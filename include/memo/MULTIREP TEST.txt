@@ -1,0 +1,23 @@
+USE students
+TOP
+
+MULTIREP GPA WITH 3.75, STATUS WITH A
+* expected: succeeds
+
+MULTIREP GPA WITH 4.25, STATUS WITH A
+* expected: MULTIREP: GPA: GPA must be between 0.00 and 4.00.
+
+MULTIREP GPA WITH 3.50, STATUS WITH X
+* expected: MULTIREP: STATUS: STATUS must be one of A, I, S.
+
+MULTIREP AGE WITH 12
+* expected: MULTIREP: AGE: AGE must be 16 or greater.
+
+MULTIREP PRICE WITH -5.00
+* expected: MULTIREP: PRICE: PRICE must be 0.00 or greater.
+
+MULTIREP STATE WITH OR
+* expected: succeeds
+
+MULTIREP STATE WITH Oregon
+* expected: MULTIREP: STATE: STATE must be two uppercase letters.

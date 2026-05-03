@@ -1,0 +1,62 @@
+@'
+# Build output
+build/
+out/
+bin/
+obj/
+Debug/
+Release/
+x64/
+.vs/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+*.cmake.user
+
+# Visual Studio
+*.suo
+*.user
+*.vcxproj.user
+*.VC.db
+*.VC.opendb
+ipch/
+
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pdb
+
+# Binaries and libraries
+*.exe
+*.dll
+*.lib
+*.obj
+*.ilk
+
+# Local database/runtime files
+*.dbf
+*.dbt
+*.cdx
+*.idx
+*.ndx
+*.dti.json
+*.lmdb
+*.mdb
+*.ldb
+
+# Logs/temp
+*.log
+*.tmp
+*.bak
+*.old
+*.sav
+
+# Local environment
+.env
+.vscode/.browse.VC.db
+'@ | Set-Content .gitignore -Encoding UTF8

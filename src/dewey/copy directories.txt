@@ -1,0 +1,2 @@
+Get-ChildItem "D:\code\ccode\dottalkpp" -Recurse -Directory |
+    % { New-Item -ItemType Directory ($_.FullName -replace 'D:\\code\\ccode\\dottalkpp','C:\\dottalkpp') -Force }

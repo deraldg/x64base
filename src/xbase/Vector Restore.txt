@@ -1,0 +1,244 @@
+Yes. This backup is the right baseline.
+
+Here is the handoff.
+
+## Project handoff
+
+### Core correction
+
+We went off track by modifying `xbase.hpp` for x64 vectored metadata. That was the wrong layer.
+
+The correct architecture is:
+
+* `xbase.hpp` = core engine/runtime contract only
+* `xbase_vfp.hpp` = classic/VFP lineage loader
+* `xbase_64.hpp` = x64 extension layer, including vectored metadata
+* `xbase_cli.hpp` = engine/CLI separator, not part of the storage codex
+
+Use lowercase `trinity` and `god` unless referring to the theological real thing.
+
+---
+
+## Decision now locked
+
+### Do not extend `xbase.hpp` for x64 vector metadata
+
+Do not add to `DbArea` in `xbase.hpp`:
+
+* vector name cache
+* metadata version/flags
+* table/field name byte-length caches
+* x64 metadata visibility fields
+
+`DbArea` should only receive the **resolved final names** from the x64 loader.
+
+### Put the vector system in `xbase_64.hpp`
+
+That includes:
+
+* `X64MetaLocator`
+* `X64MetaHeader`
+* `X64FieldNameEntry`
+* metadata block reading/validation
+* resolving vectored names into existing runtime fields:
+
+  * `_logical_name`
+  * `FieldDef.name`
+
+No new x64 metadata state needs to live in `DbArea`.
+
+---
+
+## Known good baseline file
+
+The uploaded `dbarea.cpp` backup is the correct baseline to restore from. It already has the right engine-side boundaries:
+
+* no CLI/table-buffer coupling
+* lazy `IndexManager` construction via `IndexManager(*this)`
+* lazy `MemoManager` construction via `MemoManager(*this, _memo_ctx)`
+* `close()` shuts index and memo managers down first
+* `_compute_paths_and_names_()` computes canonical runtime descriptors
+* `replaceFieldStored()` stays engine-side and does direct write/index update only
+
+This backup should be used, not the later stub.
+
+---
+
+## Immediate restore plan
+
+### 1. Restore `xbase.hpp`
+
+Revert it to the pre-vector/core-engine version.
+Keep only:
+
+* base structs
+* `DbArea`
+* current runtime state
+* index/memo integration
+* VFP/x64 compatibility setters already established before the vector mistake
+
+Do not keep the added vector-name runtime cache fields.
+
+### 2. Restore `dbarea.cpp`
+
+Use the uploaded backup as the implementation baseline. It is already aligned to the proper engine boundary.
+
+### 3. Keep `xbase_64.hpp`
+
+Keep the x64 header work there:
+
+* `LargeHeaderExtension`
+* `X64MetaLocator`
+* `X64MetaHeader`
+* `X64FieldNameEntry`
+* loader seek offset changes
+* metadata block logic
+
+But make x64 loader simply **apply resolved names** into the normal runtime fields, not into new x64-specific caches in `DbArea`.
+
+---
+
+## x64 vector metadata contract
+
+### Capability
+
+* table name max: 128
+* field name max: 64
+* practical default field-name policy: 16
+* recommended target: 16–20
+* UTF-8
+* no truncation
+* tooling may abbreviate for display only
+
+### Fallback short-name policy
+
+* default: relaxed
+* toggleable: strict
+
+Relaxed is best for conversion/import scenarios. Strict is for data-dictionary-grade schemas.
+
+### Runtime rule
+
+Loader reads x64 metadata block and resolves:
+
+* table name -> `_logical_name`
+* field names -> `FieldDef.name`
+
+Then discard metadata details. `DbArea` is not the metadata mirror.
+
+---
+
+## Current technical problem that must be fixed next
+
+### x64 create/write path and x64 loader are out of sync
+
+The x64 loader now expects:
+
+* 32-byte base header
+* 64-byte x64 extension
+* 16-byte `X64MetaLocator`
+* field descriptors
+
+So field descriptors start at byte **112**.
+
+But `CREATE X64` was still writing the old layout, causing reopen failure with:
+
+* truncated classic field descriptor
+* broken reopen after create
+
+### Required fix in `cmd_create.cpp`
+
+For x64 create:
+
+* write the 16-byte `X64MetaLocator` after `LargeHeaderExtension`
+* even if metadata block is absent initially:
+
+  * `meta_offset = 0`
+  * `meta_length = 0`
+  * `meta_version = 0`
+  * `meta_flags = 0`
+* recalculate header/data start using the new x64 fixed pre-descriptor size
+
+Until that is fixed, newly created x64 tables will mismatch the loader.
+
+---
+
+## Known syntax reminder
+
+Correct create syntax is:
+
+```text
+CREATE X64 COMMAND_AVATARS ( ... )
+```
+
+Not:
+
+```text
+CREATE X64 TABLE COMMAND_AVATARS ( ... )
+```
+
+---
+
+## LMDB / indexing project state
+
+### Solid and working
+
+CDX + LMDB integration is in a strong state:
+
+* attach/open works
+* `SET INDEX` / `SET ORDER` pipeline works
+* navigation works
+* SMARTLIST works
+* runtime binding between CDX container and LMDB backend is coherent 
+
+### Open items already identified
+
+* `LIST` still has non-centralized order traversal in some paths
+* `order_nav.hpp` needs explicit CDX handling instead of treating “not CNX” as INX
+* `STATUS`/`AREA` reporting still prints old LMDB env path in at least one path
+* `COMMIT` lifecycle patch remains pending for detach/rebuild/reattach around LMDB rebuilds 
+
+---
+
+## Tuple / buffer architecture state
+
+This remains valid and should be preserved:
+
+* `Cell` = edit unit
+* `Row` = row object
+* `Schema` = runtime column contract
+* tuple table = ideal edit workspace
+* row = commit unit
+* cell = edit unit
+* if any field changes, row is dirty
+* if indexed field changes, index is stale
+* commit writes full row from the buffer
+
+That logic is separate from header/vector storage and should remain separate.
+
+---
+
+## Schema codex
+
+The community college schema is the compatibility/reference corpus:
+
+* short uppercase field names
+* classic-friendly naming
+* good for relations, demos, testing, and browser work
+
+Treat it as the **compatibility schema codex**, distinct from future metadata-rich x64 schemas.
+
+---
+
+## Best next move
+
+Do this in order:
+
+1. restore `xbase.hpp`
+2. restore `dbarea.cpp` from the known-good backup
+3. keep x64 vector structures in `xbase_64.hpp` only
+4. fix `cmd_create.cpp` to write `X64MetaLocator`
+5. test `CREATE X64` -> reopen -> `USE` -> `LIST`
+6. only then wire full metadata block writing and name resolution
+
+That is the clean recovery path.

@@ -1,0 +1,46 @@
+echo ============================================================
+echo RULE / CONSTRAINT TEST - STUDENTS
+echo ============================================================
+
+schemas close
+do x64
+use students
+top
+
+echo
+echo --- Valid single-field tests ---
+multirep GPA WITH 3.75
+multirep GENDER WITH M
+multirep MAJOR WITH CSCI
+multirep EMAIL WITH test@example.com
+multirep SID WITH 1
+
+echo
+echo --- Invalid single-field tests ---
+multirep GPA WITH 4.25
+multirep GENDER WITH Z
+multirep MAJOR WITH CS
+multirep EMAIL WITH bademail
+multirep SID WITH 0
+
+echo
+echo --- Boundary tests ---
+multirep GPA WITH 0.00
+multirep GPA WITH 4.00
+
+echo
+echo --- Atomic multi-field success ---
+multirep GPA WITH 3.50, GENDER WITH F, MAJOR WITH MATH, EMAIL WITH jane.test@example.com
+
+echo
+echo --- Atomic multi-field failure: should reject all before write ---
+multirep GPA WITH 3.80, GENDER WITH Z, MAJOR WITH CSCI, EMAIL WITH good@example.com
+
+echo
+echo --- Verify current record after failure ---
+list 1
+
+echo
+echo ============================================================
+echo END RULE / CONSTRAINT TEST
+echo ============================================================

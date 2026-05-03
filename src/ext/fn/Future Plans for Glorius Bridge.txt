@@ -1,0 +1,919 @@
+Below is the future implementation map for the **tuple augment / bridge layer** as a full subsystem.
+
+The central rule stays:
+
+```text
+DbArea / TABLE remains truth.
+TupleStream becomes the common row surface.
+Cell/validation/export/staging are augments.
+No second table engine.
+```
+
+---
+
+# 1. Final architecture
+
+```text
+DbArea / WorkArea / OrderState / Relations / MemoManager
+        ↓
+TupleBuilder
+        ↓
+DbTupleStream
+        ↓
+TupleRow
+        ↓
+Tuple Augment Layer
+        ├── TupleCellAdapter
+        ├── TupleValidator
+        ├── TupleDelta/Staging
+        ├── TupleExport
+        ├── TupleImport/Staging
+        ├── TupleCompare
+        ├── TupleReport
+        └── Future Browser/Edit Layer
+```
+
+The augment layer should never own DBF file structure, x64 header parsing, index mutation, memo storage, or physical table writes.
+
+---
+
+# 2. Subsystem layout
+
+Recommended final folder shape:
+
+```text
+include/tuple/
+    tuple_cell_adapter.hpp
+    tuple_validate.hpp
+    tuple_sink.hpp
+    tuple_csv_sink.hpp
+    tuple_sqlite_sink.hpp
+    tuple_json_sink.hpp
+    tuple_report.hpp
+    tuple_stage.hpp
+    tuple_compare.hpp
+    tuple_import.hpp
+
+src/tuple/
+    tuple_cell_adapter.cpp
+    tuple_validate.cpp
+    tuple_csv_sink.cpp
+    tuple_sqlite_sink.cpp
+    tuple_json_sink.cpp
+    tuple_report.cpp
+    tuple_stage.cpp
+    tuple_compare.cpp
+    tuple_import.cpp
+
+src/cli/
+    cmd_tupvalidate.cpp
+    cmd_tupexport.cpp
+    cmd_tupstage.cpp
+    cmd_tupcompare.cpp
+    cmd_tupreport.cpp
+```
+
+I would keep the command names visibly tuple-related until the subsystem proves itself.
+
+---
+
+# 3. Implementation phases
+
+## Phase 1 — Stabilize current TUPVALIDATE
+
+Current status: good first proof.
+
+Already proven:
+
+```text
+TUPVALIDATE runs.
+Natural-order validation works.
+FOR-filtered validation works.
+CNX active-order session does not break it.
+Existing dt::data codecs still compile.
+```
+
+Next cleanup:
+
+```text
+1. Add cursor preservation check internally.
+2. Add optional order summary.
+3. Add issue limit, e.g. MAX 50.
+4. Add clearer output for FOR filters.
+5. Add ALL / DELETED behavior if tuple stream supports it.
+```
+
+Suggested syntax:
+
+```text
+TUPVALIDATE
+TUPVALIDATE *
+TUPVALIDATE LNAME,FNAME
+TUPVALIDATE * FOR LNAME >= "M"
+TUPVALIDATE * MAX 25
+TUPVALIDATE * TRACE
+```
+
+Useful output later:
+
+```text
+TUPVALIDATE: STUDENTS
+Order       : CNX TAG LNAME ASC
+Filter      : LNAME >= "M"
+Rows checked : 117
+Cells checked: 1053
+Issues      : 0
+Cursor      : preserved at recno 21
+```
+
+---
+
+## Phase 2 — Make tuple-to-cell conversion authoritative
+
+The tuple adapter should become the one common place that turns display/string values into typed values.
+
+Core flow:
+
+```text
+TupleColumn + TupleRow value + FieldDef
+        ↓
+Cell
+```
+
+Responsibilities:
+
+```text
+C → string
+N/F/B/Y → numeric
+D → date
+L → logical
+M → memo reference placeholder
+T → datetime placeholder
+I → integer
+unknown → raw string
+```
+
+Important: the adapter should carry both values:
+
+```text
+raw string value
+typed parsed value
+```
+
+That allows reports to say:
+
+```text
+RECNO 42 FIELD BALANCE raw="123456789.999" invalid for N(8,2)
+```
+
+Do not throw on ordinary bad data. Return a validation issue.
+
+---
+
+## Phase 3 — Validation rules by DBF field type
+
+Add a validation matrix.
+
+Initial rules:
+
+```text
+C Character:
+    length <= field width
+
+N Numeric:
+    parseable
+    integer/decimal width fits
+    decimals fit declared scale
+
+F Float:
+    parseable as floating point
+
+D Date:
+    blank allowed if policy permits
+    YYYYMMDD valid
+    month/day valid
+
+L Logical:
+    accepts T/F/Y/N/1/0/.T./.F. depending policy
+
+M Memo:
+    blank or syntactically valid reference
+    no payload validation yet
+
+I Integer:
+    parseable integer
+    fits 32-bit signed range unless x64 policy says otherwise
+
+Y Currency:
+    parseable decimal
+    fixed scale policy
+
+T DateTime:
+    parseable datetime, later
+```
+
+Keep the policy configurable:
+
+```text
+strict
+lenient
+classic FoxPro
+DotTalk x64
+import mode
+export mode
+```
+
+Example future command:
+
+```text
+TUPVALIDATE * POLICY STRICT
+TUPVALIDATE * POLICY FOX
+TUPVALIDATE * POLICY IMPORT
+```
+
+---
+
+## Phase 4 — CSV export sink
+
+This is the first practical export target.
+
+Command:
+
+```text
+TUPEXPORT CSV tmp\students.csv
+TUPEXPORT CSV tmp\students.csv FOR LNAME >= "M"
+TUPEXPORT CSV tmp\students.csv FIELDS LNAME,FNAME,MAJOR
+```
+
+Rules:
+
+```text
+Uses DbTupleStream.
+Respects current area.
+Respects active order.
+Respects FOR filter.
+Preserves cursor.
+Writes proper CSV quoting.
+Writes header row.
+Does not mutate table.
+```
+
+Internal shape:
+
+```text
+DbTupleStream
+        ↓
+TupleRow
+        ↓
+CsvTupleSink
+```
+
+This is useful immediately for inspection, reporting, test artifacts, and SQL Server file-based interchange.
+
+---
+
+## Phase 5 — JSON export sink
+
+Add JSON after CSV.
+
+Command:
+
+```text
+TUPEXPORT JSON tmp\students.json
+TUPEXPORT JSON tmp\students.json FOR LNAME >= "M"
+```
+
+Use cases:
+
+```text
+debug reports
+web/API staging
+test baselines
+Python integration
+structured comparison
+```
+
+JSON should preserve provenance:
+
+```json
+{
+  "table": "STUDENTS",
+  "recno": 21,
+  "deleted": false,
+  "values": {
+    "LNAME": "WHITE",
+    "FNAME": "JOHN"
+  }
+}
+```
+
+This is where `TupleFragment` becomes valuable.
+
+---
+
+## Phase 6 — SQLite export/staging sink
+
+SQLite should come after CSV and JSON, not before.
+
+Command:
+
+```text
+TUPEXPORT SQLITE tmp\students.db TABLE students
+TUPEXPORT SQLITE tmp\students.db TABLE students FOR LNAME >= "M"
+```
+
+Rules:
+
+```text
+Use typed cells, not raw display strings.
+Use prepared statements.
+Bind parameters.
+Create table from FieldDef-derived schema.
+Preserve recno/deleted/provenance columns optionally.
+```
+
+Possible generated columns:
+
+```text
+__recno
+__deleted
+__area
+__source_table
+LNAME
+FNAME
+...
+```
+
+This supports:
+
+```text
+analysis
+temporary SQL joins
+external reporting
+ETL staging
+Python/SQL interop
+```
+
+Still not a second runtime engine.
+
+---
+
+## Phase 7 — TupleDelta staging
+
+This is where the augment becomes more powerful.
+
+Purpose:
+
+```text
+proposed change
+        ↓
+validate
+        ↓
+stage as TupleDelta
+        ↓
+preview
+        ↓
+apply later through real table mutation path
+```
+
+Commands:
+
+```text
+TUPSTAGE REPLACE LNAME WITH "WHITE"
+TUPSTAGE REPLACE BALANCE WITH "123.45" FOR LNAME = "SMITH"
+TUPSTAGE SHOW
+TUPSTAGE CLEAR
+TUPSTAGE APPLY
+```
+
+Very important boundary:
+
+```text
+TUPSTAGE APPLY must call existing REPLACE / DbArea mutation logic.
+It must not write DBF bytes itself.
+```
+
+This keeps index hooks, memo hooks, locks, table buffering, and future commit/rollback behavior centralized.
+
+---
+
+## Phase 8 — Validation-driven staging
+
+Once staging exists, allow validation to produce proposed fixes.
+
+Examples:
+
+```text
+TUPVALIDATE * STAGE FIXTRIM
+TUPVALIDATE * STAGE UPPER LNAME
+TUPVALIDATE * STAGE NULLBLANKS
+```
+
+But keep this conservative.
+
+Better first:
+
+```text
+TUPVALIDATE * REPORT tmp\bad_rows.csv
+```
+
+Only later:
+
+```text
+TUPVALIDATE * STAGE
+```
+
+I would not auto-fix anything until reporting is mature.
+
+---
+
+## Phase 9 — Import staging
+
+This is the reverse path.
+
+Goal:
+
+```text
+CSV / JSON / SQLite
+        ↓
+RowCodec
+        ↓
+Cell validation
+        ↓
+TupleDelta or append staging
+        ↓
+apply through table engine
+```
+
+Commands:
+
+```text
+TUPIMPORT CSV tmp\students_patch.csv STAGE
+TUPIMPORT CSV tmp\new_students.csv APPEND STAGE
+TUPIMPORT JSON tmp\students_patch.json STAGE
+```
+
+Key rules:
+
+```text
+Never import directly into DBF on first pass.
+Always stage.
+Always validate.
+Always report.
+Only apply through official mutation commands.
+```
+
+This will support your SQL Server file-based bridge plan without building native ODBC first.
+
+---
+
+## Phase 10 — Compare / diff
+
+Tuple comparison is a natural use of the augment.
+
+Commands:
+
+```text
+TUPCOMPARE STUDENTS WITH tmp\students.csv
+TUPCOMPARE CURRENT WITH SQLITE tmp\students.db TABLE students
+TUPCOMPARE AREA 4 WITH AREA 9
+```
+
+Use cases:
+
+```text
+before/after structural rewrite
+migration verification
+CSV export round-trip check
+index/order test baselines
+regression testing
+```
+
+Output:
+
+```text
+Rows compared : 200
+Different rows: 3
+Missing rows  : 0
+Extra rows    : 1
+```
+
+Later it can emit `TupleDelta`.
+
+---
+
+## Phase 11 — Report layer
+
+Once validation/export/compare exist, add reporting.
+
+Commands:
+
+```text
+TUPREPORT STRUCTURE
+TUPREPORT VALIDATION
+TUPREPORT ORDER
+TUPREPORT SUMMARY
+TUPREPORT TO tmp\report.txt
+```
+
+Possible reports:
+
+```text
+field completeness
+invalid values
+duplicate keys
+blank required fields
+memo reference summary
+deleted-record summary
+field width pressure
+```
+
+This becomes a clean diagnostic surface without bloating `AREA`, `STATUS`, or `SMARTLIST`.
+
+---
+
+## Phase 12 — Browser/edit integration
+
+Only after the augment is stable should the browser use it.
+
+Future flow:
+
+```text
+Smart Browser row
+        ↓
+TupleRow
+        ↓
+Cell adapter
+        ↓
+user edit
+        ↓
+validate new Cell
+        ↓
+TupleDelta
+        ↓
+apply through DbArea mutation path
+```
+
+This gives browser edits a safe validation/staging layer.
+
+It also avoids letting the visual browser write directly into records.
+
+---
+
+# 4. Command family proposal
+
+Keep the first generation explicit:
+
+```text
+TUPVALIDATE     validate tuple stream
+TUPEXPORT       export tuple stream
+TUPSTAGE        stage tuple deltas
+TUPIMPORT       import into staged tuple deltas
+TUPCOMPARE      compare tuple streams
+TUPREPORT       generate tuple reports
+```
+
+Later, user-facing aliases can be nicer:
+
+```text
+VALIDATE
+EXPORT
+IMPORT
+COMPARE
+REPORT
+```
+
+But keep tuple names while proving behavior.
+
+---
+
+# 5. Test plan
+
+## Existing proof surface
+
+You already proved:
+
+```text
+TUPVALIDATE on STUDENTS_X64 natural order
+TUPVALIDATE with FOR LNAME >= "M"
+TUPVALIDATE on STUDENTS with CNX LNAME active
+```
+
+## Add tests in this order
+
+### Test 1 — Basic validation
+
+```text
+schemas open dbf
+select students
+tupvalidate
+```
+
+Expected:
+
+```text
+Rows checked > 0
+Cells checked > 0
+Issues sane
+No cursor damage
+```
+
+### Test 2 — FOR validation
+
+```text
+tupvalidate * for lname >= "M"
+```
+
+Expected:
+
+```text
+fewer rows
+no crash
+valid issue count
+```
+
+### Test 3 — Ordered validation
+
+```text
+set order to tag lname
+tupvalidate
+```
+
+Expected:
+
+```text
+order active
+no crash
+same row count
+```
+
+### Test 4 — CSV export
+
+```text
+tupexport csv tmp\students.csv
+```
+
+Expected:
+
+```text
+file exists
+header correct
+row count correct
+quoted values valid
+```
+
+### Test 5 — CSV filtered export
+
+```text
+tupexport csv tmp\students_m.csv for lname >= "M"
+```
+
+Expected:
+
+```text
+same count as TUPVALIDATE filtered count
+```
+
+### Test 6 — JSON export
+
+```text
+tupexport json tmp\students.json
+```
+
+Expected:
+
+```text
+valid JSON
+recno/provenance present
+```
+
+### Test 7 — SQLite export
+
+```text
+tupexport sqlite tmp\students.db table students
+```
+
+Expected:
+
+```text
+SQLite file opens
+row count matches
+schema sane
+```
+
+### Test 8 — structural rewrite audit
+
+```text
+tupvalidate
+fieldmgr append TESTFIELD C(10)
+tupvalidate
+tupcompare before.json after.json
+```
+
+Expected:
+
+```text
+existing fields unchanged
+new field blank/defaulted
+row count preserved
+```
+
+---
+
+# 6. Integration with x64 vector work
+
+The augment should stay downstream of x64 resolution.
+
+Correct pipeline:
+
+```text
+xbase_64.hpp reads vector metadata
+DbArea gets resolved table/field names
+TupleBuilder reads resolved FieldDef names
+TupleCellAdapter consumes tuple columns
+Exporter/validator/report uses cells
+```
+
+Do not let tuple augment code parse raw x64 headers.
+
+This protects the header trinity.
+
+---
+
+# 7. Integration with memo system
+
+Initial memo validation should be shallow:
+
+```text
+blank memo ref = OK
+syntactically valid memo ref = OK
+malformed memo ref = issue
+payload unreadable = warning later
+```
+
+Later add:
+
+```text
+TUPVALIDATE MEMO
+TUPREPORT MEMO
+TUPEXPORT CSV MEMO AS REF
+TUPEXPORT JSON MEMO INLINE
+TUPEXPORT JSON MEMO EXTERNAL
+```
+
+Memo payload behavior must go through `MemoManager`.
+
+---
+
+# 8. Integration with indexing
+
+The augment should not mutate indexes.
+
+For read/export/report:
+
+```text
+uses active order through DbTupleStream
+does not rebuild
+does not open index files directly unless tuple stream already does
+```
+
+For staged apply:
+
+```text
+TupleDelta apply calls existing mutation path
+existing mutation hooks update indexes
+```
+
+That preserves CDX/LMDB lifecycle rules.
+
+---
+
+# 9. Integration with SQL Server direction
+
+This augment fits the near-term SQL Server bridge plan.
+
+Preferred path:
+
+```text
+DotTalk++ table
+        ↓
+TUPEXPORT CSV/TSV/PIPE
+        ↓
+SQL Server import/staging
+```
+
+Reverse:
+
+```text
+SQL Server export query
+        ↓
+CSV/TSV/PIPE
+        ↓
+TUPIMPORT STAGE
+        ↓
+validate
+        ↓
+apply
+```
+
+This avoids premature native ODBC integration.
+
+---
+
+# 10. Milestones
+
+## Milestone A — Validation Augment
+
+```text
+TUPVALIDATE stable
+cursor preservation
+FOR support
+basic type checks
+```
+
+Status: partially achieved.
+
+## Milestone B — Export Augment
+
+```text
+TUPEXPORT CSV
+TUPEXPORT JSON
+active order preserved
+FOR support
+```
+
+## Milestone C — SQLite Staging
+
+```text
+TUPEXPORT SQLITE
+typed binding
+schema generation
+```
+
+## Milestone D — Staged Edit Layer
+
+```text
+TUPSTAGE
+TupleDelta validation
+SHOW/CLEAR/APPLY
+```
+
+## Milestone E — Import Staging
+
+```text
+TUPIMPORT CSV STAGE
+validation report
+apply through engine
+```
+
+## Milestone F — Compare/Report
+
+```text
+TUPCOMPARE
+TUPREPORT
+migration/rewrite audit
+```
+
+## Milestone G — Browser Integration
+
+```text
+browser edits validate through Cell
+edits stage as TupleDelta
+apply through official mutation path
+```
+
+---
+
+# Bottom line
+
+The full implementation should make the tuple augment into a **safe utility belt** around TABLE:
+
+```text
+validate
+export
+stage
+import
+compare
+report
+assist browser editing
+```
+
+It should not become:
+
+```text
+a second table engine
+a new storage model
+a Workbook abstraction
+a replacement for DbArea
+a replacement for TupleStream
+```
+
+The next practical build step after current green compile is:
+
+```text
+1. strengthen TUPVALIDATE output
+2. add cursor preservation reporting
+3. add TUPEXPORT CSV
+```
+
+CSV export is the next best proof because it turns the augment from “diagnostic only” into a genuinely useful data-movement tool.

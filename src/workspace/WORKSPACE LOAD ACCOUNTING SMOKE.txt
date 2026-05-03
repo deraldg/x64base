@@ -1,0 +1,63 @@
+* ============================================================
+* WORKSPACE LOAD ACCOUNTING SMOKE
+* ============================================================
+* Purpose:
+*   Verify WORKSPACE LOAD relation-count accounting after the fix.
+*
+* Scope:
+*   Non-destructive.
+*   Tests both:
+*     1. Failure path without DO SANDBOX
+*     2. Good path after DO SANDBOX
+*
+* Expected failure path:
+*   WORKSPACE LOAD mcc_sandbox should fail to open DBFs from default DBF root
+*   and should report 0 restored relations with rejected count.
+*
+* Expected good path:
+*   DO SANDBOX
+*   WORKSPACE LOAD mcc_sandbox
+*   should restore 12 areas and 15 relations.
+* ============================================================
+
+ECHO ============================================================
+ECHO WORKSPACE LOAD ACCOUNTING SMOKE
+ECHO ============================================================
+
+ECHO
+ECHO --- FAILURE PATH: LOAD MCC WITHOUT SANDBOX PATHS ---
+ECHO --- EXPECT: 0 AREAS, 0 RELATIONS, 15 REJECTED ---
+WORKSPACE CLOSE
+WORKSPACE LOAD mcc_sandbox
+
+ECHO
+ECHO --- RECOVERY: SET SANDBOX PATHS ---
+DO SANDBOX
+
+ECHO
+ECHO --- GOOD PATH: LOAD MCC WITH SANDBOX PATHS ---
+ECHO --- EXPECT: 12 AREAS, 15 RELATIONS ---
+WORKSPACE CLOSE
+WORKSPACE LOAD mcc_sandbox
+WORKSPACE
+
+ECHO
+ECHO --- VERIFY ROOT TABLE AND RELATIONS ---
+SELECT STUDENTS
+AREA
+REL LIST
+
+ECHO
+ECHO --- VERIFY RELATION ENUM STILL WORKS ---
+GOTO 1
+REL REFRESH
+REL ENUM LIMIT 10 ENROLL CLASSES COURSES TUPLE STUDENTS.SID,STUDENTS.LNAME,ENROLL.CLS_ID,CLASSES.CID,COURSES.TITLE
+
+ECHO
+ECHO --- VERIFY SMARTBROWSE LABEL ---
+SMART
+
+ECHO
+ECHO ============================================================
+ECHO WORKSPACE LOAD ACCOUNTING SMOKE DONE
+ECHO ============================================================

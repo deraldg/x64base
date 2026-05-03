@@ -1,0 +1,12 @@
+$env:VCPKG_ROOT = "C:\Users\<name>\vcpkg"
+
+Remove-Item -Recurse -Force .\build -ErrorAction SilentlyContinue
+
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+  -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+  -DDOTTALK_WITH_TV=ON `
+  -DDOTTALK_WITH_INDEX=ON `
+  -DBUILD_PYDOTTALK=ON `
+  -DDOTTALK_FOXPRO_PALETTE=ON
+
+cmake --build build --config Release

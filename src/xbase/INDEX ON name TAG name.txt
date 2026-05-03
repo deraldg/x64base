@@ -1,0 +1,5 @@
+INDEX ON name TAG name
+INDEX ON target_kind TAG targetkind
+INDEX ON target_name TAG targetname
+INDEX ON help_auth TAG helpauth
+INDEX ON migration TAG migration

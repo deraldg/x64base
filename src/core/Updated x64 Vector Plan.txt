@@ -1,0 +1,238 @@
+Here is the plan, stated as a working specification rather than code.
+
+## x64 naming and geometry plan
+
+### 1. One x64 family, not two
+
+There will be one x64 format family. It is vector-capable by design.
+
+We are not building a split model where one x64 reader is “old style” and another is “new style.” We are building one x64 header contract that can express different vector combinations through its own metadata and constants.
+
+`xbase_64.hpp` is the owner of that contract. `xbase.hpp` and `xbase_vfp.hpp` stay in their normal roles. 
+
+### 2. Reader follows the file
+
+`USE` does not assume a separate global naming mode. It reads the table’s x64 header contract from the file, and the rest of runtime follows that geometry.
+
+That means:
+
+* the file declares its x64 naming/metadata geometry
+* `USE` reads it
+* `DbArea` is populated from it
+* all later commands operate from the resolved runtime schema
+
+So the file is authoritative, not a user setting or session toggle. 
+
+### 3. Long-name logic lives in xbase_64 only
+
+Everything about long names belongs in `xbase_64.hpp`.
+
+That includes:
+
+* table-name length policy
+* field-name length policy
+* metadata structures
+* truncation/fallback policy
+* metadata parsing
+* metadata validation
+* resolution into runtime names
+
+`xbase.hpp` remains a runtime/engine layer. It may receive only the minimum additions needed so `xbase_64.hpp` can populate `DbArea`, such as setting logical table name and resolved field names. It should not become an x64 metadata mirror. 
+
+### 4. Default header contract
+
+The default x64 header contract is not “max everything.”
+
+The default contract is:
+
+* `tnl = FoxPro standard table length`
+* `fnl = FoxPro standard field name length`
+
+That becomes the baseline vector contract.
+
+The vector system may allow larger combinations up to the supported maxima, but the default contract is FoxPro-standard lengths, for compatibility and predictable behavior.
+
+### 5. Maximum capability remains higher
+
+The x64 family still supports larger upper bounds.
+
+Capability remains:
+
+* table name max: 128 bytes
+* field name max: 64 bytes
+
+But those are capability limits, not the default contract. 
+
+### 6. Structural descriptor remains
+
+The fixed structural descriptor stays.
+
+It continues to provide:
+
+* fixed geometry
+* compatibility token
+* fallback short name
+* safe bootstrap open behavior
+
+For x64 vectored tables, the structural name is fallback only. The authoritative long name lives in x64 metadata. 
+
+### 7. Runtime truth is always resolved names
+
+Once a file is opened, runtime truth becomes:
+
+* `DbArea`
+* `FieldDef`
+* resolved in-memory schema names
+
+No subsystem should repeatedly consult raw x64 vector metadata after open. Resolution happens once during `USE`, and everything downstream uses runtime truth. 
+
+### 8. Truncation is never fatal
+
+This is a major policy point.
+
+If a name exceeds the current table contract:
+
+* generate fallback short token as needed
+* warn
+* continue
+
+Worst case is truncation and warning. It must not produce open failure, descriptor failure, or schema crash.
+
+So name policy violations are non-fatal compatibility events, not structural corruption.
+
+### 9. Structural failures are only for real corruption
+
+Open failure should occur only for genuine structural problems, such as:
+
+* invalid file size
+* impossible offsets
+* invalid metadata bounds
+* bad magic/version where required
+* unrecoverable descriptor corruption
+
+It should not fail merely because a long name is longer than the default naming contract.
+
+### 10. `USE` contract
+
+`USE` is the canonical reader bridge.
+
+Its sequence is:
+
+1. read fixed structural base
+2. establish baseline runtime schema from descriptor fallback names
+3. read x64 naming/metadata contract
+4. validate metadata
+5. resolve authoritative names
+6. populate `DbArea` and `FieldDef`
+7. continue normally from resolved runtime state
+
+That is the whole point of the x64 layer. 
+
+### 11. `VUSE` is the proving ground
+
+`cmd_vuse` remains the experimental path.
+
+We do not touch `cmd_use` until `cmd_vuse` is green.
+
+So the plan is:
+
+* implement and prove vector-aware read behavior through `VUSE`
+* confirm normal x64 files, fallback names, warnings, and resolved names all behave correctly
+* only then merge the logic back into `USE`
+
+That keeps the stable surface stable.
+
+### 12. Producer and reader must match the same contract
+
+The x64 producer side and the x64 reader side must always follow the same header contract.
+
+That means these must agree:
+
+* `dbf_create.cpp`
+* `fields_mgr.cpp` via `create_dbf(...)`
+* x64 reader in `xbase_64.hpp`
+* `USE`/`VUSE`
+
+No reader-first drift. No writer-first drift. One contract.
+
+### 13. Schema and CLI stay separate
+
+Schema, CLI, and helper layers do not own x64 name logic.
+
+They consume resolved runtime state.
+
+So:
+
+* `xbase_64.hpp` owns long-name interpretation
+* `xbase.hpp` owns runtime state
+* CLI and schema tooling work from `DbArea` / `FieldDef`
+
+That preserves the header trinity and the CLI boundary. 
+
+## Implementation order
+
+### Phase 1: lock contract
+
+Lock the x64 naming contract as:
+
+* vector-capable family
+* default `tnl/fnl` = FoxPro standard
+* maxima remain 128/64
+* truncation warns only
+* no fatal errors for overlength names alone
+
+### Phase 2: reader behavior in VUSE
+
+Make `VUSE` prove:
+
+* baseline x64 open
+* fallback short-name open
+* metadata-aware long-name resolution
+* warnings instead of failure on overlength names
+* clean failure-state reset on true structural error
+
+### Phase 3: producer alignment
+
+Ensure `dbf_create.cpp` and rewrite paths emit files matching the same contract:
+
+* fixed descriptor fallback
+* x64 naming metadata as needed
+* declared `tnl/fnl` contract carried in x64-owned metadata/header logic
+
+### Phase 4: runtime population
+
+Allow `xbase_64.hpp` to populate:
+
+* logical table name
+* field names
+
+into `DbArea`, with only minimal runtime hooks added to `xbase.hpp`.
+
+### Phase 5: merge back into USE
+
+Once `VUSE` is proven on:
+
+* current x64 files
+* sandbox files
+* long-name cases
+* truncation cases
+* rewrite cases
+
+then merge the same logic into `USE`.
+
+## Final doctrine
+
+The final doctrine is:
+
+* one x64 family
+* vector-capable by design
+* default naming contract set to FoxPro-standard lengths
+* larger vector combinations allowed up to max capability
+* file declares its geometry
+* `USE` reads and resolves it
+* runtime follows it
+* truncation warns, never crashes
+* long-name logic stays in `xbase_64.hpp`
+* `DbArea` holds only resolved runtime truth
+
+That is the plan.

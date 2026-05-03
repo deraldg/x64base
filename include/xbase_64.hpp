@@ -1,0 +1,290 @@
+// xbase_64.hpp
+// x64 dialect expansion layer.
+//
+// Phase 1 contract:
+// - xbase.hpp remains neutral
+// - xbase_vfp.hpp remains the VFP bridge
+// - xbase_64.hpp owns x64 extension structures and x64 naming/vector policy
+// - reader behavior remains FoxPro/VFP-compatible first
+// - fallback DBF field token remains 10 visible characters
+// - long-name policy is warning/truncation only, never a structural open failure
+//
+// IMPORTANT:
+// This phase does NOT yet require vectored metadata to open an x64 table.
+// Standard x64 files continue to read descriptors immediately after the
+// 64-byte extension block.
+
+#pragma once
+
+#include "xbase_vfp.hpp"
+
+#include <cstdint>
+#include <cstring>
+#include <fstream>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace xbase {
+
+// -----------------------------------------------------------------------------
+// X64 VERSION BYTE
+// -----------------------------------------------------------------------------
+constexpr uint8_t DBF_VERSION_64 = 0x64;
+
+// -----------------------------------------------------------------------------
+// X64 LARGE HEADER EXTENSION (64 bytes)
+// -----------------------------------------------------------------------------
+#pragma pack(push, 1)
+struct LargeHeaderExtension {
+    uint64_t record_count;     // total records (64-bit)
+    uint64_t data_start_64;    // data section offset
+    uint64_t record_size_64;   // bytes per record
+    uint64_t autoq_next;       // next autoincrement / sequence value
+    uint32_t table_flags;      // x64 table capability flags
+    uint32_t reserved32;       // reserved
+    uint64_t reserved[3];      // reserved, future use
+};
+#pragma pack(pop)
+
+static_assert(sizeof(LargeHeaderExtension) == 64,
+              "LargeHeaderExtension must be exactly 64 bytes");
+
+// Base 32-byte header + 64-byte x64 extension.
+// Phase 1 reader opens x64 files exactly from this structural geometry.
+constexpr uint16_t LARGE_HEADER_SIZE =
+    32 + static_cast<uint16_t>(sizeof(LargeHeaderExtension));
+
+// -----------------------------------------------------------------------------
+// OPTIONAL X64 METADATA LOCATOR / VECTOR METADATA BLOCK
+//
+// These structures belong to x64 and are part of the x64 contract, but phase 1
+// reader behavior does not require them to be present for a successful open.
+// -----------------------------------------------------------------------------
+#pragma pack(push, 1)
+struct X64MetaLocator {
+    uint64_t meta_offset;   // absolute file offset of metadata block
+    uint32_t meta_length;   // metadata block length in bytes
+    uint16_t meta_version;  // metadata sub-format version
+    uint16_t meta_flags;    // reserved
+};
+#pragma pack(pop)
+
+static_assert(sizeof(X64MetaLocator) == 16,
+              "X64MetaLocator must be exactly 16 bytes");
+
+#pragma pack(push, 1)
+struct X64MetaHeader {
+    char     magic[4];            // "X64M"
+    uint16_t version;             // metadata version
+    uint16_t flags;               // policy / reserved
+
+    uint32_t total_length;        // total metadata block length in bytes
+
+    uint32_t table_name_offset;   // relative to string_pool_offset
+    uint16_t table_name_length;   // bytes
+    uint16_t reserved0;
+
+    uint32_t field_entry_offset;  // relative to metadata block start
+    uint32_t field_count;         // number of X64FieldNameEntry records
+
+    uint32_t string_pool_offset;  // relative to metadata block start
+    uint32_t string_pool_length;  // bytes
+
+    uint32_t checksum;            // optional; zero if unused
+    uint32_t reserved1;
+};
+#pragma pack(pop)
+
+static_assert(sizeof(X64MetaHeader) == 44,
+              "X64MetaHeader must be exactly 44 bytes");
+
+#pragma pack(push, 1)
+struct X64FieldNameEntry {
+    uint32_t field_index;   // 1-based field index
+    uint32_t name_offset;   // relative to string_pool_offset
+    uint16_t name_length;   // bytes
+    uint16_t flags;         // reserved / policy
+};
+#pragma pack(pop)
+
+static_assert(sizeof(X64FieldNameEntry) == 12,
+              "X64FieldNameEntry must be exactly 12 bytes");
+
+// -----------------------------------------------------------------------------
+// X64 TABLE FLAGS
+// -----------------------------------------------------------------------------
+constexpr uint32_t DBF64_FLAG_HAS_MEMO              = 0x00000001;
+constexpr uint32_t DBF64_FLAG_HAS_RECID_PK          = 0x00000002;
+constexpr uint32_t DBF64_FLAG_STRICT_FALLBACK_NAMES = 0x00000004;
+constexpr uint32_t DBF64_FLAG_HAS_META_BLOCK        = 0x00000008;
+
+constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
+    DBF64_FLAG_HAS_MEMO |
+    DBF64_FLAG_HAS_RECID_PK |
+    DBF64_FLAG_STRICT_FALLBACK_NAMES |
+    DBF64_FLAG_HAS_META_BLOCK;
+
+// -----------------------------------------------------------------------------
+// X64 NAMING / VECTOR CONTRACT (PHASE 1)
+//
+// Authoritative long-name policy follows FoxPro-style long-name defaults first,
+// so the system can be validated without changing day-to-day behavior.
+//
+// Capability maxima remain x64-owned and may be widened later.
+// -----------------------------------------------------------------------------
+constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128; // phase-1 default contract
+constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128; // phase-1 default contract
+constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 128;
+constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 128;
+constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
+
+// -----------------------------------------------------------------------------
+// Policy helpers
+// -----------------------------------------------------------------------------
+inline bool x64_table_name_fits(std::size_t bytes) noexcept {
+    return bytes <= X64_TABLE_NAME_LENGTH;
+}
+
+inline bool x64_field_name_fits(std::size_t bytes) noexcept {
+    return bytes <= X64_FIELD_NAME_LENGTH;
+}
+
+inline std::string x64_fallback_field_token(const std::string& name)
+{
+    if (name.size() <= X64_FALLBACK_FIELD_TOKEN_BYTES) return name;
+    return name.substr(0, X64_FALLBACK_FIELD_TOKEN_BYTES);
+}
+
+// -----------------------------------------------------------------------------
+// 0x64 LOADER (PHASE 1)
+//
+// Reader behavior remains FoxPro/VFP-compatible first:
+// - read the 32-byte compatible header
+// - read the 64-byte x64 extension
+// - read field descriptors starting immediately after the extension (offset 96)
+// - do not require vector metadata for a successful open
+//
+// Vector metadata belongs to x64 and may be consumed in a later phase after the
+// stable x64 structural path is green again.
+// -----------------------------------------------------------------------------
+namespace x64_loader {
+
+inline bool validate_large_header_extension(const VfpHeader& vh,
+                                            const LargeHeaderExtension& ext,
+                                            std::string* why = nullptr)
+{
+    auto fail = [&](const char* msg) {
+        if (why) {
+            *why = msg;
+        }
+        return false;
+    };
+
+    if (vh.version != DBF_VERSION_64) {
+        return fail("x64 compatible header version byte is not 0x64");
+    }
+
+    // x64 extension values are authoritative. Do not silently fall back to
+    // the compatible 16-bit header values, because that masks damaged or
+    // diminished x64 metadata.
+    if (ext.data_start_64 < LARGE_HEADER_SIZE) {
+        return fail("x64 data_start_64 is before the field descriptor area");
+    }
+
+    if (ext.record_size_64 == 0) {
+        return fail("x64 record_size_64 is zero");
+    }
+
+    // Current DbArea setters accept int16_t. Until the common runtime surface
+    // is widened, reject values that would overflow that API instead of
+    // truncating/casting them into negative or corrupted geometry.
+    if (ext.data_start_64 >
+        static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max())) {
+        return fail("x64 data_start_64 exceeds current DbArea range");
+    }
+
+    if (ext.record_size_64 >
+        static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max())) {
+        return fail("x64 record_size_64 exceeds current DbArea range");
+    }
+
+    // Phase 1 contract: the compatible VFP-style header should mirror the
+    // x64 extension geometry when those compatible fields are populated.
+    if (vh.header_size != 0 &&
+        ext.data_start_64 != static_cast<std::uint64_t>(vh.header_size)) {
+        return fail("x64 data_start_64 disagrees with compatible header_size");
+    }
+
+    if (vh.record_size != 0 &&
+        ext.record_size_64 != static_cast<std::uint64_t>(vh.record_size)) {
+        return fail("x64 record_size_64 disagrees with compatible record_size");
+    }
+
+    if ((ext.table_flags & ~DBF64_KNOWN_TABLE_FLAGS) != 0) {
+        return fail("x64 table_flags contain unknown bits");
+    }
+
+    return true;
+}
+
+inline void readHeader(DbArea& area, std::fstream& fp) {
+    const uint8_t ver = vfp_loader::peekVersion(fp);
+    if (ver != DBF_VERSION_64) {
+        throw std::runtime_error("Not an xbase_64 file (expected 0x64)");
+    }
+
+    area.setVersionByte(ver);
+    area.setKind(detect_area_kind_from_version(ver));
+
+    VfpHeader vh{};
+    fp.read(reinterpret_cast<char*>(&vh), sizeof(vh));
+    if (!fp) {
+        throw std::runtime_error("Failed to read base 32-byte x64 header");
+    }
+
+    area.setVersionByte(vh.version);
+    area.setKind(detect_area_kind_from_version(vh.version));
+    area.setLastUpdated(vh.yy, vh.mm, vh.dd);
+
+    LargeHeaderExtension ext{};
+    fp.read(reinterpret_cast<char*>(&ext), sizeof(ext));
+    if (!fp) {
+        throw std::runtime_error("Truncated x64 64-byte extension");
+    }
+
+    std::string why;
+    if (!validate_large_header_extension(vh, ext, &why)) {
+        throw std::runtime_error("Invalid x64 header extension: " + why);
+    }
+
+    // x64 record_count is authoritative. Preserve the full 64-bit value in
+    // DbArea and let the legacy 32-bit mirror clamp only where required.
+    area.setRecordCount64(ext.record_count);
+
+    area.setDataStart(static_cast<int16_t>(ext.data_start_64));
+    area.setRecordLength(static_cast<int16_t>(ext.record_size_64));
+    area.setAutoQNext64(ext.autoq_next);
+    area.setTableFlags(ext.table_flags);
+}
+
+inline void readFields(DbArea& area,
+                       std::fstream& fp,
+                       std::vector<VfpFieldExtras>& extras)
+{
+    fp.clear();
+    fp.seekg(LARGE_HEADER_SIZE, std::ios::beg);
+    if (!fp) {
+        throw std::runtime_error("Failed to seek to x64 field descriptor area");
+    }
+
+    // Phase 1: descriptors are read exactly like VFP/classic behavior, with
+    // fallback field tokens. Optional vector metadata is intentionally ignored
+    // until the stable x64 open path is green again.
+    vfp_loader::readFields(area, fp, extras);
+}
+
+} // namespace x64_loader
+
+} // namespace xbase
