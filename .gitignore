@@ -106,25 +106,49 @@ desktop.ini
 # ----------------------------------------------------------------------
 # Embedded runtime package
 # Intended GitHub shape: deraldg/x64base/dottalkpp/...
-# Keep: configs, launch scripts, sample DBFs/memos, schemas, workspaces, help.
-# Ignore: generated indexes, LMDB, logs, tmp, out, backups, built binaries.
+#
+# Keep:
+#   configs, launch scripts, sample DBFs/memos, schemas, workspaces, help,
+#   and curated smoke-test scripts.
+#
+# Ignore:
+#   generated indexes, LMDB, logs, tmp, out, backups, built binaries,
+#   accidental source-tree duplicates, scratch exports, historical backups,
+#   and large archives.
 # ----------------------------------------------------------------------
+
+# Runtime should not contain a nested source/build repo
+/dottalkpp/.git/
+/dottalkpp/.gitignore
+/dottalkpp/.editorconfig
+/dottalkpp/.gitattributes
+/dottalkpp/CMakeLists.txt
+/dottalkpp/CMakePresets.json
+/dottalkpp/MANIFEST.txt
+/dottalkpp/vcpkg.json
+/dottalkpp/windows_book.txt
+/dottalkpp/wslrun.sh
 /dottalkpp/CMakeCache.txt
 /dottalkpp/CMakeFiles/
+/dottalkpp/cmake_install.cmake
 /dottalkpp/build/
 /dottalkpp/out/
 /dottalkpp/dist/
 /dottalkpp/vcpkg_installed/
 /dottalkpp/__pycache__/
 
-# Runtime bin: keep .ini/.bat/.ps1/.sh/.ico, ignore built payloads
+# Runtime bin: keep .ini/.bat/.ps1/.sh/.ico, ignore built payloads and local env files
+/dottalkpp/bin-wsl/
+/dottalkpp/bin/dottalkpp
 /dottalkpp/bin/*.exe
 /dottalkpp/bin/*.dll
 /dottalkpp/bin/*.pdb
 /dottalkpp/bin/*.lib
+/dottalkpp/bin/*.env
 /dottalkpp/bin/.relations/
 
-# Runtime generated data
+# Runtime generated data/state
+/dottalkpp/data/.relations/
 /dottalkpp/data/indexes/
 /dottalkpp/data/INDEXES/
 /dottalkpp/data/lmdb/
@@ -136,28 +160,68 @@ desktop.ini
 /dottalkpp/data/*.sqlite
 /dottalkpp/data/*.db
 
-# Script/history backups inside runtime are not bare necessities
+# Runtime scratch/export files that are not bare necessities
+/dottalkpp/data/*.csv
+/dottalkpp/data/*.tsv
+/dottalkpp/data/*.txt
+/dottalkpp/data/*.jpg
+/dottalkpp/data/*.jpeg
+/dottalkpp/data/*.png
+/dottalkpp/data/*.dat
+/dottalkpp/data/*.ini
+
+# Runtime archive bundles are recoverable/generated and too bulky for baseline
+/dottalkpp/data/*.zip
+/dottalkpp/data/**/*.zip
+/dottalkpp/help/*.zip
+/dottalkpp/help/**/*.zip
+
+# Runtime scratch/test/project/system folders; add back deliberately if later required
+/dottalkpp/data/projects/
+/dottalkpp/data/tests/
+/dottalkpp/data/system/
+
+# Runtime scripts: keep curated .dts/.ps1 scripts, ignore bulky historical/scratch subtrees
 /dottalkpp/data/scripts/backup/
+/dottalkpp/data/scripts/tmp/
+/dottalkpp/data/scripts/scripts/
+/dottalkpp/data/scripts/notes/
+/dottalkpp/data/scripts/draw.io/
 
 # ----------------------------------------------------------------------
-# Same rules for the currently observed mixed-case runtime folder in the ZIP.
-# Prefer renaming /DotTalkpp/ -> /dottalkpp/ before the final commit, but these
-# rules protect the tree while you are transitioning on Windows.
+# Same rules for the previously observed mixed-case runtime folder in ZIP.
+# Prefer /dottalkpp/, but these rules protect transitional Windows trees.
 # ----------------------------------------------------------------------
+
+/DotTalkpp/.git/
+/DotTalkpp/.gitignore
+/DotTalkpp/.editorconfig
+/DotTalkpp/.gitattributes
+/DotTalkpp/CMakeLists.txt
+/DotTalkpp/CMakePresets.json
+/DotTalkpp/MANIFEST.txt
+/DotTalkpp/vcpkg.json
+/DotTalkpp/windows_book.txt
+/DotTalkpp/wslrun.sh
 /DotTalkpp/CMakeCache.txt
 /DotTalkpp/CMakeFiles/
+/DotTalkpp/cmake_install.cmake
 /DotTalkpp/build/
 /DotTalkpp/out/
 /DotTalkpp/dist/
 /DotTalkpp/vcpkg_installed/
 /DotTalkpp/__pycache__/
 
+/DotTalkpp/bin-wsl/
+/DotTalkpp/bin/dottalkpp
 /DotTalkpp/bin/*.exe
 /DotTalkpp/bin/*.dll
 /DotTalkpp/bin/*.pdb
 /DotTalkpp/bin/*.lib
+/DotTalkpp/bin/*.env
 /DotTalkpp/bin/.relations/
 
+/DotTalkpp/data/.relations/
 /DotTalkpp/data/indexes/
 /DotTalkpp/data/INDEXES/
 /DotTalkpp/data/lmdb/
@@ -168,7 +232,30 @@ desktop.ini
 /DotTalkpp/data/backup/
 /DotTalkpp/data/*.sqlite
 /DotTalkpp/data/*.db
+
+/DotTalkpp/data/*.csv
+/DotTalkpp/data/*.tsv
+/DotTalkpp/data/*.txt
+/DotTalkpp/data/*.jpg
+/DotTalkpp/data/*.jpeg
+/DotTalkpp/data/*.png
+/DotTalkpp/data/*.dat
+/DotTalkpp/data/*.ini
+
+/DotTalkpp/data/*.zip
+/DotTalkpp/data/**/*.zip
+/DotTalkpp/help/*.zip
+/DotTalkpp/help/**/*.zip
+
+/DotTalkpp/data/projects/
+/DotTalkpp/data/tests/
+/DotTalkpp/data/system/
+
 /DotTalkpp/data/scripts/backup/
+/DotTalkpp/data/scripts/tmp/
+/DotTalkpp/data/scripts/scripts/
+/DotTalkpp/data/scripts/notes/
+/DotTalkpp/data/scripts/draw.io/
 
 # ----------------------------------------------------------------------
 # Intentional non-ignores / reminders

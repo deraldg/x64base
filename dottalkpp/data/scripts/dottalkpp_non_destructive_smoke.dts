@@ -1,0 +1,284 @@
+* ============================================================
+* DotTalk++ Non-Destructive / Non-Complex Command Smoke Test
+* ============================================================
+* Purpose:
+*   Exercise each simple, observer, navigation, help, expression,
+*   metadata, and safe table command registered in shell_commands.cpp.
+*
+* Deliberately excluded:
+*   APPEND, APPEND_BLANK, REPLACE, MULTIREP, DELETE, RECALL, UNDELETE,
+*   PACK, TURBOPACK, ZAP, CREATE, ERASE, IMPORT, EXPORT, IMPORTSQL,
+*   EXPORTSQL, SFTP, WEB, IMAGE, BROWSE/UI commands, SQL INSERT/UPDATE/ERASE,
+*   COMMIT/ROLLBACK/TABLE_BUFFER, BUILDLMDB/REINDEX/REBUILD, SCAN/LOOP/IF blocks.
+*
+* Assumptions:
+*   - Run from the DotTalk++ project root or normal runtime directory.
+*   - init.ini / dottalkpp.ini provide standard DATA/DBF/INDEXES paths.
+*   - BUILDING.DBF, STUDENTS.DBF, TEACHERS.DBF may or may not exist.
+*     The script continues even if individual USE/SELECT operations fail.
+*   - LIST is developer-only in your current roadmap; use SMARTLIST for order checks.
+* ============================================================
+
+ECHO ============================================================
+ECHO DOTTalkpp NON-DESTRUCTIVE COMMAND SMOKE TEST
+ECHO ============================================================
+
+ECHO
+ECHO --- 00. Session / version / environment observers ---
+VERSION
+ABOUT
+STATUS
+AREA
+AREA51
+SHOWINI
+DIR
+DIR DBF
+DIR DBF/X32
+DIR DBF/X64
+COLOR DEFAULT
+BELL
+GPS
+
+ECHO
+ECHO --- 01. Help / reference / metadata command surface ---
+HELP
+HELP USE
+HELP SELECT
+HELP SMARTLIST
+HELP FUNCTIONS
+* FOXHELP
+* DOTHELP
+* FOXSTANDARD USE
+* FOXSTANDARD LIST
+BETA
+PSHELL
+CMDHELP
+COMMANDSHELP
+CMDHELPCHK
+CMDHELPCHK REF
+CMDREL
+CMDARGCHK
+SECURITY
+TABLEMETA
+
+ECHO
+ECHO --- 02. Expression engine without DBF dependency ---
+CALC 1+1
+CALC ABS(-42)
+CALC INT(12.99)
+CALC ROUND(12.345,2)
+CALC MIN(3,1)
+CALC MAX(3,1)
+CALC BETWEEN(5,1,10)
+CALC MOD(10,3)
+CALC SQRT(81)
+CALC EXP(1)
+CALC LOG(10)
+CALC LOG10(1000)
+CALC SIN(0)
+CALC COS(0)
+CALC TAN(0)
+CALC ASIN(0)
+CALC ACOS(1)
+CALC ATAN(1)
+CALC CEILING(1.2)
+CALC FLOOR(1.8)
+CALC EMPTY("")
+CALC EMPTY(" ")
+CALC TRIM("  ABC  ")
+CALC DATE()
+CALC TODAY()
+CALC TIME()
+CALC NOW()
+CALC CTOD("2000/01/01")
+CALC DTOC(CTOD("2000/01/01"))
+CALC DTOS(CTOD("2000/01/01"))
+CALC YEAR(CTOD("2000/01/01"))
+CALC MONTH(CTOD("2000/01/01"))
+CALC DAY(CTOD("2000/01/01"))
+CALC DOW(CTOD("2000/01/01"))
+CALC CDOW(CTOD("2000/01/01"))
+CALC CMONTH(CTOD("2000/01/01"))
+CALC SECONDS()
+
+ECHO
+ECHO --- 03. Education / formula commands ---
+BOOLEAN HELP
+FORMULA HELP
+EVALUATE HELP
+NORMALIZE HELP
+ASCII
+COBOL
+CODASYL
+RETRO
+EXAMPLE
+CASE
+DRAWIO
+
+ECHO
+ECHO --- 04. SQL / SQLite observer surface ---
+SQLVER
+SQLITE
+SQL HELP
+SQLSEL HELP
+WHERE HELP
+SHOW HELP
+DBAREAS
+DBAREA
+WA
+
+ECHO
+ECHO --- 05. Schema/workspace/project observers ---
+SCHEMAS
+SCHEMAS ALL
+WORKSPACE
+PROJECTS
+WSREPORT
+DDL
+DDL HELP
+FIELDS
+STRUCT
+FIELDMGR
+RULE
+RULE STATUS
+RULE LIST
+RULE PATHS
+VALIDATE
+
+ECHO
+ECHO --- 06. Try standard schema open safely ---
+SCHEMAS OPEN DBF
+SCHEMAS
+AREA
+AREA51
+DBAREAS
+
+ECHO
+ECHO --- 07. Safe work-area selection attempts ---
+SELECT 0
+AREA
+AREA51
+SELECT BUILDING
+AREA
+SELECT STUDENTS
+AREA
+SELECT TEACHERS
+AREA
+
+ECHO
+ECHO --- 08. Safe table observers after schema open ---
+FIELDS
+STRUCT
+COUNT
+DISPLAY
+LIST 5
+SMARTLIST 5
+RECNO
+GPS
+STATUS
+
+ECHO
+ECHO --- 09. Cursor movement smoke test ---
+TOP
+RECNO
+DISPLAY
+SKIP 1
+RECNO
+DISPLAY
+SKIP -1
+RECNO
+BOTTOM
+RECNO
+DISPLAY
+TOP
+RECNO
+GO 1
+RECNO
+GOTO 1
+RECNO
+FIRST
+RECNO
+NEXT
+RECNO
+PRIOR
+RECNO
+LAST
+RECNO
+TOP
+RECNO
+
+ECHO
+ECHO --- 10. Locate / continue / seek/find smoke test ---
+LOCATE
+CONTINUE
+FIND A
+SEEK A
+INDEXSEEK A
+
+ECHO
+ECHO --- 11. Aggregate observers ---
+AGGS
+SUM
+AVG
+AVERAGE
+MIN
+MAX
+
+ECHO
+ECHO --- 12. Filter / relation observer surface ---
+SETFILTER
+REFRESH
+RELATIONS
+REL_LIST
+REL_REFRESH
+REL
+TUPLE
+TUPTALK
+TUPLEDELTA
+
+ECHO
+ECHO --- 13. Index/order observer and light navigation surface ---
+SETINDEX
+SETCNX
+SETCDX
+SETLMDB
+SETORDER
+ASCEND
+SMARTLIST 5
+DESCEND
+SMARTLIST 5
+TOP
+AREA51
+LMDB
+LMDBDUMP
+LMDB_UTIL
+CNX
+CDX
+INDEX
+
+ECHO
+ECHO --- 14. Memo / lock / output helpers ---
+MEMO
+LOCK
+UNLOCK
+DUMP
+* TEXT
+PRN
+
+ECHO
+ECHO --- 15. Variables and script utilities ---
+VAR
+DOTSCRIPT
+ZIP
+ECHO Script echo check
+
+ECHO
+ECHO --- 16. Close lifecycle smoke test ---
+SCHEMAS CLOSE
+SCHEMAS
+AREA
+STATUS
+
+ECHO ============================================================
+ECHO NON-DESTRUCTIVE COMMAND SMOKE TEST COMPLETE
+ECHO ============================================================
