@@ -7,9 +7,11 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "xbase/field_name_policy.hpp"
 
 // Tiny namespace to avoid collisions with local helpers.
 namespace xfg {
@@ -41,6 +43,11 @@ inline std::string trim_copy(std::string s) {
 
 inline char up_char(char c) noexcept {
     return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+}
+
+inline std::string up_copy(std::string s) {
+    for (char& c : s) c = up_char(c);
+    return s;
 }
 
 // -----------------------------------------------------------------------------
@@ -100,37 +107,81 @@ inline bool is_memo_type(char t) noexcept {
 
 // -----------------------------------------------------------------------------
 // Field resolution
+//
+// Resolution policy:
+//   1. Authoritative/logical field names always win.
+//   2. For x64 tables only, if no authoritative match is found, allow the
+//      generated DBF/VFP descriptor fallback token as a compatibility alias.
+//      This mirrors the write-time policy used by CREATE X64 and
+//      COPY AS X64 VECTOR.
+//   3. Fallback aliases are accepted only when they map uniquely.
+//
+// This keeps x64 metadata names canonical while making non-destructive
+// 10-byte descriptor tokens useful as aliases.
 // -----------------------------------------------------------------------------
-inline int resolve_field_index_std(xbase::DbArea& db, const std::string& nameIn) {
-    const std::string name = textio::trim(nameIn);
-    const auto F = db.fields();
+inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& nameIn) {
+    const std::string want = up_copy(trim_copy(nameIn));
+    const auto& F = db.fields();
+
+    // 1. Authoritative/logical field names always win.
     for (int i = 0; i < static_cast<int>(F.size()); ++i) {
-        if (textio::ieq(textio::trim(F[i].name), name)) return i;
+        if (up_copy(trim_copy(F[static_cast<std::size_t>(i)].name)) == want) {
+            return i;
+        }
     }
+
+    // 2. x64 descriptor fallback-token aliases.
+    if (db.versionByte() == 0x64) {
+        std::vector<std::string> logical_names;
+        logical_names.reserve(F.size());
+
+        for (const auto& fd : F) {
+            logical_names.push_back(fd.name);
+        }
+
+        const auto plans =
+            xbase::field_name_policy::plan_x64_unique_fallback(logical_names);
+
+        int found = -1;
+        bool ambiguous = false;
+
+        for (int i = 0; i < static_cast<int>(plans.size()); ++i) {
+            const std::string token =
+                up_copy(trim_copy(plans[static_cast<std::size_t>(i)].descriptor_name));
+
+            if (token == want) {
+                if (found >= 0 && found != i) {
+                    ambiguous = true;
+                    break;
+                }
+                found = i;
+            }
+        }
+
+        if (!ambiguous && found >= 0) {
+            return found;
+        }
+    }
+
     return -1;
 }
 
-inline int resolve_field_index_std(const xbase::DbArea& db, const std::string& nameIn) {
-    const std::string name = textio::trim(nameIn);
-    const auto F = db.fields();
-    for (int i = 0; i < static_cast<int>(F.size()); ++i) {
-        if (textio::ieq(textio::trim(F[i].name), name)) return i;
-    }
-    return -1;
+inline int resolve_field_index_std(xbase::DbArea& db, const std::string& nameIn) {
+    return resolve_field_index_std(static_cast<const xbase::DbArea&>(db), nameIn);
 }
 
 inline char getFieldType(xbase::DbArea& db, const std::string& name) {
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return '\0';
-    const auto F = db.fields();
-    return (idx0 < static_cast<int>(F.size())) ? F[idx0].type : '\0';
+    const auto& F = db.fields();
+    return (idx0 < static_cast<int>(F.size())) ? F[static_cast<std::size_t>(idx0)].type : '\0';
 }
 
 inline char getFieldType(const xbase::DbArea& db, const std::string& name) {
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return '\0';
-    const auto F = db.fields();
-    return (idx0 < static_cast<int>(F.size())) ? F[idx0].type : '\0';
+    const auto& F = db.fields();
+    return (idx0 < static_cast<int>(F.size())) ? F[static_cast<std::size_t>(idx0)].type : '\0';
 }
 
 // -----------------------------------------------------------------------------
@@ -169,10 +220,10 @@ inline std::string getFieldAsResolvedString(xbase::DbArea& db,
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return std::string{};
 
-    const auto F = db.fields();
+    const auto& F = db.fields();
     if (idx0 >= static_cast<int>(F.size())) return std::string{};
 
-    const char t = up_char(F[idx0].type);
+    const char t = up_char(F[static_cast<std::size_t>(idx0)].type);
     std::string raw = rtrim_copy(db.get(idx0 + 1));
 
     if (t == 'M' && memoResolver) {
@@ -209,10 +260,10 @@ inline double getFieldAsNumber(xbase::DbArea& db, const std::string& name) {
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) throw std::runtime_error("field not found");
 
-    const auto F = db.fields();
+    const auto& F = db.fields();
     if (idx0 >= static_cast<int>(F.size())) throw std::runtime_error("field index out of range");
 
-    const char t = up_char(F[idx0].type);
+    const char t = up_char(F[static_cast<std::size_t>(idx0)].type);
     const std::string raw = getFieldRawString(db, name);
 
     if (is_numeric_ascii_type(t) || is_binary_numeric_type(t)) {
@@ -255,9 +306,9 @@ inline std::optional<bool> tryGetFieldAsBool(xbase::DbArea& db, const std::strin
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return std::nullopt;
 
-    const auto F = db.fields();
+    const auto& F = db.fields();
     if (idx0 >= static_cast<int>(F.size())) return std::nullopt;
-    if (!is_logical_type(F[idx0].type)) return std::nullopt;
+    if (!is_logical_type(F[static_cast<std::size_t>(idx0)].type)) return std::nullopt;
 
     std::string s = trim_copy(getFieldRawString(db, name));
     if (s.empty()) return std::nullopt;
@@ -279,10 +330,10 @@ inline std::string getFieldAsDateString(xbase::DbArea& db, const std::string& na
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return std::string{};
 
-    const auto F = db.fields();
+    const auto& F = db.fields();
     if (idx0 >= static_cast<int>(F.size())) return std::string{};
 
-    const char t = up_char(F[idx0].type);
+    const char t = up_char(F[static_cast<std::size_t>(idx0)].type);
     if (!(t == 'D' || t == 'T')) return std::string{};
 
     return rtrim_copy(getFieldRawString(db, name));
@@ -304,10 +355,10 @@ inline std::string getFieldForDisplay(xbase::DbArea& db,
     const int idx0 = resolve_field_index_std(db, name);
     if (idx0 < 0) return std::string{};
 
-    const auto F = db.fields();
+    const auto& F = db.fields();
     if (idx0 >= static_cast<int>(F.size())) return std::string{};
 
-    if (is_memo_type(F[idx0].type)) {
+    if (is_memo_type(F[static_cast<std::size_t>(idx0)].type)) {
         return getFieldAsResolvedString(db, name, memoResolver);
     }
 

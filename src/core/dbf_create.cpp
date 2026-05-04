@@ -13,6 +13,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <ostream>
 #include <string>
 #include <system_error>
@@ -99,6 +100,16 @@ static bool create_fpt_seed(const std::string& dbfPath, std::string& err)
     return true;
 }
 
+static std::string descriptor_name_for(const FieldSpec& f)
+{
+    // descriptor_name is optional and only controls the physical 10-byte
+    // DBF/VFP field descriptor token. f.name remains the authoritative
+    // logical/x64 metadata name.
+    std::string fn = f.descriptor_name.empty() ? f.name : f.descriptor_name;
+    if (fn.size() > 10) fn.resize(10);
+    return fn;
+}
+
 static bool write_classic_dbf(const std::string& path,
                               const std::vector<FieldSpec>& fields,
                               TableFlavor flavor,
@@ -159,8 +170,7 @@ static bool write_classic_dbf(const std::string& path,
     for (const auto& f : fields)
     {
         char name11[11] = {0};
-        std::string fn = f.name;
-        if (fn.size() > 10) fn.resize(10);
+        std::string fn = descriptor_name_for(f);
         std::memcpy(name11, fn.c_str(), fn.size());
 
         out.write(name11, 11);
@@ -299,8 +309,7 @@ static bool write_vfp_dbf(const std::string& path,
     for (const auto& f : fields)
     {
         VFPFieldRec vf{};
-        std::string fn = f.name;
-        if (fn.size() > 10) fn.resize(10);
+        std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
 
         vf.type      = f.type;
@@ -348,18 +357,33 @@ static bool write_x64_dbf(const std::string& path,
     bool hasMemo = false;
     std::uint16_t recLen = 1; // delete flag
 
+    std::vector<std::string> fieldNames;
+    fieldNames.reserve(fields.size());
+
     for (const auto& f : fields)
     {
         recLen = static_cast<std::uint16_t>(recLen + f.len);
         if (f.type == 'M') hasMemo = true;
+        fieldNames.push_back(f.name);
     }
 
-    const std::uint16_t hdrLen =
-        static_cast<std::uint16_t>(
-            sizeof(xbase::VfpHeader) +
-            sizeof(xbase::LargeHeaderExtension) +
-            fields.size() * sizeof(xbase::VfpField) +
-            1);
+    const std::string tableName = std::filesystem::path(path).stem().string();
+    const std::vector<char> metaBlock =
+        xbase::x64_build_name_metadata(tableName, fieldNames);
+
+    const std::size_t hdrLenWide =
+        sizeof(xbase::VfpHeader) +
+        sizeof(xbase::LargeHeaderExtension) +
+        fields.size() * sizeof(xbase::VfpField) +
+        1 +
+        metaBlock.size();
+
+    if (hdrLenWide > static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max())) {
+        err = "X64 header/metadata section is too large for current compatible header";
+        return false;
+    }
+
+    const std::uint16_t hdrLen = static_cast<std::uint16_t>(hdrLenWide);
 
     std::error_code ec;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
@@ -404,6 +428,9 @@ static bool write_x64_dbf(const std::string& path,
     ext.record_size_64 = recLen;
     ext.autoq_next     = 1;
     ext.table_flags    = hasMemo ? xbase::DBF64_FLAG_HAS_MEMO : 0;
+    if (!metaBlock.empty()) {
+        ext.table_flags |= xbase::DBF64_FLAG_HAS_META_BLOCK;
+    }
     ext.reserved32     = 0;
     ext.reserved[0]    = 0;
     ext.reserved[1]    = 0;
@@ -420,8 +447,7 @@ static bool write_x64_dbf(const std::string& path,
     for (const auto& f : fields)
     {
         xbase::VfpField vf{};
-        std::string fn = f.name;
-        if (fn.size() > 10) fn.resize(10);
+        const std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
 
         vf.type         = f.type;
@@ -444,6 +470,18 @@ static bool write_x64_dbf(const std::string& path,
     }
 
     out.put((char)0x0D);
+
+    if (!metaBlock.empty()) {
+        out.write(metaBlock.data(), static_cast<std::streamsize>(metaBlock.size()));
+        if (!out) {
+            err = "could not write X64 metadata block";
+            return false;
+        }
+    }
+
+    const char eof = static_cast<char>(0x1A);
+    out.write(&eof, 1);
+
     out.flush();
     out.close();
     if (!out) {

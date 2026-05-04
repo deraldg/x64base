@@ -248,11 +248,8 @@ int resolve_field1(const xbase::DbArea* ar, const std::string& canonicalField) {
     if (!area_is_open(ar)) return 0;
 
     try {
-        const auto& fs = ar->fields();
-        const std::string want = up(canonicalField);
-        for (std::size_t fi = 0; fi < fs.size(); ++fi) {
-            if (up(fs[fi].name) == want) return static_cast<int>(fi) + 1; // 1-based field #
-        }
+        const int idx0 = xfg::resolve_field_index_std(*ar, canonicalField);
+        if (idx0 >= 0) return idx0 + 1; // 1-based field #
     } catch (...) {}
 
     return 0;
@@ -316,16 +313,13 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
         const xbase::DbArea* ar = resolve_area(static_cast<std::size_t>(slot));
         std::string canonicalField = fieldName;
 
-        // Resolve canonical case by schema match
+        // Resolve canonical case / authoritative display name by schema or x64 fallback alias.
         if (area_is_open(ar)) {
             try {
                 const auto& fs = ar->fields();
-                const std::string want = up(fieldName);
-                for (const auto& fd : fs) {
-                    if (up(fd.name) == want) {
-                        canonicalField = fd.name;
-                        break;
-                    }
+                const int idx0 = xfg::resolve_field_index_std(*ar, fieldName);
+                if (idx0 >= 0 && idx0 < static_cast<int>(fs.size())) {
+                    canonicalField = fs[static_cast<std::size_t>(idx0)].name;
                 }
             } catch (...) {}
         }
@@ -345,16 +339,14 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
         if (have_area) {
             try {
                 bool matched = false;
-                const std::string want = up(canonicalField);
                 const auto& fs = ar->fields();
-                for (std::size_t fi = 0; fi < fs.size(); ++fi) {
-                    const auto& fd = fs[fi];
-                    if (up(fd.name) == want) {
-                        field1 = static_cast<int>(fi) + 1; // 1-based
-                        val = xfg::getFieldAsString(*const_cast<xbase::DbArea*>(ar), fd.name);
-                        matched = true;
-                        break;
-                    }
+                const int idx0 = xfg::resolve_field_index_std(*ar, canonicalField);
+
+                if (idx0 >= 0 && idx0 < static_cast<int>(fs.size())) {
+                    const auto& fd = fs[static_cast<std::size_t>(idx0)];
+                    field1 = idx0 + 1; // 1-based
+                    val = xfg::getFieldAsString(*const_cast<xbase::DbArea*>(ar), fd.name);
+                    matched = true;
                 }
 
                 if (!matched) {

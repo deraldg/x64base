@@ -191,10 +191,25 @@ std::string DbArea::rtrim(std::string s)
 
 int DbArea::findFieldCI(const std::string& name) const
 {
+    // First resolve against the final runtime names. For x64 tables these may
+    // have been promoted from X64M metadata by xbase_64.hpp.
     for (size_t i = 0; i < _fields.size(); ++i) {
         if (textio::ieq(_fields[i].name, name))
             return static_cast<int>(i + 1);
     }
+
+    // Then allow the raw DBF/VFP descriptor fallback token. This preserves
+    // compatibility when an x64 field has an authoritative long name but older
+    // scripts still refer to its 10-byte descriptor token. If duplicate fallback
+    // tokens exist, the first descriptor wins, matching the older ambiguous
+    // behavior and relying on CREATE-time warnings to make that ambiguity known.
+    for (size_t i = 0; i < _rawFields.size(); ++i) {
+        const std::string fallback(_rawFields[i].field_name,
+                                   strnlen(_rawFields[i].field_name, 11));
+        if (!fallback.empty() && textio::ieq(fallback, name))
+            return static_cast<int>(i + 1);
+    }
+
     return 0;
 }
 

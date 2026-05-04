@@ -11,6 +11,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "xbase/area_kind_util.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_hooks.hpp"      // to run reconcile_after_mutation()
 #include "cli/cmd_setpath.hpp"
@@ -247,18 +248,6 @@ static bool cnx_tag_is_unique(const std::string& cnx_path, const std::string& ta
 
 // ----------------------- flavor / valid-index helpers -----------------------
 
-static const char* area_kind_token_local(const DbArea& a)
-{
-    switch (a.kind()) {
-        case AreaKind::V32:  return "v32";
-        case AreaKind::V64:  return "v64";
-        case AreaKind::V128: return "v128";
-        case AreaKind::Tup:  return "tup";
-        case AreaKind::Unknown:
-        default:             return "unknown";
-    }
-}
-
 // Current policy helper.
 // If policy changes later (for example LMDB-backed CDX also allowed for v32),
 // change this function only.
@@ -364,7 +353,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
 
     // Standardized open report
     std::cout << "Opened " << open_display_name(a, dbf_path)
-              << " (" << area_kind_token_local(a) << ")"
+              << " (" << xbase::dbf_version_token(a.versionByte()) << ")"
               << " : Record count " << a.recCount() << "\n";
     std::cout << "Valid Index/Indices   : " << valid_index_types_for(a) << "\n";
 

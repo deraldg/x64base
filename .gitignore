@@ -1,62 +1,177 @@
-@'
-# Build output
-build/
-out/
-bin/
-obj/
-Debug/
-Release/
-x64/
-.vs/
+# x64base / DotTalk++ recovered repo ignore rules
+# Goal: keep source plus a minimal embedded runtime environment,
+# while excluding build products, generated indexes, LMDB stores, logs, tmp,
+# vcpkg payloads, and accidental nested Git/build artifacts.
 
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-CTestTestfile.cmake
-compile_commands.json
-*.cmake.user
+# ----------------------------------------------------------------------
+# Never commit nested Git metadata or local repo internals
+# ----------------------------------------------------------------------
+.git/
+**/.git/
 
-# Visual Studio
+# ----------------------------------------------------------------------
+# Build trees and CMake generator output
+# Root-anchored on purpose: do not ignore embedded runtime bin folders by name.
+# ----------------------------------------------------------------------
+/build/
+/build-*/
+/out/
+/dist/
+/obj/
+/Debug/
+/Release/
+/x64/
+/.vs/
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/CTestTestfile.cmake
+/compile_commands.json
+/*.cmake.user
+
+# CMake generated files that accidentally appear inside source subdirs
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+**/CMakeFiles/
+
+# Visual Studio / MSVC noise anywhere
 *.suo
 *.user
 *.vcxproj.user
 *.VC.db
 *.VC.opendb
+*.obj
+*.ilk
+*.idb
+*.tlog
+*.lastbuildstate
 ipch/
 
-# Python
+# vcpkg installed payloads are huge and reproducible
+/vcpkg_installed/
+**/vcpkg_installed/
+vcpkg-manifest-install.log
+
+# ----------------------------------------------------------------------
+# Python/helper build noise
+# ----------------------------------------------------------------------
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyd
-*.pdb
 
-# Binaries and libraries
+# ----------------------------------------------------------------------
+# Built binaries/libraries: users build these locally
+# Keep scripts/configs in runtime bin, but ignore exe/dll/lib/pdb payloads.
+# ----------------------------------------------------------------------
 *.exe
 *.dll
 *.lib
-*.obj
-*.ilk
+*.pdb
+*.exp
+*.pch
 
-# Local database/runtime files
-*.dbf
-*.dbt
-*.cdx
-*.idx
-*.ndx
-*.dti.json
-*.lmdb
-*.mdb
-*.ldb
+# ----------------------------------------------------------------------
+# Archives and backup bundles: keep the repo lean
+# ----------------------------------------------------------------------
+*.zip
+*.7z
+*.tar
+*.tar.gz
 
-# Logs/temp
+# ----------------------------------------------------------------------
+# Logs/temp/scratch
+# ----------------------------------------------------------------------
 *.log
 *.tmp
 *.bak
 *.old
 *.sav
-
-# Local environment
+*.orig
+*.rej
+.DS_Store
+Thumbs.db
+desktop.ini
 .env
-.vscode/.browse.VC.db
-'@ | Set-Content .gitignore -Encoding UTF8
+*.local
+
+# ----------------------------------------------------------------------
+# Top-level accidental runtime/build folders from local experiments
+# The canonical embedded runtime should live under /dottalkpp/.
+# ----------------------------------------------------------------------
+/bin/
+/user/
+/.relations/
+
+# ----------------------------------------------------------------------
+# Embedded runtime package
+# Intended GitHub shape: deraldg/x64base/dottalkpp/...
+# Keep: configs, launch scripts, sample DBFs/memos, schemas, workspaces, help.
+# Ignore: generated indexes, LMDB, logs, tmp, out, backups, built binaries.
+# ----------------------------------------------------------------------
+/dottalkpp/CMakeCache.txt
+/dottalkpp/CMakeFiles/
+/dottalkpp/build/
+/dottalkpp/out/
+/dottalkpp/dist/
+/dottalkpp/vcpkg_installed/
+/dottalkpp/__pycache__/
+
+# Runtime bin: keep .ini/.bat/.ps1/.sh/.ico, ignore built payloads
+/dottalkpp/bin/*.exe
+/dottalkpp/bin/*.dll
+/dottalkpp/bin/*.pdb
+/dottalkpp/bin/*.lib
+/dottalkpp/bin/.relations/
+
+# Runtime generated data
+/dottalkpp/data/indexes/
+/dottalkpp/data/INDEXES/
+/dottalkpp/data/lmdb/
+/dottalkpp/data/LMDB/
+/dottalkpp/data/logs/
+/dottalkpp/data/tmp/
+/dottalkpp/data/out/
+/dottalkpp/data/backup/
+/dottalkpp/data/*.sqlite
+/dottalkpp/data/*.db
+
+# Script/history backups inside runtime are not bare necessities
+/dottalkpp/data/scripts/backup/
+
+# ----------------------------------------------------------------------
+# Same rules for the currently observed mixed-case runtime folder in the ZIP.
+# Prefer renaming /DotTalkpp/ -> /dottalkpp/ before the final commit, but these
+# rules protect the tree while you are transitioning on Windows.
+# ----------------------------------------------------------------------
+/DotTalkpp/CMakeCache.txt
+/DotTalkpp/CMakeFiles/
+/DotTalkpp/build/
+/DotTalkpp/out/
+/DotTalkpp/dist/
+/DotTalkpp/vcpkg_installed/
+/DotTalkpp/__pycache__/
+
+/DotTalkpp/bin/*.exe
+/DotTalkpp/bin/*.dll
+/DotTalkpp/bin/*.pdb
+/DotTalkpp/bin/*.lib
+/DotTalkpp/bin/.relations/
+
+/DotTalkpp/data/indexes/
+/DotTalkpp/data/INDEXES/
+/DotTalkpp/data/lmdb/
+/DotTalkpp/data/LMDB/
+/DotTalkpp/data/logs/
+/DotTalkpp/data/tmp/
+/DotTalkpp/data/out/
+/DotTalkpp/data/backup/
+/DotTalkpp/data/*.sqlite
+/DotTalkpp/data/*.db
+/DotTalkpp/data/scripts/backup/
+
+# ----------------------------------------------------------------------
+# Intentional non-ignores / reminders
+# Do NOT globally ignore DBF/DBT/FPT/DTX/DTS/DTSCHEMA/ERZ/CNX.
+# Those are part of the embedded smoke-test/runtime package.
+# ----------------------------------------------------------------------

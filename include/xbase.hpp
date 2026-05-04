@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <optional>
 #include <limits>
+#include <utility>
 
 #include "memo/memo_context.hpp"
 
@@ -228,6 +229,21 @@ public:
     // ---- Legacy compatibility --------------------------------------------
     std::string name() const { return _logical_name; }
     void        setFilename(std::string path);
+
+    // ---- Resolved runtime names ------------------------------------------
+    // These setters receive final names resolved by dialect-specific loaders
+    // such as xbase_64.hpp. DbArea stores runtime truth only; it does not
+    // mirror or own the underlying vector metadata blocks.
+    void setLogicalName(std::string name) {
+        _logical_name = std::move(name);
+        _db_name = _logical_name;
+    }
+
+    bool setFieldName(int field1, std::string name) {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
+        _fields[static_cast<std::size_t>(field1 - 1)].name = std::move(name);
+        return true;
+    }
 
     // ---- Internal lifecycle helpers --------------------------------------
     void _compute_paths_and_names_(const std::string& abs_dbf_path);

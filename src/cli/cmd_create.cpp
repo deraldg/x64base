@@ -1,5 +1,7 @@
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xbase/field_name_policy.hpp"
 #include "datatype_index.hpp"
 #include "memo/memo_auto.hpp"
 
@@ -20,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -232,6 +235,56 @@ static bool parse_one(const std::string& part,
     return true;
 }
 
+
+static void apply_x64_descriptor_name_policy(std::vector<FieldSpec>& fields)
+{
+    std::vector<std::string> names;
+    names.reserve(fields.size());
+    for (const auto& f : fields) names.push_back(f.name);
+
+    const auto plans = xbase::field_name_policy::plan_x64_unique_fallback(names);
+
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        fields[i].descriptor_name = plans[i].descriptor_name;
+
+        const bool metadata_fits = xbase::x64_field_name_fits(plans[i].logical_name.size());
+
+        if (!metadata_fits) {
+            std::cout
+                << "CREATE X64 WARNING: field name '" << plans[i].logical_name
+                << "' exceeds current x64 logical field-name length "
+                << xbase::X64_FIELD_NAME_LENGTH
+                << "; it will not be stored as an authoritative x64 metadata name; "
+                << "descriptor fallback token is '" << plans[i].descriptor_name << "'";
+
+            if (plans[i].mangled) {
+                std::cout << "; token was mangled to avoid a fallback collision";
+            }
+            if (plans[i].sanitized) {
+                std::cout << "; token was normalized for DBF descriptor safety";
+            }
+            std::cout << ".\n";
+            continue;
+        }
+
+        if (plans[i].truncated || plans[i].mangled || plans[i].sanitized) {
+            std::cout
+                << "CREATE X64 WARNING: field name '" << plans[i].logical_name
+                << "' uses DBF/VFP descriptor fallback token '"
+                << plans[i].descriptor_name
+                << "'; authoritative x64 metadata name will be preserved";
+
+            if (plans[i].mangled) {
+                std::cout << "; token was mangled to avoid a fallback collision";
+            }
+            if (plans[i].sanitized) {
+                std::cout << "; token was normalized for DBF descriptor safety";
+            }
+            std::cout << ".\n";
+        }
+    }
+}
+
 static bool parse_field_list(std::istringstream& args,
                              std::vector<FieldSpec>& out,
                              std::string& tableName,
@@ -360,6 +413,10 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
                   << f.type << "("
                   << int(f.len) << ","
                   << int(f.dec) << ")\n";
+    }
+
+    if (flavor == Flavor::X64) {
+        apply_x64_descriptor_name_policy(fields);
     }
 
     if (area.isOpen())

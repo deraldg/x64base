@@ -68,7 +68,8 @@ void cmd_AREA(DbArea& A, std::istringstream&)
 
     const std::string& abs = A.filename();
     std::cout << "  DBF (abs)           : " << (abs.empty() ? "(unknown)" : abs) << "\n";
-    std::cout << "  DBF Flavor          : " << xbase::area_kind_token(A.kind()) << "\n";
+    std::cout << "  DBF Flavor          : " << xbase::dbf_version_token(A.versionByte()) << "\n";
+    std::cout << "  Runtime kind        : " << xbase::area_kind_token(A.kind()) << "\n";
 
     const std::string ln = A.logicalName();
     std::cout << "  Logical name        : " << (ln.empty() ? "(unknown)" : ln) << "\n";

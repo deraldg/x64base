@@ -7,9 +7,12 @@
 #include <algorithm>
 #include <cctype>
 #include <system_error>
+#include <cstdint>
 
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xbase/field_name_policy.hpp"
 #include "textio.hpp"
 
 using namespace xbase;
@@ -23,16 +26,28 @@ static inline std::string trim(std::string s) { return textio::trim(std::move(s)
 
 static bool token_is(const std::string& t, const char* u) { return up(t) == u; }
 
+static inline std::string lower_copy(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+    return s;
+}
+
 static void usage_copy() {
     std::cout
         << "Usage:\n"
         << "  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]\n"
         << "  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]\n"
+        << "  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]\n"
         << "  COPY FILE <SRC> TO <DST> [OVERWRITE]\n"
         << "\n"
         << "Notes:\n"
         << "  - COPY TO <name>                 : binary copy of the current DBF\n"
         << "  - COPY TO <name> AS <flavor>     : logical table copy/conversion\n"
+        << "  - COPY TO <name> AS X64 VECTOR   : one-step copy from any open table to x64 vector form\n"
+        << "  - VECTOR is target-driven and is valid only with AS X64\n"
+        << "  - AS X64 controls output format only; the destination path is honored\n"
+        << "  - AS VFP/FOX/MSDOS writes free-table 10-byte descriptor field names\n"
+        << "  - COPY AS free-table fails if 10-byte descriptor names would collide\n"
         << "  - WITH SIDECARS applies to binary COPY TO only\n"
         << "  - x64 output still writes .dbf for now (no .dbfx yet)\n"
         << "\n"
@@ -76,20 +91,39 @@ static std::filesystem::path ensure_dbf_path(const std::filesystem::path& p) {
     return std::filesystem::path(xbase::dbNameWithExt(p.string()));
 }
 
+static bool dst_token_has_explicit_dir(const std::filesystem::path& dstp) {
+    return dstp.has_parent_path() &&
+           !dstp.parent_path().empty() &&
+           dstp.parent_path().string() != ".";
+}
+
 static std::filesystem::path resolve_dst_for_copy_to(const DbArea& a, const std::string& dstToken) {
-    // If dstToken includes a directory, honor it; otherwise write next to the open DBF.
+    // Binary COPY behavior: if dstToken includes a directory, honor it;
+    // otherwise write next to the open DBF.
     std::filesystem::path dstp(trim(dstToken));
     const std::filesystem::path srcp(a.filename());
 
     std::filesystem::path leaf = dstp.filename();
     leaf = ensure_dbf_path(leaf);
 
-    const bool has_dir =
-        dstp.has_parent_path() &&
-        !dstp.parent_path().empty() &&
-        dstp.parent_path().string() != ".";
+    if (dst_token_has_explicit_dir(dstp)) return dstp.parent_path() / leaf;
+    return srcp.parent_path() / leaf;
+}
 
-    if (has_dir) return dstp.parent_path() / leaf;
+static std::filesystem::path resolve_dst_for_logical_copy_to(const DbArea& a,
+                                                             const std::string& dstToken) {
+    // Logical COPY AS changes the destination table format only.  It must not
+    // silently redirect the destination to an x64/vfp/etc. profile directory.
+    // A bare name follows the established COPY behavior and is written beside
+    // the currently open source DBF.  An explicit relative or absolute path is
+    // honored exactly as the user supplied it.
+    std::filesystem::path dstp(trim(dstToken));
+    const std::filesystem::path srcp(a.filename());
+
+    std::filesystem::path leaf = dstp.filename();
+    leaf = ensure_dbf_path(leaf);
+
+    if (dst_token_has_explicit_dir(dstp)) return dstp.parent_path() / leaf;
     return srcp.parent_path() / leaf;
 }
 
@@ -189,11 +223,177 @@ static std::string flavor_name_local(Flavor f) {
     return xbase::dbf_create::flavor_name(f);
 }
 
+
+struct CopyVectorOptions {
+    bool vector_requested = false;
+};
+
+static constexpr std::size_t FREE_TABLE_FIELD_TOKEN_BYTES = 10;
+
+static std::string free_table_descriptor_token(const std::string& name) {
+    if (name.size() <= FREE_TABLE_FIELD_TOKEN_BYTES) return name;
+    return name.substr(0, FREE_TABLE_FIELD_TOKEN_BYTES);
+}
+
+static std::string field_token_key(std::string s) {
+    s = trim(std::move(s));
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool is_free_table_target(Flavor flavor) noexcept {
+    return flavor == Flavor::MSDOS ||
+           flavor == Flavor::FOX26 ||
+           flavor == Flavor::VFP;
+}
+
+static bool apply_free_table_name_policy(Flavor flavor,
+                                         std::vector<FieldSpec>& specs,
+                                         std::vector<std::string>& warnings,
+                                         std::string& err) {
+    if (!is_free_table_target(flavor)) return true;
+
+    struct SeenName {
+        std::string key;
+        std::string original;
+        std::string token;
+        std::size_t index = 0;
+    };
+
+    std::vector<SeenName> seen;
+
+    for (std::size_t i = 0; i < specs.size(); ++i) {
+        const std::string original = specs[i].name;
+        const std::string token = free_table_descriptor_token(original);
+        const std::string key = field_token_key(token);
+
+        if (original.size() > FREE_TABLE_FIELD_TOKEN_BYTES) {
+            warnings.push_back(
+                "COPY TO AS " + flavor_name_local(flavor) +
+                " WARNING: field name '" + original +
+                "' exceeds free-table descriptor length 10; stored descriptor name will be '" +
+                token + "'.");
+        }
+
+        for (const auto& s : seen) {
+            if (s.key == key) {
+                err = "COPY TO AS " + flavor_name_local(flavor) +
+                      ": field name collision after 10-byte descriptor mapping: '" +
+                      original + "' and earlier field '" + s.original +
+                      "' both map to '" + token +
+                      "'. Target free tables have no x64 metadata authority; "
+                      "copy AS X64 VECTOR or rename fields first.";
+                return false;
+            }
+        }
+
+        specs[i].name = token;
+        seen.push_back(SeenName{key, original, token, i});
+    }
+
+    return true;
+}
+
+static void apply_x64_descriptor_name_policy(Flavor flavor,
+                                             std::vector<FieldSpec>& specs,
+                                             std::vector<std::string>& warnings) {
+    if (flavor != Flavor::X64) return;
+
+    std::vector<std::string> names;
+    names.reserve(specs.size());
+    for (const auto& s : specs) names.push_back(s.name);
+
+    const auto plans = xbase::field_name_policy::plan_x64_unique_fallback(names);
+
+    for (std::size_t i = 0; i < specs.size(); ++i) {
+        specs[i].descriptor_name = plans[i].descriptor_name;
+
+        const bool metadata_fits = xbase::x64_field_name_fits(plans[i].logical_name.size());
+
+        if (!metadata_fits) {
+            std::string msg =
+                "COPY TO AS X64 WARNING: field name '" + plans[i].logical_name +
+                "' exceeds current x64 logical field-name length " +
+                std::to_string(xbase::X64_FIELD_NAME_LENGTH) +
+                "; it will not be stored as an authoritative x64 metadata name; "
+                "descriptor fallback token is '" + plans[i].descriptor_name + "'";
+
+            if (plans[i].mangled) {
+                msg += "; token was mangled to avoid a fallback collision";
+            }
+            if (plans[i].sanitized) {
+                msg += "; token was normalized for DBF descriptor safety";
+            }
+            msg += ".";
+            warnings.push_back(std::move(msg));
+            continue;
+        }
+
+        if (plans[i].truncated || plans[i].mangled || plans[i].sanitized) {
+            std::string msg =
+                "COPY TO AS X64 WARNING: field name '" + plans[i].logical_name +
+                "' uses DBF/VFP descriptor fallback token '" +
+                plans[i].descriptor_name +
+                "'; authoritative x64 metadata name is preserved";
+
+            if (plans[i].mangled) {
+                msg += "; token was mangled to avoid a fallback collision";
+            }
+            if (plans[i].sanitized) {
+                msg += "; token was normalized for DBF descriptor safety";
+            }
+            msg += ".";
+            warnings.push_back(std::move(msg));
+        }
+    }
+}
+
+static bool parse_copy_vector_options(const std::vector<std::string>& tok,
+                                      size_t start,
+                                      Flavor flavor,
+                                      CopyVectorOptions& out,
+                                      std::string& err) {
+    out = CopyVectorOptions{};
+
+    for (size_t i = start; i < tok.size(); ++i) {
+        const std::string u = up(trim(tok[i]));
+
+        if (u == "VECTOR") {
+            if (out.vector_requested) {
+                err = "COPY TO AS: duplicate VECTOR option.";
+                return false;
+            }
+            out.vector_requested = true;
+            continue;
+        }
+
+        if (u == "FIELDNAMES" || u == "FIELDNAME" || u == "FIELDS" ||
+            u == "TABLENAME" || u == "TABLENAMES" || u == "TABLE") {
+            err = "COPY TO AS: explicit vector length parameters are not implemented yet; "
+                  "use AS X64 VECTOR to apply the current x64 vector policy.";
+            return false;
+        }
+
+        err = "COPY TO AS: unexpected option after target flavor: '" + tok[i] + "'.";
+        return false;
+    }
+
+    if (out.vector_requested && flavor != Flavor::X64) {
+        err = "COPY TO AS: VECTOR is valid only with target flavor X64.";
+        return false;
+    }
+
+    return true;
+}
+
 static bool build_field_specs_from_area(const DbArea& src,
                                         Flavor flavor,
                                         std::vector<FieldSpec>& out,
+                                        std::vector<std::string>& warnings,
                                         std::string& err) {
     out.clear();
+    warnings.clear();
     for (const auto& fd : src.fields()) {
         const char T = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
 
@@ -220,6 +420,12 @@ static bool build_field_specs_from_area(const DbArea& src,
 
     if (out.empty()) {
         err = "COPY TO AS: source table has no fields.";
+        return false;
+    }
+
+    apply_x64_descriptor_name_policy(flavor, out, warnings);
+
+    if (!apply_free_table_name_policy(flavor, out, warnings, err)) {
         return false;
     }
 
@@ -256,9 +462,15 @@ static bool logical_copy_to_as(const DbArea& src,
                                const std::filesystem::path& dstp,
                                Flavor flavor,
                                bool overwrite,
+                               const CopyVectorOptions& vector_opts,
                                std::string& err) {
     if (!src.isOpen()) {
         err = "COPY TO AS: no file open.";
+        return false;
+    }
+
+    if (vector_opts.vector_requested && flavor != Flavor::X64) {
+        err = "COPY TO AS: VECTOR is valid only with target flavor X64.";
         return false;
     }
 
@@ -271,6 +483,16 @@ static bool logical_copy_to_as(const DbArea& src,
     if (same_path(srcp, dstp)) {
         err = "COPY TO AS: source and destination are the same file.";
         return false;
+    }
+
+    std::vector<FieldSpec> specs;
+    std::vector<std::string> name_warnings;
+    if (!build_field_specs_from_area(src, flavor, specs, name_warnings, err)) {
+        return false;
+    }
+
+    for (const auto& w : name_warnings) {
+        std::cout << w << "\n";
     }
 
     std::error_code ec;
@@ -286,11 +508,6 @@ static bool logical_copy_to_as(const DbArea& src,
 
     if (overwrite) {
         remove_conversion_artifacts(dstp);
-    }
-
-    std::vector<FieldSpec> specs;
-    if (!build_field_specs_from_area(src, flavor, specs, err)) {
-        return false;
     }
 
     if (!xbase::dbf_create::create_dbf(dstp.string(), specs, flavor, err)) {
@@ -419,7 +636,6 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
         }
 
         const std::filesystem::path srcp(a.filename());
-        const std::filesystem::path dstp = resolve_dst_for_copy_to(a, tok[1]);
 
         // Logical conversion branch: COPY TO <name> AS <flavor>
         size_t as_pos = tok.size();
@@ -431,6 +647,12 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
         }
 
         if (as_pos != tok.size()) {
+            if (as_pos != 2) {
+                std::cout << "COPY TO AS failed: unexpected token between destination and AS: '"
+                          << tok[2] << "'\n";
+                std::cout << "Use: COPY TO <destination> AS <flavor> [VECTOR] [OVERWRITE]\n";
+                return;
+            }
             if (as_pos + 1 >= tok.size()) {
                 usage_copy();
                 return;
@@ -442,22 +664,39 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
                 return;
             }
 
+            CopyVectorOptions vector_opts;
+            std::string option_err;
+            if (!parse_copy_vector_options(tok, as_pos + 2, flavor, vector_opts, option_err)) {
+                std::cout << option_err << "\n";
+                return;
+            }
+
+            const std::filesystem::path dstp = resolve_dst_for_logical_copy_to(a, tok[1]);
+
             if (with_sidecars) {
                 std::cout << "COPY TO AS: WITH SIDECARS ignored for logical conversion.\n";
             }
 
+            if (vector_opts.vector_requested) {
+                std::cout << "COPY TO AS X64 VECTOR: using current x64 vector metadata policy.\n";
+            }
+
             std::string err;
-            if (!logical_copy_to_as(a, dstp, flavor, overwrite, err)) {
+            if (!logical_copy_to_as(a, dstp, flavor, overwrite, vector_opts, err)) {
                 std::cout << "COPY TO AS failed: " << err << "\n";
                 return;
             }
 
             std::cout << "Copied table to " << dstp.string()
-                      << " [" << flavor_name_local(flavor) << "]\n";
+                      << " [" << flavor_name_local(flavor) << "]";
+            if (vector_opts.vector_requested) std::cout << " VECTOR";
+            std::cout << "\n";
             return;
         }
 
         // Existing binary copy behavior
+        const std::filesystem::path dstp = resolve_dst_for_copy_to(a, tok[1]);
+
         std::string err;
         if (!copy_file_binary(srcp, dstp, overwrite, &err)) {
             std::cout << "COPY TO failed: " << err << "\n";
