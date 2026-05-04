@@ -1,0 +1,28 @@
+# DotTalk++ shared RULE catalog.
+# Location: dottalkpp/data/SCHEMAS/rules.meta
+
+[RULE GPA_4_0]
+TYPE=N
+MIN=0.00
+MAX=4.00
+MESSAGE=GPA must be between 0.00 and 4.00
+
+[RULE GENDER_CODE]
+TYPE=C
+ENUM=M,F,X
+MESSAGE=GENDER must be one of M, F, X
+
+[RULE MAJOR_CODE]
+TYPE=C
+PATTERN=^[A-Z]{4}$
+MESSAGE=MAJOR must be 4 uppercase letters
+
+[RULE EMAIL_ADDR]
+TYPE=C
+PATTERN=basic-email
+MESSAGE=EMAIL must be a valid email address
+
+[RULE POSITIVE_ID]
+TYPE=N
+MIN=1
+MESSAGE=ID must be greater than 0

@@ -1,0 +1,10 @@
+# default.erz
+# Default ERSATZ session file
+
+# Optional workspace handoff
+WORKSPACE=mcc.dtschema
+
+# Browser seed
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers
