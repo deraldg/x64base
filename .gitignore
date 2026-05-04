@@ -256,6 +256,29 @@ desktop.ini
 /DotTalkpp/data/scripts/scripts/
 /DotTalkpp/data/scripts/notes/
 /DotTalkpp/data/scripts/draw.io/
+# ----------------------------------------------------------------------
+# Runtime script estate leftovers
+# We already track curated smoke-test folders/files:
+#   canaries/, cases/, main/, manual/, sub/, suites/
+#   x32.dts, x64.dts, stable_demo.dts, README.txt, etc.
+#
+# Ignore remaining loose top-level script/history files by default.
+# Add back intentionally with git add -f if one becomes canonical.
+# ----------------------------------------------------------------------
+
+/dottalkpp/data/scripts/*.dts
+/dottalkpp/data/scripts/*.DTS
+/dottalkpp/data/scripts/*.txt
+/dottalkpp/data/scripts/*.ps1
+/dottalkpp/data/scripts/*.drawio
+/dottalkpp/data/scripts/legacy/
+
+/DotTalkpp/data/scripts/*.dts
+/DotTalkpp/data/scripts/*.DTS
+/DotTalkpp/data/scripts/*.txt
+/DotTalkpp/data/scripts/*.ps1
+/DotTalkpp/data/scripts/*.drawio
+/DotTalkpp/data/scripts/legacy/
 
 # ----------------------------------------------------------------------
 # Intentional non-ignores / reminders
