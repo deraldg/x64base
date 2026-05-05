@@ -33,9 +33,11 @@ struct JoinField {
 };
 
 struct Relation {
-    std::string child;                 // normalized (UPPER)
-    std::vector<JoinField> joins;      // HARD bindings (indices)
-    std::vector<std::string> names;    // original field names (for save/export)
+    std::string child;                         // normalized (UPPER)
+    std::vector<JoinField> joins;              // HARD bindings (indices)
+    std::vector<std::string> names;            // legacy same-field names
+    std::vector<std::string> parent_names;     // parent-side field names
+    std::vector<std::string> child_names;      // child-side field names
 };
 
 std::unordered_map<std::string, std::vector<Relation>> g_relations; // key: parent (UPPER)
@@ -71,6 +73,24 @@ static std::string naked_field(std::string s) {
     auto dot = s.find('.');
     if (dot != std::string::npos) s = s.substr(dot + 1);
     return textio::trim(std::move(s));
+}
+
+static bool same_field_lists(const std::vector<std::string>& a,
+                             const std::vector<std::string>& b) {
+    if (a.size() != b.size()) return false;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (up_copy(naked_field(a[i])) != up_copy(naked_field(b[i]))) return false;
+    }
+    return true;
+}
+
+static std::string join_names_csv(const std::vector<std::string>& names) {
+    std::string out;
+    for (std::size_t i = 0; i < names.size(); ++i) {
+        if (i) out += ",";
+        out += names[i];
+    }
+    return out;
 }
 
 static std::string ltrim_copy(std::string s) {
@@ -416,10 +436,14 @@ parent_field_values_names(const xbase::DbArea& parent, const Relation& rel) {
     out.reserve(rel.joins.size());
     xbase::DbArea& P = const_cast<xbase::DbArea&>(parent);
 
-    for (std::size_t i = 0; i < rel.joins.size() && i < rel.names.size(); ++i) {
-        const std::string field_name = naked_field(rel.names[i]);
+    for (std::size_t i = 0; i < rel.joins.size(); ++i) {
+        std::string child_field_name;
+        if (i < rel.child_names.size()) child_field_name = naked_field(rel.child_names[i]);
+        else if (i < rel.names.size()) child_field_name = naked_field(rel.names[i]);
+        if (child_field_name.empty()) continue;
+
         const std::string val = get_by_index_as_string(P, rel.joins[i].parent_field);
-        out.emplace_back(field_name, val);
+        out.emplace_back(child_field_name, val);
     }
     return out;
 }
@@ -441,8 +465,24 @@ void set_scan_limit(std::size_t max_steps) noexcept { g_scan_limit = max_steps ?
 bool add_relation(const std::string& parent_area,
                   const std::string& child_area,
                   const std::vector<std::string>& tuple_fields) {
+    return add_relation(parent_area, child_area, tuple_fields, tuple_fields);
+}
+
+bool add_relation(const std::string& parent_area,
+                  const std::string& child_area,
+                  const std::vector<std::string>& parent_fields,
+                  const std::vector<std::string>& child_fields) {
     const std::string parent = up_copy(parent_area);
     const std::string child  = up_copy(child_area);
+
+    if (parent_fields.empty() || child_fields.empty()) {
+        if (g_verbose) std::cout << "REL: add failed (no fields provided)\n";
+        return false;
+    }
+    if (parent_fields.size() != child_fields.size()) {
+        if (g_verbose) std::cout << "REL: add failed (parent/child field counts differ)\n";
+        return false;
+    }
 
     xbase::DbArea* P = find_open_area_by_name_ci(parent);
     xbase::DbArea* C = find_open_area_by_name_ci(child);
@@ -453,16 +493,23 @@ bool add_relation(const std::string& parent_area,
 
     Relation r;
     r.child = child;
-    r.names = tuple_fields;
+    r.parent_names = parent_fields;
+    r.child_names = child_fields;
+    if (same_field_lists(parent_fields, child_fields)) r.names = parent_fields;
     r.joins.clear();
-    r.joins.reserve(tuple_fields.size());
+    r.joins.reserve(parent_fields.size());
 
-    for (const auto& f_raw : tuple_fields) {
-        const std::string f = naked_field(f_raw);
-        const int pf = find_field_index_ci(*P, f);
-        const int cf = find_field_index_ci(*C, f);
-        if (pf <= 0 || cf <= 0) {
-            std::cout << "REL: field not found: " << f << "\n";
+    for (std::size_t i = 0; i < parent_fields.size(); ++i) {
+        const std::string pf_name = naked_field(parent_fields[i]);
+        const std::string cf_name = naked_field(child_fields[i]);
+        const int pf = find_field_index_ci(*P, pf_name);
+        const int cf = find_field_index_ci(*C, cf_name);
+        if (pf <= 0) {
+            std::cout << "REL: parent field not found: " << pf_name << "\n";
+            return false;
+        }
+        if (cf <= 0) {
+            std::cout << "REL: child field not found: " << cf_name << "\n";
             return false;
         }
         r.joins.push_back(JoinField{pf, cf});
@@ -475,9 +522,10 @@ bool add_relation(const std::string& parent_area,
 
     if (g_verbose) {
         std::cout << "REL: " << parent << " -> " << child << " ON ";
-        for (std::size_t i = 0; i < tuple_fields.size(); ++i) {
-            if (i) std::cout << ",";
-            std::cout << tuple_fields[i];
+        if (same_field_lists(parent_fields, child_fields)) {
+            std::cout << join_names_csv(parent_fields);
+        } else {
+            std::cout << join_names_csv(parent_fields) << " TO " << join_names_csv(child_fields);
         }
         std::cout << "\n";
     }
@@ -659,7 +707,15 @@ std::vector<RelationSpec> export_relations() {
     for (const auto& kv : g_relations) {
         const std::string& parent = kv.first;
         for (const auto& rel : kv.second) {
-            out.push_back(RelationSpec{ parent, rel.child, rel.names });
+            RelationSpec spec;
+            spec.parent = parent;
+            spec.child = rel.child;
+            spec.parent_fields = rel.parent_names;
+            spec.child_fields = rel.child_names;
+            if (same_field_lists(spec.parent_fields, spec.child_fields)) {
+                spec.fields = spec.parent_fields;
+            }
+            out.push_back(std::move(spec));
         }
     }
     return out;
@@ -667,7 +723,13 @@ std::vector<RelationSpec> export_relations() {
 
 void import_relations(const std::vector<RelationSpec>& specs, bool clear_existing) {
     if (clear_existing) g_relations.clear();
-    for (const auto& s : specs) add_relation(s.parent, s.child, s.fields);
+    for (const auto& s : specs) {
+        if (!s.parent_fields.empty() || !s.child_fields.empty()) {
+            add_relation(s.parent, s.child, s.parent_fields, s.child_fields);
+        } else {
+            add_relation(s.parent, s.child, s.fields);
+        }
+    }
 }
 
 // ---- Accurate REL LIST ALL support helpers (internal) ----
@@ -717,15 +779,22 @@ static std::vector<std::string> infer_unique_child_chain(const std::string& root
 }
 
 static std::string format_on_fields(const Relation& rel) {
-    std::string s;
-    if (!rel.names.empty()) {
-        s += " ON ";
-        for (std::size_t i = 0; i < rel.names.size(); ++i) {
-            if (i) s += ",";
-            s += rel.names[i];
+    if (!rel.parent_names.empty() && !rel.child_names.empty()) {
+        std::string s = " ON ";
+        s += join_names_csv(rel.parent_names);
+        if (!same_field_lists(rel.parent_names, rel.child_names)) {
+            s += " TO ";
+            s += join_names_csv(rel.child_names);
         }
+        return s;
     }
-    return s;
+
+    if (!rel.names.empty()) {
+        std::string s = " ON ";
+        s += join_names_csv(rel.names);
+        return s;
+    }
+    return {};
 }
 
 // ---- SURGICALLY REPLACED: list_tree_for_current_parent ----

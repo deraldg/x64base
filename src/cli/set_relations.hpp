@@ -19,9 +19,18 @@ void set_verbose(bool on) noexcept;
 void set_scan_limit(std::size_t max_steps) noexcept;
 
 // Relation graph editing
+// Same-field relation: parent.<field> == child.<field>.
 bool add_relation(const std::string& parent_area,
                   const std::string& child_area,
                   const std::vector<std::string>& tuple_fields);
+
+// Asymmetric relation: parent.<parent_fields[i]> == child.<child_fields[i]>.
+// Preserves the legacy same-field overload while allowing metadata/system
+// dictionary relations such as SYSCMD.CAN_NAME -> SYSSUBCMD.PARENT.
+bool add_relation(const std::string& parent_area,
+                  const std::string& child_area,
+                  const std::vector<std::string>& parent_fields,
+                  const std::vector<std::string>& child_fields);
 
 bool remove_relation(const std::string& parent_area,
                      const std::string& child_area);
@@ -95,7 +104,15 @@ int match_count_for_child(const std::string& child_area);
 struct RelationSpec {
     std::string parent;
     std::string child;
+
+    // Legacy same-field representation. Existing relation files use this.
     std::vector<std::string> fields;
+
+    // New asymmetric-key representation. If these are populated, they are
+    // authoritative; fields remains a compatibility projection only when the
+    // two sides are identical.
+    std::vector<std::string> parent_fields;
+    std::vector<std::string> child_fields;
 };
 
 std::vector<RelationSpec> export_relations();

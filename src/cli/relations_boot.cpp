@@ -52,11 +52,12 @@ static void load_default_if_exists() {
             if (e == std::string::npos) return "";
             return obj.substr(s, e - s);
         };
-        auto grab_fields = [&]()->std::vector<std::string>{
+        auto grab_array = [&](const std::string& key)->std::vector<std::string>{
             std::vector<std::string> out;
-            size_t s = obj.find("\"fields\":[");
+            std::string pat = "\"" + key + "\":[";
+            size_t s = obj.find(pat);
             if (s == std::string::npos) return out;
-            s += 10;
+            s += pat.size();
             size_t e = obj.find("]", s);
             if (e == std::string::npos) return out;
             std::string arr = obj.substr(s, e - s);
@@ -74,8 +75,12 @@ static void load_default_if_exists() {
         relations_api::RelationSpec rs;
         rs.parent = grab_string("parent");
         rs.child  = grab_string("child");
-        rs.fields = grab_fields();
-        if (!rs.parent.empty() && !rs.child.empty() && !rs.fields.empty()) specs.push_back(std::move(rs));
+        rs.fields = grab_array("fields");
+        rs.parent_fields = grab_array("parent_fields");
+        rs.child_fields = grab_array("child_fields");
+        const bool has_legacy_fields = !rs.fields.empty();
+        const bool has_asymmetric_fields = !rs.parent_fields.empty() && !rs.child_fields.empty();
+        if (!rs.parent.empty() && !rs.child.empty() && (has_legacy_fields || has_asymmetric_fields)) specs.push_back(std::move(rs));
         pos = p_obj_end + 1;
     }
     relations_api::import_relations(specs, /*clear_existing*/true);
@@ -109,12 +114,22 @@ static void save_default() {
     f << "{\n  \"relations\": [\n";
     for (size_t i=0;i<specs.size();++i) {
         const auto& s = specs[i];
-        f << "    {\"parent\":\"" << jesc(s.parent) << "\",\"child\":\"" << jesc(s.child) << "\",\"fields\":[";
-        for (size_t j=0;j<s.fields.size();++j) {
-            if (j) f << ",";
-            f << "\"" << jesc(s.fields[j]) << "\"";
+        auto write_array = [&](const char* key, const std::vector<std::string>& values) {
+            f << ",\"" << key << "\":[";
+            for (size_t j=0;j<values.size();++j) {
+                if (j) f << ",";
+                f << "\"" << jesc(values[j]) << "\"";
+            }
+            f << "]";
+        };
+
+        f << "    {\"parent\":\"" << jesc(s.parent) << "\",\"child\":\"" << jesc(s.child) << "\"";
+        if (!s.fields.empty()) write_array("fields", s.fields);
+        if (!s.parent_fields.empty() || !s.child_fields.empty()) {
+            write_array("parent_fields", s.parent_fields);
+            write_array("child_fields", s.child_fields);
         }
-        f << "]}";
+        f << "}";
         if (i + 1 < specs.size()) f << ",";
         f << "\n";
     }

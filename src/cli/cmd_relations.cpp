@@ -49,6 +49,41 @@ static std::vector<std::string> split_fields_csv(const std::string& csv) {
     return out;
 }
 
+static bool split_on_to_clause(const std::string& tail,
+                               std::string& parent_csv,
+                               std::string& child_csv) {
+    parent_csv.clear();
+    child_csv.clear();
+
+    std::istringstream ss(tail);
+    std::vector<std::string> before;
+    std::vector<std::string> after;
+    bool saw_to = false;
+    std::string tok;
+    while (ss >> tok) {
+        if (up(tok) == "TO") {
+            if (saw_to) return false;
+            saw_to = true;
+            continue;
+        }
+        if (saw_to) after.push_back(tok);
+        else before.push_back(tok);
+    }
+
+    auto join_tokens = [](const std::vector<std::string>& parts) {
+        std::string out;
+        for (std::size_t i = 0; i < parts.size(); ++i) {
+            if (i) out += " ";
+            out += parts[i];
+        }
+        return trim(std::move(out));
+    };
+
+    parent_csv = join_tokens(before);
+    child_csv = saw_to ? join_tokens(after) : parent_csv;
+    return !parent_csv.empty() && !child_csv.empty();
+}
+
 static int slot_of_area(xbase::DbArea* area) {
     if (!area) return -1;
     const std::size_t n = workareas::count();
@@ -364,6 +399,8 @@ static std::vector<relations_api::RelationSpec> parse_relations_file(const std::
             if (key == "parent") rs.parent = parse_string();
             else if (key == "child") rs.child = parse_string();
             else if (key == "fields") rs.fields = parse_string_array();
+            else if (key == "parent_fields") rs.parent_fields = parse_string_array();
+            else if (key == "child_fields") rs.child_fields = parse_string_array();
             else {
                 skip_ws();
                 if (pos < content.size() && content[pos] == '"') (void)parse_string();
@@ -375,7 +412,9 @@ static std::vector<relations_api::RelationSpec> parse_relations_file(const std::
             consume(',');
         }
 
-        if (!rs.parent.empty() && !rs.child.empty() && !rs.fields.empty()) {
+        const bool has_legacy_fields = !rs.fields.empty();
+        const bool has_asymmetric_fields = !rs.parent_fields.empty() && !rs.child_fields.empty();
+        if (!rs.parent.empty() && !rs.child.empty() && (has_legacy_fields || has_asymmetric_fields)) {
             specs.push_back(std::move(rs));
         }
 
@@ -391,6 +430,7 @@ static void show_set_relations_usage() {
     std::cout <<
         "SET RELATIONS syntax\n"
         "  SET RELATIONS ADD <parent> <child> ON f1[,f2...]\n"
+        "  SET RELATIONS ADD <parent> <child> ON parent_f1[,parent_f2...] TO child_f1[,child_f2...]\n"
         "  SET RELATIONS CLEAR <parent>\n"
         "  SET RELATIONS CLEAR ALL\n";
 }
@@ -440,22 +480,30 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
             return;
         }
 
-        std::string fields_csv;
-        std::getline(ss, fields_csv);
-        fields_csv = trim(fields_csv);
+        std::string fields_tail;
+        std::getline(ss, fields_tail);
+        fields_tail = trim(fields_tail);
 
-        if (parent.empty() || child.empty() || fields_csv.empty()) {
-            std::cout << "Usage: SET RELATIONS ADD <parent> <child> ON f1,f2\n";
+        std::string parent_csv;
+        std::string child_csv;
+        if (parent.empty() || child.empty() || fields_tail.empty() ||
+            !split_on_to_clause(fields_tail, parent_csv, child_csv)) {
+            std::cout << "Usage: SET RELATIONS ADD <parent> <child> ON f1,f2 [TO child_f1,child_f2]\n";
             return;
         }
 
-        auto fields = split_fields_csv(fields_csv);
-        if (fields.empty()) {
+        auto parent_fields = split_fields_csv(parent_csv);
+        auto child_fields = split_fields_csv(child_csv);
+        if (parent_fields.empty() || child_fields.empty()) {
             std::cout << "SET RELATIONS: no fields provided\n";
             return;
         }
+        if (parent_fields.size() != child_fields.size()) {
+            std::cout << "SET RELATIONS: parent/child field counts differ\n";
+            return;
+        }
 
-        if (!relations_api::add_relation(parent, child, fields)) return;
+        if (!relations_api::add_relation(parent, child, parent_fields, child_fields)) return;
 
         relations_api::refresh_if_enabled();
         std::cout << "OK\n";
@@ -566,14 +614,23 @@ void cmd_REL_SAVE(xbase::DbArea& /*A*/, std::istringstream& iss) {
     out << "[\n";
     for (std::size_t i = 0; i < specs.size(); ++i) {
         const auto& s = specs[i];
+        auto write_array = [&](const char* key, const std::vector<std::string>& values) {
+            out << ",\"" << key << "\":[";
+            for (std::size_t j = 0; j < values.size(); ++j) {
+                if (j) out << ",";
+                out << "\"" << escape_json(values[j]) << "\"";
+            }
+            out << "]";
+        };
+
         out << "  {\"parent\":\"" << escape_json(s.parent)
-            << "\",\"child\":\"" << escape_json(s.child)
-            << "\",\"fields\":[";
-        for (std::size_t j = 0; j < s.fields.size(); ++j) {
-            if (j) out << ",";
-            out << "\"" << escape_json(s.fields[j]) << "\"";
+            << "\",\"child\":\"" << escape_json(s.child) << "\"";
+        if (!s.fields.empty()) write_array("fields", s.fields);
+        if (!s.parent_fields.empty() || !s.child_fields.empty()) {
+            write_array("parent_fields", s.parent_fields);
+            write_array("child_fields", s.child_fields);
         }
-        out << "]}";
+        out << "}";
         if (i + 1 < specs.size()) out << ",";
         out << "\n";
     }

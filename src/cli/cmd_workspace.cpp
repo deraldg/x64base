@@ -861,15 +861,42 @@ static int schema_close_matching_token(const string& token) {
 // --------- RELATIONS IO (optional) ------------------------------------------
 
 #if HAVE_RELATIONS
+static bool same_field_list_ci(const std::vector<std::string>& a,
+                               const std::vector<std::string>& b) {
+    if (a.size() != b.size()) return false;
+    auto naked = [](std::string s) {
+        auto dot = s.find('.');
+        if (dot != std::string::npos) s = s.substr(dot + 1);
+        return to_upper(trim_copy(std::move(s)));
+    };
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (naked(a[i]) != naked(b[i])) return false;
+    }
+    return true;
+}
+
+static std::string join_csv(const std::vector<std::string>& fields) {
+    std::ostringstream oss;
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        if (i) oss << ",";
+        oss << fields[i];
+    }
+    return oss.str();
+}
+
 static std::vector<string> export_relations_lines() {
     std::vector<string> lines;
     try {
         for (const auto& rs : relations_api::export_relations()) {
+            const std::vector<std::string>& parent_fields =
+                !rs.parent_fields.empty() ? rs.parent_fields : rs.fields;
+            const std::vector<std::string>& child_fields =
+                !rs.child_fields.empty() ? rs.child_fields : rs.fields;
+
             std::ostringstream oss;
-            oss << rs.parent << " " << rs.child << " ON ";
-            for (size_t i = 0; i < rs.fields.size(); ++i) {
-                if (i) oss << ",";
-                oss << rs.fields[i];
+            oss << rs.parent << " " << rs.child << " ON " << join_csv(parent_fields);
+            if (!child_fields.empty() && !same_field_list_ci(parent_fields, child_fields)) {
+                oss << " TO " << join_csv(child_fields);
             }
             lines.push_back(oss.str());
         }
@@ -903,30 +930,51 @@ static bool apply_relation_line(const std::string& body) {
         return false;
     }
 
-    std::string fields_csv;
-    std::getline(rss, fields_csv);
-    fields_csv = trim_copy_local(fields_csv);
-    if (fields_csv.empty()) {
+    std::string rest;
+    std::getline(rss, rest);
+    rest = trim_copy_local(rest);
+    if (rest.empty()) {
         std::cout << "  ! RELATION skipped (no fields): " << body << "\n";
         return false;
     }
 
-    std::vector<std::string> fields;
+    // Workspace relation lines support both legacy same-field form:
+    //   RELATION PARENT CHILD ON FIELD1,FIELD2
+    // and asymmetric metadata/system-dictionary form:
+    //   RELATION PARENT CHILD ON PARENT_FIELD TO CHILD_FIELD
+    std::string parent_csv;
+    std::string child_csv;
+    bool saw_to = false;
     {
+        std::istringstream toks(rest);
         std::string tok;
-        std::istringstream fss(fields_csv);
-        while (std::getline(fss, tok, ',')) {
-            tok = trim_copy_local(tok);
-            if (!tok.empty()) fields.push_back(tok);
+        while (toks >> tok) {
+            if (up_token(tok) == "TO") {
+                saw_to = true;
+                continue;
+            }
+            std::string& dest = saw_to ? child_csv : parent_csv;
+            if (!dest.empty()) dest += ' ';
+            dest += tok;
         }
     }
 
-    if (fields.empty()) {
+    std::vector<std::string> parent_fields = split_tokens(parent_csv);
+    std::vector<std::string> child_fields  = saw_to ? split_tokens(child_csv) : parent_fields;
+
+    if (parent_fields.empty() || child_fields.empty()) {
         std::cout << "  ! RELATION skipped (no fields): " << body << "\n";
         return false;
     }
 
-    if (!relations_api::add_relation(parent, child, fields)) {
+    bool ok = false;
+    if (saw_to) {
+        ok = relations_api::add_relation(parent, child, parent_fields, child_fields);
+    } else {
+        ok = relations_api::add_relation(parent, child, parent_fields);
+    }
+
+    if (!ok) {
         std::cout << "  ! RELATION rejected by engine: " << body << "\n";
         return false;
     }

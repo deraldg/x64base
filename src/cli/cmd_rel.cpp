@@ -24,7 +24,8 @@ static void rel_usage() {
         << "  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>\n"
         << "  REL SAVE [path] | REL SAVE AS <dataset>\n"
         << "  REL LOAD [path] | REL LOAD AS <dataset>\n"
-        << "  REL ADD <parent> <child> ON <field>      # alias of SET RELATIONS ADD\n"
+        << "  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation\n"
+        << "  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation\n"
         << "  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR\n";
 }
 
