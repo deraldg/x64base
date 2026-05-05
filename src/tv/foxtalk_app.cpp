@@ -9,6 +9,11 @@
 #define Uses_TScreen
 #define Uses_TKeys
 #define Uses_MsgBox
+#define Uses_TEditWindow
+#define Uses_TEditor
+#define Uses_TFileDialog
+#define Uses_TDialog
+#define Uses_TObject
 
 #if DOTTALK_TV_AVAILABLE
 #include <tvision/tv.h>
@@ -16,7 +21,14 @@
 
 #include "tv/foxtalk_app.hpp"
 
+#include <algorithm>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <cstring>
 #include <sstream>
 #include <string>
 
@@ -24,9 +36,11 @@
 #include "tv/foxtalk_cmd_input.hpp"
 #include "tv/foxtalk_command_window.hpp"
 #include "tv/foxtalk_ids.hpp"
+#include "tv/foxtalk_layout.hpp"
 #include "tv/foxtalk_log_view.hpp"
 #include "tv/foxtalk_menu.hpp"
 #include "tv/foxtalk_output_window.hpp"
+#include "tv/foxtalk_pro_menu_ids.hpp"
 #include "tv/foxtalk_status.hpp"
 #include "tv/foxtalk_util.hpp"
 #include "tv/foxtalk_workspace_window.hpp"
@@ -37,6 +51,8 @@ extern "C" xbase::XBaseEngine* shell_engine();
 extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui_cmds);
 
 namespace foxtalk {
+
+std::filesystem::path iniPath();
 
 namespace {
 
@@ -82,6 +98,343 @@ static std::string probeFilterText(xbase::DbArea& area)
     return {};
 }
 
+static WindowGeometry makeWindowGeometry(int x, int y, int w, int h)
+{
+    WindowGeometry g;
+    g.x = x;
+    g.y = y;
+    g.w = w;
+    g.h = h;
+    g.zoomed = false;
+    return g;
+}
+
+struct FoxtalkZones
+{
+    WindowGeometry output;     // Persistent upper log pane.
+    WindowGeometry workbench;  // Visible gray desktop band; not a window.
+    WindowGeometry command;    // Persistent bottom command surface.
+    WindowGeometry workspace;  // Small floating inspector.
+};
+
+static int desktopWidth()
+{
+    if (TProgram::deskTop)
+        return std::max<int>(1, TProgram::deskTop->size.x);
+    return std::max<int>(1, TScreen::screenWidth);
+}
+
+static int desktopHeight()
+{
+    if (TProgram::deskTop)
+        return std::max<int>(1, TProgram::deskTop->size.y);
+    return std::max<int>(1, TScreen::screenHeight);
+}
+
+static FoxtalkZones canonicalZones()
+{
+    const int dw = desktopWidth();
+    const int dh = desktopHeight();
+
+    const int commandH = std::min(4, std::max(3, dh - 2));
+    const int commandY = std::max(0, dh - commandH);
+    const int paneX = 1;
+    const int paneW = std::max(20, dw - 2);
+
+    const int outputY = 1;
+    const int availableAboveCommand = std::max(0, commandY - outputY);
+
+    // The gray desktop is an intentional workbench, not wasted space.
+    // Keep a modest band visible on normal terminals, but give it up
+    // before starving the output pane on small screens.
+    const int desiredWorkbenchH = std::min(8, std::max(4, dh / 7));
+    const int minOutputH = 6;
+    const int workbenchH = std::max(0,
+        std::min(desiredWorkbenchH, availableAboveCommand - minOutputH));
+    const int outputH = std::max(minOutputH, availableAboveCommand - workbenchH);
+
+    FoxtalkZones z;
+    z.output = makeWindowGeometry(paneX, outputY, paneW, outputH);
+    z.workbench = makeWindowGeometry(paneX, outputY + outputH, paneW,
+                                     std::max(0, commandY - (outputY + outputH)));
+    z.command = makeWindowGeometry(paneX, commandY, paneW, commandH);
+    z.workspace = makeWindowGeometry(2, 1,
+                                     std::min(32, std::max(20, dw - 4)),
+                                     std::min(10, std::max(6, dh - 4)));
+    return z;
+}
+
+static WindowGeometry canonicalCommandGeometry()
+{
+    return canonicalZones().command;
+}
+
+static WindowGeometry canonicalOutputGeometry()
+{
+    return canonicalZones().output;
+}
+
+static WindowGeometry canonicalWorkspaceGeometry()
+{
+    return canonicalZones().workspace;
+}
+
+static void clampGeometryToDesktop(WindowGeometry& g,
+                                   const WindowGeometry& defaults,
+                                   int minW,
+                                   int minH)
+{
+    clampGeometryToScreen(
+        g,
+        desktopWidth(), desktopHeight(),
+        defaults.x, defaults.y, defaults.w, defaults.h,
+        minW, minH
+    );
+}
+
+static TRect rectFromGeometry(const WindowGeometry& g)
+{
+    return TRect(
+        S(g.x),
+        S(g.y),
+        S(g.x + g.w),
+        S(g.y + g.h)
+    );
+}
+
+struct SavedDesktopSize
+{
+    int w = 0;
+    int h = 0;
+};
+
+static SavedDesktopSize readSavedDesktopSize()
+{
+    SavedDesktopSize s;
+
+    std::ifstream in(iniPath());
+    if (!in)
+        return s;
+
+    std::string line;
+    while (std::getline(in, line)) {
+        const auto pos = line.find('=');
+        if (pos == std::string::npos)
+            continue;
+
+        const std::string k = trim(line.substr(0, pos));
+        const std::string v = trim(line.substr(pos + 1));
+
+        try {
+            if (k == "desk.w" || k == "screen.w")
+                s.w = std::stoi(v);
+            else if (k == "desk.h" || k == "screen.h")
+                s.h = std::stoi(v);
+        }
+        catch (...) {
+            // Ignore malformed portability markers.
+        }
+    }
+
+    return s;
+}
+
+static SavedDesktopSize gLoadedDesktopSize;
+
+static bool savedGeometryMatchesDesktop()
+{
+    if (gLoadedDesktopSize.w <= 0 || gLoadedDesktopSize.h <= 0)
+        return false;
+
+    const int dw = desktopWidth();
+    const int dh = desktopHeight();
+
+    // Terminal resize can be off by a cell or two depending on host chrome.
+    // Treat small drift as the same physical layout, but reflow portrait
+    // vs. landscape and other material size changes.
+    return std::abs(gLoadedDesktopSize.w - dw) <= 2
+        && std::abs(gLoadedDesktopSize.h - dh) <= 1;
+}
+
+static void useCanonicalGeometry(LayoutState& state)
+{
+    const FoxtalkZones z = canonicalZones();
+    state.output = z.output;
+    state.command = z.command;
+    state.output.zoomed = false;
+    state.command.zoomed = false;
+}
+
+static void stampCurrentDesktopSize()
+{
+    gLoadedDesktopSize.w = desktopWidth();
+    gLoadedDesktopSize.h = desktopHeight();
+}
+
+static void prepareLayoutForCurrentDesktop(LayoutState& state)
+{
+    if (!savedGeometryMatchesDesktop())
+        useCanonicalGeometry(state);
+
+    stampCurrentDesktopSize();
+}
+
+static bool saveLayoutStateForCurrentDesktop(const LayoutState& state)
+{
+    const bool ok = saveLayoutState(state);
+    if (!ok)
+        return false;
+
+    std::ofstream out(iniPath(), std::ios::app);
+    if (!out)
+        return false;
+
+    out << "desk.w=" << desktopWidth() << "\n";
+    out << "desk.h=" << desktopHeight() << "\n";
+    return true;
+}
+
+static unsigned short execEditorDialog(TDialog* d, void* data)
+{
+    if (!TProgram::application || !TProgram::deskTop || !d)
+        return cmCancel;
+
+    TView* p = TProgram::application->validView(d);
+    if (!p)
+        return cmCancel;
+
+    if (data)
+        p->setData(data);
+
+    const unsigned short result = TProgram::deskTop->execView(p);
+    if (result != cmCancel && data)
+        p->getData(data);
+
+    TObject::destroy(p);
+    return result;
+}
+
+static unsigned short editorFileError(const char* prefix, const char* fileName)
+{
+    std::string msg = std::string(prefix) + (fileName ? fileName : "(unknown)") + ".";
+    return messageBox(msg.c_str(), mfError | mfOKButton);
+}
+
+static unsigned short turboEditorDialog(int dialog, ...)
+{
+    va_list args;
+
+    switch (dialog) {
+    case edOutOfMemory:
+        return messageBox("Not enough memory for this editor operation.", mfError | mfOKButton);
+
+    case edReadError: {
+        va_start(args, dialog);
+        char* fileName = va_arg(args, char*);
+        va_end(args);
+        return editorFileError("Error reading file ", fileName);
+    }
+
+    case edWriteError: {
+        va_start(args, dialog);
+        char* fileName = va_arg(args, char*);
+        va_end(args);
+        return editorFileError("Error writing file ", fileName);
+    }
+
+    case edCreateError: {
+        va_start(args, dialog);
+        char* fileName = va_arg(args, char*);
+        va_end(args);
+        return editorFileError("Error creating file ", fileName);
+    }
+
+    case edSaveModify: {
+        va_start(args, dialog);
+        char* fileName = va_arg(args, char*);
+        va_end(args);
+        std::string msg = std::string(fileName ? fileName : "Untitled") + " has been modified. Save?";
+        return messageBox(msg.c_str(), mfInformation | mfYesNoCancel);
+    }
+
+    case edSaveUntitled:
+        return messageBox("Save untitled file?", mfInformation | mfYesNoCancel);
+
+    case edSaveAs: {
+        va_start(args, dialog);
+        char* fileName = va_arg(args, char*);
+        va_end(args);
+        return execEditorDialog(
+            new TFileDialog("*.*", "Save text file as", "~N~ame", fdOKButton, 101),
+            fileName
+        );
+    }
+
+    case edFind:
+    case edReplace:
+        return messageBox("Find/replace dialogs are not wired into TurboTalk yet.",
+                          mfInformation | mfOKButton);
+
+    case edSearchFailed:
+        return messageBox("Search string not found.", mfError | mfOKButton);
+
+    case edReplacePrompt:
+        return messageBox("Replace this occurrence?", mfInformation | mfYesNoCancel);
+    }
+
+    return cmCancel;
+}
+
+static TRect canonicalEditorRect()
+{
+    const int dw = desktopWidth();
+    const int dh = desktopHeight();
+    const FoxtalkZones z = canonicalZones();
+
+    const int left = std::min(3, std::max(0, dw - 20));
+    const int top = std::min(2, std::max(0, dh - 8));
+    const int right = std::max(left + 40, dw - 3);
+    const int bottomLimit = std::max(top + 10, z.command.y - 1);
+    const int bottom = std::min(std::max(top + 10, dh - 5), bottomLimit);
+
+    return TRect(S(left), S(top), S(std::min(dw, right)), S(std::min(dh, bottom)));
+}
+
+static bool openTextEditor(const std::string& fileName)
+{
+    if (!TProgram::application || !TProgram::deskTop)
+        return false;
+
+    TEditor::editorDialog = turboEditorDialog;
+
+    TRect r = canonicalEditorRect();
+    const char* path = fileName.empty() ? nullptr : fileName.c_str();
+    TView* view = TProgram::application->validView(new TEditWindow(r, path, wnNoNumber));
+    if (!view) {
+        messageBox("Could not create editor window.", mfError | mfOKButton);
+        return false;
+    }
+
+    TProgram::deskTop->insert(view);
+    view->show();
+    view->select();
+    return true;
+}
+
+static bool openTextEditorDialog()
+{
+    char fileName[MAXPATH] = "*.dts";
+    const unsigned short result = execEditorDialog(
+        new TFileDialog("*.dts", "Open text / DotScript file", "~N~ame", fdOpenButton, 100),
+        fileName
+    );
+
+    if (result == cmCancel)
+        return false;
+
+    return openTextEditor(fileName);
+}
+
 } // anonymous namespace
 
 TFoxtalkApp::TFoxtalkApp()
@@ -91,6 +444,7 @@ TFoxtalkApp::TFoxtalkApp()
       redirect_(this)
 {
     loadState();
+    prepareLayoutForCurrentDesktop(layout_);
 
     createBackground();
     createOutputWindow();
@@ -122,7 +476,7 @@ TFoxtalkApp::TFoxtalkApp()
 TFoxtalkApp::~TFoxtalkApp()
 {
     saveStateFromWindows();
-    saveLayoutState(layout_);
+    saveLayoutStateForCurrentDesktop(layout_);
 }
 
 TMenuBar* TFoxtalkApp::initMenuBar(TRect bounds)
@@ -180,54 +534,25 @@ void TFoxtalkApp::flushPending()
 
 void TFoxtalkApp::createBackground()
 {
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
-    deskTop->insert(new TBackground(TRect(S(0), S(0), S(sw), S(sh)), 0x20));
+    if (!deskTop)
+        return;
+
+    deskTop->insert(new TBackground(deskTop->getExtent(), 0x20));
 }
 
 void TFoxtalkApp::createOutputWindow()
 {
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
+    clampGeometryToDesktop(layout_.output, canonicalOutputGeometry(), 20, 6);
 
-    clampGeometryToScreen(
-        layout_.output,
-        sw, sh,
-        2, 2, sw - 4, sh - 9,
-        20, 6
-    );
-
-    const TRect r(
-        S(layout_.output.x),
-        S(layout_.output.y),
-        S(layout_.output.x + layout_.output.w),
-        S(layout_.output.y + layout_.output.h)
-    );
-
-    outWin_ = new FoxtalkOutputWindow(r, "Foxtalk Output", 0);
+    outWin_ = new FoxtalkOutputWindow(rectFromGeometry(layout_.output), "TurboTalk Output", 0);
     deskTop->insert(outWin_);
 }
 
 void TFoxtalkApp::createCommandWindow()
 {
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
+    clampGeometryToDesktop(layout_.command, canonicalCommandGeometry(), 20, 3);
 
-    clampGeometryToScreen(
-        layout_.command,
-        sw, sh,
-        1, sh - 5, sw - 2, 4,
-        20, 4
-    );
-
-    const TRect r(
-        S(layout_.command.x),
-        S(layout_.command.y),
-        S(layout_.command.x + layout_.command.w),
-        S(layout_.command.y + layout_.command.h)
-    );
-
-    cmdWin_ = new FoxtalkCommandWindow(r, "Command", 0);
+    cmdWin_ = new FoxtalkCommandWindow(rectFromGeometry(layout_.command), "Command", 0);
 
     if (!layout_.lastInput.empty())
         cmdWin_->setInputText(layout_.lastInput);
@@ -237,8 +562,8 @@ void TFoxtalkApp::createCommandWindow()
 
 void TFoxtalkApp::createWorkspaceWindow()
 {
-    const TRect r(S(2), S(2), S(34), S(12));
-    wsWin_ = new FoxtalkWorkspaceWindow(r, "Workspace", 0);
+    const WindowGeometry ws = canonicalWorkspaceGeometry();
+    wsWin_ = new FoxtalkWorkspaceWindow(rectFromGeometry(ws), "Workspace", 0);
     deskTop->insert(wsWin_);
     refreshWorkspaceWindow();
 }
@@ -276,6 +601,19 @@ void TFoxtalkApp::showMessage(const std::string& m)
         cmdWin_->setMessage(m);
 }
 
+namespace {
+
+bool isNestedTvCommand(const std::string& cmd)
+{
+    return cmd == "FOXTALK" ||
+           cmd == "TURBOTALK" ||
+           cmd == "TVISION" ||
+           cmd == "BROWSETV" ||
+           cmd == "BROWSETUI";
+}
+
+} // namespace
+
 void TFoxtalkApp::runImmediate(const std::string& line)
 {
     if (!cmdWin_)
@@ -295,8 +633,10 @@ void TFoxtalkApp::runFromInput()
         return;
 
     const std::string s = trim(cmdWin_->getInputText());
-    if (!s.empty())
+    if (!s.empty()) {
         executeCommandLine(s);
+        cmdWin_->setInputText("");
+    }
 
     cmdWin_->focusInput();
 }
@@ -319,14 +659,48 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
         tok >> cmd;
         cmd = upcopy(cmd);
 
+        std::string rest;
+        std::getline(tok, rest);
+        rest = trim(rest);
+        const std::string restUpper = upcopy(rest);
+
+        if ((cmd == "CLEAR" && (restUpper.empty() || restUpper == "OUTPUT" || restUpper == "SCREEN")) ||
+            cmd == "CLS") {
+            if (outWin_ && outWin_->logView()) {
+                outWin_->logView()->clearAll();
+                showMessage("Output cleared.");
+            }
+            return;
+        }
+
+        if (isNestedTvCommand(cmd)) {
+            std::cout << cmd << " is not launched from inside TurboTalk. Use the outer CLI unless this app is explicitly integrated.\n";
+            showMessage("Nested TVision app blocked inside TurboTalk.");
+            return;
+        }
+
+        if (cmd == "TED" || cmd == "TEDIT" || cmd == "TURBOEDIT") {
+            const bool opened = rest.empty() ? openTextEditorDialog() : openTextEditor(rest);
+            if (opened) {
+                const std::string openedMsg = rest.empty() ? std::string(".") : (std::string(": ") + rest);
+                std::cout << "TurboTalk editor opened" << openedMsg << "\n";
+                showMessage(rest.empty() ? "Editor opened." : ("Editor: " + rest));
+            }
+            else {
+                showMessage("Editor canceled or unavailable.");
+            }
+            return;
+        }
+
         if (cmd == "WIN") {
             std::string sub;
-            tok >> sub;
+            std::istringstream subtok(rest);
+            subtok >> sub;
             sub = upcopy(trim(sub));
 
             if (sub == "SAVE") {
                 saveStateFromWindows();
-                saveLayoutState(layout_);
+                saveLayoutStateForCurrentDesktop(layout_);
                 std::cout << "Window layout saved.\n";
                 showMessage("WIN SAVE done.");
                 refreshWorkspaceWindow();
@@ -343,10 +717,10 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
             }
 
             if (sub == "DEFAULTS" || sub == "RESET") {
-                resetCommandWindow();
                 resetOutputWindow();
+                resetCommandWindow();
                 saveStateFromWindows();
-                saveLayoutState(layout_);
+                saveLayoutStateForCurrentDesktop(layout_);
                 std::cout << "Window layout reset to defaults.\n";
                 showMessage("WIN DEFAULTS done.");
                 refreshWorkspaceWindow();
@@ -425,6 +799,7 @@ void TFoxtalkApp::setInputFromHistory()
 void TFoxtalkApp::loadState()
 {
     loadLayoutState(layout_, kMaxHistory);
+    gLoadedDesktopSize = readSavedDesktopSize();
     histPos_ = static_cast<int>(layout_.history.size());
 }
 
@@ -449,41 +824,19 @@ void TFoxtalkApp::saveStateFromWindows()
 
 void TFoxtalkApp::applyStateToWindows()
 {
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
+    prepareLayoutForCurrentDesktop(layout_);
 
-    clampGeometryToScreen(
-        layout_.output,
-        sw, sh,
-        2, 2, sw - 4, sh - 9,
-        20, 6
-    );
-
-    clampGeometryToScreen(
-        layout_.command,
-        sw, sh,
-        1, sh - 5, sw - 2, 4,
-        20, 4
-    );
+    clampGeometryToDesktop(layout_.output, canonicalOutputGeometry(), 20, 6);
+    clampGeometryToDesktop(layout_.command, canonicalCommandGeometry(), 20, 3);
 
     if (outWin_) {
-        TRect outRect(
-            S(layout_.output.x),
-            S(layout_.output.y),
-            S(layout_.output.x + layout_.output.w),
-            S(layout_.output.y + layout_.output.h)
-        );
-        outWin_->locate(outRect);
+        TRect r = rectFromGeometry(layout_.output);
+        outWin_->locate(r);
     }
 
     if (cmdWin_) {
-        TRect cmdRect(
-            S(layout_.command.x),
-            S(layout_.command.y),
-            S(layout_.command.x + layout_.command.w),
-            S(layout_.command.y + layout_.command.h)
-        );
-        cmdWin_->locate(cmdRect);
+        TRect r = rectFromGeometry(layout_.command);
+        cmdWin_->locate(r);
         cmdWin_->focusInput();
     }
 }
@@ -502,10 +855,8 @@ void TFoxtalkApp::resetCommandWindow()
     if (!cmdWin_)
         return;
 
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
-
-    TRect r(S(1), S(sh - 5), S(sw - 1), S(sh - 1));
+    layout_.command = canonicalCommandGeometry();
+    TRect r = rectFromGeometry(layout_.command);
     cmdWin_->locate(r);
     cmdWin_->flags |= (wfMove | wfGrow | wfZoom);
     cmdWin_->select();
@@ -530,10 +881,8 @@ void TFoxtalkApp::resetOutputWindow()
     if (!outWin_)
         return;
 
-    const int sw = TScreen::screenWidth;
-    const int sh = TScreen::screenHeight;
-
-    TRect r(S(2), S(2), S(sw - 2), S(sh - 7));
+    layout_.output = canonicalOutputGeometry();
+    TRect r = rectFromGeometry(layout_.output);
     outWin_->locate(r);
     outWin_->flags |= (wfMove | wfGrow | wfZoom);
     outWin_->select();
@@ -583,99 +932,294 @@ WorkspaceSnapshot TFoxtalkApp::makeWorkspaceSnapshot()
 
 bool TFoxtalkApp::dispatchMenu(int id)
 {
-    switch (id) {
-        case cmFileOpen:       runImmediate("USE"); return true;
-        case cmFileClose:      runImmediate("CLOSE"); return true;
-        case cmAreaSelect:     runImmediate("AREA"); return true;
-        case cmIndexOpen:      runImmediate("SET INDEX"); return true;
-        case cmIndexClose:     runImmediate("SET INDEX TO"); return true;
-        case cmWinSave:        runImmediate("WIN SAVE"); return true;
-        case cmWinRestore:     runImmediate("WIN RESTORE"); return true;
-        case cmWinDefaults:    runImmediate("WIN DEFAULTS"); return true;
+    auto run = [this](const char* line) -> bool {
+        runImmediate(line);
+        return true;
+    };
 
-        case cmBrowse:         runImmediate("BROWSE"); return true;
-        case cmRecordView:     runImmediate("RECORDVIEW"); return true;
-        case cmList:           runImmediate("LIST"); return true;
-        case cmSmartList:      runImmediate("SMARTLIST"); return true;
-        case cmCount:          runImmediate("COUNT"); return true;
-        case cmFind:           runImmediate("FIND"); return true;
-        case cmLocate:         runImmediate("LOCATE"); return true;
-        case cmWhere:          runImmediate("WHERE"); return true;
-        case cmWhereClear:     runImmediate("WHERE"); return true;
+    auto prefill = [this](const char* line) -> bool {
+        if (cmdWin_) {
+            cmdWin_->setInputText(line);
+            cmdWin_->show();
+            cmdWin_->select();
+            cmdWin_->focusInput();
+            showMessage(std::string("Ready: ") + line);
+        }
+        return true;
+    };
+
+    auto info = [](const char* message) -> bool {
+        messageBox(message, mfInformation);
+        return true;
+    };
+
+    auto editFile = [this](const char* path) -> bool {
+        if (openTextEditor(path ? path : ""))
+            showMessage(std::string("Editor: ") + (path ? path : "untitled"));
+        else
+            showMessage("Editor unavailable.");
+        return true;
+    };
+
+    auto editDialog = [this]() -> bool {
+        if (openTextEditorDialog())
+            showMessage("Editor opened.");
+        else
+            showMessage("Editor canceled.");
+        return true;
+    };
+
+    switch (id) {
+        // Existing prototype menu ids: preserved for compatibility with any
+        // stale events, saved status bindings, or local experiments.
+        case cmFileOpen:       return prefill("USE ");
+        case cmFileClose:      return run("CLOSE");
+        case cmAreaSelect:     return prefill("AREA ");
+        case cmIndexOpen:      return prefill("SET INDEX TO ");
+        case cmIndexClose:     return run("SET INDEX TO");
+        case cmWinSave:        return run("WIN SAVE");
+        case cmWinRestore:     return run("WIN RESTORE");
+        case cmWinDefaults:    return run("WIN DEFAULTS");
+
+        case cmBrowse:         return run("BROWSE");
+        case cmRecordView:     return run("RECORDVIEW");
+        case cmList:           return run("LIST");
+        case cmSmartList:      return run("SMARTLIST");
+        case cmCount:          return run("COUNT");
+        case cmFind:           return prefill("FIND ");
+        case cmLocate:         return prefill("LOCATE FOR ");
+        case cmWhere:          return prefill("WHERE ");
+        case cmWhereClear:     return run("SET FILTER TO");
 
         case cmWorkspace:
             showWorkspaceWindow();
             return true;
 
-        case cmShowDeletedStub:
-            messageBox("TODO: Toggle 'SET DELETED ON/OFF'", mfInformation);
-            return true;
+        case cmShowDeletedStub: return info("Use command line: SET DELETED ON | SET DELETED OFF");
+        case cmStatusStub:      return run("STATUS");
+        case cmSeek:            return prefill("SEEK ");
+        case cmSetOrder:        return prefill("SET ORDER TO ");
+        case cmReindex:         return run("REINDEX");
+        case cmTagManagerStub:  return info("Tag Manager will become a real dialog after menu validation.");
+        case cmOrderInfoStub:   return run("STATUS");
+        case cmSetRelation:     return prefill("SET RELATION TO ");
+        case cmRelRefresh:      return run("REL REFRESH");
+        case cmRelClear:        return run("SET RELATION OFF ALL");
+        case cmRelBrowserStub:  return prefill("REL ENUM LIMIT 10 ");
+        case cmAppend:          return run("APPEND");
+        case cmEdit:            return run("EDIT");
+        case cmDelete:          return run("DELETE");
+        case cmRecall:          return run("RECALL");
+        case cmPack:            return run("PACK");
+        case cmTurboPack:       return run("TURBOPACK");
+        case cmZapStub:         return info("ZAP is intentionally not run from this menu yet. Type ZAP manually when you mean it.");
+        case cmBlankStub:       return run("APPEND_BLANK");
+        case cmCalc:            return prefill("CALC ");
+        case cmEval:            return prefill("EVAL ");
+        case cmHelp:            return run("HELP");
+        case cmSelfTest:        return run("/SELFTEST 300");
+        case cmHistorySizeStub: return info("History sizing remains fixed for now.");
+        case cmVerbosityStub:   return info("Message verbosity is a future TurboTalk preference.");
+        case cmOutputModeStub:  return info("Output routing remains command-driven for now.");
+        case cmPaletteColor:    return prefill("COLOR ");
+        case cmKeysStub:        return info("Keys: F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z Cmd | Alt-O Output | Alt-X Exit");
+        case cmAboutStub:       return info("TurboTalk (DotTalk++) - Turbo Vision / MagicBLOT command desktop.");
 
-        case cmStatusStub:
-            messageBox("TODO: STATUS summary window", mfInformation);
-            return true;
+        // System.
+        case cmFtSysAbout:       return run("ABOUT");
+        case cmFtSysVersion:     return run("VERSION");
+        case cmFtSysStatus:      return run("STATUS");
+        case cmFtSysPaths:       return run("SET PATH");
+        case cmFtSysColorDefault:return run("COLOR DEFAULT");
+        case cmFtSysColorGreen:  return run("COLOR GREEN");
+        case cmFtSysColorAmber:  return run("COLOR AMBER");
+        case cmFtSysShell:       return prefill("! ");
+        case cmFtSysDotScriptX32: return run("DOTSCRIPT x32");
+        case cmFtSysDotScriptX64: return run("DOTSCRIPT x64");
+        case cmFtSysDotScriptSandbox: return run("DOTSCRIPT sandbox");
+        case cmFtSysDotScriptInit: return prefill("DOTSCRIPT init.ini");
+        case cmFtSysDotScriptShutdown: return prefill("DOTSCRIPT shutdown.ini");
+        case cmFtSysShowDottalkIni: return run("SHOWINI");
+        case cmFtSysEditDottalkIni: return editFile("dottalkpp.ini");
+        case cmFtSysEditInitIni: return editFile("init.ini");
+        case cmFtSysEditShutdownIni: return editFile("shutdown.ini");
+        case cmFtSysEditDotScript: return editDialog();
+        case cmFtSysEditScratch: return editFile("");
 
-        case cmSeek:           runImmediate("SEEK"); return true;
-        case cmSetOrder:       runImmediate("SET ORDER"); return true;
-        case cmReindex:        runImmediate("REINDEX"); return true;
+        // File.
+        case cmFtFileUse:        return prefill("USE ");
+        case cmFtFileClose:      return run("CLOSE");
+        case cmFtFileCloseAll:   return run("WORKSPACE CLOSE");
+        case cmFtFileSelect:     return prefill("SELECT ");
+        case cmFtFileDir:        return prefill("DIR ");
+        case cmFtFileImport:     return prefill("IMPORT ");
+        case cmFtFileExport:     return prefill("EXPORT ");
+        case cmFtFileDotScript:  return prefill("DOTSCRIPT ");
 
-        case cmTagManagerStub:
-            messageBox("TODO: Tag Manager", mfInformation);
-            return true;
+        // Workspace.
+        case cmFtWorkSummary:    return run("WORKSPACE");
+        case cmFtWorkOpenDbf:    return run("WORKSPACE OPEN DBF");
+        case cmFtWorkOpenDir:    return prefill("WORKSPACE OPEN ");
+        case cmFtWorkSave:       return prefill("WORKSPACE SAVE ");
+        case cmFtWorkLoad:       return prefill("WORKSPACE LOAD ");
+        case cmFtWorkClose:      return run("WORKSPACE CLOSE");
+        case cmFtWorkArea:       return run("AREA");
+        case cmFtWorkDbarea:     return run("DBAREA");
+        case cmFtWorkDbareas:    return run("DBAREAS");
+        case cmFtWorkReport:     return run("WSREPORT");
+        case cmFtWorkRefresh:    return run("REFRESH");
 
-        case cmOrderInfoStub:
-            messageBox("TODO: Order Info", mfInformation);
-            return true;
+        // Ersatz/demo workflows.
+        case cmFtErsatzMcc:      return run("ERSATZ MCC");
+        case cmFtErsatzPrompt:   return prefill("ERSATZ ");
+        case cmFtErsatzWorkspace:return run("WORKSPACE");
+        case cmFtErsatzRelAll:   return run("REL LIST ALL");
+        case cmFtErsatzRecord:   return run("RECORDVIEW");
 
-        case cmSetRelation:    runImmediate("SET RELATION"); return true;
-        case cmRelRefresh:     runImmediate("RELREFRESH"); return true;
-        case cmRelClear:       runImmediate("CLEAR RELATION"); return true;
+        // Table/schema/state.
+        case cmFtTableStruct:    return run("STRUCT");
+        case cmFtTableFields:    return run("FIELDS");
+        case cmFtTableStatus:    return run("STATUS");
+        case cmFtTableMeta:      return run("TABLEMETA");
+        case cmFtTableValidate:  return run("VALIDATE");
+        case cmFtTableDDL:       return prefill("DDL ");
+        case cmFtTableShow:      return run("SHOW");
+        case cmFtTableBufferOn:  return run("TABLE ON");
+        case cmFtTableBufferOff: return run("TABLE OFF");
+        case cmFtTableStale:     return run("TABLE STALE");
+        case cmFtTableFresh:     return prefill("TABLE FRESH ");
+        case cmFtTableCommit:    return run("COMMIT");
+        case cmFtTableRollback:  return info("ROLLBACK is listed but not confirmed in current shakedowns. Type it manually if you are testing it.");
 
-        case cmRelBrowserStub:
-            messageBox("TODO: Relations Browser", mfInformation);
-            return true;
+        // Record/navigation/editing.
+        case cmFtRecView:        return run("RECORDVIEW");
+        case cmFtRecDisplay:     return run("DISPLAY");
+        case cmFtRecContext:     return run("RECORD");
+        case cmFtRecGoto:        return prefill("GOTO ");
+        case cmFtRecTop:         return run("TOP");
+        case cmFtRecBottom:      return run("BOTTOM");
+        case cmFtRecSkipForward: return run("SKIP 1");
+        case cmFtRecSkipBack:    return run("SKIP -1");
+        case cmFtRecAppend:      return run("APPEND");
+        case cmFtRecAppendBlank: return run("APPEND_BLANK");
+        case cmFtRecEdit:        return run("EDIT");
+        case cmFtRecReplace:     return prefill("REPLACE ");
+        case cmFtRecDelete:      return run("DELETE");
+        case cmFtRecRecall:      return run("RECALL");
+        case cmFtRecPack:        return run("PACK");
+        case cmFtRecZapSafe:     return info("ZAP is destructive. For now TurboTalk only reminds you; type ZAP manually if intentional.");
+        case cmFtRecLock:        return run("LOCK");
+        case cmFtRecUnlock:      return run("UNLOCK");
 
-        case cmAppend:         runImmediate("APPEND"); return true;
-        case cmEdit:           runImmediate("EDIT"); return true;
-        case cmDelete:         runImmediate("DELETE"); return true;
-        case cmRecall:         runImmediate("RECALL"); return true;
-        case cmPack:           runImmediate("PACK"); return true;
-        case cmTurboPack:      runImmediate("TURBOPACK"); return true;
+        // Index/order/search.
+        case cmFtIdxSetIndex:    return prefill("SET INDEX TO ");
+        case cmFtIdxSetOrder:    return prefill("SET ORDER TO ");
+        case cmFtIdxPhysical:    return run("SET ORDER TO 0");
+        case cmFtIdxSeek:        return prefill("SEEK ");
+        case cmFtIdxFind:        return prefill("FIND ");
+        case cmFtIdxIndexSeek:   return prefill("INDEXSEEK ");
+        case cmFtIdxAscend:      return run("ASCEND");
+        case cmFtIdxDescend:     return run("DESCEND");
+        case cmFtIdxReindex:     return run("REINDEX");
+        case cmFtIdxBuildLmdb:   return run("BUILDLMDB");
+        case cmFtIdxCnx:         return prefill("CNX ");
+        case cmFtIdxCdx:         return prefill("CDX ");
+        case cmFtIdxLmdb:        return prefill("LMDB ");
 
-        case cmZapStub:
-            messageBox("TODO: ZAP", mfInformation);
-            return true;
+        // Lists/filtering/projection.
+        case cmFtListList:       return run("LIST");
+        case cmFtListList10:     return run("LIST 10");
+        case cmFtListSmart:      return run("SMARTLIST");
+        case cmFtListSmartFilter:return prefill("SMARTLIST 20 FOR ");
+        case cmFtListDisplay:    return run("DISPLAY");
+        case cmFtListCount:      return prefill("COUNT FOR ");
+        case cmFtListSum:        return prefill("SUM ");
+        case cmFtListAverage:    return prefill("AVERAGE ");
+        case cmFtListWhere:      return prefill("WHERE ");
+        case cmFtListSetFilter:  return prefill("SET FILTER TO ");
+        case cmFtListClearFilter:return run("SET FILTER TO");
+        case cmFtListPredHelp:   return run("PREDHELP");
+        case cmFtListPredicates: return run("PREDICATES");
 
-        case cmBlankStub:
-            messageBox("TODO: BLANK", mfInformation);
-            return true;
+        // Browsers.
+        case cmFtBrowseCurrent:  return run("BROWSE");
+        case cmFtBrowseSimple:   return prefill("SIMPLEBROWSER ");
+        case cmFtBrowseSmart:    return prefill("SMARTBROWSER ");
+        case cmFtBrowseText:     return info("BROWSETUI is not launched inside TurboTalk yet. Use the outer CLI until it is integrated.");
+        case cmFtBrowseTv:       return info("BROWSETV is not launched inside TurboTalk yet. Use the outer CLI until it is integrated.");
+        case cmFtBrowseDev:      return run("BROWSER");
+        case cmFtBrowseRecord:   return run("RECORDVIEW");
+        case cmFtBrowseChildren: return prefill("SIMPLEBROWSER SHOW CHILDREN LIMIT 20");
+        case cmFtBrowseFor:      return prefill("SIMPLEBROWSER FOR ");
+        case cmFtBrowseOrder:    return prefill("SIMPLEBROWSER ORDER ");
 
-        case cmCalc:           runImmediate("CALC"); return true;
-        case cmEval:           runImmediate("EVALUATE"); return true;
-        case cmHelp:           runImmediate("HELP"); return true;
-        case cmSelfTest:       runImmediate("/SELFTEST 300"); return true;
+        // Relations.
+        case cmFtRelSet:         return prefill("SET RELATION TO ");
+        case cmFtRelSetAdd:      return prefill("SET RELATION ADDITIVE TO ");
+        case cmFtRelOffInto:     return prefill("SET RELATION OFF INTO ");
+        case cmFtRelOffAll:      return run("SET RELATION OFF ALL");
+        case cmFtRelList:        return run("REL LIST");
+        case cmFtRelListAll:     return run("REL LIST ALL");
+        case cmFtRelRefresh:     return run("REL REFRESH");
+        case cmFtRelAdd:         return prefill("REL ADD ");
+        case cmFtRelClear:       return prefill("REL CLEAR ");
+        case cmFtRelSave:        return prefill("REL SAVE ");
+        case cmFtRelLoad:        return prefill("REL LOAD ");
+        case cmFtRelEnum:        return prefill("REL ENUM LIMIT 10 ");
 
-        case cmHistorySizeStub:
-            messageBox("TODO: History Size", mfInformation);
-            return true;
+        // Tuples.
+        case cmFtTupleAll:       return run("TUPLE *");
+        case cmFtTupleFields:    return prefill("TUPLE ");
+        case cmFtTupleArea:      return prefill("TUPLE #");
+        case cmFtTupleMixed:     return prefill("TUPLE #9.*,#11.LNAME");
+        case cmFtTupleTuptalk:   return prefill("TUPTALK ");
+        case cmFtTupleExport:    return prefill("TUPEXPORT ");
+        case cmFtTupleValidate:  return run("TUPVALIDATE");
+        case cmFtTupleRelEnum:   return prefill("REL ENUM LIMIT 10 ");
 
-        case cmVerbosityStub:
-            messageBox("TODO: Message Verbosity", mfInformation);
-            return true;
+        // Functions/expressions.
+        case cmFtFuncCalc:       return prefill("CALC ");
+        case cmFtFuncEval:       return prefill("EVAL ");
+        case cmFtFuncCatalog:    return run("EXPFUNCS");
+        case cmFtFuncPredHelp:   return run("PREDHELP");
+        case cmFtFuncPredicates: return run("PREDICATES");
+        case cmFtFuncUpper:      return prefill("CALC UPPER(\"\")");
+        case cmFtFuncDate:       return prefill("CALC DATE()");
+        case cmFtFuncNumericHelp:return prefill("HELP ABS");
+        case cmFtFuncStringHelp: return prefill("HELP UPPER");
 
-        case cmOutputModeStub:
-            messageBox("TODO: Output Mode", mfInformation);
-            return true;
+        // Command/help/test surface.
+        case cmFtCmdHelp:        return run("HELP");
+        case cmFtCmdFoxHelp:     return run("FOXHELP");
+        case cmFtCmdCatalog:     return run("CMDHELP");
+        case cmFtCmdBuildCatalog:return run("CMDHELP BUILD");
+        case cmFtCmdValidateCatalog:return run("CMDHELPCHK");
+        case cmFtCmdArgCheck:    return run("CMDARGCHK");
+        case cmFtCmdCommandsHelp:return run("COMMANDSHELP");
+        case cmFtCmdDotScript:   return prefill("DOTSCRIPT ");
+        case cmFtCmdTest:        return prefill("TEST ");
+        case cmFtCmdShow:        return run("SHOW");
+        case cmFtCmdDump:        return run("DUMP");
+        case cmFtCmdSetVar:      return prefill("SET VAR ");
+        case cmFtCmdSetVarBang:  return prefill("SET VAR! ");
+        case cmFtCmdSqlVersion:  return run("SQLVER");
+        case cmFtCmdSqlite:      return run("SQLITE");
+        case cmFtCmdSqlExec:     return prefill("SQL ");
+        case cmFtCmdSqlSelect:   return prefill("SQLSEL ");
 
-        case cmPaletteColor:   runImmediate("COLOR"); return true;
+        // Help.
+        case cmFtHelpMain:       return run("HELP");
+        case cmFtHelpCommand:    return prefill("HELP ");
+        case cmFtHelpFox:        return run("FOXHELP");
+        case cmFtHelpPred:       return run("PREDHELP");
+        case cmFtHelpWorkspace:  return run("HELP WORKSPACE");
+        case cmFtHelpRelations:  return run("HELP REL");
+        case cmFtHelpTuple:      return run("HELP TUPLE");
+        case cmFtHelpBrowser:    return run("HELP SIMPLEBROWSER");
+        case cmFtHelpKeys:       return info("Keys: F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z Cmd | Ctrl-F5 Restore Cmd | Alt-O Output | Ctrl-F6 Restore Out | Alt-X Exit");
+        case cmFtWinClearOutput: if (outWin_ && outWin_->logView()) { outWin_->logView()->clearAll(); showMessage("Output cleared."); } return true;
 
-        case cmKeysStub:
-            messageBox("TODO: Keys Cheat Sheet", mfInformation);
-            return true;
-
-        case cmAboutStub:
-            messageBox("Foxtalk (DotTalk++) - TVision shell.\n(c) 2025", mfInformation);
-            return true;
+        case cmFtHelpAbout:      return info("TurboTalk is the Turbo Vision / MagicBLOT command desktop for DotTalk++.");
     }
 
     return false;

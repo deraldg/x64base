@@ -173,27 +173,87 @@ private:
     int hi_{-1};
 };
 
+static int clampInt(int v, int lo, int hi){
+    if(hi < lo) return lo;
+    return std::max(lo, std::min(v, hi));
+}
+
+static int tvDeskW(){
+    return TProgram::deskTop ? (int)TProgram::deskTop->size.x : TScreen::screenWidth;
+}
+
+static int tvDeskH(){
+    return TProgram::deskTop ? (int)TProgram::deskTop->size.y : TScreen::screenHeight;
+}
+
+static int maxLineWidth(const std::vector<std::string>& lines){
+    int w = 1;
+    for(const auto& line : lines) w = std::max(w, (int)line.size());
+    return w;
+}
+
+static TRect centeredRecordRect(DbArea* a, const std::string& footerText, int minW, int minH){
+    const int sw = std::max(20, tvDeskW());
+    const int sh = std::max(10, tvDeskH());
+
+    int contentW = (int)footerText.size();
+    int lineCount = 4;
+    if(a){
+        a->readCurrent();
+        auto lines = recordLines(*a);
+        contentW = std::max(contentW, maxLineWidth(lines));
+        lineCount = std::max(1, (int)lines.size());
+    }
+
+    // Window geometry includes frame, a one-line footer, and a horizontal scrollbar.
+    // Content view height is (h - 4), so lineCount + 4 fits records without waste.
+    const int maxW = std::max(minW, sw - 2);
+    const int maxH = std::max(minH, sh - 2);
+    const int w = clampInt(contentW + 4, minW, maxW);
+    const int h = clampInt(lineCount + 4, minH, maxH);
+    const int L = std::max(0, (sw - w) / 2);
+    const int T = std::max(0, (sh - h) / 2);
+    return TRect(S(L), S(T), S(L + w), S(T + h));
+}
+
+static void insertScrollBarsAndFooter(TWindow* win, int w, int h,
+                                      TScrollBar*& hsb, TScrollBar*& vsb,
+                                      const char* footerText){
+    const TRect hRect(S(1), S(h-2), S(w-2), S(h-1));
+    const TRect vRect(S(w-2), S(1), S(w-1), S(h-2));
+    hsb = new TScrollBar(hRect);
+    vsb = new TScrollBar(vRect);
+
+    // Keep chrome attached to the current window edges after manual resize.
+    hsb->growMode = gfGrowHiX | gfGrowLoY | gfGrowHiY;
+    vsb->growMode = gfGrowLoX | gfGrowHiX | gfGrowHiY;
+
+    win->insert(hsb);
+    win->insert(vsb);
+
+    auto* footer = new TStaticText(TRect(S(1), S(h-3), S(w-2), S(h-2)), footerText);
+    footer->growMode = gfGrowHiX | gfGrowLoY | gfGrowHiY;
+    win->insert(footer);
+}
+
 class RecordViewWindow : public TWindow {
 public:
     RecordViewWindow(DbArea* a,long rec)
-    : TWindow(TRect(0,0,S(60),S(18)),"Record (read-only)",0), TWindowInit(&TWindow::initFrame), a_(a)
+    : TWindow(TRect(0,0,S(60),S(12)),"Record (read-only)",0), TWindowInit(&TWindow::initFrame), a_(a)
     {
         flags|=wfGrow|wfZoom; growMode=gfGrowAll;
-        const int sw=TScreen::screenWidth, sh=TScreen::screenHeight;
-        const int w=std::min(std::max(60,sw-6), sw-2);
-        const int h=std::min(std::max(16,sh-6), sh-2);
-        const int L=(sw-w)/2, T=(sh-h)/2;
-        TRect rc(S(L),S(T),S(L+w),S(T+h)); locate(rc);
+        if(a_&&rec>=1&&rec<=a_->recCount()) a_->gotoRec((int32_t)rec);
 
-        const TRect hRect(S(1),S(h-2),S(w-2),S(h-1)), vRect(S(w-2),S(1),S(w-1),S(h-2));
-        auto* hsb=new TScrollBar(hRect); auto* vsb=new TScrollBar(vRect); insert(hsb); insert(vsb);
+        const char* footerText = "~?/?~ rec   ~PgUp/PgDn/Home/End~   ~Esc~ close";
+        TRect rc = centeredRecordRect(a_, footerText, 44, 8);
+        locate(rc);
+        const int w = (int)(rc.b.x - rc.a.x);
+        const int h = (int)(rc.b.y - rc.a.y);
+
+        TScrollBar* hsb=nullptr; TScrollBar* vsb=nullptr;
+        insertScrollBarsAndFooter(this, w, h, hsb, vsb, footerText);
 
         const TRect vr(S(1),S(1),S(w-2),S(h-3)); view_=new LinesView(vr,hsb,vsb); insert(view_);
-
-        insert(new TStaticText(TRect(S(1),S(h-3),S(w-2),S(h-2)),
-            "~?/?~ rec   ~PgUp/PgDn/Home/End~   ~Esc~ close"));
-
-        if(a_&&rec>=1&&rec<=a_->recCount()) a_->gotoRec((int32_t)rec);
         reload();
     }
 
@@ -220,22 +280,20 @@ private: DbArea* a_{nullptr}; LinesView* view_{nullptr};
 class RecordEditWindow : public TWindow {
 public:
     explicit RecordEditWindow(DbArea* a)
-    : TWindow(TRect(0,0,S(60),S(18)),"Record (edit)",0), TWindowInit(&TWindow::initFrame), a_(a)
+    : TWindow(TRect(0,0,S(60),S(12)),"Record (edit)",0), TWindowInit(&TWindow::initFrame), a_(a)
     {
         flags|=wfGrow|wfZoom; growMode=gfGrowAll;
-        const int sw=TScreen::screenWidth, sh=TScreen::screenHeight;
-        const int w=std::min(std::max(60,sw-6), sw-2);
-        const int h=std::min(std::max(16,sh-6), sh-2);
-        const int L=(sw-w)/2, T=(sh-h)/2;
-        TRect rc(S(L),S(T),S(L+w),S(T+h)); locate(rc);
 
-        const TRect hRect(S(1),S(h-2),S(w-2),S(h-1)), vRect(S(w-2),S(1),S(w-1),S(h-2));
-        auto* hsb=new TScrollBar(hRect); auto* vsb=new TScrollBar(vRect); insert(hsb); insert(vsb);
+        const char* footerText = "~?/?~ field   ~Enter~ edit   ~PgUp/PgDn/Home/End~ rec   ~Esc~ close";
+        TRect rc = centeredRecordRect(a_, footerText, 58, 10);
+        locate(rc);
+        const int w = (int)(rc.b.x - rc.a.x);
+        const int h = (int)(rc.b.y - rc.a.y);
+
+        TScrollBar* hsb=nullptr; TScrollBar* vsb=nullptr;
+        insertScrollBarsAndFooter(this, w, h, hsb, vsb, footerText);
 
         const TRect vr(S(1),S(1),S(w-2),S(h-3)); view_=new LinesView(vr,hsb,vsb); insert(view_);
-
-        insert(new TStaticText(TRect(S(1),S(h-3),S(w-2),S(h-2)),
-            "~?/?~ field   ~Enter~ edit   ~PgUp/PgDn/Home/End~ rec   ~Esc~ close"));
 
         sel_ = 0;
         reload();

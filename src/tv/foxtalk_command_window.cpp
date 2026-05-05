@@ -64,7 +64,7 @@ void FoxtalkCommandWindow::setInputText(const std::string& s)
     if (!input_)
         return;
 
-    input_->setData((void*)s.c_str());
+    input_->prefill(s);
 }
 
 void FoxtalkCommandWindow::focusInput()

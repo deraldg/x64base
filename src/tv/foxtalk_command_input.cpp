@@ -22,7 +22,15 @@ TCmdInput::TCmdInput(const TRect& bounds, ushort maxLen)
 void TCmdInput::prefill(const std::string& s)
 {
     setData((void*)s.c_str());
-    selectAll(True);
+
+    const int end = static_cast<int>(s.size());
+    curPos = end;
+    firstPos = 0;
+    selStart = end;
+    selEnd = end;
+
+    focus();
+    drawView();
 }
 
 void TCmdInput::handleEvent(TEvent& ev)

@@ -49,6 +49,14 @@ void FoxtalkLogView::draw()
                 : std::string();
 
         const int sx = static_cast<int>(size.x);
+        const int scrollX = std::max<int>(0, delta.x);
+
+        if (scrollX > 0) {
+            if (scrollX < static_cast<int>(text.size()))
+                text.erase(0, static_cast<std::size_t>(scrollX));
+            else
+                text.clear();
+        }
 
         if (static_cast<int>(text.size()) < sx)
             text.append(static_cast<std::size_t>(sx - static_cast<int>(text.size())), ' ');
