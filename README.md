@@ -1,6 +1,3 @@
-I tightened the wording, removed repeated “beta/history/browser” explanations, kept self-documentation prominent, and used the project’s own `ABOUT` language as the identity anchor. The browser wording is also grounded in your current smoke output showing ERSATZ, SMARTBROWSE/ARTBROWSE, and SIMPLEBROWSE/SB in action.  
-
-````markdown
 # DotTalk++ / x64base
 
 **A working educational xBase / FoxPro-inspired database runtime, command shell, and architecture lab built in modern C++.**
@@ -556,6 +553,629 @@ ask for HELP
 inspect metadata
 validate reflection
 compare runtime behavior
+```
+
+---
+
+## CMDHELPCHK
+
+`CMDHELPCHK` is the current validation tool for documentation/runtime congruence.
+
+It supports reflection audit mode:
+
+```text
+CMDHELPCHK
+CMDHELPCHK REF
+CMDHELPCHK REFLECT
+```
+
+and legacy HELP DBF validation mode:
+
+```text
+CMDHELPCHK <help-output-directory>
+```
+
+Current reflection checks include:
+
+```text
+unresolved entry variants
+duplicate canonical commands
+duplicate subcommands
+missing parent commands
+duplicate functions
+invalid function argument ranges
+missing function categories
+```
+
+Status: active. The next milestone is comparing runtime reflection against the x64 SYS* metadata catalog.
+
+This is one of the places where DotTalk++ tries to turn documentation into an executable contract.
+
+---
+
+## DDL and Schema Tools
+
+DotTalk++ includes an active DDL command surface.
+
+Current DDL capabilities include:
+
+```text
+DDL FETCH <url> TO <file>
+DDL VALIDATE <schema.json> USING <validator.json>
+DDL CREATE DBF <output.dbf> FROM <schema.json>
+```
+
+The DDL path can create DBF structures from JSON schema definitions and emit sidecar metadata files such as:
+
+```text
+<table>.ddl.json
+<table>.load.json
+<table>.indexes.json
+<table>.schema.copy.json
+```
+
+Status: active / partial.
+
+DBF creation and blank seeding exist. CSV seeding is not complete yet and should not be treated as a finished import pipeline.
+
+Educationally, DDL is useful because it connects a visible table file to a schema document. A student can see that a DBF is not magic: it has fields, types, lengths, structure, and metadata that can be generated and inspected.
+
+---
+
+## DrawIO / Design Surface
+
+DotTalk++ includes a small `DRAWIO` helper command:
+
+```text
+DRAWIO
+DRAWIO OPEN
+DRAWIO OPEN <url>
+```
+
+Current behavior opens diagrams.net / draw.io in the default browser.
+
+Future direction: generate useful diagrams from DotTalk++ metadata, relations, schemas, and runtime catalogs.
+
+Current status: helper implemented; metadata-generated diagrams are planned, not complete.
+
+This is a good example of the project’s general approach: start with a small useful command, then connect it later to metadata, schemas, and relation graphs.
+
+---
+
+## Memo System
+
+Object-oriented design direction:
+
+```text
+DbArea -> MemoRef -> MemoManager -> MemoObject -> MemoStore
+```
+
+Goals and partial capabilities:
+
+* Multi-record memo isolation
+* Persistence across sessions
+* Safer PACK behavior
+* Future-ready large-object handling
+
+Status: active, but still treated with canaries. Some memo payload/backend attachment paths need more proof before being called complete.
+
+Memo is intentionally separated from the core table engine. That separation is part of the architecture, because table records and large object payloads should not be treated as the same concern.
+
+---
+
+## Expression Engine
+
+Supports:
+
+* Numeric functions
+* String functions
+* Date functions
+* FoxPro-style expression behavior
+* Runtime evaluation
+* Function documentation integration
+
+Example:
+
+```text
+CALC SOUNDEX("WHITE")
+-> W300
+```
+
+Expression functions are increasingly tied into HELP and reflection.
+
+This matters for students because expressions connect data inspection, filtering, calculation, and command behavior.
+
+---
+
+## Python Binding
+
+`pydottalk` is an optional Python binding.
+
+Current status:
+
+* Builds in the Windows development environment
+* Can import under Python 3.12
+* Has basic read-only DBF smoke coverage
+
+This is active integration work, not yet a full public API promise.
+
+The educational value is that the same table concepts can eventually be seen from both the DotTalk++ command surface and Python.
+
+---
+
+## Runtime Scripts and Canaries
+
+DotTalk++ includes runtime scripts for smoke testing, setup, and canary checks.
+
+Examples include scripts that:
+
+* Set x32 paths
+* Set x64 metadata paths
+* Open workspace estates
+* Run non-destructive smoke tests
+* Exercise HELP and command surfaces
+* Exercise relation and browser behavior
+
+Canaries are intentionally part of the workflow. They help distinguish:
+
+```text
+implemented and proven
+implemented but fragile
+designed but not complete
+legacy behavior preserved for compatibility
+```
+
+---
+
+## Feature Status Matrix
+
+| Area | Status | Notes |
+| ---- | ------ | ----- |
+| DBF / xBase table engine | Active | Core table, cursor, record, and structure behavior exist. |
+| x32 DBF runtime | Proven | MCC sample workspace restores and browses successfully. |
+| x64 DBF / metadata work | Active | x64 metadata tables can be opened with CDX/LMDB attached. |
+| INX / CNX / CDX indexing | Active | INX/CNX are established; CDX is the logical multi-tag surface with LMDB backend work. |
+| LMDB backend | Active | Used behind CDX for x64-family indexing. |
+| Relations | Recently advanced | Same-field relations and asymmetric `ON parent TO child` relations are both supported. |
+| Workspace persistence | Proven for relation graph | Asymmetric relations now survive `WORKSPACE SAVE` / `WORKSPACE LOAD`. |
+| Browsers | Active / runtime-proven | ERSATZ relational browser, SMARTBROWSE/ARTBROWSE record browser, and SIMPLEBROWSE/SB tuple browser exist and have current smoke evidence. |
+| Tuple traversal | Active | ERSATZ and relation-aware tuple grids are runtime-proven for MCC sample data. |
+| DDL | Active / partial | JSON-schema DBF creation and sidecar metadata exist; CSV seeding remains incomplete. |
+| HELP | Active / mixed-source | Uses reflection, catalogs, function docs, and legacy references. |
+| CMDHELPCHK | Active | Reflection audit and legacy HELP DBF validation exist. SYS* congruence validation is next. |
+| Metadata self-documentation | Active / emerging | Runtime reflection exists; SYS* catalog alignment is the next focus. |
+| DrawIO | Helper implemented / generation planned | Command opens diagrams.net; metadata-generated diagrams are not yet complete. |
+| Memo | Active / canary | OO memo architecture exists; some payload/backend attachment paths still need proof. |
+| Python binding | Active | `pydottalk` builds and has basic read-only smoke coverage. |
+| Simple TUI | Active / experimental | Turbo Vision-style text UI exposes runtime command groups through menus, command window, output window, and workspace/status panels; used as a learning and command-discovery layer. |
+
+---
+
+## Command Highlights
+
+### Table Operations
+
+```text
+USE <table>
+SELECT <n>
+SELECT <alias>
+AREA
+DBAREA
+DBAREAS
+STRUCT
+```
+
+### Indexing
+
+```text
+SET INDEX TO students.cdx
+SET ORDER TO TAG lname
+BUILDLMDB
+REINDEX
+```
+
+### Navigation
+
+```text
+TOP
+BOTTOM
+SKIP
+SEEK <value>
+GOTO <n>
+```
+
+### Query / Display
+
+```text
+SMARTLIST
+LIST
+COUNT FOR <expr>
+SCAN / ENDSCAN
+LOCATE FOR <expr>
+```
+
+### Browsing
+
+```text
+SMARTBROWSE
+ARTBROWSE
+SIMPLEBROWSE
+SB
+ERSATZ
+ERSATZ MCC
+ERSATZ LOAD <name>
+```
+
+### Relations
+
+```text
+REL ADD STUDENTS ENROLL ON SID
+REL ADD SYSCMD SYSSUBCMD ON CAN_NAME TO PARENT
+REL LIST ALL
+REL ENUM
+```
+
+### Workspace
+
+```text
+WORKSPACE OPEN DBF
+WORKSPACE OPEN DBF CDX
+WORKSPACE SAVE <name>
+WORKSPACE LOAD <name>
+WORKSPACE CLOSE
+WSREPORT
+```
+
+### Metadata
+
+```text
+do metadata_x64
+workspace open dbf cdx
+workspace load metadata_x64_rel
+```
+
+### HELP / Validation
+
+```text
+HELP
+HELP <command>
+HELP FUNCTION <name>
+CMDHELPCHK
+CMDHELPCHK REF
+```
+
+### DDL
+
+```text
+DDL FETCH <url> TO <file>
+DDL VALIDATE <schema.json> USING <validator.json>
+DDL CREATE DBF <output.dbf> FROM <schema.json>
+```
+
+### DrawIO
+
+```text
+DRAWIO
+DRAWIO OPEN
+DRAWIO OPEN <url>
+```
+
+---
+
+## Listing and Browsing Surfaces
+
+DotTalk++ has both listing tools and browser tools. They overlap, but they are not the same thing.
+
+* **LIST**
+
+  * Developer-oriented table printer
+  * Useful for low-level inspection and compatibility testing
+  * Cursor-driven
+
+* **SMARTLIST**
+
+  * Table-aware listing surface
+  * Order-aware
+  * Expression-driven
+  * Intended future primary listing interface for non-interactive table output
+
+* **SIMPLEBROWSE / SB**
+
+  * Read-only workspace browser
+  * Tuple-style output
+  * Useful for fast inspection of current area/workspace state
+
+* **SMARTBROWSE / ARTBROWSE**
+
+  * Interactive record browser
+  * Supports navigation, filtering, order switching, schema display, JSON display, and relation-aware child exploration
+  * Active beta surface
+
+* **ERSATZ**
+
+  * Relation-aware browser/workspace launcher
+  * Useful for proving relation trees, descendant summaries, and tuple grids
+  * Current primary proof surface for relation-aware browsing
+
+* **Simple TUI**
+
+  * Text-mode menu layer
+  * Provides menu-driven command discovery
+  * Wraps many CLI/runtime commands without replacing them
+  * Active beta surface for workspace, table, browse, relation, tuple, command, and help workflows
+
+The browser layer is important because DotTalk++ is not only a command engine. It is also an inspection environment.
+
+---
+
+## Index Lifecycle
+
+```text
+CDX CREATE
+SET INDEX
+SET ORDER
+BUILDLMDB
+-> LMDB backend ready
+```
+
+Mutation model:
+
+* Append / Replace -> active work
+* Delete / Recall -> still needs complete proof
+* Buffered vs direct write modes planned
+* Reporting surfaces may lag actual index state in some canary cases
+
+---
+
+## Current Work Focus
+
+The current useful work is validation and congruence, not broad feature expansion.
+
+Primary focus:
+
+* CMDHELPCHK v2
+* HELP / SYS* congruence checks
+* Metadata catalog reports
+* Proof that reflected commands, generated HELP, and SYS* tables agree
+
+Secondary active areas:
+
+* CDX / LMDB lifecycle cleanup
+* SMARTLIST improvement
+* Memo payload/backend proof
+* DDL seeding and schema workflow expansion
+* Metadata-generated DrawIO diagrams
+* Continued TUI cleanup and command-discovery reinforcement
+* Browser polish without breaking command semantics
+
+---
+
+## Architecture Overview
+
+```text
+xbase/          <- core table engine
+xindex/         <- indexing systems
+memo/           <- memo subsystem
+xexpr/          <- expression engine
+cli/            <- command interface, workspace commands, browsers, HELP, DDL, DrawIO helpers
+help/           <- reflection and HELP model
+tuple/          <- tuple / row / cell / relation-aware adapters
+pydottalk/      <- Python bindings
+tv/             <- simple TUI components
+dottalkpp/      <- runtime data, scripts, workspaces, tests, help
+```
+
+---
+
+## Design Rules
+
+* DbArea is the runtime truth for records, cursor, mutation, and table flavor behavior
+* Memo payload is external to table engine
+* CDX is the logical multi-tag index abstraction
+* LMDB is the physical backend, hidden behind normal command-surface wording
+* HELP should increasingly be generated or validated from runtime truth
+* DotScript is canonical for automation
+* Python is a future integration surface
+* Tuple infrastructure is relation-aware and orthogonal to raw table storage
+* Browsers are first-class inspection surfaces, not just formatted LIST output
+* The TUI is a convenience and discovery layer; the command language remains canonical
+* Student learning matters: visible layers are a feature, not a flaw
+
+---
+
+## Example Sessions
+
+### x32 MCC relation smoke
+
+```text
+do x32
+ersatz mcc
+ersatz
+```
+
+Expected behavior:
+
+```text
+WORKSPACE LOAD: restored 12 area(s) and 15 relation(s).
+ROWS SHOWN: ... | STATUS: OK
+```
+
+### Browser smoke
+
+```text
+do x32
+ersatz load mcc
+ersatz
+select students
+smartbrowse
+simplebrowse
+```
+
+Expected behavior:
+
+```text
+ERSATZ Relational Browser opens on STUDENTS.
+SMARTBROWSE / ARTBROWSE shows interactive record browsing state.
+SIMPLEBROWSE emits tuple-style rows from the selected area.
+```
+
+### x64 metadata relation smoke
+
+```text
+do metadata_x64
+workspace open dbf cdx
+rel add syscmd syssubcmd on can_name to parent
+rel add syssubcmd sysentvar on qual_name to help_ownr
+select 1
+rel list all
+```
+
+Expected relation shape:
+
+```text
+SYSCMD
+  -> SYSSUBCMD ON can_name TO parent
+    -> SYSENTVAR ON qual_name TO help_ownr
+```
+
+### x64 metadata relation persistence
+
+```text
+workspace save metadata_x64_rel
+workspace close
+do metadata_x64
+workspace load metadata_x64_rel
+select 1
+rel list all
+select 7
+rel list all
+```
+
+Expected behavior:
+
+```text
+WORKSPACE LOAD: restored 8 area(s) and 2 relation(s).
+```
+
+### HELP / reflection smoke
+
+```text
+help
+help functions
+help function soundex
+cmdhelpchk
+cmdhelpchk ref
+```
+
+Expected behavior:
+
+```text
+HELP displays mixed-source command/function help.
+CMDHELPCHK reflection mode reports command, subcommand, and function checks.
+```
+
+---
+
+## Roadmap
+
+### Short Term
+
+* CMDHELPCHK / SYS* congruence validation
+* HELP metadata alignment
+* Preserve asymmetric relation behavior while building reports on top of it
+* Continue CDX / LMDB lifecycle cleanup
+* Keep x32 MCC regression smoke passing
+* Keep browser smoke paths passing
+* Keep the simple TUI aligned with real command names
+
+### Mid Term
+
+* Stronger metadata reports
+* Generated HELP validation
+* SMARTLIST improvements
+* Tuple engine stabilization
+* Memo backend proof
+* DDL seeding improvements
+* Browser polish
+* Metadata-aware TUI help and command discovery
+
+### Long Term
+
+* Metadata-generated diagrams
+* Stronger Python integration
+* Service layer experiments
+* UI expansion
+* Migration and teaching tools
+* Better educational labs around tables, indexes, relations, metadata, and HELP validation
+* Finished educational tools, database utilities, and applications built on the proven runtime
+
+---
+
+## Naming and Identity
+
+DotTalk++ preserves the spirit of FoxPro/xBase engineering without copying legacy branding.
+
+It values:
+
+* Direct command interaction
+* Understandable table files
+* Fast inspection
+* Scriptable workflows
+* Relation-aware browsing
+* Self-documenting runtime metadata
+* Learning through visible system behavior
+
+The project is not trying to pretend the past was perfect. It is trying to recover the parts that were teachable, direct, and powerful.
+
+---
+
+## Why This Exists
+
+DotTalk++ exists to make database systems understandable again.
+
+It is not trying to be a commercial database product. It is a working educational and research system built around ideas that are still worth teaching:
+
+* records and fields
+* table files
+* indexes and access paths
+* work areas and runtime state
+* relations and graph traversal
+* commands and scripts
+* HELP as part of the system
+* metadata as self-description
+* HELP and validation as proof
+
+The project draws from xBase, dBase, Clipper, FoxPro, DOS-era command systems, and early personal-computer software because those systems made many of the layers visible.
+
+Modern software often hides those layers.
+
+DotTalk++ tries to expose them again, but with cleaner modern architecture underneath.
+
+Some areas are still beta because they are being proven layer by layer. The goal is to finish useful educational tools, database utilities, and applications from the pieces that prove themselves.
+
+---
+
+## Author
+
+Derald Grimwood  
+B.S. Management Information Systems  
+xBase / SAP / ERP background
+
+---
+
+## License
+
+(To be defined)
+
+---
+
+## Final Notes
+
+> User interfaces change, languages change, but the underlying database principles remain constant.
+>
+> — Derald Grimwood
+
+> Preserve the past. Teach the layers. Fix the architecture. Move forward.compare runtime behavior
 ```
 
 ---
