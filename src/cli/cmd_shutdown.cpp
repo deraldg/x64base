@@ -1,6 +1,43 @@
 // src/cli/cmd_shutdown.cpp
 // Runs optional shutdown script from bin/shutdown.ini
 
+// @dottalk.usage v1
+// owner: DOT|SHUTDOWN
+// command: SHUTDOWN
+// category: script
+// status: supported
+// noargs: execute
+// effect: execute
+// mutates: delegates-command-effects session filesystem
+// usage-access: SHUTDOWN USAGE
+// summary:
+//   Run the optional shutdown.ini script from the executable directory.
+//
+// usage:
+//   SHUTDOWN
+//   SHUTDOWN USAGE
+//
+// notes:
+//   SHUTDOWN with no arguments looks for shutdown.ini beside the executable and executes it when present.
+//   SHUTDOWN USAGE prints usage and does not execute shutdown.ini.
+//   Each non-empty shutdown.ini line is executed through the shell command executor.
+//   UTF-8 BOM and trailing carriage returns are handled.
+//   SHUTDOWN may indirectly mutate data, session state, or files depending on script contents.
+//
+// risk:
+//   reads_files: shutdown.ini when present
+//   executes_commands: yes
+//   mutates_table_data: depends on script contents
+//   mutates_session: depends on script contents
+//   writes_files: depends on script contents
+//
+// related:
+//   INIT
+//   TEST
+//   DOTSCRIPT
+//
+
+#include <cctype>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -20,6 +57,42 @@
 #include "xbase.hpp"
 
 namespace fs = std::filesystem;
+
+
+namespace {
+static std::string shutdown_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string shutdown_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_shutdown_usage_request(const std::string& raw)
+{
+    std::string t = shutdown_upper(shutdown_trim(raw));
+    if (t.rfind("SHUTDOWN ", 0) == 0) {
+        t = shutdown_upper(shutdown_trim(t.substr(9)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_shutdown_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SHUTDOWN\n"
+        << "  SHUTDOWN USAGE\n"
+        << "Notes:\n"
+        << "  - SHUTDOWN with no arguments executes shutdown.ini when present.\n"
+        << "  - SHUTDOWN USAGE prints this usage and does not execute shutdown.ini.\n";
+}
+} // namespace
 
 // Match the real signature that already exists in your program.
 bool shell_execute_line(xbase::DbArea& current, const std::string& line);
@@ -104,7 +177,13 @@ static void run_shutdown_script(xbase::DbArea& current, const fs::path& ini_path
     }
 }
 
-void cmd_SHUTDOWN(xbase::DbArea& current, std::istringstream& /*in*/) {
+void cmd_SHUTDOWN(xbase::DbArea& current, std::istringstream& in) {
+    const std::string raw_args = in.str();
+    if (is_shutdown_usage_request(raw_args)) {
+        print_shutdown_usage();
+        return;
+    }
+
     try {
         const fs::path ini_path = get_executable_dir() / "shutdown.ini";
         if (fs::exists(ini_path) && fs::is_regular_file(ini_path)) {

@@ -1,3 +1,47 @@
+// @dottalk.usage v1
+// owner: DOT|MEMO
+// command: MEMO
+// category: memo
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: memo-storage filesystem
+// usage-access: MEMO USAGE
+// summary:
+//   Inspect and maintain x64 memo sidecar/object storage for the current work
+//   area or all open work areas.
+//
+// usage:
+//   MEMO USAGE
+//   MEMO STATUS
+//   MEMO STATUS ALL
+//   MEMO VERIFY
+//   MEMO VERIFY ALL
+//   MEMO GC
+//   MEMO GC ALL
+//   MEMO GC CONFIRM
+//   MEMO GC ALL CONFIRM
+//
+// notes:
+//   MEMO with no arguments prints usage.
+//   STATUS reports memo object/ref statistics.
+//   VERIFY scans memo references and reports missing/orphaned objects.
+//   GC without CONFIRM is a dry run.
+//   GC with CONFIRM may remove orphan memo objects and reclaim storage.
+//   ALL targets all open work areas; otherwise the current work area is used.
+//
+// risk:
+//   reads_memo_storage: yes
+//   writes_memo_storage: MEMO GC CONFIRM forms
+//   mutates_table_data: no direct DBF record mutation
+//   requires_open_area: yes except usage
+//
+// related:
+//   CALCWRITE
+//   REPLACE
+//   PACK
+//
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -41,6 +85,19 @@ std::vector<int> target_slots(bool all_flag)
         if (is_open_area(i)) out.push_back(static_cast<int>(i));
     }
     return out;
+}
+
+void print_memo_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  MEMO USAGE\n"
+        << "  MEMO STATUS [ALL]\n"
+        << "  MEMO VERIFY [ALL]\n"
+        << "  MEMO GC [ALL] [CONFIRM]\n"
+        << "Notes:\n"
+        << "  - MEMO GC without CONFIRM is a dry run.\n"
+        << "  - MEMO GC with CONFIRM may remove orphan memo objects.\n";
 }
 
 void print_verify(const dottalk::memo::MemoScanResult& s)
@@ -134,8 +191,8 @@ void cmd_MEMO(xbase::DbArea& /*unused*/, std::istringstream& iss)
         else if (tok == "CONFIRM") confirm = true;
     }
 
-    if (subcmd.empty()) {
-        std::cout << "Usage: MEMO STATUS|VERIFY|GC [ALL] [CONFIRM]\n";
+    if (subcmd.empty() || subcmd == "USAGE" || subcmd == "HELP" || subcmd == "?") {
+        print_memo_usage();
         return;
     }
 
@@ -184,7 +241,7 @@ void cmd_MEMO(xbase::DbArea& /*unused*/, std::istringstream& iss)
                 print_gc(scan, confirm, removed, reclaimed, error);
             }
         } else {
-            std::cout << "Usage: MEMO STATUS|VERIFY|GC [ALL] [CONFIRM]\n";
+            print_memo_usage();
             return;
         }
 

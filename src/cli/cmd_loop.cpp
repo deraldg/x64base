@@ -12,6 +12,94 @@
 //       currently acts as a label only if not numeric
 //   - hard default max iterations: 1000
 // ============================================================================
+// @dottalk.usage v1
+// owner: DOT|LOOP
+// command: LOOP
+// category: script
+// status: supported
+// noargs: execute
+// effect: buffer
+// mutates: loop-buffer loop-state
+// usage-access: LOOP USAGE
+// summary:
+//   Start buffering commands for later replay by ENDLOOP, with optional quiet
+//   mode and numeric repetition labels.
+//
+// usage:
+//   LOOP
+//   LOOP USAGE
+//   LOOP QUIET
+//   LOOP <n>
+//   LOOP <n> TIMES
+//   LOOP FOR <n>
+//   LOOP FOR <n> TIMES
+//   LOOP FOR <label>
+//   LOOP OVERRIDE <label>
+//
+// notes:
+//   LOOP with no arguments starts command buffering and replays once at ENDLOOP.
+//   LOOP <n>, LOOP <n> TIMES, and LOOP FOR <n> replay buffered commands n times.
+//   LOOP QUIET suppresses buffering and ENDLOOP status messages.
+//   LOOP FOR <label> stores a nonnumeric label and currently replays once.
+//   ENDLOOP executes buffered commands through the pluggable shell executor.
+//   The loop implementation skips buffered ENDLOOP lines during replay.
+//   Iteration count is clamped to the hard maximum when necessary.
+//   LOOP mutates script execution state and may indirectly mutate anything its buffered commands mutate.
+//
+// risk:
+//   mutates_loop_state: yes
+//   buffers_commands: yes
+//   executes_commands: through ENDLOOP
+//   mutates_table_data: depends on buffered commands
+//   max_iterations: clamped
+//
+// related:
+//   ENDLOOP
+//   WHILE
+//   ENDWHILE
+//   UNTIL
+//   ENDUNTIL
+//
+
+// @dottalk.usage v1
+// owner: DOT|ENDLOOP
+// command: ENDLOOP
+// category: script
+// status: supported
+// noargs: execute
+// effect: execute
+// mutates: loop-buffer loop-state delegates-command-effects
+// usage-access: ENDLOOP USAGE
+// summary:
+//   End the active LOOP block and replay buffered commands through the shell
+//   executor.
+//
+// usage:
+//   ENDLOOP
+//   ENDLOOP USAGE
+//
+// notes:
+//   ENDLOOP with no arguments executes the active LOOP buffer.
+//   ENDLOOP requires an active LOOP block except for ENDLOOP USAGE.
+//   ENDLOOP clears active loop state before replay.
+//   ENDLOOP replays buffered commands through the registered loop executor.
+//   ENDLOOP reports when no LOOP is active.
+//   ENDLOOP may indirectly mutate data, session state, or files depending on buffered commands.
+//
+// risk:
+//   executes_commands: yes
+//   mutates_loop_state: yes
+//   mutates_table_data: depends on buffered commands
+//   mutates_session: depends on buffered commands
+//
+// related:
+//   LOOP
+//   WHILE
+//   ENDWHILE
+//   UNTIL
+//   ENDUNTIL
+//
+
 #include "loop_state.hpp"
 #include "cmd_loop.hpp"
 
@@ -140,6 +228,57 @@ static size_t iterations_from_label(const std::string& label)
     return n;
 }
 
+
+static void print_loop_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  LOOP\n"
+        << "  LOOP USAGE\n"
+        << "  LOOP QUIET\n"
+        << "  LOOP <n>\n"
+        << "  LOOP <n> TIMES\n"
+        << "  LOOP FOR <n>\n"
+        << "  LOOP FOR <n> TIMES\n"
+        << "  LOOP FOR <label>\n"
+        << "  LOOP OVERRIDE <label>\n"
+        << "Notes:\n"
+        << "  - LOOP starts buffering commands until ENDLOOP.\n"
+        << "  - Numeric forms replay the buffer n times.\n";
+}
+
+static void print_endloop_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  ENDLOOP\n"
+        << "  ENDLOOP USAGE\n"
+        << "Notes:\n"
+        << "  - ENDLOOP executes the active LOOP buffer through the registered executor.\n";
+}
+
+static bool is_loop_usage_request(const std::string& raw)
+{
+    std::string t = trim_ascii(raw);
+    upcase_ascii(t);
+    if (starts_with_ascii(t, "LOOP ")) {
+        t = trim_ascii(t.substr(5));
+        upcase_ascii(t);
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static bool is_endloop_usage_request(const std::string& raw)
+{
+    std::string t = trim_ascii(raw);
+    upcase_ascii(t);
+    if (starts_with_ascii(t, "ENDLOOP ")) {
+        t = trim_ascii(t.substr(8));
+        upcase_ascii(t);
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 } // namespace
 
 // ---- public API -------------------------------------------------------------
@@ -158,6 +297,12 @@ LoopExecFn loop_get_executor()
 
 void cmd_LOOP(xbase::DbArea&, std::istringstream& S)
 {
+    const std::string raw_args = S.str();
+    if (is_loop_usage_request(raw_args)) {
+        print_loop_usage();
+        return;
+    }
+
     auto& st = loopblock::state();
     st.lines.clear();
 
@@ -193,8 +338,14 @@ void cmd_LOOP_BUFFER(xbase::DbArea&, std::istringstream& S)
     }
 }
 
-void cmd_ENDLOOP(xbase::DbArea& A, std::istringstream&)
+void cmd_ENDLOOP(xbase::DbArea& A, std::istringstream& S)
 {
+    const std::string raw_args = S.str();
+    if (is_endloop_usage_request(raw_args)) {
+        print_endloop_usage();
+        return;
+    }
+
     auto& st = loopblock::state();
     if (!st.active) {
         std::cout << "ENDLOOP: not in a LOOP.\n";

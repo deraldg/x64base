@@ -23,6 +23,65 @@
 //     It does NOT auto-run SCHEMAS LOAD here. Keep this layer thin.
 //   - This is a LabTalk-facing teaching command, not a new backend.
 
+// @dottalk.usage v1
+// owner: DOT|CODASYL
+// command: CODASYL
+// category: education
+// status: supported
+// noargs: usage
+// effect: teaching
+// mutates: codasyl-teaching-state cursor
+// usage-access: CODASYL USAGE
+// summary:
+//   Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas,
+//   simulating owner/member set traversal without a second storage engine.
+//
+// usage:
+//   CODASYL USAGE
+//   CODASYL HELP
+//   CODASYL MODE ON
+//   CODASYL MODE OFF
+//   CODASYL LOAD <world>
+//   CODASYL SETS
+//   CODASYL SHOW SET <name>
+//   CODASYL FIND OWNER <set> <value>
+//   CODASYL FIND OWNER <owner_alias> <value>
+//   CODASYL GET FIRST
+//   CODASYL GET FIRST <set>
+//   CODASYL GET FIRST <member_alias>
+//   CODASYL GET NEXT
+//   CODASYL GET NEXT <set>
+//   CODASYL GET NEXT <member_alias>
+//   CODASYL WALK
+//   CODASYL WALK <set>
+//   CODASYL WALK <member_alias>
+//   CODASYL STATUS
+//
+// notes:
+//   CODASYL with no arguments shows usage.
+//   This is a teaching adapter and does not create physical CODASYL storage.
+//   It uses already-open work areas and named set definitions.
+//   LOAD installs a predefined set map for a named lesson world.
+//   FIND OWNER captures the current owner and builds a member snapshot.
+//   GET FIRST and GET NEXT move through the simulated member ring.
+//   WALK prints a simulated owner/member ring and preserves the member-area cursor best-effort.
+//   STATUS reports CODASYL teaching state.
+//
+// risk:
+//   reads_open_work_areas: yes
+//   changes_current_area_cursor: GET FIRST GET NEXT
+//   restores_cursor_best_effort: WALK
+//   mutates_table_data: no
+//   creates_files: no
+//   separate_storage_engine: no
+//
+// related:
+//   WORKSPACE
+//   REL
+//   BROWSE
+//   USE
+//
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -102,16 +161,20 @@ static std::vector<std::string> split_ws(const std::string& s) {
 
 static void print_usage() {
     std::cout
-        << "CODASYL HELP\n"
-        << "CODASYL MODE ON|OFF\n"
-        << "CODASYL LOAD <world>\n"
-        << "CODASYL SETS\n"
-        << "CODASYL SHOW SET <name>\n"
-        << "CODASYL FIND OWNER <set|owner_alias> <value>\n"
-        << "CODASYL GET FIRST [<set|member_alias>]\n"
-        << "CODASYL GET NEXT  [<set|member_alias>]\n"
-        << "CODASYL WALK      [<set|member_alias>]\n"
-        << "CODASYL STATUS\n"
+        << "Usage:\n"
+        << "  CODASYL USAGE\n"
+        << "  CODASYL HELP\n"
+        << "  CODASYL MODE ON\n"
+        << "  CODASYL MODE OFF\n"
+        << "  CODASYL LOAD <world>\n"
+        << "  CODASYL SETS\n"
+        << "  CODASYL SHOW SET <name>\n"
+        << "  CODASYL FIND OWNER <set> <value>\n"
+        << "  CODASYL FIND OWNER <owner_alias> <value>\n"
+        << "  CODASYL GET FIRST [<set or member_alias>]\n"
+        << "  CODASYL GET NEXT  [<set or member_alias>]\n"
+        << "  CODASYL WALK      [<set or member_alias>]\n"
+        << "  CODASYL STATUS\n"
         << "\n"
         << "Notes:\n"
         << "  - Thin teaching layer only; no physical CODASYL storage is created.\n"
@@ -706,7 +769,7 @@ void cmd_CODASYL(xbase::DbArea& area, std::istringstream& iss)
     std::getline(iss >> std::ws, rest);
     rest = trim_copy(rest);
 
-    if (SUB.empty() || SUB == "HELP" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
+    if (SUB.empty() || SUB == "USAGE" || SUB == "HELP" || SUB == "?" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
         print_usage();
         return;
     }

@@ -15,6 +15,54 @@
 // - Current implementation treats <expr> as a field list string and reuses
 //   split_fields_csv semantics via comma splitting if needed later.
 
+// @dottalk.usage v1
+// owner: DOT|SET_RELATION
+// command: SET_RELATION
+// category: relations
+// status: supported
+// noargs: usage
+// effect: configure
+// mutates: relation-state
+// usage-access: SET RELATION USAGE
+// summary:
+//   FoxPro-compatible SET RELATION parser that configures parent-to-child
+//   relations through the relations_api backend.
+//
+// usage:
+//   SET_RELATION USAGE
+//   SET_RELATION TO <expr> INTO <child>
+//   SET_RELATION ADDITIVE TO <expr> INTO <child>
+//   SET_RELATION OFF ALL
+//   SET_RELATION OFF INTO <child>
+//   SET RELATION USAGE
+//   SET RELATION TO <expr> INTO <child>
+//   SET RELATION TO <expr> INTO <child>, <expr> INTO <child>
+//   SET RELATION ADDITIVE TO <expr> INTO <child>
+//   SET RELATION OFF ALL
+//   SET RELATION OFF INTO <child>
+//
+// notes:
+//   SET RELATION with no arguments shows usage.
+//   SET RELATION requires a current parent area except for usage.
+//   ADDITIVE preserves existing relations and adds more clauses.
+//   Non-additive SET RELATION clears current parent relations before adding clauses.
+//   OFF ALL clears all relations for the current parent.
+//   OFF INTO <child> removes one child relation.
+//   Expressions are currently field-list strings reused through relations_api field semantics.
+//
+// risk:
+//   mutates_relation_state: yes
+//   refreshes_relations: yes
+//   mutates_table_data: no
+//   requires_current_parent: yes except usage
+//
+// related:
+//   REL
+//   RELATION
+//   WORKSPACE
+//   ERSATZ
+//
+
 #include "xbase.hpp"
 #include "set_relations.hpp"
 #include "textio.hpp"
@@ -37,6 +85,28 @@ static std::string up_copy(std::string s) {
 
 static std::string trim_copy(std::string s) {
     return textio::trim(std::move(s));
+}
+
+
+static void print_set_relation_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET RELATION USAGE\n"
+        << "  SET RELATION TO <expr> INTO <child>\n"
+        << "  SET RELATION TO <expr> INTO <child>, <expr> INTO <child>\n"
+        << "  SET RELATION ADDITIVE TO <expr> INTO <child>\n"
+        << "  SET RELATION OFF ALL\n"
+        << "  SET RELATION OFF INTO <child>\n";
+}
+
+static bool is_set_relation_usage_request(const std::string& raw)
+{
+    std::string t = up_copy(trim_copy(raw));
+    if (t.rfind("SET RELATION ", 0) == 0) {
+        t = up_copy(trim_copy(t.substr(13)));
+    }
+    return t.empty() || t == "USAGE" || t == "HELP" || t == "?";
 }
 
 struct Clause {
@@ -132,14 +202,8 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
     std::getline(iss, rest);
     rest = trim_copy(rest);
 
-    if (rest.empty()) {
-        std::cout
-            << "SET RELATION syntax\n"
-            << "  SET RELATION TO <expr> INTO <child>\n"
-            << "  SET RELATION TO <expr1> INTO <child1>[, <expr2> INTO <child2> ...]\n"
-            << "  SET RELATION ADDITIVE TO <expr> INTO <child>\n"
-            << "  SET RELATION OFF INTO <child>\n"
-            << "  SET RELATION OFF ALL\n";
+    if (is_set_relation_usage_request(rest)) {
+        print_set_relation_usage();
         return;
     }
 

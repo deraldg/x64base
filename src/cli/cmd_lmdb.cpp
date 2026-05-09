@@ -8,6 +8,60 @@
 // This command is intentionally a thin wrapper over DbArea::indexManager().
 // It does not touch LMDB_UTIL or any shared singleton state.
 //
+// @dottalk.usage v1
+// owner: DOT|LMDB
+// command: LMDB
+// category: index
+// status: developer
+// noargs: usage
+// effect: mixed
+// mutates: index-backend order-state cursor
+// usage-access: LMDB USAGE
+// summary:
+//   Inspect and control the per-area LMDB backed CDX index backend through the
+//   current DbArea IndexManager.
+//
+// usage:
+//   LMDB USAGE
+//   LMDB INFO
+//   LMDB OPEN <container.cdx>
+//   LMDB OPEN <envdir.cdx.d>
+//   LMDB OPEN <stem>
+//   LMDB USE <tag>
+//   LMDB SEEK <key>
+//   LMDB DUMP
+//   LMDB DUMP <max>
+//   LMDB SCAN <low> <high>
+//   LMDB CLOSE
+//
+// notes:
+//   LMDB is a thin wrapper over the current area IndexManager and CDX backend.
+//   LMDB does not use LMDB_UTIL or any shared global LMDB environment.
+//   Bare stems are resolved through the INDEXES path slot.
+//   OPEN attaches the CDX container and updates legacy order state.
+//   USE selects an active tag and updates legacy active-tag state.
+//   SEEK searches the selected tag and reports the matching record number.
+//   DUMP and SCAN inspect the selected tag.
+//   CLOSE closes the current area index manager and clears order state.
+//   LMDB mutates index/order session state but not table records.
+//
+// risk:
+//   opens_lmdb_backend: LMDB OPEN
+//   closes_lmdb_backend: LMDB CLOSE
+//   mutates_order_state: OPEN USE CLOSE
+//   reads_index_data: INFO SEEK DUMP SCAN
+//   mutates_table_data: no
+//   global_lmdb_state: no
+//
+// related:
+//   CDX
+//   CNX
+//   SET INDEX
+//   SET ORDER
+//   LMDBDUMP
+//   LMDB_UTIL
+//
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -25,6 +79,36 @@
 namespace fs = std::filesystem;
 
 namespace {
+
+
+static constexpr const char* DT_USAGE_LMDB = R"DTUSAGE(
+@dottalk.usage v1
+owner: DOT|LMDB
+command: LMDB
+category: index
+status: developer
+summary: Per-area LMDB/CDX backend inspection and control command.
+usage:
+  LMDB command (per-area):
+  LMDB INFO
+  LMDB OPEN <container.cdx>
+  LMDB OPEN <envdir.cdx.d>
+  LMDB OPEN <stem>
+  LMDB USE <TAG>
+  LMDB SEEK <key>
+  LMDB DUMP [<max>]
+  LMDB SCAN <low> <high>
+  LMDB CLOSE
+notes:
+  LMDB is a thin wrapper over the current area IndexManager/CDX backend.
+  Bare stems are resolved through the INDEXES path slot.
+  Runtime status and error output is intentionally separate from this usage contract.
+related:
+  SET INDEX
+  SET ORDER
+  CDX
+  CNX
+)DTUSAGE";
 
 inline std::string trim_copy(const std::string& s) { return textio::trim(s); }
 
@@ -100,14 +184,22 @@ static std::string resolve_container_token(const std::string& token) {
 
 static void lmdb_help() {
     std::cout
-        << "LMDB command (per-area):\n"
+        << "Usage:\n"
+        << "  LMDB USAGE\n"
         << "  LMDB INFO\n"
-        << "  LMDB OPEN <container.cdx | envdir.cdx.d | stem>\n"
-        << "  LMDB USE  <TAG>\n"
+        << "  LMDB OPEN <container.cdx>\n"
+        << "  LMDB OPEN <envdir.cdx.d>\n"
+        << "  LMDB OPEN <stem>\n"
+        << "  LMDB USE <tag>\n"
         << "  LMDB SEEK <key>\n"
-        << "  LMDB DUMP [<max>]\n"
+        << "  LMDB DUMP\n"
+        << "  LMDB DUMP <max>\n"
         << "  LMDB SCAN <low> <high>\n"
-        << "  LMDB CLOSE\n";
+        << "  LMDB CLOSE\n"
+        << "Notes:\n"
+        << "  - LMDB is per-area and uses the current DbArea IndexManager/CDX backend.\n"
+        << "  - Bare stems resolve through the INDEXES path slot.\n"
+        << "  - LMDB_UTIL is deprecated and disabled.\n";
 }
 
 static std::string key_bytes_to_text(const xindex::Key& kb) {
@@ -129,8 +221,13 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
     iss >> sub;
     sub = upper_copy(sub);
 
-    if (sub.empty() || sub == "HELP" || sub == "?") {
+    if (sub.empty() || sub == "USAGE" || sub == "HELP" || sub == "?") {
         lmdb_help();
+        return;
+    }
+
+    if (!db.isOpen() && sub != "INFO" && sub != "CLOSE") {
+        std::cout << "* LMDB " << sub << ": no table open in current area\n";
         return;
     }
 

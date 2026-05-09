@@ -1,6 +1,93 @@
 // src/cli/cmd_set.cpp
 // FoxPro-style SET command router for DotTalk++
 
+// @dottalk.usage v1
+// owner: DOT|SET
+// command: SET
+// category: settings
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: settings output-routing table-buffer order-state filter-state relation-state path-state
+// usage-access: SET USAGE
+// summary:
+//   General SET dispatcher for session settings, output routing, table buffering,
+//   paths, case/near behavior, and index/order/filter/relation subcommands.
+//
+// usage:
+//   SET
+//   SET USAGE
+//   SET TABLE BUFFER ON
+//   SET TABLE BUFFER OFF
+//   SET TABLE BUFFER ON ALL
+//   SET TABLE BUFFER OFF ALL
+//   SET CONSOLE ON
+//   SET CONSOLE OFF
+//   SET PRINT ON
+//   SET PRINT OFF
+//   SET PRINT TO <file>
+//   SET DEVICE TO SCREEN
+//   SET DEVICE TO FILE <path>
+//   SET DEVICE TO PRINTER
+//   SET DEVICE TO NULL
+//   SET ALTERNATE ON
+//   SET ALTERNATE OFF
+//   SET ALTERNATE TO <file>
+//   SET TALK ON
+//   SET TALK OFF
+//   SET ECHO ON
+//   SET ECHO OFF
+//   SET PAGING ON
+//   SET PAGING OFF
+//   SET WRAP ON
+//   SET WRAP OFF
+//   SET DELETED ON
+//   SET DELETED OFF
+//   SET CASE ON
+//   SET CASE OFF
+//   SET NEAR ON
+//   SET NEAR OFF
+//   SET EDITOR TO <value>
+//   SET EDITOR TO DEFAULT
+//   SET EDITOR TO OFF
+//   SET PATH <slot> <path>
+//   SET INDEX <args>
+//   SET ORDER <args>
+//   SET FILTER <args>
+//   SET RELATION <args>
+//   SET CNX <args>
+//   SET CDX <args>
+//   SET LMDB <args>
+//
+// notes:
+//   SET with no arguments shows usage.
+//   SET USAGE shows usage without mutating settings.
+//   SET PATH, INDEX, ORDER, FILTER, RELATION, CNX, CDX, and LMDB delegate to their command handlers.
+//   Output routing settings mutate session output behavior only.
+//   TABLE BUFFER toggles table buffering state for the current area or all open areas.
+//   SET CASE and SET NEAR mutate expression/search behavior settings.
+//   SET may mutate table-buffer, order, path, relation, filter, and output state depending on the option.
+//
+// risk:
+//   mutates_session_settings: yes
+//   mutates_output_routing: CONSOLE PRINT DEVICE ALTERNATE ECHO PAGING WRAP
+//   mutates_table_buffer_state: TABLE BUFFER
+//   mutates_path_state: PATH
+//   mutates_index_order_state: INDEX ORDER CNX CDX LMDB
+//   mutates_filter_state: FILTER
+//   mutates_relation_state: RELATION RELATIONS
+//   mutates_table_data: no direct table-data mutation
+//
+// related:
+//   SETPATH
+//   SETINDEX
+//   SETORDER
+//   SETFILTER
+//   SET_RELATION
+//   SETCASE
+//   SETNEAR
+//
+
 #include "xbase.hpp"
 
 #include <algorithm>
@@ -65,7 +152,10 @@ static void print_set_usage() {
     auto& out = cli::OutputRouter::instance().out();
 
     out
-        << "Usage: SET <option> [args]\n"
+        << "Usage:\n"
+        << "  SET\n"
+        << "  SET USAGE\n"
+        << "  SET <option> [args]\n"
         << "Public options:\n"
         << "  SET TABLE BUFFER ON|OFF [ALL]\n"
         << "  SET CONSOLE ON|OFF\n"
@@ -83,6 +173,7 @@ static void print_set_usage() {
         << "  SET NEAR ON|OFF\n"
         << "  SET EDITOR TO <value|DEFAULT|OFF>\n"
         << "  SET PATH <slot> <path>\n"
+        << "  SET UNIQUE FIELD <name> ON|OFF\n"
         << "  SET TIMER ON|OFF\n"
         << "  SET POLLING ON|OFF\n"
         << "  SET INDEX TO <file>\n"
@@ -116,6 +207,11 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         return;
     }
     opt = up_copy(opt);
+
+    if (opt == "USAGE" || opt == "HELP" || opt == "?") {
+        print_set_usage();
+        return;
+    }
 
     // ─────────────────────────────────────────────────────────────
     // SET TABLE BUFFER
@@ -553,6 +649,15 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         }
 
         out << "Usage: SET DEVICE TO SCREEN|FILE <path>|PRINTER [name]|NULL\n";
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SET UNIQUE
+    // ─────────────────────────────────────────────────────────────
+    if (opt == "UNIQUE") {
+        std::istringstream r(rest(args));
+        cmd_SET_UNIQUE(A, r);
         return;
     }
 

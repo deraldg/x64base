@@ -15,6 +15,44 @@
 // - Does not depend on cmd_help.cpp internals.
 // - Category order matches grouped HELP output.
 
+// @dottalk.usage v1
+// owner: DOT|EXPORTFUNCTIONS
+// command: EXPORTFUNCTIONS
+// category: help
+// status: supported
+// noargs: create
+// effect: export
+// mutates: filesystem
+// usage-access: EXPORTFUNCTIONS USAGE
+// summary:
+//   Export the expression/function catalog to Markdown documentation.
+//
+// usage:
+//   EXPORTFUNCTIONS
+//   EXPORTFUNCTIONS USAGE
+//   EXPORTFUNCTIONS MD
+//   EXPORTFUNCTIONS MD <path>
+//   EXPORTFUNCTIONS <path>
+//
+// notes:
+//   EXPORTFUNCTIONS with no arguments writes ./data/docs/functions.md.
+//   EXPORTFUNCTIONS MD writes the default Markdown output.
+//   EXPORTFUNCTIONS MD <path> writes Markdown to the supplied path.
+//   EXPORTFUNCTIONS <path> treats the argument as the Markdown output path.
+//   EXPORTFUNCTIONS USAGE prints usage and does not write files.
+//   The expression function catalog remains the source of truth.
+//
+// risk:
+//   writes_files: yes except usage
+//   overwrites_output: yes, target path is truncated by ofstream
+//   mutates_table_data: no
+//
+// related:
+//   HELP
+//   CMDHELP
+//   DOTHELP
+//
+
 #include "xbase.hpp"
 #include "cli/expr/function_catalog.hpp"
 
@@ -227,6 +265,7 @@ void show_usage()
     std::cout
         << "Usage:\n"
         << "  EXPORTFUNCTIONS\n"
+        << "  EXPORTFUNCTIONS USAGE\n"
         << "  EXPORTFUNCTIONS MD\n"
         << "  EXPORTFUNCTIONS MD <path>\n"
         << "  EXPORTFUNCTIONS <path>\n\n"
@@ -245,7 +284,10 @@ void cmd_EXPORTFUNCTIONS(xbase::DbArea& /*area*/, std::istringstream& iss)
     std::getline(iss >> std::ws, second);
     second = trim(second);
 
-    if (to_upper(first) == "HELP" || to_upper(first) == "/?" || to_upper(first) == "-?") {
+    if (to_upper(first) == "USAGE" || to_upper(first) == "HELP" ||
+        to_upper(first) == "?" || to_upper(first) == "/?" ||
+        to_upper(first) == "-?" || to_upper(first) == "-H" ||
+        to_upper(first) == "--HELP") {
         show_usage();
         return;
     }

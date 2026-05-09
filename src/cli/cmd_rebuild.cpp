@@ -16,6 +16,48 @@
 // - REINDEX CNX -> calls REBUILD
 // - This file is the CNX execution engine / orchestrator
 
+// @dottalk.usage v1
+// owner: DOT|REBUILD
+// command: REBUILD
+// category: index
+// status: supported
+// noargs: mutate
+// effect: rebuild
+// mutates: cnx-index table-stale-state
+// usage-access: REBUILD USAGE
+// summary:
+//   Rebuild a CNX container for the current table, using the active CNX or a
+//   supplied CNX name/path and clearing TABLE stale state on success.
+//
+// usage:
+//   REBUILD USAGE
+//   REBUILD
+//   REBUILD <name-or-path.cnx>
+//
+// notes:
+//   REBUILD with no arguments uses the current CNX or defaults to <table>.cnx.
+//   REBUILD requires an open table except for REBUILD USAGE.
+//   REBUILD prompts to COMMIT dirty TABLE buffers before rebuilding.
+//   REBUILD refuses to continue if the table remains dirty after COMMIT.
+//   REBUILD opens the CNX tag directory once for reporting.
+//   The CNX backend rebuilds all tags in the container in one rebuild call.
+//   On success, TABLE STALE is cleared for the current area when table buffering is enabled.
+//
+// risk:
+//   writes_index_file: yes
+//   reads_cnx_tagdir: yes
+//   may_commit_buffered_table_data: yes when dirty TABLE is accepted
+//   clears_stale_state: yes on success
+//   mutates_table_data: indirectly through COMMIT prompt only
+//   requires_open_table: yes except usage
+//
+// related:
+//   REINDEX
+//   CNX
+//   COMMIT
+//   TABLE
+//
+
 #include "xbase.hpp"
 
 #include "cnx/cnx.hpp"
@@ -133,27 +175,32 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
 static void print_help()
 {
     std::cout
-        << "REBUILD [<name-or-path.cnx>]\n"
-        << "  Rebuilds the CNX container once.\n"
-        << "  CNX backend rebuilds all tags in the container.\n"
-        << "  No args: uses current CNX or defaults to <table>.cnx\n";
+        << "Usage:\n"
+        << "  REBUILD USAGE\n"
+        << "  REBUILD\n"
+        << "  REBUILD <name-or-path.cnx>\n"
+        << "Notes:\n"
+        << "  - Rebuilds the CNX container once.\n"
+        << "  - No args uses current CNX or defaults to <table>.cnx.\n"
+        << "  - Dirty TABLE buffers are committed only after confirmation.\n";
 }
 
 } // namespace
 
 void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
 {
-    const int area0 = resolve_current_index(A);
-    if (!ensure_clean_or_commit(A, area0, "REBUILD")) return;
-
     std::string arg;
     if (in >> arg) {
         const std::string up = up_copy(arg);
-        if (up == "HELP" || up == "/?" || up == "-H" || up == "--HELP") {
+        if (up == "USAGE" || up == "HELP" || up == "?" ||
+            up == "/?" || up == "-H" || up == "--HELP") {
             print_help();
             return;
         }
     }
+
+    const int area0 = resolve_current_index(A);
+    if (!ensure_clean_or_commit(A, area0, "REBUILD")) return;
 
     if (!A.isOpen()) {
         std::cout << "REBUILD: no table open.\n";

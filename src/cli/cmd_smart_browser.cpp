@@ -1,4 +1,48 @@
 // src/cli/cmd_smart_browser.cpp
+// @dottalk.usage v1
+// owner: DOT|SMART_BROWSER
+// command: SMART_BROWSER
+// category: browser
+// status: supported
+// noargs: interactive
+// effect: browse
+// mutates: cursor
+// usage-access: SMART_BROWSER USAGE
+// summary:
+//   Interactive tuple-stream smart browser with paging, relation child browsing,
+//   schema/json display toggles, filtering, navigation, and breadcrumbs.
+//
+// usage:
+//   SMART_BROWSER
+//   SMART_BROWSER USAGE
+//   SMART_BROWSER <spec>
+//   SMART_BROWSER <spec> FOR <expr>
+//   SMART_BROWSER <spec> PAGESIZE <n>
+//   SMART_BROWSER <spec> SHOW SCHEMA
+//   SMART_BROWSER <spec> SHOW JSON
+//   SMART_BROWSER <spec> STATUS VERBOSE
+//   SMARTBROWSER
+//   SMARTBROWSER USAGE
+//
+// notes:
+//   SMART_BROWSER with no arguments opens the interactive browser using default spec.
+//   SMARTBROWSER is an alias entrypoint.
+//   The browser is read-only for table data but traverses tuple streams and may move cursors.
+//   Work-area cursors are restored best-effort when the browser exits.
+//   Interactive pager commands include TOP, BOTTOM, SKIP, GOTO, FOR, CLEAR FOR, ORDER, SPEC, SHOW, OPEN CHILD, BACK, STATUS, HELP, and QUIT.
+//
+// risk:
+//   interactive_prompt: yes
+//   mutates_cursor: temporary during browsing
+//   cursor_restore: best effort
+//   mutates_table_data: no
+//
+// related:
+//   SMARTLIST
+//   TUPLE
+//   RBROWSE
+//
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -71,6 +115,30 @@ static std::string trim(std::string s) {
     return s;
 }
 static std::string up(std::string s) { for (auto& c : s) c = (char)std::toupper((unsigned char)c); return s; }
+
+static void print_smart_browser_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SMART_BROWSER\n"
+        << "  SMART_BROWSER USAGE\n"
+        << "  SMART_BROWSER <spec>\n"
+        << "  SMART_BROWSER <spec> FOR <expr>\n"
+        << "  SMART_BROWSER <spec> PAGESIZE <n>\n"
+        << "  SMART_BROWSER <spec> SHOW SCHEMA\n"
+        << "  SMART_BROWSER <spec> SHOW JSON\n"
+        << "  SMART_BROWSER <spec> STATUS VERBOSE\n"
+        << "  SMARTBROWSER\n"
+        << "  SMARTBROWSER USAGE\n";
+}
+
+static bool is_smart_browser_usage_request(std::string raw)
+{
+    raw = up(trim(raw));
+    if (raw.rfind("SMART_BROWSER ", 0) == 0) raw = up(trim(raw.substr(14)));
+    if (raw.rfind("SMARTBROWSER ", 0) == 0) raw = up(trim(raw.substr(13)));
+    return raw == "USAGE" || raw == "HELP" || raw == "?";
+}
 
 struct PagerState { bool show_schema=false, show_json=false, status_verbose=false; };
 struct StreamCtx { std::string spec; std::string filter; };
@@ -260,6 +328,12 @@ static void run_smart_browser(std::istringstream& iss) {
 
 void cmd_SMART_BROWSER(xbase::DbArea& /*A*/, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_smart_browser_usage_request(raw_args)) {
+        print_smart_browser_usage();
+        return;
+    }
+
     WorkAreaCursorRestore __restore; // keep SMARTBROWSER read-only w.r.t. workarea cursors
     run_smart_browser(iss);
 }

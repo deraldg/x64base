@@ -17,6 +17,37 @@
 // engine access: compute area slot without changing DbArea API
 extern "C" xbase::XBaseEngine* shell_engine();
 
+// @dottalk.usage v1
+// owner: DOT|DBAREA
+// command: DBAREA
+// category: workspace
+// status: supported
+// noargs: report
+// effect: report
+// mutates: no
+// usage-access: DBAREA USAGE
+// summary:
+//   Report the current DbArea/work-area state, including file identity,
+//   logical name, record counts, current record, active order/index status,
+//   and field structure.
+//
+// usage:
+//   DBAREA
+//   DBAREA USAGE
+//
+// notes:
+//   DBAREA with no arguments is a read-only report for the current work area.
+//   The current implementation receives an argument stream but does not consume it.
+//   Slot, ALL, and relation-context report forms are currently implemented by DBAREAS.
+//   Keep DBAREA focused as the canonical single-area report.
+//
+// related:
+//   DBAREAS
+//   WORKSPACE
+//   STATUS
+//   STRUCT
+//
+
 namespace {
 static inline std::string rtrim_copy(std::string s){
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();

@@ -1,9 +1,19 @@
 // ============================================================================
 // File: src/cli/cmdhelp.cpp
 // ============================================================================
-// Adds mode switch:
-//   - BUILD  : build DBFs (same behavior as before), then print report
-//   - (none) : show existing DBFs (commands.dbf/cmd_args.dbf) in same report
+// Current HELP DATA command surface.
+//
+// Doctrine:
+//   CMDHELP BUILD          -> build current HELP DATA DBFs
+//   CMDHELP BUILD V2       -> silent compatibility alias for CMDHELP BUILD
+//   CMDHELP BUILD LEGACY   -> old commands.dbf/cmd_args.dbf builder
+//   CMDHELP                -> report current HELP DATA from help_line.dbf
+//   CMDHELP LEGACY         -> report old commands.dbf/cmd_args.dbf
+//   CMDHELP USAGE          -> usage
+//
+// Notes:
+//   The legacy writer/reader remains in this file only as an explicit
+//   compatibility path.  It is no longer the default build/report surface.
 //
 #include "cmdhelp.hpp"
 
@@ -17,6 +27,8 @@
 #include <iostream>
 #include <regex>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,6 +36,7 @@
 
 #include "xbase.hpp"
 #include "edref.hpp"
+#include "helpdata_cmdhelp_bridge.hpp"
 
 // Optional setpath-aware slot resolving (HELP slot).
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
@@ -59,8 +72,8 @@ static fs::path help_root_dir() {
 // - relative => interpreted relative to HELP slot directory
 static fs::path resolve_help_dir_arg(const std::string& argRaw) {
     std::string a = argRaw;
-    while (!a.empty() && std::isspace((unsigned char)a.front())) a.erase(a.begin());
-    while (!a.empty() && std::isspace((unsigned char)a.back())) a.pop_back();
+    while (!a.empty() && std::isspace(static_cast<unsigned char>(a.front()))) a.erase(a.begin());
+    while (!a.empty() && std::isspace(static_cast<unsigned char>(a.back()))) a.pop_back();
     if (a.empty() || a == ".") return help_root_dir();
     fs::path p(a);
     if (p.is_absolute()) return p;
@@ -81,6 +94,50 @@ static std::string make_cmdkey(const std::string& catalog, const std::string& co
     return up(catalog) + "|" + up(command);
 }
 
+static std::vector<std::string> split_words(const std::string& s) {
+    std::vector<std::string> out;
+    std::istringstream ss(s);
+    std::string w;
+    while (ss >> w) out.push_back(w);
+    return out;
+}
+
+static bool is_expression_function_name(const std::string& name) {
+    static const std::unordered_set<std::string> names = {
+        "ABS","ACOS","ALLTRIM","ASC","ASIN","AT","ATAN","ATC","BETWEEN",
+        "CDOW","CEILING","CHR","CHRTRAN","CMONTH","CONCAT","COS","CTOD",
+        "DATE","DATEADD","DATEDIFF","DATETIME","DAY","DOW","DTOC","DTOS",
+        "EMPTY","EXP","FLOOR","GOMONTH","INT","LEFT","LEN","LIKE","LOG",
+        "LOG10","LOWER","LTRIM","MAX","MIN","MOD","MONTH","NOW","RAND",
+        "RAT","REPLICATE","RIGHT","ROUND","RTRIM","SECONDS","SIN","SOUNDEX",
+        "SPACE","SQRT","STR","STRTRAN","SUBSTR","TAN","TIME","TODAY",
+        "TRANSFORM","TRIM","UPPER","VAL","YEAR"
+    };
+    return names.count(up(name)) != 0;
+}
+
+static bool is_developer_surface_name(const std::string& name) {
+    const std::string n = up(name);
+    return n.find("LMDB") != std::string::npos ||
+           n.find("_BUFFER") != std::string::npos ||
+           n == "TABLE_BUFFER" ||
+           n == "SCAN_BUFFER" ||
+           n == "LOOP_BUFFER" ||
+           n == "WHILE_BUFFER" ||
+           n == "UNTIL_BUFFER";
+}
+
+static std::string generated_pending_summary(const std::string& name) {
+    const std::string n = up(name);
+    if (is_expression_function_name(n)) {
+        return n + " is expression/function-style help; verify whether it belongs in the function catalog rather than native command help.";
+    }
+    if (is_developer_surface_name(n)) {
+        return n + " is a developer/diagnostic command surface; curated DOTREF help is pending.";
+    }
+    return n + " is a registered DotTalk++ command; curated DOTREF support status and help summary are pending.";
+}
+
 // FoxRef syntax -> likely switches
 std::vector<std::string> switches_from_syntax(const std::string& syntax) {
     static const std::unordered_set<std::string> IGN = {
@@ -98,7 +155,7 @@ std::vector<std::string> switches_from_syntax(const std::string& syntax) {
     std::string t;
     for (char c : syntax) {
         if (std::isalnum(static_cast<unsigned char>(c)) || c == '_') {
-            t.push_back(static_cast<char>(std::toupper(c)));
+            t.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
         } else {
             if (!t.empty()) {
                 if (!IGN.count(t) && LIKELY.count(t)) out.push_back(t);
@@ -127,7 +184,9 @@ std::string command_hint_from_path(const fs::path& p) {
     return {};
 }
 
-// Broader mining: tokens, NO* toggles, SET <OPT> ON|OFF, string flags
+// Broader mining: tokens, NO* toggles, SET <OPT> ON|OFF, string flags.
+// This is legacy cmd_args support only.  Current HELP DATA mining lives in
+// src/help/helpdata_source_miner.cpp.
 std::unordered_map<std::string, std::set<std::string>>
 scan_sources_for_switches(const std::vector<std::string>& roots)
 {
@@ -433,14 +492,16 @@ static void write_dbf_with_memo(const std::string& dbf_path,
     out.write(&eof, 1);
 }
 
-// ==== minimal DBF/DBT reader (for SHOW mode) =================================
+// ==== minimal DBF/DBT reader (for SHOW/report mode) ==========================
 
 class DBTReader {
 public:
     explicit DBTReader(const std::string& path)
         : path_(path), blockSize_(512)
     {
-        in_.open(path_, std::ios::binary);
+        if (!path_.empty()) {
+            in_.open(path_, std::ios::binary);
+        }
         valid_ = in_.good();
     }
 
@@ -518,6 +579,7 @@ static bool read_dbf_with_memo(const std::string& dbf_path,
     for (uint32_t r = 0; r < hdr.nrecs; ++r) {
         char delFlag = 0;
         in.read(&delFlag, 1);
+        (void)delFlag;
 
         std::vector<std::string> row;
         row.reserve(nfields);
@@ -541,6 +603,22 @@ static bool read_dbf_with_memo(const std::string& dbf_path,
     }
 
     return true;
+}
+
+static int dbf_field_index(const DbfTable& tbl, const char* wanted) {
+    const std::string W = up(wanted);
+    for (int i = 0; i < static_cast<int>(tbl.fields.size()); ++i) {
+        std::string fn(tbl.fields[static_cast<size_t>(i)].name,
+                       tbl.fields[static_cast<size_t>(i)].name +
+                           strnlen(tbl.fields[static_cast<size_t>(i)].name, 11));
+        if (up(fn) == W) return i;
+    }
+    return -1;
+}
+
+static std::string dbf_cell(const std::vector<std::string>& row, int ix) {
+    if (ix < 0 || ix >= static_cast<int>(row.size())) return {};
+    return row[static_cast<size_t>(ix)];
 }
 
 // ==== end utils ==============================================================
@@ -613,7 +691,7 @@ std::vector<CommandInfo> collect_commands() {
             ci.implemented = true;
             ci.supported = false;
             ci.usage.clear();
-            ci.verbose = "Homegrown command.";
+            ci.verbose = generated_pending_summary(key);
             out.push_back(std::move(ci));
         }
     }
@@ -667,6 +745,7 @@ std::vector<ArgInfo> collect_args(const std::vector<CommandInfo>& cmds,
             }
         }
 
+        // Legacy cmd_args compatibility kept exactly as broad scope rows.
         for (auto k : {"FOR","WHILE","NEXT","RECORD","REST"}) {
             per_cmd[key].insert(k);
         }
@@ -755,7 +834,7 @@ void print_commands_report(std::ostream& os, const std::vector<CommandInfo>& cmd
     }
 }
 
-// === DBF export with memo ====================================================
+// === legacy DBF export with memo =============================================
 
 DbfWriteCounts export_dbfs(const std::string& out_dir,
                            const std::vector<std::string>& source_roots)
@@ -828,7 +907,7 @@ DbfWriteCounts export_dbfs(const std::string& out_dir,
     return { static_cast<int>(rows_cmd.size()), static_cast<int>(rows_arg.size()) };
 }
 
-// === SHOW (read existing DBFs) ===============================================
+// === legacy SHOW (read existing commands/cmd_args DBFs) ======================
 
 class CmdDbfLoader {
 public:
@@ -899,6 +978,584 @@ public:
     }
 };
 
+// === current HELP DATA report ================================================
+
+static bool load_help_line_table(const std::string& dir, DbfTable& out) {
+    const std::string dbf = (fs::path(dir) / "help_line.dbf").string();
+    return read_dbf_with_memo(dbf, std::string(), out);
+}
+
+static void print_count_map(const char* title, const std::unordered_map<std::string, int>& counts) {
+    std::vector<std::pair<std::string, int>> rows(counts.begin(), counts.end());
+    std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) {
+        return a.first < b.first;
+    });
+
+    std::cout << "\n" << title << ":\n";
+    for (const auto& kv : rows) {
+        std::cout << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
+    }
+}
+
+static void print_current_help_report(const std::string& dir) {
+    DbfTable tbl;
+    if (!load_help_line_table(dir, tbl)) {
+        std::cout << "CMDHELP: could not read current HELP DATA in \"" << dir << "\".\n"
+                  << "Expected: help_line.dbf\n"
+                  << "Tip: run: CMDHELP BUILD . <source-root>\n";
+        return;
+    }
+
+    const int ix_topic_key = dbf_field_index(tbl, "TOPICKEY");
+    const int ix_kind      = dbf_field_index(tbl, "KIND");
+    const int ix_source    = dbf_field_index(tbl, "SOURCE");
+    const int ix_confid    = dbf_field_index(tbl, "CONFID");
+    const int ix_role      = dbf_field_index(tbl, "ROLE");
+    const int ix_text      = dbf_field_index(tbl, "TEXT");
+
+    if (ix_topic_key < 0 || ix_kind < 0 || ix_source < 0 || ix_text < 0) {
+        std::cout << "CMDHELP: help_line.dbf is missing expected columns.\n"
+                  << "Need at least TOPICKEY, KIND, SOURCE, TEXT.\n";
+        return;
+    }
+
+    std::set<std::string> topics;
+    std::unordered_map<std::string, int> by_kind;
+    std::unordered_map<std::string, int> by_source;
+
+    for (const auto& r : tbl.rows) {
+        const std::string topic = dbf_cell(r, ix_topic_key);
+        const std::string kind = dbf_cell(r, ix_kind);
+        const std::string source = dbf_cell(r, ix_source);
+
+        if (!topic.empty()) topics.insert(topic);
+        by_kind[kind.empty() ? "(blank)" : kind]++;
+        by_source[source.empty() ? "(blank)" : source]++;
+    }
+
+    std::cout << "CMDHELP Report (current HELP DATA)\n";
+    std::cout << "  directory : " << dir << "\n";
+    std::cout << "  line rows : " << tbl.rows.size() << "\n";
+    std::cout << "  topics    : " << topics.size() << "\n";
+
+    print_count_map("By KIND", by_kind);
+    print_count_map("By SOURCE", by_source);
+
+    std::cout << "\nPreview rows\n";
+    std::cout << std::left
+              << std::setw(20) << "TOPICKEY"
+              << std::setw(14) << "KIND"
+              << std::setw(16) << "SOURCE"
+              << std::setw(14) << "CONFID"
+              << std::setw(10) << "ROLE"
+              << "TEXT\n";
+    std::cout << "--------------------------------------------------------------------------------\n";
+
+    int shown = 0;
+    for (const auto& r : tbl.rows) {
+        if (shown >= 24) break;
+
+        std::string text = dbf_cell(r, ix_text);
+        for (char& ch : text) {
+            if (ch == '\n' || ch == '\r' || ch == '\t') ch = ' ';
+        }
+        if (text.size() > 100) text.resize(100);
+
+        std::cout << std::left
+                  << std::setw(20) << dbf_cell(r, ix_topic_key).substr(0, 19)
+                  << std::setw(14) << dbf_cell(r, ix_kind).substr(0, 13)
+                  << std::setw(16) << dbf_cell(r, ix_source).substr(0, 15)
+                  << std::setw(14) << dbf_cell(r, ix_confid).substr(0, 13)
+                  << std::setw(10) << dbf_cell(r, ix_role).substr(0, 9)
+                  << text << "\n";
+        ++shown;
+    }
+}
+
+
+// === current topic rendering =================================================
+
+struct HelpLineView {
+    std::string topic_key;
+    std::string topic;
+    std::string kind;
+    std::string source;
+    std::string confid;
+    std::string role;
+    int line_no{0};
+    int part_no{0};
+    std::string text;
+};
+
+static int safe_int_cell(const std::vector<std::string>& row, int ix) {
+    try {
+        const std::string s = dbf_cell(row, ix);
+        if (s.empty()) return 0;
+        return std::stoi(s);
+    } catch (...) {
+        return 0;
+    }
+}
+
+static std::string topic_suffix(const std::string& topickey) {
+    const auto pos = topickey.find('|');
+    if (pos == std::string::npos) return up(topickey);
+    return up(topickey.substr(pos + 1));
+}
+
+static std::string topic_catalog(const std::string& topickey) {
+    const auto pos = topickey.find('|');
+    if (pos == std::string::npos) return {};
+    return up(topickey.substr(0, pos));
+}
+
+static int catalog_rank(const std::string& key) {
+    const std::string c = topic_catalog(key);
+    if (c == "DOT") return 0;
+    if (c == "FOX") return 1;
+    if (c == "ED")  return 2;
+    if (c == "FUNC") return 3;
+    if (c == "MSG") return 4;
+    return 9;
+}
+
+static int kind_rank(const std::string& kind_raw) {
+    const std::string k = up(kind_raw);
+    if (k == "SUMMARY")     return 10;
+    if (k == "USAGE")       return 20;
+    if (k == "SYNTAX")      return 30;
+    if (k == "ARGUMENT")    return 40;
+    if (k == "EXAMPLE")     return 50;
+    if (k == "NOTE")        return 60;
+    if (k == "WARNING")     return 70;
+    if (k == "ERROR")       return 80;
+    if (k == "RELATED")     return 90;
+    if (k == "DEPRECATION") return 100;
+    if (k == "HINT")        return 110;
+    if (k == "STATUS")      return 900;
+    if (k == "SOURCE_FACT") return 910;
+    return 500;
+}
+
+static int source_rank(const std::string& source_raw) {
+    const std::string s = up(source_raw);
+    if (s == "USAGE_CONTRACT") return 0;
+    if (s == "CURATED_DOC")    return 1;
+    if (s == "DOTREF")         return 2;
+    if (s == "FOXREF")         return 3;
+    if (s == "EDREF")          return 4;
+    if (s == "REGISTRY")       return 5;
+    if (s == "SHARED_MSG")     return 6;
+    if (s == "SOURCE_MINER")   return 9;
+    return 7;
+}
+
+enum class TopicRenderMode {
+    Full,
+    Usage
+};
+
+static bool render_kind_default(const std::string& kind_raw) {
+    const std::string k = up(kind_raw);
+    return k == "SUMMARY" ||
+           k == "USAGE" ||
+           k == "SYNTAX" ||
+           k == "EXAMPLE" ||
+           k == "NOTE" ||
+           k == "WARNING" ||
+           k == "ERROR" ||
+           k == "RELATED" ||
+           k == "DEPRECATION" ||
+           k == "HINT";
+}
+
+static bool render_kind_usage(const std::string& kind_raw) {
+    const std::string k = up(kind_raw);
+    return k == "USAGE" ||
+           k == "SYNTAX" ||
+           k == "EXAMPLE";
+}
+
+static bool starts_with_ci(const std::string& text, const std::string& prefix) {
+    if (prefix.size() > text.size()) return false;
+    return up(text.substr(0, prefix.size())) == up(prefix);
+}
+
+static std::string trimmed_copy_local(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static bool contains_ci(const std::string& text, const std::string& needle) {
+    return up(text).find(up(needle)) != std::string::npos;
+}
+
+static bool is_source_evidence_text(const std::string& raw) {
+    const std::string s = trimmed_copy_local(raw);
+    const std::string u = up(s);
+
+    if (s.empty()) return true;
+
+    // Source/evidence rows are useful for CMDHELPCHK and future DETAILS mode,
+    // but they should not be user-facing topic help.
+    if (contains_ci(s, " pattern=")) return true;
+    if (contains_ci(s, "pattern=")) return true;
+    if (contains_ci(s, " version=")) return true;
+    if (contains_ci(s, " function=")) return true;
+    if (contains_ci(s, "Mined from command-local usage/help output")) return true;
+
+    // Windows / POSIX source path evidence, e.g. d:/code/... or src/cli/...
+    if (contains_ci(s, ":/code/")) return true;
+    if (contains_ci(s, ":\\code\\")) return true;
+    if (starts_with_ci(s, "src/") || starts_with_ci(s, "./src/")) return true;
+    if (starts_with_ci(s, "d:/") || starts_with_ci(s, "c:/")) return true;
+
+    // Contract metadata should not leak into rendered USAGE.
+    if (starts_with_ci(s, "owner=")) return true;
+    if (starts_with_ci(s, "command=")) return true;
+    if (starts_with_ci(s, "category=")) return true;
+    if (starts_with_ci(s, "status=")) return true;
+    if (starts_with_ci(s, "noargs=")) return true;
+    if (starts_with_ci(s, "usage-access=")) return true;
+    if (starts_with_ci(s, "source=")) return true;
+    if (starts_with_ci(s, "confidence=")) return true;
+
+    if (u == "COMMAND-OWNED @DOTTALK.USAGE V1 SUMMARY.") return true;
+
+    return false;
+}
+
+static bool usage_or_syntax_line_looks_runnable(const HelpLineView& h) {
+    std::string s = trimmed_copy_local(h.text);
+    if (s.empty()) return false;
+
+    const std::string cmd = topic_suffix(h.topic_key);
+    const std::string cmdU = up(cmd);
+    const std::string sU = up(s);
+
+    // Evidence/metadata has already been filtered separately, but keep this
+    // guard local because usage/syntax sections are the most visible.
+    if (is_source_evidence_text(s)) return false;
+
+    // Suppress labels/descriptions that were mined too broadly.
+    if (sU == cmdU + " SYNTAX") return false;
+    if (sU == cmdU + " USAGE") return false;
+    if (sU == "SYNTAX" || sU == "USAGE" || sU == "SUBCOMMANDS:" || sU == "EXAMPLES:") return false;
+
+    // Preferred form: full topic suffix starts the row.
+    // Examples: "SET ORDER TO <tag>", "REL LIST [ALL]".
+    if (starts_with_ci(s, cmd)) {
+        return true;
+    }
+
+    // Fallback for compound topics and compatibility aliases:
+    // use the first word of the topic.  This lets DOT|REL_ENUM show REL...
+    // but still blocks arbitrary note lines like "asymmetric relation".
+    const auto words = split_words(cmd);
+    if (!words.empty() && starts_with_ci(s, words.front() + " ")) {
+        return true;
+    }
+
+    return false;
+}
+
+static bool should_render_topic_line(const HelpLineView& h, TopicRenderMode mode) {
+    const std::string k = up(h.kind);
+    const std::string source = up(h.source);
+
+    if (is_source_evidence_text(h.text)) {
+        return false;
+    }
+
+    // Source facts, registry status, and mined argument candidates are
+    // validator material, not ordinary topic help.
+    if (k == "SOURCE_FACT" || k == "STATUS" || k == "ARGUMENT") {
+        return false;
+    }
+
+    if (mode == TopicRenderMode::Usage) {
+        if (!render_kind_usage(k)) return false;
+    } else {
+        if (!render_kind_default(k)) return false;
+    }
+
+    if (k == "USAGE" || k == "SYNTAX") {
+        if (!usage_or_syntax_line_looks_runnable(h)) {
+            return false;
+        }
+    }
+
+    // In topic rendering, SOURCE_MINER is allowed only when it found a
+    // recognizable runnable form.  Broader source-mined notes/evidence stay
+    // available to CMDHELPCHK instead of polluting user help.
+    if (source == "SOURCE_MINER" && !(k == "USAGE" || k == "SYNTAX" || k == "EXAMPLE")) {
+        return false;
+    }
+
+    return true;
+}
+
+
+static std::string join_words_range(const std::vector<std::string>& words, size_t first, size_t last_exclusive) {
+    std::string out;
+    for (size_t i = first; i < last_exclusive && i < words.size(); ++i) {
+        if (!out.empty()) out += ' ';
+        out += words[i];
+    }
+    return out;
+}
+
+static std::vector<HelpLineView> load_current_help_lines(const std::string& dir) {
+    DbfTable tbl;
+    if (!load_help_line_table(dir, tbl)) {
+        return {};
+    }
+
+    const int ix_topic_key = dbf_field_index(tbl, "TOPICKEY");
+    const int ix_topic     = dbf_field_index(tbl, "TOPIC");
+    const int ix_kind      = dbf_field_index(tbl, "KIND");
+    const int ix_source    = dbf_field_index(tbl, "SOURCE");
+    const int ix_confid    = dbf_field_index(tbl, "CONFID");
+    const int ix_role      = dbf_field_index(tbl, "ROLE");
+    const int ix_line_no   = dbf_field_index(tbl, "LINE_NO");
+    const int ix_part_no   = dbf_field_index(tbl, "PART_NO");
+    const int ix_text      = dbf_field_index(tbl, "TEXT");
+
+    if (ix_topic_key < 0 || ix_kind < 0 || ix_source < 0 || ix_text < 0) {
+        return {};
+    }
+
+    std::vector<HelpLineView> lines;
+    lines.reserve(tbl.rows.size());
+
+    for (const auto& r : tbl.rows) {
+        HelpLineView h;
+        h.topic_key = dbf_cell(r, ix_topic_key);
+        h.topic     = dbf_cell(r, ix_topic);
+        h.kind      = dbf_cell(r, ix_kind);
+        h.source    = dbf_cell(r, ix_source);
+        h.confid    = dbf_cell(r, ix_confid);
+        h.role      = dbf_cell(r, ix_role);
+        h.line_no   = safe_int_cell(r, ix_line_no);
+        h.part_no   = safe_int_cell(r, ix_part_no);
+        h.text      = dbf_cell(r, ix_text);
+
+        if (!h.topic_key.empty() && !h.text.empty()) {
+            lines.push_back(std::move(h));
+        }
+    }
+
+    return lines;
+}
+
+static std::vector<std::string> resolve_topic_keys_from_lines(const std::vector<HelpLineView>& lines,
+                                                              const std::string& query_raw) {
+    const std::string q = up(query_raw);
+    std::set<std::string> exact;
+    std::set<std::string> suffix;
+
+    for (const auto& h : lines) {
+        const std::string keyU = up(h.topic_key);
+        const std::string topicU = up(h.topic);
+        const std::string suffU = topic_suffix(h.topic_key);
+
+        if (q.find('|') != std::string::npos) {
+            if (keyU == q) exact.insert(h.topic_key);
+        } else {
+            if (suffU == q || topicU == q) exact.insert(h.topic_key);
+            else if (suffU.find(q) != std::string::npos || topicU.find(q) != std::string::npos) suffix.insert(h.topic_key);
+        }
+    }
+
+    std::vector<std::string> out(exact.begin(), exact.end());
+    if (out.empty()) {
+        out.assign(suffix.begin(), suffix.end());
+    }
+
+    std::sort(out.begin(), out.end(), [](const std::string& a, const std::string& b) {
+        const int ca = catalog_rank(a);
+        const int cb = catalog_rank(b);
+        if (ca != cb) return ca < cb;
+        return up(a) < up(b);
+    });
+
+    if (out.size() > 8) {
+        out.resize(8);
+    }
+
+    return out;
+}
+
+static void render_current_topic_help(const std::string& dir,
+                                      const std::string& query_raw,
+                                      TopicRenderMode mode) {
+    std::string query = query_raw;
+    while (!query.empty() && std::isspace(static_cast<unsigned char>(query.front()))) query.erase(query.begin());
+    while (!query.empty() && std::isspace(static_cast<unsigned char>(query.back()))) query.pop_back();
+
+    if (query.empty()) {
+        print_current_help_report(dir);
+        return;
+    }
+
+    const auto lines = load_current_help_lines(dir);
+    if (lines.empty()) {
+        std::cout << "CMDHELP: could not load current HELP DATA lines from \"" << dir << "\".\n"
+                  << "Tip: run CMDHELP BUILD . <source-root>\n";
+        return;
+    }
+
+    const auto keys = resolve_topic_keys_from_lines(lines, query);
+    if (keys.empty()) {
+        std::cout << "CMDHELP: no current HELP DATA topic matched \"" << query << "\".\n"
+                  << "Tip: run CMDHELP with no arguments for a HELP DATA summary.\n";
+        return;
+    }
+
+    std::unordered_set<std::string> keyset;
+    for (const auto& k : keys) keyset.insert(up(k));
+
+    std::vector<HelpLineView> picked;
+    for (const auto& h : lines) {
+        if (!keyset.count(up(h.topic_key))) continue;
+
+        if (!should_render_topic_line(h, mode)) {
+            continue;
+        }
+
+        picked.push_back(h);
+    }
+
+    std::sort(picked.begin(), picked.end(), [](const HelpLineView& a, const HelpLineView& b) {
+        const int ca = catalog_rank(a.topic_key);
+        const int cb = catalog_rank(b.topic_key);
+        if (ca != cb) return ca < cb;
+
+        const std::string ak = up(a.topic_key);
+        const std::string bk = up(b.topic_key);
+        if (ak != bk) return ak < bk;
+
+        const int ka = kind_rank(a.kind);
+        const int kb = kind_rank(b.kind);
+        if (ka != kb) return ka < kb;
+
+        const int sa = source_rank(a.source);
+        const int sb = source_rank(b.source);
+        if (sa != sb) return sa < sb;
+
+        if (a.line_no != b.line_no) return a.line_no < b.line_no;
+        if (a.part_no != b.part_no) return a.part_no < b.part_no;
+        return a.text < b.text;
+    });
+
+    std::cout << "CMDHELP " << (mode == TopicRenderMode::Usage ? "USAGE " : "")
+              << up(query) << "\n";
+
+    if (keys.size() > 1) {
+        std::cout << "Matched topics:";
+        for (const auto& k : keys) std::cout << " " << k;
+        std::cout << "\n";
+    }
+
+    std::string last_key;
+    std::string last_kind;
+    std::set<std::string> seen_line;
+
+    for (const auto& h : picked) {
+        const std::string keyU = up(h.topic_key);
+        const std::string kindU = up(h.kind);
+        const std::string dedupe = keyU + "|" + kindU + "|" + up(h.text);
+        if (!seen_line.insert(dedupe).second) {
+            continue;
+        }
+
+        if (keyU != last_key) {
+            last_key = keyU;
+            last_kind.clear();
+            std::cout << "\n" << h.topic_key << "\n";
+            std::cout << std::string(h.topic_key.size(), '=') << "\n";
+        }
+
+        if (kindU != last_kind) {
+            last_kind = kindU;
+            std::cout << "\n" << kindU << "\n";
+            std::cout << std::string(kindU.size(), '-') << "\n";
+        }
+
+        std::cout << h.text << "\n";
+    }
+
+    if (picked.empty()) {
+        std::cout << "(topic exists, but no renderable help sections were found)\n";
+    }
+}
+
+static void cmdhelp_usage() {
+    std::cout
+        << "CMDHELP usage\n"
+        << "  CMDHELP\n"
+        << "  CMDHELP USAGE\n"
+        << "  CMDHELP BUILD\n"
+        << "  CMDHELP BUILD . <source-root>\n"
+        << "  CMDHELP <topic>\n"
+        << "  CMDHELP USAGE <topic>\n"
+        << "  CMDHELP <topic> USAGE\n"
+        << "  CMDHELP BUILD LEGACY\n"
+        << "  CMDHELP LEGACY\n"
+        << "\n"
+        << "Notes:\n"
+        << "  CMDHELP BUILD writes current HELP DATA tables.\n"
+        << "  CMDHELP LEGACY reads the old commands.dbf/cmd_args.dbf report.\n";
+}
+
+static void build_current_helpdata(const std::string& outdir,
+                                   const std::vector<std::string>& roots) {
+    auto list = collect_commands();
+
+    // The bridge owns detailed counters and may evolve.  CMDHELPCHK ARTIFACTS
+    // is the detailed validator/report surface.
+    auto counts = export_helpdata_v2_dbfs(outdir, list, roots);
+
+    std::cout << "CMDHELP wrote current HELP DATA -> " << outdir << "\n"
+              << "Artifacts mined from: " << (roots.empty() ? std::string("./src") : roots.front()) << "\n";
+
+    if (counts.usage_contract_files > 0 || counts.usage_contract_rows > 0) {
+        std::cout << "Usage contracts mined directly: "
+                  << counts.usage_contract_rows << " row(s) from "
+                  << counts.usage_contract_files << " file(s)\n";
+    }
+
+    print_current_help_report(outdir);
+}
+
+static void build_legacy_helpdata(const std::string& outdir,
+                                  const std::vector<std::string>& roots) {
+    auto counts = export_dbfs(outdir, roots);
+    auto list = collect_commands();
+
+    std::cout << "CMDHELP LEGACY wrote: " << counts.commands << " command rows, "
+              << counts.args << " arg rows -> " << outdir << "\n"
+              << "Switches mined from: " << (roots.empty() ? std::string("./src") : roots.front()) << "\n\n";
+    print_commands_report(std::cout, list);
+}
+
+static void report_legacy_helpdata(const std::string& dir) {
+    std::vector<CommandInfo> cmds;
+    int arg_rows = 0;
+
+    if (!CmdDbfLoader::load(dir, cmds, arg_rows)) {
+        std::cout << "CMDHELP LEGACY: could not read commands.dbf/cmd_args.dbf in \"" << dir << "\".\n"
+                  << "Tip: run: CMDHELP BUILD LEGACY\n";
+        return;
+    }
+
+    std::cout << "CMDHELP LEGACY Report: "
+              << cmds.size() << " command rows, "
+              << arg_rows << " arg rows -> " << dir << "\n\n";
+    print_commands_report(std::cout, cmds);
+}
+
 // === CLI =====================================================================
 
 void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
@@ -908,69 +1565,84 @@ void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
         while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
     };
 
-    std::string first;
-    {
-        std::streampos pos = in.tellg();
-        in >> first;
-        if (!in) {
-            in.clear();
-            in.seekg(pos);
-        }
+    std::string rest;
+    std::getline(in, rest);
+    trim_inplace(rest);
+
+    const auto words = split_words(rest);
+    const std::string firstU = words.empty() ? std::string() : up(words[0]);
+
+    if (firstU.empty()) {
+        print_current_help_report(resolve_help_dir_arg(".").string());
+        return;
     }
 
-    std::string firstU = up(first);
+    if (firstU == "USAGE" || firstU == "HELP" || firstU == "?") {
+        if (words.size() >= 2) {
+            render_current_topic_help(resolve_help_dir_arg(".").string(),
+                                      join_words_range(words, 1, words.size()),
+                                      TopicRenderMode::Usage);
+        } else {
+            cmdhelp_usage();
+        }
+        return;
+    }
+
+    if (firstU == "LEGACY") {
+        const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
+        report_legacy_helpdata(resolve_help_dir_arg(dir_arg).string());
+        return;
+    }
+
+    if (firstU == "REPORT") {
+        if (words.size() >= 2 && up(words[1]) == "LEGACY") {
+            const std::string dir_arg = (words.size() >= 3) ? words[2] : ".";
+            report_legacy_helpdata(resolve_help_dir_arg(dir_arg).string());
+            return;
+        }
+        const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
+        print_current_help_report(resolve_help_dir_arg(dir_arg).string());
+        return;
+    }
 
     if (firstU == "BUILD") {
-        std::string dummy;
-        std::getline(in, dummy);
+        size_t pos = 1;
+        bool legacy = false;
 
-        std::string outdir;
-        std::getline(in, outdir);
-        trim_inplace(outdir);
-        fs::path outdir_p = resolve_help_dir_arg(outdir);
-        outdir = outdir_p.string();
+        if (pos < words.size()) {
+            const std::string mode = up(words[pos]);
+            if (mode == "V2") {
+                // Silent compatibility.  V2 is the current build now.
+                ++pos;
+            } else if (mode == "LEGACY") {
+                legacy = true;
+                ++pos;
+            }
+        }
 
-        std::string srcroot;
-        std::getline(in, srcroot);
-        trim_inplace(srcroot);
+        const std::string outdir_arg = (pos < words.size()) ? words[pos++] : ".";
+        const std::string srcroot = (pos < words.size()) ? words[pos++] : std::string();
 
-        std::vector<std::string> roots =
+        const std::string outdir = resolve_help_dir_arg(outdir_arg).string();
+        const std::vector<std::string> roots =
             srcroot.empty() ? std::vector<std::string>{"./src"} : std::vector<std::string>{srcroot};
 
-        auto counts = export_dbfs(outdir, roots);
-        auto list = collect_commands();
-
-        std::cout << "CMDHELP wrote: " << counts.commands << " command rows, "
-                  << counts.args << " arg rows -> " << outdir << "\n"
-                  << "Switches mined from: " << (srcroot.empty() ? "./src" : srcroot) << "\n\n";
-        print_commands_report(std::cout, list);
+        if (legacy) {
+            build_legacy_helpdata(outdir, roots);
+        } else {
+            build_current_helpdata(outdir, roots);
+        }
         return;
     }
 
-    in.clear();
-    std::string line;
-    std::getline(in, line);
-    trim_inplace(line);
-
-    fs::path dir_p = resolve_help_dir_arg(line);
-    std::string dir = dir_p.string();
-
-    std::vector<CommandInfo> cmds;
-    int arg_rows = 0;
-
-    if (!CmdDbfLoader::load(dir, cmds, arg_rows)) {
-        std::cout << "CMDHELP: could not read existing DBFs in \"" << dir << "\".\n"
-                  << "Tip: run:  CMDHELP BUILD\n";
+    if (words.size() >= 2 && up(words.back()) == "USAGE") {
+        render_current_topic_help(resolve_help_dir_arg(".").string(),
+                                  join_words_range(words, 0, words.size() - 1),
+                                  TopicRenderMode::Usage);
         return;
     }
 
-    int cmd_rows = static_cast<int>(cmds.size());
-
-    std::cout << "CMDHELP Report (last CMDHELP BUILD): "
-              << cmd_rows << " command rows, "
-              << arg_rows << " arg rows -> " << dir << "\n"
-              << "Switches mined from: (existing DBFs)\n\n";
-    print_commands_report(std::cout, cmds);
+    render_current_topic_help(resolve_help_dir_arg(".").string(), rest, TopicRenderMode::Full);
 }
 
 } // namespace cmdhelp

@@ -5,6 +5,39 @@
 // Key rule (matches cmd_schemas.cpp): filename() is the source of truth for
 // whether a slot is "open". DbArea::isOpen() is not reliable during refactors.
 
+// @dottalk.usage v1
+// owner: DOT|DBAREAS
+// command: DBAREAS
+// category: workspace
+// status: supported
+// noargs: report
+// effect: report
+// mutates: no
+// usage-access: DBAREAS USAGE
+// summary:
+//   Report current, selected, or all open DbArea/work-area state.
+//
+// usage:
+//   DBAREAS
+//   DBAREAS USAGE
+//   DBAREAS <n>
+//   DBAREAS ALL
+//   DBAREAS REL
+//
+// notes:
+//   DBAREAS with no arguments reports the current area by delegating to DBAREA.
+//   DBAREAS <n> reports slot n when that slot is open.
+//   DBAREAS ALL reports all open slots using filename() as the open-area truth.
+//   DBAREAS REL reports the current area and appends relation summary/tree context.
+//   DBAREAS is read-only; it reports session/work-area state and does not mutate table data.
+//
+// related:
+//   DBAREA
+//   WORKSPACE
+//   REL
+//   STATUS
+//
+
 #include <algorithm>
 #include <cstdlib>
 #include <cctype>
@@ -137,6 +170,15 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
     }
 
     const std::string up = up_copy(tok);
+
+    if (up == "USAGE" || up == "HELP" || up == "?") {
+        std::cout << "Usage:\n";
+        std::cout << "  DBAREAS                (same as DBAREA for current)\n";
+        std::cout << "  DBAREAS <n>            (print area n)\n";
+        std::cout << "  DBAREAS ALL            (print all OPEN areas; filename() is truth)\n";
+        std::cout << "  DBAREAS REL            (current area + relations summary/tree)\n";
+        return;
+    }
 
     if (up == "ALL") {
         // Print ONLY open slots (filename() truth), using DBAREA for canonical formatting.

@@ -2,6 +2,65 @@
 // cmd_TUPLE delegates tuple assembly to the canonical builder (tuple_builder.*).
 // Printing and CLI flags remain here; data truth lives in the builder.
 
+// @dottalk.usage v1
+// owner: DOT|TUPLE
+// command: TUPLE
+// category: tuple
+// status: supported
+// noargs: report
+// effect: report
+// mutates: relation-refresh-state cursor
+// usage-access: TUPLE USAGE
+// summary:
+//   Build and print a tuple row from the canonical tuple builder using a tuple
+//   field specification and optional output flags.
+//
+// usage:
+//   TUPLE
+//   TUPLE USAGE
+//   TUPLE <spec>
+//   TUPLE <spec> --HEADER
+//   TUPLE <spec> --AREA-PREFIX
+//   TUPLE <spec> --NO-ECHO
+//   TUPLE <spec> --STRICT
+//   TUPLE <spec> --HEADER-ONLY
+//   TUPLE <spec> --VALUES-ONLY
+//   TUPLE <spec> DEBUG
+//   TUPLE <spec> --DEBUG
+//   TUPLE <spec> --NULL <token>
+//
+// examples:
+//   TUPLE
+//   TUPLE LNAME,FNAME
+//   TUPLE STUDENTS.LNAME,STUDENTS.FNAME
+//   TUPLE * --HEADER
+//   TUPLE * --VALUES-ONLY
+//
+// notes:
+//   TUPLE with no arguments uses the default star spec.
+//   TUPLE delegates tuple truth to tuple_builder.
+//   TUPLE can print formatted output, raw unit-separated values, or both.
+//   --HEADER prints a header row before values.
+//   --AREA-PREFIX prefixes header columns with area context.
+//   --NO-ECHO preserves legacy raw-only scripting behavior.
+//   --VALUES-ONLY prints raw unit-separated values only.
+//   DEBUG and --DEBUG print the raw unit-separated row before formatted output.
+//   --STRICT asks the tuple builder to reject loose field matches.
+//   TUPLE is read-only for table data.
+//
+// risk:
+//   reads_current_workspace: yes
+//   refreshes_relations: builder dependent
+//   mutates_cursor: builder dependent
+//   mutates_table_data: no
+//
+// related:
+//   SMARTLIST
+//   TUPVALIDATE
+//   TUPTALK
+//   ERSATZ
+//
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -73,6 +132,37 @@ bool remove_flag_ci(std::string& s, const std::string& flag_upper) {
     return removed;
 }
 
+
+void print_tuple_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  TUPLE\n"
+        << "  TUPLE USAGE\n"
+        << "  TUPLE <spec>\n"
+        << "  TUPLE <spec> --HEADER\n"
+        << "  TUPLE <spec> --AREA-PREFIX\n"
+        << "  TUPLE <spec> --NO-ECHO\n"
+        << "  TUPLE <spec> --STRICT\n"
+        << "  TUPLE <spec> --HEADER-ONLY\n"
+        << "  TUPLE <spec> --VALUES-ONLY\n"
+        << "  TUPLE <spec> DEBUG\n"
+        << "  TUPLE <spec> --DEBUG\n"
+        << "  TUPLE <spec> --NULL <token>\n"
+        << "Examples:\n"
+        << "  TUPLE\n"
+        << "  TUPLE LNAME,FNAME\n"
+        << "  TUPLE * --HEADER\n"
+        << "  TUPLE * --VALUES-ONLY\n";
+}
+
+bool is_tuple_usage_request(const std::string& raw) {
+    std::string t = up(trim(raw));
+    if (t.rfind("TUPLE ", 0) == 0) {
+        t = up(trim(t.substr(6)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 std::string join_us(const std::vector<std::string>& vals) {
     std::string out;
     for (std::size_t i = 0; i < vals.size(); ++i) {
@@ -102,6 +192,12 @@ std::string join_pretty(const std::vector<std::string>& vals, const std::string&
 void cmd_TUPLE(xbase::DbArea& /*A*/, std::istringstream& args) {
     std::string spec{std::istreambuf_iterator<char>(args), std::istreambuf_iterator<char>()};
     spec = trim(spec);
+
+    if (is_tuple_usage_request(spec)) {
+        print_tuple_usage();
+        return;
+    }
+
     if (spec.empty()) spec = "*";
 
     bool want_header = false;

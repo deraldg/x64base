@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: DOT|GPS
+// command: GPS
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor
+// usage-access: GPS USAGE
+// summary:
+//   Report current work-area position, including area slot, table label,
+//   physical record number, and computed logical row.
+//
+// usage:
+//   GPS
+//   GPS USAGE
+//
+// notes:
+//   GPS with no arguments reports cursor position.
+//   GPS with no open table reports the current area and no-table state.
+//   GPS computes logical row by iterating visible ordered records.
+//   GPS is read-only for table data but may temporarily move the cursor while computing logical row.
+//
+// risk:
+//   reads_table_records: yes when table is open
+//   mutates_cursor: temporary during logical-row computation
+//   mutates_table_data: no
+//
+// related:
+//   GOTO
+//   SKIP
+//   AREA
+//   STATUS
+//
+
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -5,6 +41,42 @@
 #include "xbase.hpp"
 #include "workareas.hpp"
 #include "cli/order_iterator.hpp"
+
+
+namespace {
+static std::string gps_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string gps_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_gps_usage_request(const std::string& raw)
+{
+    std::string t = gps_upper(gps_trim(raw));
+    if (t.rfind("GPS ", 0) == 0) {
+        t = gps_upper(gps_trim(t.substr(4)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_gps_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  GPS\n"
+        << "  GPS USAGE\n"
+        << "Notes:\n"
+        << "  - Reports area slot, table label, physical recno, and logical row.\n"
+        << "  - With no open table, GPS reports the no-table cursor state.\n";
+}
+} // namespace
 
 // ---------- minimal filter pass (GPS uses default LIST semantics) ----------
 static inline bool pass_deleted_filter(const xbase::DbArea& a)
@@ -53,8 +125,14 @@ static std::int64_t compute_logical_row(xbase::DbArea& a, int32_t physical)
 }
 
 // ---------- main command ----------
-void cmd_GPS(xbase::DbArea& current, std::istringstream& /*iss*/)
+void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_gps_usage_request(raw_args)) {
+        print_gps_usage();
+        return;
+    }
+
     const std::size_t cur_area = workareas::current_slot();
 
     if (!current.isOpen()) {

@@ -9,6 +9,41 @@
 //
 // Deps: workareas.hpp, xbase.hpp
 
+// @dottalk.usage v1
+// owner: DOT|SELECT
+// command: SELECT
+// category: workspace
+// status: supported
+// noargs: usage
+// effect: select
+// mutates: current-area
+// usage-access: SELECT USAGE
+// summary:
+//   Select the current work area by numeric slot or by work-area/table name.
+//
+// usage:
+//   SELECT USAGE
+//   SELECT <n>
+//   SELECT <name>
+//   SELECT <table.dbf>
+//
+// notes:
+//   SELECT with no arguments prints usage with the current valid slot range.
+//   SELECT USAGE prints usage and does not change the current area.
+//   Numeric selection uses the current workarea slot count.
+//   Name selection matches workarea labels and open DBF base names case-insensitively.
+//   SELECT mutates current-area/session state but does not mutate table data.
+//
+// risk:
+//   mutates_current_area: yes
+//   mutates_table_data: no
+//
+// related:
+//   AREA
+//   DBAREA
+//   WORKSPACE
+//
+
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -63,14 +98,30 @@ static bool try_parse_int(const std::string& s, int& out) {
 
 // ----------------- command -----------------
 
+static void print_select_usage()
+{
+    const size_t cnt = workareas::count();
+    std::cout
+        << "Usage:\n"
+        << "  SELECT USAGE\n"
+        << "  SELECT <0.." << (cnt ? (int)(cnt - 1) : 0) << ">\n"
+        << "  SELECT <name>\n"
+        << "  SELECT <table.dbf>\n";
+}
+
 void cmd_SELECT(xbase::DbArea& /*A*/, std::istringstream& iss) {
     xbase::XBaseEngine* eng = shell_engine();
     if (!eng) { std::cout << "SELECT: engine unavailable.\n"; return; }
 
     std::string arg;
     if (!(iss >> arg) || arg.empty()) {
-        const size_t cnt = workareas::count();
-        std::cout << "Usage: SELECT <0.." << (cnt ? (int)(cnt - 1) : 0) << " | <name>>\n";
+        print_select_usage();
+        return;
+    }
+
+    const std::string argU0 = to_upper(arg);
+    if (argU0 == "USAGE" || argU0 == "HELP" || argU0 == "?") {
+        print_select_usage();
         return;
     }
 

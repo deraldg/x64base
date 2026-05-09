@@ -20,6 +20,58 @@
 // - Standalone: opens LMDB env read-only from <env_path>. Does NOT depend on your xindex backend.
 // - Wire from your existing cmd_LMDB dispatcher (DO NOT define cmd_LMDB here).
 
+// @dottalk.usage v1
+// owner: DOT|LMDBDUMP
+// command: LMDBDUMP
+// category: diagnostics
+// status: developer
+// noargs: usage
+// effect: inspect
+// mutates: none
+// usage-access: LMDBDUMP USAGE
+// summary:
+//   Open an LMDB environment read-only and dump keys and values for diagnostics,
+//   with optional named DB, grep, limit, and start-key controls.
+//
+// usage:
+//   LMDBDUMP USAGE
+//   LMDBDUMP <env_path>
+//   LMDBDUMP <env_path> --db <name>
+//   LMDBDUMP <env_path> -db <name>
+//   LMDBDUMP <env_path> --grep <ascii>
+//   LMDBDUMP <env_path> -grep <ascii>
+//   LMDBDUMP <env_path> --trydb
+//   LMDBDUMP <env_path> --limit <n>
+//   LMDBDUMP <env_path> --start <key>
+//   LMDBDUMP <env_path> --starthex <hex>
+//
+// examples:
+//   LMDBDUMP indexes\students.cdx.d
+//   LMDBDUMP indexes\students.cdx.d --trydb
+//   LMDBDUMP indexes\students.cdx.d --grep MILLER --limit 50
+//   LMDBDUMP indexes\students.cdx.d --db lname --start M --limit 200
+//
+// notes:
+//   LMDBDUMP opens the supplied LMDB environment read-only.
+//   LMDBDUMP does not depend on the xindex backend or current work area.
+//   --start treats the key as ASCII unless it begins with 0x.
+//   --starthex accepts hex bytes.
+//   --trydb scans main DB keys and probes named DB candidates.
+//   LMDBDUMP is diagnostic and does not mutate table or index data.
+//
+// risk:
+//   opens_lmdb_env: read-only
+//   reads_index_data: yes
+//   writes_files: no
+//   mutates_table_data: no
+//   mutates_index_data: no
+//
+// related:
+//   LMDB
+//   CDX
+//   CNX
+//
+
 #include <lmdb.h>
 
 #include <algorithm>
@@ -184,6 +236,7 @@ struct DumpArgs {
 void print_dump_help() {
   std::cout
       << "Usage:\n"
+      << "  LMDBDUMP USAGE\n"
       << "  LMDBDUMP <env_path>\n"
       << "      [--db <name>] [-db <name>]\n"
       << "      [--grep <ASCII>] [-grep <ASCII>]\n"
@@ -442,8 +495,33 @@ void do_dump(const DumpArgs& args) {
 
 }  // namespace
 
+static std::string lmdbdump_trim(std::string s) {
+  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+  return s;
+}
+
+static std::string lmdbdump_upper(std::string s) {
+  for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+  return s;
+}
+
+static bool is_lmdbdump_usage_request(const std::string& raw) {
+  std::string t = lmdbdump_upper(lmdbdump_trim(raw));
+  if (t.rfind("LMDBDUMP ", 0) == 0) {
+    t = lmdbdump_upper(lmdbdump_trim(t.substr(9)));
+  }
+  return t == "USAGE" || t == "HELP" || t == "?" || t == "--HELP" || t == "-H";
+}
+
 // Called by your existing cmd_LMDB dispatcher when sub == "DUMP".
 void cmd_LMDB_DUMP(xbase::DbArea& /*A*/, std::istringstream& iss) {
+  const std::string raw_args = iss.str();
+  if (is_lmdbdump_usage_request(raw_args)) {
+    print_dump_help();
+    return;
+  }
+
   try {
     DumpArgs args = parse_dump_args(iss);
     if (args.help) {

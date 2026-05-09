@@ -1,3 +1,41 @@
+// @dottalk.usage v1
+// owner: DOT|SETFILTER
+// command: SETFILTER
+// category: query
+// status: supported
+// noargs: usage
+// effect: configure
+// mutates: filter-state
+// usage-access: SET FILTER USAGE
+// summary:
+//   Set or clear the per-area filter expression used by selector-backed scans.
+//
+// usage:
+//   SET FILTER USAGE
+//   SET FILTER TO <expr>
+//   SET FILTER TO
+//   SETFILTER USAGE
+//   SETFILTER TO <expr>
+//   SETFILTER TO
+//
+// notes:
+//   SET FILTER with no arguments shows usage.
+//   SET FILTER TO with no expression clears the filter.
+//   SET FILTER TO <expr> validates and activates the filter expression.
+//   Filter state is keyed by DbArea pointer and also registered with the shared filter registry.
+//   SET FILTER mutates selection/session state but not table records.
+//
+// risk:
+//   mutates_filter_state: yes
+//   mutates_table_data: no
+//
+// related:
+//   COUNT
+//   LOCATE
+//   LIST
+//   SET
+//
+
 #include "xbase.hpp"
 #include "filters/filter_registry.hpp"
 
@@ -29,6 +67,41 @@ static inline void uppercase_inplace(std::string& s) {
     }
 }
 
+
+static std::string trim_copy_local(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string upper_copy_local(std::string s)
+{
+    uppercase_inplace(s);
+    return s;
+}
+
+static void print_setfilter_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET FILTER USAGE\n"
+        << "  SET FILTER TO <expr>\n"
+        << "  SET FILTER TO\n"
+        << "  SETFILTER USAGE\n"
+        << "  SETFILTER TO <expr>\n"
+        << "  SETFILTER TO\n";
+}
+
+static bool is_setfilter_usage_request(const std::string& raw)
+{
+    std::string t = upper_copy_local(trim_copy_local(raw));
+    if (t.rfind("SET FILTER ", 0) == 0) {
+        t = upper_copy_local(trim_copy_local(t.substr(11)));
+    }
+    return t.empty() || t == "USAGE" || t == "HELP" || t == "?";
+}
+
 } // namespace
 
 bool filter_is_active_for(const xbase::DbArea* area) {
@@ -45,9 +118,16 @@ std::string filter_expr_for(const xbase::DbArea* area) {
 }
 
 void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
+    const std::string raw_args = args.str();
+
     std::string first;
     if (!(args >> first)) {
-        std::cout << "SET FILTER TO <expr> | SET FILTER TO (clear)\n";
+        print_setfilter_usage();
+        return;
+    }
+
+    if (is_setfilter_usage_request(first) || is_setfilter_usage_request(raw_args)) {
+        print_setfilter_usage();
         return;
     }
 
@@ -55,6 +135,7 @@ void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
 
     if (first != "TO") {
         std::cout << "SET FILTER: expected 'TO'.\n";
+        print_setfilter_usage();
         return;
     }
 

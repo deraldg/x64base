@@ -15,6 +15,37 @@
 
 namespace {
 
+
+static constexpr const char* DT_USAGE_REL = R"DTUSAGE(
+@dottalk.usage v1
+owner: DOT|REL
+command: REL
+category: relations
+status: supported
+summary: Relations engine command dispatcher.
+usage:
+  REL syntax
+  REL LIST [ALL]
+  REL REFRESH
+  REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL SAVE [path] | REL SAVE AS <dataset>
+  REL LOAD [path] | REL LOAD AS <dataset>
+  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation
+  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation
+  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR
+notes:
+  REL keeps relation subcommand parsing in one place and forwards to the relation handlers.
+  REL ADD with ON <field> creates a same-field relation.
+  REL ADD with ON <parent_field> TO <child_field> creates an asymmetric relation.
+  REL CLEAR is an alias of SET RELATIONS CLEAR.
+related:
+  SET RELATION
+  SET RELATIONS
+  TUPLE
+  WORKSPACE
+)DTUSAGE";
+
 static void rel_usage() {
     std::cout
         << "REL syntax\n"

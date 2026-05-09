@@ -17,6 +17,64 @@
 //   INDEX ON #2 TAG students ASC 1INX
 //   INDEX ON LNAME TAG students DESC 2INX
 
+// @dottalk.usage v1
+// owner: DOT|INDEX
+// command: INDEX
+// category: index
+// status: supported
+// noargs: usage
+// effect: create
+// mutates: index-file filesystem order-metadata
+// usage-access: INDEX USAGE
+// summary:
+//   Build an INX index file from the current table using a field key,
+//   tag/file name, optional direction, and optional INX format.
+//
+// usage:
+//   INDEX USAGE
+//   INDEX ON <field> TAG <name>
+//   INDEX ON <field> TAG <name> ASC
+//   INDEX ON <field> TAG <name> DESC
+//   INDEX ON <field> TAG <name> 1INX
+//   INDEX ON <field> TAG <name> 2INX
+//   INDEX ON <field> TAG <name> ASC 1INX
+//   INDEX ON <field> TAG <name> DESC 2INX
+//
+// examples:
+//   INDEX ON LNAME TAG students
+//   INDEX ON LNAME TAG students DESC
+//   INDEX ON LNAME TAG students ASC 1INX
+//   INDEX ON LNAME TAG students DESC 2INX
+//
+// notes:
+//   INDEX requires an open table except for INDEX USAGE, INDEX HELP, and INDEX question-mark.
+//   Deleted records are excluded.
+//   Default direction is ASC.
+//   Default output format is 2INX, matching REINDEX.
+//   Optional direction and format tokens may appear in either order.
+//   Field-number tokens are also accepted by the parser, but omitted from mineable usage rows because hash syntax is a source-comment marker.
+//   2INX uses fixed-length keys, uppercases character fields, and writes a pos-by-recno table.
+//   TAG must name an INX file target; non-.inx extensions are refused.
+//   INDEX writes an index file through the INDEXES path resolver and does not mutate table records.
+//
+// risk:
+//   reads_table_records: yes
+//   writes_index_file: yes
+//   overwrites_index_file: depends on output stream/backend behavior for existing target
+//   excludes_deleted_records: yes
+//   mutates_table_data: no
+//   requires_open_table: yes
+//   default_format: 2INX
+//   default_direction: ASC
+//
+// related:
+//   REINDEX
+//   SET INDEX
+//   SET ORDER
+//   CDX
+//   CNX
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/path_resolver.hpp"
@@ -224,10 +282,50 @@ bool write_2inx(const fs::path& outPath,
     return true;
 }
 
+
+static std::string trim_local(std::string s) {
+    auto issp = [](unsigned char c){ return std::isspace(c)!=0; };
+    while (!s.empty() && issp(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && issp(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static bool is_index_usage_request(const std::string& raw) {
+    std::string t = dottalk::canon(trim_local(raw));
+
+    // Some command paths pass the whole raw command line ("INDEX USAGE")
+    // instead of only the command tail ("USAGE").  Accept both.
+    if (t.rfind("INDEX ", 0) == 0) {
+        t = dottalk::canon(trim_local(t.substr(6)));
+    }
+
+    return t.empty() || t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_index_usage() {
+    std::cout << "Usage: INDEX ON <field> TAG <name> [ASC|DESC] [1INX|2INX]\n";
+    std::cout << "   Field-number tokens are also accepted by the parser.\n";
+    std::cout << "Defaults: ASC, 2INX\n";
+    std::cout << "Examples:\n";
+    std::cout << "  INDEX ON LNAME TAG students\n";
+    std::cout << "  INDEX ON LNAME TAG students DESC\n";
+        std::cout << "  INDEX ON LNAME TAG students DESC 2INX\n";
+    std::cout << "Notes:\n";
+    std::cout << "  - INDEX requires an open table except for INDEX USAGE.\n";
+    std::cout << "  - Deleted records are excluded.\n";
+    std::cout << "  - TAG resolves through the INDEXES path and must name an .inx target.\n";
+}
+
 } // anonymous namespace
 
 void cmd_INDEX(DbArea& A, std::istringstream& in)
 {
+    const std::string raw_args = in.str();
+    if (is_index_usage_request(raw_args)) {
+        print_index_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "No table open.\n";
         return;
@@ -238,12 +336,7 @@ void cmd_INDEX(DbArea& A, std::istringstream& in)
     dottalk::InxFmt fmt = dottalk::InxFmt::V2_2INX;  // 2INX default
 
     if (!parse_args(in, fieldTok, tag, descending, fmt)) {
-        std::cout << "Usage: INDEX ON <field|#n> TAG <name> [ASC|DESC] [1INX|2INX]\n";
-        std::cout << "Defaults: ASC, 2INX\n";
-        std::cout << "Examples:\n";
-        std::cout << "  INDEX ON LNAME TAG students\n";
-        std::cout << "  INDEX ON LNAME TAG students DESC\n";
-        std::cout << "  INDEX ON #2 TAG students ASC 1INX\n";
+        print_index_usage();
         return;
     }
 

@@ -32,6 +32,55 @@
 // - For .inx, trailing TAG / bare tag is accepted but ignored, because INX is
 //   effectively a single-order container.
 
+// @dottalk.usage v1
+// owner: DOT|SETINDEX
+// command: SETINDEX
+// category: index
+// status: supported
+// noargs: usage
+// effect: attach
+// mutates: order-state index-backend cursor
+// usage-access: SET INDEX USAGE
+// summary:
+//   Flavor-aware SET INDEX command that attaches INX, CNX, or CDX containers and
+//   can seed an active tag immediately.
+//
+// usage:
+//   SET INDEX USAGE
+//   SET INDEX TO <container>
+//   SET INDEX TO <container> TAG <tag>
+//   SET INDEX TO <container> <tag>
+//   SETINDEX USAGE
+//   SETINDEX TO <container>
+//   SETINDEX TO <container> TAG <tag>
+//   SETINDEX TO <container> <tag>
+//
+// notes:
+//   SET INDEX requires an open table except for usage.
+//   Explicit extensions are validated by table flavor.
+//   v32 tables accept INX or CNX.
+//   v64 tables require CDX.
+//   Bare container names resolve through the INDEXES path slot.
+//   CDX attachment also requires the LMDB environment to exist.
+//   Container attach and tag activation are treated as related but separate decisions.
+//   INX is single-order; supplied tag names are accepted but ignored.
+//   On hard failure, active index/order state is cleared to avoid stale ordering.
+//
+// risk:
+//   mutates_order_state: yes
+//   mutates_index_backend: yes
+//   mutates_cursor: when tag activation positions to first ordered record
+//   reads_filesystem: yes
+//   mutates_table_data: no
+//
+// related:
+//   SET ORDER
+//   INDEX
+//   REINDEX
+//   CDX
+//   CNX
+//
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -104,6 +153,30 @@ static bool has_explicit_extension(const fs::path& p) {
 
 static bool is_v64_area(const xbase::DbArea& A) {
     return A.kind() == xbase::AreaKind::V64;
+}
+
+
+static void print_setindex_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET INDEX USAGE\n"
+        << "  SET INDEX TO <container>\n"
+        << "  SET INDEX TO <container> TAG <tag>\n"
+        << "  SET INDEX TO <container> <tag>\n"
+        << "  SETINDEX USAGE\n"
+        << "  SETINDEX TO <container>\n"
+        << "  SETINDEX TO <container> TAG <tag>\n"
+        << "  SETINDEX TO <container> <tag>\n";
+}
+
+static bool is_setindex_usage_request(const std::string& raw)
+{
+    std::string t = up_copy(textio::trim(raw));
+    if (t.rfind("SET INDEX ", 0) == 0) {
+        t = up_copy(textio::trim(t.substr(10)));
+    }
+    return t.empty() || t == "USAGE" || t == "HELP" || t == "?";
 }
 
 static bool is_v32_area(const xbase::DbArea& A) {
@@ -465,6 +538,12 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
 
 void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
 {
+    const std::string raw_args = args.str();
+    if (is_setindex_usage_request(raw_args)) {
+        print_setindex_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "SET INDEX: no table open.\n";
         return;
@@ -476,6 +555,7 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
 
     if (!parse_setindex_args(args, tok, tag, parse_err)) {
         std::cout << parse_err << "\n";
+        print_setindex_usage();
         return;
     }
 

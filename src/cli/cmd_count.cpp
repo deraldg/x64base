@@ -19,6 +19,55 @@
 //   • Persistent SET FILTER is part of the logical rowset.
 //     Therefore plain COUNT must NOT use raw recCount() when a persistent filter is active.
 
+// @dottalk.usage v1
+// owner: DOT|COUNT
+// command: COUNT
+// category: query
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor transient-relation-refresh-state
+// usage-access: COUNT USAGE
+// summary:
+//   Count records in the current logical rowset using selector-backed and
+//   predicate-backed scan paths, preserving cursor cohesion.
+//
+// usage:
+//   COUNT
+//   COUNT USAGE
+//   COUNT ALL
+//   COUNT FOR <expr>
+//   COUNT WHERE <expr>
+//   COUNT <expr>
+//   COUNT DELETED
+//   COUNT NOT DELETED
+//   COUNT !DELETED
+//
+// notes:
+//   COUNT with no arguments counts the current logical rowset.
+//   With no open table, COUNT preserves existing behavior and prints 0.
+//   Persistent SET FILTER is part of the logical rowset.
+//   COUNT FOR and COUNT WHERE normalize the predicate form before scanning.
+//   COUNT DELETED and COUNT NOT DELETED select by deletion state.
+//   COUNT preserves the active cursor where possible after scans.
+//   COUNT suppresses relation auto-refresh during full scans to avoid refresh thrash.
+//   COUNT is read-only for table data, though it may temporarily move and restore the cursor.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_table_data: no
+//   cursor_movement: temporary during scans
+//   cursor_restore: best effort
+//   relation_refresh_suppression: temporary during scans
+//
+// related:
+//   LOCATE
+//   LIST
+//   FILTER
+//   SET FILTER
+//   GOTO
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -90,6 +139,31 @@ static inline std::string strip_inline_comments(std::string s){
 
     if (cut != std::string::npos) s.erase(cut);
     return trim(s);
+}
+
+
+static bool is_count_usage_request(std::string raw)
+{
+    const std::string t = upcopy(trim(std::move(raw)));
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_count_usage()
+{
+    print_line("Usage:");
+    print_line("  COUNT");
+    print_line("  COUNT USAGE");
+    print_line("  COUNT ALL");
+    print_line("  COUNT FOR <expr>");
+    print_line("  COUNT WHERE <expr>");
+    print_line("  COUNT <expr>");
+    print_line("  COUNT DELETED");
+    print_line("  COUNT NOT DELETED");
+    print_line("  COUNT !DELETED");
+    print_line("Notes:");
+    print_line("  - COUNT with no arguments counts the current logical rowset.");
+    print_line("  - With no open table, COUNT preserves existing behavior and prints 0.");
+    print_line("  - COUNT preserves the active cursor where possible after scans.");
 }
 
 enum class CountMode {
@@ -304,13 +378,19 @@ static cli::scan::SelectionSpec to_selection_spec(const CountSpec& spec)
 
 void cmd_COUNT(xbase::DbArea& area, std::istringstream& args)
 {
+    std::string tail;
+    std::getline(args, tail);
+
+    if (is_count_usage_request(tail)) {
+        print_count_usage();
+        return;
+    }
+
     if (!area.isOpen()){
         print_line("0");
         return;
     }
 
-    std::string tail;
-    std::getline(args, tail);
     CountSpec spec = parse_count_tail(tail);
 
     if (spec.mode == CountMode::EXPR && !spec.expr.empty()) {

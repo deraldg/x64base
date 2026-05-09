@@ -1,4 +1,38 @@
+// @dottalk.usage v1
+// owner: DOT|FIELDS
+// command: FIELDS
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: FIELDS USAGE
+// summary:
+//   Report the field list for the current work area with aligned field number,
+//   name, type, length, and decimal columns.
+//
+// usage:
+//   FIELDS
+//   FIELDS USAGE
+//
+// notes:
+//   FIELDS with no arguments reports field metadata.
+//   FIELDS is read-only and does not mutate table data or cursor position.
+//   If no fields are available, FIELDS prints a no-fields message.
+//
+// risk:
+//   reads_schema: yes
+//   mutates_table_data: no
+//   mutates_cursor: no
+//
+// related:
+//   STRUCT
+//   FIELDMGR
+//   DUMP
+//
+
 #include "xbase.hpp"
+#include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -11,6 +45,36 @@ using xbase::FieldDef;
 
 namespace {
 
+
+static std::string fields_trim(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string fields_upper(std::string s) {
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_fields_usage_request(const std::string& raw) {
+    std::string t = fields_upper(fields_trim(raw));
+    if (t.rfind("FIELDS ", 0) == 0) {
+        t = fields_upper(fields_trim(t.substr(7)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_fields_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  FIELDS\n"
+        << "  FIELDS USAGE\n"
+        << "Notes:\n"
+        << "  - Reports field number, name, type, length, and decimals for the current area.\n"
+        << "  - FIELDS is read-only.\n";
+}
+
 // compute the width in digits for numbering column (?#?)
 static int digits(std::size_t n) {
     int d = 1;
@@ -22,8 +86,14 @@ static int digits(std::size_t n) {
 
 // FIELDS
 // Shows the field list with aligned columns.
-void cmd_FIELDS(DbArea& area, std::istringstream& /*unused*/)
+void cmd_FIELDS(DbArea& area, std::istringstream& args)
 {
+    const std::string raw_args = args.str();
+    if (is_fields_usage_request(raw_args)) {
+        print_fields_usage();
+        return;
+    }
+
     const auto& defs = area.fields();
     const std::size_t n = static_cast<std::size_t>(area.fieldCount());
 

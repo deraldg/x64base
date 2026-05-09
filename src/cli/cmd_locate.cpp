@@ -1,5 +1,54 @@
 // src/cli/cmd_locate.cpp
 
+// @dottalk.usage v1
+// owner: DOT|LOCATE
+// command: LOCATE
+// category: navigation
+// status: supported
+// noargs: usage
+// effect: locate
+// mutates: cursor locate-state continue-state
+// usage-access: LOCATE USAGE
+// summary:
+//   Locate the first record matching a predicate, using simple CDX fast-path
+//   when possible and selector-backed scanning otherwise.
+//
+// usage:
+//   LOCATE USAGE
+//   LOCATE FOR <expr>
+//   LOCATE <field> <op> <value>
+//
+// examples:
+//   LOCATE FOR LNAME = Smith
+//   LOCATE LNAME = Smith
+//   LOCATE FOR BALANCE > 100
+//
+// notes:
+//   LOCATE requires an open table except for LOCATE USAGE.
+//   LOCATE with no predicate shows usage.
+//   LOCATE clears previous LOCATE and CONTINUE bridge state before searching.
+//   Simple predicates on the active CDX tag may use the CDX fast path.
+//   Complex predicates are evaluated through the selector and expression path.
+//   LOCATE positions on the first matching record.
+//   LOCATE updates locate state and CONTINUE bridge state after a match.
+//   LOCATE is read-only for table data but mutates cursor/search state.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: yes when match found
+//   mutates_locate_state: yes
+//   mutates_continue_state: yes
+//   mutates_table_data: no
+//   uses_index_fast_path: when simple predicate matches active CDX tag
+//
+// related:
+//   CONTINUE
+//   FIND
+//   SEEK
+//   COUNT
+//   SET FILTER
+//
+
 #include <cctype>
 #include <cstdlib>
 #include <iostream>
@@ -101,6 +150,32 @@ static bool expression_has_function_call(const std::string& expr) {
     if (rp == std::string::npos) return false;
 
     return true;
+}
+
+
+static bool is_locate_usage_request(std::string raw)
+{
+    std::string t = upper_copy(trim(std::move(raw)));
+    if (t.rfind("LOCATE ", 0) == 0) {
+        t = upper_copy(trim(t.substr(7)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_locate_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  LOCATE USAGE\n"
+        << "  LOCATE FOR <expr>\n"
+        << "  LOCATE <field> <op> <value>\n"
+        << "Examples:\n"
+        << "  LOCATE FOR LNAME = Smith\n"
+        << "  LOCATE LNAME = Smith\n"
+        << "  LOCATE FOR BALANCE > 100\n"
+        << "Notes:\n"
+        << "  - LOCATE requires an open table except for LOCATE USAGE.\n"
+        << "  - LOCATE positions on the first matching record and updates CONTINUE state.\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -264,6 +339,12 @@ static bool try_locate_cdx_simple(xbase::DbArea& A,
 
 void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_locate_usage_request(raw_args)) {
+        print_locate_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "No table open.\n";
         return;
@@ -281,7 +362,7 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
         where_text = trim(os.str());
 
         if (where_text.empty()) {
-            std::cout << "Syntax: LOCATE [FOR <expr>] or LOCATE <field> <op> <value>\n";
+            print_locate_usage();
             return;
         }
     }

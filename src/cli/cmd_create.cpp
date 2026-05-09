@@ -1,3 +1,59 @@
+// @dottalk.usage v1
+// owner: DOT|CREATE
+// command: CREATE
+// category: schema
+// status: supported
+// noargs: usage
+// effect: create
+// mutates: filesystem session schema
+// usage-access: CREATE USAGE
+// summary:
+//   Create a DBF table in the configured DBF path slot using the requested
+//   xBase/DBF flavor and field specification.
+//
+// usage:
+//   CREATE USAGE
+//   CREATE <name> (<field> <type>[, ...])
+//   CREATE MSDOS <name> (<field> <type>[, ...])
+//   CREATE DBASE <name> (<field> <type>[, ...])
+//   CREATE FOX26 <name> (<field> <type>[, ...])
+//   CREATE FOXPRO <name> (<field> <type>[, ...])
+//   CREATE VFP <name> (<field> <type>[, ...])
+//   CREATE X64 <name> (<field> <type>[, ...])
+//
+// examples:
+//   CREATE students (sid N(6), lname C(20), fname C(15))
+//   CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+//   CREATE VFP ledger (acct C(12), amount Y, posted D)
+//
+// notes:
+//   CREATE with no usable table/field specification shows usage and does not create a file.
+//   Relative table names resolve through the configured DBF path slot.
+//   CREATE clears active order state and closes the current area before writing the new table.
+//   After a successful write, CREATE opens the created table in the current area.
+//   If any field is M, CREATE attempts automatic memo attach after opening the table.
+//   X64 CREATE applies descriptor fallback/name policy for DBF descriptor safety.
+//   Long, duplicate, or descriptor-unsafe X64 field names may receive fallback tokens.
+//   X64 logical/authoritative metadata names are preserved when they fit the current x64 metadata limits.
+//   CREATE is a filesystem/schema mutation command; do not classify it as a read-only report command.
+//
+// risk:
+//   creates_files: yes
+//   opens_area: yes
+//   closes_current_area: yes
+//   clears_order_state: yes
+//   writes_dbf: yes
+//   writes_memo: when M fields are present
+//   possible_overwrite: depends on dbf_create backend behavior for existing paths
+//
+// related:
+//   USE
+//   STRUCT
+//   FIELDS
+//   WORKSPACE
+//   SETPATH
+//
+
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
@@ -285,6 +341,49 @@ static void apply_x64_descriptor_name_policy(std::vector<FieldSpec>& fields)
     }
 }
 
+
+static bool is_create_usage_request(const std::string& raw)
+{
+    std::string t = up_copy(trim(raw));
+
+    // Some dispatch paths pass only the command tail ("USAGE"), while the
+    // current CREATE path has historically exposed the full raw line
+    // ("CREATE USAGE") to cmd_CREATE.  Accept both so CREATE USAGE is a
+    // true usage request and does not fall through to parse/create logic.
+    if (t.rfind("CREATE ", 0) == 0) {
+        t = trim(t.substr(7));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_create_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  CREATE USAGE\n"
+        << "  CREATE <name> (<field> <type>[, ...])\n"
+        << "  CREATE MSDOS <name> (<field> <type>[, ...])\n"
+        << "  CREATE DBASE <name> (<field> <type>[, ...])\n"
+        << "  CREATE FOX26 <name> (<field> <type>[, ...])\n"
+        << "  CREATE FOXPRO <name> (<field> <type>[, ...])\n"
+        << "  CREATE VFP <name> (<field> <type>[, ...])\n"
+        << "  CREATE X64 <name> (<field> <type>[, ...])\n"
+        << "Types:\n"
+        << "  XBASE currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M\n"
+        << "  VFP/X64 currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T\n"
+        << "Examples:\n"
+        << "  CREATE students (sid N(6), lname C(20), fname C(15))\n"
+        << "  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)\n"
+        << "Notes:\n"
+        << "  - CREATE writes a DBF file under the configured DBF path slot for relative names.\n"
+        << "  - CREATE clears active order state and closes the current area before writing.\n"
+        << "  - CREATE opens the created table after a successful write.\n"
+        << "  - M fields trigger automatic memo attach after opening.\n"
+        << "  - X64 CREATE may use descriptor fallback tokens for DBF/VFP descriptor safety.\n";
+}
+
+
 static bool parse_field_list(std::istringstream& args,
                              std::vector<FieldSpec>& out,
                              std::string& tableName,
@@ -384,6 +483,11 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
 {
     const std::string raw_args = args.str();
 
+    if (is_create_usage_request(raw_args)) {
+        print_create_usage();
+        return;
+    }
+
     std::vector<FieldSpec> fields;
     std::string table;
     Flavor flavor = Flavor::MSDOS;
@@ -396,13 +500,7 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
         if (!err.empty()) {
             std::cout << err << "\n";
         }
-        std::cout << "CREATE <name> (<FIELD TYPE(len[,dec]) ...>)\n"
-                  << "CREATE MSDOS <name> (...)\n"
-                  << "CREATE FOX26 <name> (...)\n"
-                  << "CREATE VFP <name> (...)\n"
-                  << "CREATE X64 <name> (...)\n"
-                  << "XBASE currently implemented CREATE types: C(n), N(n[,d]), F(n[,d]), D, L, M\n"
-                  << "VFP and x64 currently implemented CREATE types: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T\n";
+        print_create_usage();
         return;
     }
 

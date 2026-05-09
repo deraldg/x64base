@@ -1,3 +1,44 @@
+// @dottalk.usage v1
+// owner: DOT|SCX
+// command: SCX
+// category: index
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: scx-index-file
+// usage-access: SCX USAGE
+// summary:
+//   Student/local SCX index-file lab command for creating, tagging, building,
+//   listing, and inspecting SCX index files.
+//
+// usage:
+//   SCX USAGE
+//   SCX CREATE <file>
+//   SCX ADDTAG <file> <name> FIELD <n>
+//   SCX ADDTAG <file> <name> FIELD <n> DESC
+//   SCX BUILD <file>
+//   SCX TAGS <file>
+//   SCX INFO <file>
+//
+// notes:
+//   SCX with no arguments prints usage.
+//   CREATE writes a new SCX container/file.
+//   ADDTAG mutates SCX tag metadata.
+//   BUILD builds SCX contents from the current area.
+//   TAGS and INFO inspect SCX metadata.
+//   SCX is separate from the ordinary command-surface CNX/CDX/LMDB abstractions.
+//
+// risk:
+//   writes_index_file: CREATE ADDTAG BUILD
+//   reads_current_area: BUILD
+//   mutates_table_data: no
+//
+// related:
+//   IDX
+//   INDEX
+//   REINDEX
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -5,19 +46,32 @@
 #include "xbase.hpp"
 #include "xindex/local_index_stub.hpp"
 
+static void print_scx_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SCX USAGE\n"
+        << "  SCX CREATE <file>\n"
+        << "  SCX ADDTAG <file> <name> FIELD <n> [DESC]\n"
+        << "  SCX BUILD <file>\n"
+        << "  SCX TAGS <file>\n"
+        << "  SCX INFO <file>\n";
+}
+
 void cmd_SCX(xbase::DbArea& area, std::istringstream& in)
 {
     std::string sub;
     if (!(in >> sub)) {
-        std::cout << "SCX CREATE <file>\n";
-        std::cout << "SCX ADDTAG <file> <name> FIELD <n> [DESC]\n";
-        std::cout << "SCX BUILD <file>\n";
-        std::cout << "SCX TAGS <file>\n";
-        std::cout << "SCX INFO <file>\n";
+        print_scx_usage();
         return;
     }
 
     const std::string U = xindex::upper_ascii_copy(sub);
+
+    if (U == "USAGE" || U == "HELP" || U == "?") {
+        print_scx_usage();
+        return;
+    }
     std::string err;
 
     if (U == "CREATE") {

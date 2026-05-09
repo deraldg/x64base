@@ -1,4 +1,78 @@
 // src/cli/cmd_ersatz.cpp
+// @dottalk.usage v1
+// owner: DOT|ERSATZ
+// command: ERSATZ
+// category: relational-browser
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: browser-session workspace-files cursor delta-baselines
+// usage-access: ERSATZ USAGE
+// summary:
+//   Relational browser and tuple-stream helper for current workspace/session,
+//   with navigation, tree/grid rendering, workspace handoff, and delta baselines.
+//
+// usage:
+//   ERSATZ
+//   ERSATZ USAGE
+//   ERSATZ SHOW
+//   ERSATZ REFRESH
+//   ERSATZ TREE
+//   ERSATZ GRID
+//   ERSATZ STATUS
+//   ERSATZ ORDER
+//   ERSATZ TOP
+//   ERSATZ BOTTOM
+//   ERSATZ NEXT
+//   ERSATZ NEXT <n>
+//   ERSATZ PREV
+//   ERSATZ PREV <n>
+//   ERSATZ SKIP <n>
+//   ERSATZ ROOT
+//   ERSATZ ROOT <alias>
+//   ERSATZ LIMIT <n>
+//   ERSATZ PATH <alias>
+//   ERSATZ CLEARPATH
+//   ERSATZ BACK
+//   ERSATZ OPEN <workspace>
+//   ERSATZ LOAD <name>
+//   ERSATZ SAVE <name>
+//   ERSATZ WLOAD <name>
+//   ERSATZ DELTA MARK <name>
+//   ERSATZ DELTA SHOW <name>
+//   ERSATZ DELTA CLEAR <name>
+//   ERSATZ DELTA CLEAR ALL
+//   ERSATZ DELTA STATUS
+//   ERSATZ RESET
+//
+// notes:
+//   ERSATZ with no arguments renders the current relational browser snapshot.
+//   SHOW, REFRESH, TREE, and GRID render the current browser session.
+//   TOP, BOTTOM, NEXT, PREV, and SKIP navigate the root cursor and render.
+//   ROOT, LIMIT, PATH, CLEARPATH, and BACK mutate browser session settings.
+//   OPEN hands off to WORKSPACE.
+//   LOAD, SAVE, and WLOAD read or write workspace files.
+//   DELTA commands manage in-memory tuple-stream baselines.
+//   RESET clears ERSATZ browser session state.
+//   ERSATZ is not table-data mutation by itself, but it can mutate cursor/session/workspace state.
+//
+// risk:
+//   mutates_cursor: navigation commands
+//   mutates_browser_session: yes
+//   reads_workspace_files: OPEN LOAD WLOAD
+//   writes_workspace_files: SAVE
+//   mutates_delta_baselines: DELTA MARK CLEAR
+//   mutates_table_data: no direct table mutation
+//   delegates_workspace: OPEN
+//
+// related:
+//   WORKSPACE
+//   REL
+//   BROWSE
+//   TUPLE
+//   GPS
+//
+
 #include "cli/cmd_ersatz.hpp"
 
 #include <algorithm>
@@ -22,6 +96,8 @@
 #include "cli/order_state.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
+#include "set_relations.hpp"
+#include "workareas.hpp"
 
 // Real WORKSPACE command entry point
 void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in);
@@ -478,6 +554,9 @@ namespace
         return ext == ".DTSCHEMA" || ext == ".INI" || ext == ".DOT";
     }
 
+    static std::string stem_upper_from_pathish(const std::string& pathish);
+    static bool same_workspace_stem(const std::string& lhs, const fs::path& rhs);
+
     static bool handoff_to_workspace(xbase::DbArea& area,
                                      const std::string& target,
                                      std::string& status)
@@ -502,8 +581,21 @@ namespace
         }
 
         const std::string after = workspace_last_loaded_file();
-        if (after.empty() || after == before)
+        if (after.empty())
         {
+            status = "workspace load failed: " + resolved.string();
+            return false;
+        }
+
+        if (after == before)
+        {
+            if (!before.empty() && same_workspace_stem(before, resolved))
+            {
+                browser::reset_session();
+                status = "workspace already loaded: " + after;
+                return true;
+            }
+
             status = "workspace load failed: " + resolved.string();
             return false;
         }
@@ -679,34 +771,132 @@ namespace
     static void print_help()
     {
         std::cout
-            << "ERSATZ syntax\n"
-            << "  ERSATZ                 show full browser snapshot using saved path/root\n"
-            << "  ERSATZ SHOW            same as ERSATZ\n"
-            << "  ERSATZ TREE            show only relation tree\n"
-            << "  ERSATZ GRID            show only tuple grid + summary\n"
-            << "  ERSATZ STATUS          show current ERSATZ session state\n"
-            << "  ERSATZ ORDER           show active root-table order used by ERSATZ\n"
-            << "  ERSATZ TOP             move root to first record in active order and show\n"
-            << "  ERSATZ BOTTOM          move root to last record in active order and show\n"
-            << "  ERSATZ NEXT [n]        move root forward n record(s) in active order and show\n"
-            << "  ERSATZ PREV [n]        move root backward n record(s) in active order and show\n"
-            << "  ERSATZ SKIP <n>        move root by signed n in active order and show\n"
-            << "  ERSATZ ROOT [alias]    set/show browser root alias\n"
-            << "  ERSATZ OPEN <alias>    push one child alias onto the path\n"
-            << "  ERSATZ BACK            pop one alias from the path\n"
-            << "  ERSATZ PATH            show current path\n"
-            << "  ERSATZ CLEARPATH       clear current path\n"
-            << "  ERSATZ LIMIT <n>       set row limit\n"
-            << "  ERSATZ LOAD [name]     load current/public/default/data workspaces\\name.erz\n"
-            << "  ERSATZ SAVE [name]     save current-user workspaces\\name.erz\n"
-            << "  ERSATZ WLOAD [name]    load current/public/default/data workspaces\\name.dtschema\n"
-            << "  ERSATZ DELTA MARK [name] [LIMIT n]  capture current tuple stream baseline\n"
-            << "  ERSATZ DELTA SHOW [name] [LIMIT n]  compare current tuple stream to baseline\n"
-            << "  ERSATZ DELTA CLEAR [name|ALL]       clear saved tuple baseline(s)\n"
-            << "  ERSATZ DELTA STATUS                 list saved tuple baselines\n"
-            << "  ERSATZ REFRESH         rebuild using current root record position\n"
-            << "  ERSATZ RESET           clear saved ERSATZ state\n"
-            << "  ERSATZ HELP\n";
+            << "Usage:\n"
+            << "  ERSATZ\n"
+            << "  ERSATZ USAGE\n"
+            << "  ERSATZ SAMPLE\n"
+            << "  ERSATZ SHOW\n"
+            << "  ERSATZ REFRESH\n"
+            << "  ERSATZ TREE\n"
+            << "  ERSATZ GRID\n"
+            << "  ERSATZ STATUS\n"
+            << "  ERSATZ ORDER\n"
+            << "  ERSATZ TOP\n"
+            << "  ERSATZ BOTTOM\n"
+            << "  ERSATZ NEXT [<n>]\n"
+            << "  ERSATZ PREV [<n>]\n"
+            << "  ERSATZ SKIP <n>\n"
+            << "  ERSATZ ROOT [<alias>]\n"
+            << "  ERSATZ LIMIT <n>\n"
+            << "  ERSATZ PATH <alias>\n"
+            << "  ERSATZ CLEARPATH\n"
+            << "  ERSATZ BACK\n"
+            << "  ERSATZ OPEN <workspace>\n"
+            << "  ERSATZ LOAD <name>\n"
+            << "  ERSATZ SAVE <name>\n"
+            << "  ERSATZ WLOAD <name>\n"
+            << "  ERSATZ DELTA MARK [<name>] [LIMIT <n>]\n"
+            << "  ERSATZ DELTA SHOW [<name>] [LIMIT <n>]\n"
+            << "  ERSATZ DELTA CLEAR <name>\n"
+            << "  ERSATZ DELTA CLEAR ALL\n"
+            << "  ERSATZ DELTA STATUS\n"
+            << "  ERSATZ RESET\n"
+            << "Notes:\n"
+            << "  - ERSATZ with no arguments renders the current browser snapshot.\n"
+            << "  - Navigation commands move the root cursor and render again.\n"
+            << "  - LOAD/SAVE/WLOAD interact with workspace files.\n"
+            << "  - SAMPLE prints a DotScript smoke test for MCC/ERSATZ smart-root behavior.\n";
+    }
+
+    static void print_sample_script()
+    {
+        std::cout << R"ERSATZ_SAMPLE(; -----------------------------------------------------------------------------
+; ERSATZ SMART ROOT SAMPLE / TEST SCRIPT
+; -----------------------------------------------------------------------------
+; ersatz_smart_test.dot
+; Purpose:
+;   Test smarter ERSATZ root/profile recovery after MCC workspace load.
+;
+; Expected core behavior:
+;   - MCC loads x32 paths and mcc.dtschemas.
+;   - Plain ERSATZ should not stay stuck on BUILDING if BUILDING has no children.
+;   - SELECT STUDENTS + ERSATZ should use STUDENTS or mcc.erz-derived STUDENTS root.
+;   - RBROWSE should behave the same as ERSATZ.
+
+set echo on
+
+echo ============================================================
+echo ERSATZ SMART ROOT TEST
+echo ============================================================
+
+echo .
+echo STEP 1: Load MCC convenience demo
+mcc
+
+echo .
+echo STEP 2: Show active workspace relation tree from current state
+rel list all
+
+echo .
+echo STEP 3: Plain ERSATZ immediately after MCC
+echo EXPECT: Should open browser or auto-load/infer MCC profile/root.
+echo EXPECT-NOT: No active relations found from root alias BUILDING.
+ersatz
+
+echo .
+echo STEP 4: Reset ERSATZ session, then select STUDENTS
+echo This tests whether SELECT STUDENTS can dislodge stale/default root.
+ersatz reset
+select students
+top
+tup
+rel list
+rel list all
+
+echo .
+echo STEP 5: Plain ERSATZ after SELECT STUDENTS
+echo EXPECT: ROOT should be STUDENTS, with ENROLL path available.
+echo EXPECT-NOT: root alias BUILDING failure.
+ersatz
+
+echo .
+echo STEP 6: RBROWSE compatibility
+echo EXPECT: RBROWSE should match ERSATZ behavior.
+rbrowse
+
+echo .
+echo STEP 7: Explicit profile should still work
+ersatz reset
+ersatz mcc
+ersatz
+
+echo .
+echo STEP 8: Navigation smoke test
+ersatz next
+ersatz prev
+ersatz top
+ersatz bottom
+
+echo .
+echo STEP 9: Status and order smoke
+ersatz status
+ersatz order
+
+echo .
+echo STEP 10: Manual root override should still work
+ersatz root students
+ersatz clearpath
+ersatz open enroll
+ersatz open classes
+ersatz open tassign
+ersatz open teachers
+ersatz path
+ersatz grid
+
+echo ============================================================
+echo ERSATZ SMART ROOT TEST DONE
+echo ============================================================
+)ERSATZ_SAMPLE";
     }
 
     static void print_session_status(xbase::DbArea& area)
@@ -731,10 +921,332 @@ namespace
         std::cout << "  DATA SCRIPT   : " << data_scripts_root().string() << "\n";
     }
 
+    static std::string stem_upper_from_pathish(const std::string& pathish)
+    {
+        const std::string t = trim(pathish);
+        if (t.empty())
+            return "";
+
+        fs::path p(t);
+        std::string stem = p.stem().string();
+        if (stem.empty())
+            stem = p.filename().string();
+        return upper_copy(stem);
+    }
+
+    static bool same_workspace_stem(const std::string& lhs, const fs::path& rhs)
+    {
+        const std::string l = stem_upper_from_pathish(lhs);
+        const std::string r = upper_copy(rhs.stem().string());
+        return !l.empty() && !r.empty() && l == r;
+    }
+
+    static std::string workspace_profile_candidate_name()
+    {
+        const std::string last = workspace_last_loaded_file();
+        if (trim(last).empty())
+            return "";
+
+        fs::path p(last);
+        std::string stem = p.stem().string();
+        if (stem.empty())
+            stem = p.filename().string();
+
+        stem = trim(stem);
+        if (stem.empty())
+            return "";
+
+        const std::string up = upper_copy(stem);
+        if (up == "DEFAULT")
+            return "";
+
+        return stem;
+    }
+
+    static std::string alias_for_area_safe(xbase::DbArea& area)
+    {
+        return current_area_name(area);
+    }
+
+    static bool alias_is_open(const std::string& alias)
+    {
+        const std::string want = upper_copy(alias);
+        if (want.empty())
+            return false;
+
+        const std::size_t n = workareas::count();
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            xbase::DbArea* a = workareas::db(i);
+            if (!a)
+                continue;
+
+            try
+            {
+                if (!a->isOpen())
+                    continue;
+            }
+            catch (...)
+            {
+                continue;
+            }
+
+            if (upper_copy(alias_for_area_safe(*a)) == want)
+                return true;
+        }
+
+        return false;
+    }
+
+    static bool relation_root_has_children(const std::string& alias,
+                                           browser::RelationTreeSnapshot* out_tree = nullptr)
+    {
+        const std::string root = trim(alias);
+        if (root.empty())
+            return false;
+
+        browser::RelationTreeSnapshot tree{};
+        std::vector<std::string> warnings;
+        std::string status = "OK";
+
+        if (!browser::relation_build_tree(root, tree, warnings, status))
+            return false;
+
+        if (out_tree)
+            *out_tree = tree;
+
+        return !tree.links.empty();
+    }
+
+    static std::vector<std::string> children_for_parent_from_specs(
+        const std::vector<relations_api::RelationSpec>& specs,
+        const std::string& parent)
+    {
+        std::vector<std::string> out;
+        const std::string want = upper_copy(parent);
+
+        for (const auto& s : specs)
+        {
+            if (upper_copy(s.parent) == want && !trim(s.child).empty())
+                out.push_back(s.child);
+        }
+
+        return out;
+    }
+
+    static int incoming_count_for_alias(const std::vector<relations_api::RelationSpec>& specs,
+                                        const std::string& alias)
+    {
+        int n = 0;
+        const std::string want = upper_copy(alias);
+
+        for (const auto& s : specs)
+        {
+            if (upper_copy(s.child) == want)
+                ++n;
+        }
+
+        return n;
+    }
+
+    static int relation_depth_from_alias(const std::vector<relations_api::RelationSpec>& specs,
+                                         const std::string& alias,
+                                         std::vector<std::string>& stack)
+    {
+        const std::string up = upper_copy(alias);
+        if (up.empty())
+            return 0;
+
+        for (const auto& seen : stack)
+        {
+            if (upper_copy(seen) == up)
+                return 0;
+        }
+
+        stack.push_back(alias);
+
+        int best = 0;
+        const auto children = children_for_parent_from_specs(specs, alias);
+        for (const auto& child : children)
+        {
+            std::vector<std::string> next_stack = stack;
+            const int d = 1 + relation_depth_from_alias(specs, child, next_stack);
+            if (d > best)
+                best = d;
+        }
+
+        return best;
+    }
+
+    static std::string infer_best_relation_root_alias()
+    {
+        const auto specs = relations_api::export_relations();
+        if (specs.empty())
+            return "";
+
+        std::vector<std::string> parents;
+        parents.reserve(specs.size());
+
+        for (const auto& s : specs)
+        {
+            const std::string parent = trim(s.parent);
+            if (parent.empty())
+                continue;
+
+            bool seen = false;
+            for (const auto& existing : parents)
+            {
+                if (upper_copy(existing) == upper_copy(parent))
+                {
+                    seen = true;
+                    break;
+                }
+            }
+
+            if (!seen)
+                parents.push_back(parent);
+        }
+
+        std::string best;
+        int best_score = -1000000;
+
+        for (const auto& parent : parents)
+        {
+            if (!alias_is_open(parent))
+                continue;
+
+            const auto children = children_for_parent_from_specs(specs, parent);
+            if (children.empty())
+                continue;
+
+            std::vector<std::string> stack;
+            const int incoming = incoming_count_for_alias(specs, parent);
+            const int depth = relation_depth_from_alias(specs, parent, stack);
+            const std::string up = upper_copy(parent);
+
+            int score = 0;
+            score += static_cast<int>(children.size()) * 20;
+            score += depth * 25;
+
+            // Prefer true graph roots over intermediate aliases.  In the MCC
+            // workspace this prevents area 0 / lookup-style aliases such as
+            // BUILDING from becoming sticky browser roots, and it favors
+            // STUDENTS over ENROLL or CLASSES.
+            if (incoming == 0)
+                score += 250;
+            else
+                score -= incoming * 60;
+
+            // MCC/demo convention. This is deliberately a tie-breaker on top
+            // of relation-graph evidence, not a table-opening shortcut.
+            if (up == "STUDENTS")
+                score += 100;
+
+            if (score > best_score)
+            {
+                best_score = score;
+                best = parent;
+            }
+        }
+
+        return best;
+    }
+
+    static bool try_auto_load_workspace_ersatz_profile(xbase::DbArea& area,
+                                                       std::string& status)
+    {
+        const std::string candidate = workspace_profile_candidate_name();
+        if (candidate.empty())
+            return false;
+
+        const fs::path profile_path = resolve_ersatz_file_path(candidate);
+        if (!file_exists(profile_path))
+            return false;
+
+        std::string load_status;
+        if (!load_ersatz_file(area, candidate, load_status))
+        {
+            status = load_status;
+            return false;
+        }
+
+        status = load_status;
+        return true;
+    }
+
+    static bool smarten_ersatz_session(xbase::DbArea& area, bool verbose)
+    {
+        const std::string selected = current_area_name(area);
+        const std::string existing = browser::root_alias();
+
+        if (!existing.empty() && relation_root_has_children(existing))
+            return true;
+
+        // First try a matching .erz profile for the currently loaded workspace.
+        // This makes the common sequence "MCC" then "ERSATZ" behave like
+        // "ERSATZ MCC" when mcc.erz exists, without moving workspace/table
+        // ownership into ERSATZ inference code.
+        if (!existing.empty() || !selected.empty())
+        {
+            std::string profile_status;
+            if (try_auto_load_workspace_ersatz_profile(area, profile_status))
+            {
+                if (relation_root_has_children(browser::root_alias()))
+                {
+                    if (verbose)
+                        std::cout << "ERSATZ: auto-loaded browser profile for active workspace ("
+                                  << profile_status << ").\n";
+                    return true;
+                }
+            }
+        }
+
+        if (!selected.empty() && relation_root_has_children(selected))
+        {
+            if (!existing.empty() && upper_copy(existing) != upper_copy(selected) && verbose)
+            {
+                std::cout << "ERSATZ: root " << existing
+                          << " has no child relations; using selected alias "
+                          << selected << ".\n";
+            }
+            else if (existing.empty() && verbose)
+            {
+                std::cout << "ERSATZ: using selected alias " << selected
+                          << " as relational browser root.\n";
+            }
+
+            browser::set_root_alias(selected);
+            browser::clear_path();
+            return true;
+        }
+
+        const std::string inferred = infer_best_relation_root_alias();
+        if (!inferred.empty())
+        {
+            if (verbose)
+            {
+                if (!existing.empty())
+                    std::cout << "ERSATZ: root " << existing
+                              << " has no child relations; inferred root "
+                              << inferred << " from active relation graph.\n";
+                else
+                    std::cout << "ERSATZ: inferred root " << inferred
+                              << " from active relation graph.\n";
+            }
+
+            browser::set_root_alias(inferred);
+            browser::clear_path();
+            return true;
+        }
+
+        browser::ensure_session_root(selected);
+        return relation_root_has_children(browser::root_alias());
+    }
+
     static bool build_snapshot_from_session(xbase::DbArea& area,
                                             browser::BrowserSnapshot& snap)
     {
-        browser::ensure_session_root(current_area_name(area));
+        smarten_ersatz_session(area, true);
 
         browser::BrowserRequest req{};
         req.root_alias = browser::root_alias();
@@ -1426,9 +1938,15 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     const std::string raw_sub = trim(sub);
     sub = upper_copy(raw_sub);
 
-    if (sub == "HELP")
+    if (sub == "USAGE" || sub == "HELP" || sub == "?")
     {
         print_help();
+        return;
+    }
+
+    if (sub == "SAMPLE" || sub == "TESTSCRIPT")
+    {
+        print_sample_script();
         return;
     }
 
@@ -1684,6 +2202,8 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         sub == "TREE" ||
         sub == "GRID" ||
         sub == "HELP" ||
+        sub == "SAMPLE" ||
+        sub == "TESTSCRIPT" ||
         sub == "RESET" ||
         sub == "STATUS" ||
         sub == "ORDER" ||

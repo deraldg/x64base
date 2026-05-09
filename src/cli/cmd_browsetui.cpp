@@ -1,6 +1,48 @@
 // src/cli/cmd_browsetui.cpp
 // COMPLETE + TARGETED CLEAR VERSION - No more "declared but not defined" errors
 
+// @dottalk.usage v1
+// owner: DOT|BROWSETUI
+// command: BROWSETUI
+// category: ui
+// status: supported
+// noargs: interactive
+// effect: interactive
+// mutates: delegates create append delete goto replace-like staged edits
+// usage-access: BROWSETUI USAGE
+// summary:
+//   Enter the full-screen Turbo/console browse UI with create, read, update,
+//   delete, append, navigation, and staged edit support.
+//
+// usage:
+//   BROWSETUI USAGE
+//   BROWSETUI
+//
+// notes:
+//   BROWSETUI with no arguments enters the interactive TUI browser.
+//   The TUI uses function keys and single-key commands for create, read/list, update/edit, delete, append, goto, help, and quit.
+//   Edits may be staged and then saved or discarded when navigating or exiting.
+//   BROWSETUI delegates to existing command handlers for create, append, delete, list/display, goto, and update-like operations.
+//   BROWSETUI is interactive and may mutate table data or session state depending on user actions.
+//
+// risk:
+//   interactive: yes
+//   mutates_table_data: create append delete update actions
+//   mutates_record_pointer: navigation actions
+//   staged_edits: yes
+//   delegates_to_create: yes
+//   delegates_to_append: yes
+//   delegates_to_delete: yes
+//
+// related:
+//   BROWSE
+//   BROWSER
+//   CREATE
+//   APPEND
+//   DELETE
+//   GOTO
+//
+
 #include <string>
 #include <vector>
 #include <sstream>
@@ -47,6 +89,36 @@ static void clear_content_area(Console& con, int x, int y, int width, int height
 static inline void rtrim_inplace(std::string& s) {
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
         s.pop_back();
+}
+
+
+static std::string browsetui_trim(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string browsetui_upper(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool is_browsetui_usage_request(std::string raw) {
+    std::string t = browsetui_upper(browsetui_trim(std::move(raw)));
+    if (t.rfind("BROWSETUI ", 0) == 0) t = browsetui_trim(t.substr(10));
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_browsetui_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  BROWSETUI USAGE\n"
+        << "  BROWSETUI\n"
+        << "Notes:\n"
+        << "  - Enters the full-screen interactive browse TUI.\n"
+        << "  - F1 create, F2 read/list, F3 update/edit, F4 delete, F5 append.\n"
+        << "  - G goto, L list/read, D display, E edit, H/? help, Q/Esc quit.\n";
 }
 
 // ==================================================================
@@ -471,7 +543,11 @@ static void show_modal(Console& con, const std::string& title,
 // MAIN COMMAND
 // ==================================================================
 void cmd_BROWSETUI(xbase::DbArea& area, std::istringstream& iss) {
-    (void)iss;
+    const std::string raw_args = iss.str();
+    if (is_browsetui_usage_request(raw_args)) {
+        print_browsetui_usage();
+        return;
+    }
 
     std::unique_ptr<Console> con(make_console());
     std::string status = "Ready.";

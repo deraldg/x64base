@@ -1,6 +1,65 @@
 // src/commands/cmd_dotscript.cpp
 // DOTSCRIPT runner with TRACE banner + scripts/tests resolver + @file support + one-level subscript limit.
 
+// @dottalk.usage v1
+// owner: DOT|DOTSCRIPT
+// command: DOTSCRIPT
+// category: script
+// status: supported
+// noargs: usage
+// effect: execute
+// mutates: delegates script commands session
+// usage-access: DOTSCRIPT USAGE
+// summary:
+//   Run a DotTalk++ script file, resolving bare names through script/test
+//   search locations, supporting @file notation, TRACE mode, and one-level
+//   subscript nesting.
+//
+// usage:
+//   DOTSCRIPT USAGE
+//   DOTSCRIPT <file>
+//   DOTSCRIPT @<file>
+//   DOTSCRIPT TRACE
+//   DOTSCRIPT TRACE ON
+//   DOTSCRIPT TRACE OFF
+//   DOTSCRIPT TRACE <file>
+//   DOTSCRIPT TRACE @<file>
+//   DOTSCRIPT TRACE ON <file>
+//   DOTSCRIPT TRACE OFF <file>
+//   DOTSCRIPT TRACE ON @<file>
+//   DOTSCRIPT TRACE OFF @<file>
+//
+// notes:
+//   DOTSCRIPT with no arguments shows usage.
+//   DOTSCRIPT reads an external script file and executes each nonblank,
+//   noncomment line through the shell command executor.
+//   Script comments/blank lines are ignored when they begin with *, //, &&, or ; after trimming.
+//   Bare script names try the typed name, .dts extension, scripts/, and tests/ candidates.
+//   @file notation is accepted and unquoted before path resolution.
+//   TRACE without a file reports the current trace state and usage.
+//   TRACE ON/OFF changes global DOTSCRIPT trace state.
+//   TRACE <file> runs a single script with trace enabled without changing global trace state.
+//   Nesting is limited to main script plus one subscript.
+//   DOTSCRIPT itself delegates side effects to the commands inside the script; it is not read-only.
+//
+// risk:
+//   reads_files: yes
+//   executes_commands: yes
+//   mutates_data: depends on script contents
+//   mutates_session: depends on script contents
+//   writes_files: depends on script contents
+//   trace_state_mutation: DOTSCRIPT TRACE ON/OFF
+//   nesting_limit: main plus one subscript
+//   no_transaction_or_rollback: yes
+//
+// related:
+//   TEST
+//   CMDHELP
+//   WORKSPACE
+//   CREATE
+//   USE
+//
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -144,6 +203,7 @@ static bool g_trace_banner_printed = false;
 static void print_usage() {
     std::cout
         << "Usage:\n"
+        << "  DOTSCRIPT USAGE\n"
         << "  DOTSCRIPT <file>\n"
         << "  DOTSCRIPT @<file>\n"
         << "  DOTSCRIPT TRACE\n"
@@ -151,7 +211,19 @@ static void print_usage() {
         << "  DOTSCRIPT TRACE <file>\n"
         << "  DOTSCRIPT TRACE @<file>\n"
         << "  DOTSCRIPT TRACE ON|OFF <file>\n"
-        << "  DOTSCRIPT TRACE ON|OFF @<file>\n";
+        << "  DOTSCRIPT TRACE ON|OFF @<file>\n"
+        << "Notes:\n"
+        << "  - Bare names resolve as typed, .dts, scripts/, then tests/.\n"
+        << "  - Lines beginning with *, //, &&, or ; after trimming are skipped.\n"
+        << "  - DOTSCRIPT executes commands; side effects depend on script contents.\n"
+        << "  - Nesting is limited to main script plus one subscript.\n";
+}
+
+
+static bool is_dotscript_usage_request(const std::string& raw)
+{
+    const std::string t = upper_copy(trim_copy(raw));
+    return t == "USAGE" || t == "HELP" || t == "?";
 }
 
 static void maybe_print_trace_banner() {
@@ -174,7 +246,7 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
     std::getline(args, rest);
     rest = trim_copy(std::move(rest));
 
-    if (rest.empty()) {
+    if (rest.empty() || is_dotscript_usage_request(rest)) {
         print_usage();
         return;
     }

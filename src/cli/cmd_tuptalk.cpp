@@ -21,6 +21,67 @@
 // - PUSH ROW builds a single fixed-width, schema-aligned row (good for round-trip tests).
 // - When printing schema lengths/decimals we cast to int (avoid unsigned-char/control-char issues).
 
+// @dottalk.usage v1
+// owner: DOT|TUPTALK
+// command: TUPTALK
+// category: tuple
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: tuptalk-buffer filesystem
+// usage-access: TUPTALK USAGE
+// summary:
+//   Tuple-based normalization test harness and live DBF capture tool for
+//   building, normalizing, dumping, exporting, and pushing tuple entries.
+//
+// usage:
+//   TUPTALK
+//   TUPTALK USAGE
+//   TUPTALK RESET
+//   TUPTALK ADD <type> <len> <raw>
+//   TUPTALK ADD <type> <len> <dec> <raw>
+//   TUPTALK LIST
+//   TUPTALK NORMALIZE
+//   TUPTALK DUMP
+//   TUPTALK EXPORT CSV
+//   TUPTALK EXPORT TSV
+//   TUPTALK EXPORT CSV <path>
+//   TUPTALK EXPORT TSV <path>
+//   TUPTALK PUSH <field>
+//   TUPTALK PUSH ALL
+//   TUPTALK PUSH ALL FILTER <mask>
+//   TUPTALK PUSH FILTER <mask>
+//   TUPTALK PUSH ROW
+//
+// examples:
+//   TUPTALK PUSH LASTNAME
+//   TUPTALK PUSH 3
+//   TUPTALK PUSH ALL
+//   TUPTALK PUSH ALL FILTER CND
+//   TUPTALK PUSH ROW
+//
+// notes:
+//   TUPTALK with no arguments shows usage/help and buffer status.
+//   TT is wired as a shell alias for TUPTALK.
+//   ADD creates a test entry from raw text and schema type metadata.
+//   NORMALIZE fills normalized values using value_normalize.
+//   PUSH captures fields or rows from the current DBF record.
+//   EXPORT writes CSV or TSV when a path is supplied or uses default behavior.
+//   TUPTALK mutates its process-local scratch buffer and may write export files.
+//
+// risk:
+//   mutates_tuptalk_buffer: yes
+//   reads_current_record: PUSH forms
+//   writes_files: EXPORT forms
+//   mutates_table_data: no
+//   requires_open_table: PUSH forms
+//
+// related:
+//   TUPLE
+//   TUPVALIDATE
+//   FIELDS
+//
+
 #include "cmd_tuptalk.hpp"
 
 #include <algorithm>
@@ -106,9 +167,9 @@ static void print_status() {
 
 static void print_help() {
     std::cout <<
-        "TUPTALK / TT ? tuple normalization harness\n"
-        "Syntax:\n"
-        "  TUPTALK                 # show this help + status\n"
+        "Usage:\n"
+        "  TUPTALK\n"
+        "  TUPTALK USAGE\n"
         "  TUPTALK RESET\n"
         "  TUPTALK ADD <type> <len> [<dec>] <raw...>\n"
         "      type: C|N|D|L (case-insensitive)\n"
@@ -121,8 +182,8 @@ static void print_help() {
         "  TUPTALK EXPORT CSV|TSV [<path>]\n"
         "      Export: index,type,len,dec,raw,norm (CSV quoted / TSV sanitized)\n"
         "  TUPTALK PUSH <fieldName|#>\n"
-        "      Add one entry using the current record?s value and the field?s type/len/dec\n"
-        "      Matching: exact(case-insensitive) ? unique prefix ? unique substring\n"
+        "      Add one entry using the current record value and field type/len/dec\n"
+        "      Matching: exact(case-insensitive), unique prefix, then unique substring\n"
         "  TUPTALK PUSH ALL [FILTER <mask>]\n"
         "      Add entries for all fields; optional <mask> like CND to restrict types\n"
         "  TUPTALK PUSH FILTER <mask>\n"
@@ -573,7 +634,8 @@ void cmd_TUPTALK(DbArea& area, std::istringstream& iss) {
         handle_export(iss);
     } else if (sub == "PUSH") {
         handle_push(area, iss);
-    } else if (sub == "HELP" || sub == "/?" || sub == "-H" || sub == "--HELP") {
+    } else if (sub == "USAGE" || sub == "HELP" || sub == "?" ||
+               sub == "/?" || sub == "-H" || sub == "--HELP") {
         print_help();
     } else {
         std::cout << "TUPTALK: unknown subcommand \"" << sub

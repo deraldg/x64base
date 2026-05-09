@@ -25,6 +25,71 @@
 // - REINDEX ALL excludes student families by design.
 //   Student families are opt-in through REINDEX CUSTOM.
 
+// @dottalk.usage v1
+// owner: DOT|REINDEX
+// command: REINDEX
+// category: index
+// status: supported
+// noargs: mutate
+// effect: rebuild
+// mutates: index-files table-stale-state
+// usage-access: REINDEX USAGE
+// summary:
+//   Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index
+//   families, choosing a default family by table flavor when no family is given.
+//
+// usage:
+//   REINDEX USAGE
+//   REINDEX
+//   REINDEX INX
+//   REINDEX INX <tagfile>
+//   REINDEX CNX
+//   REINDEX CNX <name-or-path.cnx>
+//   REINDEX CDX
+//   REINDEX CDX YES
+//   REINDEX CDX AUTO
+//   REINDEX CDX NOPROMPT
+//   REINDEX CDX CLEAN
+//   REINDEX CDX FORCE
+//   REINDEX CDX QUIET
+//   REINDEX SIX
+//   REINDEX SIX <tagfile>
+//   REINDEX SCX
+//   REINDEX SCX <tagfile>
+//   REINDEX ALL
+//   REINDEX CUSTOM
+//   REINDEX <tagfile>
+//
+// notes:
+//   REINDEX with no arguments chooses the default family by open table flavor.
+//   v64-like tables default to CDX through BUILDLMDB.
+//   v32-like tables default to INX.
+//   With no table open, the fallback default is CDX.
+//   REINDEX INX rebuilds a legacy single-tag INX file.
+//   REINDEX CNX delegates to REBUILD.
+//   REINDEX CDX delegates to BUILDLMDB.
+//   REINDEX ALL excludes SIX and SCX by design.
+//   REINDEX CUSTOM runs SIX and SCX student families.
+//   REINDEX <tagfile> is treated as REINDEX INX <tagfile> for compatibility.
+//   Dirty TABLE buffers may prompt for COMMIT before supported rebuild paths.
+//
+// risk:
+//   writes_index_files: yes
+//   may_commit_buffered_table_data: yes when dirty TABLE is accepted
+//   clears_stale_state: INX path on success
+//   mutates_table_data: indirectly through COMMIT prompt only
+//   delegates_to_rebuild: CNX
+//   delegates_to_buildlmdb: CDX
+//
+// related:
+//   REBUILD
+//   BUILDLMDB
+//   INDEX
+//   CDX
+//   CNX
+//   COMMIT
+//
+
 #include "xbase.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
@@ -177,41 +242,21 @@ static ReindexFamily default_family_for_area(const DbArea& A)
 static void print_reindex_help()
 {
     std::cout
-        << "REINDEX [INX|CNX|CDX|SIX|SCX|ALL|CUSTOM] [family-specific args]\n"
-        << "\n"
-        << "Canonical rebuild command.\n"
-        << "\n"
+        << "Usage:\n"
+        << "  REINDEX USAGE\n"
         << "  REINDEX\n"
-        << "      Default family by open table flavor:\n"
-        << "      v64-like table -> CDX (via BUILDLMDB)\n"
-        << "      v32-like table -> INX\n"
-        << "\n"
         << "  REINDEX INX [<tagfile>]\n"
-        << "      Rebuild a legacy single-tag INX file.\n"
-        << "\n"
         << "  REINDEX CNX [<name-or-path.cnx>]\n"
-        << "      Rebuild a legacy compound CNX file.\n"
-        << "\n"
         << "  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]\n"
-        << "      Rebuild CDX/LMDB backing store via BUILDLMDB.\n"
-        << "\n"
         << "  REINDEX SIX [<tagfile>]\n"
-        << "      Student single-tag family.\n"
-        << "\n"
         << "  REINDEX SCX [<tagfile>]\n"
-        << "      Student compound family.\n"
-        << "\n"
         << "  REINDEX ALL\n"
-        << "      v32-like table -> INX + CNX\n"
-        << "      v64-like table -> CDX\n"
-        << "      (excludes SIX/SCX by design)\n"
-        << "\n"
         << "  REINDEX CUSTOM\n"
-        << "      SIX + SCX\n"
-        << "\n"
-        << "Backward compatibility:\n"
         << "  REINDEX <tagfile>\n"
-        << "      Treated as REINDEX INX <tagfile>.\n";
+        << "Notes:\n"
+        << "  - Default: v64-like table -> CDX; v32-like table -> INX.\n"
+        << "  - CNX delegates to REBUILD; CDX delegates to BUILDLMDB.\n"
+        << "  - REINDEX <tagfile> is treated as REINDEX INX <tagfile>.\n";
 }
 
 // little-endian I/O
@@ -528,7 +573,7 @@ void cmd_REINDEX(DbArea& A, std::istringstream& args) {
     std::getline(peek, restAfterFirst);
     restAfterFirst = trim_copy(restAfterFirst);
 
-    if (firstUp == "HELP" || firstUp == "?" || firstUp == "/?" ||
+    if (firstUp == "USAGE" || firstUp == "HELP" || firstUp == "?" || firstUp == "/?" ||
         firstUp == "-H" || firstUp == "--HELP") {
         print_reindex_help();
         return;

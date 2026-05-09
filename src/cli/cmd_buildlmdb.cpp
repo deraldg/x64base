@@ -16,6 +16,64 @@
 //   YES / Y / AUTO / NOPROMPT / QUIET / SILENT explicitly.
 // - CLEAN / FORCE archives first and proceeds without the destructive prompt path.
 
+// @dottalk.usage v1
+// owner: DOT|BUILDLMDB
+// command: BUILDLMDB
+// category: index
+// status: supported
+// noargs: mutate
+// effect: rebuild
+// mutates: lmdb-index-backend filesystem order-state
+// usage-access: BUILDLMDB USAGE
+// summary:
+//   Build or rebuild the LMDB backing store for a CDX container using one LMDB
+//   environment per table container and named databases for tags.
+//
+// usage:
+//   BUILDLMDB USAGE
+//   BUILDLMDB
+//   BUILDLMDB YES
+//   BUILDLMDB AUTO
+//   BUILDLMDB NOPROMPT
+//   BUILDLMDB CLEAN YES
+//   BUILDLMDB FORCE YES
+//   BUILDLMDB QUIET
+//   BUILDLMDB SILENT
+//   BUILDLMDB TINY
+//   BUILDLMDB SMALL
+//   BUILDLMDB MEDIUM
+//   BUILDLMDB LARGE
+//   BUILDLMDB XL
+//   BUILDLMDB HUGE
+//   BUILDLMDB MAPSIZE <size> YES
+//   BUILDLMDB CLEAN MAPSIZE <size> YES
+//
+// notes:
+//   BUILDLMDB requires an open table except for usage/help requests.
+//   The public CDX container resolves under INDEXES and the LMDB backend environment resolves under LMDB.
+//   If an existing LMDB environment would be destructively rebuilt, explicit YES, AUTO, NOPROMPT, QUIET, or SILENT is required.
+//   CLEAN and FORCE archive the existing environment before rebuild.
+//   BUILDLMDB releases active index/order state before destructive rebuild.
+//   BUILDLMDB rebuilds tag databases from current table data.
+//
+// risk:
+//   reads_table_records: yes
+//   reads_cdx_container: yes
+//   writes_lmdb_environment: yes
+//   drops_or_recreates_lmdb_databases: yes
+//   archives_existing_environment: CLEAN or FORCE
+//   clears_order_state: before rebuild
+//   requires_confirmation_for_existing_environment: yes
+//   mutates_table_data: no
+//
+// related:
+//   CDX
+//   LMDB
+//   SET ORDER
+//   INDEX
+//   REINDEX
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/path_resolver.hpp"
@@ -524,7 +582,7 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
     for (size_t i = 0; i < tokens.size(); ++i) {
         const std::string& t = tokens[i];
 
-        if (t == "HELP" || t == "?" || t == "/?") {
+        if (t == "USAGE" || t == "HELP" || t == "?" || t == "/?") {
             show_help = true;
         } else if (t == "CLEAN") {
             do_clean = true;

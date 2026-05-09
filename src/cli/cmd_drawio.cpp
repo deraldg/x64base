@@ -9,6 +9,41 @@
 //   DRAWIO OPEN
 //   DRAWIO OPEN <url>
 
+// @dottalk.usage v1
+// owner: DOT|DRAWIO
+// command: DRAWIO
+// category: integration
+// status: supported
+// noargs: execute
+// effect: launch
+// mutates: external-browser
+// usage-access: DRAWIO USAGE
+// summary:
+//   Launch diagrams.net or a supplied draw.io URL in the default browser.
+//
+// usage:
+//   DRAWIO USAGE
+//   DRAWIO
+//   DRAWIO OPEN
+//   DRAWIO OPEN <url>
+//
+// notes:
+//   DRAWIO with no arguments launches the default diagrams.net URL.
+//   DRAWIO OPEN with no URL also launches the default diagrams.net URL.
+//   DRAWIO OPEN <url> launches the supplied URL.
+//   DRAWIO does not mutate table data or workspace state.
+//
+// risk:
+//   launches_external_browser: yes
+//   opens_url: yes
+//   mutates_table_data: no
+//   writes_files: no
+//
+// related:
+//   HELP
+//   EXPORT
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -39,6 +74,7 @@ static std::string up_copy(std::string s) {
 static void print_usage() {
     std::cout
         << "Usage:\n"
+        << "  DRAWIO USAGE\n"
         << "  DRAWIO\n"
         << "  DRAWIO OPEN\n"
         << "  DRAWIO OPEN <url>\n"
@@ -87,7 +123,7 @@ void cmd_DRAWIO(xbase::DbArea& area, std::istringstream& iss) {
 
     const std::string SUB = up_copy(sub);
 
-    if (SUB == "HELP" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
+    if (SUB == "USAGE" || SUB == "HELP" || SUB == "?" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
         print_usage();
         return;
     }

@@ -16,6 +16,53 @@
 //   - Tag build data (RUN1) persistence is handled by cdx backend; this command
 //     is only for container header + tag directory management.
 
+// @dottalk.usage v1
+// owner: DOT|CDX
+// command: CDX
+// category: index
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: index-metadata filesystem
+// usage-access: CDX USAGE
+// summary:
+//   Manage CDX index container metadata: create containers, inspect header/tag
+//   directories, add tags, and drop tags.
+//
+// usage:
+//   CDX USAGE
+//   CDX INFO [<path.cdx>]
+//   CDX TAGS [<path.cdx>]
+//   CDX CREATE [<path.cdx>]
+//   CDX ADDTAG <name> [<path.cdx>]
+//   CDX DROPTAG <name> [<path.cdx>]
+//
+// notes:
+//   CDX with no arguments shows usage and does not default to INFO.
+//   If no path is supplied, CDX first uses the active CDX path from order state when available.
+//   Otherwise CDX derives <current_dbf_basename>.cdx through the INDEXES path slot.
+//   CREATE refuses to overwrite an existing file.
+//   INFO and TAGS are read-only inspection operations and require an existing file.
+//   ADDTAG and DROPTAG mutate the CDX container tag directory and require an existing file.
+//   CDX manages container header/tag metadata; backend tag build data persistence is owned elsewhere.
+//
+// risk:
+//   reads_index_file: INFO TAGS ADDTAG DROPTAG
+//   creates_index_file: CREATE
+//   overwrites_index_file: no, CREATE refuses existing target
+//   mutates_index_metadata: ADDTAG DROPTAG
+//   mutates_table_data: no
+//   default_path_uses_order_state: yes
+//   default_path_uses_indexes_slot: yes
+//
+// related:
+//   CNX
+//   INDEX
+//   SET CDX
+//   SET ORDER
+//   REINDEX
+//
+
 #include "xbase.hpp"
 #include "cdx/cdx.hpp"
 #include "cli/path_resolver.hpp"
@@ -117,11 +164,17 @@ static bool resolve_target_path(xbase::DbArea& area,
 static void print_help()
 {
     std::cout
-        << "CDX INFO [<path.cdx>]\n"
-        << "CDX TAGS [<path.cdx>]\n"
-        << "CDX CREATE [<path.cdx>]\n"
-        << "CDX ADDTAG <name> [<path.cdx>]\n"
-        << "CDX DROPTAG <name> [<path.cdx>]\n";
+        << "Usage:\n"
+        << "  CDX USAGE\n"
+        << "  CDX INFO [<path.cdx>]\n"
+        << "  CDX TAGS [<path.cdx>]\n"
+        << "  CDX CREATE [<path.cdx>]\n"
+        << "  CDX ADDTAG <name> [<path.cdx>]\n"
+        << "  CDX DROPTAG <name> [<path.cdx>]\n"
+        << "Notes:\n"
+        << "  - CDX with no arguments shows usage.\n"
+        << "  - CREATE refuses to overwrite an existing CDX file.\n"
+        << "  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n";
 }
 
 } // namespace
@@ -140,7 +193,7 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
 
     std::string SUB = up_copy(sub);
 
-    if (SUB == "HELP" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
+    if (SUB == "USAGE" || SUB == "HELP" || SUB == "?" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
         print_help();
         return;
     }

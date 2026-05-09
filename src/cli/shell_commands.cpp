@@ -379,7 +379,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Tuple/relationship exploration commands
     // ---------------------------------------------------------------------
     // Aliases are kept together so help/reflection can see shared ownership.
-    registry().add("TUPLEDELTA",   [](DbArea& A, std::istringstream& S){ cmd_TUPTALK(A,S);     });
+    registry().add("TUPLEDELTA",   [](DbArea& A, std::istringstream& S){ cmd_TUPLEDELTA(A,S);  });
     registry().add("TUPTALK",      [](DbArea& A, std::istringstream& S){ cmd_TUPTALK(A,S);     });
     registry().add("TUPLE",        [](DbArea& A, std::istringstream& S){ cmd_TUPLE(A,S);       });
     registry().add("TUPVALIDATE",  [](DbArea& A, std::istringstream& S){ cmd_TUPVALIDATE(A,S); });
@@ -405,7 +405,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("ERASE",     [](DbArea& A, std::istringstream& S){ cmd_ERASE(A,S);  });
 
     registry().add("DUMP",      [](DbArea& A, std::istringstream& S){ cmd_DUMP(A,S); });
-    registry().add("EDIT",      [](DbArea& A, std::istringstream& S){ cmd_EDIT(A,S); });
+    registry().add("EDIT",      [](DbArea& A, std::istringstream& S){ edu_EDIT(A,S); });
 
     // LOCATE/CONTINUE are cursor movers and should use the same hook contract
     // as GO/TOP/SKIP/SEEK.
@@ -465,12 +465,14 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Calculator, expression, and education-expression commands. CALC should
     // remain usable without an open DBF. edu_* commands are shell commands, not
     // expression function self-registration.
-    registry().add("CALC",      [](DbArea& A, std::istringstream& S){ cmd_CALC(A,S);      });
-    registry().add("CALCWRITE", [](DbArea& A, std::istringstream& S){ cmd_CALCWRITE(A,S); });
-    registry().add("BOOLEAN",   [](DbArea& A, std::istringstream& S){ edu_BOOLEAN(A,S);   });
-    registry().add("FORMULA",   [](DbArea& A, std::istringstream& S){ edu_FORMULA(A,S);   });
-    registry().add("EVALUATE",  [](DbArea& A, std::istringstream& S){ edu_EVALUATE(A,S);  });
-    registry().add("NORMALIZE", [](DbArea& A, std::istringstream& S){ edu_NORMALIZE(A,S); });
+    registry().add("CALC",      [](DbArea& A, std::istringstream& S){ cmd_CALC(A,S);       });
+    registry().add("CALCWRITE", [](DbArea& A, std::istringstream& S){ cmd_CALCWRITE(A,S);  });
+    registry().add("BOOLEAN",   [](DbArea& A, std::istringstream& S){ edu_BOOLEAN(A,S);    });
+    registry().add("FORMULA",   [](DbArea& A, std::istringstream& S){ edu_FORMULA(A,S);    });
+    registry().add("EVALUATE",  [](DbArea& A, std::istringstream& S){ edu_EVALUATE(A,S);   });
+    registry().add("NORMALIZE", [](DbArea& A, std::istringstream& S){ edu_NORMALIZE(A,S);  });
+    registry().add("IDX",       [](DbArea& A, std::istringstream& S){ edu_IDX(A,S);        });
+
 
     // SQL and SmartList command surface. SMARTLIST is the preferred
     // table-centric listing command for order-aware testing. SQL-side mutation
@@ -487,14 +489,18 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("DBAREAS",   [](DbArea& A, std::istringstream& S){ cmd_DBAREAS(A,S);    });
     registry().add("WA",        [](DbArea& A, std::istringstream& S){ cmd_WAMREPORT(A,S);  });
 
-    registry().add("SQLITE",       [](DbArea& A, std::istringstream& S){ cmd_SQLITE(A,S); });
-    registry().add("SQLVER",       [](DbArea& A, std::istringstream& S){ cmd_SQLVER(A,S); });
+    registry().add("SQLITE",    [](DbArea& A, std::istringstream& S){ cmd_SQLITE(A,S);     });
+    registry().add("SQLVER",    [](DbArea& A, std::istringstream& S){ cmd_SQLVER(A,S);     });
+    registry().add("BIBLETALK", [](DbArea& A, std::istringstream& S){ edu_BIBLETALK(A,S);  });
+    registry().add("ERP",       [](DbArea& A, std::istringstream& S){ edu_ERP(A,S);        });
+
 
     // ---------------------------------------------------------------------
     // Programming and scripting control-flow commands
     // ---------------------------------------------------------------------
     // These support DotScript-style flow control and should not perform
     // registry-level relation refresh unless the command body mutates table state.
+
 //  Programming and Scripting
     registry().add("SCAN",         [](DbArea& A, std::istringstream& S){ cmd_SCAN(A,S);    });
     registry().add("ENDSCAN",      [](DbArea& A, std::istringstream& S){ cmd_ENDSCAN(A,S); });
@@ -524,6 +530,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("FOXSTANDARD",  [](DbArea& A, std::istringstream& S){ cmd_FOXSTANDARD(A,S); });
     registry().add("BETA",         [](DbArea& A, std::istringstream& S){ cmd_BETA(A,S);        });
     registry().add("PSHELL",       [](DbArea& A, std::istringstream& S){ cmd_PSHELL(A,S);      });
+    registry().add("MCC",          [](DbArea& A, std::istringstream& S){ cmd_MCC(A,S);         });
 
     // ---------------------------------------------------------------------
     // Metadata, command-help, diagnostics, and scripting utilities
@@ -533,6 +540,16 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("EXPFUNCs",     [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
 
     registry().add("SECURITY",     [](DbArea& A, std::istringstream& S){ cmd_SECURITY(A,S);    });
+
+    registry().add("ERROR_CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });
+    registry().add("ERROR_STATUS", [](DbArea& A, std::istringstream& S){ cmd_ERROR_STATUS(A,S); });
+    registry().add("ERROR_TEST",   [](DbArea& A, std::istringstream& S){ cmd_ERROR_TEST(A,S);   });
+
+    // Friendly multi-word aliases for the same diagnostic commands.
+    registry().add("ERROR CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });
+    registry().add("ERROR STATUS", [](DbArea& A, std::istringstream& S){ cmd_ERROR_STATUS(A,S); });
+    registry().add("ERROR TEST",   [](DbArea& A, std::istringstream& S){ cmd_ERROR_TEST(A,S);   });
+
 
     registry().add("CMDHELP",      [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);     });
     registry().add("COMMANDSHELP", [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);     });
@@ -568,7 +585,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Built-in educational commands live here. Student-created commands should
     // live in extension/custom and may self-register there.
 //  EDUCATION
-    registry().add("COBOL",        [](DbArea& A, std::istringstream& S){ cmd_COBOL(A,S);       });
+    registry().add("COBOL",        [](DbArea& A, std::istringstream& S){ edu_COBOL(A,S);       });
     registry().add("CODASYL",      [](DbArea& A, std::istringstream& S){ cmd_CODASYL(A,S);     });
     registry().add("DRAWIO",       [](DbArea& A, std::istringstream& S){ cmd_DRAWIO(A,S);      });
     registry().add("RETRO",        [](DbArea& A, std::istringstream& S){ cmd_RETRO(A,S);       });
@@ -582,7 +599,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // ---------------------------------------------------------------------
     // SQL import/export bridges DBF/table data with SQL workflows. TEXT and
     // PRN are output helpers. No registry-level relation refresh is attached.
-    registry().add("TEXT",         [](DbArea& A, std::istringstream& S){ cmd_TEXT(A,S);        });
+    registry().add("TEXT",         [](DbArea& A, std::istringstream& S){ edu_TEXT(A,S);        });
     registry().add("PRN",          [](DbArea& A, std::istringstream& S){ cmd_PRN(A,S);         });
 
 //  MSSQL et al Import/Export

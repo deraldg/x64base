@@ -1,5 +1,39 @@
 // src/cli/cmd_status.cpp
 
+// @dottalk.usage v1
+// owner: DOT|STATUS
+// command: STATUS
+// category: workspace
+// status: supported
+// noargs: report
+// effect: report
+// mutates: no
+// usage-access: STATUS USAGE
+// summary:
+//   Report current or all open work-area status, including workspace occupancy,
+//   DBF flavor, active order/index state, tags, records, and optional structure details.
+//
+// usage:
+//   STATUS
+//   STATUS USAGE
+//   STATUS ALL
+//   STATUS VERBOSE
+//   STATUS ALL VERBOSE
+//
+// notes:
+//   STATUS with no arguments reports the current work area.
+//   STATUS ALL reports all open work areas.
+//   STATUS VERBOSE includes field structure details.
+//   STATUS is read-only; it reports session/work-area/index state and does not mutate table data.
+//
+// related:
+//   AREA
+//   DBAREA
+//   DBAREAS
+//   STRUCT
+//   WORKSPACE
+//
+
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -155,10 +189,31 @@ void print_status_for_area(std::size_t slot, xbase::DbArea& A, bool isCurrent, b
     }
 }
 
+
+void print_status_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  STATUS                 (Report current work-area status)\n"
+        << "  STATUS USAGE           (Show this usage)\n"
+        << "  STATUS ALL             (Report all open work areas)\n"
+        << "  STATUS VERBOSE         (Include field structure for current area)\n"
+        << "  STATUS ALL VERBOSE     (Report all open areas with field structure)\n"
+        << "Notes:\n"
+        << "  - STATUS is read-only; it reports work-area/index state.\n";
+}
+
 } // namespace
 
 void cmd_STATUS(xbase::DbArea& A, std::istringstream& args) {
     const std::string raw = upper(args.str());
+
+    if (raw.find("USAGE") != std::string::npos ||
+        raw.find("HELP")  != std::string::npos ||
+        raw.find("?")     != std::string::npos) {
+        print_status_usage();
+        return;
+    }
+
     const bool wantAll = (raw.find("ALL") != std::string::npos);
     const bool wantVerbose = (raw.find("VERBOSE") != std::string::npos);
 

@@ -6,9 +6,12 @@
 namespace xbase { class DbArea; }
 
 // DBAREA
-//  - DBAREA                 (current slot)
-//  - DBAREA <n>             (inspect slot n)
-//  - DBAREA ALL             (inspect all open slots)
-//  - DBAREA REL|LINKS       (append relation context for current parent)
-//  - DBAREA <n> REL|LINKS   (REL/LINKS only meaningful for current slot; otherwise prints a note)
+//  - DBAREA                 (current slot read-only report)
+//  - DBAREA USAGE           (usage/help access path; dispatcher support may be external)
+// Notes:
+//  - DBAREA is the canonical single-area report.
+//  - DBAREAS owns optional slot/all/relation report forms:
+//      DBAREAS <n>
+//      DBAREAS ALL
+//      DBAREAS REL
 void cmd_DBAREA(xbase::DbArea& A, std::istringstream& S);

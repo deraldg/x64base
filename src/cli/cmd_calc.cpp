@@ -10,6 +10,57 @@
 //   expression layer, not by CALC's final fallback.
 // ===============================
 
+// @dottalk.usage v1
+// owner: DOT|CALC
+// command: CALC
+// category: expression
+// status: supported
+// noargs: value
+// effect: evaluate
+// mutates: none unless assignment targets an open field
+// usage-access: CALC USAGE
+// summary:
+//   Evaluate an xexpr scalar expression and print the result. When the input
+//   is an assignment to a real field in the current area, CALC delegates to
+//   CALCWRITE for mutation semantics.
+//
+// usage:
+//   CALC USAGE
+//   CALC <expr>
+//   CALC (<expr>)
+//   CALC <field> = <expr>
+//
+// examples:
+//   CALC 1 + 2
+//   CALC DATE()
+//   CALC UPPER(LNAME)
+//   CALC BALANCE = BALANCE + 10
+//
+// notes:
+//   CALC with an empty expression preserves existing behavior and prints .F.
+//   CALC prints Bool, Number, String, and Date results.
+//   CALC uses xexpr for scalar and field-aware expression evaluation.
+//   CALC assignment mutates only when the LHS is a real field in the open area.
+//   Field assignment is delegated to CALCWRITE so table-buffer, memo, validation,
+//   and direct-write/index semantics stay centralized.
+//   CALC expression-only mode is read-only; CALC field-assignment mode is a data mutation path.
+//
+// risk:
+//   evaluates_expression: yes
+//   reads_current_record: when expression references fields
+//   writes_table_data: only when assignment targets an existing field
+//   delegates_to_calcwrite: for field assignment
+//   writes_memo: through CALCWRITE when assigning memo fields
+//   table_buffer_semantics: through CALCWRITE
+//   no_open_area_allowed: for expressions that do not need fields
+//
+// related:
+//   CALCWRITE
+//   REPLACE
+//   MULTIREP
+//   XEXPR
+//
+
 #include "cli/cmd_calc.hpp"
 
 #include <cctype>
@@ -68,6 +119,38 @@ static std::string up(std::string s) {
     for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     return s;
 }
+
+
+static bool is_calc_usage_request(std::string raw) {
+    std::string t = up(trim(std::move(raw)));
+
+    // Dispatch normally passes only the tail ("USAGE"), but accept full raw
+    // input too ("CALC USAGE") for robustness.
+    if (t.rfind("CALC ", 0) == 0) {
+        t = trim(t.substr(5));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_calc_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  CALC USAGE             (Show this usage)\n"
+        << "  CALC <expr>            (Evaluate expression and print result)\n"
+        << "  CALC (<expr>)          (Outer parentheses are allowed)\n"
+        << "  CALC <field> = <expr>  (If <field> exists, delegate to CALCWRITE)\n"
+        << "Examples:\n"
+        << "  CALC 1 + 2\n"
+        << "  CALC DATE()\n"
+        << "  CALC UPPER(LNAME)\n"
+        << "  CALC BALANCE = BALANCE + 10\n"
+        << "Notes:\n"
+        << "  - CALC expression-only mode is read-only.\n"
+        << "  - CALC field-assignment mode mutates through CALCWRITE.\n"
+        << "  - Empty CALC preserves existing behavior and prints .F.\n";
+}
+
 
 static bool parse_assign(const std::string& src, std::string& lhs, std::string& rhs) {
     bool in_s = false, in_d = false;
@@ -134,6 +217,11 @@ void cmd_CALC(xbase::DbArea& area, std::istringstream& args) {
     std::string expr;
     std::getline(args, expr);
     expr = cliutil::strip_inline_comments(trim(expr));
+
+    if (is_calc_usage_request(expr)) {
+        print_calc_usage();
+        return;
+    }
 
     if (expr.empty()) {
         std::cout << ".F.\n";

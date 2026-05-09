@@ -14,6 +14,61 @@
 //     * field-level validation of the stored value
 //     * table-buffer dirty/stale bookkeeping
 //
+// @dottalk.usage v1
+// owner: DOT|REPLACE
+// command: REPLACE
+// category: data
+// status: supported
+// noargs: usage
+// effect: mutate
+// mutates: table-data table-buffer memo stale-state index
+// usage-access: REPLACE USAGE
+// summary:
+//   Replace one field in the current record by field name or field index,
+//   preserving RHS expression evaluation, type validation, memo conversion,
+//   and table-buffer semantics.
+//
+// usage:
+//   REPLACE USAGE
+//   REPLACE <field_index> WITH <value>
+//   REPLACE <field_name> WITH <value>
+//
+// examples:
+//   REPLACE LNAME WITH "Smith"
+//   REPLACE 3 WITH TODAY
+//   REPLACE NOTES WITH "updated memo text"
+//
+// notes:
+//   REPLACE requires an open table and a current record.
+//   REPLACE resolves fields by standard field index/name rules.
+//   RHS values pass through the expression/RHS evaluator and legacy string/date function handling.
+//   X64 memo text is converted into stored object-id text before DBF storage.
+//   Field values are validated and normalized before storage.
+//   When TABLE buffering is ON, REPLACE records a buffered field change and marks the field stale/dirty.
+//   When TABLE buffering is OFF, REPLACE writes immediately through DbArea storage.
+//   COMMIT owns durable application of buffered table changes.
+//   REPLACE is a table-data mutation command; do not classify it as read-only.
+//
+// risk:
+//   writes_dbf_record: when TABLE buffering is OFF
+//   writes_table_buffer: when TABLE buffering is ON
+//   writes_memo: when replacing x64 memo fields with non-empty text
+//   clears_memo_field: when replacing x64 memo fields with empty text
+//   marks_dirty: when TABLE buffering is ON
+//   marks_stale_field: yes
+//   requires_current_record: yes
+//   requires_open_table: yes
+//   record_locking: immediate-write path relies on DbArea/write backend locking behavior
+//
+// related:
+//   REPLACE_MULTI
+//   TABLE
+//   COMMIT
+//   ROLLBACK
+//   STRUCT
+//   FIELDS
+//
+
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -695,9 +750,47 @@ struct RecordLockGuard {
     RecordLockGuard& operator=(const RecordLockGuard&) = delete;
 };
 
+
+static bool is_replace_usage_request(const std::string& raw)
+{
+    std::string t = up_copy(trim_copy(raw));
+
+    // Dispatch normally passes only the tail ("USAGE"), but accept full raw
+    // input too ("REPLACE USAGE") so usage stays robust across shell paths.
+    if (t.rfind("REPLACE ", 0) == 0) {
+        t = trim_copy(t.substr(8));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_replace_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  REPLACE USAGE\n"
+        << "  REPLACE <field_index> WITH <value>\n"
+        << "  REPLACE <field_name>  WITH <value>\n"
+        << "Examples:\n"
+        << "  REPLACE LNAME WITH \"Smith\"\n"
+        << "  REPLACE 3 WITH TODAY\n"
+        << "Notes:\n"
+        << "  - REPLACE requires an open table and a current record.\n"
+        << "  - RHS values are evaluated before validation/storage.\n"
+        << "  - X64 memo text is converted to stored memo object-id text.\n"
+        << "  - TABLE ON buffers field changes and marks fields stale/dirty.\n"
+        << "  - TABLE OFF writes immediately through DbArea storage.\n";
+}
+
 } // namespace
 
 void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
+    const std::string raw_args = in.str();
+    if (is_replace_usage_request(raw_args)) {
+        print_replace_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "REPLACE: no file open.\n";
         return;
@@ -706,7 +799,7 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     std::string field_name, with, value_raw;
     in >> field_name >> with;
     if (to_upper_copy(with) != "WITH") {
-        std::cout << "Usage: REPLACE <field> WITH <value>\n";
+        print_replace_usage();
         return;
     }
 

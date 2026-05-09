@@ -1,6 +1,60 @@
 // src/cli/cmd_use.cpp
 // DotTalk++ USE command (open DBF in a work area) — duplicate-open guard, NOINDEX, auto-attach
 
+// @dottalk.usage v1
+// owner: DOT|USE
+// command: USE
+// category: workspace
+// status: supported
+// noargs: usage
+// effect: session
+// mutates: session area order memo index
+// usage-access: USE USAGE
+// summary:
+//   Open a DBF table into the current work area, with duplicate-open guard,
+//   memo auto-attach, optional index auto-attach, and NOINDEX physical-order mode.
+//
+// usage:
+//   USE USAGE
+//   USE <table>
+//   USE <table.dbf>
+//   USE <path\table.dbf>
+//   USE <table> NOINDEX
+//   USE <table> NOIDX
+//
+// notes:
+//   USE requires a table name or path; no usable argument shows usage.
+//   Relative logical names resolve through the configured DBF path slot.
+//   USE prevents duplicate opens of the same DBF path across work areas.
+//   USE clears stale order/tag/container state and closes the current area before opening the new DBF.
+//   USE opens the target DBF and populates DbArea metadata.
+//   USE auto-attaches memo storage when memo fields are present.
+//   USE auto-attaches a same-directory INX/IDX order when present, unless NOINDEX/NOIDX is specified.
+//   USE does not auto-attach CNX; CNX is deprecated and explicit-use only.
+//   NOINDEX/NOIDX opens the table in physical order and skips index auto-attach.
+//   USE is a session/area mutation command; it changes the current work area binding but should not mutate table records.
+//
+// risk:
+//   opens_files: yes
+//   closes_current_area: yes
+//   clears_order_state: yes
+//   attaches_memo: when memo fields are present
+//   attaches_index: INX/IDX when present unless NOINDEX/NOIDX
+//   duplicate_open_guard: yes
+//   writes_dbf_records: no
+//   deletes_files: no
+//   creates_files: no
+//
+// related:
+//   CLOSE
+//   WORKSPACE
+//   SETPATH
+//   SET ORDER
+//   SET INDEX
+//   STRUCT
+//   DBAREA
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -114,6 +168,50 @@ static bool contains_noindex(std::istringstream& iss)
     iss.seekg(pos);
     return found;
 }
+
+
+static std::string trim_copy_use(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+        s.pop_back();
+    }
+    return s;
+}
+
+static bool is_use_usage_request(std::string raw)
+{
+    std::string t = up_copy(trim_copy_use(std::move(raw)));
+
+    // Most dispatch paths pass only the command tail ("USAGE"), but accept
+    // full raw input too ("USE USAGE") so this path remains robust.
+    if (t.rfind("USE ", 0) == 0) {
+        t = trim_copy_use(t.substr(4));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_use_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  USE USAGE              (Show this usage)\n"
+        << "  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n"
+        << "  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n"
+        << "  USE <path\\\\table.dbf>   (Open explicit path)\n"
+        << "  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n"
+        << "  USE <table> NOIDX      (Alias of NOINDEX)\n"
+        << "Notes:\n"
+        << "  - USE closes/resets the current area before opening the target table.\n"
+        << "  - USE prevents duplicate opens of the same DBF path across work areas.\n"
+        << "  - USE auto-attaches memo storage when memo fields are present.\n"
+        << "  - USE auto-attaches same-directory INX/IDX when present, unless NOINDEX/NOIDX is used.\n"
+        << "  - USE does not auto-attach CNX; CNX is explicit-use only.\n";
+}
+
 
 static void clear_order_best_effort(DbArea& a)
 {
@@ -276,11 +374,18 @@ static std::string open_display_name(const DbArea& a, const fs::path& dbf_path)
 
 void cmd_USE(DbArea& a, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_use_usage_request(raw_args)) {
+        print_use_usage();
+        return;
+    }
+
     std::string name;
     iss >> name;
 
     if (name.empty()) {
         std::cout << "USE: missing table name.\n";
+        print_use_usage();
         return;
     }
 
