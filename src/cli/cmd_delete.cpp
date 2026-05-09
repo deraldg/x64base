@@ -22,6 +22,56 @@
 //   active index may now require rebuild.
 // - After a successful delete, current navigation is refreshed best-effort.
 
+// @dottalk.usage v1
+// owner: DOT|DELETE
+// command: DELETE
+// category: data
+// status: supported
+// noargs: mutate
+// effect: mutate
+// mutates: table-data deletion-flag index stale-state cursor
+// usage-access: DELETE USAGE
+// summary:
+//   Mark the current record or selected records deleted, honoring filters and
+//   applying index delete snapshots in direct-write mode.
+//
+// usage:
+//   DELETE USAGE
+//   DELETE
+//   DELETE ALL
+//   DELETE REST
+//   DELETE NEXT <n>
+//   DELETE FOR <field> <op> <value>
+//
+// notes:
+//   DELETE with no arguments deletes the current record.
+//   DELETE requires an open table except for DELETE USAGE.
+//   DELETE honors active SET FILTER in ALL, REST, NEXT, and FOR scans.
+//   DELETE snapshots target recnos before mutating to avoid active-index traversal mutation.
+//   Direct-write mode captures index keys before delete and applies index delete snapshots after delete.
+//   Buffered table mode leaves rebuild or final application to COMMIT.
+//   DELETE marks fields stale best-effort and refreshes current navigation best-effort.
+//   If index snapshot or apply fails, data delete may still succeed and a rebuild warning is emitted.
+//
+// risk:
+//   marks_records_deleted: yes
+//   record_locking: yes
+//   writes_table_data: yes
+//   updates_indexes: direct-write snapshot path when available
+//   marks_stale_field: yes
+//   cursor_movement: during selected deletes
+//   cursor_restore: best effort
+//   requires_open_table: yes except usage
+//
+// related:
+//   RECALL
+//   PACK
+//   TABLE
+//   COMMIT
+//   COUNT
+//   SET FILTER
+//
+
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
@@ -66,6 +116,36 @@ struct CursorRestore {
         }
     }
 };
+
+
+static void print_delete_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  DELETE USAGE\n"
+        << "  DELETE                         (delete current record)\n"
+        << "  DELETE ALL\n"
+        << "  DELETE REST\n"
+        << "  DELETE NEXT <n>\n"
+        << "  DELETE FOR <field> <op> <value>\n"
+        << "Notes:\n"
+        << "  - DELETE requires an open table except for DELETE USAGE.\n"
+        << "  - DELETE honors active SET FILTER in ALL/REST/NEXT/FOR scans.\n"
+        << "  - Direct-write mode updates active index backends best-effort.\n";
+}
+
+static bool is_delete_usage_request(const std::string& raw)
+{
+    std::string t = textio::up(textio::trim(raw));
+
+    // Some dispatch paths pass the whole raw line ("DELETE USAGE")
+    // instead of only the command tail ("USAGE"). Accept both.
+    if (t.rfind("DELETE ", 0) == 0) {
+        t = textio::up(textio::trim(t.substr(7)));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
 
 static int resolve_current_index(xbase::DbArea& A) {
     xbase::XBaseEngine* eng = shell_engine();
@@ -205,6 +285,12 @@ static int32_t delete_targets_by_recno(xbase::DbArea& area,
 
 void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_delete_usage_request(raw_args)) {
+        print_delete_usage();
+        return;
+    }
+
     if (!area.isOpen()) {
         std::cout << "No table is open. Use USE <file> first.\n";
         return;
@@ -270,7 +356,7 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
     if (UM == "NEXT") {
         int n = 0;
         if (!(iss >> n) || n <= 0) {
-            std::cout << "Usage: DELETE NEXT <n>\n";
+            print_delete_usage();
             return;
         }
 
@@ -284,7 +370,7 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
         return;
     }
 
-    std::cout << "Usage: DELETE [ALL | REST | NEXT <n> | FOR <field> <op> <value>]  (no args => delete current record)\n";
+    print_delete_usage();
 }
 
 static bool s_registered = [](){

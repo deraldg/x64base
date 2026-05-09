@@ -45,6 +45,52 @@
 // - Common shorthand such as `WORKSPACE OPEN dbf` and `WORKSPACE OPEN students`
 //   are treated as DBF-slot-relative requests.
 //
+// @dottalk.usage v1
+// owner: DOT|WORKSPACE
+// command: WORKSPACE
+// category: workspace
+// status: supported
+// noargs: report
+// effect: session
+// mutates: session
+// usage-access: WORKSPACE USAGE
+// summary:
+//   Report and manage live work-area/session layout.
+//
+// usage:
+//   WORKSPACE
+//   WORKSPACE USAGE
+//   WORKSPACE ALL
+//   WORKSPACE OPEN DBF
+//   WORKSPACE OPEN <dir>
+//   WORKSPACE OPEN <file.dbf>
+//   WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]
+//   WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]
+//   WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]
+//   WORKSPACE CLOSE
+//   WORKSPACE CLOSE <n> [m ...]
+//   WORKSPACE CLOSE <name|file|stem|alias>[,...]
+//   WORKSPACE SAVE <file>
+//   WORKSPACE LOAD <file>
+//   WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]
+//
+// notes:
+//   WORKSPACE with no arguments is a report: it lists current open work areas.
+//   WORKSPACE ALL lists all area slots, including closed slots.
+//   WORKSPACE OPEN DBF scans the configured DBF path slot and opens tables into work areas.
+//   WORKSPACE OPEN <dir> scans a specific directory and opens DBFs into work areas.
+//   WORKSPACE OPEN <file.dbf> opens a single table into the current work area.
+//   WORKSPACE CLOSE closes all open work areas and clears relation/session state.
+//   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
+//   DDL owns schema/definition work; WORKSPACE owns live session/work-area state.
+//
+// related:
+//   DBAREA
+//   DBAREAS
+//   DDL
+//   REL
+//   STATUS
+//
 #include <algorithm>
 #include <cctype>
 #include <climits>
@@ -1513,6 +1559,33 @@ static void workspace_print_tuples(xbase::DbArea& current,
 
 // --------- Command Entry ----------------------------------------------------
 
+static void workspace_print_usage() {
+    std::cout << "Usage:\n";
+    std::cout << "  WORKSPACE                                   (List open areas)\n";
+    std::cout << "  WORKSPACE USAGE                            (Show this usage)\n";
+    std::cout << "  WORKSPACE ALL                              (List all areas, including closed slots)\n";
+    std::cout << "  WORKSPACE OPEN DBF                         (Open tables from configured DBF slot)\n";
+    std::cout << "  WORKSPACE OPEN [<dir>]                     (Open all tables in dir)\n";
+    std::cout << "  WORKSPACE OPEN <dir> recursive             (STUB: accepts flag; non-recursive for now)\n";
+    std::cout << "  WORKSPACE OPEN <file.dbf>                  (Open single table in current area)\n";
+    std::cout << "  WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]\n";
+    std::cout << "  WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]\n";
+    std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
+    std::cout << "  WORKSPACE CLOSE                            (Close all open areas)\n";
+    std::cout << "  WORKSPACE CLOSE <n> [m ...]                (Close by area index)\n";
+    std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...] (Close by name/alias; case-insensitive)\n";
+    std::cout << "  WORKSPACE SAVE <file>                      (Save areas [+relations if available])\n";
+    std::cout << "  WORKSPACE LOAD <file>                      (Load areas [+relations]; relative/cross-OS paths supported)\n";
+    std::cout << "  WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]\n";
+    std::cout << "Notes:\n";
+    std::cout << "  - WORKSPACE with no arguments is a read-only report of open areas.\n";
+    std::cout << "  - For OPEN: <target> is always the first argument after OPEN.\n";
+    std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
+    std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
+    std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
+    std::cout << "  - Without CNX/INX/CDX, no index files will be attached.\n";
+}
+
 std::string workspace_last_loaded_file() {
     return g_last_loaded_workspace_file;
 }
@@ -1541,7 +1614,10 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
     rest_of_args = trim_copy(rest_of_args);
 
     try {
-        if (sub_command == "open") {
+        if (sub_command == "usage" || sub_command == "help" || sub_command == "?") {
+            workspace_print_usage();
+
+        } else if (sub_command == "open") {
             auto toks = split_tokens(rest_of_args);
 
             if (!toks.empty() && (ci_equal(toks[0], "cnx") || ci_equal(toks[0], "inx") ||
@@ -1746,25 +1822,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
 
         } else {
             std::cout << "WORKSPACE: Unknown subcommand '" << sub_command << "'.\n";
-            std::cout << "Usage:\n";
-            std::cout << "  WORKSPACE                                   (List open areas)\n";
-            std::cout << "  WORKSPACE ALL                               (List all areas, including closed slots)\n";
-            std::cout << "  WORKSPACE OPEN [<dir>]                      (Open all tables in dir)\n";
-            std::cout << "  WORKSPACE OPEN <dir> recursive              (STUB: accepts flag; non-recursive for now)\n";
-            std::cout << "  WORKSPACE OPEN <file.dbf>                   (Open single table in current area)\n";
-            std::cout << "  WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]\n";
-            std::cout << "  WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]\n";
-            std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
-            std::cout << "  WORKSPACE CLOSE                             (Close all open areas)\n";
-            std::cout << "  WORKSPACE CLOSE <n> [m ...]                 (Close by index)\n";
-            std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...](Close by name/alias; case-insensitive)\n";
-            std::cout << "  WORKSPACE SAVE <file>                       (Save areas [+relations if available])\n";
-            std::cout << "  WORKSPACE LOAD <file>                       (Load areas [+relations]; relative/cross-OS paths supported)\n";
-            std::cout << "Notes:\n";
-            std::cout << "  - For OPEN: <target> is always the first argument after OPEN.\n";
-            std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
-            std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-            std::cout << "  - Without CNX/INX/CDX, no index files will be attached.\n";
+            workspace_print_usage();
         }
     } catch (const std::exception& ex) {
         std::cout << "WORKSPACE: Error: " << ex.what() << "\n";

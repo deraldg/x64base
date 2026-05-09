@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "xbase.hpp"
@@ -85,6 +86,119 @@ inline std::optional<double> get_field_num(xbase::DbArea& area,
     }
 }
 
+inline bool is_ident_start(char c)
+{
+    return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
+}
+
+inline bool is_ident_char(char c)
+{
+    return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
+}
+
+inline std::string upper(std::string s)
+{
+    for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    return s;
+}
+
+inline bool is_known_nonfield_identifier(const std::string& ident)
+{
+    static const std::unordered_set<std::string> k = {
+        "AND", "OR", "NOT", "TRUE", "FALSE", "T", "F",
+        "DATE", "TODAY", "TIME", "NOW", "DATETIME",
+        "CTOD", "DTOC", "DATEADD", "DATEDIFF",
+        "UPPER", "LOWER", "ALLTRIM", "LTRIM", "RTRIM", "TRIM",
+        "LEN", "LEFT", "RIGHT", "SUBSTR", "VAL", "STR", "TRANSFORM"
+    };
+    return k.find(upper(ident)) != k.end();
+}
+
+inline bool has_comparison_at(const std::string& s, size_t i, size_t& width)
+{
+    width = 0;
+    if (i >= s.size()) return false;
+    const char c = s[i];
+    if ((c == '<' || c == '>' || c == '!') && i + 1 < s.size() && s[i + 1] == '=') {
+        width = 2;
+        return true;
+    }
+    if (c == '<' && i + 1 < s.size() && s[i + 1] == '>') {
+        width = 2;
+        return true;
+    }
+    if (c == '=' || c == '<' || c == '>') {
+        width = 1;
+        return true;
+    }
+    return false;
+}
+
+inline bool last_identifier_before(const std::string& s, size_t pos, std::string& ident)
+{
+    ident.clear();
+    if (pos == 0) return false;
+
+    size_t i = pos;
+    while (i > 0 && std::isspace(static_cast<unsigned char>(s[i - 1]))) --i;
+    while (i > 0 && s[i - 1] == ')') {
+        --i;
+        while (i > 0 && std::isspace(static_cast<unsigned char>(s[i - 1]))) --i;
+    }
+    if (i == 0) return false;
+
+    size_t end = i;
+    while (i > 0 && is_ident_char(s[i - 1])) --i;
+    if (i == end || !is_ident_start(s[i])) return false;
+
+    ident = s.substr(i, end - i);
+    return true;
+}
+
+inline bool validate_filter_field_refs(xbase::DbArea& area,
+                                       const std::string& text,
+                                       std::string& err)
+{
+    bool in_quote = false;
+    char quote = '\0';
+
+    for (size_t i = 0; i < text.size(); ++i) {
+        const char c = text[i];
+        if (in_quote) {
+            if (c == quote) in_quote = false;
+            continue;
+        }
+        if (c == '\'' || c == '"') {
+            in_quote = true;
+            quote = c;
+            continue;
+        }
+
+        size_t width = 0;
+        if (!has_comparison_at(text, i, width)) continue;
+
+        std::string lhs;
+        if (!last_identifier_before(text, i, lhs)) {
+            i += width ? width - 1 : 0;
+            continue;
+        }
+
+        if (is_known_nonfield_identifier(lhs)) {
+            i += width ? width - 1 : 0;
+            continue;
+        }
+
+        if (find_field_ci(area.fields(), lhs) < 0) {
+            err = "unknown field '" + lhs + "' in filter expression";
+            return false;
+        }
+
+        i += width ? width - 1 : 0;
+    }
+
+    return true;
+}
+
 } // namespace filter_detail
 
 #define DOTTALK_GET_FIELD_STR(area, name) filter_detail::get_field_str(area, name)
@@ -108,7 +222,14 @@ namespace filter {
 
 bool set(xbase::DbArea* area, const std::string& text, std::string& err)
 {
-    if (!area) return false;
+    if (!area || !area->isOpen()) {
+        err = "no table open";
+        return false;
+    }
+
+    if (!filter_detail::validate_filter_field_refs(*area, text, err)) {
+        return false;
+    }
 
     auto cr = dottalk::expr::compile_where(text);
     if (!cr) {

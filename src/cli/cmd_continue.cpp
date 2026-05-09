@@ -7,6 +7,44 @@
 // If an order is active, traversal follows active order.
 // Otherwise traversal is physical forward order.
 
+// @dottalk.usage v1
+// owner: DOT|CONTINUE
+// command: CONTINUE
+// category: navigation
+// status: supported
+// noargs: navigate
+// effect: locate
+// mutates: cursor continue-state
+// usage-access: CONTINUE USAGE
+// summary:
+//   Continue a previous LOCATE search, or continue with an explicit FOR
+//   predicate, following active order when present.
+//
+// usage:
+//   CONTINUE
+//   CONTINUE USAGE
+//   CONTINUE FOR <expr>
+//
+// notes:
+//   CONTINUE with no arguments reuses the active LOCATE/CONTINUE predicate.
+//   CONTINUE FOR <expr> searches forward from the current record using the supplied predicate.
+//   CONTINUE follows active order when one is present; otherwise it scans physical order.
+//   CONTINUE requires an open table except for CONTINUE USAGE.
+//   CONTINUE mutates cursor/search state but does not mutate table data.
+//
+// risk:
+//   mutates_cursor: yes when match found
+//   mutates_continue_state: yes
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   LOCATE
+//   FIND
+//   SEEK
+//
+
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -32,6 +70,31 @@ static std::string trim_copy(const std::string& s)
     if (b == std::string::npos) return {};
     const auto e = s.find_last_not_of(" \t\r\n");
     return s.substr(b, e - b + 1);
+}
+
+
+static std::string continue_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_continue_usage_request(const std::string& raw)
+{
+    std::string t = continue_upper(trim_copy(raw));
+    if (t.rfind("CONTINUE ", 0) == 0) {
+        t = continue_upper(trim_copy(t.substr(9)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_continue_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  CONTINUE\n"
+        << "  CONTINUE USAGE\n"
+        << "  CONTINUE FOR <expr>\n";
 }
 
 static bool parse_continue_args(std::istringstream& in,
@@ -172,7 +235,12 @@ static bool continue_physical_shared(xbase::DbArea& A,
 
 void cmd_CONTINUE(xbase::DbArea& A, std::istringstream& in)
 {
-    if (!A.isOpen()) {
+        if (is_continue_usage_request(in.str())) {
+        print_continue_usage();
+        return;
+    }
+
+if (!A.isOpen()) {
         std::cout << "CONTINUE: no file open.\n";
         return;
     }

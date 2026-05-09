@@ -1,6 +1,43 @@
 // src/cli/cmd_init.cpp
 // Initializes runtime environment before the REPL (paths, locks, init scripts)
 
+// @dottalk.usage v1
+// owner: DOT|INIT
+// command: INIT
+// category: script
+// status: supported
+// noargs: execute
+// effect: initialize
+// mutates: path-state lock-state delegates-command-effects
+// usage-access: INIT USAGE
+// summary:
+//   Initialize runtime paths, cleanup stale locks, and run system/user init
+//   scripts from the executable directory.
+//
+// usage:
+//   INIT
+//   INIT USAGE
+//
+// notes:
+//   INIT with no arguments initializes default paths when needed and reports path slots.
+//   INIT cleans stale DBF locks best-effort.
+//   INIT runs dottalkpp.ini and init.ini from the executable directory when present.
+//   INIT USAGE prints usage and does not initialize paths, cleanup locks, or run scripts.
+//   Script commands run through the shell command executor and may have their own side effects.
+//
+// risk:
+//   mutates_path_state: yes
+//   cleans_lock_files: yes
+//   reads_ini_files: yes
+//   executes_commands: yes
+//   mutates_table_data: depends on init script contents
+//
+// related:
+//   SHUTDOWN
+//   SETPATH
+//   DOTSCRIPT
+//
+
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -28,6 +65,37 @@ namespace fs = std::filesystem;
 
 // Match the real signature that already exists in your program.
 bool shell_execute_line(xbase::DbArea& current, const std::string& line);
+
+
+static std::string init_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string init_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_init_usage_request(const std::string& raw)
+{
+    std::string t = init_upper(init_trim(raw));
+    if (t.rfind("INIT ", 0) == 0) {
+        t = init_upper(init_trim(t.substr(5)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_init_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  INIT\n"
+        << "  INIT USAGE\n";
+}
 
 static fs::path get_executable_dir() {
 #if defined(_WIN32)
@@ -202,7 +270,12 @@ static void run_init_script(xbase::DbArea& current, const fs::path& ini_path, co
     }
 }
 
-void cmd_INIT(xbase::DbArea& current, std::istringstream& /*in*/) {
+void cmd_INIT(xbase::DbArea& current, std::istringstream& in) {
+    if (is_init_usage_request(in.str())) {
+        print_init_usage();
+        return;
+    }
+
     using namespace dottalk::paths;
 
     if (state().data_root.empty()

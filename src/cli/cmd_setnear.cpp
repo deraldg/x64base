@@ -1,4 +1,42 @@
 // src/cli/cmd_setnear.cpp
+// @dottalk.usage v1
+// owner: DOT|SETNEAR
+// command: SETNEAR
+// category: settings
+// status: supported
+// noargs: report
+// effect: configure
+// mutates: near-search-setting
+// usage-access: SET NEAR USAGE
+// summary:
+//   Report or set SEEK/FIND near-match behavior.
+//
+// usage:
+//   SET NEAR
+//   SET NEAR USAGE
+//   SET NEAR ON
+//   SET NEAR OFF
+//   SETNEAR
+//   SETNEAR USAGE
+//   SETNEAR ON
+//   SETNEAR OFF
+//
+// notes:
+//   SET NEAR with no arguments reports current NEAR state.
+//   ON, TRUE, and 1 enable nearest greater-or-equal match behavior.
+//   OFF, FALSE, and 0 require exact matches.
+//   This mutates search behavior settings only.
+//
+// risk:
+//   mutates_session_settings: yes
+//   mutates_table_data: no
+//
+// related:
+//   SEEK
+//   FIND
+//   SET CASE
+//
+
 #include <atomic>
 #include <iostream>
 #include <sstream>
@@ -35,6 +73,20 @@ void set_near(bool on) noexcept {
 
 } // namespace dottalk::near
 
+static void print_setnear_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET NEAR\n"
+        << "  SET NEAR USAGE\n"
+        << "  SET NEAR ON\n"
+        << "  SET NEAR OFF\n"
+        << "  SETNEAR\n"
+        << "  SETNEAR USAGE\n"
+        << "  SETNEAR ON\n"
+        << "  SETNEAR OFF\n";
+}
+
 void cmd_SETNEAR(xbase::DbArea&, std::istringstream& iss) {
     std::string tok;
 
@@ -42,6 +94,11 @@ void cmd_SETNEAR(xbase::DbArea&, std::istringstream& iss) {
         std::cout << (dottalk::near::get_near()
             ? "NEAR: ON\n"
             : "NEAR: OFF\n");
+        return;
+    }
+
+    if (textio::ieq(tok, "USAGE") || textio::ieq(tok, "HELP") || tok == "?") {
+        print_setnear_usage();
         return;
     }
 
@@ -57,5 +114,5 @@ void cmd_SETNEAR(xbase::DbArea&, std::istringstream& iss) {
         return;
     }
 
-    std::cout << "Usage: SET NEAR [ON|OFF]\n";
+    print_setnear_usage();
 }

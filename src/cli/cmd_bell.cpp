@@ -1,3 +1,37 @@
+// @dottalk.usage v1
+// owner: DOT|BELL
+// command: BELL
+// category: ui
+// status: supported
+// noargs: execute
+// effect: configure
+// mutates: bell-setting audible-notification
+// usage-access: BELL USAGE
+// summary:
+//   Ring the bell when enabled, or turn the shell bell setting on or off.
+//
+// usage:
+//   BELL
+//   BELL USAGE
+//   BELL ON
+//   BELL OFF
+//
+// notes:
+//   BELL with no arguments rings the bell when bell is ON; otherwise reports that bell is OFF.
+//   BELL ON enables the bell and rings it once.
+//   BELL OFF disables the bell.
+//   BELL mutates only the shell bell setting and audible notification state.
+//
+// risk:
+//   mutates_setting: bell_on
+//   audible_effect: yes when ringing
+//   mutates_table_data: no
+//
+// related:
+//   SET
+//   COLOR
+//
+
 #include "xbase.hpp"
 
 #include <algorithm>

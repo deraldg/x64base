@@ -1,3 +1,47 @@
+// @dottalk.usage v1
+// owner: DOT|PRN
+// command: PRN
+// category: output
+// status: supported
+// noargs: report
+// effect: configure
+// mutates: output-router
+// usage-access: PRN USAGE
+// summary:
+//   Report or configure the PRN output destination used by the output router.
+//
+// usage:
+//   PRN
+//   PRN USAGE
+//   PRN STATUS
+//   PRN SHOW
+//   PRN OFF
+//   PRN TO CONSOLE
+//   PRN TO SCREEN
+//   PRN TO FILE <path>
+//   PRN TO PRINTER
+//   PRN TO PRINTER <name>
+//   PRN TO NULL
+//
+// notes:
+//   PRN with no arguments reports current output routing status.
+//   PRN USAGE prints usage and does not change routing.
+//   PRN OFF and PRN TO NULL route PRN output to NULL.
+//   PRN TO FILE opens/truncates or creates the destination as owned by OutputRouter.
+//   PRN TO PRINTER is staged only; OS handoff is disabled.
+//   PRN does not mutate table data.
+//
+// risk:
+//   mutates_output_router: yes except status/usage
+//   writes_files: PRN TO FILE
+//   mutates_table_data: no
+//
+// related:
+//   ECHO
+//   SET ALTERNATE
+//   SET PRINTER
+//
+
 #include "cli/cmd_prn.hpp"
 
 #include <algorithm>
@@ -38,6 +82,7 @@ static void show_usage(std::ostream& out)
     out
         << "Usage:\n"
         << "  PRN\n"
+        << "  PRN USAGE\n"
         << "  PRN STATUS\n"
         << "  PRN OFF\n"
         << "  PRN TO CONSOLE\n"
@@ -82,6 +127,11 @@ void cmd_PRN(xbase::DbArea&, std::istringstream& in)
     }
 
     tok = up_copy(tok);
+
+    if (tok == "USAGE" || tok == "HELP" || tok == "?") {
+        show_usage(out);
+        return;
+    }
 
     if (tok == "STATUS" || tok == "SHOW") {
         show_status(R, out);

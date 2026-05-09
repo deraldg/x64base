@@ -1,6 +1,38 @@
 // src/cli/cmd_ERROR_STATUS.cpp
 // Display the last xBase_64 error in a structured, MS-conformal format.
 
+// @dottalk.usage v1
+// owner: DOT|ERROR_STATUS
+// command: ERROR_STATUS
+// category: diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: output-format-state
+// usage-access: ERROR_STATUS USAGE
+// summary:
+//   Display the last xBase_64 error in a structured, HRESULT-style diagnostic format.
+//
+// usage:
+//   ERROR_STATUS
+//   ERROR_STATUS USAGE
+//
+// notes:
+//   ERROR_STATUS with no arguments reports the last error.
+//   ERROR_STATUS prints severity, facility, number, HRESULT, and message.
+//   ERROR_STATUS changes stream formatting while printing diagnostic output.
+//   ERROR_STATUS does not mutate table data.
+//
+// risk:
+//   reads_error_state: yes
+//   mutates_output_format_state: yes
+//   mutates_table_data: no
+//
+// related:
+//   ERROR_CLEAR
+//   ERROR_TEST
+//
+
 #include <iostream>
 #include <sstream>
 #include <iomanip>

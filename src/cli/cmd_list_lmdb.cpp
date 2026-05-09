@@ -14,6 +14,56 @@
 // - If <TAG> is provided, it becomes the active tag for this area (and updates orderstate).
 // - Descending order is supported: if the area's order is DESC, we iterate cursor via last/prev.
 //
+// @dottalk.usage v1
+// owner: DOT|LIST_LMDB
+// command: LIST_LMDB
+// category: index
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor order-state index-backend
+// usage-access: LIST_LMDB USAGE
+// summary:
+//   Enumerate records in active LMDB/CDX index order without in-memory sorting.
+//
+// usage:
+//   LIST_LMDB
+//   LIST_LMDB USAGE
+//   LIST_LMDB ALL
+//   LIST_LMDB <limit>
+//   LIST_LMDB DELETED
+//   LIST_LMDB NODELETED
+//   LIST_LMDB ASC
+//   LIST_LMDB DESC
+//   LIST_LMDB <tag>
+//   LL
+//   LL USAGE
+//   LL ALL
+//   LL <limit>
+//
+// notes:
+//   LIST_LMDB with no arguments lists records through the active LMDB order.
+//   LL is a shorthand alias for LIST_LMDB.
+//   Tokens are accepted in any order.
+//   A supplied tag becomes the active tag for the current area and updates order state.
+//   ASC and DESC override display direction for the command.
+//   LIST_LMDB requires an open table and active LMDB order except for LIST_LMDB USAGE.
+//   LIST_LMDB restores the original cursor best-effort after listing.
+//
+// risk:
+//   reads_index_data: yes
+//   mutates_cursor: temporary during scan
+//   cursor_restore: best effort
+//   mutates_order_state: when tag override is supplied
+//   mutates_table_data: no
+//
+// related:
+//   LMDB
+//   SETLMDB
+//   SET ORDER
+//   LIST
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -79,6 +129,35 @@ static inline std::string upper_copy(std::string s) {
 
 static inline bool is_digits(const std::string& s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), [](unsigned char c){ return std::isdigit(c) != 0; });
+}
+
+
+static bool is_list_lmdb_usage_request(const std::string& raw)
+{
+    std::string t = upper_copy(trim_copy(raw));
+    if (t.rfind("LIST_LMDB ", 0) == 0) {
+        t = upper_copy(trim_copy(t.substr(10)));
+    } else if (t.rfind("LL ", 0) == 0) {
+        t = upper_copy(trim_copy(t.substr(3)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_list_lmdb_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  LIST_LMDB\n"
+        << "  LIST_LMDB USAGE\n"
+        << "  LIST_LMDB ALL\n"
+        << "  LIST_LMDB <limit>\n"
+        << "  LIST_LMDB DELETED\n"
+        << "  LIST_LMDB NODELETED\n"
+        << "  LIST_LMDB ASC\n"
+        << "  LIST_LMDB DESC\n"
+        << "  LIST_LMDB <tag>\n"
+        << "  LL\n"
+        << "  LL USAGE\n";
 }
 
 static int recno_width(const xbase::DbArea& a) {
@@ -147,6 +226,11 @@ static Options parse_opts(std::istringstream& iss) {
 
 void cmd_LIST_LMDB(xbase::DbArea& a, std::istringstream& iss)
 {
+    if (is_list_lmdb_usage_request(iss.str())) {
+        print_list_lmdb_usage();
+        return;
+    }
+
     CursorRestore restore(a);
 
     if (!a.isOpen()) {

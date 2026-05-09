@@ -1,3 +1,63 @@
+// @dottalk.usage v1
+// owner: DOT|FIELDMGR
+// command: FIELDMGR
+// category: schema
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: table-schema index metadata
+// usage-access: FIELDMGR USAGE
+// summary:
+//   Inspect and modify field definitions for the current DBF through the shared
+//   fields manager layer.
+//
+// usage:
+//   FIELDMGR
+//   FIELDMGR USAGE
+//   FIELDMGR HELP
+//   FIELDMGR SHOW
+//   FIELDMGR LIST
+//   FIELDMGR APPEND <name> <type>
+//   FIELDMGR DELETE <name>
+//   FIELDMGR MODIFY <name> NAME <newname>
+//   FIELDMGR MODIFY <name> TYPE <type>
+//   FIELDMGR MODIFY <name> TO <newname> <type>
+//   FIELDMGR COPY TO <target>
+//   FIELDMGR VALIDATE
+//   FIELDMGR CHECK
+//   FIELDMGR REBUILD INDEXES
+//
+// examples:
+//   FIELDMGR SHOW
+//   FIELDMGR APPEND ZIP C10
+//   FIELDMGR DELETE ZIP
+//   FIELDMGR MODIFY ZIP NAME POSTAL
+//   FIELDMGR VALIDATE
+//
+// notes:
+//   FIELDMGR with no arguments shows current field metadata.
+//   SHOW and LIST are read-only reports.
+//   APPEND, DELETE, and MODIFY mutate table schema.
+//   COPY exports or copies field metadata through the fields manager layer.
+//   VALIDATE and CHECK report field/schema consistency.
+//   REBUILD INDEXES delegates index rebuild through the fields manager layer.
+//   FIELDMGR is schema mutation capable and is not purely read-only.
+//
+// risk:
+//   reads_schema: yes
+//   mutates_schema: APPEND DELETE MODIFY
+//   rebuilds_indexes: REBUILD INDEXES
+//   writes_files: COPY may write through field manager behavior
+//   mutates_table_data: schema operations may rewrite table structure through field manager behavior
+//
+// related:
+//   STRUCT
+//   FIELDS
+//   DDL
+//   CREATE
+//   INDEX
+//
+
 #include "xbase/fields.hpp"
 
 #include <cctype>
@@ -243,7 +303,7 @@ void cmd_FIELDMGR(xbase::DbArea& db, std::istringstream& iss)
         return;
     }
 
-    if (op0 == "HELP" || op0 == "?") {
+    if (op0 == "USAGE" || op0 == "HELP" || op0 == "?") {
         print_usage();
         return;
     }

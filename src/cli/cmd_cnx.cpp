@@ -16,6 +16,56 @@
 //   - Follows plausible child offsets recursively with loop/depth protection
 //   - Does NOT modify CNX or replace backend traversal
 
+// @dottalk.usage v1
+// owner: DOT|CNX
+// command: CNX
+// category: index
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: index-metadata filesystem
+// usage-access: CNX USAGE
+// summary:
+//   Manage CNX index container metadata: create containers, inspect header/tag
+//   directories, add/drop tags, and walk/trace RUN1 tag structures.
+//
+// usage:
+//   CNX USAGE
+//   CNX INFO [<path.cnx>]
+//   CNX TAGS [<path.cnx>]
+//   CNX CREATE [<path.cnx>]
+//   CNX ADDTAG <name> [<path.cnx>]
+//   CNX DROPTAG <name> [<path.cnx>]
+//   CNX WALK <tag> [<path.cnx>]
+//   CNX TRACE <tag> [<path.cnx>]
+//
+// notes:
+//   CNX with no arguments shows usage.
+//   If no path is supplied, CNX first uses the active CNX path from order state when available.
+//   Otherwise CNX derives <current_dbf_basename>.cnx through the INDEXES path slot.
+//   CREATE refuses to overwrite an existing file.
+//   INFO, TAGS, WALK, and TRACE are read-only inspection/diagnostic operations and require an existing file.
+//   WALK/TRACE use root_page_off from the CNX tag directory and follow plausible child offsets with loop/depth protection.
+//   ADDTAG and DROPTAG mutate the CNX container tag directory and require an existing file.
+//
+// risk:
+//   reads_index_file: INFO TAGS WALK TRACE ADDTAG DROPTAG
+//   creates_index_file: CREATE
+//   overwrites_index_file: no, CREATE refuses existing target
+//   mutates_index_metadata: ADDTAG DROPTAG
+//   mutates_table_data: no
+//   diagnostic_tree_walk: WALK TRACE
+//   default_path_uses_order_state: yes
+//   default_path_uses_indexes_slot: yes
+//
+// related:
+//   CDX
+//   INDEX
+//   SET CNX
+//   SET ORDER
+//   REINDEX
+//
+
 #include "xbase.hpp"
 #include "cnx/cnx.hpp"
 #include "cli/path_resolver.hpp"
@@ -117,12 +167,19 @@ static bool resolve_target_path(xbase::DbArea& area,
 static void print_help()
 {
     std::cout
-        << "CNX INFO [<path.cnx>]\n"
-        << "CNX TAGS [<path.cnx>]\n"
-        << "CNX CREATE [<path.cnx>]\n"
-        << "CNX ADDTAG <name> [<path.cnx>]\n"
-        << "CNX DROPTAG <name> [<path.cnx>]\n"
-        << "CNX WALK <tag> [<path.cnx>]\n";
+        << "Usage:\n"
+        << "  CNX USAGE\n"
+        << "  CNX INFO [<path.cnx>]\n"
+        << "  CNX TAGS [<path.cnx>]\n"
+        << "  CNX CREATE [<path.cnx>]\n"
+        << "  CNX ADDTAG <name> [<path.cnx>]\n"
+        << "  CNX DROPTAG <name> [<path.cnx>]\n"
+        << "  CNX WALK <tag> [<path.cnx>]\n"
+        << "  CNX TRACE <tag> [<path.cnx>]\n"
+        << "Notes:\n"
+        << "  - CNX with no arguments shows usage.\n"
+        << "  - CREATE refuses to overwrite an existing CNX file.\n"
+        << "  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n";
 }
 
 static std::uint32_t rd_u32_le(const unsigned char* p)
@@ -354,7 +411,7 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
 
     std::string SUB = up_copy(sub);
 
-    if (SUB == "HELP" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
+    if (SUB == "USAGE" || SUB == "HELP" || SUB == "?" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
         print_help();
         return;
     }

@@ -1,17 +1,22 @@
 // ============================================================================
-// File: src/cli/cmd_cmdhelpchk.cpp
-// Robust validator for commands.dbf/.dbt produced by CMDHELP
+// File: src/cli/command_helpchk.cpp
+// Robust validator for commands.dbf/.dbt produced by CMDHELP.
+// Adds HELP DATA v2 artifact validation for help_artifacts.dbf/.dbt.
 // Plus reflection-system audit mode.
 // ============================================================================
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "xbase.hpp"
@@ -80,6 +85,17 @@ static std::string trim_copy(std::string s)
     return s;
 }
 
+static std::vector<std::string> split_words(const std::string& s)
+{
+    std::vector<std::string> words;
+    std::istringstream in(s);
+    std::string w;
+    while (in >> w) {
+        words.push_back(w);
+    }
+    return words;
+}
+
 #pragma pack(push,1)
 struct DbfHeader {
     uint8_t  version;
@@ -99,6 +115,24 @@ struct DbfField {
     uint8_t  reserved[14];
 };
 #pragma pack(pop)
+
+static std::string dbf_field_name_11(const char raw[11])
+{
+    size_t n = 0;
+    while (n < 11 && raw[n] != '\0') {
+        ++n;
+    }
+
+    std::string s(raw, raw + n);
+
+    while (!s.empty() &&
+           (s.back() == '\0' ||
+            std::isspace(static_cast<unsigned char>(s.back())))) {
+        s.pop_back();
+    }
+
+    return s;
+}
 
 struct Col {
     std::string name;
@@ -156,7 +190,6 @@ static Dbf open_dbf(const fs::path& p)
         throw std::runtime_error("short read header");
     }
 
-    // Read fields until 0x0D.
     while (true) {
         char c;
         if (!dbf.in.read(&c, 1)) {
@@ -173,14 +206,12 @@ static Dbf open_dbf(const fs::path& p)
         }
 
         Col col;
-        col.name.assign(f.name, f.name + 11);
-        col.name = trimr(col.name);
+        col.name = dbf_field_name_11(f.name);
         col.type = f.type;
         col.len  = f.length;
         dbf.cols.push_back(col);
     }
 
-    // Compute offsets.
     size_t off = 1;
     for (auto& c : dbf.cols) {
         c.offset = off;
@@ -188,6 +219,17 @@ static Dbf open_dbf(const fs::path& p)
     }
     dbf.rec0 = static_cast<size_t>(dbf.hdr.header_len);
     return dbf;
+}
+
+static int col_index(const Dbf& dbf, const std::string& name)
+{
+    const std::string want = upper(name);
+    for (int i = 0; i < static_cast<int>(dbf.cols.size()); ++i) {
+        if (upper(dbf.cols[i].name) == want) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 static std::string memo_preview(const fs::path& dbt_path,
@@ -249,6 +291,33 @@ static uint32_t read_mptr(const std::vector<char>& rec, const Col& c)
     return static_cast<uint32_t>(std::strtoul(s.c_str(), nullptr, 10));
 }
 
+static std::string read_cell(const std::vector<char>& rec,
+                             const Dbf& dbf,
+                             int ix,
+                             const fs::path& dbt_path,
+                             size_t* memo_len = nullptr,
+                             size_t max_memo_chars = 240)
+{
+    if (memo_len) {
+        *memo_len = 0;
+    }
+    if (ix < 0 || ix >= static_cast<int>(dbf.cols.size())) {
+        return {};
+    }
+
+    const Col& c = dbf.cols[ix];
+    if (c.type == 'M') {
+        const uint32_t blk = read_mptr(rec, c);
+        size_t len = 0;
+        std::string s = memo_preview(dbt_path, blk, len, max_memo_chars);
+        if (memo_len) {
+            *memo_len = len;
+        }
+        return s;
+    }
+    return read_char(rec, c);
+}
+
 static std::pair<fs::path, fs::path> resolve_paths(const fs::path& outdir)
 {
     fs::path p1 = outdir / "commands.dbf";
@@ -266,14 +335,304 @@ static std::pair<fs::path, fs::path> resolve_paths(const fs::path& outdir)
         "' or '" + (outdir / "data").string() + "'");
 }
 
+static std::pair<fs::path, fs::path> resolve_artifact_paths(const fs::path& outdir)
+{
+    fs::path p1 = outdir / "help_artifacts.dbf";
+    if (fs::exists(p1)) {
+        return {p1, outdir / "help_artifacts.dbt"};
+    }
+
+    fs::path p2 = outdir / "data" / "help_artifacts.dbf";
+    if (fs::exists(p2)) {
+        return {p2, outdir / "data" / "help_artifacts.dbt"};
+    }
+
+    throw std::runtime_error(
+        "help_artifacts.dbf not found in '" + outdir.string() +
+        "' or '" + (outdir / "data").string() + "'");
+}
+
+static std::unordered_set<std::string> load_command_keys(const fs::path& outdir)
+{
+    std::unordered_set<std::string> keys;
+
+    try {
+        auto [dbf_path, dbt_path] = resolve_paths(outdir);
+        (void)dbt_path;
+        auto dbf = open_dbf(dbf_path);
+
+        const int ix_cat = col_index(dbf, "CATALOG");
+        const int ix_cmd = col_index(dbf, "COMMAND");
+        const int ix_key = col_index(dbf, "CMDKEY");
+        if ((ix_cat < 0 || ix_cmd < 0) && ix_key < 0) {
+            return keys;
+        }
+
+        dbf.in.seekg(static_cast<std::streamoff>(dbf.rec0), std::ios::beg);
+        std::vector<char> rec(dbf.hdr.rec_len);
+
+        for (uint32_t r = 0; r < dbf.hdr.nrecs; ++r) {
+            if (!read_exact(dbf.in, rec.data(), rec.size())) {
+                break;
+            }
+            if (!rec.empty() && rec[0] == '*') {
+                continue;
+            }
+
+            std::string key;
+            if (ix_key >= 0) {
+                key = upper(trim_copy(read_char(rec, dbf.cols[ix_key])));
+            }
+            if (key.empty() && ix_cat >= 0 && ix_cmd >= 0) {
+                key = upper(trim_copy(read_char(rec, dbf.cols[ix_cat]))) + "|" +
+                      upper(trim_copy(read_char(rec, dbf.cols[ix_cmd])));
+            }
+            if (!key.empty()) {
+                keys.insert(key);
+            }
+        }
+    } catch (...) {
+    }
+
+    return keys;
+}
+
+static void print_map(const char* title, const std::map<std::string, int>& counts)
+{
+    std::cout << title << "\n";
+    if (counts.empty()) {
+        std::cout << "  (none)\n";
+        return;
+    }
+    for (const auto& kv : counts) {
+        std::cout << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
+    }
+}
+
+static void run_artifacts_check(const std::string& dir_arg, int limit)
+{
+    fs::path outdir = resolve_help_dir_arg(dir_arg);
+
+    auto [dbf_path, dbt_path] = resolve_artifact_paths(outdir);
+    auto dbf = open_dbf(dbf_path);
+
+    const int ix_id       = col_index(dbf, "ID");
+    const int ix_catalog  = col_index(dbf, "CATALOG");
+    const int ix_command  = col_index(dbf, "COMMAND");
+    const int ix_cmdkey   = col_index(dbf, "CMDKEY");
+    const int ix_owner    = col_index(dbf, "OWNER");
+    const int ix_kind     = col_index(dbf, "KIND");
+    const int ix_source   = col_index(dbf, "SOURCE");
+    const int ix_confid   = col_index(dbf, "CONFID");
+    const int ix_severity = col_index(dbf, "SEVERITY");
+    const int ix_name     = col_index(dbf, "NAME");
+    const int ix_text     = col_index(dbf, "TEXT");
+    const int ix_detail   = col_index(dbf, "DETAIL");
+    const int ix_evidence = col_index(dbf, "EVIDENCE");
+    (void)ix_catalog;
+    (void)ix_command;
+    (void)ix_owner;
+    (void)ix_detail;
+    (void)ix_evidence;
+
+    std::cout << "Opened " << dbf_path.string()
+              << " (" << dbf.hdr.nrecs << " artifact rows)\n";
+
+    std::cout << "Columns:";
+    for (const auto& c : dbf.cols) {
+        std::cout << " [" << c.name << ":" << c.type << "," << int(c.len) << "]";
+    }
+    std::cout << "\n";
+
+    if (ix_kind < 0 || ix_source < 0 || ix_confid < 0) {
+        std::cout << "Missing expected HELP DATA v2 columns; need at least KIND, SOURCE, CONFID.\n";
+        return;
+    }
+
+    const auto valid_keys = load_command_keys(outdir);
+
+    std::map<std::string, int> by_kind;
+    std::map<std::string, int> by_source;
+    std::map<std::string, int> by_confid;
+    std::map<std::string, int> by_severity;
+
+    int deleted_rows = 0;
+    int blank_kind = 0;
+    int blank_source = 0;
+    int blank_confid = 0;
+    int source_miner_rows = 0;
+    int heuristic_rows = 0;
+    int message_rows = 0;
+    int orphan_cmdkey_rows = 0;
+    int blank_text_rows = 0;
+    int shown = 0;
+
+    struct RowPreview {
+        std::string id;
+        std::string kind;
+        std::string source;
+        std::string confid;
+        std::string cmdkey;
+        std::string name;
+        std::string text;
+    };
+    std::vector<RowPreview> previews;
+
+    dbf.in.seekg(static_cast<std::streamoff>(dbf.rec0), std::ios::beg);
+    std::vector<char> rec(dbf.hdr.rec_len);
+
+    for (uint32_t r = 0; r < dbf.hdr.nrecs; ++r) {
+        if (!read_exact(dbf.in, rec.data(), rec.size())) {
+            break;
+        }
+        if (!rec.empty() && rec[0] == '*') {
+            ++deleted_rows;
+            continue;
+        }
+
+        const std::string kind = upper(trim_copy(read_cell(rec, dbf, ix_kind, dbt_path)));
+        const std::string src  = upper(trim_copy(read_cell(rec, dbf, ix_source, dbt_path)));
+        const std::string conf = upper(trim_copy(read_cell(rec, dbf, ix_confid, dbt_path)));
+        const std::string sev  = upper(trim_copy(read_cell(rec, dbf, ix_severity, dbt_path)));
+        const std::string key  = upper(trim_copy(read_cell(rec, dbf, ix_cmdkey, dbt_path)));
+
+        by_kind[kind.empty() ? "(blank)" : kind]++;
+        by_source[src.empty() ? "(blank)" : src]++;
+        by_confid[conf.empty() ? "(blank)" : conf]++;
+        by_severity[sev.empty() ? "(blank)" : sev]++;
+
+        if (kind.empty()) ++blank_kind;
+        if (src.empty()) ++blank_source;
+        if (conf.empty()) ++blank_confid;
+        if (src == "SOURCE_MINER") ++source_miner_rows;
+        if (conf == "HEURISTIC") ++heuristic_rows;
+        if (kind == "MESSAGE") ++message_rows;
+
+        size_t text_len = 0;
+        std::string text = read_cell(rec, dbf, ix_text, dbt_path, &text_len, 160);
+        if (text_len == 0 && trim_copy(text).empty()) {
+            ++blank_text_rows;
+        }
+
+        if (!key.empty() && !valid_keys.empty() && valid_keys.count(key) == 0) {
+            ++orphan_cmdkey_rows;
+        }
+
+        if (shown < limit) {
+            RowPreview p;
+            p.id = read_cell(rec, dbf, ix_id, dbt_path);
+            p.kind = kind;
+            p.source = src;
+            p.confid = conf;
+            p.cmdkey = key;
+            p.name = read_cell(rec, dbf, ix_name, dbt_path);
+            p.text = text;
+            previews.push_back(std::move(p));
+            ++shown;
+        }
+    }
+
+    std::cout << "\nHELP DATA v2 artifact summary\n";
+    std::cout << "  rows                 : " << dbf.hdr.nrecs << "\n";
+    std::cout << "  deleted rows         : " << deleted_rows << "\n";
+    std::cout << "  source-miner rows    : " << source_miner_rows << "\n";
+    std::cout << "  heuristic rows       : " << heuristic_rows << "\n";
+    std::cout << "  message rows         : " << message_rows << "\n";
+    std::cout << "  blank text rows      : " << blank_text_rows << "\n";
+    std::cout << "  orphan CMDKEY rows   : " << orphan_cmdkey_rows;
+    if (valid_keys.empty()) {
+        std::cout << "  (legacy command keys unavailable)";
+    }
+    std::cout << "\n";
+    std::cout << "  blank KIND/SOURCE/CONFID: "
+              << blank_kind << "/" << blank_source << "/" << blank_confid << "\n";
+
+    std::cout << "\n";
+    print_map("By KIND:", by_kind);
+    std::cout << "\n";
+    print_map("By SOURCE:", by_source);
+    std::cout << "\n";
+    print_map("By CONFID:", by_confid);
+    std::cout << "\n";
+    print_map("By SEVERITY:", by_severity);
+
+    if (limit > 0) {
+        std::cout << "\nPreview rows (limit " << limit << ")\n";
+        std::cout << std::left
+                  << std::setw(6)  << "ID"
+                  << std::setw(16) << "KIND"
+                  << std::setw(16) << "SOURCE"
+                  << std::setw(12) << "CONFID"
+                  << std::setw(28) << "CMDKEY"
+                  << std::setw(22) << "NAME"
+                  << "TEXT\n";
+        std::cout << "------------------------------------------------------------------------------------------------------------\n";
+        for (const auto& p : previews) {
+            std::string key = p.cmdkey;
+            if (key.size() > 27) key.resize(27);
+            std::string name = p.name;
+            if (name.size() > 21) name.resize(21);
+            std::string text = p.text;
+            for (auto& ch : text) {
+                if (ch == '\n' || ch == '\r' || ch == '\t') ch = ' ';
+            }
+            if (text.size() > 100) text.resize(100);
+
+            std::cout << std::left
+                      << std::setw(6)  << p.id
+                      << std::setw(16) << p.kind
+                      << std::setw(16) << p.source
+                      << std::setw(12) << p.confid
+                      << std::setw(28) << key
+                      << std::setw(22) << name
+                      << text << "\n";
+        }
+    }
+
+    std::cout << "\nDBT: " << dbt_path.string() << "\n";
+}
+
 } // anonymous namespace
 
 void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
 {
-    std::string outdir;
-    std::getline(in, outdir);
+    std::string rest;
+    std::getline(in, rest);
+    rest = trim_copy(rest);
 
-    const std::string trimmed = trim_copy(outdir);
+    std::vector<std::string> words = split_words(rest);
+    std::string first = words.empty() ? std::string() : upper(words[0]);
+
+    // ------------------------------------------------------------------------
+    // HELP DATA v2 artifact validation mode
+    //
+    // Usage:
+    //   CMDHELPCHK ARTIFACTS
+    //   CMDHELPCHK ARTIFACTS .
+    //   CMDHELPCHK ARTIFACTS . 20
+    //   CMDHELPCHK V2 . 20
+    // ------------------------------------------------------------------------
+    if (first == "ARTIFACTS" || first == "ARTIFACT" || first == "V2") {
+        std::string dir_arg;
+        int limit = 10;
+
+        if (words.size() >= 2) {
+            dir_arg = words[1];
+        }
+        if (words.size() >= 3) {
+            try {
+                limit = std::max(0, std::stoi(words[2]));
+            } catch (...) {
+            }
+        }
+
+        try {
+            run_artifacts_check(dir_arg, limit);
+        } catch (const std::exception& ex) {
+            std::cout << "CMDHELPCHK ARTIFACTS error: " << ex.what() << "\n";
+        }
+        return;
+    }
 
     // ------------------------------------------------------------------------
     // Reflection-system mode
@@ -283,7 +642,7 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
     //   CMDHELPCHK REF
     //   CMDHELPCHK REFLECT
     // ------------------------------------------------------------------------
-    if (trimmed.empty() || upper(trimmed) == "REF" || upper(trimmed) == "REFLECT") {
+    if (rest.empty() || first == "REF" || first == "REFLECT") {
         using namespace refsys;
 
         ReferenceCollection rc = build_reference_collection();
@@ -314,26 +673,26 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
 
     // ------------------------------------------------------------------------
     // Legacy DBF validation mode
+    //
+    // Usage:
+    //   CMDHELPCHK <dir> [limit]
     // ------------------------------------------------------------------------
-    fs::path outdir_p = resolve_help_dir_arg(outdir);
-    outdir = outdir_p.string();
-
-    std::string limit_s;
-    std::getline(in, limit_s);
-
+    std::string outdir = words.empty() ? std::string() : words[0];
     int limit = 5;
-    if (!limit_s.empty()) {
+    if (words.size() >= 2) {
         try {
-            limit = std::max(1, std::stoi(limit_s));
+            limit = std::max(1, std::stoi(words[1]));
         } catch (...) {
         }
     }
+
+    fs::path outdir_p = resolve_help_dir_arg(outdir);
+    outdir = outdir_p.string();
 
     try {
         auto [dbf_path, dbt_path] = resolve_paths(outdir);
         auto dbf = open_dbf(dbf_path);
 
-        // Discover columns.
         int id_ix = -1;
         int cmd_ix = -1;
         int usage_ix = -1;
@@ -357,7 +716,6 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
             }
         }
 
-        // Fallback: if USAGE/VERBOSE names not present, pick first two memos.
         if (usage_ix < 0 && !memo_ix.empty()) {
             usage_ix = memo_ix[0];
         }
@@ -365,7 +723,6 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
             verbose_ix = memo_ix[1];
         }
 
-        // Print discovered header.
         std::cout << "Opened " << dbf_path.string()
                   << " (" << dbf.hdr.nrecs << " rows)\n";
         std::cout << "Columns:";
@@ -415,7 +772,6 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
                       << std::setw(14) << std::to_string(u_len)
                       << u_prev << "\n";
 
-            // Optional second memo column preview (VERBOSE or next memo).
             if (verbose_ix >= 0) {
                 const auto v_blk = read_mptr(rec, dbf.cols[verbose_ix]);
                 size_t v_len = 0;

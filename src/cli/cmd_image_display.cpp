@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: DOT|IMAGE
+// command: IMAGE
+// category: shell
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: external-viewer
+// usage-access: IMAGE USAGE
+// summary:
+//   Inspect image file metadata or open a supported image file in the operating
+//   system viewer.
+//
+// usage:
+//   IMAGE USAGE
+//   IMAGE <file>
+//   IMAGE INFO <file>
+//
+// notes:
+//   IMAGE with no arguments prints usage.
+//   IMAGE USAGE prints usage and does not open a viewer.
+//   IMAGE INFO <file> prints file extension, size, and recognized-image status.
+//   IMAGE <file> opens the OS viewer on Windows.
+//   Non-Windows viewer launch is currently not implemented.
+//   IMAGE does not mutate table data.
+//
+// risk:
+//   launches_external_viewer: IMAGE <file> on Windows
+//   reads_filesystem_metadata: yes
+//   mutates_table_data: no
+//
+// related:
+//   WEB
+//   BANG
+//
+
 #include "cmd_image_display.hpp"
 
 #include <algorithm>
@@ -85,7 +121,8 @@ static bool supported_image_ext(const std::string& extUpper)
 static void usage()
 {
     std::cout
-        << "IMAGE command\n"
+        << "Usage:\n"
+        << "  IMAGE USAGE\n"
         << "  IMAGE <file>\n"
         << "  IMAGE INFO <file>\n";
 }
@@ -136,6 +173,11 @@ void cmd_IMAGE_DISPLAY(DbArea&, std::istringstream& iss)
 
     const std::string tokU = upcopy(tok);
 
+
+    if (tokU == "USAGE" || tokU == "HELP" || tokU == "?") {
+        usage();
+        return;
+    }
     if (tokU == "INFO") {
         const std::string raw = trim(read_pathish(iss));
         if (raw.empty()) {

@@ -1,75 +1,214 @@
 // src/cli/cmd_export.cpp
+// @dottalk.usage v1
+// owner: DOT|EXPORT
+// command: EXPORT
+// category: io
+// status: supported
+// noargs: usage
+// effect: export
+// mutates: filesystem
+// usage-access: EXPORT USAGE
+// summary:
+//   Export the current DBF rowset to a delimited file.
+//
+// usage:
+//   EXPORT USAGE
+//   EXPORT [TO] <file> [CSV|PIPE]
+//   EXPORT <table> TO <file> [CSV|PIPE]
+//
+// notes:
+//   EXPORT requires an open table except for EXPORT USAGE.
+//   EXPORT [TO] <file> writes the current table to the named file.
+//   EXPORT <table> TO <file> accepts a legacy table token but exports the current area.
+//   CSV is the default format; PIPE uses a pipe delimiter.
+//   A missing extension is added automatically (.csv for CSV, .txt for PIPE).
+//   EXPORT writes a header row.
+//   EXPORT honors the active SET FILTER for the current area.
+//   EXPORT reads records in physical table order.
+//   EXPORT may report file/write errors and still emit a summary when appropriate.
+//
+// risk:
+//   reads_table_records: yes
+//   writes_files: yes
+//   overwrites_output_file: yes if target exists
+//   mutates_table_data: no
+//   mutates_cursor: yes, scans physical records
+//
+// related:
+//   DUMP
+//   LIST
+//   COPY TO
+//   DDL
+//
+
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "xbase.hpp"
 #include "textio.hpp"
-
-// New core data/codec headers
-#include "dt/data/row.hpp"
-#include "dt/data/rowset.hpp"
-#include "dt/data/schema.hpp"
-#include "dt/data/row_codec_dbf.hpp"
-#include "dt/data/row_codec_csv.hpp"
+#include "filters/filter_registry.hpp"
 
 using namespace xbase;
 
 namespace {
+
+static std::string export_trim(std::string s)
+{
+    return textio::trim(std::move(s));
+}
+
+static std::string export_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_export_usage_request(std::string raw)
+{
+    std::string t = export_upper(export_trim(std::move(raw)));
+
+    // Some dispatch paths pass the whole raw line ("EXPORT USAGE")
+    // instead of only the command tail ("USAGE"). Accept both.
+    if (t.rfind("EXPORT ", 0) == 0) {
+        t = export_upper(export_trim(t.substr(7)));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_export_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  EXPORT USAGE\n"
+        << "  EXPORT [TO] <file> [CSV|PIPE]\n"
+        << "  EXPORT <table> TO <file> [CSV|PIPE]\n"
+        << "Notes:\n"
+        << "  - EXPORT writes the current table as CSV by default.\n"
+        << "  - PIPE uses | as the delimiter.\n"
+        << "  - A missing extension is added automatically (.csv for CSV, .txt for PIPE).\n"
+        << "  - EXPORT honors the active SET FILTER for the current area.\n"
+        << "  - EXPORT requires an open table except for EXPORT USAGE.\n";
+}
 
 static bool ieq_to(const std::string& s) {
     if (s.size() != 2) return false;
     return (s[0] == 'T' || s[0] == 't') && (s[1] == 'O' || s[1] == 'o');
 }
 
-// Simple helper to report errors in a consistent way.
-static void print_error(const std::string& msg) {
-    if (!msg.empty()) {
-        std::cout << "ERROR: " << msg << "\n";
+static bool has_any_extension(const std::string& path) {
+    const std::size_t slash = path.find_last_of("/\\");
+    const std::size_t dot = path.find_last_of('.');
+    return dot != std::string::npos && (slash == std::string::npos || dot > slash);
+}
+
+static void add_default_export_extension(std::string& dest, char delimiter) {
+    if (has_any_extension(dest)) return;
+    dest += (delimiter == '|') ? ".txt" : ".csv";
+}
+
+static void write_delimited_cell(std::ostream& out, const std::string& value, char delimiter)
+{
+    bool quote = false;
+    for (char c : value) {
+        if (c == delimiter || c == '"' || c == '\r' || c == '\n') {
+            quote = true;
+            break;
+        }
     }
+
+    if (!quote) {
+        out << value;
+        return;
+    }
+
+    out << '"';
+    for (char c : value) {
+        if (c == '"') out << "\"\"";
+        else out << c;
+    }
+    out << '"';
+}
+
+static void write_delimited_row(std::ostream& out, const std::vector<std::string>& cells, char delimiter)
+{
+    for (std::size_t i = 0; i < cells.size(); ++i) {
+        if (i) out << delimiter;
+        write_delimited_cell(out, cells[i], delimiter);
+    }
+    out << "\n";
 }
 
 } // namespace
 
 void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
+    const std::string raw_args = iss.str();
+    if (is_export_usage_request(raw_args)) {
+        print_export_usage();
+        return;
+    }
+
     if (!a.isOpen()) {
         std::cout << "No file open\n";
         return;
     }
 
-    // Accept either:
-    //   EXPORT <file>
-    // or
-    //   EXPORT <table> TO <file>
-    std::string tok1;
-    if (!(iss >> tok1)) {
-        std::cout << "Usage: EXPORT <table> TO <file>\n";
-        return;
+    // Accepted forms:
+    //   EXPORT <file> [CSV|PIPE]
+    //   EXPORT TO <file> [CSV|PIPE]
+    //   EXPORT <table> TO <file> [CSV|PIPE]
+    //
+    // Canary fix: "EXPORT TO tmp\\x PIPE" must not treat literal TO as
+    // the filename. Parse optional TO and format keywords before selecting dest.
+    std::vector<std::string> toks;
+    for (std::string t; iss >> t; ) toks.push_back(t);
+
+    char delimiter = ',';
+    if (!toks.empty()) {
+        const std::string last = export_upper(toks.back());
+        if (last == "CSV") {
+            delimiter = ',';
+            toks.pop_back();
+        } else if (last == "PIPE") {
+            delimiter = '|';
+            toks.pop_back();
+        }
     }
 
     std::string dest;
-    std::string tok2;
-    std::streampos savePos = iss.tellg();
-    if (iss >> tok2) {
-        if (ieq_to(tok2)) {
-            // form: <table> TO <file>
-            if (!(iss >> dest) || dest.empty()) {
-                std::cout << "Usage: EXPORT <table> TO <file>\n";
-                return;
-            }
-        } else {
-            // fallback to single-arg form: first token is the file name
-            dest = tok1;
-            iss.seekg(savePos); // put back tok2 for safety (not used)
-        }
-    } else {
-        dest = tok1;
+    if (toks.empty()) {
+        print_export_usage();
+        return;
     }
 
-    if (!textio::ends_with_ci(dest, ".csv")) {
-        dest += ".csv";
+    if (ieq_to(toks[0])) {
+        // EXPORT TO <file>
+        if (toks.size() != 2 || toks[1].empty()) {
+            print_export_usage();
+            return;
+        }
+        dest = toks[1];
+    } else if (toks.size() >= 3 && ieq_to(toks[1])) {
+        // EXPORT <table> TO <file> -- legacy table token is accepted but
+        // the current area remains the exported source.
+        if (toks.size() != 3 || toks[2].empty()) {
+            print_export_usage();
+            return;
+        }
+        dest = toks[2];
+    } else if (toks.size() == 1) {
+        // EXPORT <file>
+        dest = toks[0];
+    } else {
+        print_export_usage();
+        return;
     }
+
+    add_default_export_extension(dest, delimiter);
 
     std::ofstream out(dest, std::ios::binary);
     if (!out) {
@@ -77,58 +216,39 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
         return;
     }
 
-    // --- New Row/Cell-based pipeline starts here -------------------------
+    const auto& fields = a.fields();
 
-    // 1) Build Schema from the current DbArea
-    dt::data::Schema schema = dt::data::build_schema_from_dbf(a);
+    std::vector<std::string> header;
+    header.reserve(fields.size());
+    for (const auto& f : fields) header.push_back(f.name);
+    write_delimited_row(out, header, delimiter);
 
-    // 2) Read all records into a RowSet (natural table order)
-    dt::data::DbfRowCodecOptions dbf_opts;
-    // You can tune these later if you want different behavior:
-    // dbf_opts.parse_dates           = true;
-    // dbf_opts.parse_logicals        = true;
-    // dbf_opts.parse_numeric         = true;
-    // dbf_opts.allow_truncate_character = false;
-    // dbf_opts.allow_round_numeric      = true;
+    std::size_t exported = 0;
+    const int nrecs = a.recCount();
 
-    std::string dbf_error;
-    dt::data::RowSet rowset = dt::data::read_rows_from_dbf(
-        a,
-        schema,
-        /*limit=*/0,         // 0 = no limit; export all records
-        &dbf_error,
-        dbf_opts
-    );
+    for (int recno = 1; recno <= nrecs; ++recno) {
+        try {
+            (void)a.gotoRec(recno);
+            (void)a.readCurrent();
+        } catch (...) {
+            continue;
+        }
 
-    if (!dbf_error.empty()) {
-        print_error(dbf_error);
-        // We still proceed if some records were read, but you can change this
-        // to a hard abort if desired.
+        // Honor persistent SET FILTER. Null FOR AST means no additional ad-hoc predicate.
+        if (!filter::visible(&a, nullptr)) continue;
+
+        std::vector<std::string> row;
+        row.reserve(fields.size());
+        for (std::size_t i = 0; i < fields.size(); ++i) {
+            row.push_back(a.get(static_cast<int>(i + 1)));
+        }
+        write_delimited_row(out, row, delimiter);
+        ++exported;
     }
 
-    // 3) Configure CSV dialect (comma-separated, header row)
-    dt::data::CsvDialect dialect;
-    dialect.delimiter       = ',';
-    dialect.quote_char      = '"';
-    dialect.escape_char     = '"';
-    dialect.has_header_row  = true;
-    dialect.trim_whitespace = false;
-    dialect.always_quote    = false;
-
-    // 4) Write RowSet as CSV to the already-open stream
-    std::string csv_error;
-    bool ok = dt::data::write_rowset_as_csv(out, rowset, dialect, &csv_error);
-    if (!ok) {
-        print_error(csv_error);
-        // We fall through to the summary message, but you may choose
-        // to return early if you want a stricter behavior.
+    if (!out) {
+        std::cout << "ERROR: write failed while exporting " << dest << "\n";
     }
 
-    // Summary: use the RowSet size so we accurately report how many
-    // records were written, independent of underlying recCount()
-    const std::size_t exported = rowset.rows.size();
     std::cout << "Exported " << exported << " records to " << dest << "\n";
 }
-
-
-

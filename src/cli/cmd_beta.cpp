@@ -1,3 +1,49 @@
+// @dottalk.usage v1
+// owner: DOT|BETA
+// command: BETA
+// category: help
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: beta-status-overrides filesystem
+// usage-access: BETA USAGE
+// summary:
+//   List, inspect, and update beta tracking items and runtime beta-status overrides.
+//
+// usage:
+//   BETA
+//   BETA USAGE
+//   BETA LIST
+//   BETA <id>
+//   BETA DONE <id>
+//   BETA DEFER <id>
+//   BETA DEFERRED <id>
+//   BETA OPEN <id>
+//   BETA CLEAR <id>
+//   BETA CLEAR ALL
+//   BETA SAVE
+//   BETA LOAD
+//
+// notes:
+//   BETA with no arguments lists beta items.
+//   BETA <id> shows a beta item when the id begins with BETA-.
+//   DONE, DEFER, DEFERRED, OPEN, CLEAR, and CLEAR ALL mutate runtime beta status overrides.
+//   SAVE writes beta status overrides to the default status path.
+//   LOAD reads beta status overrides from the default status path.
+//   BETA mutates only beta tracking/status data, not table records.
+//
+// risk:
+//   mutates_beta_status: DONE DEFER DEFERRED OPEN CLEAR
+//   reads_files: LOAD
+//   writes_files: SAVE
+//   mutates_table_data: no
+//
+// related:
+//   ABOUT
+//   HELP
+//   FOXHELP
+//
+
 #include "foxref.hpp"
 #include "help_beta.hpp"
 #include "xbase.hpp"
@@ -27,16 +73,20 @@ static std::string upper(std::string s)
 
 static void print_usage()
 {
-    std::cout << "BETA usage:\n";
-    std::cout << "  BETA LIST\n";
-    std::cout << "  BETA <ID>\n";
-    std::cout << "  BETA DONE <ID>\n";
-    std::cout << "  BETA DEFER <ID>\n";
-    std::cout << "  BETA OPEN <ID>\n";
-    std::cout << "  BETA CLEAR <ID>\n";
-    std::cout << "  BETA CLEAR ALL\n";
-    std::cout << "  BETA SAVE\n";
-    std::cout << "  BETA LOAD\n";
+    std::cout
+        << "Usage:\n"
+        << "  BETA\n"
+        << "  BETA USAGE\n"
+        << "  BETA LIST\n"
+        << "  BETA <ID>\n"
+        << "  BETA DONE <ID>\n"
+        << "  BETA DEFER <ID>\n"
+        << "  BETA DEFERRED <ID>\n"
+        << "  BETA OPEN <ID>\n"
+        << "  BETA CLEAR <ID>\n"
+        << "  BETA CLEAR ALL\n"
+        << "  BETA SAVE\n"
+        << "  BETA LOAD\n";
 }
 
 } // namespace

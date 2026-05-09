@@ -11,6 +11,49 @@
 // - Honors active SET FILTER via filter::visible(&A, nullptr).
 // - Positions on the found record when successful; restores the prior cursor when not found.
 
+// @dottalk.usage v1
+// owner: DOT|FIND
+// command: FIND
+// category: navigation
+// status: supported
+// noargs: usage
+// effect: locate
+// mutates: cursor
+// usage-access: FIND USAGE
+// summary:
+//   Find text in the current table, delegating to SEEK when the active order
+//   can satisfy the request and otherwise scanning the selected field.
+//
+// usage:
+//   FIND USAGE
+//   FIND <text>
+//   FIND <field> <text>
+//   FIND <text> IN <field>
+//
+// notes:
+//   FIND requires an open table except for FIND USAGE.
+//   FIND with one text argument delegates to SEEK when an order is active.
+//   FIND with a field delegates to SEEK only when that field is the active tag.
+//   Otherwise FIND scans the requested field using ordered or physical traversal.
+//   FIND honors active SET FILTER visibility.
+//   FIND positions on the found record when successful.
+//   FIND restores the prior cursor when not found.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: yes when found
+//   restores_cursor_on_not_found: yes
+//   mutates_table_data: no
+//   delegates_to_seek: when active order satisfies the request
+//
+// related:
+//   SEEK
+//   LOCATE
+//   GOTO
+//   COUNT
+//   SET ORDER
+//
+
 #include <cctype>
 #include <cstdint>
 #include <iostream>
@@ -346,21 +389,48 @@ static bool run_find_physical(xbase::DbArea& A,
     return true;
 }
 
+
+static bool is_find_usage_request(std::string raw) {
+    std::string t = upper_copy(trim_copy(std::move(raw)));
+    if (t.rfind("FIND ", 0) == 0) {
+        t = upper_copy(trim_copy(t.substr(5)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_find_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  FIND USAGE\n"
+        << "  FIND <text>\n"
+        << "  FIND <field> <text>\n"
+        << "  FIND <text> IN <field>\n"
+        << "Notes:\n"
+        << "  - FIND requires an open table except for FIND USAGE.\n"
+        << "  - FIND delegates to SEEK when the active order can satisfy the request.\n"
+        << "  - Otherwise FIND scans the requested field and positions on the found record.\n";
+}
+
 } // namespace
 
 void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
+    std::string rest;
+    std::getline(args, rest);
+    rest = trim_copy(rest);
+
+    if (is_find_usage_request(rest)) {
+        print_find_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "No table open.\n";
         return;
     }
 
-    std::string rest;
-    std::getline(args, rest);
-    rest = trim_copy(rest);
-
     const FindArgs fa = parse_find_args(A, rest);
     if (!fa.ok) {
-        std::cout << "Usage: FIND <text>  or  FIND <field> <text>  or  FIND <text> IN <field>\n";
+        print_find_usage();
         return;
     }
 

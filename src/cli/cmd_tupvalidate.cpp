@@ -1,6 +1,56 @@
+// @dottalk.usage v1
+// owner: DOT|TUPVALIDATE
+// command: TUPVALIDATE
+// category: tuple
+// status: supported
+// noargs: report
+// effect: validate
+// mutates: cursor
+// usage-access: TUPVALIDATE USAGE
+// summary:
+//   Validate tuple graph rows for the current table using the tuple graph cursor
+//   and relation-aware tuple validation layer.
+//
+// usage:
+//   TUPVALIDATE
+//   TUPVALIDATE USAGE
+//   TUPVALIDATE *
+//   TUPVALIDATE <tuple-spec>
+//   TUPVALIDATE * FOR <expr>
+//   TUPVALIDATE * FOR <expr> MAX <n>
+//   TUPVALIDATE * FOR <expr> TRACE
+//
+// examples:
+//   TUPVALIDATE LNAME,FNAME
+//   TUPVALIDATE STUDENTS.*,MAJORS.* FOR MAJORS.NAME = CS
+//
+// notes:
+//   TUPVALIDATE with no arguments validates the default star tuple spec.
+//   TUPVALIDATE USAGE prints usage and does not require an open table.
+//   The tuple graph cursor uses active ordering and relation context.
+//   Validation checks tuple cells against their source work areas when available.
+//   Cursor restoration is reported after validation.
+//   TUPVALIDATE is read-only for table data but moves cursors during validation.
+//
+// risk:
+//   reads_table_records: yes
+//   reads_relation_context: yes
+//   mutates_cursor: temporary during validation
+//   cursor_restore: best effort
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   TUPLE
+//   TUPTALK
+//   ERSATZ
+//   REL
+//
+
 #include "cmd_tupvalidate.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -62,8 +112,9 @@ static void print_root_accounting(const dottalk::tupleaugment::TupleGraphCursorS
 }
 
 static void print_usage() {
-    std::cout << "TUPVALIDATE usage:\n"
+    std::cout << "Usage:\n"
               << "  TUPVALIDATE\n"
+              << "  TUPVALIDATE USAGE\n"
               << "  TUPVALIDATE *\n"
               << "  TUPVALIDATE <tuple-spec>\n"
               << "  TUPVALIDATE * FOR <expr>\n"
@@ -74,9 +125,35 @@ static void print_usage() {
               << "  TUPVALIDATE STUDENTS.*,MAJORS.* FOR MAJORS.NAME = \"CS\"\n";
 }
 
+static std::string tupvalidate_trim(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string tupvalidate_up(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool is_tupvalidate_usage_request(const std::string& raw) {
+    std::string t = tupvalidate_up(tupvalidate_trim(raw));
+    if (t.rfind("TUPVALIDATE ", 0) == 0) {
+        t = tupvalidate_up(tupvalidate_trim(t.substr(12)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 } // namespace
 
 void cmd_TUPVALIDATE(xbase::DbArea& A, std::istringstream& args) {
+    const std::string raw_args = args.str();
+    if (is_tupvalidate_usage_request(raw_args)) {
+        print_usage();
+        return;
+    }
+
     try {
         if (!A.isOpen()) {
             std::cout << "TUPVALIDATE: no file open\n";

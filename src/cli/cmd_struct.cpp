@@ -7,6 +7,44 @@
 //   STRUCT ALL INDEX      -> all open areas + index info
 //   STRUCT ALL VERBOSE    -> adds CNX tag table where available
 
+// @dottalk.usage v1
+// owner: DOT|STRUCT
+// command: STRUCT
+// category: workspace
+// status: supported
+// noargs: report
+// effect: report
+// mutates: no
+// usage-access: STRUCT USAGE
+// summary:
+//   Report DBF field structure and index/container information for the current
+//   area or all open areas.
+//
+// usage:
+//   STRUCT
+//   STRUCT USAGE
+//   STRUCT INDEX
+//   STRUCT FIELDS
+//   STRUCT ALL
+//   STRUCT ALL INDEX
+//   STRUCT ALL VERBOSE
+//
+// notes:
+//   STRUCT with no arguments reports field and index information for the current area.
+//   STRUCT INDEX is explicit index-info mode; index info is included by default.
+//   STRUCT FIELDS suppresses index info and reports fields only.
+//   STRUCT ALL reports all open areas.
+//   STRUCT ALL VERBOSE includes verbose CNX tag information where available.
+//   STRUCT is read-only; it reports structure/index metadata and does not mutate table data.
+//
+// related:
+//   AREA
+//   DBAREA
+//   FIELDS
+//   STATUS
+//   WORKSPACE
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/order_state.hpp"
@@ -211,6 +249,21 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
     }
 }
 
+
+static void print_struct_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  STRUCT                 (Current area fields + index info)\n"
+        << "  STRUCT USAGE           (Show this usage)\n"
+        << "  STRUCT INDEX           (Explicit index info mode; default)\n"
+        << "  STRUCT FIELDS          (Fields only)\n"
+        << "  STRUCT ALL             (All open areas)\n"
+        << "  STRUCT ALL INDEX       (All open areas + index info)\n"
+        << "  STRUCT ALL VERBOSE     (All open areas + verbose CNX tag info)\n"
+        << "Notes:\n"
+        << "  - STRUCT is read-only; it reports DBF structure/index metadata.\n";
+}
+
 // ---- command entry ----
 void cmd_STRUCT(DbArea& A, std::istringstream& args) {
     using std::cout;
@@ -229,6 +282,13 @@ void cmd_STRUCT(DbArea& A, std::istringstream& args) {
     bool wantIndex = true;   // default: show index info
     bool verbose   = false;
     bool wantAll   = false;
+
+    for (const auto& t : toks) {
+        if (t == "usage" || t == "help" || t == "?") {
+            print_struct_usage();
+            return;
+        }
+    }
 
     for (const auto& t : toks) {
         if (t == "index")      wantIndex = true;   // explicit (already default)

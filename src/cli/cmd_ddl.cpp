@@ -1,3 +1,57 @@
+// @dottalk.usage v1
+// owner: DOT|DDL
+// command: DDL
+// category: schema
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: filesystem schema dbf sidecar
+// usage-access: DDL USAGE
+// summary:
+//   Fetch schema files, validate schema files, and create DBF tables from
+//   JSON schema definitions with optional seed rows and sidecar metadata.
+//
+// usage:
+//   DDL USAGE
+//   DDL FETCH <url> TO <file>
+//   DDL FETCH <url> TO <file> OVERWRITE
+//   DDL VALIDATE <schema.json> USING <validator.json>
+//   DDL CREATE DBF <out.dbf> FROM <schema.json>
+//   DDL CREATE DBF <out.dbf> FROM <schema.json> OVERWRITE
+//   DDL CREATE DBF <out.dbf> FROM <schema.json> SEED CSV <path.csv>
+//   DDL CREATE DBF <out.dbf> FROM <schema.json> SEED BLANK <n>
+//   DDL CREATE DBF <out.dbf> FROM <schema.json> REJECTS <rejects.csv>
+//   DDL CREATE DBF <out.dbf> FROM <schema.json> EMIT SIDECARS
+//
+// notes:
+//   DDL with no arguments shows usage.
+//   FETCH writes a schema-side file and refuses overwrite unless OVERWRITE is supplied.
+//   VALIDATE currently checks that both schema and validator inputs exist and reports OK.
+//   CREATE DBF writes a DBF file from schema field definitions.
+//   CREATE DBF refuses existing output unless OVERWRITE is supplied.
+//   Relative schema inputs resolve under SCHEMAS.
+//   Relative FETCH outputs resolve under SCHEMAS.
+//   Relative CREATE DBF outputs resolve under TMP.
+//   EMIT SIDECARS writes companion schema, load, and index metadata files.
+//   SEED CSV is recognized but not yet implemented in this drop-in.
+//
+// risk:
+//   reads_files: yes
+//   writes_files: yes
+//   writes_dbf: DDL CREATE DBF
+//   writes_sidecars: when EMIT SIDECARS is supplied
+//   overwrites_files: only when OVERWRITE is supplied
+//   network_fetch: DDL FETCH
+//   mutates_table_data: no open table mutation
+//
+// related:
+//   CREATE
+//   WORKSPACE
+//   USE
+//   STRUCT
+//   FIELDMGR
+//
+
 #include "cmd_ddl.hpp"
 
 #include <algorithm>
@@ -763,10 +817,36 @@ static int ddl_create_dbf_real(
     return 0;
 }
 
+
+static void print_ddl_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  DDL USAGE\n"
+        << "  DDL FETCH <url> TO <file> [OVERWRITE]\n"
+        << "  DDL VALIDATE <schema.json> USING <validator.json>\n"
+        << "  DDL CREATE DBF <out.dbf> FROM <schema.json> [OVERWRITE]\n"
+        << "      [SEED CSV <path.csv>] [SEED BLANK <n>]\n"
+        << "      [REJECTS <rejects.csv>] [EMIT SIDECARS]\n"
+        << "Path rules:\n"
+        << "  - Relative schema inputs resolve under SCHEMAS.\n"
+        << "  - Relative FETCH outputs resolve under SCHEMAS.\n"
+        << "  - Relative CREATE DBF outputs resolve under TMP.\n"
+        << "Notes:\n"
+        << "  - CREATE DBF refuses existing output unless OVERWRITE is supplied.\n"
+        << "  - EMIT SIDECARS writes companion schema/load/index metadata.\n";
+}
+
 // ---------- command entry ---------------------------------------------------
 
 void cmd_DDL(xbase::DbArea& /*area*/, std::istringstream& iss) {
     const std::string subcmd = up(read_word(iss));
+
+    if (subcmd.empty() || subcmd == "USAGE" || subcmd == "HELP" ||
+        subcmd == "?" || subcmd == "/?" || subcmd == "-H" || subcmd == "--HELP") {
+        print_ddl_usage();
+        return;
+    }
 
     if (subcmd == "FETCH") {
         const std::string url = read_pathish(iss);
@@ -891,15 +971,5 @@ void cmd_DDL(xbase::DbArea& /*area*/, std::istringstream& iss) {
         return;
     }
 
-    std::cout
-        << "DDL tool\n"
-        << "  DDL FETCH <url> TO <file> [OVERWRITE]\n"
-        << "  DDL VALIDATE <schema.json> USING <validator.json>\n"
-        << "  DDL CREATE DBF <out.dbf> FROM <schema.json> [OVERWRITE]\n"
-        << "      [SEED CSV <path.csv> | SEED BLANK <N>]\n"
-        << "      [REJECTS <rejects.csv>] [EMIT SIDECARS]\n"
-        << "Path rules:\n"
-        << "  - Relative schema inputs resolve under SCHEMAS.\n"
-        << "  - Relative FETCH outputs resolve under SCHEMAS.\n"
-        << "  - Relative CREATE DBF outputs resolve under TMP.\n";
+    print_ddl_usage();
 }

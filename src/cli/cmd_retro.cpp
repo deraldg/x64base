@@ -11,6 +11,40 @@
 //   RETRO <system>
 //   RETRO HELP
 
+// @dottalk.usage v1
+// owner: DOT|RETRO
+// command: RETRO
+// category: display
+// status: supported
+// noargs: usage
+// effect: display
+// mutates: console-output
+// usage-access: RETRO USAGE
+// summary:
+//   Display ASCII-safe retro computer/system splash screens.
+//
+// usage:
+//   RETRO USAGE
+//   RETRO LIST
+//   RETRO SHOW <system>
+//   RETRO <system>
+//   RETRO HELP
+//
+// notes:
+//   RETRO with no arguments prints usage.
+//   RETRO LIST lists available retro screen identifiers.
+//   RETRO SHOW <system> and RETRO <system> display a matching screen.
+//   RETRO writes console output only and does not mutate table data.
+//
+// risk:
+//   writes_console: yes
+//   mutates_table_data: no
+//
+// related:
+//   ABOUT
+//   TVISION
+//
+
 #include "shell_commands.hpp"
 
 #include <algorithm>
@@ -299,11 +333,12 @@ const Screen* find_screen_by_key(const string& key) {
 }
 
 void print_help() {
-    cout << "RETRO usage:\n";
-    cout << " RETRO LIST\n";
-    cout << " RETRO SHOW <system>\n";
-    cout << " RETRO <system>\n";
-    cout << " RETRO HELP\n";
+    cout << "Usage:\n";
+    cout << "  RETRO USAGE\n";
+    cout << "  RETRO LIST\n";
+    cout << "  RETRO SHOW <system>\n";
+    cout << "  RETRO <system>\n";
+    cout << "  RETRO HELP\n";
 }
 
 void list_screens() {
@@ -350,7 +385,7 @@ void cmd_RETRO(xbase::DbArea& area, std::istringstream& args) {
 
     const string upperVerb = upper_copy(verb);
 
-    if (upperVerb == "HELP" || upperVerb == "/?" || upperVerb == "?") {
+    if (upperVerb == "USAGE" || upperVerb == "HELP" || upperVerb == "/?" || upperVerb == "?") {
         print_help();
         return;
     }

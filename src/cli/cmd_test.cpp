@@ -1,4 +1,56 @@
 // src/cli/cmd_test.cpp
+// @dottalk.usage v1
+// owner: DOT|TEST
+// command: TEST
+// category: test
+// status: supported
+// noargs: usage
+// effect: execute
+// mutates: delegates test commands session filesystem
+// usage-access: TEST USAGE
+// summary:
+//   Run a DotTalk++ test or script file through the shell command executor,
+//   with optional log output and verbose echoing.
+//
+// usage:
+//   TEST USAGE
+//   TEST <scriptfile>
+//   TEST <scriptfile> VERBOSE
+//   TEST <scriptfile> <logfile>
+//   TEST <scriptfile> <logfile> VERBOSE
+//
+// examples:
+//   TEST smoke.dts
+//   TEST smoke.dts VERBOSE
+//   TEST smoke.dts smoke.log
+//
+// notes:
+//   TEST with no arguments shows usage.
+//   TEST resolves the script path through the shell script resolver.
+//   TEST strips supported inline comments before execution.
+//   TEST supports line continuation for accumulated logical commands.
+//   TEST executes accumulated logical commands through the shell command executor.
+//   TEST reports per-command failures and final processed/error counts.
+//   TEST can write or truncate a logfile when a logfile argument is supplied.
+//   TEST delegates side effects to commands in the test file and is not read-only.
+//
+// risk:
+//   reads_files: yes
+//   executes_commands: yes
+//   writes_log_file: when logfile argument is supplied
+//   truncates_log_file: yes when logfile is opened
+//   mutates_data: depends on test contents
+//   mutates_session: depends on test contents
+//   no_transaction_or_rollback: yes
+//
+// related:
+//   DOTSCRIPT
+//   CMDHELP
+//   WORKSPACE
+//   CREATE
+//   USE
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include <fstream>
@@ -124,6 +176,43 @@ inline bool is_comment_or_blank(const std::string& s0) {
     return s.empty();
 }
 
+
+static bool is_test_usage_request(const std::string& raw)
+{
+    std::string t = trim(raw);
+
+    // Some command paths pass the whole raw command line ("TEST USAGE")
+    // instead of only the command tail ("USAGE").  Accept both.
+    if (t.size() >= 5 &&
+        std::toupper(static_cast<unsigned char>(t[0])) == 'T' &&
+        std::toupper(static_cast<unsigned char>(t[1])) == 'E' &&
+        std::toupper(static_cast<unsigned char>(t[2])) == 'S' &&
+        std::toupper(static_cast<unsigned char>(t[3])) == 'T' &&
+        std::isspace(static_cast<unsigned char>(t[4]))) {
+        t = trim(t.substr(5));
+    }
+
+    return textio::ieq(t, "USAGE") ||
+           textio::ieq(t, "HELP") ||
+           t == "?";
+}
+
+static void print_test_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  TEST USAGE\n"
+        << "  TEST <scriptfile> [<logfile>] [VERBOSE]\n"
+        << "  TEST <scriptfile> VERBOSE\n"
+        << "  TEST <scriptfile> - VERBOSE\n"
+        << "Notes:\n"
+        << "  - TEST resolves the script through the shell script resolver.\n"
+        << "  - Unquoted # and // comments are stripped.\n"
+        << "  - A trailing unquoted semicolon is a line-continuation marker.\n"
+        << "  - TEST executes commands; side effects depend on script contents.\n"
+        << "  - A logfile argument opens/truncates the target log; '-' disables logging.\n";
+}
+
 } // namespace
 
 // TEST <scriptfile> [<logfile>] [VERBOSE]
@@ -133,8 +222,14 @@ void cmd_TEST(DbArea& A, std::istringstream& in)
     std::string logPath;
     std::string maybeVerbose;
 
+    std::string raw_args = in.str();
+    if (is_test_usage_request(raw_args)) {
+        print_test_usage();
+        return;
+    }
+
     if (!(in >> scriptPath)) {
-        std::cout << "Usage: TEST <scriptfile> [<logfile>] [VERBOSE]\n";
+        print_test_usage();
         return;
     }
     // logfile is optional

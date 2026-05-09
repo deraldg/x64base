@@ -16,6 +16,56 @@
 // - MANUAL / INTERACTIVE / AUTO are accepted for compatibility, but CDX/LMDB
 //   rebuilds are intentionally ignored by COMMIT.
 //
+// @dottalk.usage v1
+// owner: DOT|COMMIT
+// command: COMMIT
+// category: data
+// status: supported
+// noargs: mutate
+// effect: commit
+// mutates: table-data table-buffer memo stale-state index
+// usage-access: COMMIT USAGE
+// summary:
+//   Apply buffered TABLE changes to the current area or all open buffered areas,
+//   locking records at commit time and preserving legacy index rebuild compatibility.
+//
+// usage:
+//   COMMIT USAGE
+//   COMMIT
+//   COMMIT ALL
+//   COMMIT MANUAL
+//   COMMIT INTERACTIVE
+//   COMMIT AUTO
+//   COMMIT ALL MANUAL
+//   COMMIT ALL INTERACTIVE
+//   COMMIT ALL AUTO
+//
+// notes:
+//   COMMIT with no arguments applies buffered changes for the current area.
+//   COMMIT ALL applies buffered changes for all open buffered areas.
+//   TABLE ON buffers changes; COMMIT applies them with record locking.
+//   MANUAL, INTERACTIVE, and AUTO are accepted for compatibility.
+//   COMMIT does not rebuild CDX or LMDB containers.
+//   Legacy INX/IDX and CNX rebuild behavior remains only for legacy index families.
+//   COMMIT is a data mutation command when buffers contain changes.
+//
+// risk:
+//   writes_dbf_records: yes when buffered changes exist
+//   writes_memo: when buffered memo changes exist
+//   record_locking: yes at commit time
+//   clears_table_buffer_changes: on successful commit
+//   partial_commit_possible: yes
+//   cdx_lmdb_rebuild: no
+//
+// related:
+//   TABLE
+//   REPLACE
+//   CALCWRITE
+//   ROLLBACK
+//   REINDEX
+//   REBUILD
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -41,6 +91,26 @@ extern "C" xbase::XBaseEngine* shell_engine();
 using cli::Settings;
 
 namespace {
+
+
+static void print_commit_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  COMMIT USAGE\n"
+        << "  COMMIT\n"
+        << "  COMMIT ALL\n"
+        << "  COMMIT MANUAL\n"
+        << "  COMMIT INTERACTIVE\n"
+        << "  COMMIT AUTO\n"
+        << "  COMMIT ALL MANUAL\n"
+        << "  COMMIT ALL INTERACTIVE\n"
+        << "  COMMIT ALL AUTO\n"
+        << "Notes:\n"
+        << "  - COMMIT applies buffered TABLE changes with locking at commit time.\n"
+        << "  - COMMIT ALL applies all open buffered areas.\n"
+        << "  - CDX/LMDB rebuilds are intentionally not performed by COMMIT.\n";
+}
 
 static int resolve_area0(xbase::DbArea& A) {
     if (auto* eng = shell_engine()) {
@@ -290,14 +360,17 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
         std::string up = tok;
         for (auto& c : up) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 
-        if (up == "ALL") {
+        if (up == "USAGE" || up == "HELP" || up == "?") {
+            print_commit_usage();
+            return;
+        } else if (up == "ALL") {
             all = true;
         } else if (up == "MANUAL" || up == "INTERACTIVE") {
             interactive_rebuild = true;
         } else if (up == "AUTO") {
             interactive_rebuild = false;
         } else {
-            std::cout << "Usage: COMMIT [ALL] [MANUAL|INTERACTIVE|AUTO]\n";
+            print_commit_usage();
             return;
         }
     }

@@ -1,4 +1,49 @@
 // src/cli/cmd_close.cpp
+// @dottalk.usage v1
+// owner: DOT|CLOSE
+// command: CLOSE
+// category: workspace
+// status: supported
+// noargs: mutate
+// effect: close
+// mutates: session area memo order table-buffer relations
+// usage-access: CLOSE USAGE
+// summary:
+//   Close the current work area, honoring dirty table-buffer prompts,
+//   clearing memo/order/table slot state, and clearing affected relation state.
+//
+// usage:
+//   CLOSE USAGE
+//   CLOSE
+//   CLOSE ALL
+//
+// notes:
+//   CLOSE with no arguments closes the current work area.
+//   CLOSE ALL currently clears all relations before closing the current area.
+//   CLOSE prompts or cancels through dirty table-buffer protection when needed.
+//   CLOSE runs memo sidecar lifecycle hooks before clearing area identity.
+//   CLOSE clears active order/index state.
+//   CLOSE resets table buffering state for the slot to off, clean, and fresh.
+//   CLOSE is a session/area mutation command; it does not directly mutate table records.
+//
+// risk:
+//   closes_area: yes
+//   clears_order_state: yes
+//   closes_memo_backend: yes
+//   resets_table_buffer_state: yes
+//   clears_relations_for_table: yes
+//   clears_all_relations: CLOSE ALL
+//   dirty_prompt_gate: yes
+//   mutates_table_data: no
+//
+// related:
+//   USE
+//   WORKSPACE
+//   TABLE
+//   COMMIT
+//   REL
+//
+
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -110,8 +155,43 @@ static void clear_relations_involving_table(const xbase::DbArea& a)
 }
 #endif // HAVE_RELATIONS
 
+
+static std::string close_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static bool is_close_usage_request(std::string raw)
+{
+    std::string t = close_trim(std::move(raw));
+    for (char& ch : t) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    if (t.rfind("CLOSE ", 0) == 0) t = close_trim(t.substr(6));
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_close_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  CLOSE USAGE\n"
+        << "  CLOSE\n"
+        << "  CLOSE ALL\n"
+        << "Notes:\n"
+        << "  - CLOSE closes the current work area.\n"
+        << "  - CLOSE ALL clears all relations before closing the current work area.\n"
+        << "  - Dirty table-buffer state may prompt or cancel close.\n";
+}
+
 void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_close_usage_request(raw_args)) {
+        print_close_usage();
+        return;
+    }
+
     // Table buffering prompt gate
     if (!dottalk::dirty::maybe_prompt_area(a, "CLOSE")) {
         std::cout << "CLOSE canceled.\n";

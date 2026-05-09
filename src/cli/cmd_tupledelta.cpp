@@ -14,9 +14,47 @@
 //   - Stream loading is intentionally abstracted until tuple stream storage
 //     format is finalized.
 
+// @dottalk.usage v1
+// owner: DOT|TUPLEDELTA
+// command: TUPLEDELTA
+// category: tuple
+// status: experimental
+// noargs: usage
+// effect: inspect
+// mutates: none
+// usage-access: TUPLEDELTA USAGE
+// summary:
+//   Compare two named tuple streams and report insert, delete, and update
+//   deltas. The loader remains a skeleton until tuple stream storage is finalized.
+//
+// usage:
+//   TUPLEDELTA USAGE
+//   TUPLEDELTA <baseline-stream> <current-stream>
+//
+// notes:
+//   TUPLEDELTA requires two stream names except for TUPLEDELTA USAGE.
+//   Tuple stream loading is not implemented in this skeleton.
+//   REC_ID or PRIMARY UNIQUE is intended to be the identity key.
+//   Field-level diffing is intentionally stubbed for now.
+//   TUPLEDELTA is diagnostic and does not mutate table or index data.
+//
+// risk:
+//   reads_tuple_streams: intended future behavior
+//   mutates_table_data: no
+//   mutates_session: no
+//   implemented_loader: no
+//
+// related:
+//   TUPLE
+//   SMARTLIST
+//   ERSATZ
+//
+
 #include "xbase.hpp"
 #include "cli/table_state.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <iostream>
 #include <sstream>
@@ -54,6 +92,30 @@ static std::string trim(const std::string& s) {
 
     const auto last = s.find_last_not_of(" \t\r\n");
     return s.substr(first, last - first + 1);
+}
+
+
+static std::string up_copy(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool is_tupledelta_usage_request(const std::string& raw) {
+    std::string t = up_copy(trim(raw));
+    if (t.rfind("TUPLEDELTA ", 0) == 0) {
+        t = up_copy(trim(t.substr(11)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_tupledelta_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  TUPLEDELTA USAGE\n"
+        << "  TUPLEDELTA <baseline-stream> <current-stream>\n"
+        << "Notes:\n"
+        << "  - Tuple stream loading is not implemented in this skeleton.\n";
 }
 
 static bool same_tuple_payload(const TupleRow& a, const TupleRow& b) {
@@ -139,6 +201,12 @@ static void print_delta(const TupleDelta& d) {
 } // namespace
 
 void cmd_TUPLEDELTA(xbase::DbArea&, std::istringstream& ss) {
+    const std::string raw_args = ss.str();
+    if (is_tupledelta_usage_request(raw_args)) {
+        print_tupledelta_usage();
+        return;
+    }
+
     std::string baseline_name;
     std::string current_name;
 
@@ -148,7 +216,7 @@ void cmd_TUPLEDELTA(xbase::DbArea&, std::istringstream& ss) {
     current_name = trim(current_name);
 
     if (baseline_name.empty() || current_name.empty()) {
-        std::cout << "Usage: TUPLEDELTA <baseline-stream> <current-stream>\n";
+        print_tupledelta_usage();
         return;
     }
 

@@ -1,4 +1,47 @@
 // cmd_lock.cpp — owner-aware UI (works with the back-compat shims too)
+// @dottalk.usage v1
+// owner: DOT|LOCK
+// command: LOCK
+// category: concurrency
+// status: supported
+// noargs: mutate
+// effect: lock
+// mutates: lock-state
+// usage-access: LOCK USAGE
+// summary:
+//   Acquire record or table locks for the current table and inspect lock status
+//   or lock ownership.
+//
+// usage:
+//   LOCK USAGE
+//   LOCK
+//   LOCK <n>
+//   LOCK ALL
+//   LOCK TABLE
+//   LOCK STATUS
+//   LOCK WHO <n>
+//
+// notes:
+//   LOCK requires an open table except for LOCK USAGE.
+//   LOCK with no arguments locks the current record.
+//   LOCK <n> locks record n.
+//   LOCK ALL and LOCK TABLE lock the entire table.
+//   LOCK STATUS reports table and current-record lock state.
+//   LOCK WHO <n> reports the owner of record n when a lock is recorded.
+//   LOCK mutates lock state but does not mutate table data.
+//
+// risk:
+//   mutates_lock_state: yes
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//   uses_current_owner: yes
+//
+// related:
+//   UNLOCK
+//   DELETE
+//   COMMIT
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -18,9 +61,11 @@ static std::string up(std::string s) {
 
 static void print_usage() {
     std::cout << "Usage:\n"
+                 "  LOCK USAGE           - show this usage\n"
                  "  LOCK                 - lock current record\n"
                  "  LOCK <n>             - lock record <n>\n"
-                 "  LOCK ALL|TABLE       - lock entire table\n"
+                 "  LOCK ALL             - lock entire table\n"
+                 "  LOCK TABLE           - lock entire table\n"
                  "  LOCK STATUS          - show lock status\n"
                  "  LOCK WHO <n>         - show owner of record <n>\n";
 }
@@ -53,10 +98,16 @@ static void show_who(xbase::DbArea& a, uint32_t n) {
 }
 
 void cmd_LOCK(xbase::DbArea& a, std::istringstream& iss) {
+    std::string rest = up(read_rest(iss));
+    if (rest == "USAGE" || rest == "HELP" || rest == "?" ||
+        rest == "LOCK USAGE" || rest == "LOCK HELP" || rest == "LOCK ?") {
+        print_usage();
+        return;
+    }
+
     if (!a.isOpen()) { std::cout << "LOCK: no table open.\n"; return; }
     const auto& me = xbase::locks::current_owner();
 
-    std::string rest = up(read_rest(iss));
     if (rest.empty()) {
         const auto rn = static_cast<uint32_t>(a.recno());
         if (rn == 0) { std::cout << "LOCK: no current record.\n"; return; }
@@ -85,9 +136,9 @@ void cmd_LOCK(xbase::DbArea& a, std::istringstream& iss) {
         std::istringstream tmp(rest);
         std::string who; tmp >> who; // WHO
         std::string nstr; std::getline(tmp >> std::ws, nstr);
-        if (nstr.empty()) { std::cout << "Usage: LOCK WHO <recno>\n"; return; }
+        if (nstr.empty()) { print_usage(); return; }
         try { show_who(a, static_cast<uint32_t>(std::stoul(nstr))); }
-        catch (...) { std::cout << "Usage: LOCK WHO <recno>\n"; }
+        catch (...) { print_usage(); }
         return;
     }
 

@@ -1,10 +1,47 @@
 // src/cli/cmd_ERROR_TEST.cpp
 // Self-test for the xBase_64 error subsystem.
 
+// @dottalk.usage v1
+// owner: DOT|ERROR_TEST
+// command: ERROR_TEST
+// category: diagnostics
+// status: supported
+// noargs: execute
+// effect: test
+// mutates: error-state
+// usage-access: ERROR_TEST USAGE
+// summary:
+//   Run the xBase_64 error subsystem self-test and update last-error state on failure.
+//
+// usage:
+//   ERROR_TEST
+//   ERROR_TEST USAGE
+//
+// notes:
+//   ERROR_TEST with no arguments runs the error subsystem self-test.
+//   ERROR_TEST USAGE prints usage and does not run tests.
+//   Passing tests clear the last error.
+//   Failing tests set a canonical unknown error.
+//   ERROR_TEST mutates diagnostic error state only, not table data.
+//
+// risk:
+//   runs_self_test: yes
+//   clears_error_state: on success
+//   sets_error_state: on failure
+//   mutates_table_data: no
+//
+// related:
+//   ERROR_STATUS
+//   ERROR_CLEAR
+//
+
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
+#include <algorithm>
+#include <cctype>
+#include <string>
 #include "xbase.hpp"
 #include "xbase_error_codes.hpp"
 #include "xbase_error_runtime.hpp"
@@ -14,6 +51,37 @@ using namespace xbase::error;
 
 namespace
 {
+
+    std::string trim_usage(std::string s)
+    {
+        while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+        while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+        return s;
+    }
+
+    std::string upper_usage(std::string s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+        return s;
+    }
+
+    bool is_usage_request(const std::string& raw)
+    {
+        std::string t = upper_usage(trim_usage(raw));
+        if (t.rfind("ERROR_TEST ", 0) == 0) {
+            t = upper_usage(trim_usage(t.substr(11)));
+        }
+        return t == "USAGE" || t == "HELP" || t == "?";
+    }
+
+    void print_usage()
+    {
+        std::cout << "Usage:\n"
+                  << "  ERROR_TEST\n"
+                  << "  ERROR_TEST USAGE\n";
+    }
+
     bool test_ok()
     {
         code c = ok();

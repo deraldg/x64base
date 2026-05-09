@@ -12,6 +12,53 @@
 //   SETLMDB <stem|cdx|envdir>      -> default tag selection
 //   SETLMDB <...> <TAG> [--asc|--desc]
 //
+// @dottalk.usage v1
+// owner: DOT|SETLMDB
+// command: SETLMDB
+// category: index
+// status: developer
+// noargs: report
+// effect: configure
+// mutates: order-state index-backend
+// usage-access: SET LMDB USAGE
+// summary:
+//   Select LMDB-backed CDX ordering per area without touching global LMDB state.
+//
+// usage:
+//   SET LMDB
+//   SET LMDB USAGE
+//   SET LMDB 0
+//   SET LMDB <stem>
+//   SET LMDB <container.cdx>
+//   SET LMDB <envdir.cdx.d>
+//   SET LMDB <stem> <tag>
+//   SET LMDB <stem> <tag> --asc
+//   SET LMDB <stem> <tag> --desc
+//   SETLMDB
+//   SETLMDB USAGE
+//   SETLMDB 0
+//   SETLMDB <stem> <tag>
+//
+// notes:
+//   SET LMDB with no arguments reports current LMDB/order state.
+//   SET LMDB 0 clears ordering and closes the current index manager.
+//   Bare stems resolve through the INDEXES path slot as <stem>.cdx.
+//   .cdx.d environment directory tokens normalize back to the public .cdx container.
+//   Default tag is LNAME when no tag is supplied.
+//   This command opens the per-area CDX backend and never uses a global LMDB singleton.
+//
+// risk:
+//   mutates_order_state: yes
+//   mutates_index_backend: yes
+//   mutates_table_data: no
+//
+// related:
+//   LMDB
+//   SET INDEX
+//   SET ORDER
+//   CDX
+//
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -73,12 +120,45 @@ static std::string resolve_container_path(const std::string& token) {
     return (idx / (upper_copy(stem) + ".cdx")).string();
 }
 
+
+static void print_setlmdb_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET LMDB\n"
+        << "  SET LMDB USAGE\n"
+        << "  SET LMDB 0\n"
+        << "  SET LMDB <stem> [<tag>] [--asc|--desc]\n"
+        << "  SET LMDB <container.cdx> [<tag>] [--asc|--desc]\n"
+        << "  SET LMDB <envdir.cdx.d> [<tag>] [--asc|--desc]\n"
+        << "  SETLMDB\n"
+        << "  SETLMDB USAGE\n"
+        << "  SETLMDB 0\n"
+        << "  SETLMDB <stem> [<tag>] [--asc|--desc]\n";
+}
+
+static bool is_setlmdb_usage_request(const std::string& raw)
+{
+    std::string t = upper_copy(trim_copy(raw));
+    if (t.rfind("SET LMDB ", 0) == 0) {
+        t = upper_copy(trim_copy(t.substr(9)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 } // namespace
 
 void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
+    const std::string raw_args = iss.str();
+
     std::string tok;
     iss >> tok;
     tok = trim_copy(tok);
+
+    if (is_setlmdb_usage_request(tok) || is_setlmdb_usage_request(raw_args)) {
+        print_setlmdb_usage();
+        return;
+    }
 
     // Report-only form
     if (tok.empty()) {

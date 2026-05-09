@@ -1,4 +1,57 @@
 // src/cli/cmd_calcwrite.cpp
+// @dottalk.usage v1
+// owner: DOT|CALCWRITE
+// command: CALCWRITE
+// category: data
+// status: supported
+// noargs: usage
+// effect: mutate
+// mutates: table-data table-buffer memo stale-state index
+// usage-access: CALCWRITE USAGE
+// summary:
+//   Evaluate an expression and write the result into a field in the current
+//   record, preserving type normalization, validation, memo conversion,
+//   table-buffer semantics, and direct-write index maintenance.
+//
+// usage:
+//   CALCWRITE USAGE
+//   CALCWRITE <field> = <expr>
+//
+// examples:
+//   CALCWRITE BALANCE = BALANCE + 10
+//   CALCWRITE LNAME = UPPER(LNAME)
+//   CALCWRITE POSTED = TODAY
+//
+// notes:
+//   CALCWRITE requires an open table and a current record.
+//   CALCWRITE requires assignment syntax using '='.
+//   RHS expressions are evaluated with xexpr against the current area.
+//   Result values are normalized for the target field type before storage.
+//   Currency pair fields are validated and normalized through currency helpers.
+//   X64 memo fields update memo payloads and store memo object-id text.
+//   When TABLE buffering is ON, CALCWRITE buffers the change and marks the field stale/dirty.
+//   When TABLE buffering is OFF, CALCWRITE writes through DbArea::replaceFieldStored.
+//   Direct-write mode uses the engine mutation funnel so active indexes stay consistent.
+//   CALCWRITE is a table-data mutation command; do not classify it as read-only.
+//
+// risk:
+//   writes_dbf_record: when TABLE buffering is OFF
+//   writes_table_buffer: when TABLE buffering is ON
+//   writes_memo: when assigning x64 memo fields
+//   marks_dirty: when TABLE buffering is ON
+//   marks_stale_field: yes
+//   index_maintenance: direct-write path via DbArea::replaceFieldStored
+//   requires_current_record: yes
+//   requires_open_table: yes
+//
+// related:
+//   CALC
+//   REPLACE
+//   MULTIREP
+//   TABLE
+//   COMMIT
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -61,6 +114,40 @@ static inline std::string upper(std::string s) {
         [](unsigned char c) { return (char)std::toupper(c); });
     return s;
 }
+
+
+static bool is_calcwrite_usage_request(std::string raw)
+{
+    std::string t = upper(trim(std::move(raw)));
+
+    // Dispatch normally passes only the tail ("USAGE"), but accept full raw
+    // input too ("CALCWRITE USAGE") for robustness.
+    if (t.rfind("CALCWRITE ", 0) == 0) {
+        t = trim(t.substr(10));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_calcwrite_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  CALCWRITE USAGE\n"
+        << "  CALCWRITE <field> = <expr>\n"
+        << "Examples:\n"
+        << "  CALCWRITE BALANCE = BALANCE + 10\n"
+        << "  CALCWRITE LNAME = UPPER(LNAME)\n"
+        << "  CALCWRITE POSTED = TODAY\n"
+        << "Notes:\n"
+        << "  - CALCWRITE requires an open table and a current record.\n"
+        << "  - RHS expressions are evaluated with xexpr against the current area.\n"
+        << "  - Values are normalized and validated for the target field type.\n"
+        << "  - X64 memo fields update memo payloads and store memo object-id text.\n"
+        << "  - TABLE ON buffers changes and marks fields stale/dirty.\n"
+        << "  - TABLE OFF writes through DbArea::replaceFieldStored for index-safe mutation.\n";
+}
+
 
 static bool parse_assignment(const std::string& line, std::string& out_field, std::string& out_expr) {
     bool in_s = false, in_d = false;
@@ -640,23 +727,28 @@ struct RecordLockGuard {
 } // namespace
 
 void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
+    std::string line;
+    std::getline(in, line);
+    line = trim(line);
+
+    if (is_calcwrite_usage_request(line)) {
+        print_calcwrite_usage();
+        return;
+    }
+
     if (!area.isOpen()) {
         std::cout << "CALCWRITE: no file open. Use: USE <table>\n";
         return;
     }
 
-    std::string line;
-    std::getline(in, line);
-    line = trim(line);
-
     if (line.empty()) {
-        std::cout << "Usage:\n  CALCWRITE <field> = <expr>\n";
+        print_calcwrite_usage();
         return;
     }
 
     std::string lhs, rhs;
     if (!parse_assignment(line, lhs, rhs)) {
-        std::cout << "Usage:\n  CALCWRITE <field> = <expr>\n";
+        print_calcwrite_usage();
         return;
     }
 

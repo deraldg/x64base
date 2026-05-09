@@ -2,6 +2,45 @@
 // DotTalk++ ? Minimal interactive BROWSE with editing, no DbArea internals.
 // Uses existing handlers: LIST, DISPLAY, GOTO, REPLACE.
 
+// @dottalk.usage v1
+// owner: DOT|BROWSER
+// command: BROWSER
+// category: ui
+// status: supported
+// noargs: interactive
+// effect: interactive
+// mutates: delegates LIST DISPLAY GOTO REPLACE
+// usage-access: BROWSER USAGE
+// summary:
+//   Enter a minimal interactive browser with list, display, goto, edit,
+//   help, and quit commands, delegating work to existing command handlers.
+//
+// usage:
+//   BROWSER USAGE
+//   BROWSER
+//   BROWSER EDIT
+//
+// notes:
+//   BROWSER with no arguments enters interactive browse mode.
+//   BROWSER EDIT displays edit mode in the banner; edit command is available inside the browser.
+//   Inside BROWSER, L lists records, D displays current record, G moves to a record, E edits via REPLACE, H or question-mark shows help, and Q quits.
+//   BROWSER itself is interactive; side effects come from delegated GOTO and REPLACE actions.
+//
+// risk:
+//   interactive: yes
+//   mutates_record_pointer: GOTO actions
+//   mutates_table_data: edit actions through REPLACE
+//   delegates_to_replace: yes
+//
+// related:
+//   BROWSE
+//   BROWSETUI
+//   LIST
+//   DISPLAY
+//   GOTO
+//   REPLACE
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -37,6 +76,18 @@ static inline bool needs_quotes(const std::string& v) {
   return v.empty();
 }
 
+
+static void show_browser_command_usage() {
+  std::cout
+    << "Usage:\n"
+    << "  BROWSER USAGE\n"
+    << "  BROWSER\n"
+    << "  BROWSER EDIT\n"
+    << "Notes:\n"
+    << "  - Enters minimal interactive browser mode.\n"
+    << "  - Inside browser: L=list, D=display, G n=goto, E=edit, H/?=help, Q=quit.\n";
+}
+
 static void show_menu(bool editEnabled) {
   std::cout
     << "\n=== BROWSE " << (editEnabled ? "EDIT " : "") << "===\n"
@@ -57,6 +108,11 @@ void cmd_BROWSER(xbase::DbArea& area, std::istringstream& iss)
   {
     std::string rest; std::getline(iss, rest);
     rest = upper(trim(rest));
+    if (rest.rfind("BROWSER ", 0) == 0) rest = trim(rest.substr(8));
+    if (rest == "USAGE" || rest == "HELP" || rest == "?") {
+      show_browser_command_usage();
+      return;
+    }
     if (rest.find("EDIT") != std::string::npos) editMode = true;
   }
 

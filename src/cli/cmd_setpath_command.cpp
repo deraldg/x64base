@@ -23,6 +23,59 @@
 // Slots:
 //   DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP
 
+// @dottalk.usage v1
+// owner: DOT|SETPATH
+// command: SETPATH
+// category: settings
+// status: supported
+// noargs: report
+// effect: configure
+// mutates: path-state
+// usage-access: SETPATH USAGE
+// summary:
+//   Report, reset, or configure DotTalk++ path slots.
+//
+// usage:
+//   SETPATH
+//   SETPATH USAGE
+//   SETPATH RESET
+//   SETPATH DATA <path>
+//   SETPATH DBF <path>
+//   SETPATH XDBF <path>
+//   SETPATH INDEXES <path>
+//   SETPATH LMDB <path>
+//   SETPATH WORKSPACES <path>
+//   SETPATH SCHEMAS <path>
+//   SETPATH PROJECTS <path>
+//   SETPATH SCRIPTS <path>
+//   SETPATH TESTS <path>
+//   SETPATH HELP <path>
+//   SETPATH LOGS <path>
+//   SETPATH TMP <path>
+//   SET PATH <slot> <path>
+//   SET PATH <slot> TO <path>
+//   SET PATH <slot> = <path>
+//
+// notes:
+//   SETPATH with no arguments reports all path slots.
+//   RESET restores defaults based on the current DATA root.
+//   SET PATH forms route through SETPATH.
+//   DATA resolves relative to the application root.
+//   Other top-level slots resolve relative to the current DATA root.
+//   Validation is non-blocking; missing or wrong-kind paths warn but assignment still succeeds.
+//
+// risk:
+//   mutates_path_state: yes
+//   reads_filesystem: validation only
+//   mutates_table_data: no
+//
+// related:
+//   SET
+//   DDL
+//   USE
+//   WORKSPACE
+//
+
 #include "xbase.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "common/path_state.hpp"
@@ -96,6 +149,32 @@ static std::string up(std::string s)
 }
 
 // Skip optional SET PATH noise tokens: TO and =
+
+static void print_setpath_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SETPATH\n"
+        << "  SETPATH USAGE\n"
+        << "  SETPATH RESET\n"
+        << "  SETPATH <slot> [TO|=] <path>\n"
+        << "  SET PATH <slot> [TO|=] <path>\n"
+        << "Slots:\n"
+        << "  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\n";
+}
+
+static bool is_setpath_usage_request(const std::string& raw)
+{
+    std::string t = up(raw);
+    while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+    while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+    if (t.rfind("SET PATH ", 0) == 0) {
+        t = t.substr(9);
+        while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 static void skip_optional_tokens(std::istringstream& iss)
 {
     while (true) {
@@ -179,7 +258,14 @@ static void validate_slot_path(dottalk::paths::Slot /*slot*/, const fs::path& p)
 
 void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+
     std::string a1 = read_word(iss);
+    if (is_setpath_usage_request(raw_args) || is_setpath_usage_request(a1)) {
+        print_setpath_usage();
+        return;
+    }
+
     if (a1.empty()) {
         std::cout << dottalk::paths::dump();
         return;
@@ -201,10 +287,7 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
     dottalk::paths::Slot slot{};
     if (!dottalk::paths::slot_from_string(a1, slot)) {
         std::cout << "SETPATH: unknown slot: " << a1 << "\n";
-        std::cout
-            << "Usage: SETPATH [RESET] | SETPATH "
-            << "<DATA|DBF|XDBF|INDEXES|LMDB|WORKSPACES|SCHEMAS|PROJECTS|"
-            << "SCRIPTS|TESTS|HELP|LOGS|TMP> [TO|=] <path>\n";
+        print_setpath_usage();
         return;
     }
 
@@ -212,9 +295,7 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
 
     const std::string path_value = read_rest(iss);
     if (path_value.empty()) {
-        std::cout << "Usage: SETPATH "
-                  << dottalk::paths::slot_name(slot)
-                  << " [TO|=] <path>\n";
+        print_setpath_usage();
         return;
     }
 

@@ -24,6 +24,59 @@
 //   - Compound/computed tags are deferred.
 //   - Simple first-pass policy: field-name == tag-name via IndexManager.
 
+// @dottalk.usage v1
+// owner: DOT|REPLACE_MULTI
+// command: REPLACE_MULTI
+// category: data
+// status: supported
+// noargs: usage
+// effect: mutate
+// mutates: table-data memo index stale-state
+// usage-access: REPLACE_MULTI USAGE
+// summary:
+//   Replace multiple fields in the current record with one record lock and
+//   one physical write, preserving RHS evaluation, validation, memo handling,
+//   and direct index maintenance.
+//
+// usage:
+//   REPLACE_MULTI USAGE
+//   REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...
+//
+// examples:
+//   REPLACE_MULTI LNAME WITH "Smith", FNAME WITH "John"
+//   REPLACE_MULTI DOB WITH 20000101, ACTIVE WITH .T.
+//
+// notes:
+//   REPLACE_MULTI requires an open table and a current record.
+//   REPLACE_MULTI validates all assignments before applying the physical write.
+//   RHS values are evaluated/dequoted before validation and storage.
+//   Memo fields are written through the memo backend before storing the memo token.
+//   REPLACE_MULTI writes directly to the DBF and does not mark the table buffer DIRTY.
+//   REPLACE_MULTI captures before/after index snapshots and applies direct index maintenance.
+//   If index maintenance fails, changed fields are marked STALE.
+//   Buffering/COMMIT/ROLLBACK integration remains deferred for this direct-write command.
+//   REPLACE_MULTI is a table-data mutation command; do not classify it as read-only.
+//
+// risk:
+//   writes_dbf_record: yes
+//   writes_memo: when replacing memo fields
+//   one_record_lock: yes
+//   one_physical_write: yes
+//   marks_dirty: no
+//   marks_stale_field: only if index maintenance fails for changed fields
+//   index_maintenance: direct before/after snapshot application
+//   requires_current_record: yes
+//   requires_open_table: yes
+//
+// related:
+//   REPLACE
+//   TABLE
+//   COMMIT
+//   ROLLBACK
+//   STRUCT
+//   FIELDS
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -532,6 +585,40 @@ static bool parse_assignments(std::istringstream& iss,
     return true;
 }
 
+
+static bool is_replace_multi_usage_request(const std::string& raw)
+{
+    std::string t = up_copy(trim_copy(raw));
+
+    // Dispatch normally passes only the tail ("USAGE"), but accept full raw
+    // input too ("REPLACE_MULTI USAGE" or "MULTIREP USAGE").
+    if (t.rfind("REPLACE_MULTI ", 0) == 0) {
+        t = trim_copy(t.substr(14));
+    } else if (t.rfind("MULTIREP ", 0) == 0) {
+        t = trim_copy(t.substr(9));
+    }
+
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_replace_multi_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  REPLACE_MULTI USAGE\n"
+        << "  REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...\n"
+        << "Examples:\n"
+        << "  REPLACE_MULTI LNAME WITH \"Smith\", FNAME WITH \"John\"\n"
+        << "  REPLACE_MULTI DOB WITH 20000101, ACTIVE WITH .T.\n"
+        << "Notes:\n"
+        << "  - REPLACE_MULTI requires an open table and a current record.\n"
+        << "  - All assignments are validated before the physical write.\n"
+        << "  - REPLACE_MULTI uses one record lock and one DBF write.\n"
+        << "  - Memo fields are written through the memo backend.\n"
+        << "  - Direct index maintenance uses before/after snapshots.\n"
+        << "  - Changed fields are marked STALE only if index maintenance fails.\n";
+}
+
 } // namespace
 
 bool cmd_REPLACE_MULTI(xbase::DbArea& A,
@@ -793,12 +880,18 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
 
 void cmd_REPLACE_MULTI(xbase::DbArea& A, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_replace_multi_usage_request(raw_args)) {
+        print_replace_multi_usage();
+        return;
+    }
+
     std::string err;
     std::vector<FieldUpdate> updates;
 
     if (!parse_assignments(iss, A, updates, err)) {
         std::cout << err << "\n";
-        std::cout << "Usage: REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...\n";
+        print_replace_multi_usage();
         return;
     }
 

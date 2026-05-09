@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: DOT|SECURITY
+// command: SECURITY
+// category: diagnostics
+// status: supported
+// noargs: usage
+// effect: mixed
+// mutates: none
+// usage-access: SECURITY USAGE
+// summary:
+//   Display x64Base security policy/runtime diagnostics or run built-in security
+//   self-tests.
+//
+// usage:
+//   SECURITY USAGE
+//   SECURITY SHOW
+//   SECURITY SELFTEST
+//   SECURITY RUNTIME
+//
+// notes:
+//   SECURITY with no arguments prints usage.
+//   SHOW displays the active policy and profile roots.
+//   SELFTEST runs built-in security tests.
+//   RUNTIME describes runtime enforcement rules.
+//   SECURITY does not mutate table data.
+//
+// risk:
+//   runs_self_tests: SECURITY SELFTEST
+//   mutates_table_data: no
+//
+// related:
+//   ERROR_TEST
+//   VALIDATE
+//
+
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -14,7 +50,17 @@ using namespace xbase::security::runtime;
 
 namespace
 {
-    static std::string detect_profile_name()
+        static void print_security_usage()
+    {
+        std::cout
+            << "Usage:\n"
+            << "  SECURITY USAGE\n"
+            << "  SECURITY SHOW\n"
+            << "  SECURITY SELFTEST\n"
+            << "  SECURITY RUNTIME\n";
+    }
+
+static std::string detect_profile_name()
     {
         return "default";
     }
@@ -26,10 +72,17 @@ void cmd_SECURITY(xbase::DbArea& A, std::istringstream& in)
 
     std::string sub;
     if (!(in >> sub))
-        sub = "HELP";
+        sub = "USAGE";
 
     for (auto& c : sub)
         c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+
+
+    if (sub == "USAGE" || sub == "HELP" || sub == "?")
+    {
+        print_security_usage();
+        return;
+    }
 
     if (sub == "SHOW")
     {
@@ -86,9 +139,5 @@ void cmd_SECURITY(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    std::cout
-        << "SECURITY commands:\n"
-        << "  SECURITY SHOW       Display active security policy and profile roots\n"
-        << "  SECURITY SELFTEST   Run built-in security tests\n"
-        << "  SECURITY RUNTIME    Describe runtime enforcement rules\n";
+    print_security_usage();
 }

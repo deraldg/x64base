@@ -3,10 +3,42 @@
 // ABOUT
 // Print project identity, lineage, author, history, and runtime environment.
 
+// @dottalk.usage v1
+// owner: DOT|ABOUT
+// command: ABOUT
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: ABOUT USAGE
+// summary:
+//   Print DotTalk++ project identity, lineage, author, runtime environment, and
+//   current session summary.
+//
+// usage:
+//   ABOUT
+//   ABOUT USAGE
+//
+// notes:
+//   ABOUT with no arguments prints the full project/runtime report.
+//   ABOUT USAGE prints command usage only.
+//   ABOUT is read-only and does not mutate table data or session state.
+//
+// risk:
+//   mutates_table_data: no
+//   mutates_session: no
+//
+// related:
+//   VERSION
+//   SQLVER
+//
+
 #include "cli/cmd_about.hpp"
 #include "xbase/about_info.hpp"
 #include "xbase.hpp"
 
+#include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -48,6 +80,41 @@
 
 namespace
 {
+    
+    std::string about_trim(std::string s)
+    {
+        while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+            s.erase(s.begin());
+        }
+        while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+            s.pop_back();
+        }
+        return s;
+    }
+
+    std::string about_upper(std::string s)
+    {
+        for (char& ch : s) {
+            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+        }
+        return s;
+    }
+
+    bool is_about_usage_request(const std::string& raw)
+    {
+        std::string t = about_upper(about_trim(raw));
+        if (t.rfind("ABOUT ", 0) == 0) {
+            t = about_upper(about_trim(t.substr(6)));
+        }
+        return t == "USAGE" || t == "HELP" || t == "?";
+    }    void print_about_usage()
+    {
+        std::cout
+            << "Usage:\n"
+            << "  ABOUT\n"
+            << "  ABOUT USAGE\n";
+    }
+
     void print_section(const std::string& title)
     {
         std::cout << "\n" << title << "\n";
@@ -290,8 +357,13 @@ namespace
     }
 }
 
-void cmd_ABOUT(xbase::DbArea& db, std::istringstream&)
+void cmd_ABOUT(xbase::DbArea& db, std::istringstream& in)
 {
+    if (is_about_usage_request(in.str())) {
+        print_about_usage();
+        return;
+    }
+
     print_page_1();
     print_page_2(db);
 }

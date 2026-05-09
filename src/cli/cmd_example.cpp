@@ -1,3 +1,32 @@
+// @dottalk.usage v1
+// owner: DOT|EXAMPLE
+// command: EXAMPLE
+// category: diagnostics
+// status: supported
+// noargs: usage
+// effect: test
+// mutates: none
+// usage-access: EXAMPLE USAGE
+// summary:
+//   Minimal example/test command used to verify token parsing and command routing.
+//
+// usage:
+//   EXAMPLE USAGE
+//   EXAMPLE TEST
+//
+// notes:
+//   EXAMPLE with no arguments shows usage.
+//   EXAMPLE TEST prints OK.
+//   EXAMPLE is read-only and does not mutate table data.
+//
+// risk:
+//   mutates_table_data: no
+//
+// related:
+//   ERROR_TEST
+//   TEST
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 
@@ -18,5 +47,5 @@ void cmd_EXAMPLE(xbase::DbArea&, std::istringstream& iss)
         return;
     }
 
-    std::cout << "Usage: EXAMPLE TEST\n";
+    std::cout << "Usage:\n  EXAMPLE USAGE\n  EXAMPLE TEST\n";
 }

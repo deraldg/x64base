@@ -1,3 +1,55 @@
+// @dottalk.usage v1
+// owner: DOT|SORT
+// command: SORT
+// category: data
+// status: supported
+// noargs: usage
+// effect: create
+// mutates: filesystem dbf-output cursor
+// usage-access: SORT USAGE
+// summary:
+//   Create a sorted DBF copy from the current table using expression keys,
+//   optional filters, projection fields, deleted-record selection, and UNIQUE.
+//
+// usage:
+//   SORT USAGE
+//   SORT TO <outdbf> ON <expr>
+//   SORT TO <outdbf> ON <expr> ASC
+//   SORT TO <outdbf> ON <expr> DESC
+//   SORT TO <outdbf> ON <expr>, <expr>
+//   SORT ALL TO <outdbf> ON <expr>
+//   SORT DELETED TO <outdbf> ON <expr>
+//   SORT OVERWRITE TO <outdbf> ON <expr>
+//   SORT TO <outdbf> ON <expr> FOR <expr>
+//   SORT TO <outdbf> ON <expr> WHILE <expr>
+//   SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+//   SORT TO <outdbf> ON <expr> UNIQUE
+//
+// notes:
+//   SORT requires an open table except for SORT USAGE.
+//   SORT creates a DBF output file and refuses existing output unless OVERWRITE is supplied.
+//   ALL includes deleted records; DELETED selects only deleted records.
+//   ON accepts one or more key expressions.
+//   ASC and DESC can be attached to key expressions.
+//   FOR and WHILE filter selected records.
+//   FIELDS projects selected fields into the output table.
+//   UNIQUE suppresses duplicate adjacent key sets after sorting.
+//   SORT scans the source table and writes a new DBF; it does not mutate source table records.
+//
+// risk:
+//   reads_table_records: yes
+//   writes_dbf_file: yes
+//   overwrites_output_file: only with OVERWRITE
+//   mutates_cursor: yes during scan
+//   mutates_source_table_data: no
+//
+// related:
+//   INDEX
+//   REINDEX
+//   COPY TO
+//   EXPORT
+//
+
 #include "cli/cmd_sort.hpp"
 
 #include <algorithm>
@@ -488,24 +540,50 @@ static bool keys_equal(const std::vector<KeyValue>& a, const std::vector<KeyValu
     return true;
 }
 
+
+static bool is_sort_usage_request(const std::string& raw)
+{
+    std::string t = up(trim(raw));
+    if (t.rfind("SORT ", 0) == 0) {
+        t = up(trim(t.substr(5)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
 static void usage_sort() {
     std::cout
-        << "SORT [ALL|DELETED] [OVERWRITE] TO <outdbf>\n"
-        << "     ON <expr>[ASC|DESC][, <expr>...]\n"
-        << "     [FOR <expr>] [WHILE <expr>] [FIELDS <fieldlist>] [UNIQUE]\n";
+        << "Usage:\n"
+        << "  SORT USAGE\n"
+        << "  SORT TO <outdbf> ON <expr>\n"
+        << "  SORT TO <outdbf> ON <expr> ASC\n"
+        << "  SORT TO <outdbf> ON <expr> DESC\n"
+        << "  SORT TO <outdbf> ON <expr>, <expr>\n"
+        << "  SORT ALL TO <outdbf> ON <expr>\n"
+        << "  SORT DELETED TO <outdbf> ON <expr>\n"
+        << "  SORT OVERWRITE TO <outdbf> ON <expr>\n"
+        << "  SORT TO <outdbf> ON <expr> FOR <expr>\n"
+        << "  SORT TO <outdbf> ON <expr> WHILE <expr>\n"
+        << "  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>\n"
+        << "  SORT TO <outdbf> ON <expr> UNIQUE\n";
 }
 
 } // namespace
 
 void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
+    std::string rest;
+    std::getline(in, rest);
+    rest = trim(rest);
+
+    if (is_sort_usage_request(rest)) {
+        usage_sort();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "SORT: no table is open.\n";
         return;
     }
 
-    std::string rest;
-    std::getline(in, rest);
-    rest = trim(rest);
     if (rest.empty()) { usage_sort(); return; }
 
     bool include_deleted = false;

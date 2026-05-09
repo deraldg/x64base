@@ -1,3 +1,42 @@
+// @dottalk.usage v1
+// owner: DOT|SKIP
+// command: SKIP
+// category: navigation
+// status: supported
+// noargs: navigate
+// effect: navigate
+// mutates: cursor
+// usage-access: SKIP USAGE
+// summary:
+//   Move the current work-area cursor forward or backward using filter-aware
+//   navigation selection.
+//
+// usage:
+//   SKIP
+//   SKIP USAGE
+//   SKIP <n>
+//
+// notes:
+//   SKIP with no arguments moves forward one logical record.
+//   SKIP <n> moves forward when n is positive and backward when n is negative.
+//   SKIP 0 rereads the current record.
+//   SKIP requires an open table except for SKIP USAGE.
+//   Navigation uses the shared filter-aware selector.
+//   SKIP mutates cursor position but does not mutate table data.
+//
+// risk:
+//   mutates_cursor: yes
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   GOTO
+//   TOP
+//   BOTTOM
+//   GPS
+//
+
+#include <cctype>
 #include <sstream>
 #include <iostream>
 #include <cstdint>
@@ -6,8 +45,48 @@
 #include "cli/nav_select.hpp"
 #include "cli/settings.hpp"
 
+
+namespace {
+static std::string skip_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string skip_upper(std::string s)
+{
+    for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    return s;
+}
+
+static bool is_skip_usage_request(const std::string& raw)
+{
+    std::string t = skip_upper(skip_trim(raw));
+    if (t.rfind("SKIP ", 0) == 0) {
+        t = skip_upper(skip_trim(t.substr(5)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_skip_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SKIP\n"
+        << "  SKIP USAGE\n"
+        << "  SKIP <n>\n";
+}
+} // namespace
+
 void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
 {
+    const std::string raw_args = in.str();
+    if (is_skip_usage_request(raw_args)) {
+        print_skip_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "SKIP: no file open.\n";
         return;

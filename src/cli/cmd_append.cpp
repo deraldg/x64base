@@ -14,6 +14,52 @@
 //   APPEND RAW MANY <n> -> raw batch append under one lock
 //   APPEND <n>          -> shorthand for APPEND MANY <n>
 
+// @dottalk.usage v1
+// owner: DOT|APPEND
+// command: APPEND
+// category: data
+// status: supported
+// noargs: mutate
+// effect: mutate
+// mutates: table-data index memo record-pointer
+// usage-access: APPEND USAGE
+// summary:
+//   Append one or more blank records to the current table, using smart append
+//   paths that maintain keys and active indexes, or raw append paths when requested.
+//
+// usage:
+//   APPEND USAGE
+//   APPEND
+//   APPEND <count>
+//   APPEND MANY <count>
+//   APPEND RAW
+//   APPEND RAW MANY <count>
+//
+// notes:
+//   APPEND with no arguments appends one blank record through the shared smart append path.
+//   APPEND <count> is shorthand for APPEND MANY <count>.
+//   APPEND MANY <count> performs smart batch append under one lock.
+//   APPEND RAW appends one record without inline index update.
+//   APPEND RAW MANY <count> performs raw batch append under one lock.
+//   Count values must be positive integers.
+//   APPEND is a table-data mutation command; do not classify it as read-only.
+//
+// risk:
+//   writes_dbf_records: yes
+//   appends_records: yes
+//   updates_indexes: smart append paths
+//   raw_path_skips_inline_index_update: yes
+//   one_lock_batch: MANY forms
+//   requires_open_table: yes
+//
+// related:
+//   APPEND_BLANK
+//   REPLACE
+//   MULTIREP
+//   TABLE
+//   COMMIT
+//
+
 #include <cctype>
 #include <cstdint>
 #include <iostream>
@@ -31,6 +77,37 @@ namespace
         for (char& ch : s)
             ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
         return s;
+    }
+
+
+    static bool is_append_usage_request(const std::string& raw)
+    {
+        std::string t = upcase_copy(raw);
+        while (!t.empty() && std::isspace(static_cast<unsigned char>(t.front()))) t.erase(t.begin());
+        while (!t.empty() && std::isspace(static_cast<unsigned char>(t.back()))) t.pop_back();
+
+        if (t.rfind("APPEND ", 0) == 0) {
+            t = t.substr(7);
+            while (!t.empty() && std::isspace(static_cast<unsigned char>(t.front()))) t.erase(t.begin());
+        }
+
+        return t == "USAGE" || t == "HELP" || t == "?";
+    }
+
+    static void print_append_usage()
+    {
+        std::cout
+            << "Usage:\n"
+            << "  APPEND USAGE\n"
+            << "  APPEND\n"
+            << "  APPEND <count>\n"
+            << "  APPEND MANY <count>\n"
+            << "  APPEND RAW\n"
+            << "  APPEND RAW MANY <count>\n"
+            << "Notes:\n"
+            << "  - APPEND with no arguments appends one blank record.\n"
+            << "  - APPEND MANY uses the smart batch append path.\n"
+            << "  - APPEND RAW uses the raw append path without inline index update.\n";
     }
 
     static bool parse_count_token(const std::string& s, std::size_t& out)
@@ -59,6 +136,13 @@ namespace
 
 void cmd_APPEND(xbase::DbArea& A, std::istringstream& iss)
 {
+    const std::string raw_args = iss.str();
+    if (is_append_usage_request(raw_args))
+    {
+        print_append_usage();
+        return;
+    }
+
     std::string tok1;
     if (!(iss >> tok1))
     {
@@ -130,11 +214,5 @@ void cmd_APPEND(xbase::DbArea& A, std::istringstream& iss)
         return;
     }
 
-    std::cout
-        << "Usage:\n"
-        << "  APPEND\n"
-        << "  APPEND RAW\n"
-        << "  APPEND MANY <count>\n"
-        << "  APPEND RAW MANY <count>\n"
-        << "  APPEND <count>\n";
+    print_append_usage();
 }

@@ -183,6 +183,8 @@ void cmd_CMDHELPCHK(DbArea&, std::istringstream&);
 void cmd_CMDARGCHK(DbArea&, std::istringstream&);
 void cmd_FOXSTANDARD(DbArea&, std::istringstream&);
 
+void cmd_MCC(DbArea&, std::istringstream&);
+
 //   HOMEGROWN SQL
 void cmd_SQL(DbArea&, std::istringstream&);
 void cmd_SQL_SELECT(DbArea&, std::istringstream&);
@@ -200,6 +202,9 @@ void cmd_ROLLBACK(DbArea&, std::istringstream&);
 // SYSTEM
 void cmd_VERSION(DbArea&, std::istringstream&);
 void cmd_SECURITY(DbArea&, std::istringstream&);
+void cmd_ERROR_CLEAR(DbArea&, std::istringstream&);
+void cmd_ERROR_STATUS(DbArea&, std::istringstream&);
+void cmd_ERROR_TEST(DbArea&, std::istringstream&);
 void cmd_BELL(DbArea&, std::istringstream&);
 void cmd_CLEAR(DbArea&, std::istringstream&);
 void cmd_PRN(DbArea&, std::istringstream&);
@@ -234,16 +239,21 @@ void cmd_PRIOR(DbArea&, std::istringstream&);
 void cmd_LAST(DbArea&, std::istringstream&);
 
 // EDUCATION FEATURES
+//    SYSTEM
 void cmd_PROJECTS(DbArea&, std::istringstream&);
 void cmd_CODASYL(DbArea&, std::istringstream&);              // Emulate Sets and Rings
 void cmd_DRAWIO(DbArea&, std::istringstream&);               // Diagrams, Charts
 void cmd_LOCK(DbArea&, std::istringstream&);
 void cmd_UNLOCK(DbArea&, std::istringstream&);
-
+//    EDUCATION ONLY
+void edu_IDX(DbArea&, std::istringstream&);
 void edu_BOOLEAN(DbArea&, std::istringstream&);
 void edu_FORMULA(DbArea&, std::istringstream&);
 void edu_EVALUATE(DbArea&, std::istringstream&);
 void edu_NORMALIZE(DbArea&, std::istringstream&);
+
+void edu_TEXT(DbArea&, std::istringstream&);
+void edu_EDIT(DbArea&, std::istringstream&);
 
 // CASE STUDIES
 void edu_CASESTUDY(DbArea&, std::istringstream&);
@@ -261,10 +271,10 @@ void cmd_COLOR(DbArea&, std::istringstream&);
 void cmd_VT200(DbArea&, std::istringstream&);
 
 // APPLICATIONS
-void cmd_COBOL(DbArea&, std::istringstream&);
-void cmd_TEXT(DbArea&, std::istringstream&);
-void cmd_PRN(DbArea&, std::istringstream&);
-void cmd_EDIT(DbArea&, std::istringstream&);
+void edu_COBOL(DbArea&, std::istringstream&);
+void edu_BIBLETALK(DbArea&, std::istringstream&);
+void edu_ERP(DbArea&, std::istringstream&);
+
 
 // DOTSCRIPT
 void cmd_DOTSCRIPT(DbArea&, std::istringstream&);
@@ -293,5 +303,6 @@ void cmd_SETNEAR(DbArea&, std::istringstream&);
 // SQLITE
 void cmd_SQLITE(DbArea&, std::istringstream&);
 void cmd_SQLVER(DbArea&, std::istringstream&);
+
 
 

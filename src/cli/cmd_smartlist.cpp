@@ -14,6 +14,59 @@
 //   • DEBUG: prints a couple of diagnostics.
 //
 
+// @dottalk.usage v1
+// owner: DOT|SMARTLIST
+// command: SMARTLIST
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor
+// usage-access: SMARTLIST USAGE
+// summary:
+//   Filter-aware, order-aware table listing with optional projections, tuple
+//   output, debug tracing, deleted-record modes, and predicate filtering.
+//
+// usage:
+//   SMARTLIST
+//   SMARTLIST USAGE
+//   SMARTLIST <fields>
+//   SMARTLIST ALL
+//   SMARTLIST <limit>
+//   SMARTLIST NEXT <n>
+//   SMARTLIST FIRST <n>
+//   SMARTLIST DELETED
+//   SMARTLIST DEBUG
+//   SMARTLIST TUPLES
+//   SMARTLIST FOR <pred>
+//
+// notes:
+//   SMARTLIST requires an open table except for SMARTLIST USAGE.
+//   SMARTLIST with no arguments preserves existing behavior and prints usage before continuing with default listing.
+//   Field projections are comma-separated.
+//   ALL removes the output limit.
+//   NEXT and FIRST limit scan scope.
+//   DELETED selects deleted records.
+//   TUPLES emits tuple bridge output.
+//   DEBUG emits order/filter diagnostics.
+//   FOR applies predicate filtering.
+//   SMARTLIST restores the original cursor best-effort after listing.
+//   SMARTLIST is read-only for table data.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: temporary during scan
+//   cursor_restore: best effort
+//   mutates_table_data: no
+//   uses_table_buffer_overlay: when TABLE buffer is available
+//
+// related:
+//   LIST
+//   COUNT
+//   LOCATE
+//   DUMP
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "predicates.hpp"
@@ -145,6 +198,33 @@ static inline bool is_smartlist_option_token(const std::string& tok) {
         || u == "FOR"
         || u == "NEXT"
         || u == "FIRST";
+}
+
+
+static bool is_smartlist_usage_request(const std::string& raw)
+{
+    std::string t = up(trim(raw));
+    if (t.rfind("SMARTLIST ", 0) == 0) {
+        t = up(trim(t.substr(10)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_smartlist_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SMARTLIST\n"
+        << "  SMARTLIST USAGE\n"
+        << "  SMARTLIST <fields>\n"
+        << "  SMARTLIST ALL\n"
+        << "  SMARTLIST <limit>\n"
+        << "  SMARTLIST NEXT <n>\n"
+        << "  SMARTLIST FIRST <n>\n"
+        << "  SMARTLIST DELETED\n"
+        << "  SMARTLIST DEBUG\n"
+        << "  SMARTLIST TUPLES\n"
+        << "  SMARTLIST FOR <pred>\n";
 }
 
 static std::string smartlist_options_tail(std::string raw) {
@@ -485,6 +565,12 @@ static bool print_smartlist_tuple_row(xbase::DbArea& area,
 } // namespace
 
 void cmd_SMARTLIST(xbase::DbArea& a, std::istringstream& iss) {
+    const std::string raw_args = iss.str();
+    if (is_smartlist_usage_request(raw_args)) {
+        print_smartlist_usage();
+        return;
+    }
+
     if (!a.isOpen()) { std::cout << "No table open.\n"; return; }
 
     CursorRestore __restore(a);
@@ -495,7 +581,7 @@ void cmd_SMARTLIST(xbase::DbArea& a, std::istringstream& iss) {
         oss << iss.rdbuf();
         raw_tail = oss.str();
         if (trim(raw_tail).empty()) {
-            std::cout << "Usage: SMARTLIST [<fields>] [ALL | <limit> | NEXT <n> | FIRST <n> | DELETED] [DEBUG] [TUPLES] [FOR <pred>]\n";
+            print_smartlist_usage();
         }
     }
 

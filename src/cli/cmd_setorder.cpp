@@ -29,6 +29,59 @@
 // - LMDB backend resolves under LMDB.
 // - This command validates both paths before attempting backend activation.
 
+// @dottalk.usage v1
+// owner: DOT|SETORDER
+// command: SETORDER
+// category: index
+// status: supported
+// noargs: report
+// effect: configure
+// mutates: order-state index-backend cursor
+// usage-access: SET ORDER USAGE
+// summary:
+//   FoxPro-style SET ORDER command with CNX and CDX-aware tag activation.
+//
+// usage:
+//   SET ORDER
+//   SET ORDER USAGE
+//   SET ORDER 0
+//   SET ORDER PHYSICAL
+//   SET ORDER NATURAL
+//   SET ORDER PHYS
+//   SET ORDER <tag>
+//   SET ORDER TAG <tag>
+//   SET ORDER TAG <tag> IN <alias>
+//   SET ORDER <container> <tag>
+//   SET ORDER <container> <tag> ASC
+//   SET ORDER <container> <tag> DESC
+//   SETORDER
+//   SETORDER USAGE
+//   SETORDER <tag>
+//
+// notes:
+//   SET ORDER with no arguments reports the active order or physical order.
+//   SET ORDER 0, PHYSICAL, NATURAL, and PHYS clear active order.
+//   Bare tag forms prefer an already-attached compatible container.
+//   If no suitable container is attached, fallback is flavor-aware.
+//   v32 tables default to CNX.
+//   v64 tables default to CDX.
+//   IN <alias> modifies the target area without changing the selected area.
+//   INX activation is intentionally not handled by SET ORDER.
+//
+// risk:
+//   mutates_order_state: yes
+//   mutates_index_backend: yes
+//   mutates_cursor: yes
+//   mutates_table_data: no
+//
+// related:
+//   SET INDEX
+//   SET CDX
+//   SET CNX
+//   INDEX
+//   REINDEX
+//
+
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -450,12 +503,43 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     return true;
 }
 
+
+static void print_setorder_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SET ORDER\n"
+        << "  SET ORDER USAGE\n"
+        << "  SET ORDER 0\n"
+        << "  SET ORDER PHYSICAL\n"
+        << "  SET ORDER NATURAL\n"
+        << "  SET ORDER <tag>\n"
+        << "  SET ORDER TAG <tag>\n"
+        << "  SET ORDER TAG <tag> IN <alias>\n"
+        << "  SET ORDER <container> <tag> [ASC|DESC]\n"
+        << "  SETORDER\n"
+        << "  SETORDER USAGE\n"
+        << "  SETORDER <tag>\n";
+}
+
+static bool is_setorder_usage_request(const std::vector<std::string>& toks)
+{
+    if (toks.size() != 1) return false;
+    const std::string u = up_copy(toks[0]);
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
 // ---------- command implementation -------------------------------------------
 
 void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 {
     std::vector<std::string> toks;
     for (std::string t; args >> t; ) toks.push_back(t);
+
+    if (is_setorder_usage_request(toks)) {
+        print_setorder_usage();
+        return;
+    }
 
     if (toks.empty()) {
         if (!orderstate::hasOrder(currentArea)) {
@@ -629,6 +713,8 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
     if (isCdx) {
         if (!cdx_has_tag(container, tag, err)) {
+            // Do not leave an attached container reporting ASC order with no active tag.
+            clear_order_and_close_indexes(*target);
             std::cout << "SET ORDER: " << err << "\n";
             return;
         }
@@ -636,6 +722,8 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         ok = activate_cdx_on_area(*target, container, tag, ascending, err);
     } else if (isCnx) {
         if (!cnx_has_tag(*target, tag)) {
+            // Do not leave an attached container reporting ASC order with no active tag.
+            clear_order_and_close_indexes(*target);
             std::cout << "SET ORDER: tag '" << tag << "' not available for CNX on current table.\n";
             return;
         }
