@@ -2,7 +2,7 @@
 
 **From the Visible V-8 to DotTalk++ as an educational database environment**
 
-<img src="dottalkpp\docs\media/media/image1.png" style="width:3.2in;height:2.9097in" />
+<img src="media/image1.png" style="width:3.2in;height:2.9097in" />
 
 *Original project image retained from the Visible Engine Codex draft.*
 
@@ -24,7 +24,7 @@ A visible engine is powerful because it changes the student question from "what 
 | A child can turn the crank slowly and inspect sequence. | A student can run, step, inspect, rebuild, and verify without hiding the engine. |
 | The model is safe to misunderstand and retry. | The environment should make mistakes recoverable, explainable, and teachable. |
 
-<img src="dottalkpp\docs\media/media/image2.png" style="width:6.6in;height:1.95022in" />
+<img src="media/image2.png" style="width:6.6in;height:1.95022in" />
 
 | **AI angle:** The same transparency matters when AI helps build the system. A good AI partner should not just produce code; it should preserve intent, show tradeoffs, identify risks, and leave proof points behind. |
 |----|
@@ -33,11 +33,11 @@ That makes DotTalk++ more than a command language. It becomes a teaching bench: 
 
 **2. The parts should teach the whole machine**
 
-<img src="dottalkpp\docs\media/media/image3.png" style="width:3.4in;height:1.90802in" />
+<img src="media/image3.png" style="width:3.4in;height:1.90802in" />
 
 *The model engine image is kept because the visual metaphor is the document anchor.*
 
-<img src="dottalkpp\docs\media/media/image4.png" style="width:6.7in;height:3.8015in" />
+<img src="media/image4.png" style="width:6.7in;height:3.8015in" />
 
 | **Engine idea** | **DotTalk++ part** | **What the student sees** |
 |----|----|----|
@@ -54,7 +54,7 @@ That makes DotTalk++ more than a command language. It becomes a teaching bench: 
 
 The best educational comparison is the cycle, not the parts list. A four-stroke engine repeats a disciplined rhythm. DotTalk++ commands should be just as traceable.
 
-| <img src="dottalkpp\docs\media/media/image5.png" style="width:3.15in;height:1.58165in" /> | <img src="dottalkpp\docs\media/media/image6.png" style="width:2.8in;height:2.8in" /> |
+| <img src="media/image5.png" style="width:3.15in;height:1.58165in" /> | <img src="media/image6.png" style="width:2.8in;height:2.8in" /> |
 |----|----|
 
 *Original four-stroke image retained, paired with a DotTalk++ command-cycle diagram.*
@@ -72,7 +72,7 @@ This is also where students learn discipline: commands are not magic phrases. Th
 
 The strongest educational value in DotTalk++ is not only that it runs old-style commands. It is that implementation choices can be surfaced as teachable decisions.
 
-<img src="dottalkpp\docs\media/media/image7.png" style="width:6.5in;height:2.41204in" />
+<img src="media/image7.png" style="width:6.5in;height:2.41204in" />
 
 | **Decision** | **What it protects** | **What it teaches** |
 |----|----|----|
