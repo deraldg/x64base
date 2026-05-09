@@ -105,3 +105,19 @@ That is the difference between a black-box demo and an educational engine. The b
 The Visible V-8 made combustion understandable by slowing it down and putting it behind clear plastic. DotTalk++ can make database architecture and AI-assisted software decisions understandable by slowing the command cycle down and putting the reasoning behind clear glass.
 
 **The engine is visible. The architecture is teachable. Now let the student turn the crank.**
+
+## Figures
+
+![Figure 1](media/image1.png)
+
+![Figure 2](media/image2.png)
+
+![Figure 3](media/image3.png)
+
+![Figure 4](media/image4.png)
+
+![Figure 5](media/image5.png)
+
+![Figure 6](media/image6.png)
+
+![Figure 7](media/image7.png)
