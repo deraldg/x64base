@@ -9,11 +9,10 @@
 /CMakeCache.txt
 /CMakeFiles/
 /cmake-build-*/
-/build.ninja
-/cmake_install.cmake
-/CTestTestfile.cmake
-/DartConfiguration.tcl
-**/cmake_install.cmake
+build.ninja
+cmake_install.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
 /.vs/
 *.vcxproj.user
 *.VC.db
@@ -52,23 +51,27 @@
 /dottalkpp/data/lmdb/**/lock.mdb
 /dottalkpp/data/lmdb/**/backups/
 
-# Scratch and accidental local files
-/src/$envVCPKG_ROOT = CUsersderalvcpkg.txt
-/src/cli/Here’s the inventory I can defend f.txt
-/src/cli/New Text Document.txt
-/src/cli/SEARCH AND PREDICATE CANARY V1 START.txt
-/src/cli/estimate one way uhaul 1 room of fu.txt
-/src/cli/metadata.ds1.txt
-/bindings/# From the folder where you saved t.txt
-/bindings/& $py12 -c import pydottalk; from p.txt
-/bindings/autdbf_shakedown.txt
-/bindings/autodbf.txt
-/bindings/building the help files.txt
-/bindings/doc for something.txt
-/bindings/pydottalk.txt
-/bindings/pydottalk_smoke.py.first.txt
-/bindings/pydottalk_smoke.py.improved.txt
-/bindings/release checklist.txt
+# Local staging, backups, and ad hoc work areas
+/_drops/
+/_incoming/
+/_mdo_*_tmp/
+/.mdo_backups/
+/.backup-rename-cli/
+/AI_logs/
+/TMP/
+/backups/
+/memo_backup/
+/nppBackup/
+
+# Root-level generated inventories and accidental litter
+/flattened_sources.txt
+/dottalkpp_tree.txt
+/--runtime-root
+/-Filter
+/-Pattern
+/-RepoRoot
+/=
+/Unknown
 
 # Python helpers
 __pycache__/

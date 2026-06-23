@@ -1,16 +1,18 @@
 DTSHEMA 2
-AREA 0 | dbf=BUILDING.DBF | index=none | indextype=NONE | tag=none | alias=BUILDING
-AREA 1 | dbf=CLASSES.DBF | index=none | indextype=NONE | tag=none | alias=CLASSES
-AREA 2 | dbf=COURSES.DBF | index=none | indextype=NONE | tag=none | alias=COURSES
-AREA 3 | dbf=DEPT.DBF | index=none | indextype=NONE | tag=none | alias=DEPT
-AREA 4 | dbf=ENROLL.DBF | index=none | indextype=NONE | tag=none | alias=ENROLL
-AREA 5 | dbf=MAJORS.DBF | index=none | indextype=NONE | tag=none | alias=MAJORS
-AREA 6 | dbf=ROOMS.DBF | index=none | indextype=NONE | tag=none | alias=ROOMS
-AREA 7 | dbf=STUD_MAJ.DBF | index=none | indextype=NONE | tag=none | alias=STUD_MAJ
-AREA 8 | dbf=STUDENTS.dbf | index=none | indextype=NONE | tag=none | alias=STUDENTS
-AREA 9 | dbf=TASSIGN.DBF | index=none | indextype=NONE | tag=none | alias=TASSIGN
-AREA 10 | dbf=TEACHERS.dbf | index=none | indextype=NONE | tag=none | alias=TEACHERS
-AREA 11 | dbf=TERMS.DBF | index=none | indextype=NONE | tag=none | alias=TERMS
+
+AREA 0 | dbf=BUILDING.DBF | index=BUILDING.CNX | indextype=CNX | tag=BLDG | alias=BUILDING
+AREA 1 | dbf=CLASSES.DBF  | index=CLASSES.CNX  | indextype=CNX | tag=CLS_ID | alias=CLASSES
+AREA 2 | dbf=COURSES.DBF  | index=COURSES.CNX  | indextype=CNX | tag=CID | alias=COURSES
+AREA 3 | dbf=DEPT.DBF     | index=DEPT.CNX     | indextype=CNX | tag=DEPT_ID | alias=DEPT
+AREA 4 | dbf=ENROLL.DBF   | index=ENROLL.CNX   | indextype=CNX | tag=SID | alias=ENROLL
+AREA 5 | dbf=MAJORS.DBF   | index=MAJORS.CNX   | indextype=CNX | tag=MAJOR | alias=MAJORS
+AREA 6 | dbf=ROOMS.DBF    | index=ROOMS.CNX    | indextype=CNX | tag=ROOM | alias=ROOMS
+AREA 7 | dbf=STUD_MAJ.DBF | index=STUD_MAJ.CNX | indextype=CNX | tag=SID | alias=STUD_MAJ
+AREA 8 | dbf=STUDENTS.dbf | index=STUDENTS.CNX | indextype=CNX | tag=SID | alias=STUDENTS
+AREA 9 | dbf=TASSIGN.DBF  | index=TASSIGN.CNX  | indextype=CNX | tag=CLS_ID | alias=TASSIGN
+AREA 10 | dbf=TEACHERS.dbf | index=TEACHERS.CNX | indextype=CNX | tag=TID | alias=TEACHERS
+AREA 11 | dbf=TERMS.DBF   | index=TERMS.CNX    | indextype=CNX | tag=TERM | alias=TERMS
+
 RELATION STUDENTS ENROLL ON SID
 RELATION STUDENTS STUD_MAJ ON SID
 RELATION STUDENTS MAJORS ON MAJOR
