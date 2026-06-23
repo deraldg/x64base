@@ -9,3 +9,4 @@ AREA 6 | dbf=HELP_LINE_LOCALE.dbf | index=none | indextype=NONE | tag=none | ali
 AREA 7 | dbf=HELP_ARTIFACT_LOCALE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_ARTIFACT_LOCALE
 AREA 8 | dbf=commands.dbf | index=none | indextype=NONE | tag=none | alias=COMMANDS
 AREA 9 | dbf=cmd_args.dbf | index=none | indextype=NONE | tag=none | alias=CMD_ARGS
+

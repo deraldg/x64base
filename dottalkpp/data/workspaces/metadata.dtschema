@@ -1,0 +1,11 @@
+DTSHEMA 2
+AREA 0 | dbf=SYSARGS.dbf | index=none | indextype=NONE | tag=none | alias=SYSARGS
+AREA 1 | dbf=SYSCMD.dbf | index=SYSCMD.cdx | indextype=CDX | tag=none | alias=SYSCMD
+AREA 2 | dbf=SYSENTVAR.dbf | index=none | indextype=NONE | tag=none | alias=SYSENTVAR
+AREA 3 | dbf=SYSFLDDIC.dbf | index=none | indextype=NONE | tag=none | alias=SYSFLDDIC
+AREA 4 | dbf=SYSFUNC.dbf | index=none | indextype=NONE | tag=none | alias=SYSFUNC
+AREA 5 | dbf=SYSHELP.dbf | index=none | indextype=NONE | tag=none | alias=SYSHELP
+AREA 6 | dbf=SYSMSG.dbf | index=none | indextype=NONE | tag=none | alias=SYSMSG
+AREA 7 | dbf=SYSSUBCMD.dbf | index=none | indextype=NONE | tag=none | alias=SYSSUBCMD
+RELATION SYSCMD SYSSUBCMD ON can_name TO parent
+RELATION SYSSUBCMD SYSENTVAR ON qual_name TO help_ownr
