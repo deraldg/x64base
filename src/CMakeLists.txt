@@ -66,6 +66,8 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr"
   "${CMAKE_CURRENT_SOURCE_DIR}/memo"
+  "${CMAKE_CURRENT_SOURCE_DIR}/meta"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tools"
 # "${CMAKE_CURRENT_SOURCE_DIR}/help"
   "${CMAKE_CURRENT_SOURCE_DIR}/bindings"
   "${CMAKE_CURRENT_SOURCE_DIR}/binding"
@@ -215,7 +217,7 @@ endif()
 # and hard-to-diagnose crashes. The proper runtime selection is handled above.
 
 # 3.1) Turbo Vision UI — build isolated lib and link only when enabled
-if (DOTTALK_WITH_TV)
+if (DOTTALK_WITH_TV AND (TARGET tvision OR TARGET tvision::tvision))
   add_subdirectory(tv)
   target_link_libraries(dottalkpp PRIVATE dottalk_tvui)
 endif()
@@ -235,7 +237,7 @@ file(WRITE "${_shim}" [=[
 target_sources(dottalkpp PRIVATE "${_shim}")
 
 # 3.3) Optional standalone fox_palette.exe (opt-in)
-if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE)
+if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE AND (TARGET tvision OR TARGET tvision::tvision))
   add_executable(fox_palette
     ${CMAKE_SOURCE_DIR}/palette/cmd_fox_palette.cpp
     ${CMAKE_SOURCE_DIR}/palette/fox_palette.cpp
@@ -299,3 +301,15 @@ endif()
 # 7) Build summary
 message(STATUS "dottalkpp: DOTTALK_WITH_DEV = ${DOTTALK_WITH_DEV}")
 message(STATUS "dottalkpp: DOTTALK_WITH_TV  = ${DOTTALK_WITH_TV}")
+
+# DD-089H guarded Data Dictionary helper source wiring.
+# These files support the refactored DDICT read-only catalog command surface.
+if(TARGET dottalkpp)
+  target_sources(dottalkpp PRIVATE
+    datadict/ddict_read_helpers.cpp
+    datadict/ddict_catalog_paths.cpp
+    datadict/ddict_dbf_reader.cpp
+    datadict/ddict_object_resolver.cpp
+  )
+endif()
+

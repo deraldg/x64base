@@ -1,3 +1,46 @@
+// @dottalk.usage v1
+// owner: DOT|WEB
+// command: WEB
+// category: network
+// status: supported
+// noargs: usage
+// effect: network-or-file
+// mutates: optional-filesystem
+// usage-access: WEB USAGE
+// summary:
+//   Open, fetch, or inspect web URLs using the default handler or WinHTTP.
+//
+// usage:
+//   WEB USAGE
+//   WEB OPEN <url>
+//   WEB LAUNCH <url>
+//   WEB GET <url>
+//   WEB HEAD <url>
+//   WEB FETCH <url> TO <file>
+//
+// examples:
+//   WEB OPEN https://example.com
+//   WEB HEAD https://example.com
+//   WEB GET https://example.com
+//   WEB FETCH https://example.com/data.csv TO tmp\data.csv
+//
+// notes:
+//   WEB USAGE prints usage and does not launch a browser, make a network request, or write files.
+//   WEB OPEN/LAUNCH use the OS default URL handler.
+//   WEB GET/HEAD use HTTP request support where implemented.
+//   WEB FETCH writes the response body to the requested file.
+//
+// risk:
+//   network_access: WEB GET/HEAD/FETCH
+//   launches_external_app: WEB OPEN/LAUNCH
+//   writes_filesystem: WEB FETCH
+//   mutates_table_data: no
+//
+// related:
+//   SFTP
+//   PSHELL
+//
+
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
@@ -27,12 +70,21 @@ namespace {
 static void web_usage()
 {
     std::cout
-        << "WEB command\n"
+        << "Usage:\n"
+        << "  WEB USAGE\n"
         << "  WEB OPEN <url>\n"
         << "  WEB LAUNCH <url>\n"
         << "  WEB GET <url>\n"
         << "  WEB HEAD <url>\n"
-        << "  WEB FETCH <url> TO <file>\n";
+        << "  WEB FETCH <url> TO <file>\n"
+        << "Examples:\n"
+        << "  WEB OPEN https://example.com\n"
+        << "  WEB HEAD https://example.com\n"
+        << "  WEB GET https://example.com\n"
+        << "  WEB FETCH https://example.com/data.csv TO tmp\\data.csv\n"
+        << "Notes:\n"
+        << "  - WEB USAGE does not launch a browser, make a network request, or write files.\n"
+        << "  - WEB FETCH writes/truncates the requested output file.\n";
 }
 
 static std::string uppercase_copy(std::string s)
@@ -429,6 +481,12 @@ void cmd_WEB(DbArea&, std::istringstream& S)
     }
 
     sub = uppercase_copy(sub);
+
+
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
+        web_usage();
+        return;
+    }
 
     if (sub == "OPEN" || sub == "LAUNCH") {
         std::string url;

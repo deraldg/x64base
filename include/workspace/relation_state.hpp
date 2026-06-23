@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/workspace/relation_state.hpp
+// subsystem: workspace
+// role: Declares workspace-layer interfaces for DotTalk++ session, area, or runtime workspace coordination
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <string>
 
@@ -32,3 +39,4 @@ struct RelationState
 };
 
 } // namespace dottalk::workspace
+

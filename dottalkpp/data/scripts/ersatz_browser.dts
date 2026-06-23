@@ -2,7 +2,6 @@ set echo on
 echo REL ENUM ersatz browser demo
 
 * DO X64
-* DO SANDBOX
 DO X32	
 SCHEMAS OPEN
 

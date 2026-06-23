@@ -88,6 +88,7 @@
 #include <cstdint>
 
 #include "xbase.hpp"
+#include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
 #include "xbase_field_getters.hpp"
 #include "xbase_locks.hpp"
@@ -667,58 +668,6 @@ static bool eval_legacy_replace_expr(xbase::DbArea& A,
 
 // Convert user text for an x64 memo field into the stored object-id string.
 // On success, stored_value_out becomes either "" (no memo) or decimal object-id text.
-static bool build_x64_memo_stored_value(xbase::DbArea& A,
-                                        int field1,
-                                        const std::string& user_value,
-                                        std::string& stored_value_out,
-                                        std::string& err_out)
-{
-    stored_value_out.clear();
-    err_out.clear();
-
-    if (!is_x64_memo_field(A, field1)) {
-        stored_value_out = user_value;
-        return true;
-    }
-
-    auto* store = memo_store_for_area(A);
-    if (!store) {
-        err_out = "memo backend not attached";
-        return false;
-    }
-
-    std::uint64_t old_object_id = 0;
-    try {
-        old_object_id = parse_u64_or_zero(A.get(field1));
-    } catch (...) {
-        old_object_id = 0;
-    }
-
-    // Empty memo clears the field.
-    if (user_value.empty()) {
-        stored_value_out.clear();
-        return true;
-    }
-
-    std::uint64_t new_object_id = 0;
-    if (!store->update_text_id(old_object_id,
-                               std::string_view(user_value),
-                               new_object_id,
-                               nullptr))
-    {
-        err_out = "memo store update failed";
-        return false;
-    }
-
-    if (new_object_id == 0) {
-        stored_value_out.clear();
-    } else {
-        stored_value_out = std::to_string(new_object_id);
-    }
-
-    return true;
-}
-
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
 static int resolve_current_index(xbase::DbArea& A) {
@@ -874,7 +823,7 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     }
     user_value = currency_norm;
 
-    if (!build_x64_memo_stored_value(A, field1, user_value, stored_value, memo_err)) {
+    if (!dottalk::cli::memo_field_store::build_x64_memo_stored_value(A, field1, user_value, stored_value, memo_err)) {
         std::cout << "REPLACE: " << memo_err << ".\n";
         return;
     }

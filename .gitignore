@@ -1,287 +1,81 @@
-# x64base / DotTalk++ recovered repo ignore rules
-# Goal: keep source plus a minimal embedded runtime environment,
-# while excluding build products, generated indexes, LMDB stores, logs, tmp,
-# vcpkg payloads, and accidental nested Git/build artifacts.
-
-# ----------------------------------------------------------------------
-# Never commit nested Git metadata or local repo internals
-# ----------------------------------------------------------------------
-.git/
-**/.git/
-
-# ----------------------------------------------------------------------
-# Build trees and CMake generator output
-# Root-anchored on purpose: do not ignore embedded runtime bin folders by name.
-# ----------------------------------------------------------------------
+﻿# Build trees
 /build/
 /build-*/
+/build_*/
 /out/
 /dist/
+/bin/
 /obj/
-/Debug/
-/Release/
-/x64/
-/.vs/
 /CMakeCache.txt
 /CMakeFiles/
+/cmake-build-*/
+/build.ninja
 /cmake_install.cmake
 /CTestTestfile.cmake
-/compile_commands.json
-/*.cmake.user
-
-# CMake generated files that accidentally appear inside source subdirs
+/DartConfiguration.tcl
 **/cmake_install.cmake
-**/CTestTestfile.cmake
-**/CMakeFiles/
-
-# Visual Studio / MSVC noise anywhere
-*.suo
-*.user
+/.vs/
 *.vcxproj.user
 *.VC.db
-*.VC.opendb
-*.obj
-*.ilk
-*.idb
-*.tlog
-*.lastbuildstate
-ipch/
 
-# vcpkg installed payloads are huge and reproducible
-/vcpkg_installed/
-**/vcpkg_installed/
-vcpkg-manifest-install.log
-
-# ----------------------------------------------------------------------
-# Python/helper build noise
-# ----------------------------------------------------------------------
-__pycache__/
-**/__pycache__/
-*.pyc
-*.pyd
-
-# ----------------------------------------------------------------------
-# Built binaries/libraries: users build these locally
-# Keep scripts/configs in runtime bin, but ignore exe/dll/lib/pdb payloads.
-# ----------------------------------------------------------------------
+# Compiled artifacts
 *.exe
 *.dll
 *.lib
 *.pdb
+*.obj
+*.ilk
 *.exp
 *.pch
 
-# ----------------------------------------------------------------------
-# Archives and backup bundles: keep the repo lean
-# ----------------------------------------------------------------------
-*.zip
-*.7z
-*.tar
-*.tar.gz
+# CMake generators
+*.sln
+*.vcxproj
+*.vcxproj.filters
 
-# ----------------------------------------------------------------------
-# Logs/temp/scratch
-# ----------------------------------------------------------------------
+# Logs, temps
 *.log
 *.tmp
-*.bak
-*.old
-*.sav
-*.orig
-*.rej
-.DS_Store
-Thumbs.db
-desktop.ini
-.env
-*.local
+*.cache
 
-# ----------------------------------------------------------------------
-# Top-level accidental runtime/build folders from local experiments
-# The canonical embedded runtime should live under /dottalkpp/.
-# ----------------------------------------------------------------------
-/bin/
-/user/
-/.relations/
+# Local environments
+.venv/
+.vscode/
+.pytest_cache/
 
-# ----------------------------------------------------------------------
-# Embedded runtime package
-# Intended GitHub shape: deraldg/x64base/dottalkpp/...
-#
-# Keep:
-#   configs, launch scripts, sample DBFs/memos, schemas, workspaces, help,
-#   and curated smoke-test scripts.
-#
-# Ignore:
-#   generated indexes, LMDB, logs, tmp, out, backups, built binaries,
-#   accidental source-tree duplicates, scratch exports, historical backups,
-#   and large archives.
-# ----------------------------------------------------------------------
-
-# Runtime should not contain a nested source/build repo
-/dottalkpp/.git/
-/dottalkpp/.gitignore
-/dottalkpp/.editorconfig
-/dottalkpp/.gitattributes
-/dottalkpp/CMakeLists.txt
-/dottalkpp/CMakePresets.json
-/dottalkpp/MANIFEST.txt
-/dottalkpp/vcpkg.json
-/dottalkpp/windows_book.txt
-/dottalkpp/wslrun.sh
-/dottalkpp/CMakeCache.txt
-/dottalkpp/CMakeFiles/
-/dottalkpp/cmake_install.cmake
-/dottalkpp/build/
-/dottalkpp/out/
-/dottalkpp/dist/
-/dottalkpp/vcpkg_installed/
-/dottalkpp/__pycache__/
-
-# Runtime bin: keep .ini/.bat/.ps1/.sh/.ico, ignore built payloads and local env files
-/dottalkpp/bin-wsl/
-/dottalkpp/bin/dottalkpp
-/dottalkpp/bin/*.exe
-/dottalkpp/bin/*.dll
-/dottalkpp/bin/*.pdb
-/dottalkpp/bin/*.lib
-/dottalkpp/bin/*.env
-/dottalkpp/bin/.relations/
-
-# Runtime generated data/state
+# Local runtime state
+/dottalkpp/user/
 /dottalkpp/data/.relations/
-/dottalkpp/data/indexes/
-/dottalkpp/data/INDEXES/
-/dottalkpp/data/lmdb/
-/dottalkpp/data/LMDB/
 /dottalkpp/data/logs/
 /dottalkpp/data/tmp/
-/dottalkpp/data/out/
-/dottalkpp/data/backup/
-/dottalkpp/data/*.sqlite
-/dottalkpp/data/*.db
+/dottalkpp/data/lmdb/**/data.mdb
+/dottalkpp/data/lmdb/**/lock.mdb
+/dottalkpp/data/lmdb/**/backups/
 
-# Runtime scratch/export files that are not bare necessities
-/dottalkpp/data/*.csv
-/dottalkpp/data/*.tsv
-/dottalkpp/data/*.txt
-/dottalkpp/data/*.jpg
-/dottalkpp/data/*.jpeg
-/dottalkpp/data/*.png
-/dottalkpp/data/*.dat
-/dottalkpp/data/*.ini
+# Scratch and accidental local files
+/src/$envVCPKG_ROOT = CUsersderalvcpkg.txt
+/src/cli/Here’s the inventory I can defend f.txt
+/src/cli/New Text Document.txt
+/src/cli/SEARCH AND PREDICATE CANARY V1 START.txt
+/src/cli/estimate one way uhaul 1 room of fu.txt
+/src/cli/metadata.ds1.txt
+/bindings/# From the folder where you saved t.txt
+/bindings/& $py12 -c import pydottalk; from p.txt
+/bindings/autdbf_shakedown.txt
+/bindings/autodbf.txt
+/bindings/building the help files.txt
+/bindings/doc for something.txt
+/bindings/pydottalk.txt
+/bindings/pydottalk_smoke.py.first.txt
+/bindings/pydottalk_smoke.py.improved.txt
+/bindings/release checklist.txt
 
-# Runtime archive bundles are recoverable/generated and too bulky for baseline
-/dottalkpp/data/*.zip
-/dottalkpp/data/**/*.zip
-/dottalkpp/help/*.zip
-/dottalkpp/help/**/*.zip
+# Python helpers
+__pycache__/
+*.pyc
 
-# Runtime scratch/test/project/system folders; add back deliberately if later required
-/dottalkpp/data/projects/
-/dottalkpp/data/tests/
-/dottalkpp/data/system/
+# PowerShell transcript
+*.ps1xml
 
-# Runtime scripts: keep curated .dts/.ps1 scripts, ignore bulky historical/scratch subtrees
-/dottalkpp/data/scripts/backup/
-/dottalkpp/data/scripts/tmp/
-/dottalkpp/data/scripts/scripts/
-/dottalkpp/data/scripts/notes/
-/dottalkpp/data/scripts/draw.io/
-
-# ----------------------------------------------------------------------
-# Same rules for the previously observed mixed-case runtime folder in ZIP.
-# Prefer /dottalkpp/, but these rules protect transitional Windows trees.
-# ----------------------------------------------------------------------
-
-/DotTalkpp/.git/
-/DotTalkpp/.gitignore
-/DotTalkpp/.editorconfig
-/DotTalkpp/.gitattributes
-/DotTalkpp/CMakeLists.txt
-/DotTalkpp/CMakePresets.json
-/DotTalkpp/MANIFEST.txt
-/DotTalkpp/vcpkg.json
-/DotTalkpp/windows_book.txt
-/DotTalkpp/wslrun.sh
-/DotTalkpp/CMakeCache.txt
-/DotTalkpp/CMakeFiles/
-/DotTalkpp/cmake_install.cmake
-/DotTalkpp/build/
-/DotTalkpp/out/
-/DotTalkpp/dist/
-/DotTalkpp/vcpkg_installed/
-/DotTalkpp/__pycache__/
-
-/DotTalkpp/bin-wsl/
-/DotTalkpp/bin/dottalkpp
-/DotTalkpp/bin/*.exe
-/DotTalkpp/bin/*.dll
-/DotTalkpp/bin/*.pdb
-/DotTalkpp/bin/*.lib
-/DotTalkpp/bin/*.env
-/DotTalkpp/bin/.relations/
-
-/DotTalkpp/data/.relations/
-/DotTalkpp/data/indexes/
-/DotTalkpp/data/INDEXES/
-/DotTalkpp/data/lmdb/
-/DotTalkpp/data/LMDB/
-/DotTalkpp/data/logs/
-/DotTalkpp/data/tmp/
-/DotTalkpp/data/out/
-/DotTalkpp/data/backup/
-/DotTalkpp/data/*.sqlite
-/DotTalkpp/data/*.db
-
-/DotTalkpp/data/*.csv
-/DotTalkpp/data/*.tsv
-/DotTalkpp/data/*.txt
-/DotTalkpp/data/*.jpg
-/DotTalkpp/data/*.jpeg
-/DotTalkpp/data/*.png
-/DotTalkpp/data/*.dat
-/DotTalkpp/data/*.ini
-
-/DotTalkpp/data/*.zip
-/DotTalkpp/data/**/*.zip
-/DotTalkpp/help/*.zip
-/DotTalkpp/help/**/*.zip
-
-/DotTalkpp/data/projects/
-/DotTalkpp/data/tests/
-/DotTalkpp/data/system/
-
-/DotTalkpp/data/scripts/backup/
-/DotTalkpp/data/scripts/tmp/
-/DotTalkpp/data/scripts/scripts/
-/DotTalkpp/data/scripts/notes/
-/DotTalkpp/data/scripts/draw.io/
-# ----------------------------------------------------------------------
-# Runtime script estate leftovers
-# We already track curated smoke-test folders/files:
-#   canaries/, cases/, main/, manual/, sub/, suites/
-#   x32.dts, x64.dts, stable_demo.dts, README.txt, etc.
-#
-# Ignore remaining loose top-level script/history files by default.
-# Add back intentionally with git add -f if one becomes canonical.
-# ----------------------------------------------------------------------
-
-/dottalkpp/data/scripts/*.dts
-/dottalkpp/data/scripts/*.DTS
-/dottalkpp/data/scripts/*.txt
-/dottalkpp/data/scripts/*.ps1
-/dottalkpp/data/scripts/*.drawio
-/dottalkpp/data/scripts/legacy/
-
-/DotTalkpp/data/scripts/*.dts
-/DotTalkpp/data/scripts/*.DTS
-/DotTalkpp/data/scripts/*.txt
-/DotTalkpp/data/scripts/*.ps1
-/DotTalkpp/data/scripts/*.drawio
-/DotTalkpp/data/scripts/legacy/
-
-# ----------------------------------------------------------------------
-# Intentional non-ignores / reminders
-# Do NOT globally ignore DBF/DBT/FPT/DTX/DTS/DTSCHEMA/ERZ/CNX.
-# Those are part of the embedded smoke-test/runtime package.
-# ----------------------------------------------------------------------
+# Test results
+/results/

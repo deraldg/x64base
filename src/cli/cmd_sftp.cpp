@@ -25,6 +25,46 @@
 //   - This module stages a temporary sftp batch file and invokes:
 //       sftp -b <batch-file> <user@host>
 
+// @dottalk.usage v1
+// owner: DOT|SFTP
+// command: SFTP
+// category: network
+// status: supported
+// noargs: usage
+// effect: network-or-file
+// mutates: optional-filesystem remote-filesystem
+// usage-access: SFTP USAGE
+// summary:
+//   Wrap the system OpenSSH sftp client for LS, GET, and PUT file transfer.
+//
+// usage:
+//   SFTP USAGE
+//   SFTP LS <user@host:/remote/path>
+//   SFTP GET <user@host:/remote/file> TO <local-file>
+//   SFTP PUT <local-file> TO <user@host:/remote/file>
+//
+// examples:
+//   SFTP LS derald@example.com:/home/derald/data
+//   SFTP GET derald@example.com:/home/derald/data/students.dbf TO students.dbf
+//   SFTP PUT students.dbf TO derald@example.com:/home/derald/data/students.dbf
+//
+// notes:
+//   SFTP USAGE prints usage and does not start the sftp client.
+//   This command stages a temporary sftp batch file and invokes the system sftp client.
+//   Password embedding in URLs is deliberately not supported.
+//
+// risk:
+//   network_access: LS/GET/PUT
+//   launches_external_process: system sftp client
+//   writes_local_filesystem: GET temporary batch file and local output
+//   mutates_remote_filesystem: PUT
+//   mutates_table_data: no
+//
+// related:
+//   WEB
+//   PSHELL
+//
+
 #include <chrono>
 #include <cctype>
 #include <cstdlib>
@@ -69,7 +109,8 @@ static std::string uppercase_copy(std::string s)
 static void sftp_usage()
 {
     std::cout
-        << "SFTP command\n"
+        << "Usage:\n"
+        << "  SFTP USAGE\n"
         << "  SFTP LS <user@host:/remote/path>\n"
         << "  SFTP GET <user@host:/remote/file> TO <local-file>\n"
         << "  SFTP PUT <local-file> TO <user@host:/remote/file>\n"
@@ -80,8 +121,10 @@ static void sftp_usage()
         << "  SFTP PUT students.dbf TO derald@example.com:/home/derald/data/students.dbf\n"
         << "\n"
         << "Notes:\n"
-        << "  Uses the system OpenSSH sftp client.\n"
-        << "  Use key-based authentication or ssh-agent where possible.\n";
+        << "  - SFTP USAGE does not start the sftp client.\n"
+        << "  - Uses the system OpenSSH sftp client.\n"
+        << "  - Use key-based authentication or ssh-agent where possible.\n"
+        << "  - Password embedding in URLs is deliberately not supported.\n";
 }
 
 static bool contains_forbidden_chars(const std::string& s)
@@ -461,7 +504,7 @@ void cmd_SFTP(DbArea&, std::istringstream& S)
         return;
     }
 
-    if (sub == "HELP" || sub == "?") {
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
         sftp_usage();
         return;
     }

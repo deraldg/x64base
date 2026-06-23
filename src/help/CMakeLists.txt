@@ -6,6 +6,8 @@
 add_library(dottalk_helpdata STATIC
     helpdata_model.cpp
     helpdata_messages.cpp
+    message_catalog.cpp
+    locale_spine_catalog.cpp
     helpdata_artifacts.cpp
     helpdata_source_miner.cpp
     helpdata_export_dbf.cpp

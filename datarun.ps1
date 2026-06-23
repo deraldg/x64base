@@ -1,14 +1,40 @@
+$ErrorActionPreference = "Stop"
+
 $env:DOTTALK_APPEND_TRACE = "0"
 $env:DOTTALK_INDEX_TRACE  = "0"
 
-Copy-Item "\dottalkpp\build\src\Release\dottalkpp.exe" `
-          "\dottalkpp\dottalkpp\bin\dottalkpp.exe" `
-          -Force
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Set-Location "\dottalkpp\dottalkpp\data"
-& "\dottalkpp\dottalkpp\bin\dottalkpp.exe"
+if ((Split-Path $scriptDir -Leaf).ToLowerInvariant() -eq "bin") {
+    $appRoot = Split-Path -Parent $scriptDir
+    $stageRoot = Split-Path -Parent $appRoot
+} else {
+    $stageRoot = $scriptDir
+    $appRoot = Join-Path $stageRoot "dottalkpp"
+}
 
-Set-Location "\dottalkpp"
+$builtExe = Join-Path $stageRoot "build\src\Release\dottalkpp.exe"
+$runtimeExe = Join-Path $appRoot "bin\dottalkpp.exe"
+$runtimeData = Join-Path $appRoot "data"
 
-$py12 = "\dottalkpp\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
-& $py12 "\dottalkpp\bindings\pydottalk_smoke.py"
+if (-not (Test-Path -LiteralPath $builtExe)) {
+    throw "Built executable not found: $builtExe"
+}
+
+if (-not (Test-Path -LiteralPath $runtimeExe)) {
+    throw "Runtime executable path not found: $runtimeExe"
+}
+
+if (-not (Test-Path -LiteralPath $runtimeData)) {
+    throw "Runtime data path not found: $runtimeData"
+}
+
+Copy-Item -LiteralPath $builtExe -Destination $runtimeExe -Force
+
+Push-Location $runtimeData
+try {
+    & $runtimeExe
+}
+finally {
+    Pop-Location
+}

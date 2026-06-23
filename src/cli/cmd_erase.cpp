@@ -16,6 +16,44 @@
 //       .fpt .dbt .inx .cnx .cdx .idx .dtx .dti.json .schema.json
 //   - Safety gate: without CONFIRM, it prints what it *would* delete and does nothing.
 
+// @dottalk.usage v1
+// owner: DOT|ERASE
+// command: ERASE
+// category: destructive-file
+// status: supported
+// noargs: usage
+// effect: delete-table-files
+// mutates: filesystem
+// usage-access: ERASE USAGE
+// summary:
+//   Physically delete a DBF table file and known same-stem sidecar files.
+//
+// usage:
+//   ERASE USAGE
+//   ERASE <table> [CONFIRM]
+//   ERASE TABLE <table> [CONFIRM]
+//
+// examples:
+//   ERASE TABLE clients
+//   ERASE TABLE clients CONFIRM
+//   ERASE students.dbf CONFIRM
+//
+// notes:
+//   ERASE USAGE prints usage and does not inspect or delete files.
+//   Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
+//   CONFIRM physically deletes the DBF and known same-stem sidecars.
+//
+// risk:
+//   deletes_filesystem: ERASE ... CONFIRM
+//   dry_run_without_confirm: yes
+//   mutates_table_data: filesystem-level delete
+//
+// related:
+//   ZAP
+//   PACK
+//   COPY
+//
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -137,16 +175,31 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
 static void print_usage() {
     std::cout
         << "Usage:\n"
+        << "  ERASE USAGE\n"
         << "  ERASE <table> [CONFIRM]\n"
         << "  ERASE TABLE <table> [CONFIRM]\n"
+        << "Examples:\n"
+        << "  ERASE TABLE clients\n"
+        << "  ERASE TABLE clients CONFIRM\n"
+        << "  ERASE students.dbf CONFIRM\n"
         << "Notes:\n"
+        << "  - ERASE USAGE does not inspect or delete files.\n"
         << "  - Physically deletes <table>.dbf and known same-stem sidecars.\n"
-        << "  - Without CONFIRM, performs a dry-run (prints what would be deleted).\n";
+        << "  - Without CONFIRM, performs a dry-run and prints what would be deleted.\n"
+        << "  - CONFIRM performs deletion.\n";
 }
 
 void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
     std::string tok;
     if (!(iss >> tok)) { print_usage(); return; }
+    // ERASE_USAGE_CONTRACT_BRANCH
+    {
+        const std::string u = textio::up(tok);
+        if (u == "USAGE" || u == "HELP" || u == "?") {
+            print_usage();
+            return;
+        }
+    }
 
     std::string table_arg;
     bool confirm = false;

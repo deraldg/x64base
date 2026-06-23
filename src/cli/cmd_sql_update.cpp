@@ -1,3 +1,38 @@
+// @dottalk.usage v1
+// owner: DOT|UPDATE
+// command: UPDATE
+// category: sql
+// status: supported
+// noargs: usage
+// effect: update-records
+// mutates: table-data
+// usage-access: UPDATE USAGE
+// summary:
+//   Update records in the current DBF work area using SQL-like SET/WHERE syntax.
+//
+// usage:
+//   UPDATE USAGE
+//   UPDATE SET <field>=<value>[, ...] [WHERE <expr>]
+//
+// examples:
+//   UPDATE SET GPA=3.5 WHERE SID = 1001
+//   UPDATE SET MAJOR="CSCI" WHERE MAJOR = "CS"
+//
+// notes:
+//   UPDATE USAGE prints usage before open-table checks.
+//   UPDATE without WHERE may update all visible records depending on implementation.
+//   Use WHERE intentionally.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   scans_records: yes
+//   mutates_table_data: yes
+//
+// related:
+//   SQL
+//   INSERT
+//   SQLERASE
+//
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "textio.hpp"
@@ -8,6 +43,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace sqlmini {
 enum class TokK { Ident, String, Number, Eq, Ne, Gt, Lt, Ge, Le, And, Or, Not, LParen, RParen, End };
@@ -170,7 +206,49 @@ static bool parse_set_list(const std::string& src, std::vector<Assign>& out){
     return true;
 }
 
+static void print_update_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  UPDATE USAGE\n"
+        << "  UPDATE SET <field>=<value>[, ...] [WHERE <expr>]\n"
+        << "Examples:\n"
+        << "  UPDATE SET GPA=3.5 WHERE SID = 1001\n"
+        << "  UPDATE SET MAJOR=\"CSCI\" WHERE MAJOR = \"CS\"\n"
+        << "Notes:\n"
+        << "  - UPDATE USAGE does not require an open table.\n"
+        << "  - UPDATE mutates table data; use WHERE intentionally.\n";
+}
+
+static bool update_usage_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SQL_UPDATE(xbase::DbArea& A, std::istringstream& iss){
+    // UPDATE_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (update_usage_contract(usage_tok)) {
+                print_update_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if(!A.isOpen()){ std::cout<<"No file open\n"; return; }
 
     std::string rest; std::getline(iss, rest); rest = dt_trim(rest);

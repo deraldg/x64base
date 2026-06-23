@@ -6,6 +6,46 @@
 //   - duplicate values keep the first occurrence
 //   - later duplicates are assigned new numbers
 
+// @dottalk.usage v1
+// owner: DOT|VALIDATE_UNIQUE
+// command: VALIDATE UNIQUE
+// category: validation
+// status: supported
+// noargs: usage
+// effect: validate
+// mutates: optional-table-data
+// usage-access: VALIDATE UNIQUE USAGE
+// summary:
+//   Scan the current work area for duplicate/blank values in a field, optionally
+//   repairing numeric/autokey-style duplicate values.
+//
+// usage:
+//   VALIDATE UNIQUE USAGE
+//   VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]
+//
+// examples:
+//   VALIDATE UNIQUE FIELD SID
+//   VALIDATE UNIQUE FIELD EMAIL IGNORE DELETED
+//   VALIDATE UNIQUE FIELD SID REPAIR
+//   VALIDATE UNIQUE FIELD SID REPORT TO tmp\sid_dupes.txt
+//
+// notes:
+//   VALIDATE UNIQUE USAGE prints usage before open-table checks.
+//   REPAIR currently supports numeric/autokey-style fields only.
+//   REPORT TO writes a duplicate report file.
+//   Without REPAIR this command scans and reports only.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   scans_records: yes
+//   writes_files: REPORT TO <path>
+//   mutates_table_data: REPAIR
+//
+// related:
+//   VALIDATE
+//   RULE
+//
+
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -20,6 +60,23 @@
 #include "textio.hpp"
 
 using namespace textio;
+
+
+static void print_validate_unique_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  VALIDATE UNIQUE USAGE\n"
+        << "  VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n"
+        << "Examples:\n"
+        << "  VALIDATE UNIQUE FIELD SID\n"
+        << "  VALIDATE UNIQUE FIELD EMAIL IGNORE DELETED\n"
+        << "  VALIDATE UNIQUE FIELD SID REPAIR\n"
+        << "  VALIDATE UNIQUE FIELD SID REPORT TO tmp\\sid_dupes.txt\n"
+        << "Notes:\n"
+        << "  - REPAIR may mutate numeric/autokey-style field values.\n"
+        << "  - REPORT TO writes a duplicate report file.\n";
+}
 
 static inline std::string upcopy(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
@@ -112,27 +169,46 @@ static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignor
 }
 
 void cmd_VALIDATE_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
-    if (!A.isOpen()) {
-        std::cout << "VALIDATE: No file open.\n";
+    std::string tok1, tok2;
+    if (!(in >> tok1)) {
+        print_validate_unique_usage();
         return;
     }
 
-    std::string tok1, tok2;
-    if (!(in >> tok1 >> tok2)) {
-        std::cout << "Usage: VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n";
+    const std::string T1 = upcopy(tok1);
+    if (T1 == "USAGE" || T1 == "HELP" || T1 == "?") {
+        print_validate_unique_usage();
         return;
     }
-    if (upcopy(tok1) != "UNIQUE" || upcopy(tok2) != "FIELD") {
-        std::cout << "Usage: VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n";
+
+    if (!(in >> tok2)) {
+        print_validate_unique_usage();
+        return;
+    }
+
+    const std::string T2 = upcopy(tok2);
+    if (T1 == "UNIQUE" && (T2 == "USAGE" || T2 == "HELP" || T2 == "?")) {
+        print_validate_unique_usage();
+        return;
+    }
+
+    if (T1 != "UNIQUE" || T2 != "FIELD") {
+        print_validate_unique_usage();
         return;
     }
 
     std::string fieldName;
     if (!(in >> fieldName)) {
         std::cout << "VALIDATE: Expected field name.\n";
+        print_validate_unique_usage();
         return;
     }
-    const std::string fieldU = upcopy(fieldName);
+
+    if (!A.isOpen()) {
+        std::cout << "VALIDATE: No file open.\n";
+        return;
+    }
+const std::string fieldU = upcopy(fieldName);
 
     bool ignoreDeleted = false;
     bool doRepair = false;

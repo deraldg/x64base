@@ -1,14 +1,93 @@
 // src/cli/cmd_refresh.cpp
 
+// @dottalk.usage v1
+// owner: DOT|REFRESH
+// command: REFRESH
+// category: table
+// status: supported
+// noargs: execute
+// effect: refresh
+// mutates: work-area cursor order-state
+// usage-access: REFRESH USAGE
+// summary:
+//   Reopen the current table from disk and restore cursor/order state best-effort.
+//
+// usage:
+//   REFRESH
+//   REFRESH USAGE
+//
+// notes:
+//   REFRESH with no arguments reopens the current DBF file.
+//   Cursor position is restored best-effort after reopen.
+//   Active order/container/tag/direction state is restored best-effort.
+//   REFRESH USAGE prints usage before open-table checks or reopening.
+//
+// risk:
+//   reopens_table: yes
+//   mutates_work_area: yes
+//   mutates_cursor: yes
+//   mutates_order_state: restore path
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   USE
+//   REINDEX
+//   WORKSPACE
+//
+
 #include "xbase.hpp"
 #include "cli/order_state.hpp"   // src/cli/order_state.hpp (same folder as this .cpp)
 
+#include <cctype>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <system_error>
 
-void cmd_REFRESH(xbase::DbArea& a, std::istringstream&) {
+namespace {
+static std::string refresh_upper(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static void print_refresh_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  REFRESH\n"
+        << "  REFRESH USAGE\n";
+}
+
+static bool refresh_usage_request(std::istringstream& in)
+{
+    std::string tok;
+    if (!(in >> tok)) {
+        in.clear();
+        in.seekg(0);
+        return false;
+    }
+
+    const std::string u = refresh_upper(tok);
+    if (u == "USAGE" || u == "HELP" || u == "?") {
+        return true;
+    }
+
+    in.clear();
+    in.seekg(0);
+    return false;
+}
+} // namespace
+
+void cmd_REFRESH(xbase::DbArea& a, std::istringstream& in) {
+    if (refresh_usage_request(in)) {
+        print_refresh_usage();
+        return;
+    }
     if (!a.isOpen()) {
         std::cout << "No table open.\n";
         return;

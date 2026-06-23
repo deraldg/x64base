@@ -70,7 +70,7 @@
 #include "cli/order_hooks.hpp"      // to run reconcile_after_mutation()
 #include "cli/cmd_setpath.hpp"
 #include "cli/path_resolver.hpp"
-#include "memo/memo_manager.hpp"
+#include "memo/memo_auto.hpp"
 
 #include "cnx/cnx.hpp"              // reporting helper (CNX is deprecated but still supported)
 
@@ -451,7 +451,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
             : a.filename();
 
         std::string memo_err;
-        if (!a.memoManager().open_auto(openedPath, hasMemoFields, memo_err)) {
+        if (!cli_memo::memo_auto_on_use(a, openedPath, hasMemoFields, memo_err)) {
             std::cout << "USE: memo attach failed: " << memo_err << "\n";
         }
     }

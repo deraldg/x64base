@@ -1,3 +1,35 @@
+// @dottalk.usage v1
+// owner: DOT|RBROWSE
+// command: RBROWSE
+// category: browser-alias
+// status: compatibility-alias
+// noargs: delegate
+// effect: launch-ui
+// mutates: delegated-to-ERSATZ
+// usage-access: delegated-to ERSATZ/RBROWSE help surface
+// summary:
+//   Compatibility spelling for the ERSATZ relational browser.
+//
+// usage:
+//   RBROWSE [ersatz-browser-options]
+//   RBROWSE USAGE is delegated to the ERSATZ browser command surface when supported.
+//
+// notes:
+//   Keep behavior centralized in cmd_ERSATZ so relation browser behavior cannot
+//   drift between ERSATZ and RBROWSE.
+//   This file should remain a thin wrapper.
+//
+// risk:
+//   launches_ui: delegated
+//   mutates_cursor_or_ui_state: delegated
+//   mutates_table_data: delegated
+//
+// related:
+//   ERSATZ
+//   RELATIONS
+//   WORKSPACE
+//
+
 // src/cli/cmd_rbrowse.cpp
 //
 // RBROWSE is the compatibility spelling for the ERSATZ relational browser.

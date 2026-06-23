@@ -13,6 +13,49 @@
 //   - This file is diagnostic/read-only. It does not create, edit, or bind rules.
 //   - Validation still flows through field_constraints.cpp and rule_catalog.cpp.
 
+// @dottalk.usage v1
+// owner: DOT|RULE
+// command: RULE
+// category: validation
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: RULE USAGE
+// summary:
+//   Inspect rule catalog paths, bindings, and field constraints for the current
+//   work area.
+//
+// usage:
+//   RULE
+//   RULE USAGE
+//   RULE STATUS
+//   RULE SHOW <field|ALL>
+//   RULE LIST
+//   RULE PATHS
+//
+// examples:
+//   RULE
+//   RULE STATUS
+//   RULE SHOW GPA
+//   RULE SHOW ALL
+//   RULE LIST
+//   RULE PATHS
+//
+// notes:
+//   RULE with no arguments reports rule status.
+//   RULE USAGE prints usage and does not require an open table.
+//   RULE is diagnostic/read-only; it does not create, edit, or bind rules.
+//
+// risk:
+//   reads_rule_files: yes except usage
+//   mutates_table_data: no
+//
+// related:
+//   VALIDATE
+//   WHERE
+//
+
 #include "cli/field_constraints.hpp"
 #include "cli/rule_catalog.hpp"
 #include "xbase.hpp"
@@ -289,11 +332,22 @@ static void print_constraint_detail(const dottalk::constraints::FieldConstraint&
 
 static void print_usage()
 {
-    std::cout << "RULE usage:\n";
-    std::cout << "  RULE STATUS\n";
-    std::cout << "  RULE SHOW <field|ALL>\n";
-    std::cout << "  RULE LIST\n";
-    std::cout << "  RULE PATHS\n";
+    std::cout
+        << "Usage:\n"
+        << "  RULE\n"
+        << "  RULE USAGE\n"
+        << "  RULE STATUS\n"
+        << "  RULE SHOW <field|ALL>\n"
+        << "  RULE LIST\n"
+        << "  RULE PATHS\n"
+        << "Examples:\n"
+        << "  RULE STATUS\n"
+        << "  RULE SHOW GPA\n"
+        << "  RULE SHOW ALL\n"
+        << "  RULE LIST\n"
+        << "  RULE PATHS\n"
+        << "Notes:\n"
+        << "  - RULE is diagnostic/read-only; it does not create, edit, or bind rules.\n";
 }
 
 static void rule_paths(xbase::DbArea& A, std::istringstream&)
@@ -463,7 +517,7 @@ void cmd_RULE(xbase::DbArea& A, std::istringstream& S)
         return;
     }
 
-    if (sub == "HELP" || sub == "?") {
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
         print_usage();
         return;
     }

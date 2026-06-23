@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/memo/memo_auto.hpp
+// subsystem: memo
+// role: Declares memo or large-object interfaces for DotTalk++ storage workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 // Auto-open/close memo sidecars per work area.
 // Call memo_auto_on_use() from USE after the table is open,
 // and memo_auto_on_close() from CLOSE / before replacing a table in the same area.

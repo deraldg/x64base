@@ -1,6 +1,53 @@
 // 
 
 // src/cli/cmd_help.cpp
+// @dottalk.usage v1
+// owner: DOT|HELP
+// command: HELP
+// category: help
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: HELP USAGE
+// summary:
+//   Route user help requests across DotTalk command, function, FoxPro,
+//   PowerShell, SQL, beta, predicate, and educational help surfaces.
+//
+// usage:
+//   HELP
+//   HELP USAGE
+//   HELP GIANT
+//   HELP BETA
+//   HELP PS
+//   HELP SQL
+//   HELP PREDICATES
+//   HELP FUNCTIONS
+//   HELP FUNCTION <name>
+//   HELP /FOX <topic>
+//   HELP /DOT <topic>
+//   HELP /ED <topic>
+//   HELP <command>
+//
+// notes:
+//   HELP with no arguments prints the top-level help router.
+//   HELP <command> normalizes through the reflected command catalog first.
+//   HELP FUNCTION <name> checks reflected function metadata and catalog docs.
+//   HELP GIANT delegates to the full command catalog.
+//   HELP is read-only for table data and path state.
+//
+// risk:
+//   reads_help_metadata: yes
+//   mutates_table_data: no
+//   mutates_cursor: no
+//
+// related:
+//   CMDHELP
+//   CMDHELPCHK
+//   FOXHELP
+//   PREDHELP
+//
+
 #include "cmd_help.hpp"
 #include "help_router.hpp"
 #include "help_beta.hpp"
@@ -9,8 +56,10 @@
 #include "edref.hpp"
 #include "cli/command_catalog.hpp"
 #include "cli/output_router.hpp"
+#include "cli/settings.hpp"
 #include "cli/expr/function_catalog.hpp"
 #include "help/reference_collection.hpp"
+#include "help/message_catalog.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -197,6 +246,22 @@ inline void show_beta_router(const std::string& restUp)
     dottalk::help::show_beta(term);
 }
 
+inline void print_help_usage()
+{
+    out() << "DotTalk++ Help System\n\n"
+          << "  HELP GIANT            - full command catalog\n"
+          << "  HELP BETA             - beta checklist\n"
+          << "  HELP PS / PSHELL      - PowerShell helpers\n"
+          << "  HELP SQL              - SQL reference (SQLite + MSSQL)\n"
+          << "  HELP PREDICATES       - COUNT/LOCATE syntax\n"
+          << "  HELP FUNCTION <name>  - expression function help\n"
+          << "  HELP FUNCTIONS        - list documented expression functions\n"
+          << "  HELP /FOX <topic>     - FoxPro compatibility reference\n"
+          << "  HELP /DOT <topic>     - DotTalk-native command reference\n"
+          << "  HELP /ED <topic>      - educational/system concepts\n"
+          << "  HELP <command>        - default topic lookup\n";
+}
+
 // Normalize HELP topic via EntryVariantInfo.
 // Exact-match only for now.
 inline std::string normalize_help_topic(const std::string& raw)
@@ -214,6 +279,56 @@ inline std::string normalize_help_topic(const std::string& raw)
 
     return t;
 }
+
+
+// MSG-022S1 BEGIN HELP_HINT_COMMAND active provider helper
+inline void help_apply_placeholder(std::string& text,
+                                   const std::string& placeholder,
+                                   const std::string& value)
+{
+    const std::string token1 = "{" + placeholder + "}";
+    const std::string token2 = "{" + uptrim(placeholder) + "}";
+
+    std::size_t pos = 0;
+    while ((pos = text.find(token1, pos)) != std::string::npos) {
+        text.replace(pos, token1.size(), value);
+        pos += value.size();
+    }
+
+    pos = 0;
+    while ((pos = text.find(token2, pos)) != std::string::npos) {
+        text.replace(pos, token2.size(), value);
+        pos += value.size();
+    }
+}
+
+inline bool show_active_help_hint_command(const std::string& command_token)
+{
+    const auto status = dottalk::helpdata::active_message_catalog_status();
+    if (!status.active_catalog_loaded) {
+        return false;
+    }
+
+    const std::string locale = cli::Settings::instance().message_locale.empty()
+        ? std::string("en-US")
+        : cli::Settings::instance().message_locale;
+
+    std::string text = dottalk::helpdata::format_message_catalog(locale, "HELP_HINT_COMMAND");
+    if (text.empty()) {
+        return false;
+    }
+
+    help_apply_placeholder(text, "command", command_token);
+    out() << text << "\n";
+
+    if (dottalk::helpdata::message_routing_proof_enabled()) {
+        out() << "Message routing proof: active_dbf HELP_HINT_COMMAND\n";
+    }
+
+    return true;
+}
+// MSG-022S1 END HELP_HINT_COMMAND active provider helper
+
 
 inline bool show_reflected_command_topic(const std::string& term_up)
 {
@@ -478,19 +593,8 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
         return;
     }
 
-    if (restUp.empty()) {
-        out() << "DotTalk++ Help System\n\n"
-              << "  HELP GIANT            - full command catalog\n"
-              << "  HELP BETA             - beta checklist\n"
-              << "  HELP PS / PSHELL      - PowerShell helpers\n"
-              << "  HELP SQL              - SQL reference (SQLite + MSSQL)\n"
-              << "  HELP PREDICATES       - COUNT/LOCATE syntax\n"
-              << "  HELP FUNCTION <name>  - expression function help\n"
-              << "  HELP FUNCTIONS        - list documented expression functions\n"
-              << "  HELP /FOX <topic>     - FoxPro compatibility reference\n"
-              << "  HELP /DOT <topic>     - DotTalk-native command reference\n"
-              << "  HELP /ED <topic>      - educational/system concepts\n"
-              << "  HELP <command>        - default topic lookup\n";
+    if (restUp.empty() || restUp == "USAGE" || restUp == "/?" || restUp == "?") {
+        print_help_usage();
         return;
     }
 
@@ -550,7 +654,12 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
         if (term_effective == term_original_up) {
             if (show_dot_topic(opts.term)) return;
             if (show_ed_topic(opts.term)) return;
+            // MSG-022S1_3 BEGIN HELP_HINT_COMMAND active provider route before fox local fallback
+            if (show_active_help_hint_command(opts.term)) return;
+            // MSG-022S1_3 END HELP_HINT_COMMAND active provider route before fox local fallback
+
             if (show_fox_topic_local(opts.term)) return;
+
             show_fox(area, opts.term);
             return;
         }

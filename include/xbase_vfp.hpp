@@ -221,7 +221,7 @@ inline void readFields(DbArea& area,
             }
             fr.field_type         = area.fields().back().type;
             fr.field_data_address = 0;
-            fr.field_length       = area.fields().back().length;
+            fr.field_length       = static_cast<std::uint8_t>(area.fields().back().length);
             fr.decimal_places     = area.fields().back().decimals;
             area.addRawField(std::move(fr));
 

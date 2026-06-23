@@ -108,7 +108,7 @@
 #include <vector>
 
 #include "xbase.hpp"
-#include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_close
+#include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "xindex/index_manager.hpp"
 #include "cli/dirty_prompt.hpp"
 #include "cli/order_state.hpp"
@@ -305,6 +305,49 @@ static int get_area_index(xbase::DbArea& areaRef) {
     return -1;
 }
 
+static bool select_engine_area(int slot0) {
+    auto* eng = shell_engine();
+    if (!eng) return false;
+    if (slot0 < 0 || slot0 >= xbase::MAX_AREA) return false;
+    try {
+        eng->selectArea(slot0);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+static int first_open_area_index() {
+    auto* eng = shell_engine();
+    if (!eng) return -1;
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        try {
+            if (!eng->area(i).filename().empty()) return i;
+        } catch (...) {}
+    }
+    return -1;
+}
+
+static void normalize_selected_area_after_workspace_change(int preferred_area0 = -1) {
+    if (preferred_area0 >= 0 && preferred_area0 < xbase::MAX_AREA) {
+        try {
+            xbase::DbArea& preferred = get_area_0based(preferred_area0);
+            if (!preferred.filename().empty()) {
+                (void)select_engine_area(preferred_area0);
+                return;
+            }
+        } catch (...) {}
+    }
+
+    const int first_open = first_open_area_index();
+    if (first_open >= 0) {
+        (void)select_engine_area(first_open);
+        return;
+    }
+
+    (void)select_engine_area(0);
+}
+
 // Optional alias support
 template <typename T>
 using has_setLogicalName_t = decltype(std::declval<T&>().setLogicalName(std::declval<std::string>()));
@@ -383,6 +426,57 @@ static inline fs::path resolve_relative_to_root(const fs::path& p) {
 
 static inline bool area_open(xbase::DbArea& A) {
     return !A.filename().empty();
+}
+
+static fs::path resolve_workspace_file_path(const fs::path& file, bool for_save) {
+    fs::path p = file;
+    const fs::path rootWORKSPACE = WORKSPACE_root();
+
+    auto make_candidate = [&](const fs::path& candidate) -> fs::path {
+        if (candidate.is_relative()) return rootWORKSPACE / candidate;
+        return candidate;
+    };
+
+    auto existing_candidate = [&](const fs::path& candidate) -> fs::path {
+        std::error_code ec;
+        if (fs::exists(candidate, ec) && !ec) return candidate;
+        return {};
+    };
+
+    if (for_save) {
+        if (p.is_relative()) p = rootWORKSPACE / p;
+        if (!p.has_extension()) p.replace_extension(".dtschema");
+        return p;
+    }
+
+    if (p.has_extension()) {
+        if (p.is_relative()) {
+            fs::path candidate = rootWORKSPACE / p;
+            std::error_code ec;
+            if (fs::exists(candidate, ec) && !ec) return candidate;
+            return fs::current_path() / p;
+        }
+        return p;
+    }
+
+    const std::vector<std::string> exts = {".dtschema", ".dtschemas"};
+    for (const auto& ext : exts) {
+        fs::path probe = p;
+        probe.replace_extension(ext);
+
+        if (fs::path hit = existing_candidate(make_candidate(probe)); !hit.empty()) return hit;
+        if (fs::path hit = existing_candidate(fs::current_path() / probe); !hit.empty()) return hit;
+        if (fs::path hit = existing_candidate(probe); !hit.empty()) return hit;
+    }
+
+    p.replace_extension(".dtschema");
+    if (p.is_relative()) {
+        fs::path candidate = rootWORKSPACE / p;
+        std::error_code ec;
+        if (fs::exists(candidate, ec) && !ec) return candidate;
+        return fs::current_path() / p;
+    }
+    return p;
 }
 
 // --------- OPEN target resolution ------------------------------------------
@@ -574,6 +668,39 @@ struct OpenResult {
     string error;
 };
 
+// Workspace opens DBFs through several helper paths instead of cmd_USE.
+// Keep memo sidecar attach/close centralized here so x64 DTX memo fields do
+// not fall back to raw memo pointer display after WORKSPACE OPEN/LOAD.
+static bool workspace_area_has_memo_fields(xbase::DbArea& A) {
+    for (const auto& f : A.fields()) {
+        if (f.type == 'M' || f.type == 'm') return true;
+    }
+    return false;
+}
+
+static void workspace_memo_auto_close_before_dbf_close(xbase::DbArea& A) {
+    try { cli_memo::memo_auto_on_close(A); } catch (...) {}
+}
+
+static void workspace_memo_auto_attach_after_dbf_open(xbase::DbArea& A,
+                                                      const fs::path& dbf,
+                                                      const char* context) {
+    const bool hasMemoFields = workspace_area_has_memo_fields(A);
+    if (!hasMemoFields) return;
+
+    const std::string openedPath = A.filename().empty()
+        ? fs::absolute(dbf).string()
+        : A.filename();
+
+    std::string memo_err;
+    if (!cli_memo::memo_auto_on_use(A, openedPath, true, memo_err)) {
+        std::cout << (context ? context : "WORKSPACE")
+                  << ": memo attach failed for "
+                  << s8(dbf.filename())
+                  << ": " << memo_err << "\n";
+    }
+}
+
 #if HAVE_TABLE
 static void table_enable_for_area_if_open(int area0) {
     if (area0 < 0 || area0 >= xbase::MAX_AREA) return;
@@ -640,11 +767,13 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
         try {
             xbase::DbArea& A = get_area_0based(area0);
             try { orderstate::clearOrder(A); } catch (...) {}
+            workspace_memo_auto_close_before_dbf_close(A);
             try { A.close(); } catch (...) {}
 
             const string dbfStr = s8(r.dbf);
             A.open(dbfStr);
             A.setFilename(dbfStr);
+            workspace_memo_auto_attach_after_dbf_open(A, r.dbf, "WORKSPACE OPEN");
 
             r.opened = true;
 
@@ -694,11 +823,13 @@ static OpenResult schema_open_single_into_current(xbase::DbArea& current, const 
 
     try {
         try { orderstate::clearOrder(current); } catch (...) {}
+        workspace_memo_auto_close_before_dbf_close(current);
         try { current.close(); } catch (...) {}
 
         const string dbfStr = s8(dbfPath);
         current.open(dbfStr);
         current.setFilename(dbfStr);
+        workspace_memo_auto_attach_after_dbf_open(current, dbfPath, "WORKSPACE OPEN");
 
         r.opened = true;
 
@@ -723,11 +854,13 @@ static bool open_into_area(int area0, const fs::path& dbf, const std::optional<f
     try {
         xbase::DbArea& A = get_area_0based(area0);
         try { orderstate::clearOrder(A); } catch (...) {}
+        workspace_memo_auto_close_before_dbf_close(A);
         try { A.close(); } catch (...) {}
 
         const string dbfStr = s8(dbf);
         A.open(dbfStr);
         A.setFilename(dbfStr);
+        workspace_memo_auto_attach_after_dbf_open(A, dbf, "WORKSPACE LOAD");
 
         if (index && !index->empty()) {
             fs::path ip = *index;
@@ -877,6 +1010,8 @@ static void schema_close_all() {
 #if HAVE_TABLE
     try { dottalk::table::reset_all(); } catch (...) {}
 #endif
+
+    normalize_selected_area_after_workspace_change(0);
 
     std::cout << "WORKSPACE: " << close_count << " area(s) closed.\n";
 }
@@ -1035,11 +1170,7 @@ static bool apply_relation_line(const std::string& body) {
 // --------- SAVE / LOAD ------------------------------------------------------
 
 static void schema_save_to_file(const fs::path& file) {
-    fs::path outPath = file;
-    const fs::path rootWORKSPACE = WORKSPACE_root();
-
-    if (outPath.is_relative()) outPath = rootWORKSPACE / outPath;
-    if (!outPath.has_extension()) outPath.replace_extension(".dtschema");
+    fs::path outPath = resolve_workspace_file_path(file, true);
 
     {
         std::error_code ec;
@@ -1129,17 +1260,7 @@ static void schema_save_to_file(const fs::path& file) {
 }
 
 static void schema_load_from_file(const fs::path& file) {
-    fs::path inPath = file;
-    const fs::path rootWORKSPACE = WORKSPACE_root();
-
-    if (!inPath.has_extension()) inPath.replace_extension(".dtschema");
-
-    if (inPath.is_relative()) {
-        fs::path candidate = rootWORKSPACE / inPath;
-        std::error_code ec;
-        if (fs::exists(candidate, ec) && !ec) inPath = candidate;
-        else inPath = fs::current_path() / inPath;
-    }
+    fs::path inPath = resolve_workspace_file_path(file, false);
 
     std::ifstream in(inPath, std::ios::binary);
     if (!in.good()) {
@@ -1282,6 +1403,8 @@ static void schema_load_from_file(const fs::path& file) {
             std::cout << "  ~ Unknown line (ignored): " << t << "\n";
         }
     }
+
+    normalize_selected_area_after_workspace_change();
 
     std::cout << "WORKSPACE LOAD: restored " << area_count << " area(s)";
 #if HAVE_RELATIONS

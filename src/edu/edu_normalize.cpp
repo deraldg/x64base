@@ -15,12 +15,44 @@
 // This does not touch the current work area; DbArea is accepted only
 // to match the CLI handler signature.
 
+// @dottalk.usage v1
+// owner: EDU|NORMALIZE
+// command: NORMALIZE
+// category: education-normalization
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: none
+// usage-access: NORMALIZE USAGE
+// summary:
+//   Demonstrate field-value normalization rules for C/N/D/L field types.
+//
+// usage:
+//   NORMALIZE USAGE
+//   NORMALIZE <C|N|D|L> <len> [dec_if_N] <value...>
+//
+// examples:
+//   NORMALIZE C 20 "  Hello  "
+//   NORMALIZE N 10 0 1,234
+//   NORMALIZE N 10 2 1234.50
+//   NORMALIZE D 8 11/05/2025
+//   NORMALIZE L 1 yes
+//
+// notes:
+//   NORMALIZE USAGE prints usage before normalization work.
+//   This command does not touch the current work area.
+//
+// risk:
+//   mutates_table_data: no
+//
+
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <cctype>
 
 #include "xbase.hpp"
+#include <algorithm>
 
 // existing normalize helper
 #include "value_normalize.hpp"
@@ -35,9 +67,18 @@ namespace dp = dt::predicate;
 
 static void normalize_usage() {
     std::cout
-        << "Usage: NORMALIZE <C|N|D|L> <len> [dec_if_N] <value...>\n"
-        << "  Example: NORMALIZE D 8 11/05/2025\n"
-        << "           NORMALIZE N 10 2 1,234.50\n";
+        << "Usage:\n"
+        << "  NORMALIZE USAGE\n"
+        << "  NORMALIZE <C|N|D|L> <len> [dec_if_N] <value...>\n"
+        << "Examples:\n"
+        << "  NORMALIZE C 20 \"  Hello  \"\n"
+        << "  NORMALIZE N 10 0 1,234\n"
+        << "  NORMALIZE N 10 2 1234.50\n"
+        << "  NORMALIZE D 8 11/05/2025\n"
+        << "  NORMALIZE L 1 yes\n"
+        << "Notes:\n"
+        << "  - NORMALIZE USAGE does not perform normalization.\n"
+        << "  - This command does not touch the current work area.\n";
 }
 
 static void explain_character(const std::string& raw,
@@ -108,6 +149,31 @@ static void print_value_view(const dp::Value& v) {
 }
 
 void edu_NORMALIZE(xbase::DbArea& /*area*/, std::istringstream& iss) {
+    // NORMALIZE_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            std::transform(usage_tok.begin(), usage_tok.end(), usage_tok.begin(),
+                [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+
+            if (usage_tok == "USAGE" || usage_tok == "HELP" || usage_tok == "?") {
+                normalize_usage();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     char ftype = 0;
     if (!(iss >> ftype)) {
         normalize_usage();

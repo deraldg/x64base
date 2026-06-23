@@ -1,3 +1,29 @@
+// @dottalk.usage v1
+// owner: EDU|IDX_BACKEND
+// command: IDX
+// category: education-index-helper
+// status: backend-helper
+// noargs: n/a
+// effect: in-memory-index-support
+// mutates: in-memory-index-state
+// usage-access: owned-by cmd_idx.cpp
+// summary:
+//   Backend/helper implementation for the educational memory-only IDX command.
+//
+// usage:
+//   Runtime IDX command behavior and usage are owned by src/cli/cmd_idx.cpp.
+//   This file provides dottalk::edu_idx support functions and should not define
+//   a second command surface.
+//
+// notes:
+//   Keep command dispatch and usage text centralized in cmd_idx.cpp to avoid
+//   drift between the shell command and backend helper.
+//
+// risk:
+//   mutates_table_data: no
+//   mutates_in_memory_index_state: yes through backend API
+//
+
 #include "cli/edu_idx.hpp"
 
 #include <algorithm>

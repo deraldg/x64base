@@ -1,4 +1,40 @@
 // src/cli/cmd_rollback.cpp
+// @dottalk.usage v1
+// owner: DOT|ROLLBACK
+// command: ROLLBACK
+// category: table-buffer
+// status: supported
+// noargs: rollback-current-area
+// effect: discard-buffered-changes
+// mutates: buffer-state dirty-stale-flags
+// usage-access: ROLLBACK USAGE
+// summary:
+//   Discard buffered/uncommitted table changes for the current area or all areas.
+//
+// usage:
+//   ROLLBACK USAGE
+//   ROLLBACK
+//   ROLLBACK ALL
+//
+// examples:
+//   ROLLBACK
+//   ROLLBACK ALL
+//
+// notes:
+//   ROLLBACK USAGE returns before modifying buffer state.
+//   ROLLBACK without arguments clears buffered state for the current area.
+//   ROLLBACK ALL clears buffered state across all areas.
+//
+// risk:
+//   discards_uncommitted_changes: yes except usage
+//   mutates_buffer_state: yes except usage
+//   mutates_table_data: no
+//
+// related:
+//   COMMIT
+//   TABLE BUFFER
+//
+
 #include <cctype>
 #include <iostream>
 #include <sstream>
@@ -57,7 +93,44 @@ static void rollback_area(int area0, size_t& total_changes, int& areas_touched) 
 
 } // namespace
 
+static void print_rollback_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  ROLLBACK USAGE\n"
+        << "  ROLLBACK\n"
+        << "  ROLLBACK ALL\n"
+        << "Examples:\n"
+        << "  ROLLBACK\n"
+        << "  ROLLBACK ALL\n"
+        << "Notes:\n"
+        << "  - ROLLBACK USAGE does not modify buffer state.\n"
+        << "  - ROLLBACK discards buffered/uncommitted table changes.\n";
+}
 void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
+    // ROLLBACK_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = in.tellg();
+        std::string usage_tok;
+        if (in >> usage_tok) {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+
+            const std::string u = up_copy(usage_tok);
+            if (u == "USAGE" || u == "HELP" || u == "?") {
+                print_rollback_usage_contract();
+                return;
+            }
+        } else {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+        }
+    }
+
     std::string tok;
     if (in >> tok) {
         const std::string up = up_copy(tok);
@@ -80,7 +153,7 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
             return;
         }
 
-        std::cout << "Usage: ROLLBACK [ALL]\n";
+        print_rollback_usage_contract();
         return;
     }
 

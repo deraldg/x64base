@@ -30,8 +30,8 @@
 // - This command validates both paths before attempting backend activation.
 
 // @dottalk.usage v1
-// owner: DOT|SETORDER
-// command: SETORDER
+// owner: DOT|SET ORDER
+// command: SET ORDER
 // category: index
 // status: supported
 // noargs: report
@@ -713,8 +713,6 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
     if (isCdx) {
         if (!cdx_has_tag(container, tag, err)) {
-            // Do not leave an attached container reporting ASC order with no active tag.
-            clear_order_and_close_indexes(*target);
             std::cout << "SET ORDER: " << err << "\n";
             return;
         }
@@ -722,8 +720,6 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         ok = activate_cdx_on_area(*target, container, tag, ascending, err);
     } else if (isCnx) {
         if (!cnx_has_tag(*target, tag)) {
-            // Do not leave an attached container reporting ASC order with no active tag.
-            clear_order_and_close_indexes(*target);
             std::cout << "SET ORDER: tag '" << tag << "' not available for CNX on current table.\n";
             return;
         }

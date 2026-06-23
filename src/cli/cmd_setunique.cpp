@@ -2,8 +2,8 @@
 // Lists current unique fields if called without args.
 
 // @dottalk.usage v1
-// owner: DOT|SET_UNIQUE
-// command: SET_UNIQUE
+// owner: DOT|SET UNIQUE
+// command: SET UNIQUE
 // category: constraints
 // status: supported
 // noargs: report
@@ -14,10 +14,6 @@
 //   Report or configure per-table unique-field registry entries.
 //
 // usage:
-//   SET_UNIQUE
-//   SET_UNIQUE USAGE
-//   SET_UNIQUE FIELD <name> ON
-//   SET_UNIQUE FIELD <name> OFF
 //   SET UNIQUE
 //   SET UNIQUE USAGE
 //   SET UNIQUE FIELD <name> ON

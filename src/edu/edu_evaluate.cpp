@@ -7,6 +7,38 @@
 //   This command now calls the xexpr facade instead of reaching directly into
 //   cli/expr/evaluate.hpp.  The command syntax and output remain unchanged.
 
+// @dottalk.usage v1
+// owner: EDU|EVALUATE
+// command: EVALUATE / EVAL
+// category: education-expression
+// status: supported
+// noargs: usage
+// effect: evaluate-expression
+// mutates: none
+// usage-access: EVALUATE USAGE
+// summary:
+//   Evaluate a boolean predicate expression through xexpr and print .T. or .F.
+//
+// usage:
+//   EVALUATE USAGE
+//   EVALUATE <expr>
+//   EVAL <expr>
+//
+// examples:
+//   EVALUATE 1 = 1
+//   EVALUATE GPA >= 3.0
+//   EVAL LNAME = "SMITH"
+//
+// notes:
+//   EVALUATE USAGE prints usage before expression evaluation.
+//   When a table is open, field-aware expressions use the current record.
+//   This command does not mutate table data.
+//
+// risk:
+//   evaluates_expression: yes except usage
+//   mutates_table_data: no
+//
+
 #include "xbase.hpp"
 #include "cli/cli_comment.hpp"
 #include "xexpr.hpp"
@@ -15,6 +47,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cctype>
 
 using namespace xbase;
 
@@ -32,14 +65,43 @@ static std::string trim_local(std::string s)
 
 } // namespace
 
+static std::string edu_evaluate_upper_contract(std::string s) {
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static void print_evaluate_usage_contract() {
+    std::cout
+        << "Usage:\n"
+        << "  EVALUATE USAGE\n"
+        << "  EVALUATE <expr>\n"
+        << "  EVAL <expr>\n"
+        << "Examples:\n"
+        << "  EVALUATE 1 = 1\n"
+        << "  EVALUATE GPA >= 3.0\n"
+        << "  EVAL LNAME = \"SMITH\"\n"
+        << "Notes:\n"
+        << "  - EVALUATE USAGE does not evaluate an expression.\n"
+        << "  - Field-aware expressions use the current record when a table is open.\n";
+}
 void edu_EVALUATE(DbArea& area, std::istringstream& in)
 {
     std::string expr;
     std::getline(in, expr);
     expr = cliutil::strip_inline_comments(trim_local(expr));
 
+    // EVALUATE_USAGE_CONTRACT_BRANCH
+    {
+        const std::string u = edu_evaluate_upper_contract(expr);
+        if (u == "USAGE" || u == "HELP" || u == "?") {
+            print_evaluate_usage_contract();
+            return;
+        }
+    }
     if (expr.empty()) {
-        std::cout << "Usage: EVALUATE <expr>\n";
+        print_evaluate_usage_contract();
         return;
     }
 

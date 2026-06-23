@@ -142,6 +142,77 @@ static dt::EngineFormat engine_format_for(Flavor flavor) noexcept
     return dt::EngineFormat::Unknown;
 }
 
+static bool parse_u16_param(const std::string& raw,
+                            const std::string& label,
+                            std::uint16_t min_value,
+                            std::uint16_t max_value,
+                            std::uint16_t& out,
+                            std::string& err)
+{
+    const std::string text = trim(raw);
+    if (text.empty()) {
+        err = "CREATE: missing " + label + ".";
+        return false;
+    }
+
+    std::size_t pos = 0;
+    long value = 0;
+    try {
+        value = std::stol(text, &pos, 10);
+    }
+    catch (const std::exception&) {
+        err = "CREATE: invalid " + label + " '" + text + "'.";
+        return false;
+    }
+
+    if (pos != text.size()) {
+        err = "CREATE: invalid " + label + " '" + text + "'.";
+        return false;
+    }
+    if (value < static_cast<long>(min_value) || value > static_cast<long>(max_value)) {
+        err = "CREATE: " + label + " must be between " +
+              std::to_string(min_value) + " and " + std::to_string(max_value) + ".";
+        return false;
+    }
+
+    out = static_cast<std::uint16_t>(value);
+    return true;
+}
+
+static bool parse_u8_param(const std::string& raw,
+                           const std::string& label,
+                           std::uint8_t& out,
+                           std::string& err)
+{
+    std::uint16_t value = 0;
+    if (!parse_u16_param(raw, label, 0, 255, value, err)) {
+        return false;
+    }
+    out = static_cast<std::uint8_t>(value);
+    return true;
+}
+
+static bool parse_field_len_param(const std::string& raw,
+                                  const std::string& label,
+                                  Flavor flavor,
+                                  char type,
+                                  decltype(FieldSpec{}.len)& out,
+                                  std::string& err)
+{
+    const std::uint16_t max_len =
+        (flavor == Flavor::X64 && static_cast<char>(std::toupper(static_cast<unsigned char>(type))) == 'C')
+            ? 4096
+            : 255;
+
+    std::uint16_t value = 0;
+    if (!parse_u16_param(raw, label, 1, max_len, value, err)) {
+        return false;
+    }
+
+    out = static_cast<decltype(FieldSpec{}.len)>(value);
+    return true;
+}
+
 static std::vector<std::string> split_top(const std::string& inside)
 {
     std::vector<std::string> out;
@@ -217,7 +288,9 @@ static bool parse_one(const std::string& part,
                 err = "CREATE: C type requires a length, e.g. C(20).";
                 return false;
             }
-            fs.len = (std::uint8_t)std::stoi(params);
+            if (!parse_field_len_param(params, "C type length", flavor, T, fs.len, err)) {
+                return false;
+            }
             if (fs.len == 0) {
                 err = "CREATE: C type length must be greater than zero.";
                 return false;
@@ -230,11 +303,17 @@ static bool parse_one(const std::string& part,
             }
             const auto comma = params.find(',');
             if (comma == std::string::npos) {
-                fs.len = (std::uint8_t)std::stoi(params);
+                if (!parse_field_len_param(params, "numeric/float length", flavor, T, fs.len, err)) {
+                    return false;
+                }
                 fs.dec = 0;
             } else {
-                fs.len = (std::uint8_t)std::stoi(params.substr(0, comma));
-                fs.dec = (std::uint8_t)std::stoi(params.substr(comma + 1));
+                if (!parse_field_len_param(params.substr(0, comma), "numeric/float length", flavor, T, fs.len, err)) {
+                    return false;
+                }
+                if (!parse_u8_param(params.substr(comma + 1), "numeric/float decimal count", fs.dec, err)) {
+                    return false;
+                }
             }
             if (fs.len == 0) {
                 err = "CREATE: numeric/float length must be greater than zero.";
@@ -493,8 +572,6 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
     Flavor flavor = Flavor::MSDOS;
     std::string err;
 
-    std::cout << "[CREATE RAW] " << raw_args << "\n";
-
     if (!parse_field_list(args, fields, table, flavor, err))
     {
         if (!err.empty()) {
@@ -502,15 +579,6 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
         }
         print_create_usage();
         return;
-    }
-
-    std::cout << "[CREATE DEBUG] parsed fields: " << fields.size() << "\n";
-    for (const auto& f : fields)
-    {
-        std::cout << "  " << f.name << " "
-                  << f.type << "("
-                  << int(f.len) << ","
-                  << int(f.dec) << ")\n";
     }
 
     if (flavor == Flavor::X64) {

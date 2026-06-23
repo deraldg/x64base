@@ -59,6 +59,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -402,11 +403,33 @@ static void create_empty_dbf_like(const std::filesystem::path& out_path,
                                   const std::vector<xbase::FieldDef>& fields) {
     using namespace xbase;
 
-    int16_t cpr = 1; // delete flag
-    for (const auto& f : fields) cpr += static_cast<int16_t>(f.length);
+    std::uint32_t cpr_wide = 1; // delete flag
+    for (const auto& f : fields) {
+        if (f.length == 0) {
+            throw std::runtime_error("SORT: output field has zero length: " + trim(f.name));
+        }
+        if (f.length > 255u) {
+            throw std::runtime_error(
+                "SORT: classic DBF output cannot write extended X64 field length > 255: " +
+                trim(f.name));
+        }
+        cpr_wide += f.length;
+    }
 
-    const int16_t data_start =
-        static_cast<int16_t>(sizeof(HeaderRec) + (fields.size() * sizeof(FieldRec)) + 1);
+    if (cpr_wide > static_cast<std::uint32_t>(std::numeric_limits<std::int16_t>::max())) {
+        throw std::runtime_error("SORT: output record length exceeds classic DBF header limit.");
+    }
+
+    const int16_t cpr = static_cast<int16_t>(cpr_wide);
+
+    const std::uint32_t data_start_wide =
+        static_cast<std::uint32_t>(sizeof(HeaderRec) + (fields.size() * sizeof(FieldRec)) + 1);
+
+    if (data_start_wide > static_cast<std::uint32_t>(std::numeric_limits<std::int16_t>::max())) {
+        throw std::runtime_error("SORT: output header length exceeds classic DBF header limit.");
+    }
+
+    const int16_t data_start = static_cast<int16_t>(data_start_wide);
 
     HeaderRec hdr{};
     hdr.version = 0x03; // dBase III
@@ -441,7 +464,7 @@ static void create_empty_dbf_like(const std::filesystem::path& out_path,
 
         fr.field_type         = fields[i].type;
         fr.field_data_address = 0;
-        fr.field_length       = fields[i].length;
+        fr.field_length       = static_cast<std::uint8_t>(fields[i].length);
         fr.decimal_places     = fields[i].decimals;
 
         frecs[i] = fr;

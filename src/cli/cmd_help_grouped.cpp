@@ -1,3 +1,27 @@
+// @dottalk.usage v1
+// owner: DOT|HELP_GROUPED_IMPL
+// command: HELP
+// category: help-helper
+// status: implementation-helper
+// noargs: n/a
+// effect: report
+// mutates: none
+// usage-access: owned-by HELP
+// summary:
+//   Helper implementation for grouped HELP/reflection output.
+//
+// usage:
+//   This file does not export a standalone shell command.
+//   User-visible usage is owned by HELP, CMDHELP, and related HELP reflection commands.
+//
+// notes:
+//   Keep this file focused on grouped presentation/reporting support.
+//   Do not register a separate HELP_GROUPED command from here.
+//
+// risk:
+//   mutates_table_data: no
+//
+
 // src/cli/cmd_help_grouped.cpp
 #include "cmd_help.hpp"
 #include "cli/output_router.hpp"

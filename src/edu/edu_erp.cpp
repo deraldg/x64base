@@ -8,7 +8,7 @@
 //
 // Usage:
 //   ERP                         -> status + brief usage
-//   ERP HELP|?                  -> detailed usage
+//   ERP USAGE|HELP|?            -> detailed usage
 //   ERP STATUS                  -> status only
 //   ERP CWD|PWD                 -> show process working directory
 //   ERP VERSION                 -> show linked SQLite version
@@ -40,6 +40,61 @@
 //   - SQLite here is an external SQL/RDBMS backend surface, not native DbArea storage.
 //   - ERP-specific behavior belongs here, not in the generic SQLITE command.
 //   - SELECT output is capped to keep CLI responsive.
+
+// @dottalk.usage v1
+// owner: EDU|ERP
+// command: ERP / EDU_ERP
+// category: education-database-demo
+// status: supported
+// noargs: status-and-brief-usage
+// effect: sqlite-demo-query
+// mutates: sqlite-connection-state
+// usage-access: ERP USAGE; EDU_ERP USAGE
+// summary:
+//   Educational Cascade Precision manufacturing ERP SQLite wrapper for
+//   status, schema/table inspection, and domain shortcut reports.
+//
+// usage:
+//   ERP USAGE
+//   ERP HELP
+//   ERP STATUS
+//   ERP CASCADE
+//   ERP CHECK
+//   ERP MODULES
+//   ERP TABLES
+//   ERP VIEWS
+//   ERP COLUMNS <table>
+//   ERP LIST <table> [limit]
+//   ERP ITEMS
+//   ERP STOCK
+//   ERP REORDER
+//   ERP BOM [sku]
+//   ERP WORKORDERS
+//   ERP THREEWAY
+//   ERP TRIAL
+//   ERP SCHEMA [table]
+//   ERP EXEC <sql...>
+//   ERP SELECT <sql...>
+//   ERP CLOSE
+//
+// examples:
+//   ERP USAGE
+//   ERP CASCADE
+//   ERP MODULES
+//   ERP ITEMS
+//   ERP STOCK
+//   ERP SELECT select * from items limit 5
+//
+// notes:
+//   USAGE/HELP/? returns before SQLite database work.
+//   No-arg behavior remains status plus brief usage.
+//   EDU_ERP and cmd_ERP are compatibility aliases for ERP behavior.
+//
+// risk:
+//   opens_sqlite_database: CASCADE/OPEN/DB/CHECK and implicit query open paths
+//   executes_sql: EXEC/SELECT
+//   mutates_table_data: no native x64base table mutation
+//
 
 #include <algorithm>
 #include <cctype>
@@ -151,7 +206,7 @@ static std::string read_rest_trimmed(std::istringstream& args) {
 
 static void print_usage_brief() {
     std::cout
-        << "ERP: HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, CASCADE, CHECK,\n"
+        << "ERP: USAGE, HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, CASCADE, CHECK,\n"
         << "     MODULES, TABLES, VIEWS, COLUMNS <table>, LIST <table> [limit],\n"
         << "     ITEMS, STOCK, REORDER, BOM [sku], WORKORDERS, THREEWAY, TRIAL,\n"
         << "     CLOSE, SCHEMA [table], EXEC <sql>, SELECT <sql>\n";
@@ -169,6 +224,7 @@ static void print_usage_long() {
         "  Future direction is native x64base/LMDB ERP transfer and comparison.\n\n"
 
         "Core commands:\n"
+        "  ERP USAGE\n"
         "  ERP HELP\n"
         "  ERP ?\n"
         "  ERP STATUS\n"
@@ -740,7 +796,7 @@ void edu_ERP(xbase::DbArea& /*A*/, std::istringstream& args) {
 
     sub = up_copy(sub);
 
-    if (sub == "HELP" || sub == "?") {
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
         print_usage_long();
         return;
     }

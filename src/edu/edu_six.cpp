@@ -1,3 +1,36 @@
+// @dottalk.usage v1
+// owner: EDU|SIX
+// command: SIX
+// category: education-index
+// status: implementation-present
+// noargs: usage
+// effect: create-build-inspect-index-stub
+// mutates: filesystem index-stub
+// usage-access: SIX USAGE
+// summary:
+//   Educational SIX/local-index stub command for create/build/info operations.
+//
+// usage:
+//   SIX USAGE
+//   SIX CREATE <file> TAG <name> FIELD <n>
+//   SIX BUILD <file>
+//   SIX INFO <file>
+//
+// examples:
+//   SIX CREATE students.six TAG LNAME FIELD 2
+//   SIX BUILD students.six
+//   SIX INFO students.six
+//
+// notes:
+//   SIX USAGE/HELP/? returns before creating, building, or reading index files.
+//   This file defines cmd_SIX but does not itself register the command.
+//
+// risk:
+//   writes_filesystem: SIX CREATE/BUILD
+//   reads_current_table: SIX BUILD
+//   mutates_table_data: no
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -5,17 +38,35 @@
 #include "xbase.hpp"
 #include "xindex/local_index_stub.hpp"
 
+static void print_six_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SIX USAGE\n"
+        << "  SIX CREATE <file> TAG <name> FIELD <n>\n"
+        << "  SIX BUILD <file>\n"
+        << "  SIX INFO <file>\n"
+        << "Examples:\n"
+        << "  SIX CREATE students.six TAG LNAME FIELD 2\n"
+        << "  SIX BUILD students.six\n"
+        << "  SIX INFO students.six\n"
+        << "Notes:\n"
+        << "  - SIX USAGE does not create, build, or inspect index files.\n";
+}
 void cmd_SIX(xbase::DbArea& area, std::istringstream& in)
 {
     std::string sub;
     if (!(in >> sub)) {
-        std::cout << "SIX CREATE <file> TAG <name> FIELD <n>\n";
-        std::cout << "SIX BUILD <file>\n";
-        std::cout << "SIX INFO <file>\n";
+        print_six_usage_contract();
         return;
     }
 
     const std::string U = xindex::upper_ascii_copy(sub);
+    // SIX_USAGE_CONTRACT_BRANCH
+    if (U == "USAGE" || U == "HELP" || U == "?") {
+        print_six_usage_contract();
+        return;
+    }
     std::string err;
 
     if (U == "CREATE") {

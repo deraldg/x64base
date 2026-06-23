@@ -1,5 +1,48 @@
 // ============================================================================
 // File: src/cli/command_helpchk.cpp
+// @dottalk.usage v1
+// owner: DOT|CMDHELPCHK
+// command: CMDHELPCHK
+// category: help-diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: CMDHELPCHK USAGE
+// summary:
+//   Validate HELP/catalog artifacts and reflection metadata against command
+//   registry expectations, legacy HELP DBF rows, and HELP DATA v2 artifacts.
+//
+// usage:
+//   CMDHELPCHK
+//   CMDHELPCHK USAGE
+//   CMDHELPCHK REF
+//   CMDHELPCHK REFLECT
+//   CMDHELPCHK ARTIFACTS
+//   CMDHELPCHK ARTIFACTS <dir>
+//   CMDHELPCHK ARTIFACTS <dir> <limit>
+//   CMDHELPCHK V2 <dir> <limit>
+//   CMDHELPCHK <dir> [limit]
+//
+// notes:
+//   CMDHELPCHK with no arguments runs reflection-system validation.
+//   REF and REFLECT are explicit names for the reflection validation mode.
+//   ARTIFACTS and V2 validate HELP DATA v2 help_artifacts.dbf/.dbt.
+//   A directory argument without a mode runs the legacy commands.dbf/.dbt check.
+//   CMDHELPCHK reads HELP/catalog files but does not mutate table data.
+//   CMDHELPCHK v2 external scanner remains separate from this runtime command.
+//
+// risk:
+//   reads_help_dbf_dbt: yes
+//   reads_reflection_metadata: yes
+//   mutates_table_data: no
+//   mutates_cursor: no
+//
+// related:
+//   HELP
+//   CMDHELP
+//   HELP DATA
+//
 // Robust validator for commands.dbf/.dbt produced by CMDHELP.
 // Adds HELP DATA v2 artifact validation for help_artifacts.dbf/.dbt.
 // Plus reflection-system audit mode.
@@ -164,6 +207,97 @@ static std::string upper(std::string s)
         s.begin(), s.end(), s.begin(),
         [](unsigned char c) { return char(std::toupper(c)); });
     return s;
+}
+
+static std::string compact_token(std::string s)
+{
+    s = upper(std::move(s));
+    s.erase(std::remove_if(s.begin(), s.end(),
+                           [](unsigned char ch) {
+                               return std::isspace(ch) != 0 || ch == '_' || ch == '-';
+                           }),
+            s.end());
+    return s;
+}
+
+static bool has_space(const std::string& s)
+{
+    return std::any_of(s.begin(), s.end(),
+                       [](unsigned char ch) { return std::isspace(ch) != 0; });
+}
+
+static std::string compact_set_family_target(const std::string& token)
+{
+    // Artifact validation should flag compact DOT SET-family keys such as
+    // DOT|SETORDER, not already-canonical keys such as DOT|SET ORDER.
+    if (has_space(token)) {
+        return {};
+    }
+
+    static const std::map<std::string, std::string> kMap = {
+        {"SETORDER",  "SET ORDER"},
+        {"SETINDEX",  "SET INDEX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETCASE",   "SET CASE"},
+        {"SETPATH",   "SET PATH"},
+        {"SETCNX",    "SET CNX"},
+        {"SETCDX",    "SET CDX"},
+        {"SETLMDB",   "SET LMDB"},
+        {"SETNEAR",   "SET NEAR"},
+        {"SETUNIQUE", "SET UNIQUE"}
+    };
+
+    const auto it = kMap.find(compact_token(token));
+    return it == kMap.end() ? std::string{} : it->second;
+}
+
+static bool split_cmdkey(const std::string& key,
+                         std::string& catalog,
+                         std::string& command)
+{
+    const std::string k = upper(trim_copy(key));
+    const auto bar = k.find('|');
+    if (bar == std::string::npos) {
+        catalog.clear();
+        command = k;
+        return !command.empty();
+    }
+    catalog = k.substr(0, bar);
+    command = k.substr(bar + 1);
+    return !catalog.empty() || !command.empty();
+}
+
+static bool is_compact_dot_set_family_cmdkey(const std::string& key,
+                                             std::string* expected = nullptr)
+{
+    std::string catalog;
+    std::string command;
+    if (!split_cmdkey(key, catalog, command)) {
+        return false;
+    }
+    if (catalog != "DOT") {
+        return false;
+    }
+    const std::string canon = compact_set_family_target(command);
+    if (canon.empty()) {
+        return false;
+    }
+    if (expected) {
+        *expected = "DOT|" + canon;
+    }
+    return true;
+}
+
+static bool is_set_family_alias_row(const std::string& kind,
+                                    const std::string& name,
+                                    const std::string& text)
+{
+    const std::string k = upper(trim_copy(kind));
+    if (k != "ALIAS" && k != "VARIANT") {
+        return false;
+    }
+    return !compact_set_family_target(name).empty() ||
+           !compact_set_family_target(text).empty();
 }
 
 static bool read_exact(std::ifstream& in, void* buf, size_t n)
@@ -397,6 +531,18 @@ static std::unordered_set<std::string> load_command_keys(const fs::path& outdir)
     return keys;
 }
 
+static std::vector<std::string> compact_set_family_command_keys(const std::unordered_set<std::string>& keys)
+{
+    std::vector<std::string> out;
+    for (const auto& key : keys) {
+        if (is_compact_dot_set_family_cmdkey(key)) {
+            out.push_back(key);
+        }
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
 static void print_map(const char* title, const std::map<std::string, int>& counts)
 {
     std::cout << title << "\n";
@@ -465,6 +611,9 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
     int message_rows = 0;
     int orphan_cmdkey_rows = 0;
     int blank_text_rows = 0;
+    int compact_set_family_cmdkey_rows = 0;
+    int set_family_alias_rows = 0;
+    std::map<std::string, int> compact_set_family_cmdkeys;
     int shown = 0;
 
     struct RowPreview {
@@ -495,6 +644,7 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
         const std::string conf = upper(trim_copy(read_cell(rec, dbf, ix_confid, dbt_path)));
         const std::string sev  = upper(trim_copy(read_cell(rec, dbf, ix_severity, dbt_path)));
         const std::string key  = upper(trim_copy(read_cell(rec, dbf, ix_cmdkey, dbt_path)));
+        const std::string name = upper(trim_copy(read_cell(rec, dbf, ix_name, dbt_path)));
 
         by_kind[kind.empty() ? "(blank)" : kind]++;
         by_source[src.empty() ? "(blank)" : src]++;
@@ -510,6 +660,13 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
 
         size_t text_len = 0;
         std::string text = read_cell(rec, dbf, ix_text, dbt_path, &text_len, 160);
+        if (is_compact_dot_set_family_cmdkey(key)) {
+            ++compact_set_family_cmdkey_rows;
+            compact_set_family_cmdkeys[key]++;
+        }
+        if (is_set_family_alias_row(kind, name, text)) {
+            ++set_family_alias_rows;
+        }
         if (text_len == 0 && trim_copy(text).empty()) {
             ++blank_text_rows;
         }
@@ -546,6 +703,29 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
     std::cout << "\n";
     std::cout << "  blank KIND/SOURCE/CONFID: "
               << blank_kind << "/" << blank_source << "/" << blank_confid << "\n";
+
+    const auto compact_command_keys = compact_set_family_command_keys(valid_keys);
+    std::cout << "\nSET-family canonicalization\n";
+    std::cout << "  compact DOT SET-family command keys : " << compact_command_keys.size() << "\n";
+    std::cout << "  compact DOT SET-family artifact rows: " << compact_set_family_cmdkey_rows << "\n";
+    std::cout << "  SET-family alias/variant rows       : " << set_family_alias_rows << "\n";
+    if (!compact_command_keys.empty()) {
+        std::cout << "  ERROR compact SET-family command keys must canonicalize upward:\n";
+        for (const auto& key : compact_command_keys) {
+            std::string expected;
+            (void)is_compact_dot_set_family_cmdkey(key, &expected);
+            std::cout << "    " << key << " -> " << expected << "\n";
+        }
+    }
+    if (!compact_set_family_cmdkeys.empty()) {
+        std::cout << "  ERROR compact SET-family artifact CMDKEY rows must use canonical DOT|SET * keys:\n";
+        for (const auto& kv : compact_set_family_cmdkeys) {
+            std::string expected;
+            (void)is_compact_dot_set_family_cmdkey(kv.first, &expected);
+            std::cout << "    " << kv.first << " rows=" << kv.second
+                      << " expected=" << expected << "\n";
+        }
+    }
 
     std::cout << "\n";
     print_map("By KIND:", by_kind);
@@ -592,6 +772,23 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
     std::cout << "\nDBT: " << dbt_path.string() << "\n";
 }
 
+static void print_cmdhelpchk_usage()
+{
+    std::cout << "Usage:\n"
+              << "  CMDHELPCHK\n"
+              << "  CMDHELPCHK USAGE\n"
+              << "  CMDHELPCHK REF\n"
+              << "  CMDHELPCHK REFLECT\n"
+              << "  CMDHELPCHK ARTIFACTS [dir] [limit]\n"
+              << "  CMDHELPCHK V2 [dir] [limit]\n"
+              << "  CMDHELPCHK <dir> [limit]\n"
+              << "\n"
+              << "Modes:\n"
+              << "  REF/REFLECT  Validate reflected command/function metadata.\n"
+              << "  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.\n"
+              << "  <dir>        Validate legacy commands.dbf/.dbt in a help directory.\n";
+}
+
 } // anonymous namespace
 
 void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
@@ -602,6 +799,11 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
 
     std::vector<std::string> words = split_words(rest);
     std::string first = words.empty() ? std::string() : upper(words[0]);
+
+    if (first == "USAGE" || first == "HELP" || first == "/?" || first == "?") {
+        print_cmdhelpchk_usage();
+        return;
+    }
 
     // ------------------------------------------------------------------------
     // HELP DATA v2 artifact validation mode
@@ -663,6 +865,7 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
         add(check_duplicate_canonical_commands(rc));
         add(check_duplicate_subcommands(rc));
         add(check_missing_parent_commands(rc));
+        add(check_set_family_canonicalization(rc));
         add(check_duplicate_functions(rc));
         add(check_invalid_function_arg_ranges(rc));
         add(check_missing_function_categories(rc));

@@ -15,6 +15,43 @@
 // - Engine truth remains in xbase.hpp / DbArea; this command stays in CLI layer.
 // ==============================
 
+// @dottalk.usage v1
+// owner: EDU|TEXT
+// command: TEXT
+// category: utility-editor
+// status: supported
+// noargs: launch-editor-empty-buffer
+// effect: launch-editor
+// mutates: filesystem-or-memo-stub depending-on-mode
+// usage-access: TEXT USAGE
+// summary:
+//   Open the text editor with an empty buffer, literal text, a file, or a memo
+//   field target stub.
+//
+// usage:
+//   TEXT USAGE
+//   TEXT
+//   TEXT <literal text>
+//   TEXT FILE <path>
+//   TEXT MEMO <field>
+//
+// examples:
+//   TEXT
+//   TEXT hello world
+//   TEXT FILE notes.txt
+//   TEXT MEMO NOTES
+//
+// notes:
+//   TEXT USAGE/HELP/? returns before entering editor mode.
+//   TEXT with no arguments preserves the existing empty-buffer editor behavior.
+//   TEXT MEMO remains an integration stub until memo editor wiring is complete.
+//
+// risk:
+//   launches_editor: yes except usage
+//   mutates_filesystem: TEXT FILE through editor
+//   mutates_table_data: no direct mutation in current implementation
+//
+
 #include "cli/cmd_text.hpp"
 
 #include <algorithm>
@@ -184,10 +221,18 @@ namespace
     void print_usage()
     {
         std::cout << "Usage:\n";
+        std::cout << "  TEXT USAGE\n";
         std::cout << "  TEXT\n";
         std::cout << "  TEXT <literal text>\n";
         std::cout << "  TEXT FILE <path>\n";
         std::cout << "  TEXT MEMO <field>\n";
+        std::cout << "Examples:\n";
+        std::cout << "  TEXT\n";
+        std::cout << "  TEXT hello world\n";
+        std::cout << "  TEXT FILE notes.txt\n";
+        std::cout << "  TEXT MEMO NOTES\n";
+        std::cout << "Notes:\n";
+        std::cout << "  - TEXT USAGE does not enter editor mode.\n";
     }
 }
 
@@ -219,7 +264,7 @@ void cmd_TEXT(xbase::DbArea& area, std::istringstream& iss)
         return;
     }
 
-    if (mode == "HELP" || mode == "?")
+    if (mode == "USAGE" || mode == "HELP" || mode == "?")
     {
         print_usage();
         return;

@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/import/import_types.hpp
+// subsystem: import
+// role: Declares import-path helpers for loading external data into DotTalk++ workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <string>
 

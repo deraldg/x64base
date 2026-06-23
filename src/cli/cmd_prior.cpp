@@ -2,16 +2,88 @@
 // PRIOR = previous visible record in current logical view
 // (active order + filter visibility).
 
+// @dottalk.usage v1
+// owner: DOT|PRIOR
+// command: PRIOR
+// category: navigation
+// status: supported
+// noargs: navigate
+// effect: navigate
+// mutates: cursor
+// usage-access: PRIOR USAGE
+// summary:
+//   Move to the previous visible record in the current logical view.
+//
+// usage:
+//   PRIOR
+//   PRIOR USAGE
+//
+// notes:
+//   PRIOR with no arguments moves to the previous visible record.
+//   Active order and filter visibility are honored through logical_nav.
+//   PRIOR USAGE prints usage before open-table checks or cursor movement.
+//
+// risk:
+//   mutates_cursor: yes except usage
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   NEXT
+//   TOP
+//   BOTTOM
+//
+
 #include <sstream>
 #include <iostream>
 #include <cstdint>
+#include <cctype>
+#include <string>
 
 #include "xbase.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
 
-void cmd_PRIOR(xbase::DbArea& A, std::istringstream&)
+static std::string prior_upper(std::string s)
 {
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool prior_usage_request(std::istringstream& in)
+{
+    std::string tok;
+    if (!(in >> tok)) {
+        in.clear();
+        in.seekg(0);
+        return false;
+    }
+    const std::string u = prior_upper(tok);
+    if (u == "USAGE" || u == "HELP" || u == "?") {
+        return true;
+    }
+    in.clear();
+    in.seekg(0);
+    return false;
+}
+
+static void print_prior_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  PRIOR\n"
+        << "  PRIOR USAGE\n"
+        << "Notes:\n"
+        << "  - Moves to the previous visible record in the current order/filter view.\n";
+}
+void cmd_PRIOR(xbase::DbArea& A, std::istringstream& in)
+{
+    if (prior_usage_request(in)) {
+        print_prior_usage();
+        return;
+    }
     if (!A.isOpen()) {
         std::cout << "PRIOR: no file open.\n";
         return;

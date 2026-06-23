@@ -30,6 +30,48 @@
 //   - Buffered body lines replay through the canonical loop executor so
 //     shell shortcuts (e.g. TUP -> TUPLE) work the same as at the prompt.
 
+// @dottalk.usage v1
+// owner: DOT|SCAN
+// command: SCAN
+// category: script
+// status: supported
+// noargs: block-start
+// effect: loop
+// mutates: scan-state cursor delegates-command-effects
+// usage-access: SCAN USAGE
+// summary:
+//   Buffer and execute a SCAN...ENDSCAN record loop over the current logical rowset.
+//
+// usage:
+//   SCAN
+//   SCAN USAGE
+//   SCAN FOR <expr>
+//   ENDSCAN
+//   ENDSCAN USAGE
+//
+// notes:
+//   SCAN with no arguments starts buffering a scan block on the current area.
+//   SCAN FOR <expr> adds a predicate to the scan loop.
+//   ENDSCAN executes buffered body lines through the canonical command executor.
+//   Deleted records and active SET FILTER visibility are honored by the scan gate.
+//   Active order traversal uses shared order_iterator when available, with physical fallback.
+//   ENDSCAN restores the user's cursor best-effort after execution.
+//
+// risk:
+//   buffers_commands: yes
+//   executes_commands: ENDSCAN
+//   delegates_command_effects: yes
+//   mutates_cursor: during scan, restored best-effort
+//   mutates_table_data: depends on buffered command body
+//   requires_open_table: SCAN except usage
+//
+// related:
+//   WHILE
+//   UNTIL
+//   FOR
+//   LOOP
+//
+
 #include "cmd_scan.hpp"
 
 #include <algorithm>
@@ -82,6 +124,30 @@ static inline bool ends_with_iex(const std::string& s, const char* EXT3) {
 static inline std::string upper_copy(std::string s) {
     for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     return s;
+}
+
+static void print_scan_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SCAN\n"
+        << "  SCAN USAGE\n"
+        << "  SCAN FOR <expr>\n"
+        << "  ENDSCAN\n"
+        << "  ENDSCAN USAGE\n";
+}
+
+static bool scan_usage_request(const std::string& raw, const char* command_name)
+{
+    std::string s = upper_copy(trim_copy(raw));
+    if (s.empty()) return false;
+
+    const std::string cmd = upper_copy(command_name ? std::string(command_name) : std::string{});
+    if (!cmd.empty() && s.rfind(cmd + " ", 0) == 0) {
+        s = upper_copy(trim_copy(s.substr(cmd.size() + 1)));
+    }
+
+    return s == "USAGE" || s == "HELP" || s == "?";
 }
 
 static inline bool is_comment_or_blank(const std::string& raw) {
@@ -393,6 +459,11 @@ static bool run_scan_via_iterator(DbArea& A,
 
 void cmd_SCAN(DbArea& A, std::istringstream& S)
 {
+    if (scan_usage_request(S.str(), "SCAN")) {
+        print_scan_usage();
+        return;
+    }
+
     auto& st = scanblock::state();
 
     if (g_scan_executing) {
@@ -441,8 +512,13 @@ void cmd_SCAN_BUFFER(DbArea& /*A*/, std::istringstream& S)
     st.lines.push_back(raw);
 }
 
-void cmd_ENDSCAN(DbArea& A, std::istringstream& /*S*/)
+void cmd_ENDSCAN(DbArea& A, std::istringstream& S)
 {
+    if (scan_usage_request(S.str(), "ENDSCAN")) {
+        print_scan_usage();
+        return;
+    }
+
     auto& st = scanblock::state();
 
     if (g_scan_executing) {

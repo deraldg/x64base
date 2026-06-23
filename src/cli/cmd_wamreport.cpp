@@ -1,5 +1,42 @@
+// @dottalk.usage v1
+// owner: DOT|WA
+// command: WA
+// category: diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: WA USAGE
+// summary:
+//   Print the WorkAreaManager/engine bridge report and pointer identity checks.
+//
+// usage:
+//   WA
+//   WA USAGE
+//
+// examples:
+//   WA
+//   WA USAGE
+//
+// notes:
+//   WA with no arguments prints the full WAM report.
+//   WA USAGE prints usage without inspecting the WorkAreaManager bridge.
+//   WA is read-only and does not mutate table data.
+//
+// risk:
+//   reads_workspace_state: yes except usage
+//   mutates_table_data: no
+//
+// related:
+//   WSREPORT
+//   AREA
+//   WORKSPACE
+//
+
 #include "cli/cmd_wamreport.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -13,6 +50,39 @@ extern "C" xbase::XBaseEngine* shell_engine();
 
 namespace
 {
+
+
+static std::string wamreport_upper(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool wamreport_usage_request(std::istringstream& in)
+{
+    std::string tok;
+    if (!(in >> tok)) {
+        in.clear();
+        in.seekg(0, std::ios::beg);
+        return false;
+    }
+
+    const std::string u = wamreport_upper(tok);
+    in.clear();
+    in.seekg(0, std::ios::beg);
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_wamreport_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  WA\n"
+        << "  WA USAGE\n"
+        << "Notes:\n"
+        << "  - WA prints the WorkAreaManager/engine bridge report.\n";
+}
 
 static inline bool open_truth(const xbase::DbArea& a)
 {
@@ -67,8 +137,13 @@ static std::string ptr_text(const xbase::DbArea* p)
 
 } // namespace
 
-void cmd_WAMREPORT(xbase::DbArea& /*A*/, std::istringstream& /*S*/)
+void cmd_WAMREPORT(xbase::DbArea& /*A*/, std::istringstream& S)
 {
+    if (wamreport_usage_request(S)) {
+        print_wamreport_usage();
+        return;
+    }
+
     using dottalk::workspace::WorkAreaManager;
 
     WorkAreaManager wam;

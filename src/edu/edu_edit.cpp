@@ -27,6 +27,36 @@
 //       ...
 //   };
 
+// @dottalk.usage v1
+// owner: EDU|EDIT
+// command: EDIT
+// category: utility-editor
+// status: supported
+// noargs: usage
+// effect: launch-editor
+// mutates: filesystem-through-editor
+// usage-access: EDIT USAGE
+// summary:
+//   Launch the configured external editor for a file path.
+//
+// usage:
+//   EDIT USAGE
+//   EDIT <file>
+//
+// examples:
+//   EDIT notes.txt
+//   EDIT scripts\demo.dts
+//
+// notes:
+//   EDIT USAGE/HELP/? returns before launching an external editor.
+//   EDIT may create or modify files through the configured editor.
+//
+// risk:
+//   launches_external_process: yes except usage
+//   mutates_filesystem: through editor
+//   mutates_table_data: no
+//
+
 #include "xbase.hpp"
 
 #include <cctype>
@@ -169,7 +199,14 @@ std::string build_launch_command(const std::string& editor_cmd,
 }
 
 void print_edit_usage(std::ostream& out) {
-    out << "Usage: EDIT <file>\n";
+    out << "Usage:\n";
+    out << "  EDIT USAGE\n";
+    out << "  EDIT <file>\n";
+    out << "Examples:\n";
+    out << "  EDIT notes.txt\n";
+    out << "  EDIT scripts\\demo.dts\n";
+    out << "Notes:\n";
+    out << "  - EDIT USAGE does not launch an editor.\n";
 }
 
 } // namespace
@@ -182,6 +219,17 @@ void cmd_EDIT(xbase::DbArea&, std::istringstream& args) {
     std::getline(args, raw);
     raw = trim_copy(raw);
 
+    // EDIT_USAGE_CONTRACT_BRANCH
+    {
+        std::string u = raw;
+        for (char& ch : u) {
+            ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+        }
+        if (u == "USAGE" || u == "HELP" || u == "?") {
+            print_edit_usage(out);
+            return;
+        }
+    }
     if (raw.empty()) {
         print_edit_usage(out);
         return;

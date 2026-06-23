@@ -13,8 +13,8 @@
 //   SETLMDB <...> <TAG> [--asc|--desc]
 //
 // @dottalk.usage v1
-// owner: DOT|SETLMDB
-// command: SETLMDB
+// owner: DOT|SET LMDB
+// command: SET LMDB
 // category: index
 // status: developer
 // noargs: report

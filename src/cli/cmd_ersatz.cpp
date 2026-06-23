@@ -531,9 +531,23 @@ namespace
     static fs::path resolve_workspace_target(const std::string& target_in)
     {
         const std::string target = trim(target_in).empty() ? "default" : trim(target_in);
-        fs::path found = resolve_in_roots(target, workspace_search_roots(), ".dtschema");
-        if (!found.empty())
-            return found;
+        fs::path direct(target);
+
+        if (direct.has_extension())
+        {
+            fs::path found = resolve_in_roots(target, workspace_search_roots(), "");
+            if (!found.empty())
+                return found;
+
+            return fallback_in_current_user_root(target, current_user_workspaces_root(), "");
+        }
+
+        for (const std::string ext : {std::string(".dtschema"), std::string(".dtschemas")})
+        {
+            fs::path found = resolve_in_roots(target, workspace_search_roots(), ext);
+            if (!found.empty())
+                return found;
+        }
 
         return fallback_in_current_user_root(target, current_user_workspaces_root(), ".dtschema");
     }
@@ -551,7 +565,7 @@ namespace
     static bool looks_like_workspace_or_script_file(const fs::path& p)
     {
         const std::string ext = upper_copy(p.extension().string());
-        return ext == ".DTSCHEMA" || ext == ".INI" || ext == ".DOT";
+        return ext == ".DTSCHEMA" || ext == ".DTSCHEMAS" || ext == ".INI" || ext == ".DOT";
     }
 
     static std::string stem_upper_from_pathish(const std::string& pathish);
@@ -637,6 +651,11 @@ namespace
             {
                 status = "expected .erz file, not " + erz_path.string() +
                          " (use ERSATZ WLOAD for .dtschema)";
+            }
+            else if (ext == ".DTSCHEMAS")
+            {
+                status = "expected .erz file, not " + erz_path.string() +
+                         " (use ERSATZ WLOAD for .dtschema[s])";
             }
             else if (ext == ".DOT")
             {

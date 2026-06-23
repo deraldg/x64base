@@ -1,3 +1,34 @@
+// @dottalk.usage v1
+// owner: EDU|CASE
+// command: CASE
+// category: education-reference
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: none
+// usage-access: CASE USAGE
+// summary:
+//   List and show educational case-study catalog entries.
+//
+// usage:
+//   CASE USAGE
+//   CASE HELP
+//   CASE LIST
+//   CASE SHOW <id>
+//
+// examples:
+//   CASE
+//   CASE LIST
+//   CASE SHOW normalization
+//
+// notes:
+//   CASE USAGE/HELP/? prints usage before catalog lookup.
+//   CASE is read-only catalog/reference output.
+//
+// risk:
+//   mutates_table_data: no
+//
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -25,9 +56,17 @@ static std::vector<std::string> split_ws(const std::string& s) {
 
 static void print_usage() {
     std::cout
-        << "CASE HELP\n"
-        << "CASE LIST\n"
-        << "CASE SHOW <id>\n";
+        << "Usage:\n"
+        << "  CASE USAGE\n"
+        << "  CASE HELP\n"
+        << "  CASE LIST\n"
+        << "  CASE SHOW <id>\n"
+        << "Examples:\n"
+        << "  CASE\n"
+        << "  CASE LIST\n"
+        << "  CASE SHOW normalization\n"
+        << "Notes:\n"
+        << "  - CASE USAGE does not load the case catalog.\n";
 }
 
 static void print_case_block(const char* heading, const std::string& body) {
@@ -131,7 +170,7 @@ void edu_CASESTUDY(xbase::DbArea& area, std::istringstream& iss)
         rest = trim_copy(raw.substr(sub.size()));
     }
 
-    if (SUB.empty() || SUB == "HELP" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
+    if (SUB.empty() || SUB == "USAGE" || SUB == "HELP" || SUB == "?" || SUB == "/?" || SUB == "-H" || SUB == "--HELP") {
         cmd_help();
         return;
     }

@@ -10,6 +10,49 @@
 //   - Buffer persists after ENDUNTIL (mirrors ENDLOOP).
 // ============================================================================
 
+// @dottalk.usage v1
+// owner: DOT|UNTIL
+// command: UNTIL
+// category: script
+// status: supported
+// noargs: block-start
+// effect: loop
+// mutates: until-state cursor delegates-command-effects
+// usage-access: UNTIL USAGE
+// summary:
+//   Buffer and execute an UNTIL...ENDUNTIL loop from the current record until a
+//   boolean expression becomes true.
+//
+// usage:
+//   UNTIL USAGE
+//   UNTIL <bool-expr> [QUIET]
+//   ENDUNTIL
+//   ENDUNTIL USAGE
+//
+// examples:
+//   UNTIL EOF()
+//       TUPLE LNAME,FNAME,GPA
+//   ENDUNTIL
+//
+// notes:
+//   UNTIL USAGE and ENDUNTIL USAGE do not start or execute a loop.
+//   UNTIL starts buffering; the shell must route body lines to UNTIL_BUFFER.
+//   ENDUNTIL executes buffered body lines through the canonical loop executor.
+//   Execution starts at the current record and advances one record per iteration.
+//   Buffered body command effects are owned by those commands.
+//
+// risk:
+//   buffers_commands: yes
+//   executes_commands: ENDUNTIL
+//   mutates_cursor: yes during loop
+//   mutates_table_data: depends on buffered command body
+//
+// related:
+//   IF
+//   WHILE
+//   SCAN
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -62,11 +105,55 @@ static void trim_trailing(std::string& s) {
 }
 
 // -------------------------------- UNTIL -------------------------------------
+static std::string trim_usage_copy_until(std::string s)
+{
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\r' || s.front() == '\n')) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n')) {
+        s.pop_back();
+    }
+    return s;
+}
+
+static std::string upper_usage_copy_until(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool until_usage_request(const std::string& raw)
+{
+    const std::string u = upper_usage_copy_until(trim_usage_copy_until(raw));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_until_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  UNTIL USAGE\n"
+        << "  UNTIL <bool-expr> [QUIET]\n"
+        << "  ENDUNTIL\n"
+        << "  ENDUNTIL USAGE\n"
+        << "Examples:\n"
+        << "  UNTIL EOF()\n"
+        << "      TUPLE LNAME,FNAME,GPA\n"
+        << "  ENDUNTIL\n"
+        << "Notes:\n"
+        << "  - UNTIL USAGE and ENDUNTIL USAGE do not start or execute a loop.\n";
+}
 void cmd_UNTIL(xbase::DbArea&, std::istringstream& S)
 {
     auto& st = untilstate::st();
 
     std::string expr = slurp_rest(S);
+    if (until_usage_request(expr)) {
+        print_until_usage();
+        return;
+    }
     bool quiet = false;
 
     // optional trailing QUIET
@@ -102,8 +189,12 @@ void cmd_UNTIL_BUFFER(xbase::DbArea&, std::istringstream& S)
 }
 
 // -------------------------------- ENDUNTIL ----------------------------------
-void cmd_ENDUNTIL(xbase::DbArea& A, std::istringstream&)
+void cmd_ENDUNTIL(xbase::DbArea& A, std::istringstream& S)
 {
+    if (until_usage_request(slurp_rest(S))) {
+        print_until_usage();
+        return;
+    }
     auto& st = untilstate::st();
 
     // stop capturing before we run

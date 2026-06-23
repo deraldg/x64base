@@ -14,6 +14,51 @@
 //   normally contain only live records and would otherwise hide deleted rows.
 // - REST / NEXT preserve physical-scope semantics through the shared selector.
 
+// @dottalk.usage v1
+// owner: DOT|RECALL
+// command: RECALL
+// category: table-mutation
+// status: supported
+// noargs: recall-current
+// effect: undelete-records
+// mutates: table-data delete-flags index-entries
+// usage-access: RECALL USAGE
+// summary:
+//   Clear deleted flags on the current record or selected deleted records.
+//
+// usage:
+//   RECALL USAGE
+//   RECALL
+//   RECALL ALL
+//   RECALL REST
+//   RECALL NEXT <n>
+//   RECALL FOR <expr>
+//
+// examples:
+//   RECALL
+//   RECALL ALL
+//   RECALL REST
+//   RECALL NEXT 10
+//   RECALL FOR LNAME = "SMITH"
+//
+// notes:
+//   RECALL USAGE prints usage before open-table checks.
+//   RECALL with no arguments recalls the current record.
+//   RECALL target selection is deleted-only.
+//   RECALL rebuilds index entries for recalled records best-effort.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   mutates_table_data: yes
+//   clears_deleted_flags: yes
+//   mutates_index_entries: best-effort
+//
+// related:
+//   ERASE
+//   PACK
+//   ZAP
+//
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -213,8 +258,52 @@ static int32_t recall_targets(xbase::DbArea& area,
 
 } // namespace
 
+static void print_recall_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  RECALL USAGE\n"
+        << "  RECALL\n"
+        << "  RECALL ALL\n"
+        << "  RECALL REST\n"
+        << "  RECALL NEXT <n>\n"
+        << "  RECALL FOR <expr>\n"
+        << "Examples:\n"
+        << "  RECALL\n"
+        << "  RECALL ALL\n"
+        << "  RECALL REST\n"
+        << "  RECALL NEXT 10\n"
+        << "  RECALL FOR LNAME = \"SMITH\"\n"
+        << "Notes:\n"
+        << "  - RECALL USAGE does not require an open table.\n"
+        << "  - RECALL with no arguments recalls the current record.\n"
+        << "  - RECALL target selection is deleted-only.\n";
+}
 void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
 {
+    // RECALL_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            const std::string u = textio::up(usage_tok);
+            if (u == "USAGE" || u == "HELP" || u == "?") {
+                print_recall_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if (!area.isOpen()) {
         std::cout << "No table is open. Use USE <file> first.\n";
         return;
@@ -298,7 +387,7 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
         return;
     }
 
-    std::cout << "Usage: RECALL [ALL | REST | NEXT <n> | FOR <expr>]  (no args => recall current)\n";
+    print_recall_usage_contract();
 }
 
 static bool s_registered = [](){

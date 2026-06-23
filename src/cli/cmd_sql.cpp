@@ -5,6 +5,46 @@
 // Change: Suppress "false" per-record logs by default. Print per-record lines
 // only for matches (ok==true). Use VERBOSE to print all (true/false) details.
 
+// @dottalk.usage v1
+// owner: DOT|SQL
+// command: SQL
+// category: sql
+// status: supported
+// noargs: scan/report
+// effect: query
+// mutates: cursor-temporary
+// usage-access: SQL USAGE
+// summary:
+//   Evaluate SQL-like COUNT/FOR predicates over the current DBF work area.
+//
+// usage:
+//   SQL USAGE
+//   SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>] [VERBOSE]
+//
+// examples:
+//   SQL COUNT
+//   SQL COUNT ALL
+//   SQL COUNT DELETED
+//   SQL COUNT FOR GPA >= 3.0
+//   SQL LNAME = "SMITH"
+//   SQL VERBOSE COUNT FOR GPA >= 3.0
+//
+// notes:
+//   SQL USAGE prints usage before open-table checks.
+//   SQL reads records and may temporarily move the cursor.
+//   SQL does not mutate table data.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   scans_records: yes
+//   mutates_cursor: temporary
+//   mutates_table_data: no
+//
+// related:
+//   SQLSEL
+//   WHERE
+//   WHERECACHE
+//
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "record_view.hpp"
@@ -150,7 +190,53 @@ static inline bool include_row(bool deleted, DelMode mode) {
 } // anon
 
 // ---------- command ----------
+static void print_sql_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SQL USAGE\n"
+        << "  SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>] [VERBOSE]\n"
+        << "Examples:\n"
+        << "  SQL COUNT\n"
+        << "  SQL COUNT ALL\n"
+        << "  SQL COUNT DELETED\n"
+        << "  SQL COUNT FOR GPA >= 3.0\n"
+        << "  SQL LNAME = \"SMITH\"\n"
+        << "  SQL VERBOSE COUNT FOR GPA >= 3.0\n"
+        << "Notes:\n"
+        << "  - SQL USAGE does not require an open table.\n"
+        << "  - SQL scans records and does not mutate table data.\n";
+}
+
+static bool sql_usage_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SQL(xbase::DbArea& A, std::istringstream& iss) {
+    // SQL_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (sql_usage_contract(usage_tok)) {
+                print_sql_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if (!A.isOpen()) { std::cout << "No file open\n"; return; }
 
     const Opts opt = parse_opts(iss);

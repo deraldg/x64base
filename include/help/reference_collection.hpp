@@ -164,6 +164,7 @@ std::vector<CheckIssue> check_unresolved_variant_targets(const ReferenceCollecti
 std::vector<CheckIssue> check_duplicate_canonical_commands(const ReferenceCollection& rc);
 std::vector<CheckIssue> check_duplicate_subcommands(const ReferenceCollection& rc);
 std::vector<CheckIssue> check_missing_parent_commands(const ReferenceCollection& rc);
+std::vector<CheckIssue> check_set_family_canonicalization(const ReferenceCollection& rc);
 
 // Function checks
 std::vector<CheckIssue> check_duplicate_functions(const ReferenceCollection& rc);

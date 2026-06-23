@@ -1,0 +1,6 @@
+* metadata.dts
+* Set DotTalk++ runtime paths to the x64 metadata catalog lane.
+* This script assumes paths are resolved relative to the runtime DATA root.
+SETPATH DBF metadata
+SETPATH INDEXES indexes\metadata
+SETPATH LMDB lmdb\metadata

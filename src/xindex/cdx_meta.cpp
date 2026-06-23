@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdint>
 #include <fstream>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -29,6 +30,32 @@ static std::string upper_ascii_copy_(std::string s) {
         ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     }
     return s;
+}
+
+static std::string trim_ascii_copy_(std::string s) {
+    auto is_space = [](unsigned char ch){ return std::isspace(ch) != 0; };
+
+    while (!s.empty() && is_space(static_cast<unsigned char>(s.front()))) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && is_space(static_cast<unsigned char>(s.back()))) {
+        s.pop_back();
+    }
+
+    return s;
+}
+
+static std::string normalize_unsigned_ascii_(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+
+    for (unsigned char ch : s) {
+        if (std::isdigit(ch)) {
+            out.push_back(static_cast<char>(ch));
+        }
+    }
+
+    return out;
 }
 
 // Stable 64-bit FNV-1a hash.
@@ -87,8 +114,8 @@ std::optional<MetaRecord> read_meta(const std::string& cdx_path, std::string* er
             const auto pos = line.find('=');
             if (pos == std::string::npos) continue;
 
-            const std::string k = line.substr(0, pos);
-            const std::string v = line.substr(pos + 1);
+            const std::string k = trim_ascii_copy_(line.substr(0, pos));
+            const std::string v = trim_ascii_copy_(line.substr(pos + 1));
 
             if (k == "META_VERSION")      m.meta_version       = static_cast<std::uint32_t>(std::stoul(v));
             else if (k == "BACKEND")      m.backend            = v;
@@ -96,7 +123,7 @@ std::optional<MetaRecord> read_meta(const std::string& cdx_path, std::string* er
             else if (k == "VERSION")      m.table.version      = static_cast<std::uint8_t>(std::stoul(v));
             else if (k == "RECLEN")       m.table.rec_len      = static_cast<std::uint32_t>(std::stoul(v));
             else if (k == "FIELDS")       m.table.field_count  = static_cast<std::uint32_t>(std::stoul(v));
-            else if (k == "HASH")         m.table.schema_hash  = static_cast<std::uint64_t>(std::stoull(v));
+            else if (k == "HASH")         m.table.schema_hash  = static_cast<std::uint64_t>(std::stoull(normalize_unsigned_ascii_(v)));
             else if (k == "SOURCE")       m.table.source       = v;
         }
     } catch (const std::exception& ex) {
@@ -115,6 +142,7 @@ bool write_meta(const std::string& cdx_path, const MetaRecord& m, std::string* e
         if (err) *err = "write_meta: cannot open sidecar";
         return false;
     }
+    out.imbue(std::locale::classic());
 
     out << "META_VERSION=" << m.meta_version << "\n";
     out << "BACKEND="      << m.backend << "\n";

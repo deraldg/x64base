@@ -33,8 +33,8 @@
 //   effectively a single-order container.
 
 // @dottalk.usage v1
-// owner: DOT|SETINDEX
-// command: SETINDEX
+// owner: DOT|SET INDEX
+// command: SET INDEX
 // category: index
 // status: supported
 // noargs: usage

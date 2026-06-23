@@ -48,7 +48,7 @@ static bool is_known_field_type(char t)
     }
 }
 
-static bool valid_length_for_type(char t, std::uint8_t len, std::uint8_t dec)
+static bool valid_length_for_type(char t, std::uint32_t len, std::uint8_t dec)
 {
     if (len == 0) {
         return false;

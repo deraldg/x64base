@@ -1,3 +1,42 @@
+// @dottalk.usage v1
+// owner: DOT|ZIP
+// command: ZIP
+// category: archive
+// status: supported
+// noargs: usage
+// effect: archive-file-operation
+// mutates: filesystem
+// usage-access: ZIP USAGE
+// summary:
+//   List, create, or extract ZIP archives through the configured ZIP backend.
+//
+// usage:
+//   ZIP USAGE
+//   ZIP LIST <archive.zip>
+//   ZIP CREATE <archive.zip> <path>
+//   ZIP EXTRACT <archive.zip> [target_dir]
+//
+// examples:
+//   ZIP LIST backups.zip
+//   ZIP CREATE source_bundle.zip src
+//   ZIP EXTRACT source_bundle.zip tmp\source_bundle
+//
+// notes:
+//   ZIP USAGE prints usage and does not touch archive files.
+//   ZIP LIST reads an archive and prints entries.
+//   ZIP CREATE writes an archive, adding .zip when needed.
+//   ZIP EXTRACT writes files under the target directory or current directory.
+//
+// risk:
+//   reads_filesystem: ZIP LIST, ZIP CREATE source
+//   writes_filesystem: ZIP CREATE, ZIP EXTRACT
+//   overwrites_files: backend-dependent on ZIP CREATE/EXTRACT
+//   mutates_table_data: no
+//
+// related:
+//   COPY
+//   EXPORT
+//
 #include "cli/zip_service.hpp"
 #include "xbase.hpp"
 
@@ -51,9 +90,19 @@ static void print_usage()
 {
     std::cout
         << "Usage:\n"
+        << "  ZIP USAGE\n"
         << "  ZIP LIST <archive.zip>\n"
         << "  ZIP CREATE <archive.zip> <path>\n"
-        << "  ZIP EXTRACT <archive.zip> [target_dir]\n";
+        << "  ZIP EXTRACT <archive.zip> [target_dir]\n"
+        << "Examples:\n"
+        << "  ZIP LIST backups.zip\n"
+        << "  ZIP CREATE source_bundle.zip src\n"
+        << "  ZIP EXTRACT source_bundle.zip tmp\\source_bundle\n"
+        << "Notes:\n"
+        << "  - ZIP USAGE does not touch archive files.\n"
+        << "  - ZIP LIST reads an archive and prints entries.\n"
+        << "  - ZIP CREATE writes an archive and adds .zip when needed.\n"
+        << "  - ZIP EXTRACT writes files under the target directory or current directory.\n";
 }
 
 static void do_list(const std::vector<std::string>& toks)
@@ -166,6 +215,10 @@ void cmd_ZIP(xbase::DbArea&, std::istringstream& iss)
     }
 
     const std::string cmd = upper_copy(toks[0]);
+    if (cmd == "USAGE" || cmd == "HELP" || cmd == "?") {
+        print_usage();
+        return;
+    }
 
     if (cmd == "LIST") {
         do_list(toks);

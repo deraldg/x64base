@@ -8,6 +8,50 @@
 //   GO RECORD <recno>
 //   GO +/-<n>
 
+// @dottalk.usage v1
+// owner: DOT|GO
+// command: GO
+// category: navigation
+// status: supported
+// noargs: navigate
+// effect: navigate
+// mutates: cursor
+// usage-access: GO USAGE
+// summary:
+//   Refresh the current record, move to table/order endpoints, move to an
+//   absolute record number, or skip relative to the current record.
+//
+// usage:
+//   GO
+//   GO USAGE
+//   GO TOP
+//   GO BOTTOM
+//   GO FIRST
+//   GO LAST
+//   GO TO <recno>
+//   GO RECORD <recno>
+//   GO <recno>
+//   GO +<n>
+//   GO -<n>
+//
+// notes:
+//   GO with no arguments refreshes/re-reads the current record through the navigation layer.
+//   GO TOP/BOTTOM/FIRST/LAST move to logical endpoints.
+//   GO <recno>, GO TO <recno>, and GO RECORD <recno> navigate absolutely.
+//   GO +/-<n> delegates to relative skip.
+//   GO USAGE prints usage before navigation.
+//
+// risk:
+//   mutates_cursor: yes except usage
+//   mutates_table_data: no
+//
+// related:
+//   GOTO
+//   TOP
+//   BOTTOM
+//   SKIP
+//
+
 #include <sstream>
 #include <string>
 
@@ -23,6 +67,22 @@ void print_line(const std::string& s)
 {
     auto& out = cli::OutputRouter::instance().out();
     out << s << '\n';
+}
+
+void print_go_usage()
+{
+    print_line("Usage:");
+    print_line("  GO");
+    print_line("  GO USAGE");
+    print_line("  GO TOP");
+    print_line("  GO BOTTOM");
+    print_line("  GO FIRST");
+    print_line("  GO LAST");
+    print_line("  GO TO <recno>");
+    print_line("  GO RECORD <recno>");
+    print_line("  GO <recno>");
+    print_line("  GO +<n>");
+    print_line("  GO -<n>");
 }
 
 void show_command_syntax(const std::string& cmd)
@@ -54,6 +114,11 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
     }
 
     const std::string u = cli::nav::upper_copy(tok);
+
+    if (u == "USAGE" || u == "HELP" || u == "?") {
+        print_go_usage();
+        return;
+    }
 
     if (u == "TOP") {
         cli::nav::go_endpoint(A, cli::nav::Endpoint::Top, "GO");

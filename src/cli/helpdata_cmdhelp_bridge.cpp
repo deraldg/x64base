@@ -196,6 +196,58 @@ static std::string strip_contract_comment_prefix(std::string line)
     return line;
 }
 
+
+static bool is_compact_set_family_command_local(const std::string& command)
+{
+    const std::string u = hd::upper(trim_copy_local(command));
+    static const std::map<std::string, std::string> compact_to_canonical = {
+        {"SETCASE", "SET CASE"},
+        {"SETCDX", "SET CDX"},
+        {"SETCNX", "SET CNX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETINDEX", "SET INDEX"},
+        {"SETLMDB", "SET LMDB"},
+        {"SETNEAR", "SET NEAR"},
+        {"SETORDER", "SET ORDER"},
+        {"SETPATH", "SET PATH"},
+        {"SETUNIQUE", "SET UNIQUE"},
+        {"SET_UNIQUE", "SET UNIQUE"}
+    };
+    return compact_to_canonical.count(u) > 0;
+}
+
+static std::string canonicalize_set_family_command_local(const std::string& command)
+{
+    const std::string u = hd::upper(trim_copy_local(command));
+    static const std::map<std::string, std::string> compact_to_canonical = {
+        {"SETCASE", "SET CASE"},
+        {"SETCDX", "SET CDX"},
+        {"SETCNX", "SET CNX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETINDEX", "SET INDEX"},
+        {"SETLMDB", "SET LMDB"},
+        {"SETNEAR", "SET NEAR"},
+        {"SETORDER", "SET ORDER"},
+        {"SETPATH", "SET PATH"},
+        {"SETUNIQUE", "SET UNIQUE"},
+        {"SET_UNIQUE", "SET UNIQUE"}
+    };
+    auto it = compact_to_canonical.find(u);
+    return it == compact_to_canonical.end() ? u : it->second;
+}
+
+static void add_set_family_alias_if_needed_local(const std::string& original,
+                                                 std::vector<std::string>& aliases)
+{
+    const std::string u = hd::upper(trim_copy_local(original));
+    if (!is_compact_set_family_command_local(u)) {
+        return;
+    }
+    if (std::find(aliases.begin(), aliases.end(), u) == aliases.end()) {
+        aliases.push_back(u);
+    }
+}
+
 static bool source_file_extension_supported(const fs::path& p)
 {
     std::string ext = hd::upper(p.extension().string());
@@ -210,6 +262,7 @@ struct UsageContractDoc {
     std::vector<std::string> usage;
     std::vector<std::string> examples;
     std::vector<std::string> notes;
+    std::vector<std::string> aliases;
 };
 
 static void add_contract_line(UsageContractDoc& doc,
@@ -229,6 +282,8 @@ static void add_contract_line(UsageContractDoc& doc,
         doc.examples.push_back(clean);
     } else if (section == "notes" || section == "note") {
         doc.notes.push_back(clean);
+    } else if (section == "aliases" || section == "alias") {
+        doc.aliases.push_back(hd::upper(clean));
     }
 }
 
@@ -273,7 +328,8 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
 
             if (key == "summary" || key == "usage" ||
                 key == "examples" || key == "example" ||
-                key == "notes" || key == "note") {
+                key == "notes" || key == "note" ||
+                key == "aliases" || key == "alias") {
                 section = key;
                 add_contract_line(doc, section, value);
                 continue;
@@ -314,18 +370,24 @@ static void append_usage_contract_artifacts_for_doc(const UsageContractDoc& doc,
                                                     HelpDataV2Counts& counts)
 {
     std::string catalog = "DOT";
-    std::string name = hd::upper(trim_copy_local(doc.command));
+    std::string raw_name = hd::upper(trim_copy_local(doc.command));
+    std::vector<std::string> aliases = doc.aliases;
 
     if (!doc.owner.empty()) {
         const std::string ownerU = hd::upper(trim_copy_local(doc.owner));
         const auto bar = ownerU.find('|');
         if (bar != std::string::npos) {
             catalog = ownerU.substr(0, bar);
-            if (name.empty()) {
-                name = ownerU.substr(bar + 1);
+            if (raw_name.empty()) {
+                raw_name = ownerU.substr(bar + 1);
             }
+        } else if (raw_name.empty()) {
+            raw_name = ownerU;
         }
     }
+
+    add_set_family_alias_if_needed_local(raw_name, aliases);
+    std::string name = canonicalize_set_family_command_local(raw_name);
 
     if (name.empty()) {
         return;
@@ -350,6 +412,14 @@ static void append_usage_contract_artifacts_for_doc(const UsageContractDoc& doc,
                                         ordinal));
         ++counts.usage_contract_rows;
     };
+
+    int alias_ordinal = 1;
+    for (const auto& alias : aliases) {
+        add(hd::ArtifactKind::Alias,
+            "USAGE_CONTRACT_ALIAS",
+            alias,
+            alias_ordinal++);
+    }
 
     if (!doc.summary.empty()) {
         std::string combined;

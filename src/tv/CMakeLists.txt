@@ -2,7 +2,9 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-find_package(tvision CONFIG REQUIRED)
+if (NOT TARGET tvision::tvision)
+  find_package(tvision CONFIG REQUIRED)
+endif()
 
 set(TV_UI_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/cmd_browsetui.cpp

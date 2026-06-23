@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -43,7 +44,7 @@ Result not_implemented(const std::string& msg)
     return r;
 }
 
-bool parse_uint8_strict(const std::string& s, std::uint8_t& out)
+bool parse_uint32_strict(const std::string& s, std::uint32_t& out)
 {
     const std::string t = trim_copy(s);
     if (t.empty()) return false;
@@ -57,12 +58,22 @@ bool parse_uint8_strict(const std::string& s, std::uint8_t& out)
         return false;
     }
 
-    if (v > 255UL) return false;
-    out = static_cast<std::uint8_t>(v);
+    if (v > static_cast<unsigned long>(std::numeric_limits<std::uint32_t>::max())) return false;
+    out = static_cast<std::uint32_t>(v);
     return true;
 }
 
-bool default_fixed_length_for_type(char t, std::uint8_t& len, std::uint8_t& dec)
+
+bool parse_uint8_strict(const std::string& s, std::uint8_t& out)
+{
+    std::uint32_t tmp = 0;
+    if (!parse_uint32_strict(s, tmp)) return false;
+    if (tmp > 255u) return false;
+    out = static_cast<std::uint8_t>(tmp);
+    return true;
+}
+
+bool default_fixed_length_for_type(char t, std::uint32_t& len, std::uint8_t& dec)
 {
     switch (static_cast<char>(std::toupper(static_cast<unsigned char>(t)))) {
     case 'D':
@@ -456,7 +467,7 @@ bool parseFieldSpec(const std::string& textIn, xbase::FieldDef& out, std::string
     }
 
     const char type = spec.front();
-    std::uint8_t len = 0;
+    std::uint32_t len = 0;
     std::uint8_t dec = 0;
 
     const std::size_t lpar = spec.find('(');
@@ -482,7 +493,7 @@ bool parseFieldSpec(const std::string& textIn, xbase::FieldDef& out, std::string
         const std::size_t comma = inside.find(',');
 
         if (comma == std::string::npos) {
-            if (!parse_uint8_strict(inside, len)) {
+            if (!parse_uint32_strict(inside, len)) {
                 err = "invalid field length";
                 return false;
             }
@@ -491,7 +502,7 @@ bool parseFieldSpec(const std::string& textIn, xbase::FieldDef& out, std::string
             const std::string lhs = inside.substr(0, comma);
             const std::string rhs = inside.substr(comma + 1);
 
-            if (!parse_uint8_strict(lhs, len)) {
+            if (!parse_uint32_strict(lhs, len)) {
                 err = "invalid field length";
                 return false;
             }
@@ -617,6 +628,12 @@ Result append(xbase::DbArea& db,
     xbase::FieldDef fd = fdIn;
     fd.name = upper_copy(trim_copy(fd.name));
     fd.type = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
+
+    if (fd.length > 255u && db.versionByte() != 0x64) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: field length >255 is only supported for X64 tables";
+        return r;
+    }
 
     std::string err;
     if (!validateFieldDef(fd, err)) {

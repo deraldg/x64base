@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // src/cli/cmd_scan.hpp
 //
 // SCAN subsystem for DotTalk++
@@ -24,4 +24,26 @@ namespace xbase { class DbArea; }
 // SCAN subsystem commands
 void cmd_SCAN        (xbase::DbArea& A, std::istringstream& S);
 void cmd_SCAN_BUFFER (xbase::DbArea& A, std::istringstream& S); // internal helper used by shell
+
+// @dottalk.usage v1
+// owner: DOT|ENDSCAN
+// command: ENDSCAN
+// category: syntax-command
+// status: active
+// noargs: closes-control-block
+// effect: control-flow
+// mutates: none
+// usage-access: ENDSCAN USAGE
+// summary:
+//   Close a SCAN loop block.
+//
+// usage:
+//   ENDSCAN
+//
+// notes:
+//   Syntax command paired with SCAN. It does not mutate table data by itself.
+//
+// related:
+//   SCAN
+//
 void cmd_ENDSCAN     (xbase::DbArea& A, std::istringstream& S);

@@ -1,3 +1,27 @@
+// @dottalk.usage v1
+// owner: DOT|VAR_INTEGRATION_EXAMPLE
+// command: VAR
+// category: example-helper
+// status: documentation-example
+// noargs: n/a
+// effect: none
+// mutates: none
+// usage-access: owned-by VAR
+// summary:
+//   Example-only integration sketch for DotScript variable-name validation.
+//
+// usage:
+//   This file is not a shell command handler.
+//   User-visible VAR behavior and usage are owned by cmd_var.cpp.
+//
+// notes:
+//   Keep this file as a reference/example only unless intentionally wiring a
+//   real command path. Do not register cmd_VAR_example as a user command.
+//
+// risk:
+//   mutates_table_data: no
+//
+
 // Example integration for an existing cmd_var.cpp.
 // This is intentionally conservative because your exact cmd_VAR signature
 // and expression-evaluation plumbing were not included in the conversation.

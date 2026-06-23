@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <iostream>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -118,6 +119,7 @@ bool IndexManager::openCdx(const std::string& cdx_container_path,
                 if (!cdxmeta::write_meta(cdx_container_path, fresh, &meta_err)) {
                     if (err) {
                         std::ostringstream oss;
+                        oss.imbue(std::locale::classic());
                         oss << "openCdx: stale metadata detected but refresh failed"
                             << " [table kind=" << identity.kind
                             << ", version=" << static_cast<unsigned>(identity.version)
@@ -146,6 +148,7 @@ bool IndexManager::openCdx(const std::string& cdx_container_path,
             } else {
                 if (err) {
                     std::ostringstream oss;
+                    oss.imbue(std::locale::classic());
                     oss << "openCdx: metadata mismatch"
                         << " [table kind=" << identity.kind
                         << ", version=" << static_cast<unsigned>(identity.version)

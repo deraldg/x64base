@@ -3,8 +3,8 @@
 // Resolve CNX using SET PATH INDEXES slot via cli/path_resolver.
 
 // @dottalk.usage v1
-// owner: DOT|SETCNX
-// command: SETCNX
+// owner: DOT|SET CNX
+// command: SET CNX
 // category: index
 // status: supported
 // noargs: mutate

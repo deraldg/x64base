@@ -1,7 +1,44 @@
+// @dottalk.usage v1
+// owner: DOT|DISPLAY
+// command: DISPLAY
+// category: record
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: cursor
+// usage-access: DISPLAY USAGE
+// summary:
+//   Display the current record or display a requested record by record number.
+//
+// usage:
+//   DISPLAY
+//   DISPLAY USAGE
+//   DISPLAY <recno>
+//
+// notes:
+//   DISPLAY with no arguments displays the current record.
+//   DISPLAY <recno> navigates to that record number, then displays it.
+//   Memo payload display values are resolved through the memo display layer.
+//   DISPLAY USAGE prints usage before open-table checks or cursor movement.
+//
+// risk:
+//   reads_record: yes
+//   mutates_cursor: DISPLAY <recno>
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   LIST
+//   BROWSE
+//   RECNO
+//
+
 #include "xbase.hpp"
 #include "cli/memo_display.hpp"
 #include "cli/output_router.hpp"
 #include "cli/message_catalog.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <sstream>
 #include <string>
@@ -35,14 +72,47 @@ static std::string up(std::string s)
     return s;
 }
 
+
+static void print_display_usage()
+{
+    print_line("Usage:");
+    print_line("  DISPLAY");
+    print_line("  DISPLAY USAGE");
+    print_line("  DISPLAY <recno>");
+}
+
+static bool display_usage_request(std::istringstream& iss)
+{
+    std::string tok;
+    if (!(iss >> tok)) {
+        iss.clear();
+        iss.seekg(0);
+        return false;
+    }
+
+    const std::string u = up(tok);
+    if (u == "USAGE" || u == "HELP" || u == "?") {
+        return true;
+    }
+
+    iss.clear();
+    iss.seekg(0);
+    return false;
+}
+
 } // anonymous namespace
 
 void cmd_DISPLAY(DbArea& a, std::istringstream& iss)
 {
     using namespace dottalk::msg;
 
+    if (display_usage_request(iss)) {
+        print_display_usage();
+        return;
+    }
+
     if (!a.isOpen()) {
-        print_line(text(Code::NotFound));   // "No table open" → standardized
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
         return;
     }
 

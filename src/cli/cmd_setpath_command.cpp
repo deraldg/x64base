@@ -24,14 +24,14 @@
 //   DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP
 
 // @dottalk.usage v1
-// owner: DOT|SETPATH
-// command: SETPATH
+// owner: DOT|SET PATH
+// command: SET PATH
 // category: settings
 // status: supported
 // noargs: report
 // effect: configure
 // mutates: path-state
-// usage-access: SETPATH USAGE
+// usage-access: SET PATH USAGE
 // summary:
 //   Report, reset, or configure DotTalk++ path slots.
 //

@@ -13,6 +13,47 @@
 //   - User must USE to reopen
 //   - Indexes must be rebuilt/rebound after
 
+// @dottalk.usage v1
+// owner: DOT|PACK
+// command: PACK
+// category: destructive-table-structure
+// status: supported
+// noargs: destructive-current-table
+// effect: compact-table-file
+// mutates: table-file closes-table order-state memo-sidecar index-dirty-state
+// usage-access: PACK USAGE
+// summary:
+//   Physically remove deleted records by rewriting the current DBF; x64 memo
+//   tables rebuild both DBF and DTX sidecar with remapped memo ids.
+//
+// usage:
+//   PACK USAGE
+//   PACK
+//
+// examples:
+//   PACK
+//
+// notes:
+//   PACK USAGE prints usage before open-table checks.
+//   PACK rewrites the current DBF with only non-deleted records and closes the table on success.
+//   PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.
+//   Legacy memo tables are refused.
+//   Index containers must be rebuilt/rebound after PACK.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   destructive_rewrite: yes
+//   mutates_table_file: yes
+//   mutates_memo_sidecar: x64 memo tables
+//   closes_table: yes
+//   clears_order_state: yes
+//
+// related:
+//   TURBOPACK
+//   ZAP
+//   RECALL
+//
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -30,6 +71,7 @@
 #include "textio.hpp"
 #include "cli/order_state.hpp"
 #include "memo/memostore.hpp"
+#include <cctype>
 
 // Optional path slot support (SETPATH)
 #if __has_include("cli/cmd_setpath.hpp")
@@ -657,9 +699,52 @@ static bool pack_x64_memo_table(const fs::path& origPath,
 
 } // namespace
 
+static void print_pack_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  PACK USAGE\n"
+        << "  PACK\n"
+        << "Examples:\n"
+        << "  PACK\n"
+        << "Notes:\n"
+        << "  - PACK USAGE does not require an open table and does not rewrite files.\n"
+        << "  - PACK physically removes deleted records from the current DBF.\n"
+        << "  - PACK closes the table on success; reopen with USE <table>.\n"
+        << "  - PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.\n"
+        << "  - Legacy memo tables are refused.\n"
+        << "  - Index containers must be rebuilt/rebound after PACK.\n";
+}
+
+static bool pack_usage_token_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
 {
-    (void)in;
+    // PACK_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = in.tellg();
+        std::string usage_tok;
+        if (in >> usage_tok) {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+
+            if (pack_usage_token_contract(usage_tok)) {
+                print_pack_usage_contract();
+                return;
+            }
+        } else {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+        }
+    }
 
     if (!A.isOpen() || A.filename().empty()) {
         std::cout << "PACK: No table open\n";

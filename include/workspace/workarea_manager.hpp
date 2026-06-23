@@ -1,5 +1,12 @@
-
+﻿
 #pragma once
+// @dottalk.contract
+// file: include/workspace/workarea_manager.hpp
+// subsystem: workspace
+// role: Declares workspace-layer interfaces for DotTalk++ session, area, or runtime workspace coordination
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include "xbase.hpp"
 
@@ -23,3 +30,4 @@ public:
 };
 
 }
+

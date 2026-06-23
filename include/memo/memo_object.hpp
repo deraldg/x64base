@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/memo/memo_object.hpp
+// subsystem: memo
+// role: Declares memo or large-object interfaces for DotTalk++ storage workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include "memo/memo_ref.hpp"
 
@@ -46,3 +53,4 @@ bool is_text_content_type(const std::string& content_type);
 std::string normalize_content_type(const std::string& content_type);
 
 } // namespace dottalk::memo
+

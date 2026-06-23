@@ -11,6 +11,49 @@
 //   - Buffer persists after ENDWHILE (mirrors ENDLOOP behavior).
 // ============================================================================
 
+// @dottalk.usage v1
+// owner: DOT|WHILE
+// command: WHILE
+// category: script
+// status: supported
+// noargs: block-start
+// effect: loop
+// mutates: while-state cursor delegates-command-effects
+// usage-access: WHILE USAGE
+// summary:
+//   Buffer and execute a WHILE...ENDWHILE loop from the current record while a
+//   boolean expression remains true.
+//
+// usage:
+//   WHILE USAGE
+//   WHILE <bool-expr> [QUIET]
+//   ENDWHILE
+//   ENDWHILE USAGE
+//
+// examples:
+//   WHILE GPA >= 3.0
+//       TUPLE LNAME,FNAME,GPA
+//   ENDWHILE
+//
+// notes:
+//   WHILE USAGE and ENDWHILE USAGE do not start or execute a loop.
+//   WHILE starts buffering; the shell must route body lines to WHILE_BUFFER.
+//   ENDWHILE executes buffered body lines through the canonical loop executor.
+//   Execution starts at the current record and advances one record per iteration.
+//   Buffered body command effects are owned by those commands.
+//
+// risk:
+//   buffers_commands: yes
+//   executes_commands: ENDWHILE
+//   mutates_cursor: yes during loop
+//   mutates_table_data: depends on buffered command body
+//
+// related:
+//   IF
+//   UNTIL
+//   SCAN
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -63,11 +106,55 @@ static void trim_trailing(std::string& s) {
 }
 
 // -------------------------------- WHILE -------------------------------------
+static std::string trim_usage_copy_while(std::string s)
+{
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\r' || s.front() == '\n')) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n')) {
+        s.pop_back();
+    }
+    return s;
+}
+
+static std::string upper_usage_copy_while(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool while_usage_request(const std::string& raw)
+{
+    const std::string u = upper_usage_copy_while(trim_usage_copy_while(raw));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_while_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  WHILE USAGE\n"
+        << "  WHILE <bool-expr> [QUIET]\n"
+        << "  ENDWHILE\n"
+        << "  ENDWHILE USAGE\n"
+        << "Examples:\n"
+        << "  WHILE GPA >= 3.0\n"
+        << "      TUPLE LNAME,FNAME,GPA\n"
+        << "  ENDWHILE\n"
+        << "Notes:\n"
+        << "  - WHILE USAGE and ENDWHILE USAGE do not start or execute a loop.\n";
+}
 void cmd_WHILE(xbase::DbArea&, std::istringstream& S)
 {
     auto& st = whilestate::st();
 
     std::string expr = slurp_rest(S);
+    if (while_usage_request(expr)) {
+        print_while_usage();
+        return;
+    }
     bool quiet = false;
 
     // optional trailing QUIET
@@ -103,8 +190,12 @@ void cmd_WHILE_BUFFER(xbase::DbArea&, std::istringstream& S)
 }
 
 // -------------------------------- ENDWHILE ----------------------------------
-void cmd_ENDWHILE(xbase::DbArea& A, std::istringstream&)
+void cmd_ENDWHILE(xbase::DbArea& A, std::istringstream& S)
 {
+    if (while_usage_request(slurp_rest(S))) {
+        print_while_usage();
+        return;
+    }
     auto& st = whilestate::st();
 
     // stop capturing before we run

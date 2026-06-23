@@ -2,6 +2,7 @@
 
 #include "cli/output_router.hpp"
 #include "cli/command_catalog.hpp"
+#include "cli/settings.hpp"
 
 #include <ostream>
 
@@ -19,6 +20,33 @@ inline std::ostream& out()
 void print_line(const std::string& s)
 {
     out() << s << '\n';
+}
+
+std::string message_text(
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    return dottalk::helpdata::format_message(id, vars, cli::Settings::instance().message_locale);
+}
+
+void print_message(
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    print_line(message_text(id, vars));
+}
+
+void print_prefixed_message(
+    const char* cmd,
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    const std::string text = message_text(id, vars);
+    if (cmd && *cmd) {
+        out() << cmd << ": " << text << '\n';
+    } else {
+        out() << text << '\n';
+    }
 }
 
 void print_info(const char* cmd, const std::string& text)

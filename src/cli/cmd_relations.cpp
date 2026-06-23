@@ -1,4 +1,49 @@
 // src/cli/cmd_relations.cpp
+// @dottalk.usage v1
+// owner: DOT|RELATIONS
+// command: RELATIONS
+// category: relation
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: relation-graph
+// usage-access: RELATIONS USAGE
+// summary:
+//   Inspect and manage active relation definitions, relation files, and relation
+//   enumeration helpers.
+//
+// usage:
+//   RELATIONS
+//   RELATIONS USAGE
+//   RELATIONS ALL
+//   SET RELATIONS
+//   SET RELATIONS USAGE
+//   SET RELATIONS ADD <parent> <child> ON f1[,f2...] [TO child_f1[,child_f2...]]
+//   SET RELATIONS CLEAR <parent|ALL>
+//
+// examples:
+//   RELATIONS
+//   RELATIONS ALL
+//   SET RELATIONS ADD STUDENTS ENROLL ON SID
+//   SET RELATIONS CLEAR ALL
+//
+// notes:
+//   RELATIONS USAGE prints usage and does not inspect or mutate relation state.
+//   SET RELATIONS USAGE prints usage and does not mutate the relation graph.
+//   SET RELATIONS ADD/CLEAR mutate relation definitions.
+//   RELATIONS ALL reports a recursive tree rooted at the current parent.
+//
+// risk:
+//   mutates_relation_graph: SET RELATIONS ADD/CLEAR, REL_REFRESH
+//   reads_workspace_state: RELATIONS/RELATIONS ALL
+//   mutates_table_data: no
+//
+// related:
+//   RBROWSE
+//   TUPLE
+//   WORKSPACE
+//
+
 #include "cmd_relations.hpp"
 
 #include "set_relations.hpp"
@@ -427,12 +472,39 @@ static std::vector<relations_api::RelationSpec> parse_relations_file(const std::
 }
 
 static void show_set_relations_usage() {
-    std::cout <<
-        "SET RELATIONS syntax\n"
-        "  SET RELATIONS ADD <parent> <child> ON f1[,f2...]\n"
-        "  SET RELATIONS ADD <parent> <child> ON parent_f1[,parent_f2...] TO child_f1[,child_f2...]\n"
-        "  SET RELATIONS CLEAR <parent>\n"
-        "  SET RELATIONS CLEAR ALL\n";
+    std::cout
+        << "Usage:\n"
+        << "  SET RELATIONS\n"
+        << "  SET RELATIONS USAGE\n"
+        << "  SET RELATIONS ADD <parent> <child> ON f1[,f2...]\n"
+        << "  SET RELATIONS ADD <parent> <child> ON parent_f1[,parent_f2...] TO child_f1[,child_f2...]\n"
+        << "  SET RELATIONS CLEAR <parent>\n"
+        << "  SET RELATIONS CLEAR ALL\n"
+        << "Examples:\n"
+        << "  SET RELATIONS ADD STUDENTS ENROLL ON SID\n"
+        << "  SET RELATIONS CLEAR STUDENTS\n"
+        << "  SET RELATIONS CLEAR ALL\n";
+}
+
+
+static void show_relations_usage() {
+    std::cout
+        << "Usage:\n"
+        << "  RELATIONS\n"
+        << "  RELATIONS USAGE\n"
+        << "  RELATIONS ALL\n"
+        << "  SET RELATIONS\n"
+        << "  SET RELATIONS USAGE\n"
+        << "  SET RELATIONS ADD <parent> <child> ON f1[,f2...] [TO child_f1[,child_f2...]]\n"
+        << "  SET RELATIONS CLEAR <parent|ALL>\n"
+        << "Examples:\n"
+        << "  RELATIONS\n"
+        << "  RELATIONS ALL\n"
+        << "  SET RELATIONS ADD STUDENTS ENROLL ON SID\n"
+        << "  SET RELATIONS CLEAR ALL\n"
+        << "Notes:\n"
+        << "  - RELATIONS USAGE does not inspect or mutate relation state.\n"
+        << "  - SET RELATIONS USAGE does not mutate relation definitions.\n";
 }
 
 static void show_relations_file_usage() {
@@ -468,6 +540,11 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
     std::string op;
     ss >> op;
     op = up(op);
+
+    if (op == "USAGE" || op == "HELP" || op == "?") {
+        show_set_relations_usage();
+        return;
+    }
 
     if (op == "ADD") {
         std::string parent, child;
@@ -535,6 +612,10 @@ void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
     std::string maybe;
     if (iss >> maybe) {
         const std::string flag = up(trim(maybe));
+        if (flag == "USAGE" || flag == "HELP" || flag == "?") {
+            show_relations_usage();
+            return;
+        }
         if (flag == "ALL") {
             const std::string parent = relations_api::current_parent_name();
             if (parent.empty()) {

@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: EDU|ASCII
+// command: ASCII
+// category: education-reference
+// status: supported
+// noargs: report-full-table
+// effect: report
+// mutates: none
+// usage-access: ASCII USAGE
+// summary:
+//   Print ASCII/extended ASCII reference tables and selected ranges.
+//
+// usage:
+//   ASCII USAGE
+//   ASCII
+//   ASCII ASCII
+//   ASCII EXT
+//   ASCII PRINT
+//   ASCII CTRL
+//   ASCII RANGE <lo> <hi>
+//
+// examples:
+//   ASCII
+//   ASCII ASCII
+//   ASCII EXT
+//   ASCII RANGE 32 126
+//
+// notes:
+//   ASCII USAGE/HELP/? prints usage and does not emit table rows.
+//   This command is read-only reference output.
+//   The older source comment name "EDU ASCII TABLE" is not the registered
+//   command surface in the current runtime.
+//
+// risk:
+//   mutates_table_data: no
+//
 #include "xbase.hpp"
 #include "textio.hpp"
 
@@ -148,12 +184,21 @@ void print_ctrl(const std::vector<AsciiRow>& v) {
 void usage() {
     std::cout
         << "Usage:\n"
-        << "  EDU ASCII TABLE\n"
-        << "  EDU ASCII TABLE ASCII\n"
-        << "  EDU ASCII TABLE EXT\n"
-        << "  EDU ASCII TABLE CTRL\n"
-        << "  EDU ASCII TABLE PRINT\n"
-        << "  EDU ASCII TABLE RANGE a b\n";
+        << "  ASCII USAGE\n"
+        << "  ASCII\n"
+        << "  ASCII ASCII\n"
+        << "  ASCII EXT\n"
+        << "  ASCII PRINT\n"
+        << "  ASCII CTRL\n"
+        << "  ASCII RANGE <lo> <hi>\n"
+        << "Examples:\n"
+        << "  ASCII\n"
+        << "  ASCII ASCII\n"
+        << "  ASCII EXT\n"
+        << "  ASCII RANGE 32 126\n"
+        << "Notes:\n"
+        << "  - ASCII USAGE does not print the table.\n"
+        << "  - ASCII with no arguments prints the full 0..255 table.\n";
 }
 
 bool to_int(const std::string& s, int& out) {
@@ -182,7 +227,7 @@ void edu_ASCII_TABLE(xbase::DbArea&, std::istringstream& iss)
         return;
     }
 
-    if (a1 == "HELP" || a1 == "/?") {
+    if (a1 == "USAGE" || a1 == "HELP" || a1 == "?" || a1 == "/?") {
         usage();
         return;
     }

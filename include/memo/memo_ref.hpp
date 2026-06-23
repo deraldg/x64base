@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/memo/memo_ref.hpp
+// subsystem: memo
+// role: Declares memo or large-object interfaces for DotTalk++ storage workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 // memo_ref.hpp
 //
@@ -38,3 +45,4 @@ MemoRef make_x64_ref(std::uint64_t object_id);
 bool try_object_id_from_ref(const MemoRef& ref, std::uint64_t& out_object_id) noexcept;
 
 } // namespace dottalk::memo
+

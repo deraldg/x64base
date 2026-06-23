@@ -1,3 +1,33 @@
+// @dottalk.usage v1
+// owner: EXT|STUDENTECHO
+// command: STUDENTECHO / SECHO
+// category: extension-example
+// status: sample-extension
+// noargs: usage
+// effect: report
+// mutates: none
+// usage-access: STUDENTECHO USAGE; SECHO USAGE
+// summary:
+//   Student/custom extension sample that echoes the rest of the command line.
+//
+// usage:
+//   STUDENTECHO USAGE
+//   STUDENTECHO <text>
+//   SECHO USAGE
+//   SECHO <text>
+//
+// examples:
+//   STUDENTECHO hello
+//   SECHO hello
+//
+// notes:
+//   Usage/help/? prints usage before echo output.
+//   This is a self-registering extension example, not a protected built-in.
+//
+// risk:
+//   mutates_table_data: no
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -6,6 +36,7 @@
 #include "set_relations.hpp"
 #include "cli/command_registry.hpp"
 #include "../ext_policy.hpp"
+#include <cctype>
 
 /*
     Custom Command Policy
@@ -25,6 +56,28 @@
 
 namespace {
 
+static std::string studentecho_upper_contract(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static void print_studentecho_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  STUDENTECHO USAGE\n"
+        << "  STUDENTECHO <text>\n"
+        << "  SECHO USAGE\n"
+        << "  SECHO <text>\n"
+        << "Examples:\n"
+        << "  STUDENTECHO hello\n"
+        << "  SECHO hello\n"
+        << "Notes:\n"
+        << "  - USAGE/HELP/? does not echo text.\n";
+}
 void cmd_STUDENTECHO(xbase::DbArea&, std::istringstream& in)
 {
     std::string rest;
@@ -34,8 +87,16 @@ void cmd_STUDENTECHO(xbase::DbArea&, std::istringstream& in)
         rest.erase(rest.begin());
     }
 
+    // STUDENTECHO_USAGE_CONTRACT_BRANCH
+    {
+        const std::string u = studentecho_upper_contract(rest);
+        if (u == "USAGE" || u == "HELP" || u == "?") {
+            print_studentecho_usage_contract();
+            return;
+        }
+    }
     if (rest.empty()) {
-        std::cout << "Usage: STUDENTECHO <text>\n";
+        print_studentecho_usage_contract();
         return;
     }
 

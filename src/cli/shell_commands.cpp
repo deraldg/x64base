@@ -43,6 +43,7 @@
 #include "cli/dirty_prompt.hpp"        // dirty prompt wrappers
 
 #include "xbase.hpp"
+#include "cli/cmd_quit.hpp"
 
 using xbase::DbArea;
 
@@ -131,7 +132,41 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
         relations_api::refresh_if_enabled();
     });
 
+        /* VUSE_REGISTRY_USAGE_INTERCEPT_V2 */
     registry().add("VUSE",   [](DbArea& A, std::istringstream& S){
+        const std::streampos pos = S.tellg();
+        std::string tok;
+
+        if (S >> tok) {
+            for (char& ch : tok) {
+                if (ch >= 'a' && ch <= 'z') {
+                    ch = static_cast<char>(ch - 'a' + 'A');
+                }
+            }
+
+            S.clear();
+            if (pos != std::streampos(-1)) {
+                S.seekg(pos);
+            }
+
+            if (tok == "USAGE" || tok == "HELP" || tok == "?") {
+                std::cout
+                    << "Usage:\n"
+                    << "  USE USAGE\n"
+                    << "  USE <table-or-path> [NOINDEX]\n"
+                    << "  VUSE USAGE\n"
+                    << "  VUSE <table-or-path> [NOINDEX]\n"
+                    << "Notes:\n"
+                    << "  - VUSE USAGE does not open tables or mutate order state.\n";
+                return;
+            }
+        } else {
+            S.clear();
+            if (pos != std::streampos(-1)) {
+                S.seekg(pos);
+            }
+        }
+
         if (!dottalk::dirty::maybe_prompt_area(A, "USE")) {
             std::cout << "USE canceled.\n";
             return;
@@ -279,6 +314,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("COPY",         [](DbArea& A, std::istringstream& S){ cmd_COPY(A,S);   });
     registry().add("EXPORT",       [](DbArea& A, std::istringstream& S){ cmd_EXPORT(A,S); });
     registry().add("IMPORT",       [](DbArea& A, std::istringstream& S){ cmd_IMPORT(A,S); });
+    registry().add("AUTODBF",      [](DbArea& A, std::istringstream& S){ cmd_AUTODBF(A,S); });
     registry().add("SORT",         [](DbArea& A, std::istringstream& S){ cmd_SORT(A,S);   });
 
     // ---------------------------------------------------------------------
@@ -347,6 +383,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("INDEXSEEK", [](DbArea& A, std::istringstream& S){ cmd_INDEXSEEK(A,S); });
     registry().add("LMDB",      [](DbArea& A, std::istringstream& S){ cmd_LMDB(A,S);      });
     registry().add("LMDB_UTIL", [](DbArea& A, std::istringstream& S){ cmd_LMDB_UTIL(A,S); });
+    registry().add("SIX",       [](DbArea& A, std::istringstream& S){ cmd_SIX(A,S);       });
+//  registry().add("SNX",       [](DbArea& A, std::istringstream& S){ cmd_SNX(A,S);       });
 #endif 
 
     // ---------------------------------------------------------------------
@@ -405,7 +443,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("ERASE",     [](DbArea& A, std::istringstream& S){ cmd_ERASE(A,S);  });
 
     registry().add("DUMP",      [](DbArea& A, std::istringstream& S){ cmd_DUMP(A,S); });
-    registry().add("EDIT",      [](DbArea& A, std::istringstream& S){ edu_EDIT(A,S); });
+    registry().add("EDIT",      [](DbArea& A, std::istringstream& S){ cmd_EDIT(A,S); });
 
     // LOCATE/CONTINUE are cursor movers and should use the same hook contract
     // as GO/TOP/SKIP/SEEK.
@@ -478,8 +516,10 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // table-centric listing command for order-aware testing. SQL-side mutation
     // is not automatically treated as DbArea relation mutation here.
     registry().add("SQL",       [](DbArea& A, std::istringstream& S){ cmd_SQL(A,S);        });
+    registry().add("SQLHELP",   [](DbArea& A, std::istringstream& S){ cmd_SQLHELP(A,S);    });
     registry().add("SQLSEL",    [](DbArea& A, std::istringstream& S){ cmd_SQL_SELECT(A,S); });
     registry().add("WHERE",     [](DbArea& A, std::istringstream& S){ cmd_WHERE(A,S);      });
+    registry().add("WHERECACHE", [](DbArea& /*A*/, std::istringstream& S){ cmd_WHERECACHE(S); });
     registry().add("SMARTLIST", [](DbArea& A, std::istringstream& S){ cmd_SMARTLIST(A,S);  });
     registry().add("INSERT",    [](DbArea& A, std::istringstream& S){ cmd_SQL_INSERT(A,S); });
     registry().add("UPDATE",    [](DbArea& A, std::istringstream& S){ cmd_SQL_UPDATE(A,S); });
@@ -551,11 +591,13 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("ERROR TEST",   [](DbArea& A, std::istringstream& S){ cmd_ERROR_TEST(A,S);   });
 
 
-    registry().add("CMDHELP",      [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);     });
-    registry().add("COMMANDSHELP", [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);     });
-    registry().add("CMDHELPCHK",   [](DbArea& A, std::istringstream& S){ cmd_CMDHELPCHK(A,S);  });
-    registry().add("CMDREL",       [](DbArea& A, std::istringstream& S){ cmd_CMDREL(A,S);      });
-    registry().add("CMDARGCHK",    [](DbArea& A, std::istringstream& S){ cmd_CMDARGCHK(A,S);   });
+    registry().add("CMDHELP",      [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);      });
+    registry().add("COMMANDSHELP", [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);      });
+    registry().add("CMDHELPCHK",   [](DbArea& A, std::istringstream& S){ cmd_CMDHELPCHK(A,S);   });
+    registry().add("CMDREL",       [](DbArea& A, std::istringstream& S){ cmd_CMDREL(A,S);       });
+    registry().add("CMDARGCHK",    [](DbArea& A, std::istringstream& S){ cmd_CMDARGCHK(A,S);    });
+    registry().add("CANARY",       [](DbArea& A, std::istringstream& S){ cmd_CATALOGCANARY(A,S);});    
+    
 
     registry().add("DOTSCRIPT",    [](DbArea& A, std::istringstream& S){ cmd_DOTSCRIPT(A,S);   });
     registry().add("VAR",          [](DbArea& A, std::istringstream& S){ cmd_VAR(A,S);         });
@@ -585,7 +627,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Built-in educational commands live here. Student-created commands should
     // live in extension/custom and may self-register there.
 //  EDUCATION
-    registry().add("COBOL",        [](DbArea& A, std::istringstream& S){ edu_COBOL(A,S);       });
+    registry().add("COBOL",        [](DbArea& A, std::istringstream& S){ cmd_COBOL(A,S);       });
     registry().add("CODASYL",      [](DbArea& A, std::istringstream& S){ cmd_CODASYL(A,S);     });
     registry().add("DRAWIO",       [](DbArea& A, std::istringstream& S){ cmd_DRAWIO(A,S);      });
     registry().add("RETRO",        [](DbArea& A, std::istringstream& S){ cmd_RETRO(A,S);       });
@@ -593,17 +635,29 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("ASCII",        [](DbArea& A, std::istringstream& S){ edu_ASCII_TABLE(A,S); });
     registry().add("CASE",         [](DbArea& A, std::istringstream& S){ edu_CASESTUDY(A,S);   });
 
-
     // ---------------------------------------------------------------------
     // External import/export and text/print helpers
     // ---------------------------------------------------------------------
     // SQL import/export bridges DBF/table data with SQL workflows. TEXT and
     // PRN are output helpers. No registry-level relation refresh is attached.
-    registry().add("TEXT",         [](DbArea& A, std::istringstream& S){ edu_TEXT(A,S);        });
+    registry().add("TEXT",         [](DbArea& A, std::istringstream& S){ cmd_TEXT(A,S);        });
     registry().add("PRN",          [](DbArea& A, std::istringstream& S){ cmd_PRN(A,S);         });
 
 //  MSSQL et al Import/Export
     registry().add("IMPORTSQL",    [](DbArea& A, std::istringstream& S){ cmd_IMPORTSQL(A,S);   });
     registry().add("EXPORTSQL",    [](DbArea& A, std::istringstream& S){ cmd_EXPORTSQL(A,S);   });
+
+    registry().add("DDICT",        [](DbArea& A, std::istringstream& S){ cmd_DDICT(A,S);       });
+    registry().add("MSGMGR",       [](DbArea& A, std::istringstream& S){ cmd_MSGMGR(A,S);      });
+    registry().add("MANUAL",       [](DbArea& A, std::istringstream& S){ cmd_MANUAL(A,S);      });
+    registry().add("BBOX",         [](DbArea& A, std::istringstream& S){ cmd_BBOX(A,S);        });
+    registry().add("MAINT",        [](DbArea& A, std::istringstream& S){ cmd_MAINT(A,S);       });
+    registry().add("MANSTAR",      [](DbArea& A, std::istringstream& S){ cmd_MANSTAR(A,S);     });
+
+
+    registry().add("QUIT",         [](DbArea& A, std::istringstream& S){ cmd_QUIT(A,S);        });
+    registry().add("EXIT",         [](DbArea& A, std::istringstream& S){ cmd_QUIT(A,S);        });
+
+    
 
 }

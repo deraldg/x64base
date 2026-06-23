@@ -4,6 +4,8 @@
 // ----------------------------------------------------------------------------
 #include "cli/command_registry.hpp"
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "textio.hpp"
 
 #include <cctype>
@@ -34,8 +36,15 @@ RunResult CommandRegistry::try_run(DbArea& area,
                                    std::istringstream& args)
 {
     auto it = map_.find(normalized_key);
-    if (it == map_.end())
-        return {RunStatus::UnknownCommand, false, "Unknown command: " + normalized_key};
+    if (it == map_.end()) {
+        return {
+            RunStatus::UnknownCommand,
+            false,
+            cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::UnknownCommand,
+                {{"command", normalized_key}})
+        };
+    }
 
     // Snapshot remaining args without consuming the stream (handlers may still parse args).
     std::string raw;
@@ -83,7 +92,7 @@ bool CommandRegistry::run(DbArea& area,
         case RunStatus::Ok:
             return true;
         case RunStatus::UnknownCommand:
-            std::cout << r.message << "\n";
+            cli::cmdout::print_line(r.message);
             return true;
         case RunStatus::HandlerError:
             std::cerr << r.message << "\n";

@@ -1,3 +1,11 @@
 DTSHEMA 2
-AREA 0 | dbf=D:\code\ccode\dottalkpp\data\help\commands.dbf | index=commands.inx | indextype=INX | tag=none | alias=COMMANDS
-AREA 1 | dbf=D:\code\ccode\dottalkpp\data\help\cmd_args.dbf | index=cmd_args.inx | indextype=INX | tag=none | alias=CMD_ARGS
+AREA 0 | dbf=HELP_TOPIC.dbf | index=none | indextype=NONE | tag=none | alias=HELP_TOPIC
+AREA 1 | dbf=HELP_SECTION.dbf | index=none | indextype=NONE | tag=none | alias=HELP_SECTION
+AREA 2 | dbf=HELP_LINE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_LINE
+AREA 3 | dbf=HELP_ARTIFACTS.dbf | index=none | indextype=NONE | tag=none | alias=HELP_ARTIFACTS
+AREA 4 | dbf=HELP_TOPIC_LOCALE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_TOPIC_LOCALE
+AREA 5 | dbf=HELP_SECTION_LOCALE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_SECTION_LOCALE
+AREA 6 | dbf=HELP_LINE_LOCALE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_LINE_LOCALE
+AREA 7 | dbf=HELP_ARTIFACT_LOCALE.dbf | index=none | indextype=NONE | tag=none | alias=HELP_ARTIFACT_LOCALE
+AREA 8 | dbf=commands.dbf | index=none | indextype=NONE | tag=none | alias=COMMANDS
+AREA 9 | dbf=cmd_args.dbf | index=none | indextype=NONE | tag=none | alias=CMD_ARGS

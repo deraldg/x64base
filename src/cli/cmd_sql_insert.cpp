@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: DOT|INSERT
+// command: INSERT
+// category: sql
+// status: supported
+// noargs: usage
+// effect: insert-record
+// mutates: table-data
+// usage-access: INSERT USAGE
+// summary:
+//   Insert a new record into the current DBF work area using SQL-like syntax.
+//
+// usage:
+//   INSERT USAGE
+//   INSERT (<field-list>) VALUES (<value-list>)
+//   INSERT <field>=<value> [, <field>=<value> ...]
+//
+// examples:
+//   INSERT (SID,LNAME,FNAME) VALUES (999,"SMITH","JANE")
+//   INSERT SID=999, LNAME="SMITH", FNAME="JANE"
+//
+// notes:
+//   INSERT USAGE prints usage before open-table checks.
+//   INSERT appends a new record and writes supplied field values.
+//   Field/value count must match in VALUES form.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   mutates_table_data: yes
+//   appends_records: yes
+//
+// related:
+//   SQL
+//   UPDATE
+//   SQLERASE
+//
 #include "xbase.hpp"
 #include "textio.hpp"
 #include <algorithm>
@@ -72,7 +108,50 @@ static bool parse_values_tuple(const std::string& src, size_t& i, std::vector<st
     return true;
 }
 
+static void print_insert_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  INSERT USAGE\n"
+        << "  INSERT (<field-list>) VALUES (<value-list>)\n"
+        << "  INSERT <field>=<value> [, <field>=<value> ...]\n"
+        << "Examples:\n"
+        << "  INSERT (SID,LNAME,FNAME) VALUES (999,\"SMITH\",\"JANE\")\n"
+        << "  INSERT SID=999, LNAME=\"SMITH\", FNAME=\"JANE\"\n"
+        << "Notes:\n"
+        << "  - INSERT USAGE does not require an open table.\n"
+        << "  - INSERT appends a new record.\n";
+}
+
+static bool insert_usage_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SQL_INSERT(xbase::DbArea& A, std::istringstream& iss){
+    // INSERT_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (insert_usage_contract(usage_tok)) {
+                print_insert_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if(!A.isOpen()){ std::cout<<"No file open\n"; return; }
 
     std::string rest; std::getline(iss, rest);

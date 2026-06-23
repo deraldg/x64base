@@ -18,7 +18,7 @@ struct FieldSpec {
     // For x64, this is the name written to X64M metadata when available.
     std::string  name;
     char         type{};
-    std::uint8_t len{};
+    std::uint32_t len{};
     std::uint8_t dec{};
 
     // Optional physical DBF/VFP descriptor token.

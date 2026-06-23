@@ -1,3 +1,45 @@
+// @dottalk.usage v1
+// owner: DOT|TUPEXPORT
+// command: TUPEXPORT
+// category: tuple
+// status: supported
+// noargs: usage
+// effect: export
+// mutates: filesystem
+// usage-access: TUPEXPORT USAGE
+// summary:
+//   Export tuple graph rows to a CSV file using a tuple spec, optional field
+//   list, and optional FOR predicate.
+//
+// usage:
+//   TUPEXPORT USAGE
+//   TUPEXPORT CSV <path>
+//   TUPEXPORT CSV <path> <tuple-spec>
+//   TUPEXPORT CSV <path> FIELDS <field-list>
+//   TUPEXPORT CSV <path> * FOR <expr>
+//
+// examples:
+//   TUPEXPORT CSV tmp\students.csv
+//   TUPEXPORT CSV tmp\students_names.csv FIELDS LNAME,FNAME
+//   TUPEXPORT CSV tmp\students_major.csv STUDENTS.*,MAJORS.* FOR MAJORS.NAME = "CS"
+//
+// notes:
+//   TUPEXPORT USAGE prints usage before open-table checks or file writes.
+//   TUPEXPORT writes/truncates the requested CSV file.
+//   Tuple cursor/workspace cursor state is restored best-effort.
+//
+// risk:
+//   writes_filesystem: CSV output path
+//   truncates_files: CSV output path
+//   reads_tuple_graph: yes
+//   mutates_cursor: temporary, restored best-effort
+//   mutates_table_data: no
+//
+// related:
+//   TUPLE
+//   TUPTALK
+//
+
 #include "cmd_tupexport.hpp"
 
 #include <algorithm>
@@ -11,6 +53,7 @@
 
 #include "tuple/tuple_command_spec.hpp"
 #include "tuple/tuple_graph_cursor.hpp"
+#include <cctype>
 
 namespace {
 
@@ -93,15 +136,40 @@ static void print_root_accounting(const dottalk::tupleaugment::TupleGraphCursorS
 }
 
 static void print_usage() {
-    std::cout << "TUPEXPORT usage:\n"
-              << "  TUPEXPORT CSV <path>\n"
-              << "  TUPEXPORT CSV <path> <tuple-spec>\n"
-              << "  TUPEXPORT CSV <path> FIELDS <field-list>\n"
-              << "  TUPEXPORT CSV <path> * FOR <expr>\n"
-              << "Examples:\n"
-              << "  TUPEXPORT CSV tmp\\students.csv\n"
-              << "  TUPEXPORT CSV tmp\\students_names.csv FIELDS LNAME,FNAME\n"
-              << "  TUPEXPORT CSV tmp\\students_major.csv STUDENTS.*,MAJORS.* FOR MAJORS.NAME = \"CS\"\n";
+    std::cout
+        << "Usage:\n"
+        << "  TUPEXPORT USAGE\n"
+        << "  TUPEXPORT CSV <path>\n"
+        << "  TUPEXPORT CSV <path> <tuple-spec>\n"
+        << "  TUPEXPORT CSV <path> FIELDS <field-list>\n"
+        << "  TUPEXPORT CSV <path> * FOR <expr>\n"
+        << "Examples:\n"
+        << "  TUPEXPORT CSV tmp\\students.csv\n"
+        << "  TUPEXPORT CSV tmp\\students_names.csv FIELDS LNAME,FNAME\n"
+        << "  TUPEXPORT CSV tmp\\students_major.csv STUDENTS.*,MAJORS.* FOR MAJORS.NAME = \"CS\"\n"
+        << "Notes:\n"
+        << "  - TUPEXPORT writes/truncates the requested CSV file.\n"
+        << "  - TUPEXPORT USAGE does not require an open table.\n";
+}
+
+static std::string tupexport_trim(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+static std::string tupexport_upper(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static bool tupexport_usage_request(const std::string& raw)
+{
+    const std::string u = tupexport_upper(tupexport_trim(raw));
+    return u == "USAGE" || u == "HELP" || u == "?";
 }
 
 static bool ensure_parent_dir(const std::string& path, std::string& error) {
@@ -140,6 +208,22 @@ static std::vector<std::string> header_values_from_row(const dottalk::TupleRow& 
 } // namespace
 
 void cmd_TUPEXPORT(xbase::DbArea& A, std::istringstream& args) {
+    {
+        const std::streampos usagePos = args.tellg();
+        std::string usageProbe;
+        std::getline(args >> std::ws, usageProbe);
+
+        args.clear();
+        if (usagePos != std::streampos(-1)) {
+            args.seekg(usagePos);
+        }
+
+        if (tupexport_usage_request(usageProbe)) {
+            print_usage();
+            return;
+        }
+    }
+
     try {
         if (!A.isOpen()) {
             std::cout << "TUPEXPORT: no file open\n";

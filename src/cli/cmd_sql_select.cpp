@@ -1,4 +1,41 @@
 // src/cli/cmd_sql.cpp
+// @dottalk.usage v1
+// owner: DOT|SQLSEL
+// command: SQLSEL
+// category: sql
+// status: supported
+// noargs: scan/report
+// effect: query
+// mutates: cursor-temporary
+// usage-access: SQLSEL USAGE
+// summary:
+//   Evaluate SQL-like selection predicates over the current DBF work area.
+//
+// usage:
+//   SQLSEL USAGE
+//   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
+//
+// examples:
+//   SQLSEL COUNT
+//   SQLSEL COUNT ALL
+//   SQLSEL COUNT FOR GPA >= 3.0
+//   SQLSEL LNAME = "SMITH"
+//
+// notes:
+//   SQLSEL USAGE prints usage before open-table checks.
+//   SQLSEL reads records and may temporarily move the cursor.
+//   SQLSEL does not mutate table data.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   scans_records: yes
+//   mutates_cursor: temporary
+//   mutates_table_data: no
+//
+// related:
+//   SQL
+//   WHERE
+//
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "record_view.hpp"
@@ -352,7 +389,51 @@ static bool eval_chain(const std::vector<Clause>& cs, const std::vector<STok>& o
 
 } // anon
 
+static void print_sqlsel_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SQLSEL USAGE\n"
+        << "  SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]\n"
+        << "Examples:\n"
+        << "  SQLSEL COUNT\n"
+        << "  SQLSEL COUNT ALL\n"
+        << "  SQLSEL COUNT FOR GPA >= 3.0\n"
+        << "  SQLSEL LNAME = \"SMITH\"\n"
+        << "Notes:\n"
+        << "  - SQLSEL USAGE does not require an open table.\n"
+        << "  - SQLSEL scans records and does not mutate table data.\n";
+}
+
+static bool sqlsel_usage_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
+    // SQLSEL_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (sqlsel_usage_contract(usage_tok)) {
+                print_sqlsel_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if (!A.isOpen()) { std::cout << "No file open\n"; return; }
 
     const Opts opt = parse_opts(iss);

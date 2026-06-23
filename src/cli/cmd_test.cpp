@@ -74,7 +74,21 @@
 
 using namespace xbase;
 
+extern "C" xbase::XBaseEngine* shell_engine();
+
 namespace {
+
+static DbArea& current_shell_area_or(DbArea& fallback)
+{
+    if (auto* eng = shell_engine()) {
+        try {
+            return eng->area(eng->currentArea());
+        } catch (...) {
+        }
+    }
+    return fallback;
+}
+
 
 // trim helpers
 inline std::string ltrim(std::string s) {
@@ -302,7 +316,8 @@ void cmd_TEST(DbArea& A, std::istringstream& in)
             if (wantLog) flog << "> " << buffer << "\n";
         }
 
-        bool ok = shell_execute_line(A, buffer);
+        DbArea& cur = current_shell_area_or(A);
+        bool ok = shell_execute_line(cur, buffer);
         if (!ok) {
             ++nerr;
             std::cout << "TEST: command failed on/near line " << nlines << ": " << buffer << "\n";
@@ -319,7 +334,8 @@ void cmd_TEST(DbArea& A, std::istringstream& in)
             std::cout << "> " << buffer << "\n";
             if (wantLog) flog << "> " << buffer << "\n";
         }
-        bool ok = shell_execute_line(A, buffer);
+        DbArea& cur = current_shell_area_or(A);
+        bool ok = shell_execute_line(cur, buffer);
         if (!ok) {
             ++nerr;
             std::cout << "TEST: command failed at EOF: " << buffer << "\n";

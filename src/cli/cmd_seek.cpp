@@ -9,6 +9,7 @@
 // - This file must NOT own raw LMDB state directly.
 //
 // Supported forms:
+//   SEEK USAGE
 //   SEEK <value>
 //   SEEK <value> IN <field>
 //   SEEK <field> = <value>
@@ -16,6 +17,8 @@
 //   SEEK TRACE ON|OFF
 //
 // Notes:
+// - SEEK USAGE is a usage-contract probe and works without an open table.
+// - Bare SEEK with no open table preserves current behavior: "(empty)".
 // - Exact-match semantics by default.
 // - SET NEAR ON allows active-order SEEK to land on the first near key
 //   in the current index direction when no exact key exists.
@@ -23,6 +26,46 @@
 //   matching the previous dev-tool behavior.
 // - When routed through CDX, iteration follows the current active direction
 //   and returns the first exact record encountered in that order.
+
+// @dottalk.usage v1
+// owner: DOT|SEEK
+// command: SEEK
+// category: navigation
+// status: supported
+// noargs: usage
+// effect: navigate
+// mutates: cursor seek-trace-state
+// usage-access: SEEK USAGE
+// summary:
+//   Seek a value through the active order/tag or by scanning a specified field.
+//
+// usage:
+//   SEEK USAGE
+//   SEEK <value> IN <field> [TRACE ON|OFF]
+//   SEEK <field> = <value> [TRACE ON|OFF]
+//   SEEK <field> <value> [TRACE ON|OFF]
+//   SEEK <value>
+//   SEEK TRACE ON
+//   SEEK TRACE OFF
+//
+// notes:
+//   SEEK USAGE works without an open table.
+//   Bare SEEK with no open table preserves existing behavior and prints (empty).
+//   SEEK <value> uses the active order/tag when one is set.
+//   SET NEAR affects near-match reporting policy.
+//   SEEK may temporarily move the cursor while searching and leaves the cursor on a found/near match.
+//
+// risk:
+//   mutates_cursor: yes on match/near match
+//   mutates_seek_trace_state: SEEK TRACE ON|OFF
+//   mutates_table_data: no
+//
+// related:
+//   FIND
+//   INDEXSEEK
+//   SET ORDER
+//   SET NEAR
+//
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
@@ -133,11 +176,15 @@ static int find_field_1based(const xbase::DbArea& a, const std::string& name_ci)
 static void seek_usage() {
     std::cout
         << "Usage:\n"
+        << "  SEEK USAGE\n"
         << "  SEEK <value> IN <field> [TRACE ON|OFF]\n"
         << "  SEEK <field> = <value> [TRACE ON|OFF]\n"
         << "  SEEK <field> <value>   [TRACE ON|OFF]\n"
         << "  SEEK <value>           (uses active order/tag when set)\n"
-        << "  SEEK TRACE ON|OFF\n";
+        << "  SEEK TRACE ON|OFF\n"
+        << "Notes:\n"
+        << "  SEEK requires an open table except for SEEK USAGE.\n"
+        << "  SEEK <value> uses the active order/tag when one is set.\n";
 }
 
 static int compare_field_value(xbase::DbArea& a, int fld, const std::string& needleU) {
@@ -281,6 +328,31 @@ static bool seek_via_sequential_scan(xbase::DbArea& a,
 
 void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
 {
+    // Usage contract probes must work without an open table.
+    // Preserve bare SEEK no-open behavior: "(empty)".
+    {
+        std::string first;
+        if (iss >> first) {
+            if (ieq(first, "USAGE") || ieq(first, "HELP") || ieq(first, "?")) {
+                seek_usage();
+                return;
+            }
+
+            // Defensive compatibility for dispatchers/scripts that include
+            // the command token in the argument stream.
+            if (ieq(first, "SEEK")) {
+                std::string second;
+                if (iss >> second && (ieq(second, "USAGE") || ieq(second, "HELP") || ieq(second, "?"))) {
+                    seek_usage();
+                    return;
+                }
+            }
+
+            iss.clear();
+            iss.seekg(0);
+        }
+    }
+
     if (!a.isOpen()) {
         std::cout << "(empty)\n";
         return;

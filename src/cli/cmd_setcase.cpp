@@ -1,7 +1,7 @@
 // src/cli/cmd_setcase.cpp
 // @dottalk.usage v1
-// owner: DOT|SETCASE
-// command: SETCASE
+// owner: DOT|SET CASE
+// command: SET CASE
 // category: settings
 // status: supported
 // noargs: report

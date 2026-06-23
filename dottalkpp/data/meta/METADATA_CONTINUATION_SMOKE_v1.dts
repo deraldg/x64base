@@ -1,0 +1,66 @@
+* ============================================================
+* METADATA_CONTINUATION_SMOKE_v1.dts
+*
+* Purpose:
+*   Safe smoke test for DotScript apostrophe continuation and
+*   x64 memo/catalog mechanics.
+*
+* Critical workflow rule:
+*   This script DOES NOT set paths.
+*   Run the environment script first:
+*
+*       DO metadata
+*       DO metadata_continuation_smoke_v1
+*
+* Safety:
+*   Uses only META_CONT_SMOKE. Does not touch SYSTEM_* tables.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== METADATA CONTINUATION SMOKE V1 START =====
+
+* Show current paths for verification. Do not mutate them here.
+SETPATH
+
+* Clean only the smoke table/index in the already-selected metadata lane.
+ERASE META_CONT_SMOKE
+ERASE META_CONT_SMOKE.CDX
+
+CREATE X64 META_CONT_SMOKE ( '
+    SMOKE_ID C(32), '
+    CANONICAL_NAME C(80), '
+    IMPLEMENTATION_STATUS C(24), '
+    OWNER_SUBSYSTEM C(48), '
+    ACTIVE L, '
+    NOTES M '
+)
+
+USE META_CONT_SMOKE
+STRUCT
+
+APPEND BLANK
+REPLACE SMOKE_ID WITH "SMOKE_001"
+REPLACE CANONICAL_NAME WITH "DotScript continuation"
+REPLACE IMPLEMENTATION_STATUS WITH "implemented"
+REPLACE OWNER_SUBSYSTEM WITH "dotscript"
+REPLACE ACTIVE WITH .T.
+REPLACE NOTES WITH "This row proves apostrophe line continuation, x64 long field metadata, memo write, and readback in the metadata lane."
+
+LIST ALL
+DISPLAY
+
+CDX CREATE
+CDX ADDTAG SMOKE_ID
+CDX ADDTAG CANONICAL_NAME
+CDX ADDTAG IMPLEMENTATION_STATUS
+CDX ADDTAG OWNER_SUBSYSTEM
+BUILDLMDB CLEAN YES
+
+ECHO ===== POST-INDEX READBACK =====
+USE META_CONT_SMOKE
+SET INDEX TO META_CONT_SMOKE
+SET ORDER TO TAG SMOKE_ID
+LIST ALL
+DISPLAY
+
+ECHO ===== METADATA CONTINUATION SMOKE V1 END =====

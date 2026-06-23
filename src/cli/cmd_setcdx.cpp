@@ -3,8 +3,8 @@
 // Resolve CDX using SET PATH INDEXES slot via cli/path_resolver.
 
 // @dottalk.usage v1
-// owner: DOT|SETCDX
-// command: SETCDX
+// owner: DOT|SET CDX
+// command: SET CDX
 // category: index
 // status: supported
 // noargs: mutate

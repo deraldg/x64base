@@ -16,8 +16,8 @@
 //   split_fields_csv semantics via comma splitting if needed later.
 
 // @dottalk.usage v1
-// owner: DOT|SET_RELATION
-// command: SET_RELATION
+// owner: DOT|SET RELATION
+// command: SET RELATION
 // category: relations
 // status: supported
 // noargs: usage
@@ -29,11 +29,6 @@
 //   relations through the relations_api backend.
 //
 // usage:
-//   SET_RELATION USAGE
-//   SET_RELATION TO <expr> INTO <child>
-//   SET_RELATION ADDITIVE TO <expr> INTO <child>
-//   SET_RELATION OFF ALL
-//   SET_RELATION OFF INTO <child>
 //   SET RELATION USAGE
 //   SET RELATION TO <expr> INTO <child>
 //   SET RELATION TO <expr> INTO <child>, <expr> INTO <child>

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <sstream>
 #include <string>
@@ -36,6 +36,7 @@ void cmd_CLOSE(DbArea&, std::istringstream&);
 void cmd_COPY(DbArea&, std::istringstream&);
 void cmd_SORT(DbArea&, std::istringstream&);
 void cmd_CREATE(DbArea&, std::istringstream&);
+void cmd_AUTODBF(DbArea&, std::istringstream&);
 void cmd_ERASE(DbArea&, std::istringstream&);
 void cmd_APPEND(DbArea&, std::istringstream&);
 void cmd_APPEND_BLANK(DbArea&, std::istringstream&);
@@ -56,6 +57,7 @@ void cmd_STRUCT(DbArea&, std::istringstream&);
 void cmd_SCHEMAS(DbArea&, std::istringstream&);
 void cmd_WORKSPACE(DbArea&, std::istringstream&);
 void cmd_WSREPORT(DbArea&, std::istringstream&);
+void cmd_CATALOGCANARY(xbase::DbArea& area, std::istringstream&);
 
 //   METADATA RECORDS
 void cmd_FIELDS(DbArea&, std::istringstream&);
@@ -68,7 +70,16 @@ void cmd_EXPORTFUNCTIONS(DbArea&, std::istringstream&);
 
 //   DATA DICTIONAIRY
 void cmd_DDL(DbArea&, std::istringstream&);
+void cmd_DDICT(DbArea&, std::istringstream&);
+void cmd_MANUAL(DbArea&, std::istringstream&);
+void cmd_MSGMGR(DbArea&, std::istringstream&);
 
+//   MAINTENANCE
+void cmd_BBOX(DbArea&, std::istringstream&);
+void cmd_MAINT(DbArea&, std::istringstream&);
+
+//   MANUALS
+void cmd_MANSTAR(DbArea&, std::istringstream&);
 
 //   NAVIGATION
 void cmd_GO(DbArea&, std::istringstream&);
@@ -139,6 +150,8 @@ void cmd_ASCEND(DbArea&, std::istringstream&);
 void cmd_DESCEND(DbArea&, std::istringstream&);
 void cmd_CNX(DbArea&, std::istringstream&);
 void cmd_CDX(DbArea&, std::istringstream&);
+void cmd_SIX(DbArea&, std::istringstream&);
+void cmd_SNX(DbArea&, std::istringstream&);
 void cmd_SETCNX(DbArea&, std::istringstream&);				// SETCMD
 void cmd_SETCDX(DbArea&, std::istringstream&);				// SETCMD
 void cmd_INDEXSEEK(DbArea&, std::istringstream&);			
@@ -185,8 +198,10 @@ void cmd_FOXSTANDARD(DbArea&, std::istringstream&);
 
 void cmd_MCC(DbArea&, std::istringstream&);
 
+
 //   HOMEGROWN SQL
 void cmd_SQL(DbArea&, std::istringstream&);
+void cmd_SQLHELP(DbArea&, std::istringstream&);
 void cmd_SQL_SELECT(DbArea&, std::istringstream&);
 
 void cmd_SQL_INSERT(DbArea&, std::istringstream&);
@@ -253,7 +268,11 @@ void edu_EVALUATE(DbArea&, std::istringstream&);
 void edu_NORMALIZE(DbArea&, std::istringstream&);
 
 void edu_TEXT(DbArea&, std::istringstream&);
+void cmd_TEXT(DbArea&, std::istringstream&);
 void edu_EDIT(DbArea&, std::istringstream&);
+void cmd_EDIT(DbArea&, std::istringstream&);
+
+void edu_ERP(DbArea&, std::istringstream&);
 
 // CASE STUDIES
 void edu_CASESTUDY(DbArea&, std::istringstream&);
@@ -272,6 +291,7 @@ void cmd_VT200(DbArea&, std::istringstream&);
 
 // APPLICATIONS
 void edu_COBOL(DbArea&, std::istringstream&);
+void cmd_COBOL(DbArea&, std::istringstream&);
 void edu_BIBLETALK(DbArea&, std::istringstream&);
 void edu_ERP(DbArea&, std::istringstream&);
 
@@ -285,12 +305,15 @@ void cmd_ENDWHILE(DbArea&, std::istringstream&);
 void cmd_UNTIL(DbArea&, std::istringstream&);
 void cmd_ENDUNTIL(DbArea&, std::istringstream&);
 void cmd_WHERE(DbArea&, std::istringstream&);
+void cmd_WHERECACHE(std::istringstream&);
 void cmd_IF(DbArea&, std::istringstream&);
 void cmd_ELSE(DbArea&, std::istringstream&);
 void cmd_ENDIF(DbArea&, std::istringstream&);
 void cmd_WHILE_BUFFER(xbase::DbArea&, std::istringstream&);
 void cmd_UNTIL_BUFFER(xbase::DbArea&, std::istringstream&);
 void cmd_VAR(DbArea&, std::istringstream&);
+void cmd_QUIT(DbArea&, std::istringstream&);
+void cmd_EXIT(DbArea&, std::istringstream&);
 
 // SET COMMANDS AND ENVIRONMENT
 void cmd_SET(DbArea&, std::istringstream&);
@@ -304,5 +327,8 @@ void cmd_SETNEAR(DbArea&, std::istringstream&);
 void cmd_SQLITE(DbArea&, std::istringstream&);
 void cmd_SQLVER(DbArea&, std::istringstream&);
 
+// RESERVED
 
 
+
+void cmd_MAINT(xbase::DbArea&, std::istringstream&);

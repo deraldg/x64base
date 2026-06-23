@@ -1,4 +1,11 @@
-#pragma once
+﻿#pragma once
+// @dottalk.contract
+// file: include/dt/data/cell_validate.hpp
+// subsystem: dt
+// role: Declares DotTalk runtime support interfaces for command or scripting workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <cstddef>
 #include <string>
@@ -19,3 +26,4 @@ bool validate_row(Row& row, RowErrorSummary& summary);
 RowErrorSummary summarize_row_errors(const Row& row);
 
 } // namespace dt::data
+

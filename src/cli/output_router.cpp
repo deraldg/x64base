@@ -363,8 +363,11 @@ struct OutputRouter::Impl {
 };
 
 OutputRouter& OutputRouter::instance() {
-    static OutputRouter global;
-    return global;
+    // Process-lifetime singleton: avoid late static destruction ordering
+    // problems during shutdown when std::cout / console state is already
+    // partially torn down.
+    static OutputRouter* global = new OutputRouter();
+    return *global;
 }
 
 OutputRouter::OutputRouter() : impl_(std::make_unique<Impl>()) {}

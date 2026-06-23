@@ -1,3 +1,28 @@
+// @dottalk.usage v1
+// owner: DOT|PSHELL_REF_IMPL
+// command: PSHELL
+// category: reference-helper
+// status: implementation-helper
+// noargs: report-through-wrapper
+// effect: report
+// mutates: none
+// usage-access: owned-by cmd_pshell_help.cpp
+// summary:
+//   PowerShell reference catalog presentation helper used by the PSHELL command.
+//
+// usage:
+//   User-visible PSHELL usage is owned by cmd_pshell_help.cpp.
+//   This file provides show_pshell_help(...) and catalog formatting support.
+//
+// notes:
+//   PSHELL is read-only reference output; it does not execute PowerShell.
+//   Keep command dispatch/usage gating in cmd_pshell_help.cpp.
+//
+// risk:
+//   executes_shell: no
+//   mutates_table_data: no
+//
+
 // cmd_pshell.cpp
 #include <iostream>
 #include <iomanip>

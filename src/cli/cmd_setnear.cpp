@@ -1,7 +1,7 @@
 // src/cli/cmd_setnear.cpp
 // @dottalk.usage v1
-// owner: DOT|SETNEAR
-// command: SETNEAR
+// owner: DOT|SET NEAR
+// command: SET NEAR
 // category: settings
 // status: supported
 // noargs: report

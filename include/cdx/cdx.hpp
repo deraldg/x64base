@@ -1,4 +1,11 @@
 #pragma once
+// @dottalk.contract
+// file: include/cdx/cdx.hpp
+// subsystem: cdx
+// role: Minimal CDX container: header I/O, tag directory read/write, add/drop tag
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 // include/cnx/cdx.hpp
 // Minimal CDX container: header I/O, tag directory read/write, add/drop tag.
 // NOTE: This does not build keys; REBUILD/COMPACT are separate concerns.
@@ -121,3 +128,4 @@ bool read_at(CDXHandle* h, std::uint64_t off, void* buf, std::size_t len);
 bool write_at(CDXHandle* h, std::uint64_t off, const void* buf, std::size_t len);
 
 } // namespace cdxfile
+

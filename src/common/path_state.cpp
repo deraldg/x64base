@@ -80,6 +80,7 @@ void build_user_paths(State& s)
     s.cur_prefs_root = s.user_current_root / "prefs";
     s.cur_logs_root = s.user_current_root / "logs";
     s.cur_tmp_root = s.user_current_root / "tmp";
+    s.user_diagrams_root = s.user_current_root / "diagrams";
 }
 
 void build_all_paths(State& s)
@@ -88,6 +89,9 @@ void build_all_paths(State& s)
         throw std::runtime_error("path_state: data_root must not be empty");
 
     s.root = s.data_root.parent_path();
+
+    s.docs_root = s.root / "docs";
+    s.system_diagrams_root = s.docs_root / "generated" / "diagrams";
 
     s.dbf_root = s.data_root / "dbf";
     s.xdbf_root = s.data_root / "xdbf";
@@ -159,6 +163,9 @@ fs::path get_slot(Slot slot)
     switch (slot) {
     case Slot::BIN: return s.bin_root;
     case Slot::DATA: return s.data_root;
+    case Slot::DOCS: return s.docs_root;
+    case Slot::SYSTEM_DIAGRAMS: return s.system_diagrams_root;
+    case Slot::USER_DIAGRAMS: return s.user_diagrams_root;
     case Slot::DBF: return s.dbf_root;
     case Slot::XDBF: return s.xdbf_root;
     case Slot::DBF_X32: return s.dbf_x32_root;
@@ -219,6 +226,9 @@ void set_slot(Slot slot, const fs::path& value)
     switch (slot) {
     case Slot::BIN: s.bin_root = abs; break;
     case Slot::DATA: s.data_root = abs; break;
+    case Slot::DOCS: s.docs_root = abs; break;
+    case Slot::SYSTEM_DIAGRAMS: s.system_diagrams_root = abs; break;
+    case Slot::USER_DIAGRAMS: s.user_diagrams_root = abs; break;
     case Slot::DBF: s.dbf_root = abs; break;
     case Slot::XDBF: s.xdbf_root = abs; break;
     case Slot::DBF_X32: s.dbf_x32_root = abs; break;
@@ -295,6 +305,11 @@ std::optional<Slot> slot_from_string(const std::string& name)
 
     if (key == "BIN") return Slot::BIN;
     if (key == "DATA") return Slot::DATA;
+    if (key == "DOCS") return Slot::DOCS;
+    if (key == "SYSTEM_DIAGRAMS" || key == "SYSDIAGRAMS" || key == "SYS_DIAGRAMS" ||
+        key == "DIAGRAMS" || key == "DRAWIO" || key == "DRAWIO_SYSTEM") return Slot::SYSTEM_DIAGRAMS;
+    if (key == "USER_DIAGRAMS" || key == "USERDIAGRAMS" || key == "CUR_DIAGRAMS" ||
+        key == "MY_DIAGRAMS" || key == "DRAWIO_USER") return Slot::USER_DIAGRAMS;
     if (key == "DBF") return Slot::DBF;
     if (key == "XDBF") return Slot::XDBF;
     if (key == "DBF_X32" || key == "DBFX32") return Slot::DBF_X32;
@@ -360,6 +375,9 @@ std::string slot_name(Slot slot)
     switch (slot) {
     case Slot::BIN: return "BIN";
     case Slot::DATA: return "DATA";
+    case Slot::DOCS: return "DOCS";
+    case Slot::SYSTEM_DIAGRAMS: return "SYSTEM_DIAGRAMS";
+    case Slot::USER_DIAGRAMS: return "USER_DIAGRAMS";
     case Slot::DBF: return "DBF";
     case Slot::XDBF: return "XDBF";
     case Slot::DBF_X32: return "DBF_X32";
@@ -441,6 +459,9 @@ void ensure_directories()
 
     const std::vector<fs::path> dirs = {
         s.data_root,
+        s.docs_root,
+        s.system_diagrams_root,
+        s.user_diagrams_root,
         s.dbf_root,
         s.xdbf_root,
         s.dbf_x32_root,
@@ -506,6 +527,9 @@ std::string describe()
     out
         << "BIN        = " << s.bin_root.string() << "\n"
         << "DATA       = " << s.data_root.string() << "\n"
+        << "DOCS       = " << s.docs_root.string() << "\n"
+        << "SYS_DIAG   = " << s.system_diagrams_root.string() << "\n"
+        << "USER_DIAG  = " << s.user_diagrams_root.string() << "\n"
         << "DBF        = " << s.dbf_root.string() << "\n"
         << "XDBF       = " << s.xdbf_root.string() << "\n"
         << "DBF_X32    = " << s.dbf_x32_root.string() << "\n"

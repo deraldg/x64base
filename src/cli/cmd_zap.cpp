@@ -8,6 +8,44 @@
 //   - User must USE to reopen
 //   - Indexes must be rebuilt/rebound after
 
+// @dottalk.usage v1
+// owner: DOT|ZAP
+// command: ZAP
+// category: destructive-table
+// status: supported
+// noargs: destructive-current-table
+// effect: remove-all-records
+// mutates: table-file closes-table order-state
+// usage-access: ZAP USAGE
+// summary:
+//   Remove all records from the current non-memo DBF while preserving structure.
+//
+// usage:
+//   ZAP USAGE
+//   ZAP
+//
+// examples:
+//   ZAP
+//
+// notes:
+//   ZAP USAGE prints usage before open-table checks.
+//   ZAP rewrites the current DBF with zero records and closes the table on success.
+//   ZAP currently refuses memo tables.
+//   Index containers must be rebuilt/rebound afterward.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   destructive: yes
+//   mutates_table_file: yes
+//   closes_table: yes
+//   clears_order_state: yes
+//
+// related:
+//   ERASE
+//   PACK
+//   RECALL
+//
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -188,8 +226,43 @@ static void try_mark_index_dirty(const std::string& orderContainer) {
 
 } // namespace
 
+static void print_zap_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  ZAP USAGE\n"
+        << "  ZAP\n"
+        << "Examples:\n"
+        << "  ZAP\n"
+        << "Notes:\n"
+        << "  - ZAP USAGE does not require an open table.\n"
+        << "  - ZAP removes all records from the current non-memo DBF while preserving structure.\n"
+        << "  - ZAP closes the table on success; reopen with USE <table>.\n"
+        << "  - Index containers must be rebuilt/rebound after ZAP.\n";
+}
 void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
-    (void)in;
+    // ZAP_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = in.tellg();
+        std::string usage_tok;
+        if (in >> usage_tok) {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+
+            const std::string u = textio::up(usage_tok);
+            if (u == "USAGE" || u == "HELP" || u == "?") {
+                print_zap_usage_contract();
+                return;
+            }
+        } else {
+            in.clear();
+            if (usage_pos != std::streampos(-1)) {
+                in.seekg(usage_pos);
+            }
+        }
+    }
 
     if (!A.isOpen() || A.filename().empty()) {
         std::cout << "ZAP: No table open\n";

@@ -58,6 +58,7 @@
 
 // relationships
 #include "set_relations.hpp"
+#include "relations_boot.hpp"
 
 #include "dli/set_view.hpp"
 
@@ -548,7 +549,7 @@ int run_shell()
     // clear();
 
     std::cout << "DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.\n\n";
-    std::cout << "CMDHELPCHK, GPS.\n\n";
+    std::cout << "Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.\n\n";
     std::cout << "Hello World!\n";
     std::cout.flush();
 
@@ -751,6 +752,16 @@ int run_shell()
         std::cout.flush();
     }
 
+    try {
+        if (relations_boot::autosave_enabled()) {
+            relations_boot::autosave();
+        }
+    } catch (...) {
+        std::cerr << "REL AUTOSAVE failed\n";
+    }
+
+    xbase::cursor_hook::set_callback(nullptr, nullptr);
+    relations_api::attach_engine(nullptr);
     g_shell_engine = nullptr;
     return 0;
 }

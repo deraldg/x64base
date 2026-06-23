@@ -65,6 +65,9 @@ struct Settings {
     // ---- External editor ----
     EditorSettings    editor;                 // SET EDITOR TO ...
 
+    // ---- Message presentation ----
+    std::string       message_locale = "en-US"; // SET LANGUAGE / SET LOCALE
+
     // ---- Misc ----
     std::uint32_t     typeahead{128};         // SET TYPEAHEAD TO n
     std::uint32_t     reprocess_ms{0};        // SET REPROCESS TO n (ms) or 0=AUTOMATIC

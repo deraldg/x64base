@@ -8,7 +8,7 @@
 //
 // Usage:
 //   EDU_BIBLETALK                         -> status + brief usage
-//   EDU_BIBLETALK HELP|?                  -> detailed usage
+//   EDU_BIBLETALK USAGE|HELP|?            -> detailed usage
 //   EDU_BIBLETALK STATUS                  -> status only
 //   EDU_BIBLETALK CWD|PWD                 -> show process working directory
 //   EDU_BIBLETALK VERSION                 -> show linked SQLite version
@@ -33,6 +33,55 @@
 //   - Independent of DBF open/order state.
 //   - SQLite here is an external SQL/RDBMS backend surface, not native DbArea storage.
 //   - SELECT output is capped (MAX_SELECT_ROWS) to keep CLI responsive.
+
+// @dottalk.usage v1
+// owner: EDU|BIBLETALK
+// command: EDU_BIBLETALK / BIBLETALK
+// category: education-database-demo
+// status: supported
+// noargs: status-and-brief-usage
+// effect: sqlite-demo-query
+// mutates: sqlite-connection-state
+// usage-access: EDU_BIBLETALK USAGE; BIBLETALK USAGE
+// summary:
+//   Educational BibleTalk/KJV SQLite database wrapper for status, schema,
+//   table inspection, verse lookup, search, and random scripture output.
+//
+// usage:
+//   EDU_BIBLETALK USAGE
+//   EDU_BIBLETALK HELP
+//   EDU_BIBLETALK STATUS
+//   EDU_BIBLETALK BIBLE
+//   EDU_BIBLETALK BIBLECHECK
+//   EDU_BIBLETALK BOOKS
+//   EDU_BIBLETALK VERSE <ref>
+//   EDU_BIBLETALK QUOTE
+//   EDU_BIBLETALK SEARCH <phrase>
+//   EDU_BIBLETALK LIST <table> [limit]
+//   EDU_BIBLETALK COLUMNS <table>
+//   EDU_BIBLETALK TABLES
+//   EDU_BIBLETALK SCHEMA [table]
+//   EDU_BIBLETALK EXEC <sql...>
+//   EDU_BIBLETALK SELECT <sql...>
+//   EDU_BIBLETALK CLOSE
+//
+// examples:
+//   EDU_BIBLETALK USAGE
+//   EDU_BIBLETALK BIBLE
+//   EDU_BIBLETALK VERSE John 3:16
+//   EDU_BIBLETALK SEARCH faith
+//   BIBLETALK QUOTE
+//
+// notes:
+//   USAGE/HELP/? returns before SQLite database work.
+//   No-arg behavior remains status plus brief usage.
+//   BIBLETALK is a compatibility alias for EDU_BIBLETALK.
+//
+// risk:
+//   opens_sqlite_database: BIBLE/OPEN/DB/BIBLECHECK and implicit query open paths
+//   executes_sql: EXEC/SELECT
+//   mutates_table_data: no native x64base table mutation
+//
 
 #include <algorithm>
 #include <cctype>
@@ -105,7 +154,7 @@ static std::string sql_like_literal_contains(const std::string& s) {
 
 static void print_usage_brief() {
     std::cout
-        << "EDU_BIBLETALK: HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, BIBLE, BIBLECHECK,\n"
+        << "EDU_BIBLETALK: USAGE, HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, BIBLE, BIBLECHECK,\n"
         << "               BOOKS, VERSE <ref>, QUOTE, SEARCH <phrase>, LIST <table> [limit],\n"
         << "               COLUMNS <table>, CLOSE, TABLES, SCHEMA [table], EXEC <sql>, SELECT <sql>\n";
 }
@@ -121,6 +170,7 @@ static void print_usage_long() {
         "  Future direction is native x64base/LMDB BibleTalk transfer and comparison.\n\n"
 
         "Core commands:\n"
+        "  EDU_BIBLETALK USAGE\n"
         "  EDU_BIBLETALK HELP\n"
         "  EDU_BIBLETALK ?\n"
         "  EDU_BIBLETALK STATUS\n"
@@ -718,7 +768,7 @@ void cmd_EDU_BIBLETALK(xbase::DbArea& /*A*/, std::istringstream& args) {
 
     sub = up_copy(sub);
 
-    if (sub == "HELP" || sub == "?") {
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
         print_usage_long();
         return;
     }

@@ -2,10 +2,52 @@
 #include "dli/screen.hpp"
 #include "dli/replace_api.hpp"
 #include "xbase.hpp"                    // Full DbArea definition
-#include <windows.h>
 #include <iostream>
 
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <cstdio>
+#endif
+
 namespace dli {
+
+namespace {
+
+#if defined(_WIN32)
+constexpr int kKeyReturn = VK_RETURN;
+constexpr int kKeyEscape = VK_ESCAPE;
+constexpr int kKeyF2 = VK_F2;
+constexpr int kKeyF3 = VK_F3;
+constexpr int kKeyF4 = VK_F4;
+
+static int read_console_key()
+{
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    INPUT_RECORD rec;
+    DWORD n = 0;
+    if (!ReadConsoleInput(hIn, &rec, 1, &n)) return -1;
+    if (rec.EventType == KEY_EVENT && rec.Event.KeyEvent.bKeyDown) {
+        return static_cast<int>(rec.Event.KeyEvent.wVirtualKeyCode);
+    }
+    return 0;
+}
+#else
+constexpr int kKeyReturn = '\n';
+constexpr int kKeyEscape = 27;
+constexpr int kKeyF2 = 0x1102;
+constexpr int kKeyF3 = 0x1103;
+constexpr int kKeyF4 = 0x1104;
+
+static int read_console_key()
+{
+    const int ch = std::getchar();
+    if (ch == EOF) return -1;
+    return ch;
+}
+#endif
+
+} // namespace
 
 BrowseController::BrowseController(xbase::DbArea& db)
     : m_db(db)
@@ -23,14 +65,10 @@ void BrowseController::run() {
     while (m_running) {
         redraw();
 
-        HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
-        INPUT_RECORD rec;
-        DWORD n = 0;
-        if (!ReadConsoleInput(hIn, &rec, 1, &n)) break;
-
-        if (rec.EventType == KEY_EVENT && rec.Event.KeyEvent.bKeyDown) {
-            handle_key(rec.Event.KeyEvent.wVirtualKeyCode);
-        }
+        const int key = read_console_key();
+        if (key < 0) break;
+        if (key == 0) continue;
+        handle_key(key);
     }
 
     screen_clear(true);
@@ -115,34 +153,37 @@ void BrowseController::draw_grid_view() {
 // ====================== KEY HANDLING ======================
 void BrowseController::handle_key(int vk) {
     if (m_inEdit) {
-        if (vk == VK_RETURN)      commit_edit();
-        else if (vk == VK_ESCAPE) cancel_edit();
+        if (vk == kKeyReturn || vk == '\r') commit_edit();
+        else if (vk == kKeyEscape) cancel_edit();
         return;
     }
 
     switch (vk) {
-        case VK_F2:
+        case kKeyF2:
             if (m_currentFields.size() > 1) {
                 start_edit(m_currentFields[1].first);
             }
             break;
 
-        case VK_F3:   // Next record
+        case kKeyF3:   // Next record
             break;
 
-        case VK_F4:   // Previous record
+        case kKeyF4:   // Previous record
             break;
 
         case 'G':
+        case 'g':
             switch_mode(BrowseMode::Grid);
             break;
 
         case 'F':
+        case 'f':
             switch_mode(BrowseMode::Form);
             break;
 
-        case VK_ESCAPE:
+        case kKeyEscape:
         case 'Q':
+        case 'q':
             m_running = false;
             break;
 

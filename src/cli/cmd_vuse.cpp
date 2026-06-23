@@ -1,6 +1,50 @@
 // src/cli/cmd_use.cpp
 // DotTalk++ USE command (open DBF in a work area) — duplicate-open guard, NOINDEX, auto-attach
 
+// @dottalk.usage v1
+// owner: DOT|USE
+// command: USE
+// category: table
+// status: supported
+// noargs: error
+// effect: open-table
+// mutates: current-work-area order-state memo-attachment
+// usage-access: USE USAGE
+// summary:
+//   Open a DBF table in the current work area, with duplicate-open protection,
+//   optional NOINDEX, and best-effort memo/index attachment.
+//
+// usage:
+//   USE USAGE
+//   USE <table-or-path> [NOINDEX]
+//   VUSE USAGE
+//   VUSE <table-or-path> [NOINDEX]
+//
+// examples:
+//   USE students
+//   USE students NOINDEX
+//   USE d:\data\students.dbf
+//
+// notes:
+//   USE with no arguments preserves existing behavior and reports a missing table name.
+//   USE USAGE prints usage and does not close/open tables or mutate order state.
+//   USE resets current-area runtime state before opening a new table.
+//   NOINDEX skips auto-attach and leaves the work area in physical order.
+//
+// risk:
+//   opens_table: yes except usage
+//   mutates_current_area: yes except usage
+//   mutates_order_state: yes except usage / NOINDEX path clears order
+//   attaches_memo: best-effort
+//   mutates_table_data: no
+//
+// related:
+//   CLOSE
+//   WORKSPACE
+//   SETPATH
+//   SET ORDER
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -285,8 +329,86 @@ static std::string open_display_name(const DbArea& a, const fs::path& dbf_path)
 
 // ----------------------- Command entry --------------------------------------
 
+namespace {
+
+static std::string use_upper_hotfix(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool use_usage_word_hotfix(const std::string& raw)
+{
+    const std::string u = use_upper_hotfix(raw);
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+} // namespace
+static void print_use_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  USE USAGE\n"
+        << "  USE <table-or-path> [NOINDEX]\n"
+        << "  VUSE USAGE\n"
+        << "  VUSE <table-or-path> [NOINDEX]\n"
+        << "Examples:\n"
+        << "  USE students\n"
+        << "  USE students NOINDEX\n"
+        << "  VUSE students\n"
+        << "Notes:\n"
+        << "  - USE/VUSE USAGE does not open tables or mutate order state.\n"
+        << "  - NOINDEX skips index auto-attach and leaves physical order.\n";
+}
+static void print_vuse_usage_hotfix_v4()
+{
+    std::cout
+        << "Usage:\n"
+        << "  USE USAGE\n"
+        << "  USE <table-or-path> [NOINDEX]\n"
+        << "  VUSE USAGE\n"
+        << "  VUSE <table-or-path> [NOINDEX]\n"
+        << "Examples:\n"
+        << "  USE students\n"
+        << "  USE students NOINDEX\n"
+        << "  VUSE students\n"
+        << "Notes:\n"
+        << "  - USE/VUSE USAGE does not open tables or mutate order state.\n"
+        << "  - NOINDEX skips index auto-attach and leaves physical order.\n";
+}
+
+static bool vuse_usage_token_hotfix_v4(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_VUSE(DbArea& a, std::istringstream& iss)
 {
+    // VUSE_USAGE_ENTRYPOINT_HOTFIX_V4
+    {
+        const std::streampos vuse_usage_pos = iss.tellg();
+        std::string vuse_usage_tok;
+        if (iss >> vuse_usage_tok) {
+            iss.clear();
+            if (vuse_usage_pos != std::streampos(-1)) {
+                iss.seekg(vuse_usage_pos);
+            }
+
+            if (vuse_usage_token_hotfix_v4(vuse_usage_tok)) {
+                print_vuse_usage_hotfix_v4();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (vuse_usage_pos != std::streampos(-1)) {
+                iss.seekg(vuse_usage_pos);
+            }
+        }
+    }
+
     std::string name;
     iss >> name;
 
@@ -295,7 +417,36 @@ void cmd_VUSE(DbArea& a, std::istringstream& iss)
         return;
     }
 
-    const bool noindex = contains_noindex(iss);
+    
+            // VUSE_USAGE_RUNTIME_HOTFIX_V2
+    {
+        std::string use_usage_probe = name;
+        std::transform(use_usage_probe.begin(), use_usage_probe.end(), use_usage_probe.begin(),
+            [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+
+        if (use_usage_probe == "USAGE" || use_usage_probe == "HELP" || use_usage_probe == "?") {
+            print_use_usage();
+            return;
+        }
+    }
+if (use_usage_word_hotfix(name)) {
+        std::cout
+            << "Usage:\n"
+            << "  USE USAGE\n"
+            << "  USE <table-or-path> [NOINDEX]\n"
+            << "  VUSE USAGE\n"
+            << "  VUSE <table-or-path> [NOINDEX]\n";
+        return;
+    }
+std::string name_u = name;
+    std::transform(name_u.begin(), name_u.end(), name_u.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    if (name_u == "USAGE" || name_u == "HELP" || name_u == "?") {
+        print_use_usage();
+        return;
+    }
+
+const bool noindex = contains_noindex(iss);
     ensure_setpath_initialized();
 
     // Resolve DBF path

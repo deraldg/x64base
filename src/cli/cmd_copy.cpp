@@ -1,4 +1,49 @@
 // src/cli/cmd_copy.cpp
+// @dottalk.usage v1
+// owner: DOT|COPY
+// command: COPY
+// category: file-table
+// status: supported
+// noargs: usage
+// effect: copy-or-convert
+// mutates: filesystem
+// usage-access: COPY USAGE
+// summary:
+//   Copy the current DBF, convert the current table to a target DBF flavor, or
+//   copy a filesystem file.
+//
+// usage:
+//   COPY USAGE
+//   COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+//   COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+//   COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+//   COPY FILE <SRC> TO <DST> [OVERWRITE]
+//
+// examples:
+//   COPY TO students_copy
+//   COPY TO students_x64 AS X64 VECTOR OVERWRITE
+//   COPY TO students_vfp AS VFP
+//   COPY TO students_backup WITH SIDECARS OVERWRITE
+//   COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+//
+// notes:
+//   COPY USAGE prints usage and does not require an open table.
+//   COPY TO requires an open table.
+//   COPY FILE does not require an open table.
+//   WITH SIDECARS applies only to binary COPY TO.
+//   OVERWRITE is required when the destination already exists.
+//
+// risk:
+//   writes_filesystem: yes
+//   overwrites_files: OVERWRITE
+//   reads_current_table: COPY TO
+//   mutates_table_data: no
+//
+// related:
+//   USE
+//   EXPORT
+//   PACK
+//
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -35,12 +80,21 @@ static inline std::string lower_copy(std::string s) {
 static void usage_copy() {
     std::cout
         << "Usage:\n"
+        << "  COPY USAGE\n"
         << "  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]\n"
         << "  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]\n"
         << "  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]\n"
         << "  COPY FILE <SRC> TO <DST> [OVERWRITE]\n"
         << "\n"
+        << "Examples:\n"
+        << "  COPY TO students_copy\n"
+        << "  COPY TO students_x64 AS X64 VECTOR OVERWRITE\n"
+        << "  COPY TO students_vfp AS VFP\n"
+        << "  COPY TO students_backup WITH SIDECARS OVERWRITE\n"
+        << "  COPY FILE source.txt TO tmp\\source_copy.txt OVERWRITE\n"
+        << "\n"
         << "Notes:\n"
+        << "  - COPY USAGE prints usage and does not require an open table.\n"
         << "  - COPY TO <name>                 : binary copy of the current DBF\n"
         << "  - COPY TO <name> AS <flavor>     : logical table copy/conversion\n"
         << "  - COPY TO <name> AS X64 VECTOR   : one-step copy from any open table to x64 vector form\n"
@@ -49,6 +103,7 @@ static void usage_copy() {
         << "  - AS VFP/FOX/MSDOS writes free-table 10-byte descriptor field names\n"
         << "  - COPY AS free-table fails if 10-byte descriptor names would collide\n"
         << "  - WITH SIDECARS applies to binary COPY TO only\n"
+        << "  - OVERWRITE is required when the destination already exists\n"
         << "  - x64 output still writes .dbf for now (no .dbfx yet)\n"
         << "\n"
         << "SIDECARS (if present next to the DBF): .inx .cnx .dtx .dti.json\n";
@@ -575,6 +630,10 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
     }
 
     if (tok.empty()) { usage_copy(); return; }
+    if (token_is(tok[0], "USAGE") || token_is(tok[0], "HELP") || token_is(tok[0], "?")) {
+        usage_copy();
+        return;
+    }
 
     bool overwrite = false;
     bool with_sidecars = false;

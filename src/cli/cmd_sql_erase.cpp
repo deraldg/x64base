@@ -1,3 +1,39 @@
+// @dottalk.usage v1
+// owner: DOT|SQLERASE
+// command: SQLERASE
+// category: sql
+// status: supported
+// noargs: usage
+// effect: delete-records
+// mutates: table-data
+// usage-access: SQLERASE USAGE
+// summary:
+//   Mark records deleted using SQL-like ERASE FROM <table> WHERE <expr> syntax.
+//
+// usage:
+//   SQLERASE USAGE
+//   SQLERASE FROM <table> WHERE <expr>
+//
+// examples:
+//   SQLERASE FROM STUDENTS WHERE SID = 1001
+//   SQLERASE FROM STUDENTS WHERE GPA < 1.0
+//
+// notes:
+//   SQLERASE USAGE prints usage before open-table checks.
+//   WHERE is required to reduce accidental destructive operations.
+//   SQLERASE mutates table data by marking matching records deleted.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   scans_records: yes
+//   mutates_table_data: yes
+//   marks_deleted: yes
+//
+// related:
+//   ERASE
+//   RECALL
+//   ZAP
+//
 #include "xbase.hpp"
 #include "xbase_field_getters.hpp"
 #include "textio.hpp"
@@ -8,6 +44,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace sqlmini {
 enum class TokK { Ident, String, Number, Eq, Ne, Gt, Lt, Ge, Le, And, Or, Not, LParen, RParen, End };
@@ -137,7 +174,49 @@ static inline std::string dt_trim(std::string s){
 }
 static inline std::string up(std::string s){ for(char& c: s) c=(char)std::toupper((unsigned char)c); return s; }
 
+static void print_sqlerase_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SQLERASE USAGE\n"
+        << "  SQLERASE FROM <table> WHERE <expr>\n"
+        << "Examples:\n"
+        << "  SQLERASE FROM STUDENTS WHERE SID = 1001\n"
+        << "  SQLERASE FROM STUDENTS WHERE GPA < 1.0\n"
+        << "Notes:\n"
+        << "  - SQLERASE USAGE does not require an open table.\n"
+        << "  - SQLERASE requires WHERE and marks matching records deleted.\n";
+}
+
+static bool sqlerase_usage_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SQL_ERASE(xbase::DbArea& A, std::istringstream& iss){
+    // SQLERASE_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (sqlerase_usage_contract(usage_tok)) {
+                print_sqlerase_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     if(!A.isOpen()){ std::cout<<"No file open\n"; return; }
 
     std::string rest; std::getline(iss, rest); rest = dt_trim(rest);

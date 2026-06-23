@@ -1,5 +1,43 @@
 // src/cli/cmd_cobol.cpp
 
+// @dottalk.usage v1
+// owner: EDU|COBOL
+// command: COBOL
+// category: education-toolchain
+// status: supported
+// noargs: usage
+// effect: export-build-run
+// mutates: filesystem external-process
+// usage-access: COBOL USAGE
+// summary:
+//   Export STUDENTS data for COBOL exercises and build/run/test COBOL programs.
+//
+// usage:
+//   COBOL USAGE
+//   COBOL EXPORT STUDENTS
+//   COBOL RUN <program>
+//   COBOL BUILD <source.cob|source.cbl>
+//   COBOL TEST <source.cob|source.cbl>
+//
+// examples:
+//   COBOL EXPORT STUDENTS
+//   COBOL BUILD hello.cob
+//   COBOL RUN hello
+//   COBOL TEST hello.cob
+//
+// notes:
+//   COBOL USAGE/HELP/? returns before table checks, file export, build, or run.
+//   EXPORT STUDENTS requires the current area to be the MCC STUDENTS table.
+//   BUILD/TEST may invoke the configured COBOL compiler.
+//   RUN/TEST may launch an external program.
+//
+// risk:
+//   reads_current_table: COBOL EXPORT STUDENTS
+//   writes_filesystem: EXPORT/BUILD
+//   launches_external_process: RUN/BUILD/TEST
+//   mutates_table_data: no
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -399,16 +437,39 @@ static std::string join_rest(std::istringstream& iss)
 
 } // namespace
 
+static void print_cobol_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  COBOL USAGE\n"
+        << "  COBOL EXPORT STUDENTS\n"
+        << "  COBOL RUN <program>\n"
+        << "  COBOL BUILD <source.cob|source.cbl>\n"
+        << "  COBOL TEST <source.cob|source.cbl>\n"
+        << "Examples:\n"
+        << "  COBOL EXPORT STUDENTS\n"
+        << "  COBOL BUILD hello.cob\n"
+        << "  COBOL RUN hello\n"
+        << "  COBOL TEST hello.cob\n"
+        << "Notes:\n"
+        << "  - COBOL USAGE does not inspect tables, write files, build, or run programs.\n"
+        << "  - EXPORT STUDENTS requires the current area to be the MCC STUDENTS table.\n"
+        << "  - BUILD/TEST may invoke the configured COBOL compiler.\n"
+        << "  - RUN/TEST may launch an external program.\n";
+}
 void cmd_COBOL(DbArea& db, std::istringstream& iss)
 {
     std::string verb;
     iss >> verb;
     verb = up_copy(verb);
+    // COBOL_USAGE_CONTRACT_BRANCH
+    if (verb.empty() || verb == "USAGE" || verb == "HELP" || verb == "?") {
+        print_cobol_usage_contract();
+        return;
+    }
 
     if (verb.empty()) {
-        std::cout
-            << "Usage: COBOL EXPORT STUDENTS | COBOL RUN <program> | "
-            << "COBOL BUILD <source.cob> | COBOL TEST <source.cob>\n";
+        print_cobol_usage_contract();
         return;
     }
 

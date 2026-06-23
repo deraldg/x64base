@@ -13,6 +13,10 @@ namespace fs = std::filesystem;
 enum class Slot {
     BIN,
     DATA,
+    DOCS,
+    SYSTEM_DIAGRAMS,
+    DIAGRAMS = SYSTEM_DIAGRAMS,
+    USER_DIAGRAMS,
     DBF,
     XDBF,
     xDBF = XDBF,
@@ -67,6 +71,9 @@ struct State {
     fs::path root;
     fs::path bin_root;
     fs::path data_root;
+    fs::path docs_root;
+    fs::path system_diagrams_root;
+    fs::path user_diagrams_root;
 
     fs::path dbf_root;
     fs::path xdbf_root;

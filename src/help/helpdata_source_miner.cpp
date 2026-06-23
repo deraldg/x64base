@@ -54,6 +54,57 @@ static std::string normalize_token(std::string s)
     return upper(s);
 }
 
+static bool is_compact_set_family_command(const std::string& command)
+{
+    const std::string u = upper(trim(command));
+    static const std::unordered_map<std::string, std::string> compact_to_canonical = {
+        {"SETCASE", "SET CASE"},
+        {"SETCDX", "SET CDX"},
+        {"SETCNX", "SET CNX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETINDEX", "SET INDEX"},
+        {"SETLMDB", "SET LMDB"},
+        {"SETNEAR", "SET NEAR"},
+        {"SETORDER", "SET ORDER"},
+        {"SETPATH", "SET PATH"},
+        {"SETUNIQUE", "SET UNIQUE"},
+        {"SET_UNIQUE", "SET UNIQUE"}
+    };
+    return compact_to_canonical.count(u) > 0;
+}
+
+static std::string canonicalize_set_family_command(const std::string& command)
+{
+    const std::string u = upper(trim(command));
+    static const std::unordered_map<std::string, std::string> compact_to_canonical = {
+        {"SETCASE", "SET CASE"},
+        {"SETCDX", "SET CDX"},
+        {"SETCNX", "SET CNX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETINDEX", "SET INDEX"},
+        {"SETLMDB", "SET LMDB"},
+        {"SETNEAR", "SET NEAR"},
+        {"SETORDER", "SET ORDER"},
+        {"SETPATH", "SET PATH"},
+        {"SETUNIQUE", "SET UNIQUE"},
+        {"SET_UNIQUE", "SET UNIQUE"}
+    };
+    auto it = compact_to_canonical.find(u);
+    return it == compact_to_canonical.end() ? u : it->second;
+}
+
+static void add_set_family_alias_if_needed(const std::string& original,
+                                           std::vector<std::string>& aliases)
+{
+    const std::string u = upper(trim(original));
+    if (!is_compact_set_family_command(u)) {
+        return;
+    }
+    if (std::find(aliases.begin(), aliases.end(), u) == aliases.end()) {
+        aliases.push_back(u);
+    }
+}
+
 static bool has_source_extension(const fs::path& path)
 {
     const std::string ext = upper(path.extension().string());
@@ -248,7 +299,7 @@ static std::string command_hint_from_path(const fs::path& path)
     if (std::regex_match(stem, m, rx) && m.size() > 1) {
         std::string name = m[1].str();
         std::replace(name.begin(), name.end(), '_', ' ');
-        return upper(name);
+        return canonicalize_set_family_command(name);
     }
     return {};
 }
@@ -707,6 +758,9 @@ static std::string command_from_syntax_line(const std::string& line)
     if (first == "SET" && !second.empty()) {
         return "SET " + second;
     }
+    if (is_compact_set_family_command(first)) {
+        return canonicalize_set_family_command(first);
+    }
     if (first == "TABLE" && second == "BUFFER") {
         return "TABLE BUFFER";
     }
@@ -1013,6 +1067,7 @@ struct ParsedUsageContract {
     std::string category;
     std::string status;
     std::string summary;
+    std::vector<std::string> aliases;
     std::unordered_map<std::string, std::vector<std::string>> sections;
 };
 
@@ -1024,10 +1079,10 @@ static void split_owner_into_catalog_command(const std::string& owner,
     const std::size_t bar = o.find('|');
     if (bar != std::string::npos) {
         catalog = normalize_token(o.substr(0, bar));
-        command = normalize_token(o.substr(bar + 1));
+        command = canonicalize_set_family_command(o.substr(bar + 1));
         return;
     }
-    command = normalize_token(o);
+    command = canonicalize_set_family_command(o);
 }
 
 static ParsedUsageContract parse_usage_contract(const std::string& body)
@@ -1059,12 +1114,20 @@ static ParsedUsageContract parse_usage_contract(const std::string& body)
 
             if (key == "OWNER") {
                 c.owner = value;
+                std::string raw_owner_command;
+                std::string ignored_catalog;
                 split_owner_into_catalog_command(value, c.catalog, c.command);
+                const std::size_t bar = trim(value).find('|');
+                raw_owner_command = (bar == std::string::npos) ? normalize_token(value)
+                                                               : normalize_token(trim(value).substr(bar + 1));
+                add_set_family_alias_if_needed(raw_owner_command, c.aliases);
                 current_section.clear();
                 continue;
             }
             if (key == "COMMAND") {
-                c.command = normalize_token(value);
+                const std::string raw_command = normalize_token(value);
+                c.command = canonicalize_set_family_command(raw_command);
+                add_set_family_alias_if_needed(raw_command, c.aliases);
                 current_section.clear();
                 continue;
             }
@@ -1199,6 +1262,11 @@ static void mine_usage_contracts(const SourceMineOptions& options,
             if (probe.empty() && sit != c.sections.end()) probe = sit->second;
             c.command = command_from_file_or_usage(file, commands, probe);
         }
+        if (!c.command.empty()) {
+            const std::string raw_command = normalize_token(c.command);
+            c.command = canonicalize_set_family_command(raw_command);
+            add_set_family_alias_if_needed(raw_command, c.aliases);
+        }
         if (c.command.empty()) {
             continue;
         }
@@ -1208,6 +1276,18 @@ static void mine_usage_contracts(const SourceMineOptions& options,
 
         const int line_no = line_for_pos(text, block.position);
         const std::string ev = evidence_for(file, line_no, "usage_contract", "version=v1");
+
+        int alias_ordinal = 0;
+        for (const auto& alias : c.aliases) {
+            add_unique(artifacts, unique,
+                       contract_artifact(c,
+                                         ArtifactKind::Alias,
+                                         "CONTRACT_ALIAS",
+                                         alias,
+                                         ++alias_ordinal,
+                                         "Compatibility compact SET-family verb routes to canonical SET * topic.",
+                                         ev));
+        }
 
         std::vector<std::string> usage_payload;
         auto uit = c.sections.find("USAGE");

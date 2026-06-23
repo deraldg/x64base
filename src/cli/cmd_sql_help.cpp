@@ -1,4 +1,44 @@
 // cmd_sql_help.cpp
+// @dottalk.usage v1
+// owner: DOT|SQLHELP
+// command: SQLHELP
+// category: reference
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: SQLHELP USAGE
+// summary:
+//   Display or search the SQL helper/reference catalog.
+//
+// usage:
+//   SQLHELP
+//   SQLHELP USAGE
+//   SQLHELP LIST-CATEGORIES
+//   SQLHELP <category>
+//   SQLHELP <term>
+//
+// examples:
+//   SQLHELP
+//   SQLHELP INDEXING
+//   SQLHELP CREATE-INDEX
+//   SQLHELP LIST-CATEGORIES
+//
+// notes:
+//   SQLHELP with no arguments displays the grouped SQL reference.
+//   SQLHELP USAGE prints command usage without searching the catalog.
+//   SQLHELP is read-only and does not execute SQL.
+//
+// risk:
+//   mutates_table_data: no
+//   executes_sql: no
+//
+// related:
+//   SQL
+//   SHOW
+//   PSHELL
+//
+
 #include "xbase.hpp"
 
 #include <algorithm>
@@ -23,6 +63,30 @@ std::string to_upper(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
     return s;
+}
+
+
+void print_sqlhelp_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SQLHELP\n"
+        << "  SQLHELP USAGE\n"
+        << "  SQLHELP LIST-CATEGORIES\n"
+        << "  SQLHELP <category>\n"
+        << "  SQLHELP <term>\n"
+        << "Examples:\n"
+        << "  SQLHELP INDEXING\n"
+        << "  SQLHELP CREATE-INDEX\n"
+        << "  SQLHELP LIST-CATEGORIES\n"
+        << "Notes:\n"
+        << "  - SQLHELP is a read-only reference command; it does not execute SQL.\n";
+}
+
+bool sqlhelp_usage_request(const std::string& raw)
+{
+    const std::string u = to_upper(raw);
+    return u == "USAGE" || u == "HELP" || u == "?";
 }
 
 void print_item(const sqlref::Item& it, bool verbose = true) {
@@ -123,6 +187,10 @@ void show_sql_help(const std::string& arg) {
 void cmd_SQLHELP(xbase::DbArea& /*area*/, std::istringstream& iss) {
     std::string args;
     std::getline(iss >> std::ws, args);
+    if (sqlhelp_usage_request(args)) {
+        print_sqlhelp_usage();
+        return;
+    }
     show_sql_help(args);
 }
 

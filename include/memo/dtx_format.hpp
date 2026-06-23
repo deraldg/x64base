@@ -1,7 +1,14 @@
-// dtx_format.hpp
+﻿// dtx_format.hpp
 // DotTalk++ native memo sidecar on-disk format definition
 
 #pragma once
+// @dottalk.contract
+// file: include/memo/dtx_format.hpp
+// subsystem: memo
+// role: Declares memo or large-object interfaces for DotTalk++ storage workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <array>
 #include <cstddef>

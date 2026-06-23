@@ -51,9 +51,17 @@ inline const std::vector<Item>& catalog() {
 
         {"BOTTOM",    "BOTTOM", "Go to last record.", true},
 
+        {"FIRST",     "FIRST", "Go to the first visible/logical record in the current view.", true},
+
+        {"LAST",      "LAST", "Go to the last visible/logical record in the current view.", true},
+
         {"GOTO",      "GOTO <recno>", "Go to record number.", true},
 
         {"SKIP",      "SKIP [<nRecords>]", "Move the record pointer forward/backward by <nRecords> (default 1).", true},
+
+        {"NEXT",      "NEXT [<nRecords>]", "Move to the next visible/logical record in the current view.", true},
+
+        {"PRIOR",     "PRIOR [<nRecords>]", "Move to the prior visible/logical record in the current view.", true},
 
         {"RECNO",     "RECNO()", "Return the current record number.", true},
 
@@ -163,6 +171,9 @@ inline const std::vector<Item>& catalog() {
 
         {"SETCASE",   "SETCASE <args...>", "Compatibility/internal target behind routed SET CASE.", true},
 
+        {"SET UNIQUE", "SET UNIQUE | SET UNIQUE FIELD <field> ON|OFF",
+                 "Report or configure per-table unique-field registry entries.", true},
+
         {"PREDHELP",  "PREDHELP [<topic>]", "Help for predicates/expressions and filtering.", true},
 
         {"PREDICATES","PREDICATES", "List supported predicates/operators for filtering.", true},
@@ -230,8 +241,13 @@ inline const std::vector<Item>& catalog() {
             - May rebuild active indexes automatically after success.
             - In current public CDX/LMDB workflow, COMMIT can trigger a CDX/LMDB rebuild when the area is stale and a CDX order is active.)", true},
 
-        {"ROLLBACK", "ROLLBACK",
-                 "Discard buffered TABLE updates (planned; not confirmed in current shakedown runs).", false},
+                {"ROLLBACK", "ROLLBACK",
+        R"fox(Discard staged TABLE/buffered changes without committing them.
+
+        Notes:
+            ROLLBACK USAGE/HELP/? is runtime-supported and does not mutate data.
+            Operational ROLLBACK behavior depends on the current buffering state.
+            This row is no longer planned-only.)fox", true},
 
         {"EXPORT", "EXPORT <csv>", "Export to CSV.", true},
 
@@ -442,7 +458,7 @@ inline const std::vector<Item>& catalog() {
             Intended for keyboard-driven browsing and diagnostics.
             Exits back to the DotTalk++ CLI.)", true},
 
-        {"BROWSE",  "BROWSE", "Table browser (FoxPro).", false},
+        {"BROWSE",  "BROWSE [EDIT]", "Enter the supported interactive browse module.", true},
 
         {"BROWSETUI","BROWSETUI", "Text-mode browser UI (developer tool).", true},
 
@@ -546,7 +562,13 @@ inline const std::vector<Item>& catalog() {
 
         {"TVISION",   "TVISION", "Turbo Vision diagnostics / demos.", true},
 
-        {"TURBOPACK", "TURBOPACK", "Turbo Vision / pack-related utility.", true},
+                {"TURBOPACK", "TURBOPACK",
+        R"fox(Fast PACK path for plain non-memo, non-x64 DBF tables.
+
+        Notes:
+            TURBOPACK USAGE does not require an open table and does not rewrite files.
+            Memo tables and x64 tables are refused; use PACK instead.
+            This is a pack/DBF command, not a Turbo Vision launcher.)fox", true},
 
         {"FOXPRO",    "FOXPRO", "DotTalk++ UI / browser command.", true},
 
@@ -621,11 +643,39 @@ inline const std::vector<Item>& catalog() {
 
         {"ENDUNTIL","ENDUNTIL", "End an UNTIL block (scripting).", true},
 
-        {"IF",    "IF <expr>", "Conditional execution block: IF ... [ELSE] ... ENDIF.", false},
+                {"IF", "IF <logicalExpression>",
+        R"fox(Conditional execution block.
 
-        {"ELSE",  "ELSE", "Optional ELSE branch for an IF block.", false},
+        Syntax:
+            IF <logicalExpression>
+                <commands>
+            ELSE
+                <commands>
+            ENDIF
 
-        {"ENDIF", "ENDIF", "End an IF block.", false},
+        Notes:
+            IF USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.)fox", true},
+
+                {"ELSE", "ELSE",
+        R"fox(Optional ELSE branch for an IF block.
+
+        Syntax:
+            ELSE
+
+        Notes:
+            ELSE USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.)fox", true},
+
+                {"ENDIF", "ENDIF",
+        R"fox(End an IF block.
+
+        Syntax:
+            ENDIF
+
+        Notes:
+            ENDIF USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.)fox", true},
 
         {"SET VAR",  "SET VAR <name> TO <value> | SET VAR <name>",
                  "Set or show a macro variable (used by &name expansion in scripts).", true},

@@ -3,6 +3,45 @@
 // WHERE expression state + shared evaluator + optional DEBUG plan dump
 // WHERE is bound into the runtime SET FILTER path.
 // ===============================
+// @dottalk.usage v1
+// owner: DOT|WHERE
+// command: WHERE
+// category: filter
+// status: supported
+// noargs: report
+// effect: filter
+// mutates: where-state filter-state
+// usage-access: WHERE USAGE
+// summary:
+//   Show, set, debug, or clear the WHERE predicate state bound into SET FILTER.
+//
+// usage:
+//   WHERE
+//   WHERE USAGE
+//   WHERE <expr>
+//   WHERE <expr> DEBUG
+//   WHERE CLEAR
+//   WHERE OFF
+//
+// notes:
+//   WHERE with no arguments reports current WHERE state.
+//   WHERE <expr> compiles the predicate, probes the current record for diagnostics, and delegates to SET FILTER.
+//   WHERE CLEAR and WHERE OFF clear WHERE state and the associated SET FILTER path.
+//   WHERE DEBUG prints compile/field diagnostics for the expression.
+//   WHERE USAGE prints usage without changing filter state.
+//
+// risk:
+//   mutates_where_state: WHERE <expr>, CLEAR, OFF
+//   mutates_filter_state: delegated SET FILTER changes
+//   mutates_table_data: no
+//
+// related:
+//   SETFILTER
+//   COUNT
+//   LIST
+//   SMARTLIST
+//
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -117,6 +156,18 @@ const WhereInfo* where_active_for(const xbase::DbArea* area)
     return (it == g_where_by_area.end() ? nullptr : &it->second);
 }
 
+static void print_where_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  WHERE\n"
+        << "  WHERE USAGE\n"
+        << "  WHERE <expr>\n"
+        << "  WHERE <expr> DEBUG\n"
+        << "  WHERE CLEAR\n"
+        << "  WHERE OFF\n";
+}
+
 static void print_where_status(xbase::DbArea& area)
 {
     auto* info = where_info_for(&area);
@@ -134,6 +185,11 @@ void cmd_WHERE(xbase::DbArea& area, std::istringstream& args)
 
     if (rest.empty()) {
         print_where_status(area);
+        return;
+    }
+
+    if (iequals(rest, "USAGE") || iequals(rest, "HELP") || iequals(rest, "?")) {
+        print_where_usage();
         return;
     }
 

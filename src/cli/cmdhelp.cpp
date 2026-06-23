@@ -102,6 +102,47 @@ static std::vector<std::string> split_words(const std::string& s) {
     return out;
 }
 
+static bool contains_space_char(const std::string& s) {
+    return std::any_of(s.begin(), s.end(),
+                       [](unsigned char ch) { return std::isspace(ch) != 0; });
+}
+
+static std::string compact_set_query_token(std::string s) {
+    s = up(std::move(s));
+    s.erase(std::remove_if(s.begin(), s.end(),
+                           [](unsigned char ch) {
+                               return std::isspace(ch) != 0 || ch == '_' || ch == '-';
+                           }),
+            s.end());
+    return s;
+}
+
+static std::string canonical_set_family_query(const std::string& query) {
+    const std::string q = up(query);
+    // A spaced query like SET ORDER is already canonical and should resolve
+    // naturally.  Compact legacy spellings like SETORDER and SET_UNIQUE are
+    // aliases into the spaced SET * topic.
+    if (contains_space_char(q)) {
+        return {};
+    }
+
+    static const std::unordered_map<std::string, std::string> kMap = {
+        {"SETORDER",  "SET ORDER"},
+        {"SETINDEX",  "SET INDEX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETCASE",   "SET CASE"},
+        {"SETPATH",   "SET PATH"},
+        {"SETCNX",    "SET CNX"},
+        {"SETCDX",    "SET CDX"},
+        {"SETLMDB",   "SET LMDB"},
+        {"SETNEAR",   "SET NEAR"},
+        {"SETUNIQUE", "SET UNIQUE"}
+    };
+
+    const auto it = kMap.find(compact_set_query_token(q));
+    return it == kMap.end() ? std::string{} : it->second;
+}
+
 static bool is_expression_function_name(const std::string& name) {
     static const std::unordered_set<std::string> names = {
         "ABS","ACOS","ALLTRIM","ASC","ASIN","AT","ATAN","ATC","BETWEEN",
@@ -130,7 +171,7 @@ static bool is_developer_surface_name(const std::string& name) {
 static std::string generated_pending_summary(const std::string& name) {
     const std::string n = up(name);
     if (is_expression_function_name(n)) {
-        return n + " is expression/function-style help; verify whether it belongs in the function catalog rather than native command help.";
+        return {};
     }
     if (is_developer_surface_name(n)) {
         return n + " is a developer/diagnostic command surface; curated DOTREF help is pending.";
@@ -684,6 +725,12 @@ std::vector<CommandInfo> collect_commands() {
         if (seen_keys.count("ED|"  + key)) seen_any = true;
 
         if (!seen_any) {
+            if (is_expression_function_name(key)) {
+                // Expression/function names are reflected through the function
+                // catalog, not as unsupported DOT command placeholders.
+                continue;
+            }
+
             CommandInfo ci;
             ci.id = next_id++;
             ci.catalog = "DOT";
@@ -1223,6 +1270,12 @@ static bool is_source_evidence_text(const std::string& raw) {
 
     if (u == "COMMAND-OWNED @DOTTALK.USAGE V1 SUMMARY.") return true;
 
+// @dottalk.locale-preview-contract v1 PHASE23T_CMDHELP_LOCALE_PREVIEW_SOURCE_CONTRACT
+// CMDHELP <topic> PREVIEW LOCALE <locale> is the explicit-only locale preview surface.
+// Default CMDHELP behavior remains unchanged until a separately authorized runtime implementation patch.
+// Locale rows with DRAFT_PLACEHOLDER or NEEDS_REVIEW fall back to source/default text.
+
+
     return false;
 }
 
@@ -1247,6 +1300,20 @@ static bool usage_or_syntax_line_looks_runnable(const HelpLineView& h) {
     // Examples: "SET ORDER TO <tag>", "REL LIST [ALL]".
     if (starts_with_ci(s, cmd)) {
         return true;
+    }
+
+    // Enforced convention: compact SET-family verbs such as SETORDER are
+    // aliases of canonical spaced SET topics such as SET ORDER.  Contract
+    // harvesting stores the canonical topic while preserving compact usage
+    // forms, so allow those rows to render under the canonical topic.
+    if (starts_with_ci(cmd, "SET ")) {
+        std::string compact = cmd;
+        compact.erase(std::remove_if(compact.begin(), compact.end(),
+                                     [](unsigned char ch) { return std::isspace(ch) != 0; }),
+                      compact.end());
+        if (!compact.empty() && starts_with_ci(s, compact)) {
+            return true;
+        }
     }
 
     // Fallback for compound topics and compatibility aliases:
@@ -1349,9 +1416,46 @@ static std::vector<HelpLineView> load_current_help_lines(const std::string& dir)
     return lines;
 }
 
+static std::vector<std::string> sorted_limited_topic_keys(std::set<std::string> keys) {
+    std::vector<std::string> out(keys.begin(), keys.end());
+    std::sort(out.begin(), out.end(), [](const std::string& a, const std::string& b) {
+        const int ca = catalog_rank(a);
+        const int cb = catalog_rank(b);
+        if (ca != cb) return ca < cb;
+        return up(a) < up(b);
+    });
+
+    if (out.size() > 8) {
+        out.resize(8);
+    }
+    return out;
+}
+
 static std::vector<std::string> resolve_topic_keys_from_lines(const std::vector<HelpLineView>& lines,
                                                               const std::string& query_raw) {
     const std::string q = up(query_raw);
+
+    // Enforced Phase 4b convention: compact SET-family queries are aliases into
+    // canonical spaced SET * topics.  Prefer the canonical topic if it exists;
+    // fall back to legacy compact topics only if the current HELP DATA lacks the
+    // canonical rows.
+    if (q.find('|') == std::string::npos) {
+        const std::string set_canon = canonical_set_family_query(q);
+        if (!set_canon.empty()) {
+            std::set<std::string> canonical_exact;
+            for (const auto& h : lines) {
+                const std::string topicU = up(h.topic);
+                const std::string suffU = topic_suffix(h.topic_key);
+                if (suffU == set_canon || topicU == set_canon) {
+                    canonical_exact.insert(h.topic_key);
+                }
+            }
+            if (!canonical_exact.empty()) {
+                return sorted_limited_topic_keys(std::move(canonical_exact));
+            }
+        }
+    }
+
     std::set<std::string> exact;
     std::set<std::string> suffix;
 
@@ -1364,27 +1468,15 @@ static std::vector<std::string> resolve_topic_keys_from_lines(const std::vector<
             if (keyU == q) exact.insert(h.topic_key);
         } else {
             if (suffU == q || topicU == q) exact.insert(h.topic_key);
+            else if ((up(h.kind) == "ALIAS" || up(h.kind) == "VARIANT") && up(h.text) == q) exact.insert(h.topic_key);
             else if (suffU.find(q) != std::string::npos || topicU.find(q) != std::string::npos) suffix.insert(h.topic_key);
         }
     }
 
-    std::vector<std::string> out(exact.begin(), exact.end());
-    if (out.empty()) {
-        out.assign(suffix.begin(), suffix.end());
+    if (!exact.empty()) {
+        return sorted_limited_topic_keys(std::move(exact));
     }
-
-    std::sort(out.begin(), out.end(), [](const std::string& a, const std::string& b) {
-        const int ca = catalog_rank(a);
-        const int cb = catalog_rank(b);
-        if (ca != cb) return ca < cb;
-        return up(a) < up(b);
-    });
-
-    if (out.size() > 8) {
-        out.resize(8);
-    }
-
-    return out;
+    return sorted_limited_topic_keys(std::move(suffix));
 }
 
 static void render_current_topic_help(const std::string& dir,

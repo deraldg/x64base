@@ -1,4 +1,40 @@
 // src/cli/cmd_dir.cpp
+// @dottalk.usage v1
+// owner: DOT|DIR
+// command: DIR
+// category: filesystem
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: DIR USAGE
+// summary:
+//   List a directory or show a single file entry through DotTalk++ path
+//   resolution.
+//
+// usage:
+//   DIR
+//   DIR USAGE
+//   DIR <path>
+//   DIR <slot>
+//   DIR <slot>:<path>
+//
+// notes:
+//   DIR with no arguments lists the configured DBF path.
+//   DIR <path> lists a directory or prints a single file entry.
+//   Slot-style paths resolve through the common path resolver.
+//   DIR is read-only and does not mutate table data or filesystem contents.
+//
+// risk:
+//   reads_filesystem: yes
+//   writes_filesystem: no
+//   mutates_table_data: no
+//
+// related:
+//   SETPATH
+//   SHOWINI
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 
@@ -16,6 +52,17 @@
 #include <string>
 
 namespace fs = std::filesystem;
+
+static void print_dir_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  DIR\n"
+        << "  DIR USAGE\n"
+        << "  DIR <path>\n"
+        << "  DIR <slot>\n"
+        << "  DIR <slot>:<path>\n";
+}
 
 static bool has_ext_ci(const fs::path& p, const char* ext) {
     auto e = textio::up(p.extension().string());
@@ -188,6 +235,12 @@ void cmd_DIR(xbase::DbArea&, std::istringstream& iss) {
     std::string arg;
     std::getline(iss, arg);
     arg = textio::trim(arg);
+
+    const std::string argU = textio::up(arg);
+    if (argU == "USAGE" || argU == "HELP" || argU == "?") {
+        print_dir_usage();
+        return;
+    }
 
     fs::path target = resolve_dir_target(arg);
 

@@ -2,6 +2,41 @@
 // FILE: src/cli/cmd_wsreport.cpp
 // ================================
 
+// @dottalk.usage v1
+// owner: DOT|WSREPORT
+// command: WSREPORT
+// category: diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: WSREPORT USAGE
+// summary:
+//   Print a workspace/status report covering open areas, LMDB/order summary,
+//   and table-buffer state.
+//
+// usage:
+//   WSREPORT
+//   WSREPORT USAGE
+//   WSREPORT ALL
+//
+// notes:
+//   WSREPORT with no arguments reports the current workspace and current area.
+//   WSREPORT ALL includes all open work areas in the area/index summary.
+//   WSREPORT USAGE prints usage and does not inspect areas.
+//   WSREPORT is read-only.
+//
+// risk:
+//   reads_workspace_state: yes except usage
+//   writes_console: yes
+//   mutates_table_data: no
+//
+// related:
+//   AREA
+//   STATUS
+//   WORKSPACE
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -41,6 +76,34 @@ static std::string upper_copy(std::string s) {
 
 static bool has_token(const std::string& hay, const char* tok) {
     return hay.find(tok) != std::string::npos;
+}
+
+static std::string trim_copy(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+        s.pop_back();
+    }
+    return s;
+}
+
+static bool wsreport_usage_request(const std::string& raw)
+{
+    const std::string u = upper_copy(trim_copy(raw));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_wsreport_usage(std::ostream& os)
+{
+    os << "Usage:\n"
+       << "  WSREPORT\n"
+       << "  WSREPORT USAGE\n"
+       << "  WSREPORT ALL\n"
+       << "Notes:\n"
+       << "  - WSREPORT prints workspace, order/LMDB, table-buffer, and area summaries.\n"
+       << "  - WSREPORT ALL includes all open work areas.\n";
 }
 
 static std::string basename_of(const std::string& path) {
@@ -235,10 +298,56 @@ static void print_area_index_block(std::ostream& os,
 // COMMAND
 // --------------------------------------------------
 
+static std::string wsreport_usage_upper_hotfix(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool wsreport_usage_request_hotfix(std::istringstream& args)
+{
+    std::string tok;
+    if (!(args >> tok)) {
+        args.clear();
+        args.seekg(0, std::ios::beg);
+        return false;
+    }
+
+    const std::string u = wsreport_usage_upper_hotfix(tok);
+    args.clear();
+    args.seekg(0, std::ios::beg);
+
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_wsreport_usage_hotfix()
+{
+    std::cout
+        << "Usage:\n"
+        << "  WSREPORT\n"
+        << "  WSREPORT USAGE\n"
+        << "  WSREPORT ALL\n"
+        << "Notes:\n"
+        << "  - WSREPORT prints workspace, order/LMDB, table-buffer, and area summaries.\n"
+        << "  - WSREPORT ALL includes all open work areas.\n";
+}
 void cmd_WSREPORT(xbase::DbArea&, std::istringstream& args) {
+    if (wsreport_usage_request_hotfix(args)) {
+        print_wsreport_usage_hotfix();
+        return;
+    }
     auto& out = cli::OutputRouter::instance().out();
 
-    const std::string raw = upper_copy(args.str());
+    const std::string arg_text = args.str();
+    if (wsreport_usage_request(arg_text)) {
+        print_wsreport_usage(out);
+        out.flush();
+        return;
+    }
+
+    const std::string raw = upper_copy(arg_text);
     const bool wantAll = has_token(raw, "ALL");
 
     const auto areas = workareas::all();

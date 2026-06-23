@@ -23,6 +23,49 @@
 //   in the tree: first/last/next/prev.
 // - It does not move the caller's record pointer.
 
+// @dottalk.usage v1
+// owner: DOT|INDEXSEEK
+// command: INDEXSEEK
+// category: navigation
+// status: supported
+// noargs: report
+// effect: seek
+// mutates: cursor-temporary
+// usage-access: INDEXSEEK USAGE
+// summary:
+//   Return the record number for a value using active CDX/LMDB order or legacy
+//   INX fallback, restoring the caller's cursor.
+//
+// usage:
+//   INDEXSEEK USAGE
+//   INDEXSEEK <value>
+//   INDEXSEEK <value> SOFT
+//   INDEXSEEK <value> TAG <tag-or-path>
+//   INDEXSEEK <value> SOFT TAG <tag-or-path>
+//
+// examples:
+//   INDEXSEEK "TAYLOR"
+//   INDEXSEEK "TAYLOR" SOFT
+//   INDEXSEEK "TAYLOR" TAG students.cdx
+//
+// notes:
+//   INDEXSEEK USAGE works without an open table.
+//   INDEXSEEK prints INDEXSEEK(): <recno> and restores the cursor best-effort.
+//   Active CDX/LMDB order is preferred when available; legacy INX fallback remains supported.
+//   SOFT returns the first >= key when an exact match is not found.
+//
+// risk:
+//   reads_index: yes
+//   mutates_cursor: temporarily, restored best-effort
+//   mutates_table_data: no
+//   requires_open_table: yes except usage
+//
+// related:
+//   SEEK
+//   FIND
+//   SET ORDER
+//
+
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "cli/path_resolver.hpp"
@@ -113,6 +156,29 @@ static std::string strip_outer_quotes(std::string s) {
 
 static std::string norm_seek_text(std::string s) {
     return upper_copy(trim_copy(s));
+}
+static bool indexseek_usage_request(const std::string& raw)
+{
+    const std::string u = upper_copy(trim_copy(raw));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_indexseek_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  INDEXSEEK USAGE\n"
+        << "  INDEXSEEK <value>\n"
+        << "  INDEXSEEK <value> SOFT\n"
+        << "  INDEXSEEK <value> TAG <tag-or-path>\n"
+        << "  INDEXSEEK <value> SOFT TAG <tag-or-path>\n"
+        << "Examples:\n"
+        << "  INDEXSEEK \"TAYLOR\"\n"
+        << "  INDEXSEEK \"TAYLOR\" SOFT\n"
+        << "  INDEXSEEK \"TAYLOR\" TAG students.cdx\n"
+        << "Notes:\n"
+        << "  - INDEXSEEK prints INDEXSEEK(): <recno> and restores the cursor best-effort.\n"
+        << "  - INDEXSEEK USAGE works without an open table.\n";
 }
 
 static bool ieq_char(char a, char b) {
@@ -485,16 +551,21 @@ static bool indexseek_via_cdx(xbase::DbArea& A,
 } // anonymous namespace
 
 void cmd_INDEXSEEK(xbase::DbArea& A, std::istringstream& args) {
+    std::string rest;
+    std::getline(args, rest);
+    rest = trim_copy(rest);
+
+    if (indexseek_usage_request(rest)) {
+        print_indexseek_usage();
+        return;
+    }
+
     if (!A.isOpen()) {
         std::cout << "INDEXSEEK(): 0\n";
         return;
     }
 
     CursorRestore restore(A);
-
-    std::string rest;
-    std::getline(args, rest);
-    rest = trim_copy(rest);
 
     ParsedArgs parsed;
     if (!parse_value_and_flags(rest, parsed)) {

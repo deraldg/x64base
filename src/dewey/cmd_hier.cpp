@@ -1,3 +1,44 @@
+// @dottalk.usage v1
+// owner: DEV|HIER
+// command: HIER
+// category: dev-hierarchy
+// status: dev-tool
+// noargs: usage
+// effect: hierarchy-table-operation
+// mutates: current-table hierarchy-fields
+// usage-access: HIER USAGE
+// summary:
+//   Developer hierarchy service command for creating, moving, validating, and
+//   listing nested hierarchy nodes in the current DbArea.
+//
+// usage:
+//   HIER USAGE
+//   HIER CREATE ROOT <node_id> [NAME <text>] [TYPE <text>] [SORT <n>]
+//   HIER ADD CHILD <parent_id> <node_id> [NAME <text>] [TYPE <text>] [SORT <n>]
+//   HIER INSERT BETWEEN <left_id> <right_id> <node_id>
+//   HIER MOVE <node_id> TO <new_parent_id>
+//   HIER DELETE <node_id>
+//   HIER DELETE SUBTREE <node_id>
+//   HIER REBUILD
+//   HIER VALIDATE
+//   HIER CHILDREN <node_id>
+//   HIER SUBTREE <node_id>
+//
+// examples:
+//   HIER CREATE ROOT ROOT NAME Root
+//   HIER ADD CHILD ROOT CHILD1 NAME Child
+//   HIER VALIDATE
+//   HIER CHILDREN ROOT
+//
+// notes:
+//   HIER USAGE/HELP/? prints usage before constructing HierarchyService.
+//   HIER is a developer command and may mutate hierarchy state in the current table.
+//
+// risk:
+//   requires_open_table: command-dependent
+//   mutates_table_data: create/add/insert/move/delete/rebuild
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "hierarchy_service.hpp"
@@ -11,6 +52,7 @@ static void usage()
 {
     std::cout <<
         "Usage:\n"
+        "  HIER USAGE\n"
         "  HIER CREATE ROOT <node_id> [NAME <text>] [TYPE <text>] [SORT <n>]\n"
         "  HIER ADD CHILD <parent_id> <node_id> [NAME <text>] [TYPE <text>] [SORT <n>]\n"
         "  HIER INSERT BETWEEN <left_id> <right_id> <node_id>\n"
@@ -20,7 +62,15 @@ static void usage()
         "  HIER REBUILD\n"
         "  HIER VALIDATE\n"
         "  HIER CHILDREN <node_id>\n"
-        "  HIER SUBTREE <node_id>\n";
+        "  HIER SUBTREE <node_id>\n"
+        "Examples:\n"
+        "  HIER CREATE ROOT ROOT NAME Root\n"
+        "  HIER ADD CHILD ROOT CHILD1 NAME Child\n"
+        "  HIER VALIDATE\n"
+        "  HIER CHILDREN ROOT\n"
+        "Notes:\n"
+        "  - HIER USAGE does not inspect or mutate hierarchy state.\n"
+        "  - HIER is a developer command and may mutate the current table.\n";
 }
 
 static HierNodeInput parse_input(const std::vector<std::string>& toks, size_t start)
@@ -67,6 +117,11 @@ void cmd_HIER(xbase::DbArea& area, std::istringstream& iss)
     }
 
     const std::string a1 = textio::upper(toks[0]);
+    // HIER_USAGE_CONTRACT_BRANCH
+    if (a1 == "USAGE" || a1 == "HELP" || a1 == "?") {
+        usage();
+        return;
+    }
 
     HierarchyService hs(area);
 

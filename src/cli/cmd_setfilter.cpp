@@ -1,6 +1,6 @@
 // @dottalk.usage v1
-// owner: DOT|SETFILTER
-// command: SETFILTER
+// owner: DOT|SET FILTER
+// command: SET FILTER
 // category: query
 // status: supported
 // noargs: usage

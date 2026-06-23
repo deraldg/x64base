@@ -70,10 +70,25 @@
 
 #include "shell_api.hpp"
 #include "xbase.hpp"
+#include "shell_transcript.hpp"
 
 using xbase::DbArea;
 
+extern "C" xbase::XBaseEngine* shell_engine();
+
 namespace {
+
+static DbArea& current_shell_area_or(DbArea& fallback)
+{
+    if (auto* eng = shell_engine()) {
+        try {
+            return eng->area(eng->currentArea());
+        } catch (...) {
+        }
+    }
+    return fallback;
+}
+
 
 struct ScopeExit {
     void (*fn)() = nullptr;
@@ -137,6 +152,126 @@ static inline bool looks_like_comment_or_blank(const std::string& line) {
     if (t.rfind("&&", 0) == 0) return true;
     if (t.rfind(";", 0) == 0) return true;
     return false;
+}
+
+
+static std::vector<std::string> split_dotscript_words(const std::string& text) {
+    std::vector<std::string> out;
+    std::string cur;
+    bool in_single = false;
+    bool in_double = false;
+    char prev = '\0';
+
+    for (char c : text) {
+        if (c == '\'' && !in_double && prev != '\\') {
+            in_single = !in_single;
+            prev = c;
+            continue;
+        }
+        if (c == '"' && !in_single && prev != '\\') {
+            in_double = !in_double;
+            prev = c;
+            continue;
+        }
+
+        const bool space = (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+        if (space && !in_single && !in_double) {
+            if (!cur.empty()) {
+                out.push_back(cur);
+                cur.clear();
+            }
+        } else {
+            cur.push_back(c);
+        }
+        prev = c;
+    }
+
+    if (!cur.empty()) out.push_back(cur);
+    return out;
+}
+
+static std::string join_dotscript_words(const std::vector<std::string>& words, size_t first, size_t last_exclusive) {
+    std::string out;
+    for (size_t i = first; i < last_exclusive && i < words.size(); ++i) {
+        if (!out.empty()) out += " ";
+        out += words[i];
+    }
+    return out;
+}
+
+static std::string strip_dotscript_at_prefix(std::string s) {
+    if (!s.empty() && s.front() == '@') s.erase(s.begin());
+    return s;
+}
+
+static std::string unquote_dotscript_token(std::string s) {
+    if (s.size() >= 2) {
+        const char a = s.front();
+        const char b = s.back();
+        if ((a == '"' && b == '"') || (a == '\'' && b == '\'')) {
+            return s.substr(1, s.size() - 2);
+        }
+    }
+    return s;
+}
+
+static bool extract_dotscript_output_clause(
+    std::string& file_spec,
+    std::string& transcript_spec,
+    bool& transcript_append,
+    std::string* error_out
+) {
+    transcript_spec.clear();
+    transcript_append = false;
+
+    std::vector<std::string> words = split_dotscript_words(file_spec);
+    if (words.size() < 3) return true;
+
+    auto upper_word = [](std::string s) {
+        for (char& c : s) {
+            if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+        }
+        return s;
+    };
+
+    size_t out_pos = static_cast<size_t>(-1);
+    size_t transcript_pos = static_cast<size_t>(-1);
+
+    const std::string last = upper_word(words.back());
+    if (last == "APPEND") {
+        if (words.size() < 4) {
+            if (error_out) *error_out = "APPEND requires OUT <file> APPEND";
+            return false;
+        }
+        const std::string maybe_out = upper_word(words[words.size() - 3]);
+        if (maybe_out == "OUT" || maybe_out == "OUTPUT") {
+            out_pos = words.size() - 3;
+            transcript_pos = words.size() - 2;
+            transcript_append = true;
+        }
+    } else {
+        const std::string maybe_out = upper_word(words[words.size() - 2]);
+        if (maybe_out == "OUT" || maybe_out == "OUTPUT") {
+            out_pos = words.size() - 2;
+            transcript_pos = words.size() - 1;
+            transcript_append = false;
+        }
+    }
+
+    if (out_pos == static_cast<size_t>(-1)) return true;
+    if (out_pos == 0) {
+        if (error_out) *error_out = "missing script file before OUT";
+        return false;
+    }
+
+    transcript_spec = unquote_dotscript_token(words[transcript_pos]);
+    if (transcript_spec.empty()) {
+        if (error_out) *error_out = "missing transcript file after OUT";
+        return false;
+    }
+
+    file_spec = strip_dotscript_at_prefix(unquote_dotscript_token(join_dotscript_words(words, 0, out_pos)));
+    return true;
 }
 
 static inline bool has_extension(const std::string& s) {
@@ -216,6 +351,7 @@ static void print_usage() {
         << "  - Bare names resolve as typed, .dts, scripts/, then tests/.\n"
         << "  - Lines beginning with *, //, &&, or ; after trimming are skipped.\n"
         << "  - DOTSCRIPT executes commands; side effects depend on script contents.\n"
+        << "  - OUT/OUTPUT tees full command output to a transcript file.\n"
         << "  - Nesting is limited to main script plus one subscript.\n";
 }
 
@@ -240,6 +376,27 @@ static void maybe_print_trace_banner() {
 
 } // namespace
 
+// @dottalk.contract DOTSCRIPT TRANSCRIPT v1
+// command: DOTSCRIPT
+// source: cmd_dotscript.cpp
+// contract_update: MDO-377G v1.1
+// purpose: DOTSCRIPT executes .dts command scripts and may tee full runtime output to a transcript.
+// @dottalk.usage v1
+// usage: DOTSCRIPT <file>
+// usage: DOTSCRIPT @<file>
+// usage: DOTSCRIPT <file> OUT <transcript-file>
+// usage: DOTSCRIPT <file> OUTPUT <transcript-file>
+// usage: DOTSCRIPT TRACE <file>
+// usage: DOTSCRIPT TRACE <file> OUT <transcript-file>
+// usage: DOTSCRIPT <file> OUT <transcript-file> APPEND
+// behavior: OUT/OUTPUT captures full command output emitted through std::cout while preserving console visibility.
+// behavior: APPEND appends to an existing transcript; default OUT/OUTPUT truncates/rewrites the transcript.
+// behavior: transcript capture does not make script commands safe; side effects still depend on script contents.
+// boundary: transcript capture itself does not mutate DBF/CDX/LMDB, MAN*/MANSTAR, reader pointers, HELP, or CMDHELPCHK.
+// note: TEST is intentionally not refactored in this patch; TEST may become a later consumer of shell_transcript.
+// provenance: MDO-377G v1.1 shell transcript service source patch with usage-contract update.
+// @dottalk.contract.end
+
 void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
 {
     std::string rest;
@@ -253,6 +410,8 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
 
     bool trace_for_this_run = g_dotscript_trace;
     std::string file_spec;
+    std::string transcript_spec;
+    bool transcript_append = false;
 
     {
         std::istringstream ss(rest);
@@ -307,6 +466,12 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
         }
     }
 
+    std::string transcript_error;
+    if (!extract_dotscript_output_clause(file_spec, transcript_spec, transcript_append, &transcript_error)) {
+        std::cout << "DOTSCRIPT: " << transcript_error << "\n";
+        return;
+    }
+
     if (file_spec.empty()) {
         print_usage();
         return;
@@ -327,6 +492,24 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
     if (!resolved) {
         std::cout << "DOTSCRIPT: script not found.\n" << attempts;
         return;
+    }
+
+    std::optional<shell_transcript::ScopedShellTranscript> transcript_guard;
+    if (!transcript_spec.empty()) {
+        std::string transcript_open_error;
+        transcript_guard.emplace(
+            std::filesystem::path(transcript_spec),
+            transcript_append,
+            true,
+            false,
+            &transcript_open_error
+        );
+        if (!transcript_guard->ok()) {
+            std::cout << "DOTSCRIPT: transcript open failed: " << transcript_open_error << "\n";
+            return;
+        }
+        std::cout << "DOTSCRIPT OUT: " << transcript_spec
+                  << (transcript_append ? " (append)" : " (write)") << "\n";
     }
 
     if (trace_for_this_run) {
@@ -364,7 +547,8 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
             std::cout << resolved->string() << ":" << lineno << "> " << trimmed << "\n";
         }
 
-        if (!shell_execute_line(area, trimmed)) {
+        DbArea& cur = current_shell_area_or(area);
+        if (!shell_execute_line(cur, trimmed)) {
             std::cout << "DOTSCRIPT: " << resolved->string() << ":" << lineno
                       << ": Unknown command: " << trimmed << "\n";
         }

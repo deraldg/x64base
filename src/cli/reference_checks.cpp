@@ -1,5 +1,8 @@
 #include "help/reference_collection.hpp"
 
+#include <algorithm>
+#include <cctype>
+#include <map>
 #include <set>
 #include <sstream>
 #include <unordered_set>
@@ -23,6 +26,56 @@ static std::unordered_set<std::string> qualified_subcommand_set(const ReferenceC
         names.insert(sc.qualified_name);
     }
     return names;
+}
+
+static std::string upper_copy(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+static std::string compact_token(std::string s)
+{
+    s = upper_copy(std::move(s));
+    s.erase(std::remove_if(s.begin(), s.end(),
+                           [](unsigned char ch) {
+                               return std::isspace(ch) != 0 || ch == '_' || ch == '-';
+                           }),
+            s.end());
+    return s;
+}
+
+static bool has_space(const std::string& s)
+{
+    return std::any_of(s.begin(), s.end(),
+                       [](unsigned char ch) { return std::isspace(ch) != 0; });
+}
+
+static std::string compact_set_family_target(const std::string& token)
+{
+    // Only compact spellings are violations/aliases here.  Already-spaced
+    // canonical topics such as SET ORDER and SET INDEX are valid and must not
+    // be re-flagged just because compact_token() can reduce them to SETORDER.
+    if (has_space(token)) {
+        return {};
+    }
+
+    static const std::map<std::string, std::string> kMap = {
+        {"SETORDER",  "SET ORDER"},
+        {"SETINDEX",  "SET INDEX"},
+        {"SETFILTER", "SET FILTER"},
+        {"SETCASE",   "SET CASE"},
+        {"SETPATH",   "SET PATH"},
+        {"SETCNX",    "SET CNX"},
+        {"SETCDX",    "SET CDX"},
+        {"SETLMDB",   "SET LMDB"},
+        {"SETNEAR",   "SET NEAR"},
+        {"SETUNIQUE", "SET UNIQUE"}
+    };
+
+    const auto it = kMap.find(compact_token(token));
+    return it == kMap.end() ? std::string{} : it->second;
 }
 
 } // namespace
@@ -96,6 +149,55 @@ std::vector<CheckIssue> check_missing_parent_commands(const ReferenceCollection&
             std::ostringstream oss;
             oss << "missing parent command: parent=" << sc.parent_command
                 << " subcommand=" << sc.name;
+            issues.push_back({"ERROR", oss.str()});
+        }
+    }
+
+    return issues;
+}
+
+std::vector<CheckIssue> check_set_family_canonicalization(const ReferenceCollection& rc)
+{
+    std::vector<CheckIssue> issues;
+
+    // CODEX convention: compact SET-family verbs are compatibility aliases.
+    // The canonical reflected/help topic must be the spaced SET * form.
+    for (const auto& cmd : rc.commands) {
+        const std::string expected = compact_set_family_target(cmd.canonical_name);
+        if (!expected.empty()) {
+            std::ostringstream oss;
+            oss << "SET-family canonical command must be spaced: "
+                << cmd.canonical_name << " should be " << expected;
+            issues.push_back({"ERROR", oss.str()});
+        }
+    }
+
+    for (const auto& sc : rc.subcommands) {
+        const std::string expected = compact_set_family_target(sc.qualified_name);
+        if (!expected.empty()) {
+            std::ostringstream oss;
+            oss << "SET-family subcommand must be represented as parent SET + name: "
+                << sc.qualified_name << " should be " << expected;
+            issues.push_back({"ERROR", oss.str()});
+        }
+    }
+
+    for (const auto& ev : rc.entry_variants) {
+        const std::string token_expected = compact_set_family_target(ev.token);
+        if (!token_expected.empty() && ev.canonical_command != token_expected) {
+            std::ostringstream oss;
+            oss << "SET-family variant target mismatch: token=" << ev.token
+                << " target=" << ev.canonical_command
+                << " expected=" << token_expected;
+            issues.push_back({"ERROR", oss.str()});
+        }
+
+        const std::string target_expected = compact_set_family_target(ev.canonical_command);
+        if (!target_expected.empty() && ev.canonical_command != target_expected) {
+            std::ostringstream oss;
+            oss << "SET-family variant target must be canonical spaced form: token="
+                << ev.token << " target=" << ev.canonical_command
+                << " should be " << target_expected;
             issues.push_back({"ERROR", oss.str()});
         }
     }

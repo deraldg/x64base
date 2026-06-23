@@ -13,6 +13,45 @@
 //   - User must USE to reopen
 //   - Indexes should be rebuilt/rebound after
 
+// @dottalk.usage v1
+// owner: DOT|TURBOPACK
+// command: TURBOPACK
+// category: destructive-table-structure
+// status: supported
+// noargs: destructive-current-table
+// effect: fast-compact-plain-dbf
+// mutates: table-file closes-table order-state
+// usage-access: TURBOPACK USAGE
+// summary:
+//   Fast byte-oriented compaction for plain non-memo, non-x64 DBF tables.
+//
+// usage:
+//   TURBOPACK USAGE
+//   TURBOPACK
+//
+// examples:
+//   TURBOPACK
+//
+// notes:
+//   TURBOPACK USAGE prints usage before open-table checks.
+//   TURBOPACK is a fast path for plain DBF tables only.
+//   Memo tables and x64 tables are refused; use PACK instead.
+//   TURBOPACK closes the table on success.
+//   Index containers must be rebuilt/rebound after TURBOPACK.
+//
+// risk:
+//   requires_open_table: yes except usage
+//   destructive_rewrite: yes
+//   mutates_table_file: yes
+//   closes_table: yes
+//   clears_order_state: yes
+//
+// related:
+//   PACK
+//   ZAP
+//   RECALL
+//
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -189,8 +228,52 @@ namespace {
     }
 }
 
-void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& /*S*/)
+static void print_turbopack_usage_contract()
 {
+    std::cout
+        << "Usage:\n"
+        << "  TURBOPACK USAGE\n"
+        << "  TURBOPACK\n"
+        << "Examples:\n"
+        << "  TURBOPACK\n"
+        << "Notes:\n"
+        << "  - TURBOPACK USAGE does not require an open table and does not rewrite files.\n"
+        << "  - TURBOPACK is a fast path for plain non-memo, non-x64 DBF tables only.\n"
+        << "  - Memo tables and x64 tables are refused; use PACK instead.\n"
+        << "  - TURBOPACK closes the table on success; reopen with USE <table>.\n"
+        << "  - Index containers must be rebuilt/rebound after TURBOPACK.\n";
+}
+
+static bool turbopack_usage_token_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
+void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
+{
+    // TURBOPACK_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = S.tellg();
+        std::string usage_tok;
+        if (S >> usage_tok) {
+            S.clear();
+            if (usage_pos != std::streampos(-1)) {
+                S.seekg(usage_pos);
+            }
+
+            if (turbopack_usage_token_contract(usage_tok)) {
+                print_turbopack_usage_contract();
+                return;
+            }
+        } else {
+            S.clear();
+            if (usage_pos != std::streampos(-1)) {
+                S.seekg(usage_pos);
+            }
+        }
+    }
+
     using namespace std;
 
     if (!A.isOpen()) {

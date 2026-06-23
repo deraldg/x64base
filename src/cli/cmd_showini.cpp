@@ -2,6 +2,47 @@
 // DotTalk++ SHOWINI command
 // Displays table.ini contents
 
+// @dottalk.usage v1
+// owner: DOT|SHOWINI
+// command: SHOWINI
+// category: diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: SHOWINI USAGE
+// summary:
+//   Display a table-specific .ini file, either derived from the current table or
+//   from an explicit file/path.
+//
+// usage:
+//   SHOWINI
+//   SHOWINI USAGE
+//   SHOWINI <table-or-ini>
+//   SHOWINI PATH <ini-file>
+//
+// examples:
+//   SHOWINI
+//   SHOWINI students
+//   SHOWINI students.ini
+//   SHOWINI PATH d:\data\students.ini
+//
+// notes:
+//   SHOWINI with no arguments derives the .ini path from the current table.
+//   SHOWINI USAGE prints usage before open-table checks or file reads.
+//   SHOWINI reads .ini files and prints parsed sections/keys; it does not write files.
+//
+// risk:
+//   reads_filesystem: yes except usage
+//   writes_filesystem: no
+//   mutates_table_data: no
+//
+// related:
+//   SHOWINI
+//   SETPATH
+//   STATUS
+//
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -10,6 +51,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <iomanip>
+#include <cctype>
 
 #include "xbase.hpp"
 #include "textio.hpp"
@@ -121,8 +163,50 @@ static fs::path derive_ini_from_dbf(const fs::path& dbf)
     return p;
 }
 
+static std::string showini_usage_upper_hotfix(std::string s)
+{
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static bool showini_usage_request_hotfix(std::istringstream& iss)
+{
+    std::string tok;
+    if (!(iss >> tok)) {
+        iss.clear();
+        iss.seekg(0, std::ios::beg);
+        return false;
+    }
+
+    const std::string u = showini_usage_upper_hotfix(tok);
+    iss.clear();
+    iss.seekg(0, std::ios::beg);
+
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+static void print_showini_usage_hotfix()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SHOWINI\n"
+        << "  SHOWINI USAGE\n"
+        << "  SHOWINI <table-or-ini>\n"
+        << "  SHOWINI PATH <ini-file>\n"
+        << "Examples:\n"
+        << "  SHOWINI\n"
+        << "  SHOWINI students\n"
+        << "  SHOWINI students.ini\n"
+        << "  SHOWINI PATH d:\\data\\students.ini\n";
+}
 void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
 {
+    if (showini_usage_request_hotfix(iss)) {
+        print_showini_usage_hotfix();
+        return;
+    }
     string arg;
     iss >> arg;
 

@@ -1,3 +1,51 @@
+// @dottalk.usage v1
+// owner: DOT|PROJECTS
+// command: PROJECTS
+// category: project
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: project-filesystem
+// usage-access: PROJECTS USAGE
+// summary:
+//   List, create, inspect, tree, or delete project skeleton directories under
+//   the configured PROJECTS slot.
+//
+// usage:
+//   PROJECTS
+//   PROJECTS USAGE
+//   PROJECTS LIST
+//   PROJECTS CREATE <name> [DATA|FEATURE|HYBRID]
+//   PROJECTS INFO <name>
+//   PROJECTS TREE <name>
+//   PROJECTS DELETE <name> [CONFIRM]
+//
+// examples:
+//   PROJECTS
+//   PROJECTS CREATE demo DATA
+//   PROJECTS INFO demo
+//   PROJECTS TREE demo
+//   PROJECTS DELETE demo
+//   PROJECTS DELETE demo CONFIRM
+//
+// notes:
+//   PROJECTS with no arguments lists known projects.
+//   CREATE writes project skeleton folders and a manifest.
+//   DELETE is dry-run unless CONFIRM is supplied.
+//   PROJECTS USAGE prints usage and does not create/delete files.
+//
+// risk:
+//   reads_filesystem: PROJECTS/LIST/INFO/TREE
+//   writes_filesystem: CREATE, DELETE CONFIRM
+//   destructive: DELETE CONFIRM
+//   mutates_table_data: no
+//
+// related:
+//   SETPATH
+//   SHOWINI
+//   WORKSPACE
+//
+
 #include "cli/cmd_projects.hpp"
 
 #include "cli/cmd_setpath.hpp"
@@ -458,11 +506,20 @@ static void print_usage()
     std::cout
         << "Usage:\n"
         << "  PROJECTS\n"
+        << "  PROJECTS USAGE\n"
         << "  PROJECTS LIST\n"
         << "  PROJECTS CREATE <name> [DATA|FEATURE|HYBRID]\n"
         << "  PROJECTS INFO <name>\n"
         << "  PROJECTS TREE <name>\n"
         << "  PROJECTS DELETE <name> [CONFIRM]\n"
+        << "\n"
+        << "Examples:\n"
+        << "  PROJECTS\n"
+        << "  PROJECTS CREATE demo DATA\n"
+        << "  PROJECTS INFO demo\n"
+        << "  PROJECTS TREE demo\n"
+        << "  PROJECTS DELETE demo\n"
+        << "  PROJECTS DELETE demo CONFIRM\n"
         << "\n"
         << "Notes:\n"
         << "  - Default type is DATA.\n"
@@ -470,7 +527,8 @@ static void print_usage()
         << "  - DATA adds: dbf, indexes, schemas.\n"
         << "  - FEATURE adds: notes, fixtures.\n"
         << "  - HYBRID adds both sets.\n"
-        << "  - DELETE is dry-run unless CONFIRM is supplied.\n";
+        << "  - DELETE is dry-run unless CONFIRM is supplied.\n"
+        << "  - PROJECTS USAGE prints usage and does not create/delete files.\n";
 }
 
 } // namespace
@@ -489,6 +547,10 @@ void cmd_PROJECTS(xbase::DbArea&, std::istringstream& iss)
     }
 
     const std::string cmd = upper_copy(toks[0]);
+    if (cmd == "USAGE" || cmd == "HELP" || cmd == "?") {
+        print_usage();
+        return;
+    }
 
     if (cmd == "LIST") {
         list_projects();

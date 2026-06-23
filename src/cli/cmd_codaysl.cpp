@@ -465,7 +465,7 @@ static bool refresh_current_member_snapshot(const CodasylSetDef& def) {
 // Commands
 // -----------------------------------------------------------------------------
 
-static void cmd_mode(const std::string& arg) {
+static void codasyl_mode(const std::string& arg) {
     const std::string up = up_copy(trim_copy(arg));
     if (up == "ON") {
         g_codasyl.enabled = true;
@@ -481,7 +481,7 @@ static void cmd_mode(const std::string& arg) {
     std::cout << "Usage: CODASYL MODE ON|OFF\n";
 }
 
-static void cmd_load(const std::string& arg) {
+static void codasyl_load(const std::string& arg) {
     const std::string world = trim_copy(arg);
     if (world.empty()) {
         std::cout << "Usage: CODASYL LOAD <world>\n";
@@ -512,7 +512,7 @@ static void cmd_load(const std::string& arg) {
     std::cout << "      Open the workspace/tables separately if not already open.\n";
 }
 
-static void cmd_sets() {
+static void codasyl_sets() {
     if (g_codasyl.sets.empty()) {
         std::cout << "CODASYL SETS: no world loaded.\n";
         return;
@@ -528,7 +528,7 @@ static void cmd_sets() {
     }
 }
 
-static void cmd_show_set(const std::string& arg) {
+static void codasyl_show_set(const std::string& arg) {
     const std::string set_name = trim_copy(arg);
     if (set_name.empty()) {
         std::cout << "Usage: CODASYL SHOW SET <name>\n";
@@ -550,7 +550,7 @@ static void cmd_show_set(const std::string& arg) {
     }
 }
 
-static void cmd_find_owner(const std::string& arg) {
+static void codasyl_find_owner(const std::string& arg) {
     auto toks = split_ws(arg);
     if (toks.size() < 2) {
         std::cout << "Usage: CODASYL FIND OWNER <set|owner_alias> <value>\n";
@@ -618,7 +618,7 @@ static void cmd_find_owner(const std::string& arg) {
     std::cout << "CODASYL FIND OWNER: no owner found for value '" << value << "'.\n";
 }
 
-static void cmd_get_first(const std::string& arg) {
+static void codasyl_get_first(const std::string& arg) {
     const auto* def = resolve_set_reference(trim_copy(arg));
     if (!def) {
         std::cout << "CODASYL GET FIRST: no set selected.\n";
@@ -643,7 +643,7 @@ static void cmd_get_first(const std::string& arg) {
     print_member_position(*def, g_codasyl.member_index, rn);
 }
 
-static void cmd_get_next(const std::string& arg) {
+static void codasyl_get_next(const std::string& arg) {
     const auto* def = resolve_set_reference(trim_copy(arg));
     if (!def) {
         std::cout << "CODASYL GET NEXT: no set selected.\n";
@@ -677,7 +677,7 @@ static void cmd_get_next(const std::string& arg) {
     print_member_position(*def, g_codasyl.member_index, rn);
 }
 
-static void cmd_walk(const std::string& arg) {
+static void codasyl_walk(const std::string& arg) {
     const auto* def = resolve_set_reference(trim_copy(arg));
     if (!def) {
         std::cout << "CODASYL WALK: no set selected.\n";
@@ -739,7 +739,7 @@ static void cmd_walk(const std::string& arg) {
     std::cout << "    -> (back to first)\n";
 }
 
-static void cmd_status() {
+static void codasyl_status() {
     std::cout << "CODASYL STATUS\n";
     std::cout << "  MODE          : " << (g_codasyl.enabled ? "ON" : "OFF") << "\n";
     std::cout << "  WORLD         : " << (g_codasyl.world.empty() ? "(none)" : g_codasyl.world) << "\n";
@@ -775,24 +775,24 @@ void cmd_CODASYL(xbase::DbArea& area, std::istringstream& iss)
     }
 
     if (SUB == "MODE") {
-        cmd_mode(rest);
+        codasyl_mode(rest);
         return;
     }
 
     if (SUB == "LOAD") {
-        cmd_load(rest);
+        codasyl_load(rest);
         return;
     }
 
     if (SUB == "SETS") {
-        cmd_sets();
+        codasyl_sets();
         return;
     }
 
     if (SUB == "SHOW") {
         auto toks = split_ws(rest);
         if (toks.size() >= 2 && ieq(toks[0], "SET")) {
-            cmd_show_set(rest.substr(rest.find(toks[1])));
+            codasyl_show_set(rest.substr(rest.find(toks[1])));
             return;
         }
         std::cout << "Usage: CODASYL SHOW SET <name>\n";
@@ -803,7 +803,7 @@ void cmd_CODASYL(xbase::DbArea& area, std::istringstream& iss)
         auto toks = split_ws(rest);
         if (!toks.empty() && ieq(toks[0], "OWNER")) {
             std::string arg = trim_copy(rest.substr(rest.find(toks[0]) + toks[0].size()));
-            cmd_find_owner(arg);
+            codasyl_find_owner(arg);
             return;
         }
         std::cout << "Usage: CODASYL FIND OWNER <set|owner_alias> <value>\n";
@@ -824,11 +824,11 @@ void cmd_CODASYL(xbase::DbArea& area, std::istringstream& iss)
         }
 
         if (which == "FIRST") {
-            cmd_get_first(arg);
+            codasyl_get_first(arg);
             return;
         }
         if (which == "NEXT") {
-            cmd_get_next(arg);
+            codasyl_get_next(arg);
             return;
         }
 
@@ -837,12 +837,12 @@ void cmd_CODASYL(xbase::DbArea& area, std::istringstream& iss)
     }
 
     if (SUB == "WALK") {
-        cmd_walk(rest);
+        codasyl_walk(rest);
         return;
     }
 
     if (SUB == "STATUS") {
-        cmd_status();
+        codasyl_status();
         return;
     }
 

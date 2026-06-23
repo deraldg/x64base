@@ -139,7 +139,6 @@ static void save_default() {
 struct AutoBoot {
     AutoBoot() {
         if (env_enabled("SB_REL_AUTOLOAD", true)) load_default_if_exists();
-        if (env_enabled("SB_REL_AUTOSAVE", true)) std::atexit(save_default);
     }
 } g_autoboot;
 
@@ -148,4 +147,5 @@ struct AutoBoot {
 namespace relations_boot {
 void autoload() { load_default_if_exists(); }
 void autosave() { save_default(); }
+bool autosave_enabled() noexcept { return env_enabled("SB_REL_AUTOSAVE", true); }
 } // namespace relations_boot

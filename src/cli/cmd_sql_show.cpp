@@ -6,6 +6,49 @@
 // - SHOW COLUMNS : column layout (similar to FIELDS/STRUCT but compact)
 // - SHOW INDEX   : order/index summary (graceful on non-order builds)
 
+// @dottalk.usage v1
+// owner: DOT|SHOW
+// command: SHOW
+// category: diagnostics
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor-temporary
+// usage-access: SHOW USAGE
+// summary:
+//   Show table, column, or active order/index information for the current work
+//   area.
+//
+// usage:
+//   SHOW
+//   SHOW USAGE
+//   SHOW COLUMNS
+//   SHOW TABLE
+//   SHOW INDEX
+//
+// examples:
+//   SHOW
+//   SHOW COLUMNS
+//   SHOW TABLE
+//   SHOW INDEX
+//
+// notes:
+//   SHOW with no arguments displays columns.
+//   SHOW TABLE scans records to count deleted rows and restores cursor best-effort.
+//   SHOW INDEX reports physical/order/tag state when available.
+//   SHOW USAGE prints usage before open-table checks or cursor movement.
+//
+// risk:
+//   reads_current_area: yes except usage
+//   mutates_cursor: SHOW TABLE temporarily, restored best-effort
+//   mutates_table_data: no
+//
+// related:
+//   STRUCT
+//   DISPLAY
+//   SET ORDER
+//
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -21,6 +64,22 @@
 
 using xbase::DbArea;
 namespace fs = std::filesystem;
+
+
+static void print_show_usage()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SHOW\n"
+        << "  SHOW USAGE\n"
+        << "  SHOW COLUMNS\n"
+        << "  SHOW TABLE\n"
+        << "  SHOW INDEX\n"
+        << "Examples:\n"
+        << "  SHOW COLUMNS\n"
+        << "  SHOW TABLE\n"
+        << "  SHOW INDEX\n";
+}
 
 static inline std::string basename_only(std::string p) {
     // normalize slashes and pull basename
@@ -143,14 +202,13 @@ void cmd_SQL_SHOW(DbArea& A, std::istringstream& S)
     what = textio::trim(what);
     const std::string U = textio::up(what);
 
+    if (U == "USAGE" || U == "HELP" || U == "?") { print_show_usage(); return; }
+
     if (U == "TABLE") { show_table(A); return; }
     if (U == "COLUMNS" || U.empty()) { show_columns(A); return; }
     if (U == "INDEX") { show_index(A); return; }
 
-    std::cout << "SHOW syntax\n"
-              << "  SHOW TABLE\n"
-              << "  SHOW COLUMNS\n"
-              << "  SHOW INDEX\n";
+    print_show_usage();
 }
 
 

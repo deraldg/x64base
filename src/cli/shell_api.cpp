@@ -226,6 +226,12 @@ std::filesystem::path shell_resolve_script_path(const std::string& token)
         return normalize_script_path(shell_script_current_dir() / p);
     }
 
+    // For interactive DO/DOTSCRIPT, preserve the documented resolver order:
+    // typed path relative to the current working directory first, then any
+    // broader script-root fallback. Otherwise a stale data/scripts/<name>.dts
+    // can shadow the intended data/<name>.dts in the runtime DATA root.
+    if (auto c = try_existing(fs::current_path() / p); !c.empty()) return c;
+
 #if HAVE_SCRIPT_PATHS
     try {
         const fs::path scriptsRoot = dottalk::paths::get_slot(dottalk::paths::Slot::SCRIPTS);

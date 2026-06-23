@@ -1,3 +1,53 @@
+// @dottalk.usage v1
+// owner: DOT|IMPORTSQL
+// command: IMPORTSQL / EXPORTSQL
+// category: import-export
+// status: supported-stub-mixed
+// noargs: usage
+// effect: import-export-preview-create
+// mutates: filesystem-or-table depending-on-subcommand
+// usage-access: IMPORTSQL USAGE; EXPORTSQL USAGE
+// summary:
+//   Preview, validate, infer schema, create/import table data from delimited
+//   files, and expose EXPORTSQL preview/file hooks.
+//
+// usage:
+//   IMPORTSQL USAGE
+//   IMPORTSQL PREVIEW <file> [DELIM PIPE|TAB|COMMA]
+//   IMPORTSQL VALIDATE <file> [DELIM PIPE|TAB|COMMA]
+//   IMPORTSQL SCHEMA <file> [DELIM PIPE|TAB|COMMA]
+//   IMPORTSQL CREATE <file> TO <table> [DELIM PIPE|TAB|COMMA]
+//   IMPORTSQL FILE <file> TO <table> [DELIM PIPE|TAB|COMMA]
+//   IMPORTSQL MAP <subcommand> <mapfile>
+//   EXPORTSQL USAGE
+//   EXPORTSQL PREVIEW <table>
+//   EXPORTSQL FILE <table> TO <file>
+//
+// examples:
+//   IMPORTSQL PREVIEW data\students.psv
+//   IMPORTSQL VALIDATE data\students.csv DELIM COMMA
+//   IMPORTSQL CREATE data\students.psv TO students
+//   IMPORTSQL FILE data\students.psv TO students
+//   EXPORTSQL PREVIEW students
+//   EXPORTSQL FILE students TO tmp\students.sql
+//
+// notes:
+//   IMPORTSQL/EXPORTSQL USAGE returns before file/table work.
+//   IMPORTSQL PREVIEW/VALIDATE/SCHEMA read input files.
+//   IMPORTSQL CREATE/FILE may create tables and import records.
+//   EXPORTSQL hooks are currently preview/file command surfaces.
+//
+// risk:
+//   reads_filesystem: IMPORTSQL PREVIEW/VALIDATE/SCHEMA/CREATE/FILE
+//   writes_filesystem: IMPORTSQL CREATE, EXPORTSQL FILE
+//   mutates_table_data: IMPORTSQL FILE/CREATE where implemented
+//
+// related:
+//   USE
+//   COPY
+//   SQL
+//
+
 #include "cmd_importsql.hpp"
 
 #include <filesystem>
@@ -11,6 +61,8 @@
 #include "import/import_normalize.hpp"
 #include "import/import_profile.hpp"
 #include "xbase.hpp"
+#include <algorithm>
+#include <cctype>
 
 using dottalkpp::import::ColumnProfile;
 using dottalkpp::import::classify_profile;
@@ -692,8 +744,72 @@ namespace
     }
 }
 
+static void print_importsql_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  IMPORTSQL USAGE\n"
+        << "  IMPORTSQL PREVIEW <file> [DELIM PIPE|TAB|COMMA]\n"
+        << "  IMPORTSQL VALIDATE <file> [DELIM PIPE|TAB|COMMA]\n"
+        << "  IMPORTSQL SCHEMA <file> [DELIM PIPE|TAB|COMMA]\n"
+        << "  IMPORTSQL CREATE <file> TO <table> [DELIM PIPE|TAB|COMMA]\n"
+        << "  IMPORTSQL FILE <file> TO <table> [DELIM PIPE|TAB|COMMA]\n"
+        << "  IMPORTSQL MAP <subcommand> <mapfile>\n"
+        << "Examples:\n"
+        << "  IMPORTSQL PREVIEW data\\students.psv\n"
+        << "  IMPORTSQL VALIDATE data\\students.csv DELIM COMMA\n"
+        << "  IMPORTSQL CREATE data\\students.psv TO students\n"
+        << "  IMPORTSQL FILE data\\students.psv TO students\n"
+        << "Notes:\n"
+        << "  - IMPORTSQL USAGE returns before file or table work.\n"
+        << "  - PREVIEW/VALIDATE/SCHEMA read input files.\n"
+        << "  - CREATE/FILE may create tables and import records.\n";
+}
+
+static void print_exportsql_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  EXPORTSQL USAGE\n"
+        << "  EXPORTSQL PREVIEW <table>\n"
+        << "  EXPORTSQL FILE <table> TO <file>\n"
+        << "Examples:\n"
+        << "  EXPORTSQL PREVIEW students\n"
+        << "  EXPORTSQL FILE students TO tmp\\students.sql\n"
+        << "Notes:\n"
+        << "  - EXPORTSQL USAGE returns before file or table work.\n";
+}
+
+static bool import_export_sql_usage_token_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_IMPORTSQL(xbase::DbArea& area, std::istringstream& iss)
 {
+    // IMPORTSQL_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (import_export_sql_usage_token_contract(usage_tok)) {
+                print_importsql_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     (void)area;
 
     std::cout << "IMPORTSQL command invoked\n";
@@ -886,6 +1002,28 @@ void cmd_IMPORTSQL(xbase::DbArea& area, std::istringstream& iss)
 
 void cmd_EXPORTSQL(xbase::DbArea& area, std::istringstream& iss)
 {
+    // EXPORTSQL_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos usage_pos = iss.tellg();
+        std::string usage_tok;
+        if (iss >> usage_tok) {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+
+            if (import_export_sql_usage_token_contract(usage_tok)) {
+                print_exportsql_usage_contract();
+                return;
+            }
+        } else {
+            iss.clear();
+            if (usage_pos != std::streampos(-1)) {
+                iss.seekg(usage_pos);
+            }
+        }
+    }
+
     (void)area;
 
     std::cout << "EXPORTSQL command invoked\n";

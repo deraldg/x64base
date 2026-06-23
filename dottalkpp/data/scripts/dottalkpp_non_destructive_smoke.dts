@@ -129,8 +129,7 @@ WA
 
 ECHO
 ECHO --- 05. Schema/workspace/project observers ---
-SCHEMAS
-SCHEMAS ALL
+WORKSPACE
 WORKSPACE
 PROJECTS
 WSREPORT
@@ -147,8 +146,8 @@ VALIDATE
 
 ECHO
 ECHO --- 06. Try standard schema open safely ---
-SCHEMAS OPEN DBF
-SCHEMAS
+WORKSPACE OPEN DBF
+WORKSPACE
 AREA
 AREA51
 DBAREAS
@@ -274,8 +273,8 @@ ECHO Script echo check
 
 ECHO
 ECHO --- 16. Close lifecycle smoke test ---
-SCHEMAS CLOSE
-SCHEMAS
+WORKSPACE CLOSE
+WORKSPACE
 AREA
 STATUS
 

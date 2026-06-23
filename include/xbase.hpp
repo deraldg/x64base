@@ -106,7 +106,7 @@ struct FieldRec {
 struct FieldDef {
     std::string name;
     char        type{};       // 'C','N','D','L', etc.
-    uint8_t     length{};     // total bytes
+    uint32_t    length{};     // total bytes (runtime truth; X64 may exceed legacy descriptor byte)
     uint8_t     decimals{};   // for 'N'
 };
 
@@ -242,6 +242,12 @@ public:
     bool setFieldName(int field1, std::string name) {
         if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
         _fields[static_cast<std::size_t>(field1 - 1)].name = std::move(name);
+        return true;
+    }
+
+    bool setFieldLength(int field1, std::uint32_t len) {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
+        _fields[static_cast<std::size_t>(field1 - 1)].length = len;
         return true;
     }
 

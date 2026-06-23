@@ -9,6 +9,38 @@
 // - Table-aware expressions use the current DbArea through xexpr::EvalContext.
 // ===============================
 
+// @dottalk.usage v1
+// owner: EDU|FORMULA
+// command: FORMULA / ?
+// category: education-expression
+// status: supported
+// noargs: usage
+// effect: evaluate-expression
+// mutates: none
+// usage-access: FORMULA USAGE
+// summary:
+//   Evaluate a scalar expression through xexpr and print the formatted value.
+//
+// usage:
+//   FORMULA USAGE
+//   FORMULA <expr>
+//   ? <expr>
+//
+// examples:
+//   FORMULA 2 + 2
+//   FORMULA UPPER(LNAME)
+//   ? GPA + 0
+//
+// notes:
+//   FORMULA USAGE prints usage before expression evaluation.
+//   When a table is open, field-aware expressions use the current record.
+//   This command does not mutate table data.
+//
+// risk:
+//   evaluates_expression: yes except usage
+//   mutates_table_data: no
+//
+
 #include "xbase.hpp"
 #include "cli/cli_comment.hpp"
 #include "xexpr.hpp"
@@ -153,6 +185,27 @@ static void print_value(const xexpr::Value& value) {
 
 } // namespace
 
+static std::string edu_formula_upper_contract(std::string s) {
+    for (char& ch : s) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return s;
+}
+
+static void print_formula_usage_contract() {
+    std::cout
+        << "Usage:\n"
+        << "  FORMULA USAGE\n"
+        << "  FORMULA <expr>\n"
+        << "  ? <expr>\n"
+        << "Examples:\n"
+        << "  FORMULA 2 + 2\n"
+        << "  FORMULA UPPER(LNAME)\n"
+        << "  ? GPA + 0\n"
+        << "Notes:\n"
+        << "  - FORMULA USAGE does not evaluate an expression.\n"
+        << "  - Field-aware expressions use the current record when a table is open.\n";
+}
 void edu_FORMULA(DbArea& area, std::istringstream& in) {
     std::string expr;
     std::getline(in, expr);
@@ -160,8 +213,16 @@ void edu_FORMULA(DbArea& area, std::istringstream& in) {
     expr = cliutil::strip_inline_comments(trim_local(expr));
     expr = strip_outer_parens(expr);
 
+    // FORMULA_USAGE_CONTRACT_BRANCH
+    {
+        const std::string u = edu_formula_upper_contract(expr);
+        if (u == "USAGE" || u == "HELP" || u == "?") {
+            print_formula_usage_contract();
+            return;
+        }
+    }
     if (expr.empty()) {
-        std::cout << "Usage: FORMULA <expr>\n";
+        print_formula_usage_contract();
         return;
     }
 

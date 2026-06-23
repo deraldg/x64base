@@ -111,6 +111,19 @@ struct X64FieldNameEntry {
 static_assert(sizeof(X64FieldNameEntry) == 12,
               "X64FieldNameEntry must be exactly 12 bytes");
 
+#pragma pack(push, 1)
+struct X64FieldMetaEntry {
+    uint32_t field_index;   // 1-based field index
+    uint32_t name_offset;   // relative to string_pool_offset
+    uint16_t name_length;   // bytes
+    uint16_t flags;         // reserved / policy
+    uint32_t field_length;  // authoritative runtime field length in bytes
+};
+#pragma pack(pop)
+
+static_assert(sizeof(X64FieldMetaEntry) == 16,
+              "X64FieldMetaEntry must be exactly 16 bytes");
+
 // -----------------------------------------------------------------------------
 // X64 TABLE FLAGS
 // -----------------------------------------------------------------------------
@@ -193,23 +206,29 @@ inline std::string x64_resolve_field_name_or_fallback(uint32_t table_flags,
 // X64M metadata helpers
 // -----------------------------------------------------------------------------
 inline std::vector<char> x64_build_name_metadata(const std::string& table_name,
-                                                 const std::vector<std::string>& field_names)
+                                                 const std::vector<std::string>& field_names,
+                                                 const std::vector<std::uint32_t>& field_lengths = {})
 {
-    struct PendingFieldName {
+    struct PendingFieldMeta {
         uint32_t field_index{};
         std::string name;
+        uint32_t field_length{};
     };
 
     const bool use_table_name = !table_name.empty() && x64_table_name_fits(table_name.size());
 
-    std::vector<PendingFieldName> pending;
+    std::vector<PendingFieldMeta> pending;
     pending.reserve(field_names.size());
 
     for (std::size_t i = 0; i < field_names.size(); ++i) {
         const std::string& name = field_names[i];
         if (name.empty()) continue;
         if (!x64_field_name_fits(name.size())) continue;
-        pending.push_back(PendingFieldName{static_cast<uint32_t>(i + 1), name});
+
+        const std::uint32_t len =
+            (i < field_lengths.size()) ? field_lengths[i] : 0u;
+
+        pending.push_back(PendingFieldMeta{static_cast<uint32_t>(i + 1), name, len});
     }
 
     if (!use_table_name && pending.empty()) {
@@ -219,7 +238,7 @@ inline std::vector<char> x64_build_name_metadata(const std::string& table_name,
     const uint32_t entry_offset = static_cast<uint32_t>(sizeof(X64MetaHeader));
     const uint32_t field_count = static_cast<uint32_t>(pending.size());
     const uint32_t string_pool_offset =
-        entry_offset + field_count * static_cast<uint32_t>(sizeof(X64FieldNameEntry));
+        entry_offset + field_count * static_cast<uint32_t>(sizeof(X64FieldMetaEntry));
 
     std::vector<char> string_pool;
     string_pool.reserve((use_table_name ? table_name.size() : 0) + field_names.size() * 16);
@@ -232,15 +251,16 @@ inline std::vector<char> x64_build_name_metadata(const std::string& table_name,
         string_pool.insert(string_pool.end(), table_name.begin(), table_name.end());
     }
 
-    std::vector<X64FieldNameEntry> entries;
+    std::vector<X64FieldMetaEntry> entries;
     entries.reserve(pending.size());
 
     for (const auto& p : pending) {
-        X64FieldNameEntry e{};
+        X64FieldMetaEntry e{};
         e.field_index = p.field_index;
         e.name_offset = static_cast<uint32_t>(string_pool.size());
         e.name_length = static_cast<uint16_t>(p.name.size());
         e.flags = 0;
+        e.field_length = p.field_length;
         string_pool.insert(string_pool.end(), p.name.begin(), p.name.end());
         entries.push_back(e);
     }
@@ -253,7 +273,7 @@ inline std::vector<char> x64_build_name_metadata(const std::string& table_name,
     mh.magic[1] = '6';
     mh.magic[2] = '4';
     mh.magic[3] = 'M';
-    mh.version = 1;
+    mh.version = 2;
     mh.flags = 0;
     mh.total_length = total_length;
     mh.table_name_offset = table_name_offset;
@@ -271,7 +291,7 @@ inline std::vector<char> x64_build_name_metadata(const std::string& table_name,
     if (!entries.empty()) {
         std::memcpy(out.data() + entry_offset,
                     entries.data(),
-                    entries.size() * sizeof(X64FieldNameEntry));
+                    entries.size() * sizeof(X64FieldMetaEntry));
     }
     if (!string_pool.empty()) {
         std::memcpy(out.data() + string_pool_offset,
@@ -301,7 +321,7 @@ inline void x64_apply_name_metadata(DbArea& area,
     if (std::memcmp(mh.magic, "X64M", 4) != 0) {
         fail("missing X64M magic");
     }
-    if (mh.version != 1) {
+    if (mh.version != 1 && mh.version != 2) {
         fail("unsupported X64M version");
     }
     if (mh.total_length > block.size()) {
@@ -314,8 +334,10 @@ inline void x64_apply_name_metadata(DbArea& area,
     if (mh.field_entry_offset > mh.total_length) {
         fail("field entry offset is out of range");
     }
+    const std::size_t entry_size =
+        (mh.version == 1) ? sizeof(X64FieldNameEntry) : sizeof(X64FieldMetaEntry);
     const uint64_t entries_bytes =
-        static_cast<uint64_t>(mh.field_count) * static_cast<uint64_t>(sizeof(X64FieldNameEntry));
+        static_cast<uint64_t>(mh.field_count) * static_cast<uint64_t>(entry_size);
     if (entries_bytes > mh.total_length - mh.field_entry_offset) {
         fail("field entries exceed metadata block");
     }
@@ -337,18 +359,40 @@ inline void x64_apply_name_metadata(DbArea& area,
     }
 
     for (uint32_t i = 0; i < mh.field_count; ++i) {
-        X64FieldNameEntry e{};
-        const std::size_t pos = static_cast<std::size_t>(mh.field_entry_offset) +
-                                static_cast<std::size_t>(i) * sizeof(X64FieldNameEntry);
-        std::memcpy(&e, block.data() + pos, sizeof(e));
+        uint32_t field_index = 0;
+        uint32_t name_offset = 0;
+        uint16_t name_length = 0;
+        uint32_t field_length = 0;
 
-        if (e.field_index == 0 || e.field_index > static_cast<uint32_t>(area.fieldCount())) {
+        const std::size_t pos = static_cast<std::size_t>(mh.field_entry_offset) +
+                                static_cast<std::size_t>(i) * entry_size;
+
+        if (mh.version == 1) {
+            X64FieldNameEntry e{};
+            std::memcpy(&e, block.data() + pos, sizeof(e));
+            field_index = e.field_index;
+            name_offset = e.name_offset;
+            name_length = e.name_length;
+        } else {
+            X64FieldMetaEntry e{};
+            std::memcpy(&e, block.data() + pos, sizeof(e));
+            field_index = e.field_index;
+            name_offset = e.name_offset;
+            name_length = e.name_length;
+            field_length = e.field_length;
+        }
+
+        if (field_index == 0 || field_index > static_cast<uint32_t>(area.fieldCount())) {
             fail("field entry index is out of range");
         }
 
-        std::string name = read_string(e.name_offset, e.name_length);
+        std::string name = read_string(name_offset, name_length);
         if (!name.empty() && x64_field_name_fits(name.size())) {
-            area.setFieldName(static_cast<int>(e.field_index), std::move(name));
+            area.setFieldName(static_cast<int>(field_index), std::move(name));
+        }
+
+        if (field_length != 0) {
+            area.setFieldLength(static_cast<int>(field_index), field_length);
         }
     }
 

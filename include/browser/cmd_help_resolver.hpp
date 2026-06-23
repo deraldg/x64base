@@ -1,4 +1,11 @@
 #pragma once
+// @dottalk.contract
+// file: include/browser/cmd_help_resolver.hpp
+// subsystem: browser
+// role: Declares browser-layer helpers for resolving command help and related UI-facing metadata
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <string>
 #include <vector>
@@ -305,3 +312,4 @@ inline std::vector<HelpMatch> suggest(const std::string& term,
 }
 
 } // namespace helpresolver
+

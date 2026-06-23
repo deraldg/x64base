@@ -30,6 +30,48 @@
 // - Non-interactive listing restores the original cursor position on exit.
 // -----------------------------------------------------------------------------
 
+// @dottalk.usage v1
+// owner: DOT|SIMPLEBROWSE
+// command: SIMPLEBROWSE
+// category: browser
+// status: supported
+// noargs: launch
+// effect: launch-ui-or-report
+// mutates: cursor-or-ui-state interactive-edit-optional
+// usage-access: SIMPLEBROWSE USAGE
+// summary:
+//   Canonical single-table DBF browser/editor, order-aware through the shared
+//   order iterator.
+//
+// usage:
+//   SIMPLEBROWSE
+//   SIMPLEBROWSE USAGE
+//   SIMPLEBROWSE [FOR <expr>] [RAW|PRETTY] [PAGE <n>] [ALL] [TOP|BOTTOM]
+//   SIMPLEBROWSE [START KEY <literal>] [QUIET] [EDIT|SESSION]
+//
+// examples:
+//   SIMPLEBROWSE
+//   SIMPLEBROWSE PAGE 20
+//   SIMPLEBROWSE FOR GPA >= 3.0
+//   SIMPLEBROWSE START KEY SMITH
+//   SIMPLEBROWSE EDIT
+//
+// notes:
+//   SIMPLEBROWSE USAGE prints usage before open-table checks or UI launch.
+//   Non-interactive listing restores the cursor best-effort.
+//   Interactive edit/session mode intentionally leaves cursor at final position.
+//   Table mutation occurs only through explicit interactive edit/save/delete actions.
+//
+// risk:
+//   launches_ui: yes except usage
+//   mutates_cursor_or_ui_state: browser interaction
+//   mutates_table_data: interactive edit/delete only
+//
+// related:
+//   WORKSPACE
+//   RBROWSE
+//   SMARTBROWSE
+//
 #include <algorithm>
 #include <cctype>
 #include <climits>
@@ -404,8 +446,56 @@ static bool browse_validate_staged_before_save(xbase::DbArea& area,
 
 } // namespace
 
+static void print_simplebrowse_usage_contract()
+{
+    std::cout
+        << "Usage:\n"
+        << "  SIMPLEBROWSE\n"
+        << "  SIMPLEBROWSE USAGE\n"
+        << "  SIMPLEBROWSE [FOR <expr>] [RAW|PRETTY] [PAGE <n>] [ALL] [TOP|BOTTOM]\n"
+        << "  SIMPLEBROWSE [START KEY <literal>] [QUIET] [EDIT|SESSION]\n"
+        << "Examples:\n"
+        << "  SIMPLEBROWSE\n"
+        << "  SIMPLEBROWSE PAGE 20\n"
+        << "  SIMPLEBROWSE FOR GPA >= 3.0\n"
+        << "  SIMPLEBROWSE START KEY SMITH\n"
+        << "  SIMPLEBROWSE EDIT\n"
+        << "Notes:\n"
+        << "  - SIMPLEBROWSE USAGE does not require an open table and does not launch the browser.\n"
+        << "  - Non-interactive listing restores the cursor best-effort.\n"
+        << "  - Interactive edit/session mode may move cursor and can mutate table data by explicit edit/delete commands.\n";
+}
+
+static bool simplebrowse_usage_token_contract(std::string tok)
+{
+    std::transform(tok.begin(), tok.end(), tok.begin(),
+        [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return tok == "USAGE" || tok == "HELP" || tok == "?";
+}
 void cmd_SIMPLE_BROWSER(xbase::DbArea& area, std::istringstream& in)
 {
+    // SIMPLEBROWSE_USAGE_CONTRACT_BRANCH
+    {
+        const std::streampos simplebrowse_usage_pos = in.tellg();
+        std::string simplebrowse_usage_tok;
+        if (in >> simplebrowse_usage_tok) {
+            in.clear();
+            if (simplebrowse_usage_pos != std::streampos(-1)) {
+                in.seekg(simplebrowse_usage_pos);
+            }
+
+            if (simplebrowse_usage_token_contract(simplebrowse_usage_tok)) {
+                print_simplebrowse_usage_contract();
+                return;
+            }
+        } else {
+            in.clear();
+            if (simplebrowse_usage_pos != std::streampos(-1)) {
+                in.seekg(simplebrowse_usage_pos);
+            }
+        }
+    }
+
     if (!area.isOpen()) { std::cout << "WORKSPACE: no file open.\n"; return; }
 
     CursorRestore restore(area); // non-interactive listing restores cursor on exit

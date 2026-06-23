@@ -1,4 +1,4 @@
-// memo_backend.hpp
+﻿// memo_backend.hpp
 // Backend-neutral memo interface for DotTalk++
 //
 // Purpose:
@@ -18,6 +18,13 @@
 //   - blank token means "no memo"
 
 #pragma once
+// @dottalk.contract
+// file: include/memo/memo_backend.hpp
+// subsystem: memo
+// role: Declares memo or large-object interfaces for DotTalk++ storage workflows
+// authority: canonical-header-contract
+// mutation: token-authorized
+// notes: canonical contract annotation inserted by guarded SelfDoc apply script
 
 #include <cstdint>
 #include <memory>

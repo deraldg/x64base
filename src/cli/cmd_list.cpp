@@ -1,4 +1,54 @@
 // src/cli/cmd_list.cpp
+//
+// @dottalk.usage v1
+// owner: DOT|LIST
+// command: LIST
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor
+// usage-access: LIST USAGE
+// summary:
+//   Display rows from the current work area using classic LIST-style output,
+//   honoring active order/index state and optional filtering modes.
+//
+// usage:
+//   LIST
+//   LIST USAGE
+//   LIST TOP
+//   LIST BOTTOM
+//   LIST ALL
+//   LIST <limit>
+//   LIST DELETED
+//   LIST FOR <predicate>
+//   LIST TOP <limit>
+//   LIST BOTTOM <limit>
+//
+// notes:
+//   LIST requires an open table except for LIST USAGE.
+//   LIST with no arguments displays from the current cursor position.
+//   LIST ALL starts at the top and removes the default output limit.
+//   TOP and BOTTOM move to an endpoint before listing.
+//   DELETED selects deleted records using physical traversal.
+//   FOR applies an expression predicate after normalization.
+//   Active order/index state is honored when possible; LIST falls back to physical order with a note.
+//   LIST is read-only for table data and restores cursor position best-effort.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: temporary during scan
+//   cursor_restore: best effort
+//   mutates_table_data: no
+//   uses_table_buffer_overlay: when TABLE buffer is available
+//
+// related:
+//   SMARTLIST
+//   SET ORDER
+//   SET INDEX
+//   COUNT
+//   LOCATE
+//
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "textio.hpp"
@@ -127,6 +177,24 @@ static void print_list_row(xbase::DbArea& area,
     }
 
     cli::smartlist::print_row(area, recw);
+}
+
+static void print_list_usage()
+{
+    std::cout << "Usage:\n"
+              << "  LIST\n"
+              << "  LIST USAGE\n"
+              << "  LIST TOP [ALL|<limit>|DELETED] [FOR <predicate>]\n"
+              << "  LIST BOTTOM [ALL|<limit>|DELETED] [FOR <predicate>]\n"
+              << "  LIST ALL [FOR <predicate>]\n"
+              << "  LIST <limit> [FOR <predicate>]\n"
+              << "  LIST DELETED\n"
+              << "  LIST FOR <predicate>\n"
+              << "\n"
+              << "Notes:\n"
+              << "  LIST honors active order/index state when possible.\n"
+              << "  LIST falls back to physical order with a note if ordered traversal is unavailable.\n"
+              << "  LIST is read-only for table data and restores cursor position best-effort.\n";
 }
 
 static Options parse_opts(std::istringstream& iss) {
@@ -414,6 +482,26 @@ static bool list_from_recnos(xbase::DbArea& a,
 
 void cmd_LIST(xbase::DbArea& a, std::istringstream& iss) {
     CursorRestore _restore_(a);
+
+    const std::streampos arg_start = iss.tellg();
+    std::string first_arg;
+    if (iss >> first_arg) {
+        if (textio::ieq(first_arg, "USAGE") ||
+            textio::ieq(first_arg, "HELP") ||
+            first_arg == "/?" || first_arg == "?") {
+            print_list_usage();
+            return;
+        }
+        iss.clear();
+        if (arg_start != std::streampos(-1)) {
+            iss.seekg(arg_start);
+        }
+    } else {
+        iss.clear();
+        if (arg_start != std::streampos(-1)) {
+            iss.seekg(arg_start);
+        }
+    }
 
     if (!a.isOpen()) {
         std::cout << "No table open.\n";
