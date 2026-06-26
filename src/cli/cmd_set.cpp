@@ -100,13 +100,13 @@
 
 #include <algorithm>
 #include <cctype>
-#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
+#include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
@@ -210,27 +210,51 @@ static std::string join_strings(const std::vector<std::string>& values) {
     return oss.str();
 }
 
-static void print_message_catalog_status() {
-    auto& out = cli::OutputRouter::instance().out();
+static std::string localized_yes_no(bool value) {
+    return cli::cmdout::message_text(
+        value ? dottalk::helpdata::MessageId::AboutYes
+              : dottalk::helpdata::MessageId::AboutNo);
+}
 
+static std::string localized_none() {
+    return cli::cmdout::message_text(dottalk::helpdata::MessageId::AboutNone);
+}
+
+static std::string display_or_none(const std::string& value) {
+    return value.empty() ? localized_none() : value;
+}
+
+static std::string localized_validation_status(bool ok) {
+    return cli::cmdout::message_text(
+        ok ? dottalk::helpdata::MessageId::SetMessageCatalogValidationGreenLabel
+           : dottalk::helpdata::MessageId::SetMessageCatalogValidationIssuesFoundLabel);
+}
+
+static void print_message_catalog_status() {
     const auto issues = dottalk::helpdata::validate_message_catalog();
     const auto locales = dottalk::helpdata::available_locales();
 
-    out << "Message catalog validation: " << (issues.empty() ? "green" : "issues found") << "\n"
-        << "  messages: " << dottalk::helpdata::all_messages().size() << "\n"
-        << "  text rows: " << dottalk::helpdata::all_message_texts().size() << "\n"
-        << "  locales: " << join_strings(locales) << "\n"
-        << "  issues: " << issues.size() << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageCatalogValidationStatusText,
+        {
+            {"status", localized_validation_status(issues.empty())},
+            {"message_count", std::to_string(dottalk::helpdata::all_messages().size())},
+            {"text_row_count", std::to_string(dottalk::helpdata::all_message_texts().size())},
+            {"locales", join_strings(locales)},
+            {"issue_count", std::to_string(issues.size())}
+        });
 
+    auto& out = cli::OutputRouter::instance().out();
     for (const auto& issue : issues) {
-        out << "  " << issue.code
-            << " key=" << issue.message_key
-            << " locale=" << issue.locale
-            << " detail=" << issue.detail
-            << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetMessageCatalogValidationIssueRowText,
+            {
+                {"code", issue.code},
+                {"key", issue.message_key},
+                {"locale", issue.locale},
+                {"detail", issue.detail}
+            });
     }
-
-    out << "  boundary: report-only; no DBF, HELP DATA, CMDHELPCHK, source-mining, or catalog mutation.\n";
 }
 
 static void print_message_catalog_report(const std::string& locale_filter = std::string()) {
@@ -246,29 +270,40 @@ static void print_message_catalog_report(const std::string& locale_filter = std:
         normalized_filter = dottalk::helpdata::normalize_locale(locale_filter);
     }
 
-    out << "Message catalog report: report-only\n"
-        << "  schema intent: SYSTEM_MESSAGES + SYSTEM_MESSAGE_TEXT\n"
-        << "  messages: " << messages.size() << "\n"
-        << "  text rows: " << texts.size() << "\n"
-        << "  locales: " << join_strings(locales) << "\n"
-        << "  validation issues: " << issues.size() << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageCatalogReportHeaderText,
+        {
+            {"message_count", std::to_string(messages.size())},
+            {"text_row_count", std::to_string(texts.size())},
+            {"locales", join_strings(locales)},
+            {"issue_count", std::to_string(issues.size())}
+        });
 
     if (!normalized_filter.empty()) {
-        out << "  locale filter: " << normalized_filter << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetMessageCatalogReportLocaleFilterLine,
+            {{"locale", normalized_filter}});
     }
 
-    out << "\nSYSTEM_MESSAGES preview:\n";
+    out << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageCatalogReportSystemMessagesTitle);
     for (const auto& message : messages) {
-        out << "  " << (message.key ? message.key : "")
-            << " | owner=" << (message.owner ? message.owner : "")
-            << " | category=" << (message.category ? message.category : "")
-            << " | severity=" << (message.severity ? message.severity : "")
-            << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetMessageCatalogReportMessageRow,
+            {
+                {"key", message.key ? message.key : ""},
+                {"owner", message.owner ? message.owner : ""},
+                {"category", message.category ? message.category : ""},
+                {"severity", message.severity ? message.severity : ""}
+            });
     }
 
-    out << "\nSYSTEM_MESSAGE_TEXT preview:\n";
+    out << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageCatalogReportSystemMessageTextTitle);
     for (const auto& message : messages) {
-        out << "  " << (message.key ? message.key : "") << ":";
+        std::string rendered_locales;
         bool any = false;
         for (const auto& text : texts) {
             if (text.id != message.id) {
@@ -278,29 +313,28 @@ static void print_message_catalog_report(const std::string& locale_filter = std:
             if (!normalized_filter.empty() && locale != normalized_filter) {
                 continue;
             }
-            out << (any ? ", " : " ") << locale;
+            rendered_locales += any ? ", " : " ";
+            rendered_locales += locale;
             any = true;
         }
         if (!any) {
-            out << " <no matching text rows>";
+            rendered_locales = " ";
+            rendered_locales += cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetMessageCatalogReportNoMatchingTextRows);
         }
-        out << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetMessageCatalogReportTextRow,
+            {
+                {"key", message.key ? message.key : ""},
+                {"value", rendered_locales}
+            });
     }
-
-    out << "\n  boundary: report-only console report; no DBF, HELP DATA, CMDHELPCHK, source-mining, file, or catalog mutation.\n";
 }
 
 static void print_language_status(const std::string& current_locale) {
-    auto& out = cli::OutputRouter::instance().out();
-
-    out << "Message locale: " << current_locale << "\n"
-        << "Supported message locales: en-US, es, fr, de, it\n"
-        << "Usage: SET LANGUAGE [TO] <en-US|es|fr|de|it|DEFAULT>\n"
-        << "       SET LOCALE   [TO] <en-US|es|fr|de|it|DEFAULT>\n"
-        << "       SET LANGUAGE CHECK\n"
-        << "       SET LOCALE CHECK\n"
-        << "       SET LANGUAGE REPORT [locale]\n"
-        << "       SET LOCALE REPORT [locale]\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetLanguageStatusText,
+        {{"locale", current_locale}});
 }
 
 static inline std::string rest(std::istringstream& iss) {
@@ -330,104 +364,40 @@ static const char* message_catalog_mode_name(dottalk::helpdata::MessageCatalogMo
 }
 
 static void print_message_catalog_provider_status() {
-    auto& out = cli::OutputRouter::instance().out();
     const auto status = dottalk::helpdata::active_message_catalog_status();
 
-    out << "Message catalog provider status:\n";
-    out << "  mode: " << message_catalog_mode_name(status.mode) << "\n";
-    out << "  active catalog present: " << (status.active_catalog_present ? "yes" : "no") << "\n";
-    out << "  active catalog loaded: " << (status.active_catalog_loaded ? "yes" : "no") << "\n";
-    out << "  message count: " << status.message_count << "\n";
-    out << "  text row count: " << status.text_row_count << "\n";
-    out << "  active dbf dir: " << status.active_dbf_dir << "\n";
-    out << "  active indexes dir: " << status.active_indexes_dir << "\n";
-    out << "  active lmdb dir: " << status.active_lmdb_dir << "\n";
-    out << "  detail: " << status.detail << "\n";
-    out << "  boundary: read-only status/load; no DBF/CDX/LMDB mutation; no runtime writeback\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageCatalogProviderStatusText,
+        {
+            {"mode", message_catalog_mode_name(status.mode)},
+            {"present", localized_yes_no(status.active_catalog_present)},
+            {"loaded", localized_yes_no(status.active_catalog_loaded)},
+            {"message_count", std::to_string(status.message_count)},
+            {"text_row_count", std::to_string(status.text_row_count)},
+            {"dbf_dir", display_or_none(status.active_dbf_dir)},
+            {"indexes_dir", display_or_none(status.active_indexes_dir)},
+            {"lmdb_dir", display_or_none(status.active_lmdb_dir)},
+            {"detail", display_or_none(status.detail)}
+        });
 }
 // MSG-022E END message catalog provider status helper
 
 // MSG-022H BEGIN SET LANGUAGE active message emission helper
 static void print_language_active_message_emission_check(const std::string& current_locale) {
-    auto& out = cli::OutputRouter::instance().out();
     const auto status = dottalk::helpdata::active_message_catalog_status();
     const std::string text =
         dottalk::helpdata::format_message_catalog(current_locale, "HELP_HINT_COMMAND");
 
-    out << "SET LANGUAGE active message emission:\n";
-    out << "  current locale: " << current_locale << "\n";
-    out << "  provider mode: " << message_catalog_mode_name(status.mode) << "\n";
-    out << "  active catalog loaded: " << (status.active_catalog_loaded ? "yes" : "no") << "\n";
-    out << "  symbol: HELP_HINT_COMMAND\n";
-    out << "  fallback locale: en-US\n";
-    out << "  text: " << (text.empty() ? "<missing>" : text) << "\n";
-    out << "  boundary: read-only emission; no DBF/CDX/LMDB mutation; no runtime writeback\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetLanguageActiveMessageEmissionText,
+        {
+            {"locale", current_locale},
+            {"mode", message_catalog_mode_name(status.mode)},
+            {"loaded", localized_yes_no(status.active_catalog_loaded)},
+            {"text", text.empty() ? localized_none() : text}
+        });
 }
 // MSG-022H END SET LANGUAGE active message emission helper
-
-
-// MSG-022G BEGIN SET LANGUAGE active catalog lookup helper
-static std::string& message_catalog_current_locale() {
-    static std::string locale = "en-US";
-    return locale;
-}
-
-static void print_message_catalog_language_check() {
-    auto& out = cli::OutputRouter::instance().out();
-    const auto status = dottalk::helpdata::active_message_catalog_status();
-    const std::string locale = message_catalog_current_locale();
-    const std::string sample = dottalk::helpdata::format_message_catalog(locale, "MESSAGE_LOCALE_SET");
-
-    out << "SET LANGUAGE active catalog check:\n";
-    out << "  current language: " << locale << "\n";
-    out << "  message catalog mode: " << message_catalog_mode_name(status.mode) << "\n";
-    out << "  active catalog present: " << (status.active_catalog_present ? "yes" : "no") << "\n";
-    out << "  active catalog loaded: " << (status.active_catalog_loaded ? "yes" : "no") << "\n";
-    out << "  message count: " << status.message_count << "\n";
-    out << "  text row count: " << status.text_row_count << "\n";
-    out << "  lookup symbol: MESSAGE_LOCALE_SET\n";
-    out << "  lookup locale: " << locale << "\n";
-    out << "  lookup text: " << (sample.empty() ? "<empty>" : sample) << "\n";
-    out << "  runtime active catalog lookup proof: "
-        << ((status.active_catalog_loaded && !sample.empty()) ? "yes" : "no") << "\n";
-    out << "  boundary: read-only lookup; no DBF/CDX/LMDB mutation; no runtime writeback\n";
-}
-
-static void handle_set_language_or_locale(std::istringstream& args, const std::string& command_name) {
-    auto& out = cli::OutputRouter::instance().out();
-
-    std::string tok;
-    args >> tok;
-    tok = up_copy(tok);
-
-    if (tok.empty()) {
-        out << command_name << ": " << message_catalog_current_locale() << "\n";
-        return;
-    }
-
-    if (tok == "CHECK" || tok == "STATUS") {
-        print_message_catalog_language_check();
-        return;
-    }
-
-    std::string locale;
-    if (tok == "TO") {
-        args >> locale;
-    } else {
-        locale = tok;
-    }
-
-    if (locale.empty()) {
-        out << "Usage: SET " << command_name << " <locale>|CHECK\n";
-        return;
-    }
-
-    message_catalog_current_locale() = locale;
-    out << command_name << ": " << message_catalog_current_locale() << "\n";
-    print_message_catalog_language_check();
-}
-// MSG-022G END SET LANGUAGE active catalog lookup helper
-
 
 
 // MSG-022O BEGIN routing proof mode helper
@@ -517,8 +487,8 @@ static std::string msg22y_message_proof_boundary_note() {
 static void print_message_proof_status() {
     // MSG-022Y ROUTED SET MESSAGE PROOF status text
     const std::string mode = dottalk::helpdata::message_routing_proof_enabled() ? "on" : "off";
-    std::cout << msg22y_message_proof_mode_status(mode) << "\n";
-    std::cout << msg22y_message_proof_boundary_note() << "\n";
+    cli::cmdout::print_line(msg22y_message_proof_mode_status(mode));
+    cli::cmdout::print_line(msg22y_message_proof_boundary_note());
 }
 
 static void handle_set_message_proof(std::istringstream& args) {
@@ -543,22 +513,14 @@ static void handle_set_message_proof(std::istringstream& args) {
         return;
     }
 
-    auto& out = cli::OutputRouter::instance().out();
-    out << "Usage:\n";
-    out << "  SET MESSAGE PROOF ON\n";
-    out << "  SET MESSAGE PROOF OFF\n";
-    out << "  SET MESSAGE PROOF CHECK\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetMessageProofUsageText);
 }
 // MSG-022O END routing proof mode helper
 
 
 // MSG-022I-B BEGIN controlled message emit helper
 static void print_message_emit_usage() {
-    auto& out = cli::OutputRouter::instance().out();
-    out << "Usage:\n";
-    out << "  SET MESSAGE CATALOG CHECK\n";
-    out << "  SET MESSAGE PROOF ON|OFF|CHECK\n";
-    out << "  SET MESSAGE EMIT <symbol> [LOCALE <locale>] [ARG <name> <value>]\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetMessageEmitUsageText);
 }
 
 static void message_replace_all(std::string& text, const std::string& needle, const std::string& value) {
@@ -597,8 +559,6 @@ static bool message_apply_single_placeholder_arg(std::string& text,
 }
 
 static void handle_set_message_emit(std::istringstream& args, const std::string& default_locale) {
-    auto& out = cli::OutputRouter::instance().out();
-
     std::string symbol;
     args >> symbol;
     if (symbol.empty()) {
@@ -647,77 +607,27 @@ static void handle_set_message_emit(std::istringstream& args, const std::string&
         substituted = message_apply_single_placeholder_arg(text, arg_name, arg_value);
     }
 
-    out << "SET MESSAGE EMIT:\n";
-    out << "  current locale: " << locale << "\n";
-    out << "  provider mode: " << message_catalog_mode_name(status.mode) << "\n";
-    out << "  active catalog present: " << (status.active_catalog_present ? "yes" : "no") << "\n";
-    out << "  active catalog loaded: " << (status.active_catalog_loaded ? "yes" : "no") << "\n";
-    out << "  message count: " << status.message_count << "\n";
-    out << "  text row count: " << status.text_row_count << "\n";
-    out << "  symbol: " << symbol << "\n";
-    out << "  locale: " << locale << "\n";
-    out << "  placeholder arg supplied: "
-        << (arg_name.empty() ? "<none>" : (arg_name + "=" + arg_value)) << "\n";
-    out << "  placeholder substitution proof: " << (substituted ? "yes" : "no") << "\n";
-    out << "  text: " << (text.empty() ? "<empty>" : text) << "\n";
-    out << "  runtime controlled emission proof: "
-        << ((status.active_catalog_loaded && !text.empty()) ? "yes" : "no") << "\n";
-    out << "  boundary: explicit diagnostic emission; no DBF/CDX/LMDB mutation; no runtime writeback\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetMessageEmitStatusText,
+        {
+            {"current_locale", locale},
+            {"mode", message_catalog_mode_name(status.mode)},
+            {"present", localized_yes_no(status.active_catalog_present)},
+            {"loaded", localized_yes_no(status.active_catalog_loaded)},
+            {"message_count", std::to_string(status.message_count)},
+            {"text_row_count", std::to_string(status.text_row_count)},
+            {"symbol", symbol},
+            {"locale", locale},
+            {"placeholder_arg", arg_name.empty() ? localized_none() : (arg_name + "=" + arg_value)},
+            {"substituted", localized_yes_no(substituted)},
+            {"text", text.empty() ? localized_none() : text},
+            {"proof", localized_yes_no(status.active_catalog_loaded && !text.empty())}
+        });
 }
 // MSG-022I-B END controlled message emit helper
 
 static void print_set_usage() {
-    auto& out = cli::OutputRouter::instance().out();
-
-    out
-        << "Usage:\n"
-        << "  SET\n"
-        << "  SET USAGE\n"
-        << "  SET <option> [args]\n"
-        << "Public options:\n"
-        << "  SET TABLE BUFFER ON|OFF [ALL]\n"
-        << "  SET CONSOLE ON|OFF\n"
-        << "  SET PRINT ON|OFF\n"
-        << "  SET PRINT TO <file>\n"
-        << "  SET DEVICE TO SCREEN|FILE <path>|PRINTER [name]|NULL\n"
-        << "  SET ALTERNATE ON|OFF\n"
-        << "  SET ALTERNATE TO <file>\n"
-        << "  SET TALK ON|OFF\n"
-        << "  SET ECHO ON|OFF\n"
-        << "  SET PAGING ON|OFF\n"
-        << "  SET WRAP ON|OFF\n"
-        << "  SET DELETED ON|OFF\n"
-        << "  SET CASE ON|OFF\n"
-        << "  SET NEAR ON|OFF\n"
-        << "  SET EDITOR TO <value|DEFAULT|OFF>\n"
-        << "  SET LANGUAGE [TO] <en-US|es|fr|de|it|DEFAULT>\n"
-        << "  SET LOCALE [TO] <en-US|es|fr|de|it|DEFAULT>\n"
-        << "  SET LANGUAGE CHECK\n"
-        << "  SET LOCALE CHECK\n"
-        << "  SET LANGUAGE REPORT [locale]\n"
-        << "  SET LOCALE REPORT [locale]\n"
-        << "  SET PATH <slot> <path>\n"
-        << "  SET MESSAGE CATALOG CHECK\n"
-        << "  SET MESSAGE EMIT <symbol> [LOCALE <locale>]\n"
-        << "  SET LANGUAGE <locale>|CHECK\n"
-        << "  SET LOCALE <locale>|CHECK\n"
-        << "  SET UNIQUE FIELD <name> ON|OFF\n"
-        << "  SET TIMER ON|OFF\n"
-        << "  SET POLLING ON|OFF\n"
-        << "  SET INDEX TO <file>\n"
-        << "  SET ORDER TO <tag|0>\n";
-
-#if DOTTALK_WITH_DEV
-    out
-        << "\n"
-        << "Developer / transitional:\n"
-        << "  SET FILTER TO <expr>\n"
-        << "  SET RELATION <args...>\n"
-        << "  SET RELATIONS <args...>\n"
-        << "  SET CNX [TO] <container.cnx>\n"
-        << "  SET CDX [TO] <container.cdx>\n"
-        << "  SET LMDB <args...>\n";
-#endif
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetUsageText);
 }
 
 } // namespace
@@ -796,7 +706,9 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
                 if (!routed_text.empty()) {
                     out << routed_text << "\n";
                     if (message_routing_proof_enabled()) {
-                        out << "Message routing proof: active_dbf UNSUPPORTED_MESSAGE_LOCALE\n";
+                        cli::cmdout::print_message(
+                            dottalk::helpdata::MessageId::MessageRoutingProofLine,
+                            {{"provider", "active_dbf"}, {"symbol", "UNSUPPORTED_MESSAGE_LOCALE"}});
                     }
                     print_language_status(S.message_locale);
                     return;
@@ -828,7 +740,9 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
             auto& route_out = cli::OutputRouter::instance().out();
             route_out << routed_text << "\n";
             if (message_routing_proof_enabled()) {
-                route_out << "Message routing proof: active_dbf MESSAGE_LOCALE_SET\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::MessageRoutingProofLine,
+                    {{"provider", "active_dbf"}, {"symbol", "MESSAGE_LOCALE_SET"}});
             }
             return;
         }
@@ -846,13 +760,6 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SET TABLE BUFFER
     // ─────────────────────────────────────────────────────────────
 
-
-    // MSG-022G BEGIN SET LANGUAGE active catalog lookup
-    if (opt == "LANGUAGE" || opt == "LOCALE") {
-        handle_set_language_or_locale(args, opt);
-        return;
-    }
-    // MSG-022G END SET LANGUAGE active catalog lookup
 
 // MSG-022E BEGIN SET MESSAGE CATALOG CHECK
     if (opt == "MESSAGE") {
@@ -902,7 +809,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
             bool on = false;
             if (!parse_on_off(tok, on)) {
-                out << "Usage: SET TABLE BUFFER ON|OFF [ALL]\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTableBufferUsageText);
                 return;
             }
 
@@ -912,7 +819,8 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
             auto* eng = shell_engine();
             if (!eng) {
-                out << "TABLE BUFFER: engine not available.\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetTableBufferEngineUnavailableText);
                 return;
             }
 
@@ -926,8 +834,12 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
                     dottalk::table::set_enabled(i, on);
                     ++changed;
                 }
-                out << "TABLE BUFFER: " << (on ? "ON" : "OFF")
-                    << " for " << changed << " open area(s).\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetTableBufferAllStatusText,
+                    {
+                        {"state", on ? "ON" : "OFF"},
+                        {"count", std::to_string(changed)}
+                    });
                 return;
             }
 
@@ -940,18 +852,23 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
             }
 
             if (area0 < 0) {
-                out << "TABLE BUFFER: cannot determine current area.\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetTableBufferCannotDetermineCurrentAreaText);
                 return;
             }
 
             dottalk::table::set_enabled(area0, on);
 
-            out << "TABLE BUFFER: " << (on ? "ON" : "OFF")
-                << " (area " << area0 << ")\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SetTableBufferAreaStatusText,
+                {
+                    {"state", on ? "ON" : "OFF"},
+                    {"area", std::to_string(area0)}
+                });
             return;
         }
 
-        out << "Usage: SET TABLE BUFFER ON|OFF [ALL]\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTableBufferUsageText);
         return;
     }
 
@@ -965,15 +882,17 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = (R.dest() == cli::OutputDest::Console);
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET CONSOLE ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetConsoleUsageText);
             return;
         }
 
         if (on) {
             R.set_dest_console();
-            R.console_note("PRN: CONSOLE");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnConsoleNoteText));
         } else {
-            R.console_note("PRN: NULL");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnNullNoteText));
             R.set_dest_null();
         }
         return;
@@ -988,7 +907,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         args >> tok;
 
         if (tok.empty()) {
-            out << "Usage: SET PRINT ON|OFF | SET PRINT TO <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPrintUsageText);
             return;
         }
 
@@ -997,34 +916,42 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         if (u == "TO") {
             std::string tail = ltrim_copy(rest(args));
             if (tail.empty()) {
-                out << "Usage: SET PRINT TO <file>\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPrintToUsageText);
                 return;
             }
 
             if (!R.set_dest_file(tail)) {
-                out << "PRINT TO failed: " << tail << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetPrintToFailedText,
+                    {{"path", tail}});
                 return;
             }
 
-            R.console_note("PRN: FILE -> " + R.prn_file_path());
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnFileNoteText,
+                {{"path", R.prn_file_path()}}));
             return;
         }
 
         bool on = (R.dest() == cli::OutputDest::File);
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET PRINT ON|OFF | SET PRINT TO <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPrintUsageText);
             return;
         }
 
         if (on) {
             if (!R.prn_file_path().empty()) {
                 (void)R.set_dest_file(R.prn_file_path());
-                R.console_note("PRN: FILE -> " + R.prn_file_path());
+                R.console_note(cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::SetPrnFileNoteText,
+                    {{"path", R.prn_file_path()}}));
             } else {
-                out << "SET PRINT ON requires a file. Use: SET PRINT TO <file>\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetPrintOnRequiresFileText);
             }
         } else {
-            R.console_note("PRN: NULL");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnNullNoteText));
             R.set_dest_null();
         }
         return;
@@ -1038,7 +965,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         args >> tok;
 
         if (tok.empty()) {
-            out << "Usage: SET ALTERNATE ON|OFF | SET ALTERNATE TO <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetAlternateUsageText);
             return;
         }
 
@@ -1047,27 +974,33 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         if (u == "TO") {
             std::string tail = ltrim_copy(rest(args));
             if (tail.empty()) {
-                out << "Usage: SET ALTERNATE TO <file>\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::SetAlternateToUsageText);
                 return;
             }
 
             if (!R.set_alternate_to(tail)) {
-                out << "ALTERNATE TO failed: " << tail << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetAlternateToFailedText,
+                    {{"path", tail}});
                 return;
             }
 
-            out << "ALTERNATE TO: " << R.alternate_to_path() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SetAlternateToStatusText,
+                {{"path", R.alternate_to_path()}});
             return;
         }
 
         bool on = R.alternate_on();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET ALTERNATE ON|OFF | SET ALTERNATE TO <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetAlternateUsageText);
             return;
         }
 
         R.set_alternate(on);
-        out << "Alternate is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetAlternateStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1080,12 +1013,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = S.talk_on.load();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET TALK ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTalkUsageText);
             return;
         }
 
-        S.talk_on.store(on);
-        out << "Talk is " << (on ? "ON" : "OFF") << "\n";
+        R.set_talk(on);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetTalkStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1098,12 +1033,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = R.echo_on();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET ECHO ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEchoUsageText);
             return;
         }
 
         R.set_echo(on);
-        out << "Echo is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetEchoStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1116,12 +1053,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = R.paging_on();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET PAGING ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPagingUsageText);
             return;
         }
 
         R.set_paging(on);
-        out << "Paging is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetPagingStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1134,12 +1073,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = R.wrap_on();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET WRAP ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetWrapUsageText);
             return;
         }
 
         R.set_wrap(on);
-        out << "Wrap is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetWrapStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1152,12 +1093,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = S.timer_on.load();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET TIMER ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTimerUsageText);
             return;
         }
 
         S.timer_on.store(on);
-        out << "Timer is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetTimerStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1170,12 +1113,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = S.polling_on.load();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET POLLING ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPollingUsageText);
             return;
         }
 
         S.polling_on.store(on);
-        out << "Polling is " << (on ? "ON" : "OFF") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetPollingStatusText,
+            {{"state", on ? "ON" : "OFF"}});
         return;
     }
 
@@ -1188,12 +1133,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         bool on = S.deleted_on.load();
         if (!parse_on_off(tok, on)) {
-            out << "Usage: SET DELETED ON|OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetDeletedUsageText);
             return;
         }
 
         S.deleted_on.store(on);
-        out << "Deleted visibility: " << (on ? "HIDE (ON)" : "SHOW (OFF)") << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetDeletedStatusText,
+            {{"state", on ? "HIDE (ON)" : "SHOW (OFF)"}});
         return;
     }
 
@@ -1227,19 +1174,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         args >> sub;
 
         if (sub.empty()) {
-            out << "Usage: SET EDITOR TO <value|DEFAULT|OFF>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEditorUsageText);
             return;
         }
 
         sub = up_copy(sub);
         if (sub != "TO") {
-            out << "Usage: SET EDITOR TO <value|DEFAULT|OFF>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEditorUsageText);
             return;
         }
 
         std::string tail = ltrim_copy(rest(args));
         if (tail.empty()) {
-            out << "Usage: SET EDITOR TO <value|DEFAULT|OFF>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEditorUsageText);
             return;
         }
 
@@ -1248,21 +1195,23 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         if (tail_up == "OFF") {
             S.editor.mode = cli::EditorMode::Off;
             S.editor.command.clear();
-            out << "EDITOR is OFF\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEditorOffStatusText);
             return;
         }
 
         if (tail_up == "DEFAULT") {
             S.editor.mode = cli::EditorMode::Default;
             S.editor.command.clear();
-            out << "EDITOR set to DEFAULT\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetEditorDefaultStatusText);
             return;
         }
 
         S.editor.mode = cli::EditorMode::Custom;
         S.editor.command = tail;
 
-        out << "EDITOR set to: " << S.editor.command << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetEditorCustomStatusText,
+            {{"value", S.editor.command}});
         return;
     }
 
@@ -1275,7 +1224,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         args >> sub;
 
         if (up_copy(sub) != "TO") {
-            out << "Usage: SET DEVICE TO SCREEN|FILE <path>|PRINTER [name]|NULL\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetDeviceUsageText);
             return;
         }
 
@@ -1285,12 +1234,14 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
         if (mode == "SCREEN" || mode == "CONSOLE") {
             R.set_dest_console();
-            R.console_note("PRN: CONSOLE");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnConsoleNoteText));
             return;
         }
 
         if (mode == "NULL" || mode == "OFF") {
-            R.console_note("PRN: NULL");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnNullNoteText));
             R.set_dest_null();
             return;
         }
@@ -1298,32 +1249,40 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         if (mode == "FILE") {
             std::string path = ltrim_copy(rest(args));
             if (path.empty()) {
-                out << "Usage: SET DEVICE TO FILE <path>\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::SetDeviceFileUsageText);
                 return;
             }
             if (!R.set_dest_file(path)) {
-                out << "SET DEVICE TO FILE failed: " << path << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetDeviceFileFailedText,
+                    {{"path", path}});
                 return;
             }
-            R.console_note("PRN: FILE -> " + R.prn_file_path());
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnFileNoteText,
+                {{"path", R.prn_file_path()}}));
             return;
         }
 
         if (mode == "PRINTER") {
             std::string printer_name = ltrim_copy(rest(args));
             if (!R.set_dest_printer(printer_name)) {
-                out << "SET DEVICE TO PRINTER failed.\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SetDevicePrinterFailedText);
                 return;
             }
             if (R.prn_uses_default_printer()) {
-                R.console_note("PRN: PRINTER -> (system default) [staged only]");
+                R.console_note(cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::SetPrnPrinterDefaultStagedNoteText));
             } else {
-                R.console_note("PRN: PRINTER -> " + R.prn_printer_name() + " [staged only]");
+                R.console_note(cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::SetPrnPrinterNamedStagedNoteText,
+                    {{"name", R.prn_printer_name()}}));
             }
             return;
         }
 
-        out << "Usage: SET DEVICE TO SCREEN|FILE <path>|PRINTER [name]|NULL\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetDeviceUsageText);
         return;
     }
 

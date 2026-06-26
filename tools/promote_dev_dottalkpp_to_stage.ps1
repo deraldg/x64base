@@ -84,7 +84,6 @@ $excludeDirs = @(
     "out",
     "system",
     "projects",
-    "metadata_x64",
     ".relations"
 )
 

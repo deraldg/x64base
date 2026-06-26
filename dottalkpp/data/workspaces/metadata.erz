@@ -1,0 +1,7 @@
+# metadata.erz
+# Canonical metadata relational browser preset.
+
+SETUP=metadata
+WORKSPACE=metadata_rel.dtschema
+ROOT=SYSCMD
+LIMIT=10

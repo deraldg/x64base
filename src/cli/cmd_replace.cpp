@@ -96,6 +96,7 @@
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
 #include "cli/cli_currency.hpp"
+#include "cli/command_output.hpp"
 
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_date.hpp"
@@ -715,20 +716,7 @@ static bool is_replace_usage_request(const std::string& raw)
 
 static void print_replace_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  REPLACE USAGE\n"
-        << "  REPLACE <field_index> WITH <value>\n"
-        << "  REPLACE <field_name>  WITH <value>\n"
-        << "Examples:\n"
-        << "  REPLACE LNAME WITH \"Smith\"\n"
-        << "  REPLACE 3 WITH TODAY\n"
-        << "Notes:\n"
-        << "  - REPLACE requires an open table and a current record.\n"
-        << "  - RHS values are evaluated before validation/storage.\n"
-        << "  - X64 memo text is converted to stored memo object-id text.\n"
-        << "  - TABLE ON buffers field changes and marks fields stale/dirty.\n"
-        << "  - TABLE OFF writes immediately through DbArea storage.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReplaceUsageText);
 }
 
 } // namespace
@@ -741,7 +729,8 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!A.isOpen()) {
-        std::cout << "REPLACE: no file open.\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE", dottalk::helpdata::MessageId::ReplaceNoFileOpenText);
         return;
     }
 
@@ -757,20 +746,24 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
 
     const int fldIndex0 = xfg::resolve_field_index_std(A, field_name);
     if (fldIndex0 < 0) {
-        std::cout << "REPLACE: field not found.\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE", dottalk::helpdata::MessageId::ReplaceFieldNotFoundText);
         return;
     }
 
     const int field1 = fldIndex0 + 1;
     const uint32_t rn = static_cast<uint32_t>(A.recno());
     if (rn == 0) {
-        std::cout << "REPLACE: no current record.\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE", dottalk::helpdata::MessageId::ReplaceNoCurrentRecordText);
         return;
     }
 
     const int area0 = resolve_current_index(A);
     if (area0 < 0) {
-        std::cout << "REPLACE: cannot determine current area.\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE",
+            dottalk::helpdata::MessageId::ReplaceCannotDetermineCurrentAreaText);
         return;
     }
 
@@ -818,19 +811,28 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     std::string currency_norm;
     std::string currency_err;
     if (!cli_currency::validate_and_normalize_currency_pair_field(A, field1, user_value, currency_norm, currency_err)) {
-        std::cout << "REPLACE: " << currency_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE",
+            dottalk::helpdata::MessageId::ReplaceDetailText,
+            {{"detail", currency_err + "."}});
         return;
     }
     user_value = currency_norm;
 
     if (!dottalk::cli::memo_field_store::build_x64_memo_stored_value(A, field1, user_value, stored_value, memo_err)) {
-        std::cout << "REPLACE: " << memo_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE",
+            dottalk::helpdata::MessageId::ReplaceDetailText,
+            {{"detail", memo_err + "."}});
         return;
     }
 
     std::string validate_err;
     if (!validate_field_value_for_store(A, field1, stored_value, validate_err)) {
-        std::cout << "REPLACE: " << validate_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE",
+            dottalk::helpdata::MessageId::ReplaceDetailText,
+            {{"detail", validate_err + "."}});
         return;
     }
 
@@ -850,7 +852,10 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         dottalk::table::mark_stale_field(area0, field1);
 
         if (Settings::instance().talk_on.load()) {
-            std::cout << "REPLACE: buffered field #" << field1 << " at rec " << rn << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "REPLACE",
+                dottalk::helpdata::MessageId::ReplaceBufferedFieldRecordText,
+                {{"field", std::to_string(field1)}, {"recno", std::to_string(rn)}});
         }
         return;
     }
@@ -865,9 +870,10 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         const bool ok = A.replaceFieldStored(field1, stored_value, &write_err);
 
         if (!ok) {
-            std::cout << "REPLACE: "
-                      << (write_err.empty() ? "write failed" : write_err)
-                      << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "REPLACE",
+                dottalk::helpdata::MessageId::ReplaceDetailText,
+                {{"detail", (write_err.empty() ? std::string("write failed") : write_err) + "."}});
             return;
         }
 
@@ -876,11 +882,18 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         if (before != after) dottalk::table::mark_stale_field(area0, field1);
 
         if (Settings::instance().talk_on.load()) {
-            std::cout << "Replaced field #" << field1 << " at rec " << A.recno() << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "REPLACE",
+                dottalk::helpdata::MessageId::ReplaceReplacedFieldRecordText,
+                {{"field", std::to_string(field1)}, {"recno", std::to_string(A.recno())}});
         }
     } catch (const std::exception& e) {
-        std::cout << "REPLACE: write failed (" << e.what() << ").\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE",
+            dottalk::helpdata::MessageId::ReplaceWriteFailedDetailText,
+            {{"detail", e.what()}});
     } catch (...) {
-        std::cout << "REPLACE: write failed.\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE", dottalk::helpdata::MessageId::ReplaceWriteFailedText);
     }
 }

@@ -42,6 +42,8 @@
 #include <string>
 #include <cctype>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
 
@@ -66,13 +68,7 @@ static bool is_clear_usage_request(std::string raw)
 }
 static void print_clear_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CLEAR USAGE\n"
-        << "  CLEAR\n"
-        << "  CLS\n"
-        << "Notes:\n"
-        << "  - Clears the console screen only.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ClearUsageText);
 }
 } // namespace
 

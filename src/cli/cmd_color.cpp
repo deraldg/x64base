@@ -42,6 +42,7 @@
 
 #include "xbase.hpp"
 #include "colors.hpp"
+#include "cli/command_output.hpp"
 
 #include <iostream>
 #include <cctype>
@@ -60,20 +61,7 @@ static std::string color_upper(std::string s)
 
 static void print_color_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  COLOR\n"
-        << "  COLOR USAGE\n"
-        << "  COLOR DEFAULT\n"
-        << "  COLOR GREEN\n"
-        << "  COLOR AMBER\n"
-        << "  COLOR TREE ON\n"
-        << "  COLOR TREE OFF\n"
-        << "  COLOR TREECOLOR ON\n"
-        << "  COLOR TREECOLOR OFF\n"
-        << "Notes:\n"
-        << "  - COLOR with no arguments reports current theme and tree palette state.\n"
-        << "  - COLOR TREE/TREECOLOR toggles tree-color behavior.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ColorUsageText);
 }
 } // namespace
 
@@ -82,13 +70,24 @@ void cmd_COLOR(DbArea& /*A*/, std::istringstream& iss) {
 
     std::string arg;
     if (!(iss >> arg)) {
-        std::cout << "COLOR is " << themeName(currentTheme()) << "\n";
-        std::cout << "TREECOLOR is " << (treeColorEnabled() ? "ON" : "OFF") << "\n";
-        std::cout << "TREE palette rotates across " << treePaletteSize() << " levels:\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ColorStatusText,
+            {{"value", themeName(currentTheme())}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ColorTreeColorStatusText,
+            {{"value", treeColorEnabled() ? "ON" : "OFF"}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ColorTreePaletteHeaderText,
+            {{"count", std::to_string(treePaletteSize())}});
         for (std::size_t i = 0; i < treePaletteSize(); ++i) {
             const Theme t = treeThemeForLevel(static_cast<int>(i));
             emitTheme(t);
-            std::cout << "  Level " << i << ": " << themeName(t) << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ColorTreeLevelLineText,
+                {
+                    {"level", std::to_string(i)},
+                    {"value", themeName(t)}
+                });
             emitCurrentTheme();
         }
         return;
@@ -103,7 +102,9 @@ void cmd_COLOR(DbArea& /*A*/, std::istringstream& iss) {
     std::string sub;
     if (ARG == "TREE" || ARG == "TREECOLOR") {
         if (!(iss >> sub)) {
-            std::cout << "TREECOLOR is " << (treeColorEnabled() ? "ON" : "OFF") << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ColorTreeColorStatusText,
+                {{"value", treeColorEnabled() ? "ON" : "OFF"}});
             return;
         }
 
@@ -111,12 +112,16 @@ void cmd_COLOR(DbArea& /*A*/, std::istringstream& iss) {
 
         if (sub == "ON") {
             setTreeColorEnabled(true);
-            std::cout << "TREECOLOR set to ON\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ColorTreeSetStatusText,
+                {{"value", "ON"}});
             return;
         }
         if (sub == "OFF") {
             setTreeColorEnabled(false);
-            std::cout << "TREECOLOR set to OFF\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ColorTreeSetStatusText,
+                {{"value", "OFF"}});
             return;
         }
 
@@ -127,5 +132,7 @@ void cmd_COLOR(DbArea& /*A*/, std::istringstream& iss) {
     // Accept COLOR DEFAULT | GREEN | AMBER | etc.
     Theme t = parseTheme(arg);
     applyTheme(t);
-    std::cout << "COLOR set to " << themeName(t) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ColorSetStatusText,
+        {{"value", themeName(t)}});
 }

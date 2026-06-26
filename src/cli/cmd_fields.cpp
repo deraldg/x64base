@@ -32,6 +32,7 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include <cctype>
 #include <iomanip>
 #include <iostream>
@@ -66,13 +67,7 @@ static bool is_fields_usage_request(const std::string& raw) {
 }
 
 static void print_fields_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  FIELDS\n"
-        << "  FIELDS USAGE\n"
-        << "Notes:\n"
-        << "  - Reports field number, name, type, length, and decimals for the current area.\n"
-        << "  - FIELDS is read-only.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FieldsUsageText);
 }
 
 // compute the width in digits for numbering column (?#?)
@@ -98,7 +93,7 @@ void cmd_FIELDS(DbArea& area, std::istringstream& args)
     const std::size_t n = static_cast<std::size_t>(area.fieldCount());
 
     if (n == 0) {
-        std::cout << "(No fields)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::FieldsNoFieldsText);
         return;
     }
 

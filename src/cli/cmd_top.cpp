@@ -35,12 +35,13 @@
 
 #include <cctype>
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/nav_select.hpp"
 #include "cli/settings.hpp"
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -68,10 +69,7 @@ static bool is_top_usage_request(const std::string& raw)
 
 static void print_top_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  TOP\n"
-        << "  TOP USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TopUsageText);
 }
 } // namespace
 
@@ -84,7 +82,7 @@ void cmd_TOP(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "TOP: no file open.\n";
+        cli::cmdout::print_prefixed_message("TOP", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
@@ -94,11 +92,13 @@ void cmd_TOP(xbase::DbArea& A, std::istringstream& in)
         cli::navsel::Step::First);
 
     if (rn <= 0 || !A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "TOP: failed.\n";
+        cli::cmdout::print_prefixed_message("TOP", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

@@ -1,6 +1,8 @@
 // src/cli/set_relations.cpp
 #include "set_relations.hpp"
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "workareas.hpp"
 #include "xbase_field_getters.hpp"
@@ -40,10 +42,19 @@ struct Relation {
     std::vector<std::string> child_names;      // child-side field names
 };
 
-std::unordered_map<std::string, std::vector<Relation>> g_relations; // key: parent (UPPER)
+static std::unordered_map<std::string, std::vector<Relation>>& relations_store() {
+    static std::unordered_map<std::string, std::vector<Relation>> relations;
+    return relations;
+}
+
+#if DOTTALK_EXTRA_DIAGNOSTICS
+static constexpr bool default_relation_verbose = true;
+#else
+static constexpr bool default_relation_verbose = false;
+#endif
 
 bool        g_autorefresh = true;
-bool        g_verbose     = true;
+bool        g_verbose     = default_relation_verbose;
 std::size_t g_scan_limit  = 500000;
 
 xbase::XBaseEngine* g_engine = nullptr;
@@ -51,7 +62,18 @@ xbase::XBaseEngine* g_engine = nullptr;
 // Optional override anchor. IMPORTANT:
 // - We DO NOT auto-set this during ADD.
 // - If empty, we always anchor to the CURRENT workarea (selected area).
-std::string g_current_parent_name;
+static std::string& current_parent_override() {
+    static std::string parent_name;
+    return parent_name;
+}
+
+static inline void emit_rel_diag(
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars = {})
+{
+    if (!g_verbose) return;
+    cli::cmdout::print_prefixed_message("REL", id, vars);
+}
 
 // ---------------------------
 // Helpers
@@ -356,8 +378,8 @@ static void clear_subtree_to_top(const std::string& parent_name,
     const std::string key = up_copy(parent_name);
     if (!seen.insert(key).second) return;
 
-    auto it = g_relations.find(key);
-    if (it == g_relations.end()) return;
+    auto it = relations_store().find(key);
+    if (it == relations_store().end()) return;
 
     for (const auto& r : it->second) {
         if (xbase::DbArea* child = find_open_area_by_name_ci(r.child)) {
@@ -379,8 +401,8 @@ static void refresh_from_parent_name(const std::string& parent_name,
 
     try { parent->readCurrent(); } catch (...) {}
 
-    auto it = g_relations.find(key);
-    if (it == g_relations.end()) return;
+    auto it = relations_store().find(key);
+    if (it == relations_store().end()) return;
 
     for (const auto& rel : it->second) {
         xbase::DbArea* child = find_open_area_by_name_ci(rel.child);
@@ -476,18 +498,18 @@ bool add_relation(const std::string& parent_area,
     const std::string child  = up_copy(child_area);
 
     if (parent_fields.empty() || child_fields.empty()) {
-        if (g_verbose) std::cout << "REL: add failed (no fields provided)\n";
+        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNoFieldsText);
         return false;
     }
     if (parent_fields.size() != child_fields.size()) {
-        if (g_verbose) std::cout << "REL: add failed (parent/child field counts differ)\n";
+        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedFieldCountMismatchText);
         return false;
     }
 
     xbase::DbArea* P = find_open_area_by_name_ci(parent);
     xbase::DbArea* C = find_open_area_by_name_ci(child);
     if (!P || !C) {
-        if (g_verbose) std::cout << "REL: add failed (parent/child not open)\n";
+        emit_rel_diag(dottalk::helpdata::MessageId::RelDiagAddFailedNotOpenText);
         return false;
     }
 
@@ -505,30 +527,32 @@ bool add_relation(const std::string& parent_area,
         const int pf = find_field_index_ci(*P, pf_name);
         const int cf = find_field_index_ci(*C, cf_name);
         if (pf <= 0) {
-            std::cout << "REL: parent field not found: " << pf_name << "\n";
+            emit_rel_diag(
+                dottalk::helpdata::MessageId::RelDiagParentFieldNotFoundText,
+                {{"field", pf_name}});
             return false;
         }
         if (cf <= 0) {
-            std::cout << "REL: child field not found: " << cf_name << "\n";
+            emit_rel_diag(
+                dottalk::helpdata::MessageId::RelDiagChildFieldNotFoundText,
+                {{"field", cf_name}});
             return false;
         }
         r.joins.push_back(JoinField{pf, cf});
     }
 
-    auto& v = g_relations[parent];
+    auto& v = relations_store()[parent];
     auto it = std::find_if(v.begin(), v.end(), [&](const Relation& x){ return x.child == child; });
     if (it == v.end()) v.push_back(std::move(r));
     else *it = std::move(r);
 
-    if (g_verbose) {
-        std::cout << "REL: " << parent << " -> " << child << " ON ";
-        if (same_field_lists(parent_fields, child_fields)) {
-            std::cout << join_names_csv(parent_fields);
-        } else {
-            std::cout << join_names_csv(parent_fields) << " TO " << join_names_csv(child_fields);
-        }
-        std::cout << "\n";
-    }
+    const std::string relation_fields =
+        same_field_lists(parent_fields, child_fields)
+            ? join_names_csv(parent_fields)
+            : join_names_csv(parent_fields) + " TO " + join_names_csv(child_fields);
+    emit_rel_diag(
+        dottalk::helpdata::MessageId::RelDiagAddedText,
+        {{"parent", parent}, {"child", child}, {"fields", relation_fields}});
 
     return true;
 }
@@ -538,11 +562,11 @@ bool remove_relation(const std::string& parent_area,
     const std::string parent = up_copy(parent_area);
     const std::string child  = up_copy(child_area);
 
-    auto it = g_relations.find(parent);
-    if (it == g_relations.end()) {
-        if (g_verbose) {
-            std::cout << "REL: no relations defined for " << parent << "\n";
-        }
+    auto it = relations_store().find(parent);
+    if (it == relations_store().end()) {
+        emit_rel_diag(
+            dottalk::helpdata::MessageId::RelDiagNoRelationsDefinedText,
+            {{"parent", parent}});
         return false;
     }
 
@@ -557,42 +581,44 @@ bool remove_relation(const std::string& parent_area,
         vec.end());
 
     if (vec.size() == old_size) {
-        if (g_verbose) {
-            std::cout << "REL: relation not found: " << parent << " -> " << child << "\n";
-        }
+        emit_rel_diag(
+            dottalk::helpdata::MessageId::RelDiagRelationNotFoundText,
+            {{"parent", parent}, {"child", child}});
         return false;
     }
 
     if (vec.empty()) {
-        g_relations.erase(it);
+        relations_store().erase(it);
     }
 
-    if (g_verbose) {
-        std::cout << "REL: removed " << parent << " -> " << child << "\n";
-    }
+    emit_rel_diag(
+        dottalk::helpdata::MessageId::RelDiagRemovedText,
+        {{"parent", parent}, {"child", child}});
 
     return true;
 }
 
 void clear_relations(const std::string& parent_area) {
-    g_relations.erase(up_copy(parent_area));
-    if (g_verbose) std::cout << "REL: cleared for " << up_copy(parent_area) << "\n";
+    relations_store().erase(up_copy(parent_area));
+    emit_rel_diag(
+        dottalk::helpdata::MessageId::RelDiagClearedForText,
+        {{"parent", up_copy(parent_area)}});
 }
 
 void clear_all_relations() {
-    g_relations.clear();
-    g_current_parent_name.clear();
-    if (g_verbose) std::cout << "REL: cleared all\n";
+    relations_store().clear();
+    current_parent_override().clear();
+    emit_rel_diag(dottalk::helpdata::MessageId::RelDiagClearedAllText);
 }
 
 void set_current_parent_name(const std::string& logical_name) noexcept {
-    g_current_parent_name = up_copy(logical_name);
+    current_parent_override() = up_copy(logical_name);
 }
 
 std::string current_parent_name() {
-    if (!g_current_parent_name.empty()) {
-        if (find_open_area_by_name_ci(g_current_parent_name)) return g_current_parent_name;
-        g_current_parent_name.clear();
+    if (!current_parent_override().empty()) {
+        if (find_open_area_by_name_ci(current_parent_override())) return current_parent_override();
+        current_parent_override().clear();
     }
     return infer_parent_from_workarea();
 }
@@ -613,8 +639,8 @@ std::vector<std::string> child_areas_for_current_parent() {
     const auto parent = current_parent_name();
     if (parent.empty()) return out;
 
-    auto it = g_relations.find(up_copy(parent));
-    if (it == g_relations.end()) return out;
+    auto it = relations_store().find(up_copy(parent));
+    if (it == relations_store().end()) return out;
 
     out.reserve(it->second.size());
     for (const auto& r : it->second) out.push_back(r.child);
@@ -629,8 +655,8 @@ int match_count_for_child(const std::string& child_area) {
         xbase::DbArea* parent_db = find_open_area_by_name_ci(parent);
         if (!parent_db || parent_db->recno() <= 0) return 0;
 
-        auto it = g_relations.find(up_copy(parent));
-        if (it == g_relations.end()) return 0;
+        auto it = relations_store().find(up_copy(parent));
+        if (it == relations_store().end()) return 0;
 
         const std::string child = up_copy(child_area);
         auto rit = std::find_if(it->second.begin(), it->second.end(),
@@ -704,7 +730,7 @@ int match_count_for_child(const std::string& child_area) {
 
 std::vector<RelationSpec> export_relations() {
     std::vector<RelationSpec> out;
-    for (const auto& kv : g_relations) {
+    for (const auto& kv : relations_store()) {
         const std::string& parent = kv.first;
         for (const auto& rel : kv.second) {
             RelationSpec spec;
@@ -722,7 +748,7 @@ std::vector<RelationSpec> export_relations() {
 }
 
 void import_relations(const std::vector<RelationSpec>& specs, bool clear_existing) {
-    if (clear_existing) g_relations.clear();
+    if (clear_existing) relations_store().clear();
     for (const auto& s : specs) {
         if (!s.parent_fields.empty() || !s.child_fields.empty()) {
             add_relation(s.parent, s.child, s.parent_fields, s.child_fields);
@@ -762,8 +788,8 @@ static std::vector<std::string> infer_unique_child_chain(const std::string& root
 
     std::string cur = root_up;
     for (int depth = 1; depth <= max_depth; ++depth) {
-        auto it = g_relations.find(cur);
-        if (it == g_relations.end() || it->second.empty()) break;
+        auto it = relations_store().find(cur);
+        if (it == relations_store().end() || it->second.empty()) break;
 
         if (it->second.size() != 1) break;
 
@@ -808,8 +834,8 @@ std::vector<PreviewRow> list_tree_for_current_parent(bool recursive, int max_dep
     out.push_back(PreviewRow{root});
 
     if (!recursive || max_depth <= 0) {
-        auto it = g_relations.find(root);
-        if (it == g_relations.end()) return out;
+        auto it = relations_store().find(root);
+        if (it == relations_store().end()) return out;
 
         for (const auto& rel : it->second) {
             std::string line(2u, ' ');
@@ -871,8 +897,8 @@ std::vector<PreviewRow> list_tree_for_current_parent(bool recursive, int max_dep
     dfs = [&](const std::string& parent_up, int depth) {
         if (depth > max_depth) return;
 
-        auto it = g_relations.find(parent_up);
-        if (it == g_relations.end() || it->second.empty()) return;
+        auto it = relations_store().find(parent_up);
+        if (it == relations_store().end() || it->second.empty()) return;
 
         for (const auto& rel : it->second) {
             const std::string child_up = up_copy(rel.child);
@@ -922,8 +948,8 @@ std::vector<relations_api::PreviewRow> preview_child(const std::string& child_ar
 
         try { const_cast<xbase::DbArea*>(A)->readCurrent(); } catch (...) {}
 
-        auto it = g_relations.find(up_copy(parent));
-        if (it == g_relations.end()) return out;
+        auto it = relations_store().find(up_copy(parent));
+        if (it == relations_store().end()) return out;
 
         const std::string child = up_copy(child_area);
         auto rit = std::find_if(it->second.begin(), it->second.end(),
@@ -960,8 +986,8 @@ static std::vector<std::string> infer_unique_chain_from_parent(const std::string
     std::vector<std::string> chain;
     std::string cur = parent_up;
     for (int depth = 0; depth < 32; ++depth) {
-        auto it = g_relations.find(cur);
-        if (it == g_relations.end()) break;
+        auto it = relations_store().find(cur);
+        if (it == relations_store().end()) break;
         if (it->second.empty()) break;
         if (it->second.size() != 1) return {};
         const std::string& child = it->second[0].child;
@@ -991,8 +1017,8 @@ static bool enum_chain_dfs(
     xbase::DbArea* child_db = find_open_area_by_name_ci(child_up);
     if (!parent_db || !child_db) return false;
 
-    auto it = g_relations.find(parent_up);
-    if (it == g_relations.end()) return false;
+    auto it = relations_store().find(parent_up);
+    if (it == relations_store().end()) return false;
     auto rit = std::find_if(it->second.begin(), it->second.end(),
                             [&](const Relation& r){ return r.child == child_up; });
     if (rit == it->second.end()) return false;

@@ -37,6 +37,8 @@
 #include <filesystem>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_report.hpp"
@@ -47,6 +49,15 @@ namespace fs = std::filesystem;
 
 // Provided by shell.cpp
 extern "C" XBaseEngine* shell_engine();
+
+namespace {
+
+inline std::ostream& out()
+{
+    return cli::OutputRouter::instance().out();
+}
+
+}
 
 
 static std::string area_upper(std::string s)
@@ -60,12 +71,7 @@ static std::string area_upper(std::string s)
 
 static void print_area_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  AREA                   (Report current work-area state)\n"
-        << "  AREA USAGE             (Show this usage)\n"
-        << "Notes:\n"
-        << "  - AREA is read-only; it reports the current area slot/file/order state.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AreaUsageText);
 }
 
 static int resolve_current_index(DbArea& A)
@@ -110,36 +116,56 @@ void cmd_AREA(DbArea& A, std::istringstream& args)
     const int idx = resolve_current_index(A);
 
     if (idx >= 0)
-        std::cout << "Current area: " << idx
-                  << " of " << workareas::occupied_desc() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AreaCurrentAreaLine,
+            {
+                {"index", std::to_string(idx)},
+                {"occupied", workareas::occupied_desc()}
+            });
     else
-        std::cout << "Current area: (unknown)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::AreaCurrentAreaUnknownLine);
 
     if (!A.isOpen()) {
-        std::cout << "  (no file open in Area)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::AreaNoFileOpenLine);
         return;
     }
 
     const std::string label = area_file_label(A);
 
-    std::cout << "  File: " << label
-              << "  Recs: " << A.recCount()
-              << "  Recno: " << A.recno() << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaFileSummaryLine,
+        {
+            {"label", label},
+            {"recs", std::to_string(A.recCount())},
+            {"recno", std::to_string(A.recno())}
+        });
 
     const std::string& abs = A.filename();
-    std::cout << "  DBF (abs)           : " << (abs.empty() ? "(unknown)" : abs) << "\n";
-    std::cout << "  DBF Flavor          : " << xbase::dbf_version_token(A.versionByte()) << "\n";
-    std::cout << "  Runtime kind        : " << xbase::area_kind_token(A.kind()) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaDbfAbsoluteLine,
+        {{"value", abs.empty() ? "(unknown)" : abs}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaDbfFlavorLine,
+        {{"value", xbase::dbf_version_token(A.versionByte())}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaRuntimeKindLine,
+        {{"value", xbase::area_kind_token(A.kind())}});
 
     const std::string ln = A.logicalName();
-    std::cout << "  Logical name        : " << (ln.empty() ? "(unknown)" : ln) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaLogicalNameLine,
+        {{"value", ln.empty() ? "(unknown)" : ln}});
 
     const std::string legacy = A.name();
-    std::cout << "  Legacy name()       : " << (legacy.empty() ? "(unknown)" : legacy) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AreaLegacyNameLine,
+        {{"value", legacy.empty() ? "(unknown)" : legacy}});
 
     if (!abs.empty()) {
-        std::cout << "  Path: " << abs << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AreaPathLine,
+            {{"value", abs}});
     }
 
-    orderreport::print_area_one_line(std::cout, A);
+    orderreport::print_area_one_line(out(), A);
 }

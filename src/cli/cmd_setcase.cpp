@@ -38,34 +38,26 @@
 //   FIND
 //
 
-#include <iostream>
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "predicate_eval.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
 
 static void print_setcase_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET CASE\n"
-        << "  SET CASE USAGE\n"
-        << "  SET CASE ON\n"
-        << "  SET CASE OFF\n"
-        << "  SETCASE\n"
-        << "  SETCASE USAGE\n"
-        << "  SETCASE ON\n"
-        << "  SETCASE OFF\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetCaseUsageText);
 }
 
 void cmd_SETCASE(xbase::DbArea&, std::istringstream& iss) {
     std::string tok;
     if (!(iss >> tok)) {
-        std::cout << (predx::get_case_sensitive()
-            ? "CASE SENSITIVE: ON\n"
-            : "CASE SENSITIVE: OFF\n");
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetCaseStatusText,
+            {{"state", predx::get_case_sensitive() ? "ON" : "OFF"}});
         return;
     }
 
@@ -76,13 +68,17 @@ void cmd_SETCASE(xbase::DbArea&, std::istringstream& iss) {
 
     if (textio::ieq(tok, "ON") || textio::ieq(tok, "TRUE") || textio::ieq(tok, "1")) {
         predx::set_case_sensitive(true);
-        std::cout << "CASE SENSITIVE: ON\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetCaseStatusText,
+            {{"state", "ON"}});
         return;
     }
 
     if (textio::ieq(tok, "OFF") || textio::ieq(tok, "FALSE") || textio::ieq(tok, "0")) {
         predx::set_case_sensitive(false);
-        std::cout << "CASE SENSITIVE: OFF\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetCaseStatusText,
+            {{"state", "OFF"}});
         return;
     }
 

@@ -29,8 +29,8 @@
 //   USE clears stale order/tag/container state and closes the current area before opening the new DBF.
 //   USE opens the target DBF and populates DbArea metadata.
 //   USE auto-attaches memo storage when memo fields are present.
-//   USE auto-attaches a same-directory INX/IDX order when present, unless NOINDEX/NOIDX is specified.
-//   USE does not auto-attach CNX; CNX is deprecated and explicit-use only.
+//   USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is specified.
+//   USE prefers the configured INDEXES slot and falls back to the DBF directory.
 //   NOINDEX/NOIDX opens the table in physical order and skips index auto-attach.
 //   USE is a session/area mutation command; it changes the current work area binding but should not mutate table records.
 //
@@ -39,7 +39,7 @@
 //   closes_current_area: yes
 //   clears_order_state: yes
 //   attaches_memo: when memo fields are present
-//   attaches_index: INX/IDX when present unless NOINDEX/NOIDX
+//   attaches_index: flavor-appropriate index when present unless NOINDEX/NOIDX
 //   duplicate_open_guard: yes
 //   writes_dbf_records: no
 //   deletes_files: no
@@ -55,23 +55,26 @@
 //   DBAREA
 //
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <filesystem>
 #include <algorithm>
 #include <cctype>
 #include <type_traits>
+#include <vector>
 
 #include "xbase.hpp"
-#include "textio.hpp"
 #include "xbase/area_kind_util.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_hooks.hpp"      // to run reconcile_after_mutation()
 #include "cli/cmd_setpath.hpp"
 #include "cli/path_resolver.hpp"
+#include "help/helpdata_messages.hpp"
 #include "memo/memo_auto.hpp"
+#include "xindex/index_manager.hpp"
 
+#include "cdx/cdx.hpp"
 #include "cnx/cnx.hpp"              // reporting helper (CNX is deprecated but still supported)
 
 using namespace xbase;
@@ -196,20 +199,7 @@ static bool is_use_usage_request(std::string raw)
 
 static void print_use_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  USE USAGE              (Show this usage)\n"
-        << "  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n"
-        << "  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n"
-        << "  USE <path\\\\table.dbf>   (Open explicit path)\n"
-        << "  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n"
-        << "  USE <table> NOIDX      (Alias of NOINDEX)\n"
-        << "Notes:\n"
-        << "  - USE closes/resets the current area before opening the target table.\n"
-        << "  - USE prevents duplicate opens of the same DBF path across work areas.\n"
-        << "  - USE auto-attaches memo storage when memo fields are present.\n"
-        << "  - USE auto-attaches same-directory INX/IDX when present, unless NOINDEX/NOIDX is used.\n"
-        << "  - USE does not auto-attach CNX; CNX is explicit-use only.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::UseUsageText);
 }
 
 
@@ -344,6 +334,121 @@ static bool cnx_tag_is_unique(const std::string& cnx_path, const std::string& ta
     return false;
 }
 
+static bool cdx_tag_is_unique(const std::string& cdx_path, const std::string& tag_upper)
+{
+    if (cdx_path.empty() || tag_upper.empty()) return false;
+
+    cdxfile::CDXHandle* h = nullptr;
+    if (!cdxfile::open(cdx_path, h)) return false;
+
+    std::vector<cdxfile::TagInfo> tags;
+    const bool ok = cdxfile::read_tagdir(h, tags);
+    cdxfile::close(h);
+
+    if (!ok) return false;
+
+    for (const auto& t : tags) {
+        if (up_copy(t.name) == up_copy(tag_upper)) {
+            return (t.flags & TAGF_UNIQUE) != 0;
+        }
+    }
+    return false;
+}
+
+static bool is_v32_area(const DbArea& a)
+{
+    return a.kind() == AreaKind::V32;
+}
+
+static bool is_v64_tag_area(const DbArea& a)
+{
+    return a.kind() == AreaKind::V64 || a.kind() == AreaKind::V128;
+}
+
+static bool file_exists_best_effort(const fs::path& p)
+{
+    std::error_code ec;
+    return fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec;
+}
+
+static std::vector<fs::path> auto_attach_candidates_for(const DbArea& a,
+                                                        const fs::path& dbf_path)
+{
+    std::vector<fs::path> out;
+
+    const fs::path opened_abs = fs::absolute(dbf_path);
+    const fs::path dbf_dir = opened_abs.parent_path();
+    const fs::path idx_root = dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES);
+    const std::string base = opened_abs.stem().string();
+
+    auto add = [&](const fs::path& p) {
+        if (!p.empty()) out.push_back(p);
+    };
+
+    if (is_v64_tag_area(a)) {
+        add(idx_root / (base + ".cdx"));
+        add(dbf_dir / (base + ".cdx"));
+        return out;
+    }
+
+    if (is_v32_area(a)) {
+        add(idx_root / (base + ".cnx"));
+        add(idx_root / (base + ".inx"));
+        add(idx_root / (base + ".idx"));
+        add(dbf_dir / (base + ".cnx"));
+        add(dbf_dir / (base + ".inx"));
+        add(dbf_dir / (base + ".idx"));
+        return out;
+    }
+
+    return out;
+}
+
+static bool activate_tag_container_for_use(DbArea& a,
+                                           const fs::path& container_path,
+                                           std::string& active_tag_out)
+{
+    active_tag_out.clear();
+
+    try {
+        a.indexManager().close();
+    } catch (...) {
+    }
+
+    orderstate::clearOrder(a);
+    orderstate::setOrder(a, container_path.string());
+    orderstate::setAscending(a, true);
+    orderhooks::reconcile_after_mutation(a);
+
+    active_tag_out = orderstate::activeTag(a);
+    if (active_tag_out.empty()) {
+        orderstate::clearOrder(a);
+        return false;
+    }
+
+    std::string err;
+    const std::string ext = up_copy(container_path.extension().string());
+    bool ok = false;
+
+    if (ext == ".CDX") {
+        ok = a.indexManager().openCdx(container_path.string(), active_tag_out, &err);
+    } else if (ext == ".CNX") {
+        ok = a.indexManager().openCnx(container_path.string(), active_tag_out, &err);
+    }
+
+    if (!ok) {
+        try {
+            a.indexManager().close();
+        } catch (...) {
+        }
+        orderstate::clearOrder(a);
+        active_tag_out.clear();
+        return false;
+    }
+
+    return true;
+}
+
 // ----------------------- flavor / valid-index helpers -----------------------
 
 // Current policy helper.
@@ -352,7 +457,7 @@ static bool cnx_tag_is_unique(const std::string& cnx_path, const std::string& ta
 static const char* valid_index_types_for(const DbArea& a)
 {
     switch (a.kind()) {
-        case AreaKind::V32:  return "INX, CNX";
+        case AreaKind::V32:  return "CNX, INX, IDX";
         case AreaKind::V64:  return "CDX";
         case AreaKind::V128: return "CDX";
         case AreaKind::Tup:  return "TUP";
@@ -384,7 +489,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     iss >> name;
 
     if (name.empty()) {
-        std::cout << "USE: missing table name.\n";
+        cli::cmdout::print_prefixed_message("USE", dottalk::helpdata::MessageId::UseMissingTableNameText);
         print_use_usage();
         return;
     }
@@ -408,12 +513,17 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     const int dup_slot = find_open_area_for_path(dbf_path);
     if (dup_slot >= 0) {
         if (dup_slot == cur_slot) {
-            std::cout << "USE: '" << dbf_path.filename().string()
-                      << "' is already open in current area " << cur_slot << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "USE",
+                dottalk::helpdata::MessageId::UseAlreadyOpenCurrentAreaText,
+                {{"file", dbf_path.filename().string()},
+                 {"area", std::to_string(cur_slot)}});
         } else {
-            std::cout << "USE: '" << dbf_path.filename().string()
-                      << "' is already open in area " << dup_slot
-                      << ". Close it first (e.g., SCHEMAS CLOSE " << dup_slot << ").\n";
+            cli::cmdout::print_prefixed_message(
+                "USE",
+                dottalk::helpdata::MessageId::UseAlreadyOpenOtherAreaText,
+                {{"file", dbf_path.filename().string()},
+                 {"area", std::to_string(dup_slot)}});
         }
         return; // no-op by design
     }
@@ -429,10 +539,12 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         a.open(dbf_path.string());
         populate_dbarea_metadata(a, dbf_path);
     } catch (const std::exception& ex) {
-        std::cout << "Open failed: " << ex.what() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::UseOpenFailedWithReasonText,
+            {{"reason", ex.what()}});
         return;
     } catch (...) {
-        std::cout << "Open failed.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::UseOpenFailedText);
         return;
     }
 
@@ -452,63 +564,82 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
 
         std::string memo_err;
         if (!cli_memo::memo_auto_on_use(a, openedPath, hasMemoFields, memo_err)) {
-            std::cout << "USE: memo attach failed: " << memo_err << "\n";
+            cli::cmdout::print_prefixed_message(
+                "USE",
+                dottalk::helpdata::MessageId::UseMemoAttachFailedText,
+                {{"reason", memo_err}});
         }
     }
 
     // Standardized open report
-    std::cout << "Opened " << open_display_name(a, dbf_path)
-              << " (" << xbase::dbf_version_token(a.versionByte()) << ")"
-              << " : Record count " << a.recCount() << "\n";
-    std::cout << "Valid Index/Indices   : " << valid_index_types_for(a) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::UseOpenedSummaryText,
+        {{"name", open_display_name(a, dbf_path)},
+         {"version", xbase::dbf_version_token(a.versionByte())},
+         {"count", std::to_string(a.recCount())}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::UseValidIndexesLineText,
+        {{"types", valid_index_types_for(a)}});
 
     // NOINDEX → force physical order; stop
     if (noindex) {
         clear_order_best_effort(a);
-        std::cout << "NOINDEX: auto-attach skipped (physical order).\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::UseNoIndexSkippedText);
         return;
     }
 
-    // Auto-attach order (best-effort, never fatal)
-    // Policy (temporary, for dev convenience):
-    //   - only auto-attach INX/IDX if present beside the DBF
-    //   - do NOT auto-attach CNX (deprecated; explicit use only)
-    const fs::path opened_abs = fs::absolute(dbf_path);
-    const fs::path dbf_dir = opened_abs.parent_path();
-    const std::string base = opened_abs.stem().string();
-
-    const fs::path inx_same_dir = dbf_dir / (base + ".inx");
-    const fs::path idx_same_dir = dbf_dir / (base + ".idx");
-
+    // Auto-attach order (best-effort, never fatal).
+    // Policy:
+    //   - x64/v128: prefer CDX from INDEXES, then DBF directory fallback
+    //   - x32: prefer CNX, then INX, then IDX from INDEXES, then DBF directory fallback
     auto try_set_order = [&](const fs::path& p) {
         try {
-            orderstate::setOrder(a, p.string());
+            const std::string ext = up_copy(p.extension().string());
+            std::string tag;
 
-            // Best-effort: for any order type, allow hooks to reconcile internal state.
-            orderhooks::reconcile_after_mutation(a);
-
-            // Report, including CNX tag/unique status if applicable.
-            // (With current policy, CNX won't be auto-attached here, but keep reporting intact.)
-            if (orderstate::isCnx(a)) {
-                const std::string tag = orderstate::activeTag(a);
-                if (!tag.empty()) {
-                    const bool uniq = cnx_tag_is_unique(orderstate::orderName(a), tag);
-                    std::cout << "Auto-attached order: " << p.filename().string()
-                              << " (tag: " << tag << (uniq ? " [UNIQUE]" : "") << ")\n";
-                } else {
-                    std::cout << "Auto-attached order: " << p.filename().string() << "\n";
+            if (ext == ".CDX" || ext == ".CNX") {
+                if (!activate_tag_container_for_use(a, p, tag)) {
+                    return false;
                 }
             } else {
-                std::cout << "Auto-attached order: " << p.filename().string() << "\n";
+                orderstate::setOrder(a, p.string());
+                orderstate::setAscending(a, true);
+                orderhooks::reconcile_after_mutation(a);
+                tag = orderstate::activeTag(a);
             }
+
+            if (!tag.empty() && (orderstate::isCnx(a) || orderstate::isCdx(a))) {
+                bool uniq = false;
+                if (orderstate::isCnx(a)) {
+                    uniq = cnx_tag_is_unique(orderstate::orderName(a), tag);
+                } else if (orderstate::isCdx(a)) {
+                    uniq = cdx_tag_is_unique(orderstate::orderName(a), tag);
+                }
+
+                cli::cmdout::print_message(
+                    uniq
+                        ? dottalk::helpdata::MessageId::UseAutoAttachedOrderTagUniqueText
+                        : dottalk::helpdata::MessageId::UseAutoAttachedOrderTagText,
+                    {{"file", p.filename().string()},
+                     {"tag", tag}});
+            } else {
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::UseAutoAttachedOrderText,
+                    {{"file", p.filename().string()}});
+            }
+            return true;
         } catch (...) {
             // best-effort
         }
+        return false;
     };
 
-    if (fs::exists(inx_same_dir)) {
-        try_set_order(inx_same_dir);
-    } else if (fs::exists(idx_same_dir)) {
-        try_set_order(idx_same_dir);
+    for (const auto& candidate : auto_attach_candidates_for(a, dbf_path)) {
+        if (!file_exists_best_effort(candidate)) {
+            continue;
+        }
+        if (try_set_order(candidate)) {
+            break;
+        }
     }
 }

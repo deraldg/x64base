@@ -47,9 +47,13 @@ DartConfiguration.tcl
 /dottalkpp/data/.relations/
 /dottalkpp/data/logs/
 /dottalkpp/data/tmp/
+/dottalkpp/data/logfile.txt
+/dottalkpp/data/tmp_stdin_quit.txt
 /dottalkpp/data/lmdb/**/data.mdb
 /dottalkpp/data/lmdb/**/lock.mdb
 /dottalkpp/data/lmdb/**/backups/
+/docs/locale/repairs/rollback/
+/docs/manuals/developer/manualgen/generated/
 
 # Local staging, backups, and ad hoc work areas
 /_drops/

@@ -71,37 +71,41 @@ public:
     WorkAreaSet()
         : areas_(xbase::MAX_AREA)
     {
-        auto* eng = shell_engine();
-        for (std::size_t i = 0; i < areas_.size(); ++i) {
-            areas_[i] =
-                std::make_unique<WorkArea>(i, &eng->area(static_cast<int>(i)));
-        }
+        rebind_if_needed();
     }
 
     std::size_t count() const { return areas_.size(); }
 
     WorkArea* at(std::size_t i) {
+        rebind_if_needed();
         if (i >= areas_.size()) return nullptr;
         return areas_[i].get();
     }
 
     const WorkArea* at(std::size_t i) const {
+        rebind_if_needed();
         if (i >= areas_.size()) return nullptr;
         return areas_[i].get();
     }
 
     WorkArea* current() {
+        rebind_if_needed();
         auto* eng = shell_engine();
+        if (!eng) return nullptr;
         return at(static_cast<std::size_t>(eng->currentArea()));
     }
 
     const WorkArea* current() const {
+        rebind_if_needed();
         auto* eng = shell_engine();
+        if (!eng) return nullptr;
         return at(static_cast<std::size_t>(eng->currentArea()));
     }
 
     std::size_t current_slot() const {
+        rebind_if_needed();
         auto* eng = shell_engine();
+        if (!eng) return 0;
         return static_cast<std::size_t>(eng->currentArea());
     }
 
@@ -122,7 +126,26 @@ public:
     }
 
 private:
+    void rebind_if_needed() const {
+        auto* eng = shell_engine();
+        if (!eng) return;
+        if (bound_engine_ == eng && areas_bound_) return;
+
+        auto* self = const_cast<WorkAreaSet*>(this);
+        for (std::size_t i = 0; i < self->areas_.size(); ++i) {
+            if (auto* area = eng->areaPtr(static_cast<int>(i))) {
+                self->areas_[i] = std::make_unique<WorkArea>(i, area);
+            } else {
+                self->areas_[i].reset();
+            }
+        }
+        self->bound_engine_ = eng;
+        self->areas_bound_ = true;
+    }
+
     std::vector<std::unique_ptr<WorkArea>> areas_;
+    xbase::XBaseEngine* bound_engine_{nullptr};
+    bool areas_bound_{false};
 };
 
 // --------------------------------------------------

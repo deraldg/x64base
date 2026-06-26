@@ -31,11 +31,11 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 
 #include <algorithm>
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -65,10 +65,9 @@ static bool is_ascend_usage_request(const std::string& raw)
 
 static void print_ascend_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  ASCEND\n"
-        << "  ASCEND USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+    cli::cmdout::print_line("  ASCEND");
+    cli::cmdout::print_line("  ASCEND USAGE");
 }
 } // namespace
 
@@ -79,9 +78,12 @@ void cmd_ASCEND(xbase::DbArea& A, std::istringstream& in) {
         return;
     }
 
-    if (!orderstate::hasOrder(A)) { std::cout << "No active index.\n"; return; }
+    if (!orderstate::hasOrder(A)) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoActiveIndex);
+        return;
+    }
     orderstate::setAscending(A, true);
-    std::cout << "Order: ASCENDING.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::OrderAscendingSet);
 }
 
 

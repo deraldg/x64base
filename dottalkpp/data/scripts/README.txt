@@ -23,5 +23,6 @@ Current flat set:
 - ersatz_browser.dts
 - ersatz_rel_enum_browser.dts
 - pydottalk_shakedown.dts
+- rebuild_stage_lmdb_snapshot_128m.dts
 - rebuild_large_lmdb_envs_128m_20260621.dts
 - stable_demo.dts

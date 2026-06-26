@@ -98,6 +98,7 @@
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
 
+#include "cli/command_output.hpp"
 #include "cli/table_state.hpp"
 #include "cli/cli_currency.hpp"
 #include "cli/expr/rhs_eval.hpp"
@@ -449,7 +450,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'D': {
             std::string norm;
             if (!normalize_date_value(value, norm)) {
-                err = "REPLACE_MULTI: invalid date for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidDateForFieldText);
                 return false;
             }
             return true;
@@ -458,7 +460,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'L': {
             std::string norm;
             if (!normalize_logical_value(value, norm)) {
-                err = "REPLACE_MULTI: invalid logical for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidLogicalForFieldText);
                 return false;
             }
             return true;
@@ -467,7 +470,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'N': {
             std::string norm;
             if (!normalize_numeric_value(value, field_length(A, fld1), field_decimals(A, fld1), norm)) {
-                err = "REPLACE_MULTI: invalid numeric for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidNumericForFieldText);
                 return false;
             }
             return true;
@@ -476,7 +480,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'F': {
             std::string norm;
             if (!normalize_numeric_value(value, field_length(A, fld1), field_decimals(A, fld1), norm)) {
-                err = "REPLACE_MULTI: invalid float for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidFloatForFieldText);
                 return false;
             }
             return true;
@@ -485,7 +490,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'I': {
             std::int32_t tmp = 0;
             if (!parse_i32_strict(value, tmp)) {
-                err = "REPLACE_MULTI: invalid int32 for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidInt32ForFieldText);
                 return false;
             }
             return true;
@@ -494,7 +500,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'B': {
             double tmp = 0.0;
             if (!parse_double_strict(value, tmp)) {
-                err = "REPLACE_MULTI: invalid double for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidDoubleForFieldText);
                 return false;
             }
             return true;
@@ -503,7 +510,8 @@ static bool validate_new_scalar_field_value(xbase::DbArea& A,
         case 'Y': {
             std::int64_t scaled = 0;
             if (!parse_currency_strict(value, scaled)) {
-                err = "REPLACE_MULTI: invalid currency for field.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidCurrencyForFieldText);
                 return false;
             }
             return true;
@@ -531,14 +539,16 @@ static bool parse_assignments(std::istringstream& iss,
 
         if (up_copy(fieldTok) == "FIELD") {
             if (!(iss >> fieldTok)) {
-                err = "REPLACE_MULTI: expected field after FIELD.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiExpectedFieldAfterFieldText);
                 return false;
             }
         }
 
         std::string withTok;
         if (!(iss >> withTok) || up_copy(withTok) != "WITH") {
-            err = "REPLACE_MULTI: expected WITH after field.";
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiExpectedWithAfterFieldText);
             return false;
         }
 
@@ -546,7 +556,8 @@ static bool parse_assignments(std::istringstream& iss,
         std::getline(iss, value, ',');
         trim_inplace(value);
         if (value.empty()) {
-            err = "REPLACE_MULTI: empty value.";
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiEmptyValueText);
             return false;
         }
 
@@ -555,12 +566,16 @@ static bool parse_assignments(std::istringstream& iss,
         int dummy = 0;
         if (!try_parse_int(fieldTok, dummy)) {
             if (fieldTok.empty() || !is_ident_start(fieldTok[0])) {
-                err = "REPLACE_MULTI: invalid field token '" + fieldTok + "'.";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiInvalidFieldTokenText,
+                    {{"field", fieldTok}});
                 return false;
             }
             for (char c : fieldTok) {
                 if (!is_ident_char(c)) {
-                    err = "REPLACE_MULTI: invalid field token '" + fieldTok + "'.";
+                    err = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::ReplaceMultiInvalidFieldTokenText,
+                        {{"field", fieldTok}});
                     return false;
                 }
             }
@@ -569,7 +584,9 @@ static bool parse_assignments(std::istringstream& iss,
         int fld = 0;
         if (!try_parse_int(fieldTok, fld)) fld = resolve_field_index_by_name_ci(A, fieldTok);
         if (fld <= 0) {
-            err = "REPLACE_MULTI: unknown field '" + fieldTok + "'.";
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiUnknownFieldText,
+                {{"field", fieldTok}});
             return false;
         }
 
@@ -579,7 +596,8 @@ static bool parse_assignments(std::istringstream& iss,
     }
 
     if (out.empty()) {
-        err = "REPLACE_MULTI: no assignments.";
+        err = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::ReplaceMultiNoAssignmentsText);
         return false;
     }
     return true;
@@ -589,6 +607,10 @@ static bool parse_assignments(std::istringstream& iss,
 static bool is_replace_multi_usage_request(const std::string& raw)
 {
     std::string t = up_copy(trim_copy(raw));
+
+    if (t == "REPLACE_MULTI" || t == "MULTIREP") {
+        return true;
+    }
 
     // Dispatch normally passes only the tail ("USAGE"), but accept full raw
     // input too ("REPLACE_MULTI USAGE" or "MULTIREP USAGE").
@@ -603,20 +625,7 @@ static bool is_replace_multi_usage_request(const std::string& raw)
 
 static void print_replace_multi_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  REPLACE_MULTI USAGE\n"
-        << "  REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...\n"
-        << "Examples:\n"
-        << "  REPLACE_MULTI LNAME WITH \"Smith\", FNAME WITH \"John\"\n"
-        << "  REPLACE_MULTI DOB WITH 20000101, ACTIVE WITH .T.\n"
-        << "Notes:\n"
-        << "  - REPLACE_MULTI requires an open table and a current record.\n"
-        << "  - All assignments are validated before the physical write.\n"
-        << "  - REPLACE_MULTI uses one record lock and one DBF write.\n"
-        << "  - Memo fields are written through the memo backend.\n"
-        << "  - Direct index maintenance uses before/after snapshots.\n"
-        << "  - Changed fields are marked STALE only if index maintenance fails.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReplaceMultiUsageText);
 }
 
 } // namespace
@@ -626,13 +635,19 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                        std::string* error)
 {
     if (!A.isOpen()) {
-        if (error) *error = "REPLACE_MULTI: no file open.";
+        if (error) {
+            *error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiNoFileOpenText);
+        }
         return false;
     }
 
     const auto rn = static_cast<uint32_t>(A.recno());
     if (rn == 0) {
-        if (error) *error = "REPLACE_MULTI: no current record.";
+        if (error) {
+            *error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiNoCurrentRecordText);
+        }
         return false;
     }
 
@@ -653,7 +668,11 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
             fld = resolve_field_index_by_name_ci(A, u.name);
         }
         if (fld <= 0) {
-            if (error) *error = "REPLACE_MULTI: unknown field '" + u.name + "'.";
+            if (error) {
+                *error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiUnknownFieldText,
+                    {{"field", u.name}});
+            }
             return false;
         }
 
@@ -668,7 +687,11 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
 
     std::string lock_err;
     if (!xbase::locks::try_lock_record(A, rn, &lock_err)) {
-        if (error) *error = "REPLACE_MULTI: record is locked (" + lock_err + ").";
+        if (error) {
+            *error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiRecordLockedText,
+                {{"detail", lock_err}});
+        }
         return false;
     }
 
@@ -709,7 +732,8 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
             if (t == 'D') {
                 std::string norm;
                 if (!normalize_date_value(r.value, norm)) {
-                    local_error = "REPLACE_MULTI: invalid date for field.";
+                    local_error = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::ReplaceMultiInvalidDateForFieldText);
                     ok = false;
                     break;
                 }
@@ -718,7 +742,8 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
             else if (t == 'L') {
                 std::string norm;
                 if (!normalize_logical_value(r.value, norm)) {
-                    local_error = "REPLACE_MULTI: invalid logical for field.";
+                    local_error = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::ReplaceMultiInvalidLogicalForFieldText);
                     ok = false;
                     break;
                 }
@@ -730,7 +755,8 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                                              field_length(A, r.field1),
                                              field_decimals(A, r.field1),
                                              norm)) {
-                    local_error = "REPLACE_MULTI: invalid numeric for field.";
+                    local_error = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::ReplaceMultiInvalidNumericForFieldText);
                     ok = false;
                     break;
                 }
@@ -742,7 +768,8 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                                              field_length(A, r.field1),
                                              field_decimals(A, r.field1),
                                              norm)) {
-                    local_error = "REPLACE_MULTI: invalid float for field.";
+                    local_error = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::ReplaceMultiInvalidFloatForFieldText);
                     ok = false;
                     break;
                 }
@@ -753,7 +780,9 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
             std::string curErr;
             if (!cli_currency::validate_and_normalize_currency_pair_field(
                     A, r.field1, r.storeValue, normCur, curErr)) {
-                local_error = "REPLACE_MULTI: " + curErr + ".";
+                local_error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::ReplaceMultiDetailText,
+                    {{"detail", curErr + "."}});
                 ok = false;
                 break;
             }
@@ -766,7 +795,8 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                 if (r.isMemo) {
                     auto* store = cli_memo::memo_store_for(A);
                     if (!store || !store->is_open()) {
-                        local_error = "REPLACE_MULTI: memo backend not attached.";
+                        local_error = cli::cmdout::message_text(
+                            dottalk::helpdata::MessageId::ReplaceMultiMemoBackendNotAttachedText);
                         ok = false;
                         break;
                     }
@@ -784,8 +814,9 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                             : store->update_text(old_ref, r.value);
 
                     if (!mr.ok) {
-                        local_error = "REPLACE_MULTI: memo write failed";
-                        if (!mr.error.empty()) local_error += " (" + mr.error + ")";
+                        local_error = cli::cmdout::message_text(
+                            dottalk::helpdata::MessageId::ReplaceMultiMemoWriteFailedText,
+                            {{"detail", mr.error.empty() ? std::string() : " (" + mr.error + ")"}});
                         ok = false;
                         break;
                     }
@@ -793,13 +824,15 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
                     r.storeValue = mr.ref.token;
 
                     if (!A.set(r.field1, r.storeValue)) {
-                        local_error = "REPLACE_MULTI: failed to store memo token in DBF field.";
+                        local_error = cli::cmdout::message_text(
+                            dottalk::helpdata::MessageId::ReplaceMultiStoreMemoTokenFailedText);
                         ok = false;
                         break;
                     }
                 } else {
                     if (!A.set(r.field1, r.storeValue)) {
-                        local_error = "REPLACE_MULTI: field set failed.";
+                        local_error = cli::cmdout::message_text(
+                            dottalk::helpdata::MessageId::ReplaceMultiFieldSetFailedText);
                         ok = false;
                         break;
                     }
@@ -810,14 +843,19 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
         if (ok) ok = A.writeCurrent();
     } catch (...) {
         ok = false;
-        if (local_error.empty()) local_error = "REPLACE_MULTI: exception during write.";
+        if (local_error.empty()) {
+            local_error = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::ReplaceMultiExceptionDuringWriteText);
+        }
     }
 
     xbase::locks::unlock_record(A, rn);
 
     if (!ok) {
         if (error) {
-            *error = local_error.empty() ? "REPLACE_MULTI: write failed." : local_error;
+            *error = local_error.empty()
+                ? cli::cmdout::message_text(dottalk::helpdata::MessageId::ReplaceMultiWriteFailedText)
+                : local_error;
         }
         return false;
     }
@@ -881,7 +919,7 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
 void cmd_REPLACE_MULTI(xbase::DbArea& A, std::istringstream& iss)
 {
     const std::string raw_args = iss.str();
-    if (is_replace_multi_usage_request(raw_args)) {
+    if (trim_copy(raw_args).empty() || is_replace_multi_usage_request(raw_args)) {
         print_replace_multi_usage();
         return;
     }
@@ -890,15 +928,21 @@ void cmd_REPLACE_MULTI(xbase::DbArea& A, std::istringstream& iss)
     std::vector<FieldUpdate> updates;
 
     if (!parse_assignments(iss, A, updates, err)) {
-        std::cout << err << "\n";
+        cli::cmdout::print_line(err);
         print_replace_multi_usage();
         return;
     }
 
     if (!cmd_REPLACE_MULTI(A, updates, &err)) {
-        std::cout << err << "\n";
+        cli::cmdout::print_prefixed_message(
+            "REPLACE_MULTI",
+            dottalk::helpdata::MessageId::ReplaceMultiDetailText,
+            {{"detail", err}});
         return;
     }
 
-    std::cout << "REPLACE_MULTI: updated " << updates.size() << " field(s).\n";
+    cli::cmdout::print_prefixed_message(
+        "REPLACE_MULTI",
+        dottalk::helpdata::MessageId::ReplaceMultiUpdatedFieldsText,
+        {{"count", std::to_string(updates.size())}});
 }

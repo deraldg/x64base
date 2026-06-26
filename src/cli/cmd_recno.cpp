@@ -35,9 +35,10 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "textio.hpp"
 
-#include <iostream>
 #include <string>
 #include <sstream>
 #include <cctype>
@@ -61,10 +62,7 @@ static bool is_recno_usage_request(std::string raw) {
 }
 
 static void print_recno_usage() {
-    std::cout << "Usage:\n"
-              << "  RECNO\n"
-              << "  RECNO USAGE\n"
-              << "  RECNO <n>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RecnoUsageText);
 }
 
 static bool parse_int32(const std::string& s, int32_t& out) {
@@ -84,12 +82,21 @@ void cmd_RECNO(xbase::DbArea& a, std::istringstream& iss) {
         return;
     }
 
-    if (!a.isOpen()) { std::cout << "No table open.\n"; return; }
-
     std::string tok;
     if (!(iss >> tok)) {
+        tok.clear();
+    } else if (recno_upper(tok) == "RECNO") {
+        tok.clear();
+    }
+
+    if (!a.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
+        return;
+    }
+
+    if (tok.empty()) {
         // no args: print current recno
-        std::cout << a.recno() << "\n";
+        cli::cmdout::print_line(std::to_string(a.recno()));
         return;
     }
 
@@ -97,16 +104,20 @@ void cmd_RECNO(xbase::DbArea& a, std::istringstream& iss) {
     if (!parse_int32(tok, n)) { print_recno_usage(); return; }
 
     if (n < 1 || n > a.recCount()) {
-        std::cout << "Record number out of range (1.." << a.recCount() << ").\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecnoOutOfRangeText,
+            {{"max", std::to_string(a.recCount())}});
         return;
     }
 
     if (!a.gotoRec(n) || !a.readCurrent()) {
-        std::cout << "Unable to navigate to record " << n << ".\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecnoUnableNavigateText,
+            {{"recno", std::to_string(n)}});
         return;
     }
 
-    std::cout << a.recno() << "\n";
+    cli::cmdout::print_line(std::to_string(a.recno()));
 }
 
 

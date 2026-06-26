@@ -217,7 +217,7 @@ endif()
 # and hard-to-diagnose crashes. The proper runtime selection is handled above.
 
 # 3.1) Turbo Vision UI — build isolated lib and link only when enabled
-if (DOTTALK_WITH_TV AND (TARGET tvision OR TARGET tvision::tvision))
+if (DOTTALK_WITH_TV)
   add_subdirectory(tv)
   target_link_libraries(dottalkpp PRIVATE dottalk_tvui)
 endif()
@@ -237,7 +237,7 @@ file(WRITE "${_shim}" [=[
 target_sources(dottalkpp PRIVATE "${_shim}")
 
 # 3.3) Optional standalone fox_palette.exe (opt-in)
-if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE AND (TARGET tvision OR TARGET tvision::tvision))
+if (DOTTALK_WITH_TV AND DOTTALK_BUILD_PALETTE_EXE)
   add_executable(fox_palette
     ${CMAKE_SOURCE_DIR}/palette/cmd_fox_palette.cpp
     ${CMAKE_SOURCE_DIR}/palette/fox_palette.cpp

@@ -7,6 +7,7 @@
 // - Do NOT auto-refresh after COUNT/LIST/DISPLAY (they should be non-positioning).
 // ==============================
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -28,8 +29,10 @@
 #include "cli/expr/ast.hpp"
 #include "cli/expr/glue_xbase.hpp"
 #include "cli/expr/value_eval.hpp"  // for EvalValue and eval_any
+#include "cli/command_output.hpp"
 #include "cli/shell_lexicon.hpp"
 #include "cli/output_router.hpp"
+#include "cli/fn_autoreg.hpp"
 
 // Indexing
 #include <lmdb.h>
@@ -123,7 +126,11 @@ struct BlockCaptureState
     std::vector<std::string> end_stack;   // nesting stack of expected end tokens
 };
 
-static BlockCaptureState g_block;
+static BlockCaptureState& block_state()
+{
+    static BlockCaptureState state;
+    return state;
+}
 
 struct LoopCaptureState
 {
@@ -132,20 +139,28 @@ struct LoopCaptureState
     std::vector<std::string> lines;
 };
 
-static LoopCaptureState g_loopcap;
+static LoopCaptureState& loop_capture_state()
+{
+    static LoopCaptureState state;
+    return state;
+}
 
 // ------------------------------------------------------------
 // Simple std::cout buffering (CLI performance).
 // ------------------------------------------------------------
 namespace dt_cli_outbuf {
     static bool g_enabled = false;
-    static std::vector<char> g_buf;
+    static std::vector<char>& out_buffer() {
+        static std::vector<char> buf;
+        return buf;
+    }
 
     static void enable(std::size_t bytes = 256 * 1024) {
         if (g_enabled) return;
-        g_buf.assign(bytes, '\0');
-        std::cout.rdbuf()->pubsetbuf(g_buf.data(),
-                                     static_cast<std::streamsize>(g_buf.size()));
+        auto& buf = out_buffer();
+        buf.assign(bytes, '\0');
+        std::cout.rdbuf()->pubsetbuf(buf.data(),
+                                     static_cast<std::streamsize>(buf.size()));
         g_enabled = true;
     }
 
@@ -155,6 +170,25 @@ namespace dt_cli_outbuf {
 }
 
 namespace {
+
+static void emit_exit_trace(const char* label)
+{
+#if DOTTALK_EXTRA_DIAGNOSTICS
+    std::cerr << "[EXIT TRACE] " << label << "\n";
+    std::cerr.flush();
+
+    try {
+        std::ofstream log("dottalk_exit_trace.log", std::ios::app);
+        if (log.is_open()) {
+            log << label << "\n";
+            log.flush();
+        }
+    } catch (...) {
+    }
+#else
+    (void)label;
+#endif
+}
 
 // -----------------------------------------------------------------------------
 // Existing helpers
@@ -314,8 +348,8 @@ static void on_cursor_changed(xbase::DbArea& moved, const char* /*reason*/, void
     auto* eng = static_cast<xbase::XBaseEngine*>(user);
     if (!eng) return;
     try {
-        xbase::DbArea& cur = eng->area(eng->currentArea());
-        if (&cur != &moved) return;
+        xbase::DbArea* cur = eng->areaPtr(eng->currentArea());
+        if (!cur || cur != &moved) return;
     } catch (...) { return; }
     relations_api::refresh_if_enabled();
 }
@@ -535,6 +569,7 @@ int run_shell()
     relations_api::set_autorefresh(true);
 
     register_shell_commands(eng, /*include_ui_cmds=*/true);
+    dottalk::ensure_builtin_commands_registered();
     shell_eval_register_for_loops();
     loop_set_executor(+loop_exec_line);
 
@@ -545,12 +580,20 @@ int run_shell()
         std::cout.flush();
     }
 
+    try {
+        relations_boot::autoload();
+    } catch (...) {
+        std::cerr << "REL AUTOLOAD failed\n";
+    }
+
     // Start app with cleared screen
     // clear();
 
-    std::cout << "DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.\n\n";
-    std::cout << "Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.\n\n";
-    std::cout << "Hello World!\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellStartupBannerLine);
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellStartupDevLine);
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellStartupHelloLine);
     std::cout.flush();
 
     auto& router = cli::OutputRouter::instance();
@@ -582,7 +625,7 @@ int run_shell()
 
     std::string line;
     while (true) {
-        if (g_block.active || g_loopcap.active) std::cout << ".. ";
+        if (block_state().active || loop_capture_state().active) std::cout << ".. ";
         else std::cout << prompt_char << " ";
         dt_cli_outbuf::flush_prompt();
 
@@ -595,38 +638,38 @@ int run_shell()
         // ------------------------------------------------------------
         // BLOCK CAPTURE MODE (DO/ENDDO only)
         // ------------------------------------------------------------
-        if (g_block.active) {
+        if (block_state().active) {
             const std::string tok = first_token(trimmed);
 
             if (is_cancel_token(tok)) {
-                std::cout << "BLOCK: cancelled\n";
-                g_block = BlockCaptureState{};
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellBlockCancelled);
+                block_state() = BlockCaptureState{};
                 continue;
             }
 
-            g_block.lines.push_back(trimmed);
+            block_state().lines.push_back(trimmed);
 
             std::string nestedEnd;
             bool nestedShellOnly = false;
             if (block_begin_token(tok, nestedEnd, nestedShellOnly)) {
-                g_block.end_stack.push_back(nestedEnd);
+                block_state().end_stack.push_back(nestedEnd);
                 continue;
             }
 
-            if (!g_block.end_stack.empty() && tok == g_block.end_stack.back()) {
-                g_block.end_stack.pop_back();
+            if (!block_state().end_stack.empty() && tok == block_state().end_stack.back()) {
+                block_state().end_stack.pop_back();
 
-                if (g_block.end_stack.empty()) {
+                if (block_state().end_stack.empty()) {
                     DbArea& cur = eng.area(eng.currentArea());
-                    if (g_block.shell_only) {
-                        if (g_block.lines.size() >= 2) {
-                            execute_shell_only_block_lines(cur, g_block.lines, 1, g_block.lines.size() - 1);
+                    if (block_state().shell_only) {
+                        if (block_state().lines.size() >= 2) {
+                            execute_shell_only_block_lines(cur, block_state().lines, 1, block_state().lines.size() - 1);
                         }
                     } else {
-                        for (const auto& L : g_block.lines)
+                        for (const auto& L : block_state().lines)
                             browsetui_dispatch_line(cur, L);
                     }
-                    g_block = BlockCaptureState{};
+                    block_state() = BlockCaptureState{};
                 }
                 continue;
             }
@@ -634,26 +677,26 @@ int run_shell()
             continue;
         }
 
-        if (g_loopcap.active) {
+        if (loop_capture_state().active) {
             const std::string tok = first_token(trimmed);
 
             if (is_cancel_token(tok)) {
-                std::cout << "LOOP BLOCK: cancelled\n";
-                g_loopcap = LoopCaptureState{};
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellLoopBlockCancelled);
+                loop_capture_state() = LoopCaptureState{};
                 continue;
             }
 
-            if (tok == g_loopcap.end_token) {
+            if (tok == loop_capture_state().end_token) {
                 DbArea& cur = eng.area(eng.currentArea());
 
-                for (const auto& L : g_loopcap.lines) {
+                for (const auto& L : loop_capture_state().lines) {
                     std::istringstream cap(L);
 
-                    if (g_loopcap.end_token == "ENDWHILE") {
+                    if (loop_capture_state().end_token == "ENDWHILE") {
                         cmd_WHILE_BUFFER(cur, cap);
-                    } else if (g_loopcap.end_token == "ENDUNTIL") {
+                    } else if (loop_capture_state().end_token == "ENDUNTIL") {
                         cmd_UNTIL_BUFFER(cur, cap);
-                    } else if (g_loopcap.end_token == "ENDSCAN") {
+                    } else if (loop_capture_state().end_token == "ENDSCAN") {
                         cmd_SCAN_BUFFER(cur, cap);
                     } else {
                         // ENDLOOP
@@ -664,11 +707,11 @@ int run_shell()
                 ShellCommandRouteGuard route_guard(router, interactive_shell);
                 shell_execute_instrumented(cur, trimmed);
 
-                g_loopcap = LoopCaptureState{};
+                loop_capture_state() = LoopCaptureState{};
                 continue;
             }
 
-            g_loopcap.lines.push_back(trimmed);
+            loop_capture_state().lines.push_back(trimmed);
             continue;
         }
 
@@ -692,21 +735,22 @@ int run_shell()
         std::string endtok;
         bool shell_only = false;
         if (block_begin_token(U, endtok, shell_only)) {
-            g_block.active = true;
-            g_block.begin_token = U;
-            g_block.shell_only = shell_only;
-            g_block.lines.clear();
-            g_block.lines.push_back(expandedLine);
-            g_block.end_stack.clear();
-            g_block.end_stack.push_back(endtok);
+            block_state().active = true;
+            block_state().begin_token = U;
+            block_state().shell_only = shell_only;
+            block_state().lines.clear();
+            block_state().lines.push_back(expandedLine);
+            block_state().end_stack.clear();
+            block_state().end_stack.push_back(endtok);
             continue;
         }
 
         if (U == "QUIT" || U == "EXIT") {
             if (!dottalk::dirty::maybe_prompt_all(eng, "QUIT")) {
-                std::cout << "QUIT canceled.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ShellQuitCanceled);
                 continue;
             }
+            emit_exit_trace("loop break requested");
             break;
         }
 
@@ -717,51 +761,65 @@ int run_shell()
 
         shell_execute_instrumented(cur, expandedLine);
 
-        if (!g_loopcap.active) {
+        if (!loop_capture_state().active) {
             if (U == "WHILE" && while_is_active()) {
-                g_loopcap.active = true;
-                g_loopcap.end_token = "ENDWHILE";
-                g_loopcap.lines.clear();
+                loop_capture_state().active = true;
+                loop_capture_state().end_token = "ENDWHILE";
+                loop_capture_state().lines.clear();
                 continue;
             }
             if (U == "UNTIL" && until_is_active()) {
-                g_loopcap.active = true;
-                g_loopcap.end_token = "ENDUNTIL";
-                g_loopcap.lines.clear();
+                loop_capture_state().active = true;
+                loop_capture_state().end_token = "ENDUNTIL";
+                loop_capture_state().lines.clear();
                 continue;
             }
             if (U == "LOOP" && loopblock::state().active) {
-                g_loopcap.active = true;
-                g_loopcap.end_token = "ENDLOOP";
-                g_loopcap.lines.clear();
+                loop_capture_state().active = true;
+                loop_capture_state().end_token = "ENDLOOP";
+                loop_capture_state().lines.clear();
                 continue;
             }
             if (U == "SCAN" && scanblock::state().active) {
-                g_loopcap.active = true;
-                g_loopcap.end_token = "ENDSCAN";
-                g_loopcap.lines.clear();
+                loop_capture_state().active = true;
+                loop_capture_state().end_token = "ENDSCAN";
+                loop_capture_state().lines.clear();
                 continue;
             }
         }
     }
 
     {
+        emit_exit_trace("before cmd_SHUTDOWN");
         DbArea& cur = eng.area(eng.currentArea());
         std::istringstream empty;
         try { cmd_SHUTDOWN(cur, empty); } catch (...) { std::cerr << "SHUTDOWN failed\n"; }
         std::cout.flush();
+        emit_exit_trace("after cmd_SHUTDOWN");
     }
 
     try {
         if (relations_boot::autosave_enabled()) {
+            emit_exit_trace("before relations_boot::autosave");
             relations_boot::autosave();
+            emit_exit_trace("after relations_boot::autosave");
+        } else {
+            emit_exit_trace("relations_boot::autosave disabled");
         }
     } catch (...) {
         std::cerr << "REL AUTOSAVE failed\n";
     }
 
+    emit_exit_trace("before cursor_hook detach");
     xbase::cursor_hook::set_callback(nullptr, nullptr);
+    emit_exit_trace("after cursor_hook detach");
+
+    emit_exit_trace("before relations_api detach");
     relations_api::attach_engine(nullptr);
+    emit_exit_trace("after relations_api detach");
+
+    emit_exit_trace("before g_shell_engine clear");
     g_shell_engine = nullptr;
+    emit_exit_trace("before return 0");
     return 0;
 }

@@ -47,24 +47,14 @@
 
 #include "xbase.hpp"
 #include <cctype>
+#include "cli/command_output.hpp"
 
 void cmd_VALIDATE_UNIQUE(xbase::DbArea&, std::istringstream&);
 
 
 static void print_validate_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  VALIDATE USAGE\n"
-        << "  VALIDATE UNIQUE USAGE\n"
-        << "  VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n"
-        << "Examples:\n"
-        << "  VALIDATE UNIQUE FIELD SID\n"
-        << "  VALIDATE UNIQUE FIELD EMAIL IGNORE DELETED\n"
-        << "  VALIDATE UNIQUE FIELD SID REPAIR\n"
-        << "  VALIDATE UNIQUE FIELD SID REPORT TO tmp\\sid_dupes.txt\n"
-        << "Notes:\n"
-        << "  - REPAIR may mutate field values; use it intentionally.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ValidateUsageText);
 }
 
 static inline std::string upcopy(std::string s) {
@@ -96,6 +86,8 @@ void cmd_VALIDATE(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    std::cout << "VALIDATE: unknown subcommand '" << tok << "'.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ValidateUnknownSubcommandText,
+        {{"command", tok}});
     print_validate_usage();
 }

@@ -42,16 +42,18 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
 
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 namespace fs = std::filesystem;
+
+using MessageId = dottalk::helpdata::MessageId;
 
 static fs::path resolve_cnx_token(const std::string& tok)
 {
@@ -99,14 +101,7 @@ static bool is_setcnx_usage_request(const std::string& raw)
 
 static void print_setcnx_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET CNX USAGE\n"
-        << "  SET CNX\n"
-        << "  SET CNX <name-or-path>\n"
-        << "  SETCNX\n"
-        << "  SETCNX USAGE\n"
-        << "  SETCNX <name-or-path>\n";
+    cli::cmdout::print_message(MessageId::SetCnxUsageText);
 }
 
 void cmd_SETCNX(xbase::DbArea& A, std::istringstream& in)
@@ -127,16 +122,25 @@ void cmd_SETCNX(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!fs::exists(p)) {
-        std::cout << "SET CNX: file not found: " << p.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CNX",
+            MessageId::SetOrderFileNotFoundText,
+            {{"path", p.string()}});
         return;
     }
 
     try {
         // CNX attachment/state is owned by order subsystem in your architecture.
         orderstate::setOrder(A, p.string());
-        std::cout << "SET CNX: attached \"" << p.string() << "\"\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CNX",
+            MessageId::SetCnxAttachedText,
+            {{"path", p.string()}});
     }
     catch (const std::exception& ex) {
-        std::cout << "SET CNX failed: " << ex.what() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CNX",
+            MessageId::SetCnxFailedText,
+            {{"detail", ex.what()}});
     }
 }

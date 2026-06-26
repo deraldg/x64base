@@ -84,12 +84,12 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
 #include "cdx/cdx.hpp"
 #include "textio.hpp"
@@ -100,6 +100,14 @@
 namespace fs = std::filesystem;
 
 namespace {
+
+using MessageId = dottalk::helpdata::MessageId;
+
+static std::string msg(MessageId id,
+                       const std::unordered_map<std::string, std::string>& vars = {})
+{
+    return cli::cmdout::message_text(id, vars);
+}
 
 static std::string up_copy(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
@@ -158,16 +166,7 @@ static bool is_v64_area(const xbase::DbArea& A) {
 
 static void print_setindex_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET INDEX USAGE\n"
-        << "  SET INDEX TO <container>\n"
-        << "  SET INDEX TO <container> TAG <tag>\n"
-        << "  SET INDEX TO <container> <tag>\n"
-        << "  SETINDEX USAGE\n"
-        << "  SETINDEX TO <container>\n"
-        << "  SETINDEX TO <container> TAG <tag>\n"
-        << "  SETINDEX TO <container> <tag>\n";
+    cli::cmdout::print_message(MessageId::SetIndexUsageText);
 }
 
 static bool is_setindex_usage_request(const std::string& raw)
@@ -216,15 +215,14 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
     const std::string ext = lower_copy(p.extension().string());
 
     if (!is_supported_index_ext(p)) {
-        err = "SET INDEX: unsupported index container: " + p.string() + "\n"
-              "Supported: .inx, .cnx, .cdx";
+        err = msg(MessageId::SetIndexUnsupportedContainerText,
+                  {{"path", p.string()}});
         return false;
     }
 
     if (is_v32_area(A)) {
         if (ext != ".inx" && ext != ".cnx") {
-            err = "SET INDEX: v32 tables accept INX or CNX, not CDX.\n"
-                  "Use .inx or .cnx for this table.";
+            err = msg(MessageId::SetIndexV32AcceptsInxOrCnxText);
             return false;
         }
         return true;
@@ -232,14 +230,13 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
 
     if (is_v64_area(A)) {
         if (ext != ".cdx") {
-            err = "SET INDEX: v64 tables require CDX (LMDB-backed).\n"
-                  "Use .cdx for this table.";
+            err = msg(MessageId::SetIndexV64RequiresCdxText);
             return false;
         }
         return true;
     }
 
-    err = "SET INDEX: unknown/unsupported table flavor for current area.";
+    err = msg(MessageId::SetIndexUnknownFlavorText);
     return false;
 }
 
@@ -276,8 +273,8 @@ static bool choose_container_path_for_flavor(const xbase::DbArea& A,
             return true;
         }
 
-        err = "SET INDEX: no valid v32 index found for '" + tok + "'.\n"
-              "Looked for .cnx, then .inx.";
+        err = msg(MessageId::SetIndexNoValidV32IndexText,
+                  {{"token", tok}});
         return false;
     }
 
@@ -289,7 +286,7 @@ static bool choose_container_path_for_flavor(const xbase::DbArea& A,
         return true;
     }
 
-    err = "SET INDEX: unknown/unsupported table flavor for current area.";
+    err = msg(MessageId::SetIndexUnknownFlavorText);
     return false;
 }
 
@@ -313,13 +310,13 @@ static bool parse_setindex_args(std::istringstream& args,
     err.clear();
 
     if (!(args >> container_tok)) {
-        err = "SET INDEX: missing filename.";
+        err = msg(MessageId::SetIndexMissingFilenameText);
         return false;
     }
 
     if (up_copy(container_tok) == "TO") {
         if (!(args >> container_tok)) {
-            err = "SET INDEX: missing filename.";
+            err = msg(MessageId::SetIndexMissingFilenameText);
             return false;
         }
     }
@@ -331,13 +328,14 @@ static bool parse_setindex_args(std::istringstream& args,
 
     if (up_copy(next) == "TAG") {
         if (!(args >> tag_tok)) {
-            err = "SET INDEX: TAG requires a name.";
+            err = msg(MessageId::SetIndexTagRequiresNameText);
             return false;
         }
 
         std::string extra;
         if (args >> extra) {
-            err = "SET INDEX: unexpected trailing token '" + extra + "'.";
+            err = msg(MessageId::SetIndexUnexpectedTrailingTokenText,
+                      {{"token", extra}});
             return false;
         }
         return true;
@@ -349,7 +347,8 @@ static bool parse_setindex_args(std::istringstream& args,
 
     std::string extra;
     if (args >> extra) {
-        err = "SET INDEX: unexpected trailing token '" + extra + "'.";
+        err = msg(MessageId::SetIndexUnexpectedTrailingTokenText,
+                  {{"token", extra}});
         return false;
     }
 
@@ -407,14 +406,14 @@ static bool cdx_has_tag(const std::string& container,
     cdxfile::CDXHandle* h = nullptr;
 
     if (!cdxfile::open(container, h)) {
-        err = "unable to open CDX container.";
+        err = msg(MessageId::SetIndexUnableOpenCdxContainerText);
         return false;
     }
 
     std::vector<cdxfile::TagInfo> tags;
     if (!cdxfile::read_tagdir(h, tags)) {
         cdxfile::close(h);
-        err = "unable to read CDX tag directory.";
+        err = msg(MessageId::SetIndexUnableReadCdxTagDirectoryText);
         return false;
     }
 
@@ -428,7 +427,8 @@ static bool cdx_has_tag(const std::string& container,
     }
 
     cdxfile::close(h);
-    err = "tag '" + wantedTag + "' not found in " + container;
+    err = msg(MessageId::SetIndexTagNotFoundInContainerText,
+              {{"tag", wantedTag}, {"container", container}});
     return false;
 }
 
@@ -469,12 +469,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
     const fs::path env_path = dottalk::paths::resolve_lmdb_env_for_cdx(container_path);
 
     if (!fs::exists(container_path)) {
-        err = "openCdx: container not found: " + container_path.string();
+        err = msg(MessageId::SetIndexOpenCdxContainerNotFoundText,
+                  {{"container", container_path.string()}});
         return false;
     }
 
     if (!fs::exists(env_path) || !fs::is_directory(env_path)) {
-        err = "openCdx: LMDB env missing: " + env_path.string();
+        err = msg(MessageId::SetIndexOpenCdxEnvMissingText,
+                  {{"env", env_path.string()}});
         return false;
     }
 
@@ -487,12 +489,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
 
     if (!area.indexManager().openCdx(container, tag, &err)) {
         if (err.empty()) {
-            err = "openCdx: backend open() failed"
-                  " [container=" + container_path.string() +
-                  ", env=" + env_path.string() + "]";
+            err = msg(MessageId::SetIndexOpenCdxBackendOpenFailedText,
+                      {{"container", container_path.string()},
+                       {"env", env_path.string()}});
         } else {
-            err += " [container=" + container_path.string() +
-                   ", env=" + env_path.string() + "]";
+            err = msg(MessageId::SetIndexOpenCdxBackendOpenFailedDetailText,
+                      {{"detail", err},
+                       {"container", container_path.string()},
+                       {"env", env_path.string()}});
         }
         orderstate::clearOrder(area);
         area.indexManager().close();
@@ -512,7 +516,8 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     err.clear();
 
     if (!fs::exists(container)) {
-        err = "openCnx: container not found: " + container;
+        err = msg(MessageId::SetIndexOpenCnxContainerNotFoundText,
+                  {{"container", container}});
         return false;
     }
 
@@ -524,7 +529,7 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     orderstate::setAscending(area, ascending);
 
     if (!area.indexManager().openCnx(container, tag, &err)) {
-        if (err.empty()) err = "openCnx: backend open failed";
+        if (err.empty()) err = msg(MessageId::SetIndexOpenCnxBackendOpenFailedText);
         orderstate::clearOrder(area);
         area.indexManager().close();
         return false;
@@ -545,7 +550,7 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
     }
 
     if (!A.isOpen()) {
-        std::cout << "SET INDEX: no table open.\n";
+        cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexNoTableOpenText);
         return;
     }
 
@@ -554,7 +559,7 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
     std::string parse_err;
 
     if (!parse_setindex_args(args, tok, tag, parse_err)) {
-        std::cout << parse_err << "\n";
+        cli::cmdout::print_line("SET INDEX: " + parse_err);
         print_setindex_usage();
         return;
     }
@@ -564,7 +569,7 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
 
     if (!choose_container_path_for_flavor(A, tok, p, err)) {
         clear_index_state(A);
-        std::cout << err << "\n";
+        cli::cmdout::print_line("SET INDEX: " + err);
         return;
     }
 
@@ -572,7 +577,10 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
 
     if (!fs::exists(p)) {
         clear_index_state(A);
-        std::cout << "SET INDEX: file not found: " << p.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET INDEX",
+            MessageId::SetIndexFileNotFoundText,
+            {{"path", p.string()}});
         return;
     }
 
@@ -589,35 +597,38 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
 
             if (!fs::exists(env)) {
                 clear_index_state(A);
-                std::cout << "SET INDEX: CDX container found but LMDB env missing\n";
-                std::cout << "  Container: " << p.string() << "\n";
-                std::cout << "  Expected : " << env.string() << "\n";
-                std::cout << "Hint: run REINDEX CDX or BUILDLMDB\n";
+                cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexCdxEnvMissingText);
+                cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.string()}});
+                cli::cmdout::print_message(MessageId::SetIndexExpectedEnvLine, {{"path", env.string()}});
+                cli::cmdout::print_message(MessageId::SetIndexHintReindexBuildLmdbText);
                 return;
             }
 
-            std::cout << "SET INDEX (CDX attached)\n";
-            std::cout << "  Container: " << p.filename().string() << "\n";
-            std::cout << "  LMDB env : " << env.string() << "\n";
-            std::cout << "Use SET ORDER TO TAG <tag>\n";
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexCdxAttachedText);
+            cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.filename().string()}});
+            cli::cmdout::print_message(MessageId::SetIndexLmdbEnvLine, {{"path", env.string()}});
+            cli::cmdout::print_message(MessageId::SetIndexUseSetOrderHintText);
             return;
         }
 
         if (ext == ".cnx") {
-            std::cout << "SET INDEX (CNX attached)\n";
-            std::cout << "  Container: " << p.filename().string() << "\n";
-            std::cout << "Use SET ORDER TO TAG <tag>\n";
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexCnxAttachedText);
+            cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.filename().string()}});
+            cli::cmdout::print_message(MessageId::SetIndexUseSetOrderHintText);
             return;
         }
 
         if (ext == ".inx") {
-            std::cout << "SET INDEX (INX attached)\n";
-            std::cout << "  " << p.filename().string() << "\n";
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexInxAttachedText);
+            cli::cmdout::print_line("  " + p.filename().string());
             return;
         }
 
         clear_index_state(A);
-        std::cout << "SET INDEX: unsupported resolved extension: " << p.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET INDEX",
+            MessageId::SetIndexUnsupportedResolvedExtensionText,
+            {{"path", p.string()}});
         return;
     }
 
@@ -635,9 +646,9 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
     if (ext == ".cdx") {
 
         if (!cdx_has_tag(container, tag_up, err2)) {
-            std::cout << "SET INDEX (CDX attached)\n";
-            std::cout << "  Container: " << p.filename().string() << "\n";
-            std::cout << "Tag '" << tag_up << "' not found.\n";
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexCdxAttachedText);
+            cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.filename().string()}});
+            cli::cmdout::print_message(MessageId::SetIndexTagNotFoundText, {{"tag", tag_up}});
             return;
         }
 
@@ -647,9 +658,9 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
     else if (ext == ".cnx") {
 
         if (!cnx_has_tag(A, tag_up)) {
-            std::cout << "SET INDEX (CNX attached)\n";
-            std::cout << "  Container: " << p.filename().string() << "\n";
-            std::cout << "Tag '" << tag_up << "' not valid for this table.\n";
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexCnxAttachedText);
+            cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.filename().string()}});
+            cli::cmdout::print_message(MessageId::SetIndexTagInvalidForTableText, {{"tag", tag_up}});
             return;
         }
 
@@ -658,25 +669,32 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
     }
     else if (ext == ".inx") {
 
-        std::cout << "SET INDEX (INX attached)\n";
-        std::cout << "  " << p.filename().string() << "\n";
-        std::cout << "  Note: INX is single-order; tag ignored.\n";
+        cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexInxAttachedText);
+        cli::cmdout::print_line("  " + p.filename().string());
+        cli::cmdout::print_message(MessageId::SetIndexInxTagIgnoredText);
         return;
     }
     else {
         clear_index_state(A);
-        std::cout << "SET INDEX: unsupported resolved extension: " << p.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET INDEX",
+            MessageId::SetIndexUnsupportedResolvedExtensionText,
+            {{"path", p.string()}});
         return;
     }
 
     if (!ok) {
         clear_index_state(A);
-        std::cout << "SET INDEX: " << (err2.empty() ? "unable to activate tag." : err2) << "\n";
+        if (err2.empty()) {
+            cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexUnableActivateTagText);
+        } else {
+            cli::cmdout::print_line("SET INDEX: " + err2);
+        }
         return;
     }
 
     // Success message (mirrors SET ORDER)
-    std::cout << "SET INDEX: attached + activated\n";
-    std::cout << "  Container: " << p.filename().string() << "\n";
-    std::cout << "  TAG: '" << tag_up << "' (ASC)\n";
+    cli::cmdout::print_prefixed_message("SET INDEX", MessageId::SetIndexAttachedActivatedText);
+    cli::cmdout::print_message(MessageId::SetIndexContainerLine, {{"path", p.filename().string()}});
+    cli::cmdout::print_message(MessageId::SetIndexTagAscLine, {{"tag", tag_up}});
 }

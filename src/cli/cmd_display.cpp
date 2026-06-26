@@ -75,10 +75,7 @@ static std::string up(std::string s)
 
 static void print_display_usage()
 {
-    print_line("Usage:");
-    print_line("  DISPLAY");
-    print_line("  DISPLAY USAGE");
-    print_line("  DISPLAY <recno>");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DisplayUsageText);
 }
 
 static bool display_usage_request(std::istringstream& iss)
@@ -134,12 +131,14 @@ void cmd_DISPLAY(DbArea& a, std::istringstream& iss)
     a.readCurrent();
 
     {
-        auto& out = cli::OutputRouter::instance().out();
-
-        out << "Record " << rec;
-        if (a.isDeleted())
-            out << " [DELETED]";
-        out << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DisplayRecordHeaderText,
+            {
+                {"recno", std::to_string(rec)},
+                {"deleted_suffix", a.isDeleted()
+                    ? cli::cmdout::message_text(dottalk::helpdata::MessageId::DisplayRecordDeletedSuffixText)
+                    : std::string{}}
+            });
 
         const auto& fields = a.fields();
 
@@ -156,7 +155,12 @@ void cmd_DISPLAY(DbArea& a, std::istringstream& iss)
             const std::string shown =
                 cli_memo::resolve_display_value(a, (int)i + 1, raw);
 
-            out << "  " << up(f.name) << " = " << trim(shown) << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::DisplayFieldLineText,
+                {
+                    {"field", up(f.name)},
+                    {"value", trim(shown)}
+                });
         }
     }
 }

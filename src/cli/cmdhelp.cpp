@@ -1,19 +1,46 @@
-// ============================================================================
-// File: src/cli/cmdhelp.cpp
-// ============================================================================
-// Current HELP DATA command surface.
+// @dottalk.usage v1
+// owner: DOT|CMDHELP
+// command: CMDHELP
+// category: help
+// status: supported
+// noargs: report
+// effect: build-report
+// mutates: helpdata
+// usage-access: CMDHELP USAGE
+// summary:
+//   Build or report the current HELP DATA catalogs and their legacy compatibility views.
 //
-// Doctrine:
-//   CMDHELP BUILD          -> build current HELP DATA DBFs
-//   CMDHELP BUILD V2       -> silent compatibility alias for CMDHELP BUILD
-//   CMDHELP BUILD LEGACY   -> old commands.dbf/cmd_args.dbf builder
-//   CMDHELP                -> report current HELP DATA from help_line.dbf
-//   CMDHELP LEGACY         -> report old commands.dbf/cmd_args.dbf
-//   CMDHELP USAGE          -> usage
+// usage:
+//   CMDHELP
+//   CMDHELP USAGE
+//   CMDHELP BUILD
+//   CMDHELP BUILD V2
+//   CMDHELP BUILD LEGACY
+//   CMDHELP LEGACY
+//   CMDHELP <topic> PREVIEW LOCALE <locale>
+//   CMDHELP <topic> LOCALE <locale>
 //
-// Notes:
-//   The legacy writer/reader remains in this file only as an explicit
-//   compatibility path.  It is no longer the default build/report surface.
+// notes:
+//   CMDHELP BUILD writes the current HELP DATA DBFs.
+//   CMDHELP BUILD V2 is a silent compatibility alias for CMDHELP BUILD.
+//   CMDHELP BUILD LEGACY drives the old commands.dbf/cmd_args.dbf builder path.
+//   CMDHELP with no arguments reports current HELP DATA from help_line.dbf.
+//   CMDHELP LEGACY reports the old commands.dbf/cmd_args.dbf surface.
+//   Locale preview is explicit-only and does not change normal CMDHELP behavior.
+//   Preview falls back to canonical/source HELP text when locale rows are missing or blocked.
+//   The legacy writer/reader remains in this file only as an explicit compatibility path.
+//   It is no longer the default build/report surface.
+//
+// risk:
+//   reads_help_metadata: yes
+//   mutates_table_data: yes
+//   mutates_session: yes
+//
+// related:
+//   HELP
+//   CMDHELPCHK
+//   DOTHELP
+//   FOXHELP
 //
 #include "cmdhelp.hpp"
 
@@ -35,8 +62,13 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "edref.hpp"
 #include "helpdata_cmdhelp_bridge.hpp"
+#include "memo/memo_auto.hpp"
+#include "memo/memo_ref.hpp"
 
 // Optional setpath-aware slot resolving (HELP slot).
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
@@ -668,9 +700,20 @@ static std::string dbf_cell(const std::vector<std::string>& row, int ix) {
 
 namespace cmdhelp {
 
+inline std::ostream& out() {
+    return cli::OutputRouter::instance().out();
+}
+
 // === catalog & args ==========================================================
 
 std::vector<CommandInfo> collect_commands() {
+    // Reference-header policy:
+    // - FOX catalog rows are compatibility/history-facing, but when a real
+    //   cmd_*.cpp implementation exists their syntax/summary should reflect the
+    //   current DotTalk++ runtime truth, not stale FoxPro prose.
+    // - DOT catalog rows describe the native DotTalk++ help identity.
+    // - CMDHELP merges registry + FOX + DOT + ED catalogs; it does not treat
+    //   legacy wording as authoritative over a live implementation contract.
     std::unordered_set<std::string> implemented;
     for (const auto& kv : dli::map()) implemented.insert(up(kv.first));
 
@@ -1032,24 +1075,27 @@ static bool load_help_line_table(const std::string& dir, DbfTable& out) {
     return read_dbf_with_memo(dbf, std::string(), out);
 }
 
-static void print_count_map(const char* title, const std::unordered_map<std::string, int>& counts) {
+static void print_count_map(const std::string& title, const std::unordered_map<std::string, int>& counts) {
     std::vector<std::pair<std::string, int>> rows(counts.begin(), counts.end());
     std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) {
         return a.first < b.first;
     });
 
-    std::cout << "\n" << title << ":\n";
+    out() << "\n" << title << ":\n";
     for (const auto& kv : rows) {
-        std::cout << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
+        out() << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
     }
 }
 
 static void print_current_help_report(const std::string& dir) {
     DbfTable tbl;
     if (!load_help_line_table(dir, tbl)) {
-        std::cout << "CMDHELP: could not read current HELP DATA in \"" << dir << "\".\n"
-                  << "Expected: help_line.dbf\n"
-                  << "Tip: run: CMDHELP BUILD . <source-root>\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentReadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentExpectedFile);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
         return;
     }
 
@@ -1061,8 +1107,10 @@ static void print_current_help_report(const std::string& dir) {
     const int ix_text      = dbf_field_index(tbl, "TEXT");
 
     if (ix_topic_key < 0 || ix_kind < 0 || ix_source < 0 || ix_text < 0) {
-        std::cout << "CMDHELP: help_line.dbf is missing expected columns.\n"
-                  << "Need at least TOPICKEY, KIND, SOURCE, TEXT.\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentMissingColumns);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentNeedColumns);
         return;
     }
 
@@ -1080,23 +1128,30 @@ static void print_current_help_report(const std::string& dir) {
         by_source[source.empty() ? "(blank)" : source]++;
     }
 
-    std::cout << "CMDHELP Report (current HELP DATA)\n";
-    std::cout << "  directory : " << dir << "\n";
-    std::cout << "  line rows : " << tbl.rows.size() << "\n";
-    std::cout << "  topics    : " << topics.size() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentReportTitle);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpCurrentDirectoryLine,
+        {{"dir", dir}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpCurrentLineRowsLine,
+        {{"count", std::to_string(tbl.rows.size())}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpCurrentTopicsLine,
+        {{"count", std::to_string(topics.size())}});
 
-    print_count_map("By KIND", by_kind);
-    print_count_map("By SOURCE", by_source);
+    print_count_map(cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpByKindTitle), by_kind);
+    print_count_map(cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpBySourceTitle), by_source);
 
-    std::cout << "\nPreview rows\n";
-    std::cout << std::left
-              << std::setw(20) << "TOPICKEY"
-              << std::setw(14) << "KIND"
-              << std::setw(16) << "SOURCE"
-              << std::setw(14) << "CONFID"
-              << std::setw(10) << "ROLE"
-              << "TEXT\n";
-    std::cout << "--------------------------------------------------------------------------------\n";
+    out() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpPreviewRowsTitle);
+    out() << std::left
+          << std::setw(20) << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewTopicKeyHeader)
+          << std::setw(14) << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewKindHeader)
+          << std::setw(16) << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewSourceHeader)
+          << std::setw(14) << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewConfidHeader)
+          << std::setw(10) << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewRoleHeader)
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewTextHeader) << "\n";
+    out() << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewDivider) << "\n";
 
     int shown = 0;
     for (const auto& r : tbl.rows) {
@@ -1108,13 +1163,13 @@ static void print_current_help_report(const std::string& dir) {
         }
         if (text.size() > 100) text.resize(100);
 
-        std::cout << std::left
-                  << std::setw(20) << dbf_cell(r, ix_topic_key).substr(0, 19)
-                  << std::setw(14) << dbf_cell(r, ix_kind).substr(0, 13)
-                  << std::setw(16) << dbf_cell(r, ix_source).substr(0, 15)
-                  << std::setw(14) << dbf_cell(r, ix_confid).substr(0, 13)
-                  << std::setw(10) << dbf_cell(r, ix_role).substr(0, 9)
-                  << text << "\n";
+        out() << std::left
+              << std::setw(20) << dbf_cell(r, ix_topic_key).substr(0, 19)
+              << std::setw(14) << dbf_cell(r, ix_kind).substr(0, 13)
+              << std::setw(16) << dbf_cell(r, ix_source).substr(0, 15)
+              << std::setw(14) << dbf_cell(r, ix_confid).substr(0, 13)
+              << std::setw(10) << dbf_cell(r, ix_role).substr(0, 9)
+              << text << "\n";
         ++shown;
     }
 }
@@ -1133,6 +1188,34 @@ struct HelpLineView {
     int part_no{0};
     std::string text;
 };
+
+struct HelpTopicLocaleView {
+    std::string topic_key;
+    std::string locale_id;
+    std::string source_title;
+    std::string localized_title;
+    std::string transl_status;
+    std::string review_status;
+};
+
+struct HelpLineLocaleView {
+    std::string topic_key;
+    std::string kind;
+    std::string role;
+    int line_order{0};
+    std::string locale_id;
+    std::string localized_label;
+    std::string source_text;
+    std::string localized_text;
+    std::string transl_status;
+    std::string review_status;
+};
+
+static std::string make_line_locale_group_key(const std::string& topic_key,
+                                              const std::string& kind,
+                                              const std::string& role) {
+    return up(topic_key) + "|" + up(kind) + "|" + up(role);
+}
 
 static int safe_int_cell(const std::vector<std::string>& row, int ix) {
     try {
@@ -1201,6 +1284,10 @@ enum class TopicRenderMode {
     Full,
     Usage
 };
+
+static std::vector<std::string> resolve_topic_keys_from_lines(const std::vector<HelpLineView>& lines,
+                                                              const std::string& query_raw);
+static void cmdhelp_usage();
 
 static bool render_kind_default(const std::string& kind_raw) {
     const std::string k = up(kind_raw);
@@ -1416,6 +1503,370 @@ static std::vector<HelpLineView> load_current_help_lines(const std::string& dir)
     return lines;
 }
 
+static bool area_has_memo_fields(const xbase::DbArea& area) {
+    for (const auto& field : area.fields()) {
+        if (field.type == 'M' || field.type == 'm') {
+            return true;
+        }
+    }
+    return false;
+}
+
+static std::string normalize_help_locale_text(std::string value) {
+    const auto nul = value.find('\0');
+    if (nul != std::string::npos) {
+        value.erase(nul);
+    }
+    return trimmed_copy_local(std::move(value));
+}
+
+static std::optional<std::string> resolve_area_memo_text(xbase::DbArea& area, const std::string& raw_token) {
+    auto* backend = cli_memo::memo_backend_for(area);
+    if (backend == nullptr) {
+        return std::nullopt;
+    }
+
+    dottalk::memo::MemoRef ref{};
+    if (!dottalk::memo::parse_memo_ref(trimmed_copy_local(raw_token), ref)) {
+        return std::nullopt;
+    }
+
+    auto result = backend->get_text(ref);
+    if (!result.ok) {
+        return std::nullopt;
+    }
+
+    return result.text;
+}
+
+static bool open_help_locale_area(const std::string& dir,
+                                  const std::string& dbf_name,
+                                  xbase::DbArea& area) {
+    const fs::path dbf = fs::path(dir) / dbf_name;
+
+    try {
+        area.open(dbf.string());
+    } catch (...) {
+        return false;
+    }
+
+    std::string memo_err;
+    if (!cli_memo::memo_auto_on_use(area, dbf.string(), area_has_memo_fields(area), memo_err)) {
+        cli_memo::memo_auto_on_close(area);
+        area.close();
+        return false;
+    }
+
+    return true;
+}
+
+static bool is_locale_preview_blocked(const std::string& transl_status_raw,
+                                      const std::string& review_status_raw) {
+    const std::string transl = up(trimmed_copy_local(transl_status_raw));
+    const std::string review = up(trimmed_copy_local(review_status_raw));
+
+    if (transl.find("DRAFT") != std::string::npos) return true;
+    if (transl.find("NEEDS_REVIEW") != std::string::npos) return true;
+    if (transl == "MISSING") return true;
+    if (review.find("NEEDS_REVIEW") != std::string::npos) return true;
+    if (review.find("REJECT") != std::string::npos) return true;
+    return false;
+}
+
+static std::vector<HelpTopicLocaleView> load_help_topic_locale_rows(const std::string& dir) {
+    xbase::DbArea area;
+    if (!open_help_locale_area(dir, "HELP_TOPIC_LOCALE.dbf", area)) {
+        return {};
+    }
+
+    std::vector<HelpTopicLocaleView> rows;
+    rows.reserve(static_cast<std::size_t>(std::max<std::int32_t>(area.recCount(), 0)));
+
+    for (int32_t recno = 1; recno <= area.recCount(); ++recno) {
+        if (!area.gotoRec(recno) || !area.readCurrent()) {
+            continue;
+        }
+
+        HelpTopicLocaleView row;
+        row.topic_key = normalize_help_locale_text(xfg::getFieldForDisplay(area, "TOPICKEY"));
+        row.locale_id = normalize_help_locale_text(xfg::getFieldForDisplay(area, "LOCALE_ID"));
+        row.source_title = normalize_help_locale_text(xfg::getFieldForDisplay(area, "SOURCE_TITLE"));
+        row.localized_title = normalize_help_locale_text(xfg::getFieldForDisplay(area, "LOCALIZED_TITLE"));
+        row.transl_status = normalize_help_locale_text(xfg::getFieldForDisplay(area, "TRANSL_STATUS"));
+        row.review_status = normalize_help_locale_text(xfg::getFieldForDisplay(area, "REVIEW_STATUS"));
+        if (!row.topic_key.empty() && !row.locale_id.empty()) {
+            rows.push_back(std::move(row));
+        }
+    }
+
+    cli_memo::memo_auto_on_close(area);
+    area.close();
+    return rows;
+}
+
+static std::vector<HelpLineLocaleView> load_help_line_locale_rows(const std::string& dir) {
+    xbase::DbArea area;
+    if (!open_help_locale_area(dir, "HELP_LINE_LOCALE.dbf", area)) {
+        return {};
+    }
+
+    std::vector<HelpLineLocaleView> rows;
+    rows.reserve(static_cast<std::size_t>(std::max<std::int32_t>(area.recCount(), 0)));
+
+    for (int32_t recno = 1; recno <= area.recCount(); ++recno) {
+        if (!area.gotoRec(recno) || !area.readCurrent()) {
+            continue;
+        }
+
+        HelpLineLocaleView row;
+        row.topic_key = normalize_help_locale_text(xfg::getFieldForDisplay(area, "TOPICKEY"));
+        row.kind = normalize_help_locale_text(xfg::getFieldForDisplay(area, "KIND"));
+        row.role = normalize_help_locale_text(xfg::getFieldForDisplay(area, "ROLE"));
+        row.line_order = static_cast<int>(xfg::tryGetFieldAsInt64(area, "LINE_ORDER").value_or(0));
+        row.locale_id = normalize_help_locale_text(xfg::getFieldForDisplay(area, "LOCALE_ID"));
+        row.localized_label = normalize_help_locale_text(xfg::getFieldForDisplay(area, "LOCALIZED_LABEL"));
+        row.source_text = normalize_help_locale_text(
+            resolve_area_memo_text(area, xfg::getFieldRawString(area, "SOURCE_TEXT")).value_or(std::string{}));
+        row.localized_text = normalize_help_locale_text(
+            resolve_area_memo_text(area, xfg::getFieldRawString(area, "LOCALIZED_TEXT")).value_or(std::string{}));
+        row.transl_status = normalize_help_locale_text(xfg::getFieldForDisplay(area, "TRANSL_STATUS"));
+        row.review_status = normalize_help_locale_text(xfg::getFieldForDisplay(area, "REVIEW_STATUS"));
+        if (!row.topic_key.empty() && !row.locale_id.empty()) {
+            rows.push_back(std::move(row));
+        }
+    }
+
+    cli_memo::memo_auto_on_close(area);
+    area.close();
+    return rows;
+}
+
+struct LocalePreviewRequest {
+    bool requested{false};
+    std::string query;
+    std::string locale;
+};
+
+static LocalePreviewRequest parse_locale_preview_request(const std::vector<std::string>& words) {
+    LocalePreviewRequest req{};
+    if (words.size() < 3) {
+        return req;
+    }
+
+    const std::string last = up(words.back());
+    const std::string prev = up(words[words.size() - 2]);
+
+    if (prev == "LOCALE") {
+        if (words.size() >= 4 && up(words[words.size() - 3]) == "PREVIEW") {
+            req.requested = true;
+            req.query = join_words_range(words, 0, words.size() - 3);
+            req.locale = words.back();
+            return req;
+        }
+
+        req.requested = true;
+        req.query = join_words_range(words, 0, words.size() - 2);
+        req.locale = words.back();
+        return req;
+    }
+
+    (void)last;
+    return req;
+}
+
+static void render_current_topic_help_locale_preview(const std::string& dir,
+                                                     const std::string& query_raw,
+                                                     const std::string& locale_raw,
+                                                     TopicRenderMode mode) {
+    std::string query = trimmed_copy_local(query_raw);
+    std::string locale = trimmed_copy_local(locale_raw);
+
+    if (query.empty() || locale.empty()) {
+        cmdhelp_usage();
+        return;
+    }
+
+    const auto lines = load_current_help_lines(dir);
+    if (lines.empty()) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentLoadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
+        return;
+    }
+
+    const auto keys = resolve_topic_keys_from_lines(lines, query);
+    if (keys.empty()) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpNoTopicMatched,
+            {{"topic", query}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpSummaryTip);
+        return;
+    }
+
+    const auto topic_locale_rows = load_help_topic_locale_rows(dir);
+    const auto line_locale_rows = load_help_line_locale_rows(dir);
+
+    std::unordered_map<std::string, HelpTopicLocaleView> topic_locale_by_key;
+    for (const auto& row : topic_locale_rows) {
+        if (up(row.locale_id) != up(locale)) continue;
+        const std::string key = up(row.topic_key);
+        if (!topic_locale_by_key.count(key)) {
+            topic_locale_by_key.emplace(key, row);
+        }
+    }
+
+    std::unordered_map<std::string, std::vector<HelpLineLocaleView>> line_locale_groups;
+    for (const auto& row : line_locale_rows) {
+        if (up(row.locale_id) != up(locale)) continue;
+        line_locale_groups[make_line_locale_group_key(row.topic_key, row.kind, row.role)].push_back(row);
+    }
+
+    for (auto& it : line_locale_groups) {
+        auto& rows = it.second;
+        std::sort(rows.begin(), rows.end(), [](const HelpLineLocaleView& a, const HelpLineLocaleView& b) {
+            if (a.line_order != b.line_order) return a.line_order < b.line_order;
+            return a.localized_text < b.localized_text;
+        });
+    }
+
+    std::unordered_set<std::string> keyset;
+    for (const auto& k : keys) keyset.insert(up(k));
+
+    std::vector<HelpLineView> picked;
+    for (const auto& h : lines) {
+        if (!keyset.count(up(h.topic_key))) continue;
+        if (!should_render_topic_line(h, mode)) continue;
+        picked.push_back(h);
+    }
+
+    std::sort(picked.begin(), picked.end(), [](const HelpLineView& a, const HelpLineView& b) {
+        const int ca = catalog_rank(a.topic_key);
+        const int cb = catalog_rank(b.topic_key);
+        if (ca != cb) return ca < cb;
+
+        const std::string ak = up(a.topic_key);
+        const std::string bk = up(b.topic_key);
+        if (ak != bk) return ak < bk;
+
+        const int ka = kind_rank(a.kind);
+        const int kb = kind_rank(b.kind);
+        if (ka != kb) return ka < kb;
+
+        const int sa = source_rank(a.source);
+        const int sb = source_rank(b.source);
+        if (sa != sb) return sa < sb;
+
+        if (a.line_no != b.line_no) return a.line_no < b.line_no;
+        if (a.part_no != b.part_no) return a.part_no < b.part_no;
+        return a.text < b.text;
+    });
+
+    out() << "CMDHELP LOCALE PREVIEW - not default command behavior\n";
+    out() << "  query            : " << up(query) << "\n";
+    out() << "  requested locale : " << locale << "\n";
+    out() << "  default behavior : CMDHELP <topic> remains canonical/source HELP\n";
+
+    if (keys.size() > 1) {
+        out() << "  matched topics   :";
+        for (const auto& k : keys) out() << " " << k;
+        out() << "\n";
+    }
+
+    std::string last_key;
+    std::string last_kind;
+    std::set<std::string> seen_line;
+    std::unordered_map<std::string, size_t> line_locale_group_pos;
+    int localized_lines = 0;
+    int fallback_lines = 0;
+
+    for (const auto& h : picked) {
+        const std::string keyU = up(h.topic_key);
+        const std::string kindU = up(h.kind);
+        const std::string dedupe = keyU + "|" + kindU + "|" + up(h.text);
+        if (!seen_line.insert(dedupe).second) {
+            continue;
+        }
+
+        const std::string locale_group_key = make_line_locale_group_key(h.topic_key, h.kind, h.role);
+        const HelpLineLocaleView* locale_row = nullptr;
+        bool locale_row_blocked = false;
+
+        const auto itGroup = line_locale_groups.find(locale_group_key);
+        if (itGroup != line_locale_groups.end() && !itGroup->second.empty()) {
+            auto& pos = line_locale_group_pos[locale_group_key];
+            if (pos < itGroup->second.size()) {
+                locale_row = &itGroup->second[pos++];
+            } else {
+                locale_row = &itGroup->second.back();
+            }
+            locale_row_blocked = is_locale_preview_blocked(locale_row->transl_status, locale_row->review_status);
+        }
+
+        if (keyU != last_key) {
+            last_key = keyU;
+            last_kind.clear();
+
+            out() << "\n" << h.topic_key << " [" << locale << "]\n";
+            out() << std::string(h.topic_key.size() + locale.size() + 3, '=') << "\n";
+
+            const auto itTopicLoc = topic_locale_by_key.find(keyU);
+            if (itTopicLoc != topic_locale_by_key.end()) {
+                const auto& row = itTopicLoc->second;
+                const bool blocked = is_locale_preview_blocked(row.transl_status, row.review_status);
+                const std::string preview_title =
+                    (!blocked && !trimmed_copy_local(row.localized_title).empty())
+                        ? row.localized_title
+                        : (!trimmed_copy_local(row.source_title).empty() ? row.source_title : topic_suffix(h.topic_key));
+
+                out() << "title  : " << preview_title << "\n";
+                out() << "status : transl=" << row.transl_status
+                      << " review=" << row.review_status
+                      << " decision=" << (blocked ? "fallback" : "localized-preview") << "\n";
+            } else {
+                out() << "title  : " << topic_suffix(h.topic_key) << "\n";
+                out() << "status : no locale topic row; fallback\n";
+            }
+        }
+
+        if (kindU != last_kind) {
+            last_kind = kindU;
+            const std::string kind_label =
+                (locale_row && !locale_row_blocked && !trimmed_copy_local(locale_row->localized_label).empty())
+                    ? locale_row->localized_label
+                    : kindU;
+            out() << "\n" << kind_label << "\n";
+            out() << std::string(kind_label.size(), '-') << "\n";
+        }
+
+        std::string render_text = h.text;
+        if (locale_row != nullptr) {
+            if (!locale_row_blocked && !trimmed_copy_local(locale_row->localized_text).empty()) {
+                render_text = locale_row->localized_text;
+                ++localized_lines;
+            } else {
+                ++fallback_lines;
+            }
+        } else {
+            ++fallback_lines;
+        }
+
+        out() << render_text << "\n";
+    }
+
+    if (picked.empty()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpTopicNoRenderableSections);
+    }
+
+    out() << "\npreview summary\n";
+    out() << "---------------\n";
+    out() << "localized lines : " << localized_lines << "\n";
+    out() << "fallback lines  : " << fallback_lines << "\n";
+    out() << "normal CMDHELP output unchanged\n";
+}
+
 static std::vector<std::string> sorted_limited_topic_keys(std::set<std::string> keys) {
     std::vector<std::string> out(keys.begin(), keys.end());
     std::sort(out.begin(), out.end(), [](const std::string& a, const std::string& b) {
@@ -1493,15 +1944,21 @@ static void render_current_topic_help(const std::string& dir,
 
     const auto lines = load_current_help_lines(dir);
     if (lines.empty()) {
-        std::cout << "CMDHELP: could not load current HELP DATA lines from \"" << dir << "\".\n"
-                  << "Tip: run CMDHELP BUILD . <source-root>\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentLoadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
         return;
     }
 
     const auto keys = resolve_topic_keys_from_lines(lines, query);
     if (keys.empty()) {
-        std::cout << "CMDHELP: no current HELP DATA topic matched \"" << query << "\".\n"
-                  << "Tip: run CMDHELP with no arguments for a HELP DATA summary.\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpNoTopicMatched,
+            {{"topic", query}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpSummaryTip);
         return;
     }
 
@@ -1541,13 +1998,17 @@ static void render_current_topic_help(const std::string& dir,
         return a.text < b.text;
     });
 
-    std::cout << "CMDHELP " << (mode == TopicRenderMode::Usage ? "USAGE " : "")
-              << up(query) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpQueryLine,
+        {
+            {"qualifier", (mode == TopicRenderMode::Usage ? std::string("USAGE ") : std::string())},
+            {"query", up(query)}
+        });
 
     if (keys.size() > 1) {
-        std::cout << "Matched topics:";
-        for (const auto& k : keys) std::cout << " " << k;
-        std::cout << "\n";
+        out() << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpMatchedTopicsLabel);
+        for (const auto& k : keys) out() << " " << k;
+        out() << "\n";
     }
 
     std::string last_key;
@@ -1565,40 +2026,38 @@ static void render_current_topic_help(const std::string& dir,
         if (keyU != last_key) {
             last_key = keyU;
             last_kind.clear();
-            std::cout << "\n" << h.topic_key << "\n";
-            std::cout << std::string(h.topic_key.size(), '=') << "\n";
+            out() << "\n" << h.topic_key << "\n";
+            out() << std::string(h.topic_key.size(), '=') << "\n";
         }
 
         if (kindU != last_kind) {
             last_kind = kindU;
-            std::cout << "\n" << kindU << "\n";
-            std::cout << std::string(kindU.size(), '-') << "\n";
+            out() << "\n" << kindU << "\n";
+            out() << std::string(kindU.size(), '-') << "\n";
         }
 
-        std::cout << h.text << "\n";
+        out() << h.text << "\n";
     }
 
     if (picked.empty()) {
-        std::cout << "(topic exists, but no renderable help sections were found)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpTopicNoRenderableSections);
     }
 }
 
 static void cmdhelp_usage() {
-    std::cout
-        << "CMDHELP usage\n"
-        << "  CMDHELP\n"
-        << "  CMDHELP USAGE\n"
-        << "  CMDHELP BUILD\n"
-        << "  CMDHELP BUILD . <source-root>\n"
-        << "  CMDHELP <topic>\n"
-        << "  CMDHELP USAGE <topic>\n"
-        << "  CMDHELP <topic> USAGE\n"
-        << "  CMDHELP BUILD LEGACY\n"
-        << "  CMDHELP LEGACY\n"
-        << "\n"
-        << "Notes:\n"
-        << "  CMDHELP BUILD writes current HELP DATA tables.\n"
-        << "  CMDHELP LEGACY reads the old commands.dbf/cmd_args.dbf report.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpUsageTitle);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpUsageBodyText);
+    out() << "  CMDHELP <topic> PREVIEW LOCALE <locale>\n";
+    out() << "  CMDHELP <topic> LOCALE <locale>\n";
+    out() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpNotesTitle);
+    out() << "  "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpUsageNoteBuild)
+          << "\n";
+    out() << "  "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpUsageNoteLegacy)
+          << "\n";
+    out() << "  Locale preview is explicit-only; plain CMDHELP remains canonical/source HELP.\n";
 }
 
 static void build_current_helpdata(const std::string& outdir,
@@ -1609,13 +2068,20 @@ static void build_current_helpdata(const std::string& outdir,
     // is the detailed validator/report surface.
     auto counts = export_helpdata_v2_dbfs(outdir, list, roots);
 
-    std::cout << "CMDHELP wrote current HELP DATA -> " << outdir << "\n"
-              << "Artifacts mined from: " << (roots.empty() ? std::string("./src") : roots.front()) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpCurrentBuildWritten,
+        {{"dir", outdir}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpArtifactsMinedFrom,
+        {{"root", (roots.empty() ? std::string("./src") : roots.front())}});
 
     if (counts.usage_contract_files > 0 || counts.usage_contract_rows > 0) {
-        std::cout << "Usage contracts mined directly: "
-                  << counts.usage_contract_rows << " row(s) from "
-                  << counts.usage_contract_files << " file(s)\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CmdHelpUsageContractsMined,
+            {
+                {"rows", std::to_string(counts.usage_contract_rows)},
+                {"files", std::to_string(counts.usage_contract_files)}
+            });
     }
 
     print_current_help_report(outdir);
@@ -1626,10 +2092,18 @@ static void build_legacy_helpdata(const std::string& outdir,
     auto counts = export_dbfs(outdir, roots);
     auto list = collect_commands();
 
-    std::cout << "CMDHELP LEGACY wrote: " << counts.commands << " command rows, "
-              << counts.args << " arg rows -> " << outdir << "\n"
-              << "Switches mined from: " << (roots.empty() ? std::string("./src") : roots.front()) << "\n\n";
-    print_commands_report(std::cout, list);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpLegacyBuildWritten,
+        {
+            {"commands", std::to_string(counts.commands)},
+            {"args", std::to_string(counts.args)},
+            {"dir", outdir}
+        });
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpSwitchesMinedFrom,
+        {{"root", (roots.empty() ? std::string("./src") : roots.front())}});
+    out() << "\n";
+    print_commands_report(out(), list);
 }
 
 static void report_legacy_helpdata(const std::string& dir) {
@@ -1637,15 +2111,23 @@ static void report_legacy_helpdata(const std::string& dir) {
     int arg_rows = 0;
 
     if (!CmdDbfLoader::load(dir, cmds, arg_rows)) {
-        std::cout << "CMDHELP LEGACY: could not read commands.dbf/cmd_args.dbf in \"" << dir << "\".\n"
-                  << "Tip: run: CMDHELP BUILD LEGACY\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpLegacyReadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpLegacyBuildTip);
         return;
     }
 
-    std::cout << "CMDHELP LEGACY Report: "
-              << cmds.size() << " command rows, "
-              << arg_rows << " arg rows -> " << dir << "\n\n";
-    print_commands_report(std::cout, cmds);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CmdHelpLegacyReportLine,
+        {
+            {"commands", std::to_string(cmds.size())},
+            {"args", std::to_string(arg_rows)},
+            {"dir", dir}
+        });
+    out() << "\n";
+    print_commands_report(out(), cmds);
 }
 
 // === CLI =====================================================================
@@ -1724,6 +2206,16 @@ void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
         } else {
             build_current_helpdata(outdir, roots);
         }
+        return;
+    }
+
+    const auto locale_preview = parse_locale_preview_request(words);
+    if (locale_preview.requested) {
+        render_current_topic_help_locale_preview(
+            resolve_help_dir_arg(".").string(),
+            locale_preview.query,
+            locale_preview.locale,
+            TopicRenderMode::Full);
         return;
     }
 

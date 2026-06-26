@@ -47,6 +47,8 @@ DbArea::DbArea() = default;
 DbArea::~DbArea() { try { close(); } catch(...) {} }
 
 void DbArea::close() {
+    _fp.clear();
+
     // Index manager must detach first while DbArea state is still valid.
     if (_idx) {
         _idx->close();
@@ -61,6 +63,7 @@ void DbArea::close() {
     if (_fp.is_open()) {
         _fp.close();
     }
+    _fp.clear();
 
     // Clear canonical runtime descriptors
     _clear_paths_and_names_();

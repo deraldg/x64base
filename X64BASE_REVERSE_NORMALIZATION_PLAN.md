@@ -110,7 +110,6 @@ Dev roots:
 - `memo`
 - `messaging`
 - `metadata`
-- `metadata_x64`
 - `sandbox`
 - `x32`
 - `x64`
@@ -131,7 +130,7 @@ Stage roots:
 Implication:
 
 - Reverse normalization should mirror only the curated stage roots above.
-- Dev-only LMDB roots such as `sandbox`, `backups`, `metadata_x64`, and one-off
+- Dev-only LMDB roots such as `sandbox`, `backups`, and one-off
   `.cdx.d` roots remain in dev unless explicitly cleaned later.
 
 Important size result:
@@ -189,8 +188,8 @@ Use stage as the reference and mirror only these subdirectories back into dev:
 ## Safety Rule
 
 Mirror subdirectories individually, not the whole `dbf`, `indexes`, or `lmdb`
-root. That preserves dev-only roots like `sandbox`, `cobol`, `backups`, and
-`metadata_x64` while normalizing the curated lanes.
+root. That preserves dev-only roots like `sandbox`, `cobol`, and `backups`
+while normalizing the curated lanes.
 
 ## Tool
 

@@ -62,12 +62,12 @@
 
 #include <cctype>
 #include <cstdint>
-#include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/append_support.hpp"
 
 namespace
@@ -96,18 +96,20 @@ namespace
 
     static void print_append_usage()
     {
-        std::cout
-            << "Usage:\n"
-            << "  APPEND USAGE\n"
-            << "  APPEND\n"
-            << "  APPEND <count>\n"
-            << "  APPEND MANY <count>\n"
-            << "  APPEND RAW\n"
-            << "  APPEND RAW MANY <count>\n"
-            << "Notes:\n"
-            << "  - APPEND with no arguments appends one blank record.\n"
-            << "  - APPEND MANY uses the smart batch append path.\n"
-            << "  - APPEND RAW uses the raw append path without inline index update.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+        cli::cmdout::print_line("  APPEND USAGE");
+        cli::cmdout::print_line("  APPEND");
+        cli::cmdout::print_line("  APPEND <count>");
+        cli::cmdout::print_line("  APPEND MANY <count>");
+        cli::cmdout::print_line("  APPEND RAW");
+        cli::cmdout::print_line("  APPEND RAW MANY <count>");
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
+        cli::cmdout::print_line(
+            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageBlankNoArgsNote));
+        cli::cmdout::print_line(
+            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageManySmartNote));
+        cli::cmdout::print_line(
+            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageRawNoInlineIndexNote));
     }
 
     static bool parse_count_token(const std::string& s, std::size_t& out)
@@ -177,13 +179,16 @@ void cmd_APPEND(xbase::DbArea& A, std::istringstream& iss)
             std::string tok3;
             if (!(iss >> tok3))
             {
-                std::cout << "Usage: APPEND RAW MANY <count>\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::AppendUsageRawManyLine);
                 return;
             }
 
             if (!parse_count_token(tok3, count))
             {
-                std::cout << "APPEND: invalid count '" << tok3 << "'\n";
+                cli::cmdout::print_prefixed_message(
+                    "APPEND",
+                    dottalk::helpdata::MessageId::AppendInvalidCount,
+                    {{"value", tok3}});
                 return;
             }
 
@@ -191,7 +196,7 @@ void cmd_APPEND(xbase::DbArea& A, std::istringstream& iss)
             return;
         }
 
-        std::cout << "Usage: APPEND RAW | APPEND RAW MANY <count>\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::AppendUsageRawSummaryLine);
         return;
     }
 
@@ -200,13 +205,16 @@ void cmd_APPEND(xbase::DbArea& A, std::istringstream& iss)
         std::string tok2;
         if (!(iss >> tok2))
         {
-            std::cout << "Usage: APPEND MANY <count>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::AppendUsageManyLine);
             return;
         }
 
         if (!parse_count_token(tok2, count))
         {
-            std::cout << "APPEND: invalid count '" << tok2 << "'\n";
+            cli::cmdout::print_prefixed_message(
+                "APPEND",
+                dottalk::helpdata::MessageId::AppendInvalidCount,
+                {{"value", tok2}});
             return;
         }
 

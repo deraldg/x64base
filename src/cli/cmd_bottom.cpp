@@ -39,15 +39,16 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/nav_select.hpp"
 #include "cli/settings.hpp"
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -76,10 +77,7 @@ static bool is_bottom_usage_request(const std::string& raw)
 
 static void print_bottom_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  BOTTOM\n"
-        << "  BOTTOM USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::BottomUsageText);
 }
 } // namespace
 
@@ -92,7 +90,7 @@ void cmd_BOTTOM(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "BOTTOM: no file open.\n";
+        cli::cmdout::print_prefixed_message("BOTTOM", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
@@ -102,11 +100,13 @@ void cmd_BOTTOM(xbase::DbArea& A, std::istringstream& in)
         cli::navsel::Step::Last);
 
     if (rn <= 0 || !A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "BOTTOM: failed.\n";
+        cli::cmdout::print_prefixed_message("BOTTOM", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

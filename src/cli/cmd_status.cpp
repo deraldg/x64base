@@ -50,6 +50,7 @@
 #include "index_summary.hpp"
 #include "cli/order_report.hpp"
 #include "cli/path_resolver.hpp"
+#include "cli/command_output.hpp"
 
 using dottalk::IndexSummary;
 
@@ -80,39 +81,53 @@ void print_area_header(std::size_t slot, const xbase::DbArea& A, bool isCurrent)
         base = A.filename();
     }
 
-    std::cout
-        << "Area " << slot << ": " << A.filename()
-        << "  (" << base << ")"
-        << (isCurrent ? " [current]" : "")
-        << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StatusAreaHeaderLine,
+        {
+            {"slot", std::to_string(slot)},
+            {"path", A.filename()},
+            {"base", base},
+            {"current", isCurrent ? " [current]" : ""}
+        });
 }
 
 void print_workspace_line()
 {
-    std::cout << "Workspace : " << workareas::occupied_desc() << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StatusWorkspaceLine,
+        {
+            {"value", workareas::occupied_desc()},
+            {"0", workareas::occupied_desc()}
+        });
 }
 
 void print_index_body(xbase::DbArea& A, bool verbose) {
     const IndexSummary S = dottalk::summarize_index(A);
 
-    std::cout << "  DBF Flavor   : " << xbase::area_kind_token(A.kind()) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StatusDbfFlavorLine,
+        {{"value", xbase::area_kind_token(A.kind())}});
 
     orderreport::print_status_block(std::cout, A);
 
-    std::cout << "  Tags        : ";
     if (S.tags.empty()) {
-        std::cout << "(none)\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StatusTagsSummaryLine,
+            {{"value", "(none)"}});
     } else if (!verbose) {
+        std::ostringstream joined;
         bool first = true;
         for (const auto& t : S.tags) {
-            if (!first) std::cout << ", ";
-            std::cout << (t.tagName.empty() ? t.fieldName : t.tagName);
+            if (!first) joined << ", ";
+            joined << (t.tagName.empty() ? t.fieldName : t.tagName);
             first = false;
         }
-        std::cout << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StatusTagsSummaryLine,
+            {{"value", joined.str()}});
     } else {
         std::cout << "\n\n";
-        std::cout << "  Tags\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusTagsTitle);
         std::cout
             << "  "
             << std::left << std::setw(14) << "Field Name"
@@ -135,31 +150,34 @@ void print_index_body(xbase::DbArea& A, bool verbose) {
         }
     }
 
-    std::cout << "  Records     : " << A.recCount() << "\n";
-
-    std::cout << "  LMDB        : ";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StatusRecordsLine,
+        {{"value", std::to_string(A.recCount())}});
     const auto* im = A.indexManagerPtr();
     if (!im || !im->hasBackend() || !im->isCdx()) {
-        std::cout << "(closed)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusLmdbClosedLine);
     } else {
         const std::string envdir =
             im->containerPath().empty()
                 ? std::string()
                 : dottalk::paths::resolve_lmdb_env_for_cdx(im->containerPath()).string();
         const std::string tag = im->activeTag();
-
-        std::cout << "envdir=" << (envdir.empty() ? std::string("(unknown)") : envdir);
-        if (!tag.empty()) {
-            std::cout << "  tag=" << tag;
-        }
-        std::cout << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StatusLmdbEnvLine,
+            {
+                {"envdir", envdir.empty() ? "(unknown)" : envdir},
+                {"tag_clause", tag.empty() ? "" : ("  tag=" + tag)}
+            });
     }
 }
 
 void print_struct(const xbase::DbArea& A) {
     const auto& F = A.fields();
 
-    std::cout << "\nFields (" << F.size() << ")\n";
+    std::cout << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StatusFieldsTitle,
+        {{"count", std::to_string(F.size())}});
     std::cout
         << "  #  "
         << std::left << std::setw(12) << "Name"
@@ -191,15 +209,7 @@ void print_status_for_area(std::size_t slot, xbase::DbArea& A, bool isCurrent, b
 
 
 void print_status_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  STATUS                 (Report current work-area status)\n"
-        << "  STATUS USAGE           (Show this usage)\n"
-        << "  STATUS ALL             (Report all open work areas)\n"
-        << "  STATUS VERBOSE         (Include field structure for current area)\n"
-        << "  STATUS ALL VERBOSE     (Report all open areas with field structure)\n"
-        << "Notes:\n"
-        << "  - STATUS is read-only; it reports work-area/index state.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusUsageText);
 }
 
 } // namespace
@@ -222,14 +232,31 @@ void cmd_STATUS(xbase::DbArea& A, std::istringstream& args) {
         xbase::DbArea* curArea = (cur < workareas::count()) ? workareas::db(cur) : &A;
 
         if (!curArea || !curArea->isOpen()) {
-            std::cout
-                << "Area " << cur << ":   () [current]\n"
-                << "Workspace : " << workareas::occupied_desc() << "\n"
-                << "DBF Flavor   : unknown\n"
-                << "Order       : PHYSICAL\n"
-                << "  Tags        : (none)\n"
-                << "  Records     : 0\n"
-                << "  LMDB        : (closed)\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::StatusAreaHeaderLine,
+                {
+                    {"slot", std::to_string(cur)},
+                    {"path", ""},
+                    {"base", ""},
+                    {"current", " [current]"}
+                });
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::StatusWorkspaceLine,
+                {
+                    {"value", workareas::occupied_desc()},
+                    {"0", workareas::occupied_desc()}
+                });
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::StatusDbfFlavorLine,
+                {{"value", "unknown"}});
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusOrderPhysicalLine);
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::StatusTagsSummaryLine,
+                {{"value", "(none)"}});
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::StatusRecordsLine,
+                {{"value", "0"}});
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusLmdbClosedLine);
             return;
         }
 

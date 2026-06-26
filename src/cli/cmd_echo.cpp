@@ -36,12 +36,13 @@
 
 #include "xbase.hpp"
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <algorithm>
 #include <cctype>
 
+#include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace {
 static std::string echo_trim(std::string s)
@@ -69,13 +70,7 @@ static bool is_echo_usage_request(const std::string& raw)
 
 static void print_echo_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  ECHO\n"
-        << "  ECHO USAGE\n"
-        << "  ECHO <text>\n"
-        << "Notes:\n"
-        << "  - ECHO ON is not the toggle command; use SET ECHO ON or SET ECHO OFF.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::EchoUsageText);
 }
 } // namespace
 
@@ -108,8 +103,7 @@ void cmd_ECHO(xbase::DbArea&, std::istringstream& iss)
         // Comment-style console output, forced directly to console.
         // This intentionally bypasses router switches so comments remain visible
         // even if SET CONSOLE OFF or alternate/print routing changes.
-        if (!rest.empty()) std::cout << "; " << rest << "\n";
-        else               std::cout << ";\n";
+        R.console_note(rest.empty() ? ";" : "; " + rest);
         return;
     }
 

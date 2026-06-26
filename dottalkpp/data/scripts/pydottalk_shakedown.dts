@@ -51,11 +51,11 @@ SHOW COLUMNS
 SHOW INDEX
 
 ECHO ===== SCHEMAS BRING-UP =====
-WORKSPACE
-WORKSPACE CLOSE
+SCHEMAS
+SCHEMAS CLOSE
 REL CLEAR ALL
-WORKSPACE OPEN DBF
-WORKSPACE
+SCHEMAS OPEN DBF
+SCHEMAS
 
 ECHO ===== BASELINE CLOCK / DATE-TIME =====
 DATE
@@ -639,14 +639,10 @@ ECHO   EXPORT / IMPORT / REBUILD / SORT / VALIDATE / TEST / SQLERASE / SHUTDOWN
 
 ECHO ===== CLEAN SHUTDOWN =====
 SET ORDER TO 0
-WORKSPACE
-WORKSPACE CLOSE
+SCHEMAS
+SCHEMAS CLOSE
 ECHO ===== EXHAUSTIVE FULL REGRESSION END =====
-* QUIT
-* Python binding smoke stays outside this staged DTS.
-* Run the matching host-side pydottalk smoke manually when needed.
-
-
-
-
+QUIT
+$py12 = "D:\code\ccode\build\vcpkg_installed\x64-windows\tools\python3\python.exe"
+& $py12 D:\code\ccode\bindings\pydottalk_smoke.py
 

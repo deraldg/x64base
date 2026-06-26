@@ -37,11 +37,12 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"   // src/cli/order_state.hpp (same folder as this .cpp)
+#include "help/helpdata_messages.hpp"
 
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -57,10 +58,7 @@ static std::string refresh_upper(std::string s)
 
 static void print_refresh_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  REFRESH\n"
-        << "  REFRESH USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RefreshUsageText);
 }
 
 static bool refresh_usage_request(std::istringstream& in)
@@ -89,14 +87,14 @@ void cmd_REFRESH(xbase::DbArea& a, std::istringstream& in) {
         return;
     }
     if (!a.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RefreshNoTableOpenText);
         return;
     }
 
     // Canonical absolute DBF path (DbArea::open expects abs path)
     const std::string abs_dbf = a.filename();
     if (abs_dbf.empty()) {
-        std::cout << "Refresh failed: current table has no filename().\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RefreshMissingFilenameText);
         return;
     }
 
@@ -114,7 +112,9 @@ void cmd_REFRESH(xbase::DbArea& a, std::istringstream& in) {
     {
         std::error_code ec;
         if (!std::filesystem::exists(abs_dbf, ec)) {
-            std::cout << "Refresh failed: file not found: " << abs_dbf << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::RefreshFileNotFoundText,
+                {{"path", abs_dbf}});
             return;
         }
     }
@@ -141,14 +141,19 @@ void cmd_REFRESH(xbase::DbArea& a, std::istringstream& in) {
 
                 orderstate::setAscending(a, was_asc);
             } catch (const std::exception& e) {
-                std::cout << "REFRESH warning: order restore failed: " << e.what() << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::RefreshOrderRestoreWarningText,
+                    {{"detail", e.what()}});
             }
         }
 
-        std::cout << "Refreshed " << a.logicalName()
-                  << " (" << a.recCount() << " records).\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RefreshSuccessText,
+            {{"name", a.logicalName()}, {"count", std::to_string(a.recCount())}});
     }
     catch (const std::exception& e) {
-        std::cout << "Refresh failed: " << e.what() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RefreshFailedText,
+            {{"detail", e.what()}});
     }
 }

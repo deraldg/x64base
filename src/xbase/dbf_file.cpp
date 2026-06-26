@@ -9,11 +9,17 @@
 #include <cctype>
 #include <cstdint>
 #include <cstddef>
+#include <cerrno>
 #include <filesystem>
+#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #if DOTTALK_WITH_INDEX
   #include "xindex/index_manager.hpp"
@@ -74,9 +80,32 @@ void DbArea::open(const std::string& filename)
 
     // Open using the canonical absolute path (single source of truth).
     // IMPORTANT: Do not auto-create files here. USE/OPEN must never create files.
+    _fp.clear();
+    errno = 0;
     _fp.open(_dbf_abs_path, std::ios::in | std::ios::out | std::ios::binary);
     if (!_fp.is_open()) {
-        throw std::runtime_error("DbArea: cannot open file (access denied/locked?): " + _dbf_abs_path);
+        std::string detail = "DbArea: cannot open file (access denied/locked?): " + _dbf_abs_path;
+        if (errno != 0) {
+            detail += " errno=" + std::to_string(errno);
+        }
+#ifdef _WIN32
+        const fs::path winp(_dbf_abs_path);
+        HANDLE h = ::CreateFileW(
+            winp.c_str(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+        if (h == INVALID_HANDLE_VALUE) {
+            detail += " gle=" + std::to_string(::GetLastError());
+        } else {
+            detail += " createfile=ok";
+            ::CloseHandle(h);
+        }
+#endif
+        throw std::runtime_error(detail);
     }
 
     readHeader();

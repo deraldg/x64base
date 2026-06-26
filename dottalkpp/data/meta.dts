@@ -1,0 +1,20 @@
+* meta.dts
+* Canonical entry point for metadata tooling in the staged/runtime tree.
+*
+* This is intentionally non-destructive:
+*   - it activates the metadata lane
+*   - it loads the current metadata workspace
+*   - it points maintainers at the schema-generation scripts under data\meta
+*
+* To create or refresh the system metadata schema, run:
+*   DO meta\SYSTEM_METADATA_SCHEMA_v1
+
+DO metadata
+WORKSPACE LOAD metadata
+
+ECHO ===== META TOOLING READY =====
+ECHO Metadata workspace is active.
+ECHO Tool scripts live under data\meta.
+ECHO To create or refresh the catalog schema:
+ECHO   DO meta\SYSTEM_METADATA_SCHEMA_v1
+ECHO =================================

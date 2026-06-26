@@ -32,13 +32,6 @@ else()
 endif()
 
 if (DOTTALK_WITH_INDEX)
-  if (TARGET unofficial::lmdb::lmdb)
-    target_link_libraries(xindex PRIVATE unofficial::lmdb::lmdb)
-  elseif (TARGET dottalk_lmdb)
-    target_link_libraries(xindex PRIVATE dottalk_lmdb)
-  else()
-    message(FATAL_ERROR
-      "xindex requires LMDB, but no LMDB target was configured. "
-      "Check top-level LMDB detection.")
-  endif()
+  find_package(unofficial-lmdb CONFIG REQUIRED)
+  target_link_libraries(xindex PRIVATE unofficial::lmdb::lmdb)
 endif()

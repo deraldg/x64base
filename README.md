@@ -228,7 +228,7 @@ Verified in the current development cycle:
 
 ```text
 clean rebuild: PASS
-metadata_x64 workspace open DBF CDX: PASS
+metadata_rel workspace open DBF CDX: PASS
 asymmetric REL ADD: PASS
 workspace save/load asymmetric relations: PASS
 x32 MCC legacy relation restore: PASS
@@ -367,9 +367,9 @@ SYSSUBCMD.QUAL_NAME  -> SYSENTVAR.HELP_OWNR
 The graph also survives workspace persistence:
 
 ```text
-WORKSPACE SAVE metadata_x64_rel
+WORKSPACE SAVE metadata_rel
 WORKSPACE CLOSE
-WORKSPACE LOAD metadata_x64_rel
+WORKSPACE LOAD metadata_rel
 ```
 
 The browser layer is where relation work becomes visible. ERSATZ shows relation trees and tuple grids, SMARTBROWSE/ARTBROWSE provides interactive record browsing, and SIMPLEBROWSE/SB gives quick tuple-style inspection.
@@ -392,8 +392,8 @@ ersatz mcc
 which restores the MCC sample workspace, and:
 
 ```text
-do metadata_x64
-workspace load metadata_x64_rel
+do metadata
+workspace load metadata_rel
 ```
 
 which restores the x64 metadata workspace with asymmetric relations.
@@ -422,7 +422,7 @@ DotScript supports:
 * Batch execution
 * Runtime smoke scripts
 * Canary scripts
-* Reusable setup scripts such as `do x32` and `do metadata_x64`
+* Reusable setup scripts such as `do x32` and `do metadata`
 * Educational and diagnostic workflows
 
 The command surface is part of the design, not just a test harness.
@@ -829,9 +829,9 @@ WSREPORT
 ### Metadata
 
 ```text
-do metadata_x64
+do metadata
 workspace open dbf cdx
-workspace load metadata_x64_rel
+workspace load metadata_rel
 ```
 
 ### HELP / Validation
@@ -1022,7 +1022,7 @@ SIMPLEBROWSE emits tuple-style rows from the selected area.
 ### x64 metadata relation smoke
 
 ```text
-do metadata_x64
+do metadata
 workspace open dbf cdx
 rel add syscmd syssubcmd on can_name to parent
 rel add syssubcmd sysentvar on qual_name to help_ownr
@@ -1041,10 +1041,10 @@ SYSCMD
 ### x64 metadata relation persistence
 
 ```text
-workspace save metadata_x64_rel
+workspace save metadata_rel
 workspace close
-do metadata_x64
-workspace load metadata_x64_rel
+do metadata
+workspace load metadata_rel
 select 1
 rel list all
 select 7
@@ -1452,9 +1452,9 @@ WSREPORT
 ### Metadata
 
 ```text
-do metadata_x64
+do metadata
 workspace open dbf cdx
-workspace load metadata_x64_rel
+workspace load metadata_rel
 ```
 
 ### HELP / Validation
@@ -1645,7 +1645,7 @@ SIMPLEBROWSE emits tuple-style rows from the selected area.
 ### x64 metadata relation smoke
 
 ```text
-do metadata_x64
+do metadata
 workspace open dbf cdx
 rel add syscmd syssubcmd on can_name to parent
 rel add syssubcmd sysentvar on qual_name to help_ownr
@@ -1664,10 +1664,10 @@ SYSCMD
 ### x64 metadata relation persistence
 
 ```text
-workspace save metadata_x64_rel
+workspace save metadata_rel
 workspace close
-do metadata_x64
-workspace load metadata_x64_rel
+do metadata
+workspace load metadata_rel
 select 1
 rel list all
 select 7

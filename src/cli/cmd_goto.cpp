@@ -45,12 +45,13 @@
 //
 
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/nav_move.hpp"
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -78,12 +79,7 @@ static bool is_goto_usage_request(const std::string& raw)
 
 static void print_goto_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  GOTO USAGE\n"
-        << "  GOTO <recno>\n"
-        << "  GOTO FIRST\n"
-        << "  GOTO LAST\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GotoUsageText);
 }
 } // namespace
 

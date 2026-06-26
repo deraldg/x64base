@@ -129,17 +129,17 @@ void cmd_IMPORT(DbArea& a, std::istringstream& iss) {
     std::ifstream in(csvfile, std::ios::binary);
     if (!in) { std::cout << "Cannot open " << csvfile << " for read.\n"; return; }
 
-    std::string line;
-    if (!std::getline(in, line)) { std::cout << "Empty CSV.\n"; return; }
-    auto headers = split_import_csv_record(line, true);
+    std::string record;
+    if (!csv::read_record(in, record)) { std::cout << "Empty CSV.\n"; return; }
+    auto headers = split_import_csv_record(record, true);
 
     std::vector<int> col2fld; col2fld.reserve(headers.size());
     for (auto &h : headers)
         col2fld.push_back(predicates::field_index_ci(a, textio::trim(h)));
 
     int imported = 0;
-    while (std::getline(in, line)) {
-        auto cols = split_import_csv_record(line, false);
+    while (csv::read_record(in, record)) {
+        auto cols = split_import_csv_record(record, false);
         if (cols.empty()) continue;
         if (!a.appendBlank()) { std::cout << "Append failed.\n"; break; }
         for (size_t c = 0; c < cols.size() && c < col2fld.size(); ++c) {

@@ -6,23 +6,6 @@
   },
   "configurePresets": [
     {
-      "name": "stage",
-      "displayName": "x64base stage (MSVC, x64, TV, index, relations, education, pydottalk)",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "value": "x64"
-      },
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "DOTTALK_WITH_TV": "ON",
-        "DOTTALK_WITH_INDEX": "ON",
-        "DOTTALK_WITH_RELATIONS": "ON",
-        "DOTTALK_WITH_EDUCATION": "ON",
-        "BUILD_PYDOTTALK": "ON"
-      }
-    },
-    {
       "name": "pro-md",
       "displayName": "dottalk pro (MSVC, /MD, TV via vcpkg)",
       "generator": "Visual Studio 17 2022",
@@ -61,7 +44,6 @@
     }
   ],
   "buildPresets": [
-    { "name": "stage-Release",   "configurePreset": "stage",   "configuration": "Release" },
     { "name": "pro-md-Release",  "configurePreset": "pro-md",  "configuration": "Release" },
     { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release" },
     { "name": "wsl-Release",     "configurePreset": "wsl",     "configuration": "Release" }

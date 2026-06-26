@@ -2,7 +2,8 @@
 # Default ERSATZ session file
 
 # Optional workspace handoff
-WORKSPACE=mcc.dtschema
+SETUP=x64
+WORKSPACE=mcc_x64.dtschema
 
 # Browser seed
 ROOT=students

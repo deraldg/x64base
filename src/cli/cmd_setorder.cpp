@@ -84,7 +84,6 @@
 
 #include <sstream>
 #include <string>
-#include <iostream>
 #include <filesystem>
 #include <cctype>
 #include <limits>
@@ -92,6 +91,7 @@
 #include <algorithm>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
 #include "cdx/cdx.hpp"
 #include "textio.hpp"
@@ -100,6 +100,16 @@
 #include "cli/nav_move.hpp"
 
 namespace fs = std::filesystem;
+
+namespace {
+using MessageId = dottalk::helpdata::MessageId;
+
+static std::string msg(MessageId id,
+                       const std::unordered_map<std::string, std::string>& vars = {})
+{
+    return cli::cmdout::message_text(id, vars);
+}
+} // namespace
 
 // ---------- helpers ----------------------------------------------------------
 
@@ -310,14 +320,14 @@ static bool cdx_has_tag(const std::string& container,
     cdxfile::CDXHandle* h = nullptr;
 
     if (!cdxfile::open(container, h)) {
-        err = "unable to open CDX container.";
+        err = msg(MessageId::SetOrderUnableOpenCdxContainerText);
         return false;
     }
 
     std::vector<cdxfile::TagInfo> tags;
     if (!cdxfile::read_tagdir(h, tags)) {
         cdxfile::close(h);
-        err = "unable to read CDX tag directory.";
+        err = msg(MessageId::SetOrderUnableReadCdxTagDirectoryText);
         return false;
     }
 
@@ -331,7 +341,8 @@ static bool cdx_has_tag(const std::string& container,
     }
 
     cdxfile::close(h);
-    err = "tag '" + wantedTag + "' not found in " + container;
+    err = msg(MessageId::SetOrderTagNotFoundInContainerText,
+              {{"tag", wantedTag}, {"container", container}});
     return false;
 }
 
@@ -401,13 +412,14 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
     const bool isInx = ends_with_ci(container, ".INX");
 
     if (!isCdx && !isCnx && !isInx) {
-        err = "unsupported index container: " + container;
+        err = msg(MessageId::SetOrderUnsupportedIndexContainerText,
+                  {{"container", container}});
         return false;
     }
 
     if (is_v32_area(area)) {
         if (isCdx) {
-            err = "v32 tables use CNX for SET ORDER tag activation, not CDX.";
+            err = msg(MessageId::SetOrderV32UsesCnxNotCdxText);
             return false;
         }
         return true;
@@ -415,7 +427,7 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
 
     if (is_v64_area(area)) {
         if (!isCdx) {
-            err = "v64 tables require CDX for SET ORDER.";
+            err = msg(MessageId::SetOrderV64RequiresCdxText);
             return false;
         }
         return true;
@@ -436,12 +448,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
     const fs::path env_path = dottalk::paths::resolve_lmdb_env_for_cdx(container_path);
 
     if (!fs::exists(container_path)) {
-        err = "openCdx: container not found: " + container_path.string();
+        err = msg(MessageId::SetOrderOpenCdxContainerNotFoundText,
+                  {{"container", container_path.string()}});
         return false;
     }
 
     if (!fs::exists(env_path) || !fs::is_directory(env_path)) {
-        err = "openCdx: LMDB env missing: " + env_path.string();
+        err = msg(MessageId::SetOrderOpenCdxEnvMissingText,
+                  {{"env", env_path.string()}});
         return false;
     }
 
@@ -455,12 +469,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
 
     if (!area.indexManager().openCdx(container, tag, &err)) {
         if (err.empty()) {
-            err = "openCdx: backend open() failed"
-                  " [container=" + container_path.string() +
-                  ", env=" + env_path.string() + "]";
+            err = msg(MessageId::SetOrderOpenCdxBackendOpenFailedText,
+                      {{"container", container_path.string()},
+                       {"env", env_path.string()}});
         } else {
-            err += " [container=" + container_path.string() +
-                   ", env=" + env_path.string() + "]";
+            err = msg(MessageId::SetOrderOpenCdxBackendOpenFailedDetailText,
+                      {{"detail", err},
+                       {"container", container_path.string()},
+                       {"env", env_path.string()}});
         }
         orderstate::clearOrder(area);
         area.indexManager().close();
@@ -480,7 +496,8 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     err.clear();
 
     if (!fs::exists(container)) {
-        err = "openCnx: container not found: " + container;
+        err = msg(MessageId::SetOrderOpenCnxContainerNotFoundText,
+                  {{"container", container}});
         return false;
     }
 
@@ -493,7 +510,7 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     orderstate::setAscending(area, ascending);
 
     if (!area.indexManager().openCnx(container, tag, &err)) {
-        if (err.empty()) err = "openCnx: backend open failed";
+        if (err.empty()) err = msg(MessageId::SetOrderOpenCnxBackendOpenFailedText);
         orderstate::clearOrder(area);
         area.indexManager().close();
         return false;
@@ -506,20 +523,7 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
 
 static void print_setorder_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET ORDER\n"
-        << "  SET ORDER USAGE\n"
-        << "  SET ORDER 0\n"
-        << "  SET ORDER PHYSICAL\n"
-        << "  SET ORDER NATURAL\n"
-        << "  SET ORDER <tag>\n"
-        << "  SET ORDER TAG <tag>\n"
-        << "  SET ORDER TAG <tag> IN <alias>\n"
-        << "  SET ORDER <container> <tag> [ASC|DESC]\n"
-        << "  SETORDER\n"
-        << "  SETORDER USAGE\n"
-        << "  SETORDER <tag>\n";
+    cli::cmdout::print_message(MessageId::SetOrderUsageText);
 }
 
 static bool is_setorder_usage_request(const std::vector<std::string>& toks)
@@ -543,7 +547,7 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
     if (toks.empty()) {
         if (!orderstate::hasOrder(currentArea)) {
-            std::cout << "SET ORDER: none (physical order).\n";
+            cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderNonePhysicalText);
             return;
         }
 
@@ -556,16 +560,24 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         else if (orderstate::isCdx(currentArea)) typeStr = "CDX";
         else if (ends_with_ci(name, ".INX")) typeStr = "INX";
 
-        std::cout << "SET ORDER: " << typeStr << " '" << name << "'";
-        if (!tag.empty()) std::cout << " TAG '" << tag << "'";
-        std::cout << " (" << (asc ? "ASC" : "DESC") << ")\n";
+        std::string tag_clause;
+        if (!tag.empty()) {
+            tag_clause = msg(MessageId::SetOrderTagClauseText, {{"tag", tag}});
+        }
+        cli::cmdout::print_prefixed_message(
+            "SET ORDER",
+            MessageId::SetOrderStatusText,
+            {{"type", typeStr},
+             {"name", name},
+             {"tag_clause", tag_clause},
+             {"direction", asc ? "ASC" : "DESC"}});
         return;
     }
 
     std::size_t i = 0;
     if (i < toks.size() && ieq(toks[i], "TO")) ++i;
     if (i >= toks.size()) {
-        std::cout << "SET ORDER: missing target.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderMissingTargetText);
         return;
     }
 
@@ -575,12 +587,15 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
             if (ieq(toks[k], "IN")) {
                 auto* eng = shell_engine();
                 if (!eng) {
-                    std::cout << "SET ORDER: engine not available.\n";
+                    cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderEngineUnavailableText);
                     return;
                 }
                 int areaIdx = resolve_area_index_by_name(*eng, toks[k + 1]);
                 if (areaIdx < 0) {
-                    std::cout << "SET ORDER: unknown area/alias: " << toks[k + 1] << "\n";
+                    cli::cmdout::print_prefixed_message(
+                        "SET ORDER",
+                        MessageId::SetOrderUnknownAreaAliasText,
+                        {{"alias", toks[k + 1]}});
                     return;
                 }
                 target = &eng->area(areaIdx);
@@ -592,14 +607,14 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
     }
 
     if (!target->isOpen()) {
-        std::cout << "SET ORDER: no table open in target area.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderNoTableOpenTargetAreaText);
         return;
     }
 
     i = 0;
     if (i < toks.size() && ieq(toks[i], "TO")) ++i;
     if (i >= toks.size()) {
-        std::cout << "SET ORDER: missing target.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderMissingTargetText);
         return;
     }
 
@@ -608,18 +623,20 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         if (is_integer(toks[i], n)) {
             if (n == 0) {
                 clear_order_and_close_indexes(*target);
-                std::cout << "SET ORDER: cleared (physical order).\n";
+                cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderClearedPhysicalText);
                 return;
             }
-            std::cout << "SET ORDER: numeric tag orders not yet implemented (requested "
-                      << n << ").\n";
+            cli::cmdout::print_prefixed_message(
+                "SET ORDER",
+                MessageId::SetOrderNumericNotImplementedText,
+                {{"number", std::to_string(n)}});
             return;
         }
 
         const std::string u = up_copy(toks[i]);
         if (u == "PHYSICAL" || u == "NATURAL" || u == "PHYS") {
             clear_order_and_close_indexes(*target);
-            std::cout << "SET ORDER: cleared (physical order).\n";
+            cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderClearedPhysicalText);
             return;
         }
     }
@@ -633,7 +650,7 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
     i = 0;
     if (i < toks.size() && ieq(toks[i], "TO")) ++i;
     if (i >= toks.size()) {
-        std::cout << "SET ORDER: missing target.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderMissingTargetText);
         return;
     }
 
@@ -642,7 +659,7 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
     if (ieq(toks[i], "TAG")) {
         if (i + 1 >= toks.size()) {
-            std::cout << "SET ORDER: missing tag name after TAG.\n";
+            cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderMissingTagNameAfterTagText);
             return;
         }
         tag = up_copy(toks[i + 1]);
@@ -654,10 +671,10 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
     }
     else if (i + 1 == toks.size()) {
         if (looks_like_container_token(toks[i])) {
-            std::cout << "SET ORDER expects a tag name, not a container filename.\n";
-            std::cout << "Use:\n";
-            std::cout << "  SET INDEX TO " << toks[i] << "\n";
-            std::cout << "  SET ORDER TO TAG <tag>\n";
+            cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderExpectsTagNotContainerText);
+            cli::cmdout::print_message(MessageId::SetOrderUseTitleText);
+            cli::cmdout::print_line("  SET INDEX TO " + toks[i]);
+            cli::cmdout::print_line("  SET ORDER TO TAG <tag>");
             return;
         }
 
@@ -678,23 +695,26 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
         std::string flavorErr;
         if (!validate_explicit_container_for_flavor(*target, container, flavorErr)) {
-            std::cout << "SET ORDER: " << flavorErr << "\n";
+            cli::cmdout::print_line("SET ORDER: " + flavorErr);
             return;
         }
     }
 
     if (container.empty()) {
-        std::cout << "SET ORDER: unable to resolve container.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderUnableResolveContainerText);
         return;
     }
 
     if (tag.empty()) {
-        std::cout << "SET ORDER: missing tag.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderMissingTagText);
         return;
     }
 
     if (!fs::exists(container)) {
-        std::cout << "SET ORDER: file not found: " << container << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET ORDER",
+            MessageId::SetOrderFileNotFoundText,
+            {{"path", container}});
         return;
     }
 
@@ -703,8 +723,8 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
     const bool isInx = ends_with_ci(container, ".INX");
 
     if (isInx) {
-        std::cout << "SET ORDER: .INX activation is not implemented here.\n";
-        std::cout << "Use SET INDEX TO <file>.inx for single-order attachment.\n";
+        cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderInxNotImplementedText);
+        cli::cmdout::print_line("Use SET INDEX TO <file>.inx for single-order attachment.");
         return;
     }
 
@@ -713,28 +733,42 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
 
     if (isCdx) {
         if (!cdx_has_tag(container, tag, err)) {
-            std::cout << "SET ORDER: " << err << "\n";
+            cli::cmdout::print_line("SET ORDER: " + err);
             return;
         }
 
         ok = activate_cdx_on_area(*target, container, tag, ascending, err);
     } else if (isCnx) {
         if (!cnx_has_tag(*target, tag)) {
-            std::cout << "SET ORDER: tag '" << tag << "' not available for CNX on current table.\n";
+            cli::cmdout::print_prefixed_message(
+                "SET ORDER",
+                MessageId::SetOrderTagNotAvailableForCnxText,
+                {{"tag", tag}});
             return;
         }
 
         ok = activate_cnx_on_area(*target, container, tag, ascending, err);
     } else {
-        std::cout << "SET ORDER: unsupported index container: " << container << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET ORDER",
+            MessageId::SetOrderUnsupportedIndexContainerText,
+            {{"container", container}});
         return;
     }
 
     if (!ok) {
-        std::cout << "SET ORDER: " << (err.empty() ? "unable to activate order." : err) << "\n";
+        if (err.empty()) {
+            cli::cmdout::print_prefixed_message("SET ORDER", MessageId::SetOrderUnableActivateOrderText);
+        } else {
+            cli::cmdout::print_line("SET ORDER: " + err);
+        }
         return;
     }
 
-    std::cout << "SET ORDER: " << (isCnx ? "CNX" : "CDX") << " TAG '" << tag << "'"
-              << " (" << (orderstate::isAscending(*target) ? "ASC" : "DESC") << ")\n";
+    cli::cmdout::print_prefixed_message(
+        "SET ORDER",
+        MessageId::SetOrderActivatedText,
+        {{"kind", isCnx ? "CNX" : "CDX"},
+         {"tag", tag},
+         {"direction", orderstate::isAscending(*target) ? "ASC" : "DESC"}});
 }

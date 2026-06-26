@@ -72,6 +72,7 @@
 
 #include "xexpr.hpp"
 #include "cli/cli_comment.hpp"
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 
 // Forward decl (defined in cmd_calcwrite.cpp in your tree)
@@ -134,21 +135,7 @@ static bool is_calc_usage_request(std::string raw) {
 }
 
 static void print_calc_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  CALC USAGE             (Show this usage)\n"
-        << "  CALC <expr>            (Evaluate expression and print result)\n"
-        << "  CALC (<expr>)          (Outer parentheses are allowed)\n"
-        << "  CALC <field> = <expr>  (If <field> exists, delegate to CALCWRITE)\n"
-        << "Examples:\n"
-        << "  CALC 1 + 2\n"
-        << "  CALC DATE()\n"
-        << "  CALC UPPER(LNAME)\n"
-        << "  CALC BALANCE = BALANCE + 10\n"
-        << "Notes:\n"
-        << "  - CALC expression-only mode is read-only.\n"
-        << "  - CALC field-assignment mode mutates through CALCWRITE.\n"
-        << "  - Empty CALC preserves existing behavior and prints .F.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CalcUsageText);
 }
 
 

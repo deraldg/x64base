@@ -40,11 +40,11 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <cctype>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/append_support.hpp"
 
 
@@ -72,13 +72,13 @@ static bool is_append_blank_usage_request(std::string raw)
 
 static void print_append_blank_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  APPEND_BLANK USAGE\n"
-        << "  APPEND_BLANK\n"
-        << "  APPEND BLANK\n"
-        << "Notes:\n"
-        << "  - Appends one blank record through shared append support.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+    cli::cmdout::print_line("  APPEND_BLANK USAGE");
+    cli::cmdout::print_line("  APPEND_BLANK");
+    cli::cmdout::print_line("  APPEND BLANK");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
+    cli::cmdout::print_line(
+        "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendBlankUsageSharedNote));
 }
 } // namespace
 

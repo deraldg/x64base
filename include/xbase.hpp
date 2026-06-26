@@ -393,6 +393,14 @@ private:
 class XBaseEngine {
 public:
     XBaseEngine();
+    DbArea* areaPtr(int idx) noexcept {
+        if (idx < 0 || idx >= MAX_AREA) return nullptr;
+        return _areas[idx].get();
+    }
+    const DbArea* areaPtr(int idx) const noexcept {
+        if (idx < 0 || idx >= MAX_AREA) return nullptr;
+        return _areas[idx].get();
+    }
     DbArea& area(int idx) {
         if (idx < 0 || idx >= MAX_AREA) throw std::out_of_range("area");
         return *_areas[idx];

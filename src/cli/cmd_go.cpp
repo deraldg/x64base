@@ -56,50 +56,15 @@
 #include <string>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/nav_move.hpp"
-#include "cli/command_catalog.hpp"
-#include "cli/message_catalog.hpp"
-#include "cli/output_router.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace {
 
-void print_line(const std::string& s)
-{
-    auto& out = cli::OutputRouter::instance().out();
-    out << s << '\n';
-}
-
 void print_go_usage()
 {
-    print_line("Usage:");
-    print_line("  GO");
-    print_line("  GO USAGE");
-    print_line("  GO TOP");
-    print_line("  GO BOTTOM");
-    print_line("  GO FIRST");
-    print_line("  GO LAST");
-    print_line("  GO TO <recno>");
-    print_line("  GO RECORD <recno>");
-    print_line("  GO <recno>");
-    print_line("  GO +<n>");
-    print_line("  GO -<n>");
-}
-
-void show_command_syntax(const std::string& cmd)
-{
-    const auto* doc = dottalk::doc::get(cmd);
-    if (!doc) {
-        return;
-    }
-
-    for (const auto& line : doc->syntax) {
-        print_line(line);
-    }
-}
-
-void show_prefixed_message(const std::string& cmd, const std::string& text)
-{
-    print_line(cmd + ": " + text);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GoUsageText);
 }
 
 } // namespace
@@ -141,8 +106,8 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
         std::string nTok;
         int n = 0;
         if (!(in >> nTok) || !cli::nav::try_parse_int_token(nTok, n) || n <= 0) {
-            show_prefixed_message("GO", dottalk::msg::text(dottalk::msg::Code::ExpectedPositiveRecordNumber));
-            show_command_syntax("GO");
+            cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
+            cli::cmdout::show_command_syntax("GO");
             return;
         }
         cli::nav::go_absolute(A, n, "GO");
@@ -150,7 +115,7 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (u == "IN") {
-        show_prefixed_message("GO", dottalk::msg::text(dottalk::msg::Code::AreaQualifierNotSupportedYet));
+        cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoAreaQualifierNotSupportedYetText);
         return;
     }
 
@@ -164,6 +129,6 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    show_prefixed_message("GO", dottalk::msg::text(dottalk::msg::Code::UnrecognizedCommandForm));
-    show_command_syntax("GO");
+    cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoUnrecognizedCommandFormText);
+    cli::cmdout::show_command_syntax("GO");
 }

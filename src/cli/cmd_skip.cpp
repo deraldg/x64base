@@ -38,12 +38,13 @@
 
 #include <cctype>
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/nav_select.hpp"
 #include "cli/settings.hpp"
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -71,11 +72,7 @@ static bool is_skip_usage_request(const std::string& raw)
 
 static void print_skip_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SKIP\n"
-        << "  SKIP USAGE\n"
-        << "  SKIP <n>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SkipUsageText);
 }
 } // namespace
 
@@ -88,7 +85,7 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "SKIP: no file open.\n";
+        cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
@@ -101,10 +98,14 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
 
     if (n == 0) {
         if (!A.readCurrent()) {
-            std::cout << "SKIP: failed to read record.\n";
+            cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavReadCurrentFailedText);
             return;
         }
-        if (talk) std::cout << "Recno: " << A.recno() << "\n";
+        if (talk) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::NavRecnoLine,
+                {{"recno", std::to_string(A.recno())}});
+        }
         return;
     }
 
@@ -126,7 +127,7 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
 
         if (rn <= 0) {
             if (!moved) {
-                std::cout << "SKIP: at end.\n";
+                cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavAtEndText);
                 return;
             }
             break;
@@ -137,9 +138,13 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!moved || !A.gotoRec(current) || !A.readCurrent()) {
-        std::cout << "SKIP: failed.\n";
+        cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
-    if (talk) std::cout << "Recno: " << A.recno() << "\n";
+    if (talk) {
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
+    }
 }

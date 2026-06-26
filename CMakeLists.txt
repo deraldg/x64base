@@ -156,6 +156,15 @@ if (VCPKG_ROOT AND EXISTS "${VCPKG_ROOT}/installed/x64-windows")
 endif()
 
 # ============================================================
+# Main Source Tree
+# ============================================================
+
+add_subdirectory(src)
+
+# Add Python binding helper after code targets exist.
+include(cmake/AddPydotTalkIfPresent.cmake OPTIONAL)
+
+# ============================================================
 # Turbo Vision Detection
 # ============================================================
 
@@ -204,48 +213,6 @@ else()
         set(_sqlite_origin "unofficial")
     endif()
 endif()
-
-# ============================================================
-# LMDB Detection
-# ============================================================
-
-set(_lmdb_found OFF)
-set(_lmdb_origin "not-found")
-
-if (DOTTALK_WITH_INDEX)
-    find_package(unofficial-lmdb CONFIG QUIET)
-    if (TARGET unofficial::lmdb::lmdb)
-        set(_lmdb_found ON)
-        set(_lmdb_origin "unofficial-config")
-    else()
-        find_path(LMDB_INCLUDE_DIR NAMES lmdb.h)
-        find_library(LMDB_LIBRARY NAMES lmdb)
-
-        if (LMDB_INCLUDE_DIR AND LMDB_LIBRARY)
-            add_library(dottalk_lmdb INTERFACE)
-            target_include_directories(dottalk_lmdb INTERFACE "${LMDB_INCLUDE_DIR}")
-            target_link_libraries(dottalk_lmdb INTERFACE "${LMDB_LIBRARY}")
-            set(_lmdb_found ON)
-            set(_lmdb_origin "system-library")
-        endif()
-    endif()
-
-    if (NOT _lmdb_found)
-        message(FATAL_ERROR
-            "LMDB was not found, but DOTTALK_WITH_INDEX=ON. "
-            "Install an LMDB development package (for example Ubuntu: liblmdb-dev), "
-            "or provide a CMake package exposing unofficial::lmdb::lmdb.")
-    endif()
-endif()
-
-# ============================================================
-# Main Source Tree
-# ============================================================
-
-add_subdirectory(src)
-
-# Add Python binding helper after code targets exist.
-include(cmake/AddPydotTalkIfPresent.cmake OPTIONAL)
 
 # ============================================================
 # Target Helper
@@ -406,8 +373,6 @@ message(STATUS "  TVISION_ROOT          : ${TVISION_ROOT}")
 message(STATUS "  VCPKG_ROOT            : ${VCPKG_ROOT}")
 message(STATUS "  sqlite found          : ${_sqlite_found}")
 message(STATUS "  sqlite origin         : ${_sqlite_origin}")
-message(STATUS "  lmdb found            : ${_lmdb_found}")
-message(STATUS "  lmdb origin           : ${_lmdb_origin}")
 message(STATUS "  tvision found         : ${_tvision_found}")
 message(STATUS "  tvision origin        : ${_tvision_origin}")
 message(STATUS "===================================")

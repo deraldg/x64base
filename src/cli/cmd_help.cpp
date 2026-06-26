@@ -55,6 +55,7 @@
 #include "dotref.hpp"
 #include "edref.hpp"
 #include "cli/command_catalog.hpp"
+#include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
 #include "cli/expr/function_catalog.hpp"
@@ -97,6 +98,35 @@ inline std::string uptrim(std::string s)
     return s;
 }
 
+inline void print_heading(dottalk::helpdata::MessageId id)
+{
+    out() << "\n" << cli::cmdout::message_text(id) << "\n";
+}
+
+inline void print_indented_lines(const std::vector<std::string>& lines)
+{
+    for (const auto& line : lines) {
+        out() << "  " << line << "\n";
+    }
+}
+
+inline std::string join_space(const std::vector<std::string>& values)
+{
+    std::string joined;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i) joined += " ";
+        joined += values[i];
+    }
+    return joined;
+}
+
+inline void print_labeled_line(
+    dottalk::helpdata::MessageId id,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    out() << cli::cmdout::message_text(id, vars) << "\n";
+}
+
 inline bool show_new_catalog_topic(const std::string& term)
 {
     const auto* doc = dottalk::doc::get(term);
@@ -105,31 +135,23 @@ inline bool show_new_catalog_topic(const std::string& term)
     out() << doc->name << " - " << doc->summary << "\n";
 
     if (!doc->syntax.empty()) {
-        out() << "\nSyntax:\n";
-        for (const auto& s : doc->syntax) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
+        print_indented_lines(doc->syntax);
     }
 
     if (!doc->samples.empty()) {
-        out() << "\nExamples:\n";
-        for (const auto& s : doc->samples) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+        print_indented_lines(doc->samples);
     }
 
     if (!doc->notes.empty()) {
-        out() << "\nNotes:\n";
-        for (const auto& s : doc->notes) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+        print_indented_lines(doc->notes);
     }
 
     if (!doc->warnings.empty()) {
-        out() << "\nWarnings:\n";
-        for (const auto& s : doc->warnings) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+        print_indented_lines(doc->warnings);
     }
 
     return true;
@@ -141,43 +163,37 @@ inline bool show_function_topic_from_doc_catalog(const std::string& term)
     if (!doc) return false;
 
     out() << doc->name << " - " << doc->summary << "\n";
-    out() << "\nCategory: " << dottalk::expr::to_string(doc->category) << "\n";
-    out() << "Arguments: " << doc->min_args << ".." << doc->max_args << "\n";
+    print_labeled_line(
+        dottalk::helpdata::MessageId::GlobalCategoryLine,
+        {{"value", dottalk::expr::to_string(doc->category)}});
+    print_labeled_line(
+        dottalk::helpdata::MessageId::GlobalArgumentsLine,
+        {{"min", std::to_string(doc->min_args)}, {"max", std::to_string(doc->max_args)}});
 
     if (!doc->aliases.empty()) {
-        out() << "Aliases:";
-        for (const auto& a : doc->aliases) {
-            out() << " " << a;
-        }
-        out() << "\n";
+        print_labeled_line(
+            dottalk::helpdata::MessageId::GlobalAliasesLine,
+            {{"value", join_space(doc->aliases)}});
     }
 
     if (!doc->syntax.empty()) {
-        out() << "\nSyntax:\n";
-        for (const auto& s : doc->syntax) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
+        print_indented_lines(doc->syntax);
     }
 
     if (!doc->examples.empty()) {
-        out() << "\nExamples:\n";
-        for (const auto& s : doc->examples) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+        print_indented_lines(doc->examples);
     }
 
     if (!doc->notes.empty()) {
-        out() << "\nNotes:\n";
-        for (const auto& s : doc->notes) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+        print_indented_lines(doc->notes);
     }
 
     if (!doc->warnings.empty()) {
-        out() << "\nWarnings:\n";
-        for (const auto& s : doc->warnings) {
-            out() << "  " << s << "\n";
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+        print_indented_lines(doc->warnings);
     }
 
     return true;
@@ -248,18 +264,7 @@ inline void show_beta_router(const std::string& restUp)
 
 inline void print_help_usage()
 {
-    out() << "DotTalk++ Help System\n\n"
-          << "  HELP GIANT            - full command catalog\n"
-          << "  HELP BETA             - beta checklist\n"
-          << "  HELP PS / PSHELL      - PowerShell helpers\n"
-          << "  HELP SQL              - SQL reference (SQLite + MSSQL)\n"
-          << "  HELP PREDICATES       - COUNT/LOCATE syntax\n"
-          << "  HELP FUNCTION <name>  - expression function help\n"
-          << "  HELP FUNCTIONS        - list documented expression functions\n"
-          << "  HELP /FOX <topic>     - FoxPro compatibility reference\n"
-          << "  HELP /DOT <topic>     - DotTalk-native command reference\n"
-          << "  HELP /ED <topic>      - educational/system concepts\n"
-          << "  HELP <command>        - default topic lookup\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::HelpUsageText);
 }
 
 // Normalize HELP topic via EntryVariantInfo.
@@ -322,7 +327,9 @@ inline bool show_active_help_hint_command(const std::string& command_token)
     out() << text << "\n";
 
     if (dottalk::helpdata::message_routing_proof_enabled()) {
-        out() << "Message routing proof: active_dbf HELP_HINT_COMMAND\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::MessageRoutingProofLine,
+            {{"provider", "active_dbf"}, {"symbol", "HELP_HINT_COMMAND"}});
     }
 
     return true;
@@ -346,10 +353,8 @@ inline bool show_reflected_command_topic(const std::string& term_up)
         }
 
         if (!cmd.syntax.empty()) {
-            out() << "\nSyntax:\n";
-            for (const auto& line : cmd.syntax) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
+            print_indented_lines(cmd.syntax);
         }
 
         std::vector<SubcommandInfo> public_subs;
@@ -372,31 +377,27 @@ inline bool show_reflected_command_topic(const std::string& term_up)
                   });
 
         if (!public_subs.empty()) {
-            out() << "\nSubcommands:\n";
+            print_heading(dottalk::helpdata::MessageId::GlobalSubcommandsTitle);
             for (const auto& sc : public_subs) {
                 out() << "  " << sc.name << "\n";
             }
         }
 
         if (!dev_subs.empty()) {
-            out() << "\nDev / Transitional:\n";
+            print_heading(dottalk::helpdata::MessageId::GlobalDevTransitionalTitle);
             for (const auto& sc : dev_subs) {
                 out() << "  " << sc.name << "\n";
             }
         }
 
         if (!cmd.notes.empty()) {
-            out() << "\nNotes:\n";
-            for (const auto& line : cmd.notes) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+            print_indented_lines(cmd.notes);
         }
 
         if (!cmd.warnings.empty()) {
-            out() << "\nWarnings:\n";
-            for (const auto& line : cmd.warnings) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+            print_indented_lines(cmd.warnings);
         }
 
         return true;
@@ -421,24 +422,18 @@ inline bool show_reflected_subcommand_topic(const std::string& term_up)
         }
 
         if (!sc.syntax.empty()) {
-            out() << "\nSyntax:\n";
-            for (const auto& line : sc.syntax) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
+            print_indented_lines(sc.syntax);
         }
 
         if (!sc.notes.empty()) {
-            out() << "\nNotes:\n";
-            for (const auto& line : sc.notes) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+            print_indented_lines(sc.notes);
         }
 
         if (!sc.warnings.empty()) {
-            out() << "\nWarnings:\n";
-            for (const auto& line : sc.warnings) {
-                out() << "  " << line << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+            print_indented_lines(sc.warnings);
         }
 
         return true;
@@ -462,45 +457,41 @@ inline bool show_reflected_function_topic(const std::string& term_up)
             out() << "\n" << fn.summary << "\n";
         }
 
-        out() << "\nCategory: " << fn.category << "\n";
-        out() << "Arguments: " << fn.min_args << ".." << fn.max_args << "\n";
+        print_labeled_line(
+            dottalk::helpdata::MessageId::GlobalCategoryLine,
+            {{"value", fn.category}});
+        print_labeled_line(
+            dottalk::helpdata::MessageId::GlobalArgumentsLine,
+            {{"min", std::to_string(fn.min_args)}, {"max", std::to_string(fn.max_args)}});
 
         if (!fn.aliases.empty()) {
-            out() << "Aliases:";
-            for (const auto& a : fn.aliases) {
-                out() << " " << a;
-            }
-            out() << "\n";
+            print_labeled_line(
+                dottalk::helpdata::MessageId::GlobalAliasesLine,
+                {{"value", join_space(fn.aliases)}});
         }
 
-        out() << "\nSyntax:\n";
+        print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
         if (!fn.syntax.empty()) {
-            for (const auto& s : fn.syntax) {
-                out() << "  " << s << "\n";
-            }
+            print_indented_lines(fn.syntax);
         } else {
-            out() << "  " << fn.canonical_name << "(...)\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::GlobalFunctionFallbackSyntaxLine,
+                {{"name", fn.canonical_name}});
         }
 
         if (!fn.examples.empty()) {
-            out() << "\nExamples:\n";
-            for (const auto& s : fn.examples) {
-                out() << "  " << s << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+            print_indented_lines(fn.examples);
         }
 
         if (!fn.notes.empty()) {
-            out() << "\nNotes:\n";
-            for (const auto& s : fn.notes) {
-                out() << "  " << s << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+            print_indented_lines(fn.notes);
         }
 
         if (!fn.warnings.empty()) {
-            out() << "\nWarnings:\n";
-            for (const auto& s : fn.warnings) {
-                out() << "  " << s << "\n";
-            }
+            print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+            print_indented_lines(fn.warnings);
         }
 
         return true;
@@ -589,7 +580,9 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
             return;
         }
 
-        out() << "No function help found for: " << fn << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::HelpNoFunctionFound,
+            {{"command", fn}});
         return;
     }
 
@@ -615,13 +608,17 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
     }
     if (opts.onlyDot) {
         if (!show_dot_topic(opts.term)) {
-            out() << "No DotTalk help found for: " << opts.term << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::HelpNoDotTalkTopicFound,
+                {{"command", opts.term}});
         }
         return;
     }
     if (opts.onlyEd) {
         if (!show_ed_topic(opts.term)) {
-            out() << "No educational help found for: " << opts.term << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::HelpNoEducationalTopicFound,
+                {{"command", opts.term}});
         }
         return;
     }
@@ -664,9 +661,11 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
             return;
         }
 
-        out() << "No help found for: " << opts.term << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::HelpNoTopicFound,
+            {{"command", opts.term}});
         return;
     }
 
-    out() << "Type HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name>, or HELP <command>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::HelpTopLevelHint);
 }

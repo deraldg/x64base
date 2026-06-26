@@ -37,12 +37,13 @@
 
 #include <sstream>
 #include <string>
-#include <iostream>
 #include <algorithm>
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/unique_registry.hpp"
+#include "help/helpdata_messages.hpp"
 
 using namespace textio;
 
@@ -55,27 +56,26 @@ static inline std::string upcopy(std::string s) {
 
 static void print_setunique_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET UNIQUE\n"
-        << "  SET UNIQUE USAGE\n"
-        << "  SET UNIQUE FIELD <name> ON\n"
-        << "  SET UNIQUE FIELD <name> OFF\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetUniqueUsageText);
 }
 
 void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
-    const std::string raw_args = in.str();
-
     std::string tok1;
     if (!(in >> tok1)) {
         auto fields = unique_reg::list_unique_fields(A);
-        if (fields.empty()) { std::cout << "UNIQUE: (none)\n"; return; }
-        std::cout << "UNIQUE fields: ";
-        for (size_t i=0;i<fields.size();++i) {
-            if (i) std::cout << ", ";
-            std::cout << fields[i];
+        if (fields.empty()) {
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetUniqueNoneText);
+            return;
         }
-        std::cout << "\n";
+
+        std::string joined;
+        for (size_t i = 0; i < fields.size(); ++i) {
+            if (i) joined += ", ";
+            joined += fields[i];
+        }
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetUniqueFieldsText,
+            {{"fields", joined}});
         return;
     }
 
@@ -102,9 +102,12 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     unique_reg::set_unique_field(A, fname, Uon == "ON");
-    std::cout << "UNIQUE " << (Uon == "ON" ? "ON" : "OFF")
-              << " for FIELD " << upcopy(fname) << ".\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SetUniqueFieldStatusText,
+        {
+            {"state", Uon == "ON" ? "ON" : "OFF"},
+            {"field", upcopy(fname)}
+        });
 }
-
 
 

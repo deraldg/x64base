@@ -41,6 +41,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "foxref.hpp"
+#include "cli/command_output.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -54,18 +55,7 @@ using xbase::DbArea;
 
 
 static void print_foxhelp_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  FOXHELP\n"
-        << "  FOXHELP USAGE\n"
-        << "  FOXHELP <name>\n"
-        << "  FOXHELP <search>\n"
-        << "  FH\n"
-        << "  FH <name>\n"
-        << "  FH <search>\n"
-        << "Notes:\n"
-        << "  - FOXHELP with no arguments lists the FoxPro-style command subset.\n"
-        << "  - FH is a short alias for FOXHELP.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpUsageText);
 }
 
 static bool is_foxhelp_usage_request(std::string raw) {
@@ -100,7 +90,7 @@ static void do_foxhelp(std::istringstream& in) {
     }
 
     if (rest.empty()) {
-        std::cout << "FoxPro-style commands (subset):\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpSubsetTitleText);
         for (const auto& it : foxref::catalog()) {
             std::cout << "  " << std::left << std::setw(12) << it.name;
             if (it.supported) {
@@ -109,7 +99,7 @@ static void do_foxhelp(std::istringstream& in) {
                 std::cout << " - " << it.summary << " [unsupported]\n";
             }
         }
-        std::cout << "Tip: FOXHELP <NAME> for details, e.g. FOXHELP INDEX\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpTipText);
         return;
     }
 
@@ -120,7 +110,9 @@ static void do_foxhelp(std::istringstream& in) {
 
     auto results = foxref::search(rest);
     if (!results.empty()) {
-        std::cout << "Matches for \"" << rest << "\":\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::FoxHelpMatchesTitleText,
+            {{"command", rest}});
         for (const auto* it : results) {
             print_item(*it);
             std::cout << "\n";
@@ -128,8 +120,10 @@ static void do_foxhelp(std::istringstream& in) {
         return;
     }
 
-    std::cout << "No help found for: " << rest << "\n";
-    std::cout << "Try FOXHELP (no args) to list commands.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::FoxHelpNoTopicText,
+        {{"command", rest}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpTryListHintText);
 }
 
 void cmd_FOXHELP(DbArea& /*A*/, std::istringstream& in) {

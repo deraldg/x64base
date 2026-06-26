@@ -48,6 +48,8 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/order_state.hpp"
+#include "cli/command_output.hpp"
+#include "cli/index_summary.hpp"
 #include "cnx/cnx.hpp"  // CNX API
 
 #include <algorithm>
@@ -136,21 +138,30 @@ static std::string to_lower(std::string s) {
 // ---- core printer for a single area ----
 static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool verbose) {
     using std::cout;
+    using dottalk::IndexSummary;
 
     if (!A.isOpen()) return;
 
-    const std::string full = A.name();
+    const std::string full = A.filename().empty() ? A.name() : A.filename();
     const std::string base = fs::path(full).filename().string();
     const auto& fields = A.fields();
     const std::size_t field_count = fields.size();
 
     // Header line for multi-area mode
     if (area_no >= 0) {
-        cout << "Area " << area_no << ": " << full << "  (" << base << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StructAreaHeaderLine,
+            {
+                {"slot", std::to_string(area_no)},
+                {"path", full},
+                {"base", base}
+            });
     }
 
     // Fields header
-    cout << "Fields (" << field_count << ")\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StructFieldsTitle,
+        {{"count", std::to_string(field_count)}});
     cout << "  #  " << std::left << std::setw(12) << "Name"
          << "  "  << std::left << std::setw(4)  << "Type"
          << "  "  << std::right << std::setw(4) << "Len"
@@ -170,33 +181,47 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
 
     // If caller only wants field layout, stop here
     if (!wantIndex) {
-        cout << "Dbfile      : " << full << "  (" << base << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StructDbfileLine,
+            {
+                {"path", full},
+                {"base", base}
+            });
         return;
     }
 
     // Resolve order container path from order_state
-    std::string indexPath = "(none)";
-    if (orderstate::hasOrder(A)) {
-        indexPath = orderstate::orderName(A);
-    }
+    const IndexSummary summary = dottalk::summarize_index(A);
+    std::string indexPath = summary.index_path.empty() ? std::string("(none)") : summary.index_path;
 
     // Collect tags for display
     std::vector<std::string> tags_to_print;
     std::vector<cnxfile::TagInfo> cnx_tags; // keep for verbose table
     std::vector<std::string> inx_tags;      // keep to fallback active tag
 
+    if (!summary.tags.empty()) {
+        tags_to_print.reserve(summary.tags.size());
+        for (const auto& tag : summary.tags) {
+            tags_to_print.push_back(tag.tagName.empty() ? tag.fieldName : tag.tagName);
+        }
+    }
+
     if (indexPath != "(none)") {
         try {
             if (ends_with_ext_ci(indexPath, "CNX")) {
                 if (read_cnx_tags(indexPath, cnx_tags)) {
-                    tags_to_print.reserve(cnx_tags.size());
-                    for (const auto& e : cnx_tags) {
-                        tags_to_print.push_back(e.name);
+                    if (tags_to_print.empty()) {
+                        tags_to_print.reserve(cnx_tags.size());
+                        for (const auto& e : cnx_tags) {
+                            tags_to_print.push_back(e.name);
+                        }
                     }
                 }
             } else if (ends_with_ext_ci(indexPath, "INX")) {
                 inx_tags = read_inx_tags_1inx(indexPath);
-                tags_to_print = inx_tags;
+                if (tags_to_print.empty()) {
+                    tags_to_print = inx_tags;
+                }
             }
         } catch (...) {
             // best-effort only; no hard failure on bad index file
@@ -206,34 +231,47 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
     // Determine active tag to print:
     // 1) use runtime orderstate::activeTag(A)
     // 2) if empty and container is 1INX with a single tag, use that tag name
-    std::string activeTag = orderstate::activeTag(A);
+    std::string activeTag = summary.active_tag.empty()
+        ? orderstate::activeTag(A)
+        : summary.active_tag;
     if (activeTag.empty() && !inx_tags.empty()) {
         activeTag = inx_tags.front();
     }
 
     // Footer (index-aware)
-    cout << "Dbfile      : " << full << "  (" << base << ")\n";
-    cout << "Index file  : " << indexPath << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StructDbfileLine,
+        {
+            {"path", full},
+            {"base", base}
+        });
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StructIndexFileLine,
+        {{"value", indexPath}});
 
-    cout << "Tags        : ";
     if (tags_to_print.empty()) {
-        cout << "(none)\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StructTagsSummaryLine,
+            {{"value", "(none)"}});
     } else {
+        std::ostringstream joined;
         for (std::size_t k = 0; k < tags_to_print.size(); ++k) {
-            if (k) cout << ", ";
-            cout << tags_to_print[k];
+            if (k) joined << ", ";
+            joined << tags_to_print[k];
         }
-        cout << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::StructTagsSummaryLine,
+            {{"value", joined.str()}});
     }
 
-    cout << "Active tag  : "
-         << (activeTag.empty() ? std::string("(none)") : activeTag)
-         << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::StructActiveTagLine,
+        {{"value", activeTag.empty() ? "(none)" : activeTag}});
 
     // Optional verbose CNX table
     if (verbose && !cnx_tags.empty()) {
-        cout << "CNX Tags (verbose)\n";
-        cout << "  * marks active\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StructCnxTagsVerboseTitle);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StructCnxMarksActiveNote);
         cout << "  " << std::left << std::setw(1)  << " "
              << std::left << std::setw(16) << "Tag"
              << "Expression\n";
@@ -251,17 +289,7 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
 
 
 static void print_struct_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  STRUCT                 (Current area fields + index info)\n"
-        << "  STRUCT USAGE           (Show this usage)\n"
-        << "  STRUCT INDEX           (Explicit index info mode; default)\n"
-        << "  STRUCT FIELDS          (Fields only)\n"
-        << "  STRUCT ALL             (All open areas)\n"
-        << "  STRUCT ALL INDEX       (All open areas + index info)\n"
-        << "  STRUCT ALL VERBOSE     (All open areas + verbose CNX tag info)\n"
-        << "Notes:\n"
-        << "  - STRUCT is read-only; it reports DBF structure/index metadata.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::StructUsageText);
 }
 
 // ---- command entry ----
@@ -301,7 +329,7 @@ void cmd_STRUCT(DbArea& A, std::istringstream& args) {
     if (wantAll) {
         auto* e = shell_engine();
         if (!e) {
-            cout << "No engine available.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::StructNoEngineText);
             return;
         }
 
@@ -316,14 +344,14 @@ void cmd_STRUCT(DbArea& A, std::istringstream& args) {
         }
 
         if (!printed_any) {
-            cout << "No open areas.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::StructNoOpenAreasText);
         }
         return;
     }
 
     // Single-area (current) behavior
     if (!A.isOpen()) {
-        cout << "No file open in current area.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StructNoFileOpenCurrentAreaText);
         return;
     }
 

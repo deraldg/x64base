@@ -27,6 +27,16 @@ struct BetaItem {
     BetaStatus  status;   // OPEN/DONE/DEFERRED (compile-time defaults)
 };
 
+// Policy:
+// - foxref.hpp is the historical / compatibility reference surface.
+// - When a real command implementation exists as cmd_*.cpp, the foxref entry
+//   should describe current DotTalk++ / x64base syntax and behavior truthfully,
+//   not legacy FoxPro wording that no longer matches runtime behavior.
+// - In that implemented-command case, foxref is the single prose source of
+//   truth for the FOX/legacy-facing help surface consumed by CMDHELP/FOXHELP.
+// - Unsupported compatibility rows may remain as historical placeholders until
+//   they are implemented, retired, or redirected.
+//
 // Minimal seed set; extend anytime.
 inline const std::vector<Item>& catalog() {
     static const std::vector<Item> k = {
@@ -51,17 +61,9 @@ inline const std::vector<Item>& catalog() {
 
         {"BOTTOM",    "BOTTOM", "Go to last record.", true},
 
-        {"FIRST",     "FIRST", "Go to the first visible/logical record in the current view.", true},
-
-        {"LAST",      "LAST", "Go to the last visible/logical record in the current view.", true},
-
         {"GOTO",      "GOTO <recno>", "Go to record number.", true},
 
         {"SKIP",      "SKIP [<nRecords>]", "Move the record pointer forward/backward by <nRecords> (default 1).", true},
-
-        {"NEXT",      "NEXT [<nRecords>]", "Move to the next visible/logical record in the current view.", true},
-
-        {"PRIOR",     "PRIOR [<nRecords>]", "Move to the prior visible/logical record in the current view.", true},
 
         {"RECNO",     "RECNO()", "Return the current record number.", true},
 
@@ -170,9 +172,6 @@ inline const std::vector<Item>& catalog() {
                  "Preferred public syntax for viewing or setting case-sensitive comparison mode.", true},
 
         {"SETCASE",   "SETCASE <args...>", "Compatibility/internal target behind routed SET CASE.", true},
-
-        {"SET UNIQUE", "SET UNIQUE | SET UNIQUE FIELD <field> ON|OFF",
-                 "Report or configure per-table unique-field registry entries.", true},
 
         {"PREDHELP",  "PREDHELP [<topic>]", "Help for predicates/expressions and filtering.", true},
 
@@ -458,7 +457,7 @@ inline const std::vector<Item>& catalog() {
             Intended for keyboard-driven browsing and diagnostics.
             Exits back to the DotTalk++ CLI.)", true},
 
-        {"BROWSE",  "BROWSE [EDIT]", "Enter the supported interactive browse module.", true},
+        {"BROWSE",  "BROWSE", "Table browser (FoxPro).", false},
 
         {"BROWSETUI","BROWSETUI", "Text-mode browser UI (developer tool).", true},
 

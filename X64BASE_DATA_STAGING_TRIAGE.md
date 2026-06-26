@@ -457,7 +457,6 @@ Recommended policy:
 - `data/dbf/x64/memo_sample/**`
 - `data/dbf/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx` moved out to docs
 - `data/metadata.dts`
-- `data/metadata_x64.dts`
 - `data/pydottalk_shakedown.dts`
 - `data/vfp.dts`
 
@@ -476,7 +475,6 @@ Current classification:
 
 - `cmdhelp.dts` -> keep as lane/bootstrap DotScript
 - `metadata.dts` -> keep as lane/bootstrap DotScript
-- `metadata_x64.dts` -> keep as lane/bootstrap DotScript
 - `vfp.dts` -> keep as lane/bootstrap DotScript
 - `pydottalk_shakedown.dts` -> keep as a real DotScript smoke/regression asset
   for `pydottalk`, which is built from `dottalkpp`
