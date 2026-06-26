@@ -1,3 +1,9 @@
+// File: src/cli/shell_api.cpp
+// Purpose: Shell-facing adapters that bridge command dispatch, expression
+//          evaluation, script resolution, and console I/O helpers.
+// Boundary: Keep engine ownership in xbase/workareas and command-specific help
+//           text in command units; this layer is shared shell glue.
+
 #include "shell_api.hpp"
 
 #include <sstream>

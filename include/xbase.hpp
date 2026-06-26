@@ -1,10 +1,9 @@
-// xbase.hpp
-// Updated with public setters for VFP compatibility, encapsulation,
-// 64-bit runtime record tracking, runtime area-kind detection,
-// and non-const memo manager pointer access.
-//
-// Core xBase engine header.
-// CLI / shell integration points must not live here.
+// File: include/xbase.hpp
+// Purpose: Core xBase engine types, constants, and DbArea/XBaseEngine contracts.
+// Boundary: This header defines engine-facing runtime state only. CLI, shell,
+//           messaging, and help-surface policy must stay outside this layer.
+// Notes: Supports mixed runtime flavors plus the memo/index hooks needed by
+//        higher layers without exposing CLI behavior here.
 
 #pragma once
 #include <cstdint>

@@ -1,3 +1,9 @@
+// File: src/cli/workareas.hpp
+// Purpose: Lightweight wrappers around engine-owned work areas for shell and
+//          runtime access.
+// Boundary: Ownership stays in xbase::XBaseEngine; this header exposes
+//           navigation and lookup conveniences without redefining lifecycle.
+
 #pragma once
 
 #include <cstddef>

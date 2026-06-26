@@ -1,4 +1,9 @@
-// src/cli/set_relations.cpp
+// File: src/cli/set_relations.cpp
+// Purpose: Relation graph storage, lookup, and tuple-walk helpers shared by
+//          REL, ERSATZ, and workspace restoration flows.
+// Boundary: This file maintains in-process relation state; command parsing and
+//           user messaging belong in the command layer that calls into it.
+
 #include "set_relations.hpp"
 
 #include "cli/command_output.hpp"

@@ -1,4 +1,9 @@
-// src/xbase/dbf_file.cpp  (ASCII only)
+// File: src/xbase/dbf_file.cpp
+// Purpose: DBF open/read/write/runtime-flavor plumbing for the core xBase
+//          engine.
+// Boundary: This unit owns physical table behavior; command messaging, help
+//           text, and shell policy belong above the engine layer.
+// Notes: ASCII only.
 
 #include "xbase.hpp"
 #include "xbase_vfp.hpp"

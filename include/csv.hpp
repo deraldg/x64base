@@ -1,3 +1,8 @@
+// File: include/csv.hpp
+// Purpose: Small CSV helpers shared by import/export and script-facing data paths.
+// Boundary: Keep this header dependency-light and format-focused; command syntax,
+//           messaging, and table mutation policy belong in higher CLI layers.
+
 #pragma once
 #include <iosfwd>
 #include <string>

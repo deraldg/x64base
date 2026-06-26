@@ -1,3 +1,9 @@
+// File: src/cli/unique_registry.cpp
+// Purpose: Runtime registry for SET UNIQUE-style field tracking during
+//          validation and mutation flows.
+// Boundary: This is process-local shell state, not persistent schema
+//           metadata; storage/backfill policy belongs elsewhere.
+
 #include "cli/unique_registry.hpp"
 #include "xbase.hpp"
 

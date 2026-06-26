@@ -1,3 +1,9 @@
+// File: src/cli/csv.cpp
+// Purpose: Low-level CSV record splitting and quoting helpers used by CLI
+//          import/export workflows.
+// Boundary: This unit owns text-level CSV parsing only; command syntax,
+//           messaging, and table mutation policy stay in the calling commands.
+
 #include "csv.hpp"
 
 #include <istream>

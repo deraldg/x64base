@@ -1,3 +1,9 @@
+# File: src/xindex/CMakeLists.txt
+# Purpose: Build the xindex library and wire optional LMDB-backed index
+#          support.
+# Boundary: Keep backend selection and library linkage here; command/runtime
+#           policy lives in the CLI and engine layers.
+
 cmake_minimum_required(VERSION 3.20)
 
 file(GLOB_RECURSE XINDEX_SOURCES CONFIGURE_DEPENDS
