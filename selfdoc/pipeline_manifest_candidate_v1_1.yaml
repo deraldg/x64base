@@ -1,0 +1,161 @@
+# SelfDoc pipeline manifest candidate v1.1
+# Generated UTC: 2026-05-16T04:47:58.145754+00:00
+# PLAN_ONLY / REPORT_ONLY candidate.
+# This file does not replace selfdoc/pipeline_manifest.yaml.
+# It documents the candidate pipeline; it does not run or promote anything.
+
+manifest_kind: selfdoc_pipeline_manifest_candidate
+manifest_version: v1_1_candidate
+status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+project_root: D:\code\ccode
+default_promotion_authorized: false
+
+gates:
+  - id: probe_stability_before_runner
+    status: CLOSED_UNTIL_CONDITIONS_MET
+    description: >
+      selfdoc/selfdoc_run.py must not be created until v1.1 source-contract
+      probe has passed comparison review, role/scope vocabulary is accepted,
+      report homes are stable, manifests identify probe order, and at least
+      two probes have repeatable outputs.
+    conditions:
+      v1_1_source_contract_probe_passed_comparison_review: true
+      role_scope_vocabulary_accepted: true
+      report_homes_stable: true
+      manifests_identify_probe_order: candidate_only
+      at_least_two_probes_have_repeatable_outputs: true
+      runner_creation_authorized: false
+
+pipelines:
+  - id: source_contracts_v0_baseline
+    status: PROMOTED_BASELINE
+    default: true
+    safety_class: REPORT_ONLY
+    steps:
+      - id: source_contract_inventory_probe_v0
+        tool: selfdoc/probes/source_contract_inventory_probe.py
+        outputs:
+          - dottalkpp/docs/generated/reports/source_contracts_inventory.md
+          - dottalkpp/docs/generated/reports/source_contracts_inventory.csv
+          - dottalkpp/docs/generated/reports/source_contracts_inventory.json
+
+  - id: source_contracts_v1_1_candidate
+    status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+    default: false
+    safety_class: REPORT_ONLY
+    description: >
+      Candidate source-contract inventory pipeline using v1.1 vocabulary and
+      command-scope classifications. This pipeline is documented for review
+      but is not the default and must not drive source repairs automatically.
+    steps:
+      - id: source_contract_inventory_probe_v1_1
+        tool: selfdoc/probes/source_contract_inventory_probe_v1_1.py
+        outputs:
+          - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.md
+          - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.csv
+          - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.json
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v0_vs_v1_1.md
+
+      - id: source_contract_inventory_v1_1_classifier_gap_review
+        tool: selfdoc/probes/source_contract_inventory_v1_1_classifier_gap_review.py
+        outputs:
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.md
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.csv
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.json
+
+      - id: source_contract_inventory_v1_1_promotion_review
+        tool: selfdoc/probes/source_contract_inventory_v1_1_promotion_review.py
+        outputs:
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_review.md
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_review.csv
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_review.json
+
+      - id: source_contract_inventory_v1_1_promotion_candidate_report
+        tool: selfdoc/probes/source_contract_inventory_v1_1_promotion_candidate_report.py
+        outputs:
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.md
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.csv
+          - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.json
+
+    non_mutation_guards:
+      - no_source_edits
+      - no_dbf_writes
+      - no_help_data_rebuild
+      - no_cmdhelpchk_changes
+      - no_source_repairs
+      - no_data_root_moves
+      - no_file_deletes
+      - no_default_promotion
+
+  - id: metadata_collection_v0_candidate
+    status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+    default: false
+    safety_class: REPORT_ONLY
+    description: >
+      Candidate metadata collection/proposal pipeline using metacollect to scan
+      source/catalog evidence and emit read-only reports plus canonical import
+      candidates. This pipeline documents the bridge between source/runtime
+      evidence and live metadata promotion, but does not itself mutate DBFs.
+    steps:
+      - id: metacollect_facts_scan
+        tool: build/Release/metacollect.exe
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode > metacollect_facts.csv
+        outputs:
+          - metacollect_facts.csv
+
+      - id: metacollect_compare_scan
+        tool: build/Release/metacollect.exe
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --compare --compare-out metacollect_compare.csv > $null
+        outputs:
+          - metacollect_compare.csv
+
+      - id: metacollect_sysfunc_candidate_export
+        tool: build/Release/metacollect.exe
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysfunc-import-out dottalkpp\data\scripts\metadata\SYSFUNC_IMPORT_v1.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv
+        companion_artifacts:
+          - dottalkpp/data/scripts/metadata/SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt
+
+      - id: metacollect_sysargs_candidate_export
+        tool: build/Release/metacollect.exe
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv
+        companion_artifacts:
+          - dottalkpp/data/scripts/metadata/SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt
+
+      - id: metacollect_sysargs_diagnostic_full_export
+        tool: build/Release/metacollect.exe
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --include-dev-commands --sysargs-include-keywords --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1_full.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1_full.csv
+        optional: true
+
+    non_mutation_guards:
+      - no_dbf_writes
+      - no_help_rebuild
+      - no_cmdhelpchk_changes
+      - no_source_repairs
+      - no_live_metadata_promotion
+      - no_default_promotion
+      - review_before_import
+      - dev_only_commands_excluded_by_default
+
+next_recommended_pipeline:
+  id: source_contract_shape_review_plan_v0
+  status: NOT_BUILT
+  safety_class: REPORT_ONLY
+  purpose: >
+    Use corrected v1.1 classification model to group the remaining 73
+    shape-review items without repairing source.

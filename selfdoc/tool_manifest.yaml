@@ -1,0 +1,66 @@
+# SelfDoc tool manifest
+# Bootstrap-only starter.
+#
+# Purpose:
+#   Inventory local helper tools that participate in SelfDoc workflows.
+#
+# Policy:
+#   This file is descriptive metadata only.
+#   It does not execute tools.
+#   It does not define runtime command behavior.
+#   It does not replace CMDHELPCHK.
+#   It records reviewed stable tools only.
+
+schema_version: 0.1
+kind: selfdoc_tool_manifest
+status: active
+
+tools:
+  - name: metacollect
+    tool_id: metacollect_v0
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTED_SUPPORT
+    entrypoint: build/Release/metacollect.exe
+    role: read-only metadata/source collector and canonical import-candidate emitter
+    inputs:
+      - src/
+      - include/
+      - bindings/
+      - dottalkpp/data/metadata/
+    outputs:
+      - metacollect_facts.csv
+      - metacollect_compare.csv
+      - dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv
+      - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv
+    companion_artifacts:
+      - dottalkpp/data/scripts/metadata/SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt
+      - dottalkpp/data/scripts/metadata/SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt
+    invocation_examples:
+      - name: facts_scan
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode > metacollect_facts.csv
+      - name: compare_scan
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --compare --compare-out metacollect_compare.csv > $null
+      - name: sysfunc_candidate_export
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysfunc-import-out dottalkpp\data\scripts\metadata\SYSFUNC_IMPORT_v1.csv > $null
+      - name: sysargs_candidate_export
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1.csv > $null
+      - name: sysargs_diagnostic_keywords_and_dev
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --include-dev-commands --sysargs-include-keywords --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1_full.csv > $null
+    writes_dbf: false
+    mutates_source: false
+    modifies_cmdhelpchk: false
+    modifies_help: false
+    modifies_live_metadata: false
+    canonical_export_policy:
+      sysargs_keywords_default: false
+      dev_only_commands_default: excluded

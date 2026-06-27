@@ -1,0 +1,209 @@
+# SelfDoc tool manifest candidate v1.1
+# Generated UTC: 2026-05-16T04:47:58.145754+00:00
+# PLAN_ONLY / REPORT_ONLY candidate.
+# This file does not replace selfdoc/tool_manifest.yaml.
+# v1.1 is documented as a promotion candidate, not as the default tool.
+
+manifest_kind: selfdoc_tool_manifest_candidate
+manifest_version: v1_1_candidate
+status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+project_root: D:\code\ccode
+default_promotion_authorized: false
+source_repairs_authorized: false
+dbf_writes_authorized: false
+cmdhelpchk_changes_authorized: false
+
+tools:
+  - id: source_contract_inventory_probe_v0
+    path: selfdoc/probes/source_contract_inventory_probe.py
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTED_BASELINE
+    role: baseline source-contract inventory probe
+    default_for: source_contract_inventory
+    outputs:
+      - dottalkpp/docs/generated/reports/source_contracts_inventory.md
+      - dottalkpp/docs/generated/reports/source_contracts_inventory.csv
+      - dottalkpp/docs/generated/reports/source_contracts_inventory.json
+
+  - id: source_contract_inventory_probe_v1_1
+    path: selfdoc/probes/source_contract_inventory_probe_v1_1.py
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTION_CANDIDATE
+    status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+    role: source-contract inventory candidate with v1.1 vocabulary and command-scope roles
+    default_for: null
+    promotion_note: >
+      Candidate is approved with scope notes but is not the default probe.
+      Human review accepted refined roles for shell core, command registry,
+      HELP subsystem, helpers, and expression/function API surfaces.
+    promotion_evidence:
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.md
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.csv
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_promotion_candidate_report.json
+    reads:
+      - src/
+      - include/
+      - dottalkpp/docs/generated/reports/source_contract_extension_vocabulary_v1_1.csv
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.csv
+    outputs:
+      - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.md
+      - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.csv
+      - dottalkpp/docs/generated/reports/source_contracts_inventory_v1_1.json
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v0_vs_v1_1.md
+    non_mutation_guards:
+      - no_source_edits
+      - no_dbf_writes
+      - no_cmdhelpchk_changes
+      - no_help_data_rebuild
+      - no_header_repairs
+      - no_file_moves_or_deletes
+      - v0_probe_preserved
+      - v0_reports_preserved
+    promotion_gate:
+      v0_v1_1_comparison_reviewed: true
+      vocabulary_gap_closed: true
+      scope_corrections_human_reviewed: true
+      false_positives_classified: true
+      default_promotion_authorized: false
+      next_required_step: shape_review_plan_or_manifest_review
+
+  - id: source_contract_inventory_v1_1_classifier_gap_review
+    path: selfdoc/probes/source_contract_inventory_v1_1_classifier_gap_review.py
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTION_SUPPORT
+    role: compare v1.1 output against draft and detect classifier regressions
+    outputs:
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.md
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.csv
+      - dottalkpp/docs/generated/reports/source_contract_inventory_v1_1_classifier_gap_review.json
+
+  - id: source_contract_inventory_v1_1_promotion_review
+    path: selfdoc/probes/source_contract_inventory_v1_1_promotion_review.py
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTION_SUPPORT
+    role: review v1.1 hotfix output for promotion readiness
+
+  - id: source_contract_inventory_v1_1_promotion_candidate_report
+    path: selfdoc/probes/source_contract_inventory_v1_1_promotion_candidate_report.py
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTION_SUPPORT
+    role: apply human scope decisions and document v1.1 candidate status
+
+  - id: metacollect_v0
+    path: build/Release/metacollect.exe
+    safety_class: REPORT_ONLY
+    lifecycle_class: PROMOTION_SUPPORT
+    status: PROMOTION_CANDIDATE_DOCUMENTED_NOT_DEFAULT
+    role: read-only metadata/source collector and canonical import-candidate emitter
+    default_for: null
+    promotion_note: >
+      metacollect is a metadata collection/proposal tool. It does not replace
+      live metadata DBFs, HELP, or CMDHELPCHK. Its outputs are review artifacts
+      and candidate import CSVs only.
+    reads:
+      - src/
+      - include/
+      - bindings/
+      - dottalkpp/data/metadata/
+    outputs:
+      - metacollect_facts.csv
+      - metacollect_compare.csv
+      - dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv
+      - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv
+    companion_artifacts:
+      - dottalkpp/data/scripts/metadata/SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt
+      - dottalkpp/data/scripts/metadata/SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt
+    invocation_examples:
+      - name: facts_scan
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode > metacollect_facts.csv
+      - name: compare_scan
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --compare --compare-out metacollect_compare.csv > $null
+      - name: sysfunc_candidate_export
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysfunc-import-out dottalkpp\data\scripts\metadata\SYSFUNC_IMPORT_v1.csv > $null
+      - name: sysargs_candidate_export
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1.csv > $null
+      - name: sysargs_diagnostic_keywords_and_dev
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --include-dev-commands --sysargs-include-keywords --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1_full.csv > $null
+    non_mutation_guards:
+      - no_dbf_writes
+      - no_help_rebuild
+      - no_cmdhelpchk_changes
+      - no_source_edits
+      - no_live_metadata_promotion
+      - dev_only_commands_excluded_by_default
+
+human_scope_decisions:
+      - path: src/cli/cmd_buildlmdb.cpp
+        approved_role: simple_command_index_materialization
+        approved_family: @dottalk.usage v1
+        approved_action: accepted_existing_command_contract
+      - path: src/cli/cmd_dothelp.cpp
+        approved_role: dothelp_listing_help_command_family
+        approved_family: selfdoc.help_subsystem_contract
+        approved_action: accepted_existing_command_family_contract
+      - path: src/cli/cmd_lmdb.cpp
+        approved_role: lmdb_index_buffer_inspection_command
+        approved_family: @dottalk.usage v1
+        approved_action: accepted_existing_command_contract
+      - path: src/cli/cmdhelp.cpp
+        approved_role: selfdoc_help_builder_command_family_applet
+        approved_family: selfdoc.help_subsystem_contract
+        approved_action: action_required_add_command_family_usage_contract
+      - path: src/cli/helpdata_cmdhelp_bridge.cpp
+        approved_role: cmdhelp_help_metadata_bridge
+        approved_family: selfdoc.help_metadata_engine_contract
+        approved_action: alternate_contract_help_metadata_engine
+      - path: src/cli/shell.cpp
+        approved_role: cli_shell_core
+        approved_family: selfdoc.cli_shell_contract
+        approved_action: alternate_contract_cli_shell_core
+      - path: src/cli/shell_commands.cpp
+        approved_role: command_registry
+        approved_family: selfdoc.command_registry_contract
+        approved_action: alternate_contract_registry
+      - path: include/xexpr/function.hpp
+        approved_role: expression_function_system_api
+        approved_family: selfdoc.function_contract_or_api_contract
+        approved_action: alternate_contract_function_api
+      - path: src/cli/browse/browse_util.cpp
+        approved_role: browser_helper
+        approved_family: selfdoc.command_helper_contract
+        approved_action: alternate_contract_helper
+      - path: src/cli/console_utils.cpp
+        approved_role: console_talk_output_helper
+        approved_family: selfdoc.cli_console_io_contract
+        approved_action: alternate_contract_console_io
+      - path: src/cli/index_utils.cpp
+        approved_role: index_key_manipulation_helper
+        approved_family: selfdoc.index_helper_contract
+        approved_action: alternate_contract_index_helper
+      - path: src/cli/shell_buffer_utils.cpp
+        approved_role: cli_shell_helpers
+        approved_family: selfdoc.cli_shell_helper_contract
+        approved_action: alternate_contract_cli_shell_helper
+      - path: src/cli/shell_control_utils.cpp
+        approved_role: cli_shell_helpers
+        approved_family: selfdoc.cli_shell_helper_contract
+        approved_action: alternate_contract_cli_shell_helper
+      - path: src/cli/shell_eval_utils.cpp
+        approved_role: cli_shell_helpers
+        approved_family: selfdoc.cli_shell_helper_contract
+        approved_action: alternate_contract_cli_shell_helper
+      - path: src/cli/shell_var_utils.cpp
+        approved_role: cli_shell_helpers
+        approved_family: selfdoc.cli_shell_helper_contract
+        approved_action: alternate_contract_cli_shell_helper
+      - path: src/cli/status_helpers.cpp
+        approved_role: order_status_helper
+        approved_family: selfdoc.order_status_contract
+        approved_action: alternate_contract_order_status

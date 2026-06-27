@@ -1,0 +1,83 @@
+# SelfDoc pipeline manifest
+# Bootstrap-only starter.
+#
+# Purpose:
+#   Describe future SelfDoc pipeline stages without implementing them yet.
+#
+# Policy:
+#   This file is descriptive metadata only.
+#   It does not write DBFs.
+#   It does not move scripts.
+#   It does not implement CMDHELPCHK.
+#   It records reviewed pipeline stages only.
+
+schema_version: 0.1
+kind: selfdoc_pipeline_manifest
+status: active
+
+pipelines:
+  - name: metadata_collection_v0
+    pipeline_id: metadata_collection_v0_candidate
+    mode: report_only
+    default: true
+    description: >
+      Reviewed metadata collection/proposal baseline using metacollect to scan
+      source/catalog evidence and emit read-only reports plus canonical import
+      candidates. This pipeline documents the bridge between source/runtime
+      evidence and later live metadata promotion.
+    stages:
+      - metacollect_facts_scan
+      - metacollect_compare_scan
+      - metacollect_sysfunc_candidate_export
+      - metacollect_sysargs_candidate_export
+    optional_stages:
+      - metacollect_sysargs_diagnostic_full_export
+    stage_details:
+      - name: metacollect_facts_scan
+        tool: metacollect
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode > metacollect_facts.csv
+        outputs:
+          - metacollect_facts.csv
+      - name: metacollect_compare_scan
+        tool: metacollect
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --compare --compare-out metacollect_compare.csv > $null
+        outputs:
+          - metacollect_compare.csv
+      - name: metacollect_sysfunc_candidate_export
+        tool: metacollect
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysfunc-import-out dottalkpp\data\scripts\metadata\SYSFUNC_IMPORT_v1.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv
+        companion_artifacts:
+          - dottalkpp/data/scripts/metadata/SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt
+      - name: metacollect_sysargs_candidate_export
+        tool: metacollect
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv
+        companion_artifacts:
+          - dottalkpp/data/scripts/metadata/SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt
+      - name: metacollect_sysargs_diagnostic_full_export
+        tool: metacollect
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --include-dev-commands --sysargs-include-keywords --sysargs-import-out dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1_full.csv > $null
+        outputs:
+          - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1_full.csv
+        optional: true
+    non_mutation_guards:
+      - no_dbf_writes
+      - no_help_rebuild
+      - no_cmdhelpchk_changes
+      - no_source_repairs
+      - no_live_metadata_promotion
+      - review_before_import
+      - dev_only_commands_excluded_by_default

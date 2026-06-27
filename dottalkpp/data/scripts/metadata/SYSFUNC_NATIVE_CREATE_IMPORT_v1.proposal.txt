@@ -1,0 +1,35 @@
+* SYSFUNC_NATIVE_CREATE_IMPORT_v1.dts.proposal.txt
+* Status: INERT_PROPOSAL_TEXT / DO_NOT_EXECUTE_AS-IS
+* Generated for canonical SYSFUNC seed review.
+*
+* Preconditions before any manual/future execution:
+* - DBF path points to data\metadata or equivalent metadata lane.
+* - Existing SYSFUNC replacement/erase has been separately authorized.
+* - Backups exist and a local timestamped backup is made first.
+
+SCHEMAS CLOSE
+SET TALK ON
+ECHO Creating and importing x64 SYSFUNC metadata table...
+
+* ERASE included in proposal text only. Review before execution.
+ERASE SYSFUNC CONFIRM
+
+SELECT 0
+CREATE x64 SYSFUNC (FUNC_ID C(32), CAN_NAME C(80), DISP_NAME C(80), DEF_LOCALE C(16), REGION_ID C(16), FUNC_CAT C(40), MIN_ARGS N(4,0), MAX_ARGS N(4,0), IMPL_STAT C(32), VIS_TIER C(32), OWNER C(64), SRC_AUTH C(64), SRC_FILE C(180), HANDLER C(96), CALC_CALL L, PUB_SURF L, SELF_REG L, MSG_CAT L, ACTIVE L, VER_AT C(24), NOTES M)
+
+USE SYSFUNC
+CDX CREATE
+CDX ADDTAG FUNC_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG FUNC_CAT
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG OWNER
+CDX ADDTAG SRC_AUTH
+BUILDLMDB CLEAN YES
+
+IMPORT scripts\metadata\SYSFUNC_IMPORT_v1.csv
+
+FIELDS
+ECHO SYSFUNC native CREATE + IMPORT proposal complete.
