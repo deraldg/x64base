@@ -46,6 +46,8 @@
 #include <string>
 #include <vector>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #if defined(_WIN32)
 #  include <windows.h>
 #elif defined(__APPLE__)
@@ -84,13 +86,7 @@ static bool is_shutdown_usage_request(const std::string& raw)
 
 static void print_shutdown_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SHUTDOWN\n"
-        << "  SHUTDOWN USAGE\n"
-        << "Notes:\n"
-        << "  - SHUTDOWN with no arguments executes shutdown.ini when present.\n"
-        << "  - SHUTDOWN USAGE prints this usage and does not execute shutdown.ini.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShutdownUsageText);
 }
 } // namespace
 
@@ -145,11 +141,15 @@ static void trim_trailing_cr(std::string& s) {
 static void run_shutdown_script(xbase::DbArea& current, const fs::path& ini_path) {
     std::ifstream in(ini_path, std::ios::binary);
     if (!in) {
-        std::cout << "SHUTDOWN: unable to open " << ini_path.string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ShutdownUnableOpenText,
+            {{"path", ini_path.string()}});
         return;
     }
 
-    std::cout << "SHUTDOWN: processing " << ini_path.string() << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ShutdownProcessingText,
+        {{"path", ini_path.string()}});
 
     std::string line;
     std::size_t line_no = 0;
@@ -168,11 +168,20 @@ static void run_shutdown_script(xbase::DbArea& current, const fs::path& ini_path
         try {
             (void)shell_execute_line(current, line);
         } catch (const std::exception& ex) {
-            std::cout << "SHUTDOWN: " << ini_path.filename().string()
-                      << ":" << line_no << ": " << ex.what() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ShutdownLineFailedText,
+                {
+                    {"file", ini_path.filename().string()},
+                    {"line", std::to_string(line_no)},
+                    {"detail", ex.what()}
+                });
         } catch (...) {
-            std::cout << "SHUTDOWN: " << ini_path.filename().string()
-                      << ":" << line_no << ": unknown error\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ShutdownLineUnknownErrorText,
+                {
+                    {"file", ini_path.filename().string()},
+                    {"line", std::to_string(line_no)}
+                });
         }
     }
 }
@@ -189,12 +198,15 @@ void cmd_SHUTDOWN(xbase::DbArea& current, std::istringstream& in) {
         if (fs::exists(ini_path) && fs::is_regular_file(ini_path)) {
             run_shutdown_script(current, ini_path);
         } else {
-            std::cout << "SHUTDOWN: no shutdown.ini found in "
-                      << get_executable_dir().string() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ShutdownNoIniFoundText,
+                {{"path", get_executable_dir().string()}});
         }
     } catch (const std::exception& ex) {
-        std::cout << "SHUTDOWN: ini processing failed: " << ex.what() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ShutdownProcessingFailedText,
+            {{"detail", ex.what()}});
     } catch (...) {
-        std::cout << "SHUTDOWN: ini processing failed (unknown error)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ShutdownProcessingFailedUnknownText);
     }
 }

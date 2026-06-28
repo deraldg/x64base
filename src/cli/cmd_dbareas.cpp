@@ -44,9 +44,11 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cmd_dbarea.hpp"
 #include "workareas.hpp"
 
@@ -114,29 +116,33 @@ static void print_relations_for_current_area(xbase::DbArea& current) {
     try { relations_api::refresh_for_current_parent(); } catch (...) {}
 
     std::cout << "\n";
-    std::cout << "Relations\n";
-    std::cout << "---------\n";
-    std::cout << "Parent anchor        : " << (parent.empty() ? "(unknown)" : parent) << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasRelationsTitleText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasRelationsDividerText);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::DbareasParentAnchorLineText,
+        {{"value", parent.empty() ? std::string("(unknown)") : parent}});
 
     // Direct children + match counts (current parent row context).
     std::vector<std::string> kids;
     try { kids = relations_api::child_areas_for_current_parent(); } catch (...) { kids.clear(); }
 
     if (kids.empty()) {
-        std::cout << "Children             : (none configured)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasChildrenNoneText);
     } else {
-        std::cout << "Children (direct)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasChildrenDirectTitleText);
         for (const auto& child : kids) {
             int mc = 0;
             try { mc = relations_api::match_count_for_child(child); } catch (...) { mc = 0; }
-            std::cout << "  -> " << child << "  (matches: " << mc << ")\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::DbareasChildMatchLineText,
+                {{"child", child}, {"count", std::to_string(mc)}});
         }
     }
 
     // Tree view (REL LIST ALL style)
     std::cout << "\n";
-    std::cout << "Relation tree\n";
-    std::cout << "-------------\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasRelationTreeTitleText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasRelationTreeDividerText);
 
     std::vector<relations_api::PreviewRow> rows;
     try { rows = relations_api::list_tree_for_current_parent(/*recursive=*/true, /*max_depth=*/64); }
@@ -172,11 +178,7 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
     const std::string up = up_copy(tok);
 
     if (up == "USAGE" || up == "HELP" || up == "?") {
-        std::cout << "Usage:\n";
-        std::cout << "  DBAREAS                (same as DBAREA for current)\n";
-        std::cout << "  DBAREAS <n>            (print area n)\n";
-        std::cout << "  DBAREAS ALL            (print all OPEN areas; filename() is truth)\n";
-        std::cout << "  DBAREAS REL            (current area + relations summary/tree)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasUsageText);
         return;
     }
 
@@ -196,7 +198,7 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
         }
 
         if (!any) {
-            std::cout << "DBAREAS: no open work areas.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasNoOpenWorkAreasText);
         }
         return;
     }
@@ -209,7 +211,8 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
 #if HAVE_RELATIONS
         print_relations_for_current_area(current);
 #else
-        std::cout << "\nRelations: (module not present)\n";
+        std::cout << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasRelationsModuleMissingText);
 #endif
         return;
     }
@@ -218,8 +221,12 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
     int slot = -1;
     if (try_parse_int(tok, slot)) {
         if (slot < 0 || slot >= xbase::MAX_AREA) {
-            std::cout << "DBAREAS: slot out of range: " << slot
-                      << " (0.." << (xbase::MAX_AREA - 1) << ")\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::DbareasSlotOutOfRangeText,
+                {
+                    {"slot", std::to_string(slot)},
+                    {"max", std::to_string(xbase::MAX_AREA - 1)},
+                });
             return;
         }
 
@@ -227,7 +234,9 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
         try { a = workareas::db(slot); } catch (...) { a = nullptr; }
 
         if (!a || !open_truth(*a)) {
-            std::cout << "DBAREAS: area " << slot << " is not open.\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::DbareasAreaNotOpenText,
+                {{"slot", std::to_string(slot)}});
             return;
         }
 
@@ -236,10 +245,6 @@ void cmd_DBAREAS(xbase::DbArea& current, std::istringstream& in)
         return;
     }
 
-    std::cout << "Usage:\n";
-    std::cout << "  DBAREAS                (same as DBAREA for current)\n";
-    std::cout << "  DBAREAS <n>            (print area n)\n";
-    std::cout << "  DBAREAS ALL            (print all OPEN areas; filename() is truth)\n";
-    std::cout << "  DBAREAS REL            (current area + relations summary/tree)\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareasUsageText);
 }
 

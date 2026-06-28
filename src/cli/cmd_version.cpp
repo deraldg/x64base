@@ -29,6 +29,8 @@
 //
 
 #include "cmd_version.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
@@ -78,9 +80,7 @@ static bool is_version_usage_request(const std::string& raw)
 
 static void print_version_usage()
 {
-    std::cout << "Usage:\n"
-              << "  VERSION\n"
-              << "  VERSION USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::VersionUsageText);
 }
 
 static std::filesystem::path version_executable_path()
@@ -150,10 +150,12 @@ void cmd_VERSION(xbase::DbArea& area, std::istringstream& args) {
     }
 
     const std::string stamp = version_build_stamp();
-    std::cout << "dottalk++ " << DOTTALKPP_VERSION
-              << "  (" << stamp << ")\n";
-    std::cout << "DotTalk++ build " << stamp << "\n";
-
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::VersionBannerLineText,
+        {{"version", DOTTALKPP_VERSION}, {"stamp", stamp}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::VersionBuildLineText,
+        {{"stamp", stamp}});
 }
  
 

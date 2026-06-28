@@ -1,0 +1,12 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_VERIFY_v1.dts
+* Status:
+*   CANONICAL_WRAPPER
+* Purpose:
+*   Stable operator entrypoint for the reviewed runtime verification step.
+* Boundary:
+*   - Read-only verification path.
+*   - Delegates only to the reviewed runtime verify script.
+* ============================================================
+
+DO RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify.dts

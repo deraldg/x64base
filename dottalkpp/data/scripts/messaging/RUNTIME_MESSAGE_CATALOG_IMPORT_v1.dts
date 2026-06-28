@@ -1,0 +1,11 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_IMPORT_v1.dts
+* Status:
+*   CANONICAL_WRAPPER
+* Purpose:
+*   Stable operator entrypoint for the reviewed runtime import step.
+* Boundary:
+*   - Delegates only to the reviewed runtime messaging import script.
+* ============================================================
+
+DO RUNTIME_MESSAGE_CATALOG_IMPORT_v1.RUN_REVIEWED.dts

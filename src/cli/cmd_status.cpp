@@ -128,14 +128,8 @@ void print_index_body(xbase::DbArea& A, bool verbose) {
     } else {
         std::cout << "\n\n";
         cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusTagsTitle);
-        std::cout
-            << "  "
-            << std::left << std::setw(14) << "Field Name"
-            << std::setw(8)  << "Type"
-            << std::setw(6)  << "Len"
-            << std::setw(6)  << "Dec"
-            << "Dir\n";
-        std::cout << "  ------------ ------- ------ ------ ----\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusTagColumnHeaderText);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusTagDividerText);
 
         for (const auto& T : S.tags) {
             const std::string field_name = !T.fieldName.empty() ? T.fieldName : T.tagName;
@@ -178,13 +172,7 @@ void print_struct(const xbase::DbArea& A) {
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::StatusFieldsTitle,
         {{"count", std::to_string(F.size())}});
-    std::cout
-        << "  #  "
-        << std::left << std::setw(12) << "Name"
-        << std::setw(6)  << "Type"
-        << std::setw(6)  << "Len"
-        << std::setw(6)  << "Dec"
-        << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusFieldColumnHeaderText);
 
     for (std::size_t i = 0; i < F.size(); ++i) {
         const auto& fd = F[i];

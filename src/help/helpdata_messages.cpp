@@ -326,6 +326,134 @@ const std::vector<MessageDef>& all_messages()
             "TABLE BUFFER: {state} (area {area})"
         },
         {
+            MessageId::TableBufferUsageText,
+            "TABLE_BUFFER_USAGE_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "USAGE",
+            "INFO",
+            "Usage:\n  TABLE\n  TABLE ALL\n  TABLE STATUS [ALL]\n  TABLE BUFFER ON [PERSISTENT|RAM] [<n>|ALL|n,m,...]\n  TABLE BUFFER OFF [<n>|ALL|n,m,...]\n  TABLE BUFFER PERSISTENT [ON|OFF] [<n>|ALL|n,m,...]\n  TABLE BUFFER DIRTY [<n>|ALL|n,m,...]\n  TABLE BUFFER CLEAN [<n>|ALL|n,m,...]\n  TABLE BUFFER STALE [<n>|ALL|n,m,...]\n  TABLE BUFFER FRESH [<n>|ALL|n,m,...]\n  TABLE BUFFER STATUS [area|ALL]\n  TABLE BUFFER DUMP [area|ALL]\n  TABLE BUFFER TESTADD <recno> [flags] [field1] [value]\n  TABLE BUFFER RESET\nLegacy compatibility:\n  TABLE ON|OFF|DIRTY|CLEAN|STALE|FRESH [<n>|ALL|n,m,...]\n  TABLE ONALL|OFFALL|DIRTYALL|CLEANALL|STALEALL|FRESHALL"
+        },
+        {
+            MessageId::TableBufferTestAddUsageText,
+            "TABLE_BUFFER_TESTADD_USAGE_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "USAGE",
+            "INFO",
+            "Usage: TABLE BUFFER TESTADD <recno> [flags] [field1] [value]"
+        },
+        {
+            MessageId::TableBufferAreasAllTitleText,
+            "TABLE_BUFFER_AREAS_ALL_TITLE_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "areas 0..{last}"
+        },
+        {
+            MessageId::TableBufferOccupiedAreasTitleText,
+            "TABLE_BUFFER_OCCUPIED_AREAS_TITLE_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "occupied areas only"
+        },
+        {
+            MessageId::TableBufferAreasUpdatedText,
+            "TABLE_BUFFER_AREAS_UPDATED_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "{count} area(s) updated."
+        },
+        {
+            MessageId::TableBufferPersistenceUpdatedText,
+            "TABLE_BUFFER_PERSISTENCE_UPDATED_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "{count} area(s) persistence updated."
+        },
+        {
+            MessageId::TableBufferInvalidAreaText,
+            "TABLE_BUFFER_INVALID_AREA_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "invalid area."
+        },
+        {
+            MessageId::TableBufferStatusHeaderText,
+            "TABLE_BUFFER_STATUS_HEADER_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "Area {area} buffer:"
+        },
+        {
+            MessageId::TableBufferDumpHeaderText,
+            "TABLE_BUFFER_DUMP_HEADER_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "Area {area} buffer dump:"
+        },
+        {
+            MessageId::TableBufferEmptyBufferText,
+            "TABLE_BUFFER_EMPTY_BUFFER_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "Area {area} buffer: empty"
+        },
+        {
+            MessageId::TableBufferNoCurrentEnabledAreaText,
+            "TABLE_BUFFER_NO_CURRENT_ENABLED_AREA_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "no current enabled area."
+        },
+        {
+            MessageId::TableBufferNoCurrentAreaSelectedOrEnabledText,
+            "TABLE_BUFFER_NO_CURRENT_AREA_SELECTED_OR_ENABLED_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "no current area selected or not enabled."
+        },
+        {
+            MessageId::TableBufferInvalidRecnoText,
+            "TABLE_BUFFER_INVALID_RECNO_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "invalid recno."
+        },
+        {
+            MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText,
+            "TABLE_BUFFER_CANNOT_DETERMINE_CURRENT_AREA_SPECIFY_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "cannot determine current area; specify an area number."
+        },
+        {
+            MessageId::TableBufferResetAllText,
+            "TABLE_BUFFER_RESET_ALL_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "STATUS",
+            "INFO",
+            "reset all areas."
+        },
+        {
+            MessageId::TableBufferUnknownSubcommandText,
+            "TABLE_BUFFER_UNKNOWN_SUBCOMMAND_TEXT",
+            "COMMAND:TABLE BUFFER",
+            "ERROR",
+            "ERROR",
+            "unknown subcommand '{subcommand}'."
+        },
+        {
             MessageId::SetConsoleUsageText,
             "SET_CONSOLE_USAGE_TEXT",
             "COMMAND:SET CONSOLE",
@@ -476,6 +604,22 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Wrap is {state}"
+        },
+        {
+            MessageId::SetDevdiagUsageText,
+            "SET_DEVDIAG_USAGE_TEXT",
+            "COMMAND:SET DEVDIAG",
+            "USAGE",
+            "INFO",
+            "Usage: SET DEVDIAG ON|OFF|STATUS"
+        },
+        {
+            MessageId::SetDevdiagStatusText,
+            "SET_DEVDIAG_STATUS_TEXT",
+            "COMMAND:SET DEVDIAG",
+            "STATUS",
+            "INFO",
+            "Passive dev diagnostics are {state}"
         },
         {
             MessageId::SetTimerUsageText,
@@ -2123,7 +2267,47 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:USE",
             "USAGE",
             "INFO",
-            "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX, then IDX."
+            "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX."
+        },
+        {
+            MessageId::LocateUsageText,
+            "LOCATE_USAGE_TEXT",
+            "COMMAND:LOCATE",
+            "USAGE",
+            "INFO",
+            "Usage:\n  LOCATE USAGE\n  LOCATE FOR <expr>\n  LOCATE <field> <op> <value>\nExamples:\n  LOCATE FOR LNAME = Smith\n  LOCATE LNAME = Smith\n  LOCATE FOR BALANCE > 100\nNotes:\n  - LOCATE requires an open table except for LOCATE USAGE.\n  - LOCATE positions on the first matching record and updates CONTINUE state."
+        },
+        {
+            MessageId::LocateFoundText,
+            "LOCATE_FOUND_TEXT",
+            "COMMAND:LOCATE",
+            "STATUS",
+            "INFO",
+            "Located."
+        },
+        {
+            MessageId::LocateNotFoundText,
+            "LOCATE_NOT_FOUND_TEXT",
+            "COMMAND:LOCATE",
+            "STATUS",
+            "INFO",
+            "Not Located."
+        },
+        {
+            MessageId::AppendUsageText,
+            "APPEND_USAGE_TEXT",
+            "COMMAND:APPEND",
+            "USAGE",
+            "INFO",
+            "Usage:\n  APPEND USAGE\n  APPEND\n  APPEND <count>\n  APPEND MANY <count>\n  APPEND RAW\n  APPEND RAW MANY <count>\nNotes:\n  - APPEND with no arguments appends one blank record through the shared smart append path.\n  - APPEND MANY uses the smart batch append path.\n  - APPEND RAW uses the raw append path without inline index update."
+        },
+        {
+            MessageId::AppendBlankUsageText,
+            "APPEND_BLANK_USAGE_TEXT",
+            "COMMAND:APPEND_BLANK",
+            "USAGE",
+            "INFO",
+            "Usage:\n  APPEND_BLANK USAGE\n  APPEND_BLANK\n  APPEND BLANK\nNotes:\n  - Appends one blank record through shared append support."
         },
         {
             MessageId::GoUsageText,
@@ -2142,12 +2326,364 @@ const std::vector<MessageDef>& all_messages()
             "Usage:\n  GOTO USAGE\n  GOTO <recno>\n  GOTO FIRST\n  GOTO LAST"
         },
         {
+            MessageId::ContinueUsageText,
+            "CONTINUE_USAGE_TEXT",
+            "COMMAND:CONTINUE",
+            "USAGE",
+            "INFO",
+            "Usage:\n  CONTINUE\n  CONTINUE USAGE\n  CONTINUE FOR <expr>"
+        },
+        {
+            MessageId::FindUsageText,
+            "FIND_USAGE_TEXT",
+            "COMMAND:FIND",
+            "USAGE",
+            "INFO",
+            "Usage:\n  FIND USAGE\n  FIND <text>\n  FIND <field> <text>\n  FIND <text> IN <field>\nNotes:\n  - FIND requires an open table except for FIND USAGE.\n  - FIND delegates to SEEK when the active order can satisfy the request.\n  - Otherwise FIND scans the requested field and positions on the found record."
+        },
+        {
+            MessageId::SeekUsageText,
+            "SEEK_USAGE_TEXT",
+            "COMMAND:SEEK",
+            "USAGE",
+            "INFO",
+            "Usage:\n  SEEK USAGE\n  SEEK <value> IN <field> [TRACE ON|OFF]\n  SEEK <field> = <value> [TRACE ON|OFF]\n  SEEK <field> <value>   [TRACE ON|OFF]\n  SEEK <value>           (uses active order/tag when set)\n  SEEK TRACE ON|OFF\nNotes:\n  SEEK requires an open table except for SEEK USAGE.\n  SEEK <value> uses the active order/tag when one is set."
+        },
+        {
+            MessageId::IndexUsageText,
+            "INDEX_USAGE_TEXT",
+            "COMMAND:INDEX",
+            "USAGE",
+            "INFO",
+            "Usage: INDEX ON <field> TAG <name> [ASC|DESC] [1INX|2INX]\n   Field-number tokens are also accepted by the parser.\nDefaults: ASC, 2INX\nExamples:\n  INDEX ON LNAME TAG students\n  INDEX ON LNAME TAG students DESC\n  INDEX ON LNAME TAG students DESC 2INX\nNotes:\n  - INDEX requires an open table except for INDEX USAGE.\n  - Deleted records are excluded.\n  - TAG resolves through the INDEXES path and must name an .inx target."
+        },
+        {
+            MessageId::IndexInvalidTagPathText,
+            "INDEX_INVALID_TAG_PATH_TEXT",
+            "COMMAND:INDEX",
+            "ERROR",
+            "ERROR",
+            "invalid TAG path '{tag}'."
+        },
+        {
+            MessageId::IndexUseBareNameHintText,
+            "INDEX_USE_BARE_NAME_HINT_TEXT",
+            "COMMAND:INDEX",
+            "HINT",
+            "INFO",
+            "Use a bare name (TAG students), an absolute path, or a slot path:"
+        },
+        {
+            MessageId::IndexUnknownFieldText,
+            "INDEX_UNKNOWN_FIELD_TEXT",
+            "COMMAND:INDEX",
+            "ERROR",
+            "ERROR",
+            "unknown field '{field}'."
+        },
+        {
+            MessageId::IndexAvailableFieldsTitle,
+            "INDEX_AVAILABLE_FIELDS_TITLE",
+            "COMMAND:INDEX",
+            "STATUS",
+            "INFO",
+            "Available:"
+        },
+        {
+            MessageId::IndexTipFieldNumberText,
+            "INDEX_TIP_FIELD_NUMBER_TEXT",
+            "COMMAND:INDEX",
+            "HINT",
+            "INFO",
+            "Tip: INDEX ON #3 TAG students"
+        },
+        {
+            MessageId::IndexTagMustNameInxText,
+            "INDEX_TAG_MUST_NAME_INX_TEXT",
+            "COMMAND:INDEX",
+            "ERROR",
+            "ERROR",
+            "TAG must name an .inx file."
+        },
+        {
+            MessageId::IndexGotPathText,
+            "INDEX_GOT_PATH_TEXT",
+            "COMMAND:INDEX",
+            "STATUS",
+            "INFO",
+            "Got: {path}"
+        },
+        {
+            MessageId::IndexCannotWriteFileText,
+            "INDEX_CANNOT_WRITE_FILE_TEXT",
+            "COMMAND:INDEX",
+            "ERROR",
+            "ERROR",
+            "cannot write file: {path}"
+        },
+        {
+            MessageId::IndexWrittenText,
+            "INDEX_WRITTEN_TEXT",
+            "COMMAND:INDEX",
+            "STATUS",
+            "INFO",
+            "written: {file} ({format}, expr: {expr}, {direction})"
+        },
+        {
+            MessageId::IdxUsageText,
+            "IDX_USAGE_TEXT",
+            "COMMAND:IDX",
+            "USAGE",
+            "INFO",
+            "IDX is a memory-only educational index lab.\nIt teaches sorting and index concepts without writing .inx files.\nUse INDEX for persistent INX files.\n\nUsage:\n  IDX\n  IDX USAGE\n  IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]\n  IDX LIST\n  IDX DROP <tag>\n  IDX DROP ALL\n  IDX HELP\n\nSort algorithms, Phase 1:\n  STD       C++ std::sort baseline\n  BUBBLE    classroom bubble sort\n\nExamples:\n  IDX ON LNAME TAG lname_std\n  IDX ON LNAME TAG lname_bubble BUBBLE\n  IDX ON LNAME TAG lname_bubble2 SORT BUBBLE DESC"
+        },
+        {
+            MessageId::IdxExpectedOnText,
+            "IDX_EXPECTED_ON_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "expected ON."
+        },
+        {
+            MessageId::IdxMissingFieldTokenText,
+            "IDX_MISSING_FIELD_TOKEN_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "missing field token."
+        },
+        {
+            MessageId::IdxExpectedTagText,
+            "IDX_EXPECTED_TAG_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "expected TAG."
+        },
+        {
+            MessageId::IdxMissingTagNameText,
+            "IDX_MISSING_TAG_NAME_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "missing TAG name."
+        },
+        {
+            MessageId::IdxDuplicateSortOptionText,
+            "IDX_DUPLICATE_SORT_OPTION_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "duplicate SORT option."
+        },
+        {
+            MessageId::IdxSortRequiresAlgorithmText,
+            "IDX_SORT_REQUIRES_ALGORITHM_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "SORT requires an algorithm name."
+        },
+        {
+            MessageId::IdxUnknownSortAlgorithmText,
+            "IDX_UNKNOWN_SORT_ALGORITHM_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "unknown SORT algorithm '{algorithm}'. Supported: STD, BUBBLE."
+        },
+        {
+            MessageId::IdxDuplicateDirectionOptionText,
+            "IDX_DUPLICATE_DIRECTION_OPTION_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "duplicate direction option."
+        },
+        {
+            MessageId::IdxUnexpectedTokenText,
+            "IDX_UNEXPECTED_TOKEN_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "unexpected token '{token}'."
+        },
+        {
+            MessageId::IdxBuildCreatedText,
+            "IDX_BUILD_CREATED_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "Memory index {verb}: {tag}"
+        },
+        {
+            MessageId::IdxExprLineText,
+            "IDX_EXPR_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  expr       : {value}"
+        },
+        {
+            MessageId::IdxSortLineText,
+            "IDX_SORT_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  sort       : {value}"
+        },
+        {
+            MessageId::IdxDirectionLineText,
+            "IDX_DIRECTION_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  direction  : {value}"
+        },
+        {
+            MessageId::IdxRecordsLineText,
+            "IDX_RECORDS_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  records    : {indexed} indexed / {scanned} scanned"
+        },
+        {
+            MessageId::IdxDeletedLineText,
+            "IDX_DELETED_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  deleted    : {count} skipped"
+        },
+        {
+            MessageId::IdxBuildElapsedLineText,
+            "IDX_BUILD_ELAPSED_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  build      : {value}"
+        },
+        {
+            MessageId::IdxSortElapsedLineText,
+            "IDX_SORT_ELAPSED_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  sort       : {value}"
+        },
+        {
+            MessageId::IdxComparisonsLineText,
+            "IDX_COMPARISONS_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  compares   : {value}"
+        },
+        {
+            MessageId::IdxSwapsLineText,
+            "IDX_SWAPS_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "  swaps      : {value}"
+        },
+        {
+            MessageId::IdxNoMemoryIndexesText,
+            "IDX_NO_MEMORY_INDEXES_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "no memory indexes."
+        },
+        {
+            MessageId::IdxMemoryIndexesTitle,
+            "IDX_MEMORY_INDEXES_TITLE",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "IDX memory indexes:"
+        },
+        {
+            MessageId::IdxListHeaderLineText,
+            "IDX_LIST_HEADER_LINE_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "TAG               EXPR        SORT      DIR   ENTRIES   BUILD"
+        },
+        {
+            MessageId::IdxDropUsageText,
+            "IDX_DROP_USAGE_TEXT",
+            "COMMAND:IDX",
+            "USAGE",
+            "INFO",
+            "Usage: IDX DROP <tag>|ALL"
+        },
+        {
+            MessageId::IdxNoMemoryIndexesToDropText,
+            "IDX_NO_MEMORY_INDEXES_TO_DROP_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "no memory indexes to drop."
+        },
+        {
+            MessageId::IdxDroppedAllText,
+            "IDX_DROPPED_ALL_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "dropped all memory indexes."
+        },
+        {
+            MessageId::IdxDroppedMemoryIndexText,
+            "IDX_DROPPED_MEMORY_INDEX_TEXT",
+            "COMMAND:IDX",
+            "STATUS",
+            "INFO",
+            "dropped memory index {tag}."
+        },
+        {
+            MessageId::IdxMemoryIndexNotFoundText,
+            "IDX_MEMORY_INDEX_NOT_FOUND_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "memory index not found: {tag}"
+        },
+        {
+            MessageId::IdxBuildUsageText,
+            "IDX_BUILD_USAGE_TEXT",
+            "COMMAND:IDX",
+            "USAGE",
+            "INFO",
+            "Usage: IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]"
+        },
+        {
+            MessageId::IdxUnknownCommandText,
+            "IDX_UNKNOWN_COMMAND_TEXT",
+            "COMMAND:IDX",
+            "ERROR",
+            "ERROR",
+            "unknown command '{command}'."
+        },
+        {
             MessageId::SkipUsageText,
             "SKIP_USAGE_TEXT",
             "COMMAND:SKIP",
             "USAGE",
             "INFO",
             "Usage:\n  SKIP\n  SKIP USAGE\n  SKIP <n>"
+        },
+        {
+            MessageId::CountUsageText,
+            "COUNT_USAGE_TEXT",
+            "COMMAND:COUNT",
+            "USAGE",
+            "INFO",
+            "Usage:\n  COUNT\n  COUNT USAGE\n  COUNT ALL\n  COUNT FOR <expr>\n  COUNT WHERE <expr>\n  COUNT <expr>\n  COUNT DELETED\n  COUNT NOT DELETED\n  COUNT !DELETED\nNotes:\n  - COUNT with no arguments counts the current logical rowset.\n  - With no open table, COUNT preserves existing behavior and prints 0.\n  - COUNT preserves the active cursor where possible after scans."
         },
         {
             MessageId::TopUsageText,
@@ -2292,6 +2828,30 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Auto-attached order: {file}"
+        },
+        {
+            MessageId::ContinueNoActiveLocateText,
+            "CONTINUE_NO_ACTIVE_LOCATE_TEXT",
+            "COMMAND:CONTINUE",
+            "ERROR",
+            "ERROR",
+            "no active locate."
+        },
+        {
+            MessageId::ContinueNotFoundText,
+            "CONTINUE_NOT_FOUND_TEXT",
+            "COMMAND:CONTINUE",
+            "STATUS",
+            "INFO",
+            "not found."
+        },
+        {
+            MessageId::ContinueFoundAtText,
+            "CONTINUE_FOUND_AT_TEXT",
+            "COMMAND:CONTINUE",
+            "STATUS",
+            "INFO",
+            "Found at {recno}."
         },
         {
             MessageId::NavNoFileOpenText,
@@ -2782,6 +3342,14 @@ const std::vector<MessageDef>& all_messages()
             "Unknown command: {command}"
         },
         {
+            MessageId::MacroUndefinedVariable,
+            "MACRO_UNDEFINED_VARIABLE",
+            "GLOBAL",
+            "ERROR",
+            "ERROR",
+            "MACRO: undefined variable: {name}"
+        },
+        {
             MessageId::MissingArgument,
             "MISSING_ARGUMENT",
             "GLOBAL",
@@ -2958,6 +3526,94 @@ const std::vector<MessageDef>& all_messages()
             "No active index."
         },
         {
+            MessageId::FindFoundText,
+            "FIND_FOUND_TEXT",
+            "COMMAND:FIND",
+            "STATUS",
+            "INFO",
+            "Found."
+        },
+        {
+            MessageId::FindNotFoundText,
+            "FIND_NOT_FOUND_TEXT",
+            "COMMAND:FIND",
+            "STATUS",
+            "INFO",
+            "Not found."
+        },
+        {
+            MessageId::SeekEmptyText,
+            "SEEK_EMPTY_TEXT",
+            "COMMAND:SEEK",
+            "STATUS",
+            "INFO",
+            "(empty)"
+        },
+        {
+            MessageId::SmartlistUsageText,
+            "SMARTLIST_USAGE_TEXT",
+            "COMMAND:SMARTLIST",
+            "USAGE",
+            "INFO",
+            "Usage:\n  SMARTLIST\n  SMARTLIST USAGE\n  SMARTLIST <fields>\n  SMARTLIST ALL\n  SMARTLIST <limit>\n  SMARTLIST NEXT <n>\n  SMARTLIST FIRST <n>\n  SMARTLIST DELETED\n  SMARTLIST DEBUG\n  SMARTLIST TUPLES\n  SMARTLIST FOR <pred>"
+        },
+        {
+            MessageId::SmartlistUnknownProjectionFieldText,
+            "SMARTLIST_UNKNOWN_PROJECTION_FIELD_TEXT",
+            "COMMAND:SMARTLIST",
+            "WARNING",
+            "WARNING",
+            "unknown projection field '{field}'; using full row."
+        },
+        {
+            MessageId::SeekTraceStatusText,
+            "SEEK_TRACE_STATUS_TEXT",
+            "COMMAND:SEEK",
+            "STATUS",
+            "INFO",
+            "SEEK TRACE is {state}."
+        },
+        {
+            MessageId::SeekUnknownFieldText,
+            "SEEK_UNKNOWN_FIELD_TEXT",
+            "COMMAND:SEEK",
+            "ERROR",
+            "ERROR",
+            "unknown field: {field}"
+        },
+        {
+            MessageId::SeekFoundAtText,
+            "SEEK_FOUND_AT_TEXT",
+            "COMMAND:SEEK",
+            "STATUS",
+            "INFO",
+            "Found at {recno}."
+        },
+        {
+            MessageId::SeekNearMatchAtText,
+            "SEEK_NEAR_MATCH_AT_TEXT",
+            "COMMAND:SEEK",
+            "STATUS",
+            "INFO",
+            "Near match at {recno}."
+        },
+        {
+            MessageId::SeekNotFoundText,
+            "SEEK_NOT_FOUND_TEXT",
+            "COMMAND:SEEK",
+            "STATUS",
+            "INFO",
+            "Not found."
+        },
+        {
+            MessageId::AscendUsageText,
+            "ASCEND_USAGE_TEXT",
+            "COMMAND:ASCEND",
+            "USAGE",
+            "INFO",
+            "Usage:\n  ASCEND\n  ASCEND USAGE\n"
+        },
+        {
             MessageId::OrderAscendingSet,
             "ORDER_ASCENDING_SET",
             "SUBSYSTEM:XINDEX",
@@ -3102,6 +3758,22 @@ const std::vector<MessageDef>& all_messages()
             "  Tags"
         },
         {
+            MessageId::StatusTagColumnHeaderText,
+            "STATUS_TAG_COLUMN_HEADER_TEXT",
+            "COMMAND:STATUS",
+            "STATUS",
+            "INFO",
+            "  Field Name    Type    Len   Dec   Dir"
+        },
+        {
+            MessageId::StatusTagDividerText,
+            "STATUS_TAG_DIVIDER_TEXT",
+            "COMMAND:STATUS",
+            "STATUS",
+            "INFO",
+            "  ------------ ------- ------ ------ ----"
+        },
+        {
             MessageId::StatusRecordsLine,
             "STATUS_RECORDS_LINE",
             "COMMAND:STATUS",
@@ -3132,6 +3804,14 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Fields ({count})"
+        },
+        {
+            MessageId::StatusFieldColumnHeaderText,
+            "STATUS_FIELD_COLUMN_HEADER_TEXT",
+            "COMMAND:STATUS",
+            "STATUS",
+            "INFO",
+            "  #  Name        Type  Len   Dec"
         },
         {
             MessageId::StatusOrderPhysicalLine,
@@ -3190,6 +3870,14 @@ const std::vector<MessageDef>& all_messages()
             "Fields ({count})"
         },
         {
+            MessageId::StructFieldColumnHeaderText,
+            "STRUCT_FIELD_COLUMN_HEADER_TEXT",
+            "COMMAND:STRUCT",
+            "STATUS",
+            "INFO",
+            "  #  Name          Type   Len   Dec"
+        },
+        {
             MessageId::StructDbfileLine,
             "STRUCT_DBFILE_LINE",
             "COMMAND:STRUCT",
@@ -3238,6 +3926,14 @@ const std::vector<MessageDef>& all_messages()
             "  * marks active"
         },
         {
+            MessageId::StructVerboseCnxColumnHeaderText,
+            "STRUCT_VERBOSE_CNX_COLUMN_HEADER_TEXT",
+            "COMMAND:STRUCT",
+            "STATUS",
+            "INFO",
+            "    Tag             Expression"
+        },
+        {
             MessageId::DbareaUsageText,
             "DBAREA_USAGE_TEXT",
             "COMMAND:DBAREA",
@@ -3262,6 +3958,94 @@ const std::vector<MessageDef>& all_messages()
             "DBAREA - Current Work Area Summary"
         },
         {
+            MessageId::DbareaBannerDividerText,
+            "DBAREA_BANNER_DIVIDER_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "============================================================"
+        },
+        {
+            MessageId::DbareaAreaSlotLineText,
+            "DBAREA_AREA_SLOT_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Area (slot)"
+        },
+        {
+            MessageId::DbareaDbfAbsoluteLineText,
+            "DBAREA_DBF_ABSOLUTE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "DBF (abs)"
+        },
+        {
+            MessageId::DbareaLogicalNameLineText,
+            "DBAREA_LOGICAL_NAME_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Logical name"
+        },
+        {
+            MessageId::DbareaLegacyNameLineText,
+            "DBAREA_LEGACY_NAME_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Legacy name()"
+        },
+        {
+            MessageId::DbareaRecordsLineText,
+            "DBAREA_RECORDS_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Records"
+        },
+        {
+            MessageId::DbareaRecordLengthLineText,
+            "DBAREA_RECORD_LENGTH_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Record length"
+        },
+        {
+            MessageId::DbareaRecordLengthMethodLineText,
+            "DBAREA_RECORD_LENGTH_METHOD_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "recordLength()"
+        },
+        {
+            MessageId::DbareaFieldsCountLineText,
+            "DBAREA_FIELDS_COUNT_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Fields"
+        },
+        {
+            MessageId::DbareaRecnoLineText,
+            "DBAREA_RECNO_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Recno"
+        },
+        {
+            MessageId::DbareaDeletedFlagLineText,
+            "DBAREA_DELETED_FLAG_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Deleted flag"
+        },
+        {
             MessageId::DbareaIndexOrderTitle,
             "DBAREA_INDEX_ORDER_TITLE",
             "COMMAND:DBAREA",
@@ -3270,12 +4054,156 @@ const std::vector<MessageDef>& all_messages()
             "Index / Order"
         },
         {
+            MessageId::DbareaSectionDividerText,
+            "DBAREA_SECTION_DIVIDER_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "-------------"
+        },
+        {
+            MessageId::DbareaIndexFileLineText,
+            "DBAREA_INDEX_FILE_LINE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "Index file"
+        },
+        {
             MessageId::DbareaFieldsTitle,
             "DBAREA_FIELDS_TITLE",
             "COMMAND:DBAREA",
             "STATUS",
             "INFO",
             "Fields"
+        },
+        {
+            MessageId::DbareaFieldsNoneText,
+            "DBAREA_FIELDS_NONE_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "(none)"
+        },
+        {
+            MessageId::DbareaFieldColumnHeaderText,
+            "DBAREA_FIELD_COLUMN_HEADER_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "#    Name              Type      Len     Dec"
+        },
+        {
+            MessageId::DbareaFieldDividerText,
+            "DBAREA_FIELD_DIVIDER_TEXT",
+            "COMMAND:DBAREA",
+            "STATUS",
+            "INFO",
+            "-------------------------------------------------"
+        },
+        {
+            MessageId::DbareasUsageText,
+            "DBAREAS_USAGE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Usage:\n  DBAREAS\n  DBAREAS USAGE\n  DBAREAS <n>\n  DBAREAS ALL\n  DBAREAS REL\nNotes:\n  - DBAREAS with no arguments reports the current area by delegating to DBAREA.\n  - DBAREAS <n> reports slot n when that slot is open.\n  - DBAREAS ALL reports all open slots using filename() as the open-area truth.\n  - DBAREAS REL reports the current area and appends relation summary/tree context.\n  - DBAREAS is read-only; it reports session/work-area state and does not mutate table data.\n"
+        },
+        {
+            MessageId::DbareasNoOpenWorkAreasText,
+            "DBAREAS_NO_OPEN_WORK_AREAS_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "DBAREAS: no open work areas."
+        },
+        {
+            MessageId::DbareasSlotOutOfRangeText,
+            "DBAREAS_SLOT_OUT_OF_RANGE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "DBAREAS: slot out of range: {slot} (0..{max})"
+        },
+        {
+            MessageId::DbareasAreaNotOpenText,
+            "DBAREAS_AREA_NOT_OPEN_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "DBAREAS: area {slot} is not open."
+        },
+        {
+            MessageId::DbareasRelationsModuleMissingText,
+            "DBAREAS_RELATIONS_MODULE_MISSING_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Relations: (module not present)"
+        },
+        {
+            MessageId::DbareasRelationsTitleText,
+            "DBAREAS_RELATIONS_TITLE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Relations"
+        },
+        {
+            MessageId::DbareasRelationsDividerText,
+            "DBAREAS_RELATIONS_DIVIDER_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "---------"
+        },
+        {
+            MessageId::DbareasParentAnchorLineText,
+            "DBAREAS_PARENT_ANCHOR_LINE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Parent anchor        : {value}"
+        },
+        {
+            MessageId::DbareasChildrenNoneText,
+            "DBAREAS_CHILDREN_NONE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Children             : (none configured)"
+        },
+        {
+            MessageId::DbareasChildrenDirectTitleText,
+            "DBAREAS_CHILDREN_DIRECT_TITLE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Children (direct)"
+        },
+        {
+            MessageId::DbareasChildMatchLineText,
+            "DBAREAS_CHILD_MATCH_LINE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "  -> {child}  (matches: {count})"
+        },
+        {
+            MessageId::DbareasRelationTreeTitleText,
+            "DBAREAS_RELATION_TREE_TITLE_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "Relation tree"
+        },
+        {
+            MessageId::DbareasRelationTreeDividerText,
+            "DBAREAS_RELATION_TREE_DIVIDER_TEXT",
+            "COMMAND:DBAREAS",
+            "WORKSPACE",
+            "INFO",
+            "-------------"
         },
         {
             MessageId::FieldsUsageText,
@@ -3292,6 +4220,22 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "(No fields)"
+        },
+        {
+            MessageId::FieldsColumnHeaderText,
+            "FIELDS_COLUMN_HEADER_TEXT",
+            "COMMAND:FIELDS",
+            "STATUS",
+            "INFO",
+            "# Name Type Len Dec"
+        },
+        {
+            MessageId::FieldsDividerText,
+            "FIELDS_DIVIDER_TEXT",
+            "COMMAND:FIELDS",
+            "STATUS",
+            "INFO",
+            "- ---- ---- --- ---"
         },
         {
             MessageId::DescendUsageText,
@@ -3438,6 +4382,14 @@ const std::vector<MessageDef>& all_messages()
             "Try HELP /DOT <term> or plain HELP <term>."
         },
         {
+            MessageId::DotHelpUnsupportedNoteText,
+            "DOTHELP_UNSUPPORTED_NOTE_TEXT",
+            "COMMAND:DOTHELP",
+            "STATUS",
+            "INFO",
+            "  (documented, but not fully supported yet)"
+        },
+        {
             MessageId::FoxHelpUsageText,
             "FOXHELP_USAGE_TEXT",
             "COMMAND:FOXHELP",
@@ -3484,6 +4436,22 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "Try FOXHELP (no args) to list commands."
+        },
+        {
+            MessageId::FoxHelpUnsupportedSuffixText,
+            "FOXHELP_UNSUPPORTED_SUFFIX_TEXT",
+            "COMMAND:FOXHELP",
+            "STATUS",
+            "INFO",
+            "[unsupported]"
+        },
+        {
+            MessageId::FoxStandardUsageText,
+            "FOXSTANDARD_USAGE_TEXT",
+            "COMMAND:FOXSTANDARD",
+            "USAGE",
+            "INFO",
+            "Usage:\n  FOXSTANDARD USAGE\n  FOXSTANDARD <command>\n  FOXSTANDARD ALL\n  FOXSTANDARD TOPICS\n  FOXSTANDARD LIST"
         },
         {
             MessageId::PshellUsageText,
@@ -6192,6 +7160,222 @@ const std::vector<MessageDef>& all_messages()
             "CMDHELP LEGACY Report: {commands} command rows, {args} arg rows -> {dir}"
         },
         {
+            MessageId::LmdbUsageText,
+            "LMDB_USAGE_TEXT",
+            "COMMAND:LMDB",
+            "USAGE",
+            "INFO",
+            "Usage:\n  LMDB USAGE\n  LMDB INFO\n  LMDB OPEN <container.cdx>\n  LMDB OPEN <envdir.cdx.d>\n  LMDB OPEN <stem>\n  LMDB USE <tag>\n  LMDB SEEK <key>\n  LMDB DUMP\n  LMDB DUMP <max>\n  LMDB SCAN <low> <high>\n  LMDB CLOSE\nNotes:\n  - LMDB is per-area and uses the current DbArea IndexManager/CDX backend.\n  - Bare stems resolve through the INDEXES path slot.\n  - LMDB_UTIL is deprecated and disabled."
+        },
+        {
+            MessageId::LmdbActionNoTableOpenText,
+            "LMDB_ACTION_NO_TABLE_OPEN_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "{action}: no table open in current area"
+        },
+        {
+            MessageId::LmdbInfoNoneText,
+            "LMDB_INFO_NONE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "(none)"
+        },
+        {
+            MessageId::LmdbInfoTitleText,
+            "LMDB_INFO_TITLE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "LMDB INFO"
+        },
+        {
+            MessageId::LmdbInfoContainerLineText,
+            "LMDB_INFO_CONTAINER_LINE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "  container: {path}"
+        },
+        {
+            MessageId::LmdbInfoTagLineText,
+            "LMDB_INFO_TAG_LINE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "  tag      : {tag}"
+        },
+        {
+            MessageId::LmdbOpenMissingPathText,
+            "LMDB_OPEN_MISSING_PATH_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "missing path"
+        },
+        {
+            MessageId::LmdbOpenInvalidPathText,
+            "LMDB_OPEN_INVALID_PATH_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "invalid path"
+        },
+        {
+            MessageId::LmdbOpenFailedText,
+            "LMDB_OPEN_FAILED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "OPEN failed: {detail}"
+        },
+        {
+            MessageId::LmdbOpenText,
+            "LMDB_OPEN_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "OPEN: {path}"
+        },
+        {
+            MessageId::LmdbUseMissingTagText,
+            "LMDB_USE_MISSING_TAG_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "missing TAG"
+        },
+        {
+            MessageId::LmdbUseFailedText,
+            "LMDB_USE_FAILED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "USE failed: {detail}"
+        },
+        {
+            MessageId::LmdbUseText,
+            "LMDB_USE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "USE: {tag}"
+        },
+        {
+            MessageId::LmdbSeekMissingKeyText,
+            "LMDB_SEEK_MISSING_KEY_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "missing key"
+        },
+        {
+            MessageId::LmdbSeekFailedText,
+            "LMDB_SEEK_FAILED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "SEEK failed: {detail}"
+        },
+        {
+            MessageId::LmdbSeekRecnoText,
+            "LMDB_SEEK_RECNO_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "SEEK: recno={recno}"
+        },
+        {
+            MessageId::LmdbDumpNoneText,
+            "LMDB_DUMP_NONE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "DUMP: (none)"
+        },
+        {
+            MessageId::LmdbDumpNoTagSelectedText,
+            "LMDB_DUMP_NO_TAG_SELECTED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "DUMP: no TAG selected. Try: LMDB USE <TAG>"
+        },
+        {
+            MessageId::LmdbDumpCursorOpenFailedText,
+            "LMDB_DUMP_CURSOR_OPEN_FAILED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "DUMP: cursor open failed"
+        },
+        {
+            MessageId::LmdbDumpPrintedText,
+            "LMDB_DUMP_PRINTED_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "DUMP: printed {count}"
+        },
+        {
+            MessageId::LmdbScanUsageText,
+            "LMDB_SCAN_USAGE_TEXT",
+            "COMMAND:LMDB",
+            "USAGE",
+            "INFO",
+            "SCAN usage: LMDB SCAN <low> <high>"
+        },
+        {
+            MessageId::LmdbScanNoneText,
+            "LMDB_SCAN_NONE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "SCAN: (none)"
+        },
+        {
+            MessageId::LmdbScanNoTagSelectedText,
+            "LMDB_SCAN_NO_TAG_SELECTED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "SCAN: no TAG selected. Try: LMDB USE <TAG>"
+        },
+        {
+            MessageId::LmdbScanCursorOpenFailedText,
+            "LMDB_SCAN_CURSOR_OPEN_FAILED_TEXT",
+            "COMMAND:LMDB",
+            "ERROR",
+            "ERROR",
+            "SCAN: cursor open failed"
+        },
+        {
+            MessageId::LmdbScanShownText,
+            "LMDB_SCAN_SHOWN_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "SCAN: shown {count}"
+        },
+        {
+            MessageId::LmdbCloseText,
+            "LMDB_CLOSE_TEXT",
+            "COMMAND:LMDB",
+            "STATUS",
+            "INFO",
+            "CLOSE"
+        },
+        {
+            MessageId::LmdbUtilDisabledText,
+            "LMDB_UTIL_DISABLED_TEXT",
+            "COMMAND:LMDB_UTIL",
+            "STATUS",
+            "INFO",
+            "LMDB_UTIL is deprecated and disabled.\nUse: LMDB (per-area)\nUsage:\n  LMDB_UTIL\n  LMDB_UTIL USAGE\nRelated:\n  LMDB INFO\n  LMDB OPEN <container.cdx>\n  LMDB USE <tag>\n  LMDB SEEK <key>\n  LMDB DUMP\n  LMDB SCAN <low> <high>\n  LMDB CLOSE"
+        },
+        {
             MessageId::ManualCatalogStatusTitle,
             "MANUAL_CATALOG_STATUS_TITLE",
             "COMMAND:MANUAL",
@@ -6584,6 +7768,14 @@ const std::vector<MessageDef>& all_messages()
             "PRN: failed to configure printer destination."
         },
         {
+            MessageId::BangUsageText,
+            "BANG_USAGE_TEXT",
+            "COMMAND:BANG",
+            "USAGE",
+            "INFO",
+            "Usage:\n  BANG\n  BANG USAGE\n  BANG <command>\n  !\n  ! <command>\nNotes:\n  - BANG with no arguments launches an interactive host shell.\n  - BANG <command> executes a host shell command."
+        },
+        {
             MessageId::BellUsageText,
             "BELL_USAGE_TEXT",
             "COMMAND:BELL",
@@ -6616,12 +7808,668 @@ const std::vector<MessageDef>& all_messages()
             "Bell is {state}"
         },
         {
+            MessageId::CloseUsageText,
+            "CLOSE_USAGE_TEXT",
+            "COMMAND:CLOSE",
+            "USAGE",
+            "INFO",
+            "Usage:\n  CLOSE USAGE\n  CLOSE\n  CLOSE ALL\nNotes:\n  - CLOSE closes the current work area.\n  - CLOSE ALL clears all relations before closing the current work area.\n  - Dirty table-buffer state may prompt or cancel close."
+        },
+        {
+            MessageId::CloseCanceledText,
+            "CLOSE_CANCELED_TEXT",
+            "COMMAND:CLOSE",
+            "STATUS",
+            "INFO",
+            "CLOSE canceled."
+        },
+        {
+            MessageId::CloseCompletedText,
+            "CLOSE_COMPLETED_TEXT",
+            "COMMAND:CLOSE",
+            "STATUS",
+            "INFO",
+            "Closed."
+        },
+        {
+            MessageId::CdxUsageText,
+            "CDX_USAGE_TEXT",
+            "COMMAND:CDX",
+            "USAGE",
+            "INFO",
+            "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+        },
+        {
+            MessageId::CdxCreateUnableResolvePathText,
+            "CDX_CREATE_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CdxCreateFileExistsText,
+            "CDX_CREATE_FILE_EXISTS_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "file already exists: \"{path}\""
+        },
+        {
+            MessageId::CdxCreateOpenFailedText,
+            "CDX_CREATE_OPEN_FAILED_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "open/create failed."
+        },
+        {
+            MessageId::CdxCreatedText,
+            "CDX_CREATED_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "created: \"{path}\""
+        },
+        {
+            MessageId::CdxFileNotFoundText,
+            "CDX_FILE_NOT_FOUND_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "file not found: \"{path}\""
+        },
+        {
+            MessageId::CdxUnableOpenText,
+            "CDX_UNABLE_OPEN_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "unable to open: \"{path}\""
+        },
+        {
+            MessageId::CdxInfoInvalidHeaderText,
+            "CDX_INFO_INVALID_HEADER_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "invalid header."
+        },
+        {
+            MessageId::CdxInfoFileLineText,
+            "CDX_INFO_FILE_LINE_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "CDX file : {path}"
+        },
+        {
+            MessageId::CdxInfoTagsLineText,
+            "CDX_INFO_TAGS_LINE_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "Tags     : {count}"
+        },
+        {
+            MessageId::CdxInfoTagLineText,
+            "CDX_INFO_TAG_LINE_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "  [{tag_id}] {name}  root_off={root_off}  recs={recs}"
+        },
+        {
+            MessageId::CdxTagsReadFailedText,
+            "CDX_TAGS_READ_FAILED_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "read failed."
+        },
+        {
+            MessageId::CdxNoTagsText,
+            "CDX_NO_TAGS_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "(no tags)"
+        },
+        {
+            MessageId::CdxTagLineText,
+            "CDX_TAG_LINE_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "  [{tag_id}] {name}"
+        },
+        {
+            MessageId::CdxAddTagMissingNameText,
+            "CDX_ADDTAG_MISSING_NAME_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "missing <name>."
+        },
+        {
+            MessageId::CdxAddTagUnableResolvePathText,
+            "CDX_ADDTAG_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CdxAddTagOpenFailedText,
+            "CDX_ADDTAG_OPEN_FAILED_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "open failed."
+        },
+        {
+            MessageId::CdxAddTagAlreadyExistsText,
+            "CDX_ADDTAG_ALREADY_EXISTS_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "tag already exists."
+        },
+        {
+            MessageId::CdxAddTagAddedText,
+            "CDX_ADDTAG_ADDED_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "added '{tag}'."
+        },
+        {
+            MessageId::CdxDropTagMissingNameText,
+            "CDX_DROPTAG_MISSING_NAME_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "missing <name>."
+        },
+        {
+            MessageId::CdxDropTagUnableResolvePathText,
+            "CDX_DROPTAG_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CdxDropTagOpenFailedText,
+            "CDX_DROPTAG_OPEN_FAILED_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "open failed."
+        },
+        {
+            MessageId::CdxDropTagNotFoundText,
+            "CDX_DROPTAG_NOT_FOUND_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "not found."
+        },
+        {
+            MessageId::CdxDropTagRemovedText,
+            "CDX_DROPTAG_REMOVED_TEXT",
+            "COMMAND:CDX",
+            "STATUS",
+            "INFO",
+            "removed '{tag}'."
+        },
+        {
+            MessageId::CdxUnknownSubcommandText,
+            "CDX_UNKNOWN_SUBCOMMAND_TEXT",
+            "COMMAND:CDX",
+            "ERROR",
+            "ERROR",
+            "unknown subcommand: {subcommand}"
+        },
+        {
+            MessageId::CnxUsageText,
+            "CNX_USAGE_TEXT",
+            "COMMAND:CNX",
+            "USAGE",
+            "INFO",
+            "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata."
+        },
+        {
+            MessageId::CnxCreateUnableResolvePathText,
+            "CNX_CREATE_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CnxCreateFileExistsText,
+            "CNX_CREATE_FILE_EXISTS_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "file already exists: \"{path}\""
+        },
+        {
+            MessageId::CnxCreateOpenFailedText,
+            "CNX_CREATE_OPEN_FAILED_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "open/create failed."
+        },
+        {
+            MessageId::CnxCreatedText,
+            "CNX_CREATED_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "created: \"{path}\""
+        },
+        {
+            MessageId::CnxFileNotFoundText,
+            "CNX_FILE_NOT_FOUND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "file not found: \"{path}\""
+        },
+        {
+            MessageId::CnxUnableOpenText,
+            "CNX_UNABLE_OPEN_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to open: \"{path}\""
+        },
+        {
+            MessageId::CnxInfoInvalidHeaderText,
+            "CNX_INFO_INVALID_HEADER_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "invalid header."
+        },
+        {
+            MessageId::CnxInfoFileLineText,
+            "CNX_INFO_FILE_LINE_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "CNX file : {path}"
+        },
+        {
+            MessageId::CnxInfoTagsLineText,
+            "CNX_INFO_TAGS_LINE_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "Tags     : {count}"
+        },
+        {
+            MessageId::CnxInfoTagLineText,
+            "CNX_INFO_TAG_LINE_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "  [{tag_id}] {name}  root_off={root_off}  recs={recs}"
+        },
+        {
+            MessageId::CnxTagsReadFailedText,
+            "CNX_TAGS_READ_FAILED_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "read failed."
+        },
+        {
+            MessageId::CnxNoTagsText,
+            "CNX_NO_TAGS_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "(no tags)"
+        },
+        {
+            MessageId::CnxTagLineText,
+            "CNX_TAG_LINE_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "  [{tag_id}] {name}"
+        },
+        {
+            MessageId::CnxWalkMissingTagText,
+            "CNX_WALK_MISSING_TAG_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "missing <tag>."
+        },
+        {
+            MessageId::CnxWalkUnableResolvePathText,
+            "CNX_WALK_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CnxWalkUnableOpenText,
+            "CNX_WALK_UNABLE_OPEN_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to open: \"{path}\""
+        },
+        {
+            MessageId::CnxWalkReadTagDirectoryFailedText,
+            "CNX_WALK_READ_TAG_DIRECTORY_FAILED_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "failed to read tag directory."
+        },
+        {
+            MessageId::CnxWalkTagNotFoundText,
+            "CNX_WALK_TAG_NOT_FOUND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "tag not found: {tag}"
+        },
+        {
+            MessageId::CnxWalkFileSummaryText,
+            "CNX_WALK_FILE_SUMMARY_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "file=\"{path}\"  tag={tag}  root_off={root_off}  stats_rec={stats_rec}"
+        },
+        {
+            MessageId::CnxWalkPageSizeText,
+            "CNX_WALK_PAGE_SIZE_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "page_size={size}"
+        },
+        {
+            MessageId::CnxWalkRootZeroText,
+            "CNX_WALK_ROOT_ZERO_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "root_page_off is 0"
+        },
+        {
+            MessageId::CnxAddTagMissingNameText,
+            "CNX_ADDTAG_MISSING_NAME_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "missing <name>."
+        },
+        {
+            MessageId::CnxAddTagUnableResolvePathText,
+            "CNX_ADDTAG_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CnxAddTagOpenFailedText,
+            "CNX_ADDTAG_OPEN_FAILED_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "open failed."
+        },
+        {
+            MessageId::CnxAddTagAlreadyExistsText,
+            "CNX_ADDTAG_ALREADY_EXISTS_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "tag already exists."
+        },
+        {
+            MessageId::CnxAddTagAddedText,
+            "CNX_ADDTAG_ADDED_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "added '{tag}'."
+        },
+        {
+            MessageId::CnxDropTagMissingNameText,
+            "CNX_DROPTAG_MISSING_NAME_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "missing <name>."
+        },
+        {
+            MessageId::CnxDropTagUnableResolvePathText,
+            "CNX_DROPTAG_UNABLE_RESOLVE_PATH_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unable to resolve path."
+        },
+        {
+            MessageId::CnxDropTagOpenFailedText,
+            "CNX_DROPTAG_OPEN_FAILED_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "open failed."
+        },
+        {
+            MessageId::CnxDropTagNotFoundText,
+            "CNX_DROPTAG_NOT_FOUND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "not found."
+        },
+        {
+            MessageId::CnxDropTagRemovedText,
+            "CNX_DROPTAG_REMOVED_TEXT",
+            "COMMAND:CNX",
+            "STATUS",
+            "INFO",
+            "removed '{tag}'."
+        },
+        {
+            MessageId::CnxUnknownSubcommandText,
+            "CNX_UNKNOWN_SUBCOMMAND_TEXT",
+            "COMMAND:CNX",
+            "ERROR",
+            "ERROR",
+            "unknown subcommand: {subcommand}"
+        },
+        {
             MessageId::ClearUsageText,
             "CLEAR_USAGE_TEXT",
             "COMMAND:CLEAR",
             "USAGE",
             "INFO",
             "Usage:\n  CLEAR USAGE\n  CLEAR\n  CLS\nNotes:\n  - Clears the console screen only."
+        },
+        {
+            MessageId::VersionUsageText,
+            "VERSION_USAGE_TEXT",
+            "COMMAND:VERSION",
+            "USAGE",
+            "INFO",
+            "Usage:\n  VERSION\n  VERSION USAGE"
+        },
+        {
+            MessageId::VersionBannerLineText,
+            "VERSION_BANNER_LINE_TEXT",
+            "COMMAND:VERSION",
+            "STATUS",
+            "INFO",
+            "dottalk++ {version}  ({stamp})"
+        },
+        {
+            MessageId::VersionBuildLineText,
+            "VERSION_BUILD_LINE_TEXT",
+            "COMMAND:VERSION",
+            "STATUS",
+            "INFO",
+            "DotTalk++ build {stamp}"
+        },
+        {
+            MessageId::SqlverUsageText,
+            "SQLVER_USAGE_TEXT",
+            "COMMAND:SQLVER",
+            "USAGE",
+            "INFO",
+            "Usage:\n  SQLVER\n  SQLVER USAGE"
+        },
+        {
+            MessageId::SqlverAvailableLineText,
+            "SQLVER_AVAILABLE_LINE_TEXT",
+            "COMMAND:SQLVER",
+            "STATUS",
+            "INFO",
+            "SQLite available: 1, version: {version}"
+        },
+        {
+            MessageId::SqlverUnavailableLineText,
+            "SQLVER_UNAVAILABLE_LINE_TEXT",
+            "COMMAND:SQLVER",
+            "STATUS",
+            "INFO",
+            "SQLite available: 0"
+        },
+        {
+            MessageId::ShutdownUsageText,
+            "SHUTDOWN_USAGE_TEXT",
+            "COMMAND:SHUTDOWN",
+            "USAGE",
+            "INFO",
+            "Usage:\n  SHUTDOWN\n  SHUTDOWN USAGE\nNotes:\n  - SHUTDOWN with no arguments executes shutdown.ini when present.\n  - SHUTDOWN USAGE prints this usage and does not execute shutdown.ini."
+        },
+        {
+            MessageId::ShutdownUnableOpenText,
+            "SHUTDOWN_UNABLE_OPEN_TEXT",
+            "COMMAND:SHUTDOWN",
+            "ERROR",
+            "ERROR",
+            "SHUTDOWN: unable to open {path}"
+        },
+        {
+            MessageId::ShutdownProcessingText,
+            "SHUTDOWN_PROCESSING_TEXT",
+            "COMMAND:SHUTDOWN",
+            "STATUS",
+            "INFO",
+            "SHUTDOWN: processing {path}"
+        },
+        {
+            MessageId::ShutdownLineFailedText,
+            "SHUTDOWN_LINE_FAILED_TEXT",
+            "COMMAND:SHUTDOWN",
+            "ERROR",
+            "ERROR",
+            "SHUTDOWN: {file}:{line}: {detail}"
+        },
+        {
+            MessageId::ShutdownLineUnknownErrorText,
+            "SHUTDOWN_LINE_UNKNOWN_ERROR_TEXT",
+            "COMMAND:SHUTDOWN",
+            "ERROR",
+            "ERROR",
+            "SHUTDOWN: {file}:{line}: unknown error"
+        },
+        {
+            MessageId::ShutdownNoIniFoundText,
+            "SHUTDOWN_NO_INI_FOUND_TEXT",
+            "COMMAND:SHUTDOWN",
+            "STATUS",
+            "INFO",
+            "SHUTDOWN: no shutdown.ini found in {path}"
+        },
+        {
+            MessageId::ShutdownProcessingFailedText,
+            "SHUTDOWN_PROCESSING_FAILED_TEXT",
+            "COMMAND:SHUTDOWN",
+            "ERROR",
+            "ERROR",
+            "SHUTDOWN: ini processing failed: {detail}"
+        },
+        {
+            MessageId::ShutdownProcessingFailedUnknownText,
+            "SHUTDOWN_PROCESSING_FAILED_UNKNOWN_TEXT",
+            "COMMAND:SHUTDOWN",
+            "ERROR",
+            "ERROR",
+            "SHUTDOWN: ini processing failed (unknown error)"
+        },
+        {
+            MessageId::SelectUsageText,
+            "SELECT_USAGE_TEXT",
+            "COMMAND:SELECT",
+            "USAGE",
+            "INFO",
+            "Usage:\n  SELECT USAGE\n  SELECT <0..{max_slot}>\n  SELECT <name>\n  SELECT <table.dbf>"
+        },
+        {
+            MessageId::SelectEngineUnavailableText,
+            "SELECT_ENGINE_UNAVAILABLE_TEXT",
+            "COMMAND:SELECT",
+            "ERROR",
+            "ERROR",
+            "SELECT: engine unavailable."
+        },
+        {
+            MessageId::SelectOutOfRangeText,
+            "SELECT_OUT_OF_RANGE_TEXT",
+            "COMMAND:SELECT",
+            "ERROR",
+            "ERROR",
+            "SELECT: out of range (valid 0..{max_slot})."
+        },
+        {
+            MessageId::SelectNoAreaMatchesText,
+            "SELECT_NO_AREA_MATCHES_TEXT",
+            "COMMAND:SELECT",
+            "ERROR",
+            "ERROR",
+            "SELECT: no area matches '{name}'. Use SELECT <0..{max_slot}> or a known name."
+        },
+        {
+            MessageId::SelectSelectedAreaText,
+            "SELECT_SELECTED_AREA_TEXT",
+            "COMMAND:SELECT",
+            "STATUS",
+            "INFO",
+            "Selected area {slot}."
+        },
+        {
+            MessageId::SelectCurrentAreaText,
+            "SELECT_CURRENT_AREA_TEXT",
+            "COMMAND:SELECT",
+            "STATUS",
+            "INFO",
+            "Current area: {slot}"
+        },
+        {
+            MessageId::SelectCurrentAreaFileSummaryText,
+            "SELECT_CURRENT_AREA_FILE_SUMMARY_TEXT",
+            "COMMAND:SELECT",
+            "STATUS",
+            "INFO",
+            "  File: {path}  Recs: {recs}  Recno: {recno}"
         },
         {
             MessageId::QuitUsageText,
@@ -7046,6 +8894,30 @@ const std::vector<MessageDef>& all_messages()
             "STATUS",
             "INFO",
             "File: {path}"
+        },
+        {
+            MessageId::ShowIniSectionHeaderText,
+            "SHOWINI_SECTION_HEADER_TEXT",
+            "COMMAND:SHOWINI",
+            "STATUS",
+            "INFO",
+            "[{name}]"
+        },
+        {
+            MessageId::ShowIniSectionDividerText,
+            "SHOWINI_SECTION_DIVIDER_TEXT",
+            "COMMAND:SHOWINI",
+            "STATUS",
+            "INFO",
+            "----------------------------------------"
+        },
+        {
+            MessageId::ShowIniKeyValueLineText,
+            "SHOWINI_KEY_VALUE_LINE_TEXT",
+            "COMMAND:SHOWINI",
+            "STATUS",
+            "INFO",
+            "{key_padded} = {value}"
         }
     };
     return messages;
@@ -7076,12 +8948,28 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetMessageCatalogReportNoMatchingTextRows, "en-US", "<no matching text rows>" },
         { MessageId::SetMessageCatalogReportTextRow, "en-US", "  {key}:{value}" },
         { MessageId::SetMessageCatalogValidationIssueRowText, "en-US", "  {code} key={key} locale={locale} detail={detail}" },
-        { MessageId::SetUsageText, "en-US", "Usage:\n  SET\n  SET USAGE\n  SET <option> [args]\nPublic options:\n  SET TABLE BUFFER ON|OFF [ALL]\n  SET CONSOLE ON|OFF\n  SET PRINT ON|OFF\n  SET PRINT TO <file>\n  SET DEVICE TO SCREEN\n  SET DEVICE TO FILE <path>\n  SET DEVICE TO PRINTER\n  SET DEVICE TO NULL\n  SET ALTERNATE ON|OFF\n  SET ALTERNATE TO <file>\n  SET TALK ON|OFF\n  SET ECHO ON|OFF\n  SET PAGING ON|OFF\n  SET WRAP ON|OFF\n  SET DELETED ON|OFF\n  SET CASE ON|OFF\n  SET NEAR ON|OFF\n  SET EDITOR TO <value>\n  SET EDITOR TO DEFAULT\n  SET EDITOR TO OFF\n  SET LANGUAGE [TO] <en-US|es|fr|de|it|DEFAULT>\n  SET LOCALE [TO] <en-US|es|fr|de|it|DEFAULT>\n  SET LANGUAGE CHECK\n  SET LOCALE CHECK\n  SET LANGUAGE REPORT [locale]\n  SET LOCALE REPORT [locale]\n  SET PATH <slot> <path>\n  SET MESSAGE CATALOG CHECK\n  SET MESSAGE EMIT <symbol> [LOCALE <locale>]\n  SET UNIQUE FIELD <name> ON|OFF\n  SET TIMER ON|OFF\n  SET POLLING ON|OFF\n  SET INDEX TO <file>\n  SET ORDER TO <tag|0>\n\nDeveloper / transitional:\n  SET FILTER TO <expr>\n  SET RELATION <args...>\n  SET RELATIONS <args...>\n  SET CNX [TO] <container.cnx>\n  SET CDX [TO] <container.cdx>\n  SET LMDB <args...>" },
+        { MessageId::SetUsageText, "en-US", "Usage:\n  SET\n  SET USAGE\n  SET <option> [args]\nPublic options:\n  SET TABLE BUFFER ON|OFF [ALL]\n  SET CONSOLE ON|OFF\n  SET PRINT ON|OFF\n  SET PRINT TO <file>\n  SET DEVICE TO SCREEN\n  SET DEVICE TO FILE <path>\n  SET DEVICE TO PRINTER\n  SET DEVICE TO NULL\n  SET ALTERNATE ON|OFF\n  SET ALTERNATE TO <file>\n  SET TALK ON|OFF\n  SET ECHO ON|OFF\n  SET PAGING ON|OFF\n  SET WRAP ON|OFF\n  SET DELETED ON|OFF\n  SET CASE ON|OFF\n  SET NEAR ON|OFF\n  SET EDITOR TO <value>\n  SET EDITOR TO DEFAULT\n  SET EDITOR TO OFF\n  SET LANGUAGE [TO] <en-US|es|fr|de|it|DEFAULT>\n  SET LOCALE [TO] <en-US|es|fr|de|it|DEFAULT>\n  SET LANGUAGE CHECK\n  SET LOCALE CHECK\n  SET LANGUAGE REPORT [locale]\n  SET LOCALE REPORT [locale]\n  SET PATH <slot> <path>\n  SET MESSAGE CATALOG CHECK\n  SET MESSAGE EMIT <symbol> [LOCALE <locale>]\n  SET UNIQUE FIELD <name> ON|OFF\n  SET DEVDIAG ON|OFF|STATUS\n  SET TIMER ON|OFF\n  SET POLLING ON|OFF\n  SET INDEX TO <file>\n  SET ORDER TO <tag|0>\n\nDeveloper / transitional:\n  SET FILTER TO <expr>\n  SET RELATION <args...>\n  SET RELATIONS <args...>\n  SET CNX [TO] <container.cnx>\n  SET CDX [TO] <container.cdx>\n  SET LMDB <args...>" },
         { MessageId::SetTableBufferUsageText, "en-US", "Usage: SET TABLE BUFFER ON|OFF [ALL]" },
         { MessageId::SetTableBufferEngineUnavailableText, "en-US", "TABLE BUFFER: engine not available." },
         { MessageId::SetTableBufferAllStatusText, "en-US", "TABLE BUFFER: {state} for {count} open area(s)." },
         { MessageId::SetTableBufferCannotDetermineCurrentAreaText, "en-US", "TABLE BUFFER: cannot determine current area." },
         { MessageId::SetTableBufferAreaStatusText, "en-US", "TABLE BUFFER: {state} (area {area})" },
+        { MessageId::TableBufferUsageText, "en-US", "Usage:\n  TABLE\n  TABLE ALL\n  TABLE STATUS [ALL]\n  TABLE BUFFER ON [PERSISTENT|RAM] [<n>|ALL|n,m,...]\n  TABLE BUFFER OFF [<n>|ALL|n,m,...]\n  TABLE BUFFER PERSISTENT [ON|OFF] [<n>|ALL|n,m,...]\n  TABLE BUFFER DIRTY [<n>|ALL|n,m,...]\n  TABLE BUFFER CLEAN [<n>|ALL|n,m,...]\n  TABLE BUFFER STALE [<n>|ALL|n,m,...]\n  TABLE BUFFER FRESH [<n>|ALL|n,m,...]\n  TABLE BUFFER STATUS [area|ALL]\n  TABLE BUFFER DUMP [area|ALL]\n  TABLE BUFFER TESTADD <recno> [flags] [field1] [value]\n  TABLE BUFFER RESET\nLegacy compatibility:\n  TABLE ON|OFF|DIRTY|CLEAN|STALE|FRESH [<n>|ALL|n,m,...]\n  TABLE ONALL|OFFALL|DIRTYALL|CLEANALL|STALEALL|FRESHALL" },
+        { MessageId::TableBufferTestAddUsageText, "en-US", "Usage: TABLE BUFFER TESTADD <recno> [flags] [field1] [value]" },
+        { MessageId::TableBufferAreasAllTitleText, "en-US", "areas 0..{last}" },
+        { MessageId::TableBufferOccupiedAreasTitleText, "en-US", "occupied areas only" },
+        { MessageId::TableBufferAreasUpdatedText, "en-US", "{count} area(s) updated." },
+        { MessageId::TableBufferPersistenceUpdatedText, "en-US", "{count} area(s) persistence updated." },
+        { MessageId::TableBufferInvalidAreaText, "en-US", "invalid area." },
+        { MessageId::TableBufferStatusHeaderText, "en-US", "Area {area} buffer:" },
+        { MessageId::TableBufferDumpHeaderText, "en-US", "Area {area} buffer dump:" },
+        { MessageId::TableBufferEmptyBufferText, "en-US", "Area {area} buffer: empty" },
+        { MessageId::TableBufferNoCurrentEnabledAreaText, "en-US", "no current enabled area." },
+        { MessageId::TableBufferNoCurrentAreaSelectedOrEnabledText, "en-US", "no current area selected or not enabled." },
+        { MessageId::TableBufferInvalidRecnoText, "en-US", "invalid recno." },
+        { MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText, "en-US", "cannot determine current area; specify an area number." },
+        { MessageId::TableBufferResetAllText, "en-US", "reset all areas." },
+        { MessageId::TableBufferUnknownSubcommandText, "en-US", "unknown subcommand '{subcommand}'." },
         { MessageId::SetConsoleUsageText, "en-US", "Usage: SET CONSOLE ON|OFF" },
         { MessageId::SetPrintUsageText, "en-US", "Usage: SET PRINT ON|OFF | SET PRINT TO <file>" },
         { MessageId::SetPrintToUsageText, "en-US", "Usage: SET PRINT TO <file>" },
@@ -7101,6 +8989,8 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetPagingStatusText, "en-US", "Paging is {state}" },
         { MessageId::SetWrapUsageText, "en-US", "Usage: SET WRAP ON|OFF" },
         { MessageId::SetWrapStatusText, "en-US", "Wrap is {state}" },
+        { MessageId::SetDevdiagUsageText, "en-US", "Usage: SET DEVDIAG ON|OFF|STATUS" },
+        { MessageId::SetDevdiagStatusText, "en-US", "Passive dev diagnostics are {state}" },
         { MessageId::SetTimerUsageText, "en-US", "Usage: SET TIMER ON|OFF" },
         { MessageId::SetTimerStatusText, "en-US", "Timer is {state}" },
         { MessageId::SetPollingUsageText, "en-US", "Usage: SET POLLING ON|OFF" },
@@ -7306,10 +9196,59 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::ErsatzDeltaNoBaselineNamedText, "en-US", "no baseline named {name}. Use ERSATZ DELTA MARK {name} first." },
         { MessageId::ErsatzDeltaSummaryText, "en-US", "{name} table={table} baseline_rows={baseline_rows} current_rows={current_rows} changes={changes}" },
         { MessageId::ErsatzDeltaNoTupleChangesText, "en-US", "No tuple changes." },
-        { MessageId::UseUsageText,          "en-US", "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX, then IDX." },
+        { MessageId::UseUsageText,          "en-US", "Usage:\n  USE USAGE              (Show this usage)\n  USE <table>            (Open <DBF slot>/<table>.dbf in current area)\n  USE <table.dbf>        (Open named DBF; logical names resolve through DBF slot)\n  USE <path\\\\table.dbf>   (Open explicit path)\n  USE <table> NOINDEX    (Open in physical order; skip index auto-attach)\n  USE <table> NOIDX      (Alias of NOINDEX)\nNotes:\n  - USE closes/resets the current area before opening the target table.\n  - USE prevents duplicate opens of the same DBF path across work areas.\n  - USE auto-attaches memo storage when memo fields are present.\n  - USE auto-attaches flavor-appropriate indexes when present, unless NOINDEX/NOIDX is used.\n  - USE prefers the configured INDEXES slot and falls back to the DBF directory.\n  - x64/v128 tables prefer CDX.\n  - x32 tables prefer CNX, then INX." },
+        { MessageId::LocateUsageText,       "en-US", "Usage:\n  LOCATE USAGE\n  LOCATE FOR <expr>\n  LOCATE <field> <op> <value>\nExamples:\n  LOCATE FOR LNAME = Smith\n  LOCATE LNAME = Smith\n  LOCATE FOR BALANCE > 100\nNotes:\n  - LOCATE requires an open table except for LOCATE USAGE.\n  - LOCATE positions on the first matching record and updates CONTINUE state." },
+        { MessageId::LocateFoundText,       "en-US", "Located." },
+        { MessageId::LocateNotFoundText,    "en-US", "Not Located." },
+        { MessageId::AppendUsageText,       "en-US", "Usage:\n  APPEND USAGE\n  APPEND\n  APPEND <count>\n  APPEND MANY <count>\n  APPEND RAW\n  APPEND RAW MANY <count>\nNotes:\n  - APPEND with no arguments appends one blank record through the shared smart append path.\n  - APPEND MANY uses the smart batch append path.\n  - APPEND RAW uses the raw append path without inline index update." },
+        { MessageId::AppendBlankUsageText,  "en-US", "Usage:\n  APPEND_BLANK USAGE\n  APPEND_BLANK\n  APPEND BLANK\nNotes:\n  - Appends one blank record through shared append support." },
         { MessageId::GoUsageText,           "en-US", "Usage:\n  GO\n  GO USAGE\n  GO TOP\n  GO BOTTOM\n  GO FIRST\n  GO LAST\n  GO TO <recno>\n  GO RECORD <recno>\n  GO <recno>\n  GO +<n>\n  GO -<n>" },
         { MessageId::GotoUsageText,         "en-US", "Usage:\n  GOTO USAGE\n  GOTO <recno>\n  GOTO FIRST\n  GOTO LAST" },
+        { MessageId::ContinueUsageText,     "en-US", "Usage:\n  CONTINUE\n  CONTINUE USAGE\n  CONTINUE FOR <expr>" },
+        { MessageId::FindUsageText,         "en-US", "Usage:\n  FIND USAGE\n  FIND <text>\n  FIND <field> <text>\n  FIND <text> IN <field>\nNotes:\n  - FIND requires an open table except for FIND USAGE.\n  - FIND delegates to SEEK when the active order can satisfy the request.\n  - Otherwise FIND scans the requested field and positions on the found record." },
+        { MessageId::SeekUsageText,         "en-US", "Usage:\n  SEEK USAGE\n  SEEK <value> IN <field> [TRACE ON|OFF]\n  SEEK <field> = <value> [TRACE ON|OFF]\n  SEEK <field> <value>   [TRACE ON|OFF]\n  SEEK <value>           (uses active order/tag when set)\n  SEEK TRACE ON|OFF\nNotes:\n  SEEK requires an open table except for SEEK USAGE.\n  SEEK <value> uses the active order/tag when one is set." },
+        { MessageId::IndexUsageText,        "en-US", "Usage: INDEX ON <field> TAG <name> [ASC|DESC] [1INX|2INX]\n   Field-number tokens are also accepted by the parser.\nDefaults: ASC, 2INX\nExamples:\n  INDEX ON LNAME TAG students\n  INDEX ON LNAME TAG students DESC\n  INDEX ON LNAME TAG students DESC 2INX\nNotes:\n  - INDEX requires an open table except for INDEX USAGE.\n  - Deleted records are excluded.\n  - TAG resolves through the INDEXES path and must name an .inx target." },
+        { MessageId::IndexInvalidTagPathText, "en-US", "invalid TAG path '{tag}'." },
+        { MessageId::IndexUseBareNameHintText, "en-US", "Use a bare name (TAG students), an absolute path, or a slot path:" },
+        { MessageId::IndexUnknownFieldText, "en-US", "unknown field '{field}'." },
+        { MessageId::IndexAvailableFieldsTitle, "en-US", "Available:" },
+        { MessageId::IndexTipFieldNumberText, "en-US", "Tip: INDEX ON #3 TAG students" },
+        { MessageId::IndexTagMustNameInxText, "en-US", "TAG must name an .inx file." },
+        { MessageId::IndexGotPathText, "en-US", "Got: {path}" },
+        { MessageId::IndexCannotWriteFileText, "en-US", "cannot write file: {path}" },
+        { MessageId::IndexWrittenText, "en-US", "written: {file} ({format}, expr: {expr}, {direction})" },
+        { MessageId::IdxUsageText,          "en-US", "IDX is a memory-only educational index lab.\nIt teaches sorting and index concepts without writing .inx files.\nUse INDEX for persistent INX files.\n\nUsage:\n  IDX\n  IDX USAGE\n  IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]\n  IDX LIST\n  IDX DROP <tag>\n  IDX DROP ALL\n  IDX HELP\n\nSort algorithms, Phase 1:\n  STD       C++ std::sort baseline\n  BUBBLE    classroom bubble sort\n\nExamples:\n  IDX ON LNAME TAG lname_std\n  IDX ON LNAME TAG lname_bubble BUBBLE\n  IDX ON LNAME TAG lname_bubble2 SORT BUBBLE DESC" },
+        { MessageId::IdxExpectedOnText,     "en-US", "expected ON." },
+        { MessageId::IdxMissingFieldTokenText, "en-US", "missing field token." },
+        { MessageId::IdxExpectedTagText,    "en-US", "expected TAG." },
+        { MessageId::IdxMissingTagNameText, "en-US", "missing TAG name." },
+        { MessageId::IdxDuplicateSortOptionText, "en-US", "duplicate SORT option." },
+        { MessageId::IdxSortRequiresAlgorithmText, "en-US", "SORT requires an algorithm name." },
+        { MessageId::IdxUnknownSortAlgorithmText, "en-US", "unknown SORT algorithm '{algorithm}'. Supported: STD, BUBBLE." },
+        { MessageId::IdxDuplicateDirectionOptionText, "en-US", "duplicate direction option." },
+        { MessageId::IdxUnexpectedTokenText, "en-US", "unexpected token '{token}'." },
+        { MessageId::IdxBuildCreatedText,   "en-US", "Memory index {verb}: {tag}" },
+        { MessageId::IdxExprLineText,       "en-US", "  expr       : {value}" },
+        { MessageId::IdxSortLineText,       "en-US", "  sort       : {value}" },
+        { MessageId::IdxDirectionLineText,  "en-US", "  direction  : {value}" },
+        { MessageId::IdxRecordsLineText,    "en-US", "  records    : {indexed} indexed / {scanned} scanned" },
+        { MessageId::IdxDeletedLineText,    "en-US", "  deleted    : {count} skipped" },
+        { MessageId::IdxBuildElapsedLineText, "en-US", "  build      : {value}" },
+        { MessageId::IdxSortElapsedLineText, "en-US", "  sort       : {value}" },
+        { MessageId::IdxComparisonsLineText, "en-US", "  compares   : {value}" },
+        { MessageId::IdxSwapsLineText,      "en-US", "  swaps      : {value}" },
+        { MessageId::IdxNoMemoryIndexesText, "en-US", "no memory indexes." },
+        { MessageId::IdxMemoryIndexesTitle, "en-US", "IDX memory indexes:" },
+        { MessageId::IdxListHeaderLineText, "en-US", "TAG               EXPR        SORT      DIR   ENTRIES   BUILD" },
+        { MessageId::IdxDropUsageText,      "en-US", "Usage: IDX DROP <tag>|ALL" },
+        { MessageId::IdxNoMemoryIndexesToDropText, "en-US", "no memory indexes to drop." },
+        { MessageId::IdxDroppedAllText,     "en-US", "dropped all memory indexes." },
+        { MessageId::IdxDroppedMemoryIndexText, "en-US", "dropped memory index {tag}." },
+        { MessageId::IdxMemoryIndexNotFoundText, "en-US", "memory index not found: {tag}" },
+        { MessageId::IdxBuildUsageText,     "en-US", "Usage: IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]" },
+        { MessageId::IdxUnknownCommandText, "en-US", "unknown command '{command}'." },
         { MessageId::SkipUsageText,         "en-US", "Usage:\n  SKIP\n  SKIP USAGE\n  SKIP <n>" },
+        { MessageId::CountUsageText,        "en-US", "Usage:\n  COUNT\n  COUNT USAGE\n  COUNT ALL\n  COUNT FOR <expr>\n  COUNT WHERE <expr>\n  COUNT <expr>\n  COUNT DELETED\n  COUNT NOT DELETED\n  COUNT !DELETED\nNotes:\n  - COUNT with no arguments counts the current logical rowset.\n  - With no open table, COUNT preserves existing behavior and prints 0.\n  - COUNT preserves the active cursor where possible after scans." },
         { MessageId::TopUsageText,          "en-US", "Usage:\n  TOP\n  TOP USAGE" },
         { MessageId::BottomUsageText,       "en-US", "Usage:\n  BOTTOM\n  BOTTOM USAGE" },
         { MessageId::FirstUsageText,        "en-US", "Usage:\n  FIRST\n  FIRST USAGE" },
@@ -7328,6 +9267,9 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::UseAutoAttachedOrderTagUniqueText, "en-US", "Auto-attached order: {file} (tag: {tag} [UNIQUE])" },
         { MessageId::UseAutoAttachedOrderTagText, "en-US", "Auto-attached order: {file} (tag: {tag})" },
         { MessageId::UseAutoAttachedOrderText, "en-US", "Auto-attached order: {file}" },
+        { MessageId::ContinueNoActiveLocateText, "en-US", "no active locate." },
+        { MessageId::ContinueNotFoundText, "en-US", "not found." },
+        { MessageId::ContinueFoundAtText,  "en-US", "Found at {recno}." },
         { MessageId::NavNoFileOpenText,     "en-US", "no file open." },
         { MessageId::NavReadCurrentFailedText, "en-US", "failed to read record." },
         { MessageId::NavAtTopText,          "en-US", "at top." },
@@ -7389,6 +9331,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::ReplaceMultiUpdatedFieldsText, "en-US", "updated {count} field(s)." },
         { MessageId::UnsupportedMessageLocale, "en-US", "Unsupported message locale: {locale}" },
         { MessageId::UnknownCommand,        "en-US", "Unknown command: {command}" },
+        { MessageId::MacroUndefinedVariable, "en-US", "MACRO: undefined variable: {name}" },
         { MessageId::MissingArgument,       "en-US", "Missing required argument." },
         { MessageId::TooManyArguments,      "en-US", "Too many arguments." },
         { MessageId::InvalidSyntax,         "en-US", "Invalid command syntax." },
@@ -7411,6 +9354,17 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::NoOpenTable,           "en-US", "No table is currently open." },
         { MessageId::NoSelectedArea,        "en-US", "No current work area is selected." },
         { MessageId::NoActiveIndex,         "en-US", "No active index." },
+        { MessageId::FindFoundText,         "en-US", "Found." },
+        { MessageId::FindNotFoundText,      "en-US", "Not found." },
+        { MessageId::SeekEmptyText,         "en-US", "(empty)" },
+        { MessageId::SmartlistUsageText,    "en-US", "Usage:\n  SMARTLIST\n  SMARTLIST USAGE\n  SMARTLIST <fields>\n  SMARTLIST ALL\n  SMARTLIST <limit>\n  SMARTLIST NEXT <n>\n  SMARTLIST FIRST <n>\n  SMARTLIST DELETED\n  SMARTLIST DEBUG\n  SMARTLIST TUPLES\n  SMARTLIST FOR <pred>" },
+        { MessageId::SmartlistUnknownProjectionFieldText, "en-US", "unknown projection field '{field}'; using full row." },
+        { MessageId::SeekTraceStatusText,   "en-US", "SEEK TRACE is {state}." },
+        { MessageId::SeekUnknownFieldText,  "en-US", "unknown field: {field}" },
+        { MessageId::SeekFoundAtText,       "en-US", "Found at {recno}." },
+        { MessageId::SeekNearMatchAtText,   "en-US", "Near match at {recno}." },
+        { MessageId::SeekNotFoundText,      "en-US", "Not found." },
+        { MessageId::AscendUsageText,       "en-US", "Usage:\n  ASCEND\n  ASCEND USAGE\n" },
         { MessageId::OrderAscendingSet,     "en-US", "Order: ASCENDING." },
         { MessageId::AreaUsageReadOnlyNote, "en-US", "AREA is read-only; it reports the current area slot/file/order state." },
         { MessageId::AreaCurrentAreaLine,   "en-US", "Current area: {index} of {occupied}" },
@@ -7429,10 +9383,13 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::StatusDbfFlavorLine,   "en-US", "  DBF Flavor   : {value}" },
         { MessageId::StatusTagsSummaryLine, "en-US", "  Tags        : {value}" },
         { MessageId::StatusTagsTitle,       "en-US", "  Tags" },
+        { MessageId::StatusTagColumnHeaderText, "en-US", "  Field Name    Type    Len   Dec   Dir" },
+        { MessageId::StatusTagDividerText,  "en-US", "  ------------ ------- ------ ------ ----" },
         { MessageId::StatusRecordsLine,     "en-US", "  Records     : {value}" },
         { MessageId::StatusLmdbClosedLine,  "en-US", "  LMDB        : (closed)" },
         { MessageId::StatusLmdbEnvLine,     "en-US", "  LMDB        : envdir={envdir}{tag_clause}" },
         { MessageId::StatusFieldsTitle,     "en-US", "Fields ({count})" },
+        { MessageId::StatusFieldColumnHeaderText, "en-US", "  #  Name        Type  Len   Dec" },
         { MessageId::StatusOrderPhysicalLine, "en-US", "Order       : PHYSICAL" },
         { MessageId::StructUsageText,       "en-US", "Usage:\n  STRUCT                 (Current area fields + index info)\n  STRUCT USAGE           (Show this usage)\n  STRUCT INDEX           (Explicit index info mode; default)\n  STRUCT FIELDS          (Fields only)\n  STRUCT ALL             (All open areas)\n  STRUCT ALL INDEX       (All open areas + index info)\n  STRUCT ALL VERBOSE     (All open areas + verbose CNX tag info)\nNotes:\n  - STRUCT is read-only; it reports DBF structure/index metadata.\n" },
         { MessageId::StructNoEngineText,    "en-US", "No engine available." },
@@ -7440,19 +9397,52 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::StructNoFileOpenCurrentAreaText, "en-US", "No file open in current area." },
         { MessageId::StructAreaHeaderLine,  "en-US", "Area {slot}: {path}  ({base})" },
         { MessageId::StructFieldsTitle,     "en-US", "Fields ({count})" },
+        { MessageId::StructFieldColumnHeaderText, "en-US", "  #  Name          Type   Len   Dec" },
         { MessageId::StructDbfileLine,      "en-US", "Dbfile      : {path}  ({base})" },
         { MessageId::StructIndexFileLine,   "en-US", "Index file  : {value}" },
         { MessageId::StructTagsSummaryLine, "en-US", "Tags        : {value}" },
         { MessageId::StructActiveTagLine,   "en-US", "Active tag  : {value}" },
         { MessageId::StructCnxTagsVerboseTitle, "en-US", "CNX Tags (verbose)" },
         { MessageId::StructCnxMarksActiveNote, "en-US", "  * marks active" },
+        { MessageId::StructVerboseCnxColumnHeaderText, "en-US", "    Tag             Expression" },
         { MessageId::DbareaUsageText,       "en-US", "Usage:\n  DBAREA\n  DBAREA USAGE\nNotes:\n  - DBAREA is read-only; it reports the current work-area summary.\n" },
         { MessageId::DbareaNoTableOpenText, "en-US", "DBAREA: no table open." },
         { MessageId::DbareaBannerTitle,     "en-US", "DBAREA - Current Work Area Summary" },
+        { MessageId::DbareaBannerDividerText, "en-US", "============================================================" },
+        { MessageId::DbareaAreaSlotLineText, "en-US", "Area (slot)" },
+        { MessageId::DbareaDbfAbsoluteLineText, "en-US", "DBF (abs)" },
+        { MessageId::DbareaLogicalNameLineText, "en-US", "Logical name" },
+        { MessageId::DbareaLegacyNameLineText, "en-US", "Legacy name()" },
+        { MessageId::DbareaRecordsLineText, "en-US", "Records" },
+        { MessageId::DbareaRecordLengthLineText, "en-US", "Record length" },
+        { MessageId::DbareaRecordLengthMethodLineText, "en-US", "recordLength()" },
+        { MessageId::DbareaFieldsCountLineText, "en-US", "Fields" },
+        { MessageId::DbareaRecnoLineText, "en-US", "Recno" },
+        { MessageId::DbareaDeletedFlagLineText, "en-US", "Deleted flag" },
         { MessageId::DbareaIndexOrderTitle, "en-US", "Index / Order" },
+        { MessageId::DbareaSectionDividerText, "en-US", "-------------" },
+        { MessageId::DbareaIndexFileLineText, "en-US", "Index file" },
         { MessageId::DbareaFieldsTitle,     "en-US", "Fields" },
+        { MessageId::DbareaFieldsNoneText,  "en-US", "(none)" },
+        { MessageId::DbareaFieldColumnHeaderText, "en-US", "#    Name              Type      Len     Dec" },
+        { MessageId::DbareaFieldDividerText, "en-US", "-------------------------------------------------" },
+        { MessageId::DbareasUsageText,      "en-US", "Usage:\n  DBAREAS\n  DBAREAS USAGE\n  DBAREAS <n>\n  DBAREAS ALL\n  DBAREAS REL\nNotes:\n  - DBAREAS with no arguments reports the current area by delegating to DBAREA.\n  - DBAREAS <n> reports slot n when that slot is open.\n  - DBAREAS ALL reports all open slots using filename() as the open-area truth.\n  - DBAREAS REL reports the current area and appends relation summary/tree context.\n  - DBAREAS is read-only; it reports session/work-area state and does not mutate table data.\n" },
+        { MessageId::DbareasNoOpenWorkAreasText, "en-US", "DBAREAS: no open work areas." },
+        { MessageId::DbareasSlotOutOfRangeText, "en-US", "DBAREAS: slot out of range: {slot} (0..{max})" },
+        { MessageId::DbareasAreaNotOpenText, "en-US", "DBAREAS: area {slot} is not open." },
+        { MessageId::DbareasRelationsModuleMissingText, "en-US", "Relations: (module not present)" },
+        { MessageId::DbareasRelationsTitleText, "en-US", "Relations" },
+        { MessageId::DbareasRelationsDividerText, "en-US", "---------" },
+        { MessageId::DbareasParentAnchorLineText, "en-US", "Parent anchor        : {value}" },
+        { MessageId::DbareasChildrenNoneText, "en-US", "Children             : (none configured)" },
+        { MessageId::DbareasChildrenDirectTitleText, "en-US", "Children (direct)" },
+        { MessageId::DbareasChildMatchLineText, "en-US", "  -> {child}  (matches: {count})" },
+        { MessageId::DbareasRelationTreeTitleText, "en-US", "Relation tree" },
+        { MessageId::DbareasRelationTreeDividerText, "en-US", "-------------" },
         { MessageId::FieldsUsageText,       "en-US", "Usage:\n  FIELDS\n  FIELDS USAGE\nNotes:\n  - Reports field number, name, type, length, and decimals for the current area.\n  - FIELDS is read-only.\n" },
         { MessageId::FieldsNoFieldsText,    "en-US", "(No fields)" },
+        { MessageId::FieldsColumnHeaderText, "en-US", "# Name Type Len Dec" },
+        { MessageId::FieldsDividerText,     "en-US", "- ---- ---- --- ---" },
         { MessageId::DescendUsageText,      "en-US", "Usage:\n  DESCEND\n  DESCEND USAGE\n" },
         { MessageId::OrderDescendingSet,    "en-US", "Order: DESCENDING." },
         { MessageId::ColorUsageText,        "en-US", "Usage:\n  COLOR\n  COLOR USAGE\n  COLOR DEFAULT\n  COLOR GREEN\n  COLOR AMBER\n  COLOR TREE ON\n  COLOR TREE OFF\n  COLOR TREECOLOR ON\n  COLOR TREECOLOR OFF\nNotes:\n  - COLOR with no arguments reports current theme and tree palette state.\n  - COLOR TREE/TREECOLOR toggles tree-color behavior.\n" },
@@ -7471,12 +9461,15 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::DotHelpMatchesTitleText, "en-US", "Matching DotTalk helpers:" },
         { MessageId::DotHelpNoTopicText,    "en-US", "No DotTalk help found for: {command}" },
         { MessageId::DotHelpTryHelpHintText, "en-US", "Try HELP /DOT <term> or plain HELP <term>." },
+        { MessageId::DotHelpUnsupportedNoteText, "en-US", "  (documented, but not fully supported yet)" },
         { MessageId::FoxHelpUsageText,      "en-US", "Usage:\n  FOXHELP\n  FOXHELP USAGE\n  FOXHELP <name>\n  FOXHELP <search>\n  FH\n  FH <name>\n  FH <search>\nNotes:\n  - FOXHELP with no arguments lists the FoxPro-style command subset.\n  - FH is a short alias for FOXHELP.\n" },
         { MessageId::FoxHelpSubsetTitleText, "en-US", "FoxPro-style commands (subset):" },
         { MessageId::FoxHelpTipText,        "en-US", "Tip: FOXHELP <NAME> for details, e.g. FOXHELP INDEX" },
         { MessageId::FoxHelpMatchesTitleText, "en-US", "Matches for \"{command}\":" },
         { MessageId::FoxHelpNoTopicText,    "en-US", "No help found for: {command}" },
         { MessageId::FoxHelpTryListHintText, "en-US", "Try FOXHELP (no args) to list commands." },
+        { MessageId::FoxHelpUnsupportedSuffixText, "en-US", "[unsupported]" },
+        { MessageId::FoxStandardUsageText,  "en-US", "Usage:\n  FOXSTANDARD USAGE\n  FOXSTANDARD <command>\n  FOXSTANDARD ALL\n  FOXSTANDARD TOPICS\n  FOXSTANDARD LIST" },
         { MessageId::PshellUsageText,       "en-US", "Usage:\n  PSHELL\n  PSHELL USAGE\n  PSHELL LIST-CATEGORIES\n  PSHELL <category>\n  PSHELL <term>\nExamples:\n  PSHELL PYTHON\n  PSHELL PY-VENV-CREATE\n  PSHELL CLEAN\nNotes:\n  - PSHELL is a read-only reference command; it does not execute PowerShell.\n" },
         { MessageId::AppendUsageBlankNoArgsNote, "en-US", "APPEND with no arguments appends one blank record." },
         { MessageId::AppendUsageManySmartNote, "en-US", "APPEND MANY uses the smart batch append path." },
@@ -8078,6 +10071,33 @@ const std::vector<MessageTextDef>& all_message_texts()
             "  CMDHELP BUILD LEGACY\n"
             "  CMDHELP LEGACY" },
         { MessageId::CmdHelpLegacyReportLine, "en-US", "CMDHELP LEGACY Report: {commands} command rows, {args} arg rows -> {dir}" },
+        { MessageId::LmdbUsageText,          "en-US", "Usage:\n  LMDB USAGE\n  LMDB INFO\n  LMDB OPEN <container.cdx>\n  LMDB OPEN <envdir.cdx.d>\n  LMDB OPEN <stem>\n  LMDB USE <tag>\n  LMDB SEEK <key>\n  LMDB DUMP\n  LMDB DUMP <max>\n  LMDB SCAN <low> <high>\n  LMDB CLOSE\nNotes:\n  - LMDB is per-area and uses the current DbArea IndexManager/CDX backend.\n  - Bare stems resolve through the INDEXES path slot.\n  - LMDB_UTIL is deprecated and disabled." },
+        { MessageId::LmdbActionNoTableOpenText, "en-US", "{action}: no table open in current area" },
+        { MessageId::LmdbInfoNoneText,       "en-US", "(none)" },
+        { MessageId::LmdbInfoTitleText,      "en-US", "LMDB INFO" },
+        { MessageId::LmdbInfoContainerLineText, "en-US", "  container: {path}" },
+        { MessageId::LmdbInfoTagLineText,    "en-US", "  tag      : {tag}" },
+        { MessageId::LmdbOpenMissingPathText, "en-US", "missing path" },
+        { MessageId::LmdbOpenInvalidPathText, "en-US", "invalid path" },
+        { MessageId::LmdbOpenFailedText,     "en-US", "OPEN failed: {detail}" },
+        { MessageId::LmdbOpenText,           "en-US", "OPEN: {path}" },
+        { MessageId::LmdbUseMissingTagText,  "en-US", "missing TAG" },
+        { MessageId::LmdbUseFailedText,      "en-US", "USE failed: {detail}" },
+        { MessageId::LmdbUseText,            "en-US", "USE: {tag}" },
+        { MessageId::LmdbSeekMissingKeyText, "en-US", "missing key" },
+        { MessageId::LmdbSeekFailedText,     "en-US", "SEEK failed: {detail}" },
+        { MessageId::LmdbSeekRecnoText,      "en-US", "SEEK: recno={recno}" },
+        { MessageId::LmdbDumpNoneText,       "en-US", "DUMP: (none)" },
+        { MessageId::LmdbDumpNoTagSelectedText, "en-US", "DUMP: no TAG selected. Try: LMDB USE <TAG>" },
+        { MessageId::LmdbDumpCursorOpenFailedText, "en-US", "DUMP: cursor open failed" },
+        { MessageId::LmdbDumpPrintedText,    "en-US", "DUMP: printed {count}" },
+        { MessageId::LmdbScanUsageText,      "en-US", "SCAN usage: LMDB SCAN <low> <high>" },
+        { MessageId::LmdbScanNoneText,       "en-US", "SCAN: (none)" },
+        { MessageId::LmdbScanNoTagSelectedText, "en-US", "SCAN: no TAG selected. Try: LMDB USE <TAG>" },
+        { MessageId::LmdbScanCursorOpenFailedText, "en-US", "SCAN: cursor open failed" },
+        { MessageId::LmdbScanShownText,      "en-US", "SCAN: shown {count}" },
+        { MessageId::LmdbCloseText,          "en-US", "CLOSE" },
+        { MessageId::LmdbUtilDisabledText,   "en-US", "LMDB_UTIL is deprecated and disabled.\nUse: LMDB (per-area)\nUsage:\n  LMDB_UTIL\n  LMDB_UTIL USAGE\nRelated:\n  LMDB INFO\n  LMDB OPEN <container.cdx>\n  LMDB USE <tag>\n  LMDB SEEK <key>\n  LMDB DUMP\n  LMDB SCAN <low> <high>\n  LMDB CLOSE" },
         { MessageId::ManualCatalogStatusTitle, "en-US", "MANUAL CATALOG STATUS" },
         { MessageId::ManualCatalogTablesTitle, "en-US", "MANUAL CATALOG TABLES" },
         { MessageId::ManualCatalogCountsTitle, "en-US", "MANUAL CATALOG COUNTS" },
@@ -8399,11 +10419,94 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::PrnFileUsageText, "en-US", "Usage: PRN TO FILE <path>" }
         ,{ MessageId::PrnFileOpenFailedText, "en-US", "PRN: failed to open file: {path}" }
         ,{ MessageId::PrnPrinterConfigureFailedText, "en-US", "PRN: failed to configure printer destination." }
+        ,{ MessageId::BangUsageText, "en-US", "Usage:\n  BANG\n  BANG USAGE\n  BANG <command>\n  !\n  ! <command>\nNotes:\n  - BANG with no arguments launches an interactive host shell.\n  - BANG <command> executes a host shell command." }
         ,{ MessageId::BellUsageText, "en-US", "Usage:\n  BELL\n  BELL USAGE\n  BELL ON\n  BELL OFF" }
         ,{ MessageId::BellRungText, "en-US", "Bell rung." }
         ,{ MessageId::BellIsOffText, "en-US", "Bell is OFF." }
         ,{ MessageId::BellStatusText, "en-US", "Bell is {state}" }
+        ,{ MessageId::CloseUsageText, "en-US", "Usage:\n  CLOSE USAGE\n  CLOSE\n  CLOSE ALL\nNotes:\n  - CLOSE closes the current work area.\n  - CLOSE ALL clears all relations before closing the current work area.\n  - Dirty table-buffer state may prompt or cancel close." }
+        ,{ MessageId::CloseCanceledText, "en-US", "CLOSE canceled." }
+        ,{ MessageId::CloseCompletedText, "en-US", "Closed." }
+        ,{ MessageId::CdxUsageText, "en-US", "Usage:\n  CDX USAGE\n  CDX INFO [<path.cdx>]\n  CDX TAGS [<path.cdx>]\n  CDX CREATE [<path.cdx>]\n  CDX ADDTAG <name> [<path.cdx>]\n  CDX DROPTAG <name> [<path.cdx>]\nNotes:\n  - CDX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CDX file.\n  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CdxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CdxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
+        ,{ MessageId::CdxCreateOpenFailedText, "en-US", "open/create failed." }
+        ,{ MessageId::CdxCreatedText, "en-US", "created: \"{path}\"" }
+        ,{ MessageId::CdxFileNotFoundText, "en-US", "file not found: \"{path}\"" }
+        ,{ MessageId::CdxUnableOpenText, "en-US", "unable to open: \"{path}\"" }
+        ,{ MessageId::CdxInfoInvalidHeaderText, "en-US", "invalid header." }
+        ,{ MessageId::CdxInfoFileLineText, "en-US", "CDX file : {path}" }
+        ,{ MessageId::CdxInfoTagsLineText, "en-US", "Tags     : {count}" }
+        ,{ MessageId::CdxInfoTagLineText, "en-US", "  [{tag_id}] {name}  root_off={root_off}  recs={recs}" }
+        ,{ MessageId::CdxTagsReadFailedText, "en-US", "read failed." }
+        ,{ MessageId::CdxNoTagsText, "en-US", "(no tags)" }
+        ,{ MessageId::CdxTagLineText, "en-US", "  [{tag_id}] {name}" }
+        ,{ MessageId::CdxAddTagMissingNameText, "en-US", "missing <name>." }
+        ,{ MessageId::CdxAddTagUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CdxAddTagOpenFailedText, "en-US", "open failed." }
+        ,{ MessageId::CdxAddTagAlreadyExistsText, "en-US", "tag already exists." }
+        ,{ MessageId::CdxAddTagAddedText, "en-US", "added '{tag}'." }
+        ,{ MessageId::CdxDropTagMissingNameText, "en-US", "missing <name>." }
+        ,{ MessageId::CdxDropTagUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CdxDropTagOpenFailedText, "en-US", "open failed." }
+        ,{ MessageId::CdxDropTagNotFoundText, "en-US", "not found." }
+        ,{ MessageId::CdxDropTagRemovedText, "en-US", "removed '{tag}'." }
+        ,{ MessageId::CdxUnknownSubcommandText, "en-US", "unknown subcommand: {subcommand}" }
+        ,{ MessageId::CnxUsageText, "en-US", "Usage:\n  CNX USAGE\n  CNX INFO [<path.cnx>]\n  CNX TAGS [<path.cnx>]\n  CNX CREATE [<path.cnx>]\n  CNX ADDTAG <name> [<path.cnx>]\n  CNX DROPTAG <name> [<path.cnx>]\n  CNX WALK <tag> [<path.cnx>]\n  CNX TRACE <tag> [<path.cnx>]\nNotes:\n  - CNX with no arguments shows usage.\n  - CREATE refuses to overwrite an existing CNX file.\n  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata." }
+        ,{ MessageId::CnxCreateUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CnxCreateFileExistsText, "en-US", "file already exists: \"{path}\"" }
+        ,{ MessageId::CnxCreateOpenFailedText, "en-US", "open/create failed." }
+        ,{ MessageId::CnxCreatedText, "en-US", "created: \"{path}\"" }
+        ,{ MessageId::CnxFileNotFoundText, "en-US", "file not found: \"{path}\"" }
+        ,{ MessageId::CnxUnableOpenText, "en-US", "unable to open: \"{path}\"" }
+        ,{ MessageId::CnxInfoInvalidHeaderText, "en-US", "invalid header." }
+        ,{ MessageId::CnxInfoFileLineText, "en-US", "CNX file : {path}" }
+        ,{ MessageId::CnxInfoTagsLineText, "en-US", "Tags     : {count}" }
+        ,{ MessageId::CnxInfoTagLineText, "en-US", "  [{tag_id}] {name}  root_off={root_off}  recs={recs}" }
+        ,{ MessageId::CnxTagsReadFailedText, "en-US", "read failed." }
+        ,{ MessageId::CnxNoTagsText, "en-US", "(no tags)" }
+        ,{ MessageId::CnxTagLineText, "en-US", "  [{tag_id}] {name}" }
+        ,{ MessageId::CnxWalkMissingTagText, "en-US", "missing <tag>." }
+        ,{ MessageId::CnxWalkUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CnxWalkUnableOpenText, "en-US", "unable to open: \"{path}\"" }
+        ,{ MessageId::CnxWalkReadTagDirectoryFailedText, "en-US", "failed to read tag directory." }
+        ,{ MessageId::CnxWalkTagNotFoundText, "en-US", "tag not found: {tag}" }
+        ,{ MessageId::CnxWalkFileSummaryText, "en-US", "file=\"{path}\"  tag={tag}  root_off={root_off}  stats_rec={stats_rec}" }
+        ,{ MessageId::CnxWalkPageSizeText, "en-US", "page_size={size}" }
+        ,{ MessageId::CnxWalkRootZeroText, "en-US", "root_page_off is 0" }
+        ,{ MessageId::CnxAddTagMissingNameText, "en-US", "missing <name>." }
+        ,{ MessageId::CnxAddTagUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CnxAddTagOpenFailedText, "en-US", "open failed." }
+        ,{ MessageId::CnxAddTagAlreadyExistsText, "en-US", "tag already exists." }
+        ,{ MessageId::CnxAddTagAddedText, "en-US", "added '{tag}'." }
+        ,{ MessageId::CnxDropTagMissingNameText, "en-US", "missing <name>." }
+        ,{ MessageId::CnxDropTagUnableResolvePathText, "en-US", "unable to resolve path." }
+        ,{ MessageId::CnxDropTagOpenFailedText, "en-US", "open failed." }
+        ,{ MessageId::CnxDropTagNotFoundText, "en-US", "not found." }
+        ,{ MessageId::CnxDropTagRemovedText, "en-US", "removed '{tag}'." }
+        ,{ MessageId::CnxUnknownSubcommandText, "en-US", "unknown subcommand: {subcommand}" }
         ,{ MessageId::ClearUsageText, "en-US", "Usage:\n  CLEAR USAGE\n  CLEAR\n  CLS\nNotes:\n  - Clears the console screen only." }
+        ,{ MessageId::VersionUsageText, "en-US", "Usage:\n  VERSION\n  VERSION USAGE" }
+        ,{ MessageId::VersionBannerLineText, "en-US", "dottalk++ {version}  ({stamp})" }
+        ,{ MessageId::VersionBuildLineText, "en-US", "DotTalk++ build {stamp}" }
+        ,{ MessageId::SqlverUsageText, "en-US", "Usage:\n  SQLVER\n  SQLVER USAGE" }
+        ,{ MessageId::SqlverAvailableLineText, "en-US", "SQLite available: 1, version: {version}" }
+        ,{ MessageId::SqlverUnavailableLineText, "en-US", "SQLite available: 0" }
+        ,{ MessageId::ShutdownUsageText, "en-US", "Usage:\n  SHUTDOWN\n  SHUTDOWN USAGE\nNotes:\n  - SHUTDOWN with no arguments executes shutdown.ini when present.\n  - SHUTDOWN USAGE prints this usage and does not execute shutdown.ini." }
+        ,{ MessageId::ShutdownUnableOpenText, "en-US", "SHUTDOWN: unable to open {path}" }
+        ,{ MessageId::ShutdownProcessingText, "en-US", "SHUTDOWN: processing {path}" }
+        ,{ MessageId::ShutdownLineFailedText, "en-US", "SHUTDOWN: {file}:{line}: {detail}" }
+        ,{ MessageId::ShutdownLineUnknownErrorText, "en-US", "SHUTDOWN: {file}:{line}: unknown error" }
+        ,{ MessageId::ShutdownNoIniFoundText, "en-US", "SHUTDOWN: no shutdown.ini found in {path}" }
+        ,{ MessageId::ShutdownProcessingFailedText, "en-US", "SHUTDOWN: ini processing failed: {detail}" }
+        ,{ MessageId::ShutdownProcessingFailedUnknownText, "en-US", "SHUTDOWN: ini processing failed (unknown error)" }
+        ,{ MessageId::SelectUsageText, "en-US", "Usage:\n  SELECT USAGE\n  SELECT <0..{max_slot}>\n  SELECT <name>\n  SELECT <table.dbf>" }
+        ,{ MessageId::SelectEngineUnavailableText, "en-US", "SELECT: engine unavailable." }
+        ,{ MessageId::SelectOutOfRangeText, "en-US", "SELECT: out of range (valid 0..{max_slot})." }
+        ,{ MessageId::SelectNoAreaMatchesText, "en-US", "SELECT: no area matches '{name}'. Use SELECT <0..{max_slot}> or a known name." }
+        ,{ MessageId::SelectSelectedAreaText, "en-US", "Selected area {slot}." }
+        ,{ MessageId::SelectCurrentAreaText, "en-US", "Current area: {slot}" }
+        ,{ MessageId::SelectCurrentAreaFileSummaryText, "en-US", "  File: {path}  Recs: {recs}  Recno: {recno}" }
         ,{ MessageId::QuitUsageText, "en-US", "Usage:\n  QUIT\n  EXIT\nNotes:\n  Requests normal DotTalk++ shutdown." }
         ,{ MessageId::UnlockUsageText, "en-US", "Usage:\n  UNLOCK USAGE\n  UNLOCK\n  UNLOCK <recno>\n  UNLOCK ALL\n  UNLOCK TABLE\nExamples:\n  UNLOCK\n  UNLOCK 10\n  UNLOCK ALL\n  UNLOCK TABLE\nNotes:\n  - UNLOCK USAGE does not require an open table.\n  - UNLOCK with no arguments unlocks the current record." }
         ,{ MessageId::UnlockNoTableOpenText, "en-US", "UNLOCK: no table open." }
@@ -8457,6 +10560,9 @@ const std::vector<MessageTextDef>& all_message_texts()
         ,{ MessageId::ShowIniLoadFailedText, "en-US", "SHOWINI: load failed: {detail}" }
         ,{ MessageId::ShowIniReportTitleText, "en-US", "INI SETTINGS REPORT" }
         ,{ MessageId::ShowIniFileLineText, "en-US", "File: {path}" }
+        ,{ MessageId::ShowIniSectionHeaderText, "en-US", "[{name}]" }
+        ,{ MessageId::ShowIniSectionDividerText, "en-US", "----------------------------------------" }
+        ,{ MessageId::ShowIniKeyValueLineText, "en-US", "{key_padded} = {value}" }
     };
     return texts;
 }

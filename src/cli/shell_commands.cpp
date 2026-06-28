@@ -35,7 +35,6 @@
 #include <sstream>
 #include <string>
 
-#include "textio.hpp"
 #include "shell_api.hpp"               // shell_dispatch_line() decl
 #include "cli/command_registry.hpp"    // dli::registry()
 #include "set_relations.hpp"           // relations_api::refresh_if_enabled()
@@ -46,58 +45,6 @@
 #include "cli/cmd_quit.hpp"
 
 using xbase::DbArea;
-
-namespace {
-
-// Private helpers used only by command registration. They support SELECT
-// resolution and avoid leaking shell-specific parsing into the xbase engine.
-
-// Return the final path component, strip the extension, and uppercase it.
-// This lets SELECT STUDENTS match an open table stored as a full path.
-static inline std::string basename_upper(std::string path) {
-    std::replace(path.begin(), path.end(), '\\', '/');
-    auto slash = path.find_last_of('/');
-    if (slash != std::string::npos) path.erase(0, slash + 1);
-    auto dot = path.find_last_of('.');
-    if (dot != std::string::npos) path.erase(dot);
-    std::transform(path.begin(), path.end(), path.begin(),
-                   [](unsigned char c) { return char(std::toupper(c)); });
-    return path;
-}
-
-// True only when the whole token is decimal digits. SELECT uses this to
-// distinguish numeric work-area selection from table-name selection.
-static inline bool is_digits(const std::string& s) {
-    if (s.empty()) return false;
-    for (unsigned char c : s) if (!std::isdigit(c)) return false;
-    return true;
-}
-
-// Resolve SELECT arguments to a work-area index. Accepted forms are numeric
-// area numbers and open table basenames. Returns -1 when no match exists.
-static int resolve_area_index_by_name(xbase::XBaseEngine& eng, const std::string& tokRaw) {
-    std::string tok = textio::trim(tokRaw);
-    if (tok.empty()) return -1;
-
-    if (is_digits(tok)) {
-        int n = 0;
-        try { n = std::stoi(tok); }
-        catch (...) { return -1; }
-        if (n >= 0 && n < xbase::MAX_AREA) return n;
-        return -1;
-    }
-
-    const std::string want = textio::up(tok);
-    for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        xbase::DbArea& A = eng.area(i);
-        if (!A.isOpen()) continue;
-        const std::string base = basename_upper(A.name());
-        if (base == want) return i;
-    }
-    return -1;
-}
-
-} // namespace
 
 // Exported registration entry point used by shell startup. extern "C" keeps
 // the symbol name stable while the implementation still uses C++ lambdas.
@@ -132,49 +79,6 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
         relations_api::refresh_if_enabled();
     });
 
-        /* VUSE_REGISTRY_USAGE_INTERCEPT_V2 */
-    registry().add("VUSE",   [](DbArea& A, std::istringstream& S){
-        const std::streampos pos = S.tellg();
-        std::string tok;
-
-        if (S >> tok) {
-            for (char& ch : tok) {
-                if (ch >= 'a' && ch <= 'z') {
-                    ch = static_cast<char>(ch - 'a' + 'A');
-                }
-            }
-
-            S.clear();
-            if (pos != std::streampos(-1)) {
-                S.seekg(pos);
-            }
-
-            if (tok == "USAGE" || tok == "HELP" || tok == "?") {
-                std::cout
-                    << "Usage:\n"
-                    << "  USE USAGE\n"
-                    << "  USE <table-or-path> [NOINDEX]\n"
-                    << "  VUSE USAGE\n"
-                    << "  VUSE <table-or-path> [NOINDEX]\n"
-                    << "Notes:\n"
-                    << "  - VUSE USAGE does not open tables or mutate order state.\n";
-                return;
-            }
-        } else {
-            S.clear();
-            if (pos != std::streampos(-1)) {
-                S.seekg(pos);
-            }
-        }
-
-        if (!dottalk::dirty::maybe_prompt_area(A, "USE")) {
-            std::cout << "USE canceled.\n";
-            return;
-        }
-        cmd_USE(A,S);
-        relations_api::refresh_if_enabled();
-    });
-
     registry().add("CLOSE", [](DbArea& A, std::istringstream& S){
         if (!dottalk::dirty::maybe_prompt_area(A, "CLOSE")) {
             std::cout << "CLOSE canceled.\n";
@@ -184,28 +88,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
         relations_api::refresh_if_enabled();
     });
 
-    registry().add("SELECT",  [&](DbArea& /*A*/, std::istringstream& S){
-        std::string tok;
-        if (!(S >> tok)) {
-            std::cout << "Usage: SELECT <0.." << (xbase::MAX_AREA-1) << " | <name>>\n";
-            return;
-        }
-        int idx = resolve_area_index_by_name(eng, tok);
-        if (idx < 0) {
-            std::cout << "Usage: SELECT <0.." << (xbase::MAX_AREA-1) << " | <name>>\n";
-            return;
-        }
-        eng.selectArea(idx);
-        std::cout << "Selected area " << idx << ".\n";
-        DbArea& cur = eng.area(eng.currentArea());
-        std::cout << "Current area: " << eng.currentArea() << "\n";
-        if (cur.isOpen()) {
-            std::cout << "  File: " << cur.name()
-                      << "  Recs: " << cur.recCount()
-                      << "  Recno: " << cur.recno() << "\n";
-        } else {
-            std::cout << "  (no file open)\n";
-        }
+    registry().add("SELECT",  [](DbArea& A, std::istringstream& S){
+        cmd_SELECT(A,S);
         relations_api::refresh_if_enabled();
     });
 

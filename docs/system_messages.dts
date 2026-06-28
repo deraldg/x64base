@@ -1,0 +1,20 @@
+* ============================================================
+* system_messages.dts
+* Status:
+*   CANONICAL_READONLY_WRAPPER
+* Purpose:
+*   Preserve the historical docs entry point while routing users to the
+*   reviewed runtime SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT verification lane.
+*
+* Boundary:
+*   - Read-only verification path.
+*   - No candidate rebuild work.
+*   - No direct DBF/CDX mutation.
+* ============================================================
+
+SET ECHO OFF
+ECHO === SYSTEM_MESSAGES -> REVIEWED RUNTIME VERIFY ===
+
+DO ../dottalkpp/data/scripts/messaging/RUNTIME_MESSAGE_CATALOG_VERIFY_v1.dts
+
+ECHO === SYSTEM_MESSAGES VERIFY COMPLETE ===

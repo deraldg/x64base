@@ -51,6 +51,8 @@
 #include <cctype>
 #include <limits>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "workareas.hpp"
 
@@ -101,17 +103,17 @@ static bool try_parse_int(const std::string& s, int& out) {
 static void print_select_usage()
 {
     const size_t cnt = workareas::count();
-    std::cout
-        << "Usage:\n"
-        << "  SELECT USAGE\n"
-        << "  SELECT <0.." << (cnt ? (int)(cnt - 1) : 0) << ">\n"
-        << "  SELECT <name>\n"
-        << "  SELECT <table.dbf>\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SelectUsageText,
+        {{"max_slot", std::to_string(cnt ? static_cast<int>(cnt - 1) : 0)}});
 }
 
 void cmd_SELECT(xbase::DbArea& /*A*/, std::istringstream& iss) {
     xbase::XBaseEngine* eng = shell_engine();
-    if (!eng) { std::cout << "SELECT: engine unavailable.\n"; return; }
+    if (!eng) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SelectEngineUnavailableText);
+        return;
+    }
 
     std::string arg;
     if (!(iss >> arg) || arg.empty()) {
@@ -138,7 +140,9 @@ void cmd_SELECT(xbase::DbArea& /*A*/, std::istringstream& iss) {
     if (try_parse_int(arg, nParsed)) {
         const size_t cnt = workareas::count();
         if (nParsed < 0 || (size_t)nParsed >= cnt) {
-            std::cout << "SELECT: out of range (valid 0.." << (cnt ? (int)(cnt - 1) : 0) << ").\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SelectOutOfRangeText,
+                {{"max_slot", std::to_string(cnt ? static_cast<int>(cnt - 1) : 0)}});
             return;
         }
         idx = nParsed;
@@ -173,25 +177,38 @@ void cmd_SELECT(xbase::DbArea& /*A*/, std::istringstream& iss) {
 
         if (idx < 0) {
             const size_t cnt = workareas::count();
-            std::cout << "SELECT: no area matches '" << arg
-                      << "'. Use SELECT <0.." << (cnt ? (int)(cnt - 1) : 0)
-                      << "> or a known name.\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SelectNoAreaMatchesText,
+                {
+                    {"name", arg},
+                    {"max_slot", std::to_string(cnt ? static_cast<int>(cnt - 1) : 0)}
+                });
             return;
         }
     }
 
     // Perform selection & echo
     eng->selectArea((size_t)idx);
-    std::cout << "Selected area " << idx << ".\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SelectSelectedAreaText,
+        {{"slot", std::to_string(idx)}});
 
     const xbase::DbArea* cur = workareas::db((size_t)idx);
     if (cur && cur->isOpen()) {
-        std::cout << "Current area: " << idx << "\n"
-                  << "  File: " << cur->filename()
-                  << "  Recs: " << cur->recCount()
-                  << "  Recno: " << cur->recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SelectCurrentAreaText,
+            {{"slot", std::to_string(idx)}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SelectCurrentAreaFileSummaryText,
+            {
+                {"path", cur->filename()},
+                {"recs", std::to_string(cur->recCount())},
+                {"recno", std::to_string(cur->recno())}
+            });
     } else {
-        std::cout << "Current area: " << idx << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SelectCurrentAreaText,
+            {{"slot", std::to_string(idx)}});
     }
 }
 

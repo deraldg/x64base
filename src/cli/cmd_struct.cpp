@@ -162,11 +162,7 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::StructFieldsTitle,
         {{"count", std::to_string(field_count)}});
-    cout << "  #  " << std::left << std::setw(12) << "Name"
-         << "  "  << std::left << std::setw(4)  << "Type"
-         << "  "  << std::right << std::setw(4) << "Len"
-         << "  "  << std::right << std::setw(4) << "Dec"
-         << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::StructFieldColumnHeaderText);
 
     // Fields rows ? no blank lines between entries
     int i = 1;
@@ -272,9 +268,7 @@ static void print_struct_for_area(DbArea& A, int area_no, bool wantIndex, bool v
     if (verbose && !cnx_tags.empty()) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::StructCnxTagsVerboseTitle);
         cli::cmdout::print_message(dottalk::helpdata::MessageId::StructCnxMarksActiveNote);
-        cout << "  " << std::left << std::setw(1)  << " "
-             << std::left << std::setw(16) << "Tag"
-             << "Expression\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::StructVerboseCnxColumnHeaderText);
         for (const auto& t : cnx_tags) {
             const bool isActive = (!activeTag.empty() && t.name == activeTag);
             std::string expr;

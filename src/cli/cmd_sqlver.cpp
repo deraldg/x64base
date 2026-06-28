@@ -33,6 +33,8 @@
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
 
@@ -61,10 +63,7 @@ static bool is_sqlver_usage_request(const std::string& raw)
 
 static void print_sqlver_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SQLVER\n"
-        << "  SQLVER USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SqlverUsageText);
 }
 } // namespace
 
@@ -84,8 +83,10 @@ void cmd_SQLVER(xbase::DbArea& /*area*/, std::istringstream& is)
 
 #if DOTTALK_SQLITE_AVAILABLE
     const char* ver = sqlite3_libversion();
-    std::cout << "SQLite available: 1, version: " << (ver ? ver : "unknown") << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::SqlverAvailableLineText,
+        {{"version", ver ? ver : "unknown"}});
 #else
-    std::cout << "SQLite available: 0\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SqlverUnavailableLineText);
 #endif
 }

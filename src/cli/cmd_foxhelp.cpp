@@ -42,6 +42,7 @@
 #include "textio.hpp"
 #include "foxref.hpp"
 #include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -53,6 +54,11 @@
 
 using xbase::DbArea;
 
+namespace {
+std::ostream& out() {
+    return cli::OutputRouter::instance().out();
+}
+}
 
 static void print_foxhelp_usage() {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpUsageText);
@@ -69,14 +75,18 @@ static bool is_foxhelp_usage_request(std::string raw) {
 }
 
 static void print_item(const foxref::Item& it) {
-    std::cout << std::left << std::setw(14) << it.name
-              << (it.supported ? " " : " (unsupported) ") << "\n";
+    out() << std::left << std::setw(14) << it.name;
+    if (it.supported) {
+        out() << " \n";
+    } else {
+        out() << " " << cli::cmdout::message_text(dottalk::helpdata::MessageId::FoxHelpUnsupportedSuffixText) << "\n";
+    }
 
     if (it.syntax && *it.syntax)
-        std::cout << "  " << it.syntax << "\n";
+        out() << "  " << it.syntax << "\n";
 
     if (it.summary && *it.summary)
-        std::cout << "  " << it.summary << "\n";
+        out() << "  " << it.summary << "\n";
 }
 
 static void do_foxhelp(std::istringstream& in) {
@@ -92,11 +102,13 @@ static void do_foxhelp(std::istringstream& in) {
     if (rest.empty()) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpSubsetTitleText);
         for (const auto& it : foxref::catalog()) {
-            std::cout << "  " << std::left << std::setw(12) << it.name;
+            out() << "  " << std::left << std::setw(12) << it.name;
             if (it.supported) {
-                std::cout << " - " << it.summary << "\n";
+                out() << " - " << it.summary << "\n";
             } else {
-                std::cout << " - " << it.summary << " [unsupported]\n";
+                out() << " - " << it.summary << " "
+                      << cli::cmdout::message_text(dottalk::helpdata::MessageId::FoxHelpUnsupportedSuffixText)
+                      << "\n";
             }
         }
         cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpTipText);
@@ -115,7 +127,7 @@ static void do_foxhelp(std::istringstream& in) {
             {{"command", rest}});
         for (const auto* it : results) {
             print_item(*it);
-            std::cout << "\n";
+            out() << "\n";
         }
         return;
     }

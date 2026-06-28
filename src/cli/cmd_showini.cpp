@@ -43,7 +43,6 @@
 //   STATUS
 //
 
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -53,7 +52,10 @@
 #include <iomanip>
 #include <cctype>
 
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "xbase.hpp"
+#include "help/helpdata_messages.hpp"
 #include "textio.hpp"
 #include "cli/command_registry.hpp"
 
@@ -138,21 +140,33 @@ static bool load_ini(const fs::path& path,
 static void print_ini(const fs::path& path,
                       const vector<IniSection>& sections)
 {
-    cout << "INI SETTINGS REPORT\n";
-    cout << "File: " << path.string() << "\n\n";
+    auto& out = cli::OutputRouter::instance().out();
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShowIniReportTitleText);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ShowIniFileLineText,
+        {{"path", path.string()}});
+    out << "\n";
 
     for (const auto& sec : sections)
     {
-        cout << "[" << sec.name << "]\n";
-        cout << "----------------------------------------\n";
+        out << cli::cmdout::message_text(
+                   dottalk::helpdata::MessageId::ShowIniSectionHeaderText,
+                   {{"name", sec.name}})
+            << "\n";
+        out << cli::cmdout::message_text(dottalk::helpdata::MessageId::ShowIniSectionDividerText)
+            << "\n";
 
         for (const auto& e : sec.entries)
         {
-            cout << left << setw(24) << e.key
-                 << " = " << e.value << "\n";
+            std::ostringstream key_padded;
+            key_padded << left << setw(24) << e.key;
+            out << cli::cmdout::message_text(
+                       dottalk::helpdata::MessageId::ShowIniKeyValueLineText,
+                       {{"key_padded", key_padded.str()}, {"value", e.value}})
+                << "\n";
         }
 
-        cout << "\n";
+        out << "\n";
     }
 }
 
@@ -189,17 +203,7 @@ static bool showini_usage_request_hotfix(std::istringstream& iss)
 
 static void print_showini_usage_hotfix()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SHOWINI\n"
-        << "  SHOWINI USAGE\n"
-        << "  SHOWINI <table-or-ini>\n"
-        << "  SHOWINI PATH <ini-file>\n"
-        << "Examples:\n"
-        << "  SHOWINI\n"
-        << "  SHOWINI students\n"
-        << "  SHOWINI students.ini\n"
-        << "  SHOWINI PATH d:\\data\\students.ini\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ShowIniUsageText);
 }
 void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
 {
@@ -209,6 +213,10 @@ void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
     }
     string arg;
     iss >> arg;
+    if (showini_usage_upper_hotfix(arg) == "SHOWINI") {
+        arg.clear();
+        iss >> arg;
+    }
 
     fs::path iniPath;
 
@@ -217,7 +225,7 @@ void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
         string fn = area.filename();
         if (fn.empty())
         {
-            cout << "SHOWINI: no table open.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ShowIniNoTableOpenText);
             return;
         }
 
@@ -233,7 +241,7 @@ void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
             iss >> arg;
             if (arg.empty())
             {
-                cout << "SHOWINI: PATH requires filename.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ShowIniPathRequiresFilenameText);
                 return;
             }
 
@@ -252,8 +260,9 @@ void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
 
     if (!fs::exists(iniPath))
     {
-        cout << "SHOWINI: ini file not found: "
-             << iniPath.string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ShowIniFileNotFoundText,
+            {{"path", iniPath.string()}});
         return;
     }
 
@@ -262,7 +271,9 @@ void cmd_SHOWINI(xbase::DbArea& area, std::istringstream& iss)
 
     if (!load_ini(iniPath, sections, error))
     {
-        cout << "SHOWINI: load failed: " << error << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ShowIniLoadFailedText,
+            {{"detail", error}});
         return;
     }
 

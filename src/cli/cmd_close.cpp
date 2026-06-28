@@ -52,6 +52,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/dirty_prompt.hpp"
 #include "cli/order_state.hpp"   // orderstate::clearOrder
 #include "memo/memo_manager.hpp"
@@ -173,15 +174,7 @@ static bool is_close_usage_request(std::string raw)
 
 static void print_close_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CLOSE USAGE\n"
-        << "  CLOSE\n"
-        << "  CLOSE ALL\n"
-        << "Notes:\n"
-        << "  - CLOSE closes the current work area.\n"
-        << "  - CLOSE ALL clears all relations before closing the current work area.\n"
-        << "  - Dirty table-buffer state may prompt or cancel close.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseUsageText);
 }
 
 void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
@@ -194,7 +187,7 @@ void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
 
     // Table buffering prompt gate
     if (!dottalk::dirty::maybe_prompt_area(a, "CLOSE")) {
-        std::cout << "CLOSE canceled.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseCanceledText);
         return;
     }
 
@@ -233,5 +226,5 @@ void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
     // RULE: closing a DBF resets TABLE state for that slot (OFF + clean + fresh)
     clear_table_slot_state(a);
 
-    std::cout << "Closed.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseCompletedText);
 }

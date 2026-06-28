@@ -112,17 +112,12 @@ void cmd_FIELDS(DbArea& area, std::istringstream& args)
 
     // Header
     std::cout
-        << std::right << std::setw(w_idx)  << "#"  << ' '
-        << std::left  << std::setw(w_name) << "Name" << ' '
-        << std::left  << std::setw(w_type) << "Type" << ' '
-        << std::right << std::setw(w_len)  << "Len"  << "\n";
+        << cli::cmdout::message_text(dottalk::helpdata::MessageId::FieldsColumnHeaderText)
+        << "\n";
 
-    // Ruler
-    auto dash = [](int w){ for (int i=0;i<w;++i) std::cout << '-'; };
-    dash(w_idx);  std::cout << ' ';
-    dash(w_name); std::cout << ' ';
-    dash(w_type); std::cout << ' ';
-    dash(w_len);  std::cout << ' '; dash(w_dec);  std::cout << "\n";
+    std::cout
+        << cli::cmdout::message_text(dottalk::helpdata::MessageId::FieldsDividerText)
+        << "\n";
 
     // Rows
     for (std::size_t i = 0; i < n; ++i) {

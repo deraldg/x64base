@@ -40,6 +40,8 @@
 //
 
 #include "fox_standard_render.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "xbase.hpp"
 
 #include <algorithm>
@@ -49,6 +51,10 @@
 #include <string>
 
 namespace {
+std::ostream& out()
+{
+    return cli::OutputRouter::instance().out();
+}
 
 std::string trim_copy(std::string s)
 {
@@ -73,13 +79,7 @@ std::string upper_copy(std::string s)
 
 void print_foxstandard_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  FOXSTANDARD USAGE\n"
-        << "  FOXSTANDARD <command>\n"
-        << "  FOXSTANDARD ALL\n"
-        << "  FOXSTANDARD TOPICS\n"
-        << "  FOXSTANDARD LIST\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxStandardUsageText);
 }
 
 } // namespace
@@ -101,9 +101,9 @@ void cmd_FOXSTANDARD(xbase::DbArea& area, std::istringstream& iss)
 
 
     if (topic_upper == "ALL" || topic_upper == "TOPICS" || topic_upper == "LIST") {
-        std::cout << dottalk::foxstd::render_topic_list();
+        out() << dottalk::foxstd::render_topic_list();
         return;
     }
 
-    std::cout << dottalk::foxstd::render_doc(rest) << "\n";
+    out() << dottalk::foxstd::render_doc(rest) << "\n";
 }

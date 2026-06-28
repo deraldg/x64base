@@ -40,8 +40,14 @@
 #include <sstream>
 #include <string>
 #include "dotref.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 
 namespace {
+std::ostream& out() {
+    return cli::OutputRouter::instance().out();
+}
+
 std::string to_upper(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
@@ -64,38 +70,33 @@ bool is_dothelp_usage_request(const std::string& raw) {
 }
 
 void print_dothelp_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  DOTHELP\n"
-        << "  DOTHELP USAGE\n"
-        << "  DOTHELP <term>\n"
-        << "  HELP /DOT <term>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpUsageText);
 }
 
 void print_item(const dotref::Item& it, bool verbose = true) {
-    std::cout << it.name << "\n";
-    std::cout << "  " << it.syntax << "\n";
-    std::cout << "  " << it.summary << "\n";
+    out() << it.name << "\n";
+    out() << "  " << it.syntax << "\n";
+    out() << "  " << it.summary << "\n";
     if (!it.supported) {
-        std::cout << "  (documented, but not fully supported yet)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpUnsupportedNoteText);
     }
-    if (verbose) std::cout << "\n";
+    if (verbose) out() << "\n";
 }
 } // namespace
 
 void show_dot_help(const std::string& arg) {
     std::string term = to_upper(arg);
     if (term.empty()) {
-        std::cout << "DOTTALK REFERENCE\n\n"
-                  << "Project-native commands and subsystems\n\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpTitleText);
+        out() << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpSubtitleText);
+        out() << "\n\n";
         for (const auto& item : dotref::catalog()) {
-            std::cout << item.name << "\n"
-                      << "  " << item.syntax << "\n"
-                      << "  " << item.summary << "\n\n";
+            out() << item.name << "\n"
+                  << "  " << item.syntax << "\n"
+                  << "  " << item.summary << "\n\n";
         }
-        std::cout << "Usage:\n"
-                  << "  DOTHELP <term>\n"
-                  << "  HELP /DOT <term>\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpSearchUsageText);
         return;
     }
     if (const auto* item = dotref::find(term)) {
@@ -104,15 +105,18 @@ void show_dot_help(const std::string& arg) {
     }
     auto matches = dotref::search(term);
     if (!matches.empty()) {
-        std::cout << "Matching DotTalk helpers:\n\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpMatchesTitleText);
+        out() << "\n";
         for (const auto* m : matches) {
             print_item(*m, false);
-            std::cout << "\n";
+            out() << "\n";
         }
         return;
     }
-    std::cout << "No DotTalk help found for: " << term << "\n"
-              << "Try HELP /DOT <term> or plain HELP <term>.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::DotHelpNoTopicText,
+        {{"command", term}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DotHelpTryHelpHintText);
 }
 
 void cmd_DOTHELP(xbase::DbArea& /*area*/, std::istringstream& iss) {

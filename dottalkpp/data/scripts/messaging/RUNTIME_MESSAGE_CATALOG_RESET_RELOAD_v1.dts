@@ -1,0 +1,11 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.dts
+* Status:
+*   CANONICAL_WRAPPER
+* Purpose:
+*   Stable operator entrypoint for the reviewed one-shot reset/reload cycle.
+* Boundary:
+*   - Delegates only to the reviewed runtime reset/reload driver.
+* ============================================================
+
+DO RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.RUN_REVIEWED.dts

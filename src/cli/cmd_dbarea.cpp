@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_report.hpp"
 
@@ -87,11 +88,21 @@ static int area_slot_of(xbase::DbArea& a){
 }
 } // namespace
 
-void cmd_DBAREA(xbase::DbArea& a, std::istringstream& /*iss*/){
+void cmd_DBAREA(xbase::DbArea& a, std::istringstream& iss){
     using namespace xbase;
 
+    std::string raw = iss.str();
+    std::transform(raw.begin(), raw.end(), raw.begin(),
+        [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
+    if (raw.find("USAGE") != std::string::npos ||
+        raw.find("HELP")  != std::string::npos ||
+        raw.find("?")     != std::string::npos) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaUsageText);
+        return;
+    }
+
     if (!a.isOpen()){
-        std::cout << "DBAREA: no table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaNoTableOpenText);
         return;
     }
 
@@ -103,50 +114,48 @@ void cmd_DBAREA(xbase::DbArea& a, std::istringstream& /*iss*/){
     const int32_t crn          = a.recno();
     const auto&   fdefs        = a.fields();
 
-    std::cout << "============================================================\n";
-    std::cout << "DBAREA - Current Work Area Summary\n";
-    std::cout << "============================================================\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaBannerDividerText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaBannerTitle);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaBannerDividerText);
 
     // Area slot
-    kv("Area (slot)", area_slot_of(a));
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaAreaSlotLineText), area_slot_of(a));
 
-    kv("DBF (abs)",        dbf_abs);
-    kv("Logical name",     logical);
-    kv("Legacy name()",    logical);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaDbfAbsoluteLineText), dbf_abs);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaLogicalNameLineText), logical);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaLegacyNameLineText), logical);
 
-    kv("Records",          static_cast<int>(recs));
-    kv("Record length",    reclen);
-    kv("recordLength()",   a.recordLength());
-    kv("Fields",           nfields);
-    kv("Recno",            static_cast<int>(crn));
-    kv("Deleted flag",     a.isDeleted()? 1 : 0);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaRecordsLineText), static_cast<int>(recs));
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaRecordLengthLineText), reclen);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaRecordLengthMethodLineText), a.recordLength());
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaFieldsCountLineText), nfields);
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaRecnoLineText), static_cast<int>(crn));
+    kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaDeletedFlagLineText), a.isDeleted()? 1 : 0);
 
-    std::cout << "\nIndex / Order\n";
-    std::cout << "-------------\n";
+    std::cout << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaIndexOrderTitle);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaSectionDividerText);
 
     // Echo index file path explicitly for parity with `area` command
     try {
         const std::string idx_path = orderstate::orderName(a);
-        kv("Index file", idx_path.empty() ? std::string("(none)") : idx_path);
+        kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaIndexFileLineText),
+           idx_path.empty() ? std::string("(none)") : idx_path);
     } catch (...) {
-        kv("Index file", std::string("(unknown)"));
+        kv(cli::cmdout::message_text(dottalk::helpdata::MessageId::DbareaIndexFileLineText), std::string("(unknown)"));
     }
 
     // Detailed status (direction, tag, etc.)
     orderreport::print_status_block(std::cout, a);
 
-    std::cout << "\nFields\n";
-    std::cout << "------\n";
+    std::cout << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaFieldsTitle);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaSectionDividerText);
     if (fdefs.empty()){
-        std::cout << "(none)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaFieldsNoneText);
     } else {
-        std::cout << std::left
-                  << std::setw(5)  << "#"
-                  << std::setw(18) << "Name"
-                  << std::setw(10) << "Type"
-                  << std::setw(8)  << "Len"
-                  << std::setw(8)  << "Dec" << "\n";
-        std::cout << std::string(5+18+10+8+8, '-') << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaFieldColumnHeaderText);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaFieldDividerText);
         for (int i=0; i<static_cast<int>(fdefs.size()); ++i){
             const auto& f = fdefs[i];
             std::cout << std::left
@@ -159,6 +168,6 @@ void cmd_DBAREA(xbase::DbArea& a, std::istringstream& /*iss*/){
         }
     }
 
-    std::cout << "============================================================\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DbareaBannerDividerText);
     std::cout.flush();
 }
