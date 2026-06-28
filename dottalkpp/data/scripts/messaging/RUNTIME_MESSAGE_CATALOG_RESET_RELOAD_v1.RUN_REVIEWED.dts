@@ -1,0 +1,9 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.RUN_REVIEWED.dts
+* Purpose:
+*   Reviewed one-shot reset + reload driver for the runtime messaging lane.
+* ============================================================
+
+DO RUNTIME_MESSAGE_CATALOG_RESET_v1.RUN_REVIEWED.dts
+DO RUNTIME_MESSAGE_CATALOG_IMPORT_v1.RUN_REVIEWED.dts
+DO RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify.dts
