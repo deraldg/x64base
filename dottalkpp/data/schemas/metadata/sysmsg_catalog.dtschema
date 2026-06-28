@@ -1,0 +1,64 @@
+# sysmsg_catalog.dtschema
+# Canonical reviewed schema contract for SYSMSG metadata rows.
+#
+# Active physical evidence:
+#   dottalkpp/data/metadata/SYSMSG.dbf
+#   dottalkpp/data/metadata/SYSMSG.dtx
+#
+# Reviewed create/import evidence:
+#   dottalkpp/data/scripts/metadata/SYSMSG_NATIVE_CREATE_IMPORT_v1.RUN_REVIEWED.dts
+#   dottalkpp/data/scripts/metadata/SYSMSG_IMPORT_v1.csv
+#   dottalkpp/data/workspaces/metadata.dtschema
+#
+# Boundary:
+#   This contract documents the reviewed SYSMSG metadata shape now in use.
+#   CDX/LMDB activation for SYSMSG is lane-owned and not asserted active here.
+
+SCHEMA_ID: SYSMSG_CATALOG
+SCHEMA_STATUS: CANONICAL_REVIEWED_CREATE_IMPORT_CONTRACT
+ACTIVE_SCHEMA_TARGET: dottalkpp/data/schemas/metadata/sysmsg_catalog.dtschema
+ACTIVE_DBF_PATH: dottalkpp/data/metadata/SYSMSG.dbf
+WORKSPACE_EVIDENCE: metadata.dtschema AREA 6 alias SYSMSG
+
+TABLE: SYSMSG
+ROLE: localized-ready metadata catalog for runtime/system message symbols
+FIELDS:
+  MSG_ID TYPE=C LEN=32 DEC=0
+  SYMBOL TYPE=C LEN=120 DEC=0
+  ENUM_NAME TYPE=C LEN=80 DEC=0
+  DEF_LOCALE TYPE=C LEN=16 DEC=0
+  REGION_ID TYPE=C LEN=16 DEC=0
+  CATEGORY TYPE=C LEN=24 DEC=0
+  SEVERITY TYPE=C LEN=24 DEC=0
+  FACILITY TYPE=C LEN=48 DEC=0
+  STATUS TYPE=C LEN=24 DEC=0
+  HELP_TOPIC TYPE=C LEN=80 DEC=0
+  CMDHELPCHK TYPE=C LEN=96 DEC=0
+  SHORT_TXT TYPE=C LEN=180 DEC=0
+  IMPL_STAT TYPE=C LEN=32 DEC=0
+  VIS_TIER TYPE=C LEN=32 DEC=0
+  OWNER TYPE=C LEN=64 DEC=0
+  SRC_AUTH TYPE=C LEN=64 DEC=0
+  SRC_FILE TYPE=C LEN=180 DEC=0
+  PUB_SURF TYPE=L LEN=1 DEC=0
+  USED_RUN TYPE=L LEN=1 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+  VER_AT TYPE=C LEN=24 DEC=0
+  SUG_ACT TYPE=M LEN=10 DEC=0
+  NOTES TYPE=M LEN=10 DEC=0
+
+LOCALE_FIELDS:
+  DEF_LOCALE REQUIRED_FOR=default language binding
+  REGION_ID REQUIRED_FOR=region-aware routing and reporting
+  HELP_TOPIC RESERVED_FOR=help/manual attachment once help identity proof is complete
+  CMDHELPCHK RESERVED_FOR=diagnostic/help gate attachment once doctrine proof is complete
+
+EXPECTED_IMPORT_SOURCE:
+  CSV: dottalkpp/data/scripts/metadata/SYSMSG_IMPORT_v1.csv
+  SOURCE_AUTHORITY: compiled_registry_v1
+  SOURCE_FILE_HINT: src/help/helpdata_messages.cpp
+
+INDEX_CONTRACT_STATUS:
+  CURRENT_STATE: not asserted active
+  REVIEWED_SCRIPT_ACTION: SET INDEX TO SYSMSG ; BUILDLMDB CLEAN YES
+  NOTE: promote explicit CDX tag contract only after the SYSMSG index lane is reactivated and read back

@@ -1,0 +1,57 @@
+RUNTIME MESSAGE CATALOG RESET v1
+================================
+
+Purpose
+-------
+Reset and recreate the active runtime messaging lane before importing a fresh
+catalog snapshot.
+
+Targets
+-------
+- `data/messaging/SYSTEM_MESSAGES.dbf`
+- `data/messaging/SYSTEM_MESSAGE_TEXT.dbf`
+- `data/messaging/SYSTEM_MESSAGE_TEXT.dtx`
+- `data/indexes/messaging/SYSTEM_MESSAGES.cdx`
+- `data/indexes/messaging/SYSTEM_MESSAGES.cdx.meta`
+- `data/indexes/messaging/SYSTEM_MESSAGE_TEXT.cdx`
+- `data/indexes/messaging/SYSTEM_MESSAGE_TEXT.cdx.meta`
+- `data/lmdb/messaging/SYSTEM_MESSAGES.cdx.d`
+- `data/lmdb/messaging/SYSTEM_MESSAGE_TEXT.cdx.d`
+
+Reviewed Doctrine
+-----------------
+Use this only as part of a snapshot reload, not as an ad hoc repair step.
+
+Preferred sequence:
+
+1. `DO scripts\messaging\RUNTIME_MESSAGE_CATALOG_RESET_v1.RUN_REVIEWED`
+2. `DO scripts\messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.RUN_REVIEWED`
+3. `DO scripts\messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify`
+
+Schema Source
+-------------
+The recreated table shape is based on:
+
+- `data/schemas/messaging/message_catalog.dtschema`
+
+Current Limitation
+------------------
+The schema contract includes expression-oriented tags such as:
+
+- `MSG_LOCALE EXPR=STR(MSGID,10,0)+LOCALE`
+- `SYMBOLLOC EXPR=SYMBOL+LOCALE`
+
+The current reviewed reset script recreates the field-addressable canonical tags
+that the present DotScript `CDX ADDTAG` surface can express directly:
+
+- `MSGID`
+- `SYMBOL`
+- `ENUMNAME`
+- `SEVERITY`
+- `FACILITY`
+- `OWNER`
+- `LOCALE`
+- `TXTHASH`
+
+This is sufficient for reviewed runtime reloads and LMDB rebuilds now, but
+expression-tag parity remains a follow-up enhancement lane.

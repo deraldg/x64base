@@ -1,0 +1,50 @@
+# locale_spine.dtschema
+# Phase 23N candidate active schema contract draft.
+# Target active path:
+#   dottalkpp/data/schemas/locale/locale_spine.dtschema
+#
+# Active artifacts described:
+#   dottalkpp/data/locale/SYSTEM_LOCALES.dbf
+#   dottalkpp/data/locale/SYSTEM_LOCALE_FALLBACK.dbf
+#   dottalkpp/data/indexes/locale/*.cdx
+#   dottalkpp/data/lmdb/locale/*.cdx.d
+#
+# Boundary:
+#   Draft only in Phase 23N. Do not treat as promoted until Phase 23O.
+
+SCHEMA_ID: LOCALE_SPINE
+SCHEMA_STATUS: CANDIDATE_DRAFT
+ACTIVE_SCHEMA_TARGET: dottalkpp/data/schemas/locale/locale_spine.dtschema
+
+TABLE: SYSTEM_LOCALES
+PRIMARY_KEY: LOCALE_ID
+FIELDS:
+  LOCALE_ID
+  BASE_LOCALE
+  DISPLAY_NAME
+  TEXT_DIR
+  SOURCE_LOCALE
+  LOCALE_STATUS
+  DEFAULT_LOCALE
+  FALLBACK_ALLOWED
+TAGS:
+  LOCALE_ID
+  BASE_LOCALE
+  LOCALE_STATUS
+  SRC
+
+TABLE: SYSTEM_LOCALE_FALLBACK
+PRIMARY_KEY: FBID
+FIELDS:
+  FBID
+  LOCALE_ID
+  FALLBACK_TO
+  FALLBACK_ORDER
+  FALLBACK_TYPE
+  RULE_STATUS
+TAGS:
+  FBID
+  LOCALE_ID
+  FALLBACK_TO
+  FALLBACK_ORDER
+  FALLBACK_TYPE

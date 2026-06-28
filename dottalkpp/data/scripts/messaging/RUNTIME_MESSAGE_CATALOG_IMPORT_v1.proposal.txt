@@ -1,0 +1,73 @@
+RUNTIME MESSAGE CATALOG IMPORT v1
+=================================
+
+Purpose
+-------
+Create a reviewed, repeatable import path for the full runtime messaging lane:
+
+- `SYSTEM_MESSAGES`
+- `SYSTEM_MESSAGE_TEXT`
+
+Inputs
+------
+- `src/help/helpdata_messages.cpp`
+- `src/help/message_catalog.cpp`
+- generated CSV snapshots:
+  - `data/scripts/messaging/SYSTEM_MESSAGES_IMPORT_v1.csv`
+  - `data/scripts/messaging/SYSTEM_MESSAGE_TEXT_IMPORT_v1.csv`
+
+Generator
+---------
+- `dottalkpp/tools/help/generate_runtime_message_catalog_seed_v1.py`
+
+Rules
+-----
+- preserve already-seeded numeric `MSGID` values found in `message_catalog.cpp`
+- allocate new numeric `MSGID` values after the current seeded maximum
+- keep `en-US` as the canonical fallback locale
+- emit explicit localized rows for `de`, `es`, `fr`, `it` where source text exists
+- emit synthetic `en-US` text rows only when `all_message_texts()` lacks one
+- use `src/help/helpdata_messages.cpp` as `SRC`
+
+Reviewed Import Shape
+---------------------
+From the `dottalkpp/data` root:
+
+1. set messaging roots
+   `SETPATH DBF MESSAGING`
+   `SETPATH INDEXES INDEXES/MESSAGING`
+   `SETPATH LMDB LMDB/MESSAGING`
+
+2. import message identity rows
+   `USE SYSTEM_MESSAGES`
+   `IMPORT scripts\messaging\SYSTEM_MESSAGES_IMPORT_v1.csv`
+
+3. import localized text rows
+   `USE SYSTEM_MESSAGE_TEXT`
+   `IMPORT scripts\messaging\SYSTEM_MESSAGE_TEXT_IMPORT_v1.csv`
+
+4. rebuild LMDB backends from existing CDX containers
+   `SET INDEX TO SYSTEM_MESSAGES.cdx`
+   `BUILDLMDB CLEAN YES`
+   `SET INDEX TO SYSTEM_MESSAGE_TEXT.cdx`
+   `BUILDLMDB CLEAN YES`
+
+Important Boundary
+------------------
+- This is a snapshot reload path, not an incremental append path.
+- Run it against a reviewed/reset messaging workspace.
+- Do not use it blindly against a dirty catalog that already contains overlapping
+  rows unless that workspace was intentionally rebuilt for the snapshot.
+
+Verification
+------------
+Run:
+
+- `DO scripts\messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify`
+
+Expected proof:
+
+- `SYSTEM_MESSAGES` row count matches generated snapshot
+- `SYSTEM_MESSAGE_TEXT` row count matches generated snapshot
+- `SET MESSAGE CATALOG CHECK` reports the active DBF provider
+- `SET MESSAGE EMIT MSGMGR_STATUS_TITLE` resolves across `en-US/de/es/fr/it`

@@ -1,0 +1,77 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_RESET_v1.RUN_REVIEWED.dts
+* Status: REVIEWED / DESTRUCTIVE_WITHIN_MESSAGING_LANE
+* Purpose:
+*   Reset the active runtime messaging workspace and recreate the DBF shape for
+*   a fresh snapshot reload, then bind/rebuild the reviewed CDX/LMDB artifacts.
+*
+* Boundary:
+*   - Mutates only the MESSAGING lane:
+*       data/messaging
+*       data/indexes/messaging
+*       data/lmdb/messaging
+*   - Does not mutate HELP DATA, SYSMSG metadata, source, or manuals.
+*   - Intended to run before the reviewed runtime import script.
+*
+* Notes:
+*   - Current DotScript CDX ADDTAG surface is field-oriented.
+*   - Current DotScript ERASE surface is table-oriented and does not remove
+*     INDEXES/LMDB artifacts by filename.
+*   - This script recreates the DBFs, then reuses or creates the canonical CDX
+*     containers by explicit name before rebuilding LMDB.
+*   - Expression-tag parity for MSG_LOCALE / SYMBOLLOC remains a follow-up lane.
+* ============================================================
+
+SET ECHO OFF
+SET PAGING OFF
+
+ECHO ===== RUNTIME MESSAGE CATALOG RESET START =====
+
+WORKSPACE CLOSE ALL
+CLOSE ALL
+REL CLEAR ALL
+
+SETPATH DBF MESSAGING
+SETPATH INDEXES INDEXES/MESSAGING
+SETPATH LMDB LMDB/MESSAGING
+
+* ------------------------------------------------------------
+* Reset physical messaging files
+* ------------------------------------------------------------
+ERASE SYSTEM_MESSAGES.DBF CONFIRM
+ERASE SYSTEM_MESSAGE_TEXT.DBF CONFIRM
+ERASE SYSTEM_MESSAGE_TEXT.DTX CONFIRM
+
+* ------------------------------------------------------------
+* SYSTEM_MESSAGES
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_MESSAGES (MSGID N(10,0), SYMBOL C(64), ENUMNAME C(64), FACILITY C(32), OWNER C(64), CATEGORY C(32), SEVERITY C(16), STATUS C(16), SRC C(32))
+
+USE SYSTEM_MESSAGES
+CDX CREATE SYSTEM_MESSAGES.cdx
+SET INDEX TO SYSTEM_MESSAGES.cdx
+CDX ADDTAG MSGID
+CDX ADDTAG SYMBOL
+CDX ADDTAG ENUMNAME
+CDX ADDTAG SEVERITY
+CDX ADDTAG FACILITY
+CDX ADDTAG OWNER
+BUILDLMDB CLEAN YES
+CLOSE
+
+* ------------------------------------------------------------
+* SYSTEM_MESSAGE_TEXT
+* ------------------------------------------------------------
+CREATE X64 SYSTEM_MESSAGE_TEXT (MSGID N(10,0), SYMBOL C(64), ENUMNAME C(64), LOCALE C(16), MSGLOCALE C(32), SYMBOLLOC C(96), TEXT M, TXTHASH C(64), STATUS C(16), SRC C(32))
+
+USE SYSTEM_MESSAGE_TEXT
+CDX CREATE SYSTEM_MESSAGE_TEXT.cdx
+SET INDEX TO SYSTEM_MESSAGE_TEXT.cdx
+CDX ADDTAG MSGID
+CDX ADDTAG SYMBOL
+CDX ADDTAG LOCALE
+CDX ADDTAG TXTHASH
+BUILDLMDB CLEAN YES
+CLOSE
+
+ECHO ===== RUNTIME MESSAGE CATALOG RESET END =====

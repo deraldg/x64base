@@ -1,0 +1,39 @@
+* ============================================================
+* RUNTIME_MESSAGE_CATALOG_IMPORT_v1.RUN_REVIEWED.dts
+* Status: REVIEWED / SNAPSHOT_RELOAD
+* Purpose:
+*   Import the full compiled runtime message catalog snapshot into the
+*   active messaging workspace, then rebuild the LMDB backends from the
+*   existing CDX containers.
+*
+* Boundary:
+*   - Assumes the target messaging tables were already reviewed/reset.
+*   - Appends/imports reviewed CSV snapshots only.
+*   - Rebuilds LMDB from existing CDX containers.
+*   - Does not modify HELP DATA, SYSMSG metadata, or source code.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== RUNTIME MESSAGE CATALOG IMPORT START =====
+
+WORKSPACE CLOSE ALL
+CLOSE ALL
+REL CLEAR ALL
+
+SETPATH DBF MESSAGING
+SETPATH INDEXES INDEXES/MESSAGING
+SETPATH LMDB LMDB/MESSAGING
+
+SELECT 0
+USE SYSTEM_MESSAGES
+IMPORT scripts\messaging\SYSTEM_MESSAGES_IMPORT_v1.csv
+SET INDEX TO SYSTEM_MESSAGES.cdx
+BUILDLMDB YES
+
+SELECT 1
+USE SYSTEM_MESSAGE_TEXT
+IMPORT scripts\messaging\SYSTEM_MESSAGE_TEXT_IMPORT_v1.csv
+SET INDEX TO SYSTEM_MESSAGE_TEXT.cdx
+BUILDLMDB YES
+
+ECHO ===== RUNTIME MESSAGE CATALOG IMPORT END =====

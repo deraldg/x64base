@@ -1,0 +1,73 @@
+# message_catalog.dtschema
+# Phase 23R clean candidate.
+# Target active path after later authorization:
+#   dottalkpp/data/schemas/messaging/message_catalog.dtschema
+#
+# Source evidence:
+#   docs/locale/reports/locale_phase23q_active_messaging_dbf_fields_v1.csv
+#   docs/messaging/reports/message_catalog_phase13_candidate_cdx_tag_plan_v1.csv
+#
+# Active promotion evidence:
+#   PHASE: 23S
+#   PROMOTED_FROM: docs/locale/schemas/candidates/phase23r_message_catalog_clean_candidate/message_catalog.dtschema
+#   SOURCE_SHA256: e5607d38c7b9f640416e80db57da4e04a0edbf1eeeec7ad10dead98d3eb08421
+#   ACTIVE_SCHEMA_PATH: dottalkpp/data/schemas/messaging/message_catalog.dtschema
+#
+# Reconciliation notes:
+#   Phase 23Q raw DBF header scan exposed invalid x64 descriptor tokens.
+#   Phase 23R filters invalid/blank descriptors and keeps only field-like rows.
+#   This remains a candidate draft until active promotion is explicitly authorized.
+
+SCHEMA_ID: MESSAGE_CATALOG
+SCHEMA_STATUS: ACTIVE_SCHEMA_CONTRACT_PROMOTED_FROM_PHASE23R_CLEAN_CANDIDATE
+ACTIVE_SCHEMA_TARGET: dottalkpp/data/schemas/messaging/message_catalog.dtschema
+PROMOTION_STATUS: ACTIVE_PROMOTED_PHASE23S
+
+TABLE: SYSTEM_MESSAGES
+ROLE: active physical Messaging DBF table
+FIELDS:
+  MSGID TYPE=N LEN=10 DEC=0
+  SYMBOL TYPE=C LEN=64 DEC=0
+  ENUMNAME TYPE=C LEN=64 DEC=0
+  FACILITY TYPE=C LEN=32 DEC=0
+  OWNER TYPE=C LEN=64 DEC=0
+  CATEGORY TYPE=C LEN=32 DEC=0
+  SEVERITY TYPE=C LEN=16 DEC=0
+  STATUS TYPE=C LEN=16 DEC=0
+  SRC TYPE=C LEN=32 DEC=0
+TAGS:
+  MSGID EXPR=STR(MSGID,10,0) UNIQUE=1 REQUIRED_FOR=primary lookup
+  SYMBOL EXPR=SYMBOL UNIQUE=1 REQUIRED_FOR=symbol lookup
+  ENUMNAME EXPR=ENUMNAME UNIQUE=1 REQUIRED_FOR=C++ enum bridge
+  SEVERITY EXPR=SEVERITY UNIQUE=0 REQUIRED_FOR=reporting
+  FACILITY EXPR=FACILITY UNIQUE=0 REQUIRED_FOR=reporting
+  OWNER EXPR=OWNER UNIQUE=0 REQUIRED_FOR=stewardship
+
+TABLE: SYSTEM_MESSAGE_TEXT
+ROLE: active physical Messaging DBF table
+FIELDS:
+  MSGID TYPE=N LEN=10 DEC=0
+  SYMBOL TYPE=C LEN=64 DEC=0
+  ENUMNAME TYPE=C LEN=64 DEC=0
+  LOCALE TYPE=C LEN=16 DEC=0
+  MSGLOCALE TYPE=C LEN=32 DEC=0
+  SYMBOLLOC TYPE=C LEN=96 DEC=0
+  TEXT TYPE=M LEN=8 DEC=0
+  TXTHASH TYPE=C LEN=64 DEC=0
+  STATUS TYPE=C LEN=16 DEC=0
+  SRC TYPE=C LEN=32 DEC=0
+TAGS:
+  MSG_LOCALE EXPR=STR(MSGID,10,0)+LOCALE UNIQUE=1 REQUIRED_FOR=localized template lookup
+  SYMBOLLOC EXPR=SYMBOL+LOCALE UNIQUE=1 REQUIRED_FOR=human review lookup
+  LOCALE EXPR=LOCALE UNIQUE=0 REQUIRED_FOR=locale reporting
+  TXTHASH EXPR=TXTHASH UNIQUE=0 REQUIRED_FOR=parity/readback
+
+EXPECTED_RUNTIME_PROOF:
+  MESSAGE_COUNT: 19
+  TEXT_ROW_COUNT: 79
+  LOCALES: de;en-US;es;fr;it
+
+PROMOTION_REQUIREMENTS:
+  PHASE23R_CLEAN_CANDIDATE_REVIEWED: required
+  ACTIVE_SCHEMA_PROMOTION_AUTHORIZED: required
+  NO_ACTIVE_DBF_CDX_LMDB_MUTATION: required

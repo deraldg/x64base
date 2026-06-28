@@ -1,0 +1,43 @@
+# syscmd_catalog.dtschema
+# Canonical reviewed schema contract for SYSCMD metadata rows.
+#
+# Active physical evidence:
+#   dottalkpp/data/metadata/SYSCMD.dbf
+#   dottalkpp/data/indexes/metadata/SYSCMD.cdx
+#   dottalkpp/data/lmdb/metadata/SYSCMD.cdx.d
+#
+# Reviewed create/import evidence:
+#   dottalkpp/data/scripts/metadata/SYSCMD_NATIVE_CREATE_IMPORT_v1.RUN_METADATA_REVIEWED.dts
+#   dottalkpp/data/scripts/metadata/SYSCMD_IMPORT_v1.csv
+#   dottalkpp/data/workspaces/metadata.dtschema
+#
+# Boundary:
+#   SYSCMD is structural command metadata, not localized display text.
+#   Locale-aware wording belongs in HELP, SYSMSG, and related companion lanes.
+
+SCHEMA_ID: SYSCMD_CATALOG
+SCHEMA_STATUS: CANONICAL_REVIEWED_CREATE_IMPORT_CONTRACT
+ACTIVE_SCHEMA_TARGET: dottalkpp/data/schemas/metadata/syscmd_catalog.dtschema
+ACTIVE_DBF_PATH: dottalkpp/data/metadata/SYSCMD.dbf
+ACTIVE_INDEX_PATH: dottalkpp/data/indexes/metadata/SYSCMD.cdx
+ACTIVE_LMDB_PATH: dottalkpp/data/lmdb/metadata/SYSCMD.cdx.d
+WORKSPACE_EVIDENCE: metadata.dtschema AREA 1 alias SYSCMD
+
+TABLE: SYSCMD
+ROLE: canonical command identity and dispatch inventory
+FIELDS:
+  CMD_ID TYPE=C LEN=32 DEC=0
+  CAN_NAME TYPE=C LEN=80 DEC=0
+  TYPE TYPE=C LEN=20 DEC=0
+  VIS TYPE=C LEN=20 DEC=0
+  HANDLER TYPE=C LEN=96 DEC=0
+  ACTIVE TYPE=L LEN=1 DEC=0
+
+EXPECTED_IMPORT_SOURCE:
+  CSV: dottalkpp/data/scripts/metadata/SYSCMD_IMPORT_v1.csv
+  SOURCE_AUTHORITY: source inventory / reviewed import csv
+
+INDEX_CONTRACT_STATUS:
+  CURRENT_STATE: active container and LMDB path present
+  TAG_CONTRACT: not yet canonically described in reviewed metadata script
+  NOTE: promote explicit tag list only after SYSCMD CDX readback is documented

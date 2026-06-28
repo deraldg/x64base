@@ -1,0 +1,14 @@
+* ============================================================
+* messaging_priority_a_seed_verify_v1.dts
+* Status: LEGACY_COMPAT_WRAPPER
+* Purpose:
+*   Preserve the older Priority A verify entry point while routing readback
+*   through the reviewed runtime message catalog verification script.
+* ============================================================
+
+SET ECHO OFF
+ECHO === LEGACY PRIORITY A VERIFY -> REVIEWED RUNTIME CATALOG VERIFY ===
+
+DO messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify.dts
+
+ECHO === LEGACY PRIORITY A VERIFY COMPLETE ===
