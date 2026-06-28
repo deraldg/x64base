@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">Command Reference Harvest</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Usage contracts and comments seed the reader-facing command guide.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="16">
+    <rect x="70" y="145" width="180" height="86" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="160" y="181">Source files</text><text x="160" y="204" font-size="13">@dottalk.usage blocks</text>
+    <rect x="310" y="145" width="180" height="86" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="400" y="181">Raw harvest</text><text x="400" y="204" font-size="13">457 blocks</text>
+    <rect x="550" y="145" width="180" height="86" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="640" y="181">Selected guide</text><text x="640" y="204" font-size="13">197 entries</text>
+    <rect x="350" y="330" width="260" height="96" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="480" y="370">Reader promotion</text><text x="480" y="394" font-size="13">HELP + META + proof required</text>
+  </g>
+  <g stroke="#374151" stroke-width="2.3" fill="none" marker-end="url(#arrow)">
+    <path d="M250 188 H310"/><path d="M490 188 H550"/><path d="M640 231 C640 292 480 285 480 330"/>
+  </g>
+</svg>

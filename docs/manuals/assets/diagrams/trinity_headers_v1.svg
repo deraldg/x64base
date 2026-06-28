@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">The Trinity Headers</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Three headers define the xBase data-structure spine.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#334155"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="88" y="150" width="225" height="150" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="115" y="196" font-size="24" font-weight="700" fill="#1e3a8a">xbase.hpp</text>
+    <text x="115" y="230" font-size="15" fill="#1e40af">Neutral runtime truth</text>
+    <text x="115" y="253" font-size="15" fill="#1e40af">DbArea, fields, records</text>
+    <text x="115" y="276" font-size="15" fill="#1e40af">memo/index hooks</text>
+    <rect x="368" y="150" width="225" height="150" rx="10" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="395" y="196" font-size="24" font-weight="700" fill="#14532d">xbase_vfp.hpp</text>
+    <text x="395" y="230" font-size="15" fill="#166534">Classic/VFP bridge</text>
+    <text x="395" y="253" font-size="15" fill="#166534">descriptor compatibility</text>
+    <text x="395" y="276" font-size="15" fill="#166534">flavor interpretation</text>
+    <rect x="648" y="150" width="225" height="150" rx="10" fill="#fef3c7" stroke="#d97706"/>
+    <text x="675" y="196" font-size="24" font-weight="700" fill="#78350f">xbase_64.hpp</text>
+    <text x="675" y="230" font-size="15" fill="#92400e">x64 extensions</text>
+    <text x="675" y="253" font-size="15" fill="#92400e">X64M name metadata</text>
+    <text x="675" y="276" font-size="15" fill="#92400e">64-bit table state</text>
+  </g>
+  <g stroke="#334155" stroke-width="2.4" fill="none" marker-end="url(#arrow)">
+    <path d="M313 225 H368"/><path d="M593 225 H648"/>
+  </g>
+  <text x="480" y="405" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#374151">Dependency direction: neutral core -> compatibility bridge -> x64 metadata authority</text>
+</svg>

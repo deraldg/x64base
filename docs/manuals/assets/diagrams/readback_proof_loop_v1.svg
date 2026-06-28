@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fbfffb"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">Runtime Proof Loop</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">The manual promotes behavior after command, mutation, and readback are captured.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="16">
+    <circle cx="230" cy="205" r="72" fill="#dbeafe" stroke="#2563eb"/><text x="230" y="199">Run</text><text x="230" y="222" font-size="13">DotScript</text>
+    <circle cx="480" cy="205" r="72" fill="#fef3c7" stroke="#d97706"/><text x="480" y="199">Capture</text><text x="480" y="222" font-size="13">transcript</text>
+    <circle cx="730" cy="205" r="72" fill="#dcfce7" stroke="#16a34a"/><text x="730" y="199">Readback</text><text x="730" y="222" font-size="13">STRUCT/LIST/STATUS</text>
+    <rect x="330" y="350" width="300" height="76" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="480" y="383">Promote</text><text x="480" y="406" font-size="13">manual claim with caveats</text>
+  </g>
+  <g stroke="#374151" stroke-width="2.3" fill="none" marker-end="url(#arrow)">
+    <path d="M302 205 H408"/><path d="M552 205 H658"/><path d="M730 277 C730 360 630 378 630 388"/><path d="M330 388 C190 388 185 280 205 263"/>
+  </g>
+</svg>
