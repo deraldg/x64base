@@ -42,16 +42,18 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
 
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 namespace fs = std::filesystem;
+
+using MessageId = dottalk::helpdata::MessageId;
 
 static fs::path resolve_cdx_token(const std::string& tok)
 {
@@ -95,14 +97,7 @@ static bool is_setcdx_usage_request(const std::string& raw)
 
 static void print_setcdx_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET CDX USAGE\n"
-        << "  SET CDX\n"
-        << "  SET CDX <name-or-path>\n"
-        << "  SETCDX\n"
-        << "  SETCDX USAGE\n"
-        << "  SETCDX <name-or-path>\n";
+    cli::cmdout::print_message(MessageId::SetCdxUsageText);
 }
 
 void cmd_SETCDX(xbase::DbArea& A, std::istringstream& in)
@@ -123,16 +118,25 @@ void cmd_SETCDX(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!fs::exists(p)) {
-        std::cout << "SET CDX: file not found: " << p.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CDX",
+            MessageId::SetOrderFileNotFoundText,
+            {{"path", p.string()}});
         return;
     }
 
     try {
         // CDX attachment/state is owned by order subsystem in your architecture.
         orderstate::setOrder(A, p.string());
-        std::cout << "SET CDX: attached \"" << p.string() << "\"\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CDX",
+            MessageId::SetCdxAttachedText,
+            {{"path", p.string()}});
     }
     catch (const std::exception& ex) {
-        std::cout << "SET CDX failed: " << ex.what() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET CDX",
+            MessageId::SetCdxFailedText,
+            {{"detail", ex.what()}});
     }
 }

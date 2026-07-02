@@ -27,6 +27,8 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -48,11 +50,8 @@ using xbase::DbArea;
 // Internal helper: prints standard "no table" message and returns true if handled
 static inline bool ensure_table_open(DbArea& A) {
     if (!A.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
         return true;
     }
     return false;
 }
-
-
-

@@ -96,20 +96,7 @@ namespace
 
     static void print_append_usage()
     {
-        cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
-        cli::cmdout::print_line("  APPEND USAGE");
-        cli::cmdout::print_line("  APPEND");
-        cli::cmdout::print_line("  APPEND <count>");
-        cli::cmdout::print_line("  APPEND MANY <count>");
-        cli::cmdout::print_line("  APPEND RAW");
-        cli::cmdout::print_line("  APPEND RAW MANY <count>");
-        cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
-        cli::cmdout::print_line(
-            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageBlankNoArgsNote));
-        cli::cmdout::print_line(
-            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageManySmartNote));
-        cli::cmdout::print_line(
-            "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendUsageRawNoInlineIndexNote));
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::AppendUsageText);
     }
 
     static bool parse_count_token(const std::string& s, std::size_t& out)

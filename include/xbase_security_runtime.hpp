@@ -21,6 +21,7 @@ using policy::enforce_atomic_writes;
 using policy::enforce_no_plaintext_secrets;
 using policy::enforce_no_unsafe_paths;
 using policy::enforce_no_elevated_writes;
+using policy::enforce_host_commands_allowed;
 
 // ------------------------------------------------------------
 // 1. Runtime Context
@@ -88,7 +89,16 @@ inline void require_secure_secrets(const context& ctx)
 }
 
 // ------------------------------------------------------------
-// 7. High-Level Open/Close Wrappers
+// 7. Host Command Execution Enforcement
+// ------------------------------------------------------------
+// Call this before launching a host shell or delegating to std::system().
+inline void require_host_commands_allowed(const context& ctx)
+{
+    enforce_host_commands_allowed(ctx.policy);
+}
+
+// ------------------------------------------------------------
+// 8. High-Level Open/Close Wrappers
 // ------------------------------------------------------------
 // These are optional helpers you can call from your DBF_64/FPT64 engine.
 
@@ -111,6 +121,11 @@ inline void on_write_begin(const context& ctx)
 inline void on_store_secret(const context& ctx)
 {
     require_secure_secrets(ctx);
+}
+
+inline void on_host_command_begin(const context& ctx)
+{
+    require_host_commands_allowed(ctx);
 }
 
 } // namespace runtime

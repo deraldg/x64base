@@ -52,11 +52,12 @@
 //   CDX
 //
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <cctype>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
 
@@ -85,20 +86,7 @@ static bool is_lmdb_util_usage_request(const std::string& raw)
 
 static void print_lmdb_util_disabled()
 {
-    std::cout
-        << "LMDB_UTIL is deprecated and disabled.\n"
-        << "Use: LMDB (per-area)\n"
-        << "Usage:\n"
-        << "  LMDB_UTIL\n"
-        << "  LMDB_UTIL USAGE\n"
-        << "Related:\n"
-        << "  LMDB INFO\n"
-        << "  LMDB OPEN <container.cdx>\n"
-        << "  LMDB USE <tag>\n"
-        << "  LMDB SEEK <key>\n"
-        << "  LMDB DUMP\n"
-        << "  LMDB SCAN <low> <high>\n"
-        << "  LMDB CLOSE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LmdbUtilDisabledText);
 }
 } // namespace
 

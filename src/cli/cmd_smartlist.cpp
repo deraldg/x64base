@@ -69,6 +69,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "predicates.hpp"
 #include "filters/filter_registry.hpp"
 #include "cli/order_state.hpp"
@@ -81,6 +82,7 @@
 #include "tuple_builder.hpp"
 #include "value_normalize.hpp"
 #include "set_relations.hpp"
+#include "help/helpdata_messages.hpp"
 #include "../xbase/cursor_hook.hpp"
 
 // Expr engine + helpers
@@ -212,19 +214,7 @@ static bool is_smartlist_usage_request(const std::string& raw)
 
 static void print_smartlist_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SMARTLIST\n"
-        << "  SMARTLIST USAGE\n"
-        << "  SMARTLIST <fields>\n"
-        << "  SMARTLIST ALL\n"
-        << "  SMARTLIST <limit>\n"
-        << "  SMARTLIST NEXT <n>\n"
-        << "  SMARTLIST FIRST <n>\n"
-        << "  SMARTLIST DELETED\n"
-        << "  SMARTLIST DEBUG\n"
-        << "  SMARTLIST TUPLES\n"
-        << "  SMARTLIST FOR <pred>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SmartlistUsageText);
 }
 
 static std::string smartlist_options_tail(std::string raw) {
@@ -312,7 +302,10 @@ static std::vector<int> parse_projection_fields(const xbase::DbArea& a, std::str
         if (n == "*") return {};
         int idx = field_index_by_name(a, n);
         if (idx <= 0) {
-            std::cout << "SMARTLIST: unknown projection field '" << n << "'; using full row.\n";
+            cli::cmdout::print_prefixed_message(
+                "SMARTLIST",
+                dottalk::helpdata::MessageId::SmartlistUnknownProjectionFieldText,
+                {{"field", n}});
             return {};
         }
         fields.push_back(idx);
@@ -571,7 +564,10 @@ void cmd_SMARTLIST(xbase::DbArea& a, std::istringstream& iss) {
         return;
     }
 
-    if (!a.isOpen()) { std::cout << "No table open.\n"; return; }
+    if (!a.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
+        return;
+    }
 
     CursorRestore __restore(a);
 
@@ -593,7 +589,10 @@ void cmd_SMARTLIST(xbase::DbArea& a, std::istringstream& iss) {
     opt.projection_fields = parse_projection_fields(a, raw_tail);
 
     const int32_t total = a.recCount();
-    if (total <= 0) { std::cout << "(empty)\n"; return; }
+    if (total <= 0) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekEmptyText);
+        return;
+    }
 
     std::shared_ptr<dottalk::expr::Expr> expr_prog;
     if (opt.haveExpr) {
@@ -724,4 +723,3 @@ void cmd_SMARTLIST(xbase::DbArea& a, std::istringstream& iss) {
 
     cli::smartlist::print_footer(opt.all, opt.limit, stats.printed);
 }
-

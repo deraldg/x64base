@@ -40,8 +40,9 @@
 #include <sstream>
 #include <string>
 
-#include "cli/output_router.hpp"
+#include "cli/command_output.hpp"
 #include "cli/settings.hpp"
+#include "help/helpdata_messages.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -78,27 +79,28 @@ static void ring_bell()
 void cmd_BELL(xbase::DbArea&, std::istringstream& in)
 {
     auto& S   = cli::Settings::instance();
-    auto& out = cli::OutputRouter::instance().out();
 
     std::string tok;
     if (!(in >> tok)) {
         if (S.bell_on.load()) {
             ring_bell();
-            out << "Bell rung.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::BellRungText);
         } else {
-            out << "Bell is OFF.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::BellIsOffText);
         }
         return;
     }
 
     bool on = S.bell_on.load();
     if (!parse_on_off(tok, on)) {
-        out << "Usage: BELL [ON|OFF]\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::BellUsageText);
         return;
     }
 
     S.bell_on.store(on);
-    out << "Bell is " << (on ? "ON" : "OFF") << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::BellStatusText,
+        {{"state", on ? "ON" : "OFF"}});
 
     if (on) {
         ring_bell();

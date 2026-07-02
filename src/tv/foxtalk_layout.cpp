@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <utility>
 
 namespace foxtalk {
 
@@ -30,6 +31,8 @@ bool loadLayoutState(LayoutState& state, int maxHistory)
         return false;
 
     state = LayoutState{};
+    std::string loadedLastInput;
+    std::vector<std::string> loadedHistory;
     std::string line;
 
     while (std::getline(in, line)) {
@@ -41,10 +44,12 @@ bool loadLayoutState(LayoutState& state, int maxHistory)
         const std::string v = trim(line.substr(pos + 1));
 
         try {
-            if (k == "lastInput")
-                state.lastInput = v;
+            if (k == "history.persist")
+                state.persistHistory = (v == "1" || upcopy(v) == "TRUE" || upcopy(v) == "ON" || upcopy(v) == "YES");
+            else if (k == "lastInput")
+                loadedLastInput = v;
             else if (k.rfind("hist.", 0) == 0)
-                state.history.push_back(v);
+                loadedHistory.push_back(v);
 
             else if (k == "out.x")
                 state.output.x = std::stoi(v);
@@ -73,11 +78,16 @@ bool loadLayoutState(LayoutState& state, int maxHistory)
         }
     }
 
-    if (static_cast<int>(state.history.size()) > maxHistory) {
-        state.history.erase(
-            state.history.begin(),
-            state.history.begin() + (static_cast<int>(state.history.size()) - maxHistory)
-        );
+    if (state.persistHistory) {
+        state.lastInput = loadedLastInput;
+        state.history = std::move(loadedHistory);
+
+        if (static_cast<int>(state.history.size()) > maxHistory) {
+            state.history.erase(
+                state.history.begin(),
+                state.history.begin() + (static_cast<int>(state.history.size()) - maxHistory)
+            );
+        }
     }
 
     return true;
@@ -89,10 +99,13 @@ bool saveLayoutState(const LayoutState& state)
     if (!out)
         return false;
 
-    out << "lastInput=" << state.lastInput << "\n";
+    out << "history.persist=" << (state.persistHistory ? 1 : 0) << "\n";
+    out << "lastInput=" << (state.persistHistory ? state.lastInput : std::string{}) << "\n";
 
-    for (std::size_t i = 0; i < state.history.size(); ++i)
-        out << "hist." << i << "=" << state.history[i] << "\n";
+    if (state.persistHistory) {
+        for (std::size_t i = 0; i < state.history.size(); ++i)
+            out << "hist." << i << "=" << state.history[i] << "\n";
+    }
 
     out << "out.x="    << state.output.x      << "\n";
     out << "out.y="    << state.output.y      << "\n";

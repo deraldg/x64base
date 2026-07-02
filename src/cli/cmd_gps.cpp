@@ -34,13 +34,14 @@
 //
 
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 #include "xbase.hpp"
 #include "workareas.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_iterator.hpp"
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -68,13 +69,7 @@ static bool is_gps_usage_request(const std::string& raw)
 
 static void print_gps_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  GPS\n"
-        << "  GPS USAGE\n"
-        << "Notes:\n"
-        << "  - Reports area slot, table label, physical recno, and logical row.\n"
-        << "  - With no open table, GPS reports the no-table cursor state.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GpsUsageText);
 }
 } // namespace
 
@@ -136,10 +131,12 @@ void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
     const std::size_t cur_area = workareas::current_slot();
 
     if (!current.isOpen()) {
-        std::cout
-            << "Cursor: Area " << cur_area
-            << " of " << workareas::occupied_desc()
-            << " ... No table open\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::GpsNoTableCursorLineText,
+            {
+                {"area", std::to_string(cur_area)},
+                {"occupied", workareas::occupied_desc()}
+            });
         return;
     }
 
@@ -158,16 +155,18 @@ void cmd_GPS(xbase::DbArea& current, std::istringstream& iss)
     }
 
     if (table_name.empty()) {
-        table_name = "(unnamed)";
+        table_name = cli::cmdout::message_text(dottalk::helpdata::MessageId::GpsUnnamedTableText);
     }
 
     const std::int64_t logical_row = compute_logical_row(current, recno);
 
-    std::cout
-        << "Cursor: Area " << cur_area
-        << " of " << workareas::occupied_desc()
-        << " ... Table " << table_name
-        << " ... Physical Recno " << recno
-        << ", Logical Row " << logical_row
-        << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::GpsCursorLineText,
+        {
+            {"area", std::to_string(cur_area)},
+            {"occupied", workareas::occupied_desc()},
+            {"table", table_name},
+            {"recno", std::to_string(recno)},
+            {"logical_row", std::to_string(logical_row)}
+        });
 }

@@ -35,8 +35,6 @@ void TCmdInput::prefill(const std::string& s)
 
 void TCmdInput::handleEvent(TEvent& ev)
 {
-    TInputLine::handleEvent(ev);
-
     if (ev.what == evKeyDown) {
         if (ev.keyDown.keyCode == kbEnter) {
             message(TProgram::application, evCommand, cmRunCmd, this);
@@ -62,6 +60,8 @@ void TCmdInput::handleEvent(TEvent& ev)
             return;
         }
     }
+
+    TInputLine::handleEvent(ev);
 }
 
 void TCmdInput::clearAll()

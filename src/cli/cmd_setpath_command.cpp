@@ -77,13 +77,13 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "common/path_state.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -152,15 +152,7 @@ static std::string up(std::string s)
 
 static void print_setpath_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SETPATH\n"
-        << "  SETPATH USAGE\n"
-        << "  SETPATH RESET\n"
-        << "  SETPATH <slot> [TO|=] <path>\n"
-        << "  SET PATH <slot> [TO|=] <path>\n"
-        << "Slots:\n"
-        << "  DATA DBF XDBF INDEXES LMDB WORKSPACES SCHEMAS PROJECTS SCRIPTS TESTS HELP LOGS TMP\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPathUsageText);
 }
 
 static bool is_setpath_usage_request(const std::string& raw)
@@ -243,13 +235,13 @@ static void validate_slot_path(dottalk::paths::Slot /*slot*/, const fs::path& p)
     const bool isDir  = exists && fs::is_directory(p, ec) && !ec;
 
     if (!exists) {
-        std::cout << "  warning: path does not exist\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPathWarnMissingText);
         return;
     }
 
     // All current path slots are directory-oriented.
     if (!isDir) {
-        std::cout << "  warning: expected directory, found file\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetPathWarnExpectedDirectoryText);
         return;
     }
 }
@@ -267,7 +259,7 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
     }
 
     if (a1.empty()) {
-        std::cout << dottalk::paths::dump();
+        cli::cmdout::print_line(dottalk::paths::dump());
         return;
     }
 
@@ -279,14 +271,19 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
         } else {
             dottalk::paths::reset();
         }
-        std::cout << "SETPATH: reset to defaults.\n";
-        std::cout << dottalk::paths::dump();
+        cli::cmdout::print_prefixed_message(
+            "SETPATH",
+            dottalk::helpdata::MessageId::SetPathResetText);
+        cli::cmdout::print_line(dottalk::paths::dump());
         return;
     }
 
     dottalk::paths::Slot slot{};
     if (!dottalk::paths::slot_from_string(a1, slot)) {
-        std::cout << "SETPATH: unknown slot: " << a1 << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SETPATH",
+            dottalk::helpdata::MessageId::SetPathUnknownSlotText,
+            {{"slot", a1}});
         print_setpath_usage();
         return;
     }
@@ -304,11 +301,13 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
 
     const fs::path resolved = dottalk::paths::get_slot(slot);
 
-    std::cout << "SETPATH: "
-              << dottalk::paths::slot_name(slot)
-              << " = "
-              << resolved.string()
-              << "\n";
+    cli::cmdout::print_prefixed_message(
+        "SETPATH",
+        dottalk::helpdata::MessageId::SetPathAssignedText,
+        {
+            {"slot", dottalk::paths::slot_name(slot)},
+            {"path", resolved.string()}
+        });
 
     validate_slot_path(slot, resolved);
 }

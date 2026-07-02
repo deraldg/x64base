@@ -181,6 +181,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
         registry().add("TVISION",    [](DbArea& A, std::istringstream& S){ cmd_TVISION(A,S); });
         registry().add("FOXPRO",     [](DbArea& A, std::istringstream& S){ cmd_FOXPRO(A,S); });
         registry().add("FOXTALK",    [](DbArea& A, std::istringstream& S){ cmd_FOXTALK(A,S); });
+        registry().add("TURBOTALK",  [](DbArea& A, std::istringstream& S){ cmd_FOXTALK(A,S); });
         registry().add("GENERIC",    [](DbArea& A, std::istringstream& S){ cmd_GENERIC(A,S); });
         registry().add("BROWSETV",   [](DbArea& A, std::istringstream& S){ cmd_BROWSETV(A,S); });
         registry().add("RECORD",     [](DbArea& A, std::istringstream& S){ cmd_RECORD(A,S); });
@@ -269,7 +270,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("LMDB_UTIL", [](DbArea& A, std::istringstream& S){ cmd_LMDB_UTIL(A,S); });
     registry().add("SIX",       [](DbArea& A, std::istringstream& S){ cmd_SIX(A,S);       });
 //  registry().add("SNX",       [](DbArea& A, std::istringstream& S){ cmd_SNX(A,S);       });
-#endif 
+#endif
 
     // ---------------------------------------------------------------------
     // Aggregate helpers
@@ -354,7 +355,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // STATUS is an observer. Do not refresh here; otherwise STATUS can mask
     // stale-relation defects during testing.
     registry().add("STATUS",    [](DbArea& A, std::istringstream& S){ cmd_STATUS(A,S); });
-    
+
     // Structure, DDL, schema, workspace, and project surfaces. SCHEMAS can
     // open/close many areas depending on subcommand; SCHEMAS-specific refresh
     // belongs inside cmd_SCHEMAS, not in this registry wrapper.
@@ -480,8 +481,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("CMDHELPCHK",   [](DbArea& A, std::istringstream& S){ cmd_CMDHELPCHK(A,S);   });
     registry().add("CMDREL",       [](DbArea& A, std::istringstream& S){ cmd_CMDREL(A,S);       });
     registry().add("CMDARGCHK",    [](DbArea& A, std::istringstream& S){ cmd_CMDARGCHK(A,S);    });
-    registry().add("CANARY",       [](DbArea& A, std::istringstream& S){ cmd_CATALOGCANARY(A,S);});    
-    
+    registry().add("CANARY",       [](DbArea& A, std::istringstream& S){ cmd_CATALOGCANARY(A,S);});
+
 
     registry().add("DOTSCRIPT",    [](DbArea& A, std::istringstream& S){ cmd_DOTSCRIPT(A,S);   });
     registry().add("VAR",          [](DbArea& A, std::istringstream& S){ cmd_VAR(A,S);         });
@@ -542,6 +543,6 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("QUIT",         [](DbArea& A, std::istringstream& S){ cmd_QUIT(A,S);        });
     registry().add("EXIT",         [](DbArea& A, std::istringstream& S){ cmd_QUIT(A,S);        });
 
-    
+
 
 }

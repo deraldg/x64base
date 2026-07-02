@@ -1,0 +1,21 @@
+DTSHEMA 2
+
+AREA 0 | dbf=DDARTIF.dbf   | index=ddartif.cdx   | indextype=CDX | tag=ARTID    | alias=DDARTIF
+AREA 1 | dbf=DDATTR.dbf    | index=ddattr.cdx    | indextype=CDX | tag=ATTRNAME | alias=DDATTR
+AREA 2 | dbf=DDBASE.dbf    | index=ddbase.cdx    | indextype=CDX | tag=BASEID   | alias=DDBASE
+AREA 3 | dbf=DDEDGE.dbf    | index=ddedge.cdx    | indextype=CDX | tag=EDGEID   | alias=DDEDGE
+AREA 4 | dbf=DDEVID.dbf    | index=ddevid.cdx    | indextype=CDX | tag=EVID     | alias=DDEVID
+AREA 5 | dbf=DDGATE.dbf    | index=ddgate.cdx    | indextype=CDX | tag=GATEID   | alias=DDGATE
+AREA 6 | dbf=DDOBJECT.dbf  | index=ddobject.cdx  | indextype=CDX | tag=OBJID    | alias=DDOBJECT
+AREA 7 | dbf=DDPROFILE.dbf | index=ddprofile.cdx | indextype=CDX | tag=PROFID   | alias=DDPROFILE
+AREA 8 | dbf=DDREVIEW.dbf  | index=ddreview.cdx  | indextype=CDX | tag=REVID    | alias=DDREVIEW
+AREA 9 | dbf=DDRUN.dbf     | index=ddrun.cdx     | indextype=CDX | tag=RUNID    | alias=DDRUN
+AREA 10 | dbf=DDSOURCE.dbf | index=ddsource.cdx  | indextype=CDX | tag=SRCID    | alias=DDSOURCE
+
+RELATION DDOBJECT DDATTR ON OBJID
+RELATION DDOBJECT DDEVID ON OBJID
+RELATION DDSOURCE DDEVID ON SRCID
+RELATION DDRUN DDARTIF ON RUNID
+RELATION DDRUN DDBASE ON RUNID
+RELATION DDRUN DDGATE ON RUNID
+RELATION DDRUN DDREVIEW ON RUNID

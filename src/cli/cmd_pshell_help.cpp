@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include "cli/command_output.hpp"
 
 static std::string pshell_usage_upper(std::string s)
 {
@@ -63,19 +64,7 @@ static bool pshell_usage_request(const std::string& raw)
 
 static void print_pshell_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  PSHELL\n"
-        << "  PSHELL USAGE\n"
-        << "  PSHELL LIST-CATEGORIES\n"
-        << "  PSHELL <category>\n"
-        << "  PSHELL <term>\n"
-        << "Examples:\n"
-        << "  PSHELL PYTHON\n"
-        << "  PSHELL PY-VENV-CREATE\n"
-        << "  PSHELL CLEAN\n"
-        << "Notes:\n"
-        << "  - PSHELL is a read-only reference command; it does not execute PowerShell.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::PshellUsageText);
 }
 // Forward declaration from cmd_pshell.cpp
 extern void show_pshell_help(const std::string& arg);

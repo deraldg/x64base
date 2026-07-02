@@ -63,6 +63,8 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "help/reference_collection.hpp"
 
 // Optional setpath-aware slot resolving (HELP slot).
@@ -78,6 +80,11 @@ using xbase::DbArea;
 namespace fs = std::filesystem;
 
 namespace {
+
+inline std::ostream& out()
+{
+    return cli::OutputRouter::instance().out();
+}
 
 static fs::path help_root_dir()
 {
@@ -545,13 +552,13 @@ static std::vector<std::string> compact_set_family_command_keys(const std::unord
 
 static void print_map(const char* title, const std::map<std::string, int>& counts)
 {
-    std::cout << title << "\n";
+    out() << title << "\n";
     if (counts.empty()) {
-        std::cout << "  (none)\n";
+        out() << "  (none)\n";
         return;
     }
     for (const auto& kv : counts) {
-        std::cout << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
+        out() << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
     }
 }
 
@@ -581,17 +588,19 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
     (void)ix_detail;
     (void)ix_evidence;
 
-    std::cout << "Opened " << dbf_path.string()
-              << " (" << dbf.hdr.nrecs << " artifact rows)\n";
+    out() << "Opened " << dbf_path.string()
+          << " (" << dbf.hdr.nrecs << " artifact rows)\n";
 
-    std::cout << "Columns:";
+    out() << "Columns:";
     for (const auto& c : dbf.cols) {
-        std::cout << " [" << c.name << ":" << c.type << "," << int(c.len) << "]";
+        out() << " [" << c.name << ":" << c.type << "," << int(c.len) << "]";
     }
-    std::cout << "\n";
+    out() << "\n";
 
     if (ix_kind < 0 || ix_source < 0 || ix_confid < 0) {
-        std::cout << "Missing expected HELP DATA v2 columns; need at least KIND, SOURCE, CONFID.\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELPCHK",
+            dottalk::helpdata::MessageId::CmdHelpChkMissingV2Columns);
         return;
     }
 
@@ -689,64 +698,66 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
         }
     }
 
-    std::cout << "\nHELP DATA v2 artifact summary\n";
-    std::cout << "  rows                 : " << dbf.hdr.nrecs << "\n";
-    std::cout << "  deleted rows         : " << deleted_rows << "\n";
-    std::cout << "  source-miner rows    : " << source_miner_rows << "\n";
-    std::cout << "  heuristic rows       : " << heuristic_rows << "\n";
-    std::cout << "  message rows         : " << message_rows << "\n";
-    std::cout << "  blank text rows      : " << blank_text_rows << "\n";
-    std::cout << "  orphan CMDKEY rows   : " << orphan_cmdkey_rows;
+    out() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpChkArtifactsSummaryTitle);
+    out() << "  rows                 : " << dbf.hdr.nrecs << "\n";
+    out() << "  deleted rows         : " << deleted_rows << "\n";
+    out() << "  source-miner rows    : " << source_miner_rows << "\n";
+    out() << "  heuristic rows       : " << heuristic_rows << "\n";
+    out() << "  message rows         : " << message_rows << "\n";
+    out() << "  blank text rows      : " << blank_text_rows << "\n";
+    out() << "  orphan CMDKEY rows   : " << orphan_cmdkey_rows;
     if (valid_keys.empty()) {
-        std::cout << "  (legacy command keys unavailable)";
+        out() << "  (legacy command keys unavailable)";
     }
-    std::cout << "\n";
-    std::cout << "  blank KIND/SOURCE/CONFID: "
-              << blank_kind << "/" << blank_source << "/" << blank_confid << "\n";
+    out() << "\n";
+    out() << "  blank KIND/SOURCE/CONFID: "
+          << blank_kind << "/" << blank_source << "/" << blank_confid << "\n";
 
     const auto compact_command_keys = compact_set_family_command_keys(valid_keys);
-    std::cout << "\nSET-family canonicalization\n";
-    std::cout << "  compact DOT SET-family command keys : " << compact_command_keys.size() << "\n";
-    std::cout << "  compact DOT SET-family artifact rows: " << compact_set_family_cmdkey_rows << "\n";
-    std::cout << "  SET-family alias/variant rows       : " << set_family_alias_rows << "\n";
+    out() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpChkSetFamilyCanonicalizationTitle);
+    out() << "  compact DOT SET-family command keys : " << compact_command_keys.size() << "\n";
+    out() << "  compact DOT SET-family artifact rows: " << compact_set_family_cmdkey_rows << "\n";
+    out() << "  SET-family alias/variant rows       : " << set_family_alias_rows << "\n";
     if (!compact_command_keys.empty()) {
-        std::cout << "  ERROR compact SET-family command keys must canonicalize upward:\n";
+        out() << "  ERROR compact SET-family command keys must canonicalize upward:\n";
         for (const auto& key : compact_command_keys) {
             std::string expected;
             (void)is_compact_dot_set_family_cmdkey(key, &expected);
-            std::cout << "    " << key << " -> " << expected << "\n";
+            out() << "    " << key << " -> " << expected << "\n";
         }
     }
     if (!compact_set_family_cmdkeys.empty()) {
-        std::cout << "  ERROR compact SET-family artifact CMDKEY rows must use canonical DOT|SET * keys:\n";
+        out() << "  ERROR compact SET-family artifact CMDKEY rows must use canonical DOT|SET * keys:\n";
         for (const auto& kv : compact_set_family_cmdkeys) {
             std::string expected;
             (void)is_compact_dot_set_family_cmdkey(kv.first, &expected);
-            std::cout << "    " << kv.first << " rows=" << kv.second
-                      << " expected=" << expected << "\n";
+            out() << "    " << kv.first << " rows=" << kv.second
+                  << " expected=" << expected << "\n";
         }
     }
 
-    std::cout << "\n";
+    out() << "\n";
     print_map("By KIND:", by_kind);
-    std::cout << "\n";
+    out() << "\n";
     print_map("By SOURCE:", by_source);
-    std::cout << "\n";
+    out() << "\n";
     print_map("By CONFID:", by_confid);
-    std::cout << "\n";
+    out() << "\n";
     print_map("By SEVERITY:", by_severity);
 
     if (limit > 0) {
-        std::cout << "\nPreview rows (limit " << limit << ")\n";
-        std::cout << std::left
-                  << std::setw(6)  << "ID"
-                  << std::setw(16) << "KIND"
-                  << std::setw(16) << "SOURCE"
-                  << std::setw(12) << "CONFID"
-                  << std::setw(28) << "CMDKEY"
-                  << std::setw(22) << "NAME"
-                  << "TEXT\n";
-        std::cout << "------------------------------------------------------------------------------------------------------------\n";
+        out() << "\nPreview rows (limit " << limit << ")\n";
+        out() << std::left
+              << std::setw(6)  << "ID"
+              << std::setw(16) << "KIND"
+              << std::setw(16) << "SOURCE"
+              << std::setw(12) << "CONFID"
+              << std::setw(28) << "CMDKEY"
+              << std::setw(22) << "NAME"
+              << "TEXT\n";
+        out() << "------------------------------------------------------------------------------------------------------------\n";
         for (const auto& p : previews) {
             std::string key = p.cmdkey;
             if (key.size() > 27) key.resize(27);
@@ -758,35 +769,35 @@ static void run_artifacts_check(const std::string& dir_arg, int limit)
             }
             if (text.size() > 100) text.resize(100);
 
-            std::cout << std::left
-                      << std::setw(6)  << p.id
-                      << std::setw(16) << p.kind
-                      << std::setw(16) << p.source
-                      << std::setw(12) << p.confid
-                      << std::setw(28) << key
-                      << std::setw(22) << name
-                      << text << "\n";
+            out() << std::left
+                  << std::setw(6)  << p.id
+                  << std::setw(16) << p.kind
+                  << std::setw(16) << p.source
+                  << std::setw(12) << p.confid
+                  << std::setw(28) << key
+                  << std::setw(22) << name
+                  << text << "\n";
         }
     }
 
-    std::cout << "\nDBT: " << dbt_path.string() << "\n";
+    out() << "\nDBT: " << dbt_path.string() << "\n";
 }
 
 static void print_cmdhelpchk_usage()
 {
-    std::cout << "Usage:\n"
-              << "  CMDHELPCHK\n"
-              << "  CMDHELPCHK USAGE\n"
-              << "  CMDHELPCHK REF\n"
-              << "  CMDHELPCHK REFLECT\n"
-              << "  CMDHELPCHK ARTIFACTS [dir] [limit]\n"
-              << "  CMDHELPCHK V2 [dir] [limit]\n"
-              << "  CMDHELPCHK <dir> [limit]\n"
-              << "\n"
-              << "Modes:\n"
-              << "  REF/REFLECT  Validate reflected command/function metadata.\n"
-              << "  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.\n"
-              << "  <dir>        Validate legacy commands.dbf/.dbt in a help directory.\n";
+    cli::cmdout::print_line("Usage:");
+    cli::cmdout::print_line("  CMDHELPCHK");
+    cli::cmdout::print_line("  CMDHELPCHK USAGE");
+    cli::cmdout::print_line("  CMDHELPCHK REF");
+    cli::cmdout::print_line("  CMDHELPCHK REFLECT");
+    cli::cmdout::print_line("  CMDHELPCHK ARTIFACTS [dir] [limit]");
+    cli::cmdout::print_line("  CMDHELPCHK V2 [dir] [limit]");
+    cli::cmdout::print_line("  CMDHELPCHK <dir> [limit]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("Modes:");
+    cli::cmdout::print_line("  REF/REFLECT  Validate reflected command/function metadata.");
+    cli::cmdout::print_line("  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.");
+    cli::cmdout::print_line("  <dir>        Validate legacy commands.dbf/.dbt in a help directory.");
 }
 
 } // anonymous namespace
@@ -831,7 +842,10 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
         try {
             run_artifacts_check(dir_arg, limit);
         } catch (const std::exception& ex) {
-            std::cout << "CMDHELPCHK ARTIFACTS error: " << ex.what() << "\n";
+            cli::cmdout::print_prefixed_message(
+                "CMDHELPCHK",
+                dottalk::helpdata::MessageId::CmdHelpChkArtifactsError,
+                {{"detail", ex.what()}});
         }
         return;
     }
@@ -849,11 +863,13 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
 
         ReferenceCollection rc = build_reference_collection();
 
-        std::cout << "\n=== REFLECTION REPORTS ===\n\n";
+        out() << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpChkReflectionReportsTitle);
+        out() << "\n";
 
-        report_subcommands(rc, std::cout);
-        report_commands(rc, std::cout);
-        report_functions(rc, std::cout);
+        report_subcommands(rc, out());
+        report_commands(rc, out());
+        report_functions(rc, out());
 
         std::vector<CheckIssue> issues;
 
@@ -870,7 +886,7 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
         add(check_invalid_function_arg_ranges(rc));
         add(check_missing_function_categories(rc));
 
-        print_check_issues(issues, std::cout);
+        print_check_issues(issues, out());
         return;
     }
 
@@ -926,25 +942,27 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
             verbose_ix = memo_ix[1];
         }
 
-        std::cout << "Opened " << dbf_path.string()
-                  << " (" << dbf.hdr.nrecs << " rows)\n";
-        std::cout << "Columns:";
+        out() << "Opened " << dbf_path.string()
+              << " (" << dbf.hdr.nrecs << " rows)\n";
+        out() << "Columns:";
         for (auto& c : dbf.cols) {
-            std::cout << " [" << c.name << ":" << c.type << "," << int(c.len) << "]";
+            out() << " [" << c.name << ":" << c.type << "," << int(c.len) << "]";
         }
-        std::cout << "\n";
+        out() << "\n";
 
         if (id_ix < 0 || cmd_ix < 0 || usage_ix < 0) {
-            std::cout << "Missing expected columns; need at least ID, COMMAND, and one memo (USAGE)\n";
+            cli::cmdout::print_prefixed_message(
+                "CMDHELPCHK",
+                dottalk::helpdata::MessageId::CmdHelpChkMissingLegacyColumns);
             return;
         }
 
-        std::cout << std::left
-                  << std::setw(6)  << "ID"
-                  << std::setw(20) << "COMMAND"
-                  << std::setw(14) << (std::string(dbf.cols[usage_ix].name) + "(len)")
-                  << "Memo preview\n";
-        std::cout << "-----------------------------------------------------------------------------\n";
+        out() << std::left
+              << std::setw(6)  << "ID"
+              << std::setw(20) << "COMMAND"
+              << std::setw(14) << (std::string(dbf.cols[usage_ix].name) + "(len)")
+              << "Memo preview\n";
+        out() << "-----------------------------------------------------------------------------\n";
 
         dbf.in.seekg(static_cast<std::streamoff>(dbf.rec0), std::ios::beg);
         std::vector<char> rec(dbf.hdr.rec_len);
@@ -969,20 +987,20 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
             size_t u_len = 0;
             const auto u_prev = memo_preview(dbt_path, u_blk, u_len);
 
-            std::cout << std::left
-                      << std::setw(6)  << id_str
-                      << std::setw(20) << cmd_str
-                      << std::setw(14) << std::to_string(u_len)
-                      << u_prev << "\n";
+            out() << std::left
+                  << std::setw(6)  << id_str
+                  << std::setw(20) << cmd_str
+                  << std::setw(14) << std::to_string(u_len)
+                  << u_prev << "\n";
 
             if (verbose_ix >= 0) {
                 const auto v_blk = read_mptr(rec, dbf.cols[verbose_ix]);
                 size_t v_len = 0;
                 const auto v_prev = memo_preview(dbt_path, v_blk, v_len);
                 if (!v_prev.empty()) {
-                    std::cout << std::setw(26) << " "
-                              << std::setw(14) << std::to_string(v_len)
-                              << v_prev << "\n";
+                    out() << std::setw(26) << " "
+                          << std::setw(14) << std::to_string(v_len)
+                          << v_prev << "\n";
                 }
             }
 
@@ -990,11 +1008,14 @@ void cmd_CMDHELPCHK(DbArea& /*area*/, std::istringstream& in)
         }
 
         if (shown == 0) {
-            std::cout << "(no rows shown; try increasing limit)\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpChkNoRowsShown);
         }
 
-        std::cout << "DBT: " << dbt_path.string() << "\n";
+        out() << "DBT: " << dbt_path.string() << "\n";
     } catch (const std::exception& ex) {
-        std::cout << "CMDHELPCHK error: " << ex.what() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "CMDHELPCHK",
+            dottalk::helpdata::MessageId::CmdHelpChkRuntimeError,
+            {{"detail", ex.what()}});
     }
 }

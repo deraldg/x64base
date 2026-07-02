@@ -24,6 +24,7 @@ using policy::enforce_header_validation;
 using policy::enforce_no_elevated_writes;
 using policy::enforce_no_plaintext_secrets;
 using policy::enforce_no_unsafe_paths;
+using policy::enforce_host_commands_allowed;
 
 namespace fs = std::filesystem;
 
@@ -173,6 +174,14 @@ inline void require_secure_secrets(const context& ctx)
 }
 
 // ------------------------------------------------------------
+// Host Command Execution Enforcement
+// ------------------------------------------------------------
+inline void require_host_commands_allowed(const context& ctx)
+{
+    enforce_host_commands_allowed(ctx.policy);
+}
+
+// ------------------------------------------------------------
 // High-Level Open/Close Wrappers
 // ------------------------------------------------------------
 inline void on_open_begin(const context& ctx, const std::string& path)
@@ -194,6 +203,11 @@ inline void on_write_begin(const context& ctx)
 inline void on_store_secret(const context& ctx)
 {
     require_secure_secrets(ctx);
+}
+
+inline void on_host_command_begin(const context& ctx)
+{
+    require_host_commands_allowed(ctx);
 }
 
 } // namespace runtime

@@ -613,6 +613,19 @@ namespace browser
         if (!resolve_browser_path(req, out.relation_tree, out.path_aliases, out.warnings, out.status))
             return false;
 
+        if (out.relation_tree.links.empty() || out.path_aliases.empty())
+        {
+            out.columns.clear();
+            out.rows.clear();
+            out.descendant_summary = DescendantSummary{};
+            out.rows_shown = 0;
+
+            if (out.status.empty())
+                out.status = out.warnings.empty() ? "OK" : "WARN";
+
+            return true;
+        }
+
         if (!resolve_tuple_columns(*root_area, out.path_aliases, req, out.columns, out.warnings, out.status))
         {
             out.warnings.push_back("Column resolution failed.");

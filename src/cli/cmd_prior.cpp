@@ -35,14 +35,15 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 #include <cctype>
 #include <string>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
+#include "help/helpdata_messages.hpp"
 
 static std::string prior_upper(std::string s)
 {
@@ -71,13 +72,9 @@ static bool prior_usage_request(std::istringstream& in)
 
 static void print_prior_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  PRIOR\n"
-        << "  PRIOR USAGE\n"
-        << "Notes:\n"
-        << "  - Moves to the previous visible record in the current order/filter view.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::PriorUsageText);
 }
+
 void cmd_PRIOR(xbase::DbArea& A, std::istringstream& in)
 {
     if (prior_usage_request(in)) {
@@ -85,22 +82,24 @@ void cmd_PRIOR(xbase::DbArea& A, std::istringstream& in)
         return;
     }
     if (!A.isOpen()) {
-        std::cout << "PRIOR: no file open.\n";
+        cli::cmdout::print_prefixed_message("PRIOR", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
     const int32_t rn = cli::logical_nav::prev_recno(A, A.recno());
     if (rn <= 0) {
-        std::cout << "PRIOR: at top.\n";
+        cli::cmdout::print_prefixed_message("PRIOR", dottalk::helpdata::MessageId::NavAtTopText);
         return;
     }
 
     if (!A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "PRIOR: failed.\n";
+        cli::cmdout::print_prefixed_message("PRIOR", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

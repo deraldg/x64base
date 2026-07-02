@@ -588,6 +588,7 @@ static const CommandDoc WORKSPACE_DOC = {
         "WORKSPACE",
         "WORKSPACE OPEN DBF",
         "WORKSPACE OPEN <dir>",
+        "WORKSPACE ADD <file.dbf>",
         "WORKSPACE CLOSE",
         "WORKSPACE SAVE <name>",
         "WORKSPACE LOAD <name>"
@@ -597,12 +598,14 @@ static const CommandDoc WORKSPACE_DOC = {
         "WORKSPACE",
         "WORKSPACE CLOSE",
         "WORKSPACE OPEN DBF",
+        "WORKSPACE ADD students",
         "WORKSPACE SAVE mcc",
         "WORKSPACE LOAD mcc.dtschemas"
     },
 
     {
         "WORKSPACE owns live areas, aliases, orders, and relation/session layout",
+        "WORKSPACE OPEN replaces area membership; WORKSPACE ADD preserves existing areas",
         "DDL owns schema/definition work",
         "SCHEMAS remains a compatibility shim for older scripts"
     },

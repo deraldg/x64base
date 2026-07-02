@@ -46,12 +46,13 @@
 
 #include <algorithm>
 #include <cctype>
-#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
 namespace {
@@ -79,38 +80,39 @@ static inline std::string rest(std::istringstream& iss)
 
 static void show_usage(std::ostream& out)
 {
-    out
-        << "Usage:\n"
-        << "  PRN\n"
-        << "  PRN USAGE\n"
-        << "  PRN STATUS\n"
-        << "  PRN OFF\n"
-        << "  PRN TO CONSOLE\n"
-        << "  PRN TO FILE <path>\n"
-        << "  PRN TO PRINTER [name]\n"
-        << "  PRN TO NULL\n";
+    out << cli::cmdout::message_text(dottalk::helpdata::MessageId::PrnUsageText) << "\n";
 }
 
 static void show_status(cli::OutputRouter& R, std::ostream& out)
 {
-    out << "PRN: " << R.describe_dest() << "\n";
+    out << cli::cmdout::message_text(
+        dottalk::helpdata::MessageId::PrnStatusLineText,
+        {{"dest", R.describe_dest()}}) << "\n";
 
     if (R.dest() == cli::OutputDest::File) {
-        out << "  File       : " << R.prn_file_path() << "\n";
+        out << cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::PrnFileLineText,
+            {{"path", R.prn_file_path()}}) << "\n";
     } else if (R.dest() == cli::OutputDest::Printer) {
         if (R.prn_uses_default_printer()) {
-            out << "  Printer    : (system default)\n";
+            out << cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::PrnPrinterDefaultLineText) << "\n";
         } else {
-            out << "  Printer    : " << R.prn_printer_name() << "\n";
+            out << cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::PrnPrinterNamedLineText,
+                {{"name", R.prn_printer_name()}}) << "\n";
         }
-        out << "  Printer job: staged only (OS handoff disabled)\n";
+        out << cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::PrnPrinterJobLineText) << "\n";
     }
 
-    out << "  Alternate  : "
-        << (R.alternate_on() ? ("ON -> " + R.alternate_to_path()) : "OFF")
-        << "\n";
+    out << cli::cmdout::message_text(
+        dottalk::helpdata::MessageId::PrnAlternateLineText,
+        {{"value", R.alternate_on() ? ("ON -> " + R.alternate_to_path()) : "OFF"}}) << "\n";
 
-    out << "  Paging     : " << (R.paging_on() ? "ON" : "OFF") << "\n";
+    out << cli::cmdout::message_text(
+        dottalk::helpdata::MessageId::PrnPagingLineText,
+        {{"state", R.paging_on() ? "ON" : "OFF"}}) << "\n";
 }
 
 } // namespace
@@ -139,7 +141,8 @@ void cmd_PRN(xbase::DbArea&, std::istringstream& in)
     }
 
     if (tok == "OFF") {
-        R.console_note("PRN: NULL");
+        R.console_note(cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::SetPrnNullNoteText));
         R.set_dest_null();
         return;
     }
@@ -159,12 +162,14 @@ void cmd_PRN(xbase::DbArea&, std::istringstream& in)
 
     if (mode == "CONSOLE" || mode == "SCREEN") {
         R.set_dest_console();
-        R.console_note("PRN: CONSOLE");
+        R.console_note(cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::SetPrnConsoleNoteText));
         return;
     }
 
     if (mode == "NULL" || mode == "OFF") {
-        R.console_note("PRN: NULL");
+        R.console_note(cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::SetPrnNullNoteText));
         R.set_dest_null();
         return;
     }
@@ -172,16 +177,21 @@ void cmd_PRN(xbase::DbArea&, std::istringstream& in)
     if (mode == "FILE") {
         std::string path = trim_copy(rest(in));
         if (path.empty()) {
-            out << "Usage: PRN TO FILE <path>\n";
+            out << cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::PrnFileUsageText) << "\n";
             return;
         }
 
         if (!R.set_dest_file(path)) {
-            out << "PRN: failed to open file: " << path << "\n";
+            out << cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::PrnFileOpenFailedText,
+                {{"path", path}}) << "\n";
             return;
         }
 
-        R.console_note("PRN: FILE -> " + R.prn_file_path());
+        R.console_note(cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::SetPrnFileNoteText,
+            {{"path", R.prn_file_path()}}));
         return;
     }
 
@@ -189,14 +199,18 @@ void cmd_PRN(xbase::DbArea&, std::istringstream& in)
         std::string printer_name = trim_copy(rest(in));
 
         if (!R.set_dest_printer(printer_name)) {
-            out << "PRN: failed to configure printer destination.\n";
+            out << cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::PrnPrinterConfigureFailedText) << "\n";
             return;
         }
 
         if (R.prn_uses_default_printer()) {
-            R.console_note("PRN: PRINTER -> (system default) [staged only]");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnPrinterDefaultStagedNoteText));
         } else {
-            R.console_note("PRN: PRINTER -> " + R.prn_printer_name() + " [staged only]");
+            R.console_note(cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::SetPrnPrinterNamedStagedNoteText,
+                {{"name", R.prn_printer_name()}}));
         }
         return;
     }

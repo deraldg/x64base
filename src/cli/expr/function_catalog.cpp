@@ -20,7 +20,10 @@ std::string upcopy(std::string s)
 // STRING / SEARCH / CONSTRUCTION / CONVERSION / LOGICAL
 // -----------------------------------------------------------------------------
 
-const FunctionDoc UPPER_DOC = {
+const std::vector<FunctionDoc>& all_docs_storage()
+{
+    static const std::vector<FunctionDoc> docs = {
+FunctionDoc{
     "UPPER",
     {},
     FunctionCategory::String,
@@ -32,9 +35,9 @@ const FunctionDoc UPPER_DOC = {
         "Input is coerced through the expression engine string path."
     },
     {}
-};
+},
 
-const FunctionDoc LOWER_DOC = {
+FunctionDoc{
     "LOWER",
     {},
     FunctionCategory::String,
@@ -46,9 +49,9 @@ const FunctionDoc LOWER_DOC = {
         "Input is coerced through the expression engine string path."
     },
     {}
-};
+},
 
-const FunctionDoc ALLTRIM_DOC = {
+FunctionDoc{
     "ALLTRIM",
     {},
     FunctionCategory::String,
@@ -60,9 +63,9 @@ const FunctionDoc ALLTRIM_DOC = {
         "Useful for normalization before comparison or display."
     },
     {}
-};
+},
 
-const FunctionDoc LTRIM_DOC = {
+FunctionDoc{
     "LTRIM",
     {},
     FunctionCategory::String,
@@ -72,9 +75,9 @@ const FunctionDoc LTRIM_DOC = {
     { "LTRIM(NAME)", "LTRIM(\"  SMITH\")" },
     {},
     {}
-};
+},
 
-const FunctionDoc RTRIM_DOC = {
+FunctionDoc{
     "RTRIM",
     { "TRIM" },
     FunctionCategory::String,
@@ -86,9 +89,9 @@ const FunctionDoc RTRIM_DOC = {
         "TRIM is treated as an alias of RTRIM."
     },
     {}
-};
+},
 
-const FunctionDoc LEFT_DOC = {
+FunctionDoc{
     "LEFT",
     {},
     FunctionCategory::String,
@@ -103,9 +106,9 @@ const FunctionDoc LEFT_DOC = {
     {
         "Non-numeric length arguments currently rely on integer parsing in the implementation."
     }
-};
+},
 
-const FunctionDoc RIGHT_DOC = {
+FunctionDoc{
     "RIGHT",
     {},
     FunctionCategory::String,
@@ -120,9 +123,9 @@ const FunctionDoc RIGHT_DOC = {
     {
         "Non-numeric length arguments currently rely on integer parsing in the implementation."
     }
-};
+},
 
-const FunctionDoc SUBSTR_DOC = {
+FunctionDoc{
     "SUBSTR",
     {},
     FunctionCategory::String,
@@ -140,9 +143,9 @@ const FunctionDoc SUBSTR_DOC = {
     {
         "Non-numeric start/length arguments currently rely on integer parsing in the implementation."
     }
-};
+},
 
-const FunctionDoc LEN_DOC = {
+FunctionDoc{
     "LEN",
     {},
     FunctionCategory::Numeric,
@@ -154,9 +157,9 @@ const FunctionDoc LEN_DOC = {
         "Returns a numeric value represented through the expression engine's string result path."
     },
     {}
-};
+},
 
-const FunctionDoc SOUNDEX_DOC = {
+FunctionDoc{
     "SOUNDEX",
     {},
     FunctionCategory::Search,
@@ -176,9 +179,9 @@ const FunctionDoc SOUNDEX_DOC = {
         "SOUNDEX is phonetic matching, not SET NEAR. SET NEAR controls ordered-key navigation; SOUNDEX computes a comparable value.",
         "Current implementation ignores non-alphabetic characters and uppercases internally. SETCASE does not change SOUNDEX output."
     }
-};
+},
 
-const FunctionDoc AT_DOC = {
+FunctionDoc{
     "AT",
     {},
     FunctionCategory::Search,
@@ -196,9 +199,9 @@ const FunctionDoc AT_DOC = {
     {
         "Search is case-sensitive."
     }
-};
+},
 
-const FunctionDoc ATC_DOC = {
+FunctionDoc{
     "ATC",
     {},
     FunctionCategory::Search,
@@ -214,9 +217,9 @@ const FunctionDoc ATC_DOC = {
         "Occurrence defaults to 1."
     },
     {}
-};
+},
 
-const FunctionDoc LIKE_DOC = {
+FunctionDoc{
     "LIKE",
     {},
     FunctionCategory::Logical,
@@ -231,9 +234,9 @@ const FunctionDoc LIKE_DOC = {
     {
         "Returns .T. or .F. as logical strings."
     }
-};
+},
 
-const FunctionDoc STR_DOC = {
+FunctionDoc{
     "STR",
     {},
     FunctionCategory::Conversion,
@@ -252,9 +255,9 @@ const FunctionDoc STR_DOC = {
     {
         "Non-numeric input currently relies on numeric parsing in the implementation."
     }
-};
+},
 
-const FunctionDoc VAL_DOC = {
+FunctionDoc{
     "VAL",
     {},
     FunctionCategory::Conversion,
@@ -267,9 +270,9 @@ const FunctionDoc VAL_DOC = {
         "Result is returned through the expression engine's string path."
     },
     {}
-};
+},
 
-const FunctionDoc CONCAT_DOC = {
+FunctionDoc{
     "CONCAT",
     { "STRCAT" },
     FunctionCategory::Construction,
@@ -285,9 +288,9 @@ const FunctionDoc CONCAT_DOC = {
         "STRCAT is treated as an alias of CONCAT."
     },
     {}
-};
+},
 
-const FunctionDoc ASC_DOC = {
+FunctionDoc{
     "ASC",
     {},
     FunctionCategory::String,
@@ -301,9 +304,9 @@ const FunctionDoc ASC_DOC = {
     {
         "Empty-string behavior should remain explicit and stable."
     }
-};
+},
 
-const FunctionDoc CHR_DOC = {
+FunctionDoc{
     "CHR",
     {},
     FunctionCategory::String,
@@ -317,9 +320,9 @@ const FunctionDoc CHR_DOC = {
     {
         "Out-of-range behavior should remain explicit and stable."
     }
-};
+},
 
-const FunctionDoc CHRTRAN_DOC = {
+FunctionDoc{
     "CHRTRAN",
     {},
     FunctionCategory::String,
@@ -333,9 +336,9 @@ const FunctionDoc CHRTRAN_DOC = {
     {
         "Length mismatch behavior between search and replacement sets should remain documented."
     }
-};
+},
 
-const FunctionDoc EMPTY_DOC = {
+FunctionDoc{
     "EMPTY",
     {},
     FunctionCategory::Logical,
@@ -349,9 +352,9 @@ const FunctionDoc EMPTY_DOC = {
     {
         "Exact emptiness rules for strings, numerics, dates, and logicals should remain explicit."
     }
-};
+},
 
-const FunctionDoc RAT_DOC = {
+FunctionDoc{
     "RAT",
     {},
     FunctionCategory::Search,
@@ -365,9 +368,9 @@ const FunctionDoc RAT_DOC = {
     {
         "Returns 0 when the substring is not found."
     }
-};
+},
 
-const FunctionDoc REPLICATE_DOC = {
+FunctionDoc{
     "REPLICATE",
     {},
     FunctionCategory::Construction,
@@ -381,9 +384,9 @@ const FunctionDoc REPLICATE_DOC = {
     {
         "Negative or invalid counts should remain explicitly handled."
     }
-};
+},
 
-const FunctionDoc SPACE_DOC = {
+FunctionDoc{
     "SPACE",
     {},
     FunctionCategory::Construction,
@@ -397,9 +400,9 @@ const FunctionDoc SPACE_DOC = {
     {
         "Negative counts should remain explicitly handled."
     }
-};
+},
 
-const FunctionDoc STRTRAN_DOC = {
+FunctionDoc{
     "STRTRAN",
     {},
     FunctionCategory::String,
@@ -411,9 +414,9 @@ const FunctionDoc STRTRAN_DOC = {
         "Useful for substring replacement rather than character-by-character translation."
     },
     {}
-};
+},
 
-const FunctionDoc TRANSFORM_DOC = {
+FunctionDoc{
     "TRANSFORM",
     {},
     FunctionCategory::Conversion,
@@ -430,13 +433,13 @@ const FunctionDoc TRANSFORM_DOC = {
     {
         "Picture formatting support should be documented explicitly if partial."
     }
-};
+},
 
 // -----------------------------------------------------------------------------
 // DATE
 // -----------------------------------------------------------------------------
 
-const FunctionDoc DATE_DOC = {
+FunctionDoc{
     "DATE",
     {},
     FunctionCategory::Date,
@@ -451,9 +454,9 @@ const FunctionDoc DATE_DOC = {
     {
         "Results depend on system clock accuracy."
     }
-};
+},
 
-const FunctionDoc TODAY_DOC = {
+FunctionDoc{
     "TODAY",
     {},
     FunctionCategory::Date,
@@ -467,9 +470,9 @@ const FunctionDoc TODAY_DOC = {
     {
         "Results depend on system clock accuracy."
     }
-};
+},
 
-const FunctionDoc NOW_DOC = {
+FunctionDoc{
     "NOW",
     {},
     FunctionCategory::Date,
@@ -484,9 +487,9 @@ const FunctionDoc NOW_DOC = {
     {
         "Exact formatting and representation should remain consistent across the expression engine."
     }
-};
+},
 
-const FunctionDoc DATETIME_DOC = {
+FunctionDoc{
     "DATETIME",
     {},
     FunctionCategory::Date,
@@ -501,9 +504,9 @@ const FunctionDoc DATETIME_DOC = {
     {
         "If NOW() and DATETIME() differ later, document the distinction explicitly."
     }
-};
+},
 
-const FunctionDoc TIME_DOC = {
+FunctionDoc{
     "TIME",
     {},
     FunctionCategory::Date,
@@ -517,9 +520,9 @@ const FunctionDoc TIME_DOC = {
     {
         "Representation format should be documented consistently."
     }
-};
+},
 
-const FunctionDoc SECONDS_DOC = {
+FunctionDoc{
     "SECONDS",
     {},
     FunctionCategory::Date,
@@ -533,9 +536,9 @@ const FunctionDoc SECONDS_DOC = {
     {
         "Exact semantics should be documented clearly if they differ from classic seconds-of-day behavior."
     }
-};
+},
 
-const FunctionDoc CTOD_DOC = {
+FunctionDoc{
     "CTOD",
     {},
     FunctionCategory::Date,
@@ -551,9 +554,9 @@ const FunctionDoc CTOD_DOC = {
         "Invalid or ambiguous date text should raise an error or return a clearly documented failure value.",
         "Accepted formats should remain explicit and stable."
     }
-};
+},
 
-const FunctionDoc DTOC_DOC = {
+FunctionDoc{
     "DTOC",
     {},
     FunctionCategory::Date,
@@ -568,9 +571,9 @@ const FunctionDoc DTOC_DOC = {
     {
         "Output format should not drift unpredictably across environments."
     }
-};
+},
 
-const FunctionDoc DTOS_DOC = {
+FunctionDoc{
     "DTOS",
     {},
     FunctionCategory::Date,
@@ -585,9 +588,9 @@ const FunctionDoc DTOS_DOC = {
     {
         "Output format should stay invariant and machine-friendly."
     }
-};
+},
 
-const FunctionDoc DAY_DOC = {
+FunctionDoc{
     "DAY",
     {},
     FunctionCategory::Date,
@@ -601,9 +604,9 @@ const FunctionDoc DAY_DOC = {
     {
         "Input must be a valid date value."
     }
-};
+},
 
-const FunctionDoc MONTH_DOC = {
+FunctionDoc{
     "MONTH",
     {},
     FunctionCategory::Date,
@@ -617,9 +620,9 @@ const FunctionDoc MONTH_DOC = {
     {
         "Input must be a valid date value."
     }
-};
+},
 
-const FunctionDoc YEAR_DOC = {
+FunctionDoc{
     "YEAR",
     {},
     FunctionCategory::Date,
@@ -633,9 +636,9 @@ const FunctionDoc YEAR_DOC = {
     {
         "Input must be a valid date value."
     }
-};
+},
 
-const FunctionDoc DOW_DOC = {
+FunctionDoc{
     "DOW",
     {},
     FunctionCategory::Date,
@@ -650,9 +653,9 @@ const FunctionDoc DOW_DOC = {
     {
         "Day numbering must remain stable and clearly defined."
     }
-};
+},
 
-const FunctionDoc CDOW_DOC = {
+FunctionDoc{
     "CDOW",
     {},
     FunctionCategory::Date,
@@ -667,9 +670,9 @@ const FunctionDoc CDOW_DOC = {
     {
         "Language/localization behavior should be documented if it ever becomes configurable."
     }
-};
+},
 
-const FunctionDoc CMONTH_DOC = {
+FunctionDoc{
     "CMONTH",
     {},
     FunctionCategory::Date,
@@ -684,9 +687,9 @@ const FunctionDoc CMONTH_DOC = {
     {
         "Language/localization behavior should be documented if it changes from fixed English output."
     }
-};
+},
 
-const FunctionDoc DATEADD_DOC = {
+FunctionDoc{
     "DATEADD",
     {},
     FunctionCategory::Date,
@@ -702,9 +705,9 @@ const FunctionDoc DATEADD_DOC = {
         "The unit implied by <delta> must be explicit in implementation and docs.",
         "If only days are supported, say so clearly."
     }
-};
+},
 
-const FunctionDoc DATEDIFF_DOC = {
+FunctionDoc{
     "DATEDIFF",
     {},
     FunctionCategory::Date,
@@ -720,9 +723,9 @@ const FunctionDoc DATEDIFF_DOC = {
         "Result sign/order should be documented clearly.",
         "If units are fixed to days, say so explicitly."
     }
-};
+},
 
-const FunctionDoc GOMONTH_DOC = {
+FunctionDoc{
     "GOMONTH",
     {},
     FunctionCategory::Date,
@@ -737,13 +740,13 @@ const FunctionDoc GOMONTH_DOC = {
     {
         "End-of-month rollover behavior should be explicitly documented."
     }
-};
+},
 
 // -----------------------------------------------------------------------------
 // NUMERIC
 // -----------------------------------------------------------------------------
 
-const FunctionDoc ABS_DOC = {
+FunctionDoc{
     "ABS",
     {},
     FunctionCategory::Numeric,
@@ -757,9 +760,9 @@ const FunctionDoc ABS_DOC = {
     {
         "Non-numeric input should be treated as an evaluation/type error unless explicitly coerced."
     }
-};
+},
 
-const FunctionDoc INT_DOC = {
+FunctionDoc{
     "INT",
     {},
     FunctionCategory::Numeric,
@@ -774,9 +777,9 @@ const FunctionDoc INT_DOC = {
     {
         "INT(-3.2) should be explicitly tested to confirm whether behavior is truncation toward zero or floor toward negative infinity."
     }
-};
+},
 
-const FunctionDoc ROUND_DOC = {
+FunctionDoc{
     "ROUND",
     {},
     FunctionCategory::Numeric,
@@ -793,9 +796,9 @@ const FunctionDoc ROUND_DOC = {
     {
         "Half-boundary behavior should be documented explicitly if financial use becomes important."
     }
-};
+},
 
-const FunctionDoc MIN_DOC = {
+FunctionDoc{
     "MIN",
     {},
     FunctionCategory::Numeric,
@@ -813,9 +816,9 @@ const FunctionDoc MIN_DOC = {
     {
         "Mixed-type argument behavior should remain explicit if coercion is permitted."
     }
-};
+},
 
-const FunctionDoc MAX_DOC = {
+FunctionDoc{
     "MAX",
     {},
     FunctionCategory::Numeric,
@@ -833,9 +836,9 @@ const FunctionDoc MAX_DOC = {
     {
         "Mixed-type argument behavior should remain explicit if coercion is permitted."
     }
-};
+},
 
-const FunctionDoc MOD_DOC = {
+FunctionDoc{
     "MOD",
     {},
     FunctionCategory::Numeric,
@@ -851,9 +854,9 @@ const FunctionDoc MOD_DOC = {
         "Division by zero must be treated as an error.",
         "Negative-operand remainder behavior should be documented if strict compatibility matters."
     }
-};
+},
 
-const FunctionDoc SQRT_DOC = {
+FunctionDoc{
     "SQRT",
     {},
     FunctionCategory::Numeric,
@@ -868,9 +871,9 @@ const FunctionDoc SQRT_DOC = {
     {
         "Negative inputs should raise an error unless complex-number support is intentionally added."
     }
-};
+},
 
-const FunctionDoc LOG_DOC = {
+FunctionDoc{
     "LOG",
     {},
     FunctionCategory::Numeric,
@@ -886,9 +889,9 @@ const FunctionDoc LOG_DOC = {
         "Input must be greater than zero.",
         "Zero or negative inputs should raise an error."
     }
-};
+},
 
-const FunctionDoc LOG10_DOC = {
+FunctionDoc{
     "LOG10",
     {},
     FunctionCategory::Numeric,
@@ -903,9 +906,9 @@ const FunctionDoc LOG10_DOC = {
         "Input must be greater than zero.",
         "Zero or negative inputs should raise an error."
     }
-};
+},
 
-const FunctionDoc EXP_DOC = {
+FunctionDoc{
     "EXP",
     {},
     FunctionCategory::Numeric,
@@ -920,9 +923,9 @@ const FunctionDoc EXP_DOC = {
     {
         "Large positive values may overflow depending on numeric backend limits."
     }
-};
+},
 
-const FunctionDoc SIN_DOC = {
+FunctionDoc{
     "SIN",
     {},
     FunctionCategory::Numeric,
@@ -937,9 +940,9 @@ const FunctionDoc SIN_DOC = {
     {
         "Degree-based expectations should not be silently assumed."
     }
-};
+},
 
-const FunctionDoc COS_DOC = {
+FunctionDoc{
     "COS",
     {},
     FunctionCategory::Numeric,
@@ -952,9 +955,9 @@ const FunctionDoc COS_DOC = {
         "Common for periodic and geometric calculations."
     },
     {}
-};
+},
 
-const FunctionDoc TAN_DOC = {
+FunctionDoc{
     "TAN",
     {},
     FunctionCategory::Numeric,
@@ -969,9 +972,9 @@ const FunctionDoc TAN_DOC = {
     {
         "Values near odd multiples of pi/2 can grow very large and may expose floating-point instability."
     }
-};
+},
 
-const FunctionDoc ASIN_DOC = {
+FunctionDoc{
     "ASIN",
     {},
     FunctionCategory::Numeric,
@@ -987,9 +990,9 @@ const FunctionDoc ASIN_DOC = {
         "Input domain should be limited to [-1, 1].",
         "Out-of-range values should raise an error."
     }
-};
+},
 
-const FunctionDoc ACOS_DOC = {
+FunctionDoc{
     "ACOS",
     {},
     FunctionCategory::Numeric,
@@ -1005,9 +1008,9 @@ const FunctionDoc ACOS_DOC = {
         "Input domain should be limited to [-1, 1].",
         "Out-of-range values should raise an error."
     }
-};
+},
 
-const FunctionDoc ATAN_DOC = {
+FunctionDoc{
     "ATAN",
     {},
     FunctionCategory::Numeric,
@@ -1022,9 +1025,9 @@ const FunctionDoc ATAN_DOC = {
     {
         "Very large magnitudes may compress toward asymptotic output values, which is mathematically expected."
     }
-};
+},
 
-const FunctionDoc CEILING_DOC = {
+FunctionDoc{
     "CEILING",
     {},
     FunctionCategory::Numeric,
@@ -1039,9 +1042,9 @@ const FunctionDoc CEILING_DOC = {
     {
         "Negative-number behavior should still follow the mathematical ceiling definition, not truncation."
     }
-};
+},
 
-const FunctionDoc FLOOR_DOC = {
+FunctionDoc{
     "FLOOR",
     {},
     FunctionCategory::Numeric,
@@ -1056,9 +1059,9 @@ const FunctionDoc FLOOR_DOC = {
     {
         "Negative-number behavior should still follow the mathematical floor definition, not truncation toward zero."
     }
-};
+},
 
-const FunctionDoc BETWEEN_DOC = {
+FunctionDoc{
     "BETWEEN",
     {},
     FunctionCategory::Numeric,
@@ -1073,9 +1076,9 @@ const FunctionDoc BETWEEN_DOC = {
     {
         "Bound ordering behavior should be explicit; if <low> > <high>, either document the behavior or normalize it consistently."
     }
-};
+},
 
-const FunctionDoc RAND_DOC = {
+FunctionDoc{
     "RAND",
     {},
     FunctionCategory::Numeric,
@@ -1089,96 +1092,31 @@ const FunctionDoc RAND_DOC = {
     {
         "Distribution and seeding behavior should be documented more precisely if stability matters."
     }
-};
+},
 
 // -----------------------------------------------------------------------------
 // ALL DOCS
 // -----------------------------------------------------------------------------
 
-const std::vector<const FunctionDoc*> ALL_DOCS = {
-    // String / Search / Construction / Conversion / Logical
-    &UPPER_DOC,
-    &LOWER_DOC,
-    &ALLTRIM_DOC,
-    &LTRIM_DOC,
-    &RTRIM_DOC,
-    &LEFT_DOC,
-    &RIGHT_DOC,
-    &SUBSTR_DOC,
-    &LEN_DOC,
-    &SOUNDEX_DOC,
-    &AT_DOC,
-    &ATC_DOC,
-    &LIKE_DOC,
-    &STR_DOC,
-    &VAL_DOC,
-    &CONCAT_DOC,
-    &ASC_DOC,
-    &CHR_DOC,
-    &CHRTRAN_DOC,
-    &EMPTY_DOC,
-    &RAT_DOC,
-    &REPLICATE_DOC,
-    &SPACE_DOC,
-    &STRTRAN_DOC,
-    &TRANSFORM_DOC,
+    };
 
-    // Date
-    &DATE_DOC,
-    &TODAY_DOC,
-    &NOW_DOC,
-    &DATETIME_DOC,
-    &TIME_DOC,
-    &SECONDS_DOC,
-    &CTOD_DOC,
-    &DTOC_DOC,
-    &DTOS_DOC,
-    &DAY_DOC,
-    &MONTH_DOC,
-    &YEAR_DOC,
-    &DOW_DOC,
-    &CDOW_DOC,
-    &CMONTH_DOC,
-    &DATEADD_DOC,
-    &DATEDIFF_DOC,
-    &GOMONTH_DOC,
-
-    // Numeric
-    &ABS_DOC,
-    &INT_DOC,
-    &ROUND_DOC,
-    &MIN_DOC,
-    &MAX_DOC,
-    &MOD_DOC,
-    &SQRT_DOC,
-    &LOG_DOC,
-    &LOG10_DOC,
-    &EXP_DOC,
-    &SIN_DOC,
-    &COS_DOC,
-    &TAN_DOC,
-    &ASIN_DOC,
-    &ACOS_DOC,
-    &ATAN_DOC,
-    &CEILING_DOC,
-    &FLOOR_DOC,
-    &BETWEEN_DOC,
-    &RAND_DOC
-};
+    return docs;
+}
 
 } // anonymous namespace
 
 const FunctionDoc* get_function_doc(const std::string& name)
 {
     const std::string want = upcopy(name);
+    const auto& docs = all_docs_storage();
 
-    for (const auto* doc : ALL_DOCS) {
-        if (doc->name == want) {
-            return doc;
+    for (const auto& doc : docs) {
+        if (doc.name == want) {
+            return &doc;
         }
-        for (const auto& alias : doc->aliases) {
+        for (const auto& alias : doc.aliases) {
             if (alias == want) {
-                return doc;
+                return &doc;
             }
         }
     }
@@ -1188,7 +1126,17 @@ const FunctionDoc* get_function_doc(const std::string& name)
 
 std::vector<const FunctionDoc*> all_function_docs()
 {
-    return ALL_DOCS;
+    static const std::vector<const FunctionDoc*> ptrs = [] {
+        std::vector<const FunctionDoc*> out;
+        const auto& docs = all_docs_storage();
+        out.reserve(docs.size());
+        for (const auto& doc : docs) {
+            out.push_back(&doc);
+        }
+        return out;
+    }();
+
+    return ptrs;
 }
 
 const char* to_string(FunctionCategory cat)

@@ -65,9 +65,7 @@ static bool is_ascend_usage_request(const std::string& raw)
 
 static void print_ascend_usage()
 {
-    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
-    cli::cmdout::print_line("  ASCEND");
-    cli::cmdout::print_line("  ASCEND USAGE");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AscendUsageText);
 }
 } // namespace
 
@@ -107,5 +105,3 @@ void cmd_ASCEND(DbArea& area, std::istringstream& iss) {
 }
 
 */
-
-

@@ -35,13 +35,14 @@
 //   ERROR_CLEAR
 //
 
-#include <iostream>
 #include <sstream>
 #include <iomanip>
 
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "xbase_error_codes.hpp"
 #include "xbase_error_runtime.hpp"
@@ -77,9 +78,7 @@ namespace
 
     void print_usage()
     {
-        std::cout << "Usage:\n"
-                  << "  ERROR_TEST\n"
-                  << "  ERROR_TEST USAGE\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorTestUsageText);
     }
 
     bool test_ok()
@@ -121,17 +120,30 @@ namespace
 
     void print_result(const char* name, bool ok_flag)
     {
-        std::cout << "  " << std::left << std::setw(20) << name
-                  << (ok_flag ? "OK" : "FAIL") << "\n";
+        std::ostringstream label;
+        label << std::left << std::setw(20) << name;
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErrorTestResultLineText,
+            {
+                {"name", label.str()},
+                {"result", cli::cmdout::message_text(
+                    ok_flag
+                        ? dottalk::helpdata::MessageId::ErrorTestOkLabel
+                        : dottalk::helpdata::MessageId::ErrorTestFailLabel)}
+            });
     }
 }
 
 void cmd_ERROR_TEST(xbase::DbArea& A, std::istringstream& in)
 {
     (void)A;
-    (void)in;
 
-    std::cout << "ERROR subsystem self-test:\n";
+    if (is_usage_request(in.str())) {
+        print_usage();
+        return;
+    }
+
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorTestHeaderText);
 
     bool ok1 = test_ok();
     bool ok2 = test_packing();
@@ -147,10 +159,10 @@ void cmd_ERROR_TEST(xbase::DbArea& A, std::istringstream& in)
 
     if (all_ok) {
         clear_last_error();
-        std::cout << "All tests passed.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorTestPassedText);
     } else {
         // Set a canonical error to indicate failure of the test suite.
         set_last_error(e_unknown());
-        std::cout << "One or more tests FAILED.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorTestFailedText);
     }
 }

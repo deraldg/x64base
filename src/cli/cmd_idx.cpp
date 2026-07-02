@@ -62,7 +62,9 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/edu_idx.hpp"
+#include "help/helpdata_messages.hpp"
 #include "textio.hpp"
 
 #include <cctype>
@@ -93,28 +95,7 @@ std::string elapsed_text(uint64_t us) {
 }
 
 void print_help() {
-    std::cout
-        << "IDX is a memory-only educational index lab.\n"
-        << "It teaches sorting and index concepts without writing .inx files.\n"
-        << "Use INDEX for persistent INX files.\n"
-        << "\n"
-        << "Usage:\n"
-        << "  IDX\n"
-        << "  IDX USAGE\n"
-        << "  IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]\n"
-        << "  IDX LIST\n"
-        << "  IDX DROP <tag>\n"
-        << "  IDX DROP ALL\n"
-        << "  IDX HELP\n"
-        << "\n"
-        << "Sort algorithms, Phase 1:\n"
-        << "  STD       C++ std::sort baseline\n"
-        << "  BUBBLE    classroom bubble sort\n"
-        << "\n"
-        << "Examples:\n"
-        << "  IDX ON LNAME TAG lname_std\n"
-        << "  IDX ON LNAME TAG lname_bubble BUBBLE\n"
-        << "  IDX ON LNAME TAG lname_bubble2 SORT BUBBLE DESC\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IdxUsageText);
 }
 
 bool parse_build_args(const std::string& first,
@@ -122,23 +103,23 @@ bool parse_build_args(const std::string& first,
                       dottalk::edu_idx::BuildRequest& request,
                       std::string& error) {
     if (upper_copy(first) != "ON") {
-        error = "IDX: expected ON.";
+        error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxExpectedOnText);
         return false;
     }
 
     if (!(in >> request.field_token) || request.field_token.empty()) {
-        error = "IDX: missing field token.";
+        error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxMissingFieldTokenText);
         return false;
     }
 
     std::string tagTok;
     if (!(in >> tagTok) || upper_copy(tagTok) != "TAG") {
-        error = "IDX: expected TAG.";
+        error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxExpectedTagText);
         return false;
     }
 
     if (!(in >> request.tag) || request.tag.empty()) {
-        error = "IDX: missing TAG name.";
+        error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxMissingTagNameText);
         return false;
     }
 
@@ -151,19 +132,21 @@ bool parse_build_args(const std::string& first,
 
         if (up == "SORT") {
             if (saw_sort) {
-                error = "IDX: duplicate SORT option.";
+                error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxDuplicateSortOptionText);
                 return false;
             }
 
             std::string algoTok;
             if (!(in >> algoTok)) {
-                error = "IDX: SORT requires an algorithm name.";
+                error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxSortRequiresAlgorithmText);
                 return false;
             }
 
             dottalk::edu_idx::SortAlgo algo{};
             if (!dottalk::edu_idx::parse_sort_algo(algoTok, algo)) {
-                error = "IDX: unknown SORT algorithm '" + algoTok + "'. Supported: STD, BUBBLE.";
+                error = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::IdxUnknownSortAlgorithmText,
+                    {{"algorithm", algoTok}});
                 return false;
             }
 
@@ -175,7 +158,7 @@ bool parse_build_args(const std::string& first,
         dottalk::edu_idx::SortDirection dir{};
         if (dottalk::edu_idx::parse_direction(tok, dir)) {
             if (saw_direction) {
-                error = "IDX: duplicate direction option.";
+                error = cli::cmdout::message_text(dottalk::helpdata::MessageId::IdxDuplicateDirectionOptionText);
                 return false;
             }
             request.direction = dir;
@@ -190,7 +173,9 @@ bool parse_build_args(const std::string& first,
             continue;
         }
 
-        error = "IDX: unexpected token '" + tok + "'.";
+        error = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::IdxUnexpectedTokenText,
+            {{"token", tok}});
         return false;
     }
 
@@ -201,27 +186,49 @@ void print_build_result(const dottalk::edu_idx::BuildRequest& request,
                         const dottalk::edu_idx::BuildResult& result) {
     const char* verb = result.replaced ? "replaced" : "created";
 
-    std::cout << "Memory index " << verb << ": " << result.tag << "\n";
-    std::cout << "  expr       : " << request.field_token << "\n";
-    std::cout << "  sort       : " << dottalk::edu_idx::to_string(request.sort_algo) << "\n";
-    std::cout << "  direction  : " << dottalk::edu_idx::to_string(request.direction) << "\n";
-    std::cout << "  records    : " << result.build.records_indexed
-              << " indexed / " << result.build.records_scanned << " scanned\n";
-    std::cout << "  deleted    : " << result.build.deleted_skipped << " skipped\n";
-    std::cout << "  build      : " << elapsed_text(result.build.elapsed_us) << "\n";
-    std::cout << "  sort       : " << elapsed_text(result.build.sort.elapsed_us) << "\n";
-    std::cout << "  compares   : " << result.build.sort.comparisons << "\n";
-    std::cout << "  swaps      : " << result.build.sort.swaps << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxBuildCreatedText,
+        {{"verb", verb}, {"tag", result.tag}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxExprLineText,
+        {{"value", request.field_token}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxSortLineText,
+        {{"value", dottalk::edu_idx::to_string(request.sort_algo)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxDirectionLineText,
+        {{"value", dottalk::edu_idx::to_string(request.direction)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxRecordsLineText,
+        {{"indexed", std::to_string(result.build.records_indexed)},
+         {"scanned", std::to_string(result.build.records_scanned)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxDeletedLineText,
+        {{"count", std::to_string(result.build.deleted_skipped)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxBuildElapsedLineText,
+        {{"value", elapsed_text(result.build.elapsed_us)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxSortElapsedLineText,
+        {{"value", elapsed_text(result.build.sort.elapsed_us)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxComparisonsLineText,
+        {{"value", std::to_string(result.build.sort.comparisons)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::IdxSwapsLineText,
+        {{"value", std::to_string(result.build.sort.swaps)}});
 }
 
 void print_list() {
     const auto rows = dottalk::edu_idx::list_indexes();
     if (rows.empty()) {
-        std::cout << "IDX: no memory indexes.\n";
+        cli::cmdout::print_prefixed_message("IDX", dottalk::helpdata::MessageId::IdxNoMemoryIndexesText);
         return;
     }
 
-    std::cout << "IDX memory indexes:\n\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IdxMemoryIndexesTitle);
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IdxListHeaderLineText);
     std::cout << std::left
               << std::setw(18) << "TAG"
               << std::setw(12) << "EXPR"
@@ -246,7 +253,7 @@ void print_list() {
 void run_drop(std::istringstream& in) {
     std::string tag;
     if (!(in >> tag) || tag.empty()) {
-        std::cout << "Usage: IDX DROP <tag>|ALL\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::IdxDropUsageText);
         return;
     }
 
@@ -254,17 +261,21 @@ void run_drop(std::istringstream& in) {
         const auto before = dottalk::edu_idx::list_indexes().size();
         dottalk::edu_idx::drop_all_indexes();
         if (before == 0) {
-            std::cout << "IDX: no memory indexes to drop.\n";
+            cli::cmdout::print_prefixed_message("IDX", dottalk::helpdata::MessageId::IdxNoMemoryIndexesToDropText);
         } else {
-            std::cout << "IDX: dropped all memory indexes.\n";
+            cli::cmdout::print_prefixed_message("IDX", dottalk::helpdata::MessageId::IdxDroppedAllText);
         }
         return;
     }
 
     if (dottalk::edu_idx::drop_index(tag)) {
-        std::cout << "IDX: dropped memory index " << tag << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "IDX", dottalk::helpdata::MessageId::IdxDroppedMemoryIndexText,
+            {{"tag", tag}});
     } else {
-        std::cout << "IDX: memory index not found: " << tag << "\n";
+        cli::cmdout::print_prefixed_message(
+            "IDX", dottalk::helpdata::MessageId::IdxMemoryIndexNotFoundText,
+            {{"tag", tag}});
     }
 }
 
@@ -299,14 +310,14 @@ void cmd_IDX(DbArea& A, std::istringstream& in) {
         std::string error;
 
         if (!parse_build_args(first, in, request, error)) {
-            std::cout << error << "\n";
-            std::cout << "Usage: IDX ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]\n";
+            cli::cmdout::print_info("IDX", error);
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::IdxBuildUsageText);
             return;
         }
 
         auto result = dottalk::edu_idx::build_and_store(A, request);
         if (!result.ok) {
-            std::cout << result.message << "\n";
+            cli::cmdout::print_info("IDX", result.message);
             return;
         }
 
@@ -314,7 +325,9 @@ void cmd_IDX(DbArea& A, std::istringstream& in) {
         return;
     }
 
-    std::cout << "IDX: unknown command '" << first << "'.\n";
+    cli::cmdout::print_prefixed_message(
+        "IDX", dottalk::helpdata::MessageId::IdxUnknownCommandText,
+        {{"command", first}});
     print_help();
 }
 
@@ -325,4 +338,3 @@ void cmd_IDX(DbArea& A, std::istringstream& in) {
 void edu_IDX(DbArea& A, std::istringstream& in) {
     cmd_IDX(A, in);
 }
-

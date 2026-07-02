@@ -1,0 +1,8 @@
+# mcc_x32.erz
+# MCC relational browser preset for x32/CNX
+
+SETUP=x32
+WORKSPACE=mcc_x32.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

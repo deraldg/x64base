@@ -18,6 +18,8 @@
 // defines xindex::IndexManager, not just the forward declaration from xbase.hpp.
 //
 // Extended UX:
+// - SET INDEX TO
+//     attach the default container for the open table (current DBF stem)
 // - SET INDEX TO <container>
 //     attach container only (current behavior preserved)
 // - SET INDEX TO <container> TAG <tag>
@@ -47,10 +49,12 @@
 //
 // usage:
 //   SET INDEX USAGE
+//   SET INDEX TO
 //   SET INDEX TO <container>
 //   SET INDEX TO <container> TAG <tag>
 //   SET INDEX TO <container> <tag>
 //   SETINDEX USAGE
+//   SETINDEX TO
 //   SETINDEX TO <container>
 //   SETINDEX TO <container> TAG <tag>
 //   SETINDEX TO <container> <tag>
@@ -60,6 +64,7 @@
 //   Explicit extensions are validated by table flavor.
 //   v32 tables accept INX or CNX.
 //   v64 tables require CDX.
+//   SET INDEX TO with no container uses the current DBF stem.
 //   Bare container names resolve through the INDEXES path slot.
 //   CDX attachment also requires the LMDB environment to exist.
 //   Container attach and tag activation are treated as related but separate decisions.
@@ -86,6 +91,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "xbase.hpp"
@@ -180,6 +186,23 @@ static bool is_setindex_usage_request(const std::string& raw)
 
 static bool is_v32_area(const xbase::DbArea& A) {
     return A.kind() == xbase::AreaKind::V32;
+}
+
+static std::string default_index_token_for_area(const xbase::DbArea& A) {
+    try {
+        const fs::path p(A.filename());
+        const std::string stem = p.stem().string();
+        if (!stem.empty()) return stem;
+    } catch (...) {
+    }
+
+    try {
+        const std::string base = A.dbfBasename();
+        if (!base.empty()) return base;
+    } catch (...) {
+    }
+
+    return {};
 }
 
 // Keep existing attach/reset behavior:
@@ -316,8 +339,8 @@ static bool parse_setindex_args(std::istringstream& args,
 
     if (up_copy(container_tok) == "TO") {
         if (!(args >> container_tok)) {
-            err = msg(MessageId::SetIndexMissingFilenameText);
-            return false;
+            container_tok.clear();
+            return true;
         }
     }
 
@@ -562,6 +585,15 @@ void cmd_SETINDEX(xbase::DbArea& A, std::istringstream& args)
         cli::cmdout::print_line("SET INDEX: " + parse_err);
         print_setindex_usage();
         return;
+    }
+
+    if (tok.empty()) {
+        tok = default_index_token_for_area(A);
+        if (tok.empty()) {
+            cli::cmdout::print_line("SET INDEX: " + msg(MessageId::SetIndexMissingFilenameText));
+            print_setindex_usage();
+            return;
+        }
     }
 
     fs::path p;

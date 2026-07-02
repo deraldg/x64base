@@ -56,6 +56,7 @@
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
+#include "cli/command_output.hpp"
 #include "csv.hpp"
 #include "textio.hpp"
 #include "import/import_normalize.hpp"
@@ -143,33 +144,32 @@ static bool is_usage_request(std::string raw)
 
 static void print_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  AUTODBF USAGE\n"
-        << "  AUTODBF <table> FROM <csvfile> [HEADER|NOHEADER|AUTO] [INFER|TEXTONLY] [OVERWRITE]\n"
-        << "  AUTODBF X64 <table> FROM <csvfile> [HEADER|NOHEADER|AUTO] [INFER|TEXTONLY] [OVERWRITE]\n"
-        << "Defaults:\n"
-        << "  - X64 table flavor\n"
-        << "  - AUTO header detection, conservative\n"
-        << "  - INFER field types\n"
-        << "  - no overwrite unless OVERWRITE is supplied\n"
-        << "Notes:\n"
-        << "  - CSV parsing uses the existing comma CSV parser.\n"
-        << "  - Long text is rejected for now rather than auto-promoted to M.\n"
-        << "  - Header names are normalized, uniquified, and sent through x64 fallback-name mangling.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+    cli::cmdout::print_line("  AUTODBF USAGE");
+    cli::cmdout::print_line("  " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfUsageLine));
+    cli::cmdout::print_line("  " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfUsageX64Line));
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalDefaultsTitle);
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfDefaultFlavorNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfDefaultHeaderNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfDefaultInferNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfDefaultOverwriteNote));
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfCsvParserNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfLongTextRejectedNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfHeaderNormalizeNote));
 }
 
 static bool parse_args(std::istringstream& iss, AutoDbfOptions& opt, std::string& err)
 {
     std::string first;
     if (!(iss >> first)) {
-        err = "AUTODBF: missing table name.";
+        err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMissingTableName);
         return false;
     }
 
     if (upper(first) == "X64") {
         if (!(iss >> opt.table)) {
-            err = "AUTODBF: missing table name after X64.";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMissingTableNameAfterX64);
             return false;
         }
     } else {
@@ -178,12 +178,12 @@ static bool parse_args(std::istringstream& iss, AutoDbfOptions& opt, std::string
 
     std::string from;
     if (!(iss >> from) || upper(from) != "FROM") {
-        err = "AUTODBF: expected FROM after table name.";
+        err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfExpectedFrom);
         return false;
     }
 
     if (!(iss >> opt.csvfile) || opt.csvfile.empty()) {
-        err = "AUTODBF: missing CSV file name after FROM.";
+        err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMissingCsvFile);
         return false;
     }
 
@@ -205,21 +205,23 @@ static bool parse_args(std::istringstream& iss, AutoDbfOptions& opt, std::string
         } else if (u == "MAXCHAR") {
             std::string n;
             if (!(iss >> n)) {
-                err = "AUTODBF: MAXCHAR requires a value.";
+                err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMaxCharRequiresValue);
                 return false;
             }
             try {
                 opt.maxChar = std::stoi(n);
             } catch (...) {
-                err = "AUTODBF: invalid MAXCHAR value.";
+                err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfInvalidMaxCharValue);
                 return false;
             }
             if (opt.maxChar < 1 || opt.maxChar > AUTODBF_MAX_FIXED_WIDTH) {
-                err = "AUTODBF: MAXCHAR must be between 1 and 254.";
+                err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMaxCharRange);
                 return false;
             }
         } else {
-            err = "AUTODBF: unknown option '" + tok + "'.";
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfUnknownOption,
+                {{"option", tok}});
             return false;
         }
     }
@@ -346,7 +348,9 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
 
     std::ifstream in(opt.csvfile, std::ios::binary);
     if (!in) {
-        scan.error = "Cannot open " + opt.csvfile + " for read.";
+        scan.error = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::AutoDbfCannotOpenRead,
+            {{"path", opt.csvfile}});
         return scan;
     }
 
@@ -361,7 +365,7 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
     }
 
     if (scan.firstRow.empty()) {
-        scan.error = "Empty CSV.";
+        scan.error = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfEmptyCsv);
         return scan;
     }
 
@@ -376,7 +380,7 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
         if (cols.size() != scan.expectedColumns) {
             scan.firstBadLine = lineNumber;
             scan.actualColumns = cols.size();
-            scan.error = "column count mismatch";
+            scan.error = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfColumnCountMismatch);
             return scan;
         }
 
@@ -411,7 +415,7 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
         if (cols.size() != scan.expectedColumns) {
             scan.firstBadLine = lineNumber;
             scan.actualColumns = cols.size();
-            scan.error = "column count mismatch";
+            scan.error = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfColumnCountMismatch);
             return scan;
         }
 
@@ -492,8 +496,10 @@ static bool build_field_spec_from_profile(const ColumnProfile& p,
 {
     if (!inferTypes) {
         if (p.maxLen > static_cast<std::size_t>(maxChar)) {
-            err = "text width " + std::to_string(p.maxLen) +
-                  " exceeds current fixed-field limit " + std::to_string(maxChar);
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfTextWidthExceedsLimit,
+                {{"width", std::to_string(p.maxLen)},
+                 {"limit", std::to_string(maxChar)}});
             return false;
         }
         fs.type = 'C';
@@ -504,8 +510,9 @@ static bool build_field_spec_from_profile(const ColumnProfile& p,
 
     const std::string klass = dottalkpp::import::classify_profile(p);
     if (klass == "LONGTEXT") {
-        err = "long text requires " + std::to_string(p.maxLen) +
-              " bytes; AUTODBF does not auto-promote to memo yet";
+        err = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::AutoDbfLongTextRequiresBytes,
+            {{"bytes", std::to_string(p.maxLen)}});
         return false;
     }
 
@@ -514,14 +521,16 @@ static bool build_field_spec_from_profile(const ColumnProfile& p,
     int dec = dottalkpp::import::proposed_target_decimals(p);
 
     if (fs.type == 'M') {
-        err = "memo inference is disabled for AUTODBF first pass";
+        err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfMemoInferenceDisabled);
         return false;
     }
 
     if (fs.type == 'C') {
         if (p.maxLen > static_cast<std::size_t>(maxChar)) {
-            err = "text width " + std::to_string(p.maxLen) +
-                  " exceeds current fixed-field limit " + std::to_string(maxChar);
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfTextWidthExceedsLimit,
+                {{"width", std::to_string(p.maxLen)},
+                 {"limit", std::to_string(maxChar)}});
             return false;
         }
         if (width > maxChar) width = maxChar;
@@ -529,11 +538,16 @@ static bool build_field_spec_from_profile(const ColumnProfile& p,
     }
 
     if (width < 1 || width > AUTODBF_MAX_FIXED_WIDTH) {
-        err = "field width " + std::to_string(width) + " is outside current fixed-field limits";
+        err = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::AutoDbfFieldWidthOutOfRange,
+            {{"width", std::to_string(width)}});
         return false;
     }
     if (dec < 0 || dec > width) {
-        err = "decimal count " + std::to_string(dec) + " is invalid for width " + std::to_string(width);
+        err = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::AutoDbfDecimalCountInvalid,
+            {{"decimals", std::to_string(dec)},
+             {"width", std::to_string(width)}});
         return false;
     }
 
@@ -577,7 +591,11 @@ static bool build_columns(const AutoDbfOptions& opt,
         fs.descriptor_name = col.descriptorName;
 
         if (!build_field_spec_from_profile(scan.profiles[i], opt.inferTypes, opt.maxChar, fs, err)) {
-            err = "column " + std::to_string(i + 1) + " (" + col.logicalName + "): " + err;
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfColumnDetail,
+                {{"index", std::to_string(i + 1)},
+                 {"name", col.logicalName},
+                 {"detail", err}});
             return false;
         }
 
@@ -629,7 +647,7 @@ static bool convert_value_for_field(const std::string& raw,
 
     if (fs.type == 'C') {
         if (s.size() > fs.len) {
-            err = "character width overflow";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfCharacterWidthOverflow);
             return false;
         }
         out = s;
@@ -642,11 +660,11 @@ static bool convert_value_for_field(const std::string& raw,
             return true;
         }
         if (!(dottalkpp::import::is_integer_text(s) || dottalkpp::import::is_decimal_text(s))) {
-            err = "invalid numeric value";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfInvalidNumericValue);
             return false;
         }
         if (s.size() > fs.len) {
-            err = "numeric width overflow";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfNumericWidthOverflow);
             return false;
         }
         out = s;
@@ -655,7 +673,7 @@ static bool convert_value_for_field(const std::string& raw,
 
     if (fs.type == 'D') {
         if (!normalize_date_for_dbf(s, out)) {
-            err = "invalid date value; expected YYYY-MM-DD";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfInvalidDateValue);
             return false;
         }
         return true;
@@ -663,13 +681,13 @@ static bool convert_value_for_field(const std::string& raw,
 
     if (fs.type == 'L') {
         if (!normalize_logical_for_dbf(s, out)) {
-            err = "invalid logical value";
+            err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfInvalidLogicalValue);
             return false;
         }
         return true;
     }
 
-    err = "unsupported AUTODBF field type";
+    err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfUnsupportedFieldType);
     return false;
 }
 
@@ -681,7 +699,9 @@ static bool for_each_data_row(const AutoDbfOptions& opt,
 {
     std::ifstream in(opt.csvfile, std::ios::binary);
     if (!in) {
-        err = "Cannot open " + opt.csvfile + " for read.";
+        err = cli::cmdout::message_text(
+            dottalk::helpdata::MessageId::AutoDbfCannotOpenRead,
+            {{"path", opt.csvfile}});
         return false;
     }
 
@@ -695,9 +715,11 @@ static bool for_each_data_row(const AutoDbfOptions& opt,
 
         std::vector<std::string> cols = split_csv_record(line);
         if (cols.size() != expectedColumns) {
-            err = "line " + std::to_string(lineNumber) + ": expected " +
-                  std::to_string(expectedColumns) + " column(s), found " +
-                  std::to_string(cols.size());
+            err = cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfLineExpectedColumnsFound,
+                {{"line", std::to_string(lineNumber)},
+                 {"expected", std::to_string(expectedColumns)},
+                 {"found", std::to_string(cols.size())}});
             return false;
         }
 
@@ -727,8 +749,12 @@ static bool validate_all_rows(const AutoDbfOptions& opt,
                 std::string converted;
                 std::string valueErr;
                 if (!convert_value_for_field(cols[i], columns[i].spec, converted, valueErr)) {
-                    err = "line " + std::to_string(lineNumber) + ", column " +
-                          std::to_string(i + 1) + " (" + columns[i].logicalName + "): " + valueErr;
+                    err = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::AutoDbfLineColumnDetail,
+                        {{"line", std::to_string(lineNumber)},
+                         {"column", std::to_string(i + 1)},
+                         {"name", columns[i].logicalName},
+                         {"detail", valueErr}});
                     return false;
                 }
             }
@@ -755,27 +781,38 @@ static bool import_rows(DbArea& area,
             for (std::size_t i = 0; i < cols.size(); ++i) {
                 std::string valueErr;
                 if (!convert_value_for_field(cols[i], columns[i].spec, converted[i], valueErr)) {
-                    err = "line " + std::to_string(lineNumber) + ", column " +
-                          std::to_string(i + 1) + " (" + columns[i].logicalName + "): " + valueErr;
+                    err = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::AutoDbfLineColumnDetail,
+                        {{"line", std::to_string(lineNumber)},
+                         {"column", std::to_string(i + 1)},
+                         {"name", columns[i].logicalName},
+                         {"detail", valueErr}});
                     return false;
                 }
             }
 
             if (!area.appendBlank()) {
-                err = "line " + std::to_string(lineNumber) + ": appendBlank failed";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::AutoDbfAppendBlankFailed,
+                    {{"line", std::to_string(lineNumber)}});
                 return false;
             }
 
             for (std::size_t i = 0; i < converted.size(); ++i) {
                 if (!area.set(static_cast<int>(i + 1), converted[i])) {
-                    err = "line " + std::to_string(lineNumber) + ", column " +
-                          std::to_string(i + 1) + " (" + columns[i].logicalName + "): set failed";
+                    err = cli::cmdout::message_text(
+                        dottalk::helpdata::MessageId::AutoDbfSetFailed,
+                        {{"line", std::to_string(lineNumber)},
+                         {"column", std::to_string(i + 1)},
+                         {"name", columns[i].logicalName}});
                     return false;
                 }
             }
 
             if (!area.writeCurrent()) {
-                err = "line " + std::to_string(lineNumber) + ": writeCurrent failed";
+                err = cli::cmdout::message_text(
+                    dottalk::helpdata::MessageId::AutoDbfWriteCurrentFailed,
+                    {{"line", std::to_string(lineNumber)}});
                 return false;
             }
 
@@ -789,31 +826,41 @@ static void print_plan(const AutoDbfOptions& opt,
                        const CsvScan& scan,
                        const std::vector<AutoDbfColumn>& columns)
 {
-    std::cout << "AUTODBF plan\n";
-    std::cout << "  CSV: " << opt.csvfile << "\n";
-    std::cout << "  Header: " << (scan.firstRowIsHeader ? "HEADER" : "NOHEADER");
-    if (opt.headerMode == HeaderMode::Auto) std::cout << " (AUTO)";
-    std::cout << "\n";
-    std::cout << "  Data rows: " << scan.dataRows << "\n";
-    std::cout << "  Columns: " << columns.size() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AutoDbfPlanTitle);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfPlanCsvLine,
+        {{"path", opt.csvfile}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfPlanHeaderLine,
+        {{"mode", scan.firstRowIsHeader ? "HEADER" : "NOHEADER"},
+         {"suffix", opt.headerMode == HeaderMode::Auto ? " (AUTO)" : ""}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfPlanDataRowsLine,
+        {{"count", std::to_string(scan.dataRows)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfPlanColumnsLine,
+        {{"count", std::to_string(columns.size())}});
 
     for (std::size_t i = 0; i < columns.size(); ++i) {
         const AutoDbfColumn& c = columns[i];
-        std::cout << "    " << (i + 1) << "  "
-                  << c.logicalName
-                  << "  " << c.spec.type;
+        std::string line = "    " + std::to_string(i + 1) + "  " +
+                           c.logicalName + "  " + std::string(1, c.spec.type);
         if (c.spec.type == 'N' || c.spec.type == 'F') {
-            std::cout << "(" << int(c.spec.len) << "," << int(c.spec.dec) << ")";
+            line += "(" + std::to_string(int(c.spec.len)) + "," + std::to_string(int(c.spec.dec)) + ")";
         } else if (c.spec.type == 'C') {
-            std::cout << "(" << int(c.spec.len) << ")";
+            line += "(" + std::to_string(int(c.spec.len)) + ")";
         }
         if (c.descriptorName != c.logicalName) {
-            std::cout << "  descriptor=" << c.descriptorName;
+            line += cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfPlanDescriptorSuffix,
+                {{"name", c.descriptorName}});
         }
         if (scan.firstRowIsHeader && c.sourceName != c.logicalName) {
-            std::cout << "  source='" << c.sourceName << "'";
+            line += cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AutoDbfPlanSourceSuffix,
+                {{"name", c.sourceName}});
         }
-        std::cout << "\n";
+        cli::cmdout::print_line(line);
     }
 }
 
@@ -831,7 +878,7 @@ void cmd_AUTODBF(DbArea& area, std::istringstream& iss)
     std::string err;
 
     if (!parse_args(iss, opt, err)) {
-        std::cout << err << "\n";
+        cli::cmdout::print_info("AUTODBF", err);
         print_usage();
         return;
     }
@@ -845,36 +892,44 @@ void cmd_AUTODBF(DbArea& area, std::istringstream& iss)
     const std::string dbfPath = path_to_string(outPath);
 
     if (std::filesystem::exists(outPath) && !opt.overwrite) {
-        std::cout << "AUTODBF failed: target exists: " << dbfPath << "\n"
-                  << "  Use OVERWRITE to replace it.\n";
+        cli::cmdout::print_prefixed_message(
+            "AUTODBF failed",
+            dottalk::helpdata::MessageId::AutoDbfTargetExists,
+            {{"path", dbfPath}});
+        cli::cmdout::print_line(
+            "  " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfUseOverwriteNote));
         return;
     }
 
     CsvScan scan = scan_csv_file(opt);
     if (!scan.ok) {
-        std::cout << "AUTODBF failed: " << scan.error;
         if (scan.firstBadLine != 0) {
-            std::cout << " at line " << scan.firstBadLine
-                      << " (expected " << scan.expectedColumns
-                      << ", found " << scan.actualColumns << ")";
+            cli::cmdout::print_prefixed_message(
+                "AUTODBF failed",
+                dottalk::helpdata::MessageId::AutoDbfScanFailedAtLine,
+                {{"detail", scan.error},
+                 {"line", std::to_string(scan.firstBadLine)},
+                 {"expected", std::to_string(scan.expectedColumns)},
+                 {"found", std::to_string(scan.actualColumns)}});
+        } else {
+            cli::cmdout::print_info("AUTODBF failed", scan.error);
         }
-        std::cout << "\n";
         return;
     }
 
     if (scan.dataRows == 0) {
-        std::cout << "AUTODBF failed: no data rows found.\n";
+        cli::cmdout::print_prefixed_message("AUTODBF failed", dottalk::helpdata::MessageId::AutoDbfNoDataRows);
         return;
     }
 
     std::vector<AutoDbfColumn> columns;
     if (!build_columns(opt, scan, columns, err)) {
-        std::cout << "AUTODBF failed: " << err << "\n";
+        cli::cmdout::print_info("AUTODBF failed", err);
         return;
     }
 
     if (!validate_all_rows(opt, scan, columns, err)) {
-        std::cout << "AUTODBF failed: " << err << "\n";
+        cli::cmdout::print_info("AUTODBF failed", err);
         return;
     }
 
@@ -890,30 +945,48 @@ void cmd_AUTODBF(DbArea& area, std::istringstream& iss)
     }
 
     if (!xbase::dbf_create::create_dbf(dbfPath, fields, xbase::dbf_create::Flavor::X64, err)) {
-        std::cout << "AUTODBF failed: create failed: " << err << "\n";
+        cli::cmdout::print_prefixed_message(
+            "AUTODBF failed",
+            dottalk::helpdata::MessageId::AutoDbfCreateFailed,
+            {{"detail", err}});
         return;
     }
 
     try {
         area.open(dbfPath);
     } catch (const std::exception& ex) {
-        std::cout << "AUTODBF failed: file written but could not reopen table: "
-                  << ex.what() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "AUTODBF failed",
+            dottalk::helpdata::MessageId::AutoDbfReopenFailedDetail,
+            {{"detail", ex.what()}});
         return;
     } catch (...) {
-        std::cout << "AUTODBF failed: file written but could not reopen table.\n";
+        cli::cmdout::print_prefixed_message(
+            "AUTODBF failed",
+            dottalk::helpdata::MessageId::AutoDbfReopenFailedGeneric);
         return;
     }
 
     std::size_t imported = 0;
     if (!import_rows(area, opt, scan, columns, imported, err)) {
-        std::cout << "AUTODBF failed during import: " << err << "\n";
-        std::cout << "  Partial rows imported: " << imported << "\n";
+        cli::cmdout::print_prefixed_message(
+            "AUTODBF failed",
+            dottalk::helpdata::MessageId::AutoDbfImportFailed,
+            {{"detail", err}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AutoDbfPartialRowsImported,
+            {{"count", std::to_string(imported)}});
         return;
     }
 
-    std::cout << "AUTODBF OK\n"
-              << "  Created: " << dbfPath << " [X64]\n"
-              << "  Imported rows: " << imported << "\n"
-              << "  Opened: " << area.filename() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AutoDbfOkTitle);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfCreatedLine,
+        {{"path", dbfPath}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfImportedRowsLine,
+        {{"count", std::to_string(imported)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::AutoDbfOpenedLine,
+        {{"path", area.filename()}});
 }

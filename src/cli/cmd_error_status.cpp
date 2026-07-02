@@ -33,16 +33,68 @@
 //   ERROR_TEST
 //
 
-#include <iostream>
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <sstream>
 #include <iomanip>
+#include <string>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "xbase_error_codes.hpp"
 #include "xbase_error_runtime.hpp"
 #include "xbase_error_context.hpp"
 
 using namespace xbase::error;
+
+namespace {
+
+std::string trim_copy(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+std::string upper_copy(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+bool is_usage_request(std::istringstream& in)
+{
+    const std::streampos start = in.tellg();
+    std::string tok;
+    if (!(in >> tok)) {
+        in.clear();
+        if (start != std::streampos(-1)) in.seekg(start);
+        return false;
+    }
+    in.clear();
+    if (start != std::streampos(-1)) in.seekg(start);
+    const std::string u = upper_copy(trim_copy(tok));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+std::string facility_hex(code c)
+{
+    std::ostringstream oss;
+    oss << "0x" << std::hex << static_cast<uint16_t>(c.get_facility());
+    return oss.str();
+}
+
+std::string hresult_hex(code c)
+{
+    char buf[11] = {};
+    std::snprintf(buf, sizeof(buf), "0x%08X", static_cast<unsigned int>(c.value));
+    return std::string(buf);
+}
+
+} // namespace
 
 // -----------------------------------------------------------------------------
 // Corrected to_string() implementation
@@ -120,20 +172,28 @@ inline std::string error_to_string(code c)
 void cmd_ERROR_STATUS(xbase::DbArea& A, std::istringstream& in)
 {
     (void)A;
-    (void)in;
+
+    if (is_usage_request(in)) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorStatusUsageText);
+        return;
+    }
 
     code c = get_last_error();
 
-    std::cout << "Last Error:\n";
-
-    std::cout << "  Severity : " << to_severity_string(c.get_severity()) << "\n";
-    std::cout << "  Facility : " << to_facility_string(c.get_facility())
-              << " (0x" << std::hex << static_cast<uint16_t>(c.get_facility()) << std::dec << ")\n";
-    std::cout << "  Number   : " << c.get_number() << "\n";
-
-    std::cout << "  HRESULT  : 0x"
-              << std::hex << std::uppercase << std::setw(8) << std::setfill('0')
-              << c.value << std::dec << "\n";
-
-    std::cout << "  Message  : " << error_to_string(c) << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorStatusHeaderText);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ErrorStatusSeverityLineText,
+        {{"value", to_severity_string(c.get_severity())}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ErrorStatusFacilityLineText,
+        {{"value", to_facility_string(c.get_facility())}, {"hex", facility_hex(c)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ErrorStatusNumberLineText,
+        {{"value", std::to_string(c.get_number())}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ErrorStatusHresultLineText,
+        {{"value", hresult_hex(c)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ErrorStatusMessageLineText,
+        {{"value", error_to_string(c)}});
 }

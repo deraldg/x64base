@@ -67,8 +67,8 @@ inline const std::vector<Item>& catalog() {
 
         {"RECNO",     "RECNO()", "Return the current record number.", true},
 
-        {"INDEX",     "INDEX ON <expr> TAG <tag> [OF <cdx>] | INDEX ON <expr> TO <idx>",
-                 "Create an index on an expression (FoxPro syntax; CDX via TAG/OF, IDX via TO).", true},
+        {"INDEX",     "INDEX ON <expr> TAG <tag> [OF <cdx>] | INDEX ON <expr> TO <inx>",
+                 "Create an index on an expression (DotTalk++ adaptation: CDX via TAG/OF, INX via TO).", true},
 
         {"SET", "SET <option> [args]",
         R"(Modern settings/index router.

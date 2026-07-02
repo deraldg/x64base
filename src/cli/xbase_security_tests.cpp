@@ -10,6 +10,7 @@
 
 #include "xbase_security.hpp"
 #include "xbase_security_policy.hpp"
+#include "xbase_security_runtime.hpp"
 #include "xbase_security_tests.hpp"
 
 using namespace xbase::security;
@@ -160,6 +161,27 @@ static void test_policy_enforcement()
                 "standard policy marks plaintext secrets as forbidden");
 }
 
+static void test_host_command_policy()
+{
+    auto standard = standard_profile();
+    runtime::context standard_ctx(standard);
+
+    assert_true(!standard.allow_host_commands,
+                "standard policy marks host commands as forbidden");
+
+    assert_throws([&]() { runtime::on_host_command_begin(standard_ctx); },
+                  "standard policy blocks host command execution");
+
+    auto permissive = permissive_profile();
+    runtime::context permissive_ctx(permissive);
+
+    assert_true(permissive.allow_host_commands,
+                "permissive policy marks host commands as allowed");
+
+    runtime::on_host_command_begin(permissive_ctx);
+    assert_true(true, "permissive policy allows host command execution");
+}
+
 // ------------------------------------------------------------
 // Public entry point
 // ------------------------------------------------------------
@@ -175,6 +197,7 @@ int run_xbase_security_tests()
     test_canonicalize();
     test_policy_profiles();
     test_policy_enforcement();
+    test_host_command_policy();
 
     return tests_failed;
 }

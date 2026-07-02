@@ -1,0 +1,8 @@
+# mcc_wsl.erz
+# MCC relational browser preset for WSL/x32-CNX
+
+SETUP=wsl
+WORKSPACE=mcc_wsl.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

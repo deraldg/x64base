@@ -2,6 +2,8 @@
 
 # ---- Options ----------------------------------------------------------------
 option(DOTTALK_WITH_TV "Build Turbo Vision UI (browse TUI, palette, etc.)" OFF)
+option(DOTTALK_WITH_GUI "Build GUI-neutral application services" OFF)
+option(DOTTALK_WITH_WX "Build wxWidgets windowed GUI frontend" OFF)
 option(DOTTALK_BUILD_OLD_PALETTE "Build legacy palette demo sources (deprecated)" OFF)
 option(DOTTALK_BUILD_PALETTE_EXE "Build standalone fox_palette.exe" OFF)
 
@@ -76,6 +78,7 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/pydottalk"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests"     # avoid test mains
   "${CMAKE_CURRENT_SOURCE_DIR}/tv"        # TV isolated, not globbed
+  "${CMAKE_CURRENT_SOURCE_DIR}/gui"       # GUI isolated, not globbed
   "${CMAKE_CURRENT_SOURCE_DIR}/palette"   # palette handled explicitly
   "${CMAKE_CURRENT_SOURCE_DIR}/build"     # exclude src in src/build
   "${CMAKE_CURRENT_SOURCE_DIR}/common"
@@ -222,6 +225,15 @@ if (DOTTALK_WITH_TV)
   target_link_libraries(dottalkpp PRIVATE dottalk_tvui)
 endif()
 
+# 3.1b) Windowed GUI architecture: GUI-neutral core only in this phase.
+if (DOTTALK_WITH_GUI OR DOTTALK_WITH_WX)
+  add_subdirectory(gui/core)
+endif()
+
+if (DOTTALK_WITH_WX)
+  add_subdirectory(gui/wx)
+endif()
+
 # 3.2) PALETTE command: by default, provide a stub so scripts don't explode
 set(_gen_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY "${_gen_dir}")
@@ -301,6 +313,8 @@ endif()
 # 7) Build summary
 message(STATUS "dottalkpp: DOTTALK_WITH_DEV = ${DOTTALK_WITH_DEV}")
 message(STATUS "dottalkpp: DOTTALK_WITH_TV  = ${DOTTALK_WITH_TV}")
+message(STATUS "dottalkpp: DOTTALK_WITH_GUI = ${DOTTALK_WITH_GUI}")
+message(STATUS "dottalkpp: DOTTALK_WITH_WX  = ${DOTTALK_WITH_WX}")
 
 # DD-089H guarded Data Dictionary helper source wiring.
 # These files support the refactored DDICT read-only catalog command surface.
@@ -312,4 +326,3 @@ if(TARGET dottalkpp)
     datadict/ddict_object_resolver.cpp
   )
 endif()
-

@@ -4,8 +4,9 @@
 #include <iostream>
 #include <sstream>
 #include "xbase.hpp"
-#include "cli/command_registry.hpp"
+#include "cli/shell_exit_request.hpp"
 #include "textio.hpp"
+#include "../cli/shell_shortcuts.hpp"
 
 // Turbo Vision preprocessor directives
 #define Uses_TApplication
@@ -36,6 +37,17 @@ const int cmDotTalkList     = 107;
 const int cmDotTalkBrowse   = 108;
 const int cmDotTalkSeek     = 109;
 const int cmDotTalkAbout    = 110;
+
+bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine);
+
+static std::string trim(const std::string& s)
+{
+    const size_t a = s.find_first_not_of(" \t\r\n");
+    if (a == std::string::npos)
+        return {};
+    const size_t b = s.find_last_not_of(" \t\r\n");
+    return s.substr(a, b - a + 1);
+}
 
 // IMPORTANT:
 // This file defines a *different* app class name to avoid ODR collision
@@ -86,14 +98,25 @@ void TGenericApp::commandDialog(xbase::DbArea& area)
     ushort result = deskTop->execView(d);
     if (result == cmOK) {
         char* cmd = input->data;
-        std::string trimmed = cmd ? cmd : "";
+        std::string trimmed = trim(cmd ? cmd : "");
         if (!trimmed.empty()) {
-            std::istringstream tok(trimmed);
+            const std::string resolved = shell_shortcuts::resolve(trimmed);
+            std::istringstream tok(resolved);
             std::string cmdToken;
             tok >> cmdToken;
             if (!cmdToken.empty()) {
                 std::string U = textio::up(cmdToken);
-                if (!dli::registry().run(area, U, tok)) {
+                std::string extra;
+                if ((U == "EXIT" || U == "QUIT" || U == "CANCEL" || U == "ABORT") && !(tok >> extra)) {
+                    xbase::clear_shell_exit_request();
+                    TEvent quit{};
+                    quit.what = evCommand;
+                    quit.message.command = cmQuit;
+                    putEvent(quit);
+                    destroy(d);
+                    return;
+                }
+                if (!shell_execute_line(area, resolved)) {
                     messageBox("Unknown command: " + cmdToken, mfError | mfOKButton);
                 }
             }
@@ -159,6 +182,7 @@ void cmd_GENERIC(xbase::DbArea& area, std::istringstream& /*args*/)
     TGenericApp app;
     app.setDbArea(&area);
     app.run();
+    xbase::clear_shell_exit_request();
 #else
     std::cout << "TVISION is not available in this build (library not found at configure time).\n";
     std::cout << "Tip: Install tvision (vcpkg or local), enable manifest mode/toolchain, re-configure, and rebuild.\n";

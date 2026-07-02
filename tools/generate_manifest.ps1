@@ -11,7 +11,7 @@ $generatedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Push-Location $repoRoot
 try {
-    $trackedFiles = & git -c safe.directory='D:/code/ccode/x64base' -C $repoRoot ls-files
+    $trackedFiles = & git -c "safe.directory=$repoRoot" -C $repoRoot ls-files
     if ($LASTEXITCODE -ne 0) {
         throw "git ls-files failed with exit code $LASTEXITCODE"
     }

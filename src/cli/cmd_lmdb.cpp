@@ -73,8 +73,10 @@
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/cmd_setpath.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace fs = std::filesystem;
 
@@ -183,23 +185,7 @@ static std::string resolve_container_token(const std::string& token) {
 }
 
 static void lmdb_help() {
-    std::cout
-        << "Usage:\n"
-        << "  LMDB USAGE\n"
-        << "  LMDB INFO\n"
-        << "  LMDB OPEN <container.cdx>\n"
-        << "  LMDB OPEN <envdir.cdx.d>\n"
-        << "  LMDB OPEN <stem>\n"
-        << "  LMDB USE <tag>\n"
-        << "  LMDB SEEK <key>\n"
-        << "  LMDB DUMP\n"
-        << "  LMDB DUMP <max>\n"
-        << "  LMDB SCAN <low> <high>\n"
-        << "  LMDB CLOSE\n"
-        << "Notes:\n"
-        << "  - LMDB is per-area and uses the current DbArea IndexManager/CDX backend.\n"
-        << "  - Bare stems resolve through the INDEXES path slot.\n"
-        << "  - LMDB_UTIL is deprecated and disabled.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LmdbUsageText);
 }
 
 static std::string key_bytes_to_text(const xindex::Key& kb) {
@@ -227,19 +213,25 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
     }
 
     if (!db.isOpen() && sub != "INFO" && sub != "CLOSE") {
-        std::cout << "* LMDB " << sub << ": no table open in current area\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbActionNoTableOpenText,
+            {{"action", sub}});
         return;
     }
 
     if (sub == "INFO") {
         const auto* im = db.indexManagerPtr();
         if (!im || !im->hasBackend() || !im->isCdx()) {
-            std::cout << "* LMDB INFO: (none)\n";
+            cli::cmdout::print_prefixed_message("LMDB INFO", dottalk::helpdata::MessageId::LmdbInfoNoneText);
             return;
         }
-        std::cout << "* LMDB INFO\n";
-        std::cout << "  container: " << im->containerPath() << "\n";
-        std::cout << "  tag      : " << (im->activeTag().empty() ? "(none)" : im->activeTag()) << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::LmdbInfoTitleText);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::LmdbInfoContainerLineText,
+            {{"path", im->containerPath()}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::LmdbInfoTagLineText,
+            {{"tag", (im->activeTag().empty() ? "(none)" : im->activeTag())}});
         return;
     }
 
@@ -248,26 +240,30 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         iss >> tok;
         tok = trim_copy(tok);
         if (tok.empty()) {
-            std::cout << "* LMDB OPEN: missing path\n";
+            cli::cmdout::print_prefixed_message("LMDB OPEN", dottalk::helpdata::MessageId::LmdbOpenMissingPathText);
             return;
         }
 
         std::string err;
         const std::string cdx_path = resolve_container_token(tok);
         if (cdx_path.empty()) {
-            std::cout << "* LMDB OPEN: invalid path\n";
+            cli::cmdout::print_prefixed_message("LMDB OPEN", dottalk::helpdata::MessageId::LmdbOpenInvalidPathText);
             return;
         }
 
         if (!db.indexManager().openCdx(cdx_path, {}, &err)) {
-            std::cout << "* LMDB OPEN failed: " << (err.empty() ? "openCdx failed" : err) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "LMDB", dottalk::helpdata::MessageId::LmdbOpenFailedText,
+                {{"detail", (err.empty() ? "openCdx failed" : err)}});
             return;
         }
 
         // Keep legacy orderstate coherent until it's removed.
         orderstate::setOrder(db, cdx_path);
 
-        std::cout << "* LMDB OPEN: " << cdx_path << "\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbOpenText,
+            {{"path", cdx_path}});
         return;
     }
 
@@ -276,19 +272,23 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         iss >> tag;
         tag = upper_copy(trim_copy(tag));
         if (tag.empty()) {
-            std::cout << "* LMDB USE: missing TAG\n";
+            cli::cmdout::print_prefixed_message("LMDB USE", dottalk::helpdata::MessageId::LmdbUseMissingTagText);
             return;
         }
 
         std::string err;
         if (!db.indexManager().setTag(tag, &err)) {
-            std::cout << "* LMDB USE failed: " << (err.empty() ? "setTag failed" : err) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "LMDB", dottalk::helpdata::MessageId::LmdbUseFailedText,
+                {{"detail", (err.empty() ? "setTag failed" : err)}});
             return;
         }
 
         orderstate::setActiveTag(db, tag);
 
-        std::cout << "* LMDB USE: " << tag << "\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbUseText,
+            {{"tag", tag}});
         return;
     }
 
@@ -297,18 +297,22 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         std::getline(iss, key);
         key = trim_copy(key);
         if (key.empty()) {
-            std::cout << "* LMDB SEEK: missing key\n";
+            cli::cmdout::print_prefixed_message("LMDB SEEK", dottalk::helpdata::MessageId::LmdbSeekMissingKeyText);
             return;
         }
 
         std::uint32_t recno = 0;
         std::string err;
         if (!db.indexManager().lmdbSeekUserKey(key, recno, err)) {
-            std::cout << "* LMDB SEEK failed: " << (err.empty() ? "not found" : err) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "LMDB", dottalk::helpdata::MessageId::LmdbSeekFailedText,
+                {{"detail", (err.empty() ? "not found" : err)}});
             return;
         }
 
-        std::cout << "* LMDB SEEK: recno=" << recno << "\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbSeekRecnoText,
+            {{"recno", std::to_string(recno)}});
         return;
     }
 
@@ -321,17 +325,17 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
 
         const auto* im = db.indexManagerPtr();
         if (!im || !im->hasBackend() || !im->isCdx()) {
-            std::cout << "* LMDB DUMP: (none)\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbDumpNoneText);
             return;
         }
         if (im->activeTag().empty()) {
-            std::cout << "* LMDB DUMP: no TAG selected. Try: LMDB USE <TAG>\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbDumpNoTagSelectedText);
             return;
         }
 
         auto cur = db.indexManager().scan(xindex::Key{}, xindex::Key{});
         if (!cur) {
-            std::cout << "* LMDB DUMP: cursor open failed\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbDumpCursorOpenFailedText);
             return;
         }
 
@@ -347,7 +351,9 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             } while (cur->next(k, r));
         }
 
-        std::cout << "* LMDB DUMP: printed " << printed << "\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbDumpPrintedText,
+            {{"count", std::to_string(printed)}});
         return;
     }
 
@@ -358,17 +364,17 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         high = upper_copy(trim_copy(high));
 
         if (low.empty() || high.empty()) {
-            std::cout << "* LMDB SCAN: usage: LMDB SCAN <low> <high>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::LmdbScanUsageText);
             return;
         }
 
         const auto* im = db.indexManagerPtr();
         if (!im || !im->hasBackend() || !im->isCdx()) {
-            std::cout << "* LMDB SCAN: (none)\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbScanNoneText);
             return;
         }
         if (im->activeTag().empty()) {
-            std::cout << "* LMDB SCAN: no TAG selected. Try: LMDB USE <TAG>\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbScanNoTagSelectedText);
             return;
         }
 
@@ -377,7 +383,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
 
         auto cur = db.indexManager().scan(lo, hi);
         if (!cur) {
-            std::cout << "* LMDB SCAN: cursor open failed\n";
+            cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbScanCursorOpenFailedText);
             return;
         }
 
@@ -393,14 +399,16 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             } while (cur->next(k, r));
         }
 
-        std::cout << "* LMDB SCAN: shown " << shown << "\n";
+        cli::cmdout::print_prefixed_message(
+            "LMDB", dottalk::helpdata::MessageId::LmdbScanShownText,
+            {{"count", std::to_string(shown)}});
         return;
     }
 
     if (sub == "CLOSE") {
         db.indexManager().close();
         try { orderstate::clearOrder(db); } catch (...) {}
-        std::cout << "* LMDB CLOSE\n";
+        cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbCloseText);
         return;
     }
 

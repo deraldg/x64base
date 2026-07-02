@@ -33,6 +33,7 @@
 #include <string>
 
 #include "cli/command_registry.hpp"
+#include "cli/shell_exit_request.hpp"
 #include "tv/foxtalk_cmd_input.hpp"
 #include "tv/foxtalk_command_window.hpp"
 #include "tv/foxtalk_ids.hpp"
@@ -55,6 +56,8 @@ namespace foxtalk {
 std::filesystem::path iniPath();
 
 namespace {
+
+const char* commandKeyHint();
 
 static bool probeHasOpenTable(xbase::DbArea& area)
 {
@@ -470,7 +473,7 @@ TFoxtalkApp::TFoxtalkApp()
         cmdWin_->focusInput();
     }
 
-    showMessage("Alt-Z Cmd | Ctrl-F5 Cmd | Alt-O Out | Ctrl-F6 Out | F10 Menu | Alt-X Exit");
+    showMessage(commandKeyHint());
 }
 
 TFoxtalkApp::~TFoxtalkApp()
@@ -612,6 +615,19 @@ bool isNestedTvCommand(const std::string& cmd)
            cmd == "BROWSETUI";
 }
 
+bool isSubappExitCommand(const std::string& cmd)
+{
+    return cmd == "EXIT" ||
+           cmd == "QUIT" ||
+           cmd == "CANCEL" ||
+           cmd == "ABORT";
+}
+
+const char* commandKeyHint()
+{
+    return "Enter/Run | Up/Dn History | Ctrl-Q Cmd | F2 Out | F3 Rec | F4 Work | Alt-X Close";
+}
+
 } // namespace
 
 void TFoxtalkApp::runImmediate(const std::string& line)
@@ -664,12 +680,74 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
         rest = trim(rest);
         const std::string restUpper = upcopy(rest);
 
+        if (isSubappExitCommand(cmd) && restUpper.empty()) {
+            xbase::clear_shell_exit_request();
+            std::cout << "Leaving TurboTalk; returning to DotTalk++ shell.\n";
+            showMessage("Returning to DotTalk++ shell.");
+            TEvent quit{};
+            quit.what = evCommand;
+            quit.message.command = cmQuit;
+            putEvent(quit);
+            return;
+        }
+
         if ((cmd == "CLEAR" && (restUpper.empty() || restUpper == "OUTPUT" || restUpper == "SCREEN")) ||
             cmd == "CLS") {
             if (outWin_ && outWin_->logView()) {
                 outWin_->logView()->clearAll();
                 showMessage("Output cleared.");
             }
+            return;
+        }
+
+        if (cmd == "HISTORY") {
+            if (restUpper.empty() || restUpper == "STATUS") {
+                std::cout << "TurboTalk history: "
+                          << (layout_.persistHistory ? "persistent" : "fresh per session")
+                          << ", entries: " << layout_.history.size() << "\n";
+                std::cout << "Usage: HISTORY STATUS | CLEAR | FRESH | KEEP\n";
+                showMessage(layout_.persistHistory ? "History persists across sessions." : "History is session-only.");
+                return;
+            }
+
+            if (restUpper == "CLEAR") {
+                layout_.history.clear();
+                layout_.lastInput.clear();
+                histPos_ = 0;
+                if (cmdWin_)
+                    cmdWin_->setInputText("");
+                saveStateFromWindows();
+                saveLayoutStateForCurrentDesktop(layout_);
+                std::cout << "TurboTalk command history cleared.\n";
+                showMessage("History cleared.");
+                return;
+            }
+
+            if (restUpper == "FRESH" || restUpper == "OFF" || restUpper == "SESSION") {
+                layout_.persistHistory = false;
+                layout_.history.clear();
+                layout_.lastInput.clear();
+                histPos_ = 0;
+                if (cmdWin_)
+                    cmdWin_->setInputText("");
+                saveStateFromWindows();
+                saveLayoutStateForCurrentDesktop(layout_);
+                std::cout << "TurboTalk command history is now fresh per session.\n";
+                showMessage("History persistence off.");
+                return;
+            }
+
+            if (restUpper == "KEEP" || restUpper == "ON" || restUpper == "PERSIST") {
+                layout_.persistHistory = true;
+                saveStateFromWindows();
+                saveLayoutStateForCurrentDesktop(layout_);
+                std::cout << "TurboTalk command history will persist across sessions.\n";
+                showMessage("History persistence on.");
+                return;
+            }
+
+            std::cout << "Usage: HISTORY STATUS | CLEAR | FRESH | KEEP\n";
+            showMessage("HISTORY usage shown.");
             return;
         }
 
@@ -735,8 +813,12 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
     }
 
     const ShellRunResult result = shell_.runLine(curArea(), trimmed);
-    if (!result.statusMessage.empty())
-        showMessage(result.statusMessage);
+    if (!result.statusMessage.empty()) {
+        if (result.success)
+            showMessage(commandKeyHint());
+        else
+            showMessage(result.statusMessage);
+    }
 
     refreshWorkspaceWindow();
 }
@@ -1022,7 +1104,7 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmVerbosityStub:   return info("Message verbosity is a future TurboTalk preference.");
         case cmOutputModeStub:  return info("Output routing remains command-driven for now.");
         case cmPaletteColor:    return prefill("COLOR ");
-        case cmKeysStub:        return info("Keys: F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z Cmd | Alt-O Output | Alt-X Exit");
+        case cmKeysStub:        return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes TurboTalk");
         case cmAboutStub:       return info("TurboTalk (DotTalk++) - Turbo Vision / MagicBLOT command desktop.");
 
         // System.
@@ -1216,7 +1298,7 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtHelpRelations:  return run("HELP REL");
         case cmFtHelpTuple:      return run("HELP TUPLE");
         case cmFtHelpBrowser:    return run("HELP SIMPLEBROWSER");
-        case cmFtHelpKeys:       return info("Keys: F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z Cmd | Ctrl-F5 Restore Cmd | Alt-O Output | Ctrl-F6 Restore Out | Alt-X Exit");
+        case cmFtHelpKeys:       return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes TurboTalk");
         case cmFtWinClearOutput: if (outWin_ && outWin_->logView()) { outWin_->logView()->clearAll(); showMessage("Output cleared."); } return true;
 
         case cmFtHelpAbout:      return info("TurboTalk is the Turbo Vision / MagicBLOT command desktop for DotTalk++.");
@@ -1227,13 +1309,29 @@ bool TFoxtalkApp::dispatchMenu(int id)
 
 void TFoxtalkApp::handleEvent(TEvent& event)
 {
-    TApplication::handleEvent(event);
-
     if (event.what == evCommand && event.message.command == cmFlushLog) {
         flushPending();
         clearEvent(event);
         return;
     }
+
+    if (event.what == evCommand && event.message.command == cmRunCmd) {
+        runFromInput();
+        clearEvent(event);
+        return;
+    }
+
+    if (event.what == evCommand && event.message.command == cmTalkExit) {
+        xbase::clear_shell_exit_request();
+        TEvent quit{};
+        quit.what = evCommand;
+        quit.message.command = cmQuit;
+        putEvent(quit);
+        clearEvent(event);
+        return;
+    }
+
+    TApplication::handleEvent(event);
 
     if (event.what == evKeyDown) {
         if (event.keyDown.keyCode == kbCtrlQ) {
@@ -1318,12 +1416,6 @@ void TFoxtalkApp::handleEvent(TEvent& event)
             return;
         }
 
-        if (id == cmRunCmd) {
-            runFromInput();
-            clearEvent(event);
-            return;
-        }
-
         if (id == cmFocusCmd) {
             if (cmdWin_) {
                 cmdWin_->show();
@@ -1354,12 +1446,6 @@ void TFoxtalkApp::handleEvent(TEvent& event)
 
         if (id == cmResetOutWin) {
             resetOutputWindow();
-            clearEvent(event);
-            return;
-        }
-
-        if (id == cmTalkExit) {
-            message(this, evCommand, cmQuit, this);
             clearEvent(event);
             return;
         }

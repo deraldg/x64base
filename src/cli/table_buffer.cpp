@@ -11,7 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "cli/command_output.hpp"
 #include "cli/table_state.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 
 extern "C" xbase::XBaseEngine* shell_engine();
@@ -185,7 +187,7 @@ static std::vector<int> default_current_target(xbase::DbArea& current) {
 static void table_show(bool show_all_slots) {
     auto* eng = shell_engine();
     if (!eng) {
-        std::cout << "TABLE BUFFER: engine not available.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTableBufferEngineUnavailableText);
         return;
     }
 
@@ -194,9 +196,14 @@ static void table_show(bool show_all_slots) {
     const int stale = count_stale();
 
     if (show_all_slots) {
-        std::cout << "TABLE BUFFER: areas 0.." << (xbase::MAX_AREA - 1) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferAreasAllTitleText,
+            {{"last", std::to_string(xbase::MAX_AREA - 1)}});
     } else {
-        std::cout << "TABLE BUFFER: occupied areas only\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferOccupiedAreasTitleText);
     }
     std::cout << "  enabled=" << enabled << " dirty=" << dirty << " stale=" << stale << "\n";
 
@@ -275,7 +282,10 @@ static void apply_to_targets(const std::vector<int>& targets,
     for (int a : targets) {
         changed += apply_one(a, verb, value);
     }
-    std::cout << "TABLE BUFFER: " << changed << " area(s) updated.\n";
+    cli::cmdout::print_prefixed_message(
+        "TABLE BUFFER",
+        dottalk::helpdata::MessageId::TableBufferAreasUpdatedText,
+        {{"count", std::to_string(changed)}});
 }
 
 static void apply_persistence_to_targets(const std::vector<int>& targets,
@@ -292,13 +302,16 @@ static void apply_persistence_to_targets(const std::vector<int>& targets,
         }
     }
 
-    std::cout << "TABLE BUFFER: " << changed << " area(s) persistence updated.\n";
+    cli::cmdout::print_prefixed_message(
+        "TABLE BUFFER",
+        dottalk::helpdata::MessageId::TableBufferPersistenceUpdatedText,
+        {{"count", std::to_string(changed)}});
 }
 
 static void apply_to_open_areas(const std::string& verb, bool value) {
     auto* eng = shell_engine();
     if (!eng) {
-        std::cout << "TABLE BUFFER: engine not available.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTableBufferEngineUnavailableText);
         return;
     }
 
@@ -308,19 +321,26 @@ static void apply_to_open_areas(const std::string& verb, bool value) {
         if (A.filename().empty()) continue;
         changed += apply_one(i, verb, value);
     }
-    std::cout << "TABLE BUFFER: " << changed << " area(s) updated.\n";
+    cli::cmdout::print_prefixed_message(
+        "TABLE BUFFER",
+        dottalk::helpdata::MessageId::TableBufferAreasUpdatedText,
+        {{"count", std::to_string(changed)}});
 }
 
 // ---- BUFFER STATUS / DUMP / TESTADD ----------------------------------------
 
 static void table_buffer_status(int area0) {
     if (!in_range(area0)) {
-        std::cout << "Invalid area.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferInvalidAreaText);
         return;
     }
 
     const auto& tb = get_tb_const(area0);
-    std::cout << "Area " << area0 << " buffer:\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::TableBufferStatusHeaderText,
+        {{"area", std::to_string(area0)}});
     std::cout << "  mode: " << persistence_label(area0) << "\n";
     if (is_persistent_enabled(area0)) {
         const std::string jp = journal_path(area0);
@@ -334,17 +354,23 @@ static void table_buffer_status(int area0) {
 
 static void table_buffer_dump(int area0) {
     if (!in_range(area0)) {
-        std::cout << "Invalid area.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferInvalidAreaText);
         return;
     }
 
     const auto& tb = get_tb_const(area0);
     if (tb.empty()) {
-        std::cout << "Area " << area0 << " buffer: empty\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::TableBufferEmptyBufferText,
+            {{"area", std::to_string(area0)}});
         return;
     }
 
-    std::cout << "Area " << area0 << " buffer dump:\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::TableBufferDumpHeaderText,
+        {{"area", std::to_string(area0)}});
     for (const auto& pair : tb.changes) {
         const auto& entry = pair.second;
         std::cout << "  recno=" << entry.recno
@@ -372,7 +398,7 @@ static void table_buffer_dump(int area0) {
 
 static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_area) {
     if (arg.empty()) {
-        std::cout << "Usage: TABLE BUFFER TESTADD <recno> [flags] [field1] [value]\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::TableBufferTestAddUsageText);
         return;
     }
 
@@ -387,7 +413,9 @@ static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_
     int recno = -1;
     iss >> recno;
     if (recno < 1) {
-        std::cout << "Invalid recno.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferInvalidRecnoText);
         return;
     }
 
@@ -426,7 +454,9 @@ static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_
 
     const int curr = resolve_current_index(current_area);
     if (curr < 0 || !is_enabled(curr)) {
-        std::cout << "No current enabled area.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferNoCurrentEnabledAreaText);
         return;
     }
 
@@ -436,18 +466,7 @@ static void table_buffer_testadd(const std::string& arg, xbase::DbArea& current_
 static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& current_area) {
     const std::string r = trim_copy(rest);
     if (r.empty()) {
-        std::cout << "Usage:\n";
-        std::cout << "  TABLE BUFFER ON [PERSISTENT|RAM] [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER OFF [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER PERSISTENT [ON|OFF] [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER DIRTY [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER CLEAN [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER STALE [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER FRESH [<n>|ALL|n,m,...]\n";
-        std::cout << "  TABLE BUFFER STATUS [area|ALL]\n";
-        std::cout << "  TABLE BUFFER DUMP [area|ALL]\n";
-        std::cout << "  TABLE BUFFER TESTADD <recno> [flags] [field1] [value]\n";
-        std::cout << "  TABLE BUFFER RESET\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::TableBufferUsageText);
         return;
     }
 
@@ -468,12 +487,18 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_status(curr);
             } else {
-                std::cout << "No current area selected or not enabled.\n";
+                cli::cmdout::print_prefixed_message(
+                    "TABLE BUFFER",
+                    dottalk::helpdata::MessageId::TableBufferNoCurrentAreaSelectedOrEnabledText);
             }
         } else {
             int a = -1;
             if (try_parse_int(arg, a)) table_buffer_status(a);
-            else std::cout << "Invalid area.\n";
+            else {
+                cli::cmdout::print_prefixed_message(
+                    "TABLE BUFFER",
+                    dottalk::helpdata::MessageId::TableBufferInvalidAreaText);
+            }
         }
         return;
     }
@@ -489,12 +514,18 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
             if (curr >= 0 && is_enabled(curr)) {
                 table_buffer_dump(curr);
             } else {
-                std::cout << "No current area selected or not enabled.\n";
+                cli::cmdout::print_prefixed_message(
+                    "TABLE BUFFER",
+                    dottalk::helpdata::MessageId::TableBufferNoCurrentAreaSelectedOrEnabledText);
             }
         } else {
             int a = -1;
             if (try_parse_int(arg, a)) table_buffer_dump(a);
-            else std::cout << "Invalid area.\n";
+            else {
+                cli::cmdout::print_prefixed_message(
+                    "TABLE BUFFER",
+                    dottalk::helpdata::MessageId::TableBufferInvalidAreaText);
+            }
         }
         return;
     }
@@ -532,7 +563,9 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
         if (targets.empty() && to_lower(target_text) != "all") {
             targets = default_current_target(current_area);
             if (targets.empty()) {
-                std::cout << "TABLE BUFFER: cannot determine current area; specify an area number.\n";
+                cli::cmdout::print_prefixed_message(
+                    "TABLE BUFFER",
+                    dottalk::helpdata::MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText);
                 return;
             }
         }
@@ -543,7 +576,9 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
 
     if (sub == "reset") {
         reset_all();
-        std::cout << "TABLE BUFFER: reset all areas.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferResetAllText);
         return;
     }
 
@@ -551,7 +586,9 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
     if (targets.empty() && to_lower(arg) != "all") {
         targets = default_current_target(current_area);
         if (targets.empty()) {
-            std::cout << "TABLE BUFFER: cannot determine current area; specify an area number.\n";
+            cli::cmdout::print_prefixed_message(
+                "TABLE BUFFER",
+                dottalk::helpdata::MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText);
             return;
         }
     }
@@ -570,7 +607,9 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
             if (targets.empty() && to_lower(target_text) != "all") {
                 targets = default_current_target(current_area);
                 if (targets.empty()) {
-                    std::cout << "TABLE BUFFER: cannot determine current area; specify an area number.\n";
+                    cli::cmdout::print_prefixed_message(
+                        "TABLE BUFFER",
+                        dottalk::helpdata::MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText);
                     return;
                 }
             }
@@ -611,28 +650,14 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
         return;
     }
 
-    std::cout << "Unknown TABLE BUFFER subcommand: " << sub << "\n";
+    cli::cmdout::print_prefixed_message(
+        "TABLE BUFFER",
+        dottalk::helpdata::MessageId::TableBufferUnknownSubcommandText,
+        {{"subcommand", sub}});
 }
 
 static void show_usage() {
-    std::cout << "Usage:\n";
-    std::cout << "  TABLE\n";
-    std::cout << "  TABLE ALL\n";
-    std::cout << "  TABLE STATUS [ALL]\n";
-    std::cout << "  TABLE BUFFER ON [PERSISTENT|RAM] [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER OFF [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER PERSISTENT [ON|OFF] [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER DIRTY [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER CLEAN [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER STALE [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER FRESH [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE BUFFER STATUS [area|ALL]\n";
-    std::cout << "  TABLE BUFFER DUMP [area|ALL]\n";
-    std::cout << "  TABLE BUFFER TESTADD <recno> [flags] [field1] [value]\n";
-    std::cout << "  TABLE BUFFER RESET\n";
-    std::cout << "Legacy compatibility:\n";
-    std::cout << "  TABLE ON|OFF|DIRTY|CLEAN|STALE|FRESH [<n>|ALL|n,m,...]\n";
-    std::cout << "  TABLE ONALL|OFFALL|DIRTYALL|CLEANALL|STALEALL|FRESHALL\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TableBufferUsageText);
 }
 
 } // namespace
@@ -688,7 +713,7 @@ void cmd_TABLE_BUFFER(xbase::DbArea& current, std::istringstream& in) {
     // Legacy compatibility path
     auto* eng = shell_engine();
     if (!eng) {
-        std::cout << "TABLE BUFFER: engine not available.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetTableBufferEngineUnavailableText);
         return;
     }
 
@@ -721,7 +746,9 @@ void cmd_TABLE_BUFFER(xbase::DbArea& current, std::istringstream& in) {
     if (targets.empty() && to_lower(rest) != "all") {
         targets = default_current_target(current);
         if (targets.empty()) {
-            std::cout << "TABLE BUFFER: cannot determine current area; specify an area number.\n";
+            cli::cmdout::print_prefixed_message(
+                "TABLE BUFFER",
+                dottalk::helpdata::MessageId::TableBufferCannotDetermineCurrentAreaSpecifyText);
             return;
         }
     }
@@ -740,9 +767,14 @@ void cmd_TABLE_BUFFER(xbase::DbArea& current, std::istringstream& in) {
         apply_to_targets(targets, "stale", false);
     } else if (sub == "reset") {
         reset_all();
-        std::cout << "TABLE BUFFER: reset all areas.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferResetAllText);
     } else {
-        std::cout << "TABLE BUFFER: unknown subcommand '" << sub << "'.\n";
+        cli::cmdout::print_prefixed_message(
+            "TABLE BUFFER",
+            dottalk::helpdata::MessageId::TableBufferUnknownSubcommandText,
+            {{"subcommand", sub}});
         show_usage();
     }
 }

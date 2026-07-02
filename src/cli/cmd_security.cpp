@@ -125,6 +125,7 @@ void cmd_SECURITY(xbase::DbArea& A, std::istringstream& in)
             << "  • Atomic writes required for structural updates\n"
             << "  • Elevated writes forbidden\n"
             << "  • Plaintext secrets forbidden\n"
+            << "  • Host shell execution forbidden unless explicitly enabled\n"
             << "  • App-local profile roots supported\n"
             << "  • OS-local profile roots supported\n"
             << "  • Policy level: " << to_string(policy.security_level) << "\n"

@@ -15,6 +15,7 @@ struct WindowGeometry {
 };
 
 struct LayoutState {
+    bool persistHistory{false};
     std::string lastInput;
     std::vector<std::string> history;
     WindowGeometry output;

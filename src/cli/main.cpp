@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 
+#include "cli/settings.hpp"
 #include "runtime/utf8_init.hpp"
 
 #ifdef _WIN32
@@ -20,6 +21,10 @@ namespace {
 
 static void emit_startup_trace(const char* label) {
 #if DOTTALK_EXTRA_DIAGNOSTICS
+    if (!cli::Settings::passiveDevDiagnosticsEnabled()) {
+        return;
+    }
+
     try {
         std::ofstream log("dottalk_startup_trace.log", std::ios::app);
         if (log.is_open()) {
@@ -74,6 +79,10 @@ static void print_usage(const char* exe) {
 
 static void warn_if_vt_input_enabled(const char* where) {
 #if DOTTALK_EXTRA_DIAGNOSTICS
+    if (!cli::Settings::passiveDevDiagnosticsEnabled()) {
+        return;
+    }
+
     DWORD mode = 0;
     HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
     if (hIn != INVALID_HANDLE_VALUE &&
@@ -90,6 +99,10 @@ static void warn_if_vt_input_enabled(const char* where) {
 
 static void dbg_print_console_state(const char* where) {
 #if DOTTALK_EXTRA_DIAGNOSTICS
+    if (!cli::Settings::passiveDevDiagnosticsEnabled()) {
+        return;
+    }
+
     std::cerr << "[DBG] " << where;
 
     const UINT inCp  = GetConsoleCP();
@@ -122,6 +135,10 @@ static void dbg_print_console_state(const char* where) {
 
 static void warn_if_not_utf8_console(const char* where) {
 #if DOTTALK_EXTRA_DIAGNOSTICS
+    if (!cli::Settings::passiveDevDiagnosticsEnabled()) {
+        return;
+    }
+
     const UINT inCp  = GetConsoleCP();
     const UINT outCp = GetConsoleOutputCP();
 

@@ -37,10 +37,11 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "filters/filter_registry.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -83,14 +84,7 @@ static std::string upper_copy_local(std::string s)
 
 static void print_setfilter_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET FILTER USAGE\n"
-        << "  SET FILTER TO <expr>\n"
-        << "  SET FILTER TO\n"
-        << "  SETFILTER USAGE\n"
-        << "  SETFILTER TO <expr>\n"
-        << "  SETFILTER TO\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetFilterUsageText);
 }
 
 static bool is_setfilter_usage_request(const std::string& raw)
@@ -134,7 +128,9 @@ void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
     uppercase_inplace(first);
 
     if (first != "TO") {
-        std::cout << "SET FILTER: expected 'TO'.\n";
+        cli::cmdout::print_prefixed_message(
+            "SET FILTER",
+            dottalk::helpdata::MessageId::SetFilterExpectedToText);
         print_setfilter_usage();
         return;
     }
@@ -150,13 +146,18 @@ void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
         info.expr.clear();
         info.active = false;
 
-        std::cout << "SET FILTER: cleared.\n";
+        cli::cmdout::print_prefixed_message(
+            "SET FILTER",
+            dottalk::helpdata::MessageId::SetFilterClearedText);
         return;
     }
 
     std::string err;
     if (!filter::set(&area, expr, err)) {
-        std::cout << "SET FILTER: error: " << err << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SET FILTER",
+            dottalk::helpdata::MessageId::SetFilterErrorText,
+            {{"detail", err}});
         return;
     }
 
@@ -164,5 +165,8 @@ void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
     info.expr = expr;
     info.active = true;
 
-    std::cout << "SET FILTER TO " << expr << "\n";
+    cli::cmdout::print_prefixed_message(
+        "SET FILTER",
+        dottalk::helpdata::MessageId::SetFilterAppliedText,
+        {{"expr", expr}});
 }

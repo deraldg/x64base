@@ -1,17 +1,21 @@
 #include "shell_var_utils.hpp"
 
+#include "cli/command_output.hpp"
 #include "textio.hpp"
 #include "shell_eval_utils.hpp"  // for VarBangEval, eval_for_varbang, serialize_varbang_value
 #include <algorithm>
 #include <cctype>
-#include <iostream>   // for std::cout
 #include <iomanip>    // for std::setprecision
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 namespace dottalk {
 
-std::unordered_map<std::string, std::string> g_shell_vars;
+static std::unordered_map<std::string, std::string>& shell_vars() {
+    static std::unordered_map<std::string, std::string> vars;
+    return vars;
+}
 
 bool is_ident_start(char c) {
     return (std::isalpha(static_cast<unsigned char>(c)) || c == '_');
@@ -40,8 +44,8 @@ bool expand_macros_outside_quotes(const std::string& in,
                 while (j < in.size() && is_ident_char(in[j])) ++j;
                 const std::string name = in.substr(i + 1, j - (i + 1));
                 const std::string key = textio::up(name);
-                auto it = g_shell_vars.find(key);
-                if (it == g_shell_vars.end()) {
+                auto it = shell_vars().find(key);
+                if (it == shell_vars().end()) {
                     err_name = name;
                     return false;
                 }
@@ -87,25 +91,31 @@ VarCmdResult try_handle_var_command(xbase::DbArea& area, const std::string& prep
     if (U == "SET") {
         const size_t eq = rest.find('=');
         if (eq == std::string::npos) {
-            std::cout << "Usage: SET VAR <name> = <text>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetVarUsageLine);
             r.ok = false;
             return r;
         }
         std::string name = textio::trim(rest.substr(0, eq));
         std::string val = textio::trim(rest.substr(eq + 1));
         if (name.empty()) {
-            std::cout << "Usage: SET VAR <name> = <text>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetVarUsageLine);
             r.ok = false;
             return r;
         }
         if (!is_ident_start(name[0])) {
-            std::cout << "SET VAR: invalid name: " << name << "\n";
+            cli::cmdout::print_prefixed_message(
+                "SET VAR",
+                dottalk::helpdata::MessageId::VarInvalidName,
+                {{"name", name}});
             r.ok = false;
             return r;
         }
         for (char c : name) {
             if (!is_ident_char(c)) {
-                std::cout << "SET VAR: invalid name: " << name << "\n";
+                cli::cmdout::print_prefixed_message(
+                    "SET VAR",
+                    dottalk::helpdata::MessageId::VarInvalidName,
+                    {{"name", name}});
                 r.ok = false;
                 return r;
             }
@@ -114,25 +124,30 @@ VarCmdResult try_handle_var_command(xbase::DbArea& area, const std::string& prep
             VarBangEval ev;
             std::string err;
             if (!eval_for_varbang(area, val, ev, err)) {
-                std::cout << "SET VAR!: " << err << "\n";
+                cli::cmdout::print_prefixed_message(
+                    "SET VAR!",
+                    dottalk::helpdata::MessageId::VarBangEvalError,
+                    {{"detail", err}});
                 r.ok = false;
                 return r;
             }
-            g_shell_vars[textio::up(name)] = serialize_varbang_value(ev);
+            shell_vars()[textio::up(name)] = serialize_varbang_value(ev);
             return r;
         }
-        g_shell_vars[textio::up(name)] = val;
+        shell_vars()[textio::up(name)] = val;
         return r;
     }
     if (U == "SHOW") {
         if (rest.empty()) {
             std::vector<std::string> keys;
-            keys.reserve(g_shell_vars.size());
-            for (const auto& kv : g_shell_vars) keys.push_back(kv.first);
+            keys.reserve(shell_vars().size());
+            for (const auto& kv : shell_vars()) keys.push_back(kv.first);
             std::sort(keys.begin(), keys.end());
-            std::cout << "VARS: " << keys.size() << " defined.\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::VarsDefinedCount,
+                {{"count", std::to_string(keys.size())}});
             for (const auto& k : keys) {
-                std::cout << " " << k << " = " << g_shell_vars[k] << "\n";
+                cli::cmdout::print_line(" " + k + " = " + shell_vars()[k]);
             }
             return r;
         }
@@ -141,23 +156,25 @@ VarCmdResult try_handle_var_command(xbase::DbArea& area, const std::string& prep
         rs >> name;
         rs >> extra;
         if (name.empty() || !extra.empty()) {
-            std::cout << "Usage: SHOW VAR [<name>]\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ShowVarUsageLine);
             r.ok = false;
             return r;
         }
         const std::string key = textio::up(name);
-        auto it = g_shell_vars.find(key);
-        if (it == g_shell_vars.end()) {
-            std::cout << "VAR not defined: " << name << "\n";
+        auto it = shell_vars().find(key);
+        if (it == shell_vars().end()) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::VarNotDefined,
+                {{"name", name}});
             r.ok = false;
             return r;
         }
-        std::cout << key << " = " << it->second << "\n";
+        cli::cmdout::print_line(key + " = " + it->second);
         return r;
     }
     if (U == "CLEAR") {
         if (rest.empty()) {
-            std::cout << "Usage: CLEAR VAR <name|ALL>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ClearVarUsageLine);
             r.ok = false;
             return r;
         }
@@ -166,25 +183,27 @@ VarCmdResult try_handle_var_command(xbase::DbArea& area, const std::string& prep
         rs >> name;
         rs >> extra;
         if (name.empty() || !extra.empty()) {
-            std::cout << "Usage: CLEAR VAR <name|ALL>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ClearVarUsageLine);
             r.ok = false;
             return r;
         }
         const std::string key = textio::up(name);
         if (key == "ALL") {
-            g_shell_vars.clear();
+            shell_vars().clear();
             return r;
         }
-        auto it = g_shell_vars.find(key);
-        if (it == g_shell_vars.end()) {
-            std::cout << "VAR not defined: " << name << "\n";
+        auto it = shell_vars().find(key);
+        if (it == shell_vars().end()) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::VarNotDefined,
+                {{"name", name}});
             r.ok = false;
             return r;
         }
-        g_shell_vars.erase(it);
+        shell_vars().erase(it);
         return r;
     }
-    std::cout << "Usage: SET VAR | SHOW VAR | CLEAR VAR\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::VarCommandUsageLine);
     r.ok = false;
     return r;
 }

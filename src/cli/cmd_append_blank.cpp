@@ -72,13 +72,7 @@ static bool is_append_blank_usage_request(std::string raw)
 
 static void print_append_blank_usage()
 {
-    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
-    cli::cmdout::print_line("  APPEND_BLANK USAGE");
-    cli::cmdout::print_line("  APPEND_BLANK");
-    cli::cmdout::print_line("  APPEND BLANK");
-    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
-    cli::cmdout::print_line(
-        "  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AppendBlankUsageSharedNote));
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AppendBlankUsageText);
 }
 } // namespace
 

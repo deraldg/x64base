@@ -61,6 +61,7 @@
 //
 
 #include "cli/cmd_aggs.hpp"
+#include "cli/command_output.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -119,49 +120,48 @@ static inline std::string upcopy(std::string s) {
 
 static void print_aggs_usage()
 {
-    std::cout
-        << "Aggregate verbs owned by AGGS\n"
-        << "\n"
-        << "Usage:\n"
-        << "  AGGS USAGE\n"
-        << "\n"
-        << "  AGGS SUM USAGE\n"
-        << "  AGGS SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "  AGGS AVG USAGE\n"
-        << "  AGGS AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "  AGGS MIN USAGE\n"
-        << "  AGGS MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "  AGGS MAX USAGE\n"
-        << "  AGGS MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "Direct aggregate verbs:\n"
-        << "  SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "  AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "  MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "  MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "Examples:\n"
-        << "  AGGS SUM GPA\n"
-        << "  AGGS AVG GPA FOR GPA >= 3.0\n"
-        << "  AGGS MIN GPA WHERE MAJOR = \"CSCI\"\n"
-        << "  AGGS MAX GPA NOT DELETED\n"
-        << "\n"
-        << "  SUM GPA\n"
-        << "  AVG GPA FOR GPA >= 3.0\n"
-        << "  MIN GPA WHERE MAJOR = \"CSCI\"\n"
-        << "  MAX GPA NOT DELETED\n"
-        << "\n"
-        << "Notes:\n"
-        << "  - AGGS owns the usage/help contract for these aggregate verbs.\n"
-        << "  - Direct SUM, AVG, MIN, and MAX are command aliases for normal use.\n"
-        << "  - FOR and WHERE are both accepted predicate introducers.\n"
-        << "  - DELETED limits the aggregate to deleted records.\n"
-        << "  - NOT DELETED and !DELETED limit the aggregate to visible/non-deleted records.\n"
-        << "  - Aggregate scans restore the cursor best-effort.\n"
-        << "  - Aggregates report values; they do not mutate table data.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AggsFamilyTitle);
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+    cli::cmdout::print_line("  AGGS USAGE");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  AGGS SUM USAGE");
+    cli::cmdout::print_line("  AGGS SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  AGGS AVG USAGE");
+    cli::cmdout::print_line("  AGGS AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  AGGS MIN USAGE");
+    cli::cmdout::print_line("  AGGS MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  AGGS MAX USAGE");
+    cli::cmdout::print_line("  AGGS MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::AggsDirectVerbsTitle);
+    cli::cmdout::print_line("  SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("  AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("  MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("  MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+    cli::cmdout::print_line("  AGGS SUM GPA");
+    cli::cmdout::print_line("  AGGS AVG GPA FOR GPA >= 3.0");
+    cli::cmdout::print_line("  AGGS MIN GPA WHERE MAJOR = \"CSCI\"");
+    cli::cmdout::print_line("  AGGS MAX GPA NOT DELETED");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  SUM GPA");
+    cli::cmdout::print_line("  AVG GPA FOR GPA >= 3.0");
+    cli::cmdout::print_line("  MIN GPA WHERE MAJOR = \"CSCI\"");
+    cli::cmdout::print_line("  MAX GPA NOT DELETED");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsOwnerNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsDirectAliasNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsForWhereAcceptedNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsDeletedOnlyNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsNotDeletedOnlyNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsCursorRestoreNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggsReadOnlyNote));
 }
 
 static bool is_usage_word(const std::string& s)
@@ -187,26 +187,27 @@ static void print_agg_usage(const char* opname)
 
     const std::string owner = std::string("AGGS ") + verb;
 
-    std::cout
-        << owner << "\n"
-        << "\n"
-        << "Usage:\n"
-        << "  " << owner << " USAGE\n"
-        << "  " << owner << " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "Examples:\n"
-        << "  " << owner << " GPA\n"
-        << "  " << owner << " GPA FOR GPA >= 3.0\n"
-        << "  " << owner << " GPA WHERE MAJOR = \"CSCI\"\n"
-        << "  " << owner << " GPA NOT DELETED\n"
-        << "\n"
-        << "Direct alias:\n"
-        << "  " << verb << " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n"
-        << "\n"
-        << "Notes:\n"
-        << "  - AGGS owns this usage contract.\n"
-        << "  - " << verb << " is the direct aggregate verb for normal command-line use.\n"
-        << "  - This aggregate reports a value and does not mutate table data.\n";
+    cli::cmdout::print_line(owner);
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalUsageTitle);
+    cli::cmdout::print_line("  " + owner + " USAGE");
+    cli::cmdout::print_line("  " + owner + " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+    cli::cmdout::print_line("  " + owner + " GPA");
+    cli::cmdout::print_line("  " + owner + " GPA FOR GPA >= 3.0");
+    cli::cmdout::print_line("  " + owner + " GPA WHERE MAJOR = \"CSCI\"");
+    cli::cmdout::print_line("  " + owner + " GPA NOT DELETED");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalDirectAliasTitle);
+    cli::cmdout::print_line("  " + verb + " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GlobalNotesTitle);
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggUsageOwnerNote));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(
+        dottalk::helpdata::MessageId::AggUsageDirectVerbNote,
+        {{"verb", verb}}));
+    cli::cmdout::print_line("  - " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggUsageReadOnlyNote));
 }
 
 // Strip inline comments (// or &&) outside quotes.
@@ -580,39 +581,51 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
     std::string perr;
 
     if (!parse_agg_spec(tail, spec, perr)) {
-        std::cout << opname << " usage:\n"
-                  << " " << opname << " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]\n";
+        cli::cmdout::print_line(
+            std::string(opname) + " " +
+            cli::cmdout::message_text(dottalk::helpdata::MessageId::AggUsageHeading));
+        cli::cmdout::print_line(
+            " " + std::string(opname) +
+            " <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
         return;
     }
 
     if (!area.isOpen()) {
         if (op == AggOp::SUM) {
-            std::cout << "0\n";
+            cli::cmdout::print_line("0");
         } else {
-            std::cout << "NULL\n";
+            cli::cmdout::print_line("NULL");
         }
         return;
     }
 
     ValuePlan vp = build_value_plan(area, spec.value_expr);
     if (vp.mode == ValuePlan::INVALID) {
-        std::cout << opname << " error: " << vp.err << "\n";
+        cli::cmdout::print_line(
+            std::string(opname) + " " +
+            cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AggErrorDetail,
+                {{"detail", vp.err}}));
         return;
     }
 
     std::string ferr;
     std::shared_ptr<Expr> pred_ast = build_predicate_ast(spec, ferr);
     if (spec.has_pred && !pred_ast) {
-        std::cout << opname << " error: " << ferr << "\n";
+        cli::cmdout::print_line(
+            std::string(opname) + " " +
+            cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AggErrorDetail,
+                {{"detail", ferr}}));
         return;
     }
 
     const int total = (int)area.recCount();
     if (total <= 0) {
         if (op == AggOp::SUM) {
-            std::cout << "0\n";
+            cli::cmdout::print_line("0");
         } else {
-            std::cout << "NULL\n";
+            cli::cmdout::print_line("NULL");
         }
         return;
     }
@@ -666,23 +679,23 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
     }
 
     if (op == AggOp::SUM) {
-        std::cout << format_number_classic(sum) << "\n";
+        cli::cmdout::print_line(format_number_classic(sum));
         return;
     }
 
     if (op == AggOp::AVG) {
         if (n == 0) {
-            std::cout << "NULL\n";
+            cli::cmdout::print_line("NULL");
         } else {
-            std::cout << format_number_classic(sum / (double)n) << "\n";
+            cli::cmdout::print_line(format_number_classic(sum / (double)n));
         }
         return;
     }
 
     if (!have_best) {
-        std::cout << "NULL\n";
+        cli::cmdout::print_line("NULL");
     } else {
-        std::cout << format_number_classic(best) << "\n";
+        cli::cmdout::print_line(format_number_classic(best));
     }
 }
 

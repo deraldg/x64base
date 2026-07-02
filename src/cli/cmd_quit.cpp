@@ -1,9 +1,11 @@
 #include "cli/cmd_quit.hpp"
 
 #include <atomic>
-#include <iostream>
 #include <sstream>
 #include <string>
+
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace {
 
@@ -15,12 +17,7 @@ bool has_extra_tokens(std::istringstream& args) {
 }
 
 void print_quit_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  QUIT\n"
-        << "  EXIT\n"
-        << "Notes:\n"
-        << "  Requests normal DotTalk++ shutdown.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::QuitUsageText);
 }
 
 } // namespace

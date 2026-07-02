@@ -12,6 +12,7 @@
 #include "cli/expr/fn_numeric.hpp"
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_date.hpp"
+#include "cli/fn_autoreg.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -157,12 +158,7 @@ static void register_builtin_fn(const dottalk::expr::BuiltinFnSpec& spec)
     });
 }
 
-// ------------------------------------------------------------
-// auto-register at startup
-// ------------------------------------------------------------
-
-struct AutoRegister {
-    AutoRegister() {
+static void register_all_builtins() {
         // String builtins
         {
             const auto* specs = dottalk::expr::string_fn_specs();
@@ -185,9 +181,18 @@ struct AutoRegister {
             for (std::size_t i=0;i<count;++i)
                 register_builtin_fn(specs[i]);
         }
-    }
-};
-
-static AutoRegister g_autoreg;
+}
 
 } // namespace
+
+namespace dottalk {
+
+void ensure_builtin_commands_registered() {
+    static const bool registered = []() {
+        register_all_builtins();
+        return true;
+    }();
+    (void)registered;
+}
+
+} // namespace dottalk

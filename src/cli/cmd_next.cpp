@@ -43,15 +43,16 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -80,10 +81,7 @@ static bool is_next_usage_request(const std::string& raw)
 
 static void print_next_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  NEXT\n"
-        << "  NEXT USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::NextUsageText);
 }
 } // namespace
 
@@ -96,22 +94,24 @@ void cmd_NEXT(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "NEXT: no file open.\n";
+        cli::cmdout::print_prefixed_message("NEXT", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
     const int32_t rn = cli::logical_nav::next_recno(A, A.recno());
     if (rn <= 0) {
-        std::cout << "NEXT: at end.\n";
+        cli::cmdout::print_prefixed_message("NEXT", dottalk::helpdata::MessageId::NavAtEndText);
         return;
     }
 
     if (!A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "NEXT: failed.\n";
+        cli::cmdout::print_prefixed_message("NEXT", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

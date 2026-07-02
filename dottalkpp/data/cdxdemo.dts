@@ -1,0 +1,21 @@
+SET PATH DBF "D:\code\ccode\docs\datadict\candidates\DD096ZB-backup-and-inactive-candidate-staging-v0\dbf"
+WORKSPACE OPEN DBF
+* WILL FAIL BECAUSE IT WILL CONCATENATE THE ABSOLUTE PATH TO THE DEFAULT PATH DATA
+
+* SET PATH DBF "D:\code\ccode\docs\datadict\candidates\DD096ZB-backup-and-inactive-candidate-staging-v0\dbf"
+* SETPATH: DBF = d:\code\ccode\dottalkpp\data\"D:\code\ccode\docs\datadict\candidates\DD096ZB-backup-and-inactive-candidate-staging-v0\dbf"
+* warning: path does not exist
+
+WORKSPACE OPEN D:\code\ccode\docs\datadict\candidates\DD096ZB-backup-and-inactive-candidate-staging-v0\dbf
+AREA
+STRUCT
+SELECT 0
+CDX CREATE TINY
+SELECT 1
+CDX CREATE TINY
+SELECT 2
+CDX CREATE TINY
+SELECT 4
+CDX CREATE TINY
+SELECT 5
+CDX CREATE TINY

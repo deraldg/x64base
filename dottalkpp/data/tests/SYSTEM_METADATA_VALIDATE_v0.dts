@@ -1,0 +1,106 @@
+* ============================================================
+* SYSTEM_METADATA_VALIDATE_v0.dts
+*
+* Purpose:
+*   Validate the first x64 metadata catalog after schema + seed.
+*
+* Critical workflow rule:
+*   This script DOES NOT set DBF / INDEXES / LMDB paths.
+*   Run the environment script first:
+*
+*       DO metadata
+*       DO system_metadata_validate_v0
+*
+* Recommended before this script:
+*
+*       DO metadata
+*       DO system_metadata_boolean_fix_v0
+*
+* Proof goals:
+*   - Correct metadata lane is active.
+*   - SYSTEM_* tables reopen cleanly.
+*   - CDX tags attach and order rows.
+*   - LMDB-backed indexes remain usable after seeded data.
+*   - Memo fields display real prose.
+*   - Boolean fields show corrected T/F values after fix.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== SYSTEM METADATA VALIDATE V0 START =====
+
+* ------------------------------------------------------------
+* PHASE 0 - PATH SANITY
+* ------------------------------------------------------------
+SETPATH
+
+* ------------------------------------------------------------
+* PHASE 1 - COMMAND CATALOG
+* ------------------------------------------------------------
+ECHO ===== VALIDATE SYSTEM_COMMANDS =====
+USE SYSTEM_COMMANDS
+SET INDEX TO SYSTEM_COMMANDS
+SET ORDER TO TAG COMMAND_ID
+LIST ALL
+LOCATE COMMAND_ID = "CMD_HELP"
+DISPLAY
+LOCATE COMMAND_ID = "CMD_SET"
+DISPLAY
+LOCATE COMMAND_ID = "CMD_REL"
+DISPLAY
+
+* ------------------------------------------------------------
+* PHASE 2 - ENTRY VARIANTS
+* ------------------------------------------------------------
+ECHO ===== VALIDATE SYSTEM_ENTRY_VARIANTS =====
+USE SYSTEM_ENTRY_VARIANTS
+SET INDEX TO SYSTEM_ENTRY_VARIANTS
+SET ORDER TO TAG VARIANT_ID
+LIST ALL
+LOCATE VARIANT_ID = "VAR_H_HELP"
+DISPLAY
+LOCATE VARIANT_ID = "VAR_RELATIONS_REL"
+DISPLAY
+
+* ------------------------------------------------------------
+* PHASE 3 - SUBCOMMANDS
+* ------------------------------------------------------------
+ECHO ===== VALIDATE SYSTEM_SUBCOMMANDS =====
+USE SYSTEM_SUBCOMMANDS
+SET INDEX TO SYSTEM_SUBCOMMANDS
+SET ORDER TO TAG SUBCOMMAND_ID
+LIST ALL
+LOCATE SUBCOMMAND_ID = "SUB_REL_ENUM"
+DISPLAY
+LOCATE SUBCOMMAND_ID = "SUB_SET_PATH"
+DISPLAY
+
+* ------------------------------------------------------------
+* PHASE 4 - HELP TEXT MEMOS
+* ------------------------------------------------------------
+ECHO ===== VALIDATE SYSTEM_HELP_TEXT =====
+USE SYSTEM_HELP_TEXT
+SET INDEX TO SYSTEM_HELP_TEXT
+SET ORDER TO TAG HELP_TEXT_ID
+LIST ALL
+LOCATE HELP_TEXT_ID = "HT_HELP_SUMMARY"
+DISPLAY
+LOCATE HELP_TEXT_ID = "HT_METADATA_DOCTRINE"
+DISPLAY
+
+* ------------------------------------------------------------
+* PHASE 5 - MESSAGES AND MESSAGE MEMOS
+* ------------------------------------------------------------
+ECHO ===== VALIDATE SYSTEM_MESSAGES =====
+USE SYSTEM_MESSAGES
+SET INDEX TO SYSTEM_MESSAGES
+SET ORDER TO TAG MESSAGE_ID
+LIST ALL
+LOCATE MESSAGE_ID = "MSG_METADATA_SEED_OK"
+DISPLAY
+
+* ------------------------------------------------------------
+* PHASE 6 - WORKSPACE REPORT
+* ------------------------------------------------------------
+WORKSPACE
+
+ECHO ===== SYSTEM METADATA VALIDATE V0 END =====

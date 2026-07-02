@@ -1,0 +1,4 @@
+* SYSTEM_METADATA_BOOLEAN_FIX.dts
+* Convenience wrapper.
+* Environment rule: run DO metadata first.
+DO system_metadata_boolean_fix_v0

@@ -15,7 +15,10 @@ namespace dottalk::table {
 // Static Data
 // ─────────────────────────────────────────────────────────────────────────────
 
-static std::array<AreaState, xbase::MAX_AREA> g_state{};
+static std::array<AreaState, xbase::MAX_AREA>& state_store() {
+    static std::array<AreaState, xbase::MAX_AREA> state{};
+    return state;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -34,21 +37,21 @@ static inline bool any_stale_bits(const AreaState& s) {
 
 bool get_state(int area0, AreaState& out) {
     if (!in_range(area0)) return false;
-    out = g_state[area0];
+    out = state_store()[area0];
     return true;
 }
 
 bool is_enabled(int area0) {
-    return in_range(area0) && g_state[area0].enabled;
+    return in_range(area0) && state_store()[area0].enabled;
 }
 
 bool is_dirty(int area0) {
-    return in_range(area0) && g_state[area0].dirty;
+    return in_range(area0) && state_store()[area0].dirty;
 }
 
 bool is_stale(int area0) {
     if (!in_range(area0)) return false;
-    const auto& s = g_state[area0];
+    const auto& s = state_store()[area0];
     return s.stale_any || any_stale_bits(s);
 }
 
@@ -58,7 +61,7 @@ bool is_stale(int area0) {
 
 void set_enabled(int area0, bool enabled) {
     if (!in_range(area0)) return;
-    auto& s = g_state[area0];
+    auto& s = state_store()[area0];
     s.enabled = enabled;
     if (enabled) {
         s.tb.clear();
@@ -67,12 +70,12 @@ void set_enabled(int area0, bool enabled) {
 
 void set_dirty(int area0, bool dirty) {
     if (!in_range(area0)) return;
-    g_state[area0].dirty = dirty;
+    state_store()[area0].dirty = dirty;
 }
 
 void set_stale(int area0, bool stale) {
     if (!in_range(area0)) return;
-    auto& s = g_state[area0];
+    auto& s = state_store()[area0];
     if (stale) {
         s.stale_any = true;
     } else {
@@ -85,7 +88,7 @@ void mark_stale_field(int area0, int field1) {
     if (!in_range(area0)) return;
     if (field1 <= 0 || field1 > kMaxFields) return;
 
-    auto& s = g_state[area0];
+    auto& s = state_store()[area0];
     const int idx0 = field1 - 1;
     const int word = idx0 / 64;
     const int bit  = idx0 % 64;
@@ -94,14 +97,14 @@ void mark_stale_field(int area0, int field1) {
 
 void clear_stale_fields(int area0) {
     if (!in_range(area0)) return;
-    std::memset(g_state[area0].stale_bits, 0, sizeof(g_state[area0].stale_bits));
+    std::memset(state_store()[area0].stale_bits, 0, sizeof(state_store()[area0].stale_bits));
 }
 
 bool get_stale_fields(int area0, std::vector<int>& out_field1) {
     out_field1.clear();
     if (!in_range(area0)) return false;
 
-    const auto& s = g_state[area0];
+    const auto& s = state_store()[area0];
     for (int field1 = 1; field1 <= kMaxFields; ++field1) {
         const int idx0 = field1 - 1;
         const int word = idx0 / 64;
@@ -123,29 +126,29 @@ void set_enabled_all(bool enabled) {
 
 void clear_dirty_all() {
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        g_state[i].dirty = false;
-        g_state[i].tb.clear();
+        state_store()[i].dirty = false;
+        state_store()[i].tb.clear();
     }
 }
 
 void clear_stale_all() {
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
-        g_state[i].stale_any = false;
-        std::memset(g_state[i].stale_bits, 0, sizeof(g_state[i].stale_bits));
+        state_store()[i].stale_any = false;
+        std::memset(state_store()[i].stale_bits, 0, sizeof(state_store()[i].stale_bits));
     }
 }
 
 int count_enabled() {
     int n = 0;
     for (int i = 0; i < xbase::MAX_AREA; ++i)
-        if (g_state[i].enabled) ++n;
+        if (state_store()[i].enabled) ++n;
     return n;
 }
 
 int count_dirty() {
     int n = 0;
     for (int i = 0; i < xbase::MAX_AREA; ++i)
-        if (g_state[i].dirty) ++n;
+        if (state_store()[i].dirty) ++n;
     return n;
 }
 
@@ -157,7 +160,7 @@ int count_stale() {
 }
 
 void reset_all() {
-    for (auto& state : g_state) {
+    for (auto& state : state_store()) {
         state = AreaState{};
     }
 }
@@ -169,7 +172,7 @@ void reset_all() {
 
 BufferPersistenceMode persistence_mode(int area0) {
     if (!in_range(area0)) return BufferPersistenceMode::RamOnly;
-    return g_state[area0].journal.mode;
+    return state_store()[area0].journal.mode;
 }
 
 bool is_persistent_enabled(int area0) {
@@ -178,7 +181,7 @@ bool is_persistent_enabled(int area0) {
 
 void set_persistence_mode(int area0, BufferPersistenceMode mode) {
     if (!in_range(area0)) return;
-    auto& j = g_state[area0].journal;
+    auto& j = state_store()[area0].journal;
     j.mode = mode;
     j.open = (mode == BufferPersistenceMode::RamJournal);
 
@@ -188,17 +191,17 @@ void set_persistence_mode(int area0, BufferPersistenceMode mode) {
 
 std::string journal_path(int area0) {
     if (!in_range(area0)) return {};
-    return g_state[area0].journal.path;
+    return state_store()[area0].journal.path;
 }
 
 void set_journal_path(int area0, const std::string& path) {
     if (!in_range(area0)) return;
-    g_state[area0].journal.path = path;
+    state_store()[area0].journal.path = path;
 }
 
 void clear_journal_state(int area0) {
     if (!in_range(area0)) return;
-    auto& j = g_state[area0].journal;
+    auto& j = state_store()[area0].journal;
     j.path.clear();
     j.open = false;
 
@@ -216,7 +219,7 @@ static std::string default_journal_path_for_area(int area0) {
 bool journal_note_buffer_on(int area0, const std::string& table_name) {
     if (!is_persistent_enabled(area0)) return true;
 
-    auto& j = g_state[area0].journal;
+    auto& j = state_store()[area0].journal;
     if (j.path.empty()) j.path = default_journal_path_for_area(area0);
     j.open = true;
 
@@ -228,7 +231,7 @@ bool journal_note_buffer_on(int area0, const std::string& table_name) {
 bool journal_note_change(int area0, const ChangeEntry& entry) {
     if (!is_persistent_enabled(area0)) return true;
 
-    auto& j = g_state[area0].journal;
+    auto& j = state_store()[area0].journal;
     if (j.path.empty()) j.path = default_journal_path_for_area(area0);
     j.open = true;
 
@@ -261,12 +264,12 @@ bool journal_note_rollback(int area0) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 bool is_history_enabled(int area0) {
-    return in_range(area0) && g_state[area0].tb.history_enabled;
+    return in_range(area0) && state_store()[area0].tb.history_enabled;
 }
 
 void set_history_enabled(int area0, bool value) {
     if (!in_range(area0)) return;
-    g_state[area0].tb.history_enabled = value;
+    state_store()[area0].tb.history_enabled = value;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -275,12 +278,12 @@ void set_history_enabled(int area0, bool value) {
 
 TableBuffer& get_tb(int area0) {
     if (!in_range(area0)) throw std::out_of_range("Invalid area index");
-    return g_state[area0].tb;
+    return state_store()[area0].tb;
 }
 
 const TableBuffer& get_tb_const(int area0) {
     if (!in_range(area0)) throw std::out_of_range("Invalid area index");
-    return g_state[area0].tb;
+    return state_store()[area0].tb;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

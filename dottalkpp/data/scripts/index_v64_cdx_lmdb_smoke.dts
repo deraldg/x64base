@@ -1,0 +1,116 @@
+* ============================================================
+* INDEX V64 CDX/LMDB SMOKE v2
+* ============================================================
+* Purpose:
+*   Test current v64 index rule:
+*     v64 tables use CDX/LMDB for active order.
+*
+* Scope:
+*   Non-destructive except disposable copy.
+*   Uses SANDBOX.
+*   Does not test INX/CNX active-order on v64.
+*
+* Key correction:
+*   COPY TO requires the source table to remain open.
+* ============================================================
+
+ECHO ============================================================
+ECHO INDEX V64 CDX/LMDB SMOKE v2
+ECHO ============================================================
+
+DO SANDBOX
+WORKSPACE CLOSE
+
+ECHO
+ECHO --- OPEN ORIGINAL STUDENTS AND CONFIRM V64/CDX ---
+USE students
+AREA
+FIELDS
+COUNT
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- ATTACH CDX AND ORDER BY LNAME ---
+SET INDEX TO students
+SET ORDER TO TAG LNAME
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SMARTLIST LNAME,FNAME,SID NEXT 10
+
+ECHO
+ECHO --- SEEK / FIND / LOCATE UNDER CDX ORDER ---
+SEEK WHITE
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+FIND MARTIN
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+LOCATE FOR LNAME = CLARK
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- SWITCH ORDER TO SID ---
+SET ORDER TO TAG SID
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SEEK 50000016
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- MAKE DISPOSABLE COPY ---
+USE students
+COPY TO students_cdx_smoke WITH SIDECARS OVERWRITE
+CLOSE
+USE students_cdx_smoke
+AREA
+COUNT
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- BUILD/ATTACH CDX FOR DISPOSABLE COPY ---
+BUILDLMDB AUTO
+SET INDEX TO students_cdx_smoke
+SET ORDER TO TAG LNAME
+AREA
+SMARTLIST LNAME,FNAME,SID NEXT 10
+
+ECHO
+ECHO --- MUTATE INDEXED FIELD AND VERIFY SEEK ---
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+REPLACE LNAME WITH "ZZZ_CDX_SMOKE"
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- SEEK MUTATED VALUE ---
+SET ORDER TO TAG LNAME
+SEEK ZZZ_CDX_SMOKE
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- RESTORE MUTATED FIELD ---
+REPLACE LNAME WITH "GRIMWOOD"
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SEEK GRIMWOOD
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CLEAR ORDER / PHYSICAL CHECK ---
+SET ORDER TO 0
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+BOTTOM
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
+CLOSE
+ECHO Suggested manual cleanup if needed:
+ECHO ERASE students_cdx_smoke.dbf and students_cdx_smoke.cdx / LMDB sidecars from SANDBOX paths.
+
+ECHO ============================================================
+ECHO INDEX V64 CDX/LMDB SMOKE v2 DONE
+ECHO ============================================================

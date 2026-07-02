@@ -68,8 +68,10 @@
 
 #include "xbase.hpp"
 #include "cnx/cnx.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -166,20 +168,7 @@ static bool resolve_target_path(xbase::DbArea& area,
 
 static void print_help()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CNX USAGE\n"
-        << "  CNX INFO [<path.cnx>]\n"
-        << "  CNX TAGS [<path.cnx>]\n"
-        << "  CNX CREATE [<path.cnx>]\n"
-        << "  CNX ADDTAG <name> [<path.cnx>]\n"
-        << "  CNX DROPTAG <name> [<path.cnx>]\n"
-        << "  CNX WALK <tag> [<path.cnx>]\n"
-        << "  CNX TRACE <tag> [<path.cnx>]\n"
-        << "Notes:\n"
-        << "  - CNX with no arguments shows usage.\n"
-        << "  - CREATE refuses to overwrite an existing CNX file.\n"
-        << "  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CnxUsageText);
 }
 
 static std::uint32_t rd_u32_le(const unsigned char* p)
@@ -347,13 +336,16 @@ static bool walk_tag_run1(const fs::path& target, const std::string& tag_name_up
 {
     CNXHandle* h = nullptr;
     if (!cnxfile::open(target.string(), h) || !h) {
-        std::cout << "CNX WALK: unable to open: \"" << target.string() << "\"\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX WALK", dottalk::helpdata::MessageId::CnxWalkUnableOpenText,
+            {{"path", target.string()}});
         return false;
     }
 
     std::vector<cnxfile::TagInfo> tags;
     if (!cnxfile::read_tagdir(h, tags)) {
-        std::cout << "CNX WALK: failed to read tag directory.\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX WALK", dottalk::helpdata::MessageId::CnxWalkReadTagDirectoryFailedText);
         cnxfile::close(h);
         return false;
     }
@@ -367,24 +359,32 @@ static bool walk_tag_run1(const fs::path& target, const std::string& tag_name_up
     }
 
     if (!found) {
-        std::cout << "CNX WALK: tag not found: " << tag_name_upper << "\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX WALK", dottalk::helpdata::MessageId::CnxWalkTagNotFoundText,
+            {{"tag", tag_name_upper}});
         cnxfile::close(h);
         return false;
     }
 
-    std::cout << "CNX WALK: file=\"" << target.string() << "\""
-              << "  tag=" << found->name
-              << "  root_off=" << found->root_page_off
-              << "  stats_rec=" << found->stats_rec
-              << "\n";
+    cli::cmdout::print_prefixed_message(
+        "CNX WALK", dottalk::helpdata::MessageId::CnxWalkFileSummaryText,
+        {
+            {"path", target.string()},
+            {"tag", found->name},
+            {"root_off", std::to_string(found->root_page_off)},
+            {"stats_rec", std::to_string(found->stats_rec)}
+        });
 
     const auto psz = cnxfile::page_size(h);
     if (psz) {
-        std::cout << "CNX WALK: page_size=" << *psz << "\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX WALK", dottalk::helpdata::MessageId::CnxWalkPageSizeText,
+            {{"size", std::to_string(*psz)}});
     }
 
     if (found->root_page_off == 0) {
-        std::cout << "CNX WALK: root_page_off is 0\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX WALK", dottalk::helpdata::MessageId::CnxWalkRootZeroText);
         cnxfile::close(h);
         return false;
     }
@@ -419,24 +419,30 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
     if (SUB == "CREATE") {
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CNX CREATE: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX CREATE", dottalk::helpdata::MessageId::CnxCreateUnableResolvePathText);
             return;
         }
         if (file_exists(target)) {
-            std::cout << "CNX CREATE: file already exists: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX CREATE", dottalk::helpdata::MessageId::CnxCreateFileExistsText,
+                {{"path", target.string()}});
             return;
         }
 
         CNXHandle* h = nullptr;
         if (!cnxfile::open(target.string(), h)) {
-            std::cout << "CNX CREATE: open/create failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX CREATE", dottalk::helpdata::MessageId::CnxCreateOpenFailedText);
             return;
         }
         cnxfile::CNXHeader hdr{};
         (void)cnxfile::read_header(h, hdr);
         cnxfile::close(h);
 
-        std::cout << "CNX created: \"" << target.string() << "\"\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX", dottalk::helpdata::MessageId::CnxCreatedText,
+            {{"path", target.string()}});
         return;
     }
 
@@ -445,20 +451,25 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
         (void)resolve_target_path(area, args, target);
 
         if (!file_exists(target)) {
-            std::cout << "CNX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX", dottalk::helpdata::MessageId::CnxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CNXHandle* h = nullptr;
         if (!cnxfile::open(target.string(), h)) {
-            std::cout << "CNX: unable to open: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX", dottalk::helpdata::MessageId::CnxUnableOpenText,
+                {{"path", target.string()}});
             return;
         }
 
         if (SUB == "INFO") {
             cnxfile::CNXHeader hdr{};
             if (!cnxfile::read_header(h, hdr)) {
-                std::cout << "CNX INFO: invalid header.\n";
+                cli::cmdout::print_prefixed_message(
+                    "CNX INFO", dottalk::helpdata::MessageId::CnxInfoInvalidHeaderText);
                 cnxfile::close(h);
                 return;
             }
@@ -466,13 +477,21 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
             std::vector<cnxfile::TagInfo> tags;
             (void)cnxfile::read_tagdir(h, tags);
 
-            std::cout << "CNX file : " << target.string() << "\n";
-            std::cout << "Tags     : " << tags.size() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CnxInfoFileLineText,
+                {{"path", target.string()}});
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CnxInfoTagsLineText,
+                {{"count", std::to_string(tags.size())}});
             for (const auto& t : tags) {
-                std::cout << "  [" << t.tag_id << "] " << t.name
-                          << "  root_off=" << t.root_page_off
-                          << "  recs=" << t.stats_rec
-                          << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CnxInfoTagLineText,
+                    {
+                        {"tag_id", std::to_string(t.tag_id)},
+                        {"name", t.name},
+                        {"root_off", std::to_string(t.root_page_off)},
+                        {"recs", std::to_string(t.stats_rec)}
+                    });
             }
             cnxfile::close(h);
             return;
@@ -480,15 +499,18 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
 
         std::vector<cnxfile::TagInfo> tags;
         if (!cnxfile::read_tagdir(h, tags)) {
-            std::cout << "CNX TAGS: read failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX TAGS", dottalk::helpdata::MessageId::CnxTagsReadFailedText);
             cnxfile::close(h);
             return;
         }
         if (tags.empty()) {
-            std::cout << "(no tags)\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::CnxNoTagsText);
         } else {
             for (const auto& t : tags) {
-                std::cout << "  [" << t.tag_id << "] " << t.name << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CnxTagLineText,
+                    {{"tag_id", std::to_string(t.tag_id)}, {"name", t.name}});
             }
         }
         cnxfile::close(h);
@@ -499,17 +521,21 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
         std::string tag;
         args >> tag;
         if (tag.empty()) {
-            std::cout << "CNX WALK: missing <tag>.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX WALK", dottalk::helpdata::MessageId::CnxWalkMissingTagText);
             return;
         }
 
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CNX WALK: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX WALK", dottalk::helpdata::MessageId::CnxWalkUnableResolvePathText);
             return;
         }
         if (!file_exists(target)) {
-            std::cout << "CNX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX", dottalk::helpdata::MessageId::CnxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
@@ -521,35 +547,43 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
         std::string name;
         args >> name;
         if (name.empty()) {
-            std::cout << "CNX ADDTAG: missing <name>.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagMissingNameText);
             return;
         }
 
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CNX ADDTAG: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagUnableResolvePathText);
             return;
         }
         if (!file_exists(target)) {
-            std::cout << "CNX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX", dottalk::helpdata::MessageId::CnxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CNXHandle* h = nullptr;
         if (!cnxfile::open(target.string(), h)) {
-            std::cout << "CNX ADDTAG: open failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagOpenFailedText);
             return;
         }
 
         const std::string up = up_copy(name);
         if (!cnxfile::add_tag(h, up)) {
-            std::cout << "CNX ADDTAG: tag already exists.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagAlreadyExistsText);
             cnxfile::close(h);
             return;
         }
 
         cnxfile::close(h);
-        std::cout << "CNX ADDTAG: added '" << up << "'.\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX ADDTAG", dottalk::helpdata::MessageId::CnxAddTagAddedText,
+            {{"tag", up}});
         return;
     }
 
@@ -557,37 +591,47 @@ void cmd_CNX(xbase::DbArea& area, std::istringstream& args)
         std::string name;
         args >> name;
         if (name.empty()) {
-            std::cout << "CNX DROPTAG: missing <name>.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX DROPTAG", dottalk::helpdata::MessageId::CnxDropTagMissingNameText);
             return;
         }
 
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CNX DROPTAG: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX DROPTAG", dottalk::helpdata::MessageId::CnxDropTagUnableResolvePathText);
             return;
         }
         if (!file_exists(target)) {
-            std::cout << "CNX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX", dottalk::helpdata::MessageId::CnxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CNXHandle* h = nullptr;
         if (!cnxfile::open(target.string(), h)) {
-            std::cout << "CNX DROPTAG: open failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX DROPTAG", dottalk::helpdata::MessageId::CnxDropTagOpenFailedText);
             return;
         }
 
         const std::string up = up_copy(name);
         if (!cnxfile::drop_tag(h, up)) {
-            std::cout << "CNX DROPTAG: not found.\n";
+            cli::cmdout::print_prefixed_message(
+                "CNX DROPTAG", dottalk::helpdata::MessageId::CnxDropTagNotFoundText);
             cnxfile::close(h);
             return;
         }
 
         cnxfile::close(h);
-        std::cout << "CNX DROPTAG: removed '" << up << "'.\n";
+        cli::cmdout::print_prefixed_message(
+            "CNX DROPTAG", dottalk::helpdata::MessageId::CnxDropTagRemovedText,
+            {{"tag", up}});
         return;
     }
 
-    std::cout << "CNX: unknown subcommand: " << sub << "\n";
+    cli::cmdout::print_prefixed_message(
+        "CNX", dottalk::helpdata::MessageId::CnxUnknownSubcommandText,
+        {{"subcommand", sub}});
 }

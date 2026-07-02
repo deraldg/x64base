@@ -1,0 +1,11 @@
+{
+  "name": "ccode",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "lmdb",
+    "nlohmann-json",
+    "sqlite3",
+    "tvision",
+    "wxwidgets"
+  ]
+}

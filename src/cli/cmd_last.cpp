@@ -43,15 +43,16 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -80,10 +81,7 @@ static bool is_last_usage_request(const std::string& raw)
 
 static void print_last_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  LAST\n"
-        << "  LAST USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LastUsageText);
 }
 } // namespace
 
@@ -96,22 +94,24 @@ void cmd_LAST(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "LAST: no file open.\n";
+        cli::cmdout::print_prefixed_message("LAST", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
     const int32_t rn = cli::logical_nav::last_recno(A);
     if (rn <= 0) {
-        std::cout << "LAST: failed.\n";
+        cli::cmdout::print_prefixed_message("LAST", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (!A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "LAST: failed.\n";
+        cli::cmdout::print_prefixed_message("LAST", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

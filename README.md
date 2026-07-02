@@ -206,22 +206,23 @@ how results are projected back to the screen
 
 ## Current Status
 
-**Project:** Working beta / active development  
-**Engine:** Working beta  
-**Indexing (INX/CNX/CDX/LMDB):** Active  
-**Memo System:** Active, with canaries  
-**CLI / DotScript:** Active and usable  
-**Tuple / Relations / Browsers:** Active; asymmetric relation persistence, ERSATZ relational browsing, SMARTBROWSE/ARTBROWSE record browsing, and SIMPLEBROWSE tuple browsing are runtime-proven  
-**HELP / Metadata:** Active; reflection-backed HELP exists, SYS* congruence validation is next  
-**DDL:** Active / partial  
-**DrawIO:** Helper implemented; metadata-generated diagrams planned  
-**Python Binding:** Active, with read-only smoke coverage  
-**Simple TUI:** Active / experimental  
+**Project:** Working beta / active development
+**Engine:** Working beta
+**Indexing (INX/CNX/CDX/LMDB):** Active
+**Memo System:** Active, with canaries
+**CLI / DotScript:** Active and usable
+**Tuple / Relations / Browsers:** Active; asymmetric relation persistence, ERSATZ relational browsing, SMARTBROWSE/ARTBROWSE record browsing, and SIMPLEBROWSE tuple browsing are runtime-proven
+**HELP / Metadata:** Active; reflection-backed HELP exists, SYS* congruence validation is next
+**DDL:** Active / partial
+**DrawIO:** Helper implemented; metadata-generated diagrams planned
+**Python Binding:** Active, with read-only smoke coverage
+**Simple TUI:** Active / experimental
+**Windowed GUI:** Active / skeletal workbench; wxWidgets C++ and Python/Tk lanes share a GUI architecture model over the DotTalk++ runtime
 
 Recent verified checkpoint:
 
 ```text
-3176203 Add asymmetric REL persistence for metadata graph
+2026-07-01 staged GUI/workbench snapshot
 ```
 
 Verified in the current development cycle:
@@ -237,6 +238,9 @@ ERSATZ tuple grid: PASS
 SMARTBROWSE / ARTBROWSE smoke: PASS
 SIMPLEBROWSE / SB tuple listing smoke: PASS
 simple TUI menu surface: visible and active
+wxWidgets workbench build: PASS
+DotTalk++ CLI build from staged repo: PASS
+GUI async core smoke: PASS
 ```
 
 Some parts are runtime-proven. Other parts are canaries or integration work. The project deliberately separates those categories so that finished tools can be built on proven layers.
@@ -471,6 +475,59 @@ Help
 Status: active / experimental. The CLI remains the canonical runtime surface; the TUI is a convenience, discovery, and teaching layer.
 
 The TUI is intentionally simple. It is not meant to be a polished IDE. It is meant to make the command system easier to discover and easier to teach.
+
+---
+
+## Windowed GUI Workbench
+
+DotTalk++ now has an active windowed GUI lane.
+
+The GUI direction is intentionally top-down over the existing x64base/DotTalk++ runtime. The database engine, work areas, cursor movement, indexes, relations, scripting behavior, localization messages, and command semantics should remain owned by DotTalk++ and x64base. GUI programs should adapt to that runtime instead of copying database behavior into separate UI implementations.
+
+Current GUI lanes:
+
+```text
+C++ wxWidgets workbench
+Python/Tk workbench mirror
+Turbo Vision-style TUI reinforcement layer
+```
+
+The wxWidgets workbench currently exposes:
+
+```text
+workspace areas
+tables
+indexes
+relations
+workspace graph
+browse grid
+structure view
+command lane
+dynamic record view
+language switching hooks
+DotTalk++ CLI bridge output
+```
+
+The Python/Tk version is kept as a first-class mirror for rapid GUI experiments and cross-checking the open GUI architecture. The TUI remains useful for historical teaching and command discovery, but wxWidgets and Tk are the richer windowed lanes.
+
+Useful launch commands from a configured Windows checkout:
+
+```powershell
+.\dottalkpp_wx.run.ps1
+.\wx.next.run.ps1
+.\dottalkpp_tk.run.ps1
+```
+
+The staged snapshot at `C:\x64base` was verified with:
+
+```powershell
+cmake --build C:\x64base\build-wx-fixed-local --config Release --target dottalk_wx_next
+cmake --build C:\x64base\build-wx-fixed-local --config Release --target dottalkpp
+cmake --build C:\x64base\build-wx-fixed-local --config Release --target dottalk_gui_core_async_smoke
+ctest --test-dir C:\x64base\build-wx-fixed-local -C Release -R dottalk_gui_core_async_smoke --output-on-failure
+```
+
+Status: active / skeletal but running. The next major correctness boundary is persistent shell/runtime bridging so GUI command execution, cursor state, indexes, relations, variables, loops, and record locking remain synchronized with the canonical DotTalk++ runtime.
 
 ---
 
@@ -1157,8 +1214,8 @@ Some areas are still beta because they are being proven layer by layer. The goal
 
 ## Author
 
-Derald Grimwood  
-B.S. Management Information Systems  
+Derald Grimwood
+B.S. Management Information Systems
 xBase / SAP / ERP background
 
 ---
@@ -1780,8 +1837,8 @@ Some areas are still beta because they are being proven layer by layer. The goal
 
 ## Author
 
-Derald Grimwood  
-B.S. Management Information Systems  
+Derald Grimwood
+B.S. Management Information Systems
 xBase / SAP / ERP background
 
 ---

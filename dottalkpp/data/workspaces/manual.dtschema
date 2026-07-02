@@ -1,0 +1,9 @@
+DTSHEMA 2
+AREA 0 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANANCHOR.dbf | index=none | indextype=NONE | tag=none | alias=MANANCHOR
+AREA 1 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANAPPX.dbf | index=none | indextype=NONE | tag=none | alias=MANAPPX
+AREA 2 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANHASH.dbf | index=none | indextype=NONE | tag=none | alias=MANHASH
+AREA 3 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANMEDIA.dbf | index=none | indextype=NONE | tag=none | alias=MANMEDIA
+AREA 4 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANPUB.dbf | index=none | indextype=NONE | tag=none | alias=MANPUB
+AREA 5 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANREVIEW.dbf | index=none | indextype=NONE | tag=none | alias=MANREVIEW
+AREA 6 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANRUN.dbf | index=none | indextype=NONE | tag=none | alias=MANRUN
+AREA 7 | dbf=D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf\MANSECTION.dbf | index=none | indextype=NONE | tag=none | alias=MANSECTION

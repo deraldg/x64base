@@ -65,13 +65,14 @@
 
 #include "xbase.hpp"
 #include "cdx/cdx.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -163,18 +164,7 @@ static bool resolve_target_path(xbase::DbArea& area,
 
 static void print_help()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CDX USAGE\n"
-        << "  CDX INFO [<path.cdx>]\n"
-        << "  CDX TAGS [<path.cdx>]\n"
-        << "  CDX CREATE [<path.cdx>]\n"
-        << "  CDX ADDTAG <name> [<path.cdx>]\n"
-        << "  CDX DROPTAG <name> [<path.cdx>]\n"
-        << "Notes:\n"
-        << "  - CDX with no arguments shows usage.\n"
-        << "  - CREATE refuses to overwrite an existing CDX file.\n"
-        << "  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CdxUsageText);
 }
 
 } // namespace
@@ -202,24 +192,30 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
     if (SUB == "CREATE") {
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CDX CREATE: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX CREATE", dottalk::helpdata::MessageId::CdxCreateUnableResolvePathText);
             return;
         }
         if (file_exists(target)) {
-            std::cout << "CDX CREATE: file already exists: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX CREATE", dottalk::helpdata::MessageId::CdxCreateFileExistsText,
+                {{"path", target.string()}});
             return;
         }
 
         CDXHandle* h = nullptr;
         if (!cdxfile::open(target.string(), h)) {
-            std::cout << "CDX CREATE: open/create failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX CREATE", dottalk::helpdata::MessageId::CdxCreateOpenFailedText);
             return;
         }
         cdxfile::CDXHeader hdr{};
         (void)cdxfile::read_header(h, hdr);
         cdxfile::close(h);
 
-        std::cout << "CDX created: \"" << target.string() << "\"\n";
+        cli::cmdout::print_prefixed_message(
+            "CDX", dottalk::helpdata::MessageId::CdxCreatedText,
+            {{"path", target.string()}});
         return;
     }
 
@@ -229,20 +225,25 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
         (void)resolve_target_path(area, args, target);
 
         if (!file_exists(target)) {
-            std::cout << "CDX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX", dottalk::helpdata::MessageId::CdxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CDXHandle* h = nullptr;
         if (!cdxfile::open(target.string(), h)) {
-            std::cout << "CDX: unable to open: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX", dottalk::helpdata::MessageId::CdxUnableOpenText,
+                {{"path", target.string()}});
             return;
         }
 
         if (SUB == "INFO") {
             cdxfile::CDXHeader hdr{};
             if (!cdxfile::read_header(h, hdr)) {
-                std::cout << "CDX INFO: invalid header.\n";
+                cli::cmdout::print_prefixed_message(
+                    "CDX INFO", dottalk::helpdata::MessageId::CdxInfoInvalidHeaderText);
                 cdxfile::close(h);
                 return;
             }
@@ -250,13 +251,21 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
             std::vector<cdxfile::TagInfo> tags;
             (void)cdxfile::read_tagdir(h, tags);
 
-            std::cout << "CDX file : " << target.string() << "\n";
-            std::cout << "Tags     : " << tags.size() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CdxInfoFileLineText,
+                {{"path", target.string()}});
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CdxInfoTagsLineText,
+                {{"count", std::to_string(tags.size())}});
             for (const auto& t : tags) {
-                std::cout << "  [" << t.tag_id << "] " << t.name
-                          << "  root_off=" << t.root_page_off
-                          << "  recs=" << t.stats_rec
-                          << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CdxInfoTagLineText,
+                    {
+                        {"tag_id", std::to_string(t.tag_id)},
+                        {"name", t.name},
+                        {"root_off", std::to_string(t.root_page_off)},
+                        {"recs", std::to_string(t.stats_rec)}
+                    });
             }
             cdxfile::close(h);
             return;
@@ -265,15 +274,18 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
         // TAGS
         std::vector<cdxfile::TagInfo> tags;
         if (!cdxfile::read_tagdir(h, tags)) {
-            std::cout << "CDX TAGS: read failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX TAGS", dottalk::helpdata::MessageId::CdxTagsReadFailedText);
             cdxfile::close(h);
             return;
         }
         if (tags.empty()) {
-            std::cout << "(no tags)\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::CdxNoTagsText);
         } else {
             for (const auto& t : tags) {
-                std::cout << "  [" << t.tag_id << "] " << t.name << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CdxTagLineText,
+                    {{"tag_id", std::to_string(t.tag_id)}, {"name", t.name}});
             }
         }
         cdxfile::close(h);
@@ -285,35 +297,43 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
         std::string name;
         args >> name;
         if (name.empty()) {
-            std::cout << "CDX ADDTAG: missing <name>.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagMissingNameText);
             return;
         }
 
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CDX ADDTAG: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagUnableResolvePathText);
             return;
         }
         if (!file_exists(target)) {
-            std::cout << "CDX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX", dottalk::helpdata::MessageId::CdxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CDXHandle* h = nullptr;
         if (!cdxfile::open(target.string(), h)) {
-            std::cout << "CDX ADDTAG: open failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagOpenFailedText);
             return;
         }
 
         const std::string up = up_copy(name);
         if (!cdxfile::add_tag(h, up)) {
-            std::cout << "CDX ADDTAG: tag already exists.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagAlreadyExistsText);
             cdxfile::close(h);
             return;
         }
 
         cdxfile::close(h);
-        std::cout << "CDX ADDTAG: added '" << up << "'.\n";
+        cli::cmdout::print_prefixed_message(
+            "CDX ADDTAG", dottalk::helpdata::MessageId::CdxAddTagAddedText,
+            {{"tag", up}});
         return;
     }
 
@@ -322,37 +342,47 @@ void cmd_CDX(xbase::DbArea& area, std::istringstream& args)
         std::string name;
         args >> name;
         if (name.empty()) {
-            std::cout << "CDX DROPTAG: missing <name>.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX DROPTAG", dottalk::helpdata::MessageId::CdxDropTagMissingNameText);
             return;
         }
 
         fs::path target;
         if (!resolve_target_path(area, args, target)) {
-            std::cout << "CDX DROPTAG: unable to resolve path.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX DROPTAG", dottalk::helpdata::MessageId::CdxDropTagUnableResolvePathText);
             return;
         }
         if (!file_exists(target)) {
-            std::cout << "CDX: file not found: \"" << target.string() << "\"\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX", dottalk::helpdata::MessageId::CdxFileNotFoundText,
+                {{"path", target.string()}});
             return;
         }
 
         CDXHandle* h = nullptr;
         if (!cdxfile::open(target.string(), h)) {
-            std::cout << "CDX DROPTAG: open failed.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX DROPTAG", dottalk::helpdata::MessageId::CdxDropTagOpenFailedText);
             return;
         }
 
         const std::string up = up_copy(name);
         if (!cdxfile::drop_tag(h, up)) {
-            std::cout << "CDX DROPTAG: not found.\n";
+            cli::cmdout::print_prefixed_message(
+                "CDX DROPTAG", dottalk::helpdata::MessageId::CdxDropTagNotFoundText);
             cdxfile::close(h);
             return;
         }
 
         cdxfile::close(h);
-        std::cout << "CDX DROPTAG: removed '" << up << "'.\n";
+        cli::cmdout::print_prefixed_message(
+            "CDX DROPTAG", dottalk::helpdata::MessageId::CdxDropTagRemovedText,
+            {{"tag", up}});
         return;
     }
 
-    std::cout << "CDX: unknown subcommand: " << sub << "\n";
+    cli::cmdout::print_prefixed_message(
+        "CDX", dottalk::helpdata::MessageId::CdxUnknownSubcommandText,
+        {{"subcommand", sub}});
 }

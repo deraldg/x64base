@@ -23,6 +23,7 @@
 #include "shell_eval_utils.hpp"
 #include "shell.hpp"
 #include "shell_api_extras.hpp"
+#include "cli/command_output.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "cli/rel_refresh_suppress.hpp"
 
@@ -321,7 +322,9 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
     std::string macroLine;
     std::string errName;
     if (!dottalk::expand_macros_outside_quotes(prepared, macroLine, errName)) {
-        std::cout << "MACRO: undefined variable: " << errName << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::MacroUndefinedVariable,
+            {{"name", errName}});
         return false;
     }
 
@@ -336,7 +339,9 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
     if (!registry().run(area, U, tok)) {
         if (try_shell_expression_fallback(area, macroLine, true))
             return true;
-        std::cout << "Unknown command: " << cmdToken << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::UnknownCommand,
+            {{"command", cmdToken}});
         return false;
     }
 

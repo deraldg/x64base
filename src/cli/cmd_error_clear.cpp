@@ -31,21 +31,61 @@
 //   ERROR_TEST
 //
 
-#include <iostream>
+#include <algorithm>
+#include <cctype>
 #include <sstream>
+#include <string>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "xbase_error_codes.hpp"
 #include "xbase_error_context.hpp"
 
 using namespace xbase::error;
 
+namespace {
+
+std::string trim_copy(std::string s)
+{
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+    return s;
+}
+
+std::string upper_copy(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return s;
+}
+
+bool is_usage_request(std::istringstream& in)
+{
+    const std::streampos start = in.tellg();
+    std::string tok;
+    if (!(in >> tok)) {
+        in.clear();
+        if (start != std::streampos(-1)) in.seekg(start);
+        return false;
+    }
+    in.clear();
+    if (start != std::streampos(-1)) in.seekg(start);
+    const std::string u = upper_copy(trim_copy(tok));
+    return u == "USAGE" || u == "HELP" || u == "?";
+}
+
+} // namespace
+
 void cmd_ERROR_CLEAR(xbase::DbArea& A, std::istringstream& in)
 {
     (void)A;
-    (void)in;
+
+    if (is_usage_request(in)) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorClearUsageText);
+        return;
+    }
 
     clear_last_error();
-
-    std::cout << "Last error cleared.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ErrorClearStatusText);
 }

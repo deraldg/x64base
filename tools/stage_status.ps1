@@ -8,7 +8,7 @@ try {
     Write-Host "Stage repo: $repoRoot"
     Write-Host ""
     Write-Host "Git status"
-    & git -c safe.directory='D:/code/ccode/x64base' -C $repoRoot status --short
+    & git -c "safe.directory=$repoRoot" -C $repoRoot status --short
 
     Write-Host ""
     Write-Host "Build artifact"

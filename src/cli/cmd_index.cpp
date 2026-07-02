@@ -77,9 +77,11 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "cli/index_utils.hpp"          // shared index utilities & abstractions
+#include "help/helpdata_messages.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -303,17 +305,7 @@ static bool is_index_usage_request(const std::string& raw) {
 }
 
 static void print_index_usage() {
-    std::cout << "Usage: INDEX ON <field> TAG <name> [ASC|DESC] [1INX|2INX]\n";
-    std::cout << "   Field-number tokens are also accepted by the parser.\n";
-    std::cout << "Defaults: ASC, 2INX\n";
-    std::cout << "Examples:\n";
-    std::cout << "  INDEX ON LNAME TAG students\n";
-    std::cout << "  INDEX ON LNAME TAG students DESC\n";
-        std::cout << "  INDEX ON LNAME TAG students DESC 2INX\n";
-    std::cout << "Notes:\n";
-    std::cout << "  - INDEX requires an open table except for INDEX USAGE.\n";
-    std::cout << "  - Deleted records are excluded.\n";
-    std::cout << "  - TAG resolves through the INDEXES path and must name an .inx target.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexUsageText);
 }
 
 } // anonymous namespace
@@ -327,7 +319,7 @@ void cmd_INDEX(DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
         return;
     }
 
@@ -350,21 +342,25 @@ void cmd_INDEX(DbArea& A, std::istringstream& in)
     //   no direction token => ASC
 
     if (!tag_token_allowed(tag)) {
-        std::cout << "INDEX: invalid TAG path '" << tag << "'.\n";
-        std::cout << "Use a bare name (TAG students), an absolute path, or a slot path:\n";
-        std::cout << "  TAG indexes/students   or   TAG dbf/students\n";
+        cli::cmdout::print_prefixed_message(
+            "INDEX", dottalk::helpdata::MessageId::IndexInvalidTagPathText,
+            {{"tag", tag}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexUseBareNameHintText);
+        cli::cmdout::print_line("  TAG indexes/students   or   TAG dbf/students");
         return;
     }
 
     const int fldIdx = dottalk::resolve_field_index(A, fieldTok);
     if (fldIdx < 1) {
-        std::cout << "INDEX: unknown field '" << fieldTok << "'.\n";
-        std::cout << "Available:\n";
+        cli::cmdout::print_prefixed_message(
+            "INDEX", dottalk::helpdata::MessageId::IndexUnknownFieldText,
+            {{"field", fieldTok}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexAvailableFieldsTitle);
         const auto& Fs = A.fields();
         for (std::size_t i = 0; i < Fs.size(); ++i) {
-            std::cout << "  " << Fs[i].name << "\n";
+            cli::cmdout::print_line("  " + Fs[i].name);
         }
-        std::cout << "Tip: INDEX ON #3 TAG students\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexTipFieldNumberText);
         return;
     }
 
@@ -386,8 +382,11 @@ void cmd_INDEX(DbArea& A, std::istringstream& in)
     outPath = dottalk::paths::ensure_ext(outPath, ".inx");
 
     if (outPath.has_extension() && dottalk::lower_copy(outPath.extension().string()) != ".inx") {
-        std::cout << "INDEX: TAG must name an .inx file.\n";
-        std::cout << "Got: " << outPath.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "INDEX", dottalk::helpdata::MessageId::IndexTagMustNameInxText);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::IndexGotPathText,
+            {{"path", outPath.string()}});
         return;
     }
 
@@ -402,12 +401,19 @@ void cmd_INDEX(DbArea& A, std::istringstream& in)
     }
 
     if (!ok) {
-        std::cout << "INDEX: cannot write file: " << outPath.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "INDEX", dottalk::helpdata::MessageId::IndexCannotWriteFileText,
+            {{"path", outPath.string()}});
         return;
     }
 
-    std::cout << "Index written: " << outPath.filename().string()
-              << "  (" << (fmt == dottalk::InxFmt::V1_1INX ? "1INX" : "2INX")
-              << ", expr: " << fieldTok
-              << ", " << (descending ? "DESC" : "ASC") << ")\n";
+    cli::cmdout::print_prefixed_message(
+        "INDEX",
+        dottalk::helpdata::MessageId::IndexWrittenText,
+        {
+            {"file", outPath.filename().string()},
+            {"format", (fmt == dottalk::InxFmt::V1_1INX ? "1INX" : "2INX")},
+            {"expr", fieldTok},
+            {"direction", (descending ? "DESC" : "ASC")}
+        });
 }

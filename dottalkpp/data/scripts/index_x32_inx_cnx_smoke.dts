@@ -1,0 +1,107 @@
+* ============================================================
+* INDEX X32 INX/CNX SMOKE v2
+* ============================================================
+* Purpose:
+*   Test INX/CNX active-order behavior on x32 tables.
+*
+* Scope:
+*   Non-destructive except disposable copy.
+*   Uses X32.
+*
+* Key correction:
+*   COPY TO requires the source table to remain open.
+* ============================================================
+
+ECHO ============================================================
+ECHO INDEX X32 INX/CNX SMOKE v2
+ECHO ============================================================
+
+DO X32
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF
+
+ECHO
+ECHO --- SELECT STUDENTS X32 ---
+SELECT STUDENTS
+AREA
+COUNT
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- PHYSICAL ORDER BASELINE ---
+SETORDER 0
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SKIP 1
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+BOTTOM
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CNX ORDER LNAME ---
+SETORDER students.cnx LNAME
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SMARTLIST LNAME,FNAME,SID NEXT 10
+SEEK WHITE
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+FIND MARTIN
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CNX ORDER MAJOR ---
+SETORDER students.cnx MAJOR
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SMARTLIST MAJOR,LNAME,FNAME,SID NEXT 10
+
+ECHO
+ECHO --- MAKE DISPOSABLE X32 COPY ---
+SELECT STUDENTS
+COPY TO students_x32_idxtest WITH SIDECARS OVERWRITE
+CLOSE
+USE students_x32_idxtest
+AREA
+COUNT
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CREATE/REINDEX INX ON LNAME ---
+INDEX ON LNAME TAG students_x32_idxtest_lname.inx
+REINDEX students_x32_idxtest_lname.inx
+SETINDEX students_x32_idxtest_lname.inx
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+SKIP 10
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- ASC/DESC UNDER ACTIVE INX ---
+ASCEND
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+DESCEND
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CLEAR ORDER ---
+SETORDER 0
+AREA
+TOP
+TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
+
+ECHO
+ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
+CLOSE
+ECHO Suggested manual cleanup if needed:
+ECHO ERASE students_x32_idxtest.dbf and students_x32_idxtest_lname.inx from X32 paths.
+
+ECHO ============================================================
+ECHO INDEX X32 INX/CNX SMOKE v2 DONE
+ECHO ============================================================

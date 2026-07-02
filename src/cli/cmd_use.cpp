@@ -394,10 +394,8 @@ static std::vector<fs::path> auto_attach_candidates_for(const DbArea& a,
     if (is_v32_area(a)) {
         add(idx_root / (base + ".cnx"));
         add(idx_root / (base + ".inx"));
-        add(idx_root / (base + ".idx"));
         add(dbf_dir / (base + ".cnx"));
         add(dbf_dir / (base + ".inx"));
-        add(dbf_dir / (base + ".idx"));
         return out;
     }
 
@@ -457,7 +455,7 @@ static bool activate_tag_container_for_use(DbArea& a,
 static const char* valid_index_types_for(const DbArea& a)
 {
     switch (a.kind()) {
-        case AreaKind::V32:  return "CNX, INX, IDX";
+        case AreaKind::V32:  return "CNX, INX";
         case AreaKind::V64:  return "CDX";
         case AreaKind::V128: return "CDX";
         case AreaKind::Tup:  return "TUP";
@@ -591,7 +589,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     // Auto-attach order (best-effort, never fatal).
     // Policy:
     //   - x64/v128: prefer CDX from INDEXES, then DBF directory fallback
-    //   - x32: prefer CNX, then INX, then IDX from INDEXES, then DBF directory fallback
+    //   - x32: prefer CNX, then INX from INDEXES, then DBF directory fallback
     auto try_set_order = [&](const fs::path& p) {
         try {
             const std::string ext = up_copy(p.extension().string());

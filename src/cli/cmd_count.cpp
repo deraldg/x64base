@@ -83,7 +83,9 @@
 #include "cli/expr/normalize_where.hpp"
 #include "cli/expr/text_compare.hpp"
 #include "cli/output_router.hpp"
+#include "cli/command_output.hpp"
 #include "filters/filter_registry.hpp"
+#include "help/helpdata_messages.hpp"
 #include "predicate_eval.hpp"
 
 // Provided by src/cli/shell.cpp
@@ -150,20 +152,7 @@ static bool is_count_usage_request(std::string raw)
 
 static void print_count_usage()
 {
-    print_line("Usage:");
-    print_line("  COUNT");
-    print_line("  COUNT USAGE");
-    print_line("  COUNT ALL");
-    print_line("  COUNT FOR <expr>");
-    print_line("  COUNT WHERE <expr>");
-    print_line("  COUNT <expr>");
-    print_line("  COUNT DELETED");
-    print_line("  COUNT NOT DELETED");
-    print_line("  COUNT !DELETED");
-    print_line("Notes:");
-    print_line("  - COUNT with no arguments counts the current logical rowset.");
-    print_line("  - With no open table, COUNT preserves existing behavior and prints 0.");
-    print_line("  - COUNT preserves the active cursor where possible after scans.");
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CountUsageText);
 }
 
 enum class CountMode {

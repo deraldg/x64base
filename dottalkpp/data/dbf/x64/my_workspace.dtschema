@@ -1,0 +1,14 @@
+# dottalkpp gui workspace v1
+kind=dtschema
+table=D:\code\ccode\dottalkpp\data\dbf\x32\BUILDING.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\CLASSES.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\COURSES.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\DEPT.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\ENROLL.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\MAJORS.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\ROOMS.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\STUD_MAJ.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\STUDENTS.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\TASSIGN.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\TEACHERS.DBF
+table=D:\code\ccode\dottalkpp\data\dbf\x32\TERMS.DBF

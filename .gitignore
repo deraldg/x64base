@@ -40,15 +40,21 @@ DartConfiguration.tcl
 # Local environments
 .venv/
 .vscode/
-.pytest_cache/
 
 # Local runtime state
 /dottalkpp/user/
+/dottalkpp/logs/
+/dottalkpp/test_reports/
+/dottalkpp/test_reports2/
+/dottalkpp/junk/
 /dottalkpp/data/.relations/
 /dottalkpp/data/logs/
 /dottalkpp/data/tmp/
 /dottalkpp/data/logfile.txt
 /dottalkpp/data/tmp_stdin_quit.txt
+/dottalkpp/dottalkpp_runtime_*.csv
+/dottalkpp/dottalkpp_runtime_*.txt
+/dottalkpp/dottalkpp_tree*.txt
 /dottalkpp/data/lmdb/**/data.mdb
 /dottalkpp/data/lmdb/**/lock.mdb
 /dottalkpp/data/lmdb/**/backups/
@@ -59,6 +65,7 @@ DartConfiguration.tcl
 /_drops/
 /_incoming/
 /_mdo_*_tmp/
+/x64base/
 /.mdo_backups/
 /.backup-rename-cli/
 /AI_logs/
@@ -66,6 +73,21 @@ DartConfiguration.tcl
 /backups/
 /memo_backup/
 /nppBackup/
+
+# Root-level export bundles and captures
+/*.zip
+/*.7z
+/*.rar
+/*.tar
+/*.gz
+/*.jpg
+/*.jpeg
+/*.png
+/*.mhtml
+/*.sqlite
+/*.db
+/*.mdb
+/*.part-*
 
 # Root-level generated inventories and accidental litter
 /flattened_sources.txt

@@ -62,7 +62,6 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -70,10 +69,13 @@
 #include "xindex/index_manager.hpp"
 
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "cli/order_state.hpp"
 
 namespace {
+
+using MessageId = dottalk::helpdata::MessageId;
 
 static inline std::string trim_copy(const std::string& s) { return textio::trim(s); }
 
@@ -123,18 +125,7 @@ static std::string resolve_container_path(const std::string& token) {
 
 static void print_setlmdb_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET LMDB\n"
-        << "  SET LMDB USAGE\n"
-        << "  SET LMDB 0\n"
-        << "  SET LMDB <stem> [<tag>] [--asc|--desc]\n"
-        << "  SET LMDB <container.cdx> [<tag>] [--asc|--desc]\n"
-        << "  SET LMDB <envdir.cdx.d> [<tag>] [--asc|--desc]\n"
-        << "  SETLMDB\n"
-        << "  SETLMDB USAGE\n"
-        << "  SETLMDB 0\n"
-        << "  SETLMDB <stem> [<tag>] [--asc|--desc]\n";
+    cli::cmdout::print_message(MessageId::SetLmdbUsageText);
 }
 
 static bool is_setlmdb_usage_request(const std::string& raw)
@@ -163,15 +154,25 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
     // Report-only form
     if (tok.empty()) {
         if (!orderstate::hasOrder(db)) {
-            std::cout << "SETLMDB: none (physical order).\n";
+            cli::cmdout::print_prefixed_message("SET LMDB", MessageId::SetOrderNonePhysicalText);
             return;
         }
-        std::cout << "SETLMDB: container '" << orderstate::orderName(db)
-                  << "' TAG '" << orderstate::activeTag(db) << "' ("
-                  << (orderstate::isAscending(db) ? "ASC" : "DESC") << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "SET LMDB",
+            MessageId::SetLmdbStatusText,
+            {{"container", orderstate::orderName(db)},
+             {"tag", orderstate::activeTag(db)},
+             {"direction", orderstate::isAscending(db) ? "ASC" : "DESC"}});
         if (const auto* im = db.indexManagerPtr(); im && im->hasBackend()) {
-            std::cout << "  backend: " << (im->isCdx() ? "CDX/LMDB" : "OTHER") << "\n";
+            cli::cmdout::print_message(
+                MessageId::SetLmdbBackendLineText,
+                {{"backend", im->isCdx() ? "CDX/LMDB" : "OTHER"}});
         }
+        return;
+    }
+
+    if (!db.isOpen()) {
+        cli::cmdout::print_prefixed_message("SET LMDB", MessageId::SetIndexNoTableOpenText);
         return;
     }
 
@@ -179,7 +180,7 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
     if (tok == "0") {
         orderstate::clearOrder(db);
         db.indexManager().close();
-        std::cout << "SETLMDB: cleared (physical order).\n";
+        cli::cmdout::print_prefixed_message("SET LMDB", MessageId::SetOrderClearedPhysicalText);
         return;
     }
 
@@ -210,7 +211,10 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
     {
         std::string err;
         if (!db.indexManager().openCdx(container, tag, &err)) {
-            std::cout << "SETLMDB: error: " << (err.empty() ? "openCdx failed" : err) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "SET LMDB",
+                MessageId::SetLmdbOpenCdxFailedText,
+                {{"detail", err.empty() ? "openCdx failed" : err}});
             // keep state consistent
             orderstate::clearOrder(db);
             db.indexManager().close();
@@ -218,7 +222,13 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
         }
     }
 
-    std::cout << "SETLMDB: using CDX '" << container << "' TAG '" << tag << "' ("
-              << (asc ? "ASC" : "DESC") << ")\n";
-    std::cout << "  envdir: " << (container + ".d") << "\n";
+    cli::cmdout::print_prefixed_message(
+        "SET LMDB",
+        MessageId::SetLmdbUsingText,
+        {{"container", container},
+         {"tag", tag},
+         {"direction", asc ? "ASC" : "DESC"}});
+    cli::cmdout::print_message(
+        MessageId::SetLmdbEnvdirLineText,
+        {{"path", container + ".d"}});
 }

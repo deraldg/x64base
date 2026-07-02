@@ -6,6 +6,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <cstdint>
 
 namespace xbase {
 namespace security {
@@ -43,6 +44,7 @@ struct config
     bool allow_plaintext_secrets = false;// Secrets must use OS keychain.
     bool allow_elevated_writes = false;  // Elevated mode must not write user data.
     bool allow_legacy_dbf = false;       // Legacy DBF formats may be unsafe.
+    bool allow_host_commands = false;    // No implicit host shell execution.
 
     bool require_tty_for_prompts = true; // No secret prompts in non-interactive mode.
     bool require_atomic_writes = true;   // DBF_64/FPT64 structural updates must be atomic.
@@ -59,6 +61,7 @@ struct config
             + "  allow_plaintext_secrets: " + (allow_plaintext_secrets ? "yes" : "no") + "\n"
             + "  allow_elevated_writes: " + (allow_elevated_writes ? "yes" : "no") + "\n"
             + "  allow_legacy_dbf: " + (allow_legacy_dbf ? "yes" : "no") + "\n"
+            + "  allow_host_commands: " + (allow_host_commands ? "yes" : "no") + "\n"
             + "  require_tty_for_prompts: " + (require_tty_for_prompts ? "yes" : "no") + "\n"
             + "  require_atomic_writes: " + (require_atomic_writes ? "yes" : "no") + "\n"
             + "  require_header_validation: " + (require_header_validation ? "yes" : "no") + "\n"
@@ -78,6 +81,7 @@ constexpr config strict_profile()
         false,  // allow_plaintext_secrets
         false,  // allow_elevated_writes
         false,  // allow_legacy_dbf
+        false,  // allow_host_commands
         true,   // require_tty_for_prompts
         true,   // require_atomic_writes
         true,   // require_header_validation
@@ -94,6 +98,7 @@ constexpr config standard_profile()
         false,  // allow_plaintext_secrets
         false,  // allow_elevated_writes
         false,  // allow_legacy_dbf
+        false,  // allow_host_commands
         true,   // require_tty_for_prompts
         true,   // require_atomic_writes
         true,   // require_header_validation
@@ -110,6 +115,7 @@ constexpr config permissive_profile()
         true,   // allow_plaintext_secrets
         true,   // allow_elevated_writes
         true,   // allow_legacy_dbf
+        true,   // allow_host_commands
         false,  // require_tty_for_prompts
         false,  // require_atomic_writes
         false,  // require_header_validation
@@ -155,6 +161,12 @@ inline void enforce_no_elevated_writes(const config& cfg, bool elevated)
     if (elevated)
         enforce(cfg.allow_elevated_writes,
                 "Elevated writes are not permitted under this policy.");
+}
+
+inline void enforce_host_commands_allowed(const config& cfg)
+{
+    enforce(cfg.allow_host_commands,
+            "Host shell command execution is not permitted under this policy.");
 }
 } // namespace policy
 } // namespace security

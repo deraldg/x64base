@@ -1,13 +1,9 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include "xbase.hpp"  // xbase::DbArea
 
 namespace dottalk {
-
-// Global shell macro variables (FoxPro-ish: SET VAR name = <text>, &name)
-extern std::unordered_map<std::string, std::string> g_shell_vars;
 
 // Check if char can start an identifier
 bool is_ident_start(char c);

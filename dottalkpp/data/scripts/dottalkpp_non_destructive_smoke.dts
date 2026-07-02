@@ -14,8 +14,9 @@
 * Assumptions:
 *   - Run from the DotTalk++ project root or normal runtime directory.
 *   - init.ini / dottalkpp.ini provide standard DATA/DBF/INDEXES paths.
-*   - BUILDING.DBF, STUDENTS.DBF, TEACHERS.DBF may or may not exist.
-*     The script continues even if individual USE/SELECT operations fail.
+*   - x64.dtschemas is the default shipped school workspace.
+*   - The script uses that populated workspace instead of scanning the raw
+*     DBF root, so navigation smoke runs against real records.
 *   - LIST is developer-only in your current roadmap; use SMARTLIST for order checks.
 * ============================================================
 
@@ -147,8 +148,9 @@ VALIDATE
 
 ECHO
 ECHO --- 06. Try standard schema open safely ---
-SCHEMAS OPEN DBF
-SCHEMAS
+DO X64
+WORKSPACE LOAD x64.dtschemas
+WORKSPACE
 AREA
 AREA51
 DBAREAS
@@ -274,8 +276,8 @@ ECHO Script echo check
 
 ECHO
 ECHO --- 16. Close lifecycle smoke test ---
-SCHEMAS CLOSE
-SCHEMAS
+WORKSPACE CLOSE
+WORKSPACE
 AREA
 STATUS
 

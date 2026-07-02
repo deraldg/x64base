@@ -1,11 +1,20 @@
 param(
-    [string]$StageDataRoot = "D:\code\ccode\x64base\dottalkpp\data",
-    [string]$DevDataRoot = "D:\code\ccode\dottalkpp\data",
+    [string]$StageDataRoot = "",
+    [string]$DevDataRoot = "",
     [string[]]$Lane = @("dbf", "indexes", "lmdb"),
     [switch]$WhatIf
 )
 
 $ErrorActionPreference = "Stop"
+
+$repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+if ([string]::IsNullOrWhiteSpace($StageDataRoot)) {
+    $StageDataRoot = Join-Path $repoRoot "dottalkpp\data"
+}
+if ([string]::IsNullOrWhiteSpace($DevDataRoot)) {
+    $devRoot = if ($env:DOTTALKPP_DEV_ROOT) { $env:DOTTALKPP_DEV_ROOT } else { "D:\code\ccode" }
+    $DevDataRoot = Join-Path $devRoot "dottalkpp\data"
+}
 
 if (-not (Test-Path -LiteralPath $StageDataRoot)) {
     throw "Stage data root not found: $StageDataRoot"
@@ -82,6 +91,6 @@ foreach ($selectedLane in $Lane) {
 
 Write-Host "Reverse normalization complete."
 Write-Host "Next:"
-Write-Host "  1. Inspect D:\code\ccode for data-lane changes"
+Write-Host "  1. Inspect $DevDataRoot for data-lane changes"
 Write-Host "  2. Rebuild or smoke-test targeted lanes as needed"
 Write-Host "  3. Resume normal dev -> stage promotion"

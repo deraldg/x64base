@@ -105,8 +105,15 @@
 
 namespace {
 
-static dottalk::sqlite::SqliteDb g_db;
-static std::string g_db_path;
+static dottalk::sqlite::SqliteDb& sqlite_db() {
+    static dottalk::sqlite::SqliteDb db;
+    return db;
+}
+
+static std::string& sqlite_db_path() {
+    static std::string path;
+    return path;
+}
 
 constexpr size_t MAX_SELECT_ROWS = 200;
 constexpr size_t MAX_META_ROWS   = 500;
@@ -199,12 +206,12 @@ static void print_usage_long() {
 
 static void print_status() {
     std::cout << "SQLITE: "
-              << (dottalk::sqlite::sqlite_is_open(g_db) ? "open" : "closed")
-              << " (db='" << (g_db_path.empty() ? "" : g_db_path) << "')\n";
+              << (dottalk::sqlite::sqlite_is_open(sqlite_db()) ? "open" : "closed")
+              << " (db='" << (sqlite_db_path().empty() ? "" : sqlite_db_path()) << "')\n";
 }
 
 static bool ensure_open(std::string& err) {
-    if (dottalk::sqlite::sqlite_is_open(g_db)) return true;
+    if (dottalk::sqlite::sqlite_is_open(sqlite_db())) return true;
 
     err = "no SQLite database is open; use SQLITE OPEN <file>|:memory: or SQLITE BIBLE";
     return false;
@@ -219,16 +226,16 @@ static void print_cwd() {
 }
 
 static bool open_sqlite_db(const std::string& path, std::string& err) {
-    dottalk::sqlite::sqlite_close(g_db);
-    g_db_path.clear();
+    dottalk::sqlite::sqlite_close(sqlite_db());
+    sqlite_db_path().clear();
 
-    if (!dottalk::sqlite::sqlite_open(g_db, path, err)) {
-        dottalk::sqlite::sqlite_close(g_db);
-        g_db_path.clear();
+    if (!dottalk::sqlite::sqlite_open(sqlite_db(), path, err)) {
+        dottalk::sqlite::sqlite_close(sqlite_db());
+        sqlite_db_path().clear();
         return false;
     }
 
-    g_db_path = path;
+    sqlite_db_path() = path;
     return true;
 }
 
@@ -268,7 +275,7 @@ static bool open_bible_seed(std::string& opened_path, std::string& err) {
 
 
 static bool ensure_open_or_bible(std::string& err) {
-    if (dottalk::sqlite::sqlite_is_open(g_db)) return true;
+    if (dottalk::sqlite::sqlite_is_open(sqlite_db())) return true;
 
     std::string opened_path;
     if (!open_bible_seed(opened_path, err)) return false;
@@ -382,7 +389,7 @@ static bool query_to_rows(const std::string& sql,
     truncated = false;
 
     return dottalk::sqlite::sqlite_query_cols(
-        g_db,
+        sqlite_db(),
         sql,
         [&](const std::vector<std::string>& c, const dottalk::sqlite::Row& r) {
             if (cols.empty()) cols = c;
@@ -603,7 +610,7 @@ static bool check_query_count(const std::string& label,
 }
 
 static bool run_bible_check() {
-    if (!dottalk::sqlite::sqlite_is_open(g_db)) {
+    if (!dottalk::sqlite::sqlite_is_open(sqlite_db())) {
         std::string opened_path;
         std::string err;
 
@@ -616,7 +623,7 @@ static bool run_bible_check() {
     }
 
     std::cout << "SQLITE BIBLE CHECK\n";
-    std::cout << "  db: " << (g_db_path.empty() ? "" : g_db_path) << "\n";
+    std::cout << "  db: " << (sqlite_db_path().empty() ? "" : sqlite_db_path()) << "\n";
     std::cout << "  sqlite: " << dottalk::sqlite::sqlite_version() << "\n";
 
     bool ok = true;
@@ -709,7 +716,7 @@ void cmd_SQLITE(xbase::DbArea& /*A*/, std::istringstream& args) {
             return;
         }
 
-        std::cout << "SQLITE: opened " << g_db_path << "\n";
+        std::cout << "SQLITE: opened " << sqlite_db_path() << "\n";
         return;
     }
 
@@ -757,8 +764,8 @@ void cmd_SQLITE(xbase::DbArea& /*A*/, std::istringstream& args) {
     }
 
     if (sub == "CLOSE") {
-        dottalk::sqlite::sqlite_close(g_db);
-        g_db_path.clear();
+        dottalk::sqlite::sqlite_close(sqlite_db());
+        sqlite_db_path().clear();
         std::cout << "SQLITE: closed\n";
         return;
     }
@@ -820,7 +827,7 @@ void cmd_SQLITE(xbase::DbArea& /*A*/, std::istringstream& args) {
             return;
         }
 
-        if (!dottalk::sqlite::sqlite_exec(g_db, sql, err)) {
+        if (!dottalk::sqlite::sqlite_exec(sqlite_db(), sql, err)) {
             std::cout << "SQLITE EXEC failed: " << err << "\n";
             return;
         }

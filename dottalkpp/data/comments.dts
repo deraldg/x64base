@@ -1,0 +1,9 @@
+* comments.dts
+* Canonical opener for the source-comment developer lane.
+
+SET PATH DBF TO COMMENTS
+SET PATH INDEXES TO INDEXES\COMMENTS
+SET PATH LMDB TO LMDB\COMMENTS
+WORKSPACE OPEN DBF CDX
+WORKSPACE
+DBAREAS

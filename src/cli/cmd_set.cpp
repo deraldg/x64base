@@ -1085,6 +1085,41 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // SET DEVDIAG
+    // Controls passive startup/shutdown/relation diagnostics in dev builds.
+    // Explicit command traces remain under their own command surfaces.
+    // ─────────────────────────────────────────────────────────────
+    if (opt == "DEVDIAG") {
+        std::string tok;
+        if (!(args >> tok)) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SetDevdiagStatusText,
+                {{"state", cli::Settings::passiveDevDiagnosticsEnabled() ? "ON" : "OFF"}});
+            return;
+        }
+
+        const std::string up = up_copy(tok);
+        if (up == "STATUS" || up == "CHECK") {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::SetDevdiagStatusText,
+                {{"state", cli::Settings::passiveDevDiagnosticsEnabled() ? "ON" : "OFF"}});
+            return;
+        }
+
+        bool on = cli::Settings::passiveDevDiagnosticsEnabled();
+        if (!parse_on_off(tok, on)) {
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetDevdiagUsageText);
+            return;
+        }
+
+        cli::Settings::setPassiveDevDiagnostics(on);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetDevdiagStatusText,
+            {{"state", on ? "ON" : "OFF"}});
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // SET TIMER
     // ─────────────────────────────────────────────────────────────
     if (opt == "TIMER") {

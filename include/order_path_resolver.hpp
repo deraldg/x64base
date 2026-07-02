@@ -1,5 +1,5 @@
 // src/cli/order_path_resolver.hpp
-// DotTalk++ — Order/Path Resolver (CNX/INX/IDX) — header-only
+// DotTalk++ — Order/Path Resolver (CNX/INX) — header-only
 // Drop-in utility for consistent path resolution and status strings.
 //
 // Usage (examples):
@@ -15,8 +15,8 @@
 //  * data_root: absolute or cwd for "data/" (your app already knows this).
 //  * dbf_dir  : directory holding the open DBF (absolute or relative to data_root).
 //  * We never rewrite a user-supplied explicit path; we resolve it as given.
-//  * Basename probes prefer indexes/<base>.cnx, then .inx, then legacy dbf/<base>.idx,
-//    then sibling of DBF (<dbf_dir>/<base>.cnx|.inx|.idx) as last resort.
+//  * Basename probes prefer indexes/<base>.cnx, then .inx,
+//    then sibling of DBF (<dbf_dir>/<base>.cnx|.inx) as last resort.
 
 #pragma once
 #include <algorithm>
@@ -29,7 +29,7 @@
 
 namespace dottalk { namespace order {
 
-enum class IndexKind { NONE=0, CNX, INX, IDX };
+enum class IndexKind { NONE=0, CNX, INX };
 
 struct ResolvedIndex {
     IndexKind   kind { IndexKind::NONE };
@@ -94,7 +94,6 @@ inline std::string make_relative(std::string a, std::string b){
 inline IndexKind kind_from_ext(const std::string& ext){
     if (ext=="cnx") return IndexKind::CNX;
     if (ext=="inx") return IndexKind::INX;
-    if (ext=="idx") return IndexKind::IDX; // legacy single-order
     return IndexKind::NONE;
 }
 
@@ -115,15 +114,12 @@ inline ResolvedIndex probe_basename(const std::string& base,
     // Probe in canonical order:
     // 1) indexes/<base>.cnx
     // 2) indexes/<base>.inx
-    // 3) dbf/<base>.idx (legacy)
-    // 4) <dbf_dir>/<base>.(cnx|inx|idx)
+    // 3) <dbf_dir>/<base>.(cnx|inx)
     const std::vector<std::pair<std::string,IndexKind>> probes = {
         { join2("indexes", base + ".cnx"), IndexKind::CNX },
         { join2("indexes", base + ".inx"), IndexKind::INX },
-        { join2("dbf"    , base + ".idx"), IndexKind::IDX },
         { join2(dbf_dir  , base + ".cnx"), IndexKind::CNX },
         { join2(dbf_dir  , base + ".inx"), IndexKind::INX },
-        { join2(dbf_dir  , base + ".idx"), IndexKind::IDX },
     };
     for (auto& pr : probes){
         auto abs = join2(data_root, pr.first);  // data_root-relative
@@ -179,7 +175,6 @@ inline std::string via_phrase(IndexKind k, const std::string& rel_path){
     switch (k){
         case IndexKind::CNX: return std::string("via CNX [") + rel_path + "]";
         case IndexKind::INX: return std::string("via INX [") + rel_path + "]";
-        case IndexKind::IDX: return std::string("via IDX [") + rel_path + "]";
         default:             return {};
     }
 }

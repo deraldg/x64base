@@ -66,6 +66,7 @@
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "xbase_field_getters.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "cli/order_iterator.hpp"
 #include "filters/filter_registry.hpp"
@@ -399,16 +400,7 @@ static bool is_find_usage_request(std::string raw) {
 }
 
 static void print_find_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  FIND USAGE\n"
-        << "  FIND <text>\n"
-        << "  FIND <field> <text>\n"
-        << "  FIND <text> IN <field>\n"
-        << "Notes:\n"
-        << "  - FIND requires an open table except for FIND USAGE.\n"
-        << "  - FIND delegates to SEEK when the active order can satisfy the request.\n"
-        << "  - Otherwise FIND scans the requested field and positions on the found record.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FindUsageText);
 }
 
 } // namespace
@@ -424,7 +416,7 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
     }
 
     if (!A.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
         return;
     }
 
@@ -466,9 +458,9 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
         if (routed) {
             if (found_recno > 0) {
                 restore.dismiss();
-                std::cout << "Found.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::FindFoundText);
             } else {
-                std::cout << "Not Found.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::FindNotFoundText);
             }
             return;
         }
@@ -481,9 +473,9 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
         if (routed) {
             if (found_recno > 0) {
                 restore.dismiss();
-                std::cout << "Found.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::FindFoundText);
             } else {
-                std::cout << "Not Found.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::FindNotFoundText);
             }
             return;
         }
@@ -495,9 +487,9 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
         (void)run_find_physical(A, fa.field, fa.needle, found_recno);
         if (found_recno > 0) {
             restore.dismiss();
-            std::cout << "Found.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::FindFoundText);
         } else {
-            std::cout << "Not Found.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::FindNotFoundText);
         }
     }
 }

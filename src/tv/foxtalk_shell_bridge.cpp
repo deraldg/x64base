@@ -5,8 +5,10 @@
 #include <sstream>
 #include <string>
 
-#include "cli/command_registry.hpp"
 #include "tv/foxtalk_util.hpp"
+#include "../cli/shell_shortcuts.hpp"
+
+bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine);
 
 namespace foxtalk {
 
@@ -20,7 +22,7 @@ std::string ShellBridge::resolveShortcuts(const std::string& line) const
         return rest.empty() ? "HELP" : "HELP " + rest;
     }
 
-    return line;
+    return shell_shortcuts::resolve(line);
 }
 
 ShellRunResult ShellBridge::runLine(xbase::DbArea& area, const std::string& line)
@@ -46,7 +48,7 @@ ShellRunResult ShellBridge::runLine(xbase::DbArea& area, const std::string& line
         }
     }
 
-    if (commandUpper == "/SELFTEST" || commandUpper == "SELFTEST" || commandUpper == "HELP") {
+    if (commandUpper == "/SELFTEST" || commandUpper == "SELFTEST") {
         return runBuiltIn(area, resolved, commandUpper, tok);
     }
 
@@ -84,7 +86,10 @@ ShellRunResult ShellBridge::runEngineCommand(xbase::DbArea& area,
                                              const std::string& originalCommandToken,
                                              const std::string& resolvedLine)
 {
-    if (!dli::registry().run(area, commandUpper, tok)) {
+    (void)commandUpper;
+    (void)tok;
+
+    if (!shell_execute_line(area, resolvedLine)) {
         const std::string msg = "Unknown or failed command: " + originalCommandToken;
         std::cerr << msg << "\n";
         return { true, false, msg };
@@ -101,11 +106,14 @@ void ShellBridge::handleHelp(std::istringstream& tok)
 
     if (topic.empty()) {
         std::cout
-            << "Foxtalk help\n"
-            << "  Enter runs. F2 Output; PgUp/PgDn/Home/End scroll.\n"
+            << "TurboTalk help\n"
+            << "  Enter or Run executes the command field.\n"
+            << "  Keys: F2 Output, F3 Record View, F4 Workspace, Ctrl-Q Command.\n"
+            << "  Command history: Up/Down; HISTORY STATUS | CLEAR | FRESH | KEEP.\n"
             << "  Windows: Alt-Z/Ctrl-F5 (Command), Alt-O/Ctrl-F6 (Output).\n"
             << "  Shortcuts: '? <cmd>' = HELP <cmd>, F3=RECORDVIEW.\n"
-            << "  Window mgmt: WIN SAVE | WIN RESTORE | WIN DEFAULTS\n";
+            << "  Window mgmt: WIN SAVE | WIN RESTORE | WIN DEFAULTS.\n"
+            << "  Nested TVision apps such as BROWSETUI/BROWSETV run from the outer CLI.\n";
         return;
     }
 
@@ -128,6 +136,11 @@ void ShellBridge::handleHelp(std::istringstream& tok)
 
     if (upper == "WIN") {
         std::cout << "WIN SAVE | WIN RESTORE | WIN DEFAULTS\n";
+        return;
+    }
+
+    if (upper == "HISTORY") {
+        std::cout << "HISTORY STATUS | CLEAR | FRESH | KEEP\n";
         return;
     }
 

@@ -29,6 +29,7 @@
 
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
+#include "cli/command_output.hpp"
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
 #include "cli/unique_registry.hpp"
@@ -299,7 +300,7 @@ bool dottalk_append_many_core(xbase::DbArea& A, std::size_t count)
 {
     if (!A.isOpen())
     {
-        std::cout << "APPEND: no file open\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::NoOpenTable);
         return false;
     }
 
@@ -309,7 +310,10 @@ bool dottalk_append_many_core(xbase::DbArea& A, std::size_t count)
     std::string err;
     if (!xbase::locks::try_lock_table(A, &err))
     {
-        std::cout << "APPEND: table locked (" << err << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendTableLocked,
+            {{"detail", err}});
         return false;
     }
 
@@ -346,13 +350,17 @@ bool dottalk_append_many_core(xbase::DbArea& A, std::size_t count)
 
     if (!ok)
     {
-        std::cout << "APPEND MANY: stopped after "
-                  << done << " successful append(s)\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendManyStopped,
+            {{"count", std::to_string(done)}});
         return false;
     }
 
     if (Settings::instance().talk_on.load())
-        std::cout << "Appended " << count << " blank record(s)\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AppendManySuccess,
+            {{"count", std::to_string(count)}});
 
     return true;
 }
@@ -385,14 +393,17 @@ bool dottalk_append_blank_raw(xbase::DbArea& A, std::uint32_t& rn)
 
     if (!A.isOpen())
     {
-        std::cout << "APPEND: no file open\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::NoOpenTable);
         return false;
     }
 
     std::string err;
     if (!xbase::locks::try_lock_table(A, &err))
     {
-        std::cout << "APPEND: table locked (" << err << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendTableLocked,
+            {{"detail", err}});
         return false;
     }
 
@@ -402,7 +413,7 @@ bool dottalk_append_blank_raw(xbase::DbArea& A, std::uint32_t& rn)
 
     if (!ok)
     {
-        std::cout << "APPEND failed\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::AppendFailed);
         return false;
     }
 
@@ -413,7 +424,7 @@ bool dottalk_append_many_raw(xbase::DbArea& A, std::size_t count)
 {
     if (!A.isOpen())
     {
-        std::cout << "APPEND: no file open\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::NoOpenTable);
         return false;
     }
 
@@ -423,7 +434,10 @@ bool dottalk_append_many_raw(xbase::DbArea& A, std::size_t count)
     std::string err;
     if (!xbase::locks::try_lock_table(A, &err))
     {
-        std::cout << "APPEND: table locked (" << err << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendTableLocked,
+            {{"detail", err}});
         return false;
     }
 
@@ -444,13 +458,17 @@ bool dottalk_append_many_raw(xbase::DbArea& A, std::size_t count)
 
     if (!ok)
     {
-        std::cout << "APPEND RAW MANY: stopped after "
-                  << done << " successful append(s)\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendRawManyStopped,
+            {{"count", std::to_string(done)}});
         return false;
     }
 
     if (Settings::instance().talk_on.load())
-        std::cout << "Appended " << count << " raw blank record(s)\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AppendRawManySuccess,
+            {{"count", std::to_string(count)}});
 
     return true;
 }
@@ -459,14 +477,17 @@ bool dottalk_append_blank_core(xbase::DbArea& A, std::istringstream&)
 {
     if (!A.isOpen())
     {
-        std::cout << "APPEND: no file open\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::NoOpenTable);
         return false;
     }
 
     std::string err;
     if (!xbase::locks::try_lock_table(A, &err))
     {
-        std::cout << "APPEND: table locked (" << err << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "APPEND",
+            dottalk::helpdata::MessageId::AppendTableLocked,
+            {{"detail", err}});
         return false;
     }
 
@@ -490,12 +511,14 @@ bool dottalk_append_blank_core(xbase::DbArea& A, std::istringstream&)
 
     if (!ok)
     {
-        std::cout << "APPEND failed\n";
+        cli::cmdout::print_prefixed_message("APPEND", dottalk::helpdata::MessageId::AppendFailed);
         return false;
     }
 
     if (Settings::instance().talk_on.load())
-        std::cout << "Appended blank record " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::AppendBlankSuccess,
+            {{"recno", std::to_string(A.recno())}});
 
     return true;
 }

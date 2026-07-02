@@ -38,10 +38,11 @@
 //
 
 #include <atomic>
-#include <iostream>
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
 
@@ -75,25 +76,16 @@ void set_near(bool on) noexcept {
 
 static void print_setnear_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET NEAR\n"
-        << "  SET NEAR USAGE\n"
-        << "  SET NEAR ON\n"
-        << "  SET NEAR OFF\n"
-        << "  SETNEAR\n"
-        << "  SETNEAR USAGE\n"
-        << "  SETNEAR ON\n"
-        << "  SETNEAR OFF\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetNearUsageText);
 }
 
 void cmd_SETNEAR(xbase::DbArea&, std::istringstream& iss) {
     std::string tok;
 
     if (!(iss >> tok)) {
-        std::cout << (dottalk::near::get_near()
-            ? "NEAR: ON\n"
-            : "NEAR: OFF\n");
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetNearStatusText,
+            {{"state", dottalk::near::get_near() ? "ON" : "OFF"}});
         return;
     }
 
@@ -104,13 +96,17 @@ void cmd_SETNEAR(xbase::DbArea&, std::istringstream& iss) {
 
     if (textio::ieq(tok, "ON") || textio::ieq(tok, "TRUE") || textio::ieq(tok, "1")) {
         dottalk::near::set_near(true);
-        std::cout << "NEAR: ON\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetNearStatusText,
+            {{"state", "ON"}});
         return;
     }
 
     if (textio::ieq(tok, "OFF") || textio::ieq(tok, "FALSE") || textio::ieq(tok, "0")) {
         dottalk::near::set_near(false);
-        std::cout << "NEAR: OFF\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetNearStatusText,
+            {{"state", "OFF"}});
         return;
     }
 

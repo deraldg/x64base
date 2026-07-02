@@ -1,0 +1,56 @@
+* ============================================================
+* METADATA_LOGICAL_SMOKE_v0.dts
+*
+* Purpose:
+*   Determine which logical literal forms REPLACE currently accepts
+*   for x64 L fields.
+*
+* Critical workflow rule:
+*   This script DOES NOT set paths.
+*   Run:
+*
+*       DO metadata
+*       DO metadata_logical_smoke_v0
+*
+* Safety:
+*   Uses only META_LOGIC_SMOKE. Does not touch SYSTEM_* tables.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== METADATA LOGICAL SMOKE V0 START =====
+
+SETPATH
+
+ERASE META_LOGIC_SMOKE
+ERASE META_LOGIC_SMOKE.CDX
+
+CREATE X64 META_LOGIC_SMOKE ( '
+    TEST_ID C(24), '
+    L_DOT_T L, '
+    L_BARE_T L, '
+    L_TRUE L, '
+    L_ONE L, '
+    L_STRING_T L, '
+    NOTES M '
+)
+
+USE META_LOGIC_SMOKE
+STRUCT
+
+APPEND
+REPLACE TEST_ID WITH "LOGIC_FORMS"
+REPLACE L_DOT_T WITH .T.
+REPLACE L_BARE_T WITH T
+REPLACE L_TRUE WITH TRUE
+REPLACE L_ONE WITH 1
+REPLACE L_STRING_T WITH "T"
+REPLACE NOTES WITH "Logical literal smoke: compare .T., T, TRUE, 1, and string T in x64 L fields."
+
+LIST ALL
+DISPLAY
+
+CDX CREATE
+CDX ADDTAG TEST_ID
+BUILDLMDB CLEAN YES
+
+ECHO ===== METADATA LOGICAL SMOKE V0 END =====

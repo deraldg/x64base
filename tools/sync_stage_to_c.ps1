@@ -1,17 +1,31 @@
 param(
-    [string]$Source = "D:\code\ccode\x64base",
-    [string]$Destination = "C:\x64base",
+    [string]$Source = "",
+    [string]$Destination = "",
     [switch]$WhatIf
 )
 
-# Checkpoint mirror only.
-# Use this after several staging iterations, before a path-sensitive smoke test,
-# or before final promotion. Do not run it as the normal inner-loop workflow.
+# Legacy checkpoint mirror helper.
+# With x64base staged directly at C:\x64base, this script is normally a no-op.
+# Pass -Destination explicitly only when creating a separate checkpoint mirror.
 
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+if ([string]::IsNullOrWhiteSpace($Source)) {
+    $Source = $repoRoot
+}
+if ([string]::IsNullOrWhiteSpace($Destination)) {
+    $Destination = if ($env:X64BASE_MIRROR_ROOT) { $env:X64BASE_MIRROR_ROOT } else { "C:\x64base" }
+}
+
 if (-not (Test-Path -LiteralPath $Source)) {
     throw "Source path not found: $Source"
+}
+
+$sourceFull = [System.IO.Path]::GetFullPath($Source).TrimEnd('\')
+$destinationFull = [System.IO.Path]::GetFullPath($Destination).TrimEnd('\')
+if ([string]::Equals($sourceFull, $destinationFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Source and destination are the same path: $sourceFull"
 }
 
 if (-not (Test-Path -LiteralPath $Destination)) {

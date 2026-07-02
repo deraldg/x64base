@@ -1,11 +1,19 @@
 param(
-    [string]$DevRoot = "D:\code\ccode",
-    [string]$StageRoot = "D:\code\ccode\x64base",
+    [string]$DevRoot = "",
+    [string]$StageRoot = "",
     [string[]]$DataLane = @(),
     [switch]$WhatIf
 )
 
 $ErrorActionPreference = "Stop"
+
+$repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+if ([string]::IsNullOrWhiteSpace($StageRoot)) {
+    $StageRoot = $repoRoot
+}
+if ([string]::IsNullOrWhiteSpace($DevRoot)) {
+    $DevRoot = if ($env:DOTTALKPP_DEV_ROOT) { $env:DOTTALKPP_DEV_ROOT } else { "D:\code\ccode" }
+}
 
 if (-not (Test-Path -LiteralPath $DevRoot)) {
     throw "Dev root not found: $DevRoot"
@@ -192,6 +200,6 @@ if ($DataLane.Count -gt 0) {
 Write-Host ""
 Write-Host "Promotion complete."
 Write-Host "Next:"
-Write-Host "  1. Review git status in D:\code\ccode\x64base"
+Write-Host "  1. Review git status in $StageRoot"
 Write-Host "  2. Build/test there"
-Write-Host "  3. Mirror to C:\x64base only at a checkpoint"
+Write-Host "  3. Keep this stage root external to the dev repo"

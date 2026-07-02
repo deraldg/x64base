@@ -174,6 +174,10 @@ namespace {
 static void emit_exit_trace(const char* label)
 {
 #if DOTTALK_EXTRA_DIAGNOSTICS
+    if (!cli::Settings::passiveDevDiagnosticsEnabled()) {
+        return;
+    }
+
     std::cerr << "[EXIT TRACE] " << label << "\n";
     std::cerr.flush();
 

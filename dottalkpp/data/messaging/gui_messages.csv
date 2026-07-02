@@ -1,0 +1,74 @@
+enum,key,en-US,es,fr,de,it
+AppTitle,gui.app.title,DotTalk++ Workbench,DotTalk++ Workbench,DotTalk++ Workbench,DotTalk++ Workbench,DotTalk++ Workbench
+Ready,gui.status.ready,Ready,Listo,Pret,Bereit,Pronto
+NoOpenAreas,gui.area.none_open,No open areas,No hay areas abiertas,Aucune zone ouverte,Keine offenen Bereiche,Nessuna area aperta
+NoTableOpen,gui.table.none_open,No table is open,No hay tabla abierta,Aucune table ouverte,Keine Tabelle geoeffnet,Nessuna tabella aperta
+NoAreaSelected,gui.area.none_selected,No area is selected,No hay area seleccionada,Aucune zone selectionnee,Kein Bereich ausgewaehlt,Nessuna area selezionata
+OpenTable,gui.action.open_table,Open Table,Abrir tabla,Ouvrir table,Tabelle oeffnen,Apri tabella
+OpenWorkspace,gui.action.open_workspace,Open Workspace,Abrir espacio de trabajo,Ouvrir espace de travail,Arbeitsbereich oeffnen,Apri workspace
+SaveWorkspace,gui.action.save_workspace,Save Workspace,Guardar espacio de trabajo,Enregistrer espace de travail,Arbeitsbereich speichern,Salva workspace
+SaveWorkspaceAs,gui.action.save_workspace_as,Save Workspace As,Guardar espacio de trabajo como,Enregistrer espace de travail sous,Arbeitsbereich speichern unter,Salva workspace con nome
+WorkspaceGraph,gui.label.workspace_graph,Workspace Graph,Grafo de espacio de trabajo,Graphe espace de travail,Arbeitsbereichsgraph,Grafo workspace
+Refresh,gui.action.refresh,Refresh,Actualizar,Actualiser,Aktualisieren,Aggiorna
+RefreshSnapshot,gui.action.refresh_snapshot,Refresh Snapshot,Actualizar vista,Actualiser l'instantane,Snapshot aktualisieren,Aggiorna snapshot
+CloseArea,gui.action.close_area,Close Area,Cerrar area,Fermer zone,Bereich schliessen,Chiudi area
+Command,gui.label.command,Command,Comando,Commande,Befehl,Comando
+Run,gui.action.run,Run,Ejecutar,Executer,Ausfuehren,Esegui
+Areas,gui.label.areas,Workspace Areas,Areas de trabajo,Zones de travail,Arbeitsbereiche,Aree di lavoro
+Browse,gui.tab.browse,Browse,Explorar,Parcourir,Durchsuchen,Sfoglia
+Structure,gui.tab.structure,Structure,Estructura,Structure,Struktur,Struttura
+File,gui.menu.file,File,Archivo,Fichier,Datei,File
+Workspace,gui.menu.workspace,Workspace,Espacio de trabajo,Espace de travail,Arbeitsbereich,Workspace
+Area,gui.menu.area,Area,Area,Zone,Bereich,Area
+Language,gui.menu.language,Language,Idioma,Langue,Sprache,Lingua
+Help,gui.menu.help,Help,Ayuda,Aide,Hilfe,Aiuto
+Exit,gui.action.exit,Exit,Salir,Quitter,Beenden,Esci
+About,gui.action.about,About,Acerca de,A propos,Info,Informazioni
+AboutTitle,gui.about.title,About DotTalk++ Workbench,Acerca de DotTalk++ Workbench,A propos de DotTalk++ Workbench,Info zu DotTalk++ Workbench,Informazioni su DotTalk++ Workbench
+AboutBody,gui.about.body,DotTalk++ Workbench opens workspaces with areas tables indexes relations browsers and command lanes.,DotTalk++ Workbench abre espacios de trabajo con areas tablas indices relaciones navegadores y comandos.,DotTalk++ Workbench ouvre des espaces de travail avec zones tables index relations navigateurs et commandes.,DotTalk++ Workbench oeffnet Arbeitsbereiche mit Bereichen Tabellen Indizes Relationen Browsern und Befehlen.,DotTalk++ Workbench apre workspace con aree tabelle indici relazioni browser e comandi.
+LocaleEnUs,gui.locale.en_us,English,Ingles,Anglais,Englisch,Inglese
+LocaleEs,gui.locale.es,Spanish,Espanol,Espagnol,Spanisch,Spagnolo
+LocaleFr,gui.locale.fr,French,Frances,Francais,Franzoesisch,Francese
+LocaleDe,gui.locale.de,German,Aleman,Allemand,Deutsch,Tedesco
+LocaleIt,gui.locale.it,Italian,Italiano,Italien,Italienisch,Italiano
+OpeningTable,gui.status.opening_table,Opening table...,Abriendo tabla...,Ouverture de la table...,Tabelle wird geoeffnet...,Apertura tabella...
+RefreshingSnapshot,gui.status.refreshing_snapshot,Refreshing snapshot...,Actualizando vista...,Actualisation de l'instantane...,Snapshot wird aktualisiert...,Aggiornamento snapshot...
+ClosingArea,gui.status.closing_area,Closing area...,Cerrando area...,Fermeture de la zone...,Bereich wird geschlossen...,Chiusura area...
+SelectingArea,gui.status.selecting_area,Selecting area...,Seleccionando area...,Selection de la zone...,Bereich wird ausgewaehlt...,Selezione area...
+RunningCommand,gui.status.running_command,Running command...,Ejecutando comando...,Execution de la commande...,Befehl wird ausgefuehrt...,Esecuzione comando...
+RowsShownOf,gui.status.rows_shown_of,rows shown of,filas mostradas de,lignes affichees sur,Zeilen angezeigt von,righe mostrate di
+SeverityInfo,gui.severity.info,info,info,info,info,info
+SeverityWarning,gui.severity.warning,warning,advertencia,avertissement,warnung,avviso
+SeverityError,gui.severity.error,error,error,erreur,fehler,errore
+TaskQueued,gui.task.queued,Queued,En cola,En file,In Warteschlange,In coda
+TaskCancelledBeforeStart,gui.task.cancelled_before_start,Cancelled before start,Cancelado antes de iniciar,Annule avant demarrage,Vor dem Start abgebrochen,Annullato prima dell'avvio
+TaskOpeningTable,gui.task.opening_table,Opening table,Abriendo tabla,Ouverture de la table,Tabelle wird geoeffnet,Apertura tabella
+TaskOpenTableFinished,gui.task.open_table_finished,Open table finished,Apertura de tabla terminada,Ouverture de table terminee,Tabelle oeffnen abgeschlossen,Apertura tabella completata
+TaskTableOpened,gui.task.table_opened,Table opened,Tabla abierta,Table ouverte,Tabelle geoeffnet,Tabella aperta
+TaskOpenTableFailed,gui.task.open_table_failed,Open table failed,No se pudo abrir la tabla,Echec ouverture table,Tabelle oeffnen fehlgeschlagen,Apertura tabella non riuscita
+TaskSelectingArea,gui.task.selecting_area,Selecting work area,Seleccionando area de trabajo,Selection zone de travail,Arbeitsbereich wird ausgewaehlt,Selezione area di lavoro
+TaskAreaSelected,gui.task.area_selected,Work area selected,Area de trabajo seleccionada,Zone de travail selectionnee,Arbeitsbereich ausgewaehlt,Area di lavoro selezionata
+TaskSelectAreaFailed,gui.task.select_area_failed,Select work area failed,No se pudo seleccionar el area,Echec selection zone,Arbeitsbereich auswaehlen fehlgeschlagen,Selezione area non riuscita
+TaskClosingArea,gui.task.closing_area,Closing work area,Cerrando area de trabajo,Fermeture zone de travail,Arbeitsbereich wird geschlossen,Chiusura area di lavoro
+TaskAreaClosed,gui.task.area_closed,Work area closed,Area de trabajo cerrada,Zone de travail fermee,Arbeitsbereich geschlossen,Area di lavoro chiusa
+TaskCloseAreaFailed,gui.task.close_area_failed,Close work area failed,No se pudo cerrar el area,Echec fermeture zone,Arbeitsbereich schliessen fehlgeschlagen,Chiusura area non riuscita
+TaskAreasListed,gui.task.areas_listed,Work areas listed,Areas de trabajo listadas,Zones de travail listees,Arbeitsbereiche aufgelistet,Aree di lavoro elencate
+TaskRunningCommand,gui.task.running_command,Running command,Ejecutando comando,Execution commande,Befehl wird ausgefuehrt,Esecuzione comando
+TaskCommandFinished,gui.task.command_finished,Command finished,Comando terminado,Commande terminee,Befehl abgeschlossen,Comando completato
+TaskCommandCompleted,gui.task.command_completed,Command completed,Comando completado,Commande executee,Befehl erledigt,Comando eseguito
+TaskCommandFailed,gui.task.command_failed,Command failed,Comando fallido,Echec commande,Befehl fehlgeschlagen,Comando non riuscito
+TaskBuildingSnapshot,gui.task.building_snapshot,Building table snapshot,Creando vista de tabla,Creation instantane table,Tabellen-Snapshot wird erstellt,Creazione snapshot tabella
+TaskSnapshotReady,gui.task.snapshot_ready,Table snapshot ready,Vista de tabla lista,Instantane table pret,Tabellen-Snapshot bereit,Snapshot tabella pronto
+TaskSnapshotFailed,gui.task.snapshot_failed,Table snapshot failed,Vista de tabla fallida,Echec instantane table,Tabellen-Snapshot fehlgeschlagen,Snapshot tabella non riuscito
+StatusOpenTablePathMissing,gui.open_table.path_missing,No table path was provided.,No se proporciono una ruta de tabla.,Aucun chemin de table fourni.,Kein Tabellenpfad angegeben.,Nessun percorso tabella fornito.
+StatusOpenTableOpened,gui.open_table.opened,Table opened in a new GUI work area.,Tabla abierta en una nueva area de trabajo GUI.,Table ouverte dans une nouvelle zone GUI.,Tabelle in neuem GUI-Arbeitsbereich geoeffnet.,Tabella aperta in una nuova area GUI.
+StatusOpenTableFailed,gui.open_table.failed,Unable to open table.,No se pudo abrir la tabla.,Impossible d'ouvrir la table.,Tabelle konnte nicht geoeffnet werden.,Impossibile aprire la tabella.
+StatusAreaNotOpen,gui.area.not_open,Requested GUI work area is not open.,El area de trabajo GUI solicitada no esta abierta.,La zone GUI demandee n'est pas ouverte.,Der angeforderte GUI-Arbeitsbereich ist nicht geoeffnet.,L'area GUI richiesta non e aperta.
+StatusAreaSelected,gui.area.selected,GUI work area selected.,Area de trabajo GUI seleccionada.,Zone GUI selectionnee.,GUI-Arbeitsbereich ausgewaehlt.,Area GUI selezionata.
+StatusAreaClosed,gui.area.closed,GUI work area closed.,Area de trabajo GUI cerrada.,Zone GUI fermee.,GUI-Arbeitsbereich geschlossen.,Area GUI chiusa.
+StatusCommandEmpty,gui.command.empty,No command text was provided.,No se proporciono texto de comando.,Aucun texte de commande fourni.,Kein Befehlstext angegeben.,Nessun testo comando fornito.
+StatusCommandSkeleton,gui.command.skeleton,Command dispatch skeleton only.,Solo esqueleto de despacho de comando.,Squelette de dispatch commande seulement.,Nur Befehlsverteilungs-Skelett.,Solo scheletro di dispatch comando.
+StatusSnapshotNoCurrentTable,gui.snapshot.no_current_table,No current table is selected.,No hay tabla actual seleccionada.,Aucune table courante selectionnee.,Keine aktuelle Tabelle ausgewaehlt.,Nessuna tabella corrente selezionata.
+StatusSnapshotFirstRecordPastEnd,gui.snapshot.first_record_past_end,Requested first record is past the end of the table.,El primer registro solicitado esta despues del final de la tabla.,Le premier enregistrement demande depasse la fin de la table.,Der angeforderte erste Datensatz liegt hinter dem Tabellenende.,Il primo record richiesto supera la fine della tabella.
+StatusSnapshotRecordReadFailed,gui.snapshot.record_read_failed,Stopped snapshot because a record could not be read.,Vista detenida porque no se pudo leer un registro.,Instantane arrete car un enregistrement n'a pas pu etre lu.,"Snapshot gestoppt, weil ein Datensatz nicht gelesen werden konnte.",Snapshot interrotto perche un record non poteva essere letto.
+StatusSnapshotFailed,gui.snapshot.failed,Unable to build table snapshot.,No se pudo crear la vista de tabla.,Impossible de creer l'instantane de table.,Tabellen-Snapshot konnte nicht erstellt werden.,Impossibile creare lo snapshot tabella.

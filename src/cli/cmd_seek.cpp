@@ -70,7 +70,9 @@
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
+#include "cli/settings.hpp"
 #include "../xbase/cursor_hook.hpp"
 
 #include <algorithm>
@@ -174,27 +176,26 @@ static int find_field_1based(const xbase::DbArea& a, const std::string& name_ci)
 }
 
 static void seek_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  SEEK USAGE\n"
-        << "  SEEK <value> IN <field> [TRACE ON|OFF]\n"
-        << "  SEEK <field> = <value> [TRACE ON|OFF]\n"
-        << "  SEEK <field> <value>   [TRACE ON|OFF]\n"
-        << "  SEEK <value>           (uses active order/tag when set)\n"
-        << "  SEEK TRACE ON|OFF\n"
-        << "Notes:\n"
-        << "  SEEK requires an open table except for SEEK USAGE.\n"
-        << "  SEEK <value> uses the active order/tag when one is set.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekUsageText);
+}
+
+static void emit_seek_trace_line(xbase::DbArea& a,
+                                 const std::string& curU,
+                                 const std::string& needleU)
+{
+    if (!g_seek_trace || !cli::Settings::devDiagnosticsEnabled()) {
+        return;
+    }
+
+    cli::cmdout::print_line(
+        "; SEEK TRACE: recno=" + std::to_string(a.recno()) +
+        " val='" + curU +
+        "' needle='" + needleU + "'");
 }
 
 static int compare_field_value(xbase::DbArea& a, int fld, const std::string& needleU) {
     const std::string curU = norm_seek_text(a.get(fld));
-
-    if (g_seek_trace) {
-        std::cout << "; SEEK TRACE: recno=" << a.recno()
-                  << " val='" << curU
-                  << "' needle='" << needleU << "'\n";
-    }
+    emit_seek_trace_line(a, curU, needleU);
 
     if (curU < needleU) return -1;
     if (curU > needleU) return 1;
@@ -354,7 +355,7 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
     }
 
     if (!a.isOpen()) {
-        std::cout << "(empty)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekEmptyText);
         return;
     }
 
@@ -369,7 +370,9 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
                 iss >> onoff;
                 if (ieq(onoff, "ON")) g_seek_trace = true;
                 else if (ieq(onoff, "OFF")) g_seek_trace = false;
-                std::cout << "SEEK TRACE is " << (g_seek_trace ? "ON" : "OFF") << ".\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekTraceStatusText,
+                    {{"state", g_seek_trace ? "ON" : "OFF"}});
                 return;
             }
             iss.clear();
@@ -395,6 +398,19 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
             seek_usage();
             return;
         }
+    }
+
+    if (toks.size() == 2 && ieq(toks[0], "TRACE")) {
+        if (ieq(toks[1], "ON")) g_seek_trace = true;
+        else if (ieq(toks[1], "OFF")) g_seek_trace = false;
+        else {
+            seek_usage();
+            return;
+        }
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SeekTraceStatusText,
+            {{"state", g_seek_trace ? "ON" : "OFF"}});
+        return;
     }
 
     // Optional trailing TRACE ON|OFF
@@ -446,7 +462,10 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
 
     const int fld = find_field_1based(a, field);
     if (fld <= 0) {
-        std::cout << "SEEK: unknown field: " << field << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SEEK",
+            dottalk::helpdata::MessageId::SeekUnknownFieldText,
+            {{"field", field}});
         return;
     }
 
@@ -472,7 +491,9 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
         try {
             if (a.gotoRec(found_recno) && a.readCurrent()) {
                 restore.dismiss(); // keep cursor on found record
-                std::cout << "Found at " << found_recno << ".\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekFoundAtText,
+                    {{"recno", std::to_string(found_recno)}});
                 return;
             }
         } catch (...) {
@@ -484,7 +505,9 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
         try {
             if (a.gotoRec(near_recno) && a.readCurrent()) {
                 restore.dismiss(); // keep cursor on near record
-                std::cout << "Near match at " << near_recno << ".\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekNearMatchAtText,
+                    {{"recno", std::to_string(near_recno)}});
                 return;
             }
         } catch (...) {
@@ -492,5 +515,5 @@ void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
         }
     }
 
-    std::cout << "Not found.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekNotFoundText);
 }

@@ -13,6 +13,10 @@
 // usage:
 //   MANUAL
 //   MANUAL USAGE
+//   MANUAL STATUS
+//   MANUAL TABLES
+//   MANUAL COUNTS
+//   MANUAL RESOLVE <token>
 //   MANUAL CATALOG STATUS
 //   MANUAL CATALOG TABLES
 //   MANUAL CATALOG COUNTS
@@ -41,6 +45,8 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 #include "textio.hpp"
 
 #include <algorithm>
@@ -53,6 +59,11 @@
 #include <vector>
 
 namespace {
+
+inline std::ostream& out()
+{
+    return cli::OutputRouter::instance().out();
+}
 
 struct ManualTableSpec {
     const char* compact;
@@ -157,21 +168,31 @@ static std::filesystem::path manual_table_path(const std::filesystem::path& dbf_
 
 static void print_manual_usage()
 {
-    std::cout
-        << "Usage:\n"
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualUsageTitle);
+    out()
         << "  MANUAL\n"
         << "  MANUAL USAGE\n"
+        << "  MANUAL STATUS\n"
+        << "  MANUAL TABLES\n"
+        << "  MANUAL COUNTS\n"
+        << "  MANUAL RESOLVE <token>\n"
         << "  MANUAL CATALOG STATUS\n"
         << "  MANUAL CATALOG TABLES\n"
         << "  MANUAL CATALOG COUNTS\n"
         << "  MANUAL CATALOG RESOLVE <token>\n"
         << "  MANUAL SECTIONS\n"
         << "  MANUAL MEDIA\n"
-        << "  MANUAL REVIEW\n"
-        << "Notes:\n"
-        << "  - MANUAL is read-only.\n"
-        << "  - MANUAL reports accepted MAN* manualgen catalog evidence.\n"
-        << "  - MANUAL does not mutate DBFs, HELP, META, CMDHELPCHK, source, or publication artifacts.\n";
+        << "  MANUAL REVIEW\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualNotesTitle);
+    out() << "  - "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualReadOnlyNote)
+          << "\n";
+    out() << "  - "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualReportsEvidenceNote)
+          << "\n";
+    out() << "  - "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualDoesNotMutateNote)
+          << "\n";
 }
 
 static void print_manual_catalog_status()
@@ -185,14 +206,23 @@ static void print_manual_catalog_status()
         }
     }
 
-    std::cout
-        << "MANUAL CATALOG STATUS\n"
-        << "  mode: read-only\n"
-        << "  repo_root: " << repo.string() << "\n"
-        << "  accepted_dbf_dir: " << dbf_dir.string() << "\n"
-        << "  accepted_dbf_dir_exists: " << (manual_exists(dbf_dir) ? 1 : 0) << "\n"
-        << "  expected_MAN_tables: " << static_cast<int>(sizeof(kManualTables) / sizeof(kManualTables[0])) << "\n"
-        << "  present_MAN_tables: " << present << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualCatalogStatusTitle);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualStatusModeLine);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualStatusRepoRootLine,
+        {{"value", repo.string()}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualStatusAcceptedDbfDirLine,
+        {{"value", dbf_dir.string()}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualStatusAcceptedDbfDirExistsLine,
+        {{"value", std::to_string(manual_exists(dbf_dir) ? 1 : 0)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualStatusExpectedTablesLine,
+        {{"value", std::to_string(static_cast<int>(sizeof(kManualTables) / sizeof(kManualTables[0])))}} );
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualStatusPresentTablesLine,
+        {{"value", std::to_string(present)}});
 }
 
 static void print_manual_catalog_tables()
@@ -200,15 +230,18 @@ static void print_manual_catalog_tables()
     const auto repo = manual_find_repo_root();
     const auto dbf_dir = manual_catalog_dbf_dir_from_repo(repo);
 
-    std::cout << "MANUAL CATALOG TABLES\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualCatalogTablesTitle);
     for (const auto& t : kManualTables) {
         const auto path = manual_table_path(dbf_dir, t);
-        std::cout
-            << "  " << t.compact
-            << " alias=" << t.alias
-            << " expected=" << t.expected_records
-            << " exists=" << (manual_exists(path) ? 1 : 0)
-            << " purpose=\"" << t.purpose << "\"\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ManualTableLine,
+            {
+                {"compact", t.compact},
+                {"alias", t.alias},
+                {"expected", std::to_string(t.expected_records)},
+                {"exists", std::to_string(manual_exists(path) ? 1 : 0)},
+                {"purpose", t.purpose}
+            });
     }
 }
 
@@ -217,27 +250,36 @@ static void print_manual_catalog_counts()
     const auto repo = manual_find_repo_root();
     const auto dbf_dir = manual_catalog_dbf_dir_from_repo(repo);
 
-    std::cout << "MANUAL CATALOG COUNTS\n";
-    std::cout << "  note: this lightweight native surface reports expected counts and DBF presence; DBF row readback remains in manualgen reports.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualCatalogCountsTitle);
+    out() << "  "
+          << cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualCatalogCountsNote)
+          << "\n";
     for (const auto& t : kManualTables) {
         const auto path = manual_table_path(dbf_dir, t);
-        std::cout
-            << "  " << t.compact
-            << " expected=" << t.expected_records
-            << " dbf_exists=" << (manual_exists(path) ? 1 : 0)
-            << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ManualCountLine,
+            {
+                {"compact", t.compact},
+                {"expected", std::to_string(t.expected_records)},
+                {"exists", std::to_string(manual_exists(path) ? 1 : 0)}
+            });
     }
 }
 
 static void print_manual_resolve(const std::string& token)
 {
     const auto* table = manual_resolve_table(token);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualCatalogResolveTitle);
     if (!table) {
-        std::cout
-            << "MANUAL CATALOG RESOLVE\n"
-            << "  requested_token: " << token << "\n"
-            << "  resolved: 0\n"
-            << "  message: unknown MAN* table token or alias\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ManualResolveRequestedTokenLine,
+            {{"value", token}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ManualResolveResolvedLine,
+            {{"value", "0"}});
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ManualResolveMessageLine,
+            {{"value", cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualResolveUnknownToken)}});
         return;
     }
 
@@ -245,35 +287,56 @@ static void print_manual_resolve(const std::string& token)
     const auto dbf_dir = manual_catalog_dbf_dir_from_repo(repo);
     const auto path = manual_table_path(dbf_dir, *table);
 
-    std::cout
-        << "MANUAL CATALOG RESOLVE\n"
-        << "  requested_token: " << token << "\n"
-        << "  resolved: 1\n"
-        << "  compact_name: " << table->compact << "\n"
-        << "  alias_candidate: " << table->alias << "\n"
-        << "  physical_table: " << path.string() << "\n"
-        << "  dbf_exists: " << (manual_exists(path) ? 1 : 0) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolveRequestedTokenLine,
+        {{"value", token}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolveResolvedLine,
+        {{"value", "1"}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolveCompactNameLine,
+        {{"value", table->compact}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolveAliasCandidateLine,
+        {{"value", table->alias}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolvePhysicalTableLine,
+        {{"value", path.string()}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualResolveDbfExistsLine,
+        {{"value", std::to_string(manual_exists(path) ? 1 : 0)}});
 }
 
-static void print_manual_table_focus(const char* title, const char* table_name)
+static void print_manual_table_focus(const std::string& title, const char* table_name)
 {
     const auto* table = manual_resolve_table(table_name);
-    std::cout << title << "\n";
+    out() << title << "\n";
     if (!table) {
-        std::cout << "  internal error: table specification missing\n";
+        out() << "  "
+              << cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualInternalTableSpecMissing)
+              << "\n";
         return;
     }
 
     const auto repo = manual_find_repo_root();
     const auto dbf_dir = manual_catalog_dbf_dir_from_repo(repo);
     const auto path = manual_table_path(dbf_dir, *table);
-    std::cout
-        << "  compact_name: " << table->compact << "\n"
-        << "  alias_candidate: " << table->alias << "\n"
-        << "  expected_records: " << table->expected_records << "\n"
-        << "  dbf_exists: " << (manual_exists(path) ? 1 : 0) << "\n"
-        << "  physical_table: " << path.string() << "\n"
-        << "  note: detailed row rendering remains a future read-only native enhancement.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualFocusCompactNameLine,
+        {{"value", table->compact}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualFocusAliasCandidateLine,
+        {{"value", table->alias}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualFocusExpectedRecordsLine,
+        {{"value", std::to_string(table->expected_records)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualFocusDbfExistsLine,
+        {{"value", std::to_string(manual_exists(path) ? 1 : 0)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ManualFocusPhysicalTableLine,
+        {{"value", path.string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ManualFocusDetailFutureNoteLine);
 }
 
 static bool is_usage_request(const std::vector<std::string>& args)
@@ -307,6 +370,28 @@ void cmd_MANUAL(xbase::DbArea&, std::istringstream& iss)
         return;
     }
 
+    if (args[0] == "CATALOG" && args.size() == 1) {
+        print_manual_catalog_status();
+        return;
+    }
+
+    if (args[0] == "STATUS") {
+        print_manual_catalog_status();
+        return;
+    }
+    if (args[0] == "TABLES") {
+        print_manual_catalog_tables();
+        return;
+    }
+    if (args[0] == "COUNTS") {
+        print_manual_catalog_counts();
+        return;
+    }
+    if (args.size() >= 2 && args[0] == "RESOLVE") {
+        print_manual_resolve(args[1]);
+        return;
+    }
+
     if (args.size() >= 2 && args[0] == "CATALOG" && args[1] == "STATUS") {
         print_manual_catalog_status();
         return;
@@ -325,18 +410,28 @@ void cmd_MANUAL(xbase::DbArea&, std::istringstream& iss)
     }
 
     if (args[0] == "SECTIONS") {
-        print_manual_table_focus("MANUAL SECTIONS", "MANSECTION");
+        print_manual_table_focus(
+            cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualSectionsTitle),
+            "MANSECTION");
         return;
     }
     if (args[0] == "MEDIA") {
-        print_manual_table_focus("MANUAL MEDIA", "MANMEDIA");
-        print_manual_table_focus("MANUAL MEDIA ANCHORS", "MANANCHOR");
+        print_manual_table_focus(
+            cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualMediaTitle),
+            "MANMEDIA");
+        print_manual_table_focus(
+            cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualMediaAnchorsTitle),
+            "MANANCHOR");
         return;
     }
     if (args[0] == "REVIEW") {
-        print_manual_table_focus("MANUAL REVIEW", "MANREVIEW");
+        print_manual_table_focus(
+            cli::cmdout::message_text(dottalk::helpdata::MessageId::ManualReviewTitle),
+            "MANREVIEW");
         return;
     }
 
-    std::cout << "MANUAL: unsupported read-only subcommand. Use MANUAL USAGE.\n";
+    cli::cmdout::print_prefixed_message(
+        "MANUAL",
+        dottalk::helpdata::MessageId::ManualUnsupportedSubcommand);
 }

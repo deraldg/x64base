@@ -1,0 +1,4 @@
+* SYSTEM_METADATA_VALIDATE.dts
+* Convenience wrapper.
+* Environment rule: run DO metadata first.
+DO system_metadata_validate_v0

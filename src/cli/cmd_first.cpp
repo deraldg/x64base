@@ -43,15 +43,16 @@
 //
 
 #include <sstream>
-#include <iostream>
 #include <cstdint>
 
+#include "cli/command_output.hpp"
 #include "xbase.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "help/helpdata_messages.hpp"
 
 
 namespace {
@@ -80,10 +81,7 @@ static bool is_first_usage_request(const std::string& raw)
 
 static void print_first_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  FIRST\n"
-        << "  FIRST USAGE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FirstUsageText);
 }
 } // namespace
 
@@ -96,22 +94,24 @@ void cmd_FIRST(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen()) {
-        std::cout << "FIRST: no file open.\n";
+        cli::cmdout::print_prefixed_message("FIRST", dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
     const int32_t rn = cli::logical_nav::first_recno(A);
     if (rn <= 0) {
-        std::cout << "FIRST: failed.\n";
+        cli::cmdout::print_prefixed_message("FIRST", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (!A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << "FIRST: failed.\n";
+        cli::cmdout::print_prefixed_message("FIRST", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

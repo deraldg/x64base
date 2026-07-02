@@ -7,13 +7,16 @@
 //   WORKSPACE OPEN [<dir>]                      : Open all .dbf in <dir> (non-recursive).
 //   WORKSPACE OPEN <dir> recursive              : (STUB) Accepts 'recursive'; falls back to non-recursive.
 //   WORKSPACE OPEN <file.dbf>                   : Open a single .dbf into the CURRENT area.
+//   WORKSPACE ADD <file.dbf>                    : Add one .dbf into the first free area without closing others.
 //
 //   WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]
+//   WORKSPACE ADD <target> AUTO|CNX|INX|IDX|CDX|NOINDEX [FALLBACK] [TABLE]
 //
 //   NOTE:
-//   - If CNX/INX/CDX is NOT specified, WORKSPACE OPEN will NOT attach/open indexes.
+//   - If CNX/INX/CDX is NOT specified, WORKSPACE OPEN uses the table flavor:
+//     v64/v128 -> CDX(LMDB), v32 -> CNX. Use NOINDEX to suppress this.
 //     (DBF sidecars like memo are handled by the DBF open path, not by WORKSPACE.)
 //   - TABLE flag will TABLE-ON each opened workarea (open DBF areas only).
 //
@@ -64,8 +67,12 @@
 //   WORKSPACE OPEN DBF
 //   WORKSPACE OPEN <dir>
 //   WORKSPACE OPEN <file.dbf>
+//   WORKSPACE ADD <file.dbf>
+//   WORKSPACE ADD <target> CNX [FALLBACK] [TABLE]
+//   WORKSPACE ADD <target> INX|IDX [FALLBACK] [TABLE]
+//   WORKSPACE ADD <target> CDX [FALLBACK] [TABLE]
 //   WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]
-//   WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]
+//   WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]
 //   WORKSPACE CLOSE
 //   WORKSPACE CLOSE <n> [m ...]
@@ -80,8 +87,12 @@
 //   WORKSPACE OPEN DBF scans the configured DBF path slot and opens tables into work areas.
 //   WORKSPACE OPEN <dir> scans a specific directory and opens DBFs into work areas.
 //   WORKSPACE OPEN <file.dbf> opens a single table into the current work area.
+//   WORKSPACE ADD <file.dbf> opens one table into the first free work area without closing existing areas.
+//   WORKSPACE OPEN is replacement-style and resets area membership before opening.
+//   WORKSPACE ADD is additive and preserves existing open areas.
 //   WORKSPACE CLOSE closes all open work areas and clears relation/session state.
 //   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
+//   Default index policy is flavor-aware: v64/v128 uses CDX(LMDB), v32 uses CNX.
 //   DDL owns schema/definition work; WORKSPACE owns live session/work-area state.
 //
 // related:
@@ -114,6 +125,7 @@
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
+#include "relations_boot.hpp"
 #include "tuple_builder.hpp"
 
 #define HAVE_PATHS 1
@@ -142,7 +154,10 @@
 namespace fs = std::filesystem;
 using std::string;
 
-static std::string g_last_loaded_workspace_file;
+static std::string& last_loaded_workspace_file() {
+    static std::string path;
+    return path;
+}
 
 // CNX (compound) extensions
 static constexpr const char* kCnxPrimaryExt = ".cnx";
@@ -323,6 +338,56 @@ static int first_open_area_index() {
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
         try {
             if (!eng->area(i).filename().empty()) return i;
+        } catch (...) {}
+    }
+    return -1;
+}
+
+static int first_closed_area_index() {
+    auto* eng = shell_engine();
+    if (!eng) return -1;
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        try {
+            if (eng->area(i).filename().empty()) return i;
+        } catch (...) {}
+    }
+    return -1;
+}
+
+static bool same_path_best_effort(const fs::path& a, const fs::path& b) {
+    auto normalize = [](const fs::path& p) {
+        std::error_code ec;
+        fs::path out = fs::weakly_canonical(p, ec);
+        if (ec) {
+            ec.clear();
+            out = fs::absolute(p, ec);
+        }
+        if (ec) out = p;
+#if defined(_WIN32)
+        auto u = out.u8string();
+        return std::string(u.begin(), u.end());
+#else
+        return out.string();
+#endif
+    };
+    std::string sa = normalize(a);
+    std::string sb = normalize(b);
+#if defined(_WIN32)
+    return ci_equal(sa, sb);
+#else
+    return sa == sb;
+#endif
+}
+
+static int find_open_area_for_path(const fs::path& dbf_path) {
+    auto* eng = shell_engine();
+    if (!eng) return -1;
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        try {
+            const std::string filename = eng->area(i).filename();
+            if (!filename.empty() && same_path_best_effort(fs::path(filename), dbf_path)) {
+                return i;
+            }
         } catch (...) {}
     }
     return -1;
@@ -562,13 +627,39 @@ static fs::path resolve_open_target(const fs::path& raw) {
 
 // --------- Index selection --------------------------------------------------
 
-enum class IndexMode { None = 0, ForceCnx, ForceInx, ForceCdx };
+enum class IndexMode { None = 0, Auto, ForceCnx, ForceInx, ForceCdx };
 
 static inline std::optional<IndexMode> parse_index_mode_ci(const std::string& token) {
+    if (ci_equal(token, "auto")) return IndexMode::Auto;
     if (ci_equal(token, "cnx")) return IndexMode::ForceCnx;
     if (ci_equal(token, "inx")) return IndexMode::ForceInx;
+    if (ci_equal(token, "idx")) return IndexMode::ForceInx;
     if (ci_equal(token, "cdx")) return IndexMode::ForceCdx;
     return std::nullopt;
+}
+
+static inline bool parse_noindex_ci(const std::string& token) {
+    return ci_equal(token, "noindex") || ci_equal(token, "noindexes") ||
+           ci_equal(token, "none") || ci_equal(token, "physical");
+}
+
+static IndexMode default_index_mode_for_area(const xbase::DbArea& A) {
+    switch (A.kind()) {
+        case xbase::AreaKind::V64:
+        case xbase::AreaKind::V128:
+            return IndexMode::ForceCdx;
+        case xbase::AreaKind::V32:
+            return IndexMode::ForceCnx;
+        case xbase::AreaKind::Tup:
+        case xbase::AreaKind::Unknown:
+        default:
+            return IndexMode::None;
+    }
+}
+
+static IndexMode effective_index_mode_for_area(const xbase::DbArea& A, IndexMode requested) {
+    if (requested == IndexMode::Auto) return default_index_mode_for_area(A);
+    return requested;
 }
 
 static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, IndexMode mode, bool fallback) {
@@ -594,6 +685,30 @@ static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, Index
 
     const fs::path sibDir = dbfPath.parent_path().empty() ? fs::current_path() : dbfPath.parent_path();
     const fs::path idxDir = idx_root();
+    const fs::path idxX32Dir = paths::get_slot(paths::Slot::INDEXES_X32);
+    const fs::path idxX64Dir = paths::get_slot(paths::Slot::INDEXES_X64);
+
+    auto append_unique_dir = [](std::vector<fs::path>& dirs, fs::path dir) {
+        if (dir.empty()) return;
+        const auto found = std::find_if(dirs.begin(), dirs.end(), [&](const fs::path& existing) {
+            std::error_code ec1;
+            std::error_code ec2;
+            const fs::path a = fs::weakly_canonical(existing, ec1);
+            const fs::path b = fs::weakly_canonical(dir, ec2);
+            if (!ec1 && !ec2) return a == b;
+            return existing == dir;
+        });
+        if (found == dirs.end()) dirs.push_back(std::move(dir));
+    };
+
+    auto dirs_for_mode = [&](IndexMode wanted) {
+        std::vector<fs::path> dirs;
+        append_unique_dir(dirs, sibDir);
+        if (wanted == IndexMode::ForceCdx) append_unique_dir(dirs, idxX64Dir);
+        if (wanted == IndexMode::ForceCnx || wanted == IndexMode::ForceInx) append_unique_dir(dirs, idxX32Dir);
+        append_unique_dir(dirs, idxDir);
+        return dirs;
+    };
 
     auto pick_first_existing = [&](const std::vector<fs::path>& cands) -> std::optional<fs::path> {
         for (const auto& p : cands) {
@@ -603,32 +718,31 @@ static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, Index
     };
 
     auto pick_inx = [&]() -> std::optional<fs::path> {
-        if (auto p = pick_first_existing(inx_candidates(sibDir))) return p;
-        if (auto p = pick_first_existing(inx_candidates(idxDir))) return p;
+        for (const auto& dir : dirs_for_mode(IndexMode::ForceInx)) {
+            if (auto p = pick_first_existing(inx_candidates(dir))) return p;
+        }
         return std::nullopt;
     };
 
     auto pick_cnx = [&]() -> std::optional<fs::path> {
-        if (auto p = pick_first_existing(cnx_candidates(sibDir))) return p;
-        if (auto p = pick_first_existing(cnx_candidates(idxDir))) return p;
+        for (const auto& dir : dirs_for_mode(IndexMode::ForceCnx)) {
+            if (auto p = pick_first_existing(cnx_candidates(dir))) return p;
+        }
         return std::nullopt;
     };
 
     auto pick_cdx = [&](const std::string& stemUpper) -> std::optional<fs::path> {
-        fs::path sib_cdx = sibDir / stem;
-        sib_cdx.replace_extension(".cdx");
+        for (const auto& dir : dirs_for_mode(IndexMode::ForceCdx)) {
+            fs::path stem_cdx = dir / stem;
+            stem_cdx.replace_extension(".cdx");
 
-        fs::path idx_cdx = idxDir / stem;
-        idx_cdx.replace_extension(".cdx");
-
-        std::vector<fs::path> cdx_candidates = {
-            idxDir / (stemUpper + ".cdx"),
-            sib_cdx,
-            idx_cdx
-        };
-
-        for (const auto& p : cdx_candidates) {
-            if (fs::exists(p)) return p;
+            const std::vector<fs::path> cdx_candidates = {
+                dir / (stemUpper + ".cdx"),
+                stem_cdx
+            };
+            for (const auto& p : cdx_candidates) {
+                if (file_ok(p)) return p;
+            }
         }
         return std::nullopt;
     };
@@ -657,6 +771,75 @@ static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, Index
     return std::nullopt;
 }
 
+static std::optional<fs::path> find_index_for_open_area(const xbase::DbArea& A,
+                                                        const fs::path& dbfPath,
+                                                        IndexMode requested,
+                                                        bool fallback) {
+    const IndexMode effective = effective_index_mode_for_area(A, requested);
+    if (effective == IndexMode::None || effective == IndexMode::Auto) return std::nullopt;
+    return find_index_for_dbf(dbfPath, effective, fallback);
+}
+
+static bool attach_workspace_index(xbase::DbArea& A,
+                                   const fs::path& indexPath,
+                                   std::string& err) {
+    err.clear();
+
+    fs::path ip = indexPath;
+    if (!ip.is_absolute()) ip = resolve_relative_to_root(ip);
+
+    std::error_code ec;
+    if (!fs::exists(ip, ec) || ec) {
+        err = "index file not found: " + s8(ip);
+        return false;
+    }
+
+    std::string backend_err;
+    const std::string path = s8(ip);
+    const std::string ext = to_lower(ip.extension().string());
+
+    try { A.indexManager().close(); } catch (...) {}
+    try { orderstate::clearOrder(A); } catch (...) {}
+
+    try {
+        orderstate::setOrder(A, path);
+        orderstate::setAscending(A, true);
+        orderstate::setActiveTag(A, "");
+    } catch (const std::exception& ex) {
+        err = ex.what();
+        return false;
+    } catch (...) {
+        err = "failed to seed order state";
+        return false;
+    }
+
+    bool opened = false;
+    if (ext == ".cdx") {
+        opened = A.indexManager().openCdx(path, {}, &backend_err);
+    } else if (ext == ".cnx") {
+        opened = A.indexManager().openCnx(path, {}, &backend_err);
+    } else if (ext == ".inx") {
+        opened = A.indexManager().load_json(path);
+        if (!opened) backend_err = "load_json failed for INX sidecar";
+    } else {
+        backend_err = "unsupported index extension: " + ext;
+    }
+
+    if (!opened) {
+        try { A.indexManager().close(); } catch (...) {}
+        try { orderstate::clearOrder(A); } catch (...) {}
+        err = backend_err.empty() ? "index backend open failed" : backend_err;
+        return false;
+    }
+
+    try {
+        const std::string active = A.indexManager().activeTag();
+        if (!active.empty()) orderstate::setActiveTag(A, active);
+    } catch (...) {}
+
+    return true;
+}
+
 // --------- OPEN helpers -----------------------------------------------------
 
 struct OpenResult {
@@ -666,6 +849,7 @@ struct OpenResult {
     bool opened = false;
     bool indexAttached = false;
     string error;
+    string indexError;
 };
 
 // Workspace opens DBFs through several helper paths instead of cmd_USE.
@@ -760,10 +944,6 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
         r.area = area0;
         r.dbf = de.path();
 
-        if (mode != IndexMode::None) {
-            r.indexFile = find_index_for_dbf(r.dbf, mode, fallback);
-        }
-
         try {
             xbase::DbArea& A = get_area_0based(area0);
             try { orderstate::clearOrder(A); } catch (...) {}
@@ -777,13 +957,9 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
 
             r.opened = true;
 
+            r.indexFile = find_index_for_open_area(A, r.dbf, mode, fallback);
             if (r.indexFile.has_value()) {
-                try {
-                    orderstate::setOrder(A, s8(*r.indexFile));
-                    r.indexAttached = true;
-                } catch (...) {
-                    r.indexAttached = false;
-                }
+                r.indexAttached = attach_workspace_index(A, *r.indexFile, r.indexError);
             }
         } catch (const std::exception& ex) {
             r.error = ex.what();
@@ -817,10 +993,6 @@ static OpenResult schema_open_single_into_current(xbase::DbArea& current, const 
     r.dbf = dbfPath;
     r.area = get_area_index(current);
 
-    if (mode != IndexMode::None) {
-        r.indexFile = find_index_for_dbf(dbfPath, mode, fallback);
-    }
-
     try {
         try { orderstate::clearOrder(current); } catch (...) {}
         workspace_memo_auto_close_before_dbf_close(current);
@@ -833,13 +1005,9 @@ static OpenResult schema_open_single_into_current(xbase::DbArea& current, const 
 
         r.opened = true;
 
+        r.indexFile = find_index_for_open_area(current, dbfPath, mode, fallback);
         if (r.indexFile.has_value()) {
-            try {
-                orderstate::setOrder(current, s8(*r.indexFile));
-                r.indexAttached = true;
-            } catch (...) {
-                r.indexAttached = false;
-            }
+            r.indexAttached = attach_workspace_index(current, *r.indexFile, r.indexError);
         }
     } catch (const std::exception& ex) {
         r.error = ex.what();
@@ -850,7 +1018,15 @@ static OpenResult schema_open_single_into_current(xbase::DbArea& current, const 
     return r;
 }
 
-static bool open_into_area(int area0, const fs::path& dbf, const std::optional<fs::path>& index, string* err) {
+static bool open_into_area(int area0,
+                           const fs::path& dbf,
+                           const std::optional<fs::path>& index,
+                           string* err,
+                           bool* index_attached = nullptr,
+                           string* index_error = nullptr,
+                           const char* context = "WORKSPACE LOAD") {
+    if (index_attached) *index_attached = false;
+    if (index_error) index_error->clear();
     try {
         xbase::DbArea& A = get_area_0based(area0);
         try { orderstate::clearOrder(A); } catch (...) {}
@@ -860,13 +1036,18 @@ static bool open_into_area(int area0, const fs::path& dbf, const std::optional<f
         const string dbfStr = s8(dbf);
         A.open(dbfStr);
         A.setFilename(dbfStr);
-        workspace_memo_auto_attach_after_dbf_open(A, dbf, "WORKSPACE LOAD");
+        workspace_memo_auto_attach_after_dbf_open(A, dbf, context);
 
         if (index && !index->empty()) {
             fs::path ip = *index;
             if (!ip.is_absolute()) ip = resolve_relative_to_root(ip);
             if (fs::exists(ip)) {
-                try { orderstate::setOrder(A, s8(ip)); } catch (...) {}
+                std::string attach_err;
+                const bool attached = attach_workspace_index(A, ip, attach_err);
+                if (index_attached) *index_attached = attached;
+                if (index_error && !attached) *index_error = attach_err;
+            } else if (index_error) {
+                *index_error = "index file not found: " + s8(ip);
             }
         }
         return true;
@@ -908,6 +1089,9 @@ static void print_open_results(const std::vector<OpenResult>& results) {
         if (r.indexFile.has_value()) {
             std::cout << "  [index: " << s8(r.indexFile->filename())
                       << (r.indexAttached ? ", attached" : ", found (not attached)") << "]";
+            if (!r.indexAttached && !r.indexError.empty()) {
+                std::cout << " (" << r.indexError << ")";
+            }
         }
         std::cout << "\n";
     }
@@ -1310,7 +1494,7 @@ static void schema_load_from_file(const fs::path& file) {
         return;
     }
 
-    g_last_loaded_workspace_file = s8(inPath);
+    last_loaded_workspace_file() = s8(inPath);
 
     schema_close_all();
 
@@ -1416,9 +1600,10 @@ static void schema_load_from_file(const fs::path& file) {
     std::cout << " (relations: stubbed)";
 #endif
     std::cout << ".\n";
-        // WORKSPACE LOAD is a structural lifecycle operation: areas and
+    // WORKSPACE LOAD is a structural lifecycle operation: areas and
     // optional relations have now been fully restored. Refresh only after
     // the complete load so relation caches do not see a half-built state.
+    relations_boot::retry_pending_autoload();
     refresh_relations_if_enabled_safe();
 }
 
@@ -1691,9 +1876,12 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE OPEN [<dir>]                     (Open all tables in dir)\n";
     std::cout << "  WORKSPACE OPEN <dir> recursive             (STUB: accepts flag; non-recursive for now)\n";
     std::cout << "  WORKSPACE OPEN <file.dbf>                  (Open single table in current area)\n";
+    std::cout << "  WORKSPACE ADD <file.dbf>                   (Add single table to first free area)\n";
+    std::cout << "  WORKSPACE ADD <target> AUTO|CNX|INX|IDX|CDX|NOINDEX [FALLBACK] [TABLE]\n";
     std::cout << "  WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]\n";
-    std::cout << "  WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]\n";
+    std::cout << "  WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
+    std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
     std::cout << "  WORKSPACE CLOSE                            (Close all open areas)\n";
     std::cout << "  WORKSPACE CLOSE <n> [m ...]                (Close by area index)\n";
     std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...] (Close by name/alias; case-insensitive)\n";
@@ -1703,14 +1891,15 @@ static void workspace_print_usage() {
     std::cout << "Notes:\n";
     std::cout << "  - WORKSPACE with no arguments is a read-only report of open areas.\n";
     std::cout << "  - For OPEN: <target> is always the first argument after OPEN.\n";
+    std::cout << "  - WORKSPACE OPEN replaces the current workspace contents; WORKSPACE ADD is additive.\n";
     std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
     std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
     std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-    std::cout << "  - Without CNX/INX/CDX, no index files will be attached.\n";
+    std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: v64/v128 CDX, v32 CNX.\n";
 }
 
 std::string workspace_last_loaded_file() {
-    return g_last_loaded_workspace_file;
+    return last_loaded_workspace_file();
 }
 
 void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
@@ -1740,13 +1929,126 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
         if (sub_command == "usage" || sub_command == "help" || sub_command == "?") {
             workspace_print_usage();
 
+        } else if (sub_command == "add") {
+            auto toks = split_tokens(rest_of_args);
+
+            if (toks.empty()) {
+                std::cout << "WORKSPACE ADD: missing DBF target.\n";
+                std::cout << "  Use: WORKSPACE ADD <file.dbf> [AUTO|CNX|INX|IDX|CDX|NOINDEX] [FALLBACK] [TABLE]\n";
+                return;
+            }
+
+            if (ci_equal(toks[0], "cnx") || ci_equal(toks[0], "inx") ||
+                ci_equal(toks[0], "idx") || ci_equal(toks[0], "cdx") ||
+                ci_equal(toks[0], "auto") || parse_noindex_ci(toks[0])) {
+                std::cout << "WORKSPACE ADD: target must come first.\n";
+                std::cout << "  Use: WORKSPACE ADD <target> [AUTO|CNX|INX|IDX|CDX|NOINDEX] [FALLBACK] [TABLE]\n";
+                return;
+            }
+
+            fs::path spec = fs::path(toks[0]);
+            bool want_fallback = false;
+            bool want_table = false;
+            IndexMode indexMode = IndexMode::Auto;
+
+            for (size_t i = 1; i < toks.size(); ++i) {
+                const std::string& tok = toks[i];
+
+                if (parse_recursive_ci(tok)) {
+                    std::cout << "WORKSPACE ADD: recursive is not supported for single-table add.\n";
+                    return;
+                }
+                if (parse_fallback_ci(tok)) { want_fallback = true; continue; }
+                if (parse_table_ci(tok)) { want_table = true; continue; }
+                if (parse_noindex_ci(tok)) { indexMode = IndexMode::None; continue; }
+
+                if (auto m = parse_index_mode_ci(tok)) {
+                    indexMode = *m;
+                    continue;
+                }
+
+                std::cout << "WORKSPACE ADD: unknown option '" << tok << "' (ignored).\n";
+            }
+
+            if (want_fallback && indexMode == IndexMode::None) {
+                std::cout << "WORKSPACE ADD: FALLBACK ignored (CNX/INX/CDX not specified).\n";
+                want_fallback = false;
+            }
+
+            spec = resolve_open_target(spec);
+            if (!fs::exists(spec) || !fs::is_regular_file(spec) || !ieq_ext(spec, ".dbf")) {
+                std::cout << "WORKSPACE ADD: Path not found or unsupported: " << s8(spec) << "\n";
+                std::cout << "  Use: WORKSPACE ADD <file.dbf> [AUTO|CNX|INX|IDX|CDX|NOINDEX] [FALLBACK] [TABLE]\n";
+                return;
+            }
+
+            const int dup_area = find_open_area_for_path(spec);
+            if (dup_area >= 0) {
+                std::cout << "WORKSPACE ADD: table already open in area " << dup_area
+                          << ": " << s8(spec) << "\n";
+                (void)select_engine_area(dup_area);
+                return;
+            }
+
+            const int area0 = first_closed_area_index();
+            if (area0 < 0) {
+                std::cout << "WORKSPACE ADD: no free work area is available"
+                          << " (MAX_AREA=" << xbase::MAX_AREA << ").\n";
+                return;
+            }
+
+            OpenResult r;
+            r.area = area0;
+            r.dbf = spec;
+
+            std::string err;
+            bool attached = false;
+            r.opened = open_into_area(area0, spec, std::nullopt, &err, &attached, &r.indexError, "WORKSPACE ADD");
+            r.indexAttached = attached;
+            r.error = err;
+            if (r.opened) {
+                try {
+                    xbase::DbArea& A = get_area_0based(area0);
+                    r.indexFile = find_index_for_open_area(A, spec, indexMode, want_fallback);
+                    if (r.indexFile.has_value()) {
+                        r.indexAttached = attach_workspace_index(A, *r.indexFile, r.indexError);
+                    }
+                } catch (const std::exception& ex) {
+                    r.indexError = ex.what();
+                } catch (...) {
+                    r.indexError = "unknown index attach error";
+                }
+            }
+
+            std::cout << "WORKSPACE ADD: opening single table into area " << area0
+                      << ": " << s8(spec)
+                      << (want_table ? " [TABLE]" : "")
+                      << "\n";
+            print_open_results(std::vector<OpenResult>{r});
+
+            if (r.opened) {
+                (void)select_engine_area(area0);
+#if HAVE_TABLE
+                if (want_table) {
+                    table_enable_for_area_if_open(area0);
+                    std::cout << "WORKSPACE ADD: TABLE enabled for area " << area0 << ".\n";
+                }
+#else
+                if (want_table) {
+                    std::cout << "WORKSPACE ADD: TABLE requested but table_state module not present.\n";
+                }
+#endif
+                refresh_relations_if_enabled_safe();
+            }
+
         } else if (sub_command == "open") {
             auto toks = split_tokens(rest_of_args);
 
             if (!toks.empty() && (ci_equal(toks[0], "cnx") || ci_equal(toks[0], "inx") ||
-                                  ci_equal(toks[0], "idx") || ci_equal(toks[0], "cdx"))) {
+                                  ci_equal(toks[0], "idx") || ci_equal(toks[0], "cdx") ||
+                                  ci_equal(toks[0], "auto") || parse_noindex_ci(toks[0]))) {
                 std::cout << "WORKSPACE OPEN: target must come first.\n";
-                std::cout << "  Use: WORKSPACE OPEN <target> CNX|INX|CDX [FALLBACK] [recursive] [TABLE]\n";
+                std::cout << "  Use: WORKSPACE OPEN <target> [AUTO|CNX|INX|IDX|CDX|NOINDEX] [FALLBACK] [recursive] [TABLE]\n";
                 return;
             }
 
@@ -1754,18 +2056,15 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             bool want_recursive = false;
             bool want_fallback  = false;
             bool want_table     = false;
-            IndexMode indexMode = IndexMode::None;
+            IndexMode indexMode = IndexMode::Auto;
 
             for (size_t i = 1; i < toks.size(); ++i) {
                 const std::string& tok = toks[i];
 
-                if (ci_equal(tok, "idx")) {
-                    std::cout << "WORKSPACE OPEN: 'IDX' is not supported. Use CNX, INX, or CDX.\n";
-                    return;
-                }
                 if (parse_recursive_ci(tok)) { want_recursive = true; continue; }
                 if (parse_fallback_ci(tok))  { want_fallback  = true; continue; }
                 if (parse_table_ci(tok))     { want_table     = true; continue; }
+                if (parse_noindex_ci(tok))   { indexMode = IndexMode::None; continue; }
 
                 if (auto m = parse_index_mode_ci(tok)) {
                     indexMode = *m;
@@ -1792,9 +2091,11 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             spec = resolve_open_target(spec);
 
             auto mode_tag = [&]() -> const char* {
+                if (indexMode == IndexMode::Auto) return "AUTO INDEX";
                 if (indexMode == IndexMode::ForceCnx) return "CNX";
-                if (indexMode == IndexMode::ForceInx) return "INX";
+                if (indexMode == IndexMode::ForceInx) return "INX/IDX";
                 if (indexMode == IndexMode::ForceCdx) return "CDX(LMDB)";
+                if (indexMode == IndexMode::None) return "NOINDEX";
                 return nullptr;
             };
 
@@ -1853,18 +2154,20 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "  WORKSPACE OPEN <dir> recursive             (STUB)\n";
                 std::cout << "  WORKSPACE OPEN <file.dbf>                  (Open single table in current area)\n";
                 std::cout << "  WORKSPACE OPEN <target> CNX [FALLBACK] [recursive] [TABLE]\n";
-                std::cout << "  WORKSPACE OPEN <target> INX [FALLBACK] [recursive] [TABLE]\n";
+                std::cout << "  WORKSPACE OPEN <target> INX|IDX [FALLBACK] [recursive] [TABLE]\n";
                 std::cout << "  WORKSPACE OPEN <target> CDX [FALLBACK] [recursive] [TABLE]   (LMDB)\n";
+                std::cout << "  WORKSPACE OPEN <target> NOINDEX [recursive] [TABLE]\n";
                 std::cout << "Notes:\n";
                 std::cout << "  - <target> is always the first argument after OPEN.\n";
                 std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
                 std::cout << "  - WORKSPACE OPEN dbf uses the DBF slot directly.\n";
                 std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-                std::cout << "  - Without CNX/INX/CDX, no index files will be attached.\n";
+                std::cout << "  - Without CNX/INX/CDX, indexes are chosen by DBF flavor: v64/v128 CDX, v32 CNX.\n";
             }
             // WORKSPACE OPEN performs a structural reset first (schema_close_all),
             // then may open zero, one, or many tables. Refresh after the
             // complete operation, not during partial opens.
+            relations_boot::retry_pending_autoload();
             refresh_relations_if_enabled_safe();
 
         } else if (sub_command == "close") {

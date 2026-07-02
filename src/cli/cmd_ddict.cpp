@@ -9,6 +9,8 @@ read_mode: READ_ONLY
 mutates: none
 
 forms:
+  DDICT
+  DDICT HELP
   DDICT STATUS
   DDICT TABLES
   DDICT FIELDS <table-or-alias>
@@ -41,6 +43,7 @@ safety:
   - No active CDX/LMDB rebuild.
   - No HELP, CMDHELPCHK, manual publication, metadata catalog, or Data Dictionary catalog mutation.
   - Runtime surface remains read-only inspection.
+  - Bare DDICT reports STATUS so the command behaves like a status-first inspector.
 
 evidence_lane:
   DD096Z-D2ZS reviewed source patch lane
@@ -48,6 +51,7 @@ evidence_lane:
 */
 
 #include "cli/cmd_ddict.hpp"
+#include "cli/command_output.hpp"
 
 #include <algorithm>
 #include <array>
@@ -75,6 +79,7 @@ using namespace dottalk::datadict;
 using dottalk::datadict::CatalogStats;
 using dottalk::datadict::DDictRow;
 using dottalk::datadict::FieldDef;
+using dottalk::helpdata::MessageId;
 using Row = dottalk::datadict::DDictRow;
  // DD-089E preview: helper namespace bridge
 
@@ -178,18 +183,7 @@ std::string joined_owner_candidates(const std::vector<std::string>& candidates) 
 }
 
 void print_ddict_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  DDICT HELP\n"
-        << "  DDICT STATUS\n"
-        << "  DDICT TABLES\n"
-        << "  DDICT OBJECTS [TYPE <type>] [PROFILE <profile>]\n"
-        << "  DDICT FIELDS <table>\n"
-        << "  DDICT TAGS <table>\n"
-        << "  DDICT REL <object-id-or-name> [IN|OUT|BOTH]\n"
-        << "  DDICT EVIDENCE <object-id-or-name>\n"
-        << "Notes:\n"
-        << "  DDICT is read-only over the active Data Dictionary catalog.\n";
+    cli::cmdout::print_message(MessageId::DDictUsageText);
 }
 
 void print_pending(const std::string& sub) {
@@ -200,28 +194,34 @@ void print_pending(const std::string& sub) {
 
 void print_status() {
     CatalogStats stats = collect_stats();
-    std::cout
-        << "DDICT STATUS\n"
-        << "  Active catalog: " << stats.dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n"
-        << "  DBF tables    : " << stats.dbf_present << " / " << kTables.size() << "\n"
-        << "  DTX sidecars  : " << stats.dtx_present << " / " << kTables.size() << "\n"
-        << "  DBF bytes     : " << stats.total_dbf_bytes << "\n";
+    cli::cmdout::print_message(MessageId::DDictStatusTitle);
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", stats.dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
+    cli::cmdout::print_message(
+        MessageId::DDictDbfTablesLine,
+        {{"present", std::to_string(stats.dbf_present)},
+         {"expected", std::to_string(kTables.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictDtxSidecarsLine,
+        {{"present", std::to_string(stats.dtx_present)},
+         {"expected", std::to_string(kTables.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictDbfBytesLine,
+        {{"bytes", std::to_string(stats.total_dbf_bytes)}});
     if (stats.dbf_present == static_cast<int>(kTables.size())) {
-        std::cout << "  Catalog state : ACTIVE_CATALOG_PRESENT\n";
+        cli::cmdout::print_message(MessageId::DDictCatalogStatePresentLine);
     } else {
-        std::cout << "  Catalog state : ACTIVE_CATALOG_REVIEW\n";
+        cli::cmdout::print_message(MessageId::DDictCatalogStateReviewLine);
     }
 }
 
 void print_tables() {
     fs::path dir = find_catalog_dir();
-    std::cout
-        << "DDICT TABLES\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n"
-        << "  Table       DBF  DTX  DBF_BYTES\n"
-        << "  ----------  ---  ---  ---------\n";
+    cli::cmdout::print_message(MessageId::DDictTablesTitle);
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
+    std::cout << cli::cmdout::message_text(MessageId::DDictTablesColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictTablesDivider) << "\n";
     for (const auto& t : kTables) {
         fs::path dbf = dir / (std::string(t.name) + ".dbf");
         fs::path dtx = dir / (std::string(t.name) + ".dtx");
@@ -242,7 +242,7 @@ void print_fields(std::istringstream& args) {
     table_token = upper_copy(trim_copy(table_token));
 
     if (table_token.empty()) {
-        std::cout << "DDICT FIELDS requires a table name.\n";
+        cli::cmdout::print_prefixed_message("DDICT", MessageId::DDictFieldsRequiresTableName);
         return;
     }
 
@@ -264,23 +264,26 @@ void print_fields(std::istringstream& args) {
         }
     }
 
-    std::cout
-        << "DDICT FIELDS " << table_token << "\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n"
-        << "  Field rows    : " << fields.size() << "\n";
+    cli::cmdout::print_message(MessageId::DDictFieldsTitle, {{"table", table_token}});
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
+    cli::cmdout::print_message(
+        MessageId::DDictFieldRowsLine,
+        {{"count", std::to_string(fields.size())}});
 
     if (!metadata_owner_used.empty() && metadata_owner_used != table_token) {
-        std::cout << "  Metadata owner: " << metadata_owner_used << "\n";
+        cli::cmdout::print_message(
+            MessageId::DDictMetadataOwnerLine,
+            {{"owner", metadata_owner_used}});
     }
 
     if (fields.empty()) {
         // DD096Z-D2ZP FIELDS OWNER-LOOKUP PATCH MARKER
         // Runtime bridge: table aliases are resolved through owner_lookup_candidates() before final NO_FIELDS_FOUND.
-        std::cout
-            << "  Result        : NO_FIELDS_FOUND\n"
-            << "  Note          : expected DDOBJECT rows where OBJTYPE=CATALOG_FIELD and OWNER in "
-            << joined_owner_candidates(owner_candidates) << "\n";
+        cli::cmdout::print_message(MessageId::DDictFieldsNoFieldsLine);
+        cli::cmdout::print_message(
+            MessageId::DDictFieldsExpectedOwnersNote,
+            {{"owners", joined_owner_candidates(owner_candidates)}});
         return;
     }
 
@@ -292,9 +295,8 @@ void print_fields(std::istringstream& args) {
         }
     }
 
-    std::cout
-        << "  Field       OBJID                     STATUS                    PROFILE       ATTRS\n"
-        << "  ----------  ------------------------  ------------------------  ------------  -----\n";
+    std::cout << cli::cmdout::message_text(MessageId::DDictFieldsColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictFieldsDivider) << "\n";
 
     for (const auto& field : fields) {
         std::string objid = value_of(field, "OBJID");
@@ -319,7 +321,7 @@ void print_tags(std::istringstream& args) {
     table_token = upper_copy(trim_copy(table_token));
 
     if (table_token.empty()) {
-        std::cout << "DDICT TAGS requires a table name.\n";
+        cli::cmdout::print_prefixed_message("DDICT", MessageId::DDictTagsRequiresTableName);
         return;
     }
 
@@ -352,17 +354,26 @@ void print_tags(std::istringstream& args) {
         }
     }
 
-    std::cout
-        << "DDICT TAGS " << table_token << "\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n"
-        << "  Table DBF     : " << (exists_quiet(dbf) ? "YES" : "NO") << "\n"
-        << "  CDX artifact  : " << (cdx.empty() ? "NO" : cdx.string()) << "\n"
-        << "  LMDB mirror   : " << (lmdb.empty() ? "NO" : lmdb.string()) << "\n"
-        << "  Catalog tags  : " << tags.size() << "\n";
+    cli::cmdout::print_message(MessageId::DDictTagsTitle, {{"table", table_token}});
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
+    cli::cmdout::print_message(
+        MessageId::DDictTableDbfLine,
+        {{"value", exists_quiet(dbf) ? "YES" : "NO"}});
+    cli::cmdout::print_message(
+        MessageId::DDictCdxArtifactLine,
+        {{"value", cdx.empty() ? "NO" : cdx.string()}});
+    cli::cmdout::print_message(
+        MessageId::DDictLmdbMirrorLine,
+        {{"value", lmdb.empty() ? "NO" : lmdb.string()}});
+    cli::cmdout::print_message(
+        MessageId::DDictCatalogTagsLine,
+        {{"count", std::to_string(tags.size())}});
 
     if (!metadata_owner_used.empty() && metadata_owner_used != table_token) {
-        std::cout << "  Metadata owner: " << metadata_owner_used << "\n";
+        cli::cmdout::print_message(
+            MessageId::DDictMetadataOwnerLine,
+            {{"owner", metadata_owner_used}});
     }
 
     if (tags.empty()) {
@@ -370,22 +381,21 @@ void print_tags(std::istringstream& args) {
         // Runtime bridge: catalog tag lookup uses owner_lookup_candidates(); physical artifacts are reported honestly.
         bool has_physical_artifact = exists_quiet(dbf) || !cdx.empty() || !lmdb.empty();
         if (has_physical_artifact) {
-            std::cout
-                << "  Result        : PHYSICAL_TAGS_FOUND_NO_CATALOG_ROWS\n"
-                << "  Note          : physical DBF/CDX/LMDB artifacts exist, but no DDOBJECT CATALOG_TAG rows were found for OWNER in "
-                << joined_owner_candidates(owner_candidates) << "\n";
+            cli::cmdout::print_message(MessageId::DDictTagsPhysicalNoCatalogLine);
+            cli::cmdout::print_message(
+                MessageId::DDictTagsPhysicalArtifactsNote,
+                {{"owners", joined_owner_candidates(owner_candidates)}});
         } else {
-            std::cout
-                << "  Result        : NO_CATALOG_TAGS_FOUND\n"
-                << "  Note          : expected DDOBJECT rows where OBJTYPE=CATALOG_TAG and OWNER in "
-                << joined_owner_candidates(owner_candidates) << "\n";
+            cli::cmdout::print_message(MessageId::DDictTagsNoCatalogLine);
+            cli::cmdout::print_message(
+                MessageId::DDictTagsExpectedOwnersNote,
+                {{"owners", joined_owner_candidates(owner_candidates)}});
         }
         return;
     }
 
-    std::cout
-        << "  Tag         OBJID                     STATUS                    PROFILE       ATTRS\n"
-        << "  ----------  ------------------------  ------------------------  ------------  -----\n";
+    std::cout << cli::cmdout::message_text(MessageId::DDictTagsColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictTagsDivider) << "\n";
 
     for (const auto& tag : tags) {
         std::string objid = value_of(tag, "OBJID");
@@ -443,11 +453,11 @@ void print_rel(std::istringstream& args) {
     }
 
     if (token.empty()) {
-        std::cout << "DDICT REL requires an object id or name.\n";
+        cli::cmdout::print_prefixed_message("DDICT", MessageId::DDictRelRequiresObjectToken);
         return;
     }
     if (!(direction == "IN" || direction == "OUT" || direction == "BOTH")) {
-        std::cout << "DDICT REL direction must be IN, OUT, or BOTH.\n";
+        cli::cmdout::print_prefixed_message("DDICT", MessageId::DDictRelInvalidDirection);
         return;
     }
 
@@ -457,15 +467,15 @@ void print_rel(std::istringstream& args) {
     auto by_id = object_index(objects);
     const Row* obj = resolve_object(objects, token);
 
-    std::cout
-        << "DDICT REL " << token << " " << direction << "\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n";
+    cli::cmdout::print_message(
+        MessageId::DDictRelTitle,
+        {{"token", token}, {"direction", direction}});
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
 
     if (!obj) {
-        std::cout
-            << "  Result        : OBJECT_NOT_FOUND\n"
-            << "  Note          : token was matched against OBJID and DDOBJECT NAME/OWNER.\n";
+        cli::cmdout::print_message(MessageId::DDictObjectNotFoundLine);
+        cli::cmdout::print_message(MessageId::DDictObjectLookupNote);
         return;
     }
 
@@ -474,11 +484,10 @@ void print_rel(std::istringstream& args) {
     std::string name = value_of(*obj, "NAME");
     std::string owner = value_of(*obj, "OWNER");
 
-    std::cout
-        << "  Object OBJID  : " << objid << "\n"
-        << "  Object type   : " << objtype << "\n"
-        << "  Object owner  : " << owner << "\n"
-        << "  Object name   : " << name << "\n";
+    cli::cmdout::print_message(MessageId::DDictObjectObjidLine, {{"value", objid}});
+    cli::cmdout::print_message(MessageId::DDictObjectTypeLine, {{"value", objtype}});
+    cli::cmdout::print_message(MessageId::DDictObjectOwnerLine, {{"value", owner}});
+    cli::cmdout::print_message(MessageId::DDictObjectNameLine, {{"value", name}});
 
     std::vector<const Row*> incoming;
     std::vector<const Row*> outgoing;
@@ -491,12 +500,17 @@ void print_rel(std::istringstream& args) {
         }
     }
 
-    std::cout
-        << "  Incoming edges: " << incoming.size() << "\n"
-        << "  Outgoing edges: " << outgoing.size() << "\n"
-        << "  Rows shown    : bounded to 40 per direction\n"
-        << "  Dir  EdgeType            OtherOBJ                  OtherType          OtherOwner      OtherName       EVID\n"
-        << "  ---  ------------------  ------------------------  -----------------  --------------  --------------  --------------------\n";
+    cli::cmdout::print_message(
+        MessageId::DDictIncomingEdgesLine,
+        {{"count", std::to_string(incoming.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictOutgoingEdgesLine,
+        {{"count", std::to_string(outgoing.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictRowsShownPerDirectionLine,
+        {{"count", "40"}});
+    std::cout << cli::cmdout::message_text(MessageId::DDictRelColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictRelDivider) << "\n";
 
     constexpr std::size_t kLimit = 40;
     if (direction == "OUT" || direction == "BOTH") {
@@ -538,7 +552,7 @@ void print_evidence(std::istringstream& args) {
     token = upper_copy(trim_copy(token));
 
     if (token.empty()) {
-        std::cout << "DDICT EVIDENCE requires an object id or name.\n";
+        cli::cmdout::print_prefixed_message("DDICT", MessageId::DDictEvidenceRequiresObjectToken);
         return;
     }
 
@@ -551,15 +565,13 @@ void print_evidence(std::istringstream& args) {
 
     const Row* obj = resolve_object(objects, token);
 
-    std::cout
-        << "DDICT EVIDENCE " << token << "\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n";
+    cli::cmdout::print_message(MessageId::DDictEvidenceTitle, {{"token", token}});
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
 
     if (!obj) {
-        std::cout
-            << "  Result        : OBJECT_NOT_FOUND\n"
-            << "  Note          : token was matched against OBJID and DDOBJECT NAME/OWNER.\n";
+        cli::cmdout::print_message(MessageId::DDictObjectNotFoundLine);
+        cli::cmdout::print_message(MessageId::DDictObjectLookupNote);
         return;
     }
 
@@ -598,19 +610,23 @@ void print_evidence(std::istringstream& args) {
         }
     }
 
-    std::cout
-        << "  Object OBJID  : " << objid << "\n"
-        << "  Object type   : " << objtype << "\n"
-        << "  Object owner  : " << owner << "\n"
-        << "  Object name   : " << name << "\n"
-        << "  Direct evidence rows: " << direct_evidence.size() << "\n"
-        << "  Attribute evidence rows: " << object_attrs.size() << "\n"
-        << "  Rows shown    : bounded to 20 per section\n";
+    cli::cmdout::print_message(MessageId::DDictObjectObjidLine, {{"value", objid}});
+    cli::cmdout::print_message(MessageId::DDictObjectTypeLine, {{"value", objtype}});
+    cli::cmdout::print_message(MessageId::DDictObjectOwnerLine, {{"value", owner}});
+    cli::cmdout::print_message(MessageId::DDictObjectNameLine, {{"value", name}});
+    cli::cmdout::print_message(
+        MessageId::DDictDirectEvidenceRowsLine,
+        {{"count", std::to_string(direct_evidence.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictAttributeEvidenceRowsLine,
+        {{"count", std::to_string(object_attrs.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictRowsShownPerSectionLine,
+        {{"count", "20"}});
 
-    std::cout
-        << "  Evidence rows\n"
-        << "  EVID                  KIND                  SRCID                 SOURCE              ARTIFACT\n"
-        << "  --------------------  --------------------  --------------------  ------------------  ------------------\n";
+    std::cout << cli::cmdout::message_text(MessageId::DDictEvidenceRowsTitle) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictEvidenceColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictEvidenceDivider) << "\n";
 
     std::size_t shown = 0;
     for (const Row* ev : direct_evidence) {
@@ -643,13 +659,12 @@ void print_evidence(std::istringstream& args) {
     }
 
     if (direct_evidence.empty()) {
-        std::cout << "  (none)\n";
+        cli::cmdout::print_message(MessageId::DDictNoneLine);
     }
 
-    std::cout
-        << "  Attribute evidence\n"
-        << "  ATTRNAME            ATTRVAL                         EVID\n"
-        << "  ------------------  ------------------------------  --------------------\n";
+    std::cout << cli::cmdout::message_text(MessageId::DDictAttributeEvidenceTitle) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictAttributeEvidenceColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictAttributeEvidenceDivider) << "\n";
 
     shown = 0;
     for (const Row* attr : object_attrs) {
@@ -668,7 +683,7 @@ void print_evidence(std::istringstream& args) {
     }
 
     if (object_attrs.empty()) {
-        std::cout << "  (none)\n";
+        cli::cmdout::print_message(MessageId::DDictNoneLine);
     }
 }
 
@@ -719,16 +734,23 @@ void print_objects(std::istringstream& args) {
         selected.push_back(&obj);
     }
 
-    std::cout
-        << "DDICT OBJECTS\n"
-        << "  Active catalog: " << dir.string() << "\n"
-        << "  Read mode     : READ-ONLY\n"
-        << "  Type filter   : " << (type_filter.empty() ? "(none)" : type_filter) << "\n"
-        << "  Profile filter: " << (profile_filter.empty() ? "(none)" : profile_filter) << "\n"
-        << "  Object rows   : " << selected.size() << "\n"
-        << "  Rows shown    : bounded to 80\n"
-        << "  OBJTYPE             NAME              OWNER             STATUS                    PROFILE       ATTRS\n"
-        << "  ------------------  ----------------  ----------------  ------------------------  ------------  -----\n";
+    cli::cmdout::print_message(MessageId::DDictObjectsTitle);
+    cli::cmdout::print_message(MessageId::DDictActiveCatalogLine, {{"path", dir.string()}});
+    cli::cmdout::print_message(MessageId::DDictReadModeLine);
+    cli::cmdout::print_message(
+        MessageId::DDictTypeFilterLine,
+        {{"value", type_filter.empty() ? "(none)" : type_filter}});
+    cli::cmdout::print_message(
+        MessageId::DDictProfileFilterLine,
+        {{"value", profile_filter.empty() ? "(none)" : profile_filter}});
+    cli::cmdout::print_message(
+        MessageId::DDictObjectRowsLine,
+        {{"count", std::to_string(selected.size())}});
+    cli::cmdout::print_message(
+        MessageId::DDictRowsShownBoundedLine,
+        {{"count", "80"}});
+    std::cout << cli::cmdout::message_text(MessageId::DDictObjectsColumnHeader) << "\n"
+              << cli::cmdout::message_text(MessageId::DDictObjectsDivider) << "\n";
 
     constexpr std::size_t kLimit = 80;
     std::size_t shown = 0;
@@ -750,7 +772,7 @@ void print_objects(std::istringstream& args) {
     }
 
     if (selected.empty()) {
-        std::cout << "  (none)\n";
+        cli::cmdout::print_message(MessageId::DDictNoneLine);
     }
 }
 
@@ -763,7 +785,12 @@ void cmd_DDICT(xbase::DbArea& area, std::istringstream& args) {
     args >> sub;
     sub = upper_copy(trim_copy(sub));
 
-    if (sub.empty() || sub == "HELP" || sub == "?" || sub == "USAGE") {
+    if (sub.empty()) {
+        print_status();
+        return;
+    }
+
+    if (sub == "HELP" || sub == "?" || sub == "USAGE") {
         print_ddict_usage();
         return;
     }
@@ -803,6 +830,9 @@ void cmd_DDICT(xbase::DbArea& area, std::istringstream& args) {
         return;
     }
 
-    std::cout << "DDICT: unknown subcommand '" << sub << "'.\n";
+    cli::cmdout::print_prefixed_message(
+        "DDICT",
+        MessageId::DDictUnknownSubcommand,
+        {{"subcommand", sub}});
     print_ddict_usage();
 }

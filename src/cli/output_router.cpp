@@ -1,4 +1,5 @@
 #include "cli/output_router.hpp"
+#include "cli/settings.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -388,7 +389,7 @@ void OutputRouter::console_note(const std::string& line) {
 
 void OutputRouter::talk_line(const std::string& line) {
     std::lock_guard<std::mutex> guard(impl_->mtx);
-    if (!impl_->talk_on) return;
+    if (!cli::Settings::instance().talk_on.load()) return;
 
     switch (impl_->dest) {
     case OutputDest::Console:
@@ -415,36 +416,47 @@ void OutputRouter::talk_line(const std::string& line) {
 
 void OutputRouter::set_echo(bool on)      { std::lock_guard<std::mutex> lk(impl_->mtx); impl_->echo_on = on; }
 void OutputRouter::set_alternate(bool on) { std::lock_guard<std::mutex> lk(impl_->mtx); impl_->alternate_on = on; }
-void OutputRouter::set_talk(bool on)      { std::lock_guard<std::mutex> lk(impl_->mtx); impl_->talk_on = on; }
+void OutputRouter::set_talk(bool on)
+{
+    std::lock_guard<std::mutex> lk(impl_->mtx);
+    impl_->talk_on = on;
+    cli::Settings::instance().talk_on.store(on);
+}
 void OutputRouter::set_paging(bool on)    { std::lock_guard<std::mutex> lk(impl_->mtx); impl_->paging_on_global = on; }
 void OutputRouter::set_wrap(bool on)      { std::lock_guard<std::mutex> lk(impl_->mtx); impl_->wrap_on_console = on; }
 
 void OutputRouter::set_console(bool on)
 {
-    if (on) set_dest_console();
-    else {
+    cli::Settings::instance().console_on.store(on);
+    if (on) {
+        set_dest_console();
+    } else {
         std::lock_guard<std::mutex> lk(impl_->mtx);
         if (impl_->dest == OutputDest::Console) impl_->dest = OutputDest::Null;
         impl_->console_on = on;
+        cli::Settings::instance().device_target = "NULL";
     }
 }
 
 void OutputRouter::set_print(bool on)
 {
     std::lock_guard<std::mutex> lk(impl_->mtx);
+    cli::Settings::instance().print_on.store(on);
     if (on) {
         if (!impl_->prn_file_path.empty() && impl_->prn_file.is_open()) {
             impl_->dest = OutputDest::File;
+            cli::Settings::instance().device_target = "FILE";
         }
     } else if (impl_->dest == OutputDest::File) {
         impl_->dest = OutputDest::Null;
+        cli::Settings::instance().device_target = "NULL";
     }
 }
 
 bool OutputRouter::console_on() const   { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->dest == OutputDest::Console && impl_->console_on; }
 bool OutputRouter::print_on() const     { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->dest == OutputDest::File; }
 bool OutputRouter::alternate_on() const { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->alternate_on; }
-bool OutputRouter::talk_on() const      { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->talk_on; }
+bool OutputRouter::talk_on() const      { return cli::Settings::instance().talk_on.load(); }
 bool OutputRouter::echo_on() const      { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->echo_on; }
 bool OutputRouter::paging_on() const    { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->paging_on_global; }
 bool OutputRouter::wrap_on() const      { std::lock_guard<std::mutex> lk(impl_->mtx); return impl_->wrap_on_console; }
@@ -501,6 +513,10 @@ void OutputRouter::set_dest_console()
     std::lock_guard<std::mutex> lk(impl_->mtx);
     impl_->dest = OutputDest::Console;
     impl_->console_on = true;
+    cli::Settings::instance().console_on.store(true);
+    cli::Settings::instance().print_on.store(false);
+    cli::Settings::instance().device_target = "SCREEN";
+    cli::Settings::instance().printer_target.clear();
 }
 
 bool OutputRouter::set_dest_file(const std::string& path)
@@ -518,6 +534,10 @@ bool OutputRouter::set_dest_file(const std::string& path)
 
     impl_->prn_file_path = trimmed;
     impl_->dest = OutputDest::File;
+    cli::Settings::instance().console_on.store(false);
+    cli::Settings::instance().print_on.store(true);
+    cli::Settings::instance().device_target = "FILE";
+    cli::Settings::instance().printer_target.clear();
     return true;
 }
 
@@ -528,6 +548,10 @@ bool OutputRouter::set_dest_printer(const std::string& printer_name)
     impl_->use_default_printer = impl_->printer_name.empty();
     impl_->printer_spool_buffer.clear();
     impl_->dest = OutputDest::Printer;
+    cli::Settings::instance().console_on.store(false);
+    cli::Settings::instance().print_on.store(false);
+    cli::Settings::instance().device_target = "PRINTER";
+    cli::Settings::instance().printer_target = impl_->printer_name;
     return true;
 }
 
@@ -535,6 +559,10 @@ void OutputRouter::set_dest_null()
 {
     std::lock_guard<std::mutex> lk(impl_->mtx);
     impl_->dest = OutputDest::Null;
+    cli::Settings::instance().console_on.store(false);
+    cli::Settings::instance().print_on.store(false);
+    cli::Settings::instance().device_target = "NULL";
+    cli::Settings::instance().printer_target.clear();
 }
 
 OutputDest OutputRouter::dest() const

@@ -59,13 +59,14 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "set_relations.hpp"
 #include "textio.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <cstring>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -85,14 +86,7 @@ static std::string trim_copy(std::string s) {
 
 static void print_set_relation_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SET RELATION USAGE\n"
-        << "  SET RELATION TO <expr> INTO <child>\n"
-        << "  SET RELATION TO <expr> INTO <child>, <expr> INTO <child>\n"
-        << "  SET RELATION ADDITIVE TO <expr> INTO <child>\n"
-        << "  SET RELATION OFF ALL\n"
-        << "  SET RELATION OFF INTO <child>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationUsageText);
 }
 
 static bool is_set_relation_usage_request(const std::string& raw)
@@ -209,7 +203,9 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
 
     const std::string parent = current_parent_or_empty();
     if (parent.empty()) {
-        std::cout << "SET RELATION: no current parent area\n";
+        cli::cmdout::print_prefixed_message(
+            "SET RELATION",
+            dottalk::helpdata::MessageId::SetRelationNoCurrentParentText);
         return;
     }
 
@@ -223,7 +219,7 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
 
         if (op2 == "ALL") {
             relations_api::clear_relations(parent);
-            std::cout << "OK\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
             return;
         }
 
@@ -232,7 +228,9 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
             ss >> child;
             child = trim_copy(child);
             if (child.empty()) {
-                std::cout << "SET RELATION OFF INTO requires child area\n";
+                cli::cmdout::print_prefixed_message(
+                    "SET RELATION",
+                    dottalk::helpdata::MessageId::SetRelationOffIntoRequiresChildText);
                 return;
             }
 
@@ -240,11 +238,13 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
                 return;
             }
             relations_api::refresh_if_enabled();
-            std::cout << "OK\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
             return;
         }
 
-        std::cout << "SET RELATION: expected INTO <child> or ALL after OFF\n";
+        cli::cmdout::print_prefixed_message(
+            "SET RELATION",
+            dottalk::helpdata::MessageId::SetRelationExpectedOffTailText);
         return;
     }
 
@@ -260,7 +260,9 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
         remaining = trim_copy(remaining);
 
         if (remaining.empty()) {
-            std::cout << "SET RELATION ADDITIVE requires TO <expr> INTO <child>\n";
+            cli::cmdout::print_prefixed_message(
+                "SET RELATION",
+                dottalk::helpdata::MessageId::SetRelationAdditiveRequiresToIntoText);
             return;
         }
 
@@ -268,7 +270,9 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
         std::string to_kw;
         ts >> to_kw;
         if (up_copy(to_kw) != "TO") {
-            std::cout << "SET RELATION ADDITIVE expects TO\n";
+            cli::cmdout::print_prefixed_message(
+                "SET RELATION",
+                dottalk::helpdata::MessageId::SetRelationAdditiveExpectsToText);
             return;
         }
 
@@ -278,13 +282,17 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
         std::getline(ss, remaining);
         remaining = trim_copy(remaining);
     } else {
-        std::cout << "SET RELATION: expected TO, ADDITIVE, or OFF\n";
+        cli::cmdout::print_prefixed_message(
+            "SET RELATION",
+            dottalk::helpdata::MessageId::SetRelationExpectedToAdditiveOffText);
         return;
     }
 
     std::vector<Clause> clauses;
     if (!parse_clause_list(remaining, clauses)) {
-        std::cout << "SET RELATION: invalid TO ... INTO ... clause\n";
+        cli::cmdout::print_prefixed_message(
+            "SET RELATION",
+            dottalk::helpdata::MessageId::SetRelationInvalidClauseText);
         return;
     }
 
@@ -295,7 +303,10 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
     for (const auto& c : clauses) {
         auto fields = expr_to_fields(c.expr_text);
         if (fields.empty()) {
-            std::cout << "SET RELATION: empty expression for child " << c.child << "\n";
+            cli::cmdout::print_prefixed_message(
+                "SET RELATION",
+                dottalk::helpdata::MessageId::SetRelationEmptyExpressionForChildText,
+                {{"child", c.child}});
             return;
         }
 
@@ -305,5 +316,5 @@ void cmd_SET_RELATION(xbase::DbArea& /*A*/, std::istringstream& iss) {
     }
 
     relations_api::refresh_if_enabled();
-    std::cout << "OK\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }

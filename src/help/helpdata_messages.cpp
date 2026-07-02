@@ -867,7 +867,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:SET INDEX",
             "USAGE",
             "INFO",
-            "Usage:\n  SET INDEX USAGE\n  SET INDEX TO <container>\n  SET INDEX TO <container> TAG <tag>\n  SET INDEX TO <container> <tag>\n  SETINDEX USAGE\n  SETINDEX TO <container>\n  SETINDEX TO <container> TAG <tag>\n  SETINDEX TO <container> <tag>"
+            "Usage:\n  SET INDEX USAGE\n  SET INDEX TO\n  SET INDEX TO <container>\n  SET INDEX TO <container> TAG <tag>\n  SET INDEX TO <container> <tag>\n  SETINDEX USAGE\n  SETINDEX TO\n  SETINDEX TO <container>\n  SETINDEX TO <container> TAG <tag>\n  SETINDEX TO <container> <tag>"
         },
         {
             MessageId::SetIndexNoTableOpenText,
@@ -6057,6 +6057,9 @@ const std::vector<MessageDef>& all_messages()
             "  MAINT COOKBOOK\n"
             "  MAINT BOUNDARY\n"
             "  MAINT BBOX\n"
+            "  MAINT DOCS\n"
+            "  MAINT GUI\n"
+            "  MAINT CONTRACTS\n"
             "Notes:\n"
             "  - MAINT is read-only first wave.\n"
             "  - MAINT inspects maintenance lanes, cookbooks, status, and boundaries.\n"
@@ -9021,7 +9024,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetPathAssignedText,   "en-US", "{slot} = {path}" },
         { MessageId::SetPathWarnMissingText, "en-US", "warning: path does not exist" },
         { MessageId::SetPathWarnExpectedDirectoryText, "en-US", "warning: expected directory, found file" },
-        { MessageId::SetIndexUsageText,     "en-US", "Usage:\n  SET INDEX USAGE\n  SET INDEX TO <container>\n  SET INDEX TO <container> TAG <tag>\n  SET INDEX TO <container> <tag>\n  SETINDEX USAGE\n  SETINDEX TO <container>\n  SETINDEX TO <container> TAG <tag>\n  SETINDEX TO <container> <tag>" },
+        { MessageId::SetIndexUsageText,     "en-US", "Usage:\n  SET INDEX USAGE\n  SET INDEX TO\n  SET INDEX TO <container>\n  SET INDEX TO <container> TAG <tag>\n  SET INDEX TO <container> <tag>\n  SETINDEX USAGE\n  SETINDEX TO\n  SETINDEX TO <container>\n  SETINDEX TO <container> TAG <tag>\n  SETINDEX TO <container> <tag>" },
         { MessageId::SetIndexNoTableOpenText, "en-US", "no table open." },
         { MessageId::SetIndexMissingFilenameText, "en-US", "missing filename." },
         { MessageId::SetIndexTagRequiresNameText, "en-US", "TAG requires a name." },
@@ -9876,6 +9879,8 @@ const std::vector<MessageTextDef>& all_message_texts()
             "  manualgen   - developer manual generation and MAN* catalog evidence\n"
             "  datadict    - DD* / DATA_DICTIONARY_* catalog and DDICT evidence\n"
             "  messaging   - message catalog, language/locale, and output text migration\n"
+            "  gui         - wx, Python/Tkinter, and TUI synchronization over shared runtime contracts\n"
+            "  contracts   - durable rules, usage contracts, registry, intake, and drift review\n"
             "  blackbox    - data in, processing, information out teaching model\n"
             "  maintenance - SDLC cookbooks, gates, boundaries, and closeouts" },
         { MessageId::MaintCookbookText, "en-US",

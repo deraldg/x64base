@@ -17,7 +17,7 @@
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
-        "DOTTALK_WITH_TVISION": "ON"
+        "DOTTALK_WITH_TV": "ON"
       }
     },
     {
@@ -30,7 +30,7 @@
       "binaryDir": "${sourceDir}/build-ansi-mt",
       "cacheVariables": {
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
-        "DOTTALK_WITH_TVISION": "OFF"
+        "DOTTALK_WITH_TV": "OFF"
       }
     },
     {
@@ -39,7 +39,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-wsl",
       "cacheVariables": {
-        "DOTTALK_WITH_TVISION": "OFF"
+        "DOTTALK_WITH_TV": "OFF"
       }
     }
   ],
@@ -49,4 +49,3 @@
     { "name": "wsl-Release",     "configurePreset": "wsl",     "configuration": "Release" }
   ]
 }
-

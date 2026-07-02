@@ -35,6 +35,34 @@ static fs::path abs_if_exists(const fs::path& p)
     return {};
 }
 
+static fs::path relative_under_root(const fs::path& path, const fs::path& root)
+{
+    if (path.empty() || root.empty()) {
+        return {};
+    }
+
+    std::error_code ec_path;
+    std::error_code ec_root;
+    const fs::path abs_path = fs::weakly_canonical(path, ec_path);
+    const fs::path abs_root = fs::weakly_canonical(root, ec_root);
+    if (ec_path || ec_root) {
+        return {};
+    }
+
+    std::error_code ec_rel;
+    const fs::path rel = fs::relative(abs_path, abs_root, ec_rel);
+    if (ec_rel || rel.empty()) {
+        return {};
+    }
+
+    for (const auto& part : rel) {
+        if (part == "..") {
+            return {};
+        }
+    }
+    return rel;
+}
+
 static fs::path resolve_in_search_roots(const std::string& token,
                                         const std::vector<fs::path>& roots,
                                         const std::string& default_ext = "")
@@ -118,7 +146,7 @@ fs::path resolve_index(const std::string& token)
     const fs::path root = get_slot(Slot::INDEXES);
     const fs::path p = resolve_in_slot(root, token);
     // Public index container/file root:
-    //   .inx, .cnx, .cdx, .idx
+    //   .inx, .cnx, .cdx
     // Do not force an extension here.
     return p;
 }
@@ -131,6 +159,11 @@ fs::path resolve_lmdb_root()
 fs::path resolve_lmdb_env_for_cdx(const fs::path& public_cdx_path)
 {
     const fs::path root = get_slot(Slot::LMDB);
+    const fs::path indexes_root = get_slot(Slot::INDEXES);
+
+    if (const fs::path rel = relative_under_root(public_cdx_path, indexes_root); !rel.empty()) {
+        return fs::absolute(root / fs::path(rel.string() + ".d"));
+    }
 
     // Derive backend env from public CDX container filename only.
     // Example:

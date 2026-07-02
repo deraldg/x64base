@@ -76,6 +76,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
 #include "cdx/cdx.hpp"
@@ -88,7 +89,6 @@
 #include <cstring>
 #include <filesystem>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -103,6 +103,8 @@ constexpr std::uint64_t LMDB_DEFAULT_MAPSIZE =
 namespace fs = std::filesystem;
 
 namespace {
+
+using dottalk::helpdata::MessageId;
 
 static std::string up_copy(std::string s) {
     for (auto& c : s) c = (char)std::toupper((unsigned char)c);
@@ -178,33 +180,7 @@ static bool parse_mapsize_spec(const std::string& raw, std::uint64_t& out_bytes)
 
 static void print_buildlmdb_usage()
 {
-    std::cout
-        << "Usage: BUILDLMDB [HELP|?] [MAPSIZE <n[K|M|G]> | SIZE <n[K|M|G]> |\n"
-        << "                  TINY|SMALL|MEDIUM|LARGE|XL|HUGE]\n"
-        << "                 [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]\n"
-        << "\n"
-        << "  BUILDLMDB\n"
-        << "      Rebuild LMDB backing store for the current CDX container.\n"
-        << "      Default mapsize is 128 MiB.\n"
-        << "\n"
-        << "  BUILDLMDB SMALL\n"
-        << "      Use preset mapsize 64 MiB.\n"
-        << "\n"
-        << "  BUILDLMDB MEDIUM\n"
-        << "      Use preset mapsize 128 MiB.\n"
-        << "\n"
-        << "  BUILDLMDB LARGE\n"
-        << "      Use preset mapsize 256 MiB.\n"
-        << "\n"
-        << "  BUILDLMDB MAPSIZE 1G YES\n"
-        << "      Rebuild using 1 GiB mapsize for empirical/speed testing.\n"
-        << "\n"
-        << "  BUILDLMDB CLEAN MAPSIZE 512M YES\n"
-        << "      Archive existing LMDB env first, then rebuild at 512 MiB.\n"
-        << "\n"
-        << "Presets:\n"
-        << "  TINY=32 MiB  SMALL=64 MiB  MEDIUM=128 MiB\n"
-        << "  LARGE=256 MiB  XL=512 MiB  HUGE=1 GiB\n";
+    cli::cmdout::print_message(MessageId::BuildLmdbUsageText);
 }
 
 static fs::path default_cdx_container_path(xbase::DbArea& area)
@@ -262,13 +238,19 @@ static bool archive_envdir_to_backups(const fs::path& envdir, bool quiet)
     std::error_code ec;
     if (!fs::exists(envdir, ec)) return true;
     if (!fs::is_directory(envdir, ec)) {
-        std::cout << "BUILDLMDB CLEAN: env path exists but is not a directory: " << envdir.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB CLEAN",
+            MessageId::BuildLmdbEnvPathNotDirectory,
+            {{"path", envdir.string()}});
         return false;
     }
 
     fs::path backups = envdir.parent_path() / "backups";
     if (!ensure_dir(backups)) {
-        std::cout << "BUILDLMDB CLEAN: unable to create backups dir: " << backups.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB CLEAN",
+            MessageId::BuildLmdbUnableCreateBackupsDir,
+            {{"path", backups.string()}});
         return false;
     }
 
@@ -279,19 +261,28 @@ static bool archive_envdir_to_backups(const fs::path& envdir, bool quiet)
         ec.clear();
         fs::copy(envdir, dst, fs::copy_options::recursive, ec);
         if (ec) {
-            std::cout << "BUILDLMDB CLEAN: copy failed: " << ec.message() << "\n";
+            cli::cmdout::print_prefixed_message(
+                "BUILDLMDB CLEAN",
+                MessageId::BuildLmdbCopyFailed,
+                {{"detail", ec.message()}});
             return false;
         }
         ec.clear();
         fs::remove_all(envdir, ec);
         if (ec) {
-            std::cout << "BUILDLMDB CLEAN: remove_all failed after copy: " << ec.message() << "\n";
+            cli::cmdout::print_prefixed_message(
+                "BUILDLMDB CLEAN",
+                MessageId::BuildLmdbRemoveAllFailed,
+                {{"detail", ec.message()}});
             return false;
         }
     }
 
     if (!quiet) {
-        std::cout << "BUILDLMDB CLEAN: archived envdir to: " << dst.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB CLEAN",
+            MessageId::BuildLmdbArchivedEnvdir,
+            {{"path", dst.string()}});
     }
     return true;
 }
@@ -412,16 +403,26 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
     MDB_txn* txn = nullptr;
     int rc0 = mdb_txn_begin(env, nullptr, 0, &txn);
     if (rc0 != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: mdb_txn_begin failed for tag " << tag_name_uc
-                  << ": " << rc0 << " (" << lmdb_err(rc0) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepTagFailed,
+            {{"step", "mdb_txn_begin"},
+             {"tag", tag_name_uc},
+             {"code", std::to_string(rc0)},
+             {"detail", lmdb_err(rc0)}});
         return false;
     }
 
     MDB_dbi dbi = 0;
     int rc = mdb_dbi_open(txn, tag_name_uc.c_str(), MDB_CREATE, &dbi);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: dbi_open failed for tag " << tag_name_uc
-                  << ": " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepTagFailed,
+            {{"step", "dbi_open"},
+             {"tag", tag_name_uc},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         mdb_txn_abort(txn);
         return false;
     }
@@ -429,8 +430,13 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
     // Clear existing contents
     rc = mdb_drop(txn, dbi, 0);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: drop/clear failed for tag " << tag_name_uc
-                  << ": " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepTagFailed,
+            {{"step", "drop/clear"},
+             {"tag", tag_name_uc},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         mdb_txn_abort(txn);
         return false;
     }
@@ -463,8 +469,13 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
 
         rc = mdb_put(txn, dbi, &mkey, &mval, 0);
         if (rc != MDB_SUCCESS) {
-            std::cout << "BUILDLMDB: put failed for tag " << tag_name_uc
-                      << " rec " << rn << ": " << rc << " (" << lmdb_err(rc) << ")\n";
+            cli::cmdout::print_prefixed_message(
+                "BUILDLMDB",
+                MessageId::BuildLmdbPutFailed,
+                {{"tag", tag_name_uc},
+                 {"recno", std::to_string(rn)},
+                 {"code", std::to_string(rc)},
+                 {"detail", lmdb_err(rc)}});
             mdb_txn_abort(txn);
             return false;
         }
@@ -472,8 +483,13 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
 
     rc = mdb_txn_commit(txn);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: txn_commit failed for tag " << tag_name_uc
-                  << ": " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepTagFailed,
+            {{"step", "txn_commit"},
+             {"tag", tag_name_uc},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         return false;
     }
 
@@ -489,35 +505,57 @@ static bool build_lmdb_env_for_cdx(xbase::DbArea& area,
 
     const fs::path envdir = lmdb_env_dir_for_container(cdx_container);
     if (!ensure_dir(envdir)) {
-        std::cout << "BUILDLMDB: unable to create env dir: " << envdir.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbUnableCreateEnvDir,
+            {{"path", envdir.string()}});
         return false;
     }
 
     MDB_env* env = nullptr;
     int rc = mdb_env_create(&env);
     if (rc != MDB_SUCCESS || !env) {
-        std::cout << "BUILDLMDB: mdb_env_create failed: " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepFailed,
+            {{"step", "mdb_env_create"},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         return false;
     }
 
     rc = mdb_env_set_maxdbs(env, 1024);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: mdb_env_set_maxdbs failed: " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepFailed,
+            {{"step", "mdb_env_set_maxdbs"},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         mdb_env_close(env);
         return false;
     }
 
     rc = mdb_env_set_mapsize(env, mapsize_bytes);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: mdb_env_set_mapsize failed: "
-                  << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepFailed,
+            {{"step", "mdb_env_set_mapsize"},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         mdb_env_close(env);
         return false;
     }
 
     rc = mdb_env_open(env, envdir.string().c_str(), 0, 0664);
     if (rc != MDB_SUCCESS) {
-        std::cout << "BUILDLMDB: mdb_env_open failed: " << rc << " (" << lmdb_err(rc) << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbLmdbStepFailed,
+            {{"step", "mdb_env_open"},
+             {"code", std::to_string(rc)},
+             {"detail", lmdb_err(rc)}});
         mdb_env_close(env);
         return false;
     }
@@ -596,12 +634,18 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
             quiet = true;
         } else if (t == "MAPSIZE" || t == "SIZE") {
             if (i + 1 >= tokens.size()) {
-                std::cout << "BUILDLMDB: " << t << " requires a value like 64M, 128M, 1G.\n";
+                cli::cmdout::print_prefixed_message(
+                    "BUILDLMDB",
+                    MessageId::BuildLmdbMapsizeRequiresValue,
+                    {{"keyword", t}});
                 return;
             }
             std::uint64_t parsed = 0;
             if (!parse_mapsize_spec(tokens[++i], parsed)) {
-                std::cout << "BUILDLMDB: invalid mapsize: " << tokens[i] << "\n";
+                cli::cmdout::print_prefixed_message(
+                    "BUILDLMDB",
+                    MessageId::BuildLmdbInvalidMapsize,
+                    {{"value", tokens[i]}});
                 return;
             }
             chosen_mapsize = parsed;
@@ -625,20 +669,21 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
     }
 
     if (!unknown_args.empty()) {
-        std::cout << "BUILDLMDB: unknown option";
-        if (unknown_args.size() > 1) std::cout << "s";
-        std::cout << ": ";
+        std::ostringstream oss;
         for (size_t i = 0; i < unknown_args.size(); ++i) {
-            if (i) std::cout << ", ";
-            std::cout << unknown_args[i];
+            if (i) oss << ", ";
+            oss << unknown_args[i];
         }
-        std::cout << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbUnknownOptions,
+            {{"options", oss.str()}});
         print_buildlmdb_usage();
         return;
     }
 
     if (!area.isOpen()) {
-        std::cout << "BUILDLMDB: No table open.\n";
+        cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbNoTableOpen);
         return;
     }
 
@@ -652,34 +697,37 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
     const fs::path envdir = lmdb_env_dir_for_container(cdx_container);
 
     if (!quiet) {
-        std::cout << "BUILDLMDB: target container " << cdx_container.string() << "\n";
-        std::cout << "BUILDLMDB: LMDB env        " << envdir.string() << "\n";
-        std::cout << "BUILDLMDB: mapsize         " << format_mapsize_bytes(chosen_mapsize) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbTargetContainerLine,
+            {{"path", cdx_container.string()}});
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbEnvLine,
+            {{"path", envdir.string()}});
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB",
+            MessageId::BuildLmdbMapsizeInfoLine,
+            {{"value", format_mapsize_bytes(chosen_mapsize)}});
     }
 
     // Safety check: shell-safe confirmation model.
     // Never do a nested std::cin prompt here; require explicit YES/AUTO/NOPROMPT.
     if (!do_clean && !do_force && looks_like_existing_lmdb_env(envdir) && !auto_confirm) {
-        std::cout << "\nWARNING: LMDB environment directory already exists and appears to contain data:\n"
-                  << "  " << envdir.string() << "\n"
-                  << "Rebuilding will DROP and recreate all tag databases inside it.\n"
-                  << "This is a destructive operation -- existing index data will be lost.\n\n"
-                  << "BUILDLMDB: confirmation required. Re-run with YES, AUTO, or NOPROMPT.\n"
-                  << "Examples:\n"
-                  << "  BUILDLMDB YES\n"
-                  << "  BUILDLMDB CLEAN YES\n"
-                  << "  BUILDLMDB MAPSIZE 1G YES\n";
+        cli::cmdout::print_message(
+            MessageId::BuildLmdbDestructiveWarningText,
+            {{"path", envdir.string()}});
         return;
     }
 
     if (!do_clean && !do_force && looks_like_existing_lmdb_env(envdir) && auto_confirm && !quiet) {
-        std::cout << "BUILDLMDB: auto-confirmed rebuild of existing env.\n";
+        cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbAutoConfirmed);
     }
 
 // --- CRITICAL: release active backend before destructive rebuild ---
     if (orderstate::hasOrder(area)) {
         if (!quiet) {
-            std::cout << "BUILDLMDB: releasing active index/order before rebuild.\n";
+            cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbReleasingActiveIndex);
         }
 
         area.indexManager().close();
@@ -690,7 +738,7 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
 
     if (do_clean || do_force) {
         if (!archive_envdir_to_backups(envdir, quiet)) {
-            std::cout << "BUILDLMDB: archive failed - aborting.\n";
+            cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbArchiveFailedAborting);
             return;
         }
     }
@@ -699,15 +747,27 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
     if (build_lmdb_env_for_cdx(area, cdx_container, chosen_mapsize, &built)) {
         if (!quiet) {
             for (size_t i = 0; i < built.size(); ++i) {
-                std::cout << " [" << (i + 1) << "] " << built[i] << " : OK\n";
+                cli::cmdout::print_message(
+                    MessageId::BuildLmdbTagOkLine,
+                    {{"index", std::to_string(i + 1)},
+                     {"tag", built[i]}});
             }
-            std::cout << "BUILDLMDB: done OK=" << built.size() << " tags rebuilt.\n";
-            std::cout << "CDX container   : " << cdx_container.string() << "\n";
-            std::cout << "LMDB environment: " << envdir.string() << "\n";
-            std::cout << "Mapsiz e        : " << format_mapsize_bytes(chosen_mapsize) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "BUILDLMDB",
+                MessageId::BuildLmdbDoneTagsRebuilt,
+                {{"count", std::to_string(built.size())}});
+            cli::cmdout::print_message(
+                MessageId::BuildLmdbCdxContainerLine,
+                {{"path", cdx_container.string()}});
+            cli::cmdout::print_message(
+                MessageId::BuildLmdbLmdbEnvironmentLine,
+                {{"path", envdir.string()}});
+            cli::cmdout::print_message(
+                MessageId::BuildLmdbMapsizeReportLine,
+                {{"value", format_mapsize_bytes(chosen_mapsize)}});
         }
         return;
     }
 
-    std::cout << "BUILDLMDB: failed to build LMDB environment.\n";
+    cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbFailedToBuildEnv);
 }

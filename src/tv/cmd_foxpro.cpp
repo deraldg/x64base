@@ -29,7 +29,9 @@
 
 #include "xbase.hpp"
 #include "cli/command_registry.hpp"
+#include "cli/shell_exit_request.hpp"
 #include "textio.hpp"
+#include "../cli/shell_shortcuts.hpp"
 
 #define Uses_TApplication
 #define Uses_TDialog
@@ -97,6 +99,7 @@ static std::string trim(const std::string& s) {
 // ---------- external shell bindings ----------
 extern "C" xbase::XBaseEngine* shell_engine();
 extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui_cmds);
+bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine);
 
 // ---------- command IDs ----------
 static const int cmFoxProExit     = cmQuit;
@@ -312,13 +315,58 @@ private:
 class TCmdInput : public TInputLine {
 public:
     TCmdInput(const TRect& r, ushort maxLen) : TInputLine(r, maxLen) {}
-    void prefill(const std::string& s) { setData((void*)s.c_str()); selectAll(True); }
+    void prefill(const std::string& s) {
+        setData((void*)s.c_str());
+        const int end = static_cast<int>(s.size());
+        curPos = end;
+        firstPos = 0;
+        selStart = end;
+        selEnd = end;
+        focus();
+        drawView();
+    }
     void handleEvent(TEvent& ev) override {
-        TInputLine::handleEvent(ev);
-        if (ev.what == evKeyDown && ev.keyDown.keyCode == kbEnter) {
-            message(owner, evCommand, cmRunCmd, this);
-            clearEvent(ev);
+        if (ev.what == evKeyDown) {
+            if (ev.keyDown.keyCode == kbEnter) {
+                message(TProgram::application, evCommand, cmRunCmd, this);
+                clearEvent(ev);
+                return;
+            }
+            if (ev.keyDown.keyCode == kbEsc) {
+                static const char* empty = "";
+                setData((void*)empty);
+                selectAll(True);
+                focus();
+                clearEvent(ev);
+                return;
+            }
+            if (ev.keyDown.keyCode == kbCtrlU) {
+                if (data) {
+                    std::string s = data;
+                    if (curPos > 0 && curPos <= static_cast<int>(s.size()))
+                        s = s.substr(static_cast<std::size_t>(curPos));
+                    setData((void*)s.c_str());
+                    selectAll(False);
+                    focus();
+                }
+                clearEvent(ev);
+                return;
+            }
+            if (ev.keyDown.keyCode == kbCtrlK) {
+                if (data) {
+                    std::string s = data;
+                    if (curPos >= 0 && curPos <= static_cast<int>(s.size()))
+                        s.resize(static_cast<std::size_t>(curPos));
+                    setData((void*)s.c_str());
+                    selectAll(False);
+                    focus();
+                }
+                clearEvent(ev);
+                return;
+            }
         }
+
+        TInputLine::handleEvent(ev);
     }
 };
 
@@ -637,16 +685,29 @@ void TDotTalkApp::executeCommandLine(const std::string& line) {
     const std::string trimmed = trim(line);
     if (trimmed.empty() || !dbArea_) return;
 
-    lastInput_ = trimmed;
-    ini_.lastCmd = trimmed;
-    if (history_.empty() || history_.back() != trimmed) history_.push_back(trimmed);
+    const std::string resolved = shell_shortcuts::resolve(trimmed);
+
+    lastInput_ = resolved;
+    ini_.lastCmd = resolved;
+    if (history_.empty() || history_.back() != resolved) history_.push_back(resolved);
     histIndex_ = -1;
 
-    std::cout << "> " << trimmed << "\n";
+    std::cout << "> " << resolved << "\n";
 
-    std::istringstream tok(trimmed);
+    std::istringstream tok(resolved);
     std::string cmdToken; tok >> cmdToken;
     std::string U = textio::up(cmdToken);
+
+    std::string extra;
+    if ((U == "EXIT" || U == "QUIT" || U == "CANCEL" || U == "ABORT") && !(tok >> extra)) {
+        xbase::clear_shell_exit_request();
+        std::cout << "Leaving FoxPro UI; returning to DotTalk++ shell.\n";
+        TEvent quit{};
+        quit.what = evCommand;
+        quit.message.command = cmQuit;
+        putEvent(quit);
+        return;
+    }
 
     auto confirm = [&](const char*, const char* msg)->bool{
         ushort r = messageBox(msg, mfWarning | mfYesNoCancel);
@@ -665,7 +726,7 @@ void TDotTalkApp::executeCommandLine(const std::string& line) {
         if (!confirm("Confirm", "ZAP will delete ALL records. Continue?")) return;
     }
 
-    if (!dli::registry().run(*dbArea_, U, tok)) {
+    if (!shell_execute_line(*dbArea_, resolved)) {
         messageBox(("Unknown or failed command: " + cmdToken).c_str(), mfError | mfOKButton);
     }
 }
@@ -1024,10 +1085,8 @@ void cmd_FOXPRO(xbase::DbArea& area, std::istringstream& /*args*/) {
     app.setDbArea(&area);
     std::cout << "Launching DotTalk FoxPro UI...\n";
     app.run();
+    xbase::clear_shell_exit_request();
 #else
     std::cout << "TVISION is not available in this build.\n";
 #endif
 }
-
-
-

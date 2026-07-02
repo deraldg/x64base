@@ -6,6 +6,7 @@
     "tvision",
     "pybind11",
     "lmdb",
-    "nlohmann-json"
+    "nlohmann-json",
+    "wxwidgets"
   ]
 }

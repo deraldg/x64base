@@ -17,11 +17,16 @@ struct Item {
     bool supported;      // whether DotTalk++ currently supports it
 };
 
+// Policy:
+// - dotref.hpp is the project-native DotTalk++ reference surface.
+// - dotref should describe the public DotTalk++ identity and preferred
+//   command/documentation wording, independent of FoxPro compatibility phrasing.
+// - foxref may overlap for historical support, but dotref remains the native
+//   namespace/reference lane for DotTalk++ help and higher documentation layers.
+
 inline const std::vector<Item>& catalog() {
     static const std::vector<Item> k = {
         {"DBAREA",    "DBAREA", "Report or inspect the current DbArea/workspace (diagnostics).", true},
-
-        {"DBAREAS",   "DBAREAS", "Report the current work-area tree and relation-oriented area diagnostics.", true},
 
         {"STATUS",    "STATUS", "Display area status.", true},
 
@@ -39,33 +44,8 @@ inline const std::vector<Item>& catalog() {
 
         {"SETINDEX",  "SETINDEX <tag|path>", "Activate an index for the area (DotTalk++ convenience wiring).", true},
 
-        {"SET CDX",   "SET CDX TO <file>", "Attach or inspect a CDX container for the current area.", true},
-
-        {"SET CNX",   "SET CNX TO <file>", "Attach or activate a CNX container for the current area.", true},
-
-        {"SET LMDB",  "SET LMDB TO <path>", "Attach or point the current area at an LMDB-backed index environment where supported.", true},
-
-        {"SET NEAR",  "SET NEAR ON|OFF|STATUS", "Control near-match seek behavior for active-order navigation.", true},
-
-        {"SET FILTER","SET FILTER TO <expr>", "Set a filter expression using the spaced compatibility form.", true},
-
-        {"SET CASE",  "SET CASE ON|OFF", "Control case-sensitivity using the spaced compatibility form.", true},
-
-        {"SET PATH",  "SET PATH <slot> <path>", "Set a runtime root/path slot using the spaced command form.", true},
-
-        {"SET RELATION", "SET RELATION TO <child> ON <field>[,<field>...]", "Define or route FoxPro-style relation wiring into the DotTalk++ relation backend.", true},
-
         {"REINDEX",   "REINDEX [ALL]",
                  "Rebuild index files for the current table (or all open tables).", true},
-
-        {"BUILDLMDB", "BUILDLMDB [HELP|?] [MAPSIZE <n[K|M|G]>|SIZE <n[K|M|G]>|TINY|SMALL|MEDIUM|LARGE|XL|HUGE] [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]",
-                 "Build or rebuild the LMDB backing store for the current CDX container.", true},
-
-        {"CDX",       "CDX [INFO|TAGS|CREATE|ADDTAG|DROPTAG] [<path.cdx>]", "Inspect or manage CDX container metadata and tag directories.", true},
-
-        {"INDEX",     "INDEX [ON <field> TAG <name> | STATUS | LIST]", "General index-management command surface for the current table.", true},
-
-        {"LMDB",      "LMDB [USAGE|INFO|CHECK|PATH ...]", "Inspect or manage LMDB-backed index/storage wiring where supported.", true},
 
         {"CNX",       "CNX <name>",
                  "Index container command (CNX multi-tag support).", true},
@@ -127,11 +107,7 @@ inline const std::vector<Item>& catalog() {
             - May currently trigger full INX rebuild work as part of the commit path (performance issue).)", true},
 {"EXPORT", "EXPORT <csv>", "Export to CSV.", true},
 
-        {"EXPORTFUNCTIONS", "EXPORTFUNCTIONS [MD [<path>]]", "Export the expression/function catalog through the canonical command surface.", true},
-
         {"IMPORT", "IMPORT <csv>", "Import from CSV.", true},
-
-        {"COPY", "COPY <source> TO <target>", "Copy table or data content into another target using DotTalk++ copy semantics.", true},
 
         {"SETPATH", "SETPATH | SETPATH RESET | SETPATH <SLOT> <path>",
         R"(Manage runtime root directories.
@@ -302,8 +278,6 @@ Used By:
 
         {"BROWSETV", "BROWSETV", "Turbo Vision browser UI (developer tool).", true},
 
-        {"BROWSE",   "BROWSE", "Open the classic browse surface for the current table/work-area context.", true},
-
         {"BROWSER",  "BROWSER", "Developer browser command (experimental).", true},
 
         {"RECORDVIEW","RECORDVIEW", "Vertical record viewer.", true},
@@ -435,10 +409,11 @@ Used By:
         {"CMDHELPCHK",   "CMDHELPCHK", "Validate HELP catalogs vs the command registry.", true},
 
 
-        {"DDICT", "DDICT [HELP|STATUS|TABLES|OBJECTS|FIELDS <table>|TAGS <table>|REL <object>|EVIDENCE <object>]",
+        {"DDICT", "DDICT [STATUS|HELP|TABLES|OBJECTS|FIELDS <table>|TAGS <table>|REL <object>|EVIDENCE <object>]",
         R"(Inspect the active Data Dictionary catalog from inside DotTalk++.
 
 Usage:
+    DDICT
     DDICT HELP
     DDICT STATUS
     DDICT TABLES
@@ -451,12 +426,16 @@ Usage:
 Notes:
     DDICT is read-only over the active Data Dictionary catalog.)", true},
 
-        {"MANUAL", "MANUAL [USAGE|CATALOG STATUS|CATALOG TABLES|CATALOG COUNTS|CATALOG RESOLVE <token>|SECTIONS|MEDIA|REVIEW]",
+        {"MANUAL", "MANUAL [USAGE|STATUS|TABLES|COUNTS|RESOLVE <token>|CATALOG STATUS|CATALOG TABLES|CATALOG COUNTS|CATALOG RESOLVE <token>|SECTIONS|MEDIA|REVIEW]",
         R"(Inspect the accepted MAN* manualgen catalog from inside DotTalk++.
 
 Usage:
     MANUAL
     MANUAL USAGE
+    MANUAL STATUS
+    MANUAL TABLES
+    MANUAL COUNTS
+    MANUAL RESOLVE <token>
     MANUAL CATALOG STATUS
     MANUAL CATALOG TABLES
     MANUAL CATALOG COUNTS
@@ -470,20 +449,6 @@ Notes:
     MANUAL reports accepted MAN* manualgen catalog evidence.
     MANUAL does not mutate DBFs, HELP, META, CMDHELPCHK, source files, or publication artifacts.
     Resolver/reader/formatter support modules are not registered commands.)", true},
-
-        {"MANSTAR", "MANSTAR [USAGE|<args...>]", "Inspect or drive the MANSTAR/manual-star helper surface where enabled.", true},
-
-        {"MSGMGR", "MSGMGR [USAGE|STATUS|CHECK]",
-        R"(Inspect the Message Manager command house and runtime messaging/locale-spine status.
-
-Usage:
-    MSGMGR
-    MSGMGR USAGE
-    MSGMGR STATUS
-    MSGMGR CHECK
-
-Notes:
-    MSGMGR is read-only in the current phase and reports messaging/locale scaffolding.)", true},
 
 
         {"BBOX", "BBOX [USAGE|MODEL|LANES|COMMENTS|HELP|MANUALGEN|DATADICT|MESSAGING|MAINT]",
@@ -506,7 +471,7 @@ Notes:
     BBOX is educational.
     BBOX explains SelfDoc lanes using the data in -> processing -> information out model.
     BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.)", true},
-        {"MAINT", "MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX]",
+        {"MAINT", "MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|CONTRACTS]",
         R"(Inspect DotTalk++ maintenance lanes, cookbooks, status, and protected-system boundaries.
 
 Usage:
@@ -517,6 +482,9 @@ Usage:
     MAINT COOKBOOK
     MAINT BOUNDARY
     MAINT BBOX
+    MAINT DOCS
+    MAINT GUI
+    MAINT CONTRACTS
 
 Notes:
     MAINT is read-only first wave.
@@ -644,32 +612,19 @@ Notes:
         // FOX compatibility entries remain in foxref.hpp.
         // Generated by patch_dotref_phase1_classic_db.py.
         {"AREA", "AREA", "Report the current DotTalk++ work-area state.", true},
-        {"APPEND", "APPEND", "Append a new record using current table defaults and active buffering rules.", true},
-        {"APPEND_BLANK", "APPEND BLANK", "Append a blank record to the current table.", true},
         {"BOTTOM", "BOTTOM", "Move to the last record in the current table/order.", true},
-        {"CLOSE", "CLOSE [ALL|<area>|<alias>]", "Close the current table, a selected area, or all open work areas.", true},
         {"COUNT", "COUNT [FOR <expr>]", "Count records in the current table, optionally using a FOR expression.", true},
-        {"DELETE", "DELETE", "Mark the current record deleted using current table semantics.", true},
         {"DISPLAY", "DISPLAY [ALL] [FIELDS <list>] [FOR <expr>]", "Display records from the current table without changing the default DOT help namespace.", true},
-        {"DIR", "DIR [<mask>|<path>]", "List directory or file entries through the DotTalk++ shell surface.", true},
-        {"ECHO", "ECHO <text...>", "Echo text to the current DotTalk++ output route.", true},
-        {"ERASE", "ERASE <target>", "Erase a file or supported target through the DotTalk++ shell surface.", true},
         {"FIND", "FIND <text> [IN <field>]", "Find text or values using the active order when possible, with scan fallback when needed.", true},
         {"GOTO", "GOTO <recno>|TOP|BOTTOM", "Move the current work area to a specific record or boundary position.", true},
         {"LIST", "LIST [ALL] [FIELDS <list>] [FOR <expr>]", "List records from the current table using DotTalk++ command semantics.", true},
         {"LOCATE", "LOCATE FOR <expr> | LOCATE <field> <op> <value>", "Position on the first record matching a predicate or simple field comparison.", true},
-        {"PACK", "PACK", "Permanently remove deleted records from the current table.", true},
-        {"RECALL", "RECALL", "Unmark the current deleted record when supported by the current table state.", true},
         {"RECNO", "RECNO", "Report the current record number for the active work area.", true},
-        {"REPLACE", "REPLACE <field> WITH <value>", "Replace one field in the current record using table-buffer and memo-aware semantics.", true},
-        {"REPLACE_MULTI", "REPLACE_MULTI <field>=<expr> ...", "Perform multiple field replacements in one pass.", true},
-        {"SEEK", "SEEK <value> [IN <field>] | SEEK <field> = <value>", "Seek through the active order or by scanning a requested field.", true},
         {"SELECT", "SELECT <area-or-alias>", "Select the active DotTalk++ work area by number or logical name.", true},
         {"SET", "SET [<option> [<value>]]", "Show or change DotTalk++ runtime settings.", true},
         {"SKIP", "SKIP [<n>]", "Move relative to the current record in the active work area.", true},
         {"TOP", "TOP", "Move to the first record in the current table/order.", true},
         {"USE", "USE <table> [ALIAS <name>] [NOINDEX]", "Open a DBF table in the active DotTalk++ work area.", true},
-        {"ZAP", "ZAP", "Delete all records from the current table.", true},
 
         // Phase 5 DOTREF high-visibility/help-adjacent curation batch.
         {"ABOUT", "ABOUT",
@@ -903,17 +858,12 @@ Notes:
         {"STUDENTHELLO", "STUDENTHELLO [USAGE]",
                  "Student/demo hello command used to teach the simplest command registration and output path.", true},
 
-        // Phase 5 DOTREF curation batch 13: student/demo, work-area, web, archive, and VUSE surfaces.
-
-        // Phase 5 DOTREF curation batch 13: student/demo, work-area, web, archive, and VUSE surfaces.
+        // Phase 5 DOTREF curation batch 13: student/demo, work-area, web, and archive surfaces.
         {"STU_REPEAT", "STU_REPEAT [USAGE|<text...>]",
                  "Student/demo repeat command used to teach argument handling, loops, and command output.", true},
 
         {"STU_UPPER", "STU_UPPER [USAGE|<text...>]",
                  "Student/demo uppercase command used to teach string handling and command output.", true},
-
-        {"VUSE", "VUSE [USAGE|<args...>]",
-                 "Open or demonstrate the VUSE helper surface for local teaching, viewing, or workspace workflows.", true},
 
         {"WA", "WA [USAGE|<args...>]",
                  "Work-area shorthand/helper surface for inspecting or selecting active work-area context.", true},

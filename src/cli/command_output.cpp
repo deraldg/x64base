@@ -5,6 +5,7 @@
 #include "cli/settings.hpp"
 
 #include <ostream>
+#include <vector>
 
 namespace cli::cmdout {
 
@@ -13,6 +14,21 @@ namespace {
 inline std::ostream& out()
 {
     return cli::OutputRouter::instance().out();
+}
+
+inline void print_heading(dottalk::helpdata::MessageId id)
+{
+    out() << "\n"
+          << dottalk::helpdata::format_message(
+                 id, {}, cli::Settings::instance().message_locale)
+          << '\n';
+}
+
+inline void print_indented_lines(const std::vector<std::string>& lines)
+{
+    for (const auto& line : lines) {
+        out() << "  " << line << '\n';
+    }
 }
 
 } // anonymous namespace
@@ -90,10 +106,8 @@ void show_command_syntax(const std::string& cmd)
     const auto* doc = dottalk::doc::get(cmd);
     if (!doc || doc->syntax.empty()) return;
 
-    out() << "Syntax:\n";
-    for (const auto& line : doc->syntax) {
-        out() << "  " << line << '\n';
-    }
+    out() << message_text(dottalk::helpdata::MessageId::GlobalSyntaxTitle) << '\n';
+    print_indented_lines(doc->syntax);
 }
 
 void show_command_help(const std::string& cmd)
@@ -104,31 +118,23 @@ void show_command_help(const std::string& cmd)
     out() << doc->name << " - " << doc->summary << '\n';
 
     if (!doc->syntax.empty()) {
-        out() << "\nSyntax:\n";
-        for (const auto& line : doc->syntax) {
-            out() << "  " << line << '\n';
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalSyntaxTitle);
+        print_indented_lines(doc->syntax);
     }
 
     if (!doc->samples.empty()) {
-        out() << "\nExamples:\n";
-        for (const auto& line : doc->samples) {
-            out() << "  " << line << '\n';
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalExamplesTitle);
+        print_indented_lines(doc->samples);
     }
 
     if (!doc->notes.empty()) {
-        out() << "\nNotes:\n";
-        for (const auto& line : doc->notes) {
-            out() << "  " << line << '\n';
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalNotesTitle);
+        print_indented_lines(doc->notes);
     }
 
     if (!doc->warnings.empty()) {
-        out() << "\nWarnings:\n";
-        for (const auto& line : doc->warnings) {
-            out() << "  " << line << '\n';
-        }
+        print_heading(dottalk::helpdata::MessageId::GlobalWarningsTitle);
+        print_indented_lines(doc->warnings);
     }
 }
 

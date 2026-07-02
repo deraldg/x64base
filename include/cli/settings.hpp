@@ -1,9 +1,25 @@
 #pragma once
 #include <atomic>
+#include <cstdlib>
 #include <string>
 #include <cstdint>
 
 namespace cli {
+
+namespace detail {
+
+inline bool default_passive_dev_diagnostics_enabled() {
+#if DOTTALK_EXTRA_DIAGNOSTICS
+    const char* v = std::getenv("DOTTALK_DEV_DIAGNOSTICS");
+    if (!v || !*v) return false;
+    const char c = static_cast<char>(*v);
+    return !(c == '0' || c == 'n' || c == 'N' || c == 'f' || c == 'F');
+#else
+    return false;
+#endif
+}
+
+} // namespace detail
 
 enum class EditorMode {
     Default,
@@ -23,6 +39,7 @@ struct Settings {
     std::atomic<bool> talk_on{true};          // SET TALK
     std::atomic<bool> status_on{false};       // SET STATUS
     std::atomic<bool> time_on{false};         // SET TIME
+    std::atomic<bool> passive_dev_diagnostics_on{detail::default_passive_dev_diagnostics_enabled()}; // SET DEVDIAG
     std::atomic<bool> timer_on{false};        // SET TIMER
     std::atomic<bool> polling_on{false};      // SET POLLING
     std::atomic<bool> clock_on{false};        // SET CLOCK
@@ -76,6 +93,26 @@ struct Settings {
     static Settings& instance() {
         static Settings s;
         return s;
+    }
+
+    static constexpr bool extraDiagnosticsBuiltIn() {
+#if DOTTALK_EXTRA_DIAGNOSTICS
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    static bool devDiagnosticsEnabled() {
+        return extraDiagnosticsBuiltIn();
+    }
+
+    static bool passiveDevDiagnosticsEnabled() {
+        return instance().passive_dev_diagnostics_on.load();
+    }
+
+    static void setPassiveDevDiagnostics(bool on) {
+        instance().passive_dev_diagnostics_on.store(on);
     }
 
     // Convenience used elsewhere

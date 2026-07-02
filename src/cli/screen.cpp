@@ -22,7 +22,10 @@ int
 #endif
 hOut = 0;
 
-static std::vector<std::string> gShadow;
+static std::vector<std::string>& shadow_buffer() {
+    static std::vector<std::string> shadow;
+    return shadow;
+}
 
 // ====================== HELPERS ======================
 #ifdef _WIN32
@@ -48,7 +51,7 @@ static void ansi_write_at(int x, int y, const char* data, size_t n) {
 // ====================== CORE ======================
 int screen_width()  { return gW; }
 int screen_height() { return gH; }
-const std::vector<std::string>& screen_shadow() { return gShadow; }
+const std::vector<std::string>& screen_shadow() { return shadow_buffer(); }
 
 bool screen_enable_vt(bool enable) {
 #ifdef _WIN32
@@ -70,7 +73,7 @@ bool screen_enable_vt(bool enable) {
 void screen_init(int width, int height) {
     gW = std::max(1, width);
     gH = std::max(1, height);
-    gShadow.assign(gH, std::string(gW, ' '));
+    shadow_buffer().assign(gH, std::string(gW, ' '));
 
 #ifdef _WIN32
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -96,12 +99,12 @@ void screen_shutdown() {
     std::printf("\x1b[0m\x1b[?25h");
     std::fflush(stdout);
 #endif
-    gShadow.clear();
+    shadow_buffer().clear();
     gW = gH = 0;
 }
 
 void screen_clear(bool clear_console) {
-    for (auto& line : gShadow) std::fill(line.begin(), line.end(), ' ');
+    for (auto& line : shadow_buffer()) std::fill(line.begin(), line.end(), ' ');
 
     if (!clear_console) return;
 
@@ -215,17 +218,17 @@ void screen_write_line(int y, std::string_view text) {
     int i = 0;
     const int n = (int)line.size();
     while (i < n) {
-        while (i < n && line[i] == gShadow[y][i]) ++i;
+        while (i < n && line[i] == shadow_buffer()[y][i]) ++i;
         if (i >= n) break;
         const int start = i;
-        while (i < n && line[i] != gShadow[y][i]) ++i;
+        while (i < n && line[i] != shadow_buffer()[y][i]) ++i;
         const int end = i;
         write_at(start, y, line.data() + start, (size_t)(end - start));
-        std::copy(line.begin() + start, line.begin() + end, gShadow[y].begin() + start);
+        std::copy(line.begin() + start, line.begin() + end, shadow_buffer()[y].begin() + start);
     }
 #else
     ansi_write_at(0, y, line.data(), line.size());
-    gShadow[y] = line;
+    shadow_buffer()[y] = line;
     std::fflush(stdout);
 #endif
 }
@@ -246,9 +249,9 @@ void screen_write_span(int x, int y, std::string_view text) {
     std::fflush(stdout);
 #endif
 
-    if (y >= 0 && y < (int)gShadow.size()) {
-        if ((int)gShadow[y].size() < gW) gShadow[y].resize(gW, ' ');
-        std::copy(text.begin(), text.begin() + n, gShadow[y].begin() + x);
+    if (y >= 0 && y < (int)shadow_buffer().size()) {
+        if ((int)shadow_buffer()[y].size() < gW) shadow_buffer()[y].resize(gW, ' ');
+        std::copy(text.begin(), text.begin() + n, shadow_buffer()[y].begin() + x);
     }
 }
 

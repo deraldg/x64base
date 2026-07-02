@@ -20,20 +20,22 @@
 // usage: BBOX DATADICT
 // usage: BBOX MESSAGING
 // usage: BBOX MAINT
+// usage: BBOX CONTRACTS
 // note: BBOX is read-only and educational.
 // note: BBOX explains SelfDoc maintenance lanes as data -> process -> information systems.
 // note: BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 
 #include <algorithm>
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 
 namespace {
+
+using dottalk::helpdata::MessageId;
 
 std::string trim_copy(std::string s) {
     auto not_space = [](unsigned char ch) { return !std::isspace(ch); };
@@ -56,103 +58,51 @@ std::string remaining_args(std::istringstream& iss) {
 }
 
 void print_bbox_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  BBOX\n"
-        << "  BBOX USAGE\n"
-        << "  BBOX MODEL\n"
-        << "  BBOX LANES\n"
-        << "  BBOX COMMENTS\n"
-        << "  BBOX HELP\n"
-        << "  BBOX MANUALGEN\n"
-        << "  BBOX DATADICT\n"
-        << "  BBOX MESSAGING\n"
-        << "  BBOX MAINT\n"
-        << "Notes:\n"
-        << "  - BBOX is read-only and educational.\n"
-        << "  - BBOX teaches the Blackbox model: data in, processing, information out.\n"
-        << "  - BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source, scripts, or publications.\n";
+    cli::cmdout::print_message(MessageId::BBoxUsageText);
 }
 
 void print_bbox_model() {
-    std::cout
-        << "BLACKBOX MODEL\n"
-        << "  DATA IN\n"
-        << "    source comments, usage contracts, DBFs, scripts, Markdown, media, source code, catalogs\n"
-        << "\n"
-        << "  PROCESSING\n"
-        << "    scan, harvest, classify, import, build, validate, publish, smoke test\n"
-        << "\n"
-        << "  INFORMATION OUT\n"
-        << "    HELP, CMDHELP, manuals, data dictionary, comments workspace, MAN*/DD*/SRC* catalogs, reports, diagrams\n"
-        << "\n"
-        << "  CONTROL\n"
-        << "    backup, rollback, boundary ledger, runtime smoke, savepoint, next gate\n";
+    cli::cmdout::print_message(MessageId::BBoxModelText);
 }
 
 void print_bbox_lanes() {
-    std::cout
-        << "BBOX LANES\n"
-        << "  COMMENTS   source comments and @dottalk.usage -> SRC* evidence catalogs\n"
-        << "  HELP       registry, DOTREF, usage contracts -> HELP DATA and CMDHELP\n"
-        << "  MANUALGEN  manual sections/media/manifests -> MAN* catalog and published manuals\n"
-        << "  DATADICT   repo/schema/help evidence -> DD* catalog and DDICT runtime view\n"
-        << "  MESSAGING  hard-coded text/message IDs/locales -> typed localized runtime messages\n"
-        << "  CMDHELPCHK command/help contracts -> validation evidence\n"
-        << "  MAINT      maintenance lanes, cookbooks, gates, and read-only status\n";
+    cli::cmdout::print_message(MessageId::BBoxLanesText);
 }
 
 void print_comments_lane() {
-    std::cout
-        << "COMMENTS BLACKBOX\n"
-        << "  DATA IN: source files, header comments, @dottalk.usage v1 blocks\n"
-        << "  PROCESS: harvest, classify, import, validate, review disposition\n"
-        << "  OUT: SRCFILE, SRCBLOCK, SRCLINE, SRCUSAGE, SRCCLASS, SRCDISP, SRCALIAS, MEMO_LINES\n"
-        << "  CURRENT WORKSPACE: dottalkpp/data/workspaces/comments.dtschema\n";
+    cli::cmdout::print_message(MessageId::BBoxCommentsLaneText);
 }
 
 void print_help_lane() {
-    std::cout
-        << "HELP BLACKBOX\n"
-        << "  DATA IN: command registry, dotref.hpp, foxref.hpp, usage contracts, curated rows, source-mined facts\n"
-        << "  PROCESS: CMDHELP BUILD, HELP DATA generation, validation, runtime smoke\n"
-        << "  OUT: help_line.dbf, help_topic.dbf, help_artifacts.dbf, commands.dbf, cmd_args.dbf, HELP/CMDHELP output\n"
-        << "  NOTE: CMDHELP and HELP /DOT are related consumers but not identical proof surfaces.\n";
+    cli::cmdout::print_message(MessageId::BBoxHelpLaneText);
 }
 
 void print_manualgen_lane() {
-    std::cout
-        << "MANUALGEN BLACKBOX\n"
-        << "  DATA IN: section files, appendices, media anchors, review queues, manifests\n"
-        << "  PROCESS: assemble, normalize, validate, publish, catalog, runtime smoke\n"
-        << "  OUT: published manual, MAN* catalog, MANUAL runtime command, regeneration evidence\n";
+    cli::cmdout::print_message(MessageId::BBoxManualgenLaneText);
 }
 
 void print_datadict_lane() {
-    std::cout
-        << "DATADICT BLACKBOX\n"
-        << "  DATA IN: data dictionary manifests, DD* candidate rows, x64 DATA_DICTIONARY_* physical tables\n"
-        << "  PROCESS: stage, import, validate, CDX/LMDB build, runtime smoke\n"
-        << "  OUT: DD* catalog, DDICT STATUS/TABLES/OBJECTS/FIELDS/TAGS/REL/EVIDENCE\n"
-        << "  RULE: use bridge policy; report metadata owner and physical artifact.\n";
+    cli::cmdout::print_message(MessageId::BBoxDatadictLaneText);
 }
 
 void print_messaging_lane() {
-    std::cout
-        << "MESSAGING BLACKBOX\n"
-        << "  DATA IN: hard-coded text, message IDs, message arguments, locale/language rows\n"
-        << "  PROCESS: extract, catalog, localize, validate placeholders, replace source strings gradually\n"
-        << "  OUT: x64base message catalog, localized runtime text, typed warnings/errors/status/help messages\n"
-        << "  CONTROL: SET LANGUAGE / SET LOCALE selects message-rendering locale where supported.\n";
+    cli::cmdout::print_message(MessageId::BBoxMessagingLaneText);
 }
 
 void print_maint_lane() {
-    std::cout
-        << "MAINT BLACKBOX\n"
-        << "  PURPOSE: developer/SDLC maintenance inspection over documented lanes and cookbooks\n"
-        << "  PRIMARY APP: native C++ MAINT surface, planned separately\n"
-        << "  EXTERNAL TOOLS: Python 3.12 for portable report tooling; PowerShell only for temporary scaffolding\n"
-        << "  RULE: MAINT starts read-only; mutation lanes require explicit guarded packages.\n";
+    cli::cmdout::print_message(MessageId::BBoxMaintLaneText);
+}
+
+void print_contracts_lane() {
+    cli::cmdout::print_line("Contracts lane");
+    cli::cmdout::print_line("  Data in:");
+    cli::cmdout::print_line("    chat decisions, source USAGE blocks, @dottalk.contract annotations, HELP/CMDHELP evidence, governance docs, database/UI/build/safety contracts");
+    cli::cmdout::print_line("  Process:");
+    cli::cmdout::print_line("    intake -> classify -> register -> cross-link -> validate -> promote -> supersede");
+    cli::cmdout::print_line("  Information out:");
+    cli::cmdout::print_line("    contract registry, lifecycle state, intake queue, scan reports, drift reports, promotion tasks");
+    cli::cmdout::print_line("  Manager mode:");
+    cli::cmdout::print_line("    MAINT CONTRACTS is the read-only manager/inspector; BBOX CONTRACTS explains the model.");
 }
 
 } // namespace
@@ -163,13 +113,13 @@ void cmd_BBOX(xbase::DbArea& /*area*/, std::istringstream& iss) {
     if (arg.empty() || arg == "MODEL") {
         print_bbox_model();
         if (arg.empty()) {
-            std::cout << "\n";
+            cli::cmdout::print_line("");
             print_bbox_lanes();
         }
         return;
     }
 
-    if (arg == "USAGE" || arg == "HELP") {
+    if (arg == "USAGE") {
         print_bbox_usage();
         return;
     }
@@ -209,6 +159,14 @@ void cmd_BBOX(xbase::DbArea& /*area*/, std::istringstream& iss) {
         return;
     }
 
-    std::cout << "BBOX: unknown topic: " << arg << "\n";
+    if (arg == "CONTRACTS" || arg == "CONTRACT") {
+        print_contracts_lane();
+        return;
+    }
+
+    cli::cmdout::print_prefixed_message(
+        "BBOX",
+        MessageId::BBoxUnknownTopic,
+        {{"topic", arg}});
     print_bbox_usage();
 }

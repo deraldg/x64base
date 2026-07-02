@@ -33,6 +33,8 @@ namespace fs = std::filesystem;
 
 namespace {
 
+static std::string canonicalize_set_family_command_local(const std::string& command);
+
 static hd::SourceKind source_for_catalog(const std::string& catalog)
 {
     const std::string cat = hd::upper(catalog);
@@ -41,10 +43,15 @@ static hd::SourceKind source_for_catalog(const std::string& catalog)
     return hd::SourceKind::DotRef;
 }
 
+static std::string canonical_artifact_command_name(const std::string& command)
+{
+    return canonicalize_set_family_command_local(command);
+}
+
 static hd::Artifact make_command_status_artifact(const CommandInfo& command)
 {
     const std::string catalog = hd::upper(command.catalog.empty() ? std::string("DOT") : command.catalog);
-    const std::string name = hd::upper(command.name);
+    const std::string name = canonical_artifact_command_name(command.name);
 
     std::string text = "implemented=";
     text += command.implemented ? "yes" : "no";
@@ -68,7 +75,7 @@ static void append_legacy_catalog_artifacts(const CommandInfo& command,
                                             HelpDataV2Counts& counts)
 {
     const std::string catalog = hd::upper(command.catalog.empty() ? std::string("DOT") : command.catalog);
-    const std::string name = hd::upper(command.name);
+    const std::string name = canonical_artifact_command_name(command.name);
     const hd::SourceKind source = source_for_catalog(catalog);
 
     if (!command.verbose.empty()) {
@@ -106,7 +113,7 @@ static void append_command_doc_artifacts(const CommandInfo& command,
                                          HelpDataV2Counts& counts)
 {
     const std::string catalog = hd::upper(command.catalog.empty() ? std::string("DOT") : command.catalog);
-    const std::string name = hd::upper(command.name);
+    const std::string name = canonical_artifact_command_name(command.name);
     const dottalk::doc::CommandDoc* doc = dottalk::doc::get(name);
     if (!doc) return;
 

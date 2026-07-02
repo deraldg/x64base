@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <sstream>
 #include <string>
@@ -47,7 +47,7 @@ void cmd_FIELDMGR(DbArea&, std::istringstream&);	// APPEND FIELDS TO A RECORD
 void cmd_DELETE(DbArea&, std::istringstream&);
 void cmd_RECALL(DbArea&, std::istringstream&);
 void cmd_TURBOPACK(DbArea&, std::istringstream&);	// BINARY FAST PACK
-void cmd_PACK(DbArea&, std::istringstream&);		
+void cmd_PACK(DbArea&, std::istringstream&);
 void cmd_ZAP(DbArea&, std::istringstream&);		// REMOVE ALL RECORDS (COPIES HEADER ONLY)
 
 // METADATA RUNTIME
@@ -104,7 +104,7 @@ void cmd_CONTINUE(DbArea&, std::istringstream&);
 
 //   REPORTING
 
-//   RELATIONAL BROWSING   
+//   RELATIONAL BROWSING
 void cmd_SMART_BROWSER(DbArea&, std::istringstream&);
 void cmd_SIMPLE_BROWSER(DbArea&, std::istringstream&);
 void cmd_ERSATZ(DbArea&, std::istringstream&);
@@ -154,7 +154,7 @@ void cmd_SIX(DbArea&, std::istringstream&);
 void cmd_SNX(DbArea&, std::istringstream&);
 void cmd_SETCNX(DbArea&, std::istringstream&);				// SETCMD
 void cmd_SETCDX(DbArea&, std::istringstream&);				// SETCMD
-void cmd_INDEXSEEK(DbArea&, std::istringstream&);			
+void cmd_INDEXSEEK(DbArea&, std::istringstream&);
 void cmd_SETLMDB(DbArea&, std::istringstream&);				// SETCMD
 void cmd_SETORDER(DbArea&, std::istringstream&);			// SETCMD
 void cmd_LMDB(DbArea&, std::istringstream&);				// EDUCATION & UTILITY
@@ -173,7 +173,7 @@ void cmd_REPLACE_MULTI(DbArea&, std::istringstream&);			// DIRECT TABLE WRITES O
 void cmd_SET_RELATIONS(DbArea&, std::istringstream&);			// SETCMD
 void cmd_RELATIONS_REFRESH(DbArea&, std::istringstream&);
 void cmd_RELATIONS_LIST(DbArea&, std::istringstream&);
-void cmd_CMDREL(DbArea&, std::istringstream&);				
+void cmd_CMDREL(DbArea&, std::istringstream&);
 void cmd_REL(DbArea&, std::istringstream&);
 void cmd_REFRESH(DbArea&, std::istringstream&);
 
@@ -238,7 +238,6 @@ void cmd_IMPORT(DbArea&, std::istringstream&);
 void cmd_SFTP(DbArea&, std::istringstream&);
 
 // DEVELOPMENT
-void cmd_VUSE(DbArea&, std::istringstream&);			// DEV
 void cmd_SHOWINI(DbArea&, std::istringstream&);
 void cmd_TABLEMETA(DbArea&, std::istringstream&);
 void cmd_ABOUT(DbArea&, std::istringstream&);
@@ -281,7 +280,7 @@ void edu_CASESTUDY(DbArea&, std::istringstream&);
 // MISCELLANEOUS
 void cmd_EXAMPLE(DbArea&, std::istringstream&);              // Structure of a self-registering Command
 void cmd_IMAGE_DISPLAY(DbArea&, std::istringstream&);        // Launch, Display, Store Images
-void cmd_WEB(DbArea&, std::istringstream&);		     // Launch, Display, Store URL,SSH,FTP,SFTP	
+void cmd_WEB(DbArea&, std::istringstream&);		     // Launch, Display, Store URL,SSH,FTP,SFTP
 void edu_ASCII_TABLE(DbArea&, std::istringstream&);
 
 // RETRO

@@ -1,0 +1,19 @@
+## CODEX Addendum: Teacher Layer Deferred Until Data Dictionary and Manualgen Stabilize
+
+Status: ACTIVE DOCTRINE / FUTURE LANE
+Project: DotTalk++ / x64base
+Area: SelfDoc / Master Document Organizer / Teaching Layer
+
+The teacher side of DotTalk++ should remain deferred until the Data Dictionary and manual generation / organization systems are solid.
+
+Correct maturity order:
+
+```text
+1. Data Dictionary
+   schema/catalog truth, DDICT inspection, HELP/CMDHELPCHK candidate alignment
+
+2. Manual generation / organization
+   stable manual catalog lane, regeneration discipline, evidence-aware section structure
+
+3. Teacher / learning layer
+   lessons, exercises, labs, student pathways, guided comparisons, classroom prompts

@@ -1,0 +1,8 @@
+# mcc_vfp.erz
+# MCC relational browser preset for VFP/CNX
+
+SETUP=vfp
+WORKSPACE=mcc_vfp.dtschema
+ROOT=students
+LIMIT=10
+PATH=enroll,classes,tassign,teachers

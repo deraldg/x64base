@@ -45,16 +45,17 @@
 //
 
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_iterator.hpp"
 #include "cli/order_state.hpp"
 #include "cli/settings.hpp"
 #include "cli/scan_selector.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace locate_continue_bridge {
     void clear();
@@ -90,11 +91,7 @@ static bool is_continue_usage_request(const std::string& raw)
 
 static void print_continue_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CONTINUE\n"
-        << "  CONTINUE USAGE\n"
-        << "  CONTINUE FOR <expr>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ContinueUsageText);
 }
 
 static bool parse_continue_args(std::istringstream& in,
@@ -235,18 +232,20 @@ static bool continue_physical_shared(xbase::DbArea& A,
 
 void cmd_CONTINUE(xbase::DbArea& A, std::istringstream& in)
 {
-        if (is_continue_usage_request(in.str())) {
+    if (is_continue_usage_request(in.str())) {
         print_continue_usage();
         return;
     }
 
-if (!A.isOpen()) {
-        std::cout << "CONTINUE: no file open.\n";
+    if (!A.isOpen()) {
+        cli::cmdout::print_prefixed_message("CONTINUE",
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
         return;
     }
 
     if (A.recno() <= 0 || A.recCount() <= 0) {
-        std::cout << "CONTINUE: failed.\n";
+        cli::cmdout::print_prefixed_message("CONTINUE",
+            dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
@@ -254,14 +253,15 @@ if (!A.isOpen()) {
     bool use_expr = false;
 
     if (!parse_continue_args(in, where_text, use_expr)) {
-        std::cout << "Usage: CONTINUE [FOR <expr>]\n";
+        print_continue_usage();
         return;
     }
 
     // Plain CONTINUE reuses the last successful LOCATE/CONTINUE predicate.
     if (!use_expr) {
         if (!locate_continue_bridge::get(where_text, use_expr)) {
-            std::cout << "CONTINUE: no active locate.\n";
+            cli::cmdout::print_prefixed_message("CONTINUE",
+                dottalk::helpdata::MessageId::ContinueNoActiveLocateText);
             return;
         }
     }
@@ -279,12 +279,14 @@ if (!A.isOpen()) {
     if (!found || found_recno <= 0) {
         (void)A.gotoRec(start_rec);
         (void)A.readCurrent();
-        std::cout << "CONTINUE: not found.\n";
+        cli::cmdout::print_prefixed_message("CONTINUE",
+            dottalk::helpdata::MessageId::ContinueNotFoundText);
         return;
     }
 
     if (!A.gotoRec(found_recno) || !A.readCurrent()) {
-        std::cout << "CONTINUE: failed.\n";
+        cli::cmdout::print_prefixed_message("CONTINUE",
+            dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
 
@@ -292,6 +294,8 @@ if (!A.isOpen()) {
     locate_continue_bridge::set(where_text, use_expr);
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Found at " << A.recno() << ".\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ContinueFoundAtText,
+            {{"recno", std::to_string(A.recno())}});
     }
 }

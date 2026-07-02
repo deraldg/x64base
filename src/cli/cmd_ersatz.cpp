@@ -90,10 +90,13 @@
 
 #include "browser/browser.hpp"
 #include "browser/browser_session.hpp"
+#include "cli/command_output.hpp"
 #include "colors.hpp"
 #include "common/path_state.hpp"
 #include "db_tuple_stream.hpp"
+#include "help/helpdata_messages.hpp"
 #include "cli/order_state.hpp"
+#include "shell_api.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
 #include "set_relations.hpp"
@@ -412,6 +415,12 @@ namespace
         return current_user_root() / "scripts";
     }
 
+    static std::string& ersatz_saved_setup_command()
+    {
+        static std::string command;
+        return command;
+    }
+
     static fs::path public_scripts_root()
     {
         return public_root() / "scripts";
@@ -516,6 +525,33 @@ namespace
             p.replace_extension(default_ext);
 
         return root / p;
+    }
+
+    static std::string normalize_workspace_reference_for_save(const std::string& path_in)
+    {
+        const std::string trimmed = trim(path_in);
+        if (trimmed.empty())
+            return trimmed;
+
+        std::error_code ec;
+        fs::path source(trimmed);
+        fs::path abs_source = fs::absolute(source, ec);
+        if (ec)
+            abs_source = source;
+
+        for (const auto& root : workspace_search_roots())
+        {
+            ec.clear();
+            fs::path abs_root = fs::absolute(root, ec);
+            if (ec)
+                abs_root = root;
+
+            fs::path rel = abs_source.lexically_relative(abs_root);
+            if (!rel.empty() && rel.native() != abs_source.native() && !(*rel.begin() == ".."))
+                return rel.generic_string();
+        }
+
+        return source.generic_string();
     }
 
     static fs::path resolve_ersatz_file_path(const std::string& target_in)
@@ -678,10 +714,12 @@ namespace
         }
 
         std::string workspace;
+        std::string setup_command;
         std::string root;
         int limit = browser::limit();
         std::vector<std::string> path_list;
 
+        bool saw_setup = false;
         bool saw_workspace = false;
         bool saw_root = false;
         bool saw_limit = false;
@@ -701,13 +739,40 @@ namespace
             const std::string key = upper_copy(trim(line.substr(0, eq)));
             const std::string val = trim(line.substr(eq + 1));
 
-            if (key == "WORKSPACE") { workspace = val; saw_workspace = true; }
+            if (key == "SETUP" || key == "DO" || key == "DOTSCRIPT") {
+                setup_command = val;
+                saw_setup = true;
+            }
+            else if (key == "WORKSPACE") { workspace = val; saw_workspace = true; }
             else if (key == "ROOT") { root = val; saw_root = true; }
             else if (key == "LIMIT") { limit = std::stoi(val); saw_limit = true; }
             else if (key == "PATH") { path_list = split_path_tokens(val); saw_path = true; }
         }
 
         browser::reset_session();
+
+        if (saw_setup)
+        {
+            const std::string setup = trim(setup_command);
+            if (setup.empty())
+            {
+                status = "setup command is empty in " + erz_path.string();
+                return false;
+            }
+
+            std::string shell_line = setup;
+            if (upper_copy(setup).rfind("DO ", 0) != 0 &&
+                upper_copy(setup).rfind("DOTSCRIPT ", 0) != 0)
+            {
+                shell_line = "DO " + setup;
+            }
+
+            if (!shell_execute_line(area, shell_line))
+            {
+                status = "setup failed: " + shell_line;
+                return false;
+            }
+        }
 
         if (saw_workspace)
         {
@@ -741,8 +806,14 @@ namespace
                 browser::push_path_alias(p);
         }
 
+        if (saw_setup)
+            ersatz_saved_setup_command() = trim(setup_command);
+        else
+            ersatz_saved_setup_command().clear();
+
         std::ostringstream oss;
         oss << "loaded " << erz_path.string();
+        if (saw_setup) oss << " SETUP=" << setup_command;
         if (saw_workspace) oss << " WORKSPACE=" << workspace;
         if (saw_root) oss << " ROOT=" << (upper_copy(root) == "USER" ? browser::root_alias() : root);
         if (saw_limit) oss << " LIMIT=" << browser::limit();
@@ -766,7 +837,11 @@ namespace
             return false;
         }
 
-        const std::string ws = workspace_last_loaded_file();
+        const std::string setup = trim(ersatz_saved_setup_command());
+        if (!setup.empty())
+            out << "SETUP=" << setup << "\n";
+
+        const std::string ws = normalize_workspace_reference_for_save(workspace_last_loaded_file());
         if (!ws.empty())
             out << "WORKSPACE=" << ws << "\n";
 
@@ -789,42 +864,7 @@ namespace
 
     static void print_help()
     {
-        std::cout
-            << "Usage:\n"
-            << "  ERSATZ\n"
-            << "  ERSATZ USAGE\n"
-            << "  ERSATZ SAMPLE\n"
-            << "  ERSATZ SHOW\n"
-            << "  ERSATZ REFRESH\n"
-            << "  ERSATZ TREE\n"
-            << "  ERSATZ GRID\n"
-            << "  ERSATZ STATUS\n"
-            << "  ERSATZ ORDER\n"
-            << "  ERSATZ TOP\n"
-            << "  ERSATZ BOTTOM\n"
-            << "  ERSATZ NEXT [<n>]\n"
-            << "  ERSATZ PREV [<n>]\n"
-            << "  ERSATZ SKIP <n>\n"
-            << "  ERSATZ ROOT [<alias>]\n"
-            << "  ERSATZ LIMIT <n>\n"
-            << "  ERSATZ PATH <alias>\n"
-            << "  ERSATZ CLEARPATH\n"
-            << "  ERSATZ BACK\n"
-            << "  ERSATZ OPEN <workspace>\n"
-            << "  ERSATZ LOAD <name>\n"
-            << "  ERSATZ SAVE <name>\n"
-            << "  ERSATZ WLOAD <name>\n"
-            << "  ERSATZ DELTA MARK [<name>] [LIMIT <n>]\n"
-            << "  ERSATZ DELTA SHOW [<name>] [LIMIT <n>]\n"
-            << "  ERSATZ DELTA CLEAR <name>\n"
-            << "  ERSATZ DELTA CLEAR ALL\n"
-            << "  ERSATZ DELTA STATUS\n"
-            << "  ERSATZ RESET\n"
-            << "Notes:\n"
-            << "  - ERSATZ with no arguments renders the current browser snapshot.\n"
-            << "  - Navigation commands move the root cursor and render again.\n"
-            << "  - LOAD/SAVE/WLOAD interact with workspace files.\n"
-            << "  - SAMPLE prints a DotScript smoke test for MCC/ERSATZ smart-root behavior.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzUsageText);
     }
 
     static void print_sample_script()
@@ -922,7 +962,7 @@ echo ============================================================
     {
         browser::ensure_session_root(current_area_name(area));
 
-        std::cout << "ERSATZ STATUS\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzStatusHeaderText);
         std::cout << "  PROFILE       : " << current_profile_name() << "\n";
         std::cout << "  ROOT          : "
                   << (browser::root_alias().empty() ? "(none)" : browser::root_alias())
@@ -1213,8 +1253,10 @@ echo ============================================================
                 if (relation_root_has_children(browser::root_alias()))
                 {
                     if (verbose)
-                        std::cout << "ERSATZ: auto-loaded browser profile for active workspace ("
-                                  << profile_status << ").\n";
+                        cli::cmdout::print_prefixed_message(
+                            "ERSATZ",
+                            dottalk::helpdata::MessageId::ErsatzAutoLoadedProfileText,
+                            {{"status", profile_status}});
                     return true;
                 }
             }
@@ -1224,14 +1266,17 @@ echo ============================================================
         {
             if (!existing.empty() && upper_copy(existing) != upper_copy(selected) && verbose)
             {
-                std::cout << "ERSATZ: root " << existing
-                          << " has no child relations; using selected alias "
-                          << selected << ".\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ",
+                    dottalk::helpdata::MessageId::ErsatzRootSelectedFallbackText,
+                    {{"existing", existing}, {"selected", selected}});
             }
             else if (existing.empty() && verbose)
             {
-                std::cout << "ERSATZ: using selected alias " << selected
-                          << " as relational browser root.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ",
+                    dottalk::helpdata::MessageId::ErsatzSelectedAliasRootText,
+                    {{"selected", selected}});
             }
 
             browser::set_root_alias(selected);
@@ -1245,12 +1290,15 @@ echo ============================================================
             if (verbose)
             {
                 if (!existing.empty())
-                    std::cout << "ERSATZ: root " << existing
-                              << " has no child relations; inferred root "
-                              << inferred << " from active relation graph.\n";
+                    cli::cmdout::print_prefixed_message(
+                        "ERSATZ",
+                        dottalk::helpdata::MessageId::ErsatzRootInferredFallbackText,
+                        {{"existing", existing}, {"inferred", inferred}});
                 else
-                    std::cout << "ERSATZ: inferred root " << inferred
-                              << " from active relation graph.\n";
+                    cli::cmdout::print_prefixed_message(
+                        "ERSATZ",
+                        dottalk::helpdata::MessageId::ErsatzInferredRootText,
+                        {{"inferred", inferred}});
             }
 
             browser::set_root_alias(inferred);
@@ -1659,7 +1707,9 @@ echo ============================================================
         int n = 0;
         if (!(iss >> n))
         {
-            std::cout << "ERSATZ DELTA: LIMIT requires a number.\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ DELTA",
+                dottalk::helpdata::MessageId::ErsatzDeltaLimitRequiresNumberText);
             limit = 0;
             return true;
         }
@@ -1670,18 +1720,7 @@ echo ============================================================
 
     static void print_delta_help()
     {
-        std::cout
-            << "ERSATZ DELTA syntax\n"
-            << "  ERSATZ DELTA MARK [name] [LIMIT n]   capture current tuple stream baseline\n"
-            << "  ERSATZ DELTA SHOW [name] [LIMIT n]   compare current tuple stream to baseline\n"
-            << "  ERSATZ DELTA [name] [LIMIT n]        same as SHOW\n"
-            << "  ERSATZ DELTA CLEAR [name|ALL]        clear saved baseline(s)\n"
-            << "  ERSATZ DELTA STATUS                  list saved baselines\n"
-            << "\n"
-            << "Notes:\n"
-            << "  Baselines are in-memory and session-local.\n"
-            << "  Identity currently uses the first tuple value, falling back to RECNO.\n"
-            << "  The tuple stream respects active order because it uses DbTupleStream.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzDeltaUsageText);
     }
 
     static void handle_delta_command(xbase::DbArea& area,
@@ -1700,10 +1739,10 @@ echo ============================================================
 
         if (action == "STATUS")
         {
-            std::cout << "ERSATZ DELTA STATUS\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzDeltaStatusHeaderText);
             if (delta_store().empty())
             {
-                std::cout << "  (no baselines)\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzDeltaNoBaselinesText);
                 return;
             }
 
@@ -1730,14 +1769,17 @@ echo ============================================================
             if (name == "ALL")
             {
                 delta_store().clear();
-                std::cout << "ERSATZ DELTA: all baselines cleared.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ DELTA",
+                    dottalk::helpdata::MessageId::ErsatzDeltaAllBaselinesClearedText);
                 return;
             }
 
             const auto n = delta_store().erase(name);
-            std::cout << "ERSATZ DELTA: "
-                      << (n ? "cleared " : "no such baseline ")
-                      << name << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ DELTA",
+                dottalk::helpdata::MessageId::ErsatzDeltaClearResultText,
+                {{"result", n ? "cleared" : "no such baseline"}, {"name", name}});
             return;
         }
 
@@ -1788,12 +1830,13 @@ echo ============================================================
 
             delta_store()[name] = std::move(b);
 
-            std::cout << "ERSATZ DELTA: baseline " << name
-                      << " captured rows=" << delta_store()[name].rows
-                      << " table=" << table;
-            if (limit != 0)
-                std::cout << " limit=" << limit;
-            std::cout << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ DELTA",
+                dottalk::helpdata::MessageId::ErsatzDeltaCapturedText,
+                {{"name", name},
+                 {"rows", std::to_string(delta_store()[name].rows)},
+                 {"table", table},
+                 {"limit_suffix", limit != 0 ? (" limit=" + std::to_string(limit)) : std::string() }});
             return;
         }
 
@@ -1802,24 +1845,28 @@ echo ============================================================
             const auto it = delta_store().find(name);
             if (it == delta_store().end())
             {
-                std::cout << "ERSATZ DELTA: no baseline named " << name
-                          << ". Use ERSATZ DELTA MARK " << name << " first.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ DELTA",
+                    dottalk::helpdata::MessageId::ErsatzDeltaNoBaselineNamedText,
+                    {{"name", name}});
                 return;
             }
 
             ErsatzDeltaMap current = capture_current_tuple_map(area, it->second.spec, limit);
             const std::vector<ErsatzDelta> deltas = compute_tuple_delta(it->second.map, current);
 
-            std::cout << "ERSATZ DELTA: " << name
-                      << " table=" << table
-                      << " baseline_rows=" << it->second.rows
-                      << " current_rows=" << current.size()
-                      << " changes=" << deltas.size()
-                      << "\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ DELTA",
+                dottalk::helpdata::MessageId::ErsatzDeltaSummaryText,
+                {{"name", name},
+                 {"table", table},
+                 {"baseline_rows", std::to_string(it->second.rows)},
+                 {"current_rows", std::to_string(current.size())},
+                 {"changes", std::to_string(deltas.size())}});
 
             if (deltas.empty())
             {
-                std::cout << "No tuple changes.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::ErsatzDeltaNoTupleChangesText);
                 return;
             }
 
@@ -1855,7 +1902,7 @@ echo ============================================================
             {
                 for (const auto& w : snap.warnings)
                 {
-                    std::cout << "ERSATZ: " << w;
+                std::cout << "ERSATZ: " << w;
                     if (w.empty() || w.back() != '\n')
                         std::cout << "\n";
                 }
@@ -1904,7 +1951,10 @@ echo ============================================================
             const long n = std::stol(tok, &used, 10);
             if (used != tok.size() || n < 1)
             {
-                std::cout << "ERSATZ: " << verb << " requires a positive count.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ",
+                    dottalk::helpdata::MessageId::ErsatzPositiveCountRequiredText,
+                    {{"verb", verb}});
                 return false;
             }
             count = n;
@@ -1912,7 +1962,10 @@ echo ============================================================
         }
         catch (...)
         {
-            std::cout << "ERSATZ: " << verb << " requires a positive count.\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzPositiveCountRequiredText,
+                {{"verb", verb}});
             return false;
         }
     }
@@ -1924,7 +1977,10 @@ echo ============================================================
         std::string tok;
         if (!(iss >> tok))
         {
-            std::cout << "ERSATZ: " << verb << " requires a signed count.\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzSignedCountRequiredText,
+                {{"verb", verb}});
             return false;
         }
 
@@ -1934,7 +1990,10 @@ echo ============================================================
             const long n = std::stol(tok, &used, 10);
             if (used != tok.size())
             {
-                std::cout << "ERSATZ: " << verb << " requires a signed count.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ERSATZ",
+                    dottalk::helpdata::MessageId::ErsatzSignedCountRequiredText,
+                    {{"verb", verb}});
                 return false;
             }
             count = n;
@@ -1942,7 +2001,10 @@ echo ============================================================
         }
         catch (...)
         {
-            std::cout << "ERSATZ: " << verb << " requires a signed count.\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzSignedCountRequiredText,
+                {{"verb", verb}});
             return false;
         }
     }
@@ -1972,7 +2034,7 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     if (sub == "RESET")
     {
         browser::reset_session();
-        std::cout << "ERSATZ: session reset.\n";
+        cli::cmdout::print_prefixed_message("ERSATZ", dottalk::helpdata::MessageId::ErsatzSessionResetText);
         return;
     }
 
@@ -1984,7 +2046,9 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
 
     if (sub == "ORDER")
     {
-        std::cout << "ERSATZ ORDER: " << order_info_line(area) << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzOrderLine,
+            {{"value", order_info_line(area)}});
         return;
     }
 
@@ -1992,18 +2056,19 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     {
         if (!area.isOpen())
         {
-            std::cout << "ERSATZ TOP: no table open.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ TOP", dottalk::helpdata::MessageId::SetIndexNoTableOpenText);
             return;
         }
 
         if (!ersatz_top(area))
         {
-            std::cout << "ERSATZ TOP: failed.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ TOP", dottalk::helpdata::MessageId::NavFailedText);
             return;
         }
 
-        std::cout << "ERSATZ TOP: recno " << ersatz_recno_safe(area)
-                  << " (" << order_info_line(area) << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzRecnoStatusText,
+            {{"verb", "TOP"}, {"recno", std::to_string(ersatz_recno_safe(area))}, {"order", order_info_line(area)}});
         render_current_ersatz_snapshot(area, "SHOW");
         return;
     }
@@ -2012,18 +2077,19 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     {
         if (!area.isOpen())
         {
-            std::cout << "ERSATZ BOTTOM: no table open.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ BOTTOM", dottalk::helpdata::MessageId::SetIndexNoTableOpenText);
             return;
         }
 
         if (!ersatz_bottom(area))
         {
-            std::cout << "ERSATZ BOTTOM: failed.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ BOTTOM", dottalk::helpdata::MessageId::NavFailedText);
             return;
         }
 
-        std::cout << "ERSATZ BOTTOM: recno " << ersatz_recno_safe(area)
-                  << " (" << order_info_line(area) << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzRecnoStatusText,
+            {{"verb", "BOTTOM"}, {"recno", std::to_string(ersatz_recno_safe(area))}, {"order", order_info_line(area)}});
         render_current_ersatz_snapshot(area, "SHOW");
         return;
     }
@@ -2032,7 +2098,9 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     {
         if (!area.isOpen())
         {
-            std::cout << "ERSATZ " << sub << ": no table open.\n";
+            cli::cmdout::print_prefixed_message(
+                ("ERSATZ " + sub).c_str(),
+                dottalk::helpdata::MessageId::SetIndexNoTableOpenText);
             return;
         }
 
@@ -2043,12 +2111,15 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         const long delta = (sub == "PREV") ? -count : count;
         if (!ersatz_skip(area, delta))
         {
-            std::cout << "ERSATZ " << sub << ": failed.\n";
+            cli::cmdout::print_prefixed_message(
+                ("ERSATZ " + sub).c_str(),
+                dottalk::helpdata::MessageId::NavFailedText);
             return;
         }
 
-        std::cout << "ERSATZ " << sub << ": recno " << ersatz_recno_safe(area)
-                  << " (" << order_info_line(area) << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzRecnoStatusText,
+            {{"verb", sub}, {"recno", std::to_string(ersatz_recno_safe(area))}, {"order", order_info_line(area)}});
         render_current_ersatz_snapshot(area, "SHOW");
         return;
     }
@@ -2057,7 +2128,7 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     {
         if (!area.isOpen())
         {
-            std::cout << "ERSATZ SKIP: no table open.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ SKIP", dottalk::helpdata::MessageId::SetIndexNoTableOpenText);
             return;
         }
 
@@ -2067,12 +2138,13 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
 
         if (!ersatz_skip(area, delta))
         {
-            std::cout << "ERSATZ SKIP: failed.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ SKIP", dottalk::helpdata::MessageId::NavFailedText);
             return;
         }
 
-        std::cout << "ERSATZ SKIP: recno " << ersatz_recno_safe(area)
-                  << " (" << order_info_line(area) << ")\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzRecnoStatusText,
+            {{"verb", "SKIP"}, {"recno", std::to_string(ersatz_recno_safe(area))}, {"order", order_info_line(area)}});
         render_current_ersatz_snapshot(area, "SHOW");
         return;
     }
@@ -2083,7 +2155,9 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         if (!(iss >> alias))
         {
             browser::ensure_session_root(current_area_name(area));
-            std::cout << "ERSATZ ROOT: " << browser::root_alias() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ErsatzRootLine,
+                {{"value", browser::root_alias()}});
             return;
         }
 
@@ -2093,7 +2167,9 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
             browser::set_root_alias(alias);
 
         browser::clear_path();
-        std::cout << "ERSATZ ROOT set to " << browser::root_alias() << ".\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzRootSetText,
+            {{"value", browser::root_alias()}});
         return;
     }
 
@@ -2102,26 +2178,30 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         int n = 0;
         if (!(iss >> n))
         {
-            std::cout << "ERSATZ: LIMIT requires a number.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ", dottalk::helpdata::MessageId::ErsatzLimitRequiresNumberText);
             return;
         }
 
         browser::set_limit(n);
-        std::cout << "ERSATZ LIMIT set to " << browser::limit() << ".\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzLimitSetText,
+            {{"value", std::to_string(browser::limit())}});
         return;
     }
 
     if (sub == "PATH")
     {
         browser::ensure_session_root(current_area_name(area));
-        std::cout << "ERSATZ PATH: " << browser::path_string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzPathLine,
+            {{"value", browser::path_string()}});
         return;
     }
 
     if (sub == "CLEARPATH")
     {
         browser::clear_path();
-        std::cout << "ERSATZ: path cleared.\n";
+        cli::cmdout::print_prefixed_message("ERSATZ", dottalk::helpdata::MessageId::ErsatzPathClearedText);
         return;
     }
 
@@ -2129,11 +2209,13 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
     {
         if (!browser::pop_path_alias())
         {
-            std::cout << "ERSATZ: path already empty.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ", dottalk::helpdata::MessageId::ErsatzPathAlreadyEmptyText);
             return;
         }
 
-        std::cout << "ERSATZ PATH: " << browser::path_string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzPathLine,
+            {{"value", browser::path_string()}});
         return;
     }
 
@@ -2142,7 +2224,7 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         std::string alias;
         if (!(iss >> alias))
         {
-            std::cout << "ERSATZ: OPEN requires a child alias.\n";
+            cli::cmdout::print_prefixed_message("ERSATZ", dottalk::helpdata::MessageId::ErsatzOpenRequiresAliasText);
             return;
         }
 
@@ -2150,13 +2232,17 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
 
         if (!validate_next_alias_against_current_tree(area, alias))
         {
-            std::cout << "ERSATZ: alias '" << alias
-                      << "' is not a valid next child for the current path.\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzInvalidNextChildText,
+                {{"alias", alias}});
             return;
         }
 
         browser::push_path_alias(alias);
-        std::cout << "ERSATZ PATH: " << browser::path_string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ErsatzPathLine,
+            {{"value", browser::path_string()}});
         return;
     }
 
@@ -2168,7 +2254,10 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         std::string status;
         if (!load_ersatz_file(area, target, status))
         {
-            std::cout << "ERSATZ: LOAD failed (" << status << ")\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzLoadFailedText,
+                {{"detail", status}});
             return;
         }
 
@@ -2184,7 +2273,10 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         std::string status;
         if (!save_ersatz_file(target, status))
         {
-            std::cout << "ERSATZ: SAVE failed (" << status << ")\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzSaveFailedText,
+                {{"detail", status}});
             return;
         }
 
@@ -2204,6 +2296,7 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
             return;
         }
 
+        ersatz_saved_setup_command().clear();
         std::cout << "ERSATZ: " << status << "\n";
         return;
     }
@@ -2248,7 +2341,10 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         std::string status;
         if (!load_ersatz_file(area, raw_sub, status))
         {
-            std::cout << "ERSATZ: LOAD failed (" << status << ")\n";
+            cli::cmdout::print_prefixed_message(
+                "ERSATZ",
+                dottalk::helpdata::MessageId::ErsatzLoadFailedText,
+                {{"detail", status}});
             return;
         }
 
@@ -2262,6 +2358,9 @@ void cmd_ERSATZ(xbase::DbArea& area, std::istringstream& iss)
         return;
     }
 
-    std::cout << "ERSATZ: unknown subcommand: " << sub << "\n";
+    cli::cmdout::print_prefixed_message(
+        "ERSATZ",
+        dottalk::helpdata::MessageId::ErsatzUnknownSubcommandText,
+        {{"subcommand", sub}});
     print_help();
 }

@@ -51,7 +51,6 @@
 
 #include <cctype>
 #include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -65,9 +64,9 @@
 #include "xbase_field_getters.hpp"
 #include "cli/order_state.hpp"
 #include "cli/scan_selector.hpp"
-#include "cli/expr/normalize_where.hpp" 
-
-
+#include "cli/expr/normalize_where.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "cli/expr/api.hpp"
 #include "cli/expr/for_parser.hpp"
 #include "cli/expr/glue_xbase.hpp"
@@ -164,18 +163,7 @@ static bool is_locate_usage_request(std::string raw)
 
 static void print_locate_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  LOCATE USAGE\n"
-        << "  LOCATE FOR <expr>\n"
-        << "  LOCATE <field> <op> <value>\n"
-        << "Examples:\n"
-        << "  LOCATE FOR LNAME = Smith\n"
-        << "  LOCATE LNAME = Smith\n"
-        << "  LOCATE FOR BALANCE > 100\n"
-        << "Notes:\n"
-        << "  - LOCATE requires an open table except for LOCATE USAGE.\n"
-        << "  - LOCATE positions on the first matching record and updates CONTINUE state.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateUsageText);
 }
 
 // -----------------------------------------------------------------------------
@@ -346,7 +334,7 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
     }
 
     if (!A.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
         return;
     }
 
@@ -385,11 +373,11 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
 
         if (try_locate_cdx_simple(A, where_text, found_recno)) {
             if (found_recno > 0) {
-                std::cout << "Located.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateFoundText);
                 locate_state::set_after_match(where_text, A.recno(), false);
                 locate_continue_bridge::set(where_text, false);
             } else {
-                std::cout << "Not Located.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
             }
             return;
         }
@@ -397,7 +385,7 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
 
     // --- fallback scan
     if (!A.top()) {
-        std::cout << "Not Located.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
         return;
     }
 
@@ -407,7 +395,7 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
         bool match = selector_match_expr_current(A, where_text);
 
         if (match) {
-            std::cout << "Located.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateFoundText);
             locate_state::set_after_match(where_text, A.recno(), use_dottalk);
             locate_continue_bridge::set(where_text, use_dottalk);
             return;
@@ -415,5 +403,5 @@ void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
 
     } while (A.skip(1));
 
-    std::cout << "Not Located.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
 }

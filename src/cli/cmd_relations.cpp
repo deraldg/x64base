@@ -46,6 +46,7 @@
 
 #include "cmd_relations.hpp"
 
+#include "cli/command_output.hpp"
 #include "set_relations.hpp"
 #include "rel_enum_engine.hpp"
 #include "xbase.hpp"
@@ -53,6 +54,7 @@
 #include "xbase_field_getters.hpp"
 #include "textio.hpp"
 #include "cli/command_registry.hpp"
+#include "help/helpdata_messages.hpp"
 
 #include <cctype>
 #include <cstddef>
@@ -472,46 +474,16 @@ static std::vector<relations_api::RelationSpec> parse_relations_file(const std::
 }
 
 static void show_set_relations_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  SET RELATIONS\n"
-        << "  SET RELATIONS USAGE\n"
-        << "  SET RELATIONS ADD <parent> <child> ON f1[,f2...]\n"
-        << "  SET RELATIONS ADD <parent> <child> ON parent_f1[,parent_f2...] TO child_f1[,child_f2...]\n"
-        << "  SET RELATIONS CLEAR <parent>\n"
-        << "  SET RELATIONS CLEAR ALL\n"
-        << "Examples:\n"
-        << "  SET RELATIONS ADD STUDENTS ENROLL ON SID\n"
-        << "  SET RELATIONS CLEAR STUDENTS\n"
-        << "  SET RELATIONS CLEAR ALL\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationsUsageText);
 }
 
 
 static void show_relations_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  RELATIONS\n"
-        << "  RELATIONS USAGE\n"
-        << "  RELATIONS ALL\n"
-        << "  SET RELATIONS\n"
-        << "  SET RELATIONS USAGE\n"
-        << "  SET RELATIONS ADD <parent> <child> ON f1[,f2...] [TO child_f1[,child_f2...]]\n"
-        << "  SET RELATIONS CLEAR <parent|ALL>\n"
-        << "Examples:\n"
-        << "  RELATIONS\n"
-        << "  RELATIONS ALL\n"
-        << "  SET RELATIONS ADD STUDENTS ENROLL ON SID\n"
-        << "  SET RELATIONS CLEAR ALL\n"
-        << "Notes:\n"
-        << "  - RELATIONS USAGE does not inspect or mutate relation state.\n"
-        << "  - SET RELATIONS USAGE does not mutate relation definitions.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RelationsUsageText);
 }
 
 static void show_relations_file_usage() {
-    std::cout <<
-        "REL SAVE/LOAD syntax\n"
-        "  REL SAVE [<file>|DEFAULT|DATASET <name>]\n"
-        "  REL LOAD [<file>|DEFAULT|DATASET <name>]\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RelationsFileUsageText);
 }
 
 static std::string join_row_for_display(const rel_enum_engine::Row& row)
@@ -553,7 +525,7 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
         std::string on_kw;
         ss >> on_kw;
         if (up(on_kw) != "ON") {
-            std::cout << "Usage: SET RELATIONS ADD <parent> <child> ON f1,f2\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationsAddUsageText);
             return;
         }
 
@@ -565,25 +537,25 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
         std::string child_csv;
         if (parent.empty() || child.empty() || fields_tail.empty() ||
             !split_on_to_clause(fields_tail, parent_csv, child_csv)) {
-            std::cout << "Usage: SET RELATIONS ADD <parent> <child> ON f1,f2 [TO child_f1,child_f2]\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationsAddUsageWithToText);
             return;
         }
 
         auto parent_fields = split_fields_csv(parent_csv);
         auto child_fields = split_fields_csv(child_csv);
         if (parent_fields.empty() || child_fields.empty()) {
-            std::cout << "SET RELATIONS: no fields provided\n";
+            cli::cmdout::print_prefixed_message("SET RELATIONS", dottalk::helpdata::MessageId::SetRelationsNoFieldsText);
             return;
         }
         if (parent_fields.size() != child_fields.size()) {
-            std::cout << "SET RELATIONS: parent/child field counts differ\n";
+            cli::cmdout::print_prefixed_message("SET RELATIONS", dottalk::helpdata::MessageId::SetRelationsFieldCountMismatchText);
             return;
         }
 
         if (!relations_api::add_relation(parent, child, parent_fields, child_fields)) return;
 
         relations_api::refresh_if_enabled();
-        std::cout << "OK\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
         return;
     }
 
@@ -591,20 +563,20 @@ void cmd_SET_RELATIONS(xbase::DbArea& /*A*/, std::istringstream& iss) {
         std::string which;
         ss >> which;
         if (which.empty()) {
-            std::cout << "Usage: SET RELATIONS CLEAR <parent>|ALL\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationsClearUsageText);
             return;
         }
         if (up(which) == "ALL") {
             relations_api::clear_all_relations();
-            std::cout << "OK\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
             return;
         }
         relations_api::clear_relations(which);
-        std::cout << "OK\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
         return;
     }
 
-    std::cout << "SET RELATIONS: unknown op. Try: ADD / CLEAR\n";
+    cli::cmdout::print_prefixed_message("SET RELATIONS", dottalk::helpdata::MessageId::SetRelationsUnknownOpText);
 }
 
 void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
@@ -619,26 +591,26 @@ void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
         if (flag == "ALL") {
             const std::string parent = relations_api::current_parent_name();
             if (parent.empty()) {
-                std::cout << "REL LIST: no current parent\n";
+                cli::cmdout::print_prefixed_message("REL LIST", dottalk::helpdata::MessageId::RelListNoCurrentParentText);
                 return;
             }
 
             auto rows = relations_api::list_tree_for_current_parent(/*recursive=*/true, /*max_depth=*/24);
 
-            std::cout << "Relations (tree) rooted at: " << up(trim(parent)) << "\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListTreeRootedAtText, {{"parent", up(trim(parent))}});
             if (rows.empty()) {
-                std::cout << "  (none)\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListNoneText);
                 return;
             }
 
             if (rows.size() == 1) {
-                std::cout << rows[0].line << "\n";
-                std::cout << "  (none)\n";
+                cli::cmdout::print_line(rows[0].line);
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListNoneText);
                 return;
             }
 
             for (const auto& r : rows) {
-                std::cout << r.line << "\n";
+                cli::cmdout::print_line(r.line);
             }
             return;
         }
@@ -649,26 +621,26 @@ void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
 
     const std::string parent = relations_api::current_parent_name();
     if (parent.empty()) {
-        std::cout << "REL LIST: no current parent\n";
+        cli::cmdout::print_prefixed_message("REL LIST", dottalk::helpdata::MessageId::RelListNoCurrentParentText);
         return;
     }
 
-    std::cout << "Relations for parent: " << parent << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListParentHeaderText, {{"parent", parent}});
     const auto kids = relations_api::child_areas_for_current_parent();
     if (kids.empty()) {
-        std::cout << "  (none)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListNoneText);
         return;
     }
 
     for (const auto& c : kids) {
         const int cnt = relations_api::match_count_for_child(c);
-        std::cout << "  -> " << c << "  (matches: " << cnt << ")\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RelListMatchLineText, {{"child", c}, {"count", std::to_string(cnt)}});
     }
 }
 
 void cmd_RELATIONS_REFRESH(xbase::DbArea& /*A*/, std::istringstream& /*iss*/) {
     relations_api::refresh_for_current_parent();
-    std::cout << "OK\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }
 
 void cmd_REL_SAVE(xbase::DbArea& /*A*/, std::istringstream& iss) {
@@ -718,11 +690,11 @@ void cmd_REL_SAVE(xbase::DbArea& /*A*/, std::istringstream& iss) {
     out << "]\n";
 
     if (!write_entire_file(path, out.str())) {
-        std::cout << "REL SAVE: cannot write file: " << path << "\n";
+        cli::cmdout::print_prefixed_message("REL SAVE", dottalk::helpdata::MessageId::RelSaveCannotWriteText, {{"path", path}});
         return;
     }
 
-    std::cout << "OK (" << specs.size() << " relation(s) saved to " << path << ")\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RelSaveOkText, {{"count", std::to_string(specs.size())}, {"path", path}});
 }
 
 void cmd_REL_LOAD(xbase::DbArea& /*A*/, std::istringstream& iss) {
@@ -745,20 +717,20 @@ void cmd_REL_LOAD(xbase::DbArea& /*A*/, std::istringstream& iss) {
 
     const std::string content = read_entire_file(path);
     if (content.empty()) {
-        std::cout << "REL LOAD: cannot read file or file empty: " << path << "\n";
+        cli::cmdout::print_prefixed_message("REL LOAD", dottalk::helpdata::MessageId::RelLoadCannotReadText, {{"path", path}});
         return;
     }
 
     const auto specs = parse_relations_file(content);
     if (specs.empty()) {
-        std::cout << "REL LOAD: no relations found in file\n";
+        cli::cmdout::print_prefixed_message("REL LOAD", dottalk::helpdata::MessageId::RelLoadNoRelationsFoundText);
         return;
     }
 
     relations_api::import_relations(specs, /*clear_existing=*/true);
     relations_api::refresh_if_enabled();
 
-    std::cout << "OK (" << specs.size() << " relation(s) loaded from " << path << ")\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RelLoadOkText, {{"count", std::to_string(specs.size())}, {"path", path}});
 }
 
 void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
@@ -767,13 +739,7 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
     rest = trim(rest);
 
     if (rest.empty()) {
-        std::cout <<
-            "REL JOIN syntax\n"
-            "  REL JOIN [ONE] [DISTINCT|ALL] [LIMIT <n>] [<child1> <child2> ...] TUPLE <fields>\n"
-            "Flags\n"
-            "  ONE       emit exactly one row using the current relation context (historical behavior)\n"
-            "  DISTINCT  de-duplicate tuples (field lists only)\n"
-            "  ALL       allow duplicates (default; overrides DISTINCT)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RelJoinUsageText);
         return;
     }
 
@@ -800,9 +766,9 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
 
         if (U == "LIMIT") {
             std::string n;
-            if (!(ss >> n)) { std::cout << "REL JOIN: LIMIT requires a number\n"; return; }
+            if (!(ss >> n)) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinLimitRequiresNumberText); return; }
             try { max_rows = static_cast<std::size_t>(std::stoull(n)); }
-            catch (...) { std::cout << "REL JOIN: LIMIT requires a number\n"; return; }
+            catch (...) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinLimitRequiresNumberText); return; }
             continue;
         }
 
@@ -817,8 +783,8 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
         path.push_back(tok);
     }
 
-    if (!saw_tuple) { std::cout << "REL JOIN: missing TUPLE\n"; return; }
-    if (tuple_tail.empty()) { std::cout << "REL JOIN: TUPLE requires an expression\n"; return; }
+    if (!saw_tuple) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinMissingTupleText); return; }
+    if (tuple_tail.empty()) { cli::cmdout::print_prefixed_message("REL JOIN", dottalk::helpdata::MessageId::RelJoinTupleRequiresExpressionText); return; }
 
     std::size_t emitted = 0;
     const auto emit_row = [&]{
@@ -852,7 +818,7 @@ void cmd_REL_JOIN(xbase::DbArea& A, std::istringstream& iss) {
     }
 
     if (!ok) return;
-    std::cout << "OK\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }
 
 void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
@@ -861,12 +827,7 @@ void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
     rest = trim(rest);
 
     if (rest.empty()) {
-        std::cout <<
-            "REL ENUM syntax\n"
-            "  REL ENUM [DISTINCT|ALL] [LIMIT <n>] [<child1> <child2> ...] TUPLE <fields>\n"
-            "Flags\n"
-            "  DISTINCT  de-duplicate tuples (field lists only)\n"
-            "  ALL       allow duplicates (default; overrides DISTINCT)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RelEnumUsageText);
         return;
     }
 
@@ -888,9 +849,9 @@ void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
 
         if (U == "LIMIT") {
             std::string n;
-            if (!(ss >> n)) { std::cout << "REL ENUM: LIMIT requires a number\n"; return; }
+            if (!(ss >> n)) { cli::cmdout::print_prefixed_message("REL ENUM", dottalk::helpdata::MessageId::RelEnumLimitRequiresNumberText); return; }
             try { max_rows = static_cast<std::size_t>(std::stoull(n)); }
-            catch (...) { std::cout << "REL ENUM: LIMIT requires a number\n"; return; }
+            catch (...) { cli::cmdout::print_prefixed_message("REL ENUM", dottalk::helpdata::MessageId::RelEnumLimitRequiresNumberText); return; }
             continue;
         }
 
@@ -905,8 +866,8 @@ void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
         path.push_back(tok);
     }
 
-    if (!saw_tuple) { std::cout << "REL ENUM: missing TUPLE\n"; return; }
-    if (tuple_tail.empty()) { std::cout << "REL ENUM: TUPLE requires an expression\n"; return; }
+    if (!saw_tuple) { cli::cmdout::print_prefixed_message("REL ENUM", dottalk::helpdata::MessageId::RelEnumMissingTupleText); return; }
+    if (tuple_tail.empty()) { cli::cmdout::print_prefixed_message("REL ENUM", dottalk::helpdata::MessageId::RelEnumTupleRequiresExpressionText); return; }
 
     rel_enum_engine::Request req{};
     req.root_alias = "";
@@ -918,12 +879,12 @@ void cmd_REL_ENUM(xbase::DbArea& A, std::istringstream& iss) {
     rel_enum_engine::Result res{};
     if (!rel_enum_engine::run(A, req, res)) {
         for (const auto& w : res.warnings)
-            std::cout << w << "\n";
+            cli::cmdout::print_line(w);
         return;
     }
 
     for (const auto& row : res.rows)
-        std::cout << join_row_for_display(row) << "\n";
+        cli::cmdout::print_line(join_row_for_display(row));
 
-    std::cout << "OK\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);
 }

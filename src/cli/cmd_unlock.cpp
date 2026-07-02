@@ -39,11 +39,12 @@
 //   FLOCK
 //
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <cctype>
 
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
 #include "textio.hpp"
@@ -55,21 +56,7 @@ static std::string up(std::string s) { for (auto& c: s) c = (char)std::toupper((
 
 static void print_unlock_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  UNLOCK USAGE\n"
-        << "  UNLOCK\n"
-        << "  UNLOCK <recno>\n"
-        << "  UNLOCK ALL\n"
-        << "  UNLOCK TABLE\n"
-        << "Examples:\n"
-        << "  UNLOCK\n"
-        << "  UNLOCK 10\n"
-        << "  UNLOCK ALL\n"
-        << "  UNLOCK TABLE\n"
-        << "Notes:\n"
-        << "  - UNLOCK USAGE does not require an open table.\n"
-        << "  - UNLOCK with no arguments unlocks the current record.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::UnlockUsageText);
 }
 void cmd_UNLOCK(xbase::DbArea& a, std::istringstream& iss) {
     // UNLOCK_USAGE_CONTRACT_BRANCH
@@ -95,21 +82,29 @@ void cmd_UNLOCK(xbase::DbArea& a, std::istringstream& iss) {
         }
     }
 
-    if (!a.isOpen()) { std::cout << "UNLOCK: no table open.\n"; return; }
+    if (!a.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::UnlockNoTableOpenText);
+        return;
+    }
 
     std::string rest = up(read_rest(iss));
     if (rest.empty()) {
         // UNLOCK current record
         const auto rn = static_cast<uint32_t>(a.recno());
-        if (rn == 0) { std::cout << "UNLOCK: no current record.\n"; return; }
+        if (rn == 0) {
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::UnlockNoCurrentRecordText);
+            return;
+        }
         xbase::locks::unlock_record(a, rn);
-        std::cout << "UNLOCK: record " << rn << " unlocked.\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::UnlockRecordUnlockedText,
+            {{"recno", std::to_string(rn)}});
         return;
     }
 
     if (rest == "ALL" || rest == "TABLE") {
         xbase::locks::unlock_table(a);
-        std::cout << "UNLOCK: table unlocked.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::UnlockTableUnlockedText);
         return;
     }
 
@@ -117,11 +112,10 @@ void cmd_UNLOCK(xbase::DbArea& a, std::istringstream& iss) {
     try {
         uint32_t n = static_cast<uint32_t>(std::stoul(rest));
         xbase::locks::unlock_record(a, n);
-        std::cout << "UNLOCK: record " << n << " unlocked.\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::UnlockRecordUnlockedText,
+            {{"recno", std::to_string(n)}});
     } catch (...) {
         print_unlock_usage_contract();
     }
 }
-
-
-

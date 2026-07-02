@@ -83,6 +83,7 @@
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
 #include "cli/cli_currency.hpp"
+#include "cli/command_output.hpp"
 
 #include "memo/memo_auto.hpp"
 #include "memo/memostore.hpp"
@@ -131,21 +132,7 @@ static bool is_calcwrite_usage_request(std::string raw)
 
 static void print_calcwrite_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CALCWRITE USAGE\n"
-        << "  CALCWRITE <field> = <expr>\n"
-        << "Examples:\n"
-        << "  CALCWRITE BALANCE = BALANCE + 10\n"
-        << "  CALCWRITE LNAME = UPPER(LNAME)\n"
-        << "  CALCWRITE POSTED = TODAY\n"
-        << "Notes:\n"
-        << "  - CALCWRITE requires an open table and a current record.\n"
-        << "  - RHS expressions are evaluated with xexpr against the current area.\n"
-        << "  - Values are normalized and validated for the target field type.\n"
-        << "  - X64 memo fields update memo payloads and store memo object-id text.\n"
-        << "  - TABLE ON buffers changes and marks fields stale/dirty.\n"
-        << "  - TABLE OFF writes through DbArea::replaceFieldStored for index-safe mutation.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CalcWriteUsageText);
 }
 
 
@@ -737,7 +724,8 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
     }
 
     if (!area.isOpen()) {
-        std::cout << "CALCWRITE: no file open. Use: USE <table>\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE", dottalk::helpdata::MessageId::CalcWriteNoFileOpenText);
         return;
     }
 
@@ -754,19 +742,25 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
 
     const int field1 = field_index_ci(area, lhs);
     if (field1 <= 0) {
-        std::cout << "CALCWRITE: unknown field '" << lhs << "'\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteUnknownFieldText,
+            {{"field", lhs}});
         return;
     }
 
     const uint32_t rn = area.recno();
     if (rn == 0) {
-        std::cout << "CALCWRITE: no current record.\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE", dottalk::helpdata::MessageId::CalcWriteNoCurrentRecordText);
         return;
     }
 
     const int area0 = resolve_current_index(area);
     if (area0 < 0) {
-        std::cout << "CALCWRITE: cannot determine current area.\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteCannotDetermineCurrentAreaText);
         return;
     }
 
@@ -780,11 +774,14 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
 
     const xexpr::Value ev = xexpr::evaluate_expression(rhs, ctx);
     if (ev.is_none() || ev.is_error()) {
-        std::cout << "CALCWRITE error: "
-                  << (ev.is_error() && !ev.error_message().empty()
-                          ? ev.error_message()
-                          : "evaluation failed")
-                  << "\n";
+        const std::string detail =
+            (ev.is_error() && !ev.error_message().empty())
+                ? ev.error_message()
+                : cli::cmdout::message_text(dottalk::helpdata::MessageId::CalcWriteEvaluationFailedText);
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", detail}});
         return;
     }
 
@@ -820,14 +817,20 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
     std::string user_value = candidate_value;
     std::string normalize_err;
     if (!normalize_calcwrite_value_for_field(ftype, flen, fdec, candidate_value, user_value, normalize_err)) {
-        std::cout << "CALCWRITE: " << normalize_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", normalize_err + "."}});
         return;
     }
 
     std::string currency_norm;
     std::string currency_err;
     if (!cli_currency::validate_and_normalize_currency_pair_field(area, field1, user_value, currency_norm, currency_err)) {
-        std::cout << "CALCWRITE: " << currency_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", currency_err + "."}});
         return;
     }
     user_value = currency_norm;
@@ -842,13 +845,19 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
     std::string to_store = user_value;
     std::string memo_err;
     if (!build_x64_memo_stored_value(area, field1, user_value, to_store, memo_err)) {
-        std::cout << "CALCWRITE: " << memo_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", memo_err + "."}});
         return;
     }
 
     std::string validate_err;
     if (!validate_field_value_for_store(area, field1, to_store, validate_err)) {
-        std::cout << "CALCWRITE: " << validate_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", validate_err + "."}});
         return;
     }
 
@@ -867,10 +876,17 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
 
         dottalk::table::mark_stale_field(area0, field1);
 
-        if (Settings::instance().talk_on.load())
-            std::cout << "CALCWRITE: buffered " << lhs << " = " << user_value << " at rec " << rn << ".\n";
-        else
-            std::cout << "CALCWRITE: buffered " << lhs << ".\n";
+        if (Settings::instance().talk_on.load()) {
+            cli::cmdout::print_prefixed_message(
+                "CALCWRITE",
+                dottalk::helpdata::MessageId::CalcWriteBufferedFieldValueText,
+                {{"field", lhs}, {"value", user_value}, {"recno", std::to_string(rn)}});
+        } else {
+            cli::cmdout::print_prefixed_message(
+                "CALCWRITE",
+                dottalk::helpdata::MessageId::CalcWriteBufferedFieldText,
+                {{"field", lhs}});
+        }
         return;
     }
 
@@ -886,7 +902,10 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
     std::string write_err;
     if (!area.replaceFieldStored(field1, to_store, &write_err)) {
         if (write_err.empty()) write_err = "write failed";
-        std::cout << "CALCWRITE: " << write_err << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", write_err + "."}});
         return;
     }
 
@@ -894,5 +913,8 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
 
     if (visible_before != after) dottalk::table::mark_stale_field(area0, field1);
 
-    std::cout << "CALCWRITE: wrote " << lhs << " = " << user_value << "\n";
+    cli::cmdout::print_prefixed_message(
+        "CALCWRITE",
+        dottalk::helpdata::MessageId::CalcWriteWroteFieldValueText,
+        {{"field", lhs}, {"value", user_value}});
 }

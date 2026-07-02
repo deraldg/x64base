@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.21)
 
 # ============================================================
 # Policies
@@ -34,6 +34,8 @@ endif()
 # ============================================================
 
 option(DOTTALK_WITH_TV        "Enable Turbo Vision features" ON)
+option(DOTTALK_WITH_GUI       "Build GUI-neutral application services" OFF)
+option(DOTTALK_WITH_WX        "Build wxWidgets windowed GUI frontend" OFF)
 option(DOTTALK_TV_TESTS       "Build Turbo Vision probe tests" ON)
 option(DOTTALK_WITH_INDEX     "Enable xindex (indexing) support" ON)
 option(DOTTALK_WITH_EDUCATION "Enable education support" ON)
@@ -41,8 +43,6 @@ option(BUILD_PYDOTTALK        "Build Python bindings" OFF)
 option(DOTTALK_WITH_RELATIONS "Enable relationship support" ON)
 
 # Transitional / developer-only command surfaces.
-option(DOTTALK_WITH_DEV       "Include developer tools and transitional aliases" ON)
-
 # Build profile: use this to steer capacity and diagnostics defaults.
 set(DOTTALK_PROFILE "DEV" CACHE STRING "Build profile: DEV or PROD")
 set_property(CACHE DOTTALK_PROFILE PROPERTY STRINGS DEV PROD)
@@ -51,42 +51,35 @@ set_property(CACHE DOTTALK_PROFILE PROPERTY STRINGS DEV PROD)
 # This may be overridden by the profile block below.
 set(DOTTALK_MAX_AREA "" CACHE STRING "Maximum open work areas (empty = choose from profile)")
 
+string(TOUPPER "${DOTTALK_PROFILE}" DOTTALK_PROFILE)
+if (NOT DOTTALK_PROFILE STREQUAL "DEV" AND NOT DOTTALK_PROFILE STREQUAL "PROD")
+    message(FATAL_ERROR "DOTTALK_PROFILE must be DEV or PROD")
+endif()
+
+set(_dottalk_with_dev_default ON)
+set(_dottalk_extra_diagnostics_default ON)
+if (DOTTALK_PROFILE STREQUAL "PROD")
+    set(_dottalk_with_dev_default OFF)
+    set(_dottalk_extra_diagnostics_default OFF)
+endif()
+
+# Transitional / developer-only command surfaces.
+option(DOTTALK_WITH_DEV "Include developer tools and transitional aliases" ${_dottalk_with_dev_default})
+
 # Optional extra diagnostics.
-option(DOTTALK_EXTRA_DIAGNOSTICS "Enable extra internal diagnostics/logging" ON)
+option(DOTTALK_EXTRA_DIAGNOSTICS "Enable extra internal diagnostics/logging" ${_dottalk_extra_diagnostics_default})
 
 # ============================================================
 # Profile Resolution
 # ============================================================
 
-string(TOUPPER "${DOTTALK_PROFILE}" DOTTALK_PROFILE)
-
-if (NOT DOTTALK_PROFILE STREQUAL "DEV" AND NOT DOTTALK_PROFILE STREQUAL "PROD")
-    message(FATAL_ERROR "DOTTALK_PROFILE must be DEV or PROD")
-endif()
-
 if (DOTTALK_PROFILE STREQUAL "DEV")
     if (DOTTALK_MAX_AREA STREQUAL "")
         set(DOTTALK_MAX_AREA "256" CACHE STRING "Maximum open work areas" FORCE)
     endif()
-
-    if (NOT DEFINED DOTTALK_WITH_DEV)
-        set(DOTTALK_WITH_DEV ON CACHE BOOL "Include developer tools and transitional aliases" FORCE)
-    endif()
-
-    if (NOT DEFINED DOTTALK_EXTRA_DIAGNOSTICS)
-        set(DOTTALK_EXTRA_DIAGNOSTICS ON CACHE BOOL "Enable extra internal diagnostics/logging" FORCE)
-    endif()
 else()
     if (DOTTALK_MAX_AREA STREQUAL "")
         set(DOTTALK_MAX_AREA "128" CACHE STRING "Maximum open work areas" FORCE)
-    endif()
-
-    if (NOT DEFINED CACHE{DOTTALK_WITH_DEV})
-        set(DOTTALK_WITH_DEV OFF CACHE BOOL "Include developer tools and transitional aliases" FORCE)
-    endif()
-
-    if (NOT DEFINED CACHE{DOTTALK_EXTRA_DIAGNOSTICS})
-        set(DOTTALK_EXTRA_DIAGNOSTICS OFF CACHE BOOL "Enable extra internal diagnostics/logging" FORCE)
     endif()
 endif()
 
@@ -158,6 +151,8 @@ endif()
 # ============================================================
 # Main Source Tree
 # ============================================================
+
+include(CTest)
 
 add_subdirectory(src)
 
@@ -340,7 +335,6 @@ endif()
 # Tests
 # ============================================================
 
-include(CTest)
 if (BUILD_TESTING)
     add_subdirectory(src/tests)
 endif()
@@ -366,6 +360,8 @@ message(STATUS "  DOTTALK_WITH_RELATIONS: ${DOTTALK_WITH_RELATIONS}")
 message(STATUS "  DOTTALK_WITH_EDUCATON : ${DOTTALK_WITH_EDUCATION}")
 message(STATUS "  xexpr found           : ${_xexpr_found}")
 message(STATUS "  DOTTALK_WITH_TV       : ${DOTTALK_WITH_TV}")
+message(STATUS "  DOTTALK_WITH_GUI      : ${DOTTALK_WITH_GUI}")
+message(STATUS "  DOTTALK_WITH_WX       : ${DOTTALK_WITH_WX}")
 message(STATUS "  DOTTALK_TV_TESTS      : ${DOTTALK_TV_TESTS}")
 message(STATUS "  BUILD_PYDOTTALK       : ${BUILD_PYDOTTALK}")
 message(STATUS "  BUILD_TESTING         : ${BUILD_TESTING}")
@@ -384,11 +380,22 @@ message(STATUS "===================================")
 
 if(NOT TARGET dt_meta)
     add_library(dt_meta STATIC
+        src/cli/expr/date/date_arith.cpp
+        src/cli/expr/date/date_utils.cpp
+        src/cli/expr/fn_date.cpp
+        src/cli/expr/fn_numeric.cpp
+        src/cli/expr/fn_string.cpp
+        src/cli/expr/function_catalog.cpp
+        src/datadict/ddict_read_helpers.cpp
+        src/datadict/ddict_dbf_reader.cpp
         src/meta/metacollect.cpp
     )
 
     target_include_directories(dt_meta PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_include_directories(dt_meta PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/cli/expr
     )
 
     target_compile_features(dt_meta PUBLIC cxx_std_17)
@@ -402,4 +409,3 @@ if(NOT TARGET metacollect)
     target_link_libraries(metacollect PRIVATE dt_meta)
 endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
-

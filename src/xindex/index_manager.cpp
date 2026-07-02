@@ -675,6 +675,22 @@ std::vector<std::string> IndexManager::listTags() const {
     if (auto* cnx = dynamic_cast<const CnxBackend*>(backend_.get())) {
         return cnx->listTags();
     }
+    if (dynamic_cast<const CdxBackend*>(backend_.get()) != nullptr && !container_path_.empty()) {
+        std::vector<std::string> out;
+        try {
+            const auto defs = area_.fields();
+            out.reserve(defs.size());
+            for (const auto& def : defs) {
+                auto tag = to_upper_copy_ascii_(def.name);
+                if (!tag.empty()) {
+                    out.push_back(std::move(tag));
+                }
+            }
+        } catch (...) {
+            out.clear();
+        }
+        if (!out.empty()) return out;
+    }
     std::vector<std::string> out;
     const auto t = activeTag();
     if (!t.empty()) out.push_back(t);

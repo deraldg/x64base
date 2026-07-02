@@ -3,14 +3,15 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
-#include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/logical_nav.hpp"
 #include "cli/settings.hpp"
+#include "help/helpdata_messages.hpp"
 
 namespace cli::nav {
 
@@ -56,15 +57,21 @@ inline bool try_parse_int_token(const std::string& s, int& out)
 inline bool refresh_current(xbase::DbArea& A, const char* who)
 {
     if (!A.isOpen()) {
-        std::cout << who << ": no file open.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
         return false;
     }
     if (!A.readCurrent()) {
-        std::cout << who << ": failed to read record.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavReadCurrentFailedText);
         return false;
     }
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
     return true;
 }
@@ -72,19 +79,27 @@ inline bool refresh_current(xbase::DbArea& A, const char* who)
 inline bool go_absolute(xbase::DbArea& A, int n, const char* who)
 {
     if (!A.isOpen()) {
-        std::cout << who << ": no file open.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
         return false;
     }
     if (n <= 0) {
-        std::cout << who << ": record number must be a positive integer.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
         return false;
     }
     if (!A.gotoRec(n) || !A.readCurrent()) {
-        std::cout << who << ": failed.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavFailedText);
         return false;
     }
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
     return true;
 }
@@ -92,7 +107,9 @@ inline bool go_absolute(xbase::DbArea& A, int n, const char* who)
 inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
 {
     if (!A.isOpen()) {
-        std::cout << who << ": no file open.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
         return false;
     }
 
@@ -111,17 +128,23 @@ inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
     }
 
     if (rn <= 0) {
-        std::cout << who << ": failed.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavFailedText);
         return false;
     }
 
     if (!A.gotoRec(rn) || !A.readCurrent()) {
-        std::cout << who << ": failed.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavFailedText);
         return false;
     }
 
     if (cli::Settings::instance().talk_on.load()) {
-        std::cout << "Recno: " << A.recno() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
     }
     return true;
 }
@@ -129,7 +152,9 @@ inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
 inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
 {
     if (!A.isOpen()) {
-        std::cout << who << ": no file open.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
         return false;
     }
 
@@ -140,10 +165,16 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
 
     if (steps == 0) {
         if (!A.readCurrent()) {
-            std::cout << who << ": failed to read record.\n";
+            cli::cmdout::print_prefixed_message(
+                who,
+                dottalk::helpdata::MessageId::NavReadCurrentFailedText);
             return false;
         }
-        if (talk) std::cout << "Recno: " << A.recno() << "\n";
+        if (talk) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::NavRecnoLine,
+                {{"recno", std::to_string(A.recno())}});
+        }
         return true;
     }
 
@@ -158,7 +189,9 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
 
         if (next <= 0) {
             if (!moved) {
-                std::cout << who << ": at end.\n";
+                cli::cmdout::print_prefixed_message(
+                    who,
+                    dottalk::helpdata::MessageId::NavAtEndText);
                 return false;
             }
             break;
@@ -169,16 +202,24 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
     }
 
     if (!moved) {
-        std::cout << who << ": at end.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavAtEndText);
         return false;
     }
 
     if (!A.gotoRec(current) || !A.readCurrent()) {
-        std::cout << who << ": failed to read record.\n";
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavReadCurrentFailedText);
         return false;
     }
 
-    if (talk) std::cout << "Recno: " << A.recno() << "\n";
+    if (talk) {
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno())}});
+    }
     return true;
 }
 
