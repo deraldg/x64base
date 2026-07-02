@@ -5,6 +5,7 @@ node_modules
 .next
 out
 .sites-artifact
+.gh-pages-deploy
 x64base-sites-artifact.tar.gz
 
 # env
