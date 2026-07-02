@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Host: https://x64base.com
+Sitemap: https://x64base.com/sitemap.xml
