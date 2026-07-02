@@ -1,0 +1,46 @@
+---
+title: "DotTalk++ Language Guide"
+description: "Command-shell-first guide to the current DotTalk++ runtime."
+---
+
+DotTalk++ is the canonical command surface for the local x64base runtime.
+
+It is used for:
+
+- opening tables and workspaces.
+- inspecting areas, fields, records, relations, and indexes.
+- running HELP and validation.
+- browsing records and relation graphs.
+- running scripts and smoke/canary workflows.
+
+## First commands to recognize
+
+```text
+HELP
+HELP <command>
+USE <table>
+SELECT <n>
+AREA
+STRUCT
+WORKSPACE OPEN DBF
+WORKSPACE OPEN DBF CDX
+WORKSPACE SAVE <name>
+WORKSPACE LOAD <name>
+REL LIST ALL
+ERSATZ
+SMARTBROWSE
+SIMPLEBROWSE
+CMDHELPCHK
+CMDHELPCHK REF
+```
+
+## Status
+
+The command language is active and usable, but individual commands vary by proof level. Some are runtime-proven, some are active beta, and some remain canary or integration surfaces.
+
+## Next
+
+- [Syntax](/docs/dottalk/syntax)
+- [REPL](/docs/dottalk/repl)
+- [Examples](/docs/dottalk/examples)
+- [Current Project Truth](/docs/dev/project-truth)

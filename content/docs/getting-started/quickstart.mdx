@@ -1,0 +1,57 @@
+---
+title: "Getting Started: Quickstart"
+description: "Run the real DotTalk++ command surfaces instead of placeholder x64base commands."
+---
+
+The local project is command-shell first. Use DotTalk++ scripts and commands rather than invented package-style examples.
+
+## Build shape
+
+The CMake project is `DotTalkpp` and uses C++20.
+
+Common local configuration starts from these build options:
+
+```powershell
+cmake -S D:\code\ccode -B D:\code\ccode\build -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_INDEX=ON -D DOTTALK_WITH_RELATIONS=ON -D BUILD_TESTING=ON
+cmake --build D:\code\ccode\build --config Release --target dottalkpp
+```
+
+GUI lanes are optional:
+
+```powershell
+cmake -S D:\code\ccode -B D:\code\ccode\build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
+```
+
+## Runtime commands to recognize
+
+These are real command surfaces from the local command reference:
+
+```text
+HELP
+HELP <command>
+CMDHELPCHK
+CMDHELPCHK REF
+WORKSPACE OPEN DBF
+WORKSPACE OPEN DBF CDX
+WORKSPACE SAVE <name>
+WORKSPACE LOAD <name>
+BUILDLMDB
+ERSATZ
+ERSATZ TREE
+ERSATZ GRID
+RBROWSE
+SMARTBROWSE
+ARTBROWSE
+SIMPLEBROWSE
+SB
+REL LIST ALL
+DDL VALIDATE <schema.json> USING <validator.json>
+DDL CREATE DBF <output.dbf> FROM <schema.json>
+DRAWIO OPEN
+```
+
+## Reality check
+
+Some commands are runtime-proven, some are active beta, and some are canary/integration surfaces. The site should preserve that distinction.
+
+For the current scan source, see [Current Project Truth](/docs/dev/project-truth).

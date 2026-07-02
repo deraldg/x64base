@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 5 12 20;          /* midnight blue */
+  --fg: 233 240 255;
+  --muted: 150 170 200;
+  --card: 12 22 36;
+  --border: 30 46 72;
+
+  --brand: 96 200 212;    /* electric teal */
+  --teal: 96 200 212;
+  --orange: 255 149 64;
+  --green: 74 222 128;
+  --purple: 168 85 247;
+  --red: 248 113 113;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: rgb(var(--fg));
+  background:
+    linear-gradient(180deg, rgba(96, 200, 212, 0.1), transparent 360px),
+    linear-gradient(90deg, rgba(255, 149, 64, 0.08), transparent 38%, rgba(96, 200, 212, 0.07)),
+    rgb(var(--bg));
+}
+
+::selection {
+  background: rgba(96, 200, 212, 0.35);
+}
+
+
+@layer base {
+  html {
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+      Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
+  }
+}

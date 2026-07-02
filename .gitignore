@@ -1,0 +1,16 @@
+# dependencies
+node_modules
+
+# next
+.next
+out
+.sites-artifact
+x64base-sites-artifact.tar.gz
+
+# env
+.env*
+!.env.example
+
+# misc
+.DS_Store
+*.log

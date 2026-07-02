@@ -1,0 +1,35 @@
+---
+title: "DBF_64 Specification"
+description: "Canonical layout of DBF_64 tables: headers, field descriptors, records."
+---
+
+> Replace placeholders with your authoritative spec once finalized.
+
+## Table header (conceptual)
+
+- magic/version
+- record count
+- header length
+- record length
+- flags / reserved
+
+## Field descriptors
+
+Each field descriptor defines:
+
+- name
+- type
+- length
+- decimals (if numeric)
+- offsets / flags
+
+## Records
+
+- fixed-length records
+- deleted flag
+- field-aligned payload
+
+## See also
+
+- [FPT64 Memo Format](/docs/engine/fpt64-memo-format)
+- [Indexing Rules](/docs/engine/indexing-rules)

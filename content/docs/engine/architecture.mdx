@@ -1,0 +1,47 @@
+---
+title: "Engine Architecture"
+description: "Observed architecture from the local DotTalk++ / x64base source tree."
+---
+
+## Principles
+
+- **Runtime truth first** - command behavior and source boundaries matter more than aspirational product language.
+- **Visible database layers** - tables, records, fields, indexes, relations, work areas, metadata, HELP, and validation are teaching surfaces.
+- **Separation of concerns** - table storage, memo payloads, indexes, command handling, metadata, HELP, validation, and UI lanes are separate responsibilities.
+- **Proof language** - distinguish runtime-proven behavior from active, partial, experimental, and canary work.
+
+## Major subsystems
+
+The local project is organized around these implementation areas:
+
+1. `src/xbase` - table runtime, DbArea behavior, cursor state, field handling, locks, and record views.
+2. `src/xindex` - INX/CNX/CDX/LMDB index infrastructure and command bridges.
+3. `src/memo` - memo store, memo manager, memo object, memo reference, and memo canaries.
+4. `src/cli` - DotTalk++ command surface, HELP, browsers, workspace commands, DDL, DrawIO, validation, and scripts.
+5. `src/datadict` - data dictionary readers, object resolution, catalog paths, and catalog bridge work.
+6. `src/xexpr` and `src/cli/expr` - expression and function evaluation.
+7. `bindings/pydottalk` - Python binding work and smoke probes.
+8. `docs/gui` and GUI source lanes - GUI-neutral services, wxWidgets frontend work, Python/Tk preview tools, and TUI alignment.
+
+## Current build surface
+
+The top-level CMake project is `DotTalkpp` version `0.6`, C++20.
+
+Important options:
+
+```text
+DOTTALK_WITH_TV
+DOTTALK_WITH_GUI
+DOTTALK_WITH_WX
+DOTTALK_WITH_INDEX
+DOTTALK_WITH_EDUCATION
+DOTTALK_WITH_RELATIONS
+BUILD_PYDOTTALK
+DOTTALK_PROFILE
+```
+
+## Current focus
+
+The current useful work is not broad feature expansion. The local tree points toward validation, congruence, GUI/runtime bridging, metadata reports, CDX/LMDB lifecycle cleanup, memo proof, and keeping browser/workspace smoke paths honest.
+
+See [Current Project Truth](/docs/dev/project-truth).

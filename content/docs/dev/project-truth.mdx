@@ -1,0 +1,74 @@
+---
+title: "Current Project Truth"
+description: "Observed state from the local DotTalk++ / x64base checkout."
+---
+
+This page reflects a local scan of `D:\code\ccode`, treated as the authoritative DotTalk++ / x64base source tree.
+
+## Source snapshot
+
+- Local path: `D:\code\ccode`
+- Git branch: `homegrown-cnx-20251112-branch`
+- Observed commit: `bed0828e` (`Add reviewed runtime message catalog reset/reload workflow`)
+- CMake project: `DotTalkpp`
+- Project version: `0.6`
+- Language standard: C++20
+
+The root `README.md` is not present in the local working tree. The current site copy therefore uses the local CMake files, command reference, GUI docs, database safety docs, source layout, and generated manual artifacts as the truth source.
+
+## Current status
+
+DotTalk++ / x64base should be described as a working educational and research runtime in active beta, not as a finished commercial database product.
+
+Current proven or active areas include:
+
+- DBF-style table runtime, cursor state, records, fields, work areas, and table inspection.
+- x64-family table and metadata work.
+- INX, CNX, CDX, and LMDB-backed index work.
+- Memo subsystem with object-oriented architecture and canary coverage.
+- DotTalk++ command shell and DotScript automation.
+- HELP, command reflection, `CMDHELPCHK`, and metadata congruence work.
+- Relation-aware browsing through `ERSATZ` / `RBROWSE`.
+- Record and tuple browsing through `SMARTBROWSE`, `ARTBROWSE`, `SIMPLEBROWSE`, and `SB`.
+- Data dictionary readers, catalog paths, and object resolver code.
+- Python binding experiments through `pydottalk`.
+- GUI work across wxWidgets, Python/Tk preview tools, and Turbo Vision-style TUI surfaces.
+
+## Build configuration truth
+
+The top-level CMake options define the real build surface:
+
+```text
+DOTTALK_WITH_TV        ON by default
+DOTTALK_WITH_GUI       OFF by default
+DOTTALK_WITH_WX        OFF by default
+DOTTALK_TV_TESTS       ON by default
+DOTTALK_WITH_INDEX     ON by default
+DOTTALK_WITH_EDUCATION ON by default
+BUILD_PYDOTTALK        OFF by default
+DOTTALK_WITH_RELATIONS ON by default
+DOTTALK_PROFILE        DEV or PROD
+```
+
+The build also wires `metacollect` as a developer executable for low-level metadata and reflection collection. Its CMake comment explicitly says it must not rebuild HELP data, mutate `CMDHELPCHK`, write DBFs, or mutate publication artifacts.
+
+## Command surface truth
+
+The command reference shows active command surfaces including:
+
+- `BUILDLMDB` for materializing LMDB-backed tag databases from current table data.
+- `CMDHELPCHK` for reflection and HELP/catalog validation.
+- `ERSATZ` and `RBROWSE` for relation-aware browsing.
+- `SIMPLEBROWSE` / `SB` and `SMARTBROWSE` / `ARTBROWSE` for tuple and record browsing.
+- `WORKSPACE` commands for opening, saving, loading, and closing workspaces.
+- `DDL` commands for schema-oriented DBF creation and validation work.
+- `DRAWIO` helpers for opening diagram tooling, with metadata-generated diagrams still a future direction.
+
+## Website wording rule
+
+Use these words carefully:
+
+- Use "active beta", "runtime-proven", "active", "partial", "experimental", and "canary" when that is the observed state.
+- Avoid presenting x64base as complete, commercial, or production-finished.
+- Avoid claiming DBF_64 and FPT64 are the only storage truth. The local tree contains DBF-style runtime work, x32 and x64-family work, memo systems, xindex backends, data dictionary code, and metadata catalogs.
+- Treat DotTalk++ as the canonical runtime and teaching shell, not merely a small scripting add-on.

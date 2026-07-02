@@ -1,0 +1,23 @@
+---
+title: "FPT64 Memo Format"
+description: "Memo storage: blocks, pointers, allocation, and integrity checks."
+---
+
+> Replace placeholders with your authoritative memo spec.
+
+## Concepts
+
+- fixed-size blocks
+- memo pointer stored in DBF_64 record
+- block chain / allocation map (implementation-dependent)
+
+## Integrity
+
+- validate pointer range
+- validate block boundaries
+- detect orphaned blocks
+
+## Practical tooling
+
+- use TupTalk to inspect record memo pointers
+- use TableTalk to export fields for audits

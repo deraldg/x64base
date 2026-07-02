@@ -1,0 +1,32 @@
+---
+title: "Getting Started: Overview"
+description: "What DotTalk++ / x64base is today, what is active, and where to begin."
+---
+
+DotTalk++ / x64base is a working educational and research runtime for xBase-style database ideas.
+
+It is not currently positioned as a finished commercial database product. It is an active beta system that exposes database layers directly: table files, records, fields, work areas, indexes, relations, metadata, HELP, validation, scripts, browsers, and simple UI surfaces.
+
+## What the local project contains
+
+- **DotTalk++ command shell** - the canonical runtime surface for commands, scripts, HELP, browsing, validation, and workspace state.
+- **x64base / DBF runtime** - DBF-style table handling, x32 and x64-family work, cursor movement, record mutation, work areas, and table inspection.
+- **xindex** - INX, CNX, CDX, and LMDB-backed indexing work.
+- **Memo subsystem** - object-oriented memo architecture with active canary coverage.
+- **Metadata and self-documentation** - command reflection, `CMDHELPCHK`, SYS* metadata work, data dictionary readers, and congruence validation.
+- **Browser surfaces** - `ERSATZ`, `RBROWSE`, `SMARTBROWSE`, `ARTBROWSE`, `SIMPLEBROWSE`, and `SB`.
+- **UI lanes** - Turbo Vision-style TUI, wxWidgets workbench work, and Python/Tk preview tools.
+- **Python integration** - `pydottalk` binding experiments and smoke scripts.
+
+## Current truth source
+
+This site is aligned to the local checkout at `D:\code\ccode`, branch `homegrown-cnx-20251112-branch`, commit `bed0828e`.
+
+See [Current Project Truth](/docs/dev/project-truth) for the scan snapshot.
+
+## Next steps
+
+1. Read the [Quickstart](/docs/getting-started/quickstart).
+2. Review [Engine Architecture](/docs/engine/architecture).
+3. Browse [DotTalk++ Language Guide](/docs/dottalk/language-guide).
+4. Check [Developer Handbook](/docs/dev/developer-handbook) before changing source or docs.

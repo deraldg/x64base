@@ -1,0 +1,36 @@
+---
+title: "Developer Handbook"
+description: "How to work from the local DotTalk++ / x64base truth."
+---
+
+## Source of truth
+
+Use `D:\code\ccode` as the authoritative local source tree for DotTalk++ / x64base work.
+
+The site content was updated from a scan of:
+
+- CMake build configuration.
+- command reference docs.
+- GUI docs under `docs/gui`.
+- database safety docs under `docs/database`.
+- source directories under `src/xbase`, `src/xindex`, `src/memo`, `src/cli`, `src/datadict`, and `bindings/pydottalk`.
+
+See [Current Project Truth](/docs/dev/project-truth).
+
+## Working principles
+
+- Preserve the difference between runtime-proven, active, partial, experimental, and canary features.
+- Treat DotTalk++ as the canonical runtime and command surface.
+- Treat x64base as the engine/runtime/data layer, not as a separate polished product unless the source tree proves that packaging.
+- Keep GUI descriptions top-down over the existing runtime. Do not imply wxWidgets, Tk, or TUI lanes own database semantics.
+- Avoid placeholder CLI commands when the local command reference has real commands.
+
+## Build boundaries
+
+Do not mutate DBFs, HELP data, metadata catalogs, or generated publication artifacts unless the task explicitly asks for that and the mutation path is understood.
+
+The local CMake metacollect block calls out a safety boundary: no HELP DATA rebuild, no `CMDHELPCHK` mutation, and no DBF writes.
+
+## Contributing
+
+See: [Contribution Guide](/docs/dev/contribution-guide)

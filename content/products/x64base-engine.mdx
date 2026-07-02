@@ -1,0 +1,32 @@
+---
+title: "x64base Engine"
+description: "DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."
+---
+
+## Overview
+
+x64base is the database/runtime side of the DotTalk++ system. In the local source tree it is best described as active beta engine work, not a finished standalone commercial product.
+
+The current engine reality includes:
+
+- DBF-style table handling.
+- x32 and x64-family table work.
+- field typing, validation, cursor state, record movement, and work areas.
+- memo subsystem work through `MemoRef`, `MemoManager`, `MemoObject`, and `MemoStore` concepts.
+- INX, CNX, CDX, and LMDB-backed index work.
+- data dictionary and metadata catalog readers.
+- command-shell integration through DotTalk++.
+
+## What is proven versus active
+
+Use "runtime-proven" only when a smoke path or command surface has current evidence. Use "active", "partial", "experimental", or "canary" where the local project says the feature is still being integrated.
+
+Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.
+
+## References
+
+- [Current Project Truth](/docs/dev/project-truth)
+- [Architecture](/docs/engine/architecture)
+- [Indexing Rules](/docs/engine/indexing-rules)
+- [Error Codes](/docs/engine/error-codes)
+- [API Reference](/docs/engine/api-reference)
