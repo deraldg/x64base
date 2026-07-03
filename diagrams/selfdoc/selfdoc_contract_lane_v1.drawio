@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" modified="" agent="DotTalk++ metadata diagram generator M1.1" version="24.7.17" type="device">
+  <diagram id="96e8bf4d-53d8-4f9e-941f-3fe094ba9710" name="SelfDoc and Contract Lane Flow">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="SelfDoc and Contract Lane Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="30" width="520" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="n_LANE_CONTRACTS" value="Contract Lane&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="110" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_LANE_SELFDOC" value="SelfDoc System&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="240" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_LANE_LABTALK" value="LabTalk Local Level&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="370" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_LANE_WEBSITE" value="x64base Website&lt;br&gt;[runtime_service]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="110" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_SRC_CHAT_DECISIONS" value="Chat Decisions&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="500" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_SRC_USAGE_BLOCKS" value="USAGE Blocks&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="630" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_SRC_ANNOTATIONS" value="@dottalk.contract&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="760" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_SRC_HELP_EVIDENCE" value="HELP and CMDHELP&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="890" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_SRC_METADATA" value="Metadata Imports&lt;br&gt;[metadata_table]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="80" y="110" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_PROC_INTAKE" value="Capture and Classify&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1020" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_PROC_REGISTER" value="Register and Cross-Link&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1150" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_PROC_PROVE" value="Prove and Promote&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1280" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_PROC_DRIFT" value="Check Drift&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1410" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_TOOL_METACOLLECT" value="metacollect&lt;br&gt;[runtime_service]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="240" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_PIPE_METADATA" value="metadata_collection_v0&lt;br&gt;[runtime_service]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="370" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_OUT_REPORTS" value="Generated Reports&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1540" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_OUT_DRAWIO" value="Draw.io Diagrams&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1670" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_OUT_MERMAID" value="Mermaid Diagrams&lt;br&gt;[contract]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1800" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_GUARD_NON_MUTATION" value="Non-Mutation Guard&lt;br&gt;[boundary]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="110" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_GUARD_EVIDENCE" value="Evidence Honesty Guard&lt;br&gt;[boundary]" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="270" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_CHAT_INTAKE" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_SRC_CHAT_DECISIONS" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_USAGE_INTAKE" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_SRC_USAGE_BLOCKS" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_ANNOT_INTAKE" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_SRC_ANNOTATIONS" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_HELP_INTAKE" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_SRC_HELP_EVIDENCE" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_METADATA_INTAKE" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_SRC_METADATA" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_INTAKE_REGISTER" value="delegates_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_PROC_INTAKE" target="n_PROC_REGISTER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_REGISTER_PROVE" value="delegates_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_PROC_REGISTER" target="n_PROC_PROVE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_PROVE_DRIFT" value="delegates_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_PROC_PROVE" target="n_PROC_DRIFT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_DRIFT_REGISTER" value="delegates_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_PROC_DRIFT" target="n_PROC_REGISTER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_CONTRACTS_INTAKE" value="owns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_LANE_CONTRACTS" target="n_PROC_INTAKE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_CONTRACTS_REGISTER" value="owns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_LANE_CONTRACTS" target="n_PROC_REGISTER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_SELFDOC_TOOL" value="owns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_LANE_SELFDOC" target="n_TOOL_METACOLLECT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_SELFDOC_PIPE" value="owns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_LANE_SELFDOC" target="n_PIPE_METADATA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_TOOL_PIPE" value="activates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_TOOL_METACOLLECT" target="n_PIPE_METADATA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_PIPE_REPORTS" value="defines" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_PIPE_METADATA" target="n_OUT_REPORTS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_REPORTS_DRAWIO" value="defines" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_OUT_REPORTS" target="n_OUT_DRAWIO">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_REPORTS_MERMAID" value="defines" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_OUT_REPORTS" target="n_OUT_MERMAID">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_DRAWIO_LABTALK" value="attaches" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_OUT_DRAWIO" target="n_LANE_LABTALK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_MERMAID_LABTALK" value="attaches" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;strokeColor=#000000;fontColor=#000000;" edge="1" parent="1" source="n_OUT_MERMAID" target="n_LANE_LABTALK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_LABTALK_WEBSITE" value="delegates_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;dashed=1;strokeColor=#666666;fontColor=#666666;" edge="1" parent="1" source="n_LANE_LABTALK" target="n_LANE_WEBSITE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_E_GUARD_PIPE" value="must_not_depend_on" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;dashed=1;strokeColor=#b85450;fontColor=#b85450;" edge="1" parent="1" source="n_PIPE_METADATA" target="n_GUARD_NON_MUTATION">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1400" y="405" />
+              <mxPoint x="1400" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_E_GUARD_PROVE" value="must_not_depend_on" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;endArrow=block;endFill=1;dashed=1;strokeColor=#b85450;fontColor=#b85450;" edge="1" parent="1" source="n_PROC_PROVE" target="n_GUARD_EVIDENCE">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1400" y="1320" />
+              <mxPoint x="1400" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" value="Legend&lt;br&gt;Solid = implemented / confirmed&lt;br&gt;Dashed = planned or boundary&lt;br&gt;Labels come from metadata relations&lt;br&gt;Proof/status remain in seed" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="720" width="310" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
