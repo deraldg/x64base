@@ -70,6 +70,7 @@ export const docsSidebar: SidebarGroup[] = [
     items: [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
       { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
+      { label: "Important Documents", href: "/docs/dev/important-documents" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },
       { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
       { label: "SelfDoc Feed Pipeline", href: "/docs/dev/selfdoc-feed-pipeline" },

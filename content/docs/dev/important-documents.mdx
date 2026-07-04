@@ -1,0 +1,86 @@
+---
+title: "Important Documents"
+description: "Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."
+---
+
+This page is the public documentation shelf for the most important document
+layers behind x64base, DotTalk++, DotScript, DotTalk++ Workbench, and the
+Laboratory Campus.
+
+The website is not meant to be a hand-written brochure. It is a reviewed
+publication surface built from the same vertical documentation system used by
+the runtime: source comments, usage contracts, HELP, metadata, SelfDoc reports,
+MDO organization, manualgen, diagrams, and AI-friendly summaries.
+
+## Document Layers
+
+| Layer | Role | Website Status |
+| --- | --- | --- |
+| Source and runtime truth | C++ source, command registration, headers, contracts, runtime transcripts, and command behavior. | Referenced and summarized; not fully mirrored. |
+| HELP and metadata | `HELP`, `CMDHELP`, command/function catalogs, usage contracts, field/type metadata, and validation readback. | Command and function pages should be regenerated from this layer. |
+| SelfDoc reports | Report-only extracts for features, contracts, comments, evidence, diagrams, and crosswalks. | Selected reports are promoted after review. |
+| MDO organization | Master Documentation Organizer structure for lanes, manuals, evidence, sections, and promotion decisions. | Public pages should cite the organized lane, not raw scanner guesses. |
+| AI-friendly artifacts | Compact summaries, manifests, crosswalks, inventories, and review notes designed for model-assisted maintenance. | Should be exposed when reviewed and clearly marked as derivative. |
+| Manualgen outputs | Generated manual inventories, validation reports, dry-runs, and accepted manual sections. | Manuals are planned for publication as reviewed outputs. |
+| Website derivatives | Public pages under `x64base.com` that present reviewed, status-labeled slices of the above. | This site is the current publication surface. |
+
+## Current Public Anchors
+
+- [Current Project Truth](/docs/dev/project-truth) records conservative wording rules and the observed implementation state.
+- [Current Work Lanes](/docs/dev/current-lanes) lists active, canary, planned, and integration lanes without crowding the front page.
+- [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline) documents the repeatable report-only path from source to manuals and website pages.
+- [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication) defines the boundary between implementation truth and public website copy.
+- [Coding Standards](/docs/dev/coding-standards) records contracts, usage comments, header conventions, and safeguards.
+- [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence) curates screenshots as evidence artifacts, not marketing screenshots.
+- [Engine Feature Crosswalk](/docs/engine/feature-crosswalk) summarizes engine features from a generated SelfDoc report.
+- [Command Catalog](/docs/dottalk/command-catalog) and [Function Catalog](/docs/dottalk/function-catalog) are public catalog derivatives that should eventually be regenerated from HELP/metadata/contract evidence.
+
+## Manual Publication Plan
+
+Manuals should appear here only after they are generated, validated, and
+reviewed. The intended path is:
+
+```text
+source behavior
+-> comments and @dottalk.usage / @dottalk.contract headers
+-> HELP, CMDHELP, metadata, and comments evidence
+-> CMDHELPCHK / SelfDoc validation reports
+-> MDO section organization
+-> manualgen inventory / validate / dry-run
+-> reviewed manual section
+-> website manual page or downloadable artifact
+```
+
+This keeps the public manual honest. If a feature is runtime-evidenced, the
+manual can say so. If it is source-evidenced, canary, planned, or
+review-needed, the manual should carry that status instead of smoothing it over.
+
+## AI-Friendly Documentation
+
+AI-friendly documents are useful because the project is broad, but they are not
+the source of truth by themselves. They should preserve:
+
+- source path or report path,
+- generation date or extraction snapshot,
+- evidence status,
+- mutation boundary,
+- review state,
+- promotion target.
+
+AI-friendly summaries are allowed on the website when they help a reader
+navigate the system and when they remain traceable back to source, HELP,
+SelfDoc, MDO, or manualgen artifacts.
+
+## Website Generation Rule
+
+The website should increasingly be maintained by vertical content generation:
+
+```text
+D:\code\ccode implementation truth
+-> SelfDoc / MDO / manualgen / AI-friendly reviewed artifacts
+-> D:\dev\x64base-site public derivatives
+-> x64base.com published documentation
+```
+
+Hand edits are acceptable for framing and review, but important technical pages
+should be fed by repeatable reports whenever possible.
