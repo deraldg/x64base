@@ -1,0 +1,107 @@
+3:I[4707,[],""]
+5:I[6423,[],""]
+6:I[8366,["972","static/chunks/972-6d5b5069acc8181c.js","185","static/chunks/app/layout-4d4d64cb6085bfb6.js"],"Navbar"]
+7:I[2972,["972","static/chunks/972-6d5b5069acc8181c.js","966","static/chunks/app/licensing/%5B...slug%5D/page-5716af31eba9c7b0.js"],""]
+4:["slug","third-party-acknowledgements","c"]
+0:["JAniUiuauEyCG8rdbVabQ",[[["",{"children":["licensing",{"children":[["slug","third-party-acknowledgements","c"],{"children":["__PAGE__?{\"slug\":[\"third-party-acknowledgements\"]}",{}]}]}]},"$undefined","$undefined",true],["",{"children":["licensing",{"children":[["slug","third-party-acknowledgements","c"],{"children":["__PAGE__",{},[["$L1","$L2",null],null],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","licensing","children","$4","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","licensing","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/7d7eb0588f0ecd17.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","className":"__variable_f367f3 __variable_3c557b","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L6",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L7",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],"notFoundStyles":[]}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, ArcticTalk®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L7",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L7",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L7",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L7",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L7",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L7",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L7",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L7",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L7",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]],null],null],["$L8",null]]]]
+9:T11d4,<p>This project stands on a broad open-source foundation. These acknowledgements identify currently observed dependencies and tools from the local DotTalk++ <code>vcpkg.json</code>, CMake configuration, and website package manifest.</p>
+<p>Acknowledgement here does not imply endorsement by the third-party project. Final redistribution packages should include exact license files for the versions shipped.</p>
+<h2 id="runtime-and-engine-libraries"><a class="no-underline" href="#runtime-and-engine-libraries">Runtime and Engine Libraries</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Project</th><th>Role in x64base / DotTalk++ / LabTalk</th><th>Credit and official link</th></tr></thead><tbody><tr><td>LMDB</td><td>Embedded key-value database used as the physical backend for CDX-backed index environments.</td><td>Lightning Memory-Mapped Database Manager by Howard Chu / Symas and the OpenLDAP project. Official documentation: <a href="https://www.lmdb.tech/doc/">lmdb.tech</a>.</td></tr><tr><td>Turbo Vision / tvision</td><td>Text UI foundation for console/TUI lanes where enabled.</td><td>Modern Turbo Vision port maintained by the tvision project. Official repository: <a href="https://github.com/magiblot/tvision">magiblot/tvision</a>.</td></tr><tr><td>SQLite</td><td>Embedded SQL database support and educational database demonstrations.</td><td>SQLite project. Official site: <a href="https://www.sqlite.org/">sqlite.org</a>. Copyright/public-domain information: <a href="https://sqlite.org/copyright.html">SQLite Copyright</a>.</td></tr><tr><td>pybind11</td><td>Optional C++ to Python binding support.</td><td>pybind11 project and contributors. Official documentation: <a href="https://pybind11.readthedocs.io/">pybind11.readthedocs.io</a>.</td></tr><tr><td>nlohmann/json</td><td>JSON support for C++ tooling and structured data paths.</td><td>JSON for Modern C++ by Niels Lohmann and contributors. Official site: <a href="https://json.nlohmann.me/">json.nlohmann.me</a>.</td></tr><tr><td>wxWidgets</td><td>Optional cross-platform GUI frontend lane.</td><td>wxWidgets project. Official site: <a href="https://wxwidgets.org/">wxwidgets.org</a>.</td></tr><tr><td>vcpkg</td><td>C/C++ dependency acquisition and build integration.</td><td>Microsoft and the C++ community. Official site: <a href="https://vcpkg.io/">vcpkg.io</a>.</td></tr></tbody></table>
+<h2 id="website-and-documentation-tooling"><a class="no-underline" href="#website-and-documentation-tooling">Website and Documentation Tooling</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Project</th><th>Role in the website</th><th>Official link</th></tr></thead><tbody><tr><td>Next.js</td><td>Website framework and static export foundation.</td><td><a href="https://nextjs.org/">nextjs.org</a></td></tr><tr><td>React</td><td>UI component runtime.</td><td><a href="https://react.dev/">react.dev</a></td></tr><tr><td>TypeScript</td><td>Typed site implementation.</td><td><a href="https://www.typescriptlang.org/">typescriptlang.org</a></td></tr><tr><td>Tailwind CSS</td><td>Utility-first styling system.</td><td><a href="https://tailwindcss.com/">tailwindcss.com</a></td></tr><tr><td>MDX / unified / remark / rehype</td><td>Markdown, MDX, headings, sanitization, and document publication pipeline.</td><td><a href="https://unifiedjs.com/">unifiedjs.com</a></td></tr><tr><td>Lucide</td><td>Icon set used in the website interface.</td><td><a href="https://lucide.dev/">lucide.dev</a></td></tr></tbody></table>
+<h2 id="lmdb-credit-in-the-cdx-system"><a class="no-underline" href="#lmdb-credit-in-the-cdx-system">LMDB Credit in the CDX System</a></h2>
+<p>LMDB deserves explicit credit in the x64base story because it gives the CDX indexing lane a durable, high-performance embedded backend. The x64base design keeps two ideas separate:</p>
+<ul>
+<li><strong>CDX is the logical container</strong> shown to users, students, and commands.</li>
+<li><strong>LMDB is the physical backend</strong> used to store and traverse built index data.</li>
+</ul>
+<p>That separation lets LabTalk teach database indexing at two levels. Beginners can learn records, logical order, tags, <code>SET ORDER</code>, and <code>SEEK</code> without needing backend vocabulary first. Advanced students can open the implementation layer and see how a memory-mapped key-value database can support ordered navigation, rebuild workflows, and index diagnostics.</p>
+<p>See <a href="/docs/engine/cdx-lmdb-indexing">CDX and LMDB Indexing</a> for the implementation-facing explanation.</p>2:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/licensing",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/licensing","className":"hover:text-fg","children":"Licensing"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/licensing/third-party-acknowledgements",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/licensing/third-party-acknowledgements","className":"hover:text-fg","children":"Third-Party Acknowledgements"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Third-Party Acknowledgements"}],["$","p",null,{"className":"mt-2 text-muted","children":"Acknowledgements for open-source libraries, tools, and third-party projects used by x64base, DotTalk++, LabTalk, and the website."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$9"},"children":null}]}]]}]
+8:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Third-Party Acknowledgements — x64base"}],["$","meta","3",{"name":"description","content":"Acknowledgements for open-source libraries, tools, and third-party projects used by x64base, DotTalk++, LabTalk, and the website."}],["$","link","4",{"rel":"canonical","href":"https://x64base.com/licensing/third-party-acknowledgements/"}],["$","meta","5",{"property":"og:title","content":"Third-Party Acknowledgements"}],["$","meta","6",{"property":"og:description","content":"Acknowledgements for open-source libraries, tools, and third-party projects used by x64base, DotTalk++, LabTalk, and the website."}],["$","meta","7",{"property":"og:url","content":"https://x64base.com/licensing/third-party-acknowledgements/"}],["$","meta","8",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","9",{"property":"og:image:width","content":"1200"}],["$","meta","10",{"property":"og:image:height","content":"630"}],["$","meta","11",{"property":"og:image:alt","content":"x64base"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:title","content":"Third-Party Acknowledgements"}],["$","meta","14",{"name":"twitter:description","content":"Acknowledgements for open-source libraries, tools, and third-party projects used by x64base, DotTalk++, LabTalk, and the website."}],["$","meta","15",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","16",{"rel":"icon","href":"/favicon.svg"}]]
+1:null

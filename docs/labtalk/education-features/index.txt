@@ -1,0 +1,135 @@
+3:I[4707,[],""]
+5:I[6423,[],""]
+6:I[8366,["972","static/chunks/972-6d5b5069acc8181c.js","185","static/chunks/app/layout-4d4d64cb6085bfb6.js"],"Navbar"]
+7:I[2972,["972","static/chunks/972-6d5b5069acc8181c.js","687","static/chunks/app/docs/%5B...slug%5D/page-0d73678025fda3e3.js"],""]
+4:["slug","labtalk/education-features","c"]
+0:["JAniUiuauEyCG8rdbVabQ",[[["",{"children":["docs",{"children":[["slug","labtalk/education-features","c"],{"children":["__PAGE__?{\"slug\":[\"labtalk\",\"education-features\"]}",{}]}]}]},"$undefined","$undefined",true],["",{"children":["docs",{"children":[["slug","labtalk/education-features","c"],{"children":["__PAGE__",{},[["$L1","$L2",null],null],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","docs","children","$4","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","docs","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/7d7eb0588f0ecd17.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","className":"__variable_f367f3 __variable_3c557b","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L6",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L7",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],"notFoundStyles":[]}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, ArcticTalk®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L7",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L7",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L7",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L7",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L7",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L7",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L7",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L7",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L7",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]],null],null],["$L8",null]]]]
+9:I[3119,["972","static/chunks/972-6d5b5069acc8181c.js","687","static/chunks/app/docs/%5B...slug%5D/page-0d73678025fda3e3.js"],"Sidebar"]
+a:T1988,<p>LabTalk should expose DotTalk++ education features as runnable labs, not as disconnected reference text. The current source tree already contains enough structure to seed this campus area.</p>
+<h2 id="source-evidence"><a class="no-underline" href="#source-evidence">Source Evidence</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Feature</th><th>Source Evidence</th><th>LabTalk Reading</th></tr></thead><tbody><tr><td>Education command family</td><td><code>D:\code\ccode\src\edu\edu_*.cpp</code> and <code>D:\code\ccode\src\cli\shell_commands.cpp</code></td><td>Built-in teaching commands are source-defined and registered through the central command surface.</td></tr><tr><td>Timed index/sort lab</td><td><code>D:\code\ccode\src\cli\cmd_idx.cpp</code> and <code>D:\code\ccode\docs\teaching\TEACHING_POINT_LEDGER.md</code></td><td><code>IDX</code> is a memory-only educational index lab; it supports <code>STD</code> and <code>BUBBLE</code> sort choices and reports build/sort elapsed time, comparisons, and swaps.</td></tr><tr><td>DBF sort path</td><td><code>D:\code\ccode\src\cli\cmd_sort.cpp</code></td><td><code>SORT</code> creates a sorted DBF copy, supports key expressions, <code>FOR</code>, <code>WHILE</code>, <code>FIELDS</code>, <code>UNIQUE</code>, and reports scanned/selected/written counts.</td></tr><tr><td>Student command hooks</td><td><code>D:\code\ccode\src\ext\cmd\cmd_student_hello.cpp</code>, <code>cmd_student_echo.cpp</code>, and <code>src\ext\ext_policy.hpp</code></td><td>Student commands may self-register from the extension area while built-in command names remain protected.</td></tr><tr><td>Student function hooks</td><td><code>D:\code\ccode\src\ext\fn\fn_student_text_autoreg.cpp</code></td><td>Student functions demonstrate the same registry-compatible pattern for learner-created expression helpers.</td></tr><tr><td>Pre/post polling hooks</td><td><code>D:\code\ccode\src\cli\pre_poll.cpp</code>, <code>post_poll.cpp</code>, and <code>cmd_polling.cpp</code></td><td>Current hooks emit <code>[POLL PRE]</code> and <code>[POLL POST]</code>; <code>cmd_polling.cpp</code> is a placeholder for future polling/integration command work.</td></tr><tr><td>Vertical publication rule</td><td><code>D:\code\ccode\docs\contracts\WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md</code></td><td>Website pages are downstream derivatives of runtime/source, HELP, metadata, CMDHELPCHK, SelfDoc, and manualgen.</td></tr></tbody></table>
+<h2 id="timed-sort-and-index-labs"><a class="no-underline" href="#timed-sort-and-index-labs">Timed Sort and Index Labs</a></h2>
+<p>The strongest current timing surface is <code>IDX</code>, not plain <code>SORT</code>.</p>
+<p><code>IDX</code> is explicitly described in source as a memory-only educational index lab. It accepts commands such as:</p>
+<pre><code class="language-text">IDX ON LNAME TAG lname_std
+IDX ON LNAME TAG lname_bubble BUBBLE
+IDX ON LNAME TAG lname_bubble2 SORT BUBBLE DESC
+IDX LIST
+IDX DROP &#x3C;tag>
+</code></pre>
+<p>Its output path records:</p>
+<ul>
+<li>records scanned and indexed,</li>
+<li>deleted records skipped,</li>
+<li>total build elapsed time,</li>
+<li>sort elapsed time,</li>
+<li>comparisons,</li>
+<li>swaps.</li>
+</ul>
+<p>That makes it suitable for a LabTalk algorithm lab where students compare <code>STD</code> versus <code>BUBBLE</code> against the same table.</p>
+<p>Plain <code>SORT</code> is also lab-ready, but it currently reports operation counts rather than elapsed time. It is useful for teaching DBF output creation, key expressions, <code>FOR</code>/<code>WHILE</code> predicates, field projection, deleted-record handling, and <code>UNIQUE</code> suppression.</p>
+<h2 id="student-code-hooks"><a class="no-underline" href="#student-code-hooks">Student Code Hooks</a></h2>
+<p>The extension policy separates core and learner code:</p>
+<pre><code class="language-text">built-in commands -> central registry
+student/custom commands -> src/ext/cmd self-registration
+function families -> function catalog or self-registration pattern
+</code></pre>
+<p>Current examples:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Hook</th><th>Registered Surface</th><th>Lesson</th></tr></thead><tbody><tr><td><code>cmd_student_hello.cpp</code></td><td><code>STUDENTHELLO</code>, <code>SHELLO</code></td><td>Add a custom command without touching the protected command registry.</td></tr><tr><td><code>cmd_student_echo.cpp</code></td><td><code>STUDENTECHO</code>, <code>SECHO</code></td><td>Add aliases and command-local usage behavior.</td></tr><tr><td><code>fn_student_text_autoreg.cpp</code></td><td><code>STU_UPPER</code>, <code>STU_REPEAT</code></td><td>Add expression-style functions with argument checks and small evaluators.</td></tr></tbody></table>
+<p>This is a strong LabTalk pattern: students can first inspect a command/function in the website catalog, then add a controlled extension, then prove it with HELP/CMDHELP and a runtime transcript.</p>
+<h2 id="prepost-polling"><a class="no-underline" href="#prepost-polling">Pre/Post Polling</a></h2>
+<p>The current pre/post polling files are small but important:</p>
+<pre><code class="language-text">pre_poll()  -> [POLL PRE]
+post_poll() -> [POLL POST]
+</code></pre>
+<p>That gives LabTalk a visible seam for later labs about command lifecycle observation. The next useful campus slice is:</p>
+<pre><code class="language-text">before command -> pre poll -> command execution -> post poll -> transcript -> SelfDoc evidence
+</code></pre>
+<p>Until a full <code>POLLING</code> command is implemented, the website should describe this as a source-defined hook surface and placeholder integration lane, not a finished user-facing polling subsystem.</p>
+<h2 id="vertical-documentation-flow"><a class="no-underline" href="#vertical-documentation-flow">Vertical Documentation Flow</a></h2>
+<p>LabTalk should feed these pages from the existing vertical stack:</p>
+<pre><code class="language-text">source comments and @dottalk.usage
+-> comments/SRC* evidence
+-> HELP DATA and CMDHELP
+-> CMDHELPCHK validation
+-> SelfDoc/manualgen artifacts
+-> website pages and LabTalk lessons
+</code></pre>
+<p>The initial website implementation uses source-derived pages:</p>
+<ul>
+<li><a href="/docs/dottalk/command-catalog">Command Catalog</a></li>
+<li><a href="/docs/dottalk/function-catalog">Function Catalog</a></li>
+</ul>
+<p>The next implementation step is to replace manual extraction with a repeatable generator that reads the same evidence tables and reports used by SelfDoc.</p>2:["$","div",null,{"className":"flex gap-8","children":[["$","$L9",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/education-features",{"className":"flex items-center gap-2","children":[["$","$L7",null,{"href":"/docs/labtalk/education-features","className":"hover:text-fg","children":"Education Features"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Education Features"}],["$","p",null,{"className":"mt-2 text-muted","children":"LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$a"},"children":null}]}],["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L7",null,{"href":"/docs/labtalk/database-evolution","className":"text-muted hover:text-fg","children":["← ","Database Evolution Path"]}]}],["$","div",null,{"children":["$","$L7",null,{"href":"/docs/labtalk/selfdoc-lane","className":"text-muted hover:text-fg","children":["SelfDoc Lane Diagrams"," →"]}]}]]}]]}]]}]
+8:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Education Features — x64base"}],["$","meta","3",{"name":"description","content":"LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."}],["$","link","4",{"rel":"canonical","href":"https://x64base.com/docs/labtalk/education-features/"}],["$","meta","5",{"property":"og:title","content":"Education Features"}],["$","meta","6",{"property":"og:description","content":"LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."}],["$","meta","7",{"property":"og:url","content":"https://x64base.com/docs/labtalk/education-features/"}],["$","meta","8",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","9",{"property":"og:image:width","content":"1200"}],["$","meta","10",{"property":"og:image:height","content":"630"}],["$","meta","11",{"property":"og:image:alt","content":"x64base"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:title","content":"Education Features"}],["$","meta","14",{"name":"twitter:description","content":"LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."}],["$","meta","15",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","16",{"rel":"icon","href":"/favicon.svg"}]]
+1:null
