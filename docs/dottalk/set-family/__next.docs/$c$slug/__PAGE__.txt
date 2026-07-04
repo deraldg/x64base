@@ -1,0 +1,119 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+8:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T12e6,<p>The SET family is documented as an engine feature, not just a collection of shell conveniences. <code>src/cli/cmd_set.cpp</code> is the general dispatcher, and specialized <code>cmd_set*.cpp</code> handlers own path, index/order, filter, relation, locale, and unique-state behavior.</p>
+<h2 id="dispatcher-boundary"><a class="no-underline" href="#dispatcher-boundary">Dispatcher boundary</a></h2>
+<p><code>SET</code> with no arguments reports usage. <code>SET USAGE</code> is read-only. Mutating forms change session/runtime state but should not directly rewrite table records unless the delegated command explicitly performs data work.</p>
+<p>Important delegated forms include:</p>
+<pre><code class="language-text">SET INDEX ...
+SET ORDER ...
+SET FILTER ...
+SET RELATION ...
+SET PATH ...
+SET CNX ...
+SET CDX ...
+SET LMDB ...
+SET UNIQUE ...
+</code></pre>
+<h2 id="output-and-session-presentation"><a class="no-underline" href="#output-and-session-presentation">Output and session presentation</a></h2>
+<p>The dispatcher covers command-output behavior:</p>
+<pre><code class="language-text">SET CONSOLE ON|OFF
+SET PRINT ON|OFF
+SET PRINT TO &#x3C;file>
+SET DEVICE TO SCREEN|FILE &#x3C;path>|PRINTER|NULL
+SET ALTERNATE ON|OFF
+SET ALTERNATE TO &#x3C;file>
+SET TALK ON|OFF
+SET ECHO ON|OFF
+SET PAGING ON|OFF
+SET WRAP ON|OFF
+</code></pre>
+<p>The settings registry also includes presentation and runtime flags such as <code>SET STATUS</code>, <code>SET TIME</code>, <code>SET TIMER</code>, <code>SET CLOCK</code>, <code>SET BELL</code>, <code>SET TYPEAHEAD</code>, and <code>SET REPROCESS</code>.</p>
+<h2 id="data-and-editing-behavior"><a class="no-underline" href="#data-and-editing-behavior">Data and editing behavior</a></h2>
+<p>Current documented surfaces include:</p>
+<pre><code class="language-text">SET TABLE BUFFER ON|OFF|ON ALL|OFF ALL
+SET DELETED ON|OFF
+SET CASE ON|OFF
+SET NEAR ON|OFF
+SET SAFETY ON|OFF
+SET EXACT ON|OFF
+SET ESCAPE ON|OFF
+SET CARRY ON|OFF
+SET CONFIRM ON|OFF
+SET EXCLUSIVE ON|OFF
+SET MULTILOCKS ON|OFF
+</code></pre>
+<p><code>SET TABLE BUFFER</code> toggles buffering for the current area or all open areas. <code>COMMIT</code> and <code>ROLLBACK</code> remain the commands that finish or discard buffered edits.</p>
+<h2 id="paths"><a class="no-underline" href="#paths">Paths</a></h2>
+<p><code>SET PATH</code> and <code>SETPATH</code> route named filesystem slots:</p>
+<pre><code class="language-text">DATA
+DBF
+XDBF
+INDEXES
+LMDB
+WORKSPACES
+SCHEMAS
+PROJECTS
+SCRIPTS
+TESTS
+HELP
+LOGS
+TMP
+</code></pre>
+<p><code>SETPATH RESET</code> returns slots to defaults. Path validation warns when needed, but assignment is still explicit state.</p>
+<h2 id="index-and-order"><a class="no-underline" href="#index-and-order">Index and order</a></h2>
+<p>The index-related SET family is flavor-aware:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Area flavor</th><th>Default order container</th><th>Accepted SET INDEX containers</th></tr></thead><tbody><tr><td>V32 classic/MS-DOS/FoxPro-like</td><td><code>.cnx</code></td><td><code>.inx</code>, <code>.cnx</code></td></tr><tr><td>V64 VFP/x64</td><td><code>.cdx</code></td><td><code>.cdx</code></td></tr></tbody></table>
+<p><code>SET ORDER 0</code>, <code>SET ORDER PHYSICAL</code>, <code>SET ORDER NATURAL</code>, and <code>SET ORDER PHYS</code> clear the active order. <code>SET ORDER TAG &#x3C;tag></code> activates a tag in the flavor-appropriate container. <code>INX</code> remains a single-order <code>SET INDEX</code> attachment path.</p>
+<h2 id="filters-and-relations"><a class="no-underline" href="#filters-and-relations">Filters and relations</a></h2>
+<p><code>SET FILTER</code> installs the current expression filter used by navigation and list-style commands.</p>
+<p><code>SET RELATION</code> manages parent-to-child relation state:</p>
+<pre><code class="language-text">SET RELATION TO &#x3C;expr> INTO &#x3C;child>
+SET RELATION TO &#x3C;expr> INTO &#x3C;child> ADDITIVE
+SET RELATION OFF ALL
+SET RELATION OFF INTO &#x3C;child>
+</code></pre>
+<p>Relation state belongs with areas and workspaces, so documentation should describe it as part of the object-oriented runtime state.</p>
+<h2 id="locale-and-formatting"><a class="no-underline" href="#locale-and-formatting">Locale and formatting</a></h2>
+<p>The SET family also carries presentation and formatting settings:</p>
+<pre><code class="language-text">SET LANGUAGE TO &#x3C;locale|DEFAULT>
+SET LOCALE TO &#x3C;locale|DEFAULT>
+SET LANGUAGE CHECK
+SET LANGUAGE REPORT
+SET LOCALE CHECK
+SET LOCALE REPORT
+SET CENTURY ON|OFF
+SET DATE TO &#x3C;format>
+SET DECIMALS TO &#x3C;n>
+SET FIXED ON|OFF
+SET MEMOWIDTH TO &#x3C;n>
+SET MEMOERROR ON|OFF
+SET EDITOR TO &#x3C;value>|DEFAULT|OFF
+</code></pre>
+<p>Locale currently has explicit command paths and message-manager integration work; public wording should stay proof-labeled by command.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dottalk/set-family",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dottalk/set-family","className":"hover:text-fg","children":"SET Family"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SET Family"}],["$","p",null,{"className":"mt-2 text-muted","children":"Current SET command family for DotTalk++ session state, paths, indexes, filters, relations, locale, output routing, and buffering."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$4"},"children":null}]}],"$L5"]}]]}],["$L6"],"$L7"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"4oEc-nw9ufyWus8CwDFvl"}
+5:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/dotscript-language-guide","className":"text-muted hover:text-fg","children":["← ","DotScript Language Guide"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/syntax","className":"text-muted hover:text-fg","children":["Syntax"," →"]}]}]]}]
+6:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

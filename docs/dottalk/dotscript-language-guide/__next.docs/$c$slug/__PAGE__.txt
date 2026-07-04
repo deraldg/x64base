@@ -3,7 +3,7 @@
 3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
 8:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 9:"$Sreact.suspense"
-4:T1031,<p>DotScript is the repeatable script form of the DotTalk++ command language. It is for command files, labs, smoke runs, validation passes, and automation that should be readable by students and maintainers.</p>
+4:T1887,<p>DotScript is the repeatable script form of the DotTalk++ command language. It is for command files, labs, smoke runs, validation passes, CSV/DBF import-export exercises, and automation that should be readable by students and maintainers.</p>
 <h2 id="script-shape"><a class="no-underline" href="#script-shape">Script shape</a></h2>
 <p>A DotScript file is a sequence of DotTalk++ commands:</p>
 <pre><code class="language-text">USE students
@@ -17,6 +17,8 @@ LIST
 SET VAR maxRows = 25
 </code></pre>
 <p>Variables are expected to support command substitution and repeatable scripts without hard-coding every value in every line.</p>
+<h2 id="dotscript-nesting"><a class="no-underline" href="#dotscript-nesting">DOTSCRIPT nesting</a></h2>
+<p>The current runner supports a main script plus one subscript. Deeper nesting is intentionally blocked by the runtime and should not be shown in public examples as available behavior.</p>
 <h2 id="comments"><a class="no-underline" href="#comments">Comments</a></h2>
 <p>Comments are part of the language, not an afterthought. They let scripts explain the lab, database assumption, or canary being run.</p>
 <pre><code class="language-text">* Open the current lab table.
@@ -32,10 +34,18 @@ STRUCT
   TAG student_name
 </code></pre>
 <p>The continuation marker should be treated as part of the canonical grammar once the parser behavior is locked.</p>
+<h2 id="if--else--endif"><a class="no-underline" href="#if--else--endif">IF / ELSE / ENDIF</a></h2>
+<p><code>IF</code> / <code>ELSE</code> / <code>ENDIF</code> uses the shell's shared boolean expression evaluator and control-flow stack.</p>
+<pre><code class="language-text">IF recno() = 1
+  ? "first record"
+ELSE
+  ? "not first"
+ENDIF
+</code></pre>
 <h2 id="loop--endloop"><a class="no-underline" href="#loop--endloop">LOOP / ENDLOOP</a></h2>
-<p><code>LOOP</code> / <code>ENDLOOP</code> is the general repetition form.</p>
+<p><code>LOOP</code> / <code>ENDLOOP</code> is the general repetition form. The command handler supports numeric repetition forms such as <code>LOOP 5</code>, <code>LOOP 5 TIMES</code>, and <code>LOOP FOR &#x3C;n></code>.</p>
 <pre><code class="language-text">SET VAR n = 0
-LOOP WHILE n &#x3C; 10
+LOOP 10
   ? n
   SET VAR n = n + 1
 ENDLOOP
@@ -44,9 +54,23 @@ ENDLOOP
 <ul>
 <li>loop condition evaluation.</li>
 <li>loop variable mutation.</li>
-<li>break/continue behavior if supported.</li>
+<li>numeric repetition labels and quiet mode.</li>
 <li>error handling inside a loop.</li>
 </ul>
+<h2 id="while--endwhile"><a class="no-underline" href="#while--endwhile">WHILE / ENDWHILE</a></h2>
+<p><code>WHILE</code> / <code>ENDWHILE</code> buffers and executes a loop while a boolean expression remains true.</p>
+<pre><code class="language-text">WHILE recno() &#x3C; 10
+  ? recno()
+  SKIP
+ENDWHILE
+</code></pre>
+<h2 id="until--enduntil"><a class="no-underline" href="#until--enduntil">UNTIL / ENDUNTIL</a></h2>
+<p><code>UNTIL</code> / <code>ENDUNTIL</code> buffers and executes a loop until a boolean expression becomes true.</p>
+<pre><code class="language-text">UNTIL eof()
+  ? recno()
+  SKIP
+ENDUNTIL
+</code></pre>
 <h2 id="scan--endscan"><a class="no-underline" href="#scan--endscan">SCAN / ENDSCAN</a></h2>
 <p>Scan-style loops are table-oriented. They should make record traversal readable and close to the xBase lineage.</p>
 <pre><code class="language-text">USE students
@@ -60,7 +84,15 @@ ENDSCAN
 <li>filter and scope interaction.</li>
 <li>deleted-record handling.</li>
 <li>index order interaction.</li>
+<li>current runtime limitation: only one <code>SCAN</code> block is buffered at a time; nested <code>SCAN</code> during <code>ENDSCAN</code> is not currently supported.</li>
 </ul>
+<h2 id="csv-and-dbf-importexport"><a class="no-underline" href="#csv-and-dbf-importexport">CSV and DBF import/export</a></h2>
+<p>DotScript examples can drive the current CSV import/export commands:</p>
+<pre><code class="language-text">USE students
+IMPORT students.csv
+EXPORT TO students_out.csv CSV
+</code></pre>
+<p><code>IMPORT</code> reads CSV into the current open DBF by matching CSV headers to field names case-insensitively. <code>EXPORT</code> writes the current table, or a named open work area, to CSV by default.</p>
 <h2 id="workspaces"><a class="no-underline" href="#workspaces">Workspaces</a></h2>
 <p>DotScript must document workspace behavior explicitly. A workspace is a wrapper over active areas. Each area is a <code>DbArea</code>-style runtime object with table state, cursor state, indexes, relations, and metadata. Scripted workspace save/load should therefore be documented as object state management, not just a file convenience.</p>
 <h2 id="memos-and-custom-field-types"><a class="no-underline" href="#memos-and-custom-field-types">Memos and custom field types</a></h2>
@@ -73,8 +105,8 @@ ENDSCAN
 <li>canary.</li>
 <li>planned.</li>
 </ul>
-<p>That keeps the language guide useful while the parser and command surface continue to mature.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dottalk/dotscript-language-guide",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dottalk/dotscript-language-guide","className":"hover:text-fg","children":"DotScript Language Guide"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotScript Language Guide"}],["$","p",null,{"className":"mt-2 text-muted","children":"Language guide for DotScript command files and automation."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$4"},"children":null}]}],"$L5"]}]]}],["$L6"],"$L7"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"IgGZkQEB1FX7sSwI54kxw"}
-5:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/language-guide","className":"text-muted hover:text-fg","children":["← ","Language Guide"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/syntax","className":"text-muted hover:text-fg","children":["Syntax"," →"]}]}]]}]
+<p>That keeps the language guide useful while the parser and command surface continue to mature.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dottalk/dotscript-language-guide",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dottalk/dotscript-language-guide","className":"hover:text-fg","children":"DotScript Language Guide"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotScript Language Guide"}],["$","p",null,{"className":"mt-2 text-muted","children":"Language guide for DotScript command files and automation."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$4"},"children":null}]}],"$L5"]}]]}],["$L6"],"$L7"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"4oEc-nw9ufyWus8CwDFvl"}
+5:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/language-guide","className":"text-muted hover:text-fg","children":["← ","Language Guide"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dottalk/set-family","className":"text-muted hover:text-fg","children":["SET Family"," →"]}]}]]}]
 6:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
 7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
 a:null

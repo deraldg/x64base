@@ -1,0 +1,74 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+8:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:Tdce,<p>x64base is an object-oriented hybrid. The runtime centers on <code>DbArea</code> and <code>XBaseEngine</code> objects, while workspaces wrap active areas and preserve table, cursor, index, relation, memo, and metadata state. The storage layer is not only <code>DBF_64</code>; the current headers define a three-part DBF family.</p>
+<h2 id="header-trinity"><a class="no-underline" href="#header-trinity">Header trinity</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Flavor</th><th>Header evidence</th><th>Runtime position</th></tr></thead><tbody><tr><td>Classic / MS-DOS DBF</td><td><code>include/xbase.hpp</code>, <code>include/xbase_vfp.hpp</code>; versions <code>0x03</code>, <code>0x83</code>, and FoxPro memo <code>0xF5</code></td><td>Classic-like V32 area. Uses 10-byte descriptor field names and classic/FoxPro descriptor rules.</td></tr><tr><td>Visual FoxPro DBF</td><td><code>include/xbase_vfp.hpp</code>; versions <code>0x30</code>, <code>0x31</code>, <code>0x32</code></td><td>VFP-compatible V64 area with newer field/data type handling, including currency-oriented work and VFP descriptor extras.</td></tr><tr><td>x64 DBF_64</td><td><code>include/xbase_64.hpp</code>; version <code>0x64</code></td><td>x64 extension layer with large-header metadata, vector table/field names, fallback descriptor tokens, and x64 field metadata.</td></tr></tbody></table>
+<p><code>include/xbase.hpp</code> is the neutral runtime contract. <code>include/xbase_vfp.hpp</code> bridges classic/MS-DOS, FoxPro, and VFP descriptor formats. <code>include/xbase_64.hpp</code> owns the x64 extension structures, vector metadata, and fallback name-resolution policy.</p>
+<h2 id="index-defaults"><a class="no-underline" href="#index-defaults">Index defaults</a></h2>
+<p>The command handlers make the current default behavior explicit:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Area flavor</th><th><code>SET ORDER</code> default container</th><th><code>SET INDEX</code> accepted containers</th><th>Notes</th></tr></thead><tbody><tr><td>V32 classic/MS-DOS/FoxPro-like</td><td><code>&#x3C;table>.cnx</code></td><td><code>.inx</code> or <code>.cnx</code></td><td><code>INX</code> is single-order attachment. Tag activation through <code>SET ORDER</code> is handled through CNX, not INX.</td></tr><tr><td>V64 VFP/x64</td><td><code>&#x3C;table>.cdx</code></td><td><code>.cdx</code></td><td>CDX is the command-facing container; LMDB is the physical backend where the CDX/LMDB environment is in use.</td></tr></tbody></table>
+<p>This should be documented as current implementation behavior, not a permanent restriction. The Open Index API lane is the right place to describe future backend-neutral expansion.</p>
+<h2 id="name-policy"><a class="no-underline" href="#name-policy">Name policy</a></h2>
+<p>x64 DBF metadata can carry authoritative table and field names beyond classic DBF descriptor limits. When x64 metadata is missing, the runtime falls back to descriptor tokens and mangled names. That fallback is intentional: old tools can still see a legal DBF-shaped file, while x64-aware code can resolve the richer vector metadata.</p>
+<h2 id="related-pages"><a class="no-underline" href="#related-pages">Related pages</a></h2>
+<ul>
+<li><a href="/docs/engine/dbf-64-specification">DBF_64 Specification</a></li>
+<li><a href="/docs/engine/indexing-rules">Indexing Rules</a></li>
+<li><a href="/docs/engine/cdx-lmdb-indexing">CDX and LMDB Indexing</a></li>
+<li><a href="/docs/engine/feature-crosswalk">Engine Feature Crosswalk</a></li>
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/engine/dbf-flavors-and-indexes",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/engine/dbf-flavors-and-indexes","className":"hover:text-fg","children":"DBF Flavors and Index Defaults"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DBF Flavors and Index Defaults"}],["$","p",null,{"className":"mt-2 text-muted","children":"The current x64base DBF flavor matrix and the default index containers used by SET INDEX and SET ORDER."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$4"},"children":null}]}],"$L5"]}]]}],["$L6"],"$L7"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"4oEc-nw9ufyWus8CwDFvl"}
+5:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/engine/architecture","className":"text-muted hover:text-fg","children":["← ","Architecture"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/engine/dbf-64-specification","className":"text-muted hover:text-fg","children":["DBF_64 Specification"," →"]}]}]]}]
+6:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null
