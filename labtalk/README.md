@@ -12,6 +12,7 @@ Current starting points:
 - `LABTALK_PORTAL_CONCEPT_v0.md`
 - `LABTALK_SDLC_FRAMEWORK_v0.md`
 - `LABTALK_DEVELOPER_PROFILE_v0.md`
+- `D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
 - `registries/apps.yaml`
 - `registries/labs.yaml`
 - `registries/concepts.yaml`

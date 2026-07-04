@@ -37,6 +37,46 @@ notes.
 These labels complement the existing proof states in
 `D:/code/ccode/labtalk/registries/proofs.yaml`.
 
+## SDLC / PLDC Decision
+
+LabTalk should use both SDLC and PLDC, but they should not mean the same thing.
+
+Recommended split:
+
+| Frame | Owns | Purpose |
+|---|---|---|
+| DotTalk++ SDLC | Runtime, source, build, commands, storage, indexing, HELP, metadata, tests, maintenance. | Keep the engine and professional runtime correct, buildable, testable, and safe. |
+| LabTalk SDLC | Laboratory Campus docs, labs, cases, datasets, portal, proof registry, student-facing claims. | Keep the campus truthful, reviewable, and proof-backed. |
+| PLDC | Products, labs, lessons, case-study packages, dashboards, public pages, class/workshop offerings. | Move a usable learning/product package from concept to delivery and support. |
+
+Decision:
+
+```text
+DotTalk++ is large enough to deserve its own SDLC.
+LabTalk uses its own campus SDLC.
+PLDC sits above both as the product/lab delivery cycle.
+```
+
+PLDC should not replace SDLC. PLDC answers: "What package are we delivering,
+to whom, and how will they use it?" SDLC answers: "What system behavior exists,
+how is it controlled, and what proof keeps it trustworthy?"
+
+## Lifecycle Stack
+
+The Laboratory Campus is a stack of related but separate lifecycles.
+
+| Layer | Lifecycle | Example output | Gate |
+|---|---|---|---|
+| Engine | x64base / storage SDLC | DBF/x64, indexes, memo, locks, row codecs. | Build, tests, runtime proof, data safety. |
+| Runtime | DotTalk++ SDLC | Commands, shell, HELP, SQL, relations, scripts, MAINT. | Source review, command proof, HELP/CMDHELPCHK, smoke tests. |
+| Maintenance | Maintenance SDLC | SelfDoc, contracts, manualgen, datadict, messaging, reports. | Report-only default, explicit mutation gate. |
+| Campus | LabTalk SDLC | Labs, cases, datasets, proof registry, portal, diagrams. | Truth-state label, proof link, review state. |
+| Product/lab | PLDC | Database Literacy Starter, SelfDoc First Lab, case-study modules, public pages. | Audience, package boundary, support/cleanup, release notes. |
+
+Use the lowest applicable lifecycle as authority. For example, a LabTalk lesson
+can present `SEEK`, but DotTalk++ SDLC owns whether `SEEK` actually behaves
+correctly.
+
 ## Current Campus State
 
 | Area | Current label | Evidence | Next gate |
@@ -53,6 +93,91 @@ These labels complement the existing proof states in
 | Static campus HTML snapshot | `planned` | Listed as P2 portal future form. | Build from registries after P1 portal readback is stable. |
 | DotTalk++ native `LABTALK` command | `planned` | Architecture says decide after registries stabilize. | Do not add until portal/registry model proves useful. |
 | Jupyter / LMS delivery | `planned` | Architecture explicitly defers LMS; notebooks only where live exploration helps. | Revisit after campus data model is stable. |
+
+## Laboratory Campus Asset Map
+
+Lab Camp / Laboratory Campus should be treated as a campus of assets, not only
+as a folder named `labtalk`.
+
+| Asset family | Current roots | Truth-state owner | Notes |
+|---|---|---|---|
+| Campus doctrine | `labtalk/*.md` | LabTalk SDLC | Architecture, education map, portal concept, SDLC framework, developer profile. |
+| Registries | `labtalk/registries` | LabTalk SDLC | Apps, labs, concepts, proofs, portal. Add datasets/cases/tools registries as needed. |
+| Labs | `labtalk/labs` | LabTalk SDLC + PLDC | A lab is a deliverable package; it needs setup, run path, proof, review, cleanup. |
+| Case studies | `docs/cases`, `labtalk/reports`, source DOCX evidence | LabTalk SDLC + case review | CASE_*.md files are runtime-readable derivatives, not source truth by themselves. |
+| Proofs | `labtalk/proofs`, `docs/cases/runtime_proofs` | Proof lane | Proof must be reproducible or explicitly classified as historical/manual review. |
+| Tools | `tools`, `labtalk/portal`, `scripts`, `src/maintenance` | Owning SDLC by behavior | Report-only tools stay lower risk; mutating tools require explicit gates. |
+| Diagrams/media | `labtalk/diagrams`, `docs/media`, case media registries | PLDC + review | Useful for teaching, but diagrams do not replace source/runtime proof. |
+| Public pages | website/content exports outside this repo | PLDC + publication review | Publication is downstream from proof and review, not a source of truth. |
+
+## Case Study Lifecycle
+
+Case studies need their own path inside the LabTalk SDLC because they mix
+history, source memory, media, runtime proof, and student-facing explanation.
+
+Case-study states:
+
+| State | Meaning | Promotion gate |
+|---|---|---|
+| `source_memory` | Personal recollection or resume-derived context captured. | Mark as source memory; do not publish as verified history. |
+| `source_document_seen` | Source file, transcript, deck, or external evidence identified. | Record path, owner, and review status. |
+| `normalized_case_draft` | CASE_*.md derivative exists. | Loader/readback succeeds; source boundary is stated. |
+| `runtime_readable` | DotTalk++ CASE loader can read it. | Runtime command proof or catalog readback exists. |
+| `lab_candidate` | Case can support a lab. | Learning objective, dataset/tool path, and proof plan exist. |
+| `reviewed_case` | Source/fact/media review is closed enough for controlled use. | Reviewer decision recorded. |
+| `student_case` | Ready for learners. | Exercise, expected observations, risk notes, and proof links complete. |
+| `publication_case` | Ready for website/manual/deck use. | Publication rights, source/fact/media review, and final copy review complete. |
+
+Case-study rule:
+
+```text
+CASE_*.md may be runtime-readable before it is student-ready.
+Runtime-readable is not the same as historically verified or publication-ready.
+```
+
+Initial case-study clusters:
+
+| Cluster | Cases | Intended lab direction |
+|---|---|---|
+| Data trail overview | HIST-000, HIST-090 | Explain why LabTalk exists and how proof-backed learning works. |
+| Army finance / JUMPS | HIST-020 | Payroll, records, batch systems, military finance, audit trails. |
+| COBOL / connected computers | HIST-010 | Fixed records, batch processing, sequential files, early business systems. |
+| CODASYL / Alcoa | HIST-030 | Network databases, payroll scheduling, industrial data pressure. |
+| xBase / Earthkids / Paxon | HIST-040, HIST-050, HIST-060 | xBase apps, small-business systems, title/escrow conversion, DBF migration. |
+| ERP / Hynix / SAP | HIST-070, HIST-080 | ERP, SQL, HR/Finance, process data, data migration and integration. |
+| Engineering runtime cases | ENG-010 through ENG-050 | Indexing, seek/scan, buffering, metadata, file-to-engine separation. |
+
+## Tool Lifecycle
+
+Tools in the Laboratory Campus need explicit classification because some are
+teaching aids, some are report generators, and some can mutate data or source.
+
+| Tool class | Examples | Default state | Gate |
+|---|---|---|---|
+| Portal launcher | `labtalk/portal/labtalk_portal.py` | `dev` | May open docs and run approved scripts; missing paths must report clearly. |
+| Report scanner | `tools/contracts/contract_scan.py`, metacollect reports | `real` or `dev` by proof | Read-only by default; output must state authority limits. |
+| Proof runner | DTS scripts, lab PowerShell wrappers | `dev` until transcript exists | Must capture command, path, return code, and output location. |
+| Fixture mutator | write labs, import/export repair tools | `planned` or `dev` | Must use disposable fixtures and rollback notes. |
+| Runtime command | DotTalk++ C++ command handlers | DotTalk++ SDLC | Owned by DotTalk++ SDLC, not LabTalk docs. |
+| GUI/workbench | Tkinter, wxWidgets, TUI, browser views | PLDC + owning SDLC | Must declare whether it is preview, dev, or maintained. |
+| Publication generator | manualgen, static campus HTML | PLDC + maintenance SDLC | Publication does not replace source/runtime authority. |
+
+Tool record fields to add when a tools registry is created:
+
+```yaml
+id:
+name:
+class:
+path:
+owning_lifecycle: dottalkpp_sdlc | labtalk_sdlc | maintenance_sdlc | pldc
+truth_state:
+risk_class:
+inputs:
+outputs:
+mutation_policy:
+proof:
+next_gate:
+```
 
 ## SDLC Lanes
 
@@ -264,6 +389,12 @@ Use this checklist before calling any LabTalk item `student_ready` or
    `instructor_preview`.
 7. Keep Historical Data Systems Trail explicitly `plugged_stubbed` until live
    demos and simulated lessons are separated.
+8. Create a case-study promotion matrix from `docs/cases/REGISTRY_CASES_v0.md`
+   using the case lifecycle above.
+9. Create a tools registry for portal, proof runners, report scanners,
+   fixture-mutating tools, and publication generators.
+10. Keep DotTalk++ SDLC in `docs/maintenance` and link LabTalk records to it
+    instead of moving runtime governance into the campus docs.
 
 ## Non-Negotiables
 
@@ -275,4 +406,6 @@ Use this checklist before calling any LabTalk item `student_ready` or
 - Do not mutate DotTalk++ runtime behavior from LabTalk docs or portal actions
   unless the change has its own implementation and proof lane.
 - Prefer demotion over ambiguity when evidence is stale.
-
+- Do not use PLDC to bypass SDLC gates.
+- Do not let LabTalk claim ownership over runtime behavior that belongs to
+  DotTalk++ SDLC.

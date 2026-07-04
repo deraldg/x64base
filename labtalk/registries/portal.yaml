@@ -25,6 +25,10 @@ sections:
         label: SDLC Framework
         kind: markdown
         path: D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+      - id: doc.dottalkpp_sdlc_charter
+        label: DotTalk++ SDLC Charter
+        kind: markdown
+        path: D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
       - id: doc.developer_profile
         label: Developer Profile
         kind: markdown
