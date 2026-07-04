@@ -1,0 +1,72 @@
+---
+title: "Engine Feature Crosswalk"
+description: "Evidence-backed x64base engine feature hierarchy generated from local source and HELP/manualgen artifacts."
+---
+
+This page is a reviewed website derivative of the local SelfDoc report:
+
+`D:\code\ccode\labtalk\reports\selfdoc\x64base_engine_feature_crosswalk_v1.md`
+
+The report was generated from local source evidence plus harvested HELP/manualgen tables. It found `22` feature lanes, `290` harvested HELP commands, and source evidence across the configured scanner globs.
+
+Status language:
+
+- **runtime-evidenced** means the scanner found supported/implemented HELP command evidence and source evidence.
+- **source-evidenced** means source evidence exists but the website summary should still be reviewed against HELP.
+- **help-catalog-evidenced** means HELP/catalog evidence exists but source mapping needs review.
+- **planned or in progress** means the lane is real work, but should not be marketed as complete.
+
+## Core engine and storage
+
+| Feature | Status | Evidence summary |
+| --- | --- | --- |
+| DBF table runtime and `DbArea` object model | runtime-evidenced | `USE`, `DBAREA`, `AREA`, `STRUCT`, `FIELDS`; `src/xbase`, `src/cli/cmd_dbarea.cpp` |
+| Workspaces wrapping active areas | runtime-evidenced | `WORKSPACE`, `WSREPORT`, `DBAREAS`; `include/workspace`, `src/cli/cmd_workspace.cpp` |
+| Visual FoxPro DBF field/data type compatibility | runtime-evidenced | VFP probe/header/codecs; currency and newer type support evidence |
+| x64 DBF extensions and newer data types | runtime-evidenced | x64 header/meta contracts and DBF64 validation surfaces |
+| Vectored table and field names with fallback mangling | runtime-evidenced | x64 metadata/vector naming contract and fallback policy evidence |
+| Object-oriented memo storage and display | runtime-evidenced | memo manager/object/reference/store; `MEMO`, `DISPLAY`, `BROWSETUI` |
+
+## Database behavior
+
+| Feature | Status | Evidence summary |
+| --- | --- | --- |
+| Cursor control and record navigation | runtime-evidenced | `GO`, `GOTO`, `SKIP`, `TOP`, `BOTTOM`, `FIRST`, `LAST`, `NEXT`, `PRIOR`, `RECNO` |
+| Record locking and unlock lifecycle | runtime-evidenced | `LOCK`, `UNLOCK`, `xbase_locks`, lock cleanup |
+| Buffered editing, dirty state, commit and rollback | runtime-evidenced | `COMMIT`, `ROLLBACK`, `REPLACE`, `CALCWRITE`, table-buffer code |
+| Triggers, rules, and validation hooks | runtime-evidenced | `TRIGGER`, `RULE`, `VALIDATE`, `VALIDATE UNIQUE`, field constraints |
+| Filtering, searching, predicates, and WHERE cache | runtime-evidenced | `SET FILTER`, `LOCATE`, `FIND`, `SEEK`, `WHERE`, `WHERECACHE`, `SMARTLIST` |
+| Relations and relation-aware browsing | runtime-evidenced | `REL`, `RELATIONS`, `SET RELATION`, `ERSATZ`, `RBROWSE` |
+
+## Index, APIs, and integration
+
+| Feature | Status | Evidence summary |
+| --- | --- | --- |
+| Open Index API and index backends | runtime-evidenced | `INDEX`, `REINDEX`, `SET INDEX`, `SET ORDER`, `SEEK`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB` |
+| SQL bridge, import/export, copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT` |
+| Remote and system integration surfaces | runtime-evidenced | `SFTP`, `PSHELL`, `WEB`, `ZIP`; platform zip backends |
+| Security and policy surfaces | runtime-evidenced | `SECURITY`, security policy/runtime/signature headers |
+
+## Language, UI, and observability
+
+| Feature | Status | Evidence summary |
+| --- | --- | --- |
+| DotScript command files, variables, loop and scan control | runtime-evidenced | `DOTSCRIPT`, `VAR`, `SET VAR`, `LOOP`, `ENDLOOP`, `SCAN`, `ENDSCAN`, `WHILE`, `UNTIL` |
+| Messaging, error/status, and output routing | runtime-evidenced | `MSGMGR`, `ERROR STATUS`, `ERROR CLEAR`, message catalog, output router |
+| Location, locale, and language support | runtime-evidenced | locale docs and message-manager integration lanes |
+| Command timing and diagnostics | runtime-evidenced | timing/profile/chrono evidence plus `STATUS`, `BETA`, `CMDHELPCHK` diagnostic surfaces |
+| Open GUI API, TUI, wxWidgets, and browser lanes | runtime-evidenced | `BROWSETUI`, `BROWSETV`, `BROWSER`, `SMARTBROWSE`, `SIMPLEBROWSE`, GUI docs |
+| SelfDoc, HELP metadata, contracts, and manualgen pipeline | runtime-evidenced | `HELP`, `CMDHELP`, `CMDHELPCHK`, `MANUAL`, `MANSTAR`, `DRAWIO`, SelfDoc/manualgen tooling |
+
+## Manualgen result
+
+The same pass ran the guarded manualgen commands. Current state:
+
+- Inventory: `25` sections, `18` media files, `12` appendices, `4` manifests.
+- Dry-run manual artifact generated under `docs/manuals/developer/manualgen/generated/manualgen_build_dry_runs/`.
+- Validation status: `FAIL` because manualgen requires Python `>= 3.12` and this run used Python `3.11.0`.
+- Boundary failures: `0`.
+- Parity review: not publication-equivalent; all `25` sections need review before replacing any publication.
+
+This is still useful: it proves the manual generation path is alive, but it must be run with Python 3.12 and reviewed before a publication replacement.
+

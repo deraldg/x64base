@@ -1,0 +1,32 @@
+---
+title: "Current Work Lanes"
+description: "Non-front-page inventory of active x64base and DotTalk++ lanes."
+---
+
+This page keeps active lanes visible without crowding the homepage. Status is intentionally conservative.
+
+| Lane | Current position |
+| --- | --- |
+| x64base table runtime | Active beta; DBF-style `DbArea` runtime, cursor state, record operations, fields, and structure inspection are runtime-evidenced. |
+| x64 and VFP storage formats | Active; VFP field/data type compatibility and x64 DBF metadata/type extension work have source and probe evidence. |
+| Vectored names | Active; x64 metadata owns longer table/field vectors with fallback mangling policy evidence. |
+| Workspaces and areas | Active; workspace commands wrap active `DbArea` objects and preserve area/table/session state. |
+| Memo subsystem | Active/canary mix; memo manager/object/reference/store architecture is source-evidenced and command-visible through memo/display/browser surfaces. |
+| Index subsystem | Active; INX/CNX/CDX/LMDB surfaces are command-visible, with Open Index API boundaries still needing careful public API wording. |
+| Record locking | Active; `LOCK`/`UNLOCK` and lock cleanup have command and source evidence. |
+| Buffered editing | Active; dirty state, table buffer, `COMMIT`, `ROLLBACK`, `REPLACE`, and `CALCWRITE` are runtime-evidenced. |
+| Triggers/rules/validation | Active; `TRIGGER`, `RULE`, constraints, and validation hooks are present, but public copy should distinguish proof level by command. |
+| DotTalk++ command shell | Active; command catalog is harvested from registry/usage contracts and should be regenerated after command changes. |
+| DotScript | Active; command files, variables, loops, scans, comments, and line-continuation docs are now a product lane. |
+| Messaging and errors | Active; message catalog, output routing, and error/status command surfaces are present. |
+| Locale/language | Active/integration lane; locale and message-spine docs exist and should be described as integration work unless runtime proof is specific. |
+| Open GUI API | Active architecture lane; wxWidgets, Python/Tk, Turbo Vision/TUI, and browser surfaces should share engine services rather than duplicate table mechanics. |
+| SQL/import/export | Active; SQL-like commands, SQLite wrapper, import/export, copy, and tuple export are command-visible. |
+| Security | Active diagnostics/policy lane; `SECURITY` and security policy/runtime headers exist. |
+| SelfDoc/manualgen | Active; report-only pipeline is working, with Python 3.12 needed for green manualgen validation. |
+| POSIX/macOS builds | Active requirement lane; WSL/Ubuntu/macOS requirements are documented, but each build result should be tagged with compiler and OS evidence. |
+
+## Website policy
+
+Lanes can be public when they are useful and evidence-backed. They should not be flattened into a single “finished product” story. Public copy should preserve proof level and point readers toward the command catalog, feature crosswalk, and generated manual artifacts.
+

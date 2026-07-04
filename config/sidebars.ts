@@ -21,6 +21,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
       { label: "Indexing Rules", href: "/docs/engine/indexing-rules" },
       { label: "CDX and LMDB Indexing", href: "/docs/engine/cdx-lmdb-indexing" },
+      { label: "Engine Feature Crosswalk", href: "/docs/engine/feature-crosswalk" },
       { label: "Error Codes", href: "/docs/engine/error-codes" },
       { label: "API Reference", href: "/docs/engine/api-reference" }
     ]
@@ -62,8 +63,10 @@ export const docsSidebar: SidebarGroup[] = [
     label: "Developer Resources",
     items: [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
+      { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },
       { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
+      { label: "SelfDoc Feed Pipeline", href: "/docs/dev/selfdoc-feed-pipeline" },
       { label: "Onboarding Guide", href: "/docs/dev/onboarding-guide" },
       { label: "Coding Standards", href: "/docs/dev/coding-standards" },
       { label: "Contribution Guide", href: "/docs/dev/contribution-guide" }

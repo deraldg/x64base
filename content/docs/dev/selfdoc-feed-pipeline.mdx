@@ -1,0 +1,60 @@
+---
+title: "SelfDoc Feed Pipeline"
+description: "Repeatable path from source, HELP, metadata, contracts, and manualgen into the website."
+---
+
+The website should be fed from the documentation system, not hand-maintained from memory.
+
+## Source of truth
+
+The authority order is:
+
+1. Runtime/source behavior in `D:\code\ccode`.
+2. HELP, metadata, command registration, comments, contracts, and canary evidence.
+3. SelfDoc reports and manualgen manifests.
+4. Reviewed manual sections.
+5. Website pages in `D:\dev\x64base-site`.
+
+When a DotTalk++ command or function is added, the expected flow is:
+
+```text
+source change
+  -> command/function registration
+  -> HELP / metadata / comments / usage contracts
+  -> SelfDoc and CMDHELPCHK validation
+  -> manualgen inventory / validate / dry-run
+  -> reviewed manual section
+  -> website command/function/API pages
+```
+
+## Current report-only feed
+
+The current repeatable feed uses:
+
+```powershell
+cd D:\code\ccode
+python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer inventory
+python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer validate
+python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer build-dry-run
+python tools\selfdoc\build_engine_feature_crosswalk.py --repo-root D:\code\ccode
+```
+
+Generated outputs include:
+
+- `labtalk/reports/selfdoc/x64base_engine_feature_crosswalk_v1.csv`
+- `labtalk/reports/selfdoc/x64base_engine_feature_crosswalk_v1.md`
+- `docs/manuals/developer/generated/x64base_engine_feature_crosswalk_manual_section_v1.md`
+- `docs/manuals/developer/manualgen/generated/manualgen_build_dry_runs/<run>/developer_manual_build_dry_run.md`
+
+## Promotion rules
+
+- Do not auto-promote uncertain scanner output into public copy.
+- Preserve status labels: runtime-evidenced, source-evidenced, help-catalog-evidenced, planned, canary, review-needed.
+- Do not claim a lane is complete when the evidence says active beta, canary, or review-needed.
+- Keep generated reports local until reviewed, then summarize them on the website.
+- Command and function pages should cite the extraction snapshot and should be regenerated when HELP/CMDHELP/usage contracts change.
+
+## Current limitation
+
+Manualgen currently validates the manual structure but requires Python `>= 3.12`. The latest run used Python `3.11.0`, so validation failed on that environment check only. Boundary failures were `0`, and the dry-run manual artifact was still generated for review.
+
