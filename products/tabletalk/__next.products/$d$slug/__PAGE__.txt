@@ -2,21 +2,20 @@
 2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
 4:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-3:T559,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
-<p>TableTalk is the site label for table-facing inspection workflows. In the local
-source, those workflows are exposed through DotTalk++ commands and browser
-surfaces rather than a separate polished TableTalk executable.</p>
-<p>Its subject is visible table/work-area state: what is open, where the cursor is,
-what fields exist, what order is attached, and how rows are listed or browsed.</p>
+3:T46d,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>TableTalk is the product/lane name for table buffering in DotTalk++.</p>
+<p>Its subject is not general table manipulation or table browsing. Its subject is
+the buffered editing state around open DBF areas: ON/OFF buffering, DIRTY versus
+clean state, STALE versus fresh fields, buffered row changes, and the
+<code>COMMIT</code>/<code>ROLLBACK</code> lifecycle.</p>
 <p>Relevant runtime areas include:</p>
 <ul>
-<li><code>USE</code>, <code>SELECT</code>, <code>AREA</code>, <code>DBAREA</code>, and <code>DBAREAS</code>.</li>
-<li><code>STRUCT</code>, <code>FIELDS</code>, and field/record inspection.</li>
-<li><code>SMARTLIST</code>, <code>SL</code>, <code>LIST</code>, and order-aware listing work.</li>
-<li><code>SMARTBROWSE</code> / <code>SM</code> / <code>SMART</code> record browsing.</li>
-<li><code>SIMPLEBROWSE</code> / <code>SB</code> simple browsing.</li>
-<li><code>BROWSE</code>, <code>BROWSER</code>, and <code>BROWSETUI</code> table browser surfaces.</li>
-<li>schema, DDL, data dictionary, and metadata catalog work.</li>
+<li><code>SET TABLE BUFFER ON|OFF [ALL]</code>.</li>
+<li><code>TABLE</code> and <code>TABLE BUFFER STATUS</code> reporting.</li>
+<li><code>TABLE BUFFER DUMP</code> for buffered change inspection.</li>
+<li><code>REPLACE</code> and <code>CALCWRITE</code> when buffering is ON.</li>
+<li><code>COMMIT</code> and <code>ROLLBACK</code>.</li>
+<li>dirty/stale field evidence such as <code>DIRTY | STALE [DOB]</code>.</li>
 </ul>
-<p>See <a href="/docs/talk-family/tabletalk">TableTalk docs</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/tabletalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/tabletalk","className":"hover:text-fg","children":"TableTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"TableTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Table, field, work-area, order, cursor, and browser inspection workflows."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"PrVD0Ux8TU2ysXPsBe00J"}
+<p>See <a href="/docs/talk-family/tabletalk">TableTalk docs</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/tabletalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/tabletalk","className":"hover:text-fg","children":"TableTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"TableTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Table buffering, dirty/stale state, commit/rollback, and buffered table mutation workflows."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"3V30iPc3zgC6T4f-bW4Nk"}
 6:null
