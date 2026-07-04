@@ -1,0 +1,214 @@
+# LabTalk portal registry v0
+
+sections:
+  - id: portal.docs
+    label: Docs
+    description: Core LabTalk definition and planning documents.
+    items:
+      - id: doc.readme
+        label: LabTalk README
+        kind: markdown
+        path: D:/code/ccode/labtalk/README.md
+      - id: doc.campus_architecture
+        label: Campus Architecture
+        kind: markdown
+        path: D:/code/ccode/labtalk/LABTALK_CAMPUS_ARCHITECTURE_v0.md
+      - id: doc.education_map
+        label: Education Map
+        kind: markdown
+        path: D:/code/ccode/labtalk/LABTALK_EDUCATION_MAP_v0.md
+      - id: doc.portal_concept
+        label: Portal Concept
+        kind: markdown
+        path: D:/code/ccode/labtalk/LABTALK_PORTAL_CONCEPT_v0.md
+      - id: doc.sdlc_framework
+        label: SDLC Framework
+        kind: markdown
+        path: D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+      - id: doc.developer_profile
+        label: Developer Profile
+        kind: markdown
+        path: D:/code/ccode/labtalk/LABTALK_DEVELOPER_PROFILE_v0.md
+      - id: doc.database_literacy_starter
+        label: Database Literacy Starter Lab
+        kind: markdown
+        path: D:/code/ccode/labtalk/labs/database_literacy_starter/LAB_DATABASE_LITERACY_STARTER_v0.md
+      - id: doc.selfdoc_comments_to_contracts
+        label: SelfDoc Comments to Contracts Lab
+        kind: markdown
+        path: D:/code/ccode/labtalk/labs/self_documenting_systems/LAB_SELFDOC_COMMENTS_TO_CONTRACTS_v0.md
+      - id: doc.manualgen_product_map
+        label: Manualgen Product Map
+        kind: markdown
+        path: D:/code/ccode/labtalk/products/manualgen_product_map_v0.md
+      - id: doc.manualgen_product_board
+        label: Manualgen Product Board
+        kind: html
+        path: D:/code/ccode/labtalk/products/manualgen_product_board_v0.html
+      - id: doc.manualgen_product_preservation
+        label: Manualgen Product Preservation
+        kind: markdown
+        path: D:/code/ccode/labtalk/products/manualgen_product_preservation_v0.md
+
+  - id: portal.apps
+    label: Apps
+    description: Registered LabTalk campus apps.
+    registry: D:/code/ccode/labtalk/registries/apps.yaml
+
+  - id: portal.labs
+    label: Labs
+    description: Registered LabTalk labs and lab candidates.
+    registry: D:/code/ccode/labtalk/registries/labs.yaml
+
+  - id: portal.concepts
+    label: Concepts
+    description: Concept vocabulary mapped to EDREF where available.
+    registry: D:/code/ccode/labtalk/registries/concepts.yaml
+
+  - id: portal.proofs
+    label: Proofs
+    description: Proof states and current proof records.
+    registry: D:/code/ccode/labtalk/registries/proofs.yaml
+
+  - id: portal.diagrams
+    label: Diagrams
+    description: Local Draw.io and Mermaid diagrams for LabTalk and DotTalk++ lanes.
+    items:
+      - id: diagram.selfdoc_contract_lane_drawio
+        label: SelfDoc Contract Lane Draw.io
+        kind: diagram
+        path: D:/code/ccode/labtalk/diagrams/selfdoc_contract_lane_v1.drawio
+        status: generated
+      - id: diagram.selfdoc_contract_lane_mermaid
+        label: SelfDoc Contract Lane Mermaid
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/selfdoc_contract_lane_v1.mmd
+        status: generated
+      - id: diagram.selfdoc_mdo_dataflow_map
+        label: SelfDoc / MDO Dataflow Map
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/SELFDOC_MDO_DATAFLOW_MAP_v0.md
+        status: draft
+      - id: diagram.selfdoc_mdo_authority_dataflow
+        label: SelfDoc / MDO Authority Dataflow
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/selfdoc_mdo_authority_dataflow_v0.mmd
+        status: draft
+      - id: diagram.selfdoc_probe_pipeline_dataflow
+        label: SelfDoc Probe Pipeline Dataflow
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/selfdoc_probe_pipeline_dataflow_v0.mmd
+        status: draft
+      - id: diagram.selfdoc_metacollect_metadata_dataflow
+        label: SelfDoc metacollect Metadata Dataflow
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/selfdoc_metacollect_metadata_dataflow_v0.mmd
+        status: draft
+      - id: diagram.mdo_manualgen_publication_dataflow
+        label: MDO Manualgen Publication Dataflow
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/mdo_manualgen_publication_dataflow_v0.mmd
+        status: draft
+      - id: diagram.mdo_guarded_help_cmdhelpchk_dataflow
+        label: MDO Guarded HELP/CMDHELPCHK Dataflow
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/mdo_guarded_help_cmdhelpchk_dataflow_v0.mmd
+        status: draft
+      - id: diagram.selfdoc_contract_lane_webui
+        label: DotTalk++ SelfDoc Lane Web Interface
+        kind: html
+        path: D:/code/ccode/dottalk-webui/selfdoc-lane.html
+        status: local_web
+
+  - id: portal.runtime
+    label: Runtime
+    description: DotTalk++ runtime launch targets.
+    items:
+      - id: runtime.database_literacy_starter
+        label: Run Database Literacy Starter
+        kind: dottalk_script
+        script: D:/code/ccode/labtalk/labs/database_literacy_starter/database_literacy_starter_v0.dts
+        status: runnable
+        proof_output_dir: D:/code/ccode/labtalk/proofs/runs
+      - id: runtime.help
+        label: HELP
+        kind: dottalk_command
+        command: HELP
+        status: runnable
+      - id: runtime.case_list
+        label: CASE LIST
+        kind: dottalk_command
+        command: CASE LIST
+        status: runnable_review_path
+      - id: runtime.cmdhelp
+        label: CMDHELP
+        kind: dottalk_command
+        command: CMDHELP
+        status: runnable
+      - id: runtime.selfdoc.comments_to_contracts.first_lab
+        label: Run SelfDoc Comments to Contracts Lab
+        kind: lab_script
+        script: D:/code/ccode/labtalk/labs/self_documenting_systems/run_selfdoc_first_lab.ps1
+        status: runnable
+        proof_output_dir: D:/code/ccode/labtalk/proofs/runs
+        timeout_seconds: 120
+
+  - id: portal.launchers
+    label: Launchers
+    description: Repo-level local launchers for DotTalk++ apps and GUI/runtime entry points.
+    items:
+      - id: launcher.cli
+        label: DotTalk++ CLI
+        kind: powershell_launcher
+        path: D:/code/ccode/datarun.ps1
+        status: interactive
+      - id: launcher.erp
+        label: ERP Runtime
+        kind: powershell_launcher
+        path: D:/code/ccode/erprun.ps1
+        status: interactive
+      - id: launcher.bible
+        label: BibleTalk Runtime
+        kind: powershell_launcher
+        path: D:/code/ccode/biblerun.ps1
+        status: interactive
+      - id: launcher.wx
+        label: wx GUI
+        kind: powershell_launcher
+        path: D:/code/ccode/wx.run.ps1
+        status: interactive
+      - id: launcher.wx_next
+        label: wx Next GUI
+        kind: powershell_launcher
+        path: D:/code/ccode/wx.next.run.ps1
+        status: interactive
+      - id: launcher.run_cli
+        label: run-cli.ps1
+        kind: powershell_launcher
+        path: D:/code/ccode/run-cli.ps1
+        status: interactive
+      - id: launcher.run_erp
+        label: run-erp.ps1
+        kind: powershell_launcher
+        path: D:/code/ccode/run-erp.ps1
+        status: interactive
+      - id: launcher.run_bible
+        label: run-bible.ps1
+        kind: powershell_launcher
+        path: D:/code/ccode/run-bible.ps1
+        status: interactive
+      - id: launcher.run_wx
+        label: run-wx.ps1
+        kind: powershell_launcher
+        path: D:/code/ccode/run-wx.ps1
+        status: interactive
+      - id: launcher.run_wx_next
+        label: run-wx-next.ps1
+        kind: powershell_launcher
+        path: D:/code/ccode/run-wx-next.ps1
+        status: interactive
+      - id: launcher.pydottalk
+        label: PyDotTalk
+        kind: powershell_launcher
+        path: D:/code/ccode/run-pydottalk.ps1
+        status: interactive
