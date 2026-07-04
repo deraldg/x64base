@@ -1,0 +1,163 @@
+---
+title: "Historical Source Lineage"
+description: "A preservation and presentation model for xBase, XDLL, DotTalk, AI-assisted recovery, and modern DotTalk++ source versions."
+---
+
+This page starts the source museum for the x64base / DotTalk++ line. It does
+not replace Git history and it does not make product claims by itself. It
+preserves evidence about code families, dates, checksums, verification level,
+and the difference between original source, recovered builds, AI-assisted false
+starts, and the modern DotTalk++ implementation.
+
+The public rule is simple: **originals stay preserved, analysis stays labeled,
+and current product claims must be backed by modern source or runtime proof.**
+
+## Why this matters
+
+The older xBase code is compact and, in some places, more complete than the
+recent AI-assisted recovery attempts. The recovered `xbase2` line contains real
+index work. The later buildable DotTalk recovery folders contain useful command
+and DBF shell evidence, but their index layer is stubbed. The modern DotTalk++
+tree is much larger in scope: DBF flavors, DBF_64, VFP compatibility, LMDB/CDX
+indexing, table buffering, dirty/stale state, GUI/TUI workbench surfaces,
+SelfDoc, manualgen, and the Laboratory Campus documentation system.
+
+That contrast is important enough to preserve as a first-class documentation
+lane.
+
+## Preservation layout
+
+Use a small archive structure rather than a loose pile of folders:
+
+```text
+archive/source-lineage/
+  1993-xbase/
+    original/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  1993-1996-xdll/
+    original/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  1995-xbase2-dottalk/
+    original/
+    buildable-msvc/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  2025-dottalk-recovery/
+    original/
+    ai-assisted/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  2025-ai-assisted-false-starts/
+    gemini/
+    grok/
+    chatgpt/
+    copilot/
+    unknown/
+    MANIFEST.json
+    NOTES.md
+  2026-dottalkpp-modern/
+    references/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+```
+
+Do not edit files under `original/`. Put build fixes, adapters, and notes in
+side folders.
+
+## Manifest fields
+
+Each artifact should be described with a small record:
+
+| Field | Purpose |
+| --- | --- |
+| `artifact_id` | Stable local ID for cross-reference. |
+| `family` | `xbase`, `xdll`, `xbase2`, `dottalk-recovery`, `ai-assisted`, `dottalkpp-modern`. |
+| `path` | Absolute local path or archive member path. |
+| `original_date` | Original timestamp when available. |
+| `captured_date` | Date brought into the current preservation set. |
+| `sha256` | Checksum used to detect duplicates and drift. |
+| `language` | C, C++, PowerShell, markdown, DBF sample, etc. |
+| `artifact_type` | `historical-source`, `historical-source-copy`, `recovery`, `ai-assisted`, `generated`, `modern-production`. |
+| `status` | `working`, `partial`, `stubbed`, `abandoned`, `merged`, `superseded`, `unknown`. |
+| `truth_level` | `file-found`, `source-reviewed`, `build-verified`, `runtime-verified`, `merged-into-modern`. |
+| `feature_tags` | Examples: `dbf`, `index`, `relation`, `dll-export`, `cli`, `stub-index`, `real-index`. |
+| `ai_assist` | `none`, `chatgpt`, `gemini`, `grok`, `copilot`, `unknown`. |
+| `notes` | Short human review note. |
+
+## First source families
+
+| Family | Evidence path | Current read |
+| --- | --- | --- |
+| 1993 xBase | `D:\code\xbase\xbase.zip` | Original archive includes `xbase/`, `xbase2/`, and `xdll/` members with 1993 and 1995 timestamps. |
+| XDLL | `D:\code\XDLL` and `D:\code\xbase\xbase.zip` | DLL/export style branch with real index calls and distinct checksums. |
+| xBase2 / DotTalk 1995 | `D:\code\xbase2` | Strong historical candidate. Contains `DOTTALK.C`, DBF core, command layer, and real block-oriented `XBINDEX.C`. |
+| gTalk / DotTalk recovery | `D:\code\gTalk` | Useful recovery and build-lane evidence. Index layer is a stub in this branch. |
+| DotTalk old code recovery | `C:\Users\deral\DotTalk\old code` | Buildable/minimal recovery branch with prompt shell and DBF commands; index functions are stubbed. |
+| AI-assisted false starts | Multiple local folders and notes | Preserve as experimental evidence, not product truth. Label Gemini/Grok/ChatGPT/Copilot work when known. |
+| Modern DotTalk++ / x64base | `D:\code\ccode` | Current active product line and runtime truth source. |
+
+## Index lineage correction
+
+The recovered DotTalk folders under `C:\Users\deral\DotTalk` and `D:\code\gTalk`
+have index vocabulary but stubbed index behavior. However, `D:\code\xbase2`
+contains real historical index work:
+
+- `D:\code\xbase2\XBINDEX.C` implements block-oriented index routines such as
+  `make_index`, `first_key`, `next_key`, `find_key`, `add_key`, `openix`,
+  `creatix`, block retrieval, free-list handling, insertion, split, and search
+  helpers.
+- `D:\code\xbase2\XBCMDS.C` wires that index engine into `open_index`,
+  `build_index`, `find`, and relation positioning.
+
+Website and manual copy should say the older index engine exists in the
+historical xBase2/XDLL line, while later AI/recovery-era DotTalk copies often
+stubbed it out.
+
+## AI-assisted artifacts
+
+The AI-assisted folders are recent but often primitive relative to both the
+original C code and the modern DotTalk++ tree. They are still valuable because
+they show recovery attempts, naming drift, build shims, generated wrappers,
+GUI/TUI experiments, and false starts.
+
+Use these labels:
+
+| Label | Meaning |
+| --- | --- |
+| `ai-assisted-experiment` | Generated or heavily AI-shaped artifact; useful evidence, not product truth. |
+| `stubbed` | Command or file exists but core behavior is missing. |
+| `superseded` | Replaced by a stronger current implementation. |
+| `source-reviewed` | A human reviewed source text enough to describe it. |
+| `build-verified` | The artifact was compiled in a named environment. |
+| `runtime-verified` | A command or feature was executed and captured. |
+
+## Seed manifest
+
+The first checksum manifest is published as a website artifact:
+
+- [source-lineage-seed.csv](/artifacts/source-lineage/source-lineage-seed.csv)
+
+This seed should be expanded by a report-only script that scans known folders,
+hashes files, detects duplicates, inventories functions, and writes reviewable
+CSV/JSON output before anything is promoted to the manual or website.
+
+## Website presentation
+
+This page belongs under Developer Resources, not on the homepage. The homepage
+can link to the broader documentation summary, but the detailed history should
+remain here with proof labels.
+
+Public wording should be conservative:
+
+> x64base/DotTalk++ descends from historical xBase/DotTalk experiments and
+> recovered C-era source. The archive includes original code, modern recovery
+> work, and AI-assisted false starts. Each artifact is labeled by verification
+> level so documentation reflects actual behavior, not aspiration.
+

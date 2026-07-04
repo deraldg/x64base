@@ -112,6 +112,7 @@ still applies unless specifically marked production-ready.
 | CLI interface | Yes | Yes | Yes | Yes | Yes/tooling | Product dependent | Script/API only |
 | TUI interface | Yes: Arctic code name for TUI | Yes | Yes | Yes/text mode | Possible | Legacy/product dependent | No |
 | GUI interface | Yes: Parallel GUI/TUI lane | Yes, UI backends | Yes, GT/GUI support | Yes, Workbench/GUI/web | .NET GUI possible | Yes | No native GUI |
+| User-defined menus/windows/dialogs | Planned UI DSL lane; supplied templates today | Via GUI libraries | Via GUI libraries | Yes | Yes through .NET/VO GUI paths | Yes/product dependent | No native GUI |
 | Smart table browser/listing | Yes: SmartList, SmartBrowser, `SB` alias | App/library dependent | App/library dependent | Product dependent | App dependent | Product dependent | No |
 | Web/application server | Not main claim | Yes/service/web possible | Some ecosystem support | Yes | .NET web possible | Product dependent | No |
 | External app commands | Yes: edit/image/web/url/shell lanes | App code | App code | Product/app code | .NET app code | Product dependent | Python code |
@@ -137,6 +138,26 @@ still applies unless specifically marked production-ready.
 | Manual generation | Yes, manualgen/MDO lanes | hbdoc/tooling exists | Tooling likely | Product docs | Tooling/docs | Product docs | No |
 | AI-friendly documentation layer | Yes, planned/developing | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
 | Website generated from docs | Developing vertical content generation | Project website/docs | Project docs | Product website/docs | Project docs | Product docs | Package docs |
+
+## Application UI DSL Gap
+
+DotTalk++ can currently define repeatable database/runtime behavior through
+commands and DotScript, but it does not yet offer a general language for creating
+custom menus, windows, dialogs, popups, controls, and event handlers.
+
+The proposed lane starts with this syntax seed:
+
+```text
+CREATE MENU MainMenu
+CREATE WINDOW CustomerWin
+CREATE DIALOG EditCustomer
+DEFINE BUTTON Save
+ON CLICK DO save_customer
+```
+
+This is a planned lane, not current runtime syntax. It would let future
+DotTalk++ scripts define small database applications that can target Arctic TUI
+first, then Parallel GUI/TUI, wxWidgets GUI, and web surfaces later.
 
 ## Summary Position
 

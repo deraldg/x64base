@@ -5,6 +5,7 @@ import {
   BarChart3,
   Boxes,
   Database,
+  LayoutPanelTop,
   FileCode2,
   GitBranch,
   GraduationCap,
@@ -56,6 +57,7 @@ const quickLinks = [
   { title: "Engine architecture", href: "/docs/engine/architecture" },
   { title: "Open Engine APIs", href: "/docs/engine/api-reference" },
   { title: "DotScript language guide", href: "/docs/dottalk/dotscript-language-guide" },
+  { title: "Application UI DSL lane", href: "/docs/dev/application-ui-dsl-lane" },
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
@@ -254,6 +256,16 @@ export default function HomePage() {
             <p className="mt-3 text-sm leading-6 text-fg">
               A feature matrix compares x64base with Harbour, xHarbour, Alaska Xbase++, XSharp,
               dBASE tools, and Python DBF libraries without overstating alpha work.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-bg/35 p-4 sm:col-span-3">
+            <div className="flex items-center gap-2 font-mono text-xs uppercase text-muted">
+              <LayoutPanelTop size={14} aria-hidden="true" />
+              planned lane
+            </div>
+            <p className="mt-3 text-sm leading-6 text-fg">
+              DotTalk++ can script database workflows today; the Application UI DSL lane explores
+              menus, windows, dialogs, controls, and event handlers for future TUI/GUI targets.
             </p>
           </div>
         </div>

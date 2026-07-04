@@ -1,0 +1,112 @@
+---
+title: "Application UI DSL Lane"
+description: "A proposed DotTalk++ lane for defining menus, windows, dialogs, controls, and event handlers without leaving the command/script environment."
+---
+
+## Position
+
+DotTalk++ can already write database/runtime programs with commands and DotScript.
+It does not yet provide a general application UI definition language like the
+classic xBase environments did.
+
+This lane is a proposed development path for moving from scripts that operate on
+data to scripts that can define small database applications.
+
+## Current Boundary
+
+DotTalk++ currently has:
+
+- CLI command programs.
+- DotScript scripts.
+- Supplied GUI/TUI templates.
+- SmartList, SmartBrowser, Browse, and relation browser surfaces.
+- Arctic as the TUI code-name surface.
+- Parallel GUI/TUI as a supplied workbench lane.
+
+DotTalk++ does **not** yet have a user-facing UI definition language for custom
+menus, windows, dialogs, popups, toolbars, form controls, or event-driven
+application screens.
+
+## Proposed Syntax Seed
+
+```text
+CREATE MENU MainMenu
+CREATE WINDOW CustomerWin
+CREATE DIALOG EditCustomer
+DEFINE BUTTON Save
+ON CLICK DO save_customer
+```
+
+This is not implemented syntax yet. It is a lane seed for design, source
+contracts, examples, and eventual runtime proof.
+
+## Proposed Scope
+
+| UI construct | Intended purpose |
+| --- | --- |
+| `CREATE MENU` / `ENDMENU` | Define named application menus and menu items. |
+| `CREATE WINDOW` / `ENDWINDOW` | Define top-level windows or workbench panels. |
+| `CREATE DIALOG` / `ENDDIALOG` | Define modal or modeless dialogs. |
+| `DEFINE BUTTON` | Define buttons and bind them to commands or scripts. |
+| `DEFINE FIELD` | Bind form fields to DBF fields, variables, or expressions. |
+| `DEFINE GRID` / `DEFINE BROWSE` | Place data grids and browses inside application screens. |
+| `ON CLICK`, `ON CHANGE`, `ON SELECT` | Define event handlers that run DotTalk++ commands or DotScript routines. |
+
+## Backend Strategy
+
+The same UI definition should be able to target more than one surface over time:
+
+- Arctic TUI first, for keyboard-oriented menus, windows, dialogs, and command
+  forms.
+- Parallel GUI/TUI next, through shared engine services.
+- wxWidgets GUI later, where native windows and controls are needed.
+- Web UI later, when a browser-facing application surface is appropriate.
+
+The UI DSL should not duplicate table mechanics. It should bind to existing
+engine services: work areas, relations, table buffers, commands, functions,
+validation, messaging, and help metadata.
+
+## Comparison Context
+
+Classic xBase environments often treated interface construction as part of the
+application language:
+
+- Visual FoxPro supported forms, menus, windows, popups, controls, and event
+  handlers.
+- dBASE Plus exposed form and menu designers that generated editable source.
+- Alaska Xbase++ supports character mode, GUI mode, hybrid mode, dialogs,
+  application windows, and menu systems.
+- Harbour and xHarbour rely heavily on GUI libraries such as MiniGUI, HwGUI,
+  wxHarbour, GTK, and Qt bindings.
+- XSharp can use .NET UI stacks such as WinForms and WPF.
+
+The DotTalk++ lane should be described as **planned**, not implemented, until
+there is command registry evidence, runtime proof, examples, and generated
+manual coverage.
+
+## Proof Gates
+
+Before this lane is presented as active implementation, it needs:
+
+1. Syntax contract and examples.
+2. Command registry entries.
+3. TUI proof for menu, window, dialog, button, and event handler.
+4. HELP/CMDHELP coverage.
+5. SelfDoc metadata coverage.
+6. Manualgen section.
+7. Website comparison update.
+
+## Website Wording
+
+Use:
+
+- "planned application UI DSL lane"
+- "proposed syntax seed"
+- "future path for menus, windows, dialogs, controls, and event handlers"
+- "targeting Arctic TUI first, with GUI/web backends later"
+
+Avoid:
+
+- "DotTalk++ already has a FoxPro-style form designer"
+- "custom GUI applications can be built without code today"
+- "drop-in replacement for Visual FoxPro forms"
