@@ -7,6 +7,8 @@ This page records visual evidence from the local runtime. These images are evide
 
 Evidence date: July 3, 2026.
 
+Screenshot media is curated like the rest of the documentation system: stable filename, evidence ID, source capture, caption, interpretation boundary, and review-before-promotion. Duplicate captures are not repeated unless they show a distinct runtime state.
+
 ## ArcticTalk Workspace Areas
 
 ![ArcticTalk workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF](/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg)
@@ -60,6 +62,65 @@ Observed evidence:
 - A record popup displays `BLDG` and `NAME` for a related record.
 - This supports the SmartBrowser/TupTalk/RelTalk evidence lane: tuple output, relation readback, and record inspection are visible in the runtime.
 
+## DotTalk++ CLI Startup and BibleTalk Evidence
+
+![DotTalk++ CLI startup showing build, SQLite availability, EDU_BIBLETALK, and command prompt hints](/images/evidence/dottalk-cli-startup-bibletalk-evidence-20260703.jpg)
+
+Observed evidence:
+
+- DotTalk++ CLI starts with the `dottalk++ beta-0` banner and DotTalk++ build timestamp.
+- Runtime reports SQLite availability and version `3.50.4`.
+- `EDU_BIBLETALK` opens the SQLite seed `biblebase\bible_kjv_x64.sqlite`.
+- Startup/readback shows education-facing CLI output, including the ASCII display, BibleTalk quote, `HELP`, `USE`, `SELECT <n>`, `AREA`, `COLOR`, `ABOUT`, and `QUIT` prompt text.
+- Developer/status hints include `CMDHELPCHK`, `GPS`, `WORKSPACE`, and `ERSATZ`.
+
+## DotTalk++ CLI Workspace and Relation Load
+
+![DotTalk++ CLI workspace load showing ERSATZ, SETPATH, REL lines, and 12 areas with 15 relations restored](/images/evidence/dottalk-cli-workspace-relation-load-evidence-20260703.jpg)
+
+Observed evidence:
+
+- DotTalk++ CLI runs `ersatz load`.
+- `SETPATH` readback shows x64 `DBF`, `INDEXES`, and `LMDB` roots.
+- Workspace close/reload output is visible before relation restoration.
+- `REL:` lines enumerate table relationships such as `STUDENTS -> ENROLL ON SID`, `CLASSES -> TEACHERS ON TID`, and `ROOMS -> BUILDING ON BLDG`.
+- Runtime reports `WORKSPACE LOAD: restored 12 area(s) and 15 relation(s)`.
+- `ERSATZ` loads `default.erz` with `SETUP=x64`, `WORKSPACE=mcc_x64.dtschema`, and the path `enroll -> classes -> tassign -> teachers`.
+
+## DotTalk++ CLI Relation Tree and Tuple Grid
+
+![DotTalk++ CLI relation tree and tuple grid showing current root record, descendant summary, and joined tuple rows](/images/evidence/dottalk-cli-relation-tree-tuple-grid-evidence-20260703.jpg)
+
+Observed evidence:
+
+- DotTalk++ CLI shows the current root record with fields including `SID`, `LNAME`, `FNAME`, `DOB`, `GENDER`, `MAJOR`, `ENROLL_D`, `GPA`, and `EMAIL`.
+- Relation tree output expands from `STUDENTS` through `ENROLL`, `CLASSES`, `COURSES`, `DEPT`, `TERMS`, `ROOMS`, `BUILDING`, `TEACHERS`, `TASSIGN`, `STUD_MAJ`, and `MAJORS`.
+- Descendant summary and tuple grid are visible in the CLI, separate from the TUI surface.
+- Tuple grid includes joined fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, `tassign.CLS_ID`, `TID`, and `teachers.LNAME`.
+
+## DotTalk++ Workbench Preview
+
+![DotTalk++ Workbench Preview showing empty workspace graph and bootstrap service notes](/images/evidence/dottalk-workbench-preview-empty-workspace-evidence-20260703.jpg)
+
+Observed evidence:
+
+- DotTalk++ Workbench Preview opens with menu groups for `File`, `Workspace`, `Run`, `Table`, `Record`, `Index`, `Lists`, `Browse`, `Rel`, `Tuple`, `Cmd`, `Language`, and `Help`.
+- Workspace Graph tab reports no open areas, no active area, no indexes, and no relations.
+- Bootstrap notes identify browsers/lists workspace graph service pending, ERSATZ runtime output available, visual presets pending, and DTSchema load/save bootstrap menu active.
+- This is preview/bootstrap evidence for the Workbench surface, not a loaded workspace proof.
+
+## Website Documentation Evidence
+
+![x64base website FAQ page showing live documentation navigation and DBF format links](/images/evidence/x64base-website-faq-live-evidence-20260703.jpg)
+
+Observed evidence:
+
+- The live site is open at `x64base.com/docs/getting-started/faq/`.
+- Navigation shows `About`, `Products`, `Documentation`, `Licensing`, `Brand`, `News`, and `Contact`.
+- Documentation sidebar includes `DBF Flavors and Index Defaults`, `DBF_64 Specification`, `FPT64 Memo Format`, and `Indexing Rules`.
+- FAQ copy refers to x64base as a lineage evolution and points to `DBF_64` and `FPT64` documentation.
+- This is website matriculation evidence. It proves publication/navigation state, not independent engine behavior.
+
 ## Manual Use
 
 For manual generation, these screenshots should be cited as reviewed media evidence. They support sections on:
@@ -70,5 +131,8 @@ For manual generation, these screenshots should be cited as reviewed media evide
 - CDX/LMDB order diagnostics.
 - LabTalk Portal and documentation index surfaces.
 - Tuple/relationship browsing.
+- DotTalk++ CLI startup, education hooks, workspace/relation loading, relation tree output, and tuple-grid readback.
+- DotTalk++ Workbench Preview bootstrap state.
+- Live x64base website documentation navigation and media-curation workflow.
 
 They should not be used to claim final product polish, completed release packaging, or absence of known diagnostics.
