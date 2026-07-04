@@ -1,0 +1,20 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+4:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+3:T715,<h2 id="primary-author"><a class="no-underline" href="#primary-author">Primary Author</a></h2>
+<p><strong>Derald R Grimwood Jr.</strong> is the originator and primary author of the x64base, DotTalk++, and LabTalk concept line. The project preserves the xBase lineage while using modern C++ implementation work, self-documenting contracts, and an education-first laboratory model.</p>
+<h2 id="contributors"><a class="no-underline" href="#contributors">Contributors</a></h2>
+<p><strong>Nathaniel Grimwood, IT Director</strong> is recognized as a human contributor who provided AI-related advice and guidance to Derald R Grimwood Jr. during the LabTalk/x64base development work.</p>
+<p>The contributor model for this project treats AI-assisted development as part of the engineering record. Human contributors may advise on AI use, source organization, implementation planning, documentation, website publication, and how source contracts connect to public-facing explanations. Human review remains the authority for release decisions, authorship, licensing, and trademark use.</p>
+<h2 id="contribution-record"><a class="no-underline" href="#contribution-record">Contribution Record</a></h2>
+<p>LabTalk is being developed as a living laboratory campus. Contributions are expected to leave a trail through one or more of these surfaces:</p>
+<ul>
+<li>Source code and build scripts.</li>
+<li><code>@dottalk.usage</code>, <code>@dottalk.contract</code>, and related SelfDoc contracts.</li>
+<li>Case stories and runtime proofs.</li>
+<li>Website pages generated from the vertical documentation system.</li>
+<li>Lab exercises, education features, and GUI/portal experiments.</li>
+</ul>
+<p>This page is a recognition surface, not a substitute for source control history, license notices, or third-party acknowledgements.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about","className":"hover:text-fg","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/contributors",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about/contributors","className":"hover:text-fg","children":"Contributors"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Contributors"}],["$","p",null,{"className":"mt-2 text-muted","children":"People recognized in the x64base and LabTalk work."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"wPgGtgV6rnPl-fv4L-HU9"}
+6:null

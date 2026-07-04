@@ -1,0 +1,27 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+4:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+3:T5bc,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>ArcticTalk is the public umbrella for the DotTalk++ front-end family.</p>
+<p>In current project use, it covers the public-facing workbench/story around GUI,
+TUI, command-lane, and repeatable workflow surfaces. Fox-derived subsystem names
+such as <code>Foxtalk</code> remain valid inside that umbrella.</p>
+<p>Its subject is the front-end/workbench layer around the runtime, not a claim
+that every tool under the umbrella is already a finished product.</p>
+<p>In the local source tree, the real surfaces include:</p>
+<ul>
+<li>ArcticTalk/Foxtalk TUI and shell-bridge work.</li>
+<li>DotScript scripts and smoke/canary workflows.</li>
+<li><code>BUILDLMDB</code>, <code>REINDEX</code>, and index lifecycle work.</li>
+<li>workspace open/save/load flows.</li>
+<li><code>CMDHELPCHK</code> validation.</li>
+<li>maintenance scripts under <code>dottalkpp/scripts</code> and related generated proposal packages.</li>
+</ul>
+<p>Use this name for the public front-end/workbench family and its repeatable
+workflow surfaces, not as a claim that a separate complete product exists.</p>
+<p>See <a href="/docs/talk-family/arctictalk">ArcticTalk docs</a>,
+<a href="/docs/dev/project-truth">Current Project Truth</a>, and
+<a href="/docs/dev/selfdoc-website-publication">SelfDoc Website Publication</a>, plus the
+canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/arctictalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/arctictalk","className":"hover:text-fg","children":"ArcticTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"ArcticTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Public umbrella for GUI, TUI, shell-bridge, and repeatable maintenance/workbench workflows."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"wPgGtgV6rnPl-fv4L-HU9"}
+6:null

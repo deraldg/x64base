@@ -1,0 +1,25 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+4:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+3:T4c8,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>RelTalk names the relation-facing workflow in the DotTalk++ / x64base system.</p>
+<p>Its subject is connected data across work areas: declared relation edges,
+asymmetric same-field/cross-owner links, saved workspace relation state, and
+rooted traversal through <code>ERSATZ</code>.</p>
+<p>The local project includes same-field relation support and asymmetric relation forms such as:</p>
+<pre><code class="language-text">REL ADD SYSCMD SYSSUBCMD ON CAN_NAME TO PARENT
+REL ADD SYSSUBCMD SYSENTVAR ON QUAL_NAME TO HELP_OWNR
+</code></pre>
+<p>Current relation-facing surfaces include:</p>
+<ul>
+<li><code>REL ADD</code></li>
+<li><code>REL LIST ALL</code></li>
+<li><code>REL ENUM</code></li>
+<li><code>REL REFRESH</code></li>
+<li><code>WORKSPACE SAVE</code> / <code>WORKSPACE LOAD</code></li>
+<li><code>ERSATZ</code>, <code>ERSATZ PATH</code>, and <code>RBROWSE</code></li>
+<li>workspace graph and GUI contract docs</li>
+</ul>
+<p>See <a href="/docs/talk-family/reltalk">RelTalk docs</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/reltalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/reltalk","className":"hover:text-fg","children":"RelTalk"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"RelTalk"}],["$","p",null,{"className":"mt-2 text-muted","children":"Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"wPgGtgV6rnPl-fv4L-HU9"}
+6:null

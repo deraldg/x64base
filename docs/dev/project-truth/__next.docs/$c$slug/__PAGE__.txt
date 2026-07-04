@@ -1,0 +1,77 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+8:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+4:T1430,<p>This page reflects a local scan of <code>D:\code\ccode</code>, treated as the authoritative DotTalk++ / x64base source tree.</p>
+<h2 id="source-snapshot"><a class="no-underline" href="#source-snapshot">Source snapshot</a></h2>
+<ul>
+<li>Local path: <code>D:\code\ccode</code></li>
+<li>Website source: <code>D:\dev\x64base-site</code></li>
+<li>Public GitHub repo: <a href="https://github.com/deraldg/x64base">deraldg/x64base</a></li>
+<li>Git branch: <code>homegrown-cnx-20251112-branch</code></li>
+<li>Observed commit: <code>bed0828e</code> (<code>Add reviewed runtime message catalog reset/reload workflow</code>)</li>
+<li>CMake project: <code>DotTalkpp</code></li>
+<li>Project version: <code>0.6</code></li>
+<li>Language standard: C++20</li>
+</ul>
+<p>The root <code>README.md</code> is not present in the local working tree. The current site copy therefore uses the local CMake files, command reference, GUI docs, database safety docs, source layout, and generated manual artifacts as the truth source.</p>
+<p>The website is a downstream publication surface. It may reorganize and summarize
+material, but it should not invent technical truth that the local runtime tree
+cannot support.</p>
+<h2 id="current-status"><a class="no-underline" href="#current-status">Current status</a></h2>
+<p>DotTalk++ / x64base should be described as a working educational and research runtime in active beta, not as a finished commercial database product.</p>
+<p>Current proven or active areas include:</p>
+<ul>
+<li>DBF-style table runtime, cursor state, records, fields, work areas, and table inspection.</li>
+<li>x64-family table and metadata work.</li>
+<li>INX, CNX, CDX, and LMDB-backed index work.</li>
+<li>Memo subsystem with object-oriented architecture and canary coverage.</li>
+<li>DotTalk++ command shell and DotScript automation.</li>
+<li>HELP, command reflection, <code>CMDHELPCHK</code>, and metadata congruence work.</li>
+<li>Relation-aware browsing through <code>ERSATZ</code> / <code>RBROWSE</code>.</li>
+<li>Record and tuple browsing through <code>SMARTBROWSE</code>, <code>ARTBROWSE</code>, <code>SIMPLEBROWSE</code>, and <code>SB</code>.</li>
+<li>Data dictionary readers, catalog paths, and object resolver code.</li>
+<li>Python binding experiments through <code>pydottalk</code>.</li>
+<li>GUI work across wxWidgets, Python/Tk preview tools, and Turbo Vision-style TUI surfaces.</li>
+<li>GUI/front-end branding now uses <code>ArcticTalk</code> as the public umbrella while
+keeping <code>Foxtalk</code> lineage names where they still explain the subsystem story.</li>
+</ul>
+<h2 id="build-configuration-truth"><a class="no-underline" href="#build-configuration-truth">Build configuration truth</a></h2>
+<p>The top-level CMake options define the real build surface:</p>
+<pre><code class="language-text">DOTTALK_WITH_TV        ON by default
+DOTTALK_WITH_GUI       OFF by default
+DOTTALK_WITH_WX        OFF by default
+DOTTALK_TV_TESTS       ON by default
+DOTTALK_WITH_INDEX     ON by default
+DOTTALK_WITH_EDUCATION ON by default
+BUILD_PYDOTTALK        OFF by default
+DOTTALK_WITH_RELATIONS ON by default
+DOTTALK_PROFILE        DEV or PROD
+</code></pre>
+<p>The build also wires <code>metacollect</code> as a developer executable for low-level metadata and reflection collection. Its CMake comment explicitly says it must not rebuild HELP data, mutate <code>CMDHELPCHK</code>, write DBFs, or mutate publication artifacts.</p>
+<h2 id="command-surface-truth"><a class="no-underline" href="#command-surface-truth">Command surface truth</a></h2>
+<p>The command reference shows active command surfaces including:</p>
+<ul>
+<li><code>BUILDLMDB</code> for materializing LMDB-backed tag databases from current table data.</li>
+<li><code>CMDHELPCHK</code> for reflection and HELP/catalog validation.</li>
+<li><code>ERSATZ</code> and <code>RBROWSE</code> for relation-aware browsing.</li>
+<li><code>SIMPLEBROWSE</code> / <code>SB</code> and <code>SMARTBROWSE</code> / <code>ARTBROWSE</code> for tuple and record browsing.</li>
+<li><code>WORKSPACE</code> commands for opening, saving, loading, and closing workspaces.</li>
+<li><code>DDL</code> commands for schema-oriented DBF creation and validation work.</li>
+<li><code>DRAWIO</code> helpers for opening diagram tooling, with metadata-generated diagrams still a future direction.</li>
+</ul>
+<h2 id="website-wording-rule"><a class="no-underline" href="#website-wording-rule">Website wording rule</a></h2>
+<p>Use these words carefully:</p>
+<ul>
+<li>Use "active beta", "runtime-proven", "active", "partial", "experimental", and "canary" when that is the observed state.</li>
+<li>Avoid presenting x64base as complete, commercial, or production-finished.</li>
+<li>Avoid claiming DBF_64 and FPT64 are the only storage truth. The local tree contains DBF-style runtime work, x32 and x64-family work, memo systems, xindex backends, data dictionary code, and metadata catalogs.</li>
+<li>Treat DotTalk++ as the canonical runtime and teaching shell, not merely a small scripting add-on.</li>
+<li>Treat the website as a reviewed derivative of SelfDoc/contracts/manual work,
+not as an independent source of technical truth.</li>
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"Talk Family","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"ArcticTalk","href":"/docs/talk-family/arctictalk"}]},{"label":"LabTalk","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/project-truth",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dev/project-truth","className":"hover:text-fg","children":"Current Project Truth"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Current Project Truth"}],["$","p",null,{"className":"mt-2 text-muted","children":"Observed state from the local DotTalk++ / x64base checkout."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$4"},"children":null}]}],"$L5"]}]]}],["$L6"],"$L7"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"wPgGtgV6rnPl-fv4L-HU9"}
+5:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/labtalk/examples","className":"text-muted hover:text-fg","children":["← ","Examples"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dev/developer-handbook","className":"text-muted hover:text-fg","children":["Developer Handbook"," →"]}]}]]}]
+6:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+7:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+a:null

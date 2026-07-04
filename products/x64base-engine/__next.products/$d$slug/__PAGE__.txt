@@ -1,0 +1,28 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+4:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+3:T693,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>x64base is the database/runtime side of the DotTalk++ system. In the local source tree it is best described as active beta engine work, not a finished standalone commercial product.</p>
+<p>The current engine reality includes:</p>
+<ul>
+<li>DBF-style table handling.</li>
+<li>x32 and x64-family table work.</li>
+<li>field typing, validation, cursor state, record movement, and work areas.</li>
+<li>memo subsystem work through <code>MemoRef</code>, <code>MemoManager</code>, <code>MemoObject</code>, and <code>MemoStore</code> concepts.</li>
+<li>INX, CNX, CDX, and LMDB-backed index work.</li>
+<li>data dictionary and metadata catalog readers.</li>
+<li>command-shell integration through DotTalk++.</li>
+</ul>
+<h2 id="what-is-proven-versus-active"><a class="no-underline" href="#what-is-proven-versus-active">What is proven versus active</a></h2>
+<p>Use "runtime-proven" only when a smoke path or command surface has current evidence. Use "active", "partial", "experimental", or "canary" where the local project says the feature is still being integrated.</p>
+<p>Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.</p>
+<h2 id="references"><a class="no-underline" href="#references">References</a></h2>
+<ul>
+<li><a href="/docs/dev/project-truth">Current Project Truth</a></li>
+<li><a href="/docs/engine/architecture">Architecture</a></li>
+<li><a href="/docs/engine/indexing-rules">Indexing Rules</a></li>
+<li><a href="/docs/engine/error-codes">Error Codes</a></li>
+<li><a href="/docs/engine/api-reference">API Reference</a></li>
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/x64base-engine",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/x64base-engine","className":"hover:text-fg","children":"x64base Engine"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"x64base Engine"}],["$","p",null,{"className":"mt-2 text-muted","children":"DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"wPgGtgV6rnPl-fv4L-HU9"}
+6:null
