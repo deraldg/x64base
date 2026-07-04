@@ -13,6 +13,8 @@ It is used for:
 - browsing records and relation graphs.
 - running scripts and smoke/canary workflows.
 
+DotScript is the productized script form of this command language. DotTalk++ is the shell and runtime vocabulary; DotScript is the repeatable file language for labs, validation runs, automation, loops, variables, comments, and documented canary scripts. See [DotScript Language Guide](/docs/dottalk/dotscript-language-guide).
+
 ## First commands to recognize
 
 ```text
@@ -27,6 +29,10 @@ WORKSPACE OPEN DBF CDX
 WORKSPACE SAVE <name>
 WORKSPACE LOAD <name>
 REL LIST ALL
+LOOP
+ENDLOOP
+SCAN
+ENDSCAN
 ERSATZ
 SMARTBROWSE
 SIMPLEBROWSE
@@ -41,6 +47,7 @@ The command language is active and usable, but individual commands vary by proof
 ## Next
 
 - [Syntax](/docs/dottalk/syntax)
+- [DotScript Language Guide](/docs/dottalk/dotscript-language-guide)
 - [REPL](/docs/dottalk/repl)
 - [Examples](/docs/dottalk/examples)
 - [Current Project Truth](/docs/dev/project-truth)

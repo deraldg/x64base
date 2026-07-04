@@ -7,12 +7,17 @@ DotTalk++ / x64base is a working educational and research runtime for xBase-styl
 
 It is not currently positioned as a finished commercial database product. It is an active beta system that exposes database layers directly: table files, records, fields, work areas, indexes, relations, metadata, HELP, validation, scripts, browsers, and simple UI surfaces.
 
+The system is being built in co-development with its documentation. SelfDoc and the Master Documentation Organizer are part of the working system: the database engine develops and documents the same structures it is building. The goal is an open, cross-platform architecture that can be studied, extended, validated, and rebuilt across Windows, WSL/Linux, Ubuntu, and macOS.
+
 ## What the local project contains
 
 - **DotTalk++ command shell** - the canonical runtime surface for commands, scripts, HELP, browsing, validation, and workspace state.
+- **DotScript** - the repeatable script-language product for command files, loops, variables, line continuation, comments, scans, and automation.
 - **x64base / DBF runtime** - DBF-style table handling, x32 and x64-family work, cursor movement, record mutation, work areas, and table inspection.
 - **xindex** - INX, CNX, CDX, and LMDB-backed indexing work.
+- **Workspaces and areas** - workspace wrappers over active `DbArea`-style objects, including table state, cursor state, indexes, relations, memos, and metadata.
 - **Memo subsystem** - object-oriented memo architecture with active canary coverage.
+- **Extension hooks** - student code hooks plus custom field type hooks for validators, display behavior, import/export semantics, and documentation metadata.
 - **Metadata and self-documentation** - command reflection, `CMDHELPCHK`, SYS* metadata work, data dictionary readers, and congruence validation.
 - **Browser surfaces** - `ERSATZ`, `RBROWSE`, `SMARTBROWSE`, `ARTBROWSE`, `SIMPLEBROWSE`, and `SB`.
 - **UI lanes** - Turbo Vision-style TUI, wxWidgets workbench work, and Python/Tk preview tools.

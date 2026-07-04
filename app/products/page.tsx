@@ -3,6 +3,7 @@ import { Card } from "@/components/Card";
 const products = [
   { slug: "x64base-engine", title: "x64base Engine", description: "DBF runtime, x64-family tables, indexes, memos, work areas." },
   { slug: "dottalk", title: "DotTalk++", description: "Canonical command shell, scripting surface, and teaching runtime." },
+  { slug: "dotscript", title: "DotScript", description: "Script language for repeatable command files, loops, variables, comments, and automation." },
   { slug: "tuptalk", title: "TupTalk", description: "Tuple-facing record views, projections, export, validation, and relation-aware row output." },
   { slug: "tabletalk", title: "TableTalk", description: "Table, field, work-area, order, cursor, and browser inspection workflows." },
   { slug: "reltalk", title: "RelTalk", description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal." },

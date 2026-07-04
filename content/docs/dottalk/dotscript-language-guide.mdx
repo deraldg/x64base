@@ -1,0 +1,111 @@
+---
+title: "DotScript Language Guide"
+description: "Language guide for DotScript command files and automation."
+---
+
+DotScript is the repeatable script form of the DotTalk++ command language. It is for command files, labs, smoke runs, validation passes, and automation that should be readable by students and maintainers.
+
+## Script shape
+
+A DotScript file is a sequence of DotTalk++ commands:
+
+```text
+USE students
+STRUCT
+LIST
+```
+
+Scripts should be written as documentation-quality artifacts: clear names, small sections, explicit assumptions, and proof-friendly output.
+
+## Variables
+
+Variables carry values between commands and expressions. The exact runtime syntax should track the local parser, but the language guide reserves this product surface for:
+
+```text
+SET VAR tableName = "students"
+SET VAR maxRows = 25
+```
+
+Variables are expected to support command substitution and repeatable scripts without hard-coding every value in every line.
+
+## Comments
+
+Comments are part of the language, not an afterthought. They let scripts explain the lab, database assumption, or canary being run.
+
+```text
+* Open the current lab table.
+USE students
+
+// Inspect structure before mutation.
+STRUCT
+```
+
+Comment forms should be accepted consistently by the script runner before they are used in published examples.
+
+## Line continuation
+
+Long commands need a documented continuation form so scripts can stay readable.
+
+```text
+INDEX ON last_name + first_name ;
+  TAG student_name
+```
+
+The continuation marker should be treated as part of the canonical grammar once the parser behavior is locked.
+
+## LOOP / ENDLOOP
+
+`LOOP` / `ENDLOOP` is the general repetition form.
+
+```text
+SET VAR n = 0
+LOOP WHILE n < 10
+  ? n
+  SET VAR n = n + 1
+ENDLOOP
+```
+
+Required documentation topics:
+
+- loop condition evaluation.
+- loop variable mutation.
+- break/continue behavior if supported.
+- error handling inside a loop.
+
+## SCAN / ENDSCAN
+
+Scan-style loops are table-oriented. They should make record traversal readable and close to the xBase lineage.
+
+```text
+USE students
+SCAN
+  ? id, last_name, first_name
+ENDSCAN
+```
+
+Required documentation topics:
+
+- current work area selection.
+- filter and scope interaction.
+- deleted-record handling.
+- index order interaction.
+
+## Workspaces
+
+DotScript must document workspace behavior explicitly. A workspace is a wrapper over active areas. Each area is a `DbArea`-style runtime object with table state, cursor state, indexes, relations, and metadata. Scripted workspace save/load should therefore be documented as object state management, not just a file convenience.
+
+## Memos and custom field types
+
+The memo system is object-oriented and should be scriptable as a first-class data surface. In addition to student code hooks, x64base should document custom field type hooks so laboratories and downstream users can add field semantics without forking the core engine.
+
+## Proof labels
+
+Every published DotScript example should be labeled as one of:
+
+- runtime-proven.
+- active beta.
+- canary.
+- planned.
+
+That keeps the language guide useful while the parser and command surface continue to mature.
+

@@ -9,6 +9,8 @@ description: "Observed architecture from the local DotTalk++ / x64base source tr
 - **Visible database layers** - tables, records, fields, indexes, relations, work areas, metadata, HELP, and validation are teaching surfaces.
 - **Separation of concerns** - table storage, memo payloads, indexes, command handling, metadata, HELP, validation, and UI lanes are separate responsibilities.
 - **Proof language** - distinguish runtime-proven behavior from active, partial, experimental, and canary work.
+- **Co-development** - the implementation and documentation system are developed together. SelfDoc and the Master Documentation Organizer are part of the architecture, not a separate publishing chore.
+- **Open cross-platform architecture** - the runtime should remain portable across Windows, WSL/Linux, Ubuntu, and macOS while keeping UI and index integrations behind open boundaries.
 
 ## Major subsystems
 
@@ -22,6 +24,31 @@ The local project is organized around these implementation areas:
 6. `src/xexpr` and `src/cli/expr` - expression and function evaluation.
 7. `bindings/pydottalk` - Python binding work and smoke probes.
 8. `docs/gui` and GUI source lanes - GUI-neutral services, wxWidgets frontend work, Python/Tk preview tools, and TUI alignment.
+
+## Workspaces and areas
+
+Workspaces are wrappers over active areas. An area is a `DbArea`-style object that owns the active table state, cursor position, selected order, relation hooks, field metadata, memo bindings, and validation context.
+
+This matters for documentation and APIs:
+
+- workspace save/load is object state management.
+- scripted workspace operations should describe the area objects they affect.
+- GUI panes should bind to workspace and area state instead of duplicating table state.
+- relation and index views should be derived from active area objects.
+
+## Memo and field extension model
+
+The memo subsystem is object-oriented: memo stores, memo managers, memo objects, and memo references need their own documentation lane.
+
+In addition to student code hooks, x64base should expose custom field type hooks. Custom field types let education labs, domain experiments, and downstream products add semantics such as validators, display formatting, import/export rules, and editor behavior without patching the core DBF runtime.
+
+## Open API boundaries
+
+The engine should maintain explicit open boundaries for:
+
+- Open Index API - index creation, rebuild, verification, lookup, order selection, and backend-neutral lifecycle calls.
+- Open GUI API - GUI-neutral services for table browsing, workspace inspection, command execution, validation reports, and editor/view synchronization.
+- DotScript - repeatable command files over the same shell/runtime concepts.
 
 ## Current build surface
 

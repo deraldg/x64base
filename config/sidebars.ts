@@ -29,6 +29,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "DotTalk++",
     items: [
       { label: "Language Guide", href: "/docs/dottalk/language-guide" },
+      { label: "DotScript Language Guide", href: "/docs/dottalk/dotscript-language-guide" },
       { label: "Syntax", href: "/docs/dottalk/syntax" },
       { label: "REPL", href: "/docs/dottalk/repl" },
       { label: "Command Catalog", href: "/docs/dottalk/command-catalog" },

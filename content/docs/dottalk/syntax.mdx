@@ -1,15 +1,18 @@
 ---
 title: "DotTalk++ Syntax"
-description: "Syntax reference (placeholder)."
+description: "Syntax reference for the command shell and DotScript files."
 ---
 
-> Replace this with your canonical grammar and examples.
+DotTalk++ syntax is intentionally command-shell first. DotScript uses the same command vocabulary in repeatable files.
 
 ## Atoms
 
 - identifiers
 - numbers
 - strings
+- variables
+- field references
+- expressions
 
 ## Statements
 
@@ -17,3 +20,19 @@ description: "Syntax reference (placeholder)."
 - select / filter
 - update / insert
 - print / export
+- loop / scan
+- workspace save / load
+- validation / report
+
+## Script control forms
+
+The language surface reserves these forms for documented script control:
+
+```text
+LOOP
+ENDLOOP
+SCAN
+ENDSCAN
+```
+
+Use [DotScript Language Guide](/docs/dottalk/dotscript-language-guide) for loop, variable, comment, and line-continuation examples.

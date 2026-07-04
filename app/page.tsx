@@ -1,12 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Boxes, Database, FileCode2, GitBranch, GraduationCap, TerminalSquare } from "lucide-react";
+import {
+  ArrowRight,
+  Boxes,
+  Database,
+  FileCode2,
+  GitBranch,
+  GraduationCap,
+  ScrollText,
+  TerminalSquare
+} from "lucide-react";
 
 const proofPoints = [
-  { label: "Project status", value: "Active beta" },
+  { label: "Project mode", value: "Co-development" },
   { label: "Runtime", value: "DotTalk++" },
-  { label: "Index model", value: "INX/CNX/CDX" },
-  { label: "GUI lane", value: "wx/Tk/TUI" }
+  { label: "Documentation", value: "SelfDoc + MDO" },
+  { label: "Architecture", value: "Open cross-platform" }
 ];
 
 const ecosystem = [
@@ -21,6 +30,12 @@ const ecosystem = [
     href: "/products/dottalk",
     desc: "A readable command language for teaching, inspection, and scripted workflows.",
     icon: TerminalSquare
+  },
+  {
+    title: "DotScript",
+    href: "/products/dotscript",
+    desc: "The script language product for repeatable command files, loops, variables, comments, and automation.",
+    icon: ScrollText
   },
   {
     title: "TupTalk",
@@ -38,8 +53,8 @@ const ecosystem = [
 
 const quickLinks = [
   { title: "Engine architecture", href: "/docs/engine/architecture" },
-  { title: "DBF_64 specification", href: "/docs/engine/dbf-64-specification" },
-  { title: "DotTalk++ guide", href: "/docs/dottalk/language-guide" },
+  { title: "Open Engine APIs", href: "/docs/engine/api-reference" },
+  { title: "DotScript language guide", href: "/docs/dottalk/dotscript-language-guide" },
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
@@ -68,9 +83,10 @@ export default function HomePage() {
             A 64-bit database engine for the xBase lineage.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted">
-            x64base is the modern home for DBF_64 tables, FPT64 memo storage, stable indexing, and the
-            DotTalk++ command shell. The current local project is an active educational and research
-            runtime: useful, inspectable, and intentionally honest about beta and canary boundaries.
+            x64base is an open, cross-platform database architecture being built in co-development with
+            its documentation system. The same runtime that develops DBF_64 tables, FPT64 memos, indexes,
+            workspaces, APIs, and DotTalk++ also documents itself through SelfDoc and a Master
+            Documentation Organizer.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -154,8 +170,9 @@ export default function HomePage() {
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">documentation</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">Readable status for real implementation work.</h2>
           <p className="mt-4 leading-7 text-muted">
-            The site now tracks the local `D:\code\ccode` truth: C++20 CMake build options, DotTalk++
-            command surfaces, xindex, memo, datadict, GUI lanes, and runtime validation work.
+            The site tracks the local `D:\code\ccode` truth: C++20 CMake build options, DotTalk++
+            command surfaces, workspaces over DbArea objects, object-oriented memos, custom field type
+            hooks, Open Index API, Open GUI API, and runtime validation work.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -186,6 +203,14 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
+        <Link href="/docs/labtalk/selfdoc-lane" className="rounded-lg border border-border bg-card/65 p-6 transition hover:border-brand/60">
+          <ScrollText className="h-6 w-6 text-orange" aria-hidden="true" />
+          <h2 className="mt-4 text-xl font-semibold tracking-tight">Co-development documentation</h2>
+          <p className="mt-2 leading-7 text-muted">
+            SelfDoc and the Master Documentation Organizer are part of the engine’s working loop, not a
+            separate after-the-fact publishing process.
+          </p>
+        </Link>
         {lanes.map((lane) => {
           const Icon = lane.icon;
           return (

@@ -1,29 +1,95 @@
 ---
-title: "API Reference"
-description: "Public API surface area for embedding and integrations (placeholder)."
+title: "Open Engine API Reference"
+description: "Public API boundaries for x64base engine, index, GUI, workspace, memo, and extension integrations."
 ---
 
-> Once you publish your API, replace this placeholder with real signatures.
+This page names the public API boundaries the project should protect as the implementation matures. It is not a frozen ABI. It is the policy-level surface for open architecture work.
 
-## Core
+## Core engine API
 
 - open/close table
 - iterate records
 - get/set fields
 - memo read/write
+- inspect structure and field metadata
+- expose typed errors and diagnostics
 
-## Indexing
+## Workspace and area API
+
+Workspaces are wrappers over active areas. Each area is a `DbArea`-style object with table state, cursor state, indexes, relations, field metadata, memo references, and validation context.
+
+The workspace API should expose:
+
+- create, select, close, save, and load workspace.
+- enumerate areas.
+- inspect active area state.
+- bind relation and index views to area state.
+- run validation against one area or a workspace set.
+
+## Open Index API
 
 - create index
 - rebuild index
 - verify index
+- open/close index environment
+- select active order
+- seek and scoped traversal
+- expose logical CDX/CNX/INX concepts without leaking one physical backend
+- support LMDB-backed lifecycle where applicable
+- report integrity and rebuild diagnostics
+
+The Open Index API is the stable integration boundary for alternate index backends, teaching tools, validation tools, and GUI order selectors.
+
+## Open GUI API
+
+The Open GUI API should keep user interface work separate from table mechanics. GUI implementations should call services instead of reimplementing the engine.
+
+Expected service groups:
+
+- browse table and current work area.
+- inspect field and structure metadata.
+- run DotTalk++ commands and DotScript files.
+- display validation and SelfDoc reports.
+- show index/order state.
+- show relation graphs.
+- edit records through engine validation.
+- synchronize views with workspace and area events.
+
+This boundary allows wxWidgets, Python/Tk, Turbo Vision/TUI, and future frontends to share the same runtime contract.
+
+## Custom field type API
+
+In addition to student code hooks, x64base should support custom field type hooks.
+
+Custom field types should be able to provide:
+
+- storage and conversion rules.
+- validation rules.
+- display and editor hints.
+- import/export behavior.
+- documentation metadata for SelfDoc and the Master Documentation Organizer.
+
+## Memo API
+
+The memo API should reflect the object-oriented memo model:
+
+- memo store.
+- memo manager.
+- memo object.
+- memo reference.
+- read/write/update operations.
+- validation and repair diagnostics.
 
 ## Errors
 
 - typed errors
 - numeric codes
+- structured diagnostics for script, index, memo, workspace, and GUI boundaries
 
 ## Integration
 
-- language bindings (future)
-- FFI boundaries (future)
+- DotScript command files.
+- Python bindings.
+- C-compatible boundary candidates.
+- GUI-neutral service bridge.
+- generated documentation and SelfDoc extraction.

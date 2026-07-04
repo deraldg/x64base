@@ -12,6 +12,7 @@ The project is a CMake C++20 project named `DotTalkpp`. The root CMake file expo
 - 64-bit Windows development environment.
 - CMake 3.21 or newer.
 - Visual Studio 2022 or another configured C++20 toolchain.
+- POSIX-compatible shell and build tools for WSL, Ubuntu, Linux, and macOS builds.
 - Optional vcpkg packages for local dependencies.
 - Optional Turbo Vision source/package if building TUI surfaces.
 - Optional wxWidgets when building the wx frontend.
@@ -31,6 +32,64 @@ cd D:\code\ccode
 cmake -S . -B build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
 cmake --build build-wx-check --config Release
 ```
+
+## WSL / Ubuntu POSIX build requirements
+
+Use WSL2 or a native Ubuntu environment when testing the POSIX build lane.
+
+Expected packages:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake ninja-build git pkg-config
+```
+
+Optional packages depend on the feature lane being tested:
+
+```bash
+sudo apt install -y liblmdb-dev libwxgtk3.2-dev python3-dev python3-venv
+```
+
+Build shape:
+
+```bash
+cd /mnt/d/code/ccode
+cmake -S . -B build-posix -G Ninja \
+  -D DOTTALK_WITH_INDEX=ON \
+  -D DOTTALK_WITH_RELATIONS=ON \
+  -D BUILD_TESTING=ON
+cmake --build build-posix
+```
+
+The POSIX lane should keep path handling, case sensitivity, newline behavior, file locking, and terminal behavior visible in test notes.
+
+## macOS build requirements
+
+Use Xcode Command Line Tools plus Homebrew packages for the macOS lane.
+
+```bash
+xcode-select --install
+brew install cmake ninja pkg-config
+```
+
+Optional feature packages:
+
+```bash
+brew install lmdb wxwidgets python
+```
+
+Build shape:
+
+```bash
+cd ~/code/ccode
+cmake -S . -B build-macos -G Ninja \
+  -D DOTTALK_WITH_INDEX=ON \
+  -D DOTTALK_WITH_RELATIONS=ON \
+  -D BUILD_TESTING=ON
+cmake --build build-macos
+```
+
+macOS notes should track compiler version, SDK version, filesystem case behavior, terminal behavior, and optional GUI backend status.
 
 ## Verify
 
