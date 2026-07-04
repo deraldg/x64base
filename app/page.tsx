@@ -67,7 +67,7 @@ const lanes = [
   },
   {
     title: "Teach with the shell",
-    text: "Use DotTalk++, DotTalk++ Workbench, Parallel GUI/TUI, Arctic TUI, and LabTalk material for labs, front-end learning, command literacy, and database fundamentals.",
+    text: "Use DotTalk++, DotTalk++ Workbench, Parallel GUI/TUI, Arctic TUI, and Laboratory Campus material for labs, front-end learning, command literacy, and database fundamentals.",
     href: "/docs/dottalk/curriculum",
     icon: GraduationCap
   }

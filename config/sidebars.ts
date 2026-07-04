@@ -54,7 +54,7 @@ export const docsSidebar: SidebarGroup[] = [
     ]
   },
   {
-    label: "LabTalk",
+    label: "Laboratory Campus",
     items: [
       { label: "Overview", href: "/docs/labtalk/overview" },
       { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },

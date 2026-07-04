@@ -8,7 +8,7 @@ const products = [
   { slug: "tabletalk", title: "TableTalk", description: "Table buffering, dirty/stale state, commit/rollback, and buffered mutation workflows." },
   { slug: "reltalk", title: "RelTalk", description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal." },
   { slug: "parallel-gui-tui", title: "Parallel GUI/TUI", description: "DotTalk++ Workbench lane for keeping graphical and terminal surfaces aligned over the same engine services." },
-  { slug: "labtalk", title: "LabTalk", description: "Laboratory campus for DotTalk++, x64base, lessons, and proof-aware learning." }
+  { slug: "labtalk", title: "Laboratory Campus", description: "Alpha collaboration campus for planning, in-development labs, and existing x64base/DotTalk++ learning evidence." }
 ];
 
 export default function ProductsPage() {

@@ -1,16 +1,18 @@
 ---
 title: "Education Features"
-description: "LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."
+description: "Laboratory Campus summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."
 ---
 
-LabTalk should expose DotTalk++ education features as runnable labs, not as disconnected reference text. The current source tree already contains enough structure to seed this campus area.
+The Laboratory Campus should expose DotTalk++ education features as runnable
+labs, not as disconnected reference text. The current source tree already
+contains enough structure to seed this alpha campus area.
 
 ## Source Evidence
 
-| Feature | Source Evidence | LabTalk Reading |
+| Feature | Source Evidence | Campus Reading |
 | --- | --- | --- |
 | Education command family | `D:\code\ccode\src\edu\edu_*.cpp` and `D:\code\ccode\src\cli\shell_commands.cpp` | Built-in teaching commands are source-defined and registered through the central command surface. |
-| Reference and retro commands | `D:\code\ccode\src\edu\edu_ascii_table.cpp`, `src\cli\cmd_retro.cpp`, and `src\cli\cmd_bbox.cpp` | `ASCII`, `RETRO`, and `BBOX` are public education-facing commands and should be treated as LabTalk material. |
+| Reference and retro commands | `D:\code\ccode\src\edu\edu_ascii_table.cpp`, `src\cli\cmd_retro.cpp`, and `src\cli\cmd_bbox.cpp` | `ASCII`, `RETRO`, and `BBOX` are public education-facing commands and should be treated as campus material. |
 | Timed index/sort lab | `D:\code\ccode\src\cli\cmd_idx.cpp` and `D:\code\ccode\docs\teaching\TEACHING_POINT_LEDGER.md` | `IDX` is a memory-only educational index lab; it supports `STD` and `BUBBLE` sort choices and reports build/sort elapsed time, comparisons, and swaps. |
 | DBF sort path | `D:\code\ccode\src\cli\cmd_sort.cpp` | `SORT` creates a sorted DBF copy, supports key expressions, `FOR`, `WHILE`, `FIELDS`, `UNIQUE`, and reports scanned/selected/written counts. |
 | Student command hooks | `D:\code\ccode\src\ext\cmd\cmd_student_hello.cpp`, `cmd_student_echo.cpp`, and `src\ext\ext_policy.hpp` | Student commands may self-register from the extension area while built-in command names remain protected. |
@@ -41,7 +43,7 @@ Its output path records:
 - comparisons,
 - swaps.
 
-That makes it suitable for a LabTalk algorithm lab where students compare `STD` versus `BUBBLE` against the same table.
+That makes it suitable for a campus algorithm lab where students compare `STD` versus `BUBBLE` against the same table.
 
 Plain `SORT` is also lab-ready, but it currently reports operation counts rather than elapsed time. It is useful for teaching DBF output creation, key expressions, `FOR`/`WHILE` predicates, field projection, deleted-record handling, and `UNIQUE` suppression.
 
@@ -49,7 +51,7 @@ Plain `SORT` is also lab-ready, but it currently reports operation counts rather
 
 Current education-visible commands include:
 
-| Command | LabTalk use |
+| Command | Campus use |
 | --- | --- |
 | `ASCII` | Teach character codes, control characters, extended ASCII, ranges, and table rendering. |
 | `RETRO` | Show ASCII-safe retro system screens for lineage and classroom context. |
@@ -59,7 +61,7 @@ Current education-visible commands include:
 | `CHRISTMAS` | Demonstrate controlled colored ASCII output. |
 | `COBOL`, `CODASYL`, `NORMALIZE`, `SIX` | Tie xBase learning to older database/toolchain concepts and normalization/index labs. |
 
-These are LabTalk curriculum and proof surfaces that should connect to command catalog rows, transcripts, and SelfDoc reports.
+These are campus curriculum and proof surfaces that should connect to command catalog rows, transcripts, and SelfDoc reports.
 
 ## Student Code Hooks
 
@@ -79,7 +81,7 @@ Current examples:
 | `cmd_student_echo.cpp` | `STUDENTECHO`, `SECHO` | Add aliases and command-local usage behavior. |
 | `fn_student_text_autoreg.cpp` | `STU_UPPER`, `STU_REPEAT` | Add expression-style functions with argument checks and small evaluators. |
 
-This is a strong LabTalk pattern: students can first inspect a command/function in the website catalog, then add a controlled extension, then prove it with HELP/CMDHELP and a runtime transcript.
+This is a strong campus pattern: students can first inspect a command/function in the website catalog, then add a controlled extension, then prove it with HELP/CMDHELP and a runtime transcript.
 
 ## Pre/Post Polling
 
@@ -90,7 +92,7 @@ pre_poll()  -> [POLL PRE]
 post_poll() -> [POLL POST]
 ```
 
-That gives LabTalk a visible seam for later labs about command lifecycle observation. The next useful campus slice is:
+That gives the campus a visible seam for later labs about command lifecycle observation. The next useful campus slice is:
 
 ```text
 before command -> pre poll -> command execution -> post poll -> transcript -> SelfDoc evidence
@@ -100,7 +102,7 @@ Until a full `POLLING` command is implemented, the website should describe this 
 
 ## Vertical Documentation Flow
 
-LabTalk should feed these pages from the existing vertical stack:
+The Laboratory Campus should feed these pages from the existing vertical stack:
 
 ```text
 source comments and @dottalk.usage
@@ -108,7 +110,7 @@ source comments and @dottalk.usage
 -> HELP DATA and CMDHELP
 -> CMDHELPCHK validation
 -> SelfDoc/manualgen artifacts
--> website pages and LabTalk lessons
+-> website pages and campus lessons
 ```
 
 The initial website implementation uses source-derived pages:
