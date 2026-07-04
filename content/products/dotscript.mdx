@@ -7,7 +7,7 @@ description: "The DotTalk++ script language product for repeatable database auto
 
 DotScript is the script-language product that sits on top of the DotTalk++ command surface.
 
-DotTalk++ is the interactive shell and runtime vocabulary. DotScript is the repeatable file and automation form: command sequences, variables, continuations, comments, loops, scans, validation runs, lab scripts, and reproducible database maintenance.
+DotTalk++ is the interactive shell and runtime vocabulary. DotScript is the repeatable file and automation form: command sequences, variables, continuations, comments, conditionals, loops, scans, CSV/DBF import-export runs, validation runs, lab scripts, and reproducible database maintenance.
 
 ## Product role
 
@@ -27,14 +27,17 @@ The public language guide lives at [DotScript Language Guide](/docs/dottalk/dots
 
 That guide tracks the core syntax subjects that must not be lost:
 
+- `IF` / `ELSE` / `ENDIF`.
 - `LOOP` / `ENDLOOP`.
-- scan-style loops and `ENDSCAN`.
+- `WHILE` / `ENDWHILE`.
+- `UNTIL` / `ENDUNTIL`.
+- `SCAN` / `ENDSCAN`.
 - variables and assignment.
 - line continuation.
 - comments.
-- command files and include-ready examples.
+- command files and one-level subscript examples.
+- CSV import/export to and from DBF workflows.
 
 ## Status
 
 DotScript is active beta and should remain proof-labeled. Some commands are runtime-proven; others are canaries or planned integration surfaces. Documentation should state that boundary clearly while still treating DotScript as a real product lane.
-

@@ -1,0 +1,38 @@
+---
+title: "DBF Flavors and Index Defaults"
+description: "The current x64base DBF flavor matrix and the default index containers used by SET INDEX and SET ORDER."
+---
+
+x64base is an object-oriented hybrid. The runtime centers on `DbArea` and `XBaseEngine` objects, while workspaces wrap active areas and preserve table, cursor, index, relation, memo, and metadata state. The storage layer is not only `DBF_64`; the current headers define a three-part DBF family.
+
+## Header trinity
+
+| Flavor | Header evidence | Runtime position |
+| --- | --- | --- |
+| Classic / MS-DOS DBF | `include/xbase.hpp`, `include/xbase_vfp.hpp`; versions `0x03`, `0x83`, and FoxPro memo `0xF5` | Classic-like V32 area. Uses 10-byte descriptor field names and classic/FoxPro descriptor rules. |
+| Visual FoxPro DBF | `include/xbase_vfp.hpp`; versions `0x30`, `0x31`, `0x32` | VFP-compatible V64 area with newer field/data type handling, including currency-oriented work and VFP descriptor extras. |
+| x64 DBF_64 | `include/xbase_64.hpp`; version `0x64` | x64 extension layer with large-header metadata, vector table/field names, fallback descriptor tokens, and x64 field metadata. |
+
+`include/xbase.hpp` is the neutral runtime contract. `include/xbase_vfp.hpp` bridges classic/MS-DOS, FoxPro, and VFP descriptor formats. `include/xbase_64.hpp` owns the x64 extension structures, vector metadata, and fallback name-resolution policy.
+
+## Index defaults
+
+The command handlers make the current default behavior explicit:
+
+| Area flavor | `SET ORDER` default container | `SET INDEX` accepted containers | Notes |
+| --- | --- | --- | --- |
+| V32 classic/MS-DOS/FoxPro-like | `<table>.cnx` | `.inx` or `.cnx` | `INX` is single-order attachment. Tag activation through `SET ORDER` is handled through CNX, not INX. |
+| V64 VFP/x64 | `<table>.cdx` | `.cdx` | CDX is the command-facing container; LMDB is the physical backend where the CDX/LMDB environment is in use. |
+
+This should be documented as current implementation behavior, not a permanent restriction. The Open Index API lane is the right place to describe future backend-neutral expansion.
+
+## Name policy
+
+x64 DBF metadata can carry authoritative table and field names beyond classic DBF descriptor limits. When x64 metadata is missing, the runtime falls back to descriptor tokens and mangled names. That fallback is intentional: old tools can still see a legal DBF-shaped file, while x64-aware code can resolve the richer vector metadata.
+
+## Related pages
+
+- [DBF_64 Specification](/docs/engine/dbf-64-specification)
+- [Indexing Rules](/docs/engine/indexing-rules)
+- [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing)
+- [Engine Feature Crosswalk](/docs/engine/feature-crosswalk)

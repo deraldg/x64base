@@ -17,6 +17,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "x64base Engine",
     items: [
       { label: "Architecture", href: "/docs/engine/architecture" },
+      { label: "DBF Flavors and Index Defaults", href: "/docs/engine/dbf-flavors-and-indexes" },
       { label: "DBF_64 Specification", href: "/docs/engine/dbf-64-specification" },
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
       { label: "Indexing Rules", href: "/docs/engine/indexing-rules" },
@@ -31,6 +32,7 @@ export const docsSidebar: SidebarGroup[] = [
     items: [
       { label: "Language Guide", href: "/docs/dottalk/language-guide" },
       { label: "DotScript Language Guide", href: "/docs/dottalk/dotscript-language-guide" },
+      { label: "SET Family", href: "/docs/dottalk/set-family" },
       { label: "Syntax", href: "/docs/dottalk/syntax" },
       { label: "REPL", href: "/docs/dottalk/repl" },
       { label: "Command Catalog", href: "/docs/dottalk/command-catalog" },

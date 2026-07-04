@@ -7,7 +7,7 @@ This page is a reviewed website derivative of the local SelfDoc report:
 
 `D:\code\ccode\labtalk\reports\selfdoc\x64base_engine_feature_crosswalk_v1.md`
 
-The report was generated from local source evidence plus harvested HELP/manualgen tables. It found `22` feature lanes, `290` harvested HELP commands, and source evidence across the configured scanner globs.
+The report was generated from local source evidence plus harvested HELP/manualgen tables. It found `24` feature lanes, `290` harvested HELP commands, and source evidence across the configured scanner globs.
 
 Status language:
 
@@ -22,6 +22,7 @@ Status language:
 | --- | --- | --- |
 | DBF table runtime and `DbArea` object model | runtime-evidenced | `USE`, `DBAREA`, `AREA`, `STRUCT`, `FIELDS`; `src/xbase`, `src/cli/cmd_dbarea.cpp` |
 | Workspaces wrapping active areas | runtime-evidenced | `WORKSPACE`, `WSREPORT`, `DBAREAS`; `include/workspace`, `src/cli/cmd_workspace.cpp` |
+| DBF flavor trinity: MS-DOS/classic, VFP, and x64 DBF_64 | runtime-evidenced | `include/xbase.hpp`, `include/xbase_vfp.hpp`, `include/xbase_64.hpp`; classic versions `0x03`, `0x83`, `0xF5`; VFP versions `0x30`, `0x31`, `0x32`; x64 version `0x64` |
 | Visual FoxPro DBF field/data type compatibility | runtime-evidenced | VFP probe/header/codecs; currency and newer type support evidence |
 | x64 DBF extensions and newer data types | runtime-evidenced | x64 header/meta contracts and DBF64 validation surfaces |
 | Vectored table and field names with fallback mangling | runtime-evidenced | x64 metadata/vector naming contract and fallback policy evidence |
@@ -42,8 +43,8 @@ Status language:
 
 | Feature | Status | Evidence summary |
 | --- | --- | --- |
-| Open Index API and index backends | runtime-evidenced | `INDEX`, `REINDEX`, `SET INDEX`, `SET ORDER`, `SEEK`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB` |
-| SQL bridge, import/export, copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT` |
+| Open Index API and index backends | runtime-evidenced | `INDEX`, `REINDEX`, `SET INDEX`, `SET ORDER`, `SEEK`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB`; V32 defaults to `.cnx`, V64 defaults to `.cdx` |
+| SQL bridge, CSV import/export, DBF copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT`, `AUTODBF`; `IMPORT` reads CSV into an open DBF and `EXPORT` writes CSV by default |
 | Remote and system integration surfaces | runtime-evidenced | `SFTP`, `PSHELL`, `WEB`, `ZIP`; platform zip backends |
 | Security and policy surfaces | runtime-evidenced | `SECURITY`, security policy/runtime/signature headers |
 
@@ -51,7 +52,8 @@ Status language:
 
 | Feature | Status | Evidence summary |
 | --- | --- | --- |
-| DotScript command files, variables, loop and scan control | runtime-evidenced | `DOTSCRIPT`, `VAR`, `SET VAR`, `LOOP`, `ENDLOOP`, `SCAN`, `ENDSCAN`, `WHILE`, `UNTIL` |
+| SET family: session, output, paths, indexes, filters, relations, locale, and buffering | runtime-evidenced | `SET`, `SET INDEX`, `SET ORDER`, `SET FILTER`, `SET RELATION`, `SET UNIQUE`, `SET CDX`, `SET CNX`, `SET LMDB`, `SETPATH` |
+| DotScript command files, variables, control flow, and one-level nesting | runtime-evidenced | `DOTSCRIPT`, `VAR`, `SET VAR`, `IF`, `ELSE`, `ENDIF`, `LOOP`, `ENDLOOP`, `WHILE`, `ENDWHILE`, `UNTIL`, `ENDUNTIL`, `SCAN`, `ENDSCAN`; nesting is main script plus one subscript |
 | Messaging, error/status, and output routing | runtime-evidenced | `MSGMGR`, `ERROR STATUS`, `ERROR CLEAR`, message catalog, output router |
 | Location, locale, and language support | runtime-evidenced | locale docs and message-manager integration lanes |
 | Command timing and diagnostics | runtime-evidenced | timing/profile/chrono evidence plus `STATUS`, `BETA`, `CMDHELPCHK` diagnostic surfaces |
@@ -69,4 +71,3 @@ The same pass ran the guarded manualgen commands. Current state:
 - Parity review: not publication-equivalent; all `25` sections need review before replacing any publication.
 
 This is still useful: it proves the manual generation path is alive, but it must be run with Python 3.12 and reviewed before a publication replacement.
-

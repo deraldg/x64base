@@ -1,0 +1,133 @@
+---
+title: "SET Family"
+description: "Current SET command family for DotTalk++ session state, paths, indexes, filters, relations, locale, output routing, and buffering."
+---
+
+The SET family is documented as an engine feature, not just a collection of shell conveniences. `src/cli/cmd_set.cpp` is the general dispatcher, and specialized `cmd_set*.cpp` handlers own path, index/order, filter, relation, locale, and unique-state behavior.
+
+## Dispatcher boundary
+
+`SET` with no arguments reports usage. `SET USAGE` is read-only. Mutating forms change session/runtime state but should not directly rewrite table records unless the delegated command explicitly performs data work.
+
+Important delegated forms include:
+
+```text
+SET INDEX ...
+SET ORDER ...
+SET FILTER ...
+SET RELATION ...
+SET PATH ...
+SET CNX ...
+SET CDX ...
+SET LMDB ...
+SET UNIQUE ...
+```
+
+## Output and session presentation
+
+The dispatcher covers command-output behavior:
+
+```text
+SET CONSOLE ON|OFF
+SET PRINT ON|OFF
+SET PRINT TO <file>
+SET DEVICE TO SCREEN|FILE <path>|PRINTER|NULL
+SET ALTERNATE ON|OFF
+SET ALTERNATE TO <file>
+SET TALK ON|OFF
+SET ECHO ON|OFF
+SET PAGING ON|OFF
+SET WRAP ON|OFF
+```
+
+The settings registry also includes presentation and runtime flags such as `SET STATUS`, `SET TIME`, `SET TIMER`, `SET CLOCK`, `SET BELL`, `SET TYPEAHEAD`, and `SET REPROCESS`.
+
+## Data and editing behavior
+
+Current documented surfaces include:
+
+```text
+SET TABLE BUFFER ON|OFF|ON ALL|OFF ALL
+SET DELETED ON|OFF
+SET CASE ON|OFF
+SET NEAR ON|OFF
+SET SAFETY ON|OFF
+SET EXACT ON|OFF
+SET ESCAPE ON|OFF
+SET CARRY ON|OFF
+SET CONFIRM ON|OFF
+SET EXCLUSIVE ON|OFF
+SET MULTILOCKS ON|OFF
+```
+
+`SET TABLE BUFFER` toggles buffering for the current area or all open areas. `COMMIT` and `ROLLBACK` remain the commands that finish or discard buffered edits.
+
+## Paths
+
+`SET PATH` and `SETPATH` route named filesystem slots:
+
+```text
+DATA
+DBF
+XDBF
+INDEXES
+LMDB
+WORKSPACES
+SCHEMAS
+PROJECTS
+SCRIPTS
+TESTS
+HELP
+LOGS
+TMP
+```
+
+`SETPATH RESET` returns slots to defaults. Path validation warns when needed, but assignment is still explicit state.
+
+## Index and order
+
+The index-related SET family is flavor-aware:
+
+| Area flavor | Default order container | Accepted SET INDEX containers |
+| --- | --- | --- |
+| V32 classic/MS-DOS/FoxPro-like | `.cnx` | `.inx`, `.cnx` |
+| V64 VFP/x64 | `.cdx` | `.cdx` |
+
+`SET ORDER 0`, `SET ORDER PHYSICAL`, `SET ORDER NATURAL`, and `SET ORDER PHYS` clear the active order. `SET ORDER TAG <tag>` activates a tag in the flavor-appropriate container. `INX` remains a single-order `SET INDEX` attachment path.
+
+## Filters and relations
+
+`SET FILTER` installs the current expression filter used by navigation and list-style commands.
+
+`SET RELATION` manages parent-to-child relation state:
+
+```text
+SET RELATION TO <expr> INTO <child>
+SET RELATION TO <expr> INTO <child> ADDITIVE
+SET RELATION OFF ALL
+SET RELATION OFF INTO <child>
+```
+
+Relation state belongs with areas and workspaces, so documentation should describe it as part of the object-oriented runtime state.
+
+## Locale and formatting
+
+The SET family also carries presentation and formatting settings:
+
+```text
+SET LANGUAGE TO <locale|DEFAULT>
+SET LOCALE TO <locale|DEFAULT>
+SET LANGUAGE CHECK
+SET LANGUAGE REPORT
+SET LOCALE CHECK
+SET LOCALE REPORT
+SET CENTURY ON|OFF
+SET DATE TO <format>
+SET DECIMALS TO <n>
+SET FIXED ON|OFF
+SET MEMOWIDTH TO <n>
+SET MEMOERROR ON|OFF
+SET EDITOR TO <value>|DEFAULT|OFF
+```
+
+Locale currently has explicit command paths and message-manager integration work; public wording should stay proof-labeled by command.

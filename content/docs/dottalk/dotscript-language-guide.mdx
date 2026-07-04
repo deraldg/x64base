@@ -3,7 +3,7 @@ title: "DotScript Language Guide"
 description: "Language guide for DotScript command files and automation."
 ---
 
-DotScript is the repeatable script form of the DotTalk++ command language. It is for command files, labs, smoke runs, validation passes, and automation that should be readable by students and maintainers.
+DotScript is the repeatable script form of the DotTalk++ command language. It is for command files, labs, smoke runs, validation passes, CSV/DBF import-export exercises, and automation that should be readable by students and maintainers.
 
 ## Script shape
 
@@ -27,6 +27,10 @@ SET VAR maxRows = 25
 ```
 
 Variables are expected to support command substitution and repeatable scripts without hard-coding every value in every line.
+
+## DOTSCRIPT nesting
+
+The current runner supports a main script plus one subscript. Deeper nesting is intentionally blocked by the runtime and should not be shown in public examples as available behavior.
 
 ## Comments
 
@@ -53,13 +57,25 @@ INDEX ON last_name + first_name ;
 
 The continuation marker should be treated as part of the canonical grammar once the parser behavior is locked.
 
+## IF / ELSE / ENDIF
+
+`IF` / `ELSE` / `ENDIF` uses the shell's shared boolean expression evaluator and control-flow stack.
+
+```text
+IF recno() = 1
+  ? "first record"
+ELSE
+  ? "not first"
+ENDIF
+```
+
 ## LOOP / ENDLOOP
 
-`LOOP` / `ENDLOOP` is the general repetition form.
+`LOOP` / `ENDLOOP` is the general repetition form. The command handler supports numeric repetition forms such as `LOOP 5`, `LOOP 5 TIMES`, and `LOOP FOR <n>`.
 
 ```text
 SET VAR n = 0
-LOOP WHILE n < 10
+LOOP 10
   ? n
   SET VAR n = n + 1
 ENDLOOP
@@ -69,8 +85,30 @@ Required documentation topics:
 
 - loop condition evaluation.
 - loop variable mutation.
-- break/continue behavior if supported.
+- numeric repetition labels and quiet mode.
 - error handling inside a loop.
+
+## WHILE / ENDWHILE
+
+`WHILE` / `ENDWHILE` buffers and executes a loop while a boolean expression remains true.
+
+```text
+WHILE recno() < 10
+  ? recno()
+  SKIP
+ENDWHILE
+```
+
+## UNTIL / ENDUNTIL
+
+`UNTIL` / `ENDUNTIL` buffers and executes a loop until a boolean expression becomes true.
+
+```text
+UNTIL eof()
+  ? recno()
+  SKIP
+ENDUNTIL
+```
 
 ## SCAN / ENDSCAN
 
@@ -89,6 +127,19 @@ Required documentation topics:
 - filter and scope interaction.
 - deleted-record handling.
 - index order interaction.
+- current runtime limitation: only one `SCAN` block is buffered at a time; nested `SCAN` during `ENDSCAN` is not currently supported.
+
+## CSV and DBF import/export
+
+DotScript examples can drive the current CSV import/export commands:
+
+```text
+USE students
+IMPORT students.csv
+EXPORT TO students_out.csv CSV
+```
+
+`IMPORT` reads CSV into the current open DBF by matching CSV headers to field names case-insensitively. `EXPORT` writes the current table, or a named open work area, to CSV by default.
 
 ## Workspaces
 
@@ -108,4 +159,3 @@ Every published DotScript example should be labeled as one of:
 - planned.
 
 That keeps the language guide useful while the parser and command surface continue to mature.
-

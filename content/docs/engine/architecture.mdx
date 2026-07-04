@@ -6,6 +6,7 @@ description: "Observed architecture from the local DotTalk++ / x64base source tr
 ## Principles
 
 - **Runtime truth first** - command behavior and source boundaries matter more than aspirational product language.
+- **Object-oriented hybrid runtime** - `DbArea`, `XBaseEngine`, workspace, memo, index, relation, and metadata objects carry state while preserving DBF-family interoperability.
 - **Visible database layers** - tables, records, fields, indexes, relations, work areas, metadata, HELP, and validation are teaching surfaces.
 - **Separation of concerns** - table storage, memo payloads, indexes, command handling, metadata, HELP, validation, and UI lanes are separate responsibilities.
 - **Proof language** - distinguish runtime-proven behavior from active, partial, experimental, and canary work.
@@ -16,7 +17,7 @@ description: "Observed architecture from the local DotTalk++ / x64base source tr
 
 The local project is organized around these implementation areas:
 
-1. `src/xbase` - table runtime, DbArea behavior, cursor state, field handling, locks, and record views.
+1. `src/xbase` - table runtime, DbArea behavior, cursor state, field handling, locks, record views, and the DBF flavor trinity.
 2. `src/xindex` - INX/CNX/CDX/LMDB index infrastructure and command bridges.
 3. `src/memo` - memo store, memo manager, memo object, memo reference, and memo canaries.
 4. `src/cli` - DotTalk++ command surface, HELP, browsers, workspace commands, DDL, DrawIO, validation, and scripts.
@@ -35,6 +36,12 @@ This matters for documentation and APIs:
 - scripted workspace operations should describe the area objects they affect.
 - GUI panes should bind to workspace and area state instead of duplicating table state.
 - relation and index views should be derived from active area objects.
+
+## DBF flavor trinity
+
+The local headers document three active storage dialects: classic/MS-DOS DBF, Visual FoxPro DBF, and x64 `DBF_64`. Classic and FoxPro-like files are bridged through the VFP descriptor layer; VFP files carry newer field/data type compatibility; x64 files add large-header metadata, vector table/field names, and fallback descriptor mangling.
+
+See [DBF Flavors and Index Defaults](/docs/engine/dbf-flavors-and-indexes).
 
 ## Memo and field extension model
 
