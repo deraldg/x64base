@@ -11,7 +11,7 @@ export function Footer() {
               A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026.
             </p>
             <p className="mt-4 text-xs text-muted">
-              x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, ArcticTalk®, and
+              x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and
               LabTalk® are trademarks of Derald R Grimwood Jr.
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs">
