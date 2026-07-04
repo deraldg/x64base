@@ -1,0 +1,164 @@
+---
+title: "xBase / DBF Ecosystem Feature Comparison"
+description: "A feature-by-feature comparison of x64base with Harbour, xHarbour, Alaska Xbase++, XSharp, dBASE tools, and Python DBF libraries."
+---
+
+## Purpose
+
+This comparison places x64base / DotTalk++ Workbench in the broader xBase,
+DBF, Clipper, FoxPro, and DBF-library ecosystem.
+
+It is not a replacement-claim table. Some systems here are mature commercial
+products, some are open-source compilers, some are migration platforms, and
+some are file-access libraries. x64base is different in emphasis: its primary
+intent is educational and architectural, with practical database/runtime uses
+developing around that core.
+
+## Reading The Table
+
+- **Yes** means the feature is present or clearly supported.
+- **Partial** means the feature exists in a limited, developing, or scoped form.
+- **No** means it is not a meaningful feature of that system.
+- **Unknown** means we should not claim it without better source proof.
+- **Not same claim** means the project has adjacent capability but not the same
+  architectural goal.
+
+A "Yes" for Harbour or Xbase++ may mean mature application-platform support. A
+"Yes" for x64base means project/source/runtime evidence exists, but alpha status
+still applies unless specifically marked production-ready.
+
+## Product / Project Character
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Primary role | Educational-first open xBase/DBF architecture, self-documenting runtime, and 64-bit DBF-style research system | Open xBase compiler/runtime | Open Clipper/xBase compiler/runtime | Commercial Clipper/xBase modernization platform | .NET xBase dialect/compiler | Commercial DBF/database products and utilities | DBF read/write libraries |
+| License / business model | Project/open architecture, alpha | Open source | Open source | Commercial | Mixed/open/commercial ecosystem | Commercial | Open source packages |
+| C++ codebase | Yes | Mostly C | Mostly C | Closed/commercial | .NET/C# ecosystem | Closed/commercial | Python |
+| Compilable application/runtime | Yes | Yes | Yes | Yes | Yes | Yes, product dependent | No, library use |
+| Source can be changed | Yes | Yes | Yes | No, product source closed | Partly, depends on component | No | Yes |
+| Production maturity | Alpha / educational / research | Mature open-source project | Mature legacy/open-source project | Mature commercial platform | Active .NET migration/compiler ecosystem | Mature commercial/legacy tools | Mature for utility/file tasks |
+
+## Storage, Tables, Memos, And Indexes
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 64-bit DBF-style table architecture | Yes, project focus | Not same claim | Not same claim | 64-bit Windows platform support, not same DBF_64 claim | Not same claim | No, classic DBF family | No |
+| 64-bit memo architecture | Yes, FPT64 lane | No/unknown | No/unknown | No/unknown | No/unknown | Classic DBT/FPT | No, classic memo support only |
+| 64-bit indexing architecture | Yes, CDX/LMDB/x64 index lanes | Classic RDD/index ecosystem | Classic index ecosystem | DBF/NTX/CDX engines | Runtime dependent | Classic indexes/tools | Usually no persistent index support |
+| 32-bit/classic DBF support | Yes, MS-DOS/classic lane | Yes | Yes | Yes | Dialect/runtime dependent | Yes | Yes |
+| VFP DBF support | Yes, VFP headers/types lane | DBF/RDD dependent | DBF/RDD dependent | Yes | VFP dialect/runtime work | Yes | Yes in selected libraries |
+| VFP currency field support | Yes | DBF/RDD dependent | DBF/RDD dependent | Likely/product dependent | Runtime dependent | Yes in VFP/dBASE variants | Yes in `dbf`; read support varies |
+| Memo fields | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
+| Vectored long table/field names with fallback mangling | Yes, x64 lane | Not same claim | Not same claim | Product dependent | .NET/runtime dependent | Product dependent | No |
+| Custom field types | Planned/developing x64 extension lane | Not same claim | Not same claim | Product/runtime dependent | .NET type system | Product dependent | Conversion hooks only |
+
+## Language And Runtime
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| xBase-style command language | Yes | Yes | Yes | Yes | Yes/dialects | Yes | No |
+| DotScript / script files | Yes | Harbour scripts/tools | Yes/likely | Yes/product dependent | Yes/compiler/runtime dependent | Product dependent | Python scripts only |
+| Variables | Yes | Yes | Yes | Yes | Yes | Yes | Python variables |
+| Conditionals | Yes: `IF`, `ELSE`, `ENDIF` | Yes | Yes | Yes | Yes | Yes | Python |
+| Loops | Yes: `LOOP`, `ENDLOOP`, `WHILE`, `UNTIL`, `SCAN`, `ENDSCAN` | Yes | Yes | Yes | Yes | Yes | Python |
+| Script nesting | Yes, currently one level | Yes/language dependent | Yes | Yes | Yes | Product dependent | Python |
+| Scalar functions | Yes, developing catalog | Yes | Yes | Yes | Yes | Yes | Python/library functions |
+| Object-oriented support | Hybrid/object-oriented DB areas, memos, workspaces | Yes | Yes | Yes | Yes | Product dependent | Python objects |
+| Compile to native/runtime application | Yes | Yes | Yes | Yes | Yes/.NET | Yes/product dependent | No |
+
+## Data Mutation And Safety
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Record mutation | Yes: `REPLACE` | Yes | Yes | Yes | Yes | Yes | API assignment/write |
+| Calculated mutation | Yes: `CALC`, `CALCWRITE` | Yes/language expressions | Yes | Yes | Yes | Product dependent | Python expressions |
+| Multi-field mutation | Yes: `MULTIREP` / replace multi lane | Yes/app code | Yes/app code | Yes/app code | Yes/app code | Product dependent | Python code |
+| Buffered table editing | Yes: table buffer, dirty/stale, commit/rollback | Varies by RDD/runtime | Varies | Yes/mature product behavior | Runtime/database dependent | Product dependent | Object/write semantics only |
+| Dirty/stale state reporting | Yes | Runtime dependent | Runtime dependent | Product dependent | Database dependent | Product dependent | No native DBF engine state |
+| Commit/rollback | Partial: table-buffer lifecycle, not full ACID RDBMS claim | Backend dependent | Backend dependent | Product/database dependent | Database dependent | Product dependent | No native DBF transaction engine |
+| Record locking | Yes | Yes | Yes | Yes | Runtime/database dependent | Yes/product dependent | Usually limited/no full lock manager |
+| Multi-user concurrency | Partial/developing | Mature xBase/RDD dependent | Mature xBase/RDD dependent | Mature commercial | Database dependent | Product dependent | Usually no |
+
+## Relational, SQL, And Database Behavior
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Work areas / DB areas | Yes | Yes | Yes | Yes | Runtime dependent | Yes | No |
+| Workspace wrapper over areas | Yes | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
+| Relations | Yes: `REL`, relation tree, relation-aware browse | Yes/xBase model | Yes | Yes | Runtime dependent | Yes/product dependent | No native |
+| Tuple/grid relational view | Yes | App/library dependent | App/library dependent | Product/app dependent | App dependent | Product dependent | No |
+| Built-in SQL bridge | Partial: SQL/SQLite/import/export bridge | Yes, SQL/ODBC listed | Extensions/libraries likely | Yes, Universal SQL | .NET data access | Yes/product dependent | External Python SQL only |
+| Full SQL server/RDBMS | No | No, but can bridge | No, but can bridge | Can bridge to server DBs | Uses .NET DBs | Product dependent | No |
+| Referential validation | Partial: relations, rules, validation hooks | App/RDD dependent | App/RDD dependent | Product/database dependent | Database dependent | Product dependent | No native |
+| Database triggers | Yes: `TRIGGER`, `RULE`, `VALIDATE` lanes | App/RDD/SQL dependent | App/RDD/SQL dependent | Product/database dependent | Database dependent | Product dependent | No native |
+| Constraints / validation | Yes, developing | App/RDD dependent | App/RDD dependent | Yes/product dependent | Database dependent | Product dependent | Python code only |
+| DDL | Yes: DDL fetch/validate/create DBF/sidecar lanes, with caveats | Via language/libraries | Via language/libraries | Yes/product dependent | Database dependent | Yes/product dependent | Create/write DBF varies |
+
+## Import, Export, And Interchange
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CSV import | Yes | Possible via libraries/code | Possible via libraries/code | Yes, Universal SQL mentions CSV | .NET libraries | Product/tool dependent | Yes via Python |
+| CSV export | Yes | Possible via libraries/code | Possible via libraries/code | Yes | .NET libraries | Product/tool dependent | Yes via Python |
+| DBF import/export | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes |
+| SQL import/export | Yes, scoped bridge | Yes/ODBC/SQL backends | Likely via libs | Yes | Yes via .NET | Yes/product dependent | Python ecosystem |
+| Memo import/export | Yes, developing with known CSV newline caveats | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
+| Data dictionary / metadata catalogs | Yes, DDICT/selfdoc/metadata lanes | Documentation/tool dependent | Tool dependent | Product/workbench dependent | Tool dependent | Product dependent | No |
+
+## UI, Tools, And Developer Experience
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CLI interface | Yes | Yes | Yes | Yes | Yes/tooling | Product dependent | Script/API only |
+| TUI interface | Yes: Arctic code name for TUI | Yes | Yes | Yes/text mode | Possible | Legacy/product dependent | No |
+| GUI interface | Yes: Parallel GUI/TUI lane | Yes, UI backends | Yes, GT/GUI support | Yes, Workbench/GUI/web | .NET GUI possible | Yes | No native GUI |
+| Smart table browser/listing | Yes: SmartList, SmartBrowser, `SB` alias | App/library dependent | App/library dependent | Product dependent | App dependent | Product dependent | No |
+| Web/application server | Not main claim | Yes/service/web possible | Some ecosystem support | Yes | .NET web possible | Product dependent | No |
+| External app commands | Yes: edit/image/web/url/shell lanes | App code | App code | Product/app code | .NET app code | Product dependent | Python code |
+| Build tooling | CMake/WSL/MSVC, POSIX/Mac requirements being documented | hbmk2/build tooling | Build tooling | Commercial Workbench | Visual Studio/.NET tooling | Product installers/tools | Python packaging |
+
+## Internationalization, Locale, And Data Types
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Language/runtime localization | Yes, message catalog and locale lanes in progress | Yes/ecosystem | Likely/verify | Product/framework dependent | .NET globalization available | Product dependent | Python locale/libs |
+| International text/codepages | In progress; classic/VFP codepage work should be documented carefully | Yes | Likely | Yes/product dependent | .NET Unicode/globalization | Product dependent | Varies by library |
+| Currency data type | Yes, VFP currency/newer type support evidenced | DBF/RDD dependent | DBF/RDD dependent | Yes/product dependent | Runtime dependent | Yes in VFP/dBASE variants | `dbf` supports Decimal currency |
+| Date/datetime/logical/numeric types | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Message catalog | Yes | Tooling/ecosystem | Tooling/ecosystem | Product/framework dependent | .NET resources | Product dependent | Python ecosystem |
+| Locale-aware formatting | In progress | Yes/ecosystem | Likely | Yes | Yes | Product dependent | Python ecosystem |
+
+## Documentation And SelfDoc
+
+| Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Built-in help | Yes | Yes | Yes | Yes | Yes | Yes | Package docs |
+| Self-documenting source/contracts | Yes, major lane | Not same claim | Not same claim | Product docs/workbench | Tooling/docs | Product docs | No |
+| Manual generation | Yes, manualgen/MDO lanes | hbdoc/tooling exists | Tooling likely | Product docs | Tooling/docs | Product docs | No |
+| AI-friendly documentation layer | Yes, planned/developing | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Website generated from docs | Developing vertical content generation | Project website/docs | Project docs | Product website/docs | Project docs | Product docs | Package docs |
+
+## Summary Position
+
+x64base should be positioned as:
+
+**An educational-first, open, object-oriented hybrid xBase/DBF architecture
+project exploring 64-bit DBF-style tables, memos, indexes, metadata, command
+runtime behavior, GUI/TUI tooling, and repeatable self-documentation.**
+
+It should not be positioned as:
+
+- a drop-in Harbour replacement
+- a drop-in Xbase++ replacement
+- a finished commercial DBMS
+- a fully compatible Visual FoxPro clone
+- the only 64-bit xBase-related technology
+
+## Sources
+
+- [Harbour](https://harbour.github.io/)
+- [Alaska Xbase++ features](https://www.alaska-software.com/products/features-list.cxp)
+- [XSharp dialects](https://docs.xsharp.it/doku.php?id=xsharp_dialects)
+- [Python dbf](https://github.com/ethanfurman/dbf)
+- [dbfread](https://dbfread.readthedocs.io/)
+- [dBASE DBF structure](https://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm)

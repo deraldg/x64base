@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
+  BarChart3,
   Boxes,
   Database,
   FileCode2,
@@ -218,6 +219,13 @@ export default function HomePage() {
             Read the ecosystem context
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
+          <Link
+            href="/docs/engine/ecosystem-feature-comparison"
+            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+          >
+            View the feature comparison
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-border bg-bg/35 p-4">
@@ -236,6 +244,16 @@ export default function HomePage() {
             <div className="font-mono text-xs uppercase text-muted">thesis</div>
             <p className="mt-3 text-sm leading-6 text-fg">
               x64base studies a larger 64-bit file/runtime model without abandoning the table workflow.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-bg/35 p-4 sm:col-span-3">
+            <div className="flex items-center gap-2 font-mono text-xs uppercase text-muted">
+              <BarChart3 size={14} aria-hidden="true" />
+              comparison
+            </div>
+            <p className="mt-3 text-sm leading-6 text-fg">
+              A feature matrix compares x64base with Harbour, xHarbour, Alaska Xbase++, XSharp,
+              dBASE tools, and Python DBF libraries without overstating alpha work.
             </p>
           </div>
         </div>
