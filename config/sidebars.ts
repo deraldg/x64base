@@ -57,6 +57,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Overview", href: "/docs/labtalk/overview" },
       { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },
       { label: "Education Features", href: "/docs/labtalk/education-features" },
+      { label: "Runtime Evidence Gallery", href: "/docs/labtalk/runtime-evidence" },
       { label: "SelfDoc Lane Diagrams", href: "/docs/labtalk/selfdoc-lane" },
       { label: "Non-Profit Guide", href: "/docs/labtalk/non-profit-guide" },
       { label: "Examples", href: "/docs/labtalk/examples" }

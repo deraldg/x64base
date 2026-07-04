@@ -1,0 +1,74 @@
+---
+title: "Runtime Evidence Gallery"
+description: "Screenshot evidence for ArcticTalk, LabTalk Portal, workspaces, table browsing, tuple output, and SelfDoc-facing manual/website proof."
+---
+
+This page records visual evidence from the local runtime. These images are evidence artifacts for the manual and website, not product screenshots claiming a finished release.
+
+Evidence date: July 3, 2026.
+
+## ArcticTalk Workspace Areas
+
+![ArcticTalk workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF](/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg)
+
+Observed evidence:
+
+- ArcticTalk GUI shell is running against `TEACHERS.DBF`.
+- Workspace pane lists 12 DBF areas: `BUILDING.DBF`, `CLASSES.DBF`, `COURSES.DBF`, `DEPT.DBF`, `ENROLL.DBF`, `MAJORS.DBF`, `ROOMS.DBF`, `STUD_MAJ.DBF`, `STUDENTS.DBF`, `TASSIGN.DBF`, `TEACHERS.DBF`, and `TERMS.DBF`.
+- Runtime output reports `WORKSPACE LOAD: restored 12 area(s) and 15 relation(s)`.
+- GUI mirror reports 12 GUI areas created from the `mcc_x64.dtschema` workspace.
+
+## Table Browser and CDX/LMDB Evidence
+
+![ArcticTalk TEACHERS.DBF browse grid with CDX/LMDB order status](/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg)
+
+Observed evidence:
+
+- Browse grid displays `TEACHERS.DBF` fields including `TID`, `LNAME`, `FNAME`, `DEPT_ID`, `EMAIL`, `HIRE_DATE`, and `TENURED`.
+- Status bar reports 20 rows shown of 20.
+- Status bar reports active ordered state: `Order: ASC tag TID`.
+- Output pane shows `SET ORDER` CDX metadata mismatch diagnostics with a `.cdx` container and `.cdx.d` LMDB environment path. This is useful evidence for the CDX/LMDB diagnostics lane and should be documented as a diagnostic state, not a clean success state.
+
+## Command Output Readback
+
+![ArcticTalk workspace table view with command output readback](/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg)
+
+Observed evidence:
+
+- ArcticTalk can show table/workspace state and command-output readback in the same GUI.
+- The output pane preserves diagnostic text for later manual or SelfDoc review.
+- This supports the policy that GUI evidence should cite visible runtime text, not only visual layout.
+
+## LabTalk Portal
+
+![LabTalk Portal docs index and README preview](/images/evidence/labtalk-portal-docs-index-evidence-20260703.jpg)
+
+Observed evidence:
+
+- LabTalk Portal has a section navigator with `Docs`, `Apps`, `Labs`, `Concepts`, `Proofs`, `Diagrams`, `Runtime`, and `Launchers`.
+- The Docs section shows items including `LabTalk README`, `Campus Architecture`, `Education Map`, `Portal Concept`, and `Database Literacy Starter Lab`.
+- The preview pane resolves a document record with ID, section, kind, and local path.
+
+## TUI Tuple and Record Browser
+
+![ArcticTalk terminal TUI showing tuple grid and record popup](/images/evidence/arctictalk-tui-tuple-grid-record-evidence-20260703.jpg)
+
+Observed evidence:
+
+- Terminal/TUI shell shows ArcticTalk menus and command/output panes.
+- Tuple grid displays joined fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, and `tassign.CLS_ID`.
+- A record popup displays `BLDG` and `NAME` for a related record.
+- This supports the SmartBrowser/TupTalk/RelTalk evidence lane: tuple output, relation readback, and record inspection are visible in the runtime.
+
+## Manual Use
+
+For manual generation, these screenshots should be cited as reviewed media evidence. They support sections on:
+
+- ArcticTalk GUI and TUI surfaces.
+- Workspace/area restoration.
+- Table browsing and SmartList/browser lanes.
+- CDX/LMDB order diagnostics.
+- LabTalk Portal and documentation index surfaces.
+- Tuple/relationship browsing.
+
+They should not be used to claim final product polish, completed release packaging, or absence of known diagnostics.
