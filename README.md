@@ -45,3 +45,39 @@ npm run build
 Copy `out/` contents into your Apache `DocumentRoot` (or a vhost directory). Optionally copy `apache/.htaccess` into that folder.
 
 See `apache/DEPLOYMENT.md` for full details and reverse-proxy alternative.
+
+## Publish cycle: laptop -> GitHub Pages -> x64base.com
+
+The live public site is served by GitHub Pages from:
+
+- repository: `https://github.com/deraldg/x64base`
+- branch: `gh-pages`
+- folder: `/`
+- local deployment worktree: `.gh-pages-deploy`
+- custom domain: `x64base.com`
+
+Use this from the laptop site root:
+
+```bash
+npm run publish:github-pages
+```
+
+That command:
+
+1. pulls/rebases `.gh-pages-deploy` from `origin/gh-pages`,
+2. runs the static Next export,
+3. refreshes `.gh-pages-deploy` from `out/`,
+4. writes `CNAME` and `.nojekyll`,
+5. commits and pushes `gh-pages`.
+
+After publishing, verify:
+
+```bash
+gh api repos/deraldg/x64base/pages
+```
+
+Expected state:
+
+- `status` is `built`
+- `cname` is `x64base.com`
+- `https_enforced` is `true`

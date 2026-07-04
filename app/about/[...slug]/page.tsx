@@ -13,15 +13,17 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
-  const filePath = resolveMdxPath("about", params.slug);
+  const { slug } = await params;
+  const filePath = resolveMdxPath("about", slug);
   const { frontmatter } = await compileMdxFromFile(filePath);
-  return metadataFromFrontmatter(frontmatter, `/about/${params.slug.join("/")}`);
+  return metadataFromFrontmatter(frontmatter, `/about/${slug.join("/")}`);
 }
 
-export default async function AboutSlugPage({ params }: { params: { slug: string[] } }) {
-  const filePath = resolveMdxPath("about", params.slug);
+export default async function AboutSlugPage({ params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const filePath = resolveMdxPath("about", slug);
   const { frontmatter, content } = await compileMdxFromFile(filePath);
 
   return (
@@ -30,7 +32,7 @@ export default async function AboutSlugPage({ params }: { params: { slug: string
         items={[
           { label: "Home", href: "/" },
           { label: "About", href: "/about" },
-          { label: frontmatter.title ?? params.slug[params.slug.length - 1], href: `/about/${params.slug.join("/")}` }
+          { label: frontmatter.title ?? slug[slug.length - 1], href: `/about/${slug.join("/")}` }
         ]}
       />
 

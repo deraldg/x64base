@@ -16,18 +16,20 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
-  const filePath = resolveMdxPath("docs", params.slug);
+  const { slug } = await params;
+  const filePath = resolveMdxPath("docs", slug);
   const { frontmatter } = await compileMdxFromFile(filePath);
-  return metadataFromFrontmatter(frontmatter, `/docs/${params.slug.join("/")}`);
+  return metadataFromFrontmatter(frontmatter, `/docs/${slug.join("/")}`);
 }
 
-export default async function DocsPage({ params }: { params: { slug: string[] } }) {
-  const filePath = resolveMdxPath("docs", params.slug);
+export default async function DocsPage({ params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const filePath = resolveMdxPath("docs", slug);
   const { frontmatter, content } = await compileMdxFromFile(filePath);
 
-  const href = `/docs/${params.slug.join("/")}`;
+  const href = `/docs/${slug.join("/")}`;
   const flat = flattenSidebar(docsSidebar);
   const idx = flat.findIndex((i) => i.href === href);
   const prev = idx > 0 ? flat[idx - 1] : null;
@@ -42,7 +44,7 @@ export default async function DocsPage({ params }: { params: { slug: string[] } 
           items={[
             { label: "Home", href: "/" },
             { label: "Documentation", href: "/docs" },
-            { label: frontmatter.title ?? params.slug[params.slug.length - 1], href }
+            { label: frontmatter.title ?? slug[slug.length - 1], href }
           ]}
         />
 

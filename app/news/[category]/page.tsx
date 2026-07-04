@@ -7,11 +7,12 @@ export function generateStaticParams() {
   return Array.from(categories).map((category) => ({ category }));
 }
 
-export default function NewsCategoryPage({ params }: { params: { category: string } }) {
-  const posts = getNewsPostsByCategory(params.category);
+export default async function NewsCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category } = await params;
+  const posts = getNewsPostsByCategory(category);
   if (!posts.length) return notFound();
 
-  const label = params.category.replace(/-/g, " ");
+  const label = category.replace(/-/g, " ");
 
   return (
     <div className="space-y-8">

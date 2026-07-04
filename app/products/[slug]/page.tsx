@@ -13,15 +13,17 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const filePath = resolveMdxPath("products", [params.slug]);
+  const { slug } = await params;
+  const filePath = resolveMdxPath("products", [slug]);
   const { frontmatter } = await compileMdxFromFile(filePath);
-  return metadataFromFrontmatter(frontmatter, `/products/${params.slug}`);
+  return metadataFromFrontmatter(frontmatter, `/products/${slug}`);
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const filePath = resolveMdxPath("products", [params.slug]);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const filePath = resolveMdxPath("products", [slug]);
   const { frontmatter, content } = await compileMdxFromFile(filePath);
 
   return (
@@ -30,7 +32,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
         items={[
           { label: "Home", href: "/" },
           { label: "Products", href: "/products" },
-          { label: frontmatter.title ?? params.slug, href: `/products/${params.slug}` }
+          { label: frontmatter.title ?? slug, href: `/products/${slug}` }
         ]}
       />
 

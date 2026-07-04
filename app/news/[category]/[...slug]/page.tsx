@@ -18,22 +18,24 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params
 }: {
-  params: { category: string; slug: string[] };
+  params: Promise<{ category: string; slug: string[] }>;
 }): Promise<Metadata> {
-  const filePath = resolveNewsPath(params.category, params.slug);
+  const { category, slug } = await params;
+  const filePath = resolveNewsPath(category, slug);
   const { frontmatter } = await compileMdxFromFile(filePath);
-  return metadataFromFrontmatter(frontmatter, `/news/${params.category}/${params.slug.join("/")}`);
+  return metadataFromFrontmatter(frontmatter, `/news/${category}/${slug.join("/")}`);
 }
 
 export default async function NewsPostPage({
   params
 }: {
-  params: { category: string; slug: string[] };
+  params: Promise<{ category: string; slug: string[] }>;
 }) {
-  const filePath = resolveNewsPath(params.category, params.slug);
+  const { category, slug } = await params;
+  const filePath = resolveNewsPath(category, slug);
   const { frontmatter, content } = await compileMdxFromFile(filePath);
 
-  const href = `/news/${params.category}/${params.slug.join("/")}`;
+  const href = `/news/${category}/${slug.join("/")}`;
 
   return (
     <div>
@@ -41,15 +43,15 @@ export default async function NewsPostPage({
         items={[
           { label: "Home", href: "/" },
           { label: "News", href: "/news" },
-          { label: params.category.replace(/-/g, " "), href: `/news/${params.category}` },
-          { label: frontmatter.title ?? params.slug[params.slug.length - 1], href }
+          { label: category.replace(/-/g, " "), href: `/news/${category}` },
+          { label: frontmatter.title ?? slug[slug.length - 1], href }
         ]}
       />
 
       <h1 className="text-3xl font-semibold tracking-tight">{frontmatter.title}</h1>
       <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted">
         {frontmatter.date ? <span className="font-mono">{frontmatter.date}</span> : null}
-        <span>Category: {params.category}</span>
+        <span>Category: {category}</span>
       </div>
       {frontmatter.description ? <p className="mt-3 text-muted">{frontmatter.description}</p> : null}
 
