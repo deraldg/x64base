@@ -1,0 +1,131 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+4:I[37457,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+5:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+b:I[68027,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default",1]
+:HL["/_next/static/chunks/16dgvo6qsdri1.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","docs","dev","important-documents",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","dev/important-documents","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/16dgvo6qsdri1.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/41qf-oxhf11mm.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mrh2-p_w84d.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L5",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L5",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L5",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L5",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L5",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L5",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L5",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L5",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L5",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L5",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L6",["$L7"],"$L8"]}],{},null,false,null]},null,false,"$@9"]},null,false,"$@9"]},null,false,null],"$La",false]],"m":"$undefined","G":["$b",["$Lc"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"dx_sPWIQE5s31YvpvR1sY"}
+d:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+e:"$Sreact.suspense"
+11:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"ViewportBoundary"]
+13:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"MetadataBoundary"]
+7:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true,"nonce":"$undefined"}]
+8:["$","$Ld",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@f"}]}]
+10:[]
+9:"$W10"
+a:["$","$1","h",{"children":[null,["$","$L11",null,{"children":"$L12"}],["$","div",null,{"hidden":true,"children":["$","$L13",null,{"children":["$","$e",null,{"name":"Next.Metadata","children":"$L14"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+c:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/16dgvo6qsdri1.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+15:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+6:["$","div",null,{"className":"flex gap-8","children":[["$","$L15",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/important-documents",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs/dev/important-documents","className":"hover:text-fg","children":"Important Documents"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Important Documents"}],"$L16","$L17","$L18"]}]]}]
+16:["$","p",null,{"className":"mt-2 text-muted","children":"Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."}]
+19:T1648,<p>This page is the public documentation shelf for the most important document
+layers behind x64base, DotTalk++, DotScript, DotTalk++ Workbench, and the
+Laboratory Campus.</p>
+<p>The website is not meant to be a hand-written brochure. It is a reviewed
+publication surface built from the same vertical documentation system used by
+the runtime: source comments, usage contracts, HELP, metadata, SelfDoc reports,
+MDO organization, manualgen, diagrams, and AI-friendly summaries.</p>
+<h2 id="document-layers"><a class="no-underline" href="#document-layers">Document Layers</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Layer</th><th>Role</th><th>Website Status</th></tr></thead><tbody><tr><td>Source and runtime truth</td><td>C++ source, command registration, headers, contracts, runtime transcripts, and command behavior.</td><td>Referenced and summarized; not fully mirrored.</td></tr><tr><td>HELP and metadata</td><td><code>HELP</code>, <code>CMDHELP</code>, command/function catalogs, usage contracts, field/type metadata, and validation readback.</td><td>Command and function pages should be regenerated from this layer.</td></tr><tr><td>SelfDoc reports</td><td>Report-only extracts for features, contracts, comments, evidence, diagrams, and crosswalks.</td><td>Selected reports are promoted after review.</td></tr><tr><td>MDO organization</td><td>Master Documentation Organizer structure for lanes, manuals, evidence, sections, and promotion decisions.</td><td>Public pages should cite the organized lane, not raw scanner guesses.</td></tr><tr><td>AI-friendly artifacts</td><td>Compact summaries, manifests, crosswalks, inventories, and review notes designed for model-assisted maintenance.</td><td>Should be exposed when reviewed and clearly marked as derivative.</td></tr><tr><td>Manualgen outputs</td><td>Generated manual inventories, validation reports, dry-runs, and accepted manual sections.</td><td>Manuals are planned for publication as reviewed outputs.</td></tr><tr><td>Website derivatives</td><td>Public pages under <code>x64base.com</code> that present reviewed, status-labeled slices of the above.</td><td>This site is the current publication surface.</td></tr></tbody></table>
+<h2 id="current-public-anchors"><a class="no-underline" href="#current-public-anchors">Current Public Anchors</a></h2>
+<ul>
+<li><a href="/docs/dev/project-truth">Current Project Truth</a> records conservative wording rules and the observed implementation state.</li>
+<li><a href="/docs/dev/current-lanes">Current Work Lanes</a> lists active, canary, planned, and integration lanes without crowding the front page.</li>
+<li><a href="/docs/dev/selfdoc-feed-pipeline">SelfDoc Feed Pipeline</a> documents the repeatable report-only path from source to manuals and website pages.</li>
+<li><a href="/docs/dev/selfdoc-website-publication">SelfDoc Website Publication</a> defines the boundary between implementation truth and public website copy.</li>
+<li><a href="/docs/dev/coding-standards">Coding Standards</a> records contracts, usage comments, header conventions, and safeguards.</li>
+<li><a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a> curates screenshots as evidence artifacts, not marketing screenshots.</li>
+<li><a href="/docs/engine/feature-crosswalk">Engine Feature Crosswalk</a> summarizes engine features from a generated SelfDoc report.</li>
+<li><a href="/docs/dottalk/command-catalog">Command Catalog</a> and <a href="/docs/dottalk/function-catalog">Function Catalog</a> are public catalog derivatives that should eventually be regenerated from HELP/metadata/contract evidence.</li>
+</ul>
+<h2 id="manual-publication-plan"><a class="no-underline" href="#manual-publication-plan">Manual Publication Plan</a></h2>
+<p>Manuals should appear here only after they are generated, validated, and
+reviewed. The intended path is:</p>
+<pre><code class="language-text">source behavior
+-> comments and @dottalk.usage / @dottalk.contract headers
+-> HELP, CMDHELP, metadata, and comments evidence
+-> CMDHELPCHK / SelfDoc validation reports
+-> MDO section organization
+-> manualgen inventory / validate / dry-run
+-> reviewed manual section
+-> website manual page or downloadable artifact
+</code></pre>
+<p>This keeps the public manual honest. If a feature is runtime-evidenced, the
+manual can say so. If it is source-evidenced, canary, planned, or
+review-needed, the manual should carry that status instead of smoothing it over.</p>
+<h2 id="ai-friendly-documentation"><a class="no-underline" href="#ai-friendly-documentation">AI-Friendly Documentation</a></h2>
+<p>AI-friendly documents are useful because the project is broad, but they are not
+the source of truth by themselves. They should preserve:</p>
+<ul>
+<li>source path or report path,</li>
+<li>generation date or extraction snapshot,</li>
+<li>evidence status,</li>
+<li>mutation boundary,</li>
+<li>review state,</li>
+<li>promotion target.</li>
+</ul>
+<p>AI-friendly summaries are allowed on the website when they help a reader
+navigate the system and when they remain traceable back to source, HELP,
+SelfDoc, MDO, or manualgen artifacts.</p>
+<h2 id="website-generation-rule"><a class="no-underline" href="#website-generation-rule">Website Generation Rule</a></h2>
+<p>The website should increasingly be maintained by vertical content generation:</p>
+<pre><code class="language-text">D:\code\ccode implementation truth
+-> SelfDoc / MDO / manualgen / AI-friendly reviewed artifacts
+-> D:\dev\x64base-site public derivatives
+-> x64base.com published documentation
+</code></pre>
+<p>Hand edits are acceptable for framing and review, but important technical pages
+should be fed by repeatable reports whenever possible.</p>17:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$19"},"children":null}]}]
+18:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dev/current-lanes","className":"text-muted hover:text-fg","children":["← ","Current Work Lanes"]}]}],["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dev/developer-handbook","className":"text-muted hover:text-fg","children":["Developer Handbook"," →"]}]}]]}]
+12:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1a:I[27201,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"IconMark"]
+f:null
+14:[["$","title","0",{"children":"Important Documents — x64base"}],["$","meta","1",{"name":"description","content":"Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/dev/important-documents/"}],["$","meta","3",{"property":"og:title","content":"Important Documents"}],["$","meta","4",{"property":"og:description","content":"Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/dev/important-documents/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Important Documents"}],["$","meta","12",{"name":"twitter:description","content":"Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"icon","href":"/favicon.svg"}],["$","$L1a","15",{}]]

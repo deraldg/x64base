@@ -1,0 +1,115 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+b:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+c:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/important-documents",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dev/important-documents","className":"hover:text-fg","children":"Important Documents"}],null]}]]}]}],"$L4","$L5","$L6","$L7"]}]]}],["$L8"],"$L9"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"dx_sPWIQE5s31YvpvR1sY"}
+4:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Important Documents"}]
+5:["$","p",null,{"className":"mt-2 text-muted","children":"Curated map of the x64base / DotTalk++ documentation layers, SelfDoc/MDO feeds, AI-friendly artifacts, and generated manuals."}]
+a:T1648,<p>This page is the public documentation shelf for the most important document
+layers behind x64base, DotTalk++, DotScript, DotTalk++ Workbench, and the
+Laboratory Campus.</p>
+<p>The website is not meant to be a hand-written brochure. It is a reviewed
+publication surface built from the same vertical documentation system used by
+the runtime: source comments, usage contracts, HELP, metadata, SelfDoc reports,
+MDO organization, manualgen, diagrams, and AI-friendly summaries.</p>
+<h2 id="document-layers"><a class="no-underline" href="#document-layers">Document Layers</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Layer</th><th>Role</th><th>Website Status</th></tr></thead><tbody><tr><td>Source and runtime truth</td><td>C++ source, command registration, headers, contracts, runtime transcripts, and command behavior.</td><td>Referenced and summarized; not fully mirrored.</td></tr><tr><td>HELP and metadata</td><td><code>HELP</code>, <code>CMDHELP</code>, command/function catalogs, usage contracts, field/type metadata, and validation readback.</td><td>Command and function pages should be regenerated from this layer.</td></tr><tr><td>SelfDoc reports</td><td>Report-only extracts for features, contracts, comments, evidence, diagrams, and crosswalks.</td><td>Selected reports are promoted after review.</td></tr><tr><td>MDO organization</td><td>Master Documentation Organizer structure for lanes, manuals, evidence, sections, and promotion decisions.</td><td>Public pages should cite the organized lane, not raw scanner guesses.</td></tr><tr><td>AI-friendly artifacts</td><td>Compact summaries, manifests, crosswalks, inventories, and review notes designed for model-assisted maintenance.</td><td>Should be exposed when reviewed and clearly marked as derivative.</td></tr><tr><td>Manualgen outputs</td><td>Generated manual inventories, validation reports, dry-runs, and accepted manual sections.</td><td>Manuals are planned for publication as reviewed outputs.</td></tr><tr><td>Website derivatives</td><td>Public pages under <code>x64base.com</code> that present reviewed, status-labeled slices of the above.</td><td>This site is the current publication surface.</td></tr></tbody></table>
+<h2 id="current-public-anchors"><a class="no-underline" href="#current-public-anchors">Current Public Anchors</a></h2>
+<ul>
+<li><a href="/docs/dev/project-truth">Current Project Truth</a> records conservative wording rules and the observed implementation state.</li>
+<li><a href="/docs/dev/current-lanes">Current Work Lanes</a> lists active, canary, planned, and integration lanes without crowding the front page.</li>
+<li><a href="/docs/dev/selfdoc-feed-pipeline">SelfDoc Feed Pipeline</a> documents the repeatable report-only path from source to manuals and website pages.</li>
+<li><a href="/docs/dev/selfdoc-website-publication">SelfDoc Website Publication</a> defines the boundary between implementation truth and public website copy.</li>
+<li><a href="/docs/dev/coding-standards">Coding Standards</a> records contracts, usage comments, header conventions, and safeguards.</li>
+<li><a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a> curates screenshots as evidence artifacts, not marketing screenshots.</li>
+<li><a href="/docs/engine/feature-crosswalk">Engine Feature Crosswalk</a> summarizes engine features from a generated SelfDoc report.</li>
+<li><a href="/docs/dottalk/command-catalog">Command Catalog</a> and <a href="/docs/dottalk/function-catalog">Function Catalog</a> are public catalog derivatives that should eventually be regenerated from HELP/metadata/contract evidence.</li>
+</ul>
+<h2 id="manual-publication-plan"><a class="no-underline" href="#manual-publication-plan">Manual Publication Plan</a></h2>
+<p>Manuals should appear here only after they are generated, validated, and
+reviewed. The intended path is:</p>
+<pre><code class="language-text">source behavior
+-> comments and @dottalk.usage / @dottalk.contract headers
+-> HELP, CMDHELP, metadata, and comments evidence
+-> CMDHELPCHK / SelfDoc validation reports
+-> MDO section organization
+-> manualgen inventory / validate / dry-run
+-> reviewed manual section
+-> website manual page or downloadable artifact
+</code></pre>
+<p>This keeps the public manual honest. If a feature is runtime-evidenced, the
+manual can say so. If it is source-evidenced, canary, planned, or
+review-needed, the manual should carry that status instead of smoothing it over.</p>
+<h2 id="ai-friendly-documentation"><a class="no-underline" href="#ai-friendly-documentation">AI-Friendly Documentation</a></h2>
+<p>AI-friendly documents are useful because the project is broad, but they are not
+the source of truth by themselves. They should preserve:</p>
+<ul>
+<li>source path or report path,</li>
+<li>generation date or extraction snapshot,</li>
+<li>evidence status,</li>
+<li>mutation boundary,</li>
+<li>review state,</li>
+<li>promotion target.</li>
+</ul>
+<p>AI-friendly summaries are allowed on the website when they help a reader
+navigate the system and when they remain traceable back to source, HELP,
+SelfDoc, MDO, or manualgen artifacts.</p>
+<h2 id="website-generation-rule"><a class="no-underline" href="#website-generation-rule">Website Generation Rule</a></h2>
+<p>The website should increasingly be maintained by vertical content generation:</p>
+<pre><code class="language-text">D:\code\ccode implementation truth
+-> SelfDoc / MDO / manualgen / AI-friendly reviewed artifacts
+-> D:\dev\x64base-site public derivatives
+-> x64base.com published documentation
+</code></pre>
+<p>Hand edits are acceptable for framing and review, but important technical pages
+should be fed by repeatable reports whenever possible.</p>6:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$a"},"children":null}]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dev/current-lanes","className":"text-muted hover:text-fg","children":["← ","Current Work Lanes"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dev/developer-handbook","className":"text-muted hover:text-fg","children":["Developer Handbook"," →"]}]}]]}]
+8:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+9:["$","$Lb",null,{"children":["$","$c",null,{"name":"Next.MetadataOutlet","children":"$@d"}]}]
+d:null
