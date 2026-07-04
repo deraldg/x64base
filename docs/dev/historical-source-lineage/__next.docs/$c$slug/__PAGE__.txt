@@ -1,0 +1,258 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+3:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+e:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+f:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":["$L4","$L5"]}],"$L6"]}]}],"$L7","$L8","$L9","$La"]}]]}],["$Lb"],"$Lc"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"WLySREK_mblWnrbHf2or4"}
+4:["$","$L3",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}]
+5:["$","span",null,{"className":"text-border","children":"/"}]
+6:["$","li","/docs/dev/historical-source-lineage",{"className":"flex items-center gap-2","children":[["$","$L3",null,{"href":"/docs/dev/historical-source-lineage","className":"hover:text-fg","children":"Historical Source Lineage"}],null]}]
+7:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Historical Source Lineage"}]
+8:["$","p",null,{"className":"mt-2 text-muted","children":"A preservation and presentation model for xBase, XDLL, DotTalk, AI-assisted recovery, and modern DotTalk++ source versions."}]
+d:T247b,<p>This page starts the source museum for the x64base / DotTalk++ line. It does
+not replace Git history and it does not make product claims by itself. It
+preserves evidence about code families, dates, checksums, verification level,
+and the difference between original source, recovered builds, AI-assisted false
+starts, and the modern DotTalk++ implementation.</p>
+<p>The public rule is simple: <strong>originals stay preserved, analysis stays labeled,
+and current product claims must be backed by modern source or runtime proof.</strong></p>
+<h2 id="why-this-matters"><a class="no-underline" href="#why-this-matters">Why this matters</a></h2>
+<p>The older xBase code is compact and, in some places, more complete than the
+recent AI-assisted recovery attempts. The recovered <code>xbase2</code> line contains real
+index work. The later buildable DotTalk recovery folders contain useful command
+and DBF shell evidence, but their index layer is stubbed. The modern DotTalk++
+tree is much larger in scope: DBF flavors, DBF_64, VFP compatibility, LMDB/CDX
+indexing, table buffering, dirty/stale state, GUI/TUI workbench surfaces,
+SelfDoc, manualgen, and the Laboratory Campus documentation system.</p>
+<p>That contrast is important enough to preserve as a first-class documentation
+lane.</p>
+<h2 id="preservation-layout"><a class="no-underline" href="#preservation-layout">Preservation layout</a></h2>
+<p>Use a small archive structure rather than a loose pile of folders:</p>
+<pre><code class="language-text">archive/source-lineage/
+  1993-xbase/
+    original/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  1993-1996-xdll/
+    original/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  1995-xbase2-dottalk/
+    original/
+    buildable-msvc/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  2025-dottalk-recovery/
+    original/
+    ai-assisted/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+  2025-ai-assisted-false-starts/
+    gemini/
+    grok/
+    chatgpt/
+    copilot/
+    unknown/
+    MANIFEST.json
+    NOTES.md
+  2026-dottalkpp-modern/
+    references/
+    analysis/
+    MANIFEST.json
+    NOTES.md
+</code></pre>
+<p>Do not edit files under <code>original/</code>. Put build fixes, adapters, and notes in
+side folders.</p>
+<h2 id="manifest-fields"><a class="no-underline" href="#manifest-fields">Manifest fields</a></h2>
+<p>Each artifact should be described with a small record:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Purpose</th></tr></thead><tbody><tr><td><code>artifact_id</code></td><td>Stable local ID for cross-reference.</td></tr><tr><td><code>family</code></td><td><code>xbase</code>, <code>xdll</code>, <code>xbase2</code>, <code>dottalk-recovery</code>, <code>ai-assisted</code>, <code>dottalkpp-modern</code>.</td></tr><tr><td><code>path</code></td><td>Absolute local path or archive member path.</td></tr><tr><td><code>original_date</code></td><td>Original timestamp when available.</td></tr><tr><td><code>captured_date</code></td><td>Date brought into the current preservation set.</td></tr><tr><td><code>sha256</code></td><td>Checksum used to detect duplicates and drift.</td></tr><tr><td><code>language</code></td><td>C, C++, PowerShell, markdown, DBF sample, etc.</td></tr><tr><td><code>artifact_type</code></td><td><code>historical-source</code>, <code>historical-source-copy</code>, <code>recovery</code>, <code>ai-assisted</code>, <code>generated</code>, <code>modern-production</code>.</td></tr><tr><td><code>status</code></td><td><code>working</code>, <code>partial</code>, <code>stubbed</code>, <code>abandoned</code>, <code>merged</code>, <code>superseded</code>, <code>unknown</code>.</td></tr><tr><td><code>truth_level</code></td><td><code>file-found</code>, <code>source-reviewed</code>, <code>build-verified</code>, <code>runtime-verified</code>, <code>merged-into-modern</code>.</td></tr><tr><td><code>feature_tags</code></td><td>Examples: <code>dbf</code>, <code>index</code>, <code>relation</code>, <code>dll-export</code>, <code>cli</code>, <code>stub-index</code>, <code>real-index</code>.</td></tr><tr><td><code>ai_assist</code></td><td><code>none</code>, <code>chatgpt</code>, <code>gemini</code>, <code>grok</code>, <code>copilot</code>, <code>unknown</code>.</td></tr><tr><td><code>notes</code></td><td>Short human review note.</td></tr></tbody></table>
+<h2 id="first-source-families"><a class="no-underline" href="#first-source-families">First source families</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Family</th><th>Evidence path</th><th>Current read</th></tr></thead><tbody><tr><td>1993 xBase</td><td><code>D:\code\xbase\xbase.zip</code></td><td>Original archive includes <code>xbase/</code>, <code>xbase2/</code>, and <code>xdll/</code> members with 1993 and 1995 timestamps.</td></tr><tr><td>XDLL</td><td><code>D:\code\XDLL</code> and <code>D:\code\xbase\xbase.zip</code></td><td>DLL/export style branch with real index calls and distinct checksums.</td></tr><tr><td>xBase2 / DotTalk 1995</td><td><code>D:\code\xbase2</code></td><td>Strong historical candidate. Contains <code>DOTTALK.C</code>, DBF core, command layer, and real block-oriented <code>XBINDEX.C</code>.</td></tr><tr><td>gTalk / DotTalk recovery</td><td><code>D:\code\gTalk</code></td><td>Useful recovery and build-lane evidence. Index layer is a stub in this branch.</td></tr><tr><td>DotTalk old code recovery</td><td><code>C:\Users\deral\DotTalk\old code</code></td><td>Buildable/minimal recovery branch with prompt shell and DBF commands; index functions are stubbed.</td></tr><tr><td>AI-assisted false starts</td><td>Multiple local folders and notes</td><td>Preserve as experimental evidence, not product truth. Label Gemini/Grok/ChatGPT/Copilot work when known.</td></tr><tr><td>Modern DotTalk++ / x64base</td><td><code>D:\code\ccode</code></td><td>Current active product line and runtime truth source.</td></tr></tbody></table>
+<h2 id="index-lineage-correction"><a class="no-underline" href="#index-lineage-correction">Index lineage correction</a></h2>
+<p>The recovered DotTalk folders under <code>C:\Users\deral\DotTalk</code> and <code>D:\code\gTalk</code>
+have index vocabulary but stubbed index behavior. However, <code>D:\code\xbase2</code>
+contains real historical index work:</p>
+<ul>
+<li><code>D:\code\xbase2\XBINDEX.C</code> implements block-oriented index routines such as
+<code>make_index</code>, <code>first_key</code>, <code>next_key</code>, <code>find_key</code>, <code>add_key</code>, <code>openix</code>,
+<code>creatix</code>, block retrieval, free-list handling, insertion, split, and search
+helpers.</li>
+<li><code>D:\code\xbase2\XBCMDS.C</code> wires that index engine into <code>open_index</code>,
+<code>build_index</code>, <code>find</code>, and relation positioning.</li>
+</ul>
+<p>Website and manual copy should say the older index engine exists in the
+historical xBase2/XDLL line, while later AI/recovery-era DotTalk copies often
+stubbed it out.</p>
+<h2 id="ai-assisted-artifacts"><a class="no-underline" href="#ai-assisted-artifacts">AI-assisted artifacts</a></h2>
+<p>The AI-assisted folders are recent but often primitive relative to both the
+original C code and the modern DotTalk++ tree. They are still valuable because
+they show recovery attempts, naming drift, build shims, generated wrappers,
+GUI/TUI experiments, and false starts.</p>
+<p>Use these labels:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Label</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ai-assisted-experiment</code></td><td>Generated or heavily AI-shaped artifact; useful evidence, not product truth.</td></tr><tr><td><code>stubbed</code></td><td>Command or file exists but core behavior is missing.</td></tr><tr><td><code>superseded</code></td><td>Replaced by a stronger current implementation.</td></tr><tr><td><code>source-reviewed</code></td><td>A human reviewed source text enough to describe it.</td></tr><tr><td><code>build-verified</code></td><td>The artifact was compiled in a named environment.</td></tr><tr><td><code>runtime-verified</code></td><td>A command or feature was executed and captured.</td></tr></tbody></table>
+<h2 id="seed-manifest"><a class="no-underline" href="#seed-manifest">Seed manifest</a></h2>
+<p>The first checksum manifest is published as a website artifact:</p>
+<ul>
+<li><a href="/artifacts/source-lineage/source-lineage-seed.csv">source-lineage-seed.csv</a></li>
+</ul>
+<p>This seed should be expanded by a report-only script that scans known folders,
+hashes files, detects duplicates, inventories functions, and writes reviewable
+CSV/JSON output before anything is promoted to the manual or website.</p>
+<h2 id="website-presentation"><a class="no-underline" href="#website-presentation">Website presentation</a></h2>
+<p>This page belongs under Developer Resources, not on the homepage. The homepage
+can link to the broader documentation summary, but the detailed history should
+remain here with proof labels.</p>
+<p>Public wording should be conservative:</p>
+<blockquote>
+<p>x64base/DotTalk++ descends from historical xBase/DotTalk experiments and
+recovered C-era source. The archive includes original code, modern recovery
+work, and AI-assisted false starts. Each artifact is labeled by verification
+level so documentation reflects actual behavior, not aspiration.</p>
+</blockquote>9:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$d"},"children":null}]}]
+a:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dev/important-documents","className":"text-muted hover:text-fg","children":["← ","Important Documents"]}]}],["$","div",null,{"children":["$","$L3",null,{"href":"/docs/dev/application-ui-dsl-lane","className":"text-muted hover:text-fg","children":["Application UI DSL Lane"," →"]}]}]]}]
+b:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+c:["$","$Le",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@10"}]}]
+10:null
