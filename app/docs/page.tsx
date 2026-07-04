@@ -11,6 +11,7 @@ import {
   GraduationCap,
   LayoutPanelTop,
   MonitorCog,
+  Ruler,
   ScrollText,
   TerminalSquare
 } from "lucide-react";
@@ -50,6 +51,12 @@ const sectionSummary = [
     description: "Compare x64base with Harbour, xHarbour, Alaska Xbase++, XSharp, dBASE tools, and Python DBF libraries.",
     href: "/docs/engine/ecosystem-feature-comparison",
     icon: BarChart3
+  },
+  {
+    title: "x64 capacity math",
+    description: "Teach why records, offsets, memos, indexes, locks, and APIs must all move from x32 to x64 together.",
+    href: "/docs/engine/x64-capacity-math",
+    icon: Ruler
   },
   {
     title: "Application UI DSL lane",

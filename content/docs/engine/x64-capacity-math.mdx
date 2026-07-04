@@ -1,0 +1,123 @@
+---
+title: "x64 Capacity Math"
+description: "A lesson and matrix for why DBF-style systems change when records, offsets, memos, indexes, and APIs move from 32-bit to 64-bit."
+---
+
+This page is a lesson first and a specification matrix second. The important
+question is not only "what is the maximum?" The real question is:
+
+**Which part of the system still decides the maximum?**
+
+A table format can put a 64-bit record count in the header, but the system is
+not truly x64 all the way if navigation, locks, memo pointers, index payloads,
+or GUI APIs still pass record numbers through 16-bit or 32-bit slots.
+
+## Why x64 all the way?
+
+Classic DBF-family files are beautifully simple: a header, field descriptors,
+fixed-length records, optional memo sidecars, and indexes. That simplicity also
+means the math is visible. If a header field is 16 bits wide, its maximum is
+bounded by `2^16 - 1`. If a record counter is 32 bits wide, its natural ceiling
+is `2^32 - 1`, and many products impose lower practical limits for file size,
+locking, compatibility, or runtime memory.
+
+Going x64 changes the shape of the possible database:
+
+| Width | Unsigned maximum | What it means in a DBF-style engine |
+| --- | ---: | --- |
+| 8-bit | 255 | Classic one-byte field lengths and flags. |
+| 16-bit | 65,535 | Header length, record length, field offsets, and compact index limits in many classic paths. |
+| 32-bit | 4,294,967,295 | Record numbers, file offsets, memo blocks, lock offsets, and index payloads in many older engines. |
+| 64-bit | 18,446,744,073,709,551,615 | Large record counts, file offsets, memo object ids, index page addresses, and future table metadata. |
+
+The lesson is not that every table should contain trillions of records. The
+lesson is that each old counter becomes a choke point unless it is widened
+through the whole stack.
+
+## The choke-point chain
+
+For a DBF-style runtime to be truly 64-bit, the following layers need to agree:
+
+1. **Table header** - record count, record length, header length, and data-start offset.
+2. **Record navigation** - `GOTO`, `SKIP`, `RECNO`, EOF/BOF, append, delete, and scan loops.
+3. **Record locking** - lock-file names, lock offsets, owner records, and stale-lock cleanup.
+4. **Memo references** - in-row memo reference width and sidecar object/block addressing.
+5. **Index payloads** - key entries must carry wide record numbers and wide page or object offsets.
+6. **Expression/runtime APIs** - scalar functions, commands, GUI bindings, and scripting need wide-safe values.
+7. **Diagnostics and manuals** - reports must say whether a value is a design target, a header capability, or a runtime-proven limit.
+
+If any one of those layers still clamps a value to 16 or 32 bits, the system may
+have an x64 file header but not an x64 operating envelope.
+
+## x64base current truth
+
+x64base already has real x64 structure in the local source tree, but the honest
+documentation must separate **format direction** from **current runtime limit**.
+
+| Capacity item | Current x64base evidence | Documentation status |
+| --- | --- | --- |
+| Work areas / open table slots | `include/xbase.hpp` defines `MAX_AREA = 256`. | Runtime-evidenced current limit. |
+| Field count | `include/xbase.hpp` defines `MAX_FIELDS = 128`; current table-buffer bitsets and compatibility paths should be treated as 128-field current truth. | Runtime-evidenced current limit. |
+| Classic/VFP record count | Classic header uses signed 32-bit mirror; VFP header has a `uint32_t num_recs`, but some current paths mirror through signed 32-bit APIs. | Classic-compatible, with current runtime chokepoints. |
+| x64 record count | `include/xbase_64.hpp` stores `LargeHeaderExtension::record_count` as `uint64_t`; `DbArea` keeps `_rec_count64` and exposes `recCount64()`. | 64-bit header/runtime state exists; all command paths still need proof. |
+| Header/data-start size | x64 extension stores `data_start_64` as `uint64_t`, but current validation rejects values above `int16_t` range because the shared `DbArea` setter is still narrow. | Design target is x64; current open path has a 16-bit compatibility gate. |
+| Record size | x64 extension stores `record_size_64` as `uint64_t`, but current validation rejects values above `int16_t` range. | Design target is x64; current open path has a 16-bit compatibility gate. |
+| Table names | x64 naming policy supports 128-byte table names. | Source-evidenced x64 metadata policy. |
+| Field names | x64 naming policy supports 128-byte field names with 10-byte descriptor fallback tokens. | Source-evidenced x64 metadata policy; fallback remains classic-compatible. |
+| Field length metadata | `X64FieldMetaEntry::field_length` is `uint32_t`; `FieldDef.length` is also `uint32_t`. | Wider field-length metadata exists; current record-size gate still constrains practical rows. |
+| x64 memo references | x64 memo fields use an 8-byte object-id slot; DTX memo object ids, offsets, payload bytes, and append offsets are `uint64_t`. | Source-evidenced DTX/x64 memo architecture. |
+| Index record numbers | `include/xindex/key_common.hpp` defines `RecNo = std::uint64_t`, but several concrete backends still expose or store `uint32_t` record numbers. | Mixed: x64 index intent exists; backend-by-backend proof needed. |
+
+This is the exact reason the project should say **x64base is developing an
+x64 DBF-style architecture**, not that every command already has unlimited
+scale.
+
+## Ecosystem capacity matrix
+
+The values below are deliberately conservative. They compare published or
+source-evidenced limits, not sales claims.
+
+| Capacity / specification | x64base / DotTalk++ Workbench | Visual FoxPro 9 | dBASE / BDE dBASE | Harbour / xHarbour DBF-family | Alaska Xbase++ DBFDBE | Python DBF libraries |
+| --- | --- | --- | --- | --- | --- | --- |
+| Primary intent | Educational-first open architecture and x64 DBF-style research system | Mature desktop database/runtime | Commercial DBF database/tooling lineage | Open Clipper/xBase compiler/runtime ecosystem | Commercial modernization/runtime platform | Utility libraries for reading/writing DBF files |
+| Open table/work areas | 256 current runtime areas | 65,535 tables open at one time, memory/file-handle limited | 256-512 open dBASE tables per system depending BDE generation | Implementation/runtime dependent | Runtime/DBE dependent | Not a work-area engine |
+| Records per table | x64 header has 64-bit record count; current command proof still needed beyond 32-bit chokepoints | 1 billion | 1 billion | Often described by DBF structure as up to `2^32 - 1` records, implementation dependent | `(lock offset - header - 1) / record size` | Follows target DBF dialect and library implementation |
+| DBF/table file size | x64 design target is wide offsets; current runtime proof is in progress | 2 GB table file | 2 GB table file | Format/backend discussions cite much larger theoretical DBF ceilings, but product/backend dependent | Default lock-offset model around 1 GB unless configured | Usually inherits classic/VFP file limits and Python/runtime memory constraints |
+| Record size | x64 header field is 64-bit, but current open validator still gates through `int16_t` range | 65,500 characters per record | 4,000 bytes dBASE 4; 32,767 bytes dBASE for Windows | Often tied to 16-bit record-size structure, around 65,535 bytes | Fixed-length DBF rows; character fields up to 64 KB | Dialect dependent |
+| Fields per table | 128 current runtime truth | 255, or 254 when nullable-field overhead applies | 255 dBASE 4; 1024 dBASE for Windows | Backend/dialect dependent | Listed as not limited by DBFDBE table, but practical DBF/runtime limits apply | Dialect/library dependent |
+| Character field width | Wider x64 metadata exists, but current row size gates practical width | 254 | 254 | Dialect/backend dependent; some readers note extended 16-bit character widths | Character values max 64 KB | Library/dialect dependent; `dbfread` documents up to 65,535 for reused length bytes |
+| Free-table field names | 10-byte fallback descriptor token; x64 metadata supports 128-byte names | 10 chars free table; 128 chars in database-contained table | dBASE/BDE table and field name size listed as 31 characters in general limits | Classic DBF-compatible fallback usually short names | DBF/Clipper-compatible rules | Dialect/library dependent |
+| Memo file / object scale | DTX uses 64-bit object ids, offsets, payload sizes, and append offsets; proof lane active | 2 GB FPT file | Memo/Blob limits product dependent; BDE Paradox lists 256 MB BLOB, dBASE memo limits vary by format | Backend dependent; public discussions cite large DBT/FPT/SMT ceilings | Memo text length and memo file size limited by system resources in DBFDBE docs | Dialect/library dependent |
+| Index key / index file scale | CDX/LMDB/xindex lanes active; mixed 32/64-bit record-number proof required | Compact index key 240 bytes; non-compact 100 bytes | 47 MDX tags; 220-character key expression | Backend dependent: NTX/CDX/other RDDs | Requires ORDER component such as NTXDBE/CDXDBE | Usually no native persistent index engine |
+| Locking model | Record locks exist; x64 lock strategy must avoid 32-bit lock-offset assumptions | Product/runtime managed | 100 record locks per dBASE table in listed BDE limits | Runtime/RDD dependent | DBF file size tied to record-lock offset model | Not a multi-user DBF engine |
+| Internationalization | Message catalog and locale lanes in progress | Code pages/collation settings | BDE/codepage dependent | Ecosystem/runtime dependent | OEM/ANSI conversion through `SET CHARSET` | Python ecosystem dependent |
+| SQL / relational support | SQL bridge, relation graph, workspaces, and DDL lanes active with caveats | SQL SELECT/update support in VFP runtime | SQL through BDE/tooling | Libraries and drivers | Database engines and migration tooling | Python DB/CSV/DBF tooling rather than native xBase work areas |
+
+## Student exercise: find the hidden 32-bit ceiling
+
+Take any proposed x64 feature and ask these questions:
+
+| Question | Why it matters |
+| --- | --- |
+| Is the value stored on disk as 64-bit? | If not, the file format itself is the ceiling. |
+| Is the value kept in memory as 64-bit? | If not, large values are lost after open. |
+| Do commands accept and print the value as 64-bit? | If not, scripts and diagnostics lie. |
+| Do locks, indexes, and memos carry the same width? | If not, mutation and navigation break before storage does. |
+| Do GUI/TUI/API bindings expose the wide value? | If not, the engine may be wider than the application surface. |
+
+For x64base, that exercise produces real engineering lanes:
+
+- widen remaining `int16_t` geometry paths for record length and data-start.
+- audit every `int32_t` and `uint32_t` record-number path.
+- prove x64 record navigation, append, delete, replace, lock, and scan behavior.
+- prove index backends with 64-bit record payloads.
+- keep fallback descriptor tokens for DBF interoperability while preserving x64 vector names.
+- make the manuals report current, proven, planned, and design-target limits separately.
+
+## Source notes
+
+- x64base local source evidence: `D:\code\ccode\include\xbase.hpp`, `include\xbase_vfp.hpp`, `include\xbase_64.hpp`, `include\memo\dtx_format.hpp`, and `include\memo\memostore.hpp`.
+- dBASE/BDE limits: [dBASE BDE Limits](https://www.dbase.com/Knowledgebase/faq/dBASE_Limits_FAQ.html).
+- Visual FoxPro limits: [Visual FoxPro System Capacities](https://www.yaldex.com/fox_pro_tutorial/html/6e27027b-806b-4f96-b7e5-5f24af2901e0.htm).
+- Alaska Xbase++ DBFDBE limits: [DBFDBE data component](https://doc.alaska-software.com/content/dbespec_h2_dbfdbe_data_component.cxp).
+- Python DBF field-type note: [dbfread field types](https://dbfread.readthedocs.io/en/latest/field_types.html).

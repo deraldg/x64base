@@ -19,6 +19,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Architecture", href: "/docs/engine/architecture" },
       { label: "xBase Ecosystem Context", href: "/docs/engine/xbase-ecosystem-context" },
       { label: "Ecosystem Feature Comparison", href: "/docs/engine/ecosystem-feature-comparison" },
+      { label: "x64 Capacity Math", href: "/docs/engine/x64-capacity-math" },
       { label: "DBF Flavors and Index Defaults", href: "/docs/engine/dbf-flavors-and-indexes" },
       { label: "DBF_64 Specification", href: "/docs/engine/dbf-64-specification" },
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
