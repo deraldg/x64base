@@ -44,12 +44,12 @@ export const docsSidebar: SidebarGroup[] = [
     ]
   },
   {
-    label: "Talk Family",
+    label: "DotTalk++ Workbench",
     items: [
       { label: "TupTalk", href: "/docs/talk-family/tuptalk" },
       { label: "TableTalk", href: "/docs/talk-family/tabletalk" },
       { label: "RelTalk", href: "/docs/talk-family/reltalk" },
-      { label: "ArcticTalk", href: "/docs/talk-family/arctictalk" }
+      { label: "ArcticTalk TUI", href: "/docs/talk-family/arctictalk" }
     ]
   },
   {

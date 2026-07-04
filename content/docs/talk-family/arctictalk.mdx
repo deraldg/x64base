@@ -1,24 +1,23 @@
 ---
 title: "ArcticTalk"
-description: "Public front-end umbrella for GUI, TUI, shell-bridge, and repeatable maintenance lanes."
+description: "Code name for the DotTalk++ Workbench TUI surface."
 ---
 
 ## What it does
 
-ArcticTalk is the public umbrella for the DotTalk++ front-end family.
+ArcticTalk is the code name for the DotTalk++ Workbench TUI surface.
 
-Within that umbrella, fox-derived subsystem names such as `Foxtalk` remain
-valid lineage names, and repeatable maintenance/automation workflows remain part
-of the same family.
+The family group is **DotTalk++ Workbench**. ArcticTalk should not be used as
+the umbrella name for all GUI, browser, shell, and workflow surfaces.
 
-Its subject is the workbench/front-end layer around the runtime:
+Its subject is the terminal/TUI presentation layer around the runtime:
 
-- GUI and TUI presentation
-- shell-bridge and command-lane work
-- repeatable smoke, indexing, and maintenance workflows
-- helper tooling that makes the runtime easier to inspect, teach, and operate
+- TUI menus and panels
+- tuple grids and record popups
+- command/output panes in the TUI shell
+- keyboard-driven workbench interaction
 
-Runtime screenshots for the current ArcticTalk GUI/TUI evidence lane are collected in the [LabTalk Runtime Evidence Gallery](/docs/labtalk/runtime-evidence).
+Runtime screenshots for the current ArcticTalk TUI evidence lane are collected in the [LabTalk Runtime Evidence Gallery](/docs/labtalk/runtime-evidence).
 
 Real local command surfaces and workflow anchors include:
 
@@ -35,9 +34,9 @@ WORKSPACE SAVE <name>
 WORKSPACE LOAD <name>
 ```
 
-The local source also includes DotScript scripts, smoke checks, maintenance
-lanes, and generated proposal packages. Treat this as active workflow
-infrastructure, not as a separate finished batch product.
+DotScript scripts, smoke checks, maintenance lanes, GUI previews, and generated
+proposal packages belong under the broader DotTalk++ Workbench family, not under
+ArcticTalk unless they are specifically TUI-facing.
 
 See [Current Project Truth](/docs/dev/project-truth) and
 [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication), plus the

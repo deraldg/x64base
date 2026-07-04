@@ -5,9 +5,9 @@ const products = [
   { slug: "dottalk", title: "DotTalk++", description: "Canonical command shell, scripting surface, and teaching runtime." },
   { slug: "dotscript", title: "DotScript", description: "Script language for repeatable command files, loops, variables, comments, and automation." },
   { slug: "tuptalk", title: "TupTalk", description: "Tuple-facing record views, projections, export, validation, and relation-aware row output." },
-  { slug: "tabletalk", title: "TableTalk", description: "Table, field, work-area, order, cursor, and browser inspection workflows." },
+  { slug: "tabletalk", title: "TableTalk", description: "Table buffering, dirty/stale state, commit/rollback, and buffered mutation workflows." },
   { slug: "reltalk", title: "RelTalk", description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal." },
-  { slug: "arctictalk", title: "ArcticTalk", description: "Public front-end umbrella for GUI, TUI, shell-bridge, and repeatable maintenance lanes." },
+  { slug: "arctictalk", title: "ArcticTalk", description: "Code name for the DotTalk++ Workbench TUI surface." },
   { slug: "labtalk", title: "LabTalk", description: "Laboratory campus for DotTalk++, x64base, lessons, and proof-aware learning." }
 ];
 

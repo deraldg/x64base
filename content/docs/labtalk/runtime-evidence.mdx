@@ -1,6 +1,6 @@
 ---
 title: "Runtime Evidence Gallery"
-description: "Screenshot evidence for ArcticTalk, LabTalk Portal, workspaces, table browsing, tuple output, and SelfDoc-facing manual/website proof."
+description: "Screenshot evidence for DotTalk++ Workbench, ArcticTalk TUI, LabTalk Portal, workspaces, table browsing, tuple output, and SelfDoc-facing manual/website proof."
 ---
 
 This page records visual evidence from the local runtime. These images are evidence artifacts for the manual and website, not product screenshots claiming a finished release.
@@ -9,20 +9,20 @@ Evidence date: July 3, 2026.
 
 Screenshot media is curated like the rest of the documentation system: stable filename, evidence ID, source capture, caption, interpretation boundary, and review-before-promotion. Duplicate captures are not repeated unless they show a distinct runtime state.
 
-## ArcticTalk Workspace Areas
+## DotTalk++ Workbench Workspace Areas
 
-![ArcticTalk workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF](/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg)
+![DotTalk++ Workbench workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF](/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg)
 
 Observed evidence:
 
-- ArcticTalk GUI shell is running against `TEACHERS.DBF`.
+- DotTalk++ Workbench GUI evidence is running against `TEACHERS.DBF`. The captured build/window may still show the older Arctic code-name text; the product-family name is DotTalk++ Workbench.
 - Workspace pane lists 12 DBF areas: `BUILDING.DBF`, `CLASSES.DBF`, `COURSES.DBF`, `DEPT.DBF`, `ENROLL.DBF`, `MAJORS.DBF`, `ROOMS.DBF`, `STUD_MAJ.DBF`, `STUDENTS.DBF`, `TASSIGN.DBF`, `TEACHERS.DBF`, and `TERMS.DBF`.
 - Runtime output reports `WORKSPACE LOAD: restored 12 area(s) and 15 relation(s)`.
 - GUI mirror reports 12 GUI areas created from the `mcc_x64.dtschema` workspace.
 
 ## Table Browser and CDX/LMDB Evidence
 
-![ArcticTalk TEACHERS.DBF browse grid with CDX/LMDB order status](/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg)
+![DotTalk++ Workbench TEACHERS.DBF browse grid with CDX/LMDB order status](/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg)
 
 Observed evidence:
 
@@ -33,11 +33,11 @@ Observed evidence:
 
 ## Command Output Readback
 
-![ArcticTalk workspace table view with command output readback](/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg)
+![DotTalk++ Workbench workspace table view with command output readback](/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg)
 
 Observed evidence:
 
-- ArcticTalk can show table/workspace state and command-output readback in the same GUI.
+- DotTalk++ Workbench can show table/workspace state and command-output readback in the same GUI.
 - The output pane preserves diagnostic text for later manual or SelfDoc review.
 - This supports the policy that GUI evidence should cite visible runtime text, not only visual layout.
 
@@ -51,13 +51,13 @@ Observed evidence:
 - The Docs section shows items including `LabTalk README`, `Campus Architecture`, `Education Map`, `Portal Concept`, and `Database Literacy Starter Lab`.
 - The preview pane resolves a document record with ID, section, kind, and local path.
 
-## TUI Tuple and Record Browser
+## ArcticTalk TUI Tuple and Record Browser
 
 ![ArcticTalk terminal TUI showing tuple grid and record popup](/images/evidence/arctictalk-tui-tuple-grid-record-evidence-20260703.jpg)
 
 Observed evidence:
 
-- Terminal/TUI shell shows ArcticTalk menus and command/output panes.
+- Terminal/TUI shell shows the ArcticTalk code-name surface with menus and command/output panes.
 - Tuple grid displays joined fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, and `tassign.CLS_ID`.
 - A record popup displays `BLDG` and `NAME` for a related record.
 - This supports the SmartBrowser/TupTalk/RelTalk evidence lane: tuple output, relation readback, and record inspection are visible in the runtime.
@@ -125,7 +125,8 @@ Observed evidence:
 
 For manual generation, these screenshots should be cited as reviewed media evidence. They support sections on:
 
-- ArcticTalk GUI and TUI surfaces.
+- DotTalk++ Workbench GUI surfaces.
+- ArcticTalk TUI code-name surface.
 - Workspace/area restoration.
 - Table browsing and SmartList/browser lanes.
 - CDX/LMDB order diagnostics.

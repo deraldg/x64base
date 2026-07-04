@@ -43,6 +43,32 @@ Current `REPLACE_MULTI` contract says buffering/`COMMIT`/`ROLLBACK` integration 
 
 For `MULTIREP`/`REPLACE_MULTI`, changed fields are marked `STALE` only if direct index maintenance fails. It does not mark the table buffer `DIRTY`.
 
+## Runtime evidence example
+
+This transcript demonstrates TableTalk/table-buffer behavior for `REPLACE`:
+
+```text
+. set table buffer on
+TABLE BUFFER: ON (area 8)
+. tup
+50000000 | Taylor | Derald | 19921225 | X | CSCI | 20250220 | 2.97 | quinn.taylor0@student.mcc.edu
+. replace dob with 19931225
+REPLACE: invalid date for field.
+. replace dob with "19931225"
+. table
+TABLE BUFFER: occupied areas only
+  enabled=1 dirty=1 stale=1
+  Area 8: DBF=STUDENTS.DBF | buffer=ON | mode=RAM | DIRTY | STALE [DOB] | rows: 1 changes (1 recnos)
+```
+
+Observed behavior:
+
+- `SET TABLE BUFFER ON` enables buffering for the current area.
+- Unquoted numeric `19931225` fails date validation for `DOB`.
+- Quoted `"19931225"` is accepted by the `REPLACE` path.
+- `TABLE` reports the current area as `buffer=ON`, `DIRTY`, and `STALE [DOB]`.
+- The buffered edit is recorded as one pending row change, not immediately promoted as clean storage.
+
 ## Type and memo handling
 
 The mutator commands validate and normalize before storage:

@@ -1,46 +1,43 @@
 ---
 title: "TableTalk"
-description: "Table, field, work-area, order, cursor, and browser inspection workflows."
+description: "Table buffering, dirty/stale state, commit/rollback, and buffered table mutation workflows."
 ---
 
 ## What it does
 
-TableTalk names the table-facing inspection workflows exposed through DotTalk++.
+TableTalk names the table-buffering lane exposed through DotTalk++.
 
-Its subject is visible database state at the table/work-area level:
+Its subject is buffered table state:
 
-- which table is open
-- which work area is active
-- what fields and structure exist
-- what order/index is attached
-- where the cursor is
-- how rows are listed or browsed
+- whether table buffering is ON or OFF
+- whether an area is clean or DIRTY
+- whether fields are fresh or STALE
+- which records have buffered changes
+- how `COMMIT` and `ROLLBACK` finish or discard pending edits
+- how mutators such as `REPLACE` and `CALCWRITE` interact with the buffer
 
 Real local command surfaces include:
 
 ```text
-USE <table>
-SELECT <n>
-SELECT <alias>
-AREA
-DBAREA
-DBAREAS
-STRUCT
-FIELDS
-LIST
-SMARTLIST
-SMARTBROWSE
-SMART
-SM
-SIMPLEBROWSE
-SB
-BROWSE
-BROWSER
-BROWSETUI
+SET TABLE BUFFER ON
+SET TABLE BUFFER OFF
+SET TABLE BUFFER ON ALL
+SET TABLE BUFFER OFF ALL
+TABLE
+TABLE BUFFER STATUS
+TABLE BUFFER DUMP
+COMMIT
+ROLLBACK
+REPLACE <field> WITH <value>
+CALCWRITE <field> = <expr>
 ```
 
-These workflows are about visible table state: fields, records, current work
-area, current order, current cursor, and browser/list output.
+These workflows are about table-buffer state, not generic table browsing. Use
+SmartList, SmartBrowse, SimpleBrowse, and the browser pages for visible
+listing/browsing surfaces.
+
+Runtime evidence should show output like `buffer=ON`, `DIRTY`, `STALE [field]`,
+and buffered row counts before promoting a TableTalk claim.
 
 See [Current Project Truth](/docs/dev/project-truth) and the canonical public
 repo [deraldg/x64base](https://github.com/deraldg/x64base).

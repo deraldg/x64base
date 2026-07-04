@@ -1,25 +1,24 @@
 ---
 title: "TableTalk"
-description: "Table, field, work-area, order, cursor, and browser inspection workflows."
+description: "Table buffering, dirty/stale state, commit/rollback, and buffered table mutation workflows."
 ---
 
 ## Overview
 
-TableTalk is the site label for table-facing inspection workflows. In the local
-source, those workflows are exposed through DotTalk++ commands and browser
-surfaces rather than a separate polished TableTalk executable.
+TableTalk is the product/lane name for table buffering in DotTalk++.
 
-Its subject is visible table/work-area state: what is open, where the cursor is,
-what fields exist, what order is attached, and how rows are listed or browsed.
+Its subject is not general table manipulation or table browsing. Its subject is
+the buffered editing state around open DBF areas: ON/OFF buffering, DIRTY versus
+clean state, STALE versus fresh fields, buffered row changes, and the
+`COMMIT`/`ROLLBACK` lifecycle.
 
 Relevant runtime areas include:
 
-- `USE`, `SELECT`, `AREA`, `DBAREA`, and `DBAREAS`.
-- `STRUCT`, `FIELDS`, and field/record inspection.
-- `SMARTLIST`, `SL`, `LIST`, and order-aware listing work.
-- `SMARTBROWSE` / `SM` / `SMART` record browsing.
-- `SIMPLEBROWSE` / `SB` simple browsing.
-- `BROWSE`, `BROWSER`, and `BROWSETUI` table browser surfaces.
-- schema, DDL, data dictionary, and metadata catalog work.
+- `SET TABLE BUFFER ON|OFF [ALL]`.
+- `TABLE` and `TABLE BUFFER STATUS` reporting.
+- `TABLE BUFFER DUMP` for buffered change inspection.
+- `REPLACE` and `CALCWRITE` when buffering is ON.
+- `COMMIT` and `ROLLBACK`.
+- dirty/stale field evidence such as `DIRTY | STALE [DOB]`.
 
 See [TableTalk docs](/docs/talk-family/tabletalk), [Current Project Truth](/docs/dev/project-truth), and the canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).
