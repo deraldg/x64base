@@ -1,11 +1,15 @@
 ---
 title: "TupTalk"
-description: "Tuple and relation-aware inspection work around DotTalk++ browser surfaces."
+description: "Tuple-facing record views, projections, export, validation, and relation-aware row output."
 ---
 
 ## Overview
 
-TupTalk is best described today as the tuple-facing part of the DotTalk++ inspection model, not a separately finished standalone product.
+TupTalk is best described today as the tuple-facing part of the DotTalk++
+inspection model, not a separately finished standalone product.
+
+Its subject is the row as a tuple: current record display, projected row output,
+tuple export, tuple validation, and relation-derived tuple grids.
 
 The local command surface includes tuple and browser-related commands such as:
 
@@ -18,9 +22,9 @@ The local command surface includes tuple and browser-related commands such as:
 
 ## Typical tasks
 
-- Inspect current area and workspace state.
-- Review tuple-style rows.
-- Explore relation-derived output.
+- Inspect current rows as tuples instead of raw table internals.
+- Review projected tuple-style rows.
+- Explore relation-derived row output.
 - Validate tuple/export behavior while keeping table mutation separate.
 
-See [TupTalk docs](/docs/talk-family/tuptalk) and [Current Project Truth](/docs/dev/project-truth).
+See [TupTalk docs](/docs/talk-family/tuptalk), [Current Project Truth](/docs/dev/project-truth), and the canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).

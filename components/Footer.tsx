@@ -11,9 +11,28 @@ export function Footer() {
               A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026.
             </p>
             <p className="mt-4 text-xs text-muted">
-              x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, and TurboTalk® are
-              trademarks of Derald.
+              x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, ArcticTalk®, and
+              LabTalk® are trademarks of Derald R Grimwood Jr.
             </p>
+            <div className="mt-4 flex flex-wrap gap-4 text-xs">
+              <a
+                href="https://github.com/deraldg/x64base"
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted hover:text-fg"
+              >
+                GitHub: x64base
+              </a>
+              <Link href="/docs/dev/selfdoc-website-publication" className="text-muted hover:text-fg">
+                SelfDoc → Website
+              </Link>
+              <Link href="/about/contributors" className="text-muted hover:text-fg">
+                Contributors
+              </Link>
+              <Link href="/licensing/third-party-acknowledgements" className="text-muted hover:text-fg">
+                Third-party credits
+              </Link>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
             <Link href="/docs" className="text-muted hover:text-fg">
@@ -38,7 +57,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
-          <span>© 1993–2026 Derald. All rights reserved.</span>
+          <span>© 1993–2026 Derald R Grimwood Jr. All rights reserved.</span>
           <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
         </div>
       </div>

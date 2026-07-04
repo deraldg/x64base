@@ -1,11 +1,20 @@
 ---
 title: "TableTalk"
-description: "Table, schema, work-area, and browser inspection workflows."
+description: "Table, field, work-area, order, cursor, and browser inspection workflows."
 ---
 
 ## What it does
 
 TableTalk names the table-facing inspection workflows exposed through DotTalk++.
+
+Its subject is visible database state at the table/work-area level:
+
+- which table is open
+- which work area is active
+- what fields and structure exist
+- what order/index is attached
+- where the cursor is
+- how rows are listed or browsed
 
 Real local command surfaces include:
 
@@ -17,12 +26,15 @@ AREA
 DBAREA
 DBAREAS
 STRUCT
+FIELDS
 LIST
 SMARTLIST
 SMARTBROWSE
 ARTBROWSE
 ```
 
-These workflows are about visible table state: fields, records, current work area, current order, current cursor, and browser/list output.
+These workflows are about visible table state: fields, records, current work
+area, current order, current cursor, and browser/list output.
 
-See [Current Project Truth](/docs/dev/project-truth).
+See [Current Project Truth](/docs/dev/project-truth) and the canonical public
+repo [deraldg/x64base](https://github.com/deraldg/x64base).

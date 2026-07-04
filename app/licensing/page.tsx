@@ -12,6 +12,11 @@ const items = [
     href: "/licensing/labtalk-non-profit-license",
     title: "LabTalk Non-Profit License",
     description: "Free usage for non-profits and learning labs."
+  },
+  {
+    href: "/licensing/third-party-acknowledgements",
+    title: "Third-Party Acknowledgements",
+    description: "Credits and official links for libraries, tools, and website dependencies."
   }
 ];
 

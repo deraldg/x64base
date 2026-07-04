@@ -1,0 +1,72 @@
+---
+title: "CDX and LMDB Indexing"
+description: "How CDX acts as the logical index container while LMDB supplies the physical index backend."
+---
+
+## Teaching Model
+
+The LabTalk explanation should start with the learner-visible model:
+
+1. A table stores records.
+2. A CDX container stores named logical tags for that table.
+3. An active order changes navigation without changing physical record order.
+4. LMDB is the backend index environment that makes the built order durable and fast.
+
+That distinction matters. CDX is the container, creator, and manager surface for indexes in the xBase lineage. LMDB is the embedded database technology used underneath the modern x64base implementation.
+
+## Source Evidence
+
+The current source tree shows this split in several places:
+
+- `include/cdx/cdx.hpp` defines the minimal CDX container contract: header I/O, table binding, tag directory read/write, and add/drop tag operations.
+- `src/cli/cmd_cdx.cpp` exposes CDX container management commands.
+- `src/cli/cmd_buildlmdb.cpp` builds or rebuilds the LMDB backing store for a CDX container.
+- `src/cli/cmd_setorder.cpp` documents the policy: v64 tables use a CDX container backed by LMDB; public CDX paths resolve under `INDEXES`, while backend LMDB paths resolve under `LMDB`.
+- `docs/cases/CASE_ENG_010_INDEX_NAVIGATION_CDX_LMDB.md` states the teaching rule directly: CDX is the user-facing logical container, and LMDB is a backend implementation detail.
+
+## Operational Flow
+
+```text
+DBF_64 / table area
+  -> CDX container
+       -> tag directory
+       -> table binding
+       -> logical order names
+  -> BUILDLMDB
+       -> LMDB environment
+       -> named backend databases for tags
+  -> SET ORDER / SEEK / INDEXSEEK / LIST_LMDB
+       -> ordered navigation and diagnostics
+```
+
+In the lab campus, this gives us a clean horizontal slice. A student can see record storage, index metadata, backend materialization, and navigation behavior as separate layers of the same system.
+
+## Command Surface
+
+| Command area | Role |
+| --- | --- |
+| `CDX` | Create and inspect the logical CDX container and tag directory. |
+| `SETCDX` | Attach a CDX container to the current work area. |
+| `BUILDLMDB` | Materialize or rebuild the LMDB backend for the current CDX/tag model. |
+| `SETLMDB` | Attach or configure the LMDB backend path where needed. |
+| `SET ORDER` | Activate a logical tag/order for navigation. |
+| `INDEXSEEK` | Seek through index-backed navigation. |
+| `LIST_LMDB` / `LMDBDUMP` / `LMDB_UTIL` | Inspect backend state for diagnostics and advanced lessons. |
+
+## Why This Fits LabTalk
+
+LabTalk is a laboratory campus, so the index system should be presented as a set of rooms:
+
+- **Records room** - physical table rows and record numbers.
+- **Container room** - CDX headers, table binding, and tag directory.
+- **Backend room** - LMDB environment, named databases, and rebuild lifecycle.
+- **Navigation room** - `SET ORDER`, `SEEK`, `SKIP`, `TOP`, and `BOTTOM`.
+- **Diagnostics room** - command output, case stories, runtime proofs, and SelfDoc contracts.
+
+This lets the same feature serve CS101, database history, systems programming, and advanced runtime inspection without changing the underlying architecture.
+
+## Third-Party Credit
+
+LMDB is the Lightning Memory-Mapped Database Manager by Howard Chu / Symas and the OpenLDAP project. The official LMDB documentation is available at [lmdb.tech](https://www.lmdb.tech/doc/).
+
+Project-wide library credits are maintained in [Third-Party Acknowledgements](/licensing/third-party-acknowledgements).

@@ -1,0 +1,78 @@
+---
+title: "Function Catalog"
+description: "Source-derived DotTalk++ expression function catalog."
+---
+
+This page is generated from `D:\code\ccode\src\cli\expr\function_catalog.cpp`, which is the current source-side documentation catalog for expression functions.
+
+The student extension function examples live separately in `D:\code\ccode\src\ext\fn\fn_student_text_autoreg.cpp`; they demonstrate how learners can add self-registering functions without changing the core catalog.
+
+Source extraction snapshot: `63` documented expression functions.
+
+## Source-Derived Functions
+
+| Function | Aliases | Category | Args | Summary |
+| --- | --- | --- | --- | --- |
+| `UPPER` |  | String | 1 | Convert text to uppercase. |
+| `LOWER` |  | String | 1 | Convert text to lowercase. |
+| `ALLTRIM` |  | String | 1 | Trim leading and trailing spaces from a string value. |
+| `LTRIM` |  | String | 1 | Trim leading spaces from a string value. |
+| `RTRIM` | TRIM | String | 1 | Trim trailing spaces from a string value. |
+| `LEFT` |  | String | 2 | Return the leftmost characters of a string. |
+| `RIGHT` |  | String | 2 | Return the rightmost characters of a string. |
+| `SUBSTR` |  | String | 2-3 | Return a substring starting at a 1-based position. |
+| `LEN` |  | Numeric | 1 | Return the length of a string value. |
+| `SOUNDEX` |  | Search | 1 | Return a four-character phonetic Soundex code for a character expression. |
+| `AT` |  | Search | 2-3 | Return the 1-based position of a substring occurrence. |
+| `ATC` |  | Search | 2-3 | Return the 1-based position of a substring occurrence, case-insensitive. |
+| `LIKE` |  | Logical | 2 | Match a value against a wildcard pattern. |
+| `STR` |  | Conversion | 1-3 | Convert a numeric value to a formatted string. |
+| `VAL` |  | Conversion | 1 | Extract the leading numeric portion of a string. |
+| `CONCAT` | STRCAT | Construction | 1-32 | Concatenate all arguments into a single string. |
+| `ASC` |  | String | 1 | Return the character code of the first character in a string. |
+| `CHR` |  | String | 1 | Return the single-character string for a numeric character code. |
+| `CHRTRAN` |  | String | 3 | Replace characters in a string by position-mapped translation. |
+| `EMPTY` |  | Logical | 1 | Return whether a value is empty according to expression-engine rules. |
+| `RAT` |  | Search | 2 | Return the 1-based position of the last occurrence of a substring. |
+| `REPLICATE` |  | Construction | 2 | Repeat a string value a specified number of times. |
+| `SPACE` |  | Construction | 1 | Return a string containing the requested number of spaces. |
+| `STRTRAN` |  | String | 3 | Replace occurrences of a substring within a string. |
+| `TRANSFORM` |  | Conversion | 1-2 | Convert a value to display-oriented character form. |
+| `DATE` |  | Date | 0 | Return the current system date. |
+| `TODAY` |  | Date | 0 | Return the current system date. |
+| `NOW` |  | Date | 0 | Return the current date/time value. |
+| `DATETIME` |  | Date | 0 | Return the current date/time value. |
+| `TIME` |  | Date | 0 | Return the current system time. |
+| `SECONDS` |  | Date | 0 | Return the current time expressed as seconds-of-day or equivalent engine-specific seconds value. |
+| `CTOD` |  | Date | 1 | Convert a character string to a date value. |
+| `DTOC` |  | Date | 1-2 | Convert a date value to character form. |
+| `DTOS` |  | Date | 1 | Convert a date value to sortable character form. |
+| `DAY` |  | Date | 1 | Return the day-of-month component of a date. |
+| `MONTH` |  | Date | 1 | Return the month component of a date. |
+| `YEAR` |  | Date | 1 | Return the year component of a date. |
+| `DOW` |  | Date | 1 | Return the day-of-week number for a date. |
+| `CDOW` |  | Date | 1 | Return the day-of-week name for a date. |
+| `CMONTH` |  | Date | 1 | Return the month name for a date. |
+| `DATEADD` |  | Date | 2 | Return a new date shifted by a specified interval. |
+| `DATEDIFF` |  | Date | 2 | Return the difference between two date values. |
+| `GOMONTH` |  | Date | 2 | Return a date shifted by a specified number of months. |
+| `ABS` |  | Numeric | 1 | Return the absolute value of a numeric expression. |
+| `INT` |  | Numeric | 1 | Return the integer portion of a numeric value. |
+| `ROUND` |  | Numeric | 1-2 | Round a numeric value to a specified number of decimal places. |
+| `MIN` |  | Numeric | 2-32 | Return the smallest value from two or more numeric expressions. |
+| `MAX` |  | Numeric | 2-32 | Return the largest value from two or more numeric expressions. |
+| `MOD` |  | Numeric | 2 | Return the remainder from dividing one numeric value by another. |
+| `SQRT` |  | Numeric | 1 | Return the square root of a numeric value. |
+| `LOG` |  | Numeric | 1 | Return the natural logarithm of a numeric value. |
+| `LOG10` |  | Numeric | 1 | Return the base-10 logarithm of a numeric value. |
+| `EXP` |  | Numeric | 1 | Return e raised to the power of the supplied numeric value. |
+| `SIN` |  | Numeric | 1 | Return the sine of an angle expressed in radians. |
+| `COS` |  | Numeric | 1 | Return the cosine of an angle expressed in radians. |
+| `TAN` |  | Numeric | 1 | Return the tangent of an angle expressed in radians. |
+| `ASIN` |  | Numeric | 1 | Return the arc-sine of a numeric value. |
+| `ACOS` |  | Numeric | 1 | Return the arc-cosine of a numeric value. |
+| `ATAN` |  | Numeric | 1 | Return the arc-tangent of a numeric value. |
+| `CEILING` |  | Numeric | 1 | Return the smallest integer greater than or equal to the numeric value. |
+| `FLOOR` |  | Numeric | 1 | Return the largest integer less than or equal to the numeric value. |
+| `BETWEEN` |  | Numeric | 3 | Return whether a numeric value lies within an inclusive lower and upper bound. |
+| `RAND` |  | Numeric | 0 | Return a pseudo-random numeric value. |

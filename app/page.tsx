@@ -52,7 +52,7 @@ const lanes = [
   },
   {
     title: "Teach with the shell",
-    text: "Use DotTalk++ and LabTalk material for labs, command literacy, and database fundamentals.",
+    text: "Use DotTalk++, ArcticTalk, and LabTalk material for labs, front-end learning, command literacy, and database fundamentals.",
     href: "/docs/dottalk/curriculum",
     icon: GraduationCap
   }
@@ -86,6 +86,14 @@ export default function HomePage() {
             >
               View products
             </Link>
+            <a
+              href="https://github.com/deraldg/x64base"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
+            >
+              View GitHub
+            </a>
           </div>
 
           <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -160,6 +168,20 @@ export default function HomePage() {
               {item.title}
             </Link>
           ))}
+          <a
+            href="https://github.com/deraldg/x64base"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
+          >
+            GitHub repository
+          </a>
+          <Link
+            href="/docs/dev/selfdoc-website-publication"
+            className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
+          >
+            SelfDoc website publication
+          </Link>
         </div>
       </section>
 
@@ -182,7 +204,7 @@ export default function HomePage() {
 
       <section className="rounded-lg border border-border bg-card/45 p-6 text-sm leading-6 text-muted">
         <p>
-          x64base, xBase_64, DotTalk++, TupTalk, TableTalk, RelTalk, TurboTalk, and LabTalk are project
+          x64base, xBase_64, DotTalk++, TupTalk, TableTalk, RelTalk, ArcticTalk, and LabTalk are project
           marks used to describe the engine, teaching shell, and related tooling.
         </p>
       </section>

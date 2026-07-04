@@ -1,0 +1,46 @@
+---
+title: SelfDoc Lane Diagrams
+description: Draw.io and Mermaid artifacts for the DotTalk++ SelfDoc and contract lane flow.
+---
+
+The SelfDoc lane records how DotTalk++ turns working knowledge into durable,
+proof-backed documentation. It connects chat decisions, source usage blocks,
+`@dottalk.contract` annotations, HELP/CMDHELP evidence, and metadata import
+candidates to contract registration, proof promotion, generated reports, and
+LabTalk publication.
+
+## Diagram Artifacts
+
+- [Open the Draw.io source](/diagrams/selfdoc/selfdoc_contract_lane_v1.drawio)
+- [Open the Mermaid source](/diagrams/selfdoc/selfdoc_contract_lane_v1.mmd)
+
+## Current Flow
+
+```text
+Intake -> Register -> Prove -> Drift Check
+SelfDoc -> metacollect -> metadata_collection_v0 -> reports
+Reports -> Draw.io / Mermaid -> LabTalk -> x64base.com
+```
+
+## Evidence Rules
+
+The lane keeps two guardrails visible:
+
+- report-only SelfDoc pipelines must not mutate DBFs, rebuild HELP, change
+  CMDHELPCHK, repair source, or promote live metadata without review;
+- documentation must not claim runtime proof unless a test, command, or
+  reproducible report proves it.
+
+## Local Source
+
+The local LabTalk shelf keeps the editable artifacts under:
+
+```text
+D:\code\ccode\labtalk\diagrams
+```
+
+The DotTalk++ generated documentation shelf mirrors them under:
+
+```text
+D:\code\ccode\dottalkpp\docs\generated\diagrams
+```

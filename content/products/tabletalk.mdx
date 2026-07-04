@@ -1,18 +1,23 @@
 ---
 title: "TableTalk"
-description: "Table, schema, work-area, and browsing concepts exposed through DotTalk++."
+description: "Table, field, work-area, order, cursor, and browser inspection workflows."
 ---
 
 ## Overview
 
-TableTalk is the site label for table-facing inspection workflows. In the local source, those workflows are exposed through DotTalk++ commands and browser surfaces rather than a separate polished TableTalk executable.
+TableTalk is the site label for table-facing inspection workflows. In the local
+source, those workflows are exposed through DotTalk++ commands and browser
+surfaces rather than a separate polished TableTalk executable.
+
+Its subject is visible table/work-area state: what is open, where the cursor is,
+what fields exist, what order is attached, and how rows are listed or browsed.
 
 Relevant runtime areas include:
 
 - `USE`, `SELECT`, `AREA`, `DBAREA`, and `DBAREAS`.
-- `STRUCT` and field/record inspection.
+- `STRUCT`, `FIELDS`, and field/record inspection.
 - `SMARTLIST`, `LIST`, and order-aware listing work.
 - `SMARTBROWSE` / `ARTBROWSE` record browsing.
 - schema, DDL, data dictionary, and metadata catalog work.
 
-See [TableTalk docs](/docs/talk-family/tabletalk) and [Current Project Truth](/docs/dev/project-truth).
+See [TableTalk docs](/docs/talk-family/tabletalk), [Current Project Truth](/docs/dev/project-truth), and the canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).

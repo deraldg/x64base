@@ -8,7 +8,8 @@ const items = [
   },
   { title: "Timeline", description: "Key milestones from 1993 to 2026.", href: "/about/timeline" },
   { title: "Brand Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
-  { title: "Mission & Vision", description: "Why x64base exists and where it’s going.", href: "/about/mission-vision" }
+  { title: "Mission & Vision", description: "Why x64base exists and where it’s going.", href: "/about/mission-vision" },
+  { title: "Contributors", description: "Human and AI contributors recognized in the project record.", href: "/about/contributors" }
 ];
 
 export default function AboutPage() {

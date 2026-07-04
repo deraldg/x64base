@@ -1,11 +1,15 @@
 ---
 title: "RelTalk"
-description: "Relation graphs, asymmetric relations, workspace state, and ERSATZ browsing."
+description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal."
 ---
 
 ## Overview
 
 RelTalk names the relation-facing workflow in the DotTalk++ / x64base system.
+
+Its subject is connected data across work areas: declared relation edges,
+asymmetric same-field/cross-owner links, saved workspace relation state, and
+rooted traversal through `ERSATZ`.
 
 The local project includes same-field relation support and asymmetric relation forms such as:
 
@@ -19,8 +23,9 @@ Current relation-facing surfaces include:
 - `REL ADD`
 - `REL LIST ALL`
 - `REL ENUM`
+- `REL REFRESH`
 - `WORKSPACE SAVE` / `WORKSPACE LOAD`
-- `ERSATZ` / `RBROWSE`
+- `ERSATZ`, `ERSATZ PATH`, and `RBROWSE`
 - workspace graph and GUI contract docs
 
-See [RelTalk docs](/docs/talk-family/reltalk) and [Current Project Truth](/docs/dev/project-truth).
+See [RelTalk docs](/docs/talk-family/reltalk), [Current Project Truth](/docs/dev/project-truth), and the canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).

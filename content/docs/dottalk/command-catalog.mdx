@@ -1,0 +1,233 @@
+---
+title: "Command Catalog"
+description: "Source-derived DotTalk++ command catalog produced from the central registry and @dottalk.usage contracts."
+---
+
+This page is a website derivative of the vertical documentation system. The command names come from `D:\code\ccode\src\cli\shell_commands.cpp`; summaries and status fields come from parsed `@dottalk.usage v1` blocks when available.
+
+Publication rule: runtime/source truth wins over this page. This page should be regenerated or reviewed when command registration, HELP, CMDHELP, or usage contracts change.
+
+Source extraction snapshot: `218` registered command keys and `202` parsed usage contract blocks.
+
+## Source-Derived Commands
+
+| Command | Category | Status | Summary | Source |
+| --- | --- | --- | --- | --- |
+| `!` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `ABOUT` | report | supported | Print DotTalk++ project identity, lineage, author, runtime environment, and current session summary. | `src\cli\cmd_about.cpp` |
+| `AGGS` | aggregate | supported | AGGS is the aggregate family/owner for the direct aggregate verbs SUM, AVG, MIN, and MAX. | `src\cli\cmd_aggs.cpp` |
+| `APPEND` | data | supported | Append one or more blank records to the current table, using smart append paths that maintain keys and active indexes, or raw append paths when requested. | `src\cli\cmd_append.cpp` |
+| `APPEND_BLANK` | data | supported | Append one blank record using the shared append support path so APPEND and APPEND BLANK behavior stay aligned. | `src\cli\cmd_append_blank.cpp` |
+| `ARCTICTALK` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `AREA` | workspace | supported | Report the current work-area slot and current area file/session state. | `src\cli\cmd_area.cpp` |
+| `AREA51` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `ASCEND` | index | supported | Set the active order/tag direction to ascending for the current work area. | `src\cli\cmd_ascend.cpp` |
+| `ASCII` | education-reference | supported | Print ASCII/extended ASCII reference tables and selected ranges. | `src\edu\edu_ascii_table.cpp` |
+| `AUTODBF` | io schema | experimental | Create an X64 DBF from a CSV file and import the CSV rows into the newly created table.  CSV headers may become field names; when there is no header, deterministic FIELDnnn names are generated. | `src\cli\cmd_autodbf.cpp` |
+| `AVERAGE` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `AVG` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `BANG` | shell | supported | Launch the host operating-system shell or execute a host shell command. | `src\cli\cmd_bang.cpp` |
+| `BBOX` | education | experimental | Teach and inspect the Blackbox model: data enters a processing system and information comes out. | `src\cli\cmd_bbox.cpp` |
+| `BELL` | ui | supported | Ring the bell when enabled, or turn the shell bell setting on or off. | `src\cli\cmd_bell.cpp` |
+| `BETA` | help | supported | List, inspect, and update beta tracking items and runtime beta-status overrides. | `src\cli\cmd_beta.cpp` |
+| `BIBLETALK` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `BOOLEAN` | education-expression | supported | Evaluate a boolean expression through xexpr and print .T. or .F. | `src\edu\edu_boolean.cpp` |
+| `BOTTOM` | navigation | supported | Move the current work-area cursor to the last visible/logical record. | `src\cli\cmd_bottom.cpp` |
+| `BROWSE` | ui | supported | Enter the refactored BROWSE module through the legacy global command symbol, preserving existing callers while delegating implementation. | `src\cli\cmd_browse.cpp` |
+| `BROWSER` | ui | supported | Enter a minimal interactive browser with list, display, goto, edit, help, and quit commands, delegating work to existing command handlers. | `src\cli\cmd_browser.cpp` |
+| `BROWSETUI` | ui | supported | Enter the full-screen Turbo/console browse UI with create, read, update, delete, append, navigation, and staged edit support. | `src\cli\cmd_browsetui.cpp` |
+| `BROWSETV` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `BUILDLMDB` | index | supported | Build or rebuild the LMDB backing store for a CDX container using one LMDB environment per table container and named databases for tags. | `src\cli\cmd_buildlmdb.cpp` |
+| `CALC` | expression | supported | Evaluate an xexpr scalar expression and print the result. When the input is an assignment to a real field in the current area, CALC delegates to CALCWRITE for mutation semantics. | `src\cli\cmd_calc.cpp` |
+| `CALCWRITE` | data | supported | Evaluate an expression and write the result into a field in the current record, preserving type normalization, validation, memo conversion, table-buffer semantics, and direct-write index maintenance. | `src\cli\cmd_calcwrite.cpp` |
+| `CANARY` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `CASE` | education-reference | supported | List and show educational case-study catalog entries. | `src\edu\edu_case.cpp` |
+| `CDX` | index | supported | Manage CDX index container metadata: create containers, inspect header/tag directories, add tags, and drop tags. | `src\cli\cmd_cdx.cpp` |
+| `CHRISTMAS` | education-demo | supported | Print the retro colored ASCII Christmas tree demo. | `src\edu\edu_christmas.cpp` |
+| `CLEAR` | ui | supported | Clear the terminal screen using the platform console command or ANSI escape sequence without touching the database engine. | `src\cli\cmd_clear.cpp` |
+| `CLOSE` | workspace | supported | Close the current work area, honoring dirty table-buffer prompts, clearing memo/order/table slot state, and clearing affected relation state. | `src\cli\cmd_close.cpp` |
+| `CMDARGCHK` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `CMDHELP` | help | supported | Build or report the current HELP DATA catalogs and their legacy compatibility views. | `src\cli\cmdhelp.cpp` |
+| `CMDHELPCHK` | help-diagnostics | supported | Validate HELP/catalog artifacts and reflection metadata against command registry expectations, legacy HELP DBF rows, and HELP DATA v2 artifacts. | `src\cli\command_helpchk.cpp` |
+| `CMDREL` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `CNX` | index | supported | Manage CNX index container metadata: create containers, inspect header/tag directories, add/drop tags, and walk/trace RUN1 tag structures. | `src\cli\cmd_cnx.cpp` |
+| `COBOL` | education-toolchain | supported | Export STUDENTS data for COBOL exercises and build/run/test COBOL programs. | `src\edu\edu_cobol.cpp` |
+| `CODASYL` | education | supported | Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, simulating owner/member set traversal without a second storage engine. | `src\cli\cmd_codaysl.cpp` |
+| `COLOR` | ui | supported | Report or set the console color theme and tree-color behavior. | `src\cli\cmd_color.cpp` |
+| `COMMANDSHELP` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `COMMIT` | data | supported | Apply buffered TABLE changes to the current area or all open buffered areas, locking records at commit time and preserving legacy index rebuild compatibility. | `src\cli\cmd_commit.cpp` |
+| `CONTINUE` | navigation | supported | Continue a previous LOCATE search, or continue with an explicit FOR predicate, following active order when present. | `src\cli\cmd_continue.cpp` |
+| `COPY` | file-table | supported | Copy the current DBF, convert the current table to a target DBF flavor, or copy a filesystem file. | `src\cli\cmd_copy.cpp` |
+| `COUNT` | query | supported | Count records in the current logical rowset using selector-backed and predicate-backed scan paths, preserving cursor cohesion. | `src\cli\cmd_count.cpp` |
+| `CREATE` | schema | supported | Create a DBF table in the configured DBF path slot using the requested xBase/DBF flavor and field specification. | `src\cli\cmd_create.cpp` |
+| `DBAREA` | workspace | supported | Report the current DbArea/work-area state, including file identity, logical name, record counts, current record, active order/index status, and field structure. | `src\cli\cmd_dbarea.cpp` |
+| `DBAREAS` | workspace | supported | Report current, selected, or all open DbArea/work-area state. | `src\cli\cmd_dbareas.cpp` |
+| `DDICT` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `DDL` | schema | supported | Fetch schema files, validate schema files, and create DBF tables from JSON schema definitions with optional seed rows and sidecar metadata. | `src\cli\cmd_ddl.cpp` |
+| `DELETE` | data | supported | Mark the current record or selected records deleted, honoring filters and applying index delete snapshots in direct-write mode. | `src\cli\cmd_delete.cpp` |
+| `DESCEND` | index | supported | Set the active order/tag direction to descending for the current work area. | `src\cli\cmd_descend.cpp` |
+| `DIR` | filesystem | supported | List a directory or show a single file entry through DotTalk++ path resolution. | `src\cli\cmd_dir.cpp` |
+| `DISPLAY` | record | supported | Display the current record or display a requested record by record number. | `src\cli\cmd_display.cpp` |
+| `DOTHELP` | help | supported | Show project-native DotTalk++ reference entries from the dotref catalog. | `src\cli\cmd_dothelp.cpp` |
+| `DOTSCRIPT` | script | supported | Run a DotTalk++ script file, resolving bare names through script/test search locations, supporting @file notation, TRACE mode, and one-level subscript nesting. | `src\cli\cmd_dotscript.cpp` |
+| `DRAWIO` | integration | supported | Launch diagrams.net, or list/open draw.io files from configured diagram paths. | `src\cli\cmd_drawio.cpp` |
+| `DUMP` | report | supported | Dump every record from the current work area in legacy pipe-delimited form. | `src\cli\cmd_dump.cpp` |
+| `ECHO` | output | supported | Print or comment-echo text through the output router depending on SET ECHO state. | `src\cli\cmd_echo.cpp` |
+| `EDIT` | utility-editor | supported | Launch the configured external editor for a file path. | `src\edu\edu_edit.cpp` |
+| `ELSE` | script-flow-helper | implementation-shim | Empty translation-unit shim for ELSE command ownership. | `src\cli\cmd_else.cpp` |
+| `ENDIF` | syntax-command | active | Close an IF control block. | `src\cli\cmd_if.cpp` |
+| `ENDLOOP` | script | supported | End the active LOOP block and replay buffered commands through the shell executor. | `src\cli\cmd_loop.cpp` |
+| `ENDSCAN` | syntax-command | active | Close a SCAN loop block. | `src\cli\cmd_scan.hpp` |
+| `ENDUNTIL` | syntax-command | active | Close an UNTIL loop/control block. | `src\cli\cmd_loop.hpp` |
+| `ENDWHILE` | syntax-command | active | Close a WHILE loop block. | `src\cli\cmd_loop.hpp` |
+| `ERASE` | destructive-file | supported | Physically delete a DBF table file and known same-stem sidecar files. | `src\cli\cmd_erase.cpp` |
+| `ERP` | integration-helper | implementation-shim | Translation-unit shim for ERP/LabTalk integration includes. | `src\cli\cmd_erp.cpp` |
+| `ERROR CLEAR` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `ERROR STATUS` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `ERROR TEST` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `ERROR_CLEAR` | diagnostics | supported | Clear the last xBase_64 error context. | `src\cli\cmd_error_clear.cpp` |
+| `ERROR_STATUS` | diagnostics | supported | Display the last xBase_64 error in a structured, HRESULT-style diagnostic format. | `src\cli\cmd_error_status.cpp` |
+| `ERROR_TEST` | diagnostics | supported | Run the xBase_64 error subsystem self-test and update last-error state on failure. | `src\cli\cmd_error_test.cpp` |
+| `ERSATZ` | relational-browser | supported | Relational browser and tuple-stream helper for current workspace/session, with navigation, tree/grid rendering, workspace handoff, and delta baselines. | `src\cli\cmd_ersatz.cpp` |
+| `EVALUATE` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `EXAMPLE` | diagnostics | supported | Minimal example/test command used to verify token parsing and command routing. | `src\cli\cmd_example.cpp` |
+| `EXIT` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `EXPFUNCS` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `EXPORT` | io | supported | Export the current DBF rowset, or an already-open named work area, to a delimited file. | `src\cli\cmd_export.cpp` |
+| `EXPORTSQL` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `FIELDMGR` | schema | supported | Inspect and modify field definitions for the current DBF through the shared fields manager layer. | `src\cli\cmd_fieldmgr.cpp` |
+| `FIELDS` | report | supported | Report the field list for the current work area with aligned field number, name, type, length, and decimal columns. | `src\cli\cmd_fields.cpp` |
+| `FIND` | navigation | supported | Find text in the current table, delegating to SEEK when the active order can satisfy the request and otherwise scanning the selected field. | `src\cli\cmd_find.cpp` |
+| `FIRST` | navigation | supported | Move the current work-area cursor to the first visible/logical record. | `src\cli\cmd_first.cpp` |
+| `FORMULA` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `FOXHELP` | help | supported | List or search the static FoxPro-style command catalog. | `src\cli\cmd_foxhelp.cpp` |
+| `FOXPRO` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `FOXSTANDARD` | help | supported | Render static historical FoxPro-standard reference topics. | `src\cli\cmd_foxstandard.cpp` |
+| `FOXTALK` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `GENERIC` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `GO` | navigation | supported | Refresh the current record, move to table/order endpoints, move to an absolute record number, or skip relative to the current record. | `src\cli\cmd_go.cpp` |
+| `GOTO` | navigation | supported | Move the current work-area cursor to an absolute record number, first record, or last record through the shared navigation layer. | `src\cli\cmd_goto.cpp` |
+| `GPS` | report | supported | Report current work-area position, including area slot, table label, physical record number, and computed logical row. | `src\cli\cmd_gps.cpp` |
+| `HELP` | help | supported | Route user help requests across DotTalk command, function, FoxPro, PowerShell, SQL, beta, predicate, and educational help surfaces. | `src\cli\cmd_help.cpp` |
+| `HIER` | dev-hierarchy | dev-tool | Developer hierarchy service command for creating, moving, validating, and listing nested hierarchy nodes in the current DbArea. | `src\dewey\cmd_hier.cpp` |
+| `IDX` | education-index-helper | backend-helper | Backend/helper implementation for the educational memory-only IDX command. | `src\edu\edu_idx.cpp` |
+| `IF` | script | supported | Start an IF/ELSE/ENDIF conditional block using the shell's shared boolean expression evaluator and control-flow stack. | `src\cli\cmd_if.cpp` |
+| `IMAGE` | shell | supported | Inspect image file metadata or open a supported image file in the operating system viewer. | `src\cli\cmd_image_display.cpp` |
+| `IMPORT` | io | supported | Import records from a CSV file into the current open table by matching CSV headers to field names case-insensitively. | `src\cli\cmd_import.cpp` |
+| `IMPORTSQL` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `INDEX` | index | supported | Build an INX index file from the current table using a field key, tag/file name, optional direction, and optional INX format. | `src\cli\cmd_index.cpp` |
+| `INDEXSEEK` | navigation | supported | Return the record number for a value using active CDX/LMDB order or legacy INX fallback, restoring the caller's cursor. | `src\cli\cmd_indexseek.cpp` |
+| `INIT` | script | supported | Initialize runtime paths, cleanup stale locks, and run system/user init scripts from the executable directory. | `src\cli\cmd_init.cpp` |
+| `INSERT` | sql | supported | Insert a new record into the current DBF work area using SQL-like syntax. | `src\cli\cmd_sql_insert.cpp` |
+| `LAST` | navigation | supported | Move the current work-area cursor to the last visible/logical record. | `src\cli\cmd_last.cpp` |
+| `LIST` | report | supported | Display rows from the current work area using classic LIST-style output, honoring active order/index state and optional filtering modes. | `src\cli\cmd_list.cpp` |
+| `LIST_LMDB` | index | supported | Enumerate records in active LMDB/CDX index order without in-memory sorting. | `src\cli\cmd_list_lmdb.cpp` |
+| `LMDB` | index | developer | Inspect and control the per-area LMDB backed CDX index backend through the current DbArea IndexManager. | `src\cli\cmd_lmdb.cpp` |
+| `LMDB_UTIL` | diagnostics | deprecated | Deprecated disabled LMDB utility command that points users to the per-area LMDB command. | `src\cli\cmd_lmdb_util.cpp` |
+| `LMDBDUMP` | diagnostics | developer | Open an LMDB environment read-only and dump keys and values for diagnostics, with optional named DB, grep, limit, and start-key controls. | `src\cli\cmd_lmdb_dump.cpp` |
+| `LOCATE` | navigation | supported | Locate the first record matching a predicate, using simple CDX fast-path when possible and selector-backed scanning otherwise. | `src\cli\cmd_locate.cpp` |
+| `LOCK` | concurrency | supported | Acquire record or table locks for the current table and inspect lock status or lock ownership. | `src\cli\cmd_lock.cpp` |
+| `LOOP` | script | supported | Start buffering commands for later replay by ENDLOOP, with optional quiet mode and numeric repetition labels. | `src\cli\cmd_loop.cpp` |
+| `LOOP_BUFFER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `MAINT` | maintenance | experimental | Inspect DotTalk++ maintenance lanes, cookbooks, status, contracts, and protected-system boundaries. | `src\cli\cmd_maint.cpp` |
+| `MANSTAR` |  |  |  | `src\cli\cmd_manstar.cpp` |
+| `MANUAL` | manualgen | experimental | Inspect the accepted MAN* manualgen catalog from inside DotTalk++. | `src\cli\cmd_manual.cpp` |
+| `MAX` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `MCC` | demo | supported | Load the MCC v32 demo workspace as a one-command starter demo. | `src\cli\cmd_mcc.cpp` |
+| `MEMO` | memo | supported | Inspect and maintain x64 memo sidecar/object storage for the current work area or all open work areas. | `src\cli\cmd_memo.cpp` |
+| `MIN` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `MSGMGR` | messaging | supported | Message Manager command house for runtime messaging and locale-spine inspection surfaces. | `src\cli\cmd_msgmgr.cpp` |
+| `MULTIREP` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `NEXT` | navigation | supported | Move the current work-area cursor to the next visible/logical record. | `src\cli\cmd_next.cpp` |
+| `NORMALIZE` | education-normalization | supported | Demonstrate field-value normalization rules for C/N/D/L field types. | `src\edu\edu_normalize.cpp` |
+| `PACK` | destructive-table-structure | supported | Physically remove deleted records by rewriting the current DBF; x64 memo tables rebuild both DBF and DTX sidecar with remapped memo ids. | `src\cli\cmd_pack.cpp` |
+| `PRIOR` | navigation | supported | Move to the previous visible record in the current logical view. | `src\cli\cmd_prior.cpp` |
+| `PRN` | output | supported | Report or configure the PRN output destination used by the output router. | `src\cli\cmd_prn.cpp` |
+| `PROJECTS` | project | supported | List, create, inspect, tree, or delete project skeleton directories under the configured PROJECTS slot. | `src\cli\cmd_projects.cpp` |
+| `PSHELL` | reference-helper | implementation-helper | PowerShell reference catalog presentation helper used by the PSHELL command. | `src\cli\cmd_pshell.cpp` |
+| `QUIT` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `RBROWSE` | browser-alias | compatibility-alias | Compatibility spelling for the ERSATZ relational browser. | `src\cli\cmd_rbrowse.cpp` |
+| `REBUILD` | index | supported | Rebuild a CNX container for the current table, using the active CNX or a supplied CNX name/path and clearing TABLE stale state on success. | `src\cli\cmd_rebuild.cpp` |
+| `RECALL` | table-mutation | supported | Clear deleted flags on the current record or selected deleted records. | `src\cli\cmd_recall.cpp` |
+| `RECNO` | navigation | supported | Report the current record number or navigate to an explicit record number. | `src\cli\cmd_recno.cpp` |
+| `RECORD` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `RECORDVIEW` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `REFRESH` | table | supported | Reopen the current table from disk and restore cursor/order state best-effort. | `src\cli\cmd_refresh.cpp` |
+| `REINDEX` | index | supported | Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index families, choosing a default family by table flavor when no family is given. | `src\cli\cmd_reindex.cpp` |
+| `REL` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `REL_LIST` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `REL_REFRESH` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `RELATIONS` | relation | supported | Inspect and manage active relation definitions, relation files, and relation enumeration helpers. | `src\cli\cmd_relations.cpp` |
+| `REPLACE` | data | supported | Replace one field in the current record by field name or field index, preserving RHS expression evaluation, type validation, memo conversion, and table-buffer semantics. | `src\cli\cmd_replace.cpp` |
+| `RETRO` | display | supported | Display ASCII-safe retro computer/system splash screens. | `src\cli\cmd_retro.cpp` |
+| `ROLLBACK` | table-buffer | supported | Discard buffered/uncommitted table changes for the current area or all areas. | `src\cli\cmd_rollback.cpp` |
+| `RULE` | validation | supported | Inspect rule catalog paths, bindings, and field constraints for the current work area. | `src\cli\cmd_rule.cpp` |
+| `SCAN` | script | supported | Buffer and execute a SCAN...ENDSCAN record loop over the current logical rowset. | `src\cli\cmd_scan.cpp` |
+| `SCAN_BUFFER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SCHEMAS` | compatibility | deprecated-compat | Deprecated compatibility shim that routes old SCHEMAS commands to WORKSPACE. | `src\cli\cmd_schemas.cpp` |
+| `SECURITY` | diagnostics | supported | Display x64Base security policy/runtime diagnostics or run built-in security self-tests. | `src\cli\cmd_security.cpp` |
+| `SEEK` | navigation | supported | Seek a value through the active order/tag or by scanning a specified field. | `src\cli\cmd_seek.cpp` |
+| `SELECT` | workspace | supported | Select the current work area by numeric slot or by work-area/table name. | `src\cli\cmd_select.cpp` |
+| `SET` | settings | supported | General SET dispatcher for session settings, output routing, table buffering, paths, case/near behavior, and index/order/filter/relation subcommands. | `src\cli\cmd_set.cpp` |
+| `SET RELATION` | relations | supported | FoxPro-compatible SET RELATION parser that configures parent-to-child relations through the relations_api backend. | `src\cli\cmd_set_relation.cpp` |
+| `SET UNIQUE` | constraints | supported | Report or configure per-table unique-field registry entries. | `src\cli\cmd_setunique.cpp` |
+| `SETCASE` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETCDX` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETCNX` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETFILTER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETINDEX` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETLMDB` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETNEAR` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETORDER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SETPATH` | environment-helper | implementation-helper | Path-slot support implementation used by SETPATH and related commands. | `src\cli\cmd_setpath.cpp` |
+| `SFTP` | network | supported | Wrap the system OpenSSH sftp client for LS, GET, and PUT file transfer. | `src\cli\cmd_sftp.cpp` |
+| `SHOW` | diagnostics | supported | Show table, column, or active order/index information for the current work area. | `src\cli\cmd_sql_show.cpp` |
+| `SHOWINI` | diagnostics | supported | Display a table-specific .ini file, either derived from the current table or from an explicit file/path. | `src\cli\cmd_showini.cpp` |
+| `SHUTDOWN` | script | supported | Run the optional shutdown.ini script from the executable directory. | `src\cli\cmd_shutdown.cpp` |
+| `SIMPLEBROWSE` | browser | supported | Canonical single-table DBF browser/editor, order-aware through the shared order iterator. | `src\cli\cmd_simple_browser.cpp` |
+| `SIX` | education-index | implementation-present | Educational SIX/local-index stub command for create/build/info operations. | `src\edu\edu_six.cpp` |
+| `SKIP` | navigation | supported | Move the current work-area cursor forward or backward using filter-aware navigation selection. | `src\cli\cmd_skip.cpp` |
+| `SMARTBROWSE` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SMARTLIST` | report | supported | Filter-aware, order-aware table listing with optional projections, tuple output, debug tracing, deleted-record modes, and predicate filtering. | `src\cli\cmd_smartlist.cpp` |
+| `SNX` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `SORT` | data | supported | Create a sorted DBF copy from the current table using expression keys, optional filters, projection fields, deleted-record selection, and UNIQUE. | `src\cli\cmd_sort.cpp` |
+| `SQL` | sql | supported | Evaluate SQL-like COUNT/FOR predicates over the current DBF work area. | `src\cli\cmd_sql.cpp` |
+| `SQLERASE` | sql | supported | Mark records deleted using SQL-like ERASE FROM <table> WHERE <expr> syntax. | `src\cli\cmd_sql_erase.cpp` |
+| `SQLHELP` | reference | supported | Display or search the SQL helper/reference catalog. | `src\cli\cmd_sql_help.cpp` |
+| `SQLITE` | sql | supported | Thin SQLite command wrapper for status, connection management, Bible seed helpers, metadata inspection, SELECT queries, and EXEC statements. | `src\cli\cmd_sqlite.cpp` |
+| `SQLSEL` | sql | supported | Evaluate SQL-like selection predicates over the current DBF work area. | `src\cli\cmd_sql_select.cpp` |
+| `SQLVER` | sql | supported | Report whether SQLite support is available and print the linked SQLite library version when available. | `src\cli\cmd_sqlver.cpp` |
+| `STATUS` | workspace | supported | Report current or all open work-area status, including workspace occupancy, DBF flavor, active order/index state, tags, records, and optional structure details. | `src\cli\cmd_status.cpp` |
+| `STRUCT` | workspace | supported | Report DBF field structure and index/container information for the current area or all open areas. | `src\cli\cmd_struct.cpp` |
+| `SUM` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `TABLE_BUFFER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `TABLEMETA` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `TEST` | test | supported | Run a DotTalk++ test or script file through the shell command executor, with optional log output and verbose echoing. | `src\cli\cmd_test.cpp` |
+| `TEXT` | utility-editor | supported | Open the text editor with an empty buffer, literal text, a file, or a memo field target stub. | `src\edu\edu_text.cpp` |
+| `TOP` | navigation | supported | Move the current work-area cursor to the first visible/logical record using the shared filter-aware navigation selector. | `src\cli\cmd_top.cpp` |
+| `TUPEXPORT` | tuple | supported | Export tuple graph rows to a CSV file using a tuple spec, optional field list, and optional FOR predicate. | `src\cli\cmd_tupexport.cpp` |
+| `TUPLE` | tuple | supported | Build and print a tuple row from the canonical tuple builder using a tuple field specification and optional output flags. | `src\cli\cmd_tuple.cpp` |
+| `TUPLEDELTA` | tuple | experimental | Compare two named tuple streams and report insert, delete, and update deltas. The loader remains a skeleton until tuple stream storage is finalized. | `src\cli\cmd_tupledelta.cpp` |
+| `TUPTALK` | tuple | supported | Tuple-based normalization test harness and live DBF capture tool for building, normalizing, dumping, exporting, and pushing tuple entries. | `src\cli\cmd_tuptalk.cpp` |
+| `TUPVALIDATE` | tuple | supported | Validate tuple graph rows for the current table using the tuple graph cursor and relation-aware tuple validation layer. | `src\cli\cmd_tupvalidate.cpp` |
+| `TURBOPACK` | destructive-table-structure | supported | Fast byte-oriented compaction for plain non-memo, non-x64 DBF tables. | `src\cli\cmd_turbo_pack.cpp` |
+| `TVISION` | diagnostics | stub | Confirm Turbo Vision/TUI support is linked; this is currently a stub. | `src\cli\cmd_tvision.cpp` |
+| `UNDELETE` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `UNLOCK` | locking | supported | Release the current record lock, a specified record lock, or the table lock. | `src\cli\cmd_unlock.cpp` |
+| `UNTIL` | script | supported | Buffer and execute an UNTIL...ENDUNTIL loop from the current record until a boolean expression becomes true. | `src\cli\cmd_until.cpp` |
+| `UNTIL_BUFFER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `UPDATE` | sql | supported | Update records in the current DBF work area using SQL-like SET/WHERE syntax. | `src\cli\cmd_sql_update.cpp` |
+| `USE` | workspace | supported | Open a DBF table into the current work area, with duplicate-open guard, memo auto-attach, optional index auto-attach, and NOINDEX physical-order mode. | `src\cli\cmd_use.cpp` |
+| `VALIDATE` | validation | supported | Route validation subcommands such as VALIDATE UNIQUE to their handlers. | `src\cli\cmd_validate.cpp` |
+| `VAR` | scripting | supported | Validate and accept DotScript variable assignment syntax. | `src\cli\cmd_var.cpp` |
+| `VERSION` | report | supported | Report the DotTalk++ version label and build date/time. | `src\cli\cmd_version.cpp` |
+| `WA` | diagnostics | supported | Print the WorkAreaManager/engine bridge report and pointer identity checks. | `src\cli\cmd_wamreport.cpp` |
+| `WEB` | network | supported | Open, fetch, or inspect web URLs using the default handler or WinHTTP. | `src\cli\cmd_web.cpp` |
+| `WHERE` | filter | supported | Show, set, debug, or clear the WHERE predicate state bound into SET FILTER. | `src\cli\cmd_where.cpp` |
+| `WHERECACHE` | diagnostics | supported | Inspect or tune the shared WHERE expression evaluation cache. | `src\cli\cmd_wherecache.cpp` |
+| `WHILE` | script | supported | Buffer and execute a WHILE...ENDWHILE loop from the current record while a boolean expression remains true. | `src\cli\cmd_while.cpp` |
+| `WHILE_BUFFER` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `WORKSPACE` | workspace | supported | Report and manage live work-area/session layout. | `src\cli\cmd_workspace.cpp` |
+| `WSREPORT` | diagnostics | supported | Print a workspace/status report covering open areas, LMDB/order summary, and table-buffer state. | `src\cli\cmd_wsreport.cpp` |
+| `ZAP` | destructive-table | supported | Remove all records from the current non-memo DBF while preserving structure. | `src\cli\cmd_zap.cpp` |
+| `ZIP` | archive | supported | List, create, or extract ZIP archives through the configured ZIP backend. | `src\cli\cmd_zip.cpp` |

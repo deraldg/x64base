@@ -27,7 +27,7 @@ export default function ContactPage() {
           <div>
             <div className="text-sm font-semibold">Notes</div>
             <ul className="mt-2 list-disc pl-5 text-sm text-muted">
-              <li>Include the product name (Engine / DotTalk++ / LabTalk) and intended usage.</li>
+              <li>Include the product name (Engine / DotTalk++ / ArcticTalk / LabTalk) and intended usage.</li>
               <li>For education/non-profit, mention institution type and expected number of seats.</li>
               <li>For partnerships, include a short summary and timeline.</li>
             </ul>
@@ -37,7 +37,7 @@ export default function ContactPage() {
 
       <section className="rounded-2xl border border-border bg-card/20 p-6 text-sm text-muted">
         <p>
-          x64base® <br />© 1993–2026 Derald
+          x64base® <br />© 1993–2026 Derald R Grimwood Jr
         </p>
       </section>
     </div>

@@ -1,0 +1,42 @@
+---
+title: "ArcticTalk"
+description: "Public front-end umbrella for GUI, TUI, shell-bridge, and repeatable maintenance lanes."
+---
+
+## What it does
+
+ArcticTalk is the public umbrella for the DotTalk++ front-end family.
+
+Within that umbrella, fox-derived subsystem names such as `Foxtalk` remain
+valid lineage names, and repeatable maintenance/automation workflows remain part
+of the same family.
+
+Its subject is the workbench/front-end layer around the runtime:
+
+- GUI and TUI presentation
+- shell-bridge and command-lane work
+- repeatable smoke, indexing, and maintenance workflows
+- helper tooling that makes the runtime easier to inspect, teach, and operate
+
+Real local command surfaces and workflow anchors include:
+
+```text
+BUILDLMDB
+BUILDLMDB CLEAN YES
+BUILDLMDB FORCE YES
+REINDEX
+CMDHELPCHK
+CMDHELPCHK REF
+WORKSPACE OPEN DBF
+WORKSPACE OPEN DBF CDX
+WORKSPACE SAVE <name>
+WORKSPACE LOAD <name>
+```
+
+The local source also includes DotScript scripts, smoke checks, maintenance
+lanes, and generated proposal packages. Treat this as active workflow
+infrastructure, not as a separate finished batch product.
+
+See [Current Project Truth](/docs/dev/project-truth) and
+[SelfDoc Website Publication](/docs/dev/selfdoc-website-publication), plus the
+canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).

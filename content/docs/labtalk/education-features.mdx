@@ -1,0 +1,102 @@
+---
+title: "Education Features"
+description: "LabTalk-facing summary of source-defined DotTalk++ education features, student hooks, timed index labs, and pre/post polling hooks."
+---
+
+LabTalk should expose DotTalk++ education features as runnable labs, not as disconnected reference text. The current source tree already contains enough structure to seed this campus area.
+
+## Source Evidence
+
+| Feature | Source Evidence | LabTalk Reading |
+| --- | --- | --- |
+| Education command family | `D:\code\ccode\src\edu\edu_*.cpp` and `D:\code\ccode\src\cli\shell_commands.cpp` | Built-in teaching commands are source-defined and registered through the central command surface. |
+| Timed index/sort lab | `D:\code\ccode\src\cli\cmd_idx.cpp` and `D:\code\ccode\docs\teaching\TEACHING_POINT_LEDGER.md` | `IDX` is a memory-only educational index lab; it supports `STD` and `BUBBLE` sort choices and reports build/sort elapsed time, comparisons, and swaps. |
+| DBF sort path | `D:\code\ccode\src\cli\cmd_sort.cpp` | `SORT` creates a sorted DBF copy, supports key expressions, `FOR`, `WHILE`, `FIELDS`, `UNIQUE`, and reports scanned/selected/written counts. |
+| Student command hooks | `D:\code\ccode\src\ext\cmd\cmd_student_hello.cpp`, `cmd_student_echo.cpp`, and `src\ext\ext_policy.hpp` | Student commands may self-register from the extension area while built-in command names remain protected. |
+| Student function hooks | `D:\code\ccode\src\ext\fn\fn_student_text_autoreg.cpp` | Student functions demonstrate the same registry-compatible pattern for learner-created expression helpers. |
+| Pre/post polling hooks | `D:\code\ccode\src\cli\pre_poll.cpp`, `post_poll.cpp`, and `cmd_polling.cpp` | Current hooks emit `[POLL PRE]` and `[POLL POST]`; `cmd_polling.cpp` is a placeholder for future polling/integration command work. |
+| Vertical publication rule | `D:\code\ccode\docs\contracts\WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md` | Website pages are downstream derivatives of runtime/source, HELP, metadata, CMDHELPCHK, SelfDoc, and manualgen. |
+
+## Timed Sort and Index Labs
+
+The strongest current timing surface is `IDX`, not plain `SORT`.
+
+`IDX` is explicitly described in source as a memory-only educational index lab. It accepts commands such as:
+
+```text
+IDX ON LNAME TAG lname_std
+IDX ON LNAME TAG lname_bubble BUBBLE
+IDX ON LNAME TAG lname_bubble2 SORT BUBBLE DESC
+IDX LIST
+IDX DROP <tag>
+```
+
+Its output path records:
+
+- records scanned and indexed,
+- deleted records skipped,
+- total build elapsed time,
+- sort elapsed time,
+- comparisons,
+- swaps.
+
+That makes it suitable for a LabTalk algorithm lab where students compare `STD` versus `BUBBLE` against the same table.
+
+Plain `SORT` is also lab-ready, but it currently reports operation counts rather than elapsed time. It is useful for teaching DBF output creation, key expressions, `FOR`/`WHILE` predicates, field projection, deleted-record handling, and `UNIQUE` suppression.
+
+## Student Code Hooks
+
+The extension policy separates core and learner code:
+
+```text
+built-in commands -> central registry
+student/custom commands -> src/ext/cmd self-registration
+function families -> function catalog or self-registration pattern
+```
+
+Current examples:
+
+| Hook | Registered Surface | Lesson |
+| --- | --- | --- |
+| `cmd_student_hello.cpp` | `STUDENTHELLO`, `SHELLO` | Add a custom command without touching the protected command registry. |
+| `cmd_student_echo.cpp` | `STUDENTECHO`, `SECHO` | Add aliases and command-local usage behavior. |
+| `fn_student_text_autoreg.cpp` | `STU_UPPER`, `STU_REPEAT` | Add expression-style functions with argument checks and small evaluators. |
+
+This is a strong LabTalk pattern: students can first inspect a command/function in the website catalog, then add a controlled extension, then prove it with HELP/CMDHELP and a runtime transcript.
+
+## Pre/Post Polling
+
+The current pre/post polling files are small but important:
+
+```text
+pre_poll()  -> [POLL PRE]
+post_poll() -> [POLL POST]
+```
+
+That gives LabTalk a visible seam for later labs about command lifecycle observation. The next useful campus slice is:
+
+```text
+before command -> pre poll -> command execution -> post poll -> transcript -> SelfDoc evidence
+```
+
+Until a full `POLLING` command is implemented, the website should describe this as a source-defined hook surface and placeholder integration lane, not a finished user-facing polling subsystem.
+
+## Vertical Documentation Flow
+
+LabTalk should feed these pages from the existing vertical stack:
+
+```text
+source comments and @dottalk.usage
+-> comments/SRC* evidence
+-> HELP DATA and CMDHELP
+-> CMDHELPCHK validation
+-> SelfDoc/manualgen artifacts
+-> website pages and LabTalk lessons
+```
+
+The initial website implementation uses source-derived pages:
+
+- [Command Catalog](/docs/dottalk/command-catalog)
+- [Function Catalog](/docs/dottalk/function-catalog)
+
+The next implementation step is to replace manual extraction with a repeatable generator that reads the same evidence tables and reports used by SelfDoc.

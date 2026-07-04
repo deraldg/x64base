@@ -1,11 +1,19 @@
 ---
 title: "RelTalk"
-description: "Relation graph, asymmetric relation, workspace, and ERSATZ workflows."
+description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal."
 ---
 
 ## What it does
 
 RelTalk names the relation-facing workflows in DotTalk++ / x64base.
+
+Its subject is connected data across work areas, not just SQL-style joins. It
+covers:
+
+- declared parent/child relation edges
+- asymmetric same-field and cross-owner relations
+- saved workspace relation state
+- rooted traversal and browser output through `ERSATZ`
 
 Real local command surfaces include:
 
@@ -15,9 +23,11 @@ REL ADD SYSCMD SYSSUBCMD ON CAN_NAME TO PARENT
 REL ADD SYSSUBCMD SYSENTVAR ON QUAL_NAME TO HELP_OWNR
 REL LIST ALL
 REL ENUM
+REL REFRESH
 WORKSPACE SAVE <name>
 WORKSPACE LOAD <name>
 ERSATZ
+ERSATZ PATH
 ERSATZ TREE
 ERSATZ GRID
 RBROWSE
@@ -25,4 +35,5 @@ RBROWSE
 
 Relation work is active and important because it connects work areas, metadata tables, browser output, and workspace persistence.
 
-See [Current Project Truth](/docs/dev/project-truth).
+See [Current Project Truth](/docs/dev/project-truth) and the canonical public
+repo [deraldg/x64base](https://github.com/deraldg/x64base).

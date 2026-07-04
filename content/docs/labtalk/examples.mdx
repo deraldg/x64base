@@ -1,16 +1,81 @@
 ---
 title: "LabTalk Examples"
-description: "Examples intended for teaching and non-profit workflows."
+description: "Example lab paths for the LabTalk laboratory campus."
 ---
 
-## Example: Audit fields (placeholder)
+These examples show how LabTalk presents x64base and DotTalk++ as a laboratory
+campus. Each example should identify the concept, app, dataset, command path,
+proof state, and lesson goal.
 
-1. Print schema
-2. Export records
-3. Validate memo pointers
+![LabTalk proof-aware learning path](/images/labtalk/labtalk_proof_path_v0.svg)
 
-## Example: Create a lesson dataset (placeholder)
+## Database Literacy Starter
 
-- build a small DBF_64 table
-- add index
-- demonstrate rebuild and verification
+Purpose:
+
+```text
+Teach tables, records, fields, order, search, scan, and output.
+```
+
+Campus path:
+
+```text
+EDREF MODEL
+-> EDREF TABLE_RECORD_FIELD
+-> EDREF INDEX
+-> EDREF SCAN
+-> DotTalk++ runtime transcript
+-> student-facing lesson
+```
+
+The first local LabTalk portal slice already uses this path to run a read-only
+DotTalk++ script and capture a proof transcript.
+
+## Comments to Contracts to HELP
+
+Purpose:
+
+```text
+Show how source comments become structured contracts, HELP output, and validation evidence.
+```
+
+Campus path:
+
+```text
+source comment
+-> @dottalk.usage v1
+-> comments evidence
+-> CMDHELP artifact
+-> CMDHELPCHK validation
+-> LabTalk lesson
+```
+
+This is the Self-Documenting Systems Lab.
+
+## Historical Data Systems Trail
+
+Purpose:
+
+```text
+Connect database history to live or simulated system behavior.
+```
+
+Campus path:
+
+```text
+Punch cards / fixed records
+-> COBOL / business reports
+-> CODASYL / network traversal
+-> xBase / DBF records and indexes
+-> SQL / ERP / industrial data
+-> cloud computing / distributed services
+-> AI-era explainability
+```
+
+The [Database Evolution Path](/docs/labtalk/database-evolution) is the first
+public version of this trail. It uses the LabTalk / DotTalk++ storyboard deck to
+connect punch cards, COBOL, ARPANET, JUMPS, CODASYL, xBase, ERP, cloud computing,
+and AI literacy.
+
+Historical cases should separate reviewed facts, source memories, simulations,
+and runtime proof.

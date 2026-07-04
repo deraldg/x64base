@@ -1,0 +1,42 @@
+---
+title: "Third-Party Acknowledgements"
+description: "Acknowledgements for open-source libraries, tools, and third-party projects used by x64base, DotTalk++, LabTalk, and the website."
+---
+
+This project stands on a broad open-source foundation. These acknowledgements identify currently observed dependencies and tools from the local DotTalk++ `vcpkg.json`, CMake configuration, and website package manifest.
+
+Acknowledgement here does not imply endorsement by the third-party project. Final redistribution packages should include exact license files for the versions shipped.
+
+## Runtime and Engine Libraries
+
+| Project | Role in x64base / DotTalk++ / LabTalk | Credit and official link |
+| --- | --- | --- |
+| LMDB | Embedded key-value database used as the physical backend for CDX-backed index environments. | Lightning Memory-Mapped Database Manager by Howard Chu / Symas and the OpenLDAP project. Official documentation: [lmdb.tech](https://www.lmdb.tech/doc/). |
+| Turbo Vision / tvision | Text UI foundation for console/TUI lanes where enabled. | Modern Turbo Vision port maintained by the tvision project. Official repository: [magiblot/tvision](https://github.com/magiblot/tvision). |
+| SQLite | Embedded SQL database support and educational database demonstrations. | SQLite project. Official site: [sqlite.org](https://www.sqlite.org/). Copyright/public-domain information: [SQLite Copyright](https://sqlite.org/copyright.html). |
+| pybind11 | Optional C++ to Python binding support. | pybind11 project and contributors. Official documentation: [pybind11.readthedocs.io](https://pybind11.readthedocs.io/). |
+| nlohmann/json | JSON support for C++ tooling and structured data paths. | JSON for Modern C++ by Niels Lohmann and contributors. Official site: [json.nlohmann.me](https://json.nlohmann.me/). |
+| wxWidgets | Optional cross-platform GUI frontend lane. | wxWidgets project. Official site: [wxwidgets.org](https://wxwidgets.org/). |
+| vcpkg | C/C++ dependency acquisition and build integration. | Microsoft and the C++ community. Official site: [vcpkg.io](https://vcpkg.io/). |
+
+## Website and Documentation Tooling
+
+| Project | Role in the website | Official link |
+| --- | --- | --- |
+| Next.js | Website framework and static export foundation. | [nextjs.org](https://nextjs.org/) |
+| React | UI component runtime. | [react.dev](https://react.dev/) |
+| TypeScript | Typed site implementation. | [typescriptlang.org](https://www.typescriptlang.org/) |
+| Tailwind CSS | Utility-first styling system. | [tailwindcss.com](https://tailwindcss.com/) |
+| MDX / unified / remark / rehype | Markdown, MDX, headings, sanitization, and document publication pipeline. | [unifiedjs.com](https://unifiedjs.com/) |
+| Lucide | Icon set used in the website interface. | [lucide.dev](https://lucide.dev/) |
+
+## LMDB Credit in the CDX System
+
+LMDB deserves explicit credit in the x64base story because it gives the CDX indexing lane a durable, high-performance embedded backend. The x64base design keeps two ideas separate:
+
+- **CDX is the logical container** shown to users, students, and commands.
+- **LMDB is the physical backend** used to store and traverse built index data.
+
+That separation lets LabTalk teach database indexing at two levels. Beginners can learn records, logical order, tags, `SET ORDER`, and `SEEK` without needing backend vocabulary first. Advanced students can open the implementation layer and see how a memory-mapped key-value database can support ordered navigation, rebuild workflows, and index diagnostics.
+
+See [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing) for the implementation-facing explanation.

@@ -1,11 +1,20 @@
 ---
 title: "TupTalk"
-description: "Tuple and relation-aware inspection surfaces in the DotTalk++ runtime."
+description: "Tuple-facing record views, projections, export, validation, and relation-aware row output."
 ---
 
 ## What it does
 
 TupTalk names the tuple-facing inspection workflows in the current system.
+
+Its subject is not "tables in general." Its subject is the current row as a
+readable tuple, projected record, or relation-derived row set. That includes:
+
+- current-record tuple display
+- browser rows treated as tuples
+- exported tuple-shaped output
+- tuple validation and tuple-contract checks
+- relation-aware tuple output through `ERSATZ`
 
 Real local command surfaces include:
 
@@ -21,6 +30,9 @@ TUPEXPORT
 TUPVALIDATE
 ```
 
-Use these pages to describe tuple inspection and relation-aware output. Do not describe TupTalk as a finished standalone CLI unless that packaging exists.
+Use these pages to describe tuple inspection, row projection, export, and
+relation-aware output. Do not describe TupTalk as a finished standalone CLI
+unless that packaging exists.
 
-See [Current Project Truth](/docs/dev/project-truth).
+See [Current Project Truth](/docs/dev/project-truth) and the canonical public
+repo [deraldg/x64base](https://github.com/deraldg/x64base).

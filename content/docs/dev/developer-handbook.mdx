@@ -7,6 +7,8 @@ description: "How to work from the local DotTalk++ / x64base truth."
 
 Use `D:\code\ccode` as the authoritative local source tree for DotTalk++ / x64base work.
 
+Use `D:\dev\x64base-site` as the website publication tree.
+
 The site content was updated from a scan of:
 
 - CMake build configuration.
@@ -16,6 +18,7 @@ The site content was updated from a scan of:
 - source directories under `src/xbase`, `src/xindex`, `src/memo`, `src/cli`, `src/datadict`, and `bindings/pydottalk`.
 
 See [Current Project Truth](/docs/dev/project-truth).
+See [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication).
 
 ## Working principles
 
@@ -23,7 +26,28 @@ See [Current Project Truth](/docs/dev/project-truth).
 - Treat DotTalk++ as the canonical runtime and command surface.
 - Treat x64base as the engine/runtime/data layer, not as a separate polished product unless the source tree proves that packaging.
 - Keep GUI descriptions top-down over the existing runtime. Do not imply wxWidgets, Tk, or TUI lanes own database semantics.
+- Treat the website as downstream of SelfDoc, contracts, manuals, and reviewed runtime docs.
+- Keep public GitHub links current where the site describes public work.
 - Avoid placeholder CLI commands when the local command reference has real commands.
+
+## Shared document workflow
+
+- Runtime/engineering truth belongs first in `D:\code\ccode`.
+- Publication-ready manuals, contracts, and diagrams should be reviewed there before site promotion.
+- The website should mirror or curate those reviewed materials, not replace them.
+- If a technical claim diverges between the two trees, fix `D:\code\ccode` first and then republish the site.
+
+## Education goal
+
+One explicit project goal is to learn front-end work through the x64base /
+DotTalk++ / LabTalk stack.
+
+That means learning:
+
+- how runtime truth feeds UI truth,
+- how CLI, TUI, GUI, and website layers align,
+- how SelfDoc and manuals feed public-facing documentation,
+- how to build a full-stack educational database system from source to site.
 
 ## Build boundaries
 

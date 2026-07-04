@@ -20,6 +20,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "DBF_64 Specification", href: "/docs/engine/dbf-64-specification" },
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
       { label: "Indexing Rules", href: "/docs/engine/indexing-rules" },
+      { label: "CDX and LMDB Indexing", href: "/docs/engine/cdx-lmdb-indexing" },
       { label: "Error Codes", href: "/docs/engine/error-codes" },
       { label: "API Reference", href: "/docs/engine/api-reference" }
     ]
@@ -30,6 +31,8 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Language Guide", href: "/docs/dottalk/language-guide" },
       { label: "Syntax", href: "/docs/dottalk/syntax" },
       { label: "REPL", href: "/docs/dottalk/repl" },
+      { label: "Command Catalog", href: "/docs/dottalk/command-catalog" },
+      { label: "Function Catalog", href: "/docs/dottalk/function-catalog" },
       { label: "Examples", href: "/docs/dottalk/examples" },
       { label: "Curriculum", href: "/docs/dottalk/curriculum" }
     ]
@@ -40,13 +43,16 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "TupTalk", href: "/docs/talk-family/tuptalk" },
       { label: "TableTalk", href: "/docs/talk-family/tabletalk" },
       { label: "RelTalk", href: "/docs/talk-family/reltalk" },
-      { label: "TurboTalk", href: "/docs/talk-family/turbotalk" }
+      { label: "ArcticTalk", href: "/docs/talk-family/arctictalk" }
     ]
   },
   {
     label: "LabTalk",
     items: [
       { label: "Overview", href: "/docs/labtalk/overview" },
+      { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },
+      { label: "Education Features", href: "/docs/labtalk/education-features" },
+      { label: "SelfDoc Lane Diagrams", href: "/docs/labtalk/selfdoc-lane" },
       { label: "Non-Profit Guide", href: "/docs/labtalk/non-profit-guide" },
       { label: "Examples", href: "/docs/labtalk/examples" }
     ]
@@ -56,6 +62,7 @@ export const docsSidebar: SidebarGroup[] = [
     items: [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },
+      { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
       { label: "Onboarding Guide", href: "/docs/dev/onboarding-guide" },
       { label: "Coding Standards", href: "/docs/dev/coding-standards" },
       { label: "Contribution Guide", href: "/docs/dev/contribution-guide" }
