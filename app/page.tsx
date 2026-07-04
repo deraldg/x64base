@@ -67,7 +67,7 @@ const lanes = [
   },
   {
     title: "Teach with the shell",
-    text: "Use DotTalk++, DotTalk++ Workbench, ArcticTalk TUI, and LabTalk material for labs, front-end learning, command literacy, and database fundamentals.",
+    text: "Use DotTalk++, DotTalk++ Workbench, Parallel GUI/TUI, Arctic TUI, and LabTalk material for labs, front-end learning, command literacy, and database fundamentals.",
     href: "/docs/dottalk/curriculum",
     icon: GraduationCap
   }
@@ -230,7 +230,7 @@ export default function HomePage() {
       <section className="rounded-lg border border-border bg-card/45 p-6 text-sm leading-6 text-muted">
         <p>
           x64base, xBase_64, DotTalk++, DotTalk++ Workbench, TupTalk, TableTalk, RelTalk,
-          ArcticTalk, and LabTalk are project marks used to describe the engine, teaching shell,
+          Arctic, and LabTalk are project marks used to describe the engine, teaching shell,
           workbench surfaces, table-buffering lane, TUI code-name surface, and related tooling.
         </p>
       </section>

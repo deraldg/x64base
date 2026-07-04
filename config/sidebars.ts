@@ -49,7 +49,8 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "TupTalk", href: "/docs/talk-family/tuptalk" },
       { label: "TableTalk", href: "/docs/talk-family/tabletalk" },
       { label: "RelTalk", href: "/docs/talk-family/reltalk" },
-      { label: "ArcticTalk TUI", href: "/docs/talk-family/arctictalk" }
+      { label: "Parallel GUI/TUI", href: "/docs/talk-family/parallel-gui-tui" },
+      { label: "Arctic TUI", href: "/docs/talk-family/arctic" }
     ]
   },
   {

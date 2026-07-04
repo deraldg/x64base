@@ -27,7 +27,7 @@ export default function ContactPage() {
           <div>
             <div className="text-sm font-semibold">Notes</div>
             <ul className="mt-2 list-disc pl-5 text-sm text-muted">
-              <li>Include the product name (Engine / DotTalk++ / ArcticTalk / LabTalk) and intended usage.</li>
+              <li>Include the product name (Engine / DotTalk++ / Parallel GUI/TUI / LabTalk) and intended usage.</li>
               <li>For education/non-profit, mention institution type and expected number of seats.</li>
               <li>For partnerships, include a short summary and timeline.</li>
             </ul>

@@ -1,0 +1,33 @@
+---
+title: "Parallel GUI/TUI"
+description: "DotTalk++ Workbench lane for keeping GUI, TUI, CLI, and browser-facing surfaces aligned."
+---
+
+## What it does
+
+Parallel GUI/TUI is the DotTalk++ Workbench lane that keeps multiple user
+interfaces attached to the same engine truth.
+
+The lane exists because x64base is an object-oriented hybrid engine with
+several valid front ends: command line, GUI, TUI, browser-facing documentation,
+and lab portal surfaces. Those front ends should not drift into separate
+stories. They should read from the same command contracts, help metadata,
+workspaces, table buffers, relation graphs, tuple output, and runtime evidence.
+
+## Current Surfaces
+
+- DotTalk++ Workbench GUI and preview windows.
+- Arctic TUI, the code name for the terminal interface.
+- DotTalk++ CLI startup, relation tree, workspace load, and tuple-grid output.
+- LabTalk Portal and website/manual evidence views.
+
+## Boundaries
+
+Parallel GUI/TUI is not a separate storage engine. Database semantics remain in
+x64base and DotTalk++. Table buffering belongs to TableTalk. Relation traversal
+belongs to RelTalk. Tuple-facing output belongs to TupTalk. The Parallel GUI/TUI
+lane proves those engine features can be exposed consistently across interfaces.
+
+See [Arctic TUI](/docs/talk-family/arctic),
+[TableTalk](/docs/talk-family/tabletalk), and the
+[Runtime Evidence Gallery](/docs/labtalk/runtime-evidence).
