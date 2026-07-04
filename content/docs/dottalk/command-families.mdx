@@ -23,6 +23,19 @@ Table inspection and browsing are a family, not one command:
 
 Use `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, and `SMARTLIST` for the current smart/list/browser surfaces.
 
+## Data Mutators
+
+`REPLACE`, `CALC`, `CALCWRITE`, and `MULTIREP`/`REPLACE_MULTI` are the mutation-sensitive command family. They deserve separate treatment from ordinary scalar functions and report commands.
+
+| Command | Documentation boundary |
+| --- | --- |
+| `CALC` | Read-only when evaluating an expression; mutating only when assignment targets a real field and delegates to `CALCWRITE`. |
+| `CALCWRITE` | Expression-backed single-field mutation; honors TABLE buffering when enabled and direct write/index maintenance when disabled. |
+| `REPLACE` | Single-field mutation; honors TABLE buffering when enabled and direct write/index maintenance when disabled. |
+| `MULTIREP` / `REPLACE_MULTI` | Multi-field direct-write path; validates all assignments, uses one record lock and one physical write, and does not currently participate in TABLE buffer dirty state. |
+
+See [Data Mutators](/docs/dottalk/data-mutators) for buffered/unbuffered behavior, stale/dirty state, memo mutation, scalar evaluation, and index-maintenance boundaries.
+
 ## DDL and Schema
 
 `DDL` is the schema-oriented command family:

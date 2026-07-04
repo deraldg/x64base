@@ -137,7 +137,7 @@ Source extraction snapshot: `218` registered command keys and `202` parsed usage
 | `MEMO` | memo | supported | Inspect and maintain x64 memo sidecar/object storage for the current work area or all open work areas. | `src\cli\cmd_memo.cpp` |
 | `MIN` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
 | `MSGMGR` | messaging | supported | Message Manager command house for runtime messaging and locale-spine inspection surfaces. | `src\cli\cmd_msgmgr.cpp` |
-| `MULTIREP` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `MULTIREP` | data | supported alias | Alias surface for `REPLACE_MULTI`: replace multiple fields in the current record with one record lock and one physical write. Current implementation is direct-write only and does not mark TABLE buffer dirty. | `src\cli\cmd_replace_multi.cpp` |
 | `NEXT` | navigation | supported | Move the current work-area cursor to the next visible/logical record. | `src\cli\cmd_next.cpp` |
 | `NORMALIZE` | education-normalization | supported | Demonstrate field-value normalization rules for C/N/D/L field types. | `src\edu\edu_normalize.cpp` |
 | `PACK` | destructive-table-structure | supported | Physically remove deleted records by rewriting the current DBF; x64 memo tables rebuild both DBF and DTX sidecar with remapped memo ids. | `src\cli\cmd_pack.cpp` |
@@ -159,6 +159,7 @@ Source extraction snapshot: `218` registered command keys and `202` parsed usage
 | `REL_REFRESH` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
 | `RELATIONS` | relation | supported | Inspect and manage active relation definitions, relation files, and relation enumeration helpers. | `src\cli\cmd_relations.cpp` |
 | `REPLACE` | data | supported | Replace one field in the current record by field name or field index, preserving RHS expression evaluation, type validation, memo conversion, and table-buffer semantics. | `src\cli\cmd_replace.cpp` |
+| `REPLACE_MULTI` | data | supported | Replace multiple fields in the current record with one record lock and one physical write, preserving RHS evaluation, validation, memo handling, and direct index maintenance. Also exposed as `MULTIREP`. | `src\cli\cmd_replace_multi.cpp` |
 | `RETRO` | display | supported | Display ASCII-safe retro computer/system splash screens. | `src\cli\cmd_retro.cpp` |
 | `ROLLBACK` | table-buffer | supported | Discard buffered/uncommitted table changes for the current area or all areas. | `src\cli\cmd_rollback.cpp` |
 | `RULE` | validation | supported | Inspect rule catalog paths, bindings, and field constraints for the current work area. | `src\cli\cmd_rule.cpp` |

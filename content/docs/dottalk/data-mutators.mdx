@@ -1,0 +1,80 @@
+---
+title: "Data Mutators"
+description: "Mutation-sensitive DotTalk++ commands: REPLACE, CALC, CALCWRITE, MULTIREP/REPLACE_MULTI, scalar evaluation, table buffering, stale state, dirty state, memo writes, and index maintenance."
+---
+
+`REPLACE`, `CALC`, `CALCWRITE`, and `MULTIREP`/`REPLACE_MULTI` deserve special handling in the documentation because they can change table data. They sit at the boundary between scalar expression evaluation and physical DBF/memo/index mutation.
+
+This page is a reviewed website derivative of the current source contracts in `src/cli/cmd_replace.cpp`, `src/cli/cmd_calc.cpp`, `src/cli/cmd_calcwrite.cpp`, `src/cli/cmd_replace_multi.cpp`, and the table-buffer state code.
+
+## Command roles
+
+| Command | Mutation role | Current source-backed behavior |
+| --- | --- | --- |
+| `CALC <expr>` | Read-only scalar evaluation | Evaluates an `xexpr` scalar or field-aware expression and prints Bool, Number, String, Date, or `.F.` fallback output. |
+| `CALC <field> = <expr>` | Conditional data mutation | If the left side is a real field in the open current area, `CALC` delegates to `CALCWRITE`. If not, it remains expression evaluation. |
+| `CALCWRITE <field> = <expr>` | Single-field expression write | Evaluates RHS with `xexpr`, normalizes for the target field type, handles currency and x64 memo fields, then writes or buffers the field. |
+| `REPLACE <field> WITH <value>` | Single-field replace | Resolves field by index/name, evaluates/dequotes RHS through the REPLACE expression path, validates/normalizes, handles x64 memo fields, then writes or buffers the field. |
+| `MULTIREP <field> WITH <value>, ...` | Multi-field direct write | Alias surface for `REPLACE_MULTI`; parses multiple assignments, validates all assignments before write, then applies one record lock and one physical DBF write. |
+| `REPLACE_MULTI <field> WITH <value>, ...` | Multi-field direct write | Canonical implementation behind `MULTIREP`; also used programmatically by UI surfaces such as staged browser saves. |
+
+Scalar functions are not data mutators by themselves. They become part of mutation only when a mutating command uses them to compute a value that is written to a field.
+
+## Buffered versus direct writes
+
+| Path | TABLE buffer ON | TABLE buffer OFF / direct |
+| --- | --- | --- |
+| `REPLACE` | Adds a table-buffer `CHANGE_UPDATE`, marks area dirty, marks changed field stale. `COMMIT` owns durable application. | Calls `DbArea::replaceFieldStored`, which owns the direct write path and index replace-snapshot behavior. If the visible value changes, the field is marked stale. |
+| `CALCWRITE` | Adds a table-buffer `CHANGE_UPDATE`, marks area dirty, marks changed field stale. `COMMIT` owns durable application. | Calls `DbArea::replaceFieldStored`, preserving direct-write/index behavior. If the visible value changes, the field is marked stale. |
+| `CALC` assignment | Same as `CALCWRITE`, because assignment delegates to `CALCWRITE`. | Same as `CALCWRITE`, because assignment delegates to `CALCWRITE`. |
+| `MULTIREP` / `REPLACE_MULTI` | Current implementation does **not** route through table buffering. | Direct-write only: validates all assignments, locks one record, performs one physical write, then applies before/after index snapshot maintenance. |
+
+Current `REPLACE_MULTI` contract says buffering/`COMMIT`/`ROLLBACK` integration is deferred. Documentation must not imply that `MULTIREP` participates in table-buffer dirty state today.
+
+## Dirty and stale state
+
+`dirty` and `stale` are not synonyms.
+
+| State | Meaning in this lane |
+| --- | --- |
+| `DIRTY` | The table buffer contains pending changes that have not been committed. `REPLACE` and `CALCWRITE` set dirty when table buffering is ON. |
+| `STALE` | A field or area needs attention because current visible/index/cache state may need refresh or rebuild. `REPLACE` and `CALCWRITE` mark changed fields stale in buffered mode. Direct writes mark stale when the visible value changes or when index maintenance fails, depending on the command path. |
+| `fresh` / `clean` | Reported state after buffer clearing, successful rebuild/refresh paths, or explicit table-buffer state commands. These labels should be verified by runtime output before being used as proof. |
+
+For `MULTIREP`/`REPLACE_MULTI`, changed fields are marked `STALE` only if direct index maintenance fails. It does not mark the table buffer `DIRTY`.
+
+## Type and memo handling
+
+The mutator commands validate and normalize before storage:
+
+- Date fields accept canonical `YYYYMMDD` and supported date forms such as `TODAY`.
+- Logical fields normalize accepted true/false spellings into DBF logical storage.
+- Numeric and float fields enforce field width and decimals.
+- Int32, double, and currency fields have strict parsing paths.
+- Currency pair fields run through the currency helper validation/normalization path.
+- x64 memo fields write memo payloads through the memo backend and store memo reference/token text in the DBF field.
+
+This is why these commands must be documented as storage mutators, not just expression or display commands.
+
+## Index maintenance
+
+| Command | Index behavior |
+| --- | --- |
+| `REPLACE` | Direct mode uses `DbArea::replaceFieldStored`, the engine mutation funnel for record write and active index replace snapshots. |
+| `CALCWRITE` | Direct mode also uses `DbArea::replaceFieldStored` so expression writes do not bypass active index maintenance. |
+| `MULTIREP` / `REPLACE_MULTI` | Captures active tag keys before the multi-field edit, performs one DBF write, captures after state, and applies the replace snapshot once. If that maintenance fails, changed fields are marked stale. |
+
+Documentation should keep single-field and multi-field mutation paths separate until the source paths converge.
+
+## Required proof before promotion
+
+Before calling a mutator behavior “complete” in the manual or product pages, capture proof for:
+
+- `TABLE BUFFER ON`, `REPLACE`, `TABLE BUFFER STATUS`, `COMMIT`, and `ROLLBACK`.
+- `TABLE BUFFER ON`, `CALCWRITE`, `TABLE BUFFER STATUS`, `COMMIT`, and `ROLLBACK`.
+- `CALC` expression-only output versus `CALC <field> = <expr>` mutation delegation.
+- `TABLE BUFFER OFF` direct writes through `REPLACE` and `CALCWRITE`, including indexed-field updates.
+- `MULTIREP`/`REPLACE_MULTI` direct write, one-lock/one-write behavior, validation failure before physical write, and stale marking on index-maintenance failure.
+- Memo-field write and clear behavior for x64 memo fields.
+
+Until those transcripts are attached to the evidence lane, the website should state the source-backed contract and avoid overstating runtime proof.
