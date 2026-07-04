@@ -202,6 +202,45 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="grid gap-6 rounded-lg border border-border bg-card/45 p-6 lg:grid-cols-[0.85fr_1.15fr]">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">research context</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight">The xBase ecosystem is still alive.</h2>
+          <p className="mt-4 leading-7 text-muted">
+            x64base belongs in the xBase conversation, but it is not a claim to replace every
+            compiler, migration tool, DBF library, or commercial modernization platform. It is a
+            focused 64-bit DBF-style architecture experiment with a recognizable table workflow.
+          </p>
+          <Link
+            href="/docs/engine/xbase-ecosystem-context"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+          >
+            Read the ecosystem context
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-bg/35 p-4">
+            <div className="font-mono text-xs uppercase text-muted">ecosystem</div>
+            <p className="mt-3 text-sm leading-6 text-fg">
+              Open-source, commercial, migration, DBF-engine, and legacy branches all still matter.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-bg/35 p-4">
+            <div className="font-mono text-xs uppercase text-muted">constraint</div>
+            <p className="mt-3 text-sm leading-6 text-fg">
+              Classic DBF-family formats carry structural assumptions from earlier computing eras.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-bg/35 p-4">
+            <div className="font-mono text-xs uppercase text-muted">thesis</div>
+            <p className="mt-3 text-sm leading-6 text-fg">
+              x64base studies a larger 64-bit file/runtime model without abandoning the table workflow.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2">
         <Link href="/docs/labtalk/selfdoc-lane" className="rounded-lg border border-border bg-card/65 p-6 transition hover:border-brand/60">
           <ScrollText className="h-6 w-6 text-orange" aria-hidden="true" />

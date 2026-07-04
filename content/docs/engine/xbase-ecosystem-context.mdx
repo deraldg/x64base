@@ -1,0 +1,106 @@
+---
+title: "xBase Ecosystem Context"
+description: "Research-backed positioning for x64base inside the living xBase, DBF, Clipper, FoxPro, and modernization ecosystem."
+---
+
+## Positioning
+
+x64base should not be described as "the first 64-bit xBase" or as a replacement
+for every existing xBase tool. The stronger claim is narrower and more durable:
+
+**x64base is an experimental 64-bit DBF/xBase architecture project that
+preserves the classic table-oriented workflow while exploring how DBF-style
+files, memos, indexes, metadata, and runtime behavior can evolve beyond
+historical structural limits.**
+
+That framing keeps the project honest. It distinguishes x64base from compiler
+projects, migration platforms, commercial modernization tools, DBF component
+libraries, and legacy-compatible application frameworks.
+
+## What The Ecosystem Already Has
+
+xBase did not disappear. It continued into several branches:
+
+| Branch | Examples | General role |
+| --- | --- | --- |
+| Open-source compiler/runtime | [Harbour](https://harbour.github.io/), xHarbour | Preserve and extend Clipper/xBase-compatible programming models. |
+| Commercial modernization | [Alaska Xbase++](https://www.alaska-software.com/landing/clipper/start.cxp), dBASE, FlagShip | Support Windows development, migration, modernization, or commercial xBase workflows. |
+| .NET migration/language work | XSharp | Bring xBase-style language work into .NET-oriented environments. |
+| DBF engines and libraries | Apollo, libxbase/Xbase64, Python DBF libraries | Provide DBF access, conversion, tooling, or embedded data-engine behavior. |
+| Legacy historical systems | Visual FoxPro, CA-Clipper, dBASE ancestors | Define the practical and historical vocabulary that current projects inherit. |
+
+Harbour describes itself as a cross-platform xBase implementation with compiler,
+runtime libraries, UI, database, and I/O backends. Alaska Xbase++ markets itself
+as a Clipper-compatible platform for 32- and 64-bit Windows. Microsoft lists
+Visual FoxPro 9.0 extended support as ending on January 13, 2015. These facts
+matter because they keep x64base from making unnecessary "only" or "first"
+claims.
+
+## Where x64base Fits
+
+Most current tools preserve, modernize, migrate, or interoperate with classic
+xBase compatibility.
+
+x64base asks a narrower engineering question:
+
+**What would an open 64-bit DBF/xBase architecture look like if designed for
+modern systems while keeping the classic workflow recognizable?**
+
+That question points to a different center of gravity:
+
+- DBF-style table and header evolution.
+- Memo architecture beyond older sidecar assumptions.
+- Index design that can represent classic intent while supporting newer backends.
+- Metadata space for longer names, field/type evolution, diagnostics, and
+  self-documentation.
+- A command-driven runtime that remains teachable and inspectable.
+
+## Historical Limits
+
+Classic DBF-family formats were designed around assumptions from earlier
+computing eras. One visible example is the table header record-count field: the
+dBASE file-structure reference describes bytes 4-7 as a 32-bit number containing
+the number of records in the table.
+
+x64base should frame this as structural research, not as a blanket scale claim.
+The point is not "infinite scale." The point is that the old table, memo,
+header, metadata, and index assumptions can be studied and reworked explicitly.
+
+## What To Say
+
+Use:
+
+- "experimental 64-bit DBF-style architecture"
+- "xBase-inspired runtime and workflow"
+- "research and engineering project"
+- "designed to explore larger table, memo, metadata, and index structures"
+- "education, exploration, and modernization-oriented"
+
+Avoid:
+
+- "the first 64-bit xBase"
+- "the only 64-bit xBase"
+- "successor to all xBase systems"
+- "fully compatible with every DBF/xBase dialect"
+- "production-ready FoxPro/Harbour/Xbase++ replacement"
+
+## Website Treatment
+
+The public website should show this as context, not as the top-level hero. The
+best placement is a lower homepage section that links here, paired with this
+documentation page as the sourced explanation.
+
+Recommended visible blocks:
+
+| Block | Message |
+| --- | --- |
+| Ecosystem | xBase is still alive across open-source, commercial, migration, DBF-engine, and legacy branches. |
+| Constraint | Classic DBF formats carry structural assumptions from earlier eras. |
+| x64base thesis | x64base explores a larger 64-bit DBF-style file/runtime model without abandoning the table workflow. |
+
+## Sources
+
+- [Harbour](https://harbour.github.io/)
+- [Alaska Xbase++](https://www.alaska-software.com/landing/clipper/start.cxp)
+- [Microsoft Visual FoxPro 9.0 Lifecycle](https://learn.microsoft.com/en-us/lifecycle/products/microsoft-visual-foxpro-90)
+- [dBASE DBF file structure](https://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm)
