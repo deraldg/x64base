@@ -1,16 +1,77 @@
 ---
 title: "Coding Standards"
-description: "Readable, maintainable rules for code and docs."
+description: "Source contracts, comments, usage headers, and safeguards for repeatable DotTalk++ / x64base development."
 ---
+
+These standards are part of the SelfDoc system. Code should be readable by a maintainer, harvestable by tools, and honest about its mutation and proof boundaries.
 
 ## Code
 
-- prefer small functions
-- explicit error handling
-- stable naming and terminology
+- Prefer small functions with explicit ownership.
+- Use stable command, field, table, and lane names.
+- Keep runtime behavior and public documentation in sync.
+- Route filesystem, network, external-process, and database mutation through explicit command contracts.
+- Preserve existing worktree changes; do not use broad rewrites for narrow documentation or command updates.
+
+## Command Header Contracts
+
+Every command intended for HELP, CMDHELP, SelfDoc, manualgen, or the website should have a leading `@dottalk.usage v1` block or an equivalent reviewed contract. Preferred fields:
+
+```text
+@dottalk.usage v1
+owner: DOT|COMMAND
+command: COMMAND
+category: ...
+status: supported|experimental|sample-extension|...
+noargs: usage|report|status|...
+effect: report|display|mixed|network-or-file|...
+mutates: none|session|filesystem|helpdata|dbf|sidecar|...
+usage-access: COMMAND USAGE
+summary:
+  Short behavior statement.
+usage:
+  COMMAND USAGE
+  COMMAND ...
+notes:
+  Runtime boundary notes and compatibility behavior.
+risk:
+  reads_files: yes|no
+  writes_files: yes|no
+  launches_external_app: yes|no
+  network_access: yes|no
+  mutates_table_data: yes|no
+related:
+  HELP
+  CMDHELPCHK
+@dottalk.end
+```
+
+These headers are harvested into comments evidence, HELP/CMDHELP rows, validation reports, manualgen, diagrams, and website pages.
+
+## Comments and Collection
+
+- Put command-level contracts at the top of the implementation file.
+- Keep usage examples ASCII-safe unless the file already requires Unicode.
+- Mark compatibility aliases explicitly.
+- State whether a command is read-only, report-only, filesystem-mutating, DBF-mutating, HELP-mutating, or externally active.
+- Use status labels such as `planned`, `canary`, `experimental`, or `review-needed` instead of burying uncertainty.
+- If a command writes HELP DATA, DBF files, sidecars, fetched files, or launches an external app, say so in `mutates:` and `risk:`.
+
+Current tooling includes `tools/comments/upsert_source_comment_contract.py` for staged source-comment imports and `tools/contracts/contract_scan.py` for contract-lane inventory.
+
+## Safeguards
+
+- Validation commands should be report-only unless a specific work order authorizes writes.
+- `CMDHELPCHK`, `MAINT`, `DDICT`, and `MANUAL` should remain read-only inspection surfaces unless their source contract changes.
+- `CMDHELP BUILD` is allowed to mutate HELP DATA because that is its explicit command contract.
+- `DDL FETCH`, `WEB FETCH`, `IMAGE`, `EDIT`, shell, and SFTP-style commands must document external app, network, and filesystem boundaries separately from table mutation.
+- Manualgen publication replacement requires review; dry-run artifacts are not automatic publications.
 
 ## Docs
 
-- short paragraphs
-- include examples
-- define terms once and reuse consistently
+- Short paragraphs.
+- Include command examples.
+- Define terms once and reuse consistently.
+- Preserve proof labels.
+- Link website pages back to command catalogs, feature crosswalks, SelfDoc reports, and manualgen artifacts.
+- Treat the website as a reviewed derivative of source, contracts, HELP, metadata, comments evidence, CMDHELPCHK, and manualgen.

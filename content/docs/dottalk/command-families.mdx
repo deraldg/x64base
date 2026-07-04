@@ -1,0 +1,101 @@
+---
+title: "Command Families"
+description: "Higher-level DotTalk++ command families documented from usage contracts, HELP, metadata, and SelfDoc evidence."
+---
+
+This page groups command families that are easy to miss in the alphabetical catalog. The catalog remains the row-level reference; this page records the documentation lanes.
+
+## Tables, Lists, and Browsers
+
+Table inspection and browsing are a family, not one command:
+
+| Surface | Current role |
+| --- | --- |
+| `SMARTLIST` / `SL` | Filter-aware, order-aware table listing with projections, tuple output, deleted-record modes, and predicate filtering. |
+| `SMARTBROWSE` / `SM` / `SMART` | Smart browser surface over table/tuple/workspace data. |
+| `SIMPLEBROWSE` / `SB` | Simple browser surface; current shortcut resolver maps `SB` to `SIMPLEBROWSE`. |
+| `BROWSE` | Legacy/global browse entrypoint forwarded to the refactored browse module. |
+| `BROWSER` | Minimal interactive browser with list, display, goto, edit, help, and quit actions. |
+| `BROWSETUI` / `BT` | Text-mode browser UI that delegates table operations to command handlers. |
+| `BROWSETV` | Turbo Vision browser lane where enabled. |
+| `RBROWSE` / `ERSATZ` | Relation-aware browsing. |
+| `TABLE`, `TABLE_BUFFER`, `TABLEMETA` | Table buffering, stale/dirty state, and metadata diagnostics. |
+
+Use `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, and `SMARTLIST` for the current smart/list/browser surfaces.
+
+## DDL and Schema
+
+`DDL` is the schema-oriented command family:
+
+```text
+DDL FETCH <url> TO <file>
+DDL VALIDATE <schema.json> USING <validator.json>
+DDL CREATE DBF <out.dbf> FROM <schema.json>
+DDL CREATE DBF <out.dbf> FROM <schema.json> EMIT SIDECARS
+DDL CREATE DBF <out.dbf> FROM <schema.json> SEED CSV <path.csv>
+DDL CREATE DBF <out.dbf> FROM <schema.json> SEED BLANK <n>
+```
+
+Current contract notes: `FETCH` can perform network access and write schema-side files; `CREATE DBF` writes DBF output and optional sidecars; existing output is refused unless `OVERWRITE` is supplied; `SEED CSV` is recognized by the contract but not complete in the current drop-in.
+
+## Data Dictionary
+
+`DDICT` is the active Data Dictionary inspection surface:
+
+```text
+DDICT STATUS
+DDICT TABLES
+DDICT FIELDS <table-or-alias>
+DDICT TAGS <table-or-alias>
+DDICT REL <object> [IN|OUT|BOTH]
+DDICT EVIDENCE <object>
+```
+
+The current source contract is read-only. It preserves DD* aliases such as `DDOBJECT`, `DDATTR`, `DDEDGE`, and `DDEVID`, while resolving authoritative `DATA_DICTIONARY_*` names.
+
+## External App and Network Boundaries
+
+These commands cross the runtime boundary and need explicit risk notes:
+
+| Command | Boundary |
+| --- | --- |
+| `EDIT` / `TEXT` | Launch or use configured editor behavior. |
+| `IMAGE` | Reads image metadata; `IMAGE <file>` opens the OS image viewer on Windows. |
+| `WEB` | Opens URLs, performs HTTP `GET`/`HEAD`, or writes fetched content to a file. |
+| `SFTP` | Remote file-transfer lane. |
+| `PSHELL`, `!`, `BANG` | Host shell / external command lane. |
+| `ZIP` | Archive read/write/extract lane through the configured backend. |
+
+Documentation must separate external-process, network, viewer/browser launch, and filesystem-write risks from database mutation.
+
+## SelfDoc, Help, Maintenance, and Manuals
+
+| Command | Role |
+| --- | --- |
+| `HELP` | Routes user help across command, function, FoxPro, PowerShell, SQL, beta, predicate, and education surfaces. |
+| `CMDHELP` | Builds or reports HELP DATA catalogs; `CMDHELP BUILD` mutates HELP DATA DBFs. |
+| `CMDHELPCHK` | Validates HELP/catalog/reflection artifacts; default behavior is report-only. |
+| `MAINT` | Read-only maintenance inspector for lanes, cookbooks, contracts, boundaries, and docs. |
+| `BBOX` | Teaches the Blackbox model and contract lane relationships. |
+| `MANUAL` | Read-only inspector for accepted MAN* manualgen catalog evidence. |
+| `MANSTAR` | Manualgen/publication support lane. |
+| `DRAWIO` | Diagram generation/export lane. |
+
+The repeatable curation path is:
+
+```text
+source behavior
+-> @dottalk.usage / @dottalk.contract / source comments
+-> comments and SRC* evidence
+-> HELP DATA and CMDHELP
+-> CMDHELPCHK validation
+-> SelfDoc reports and manualgen artifacts
+-> reviewed manual section
+-> website derivative
+```
+
+## Education and LabTalk
+
+LabTalk should expose education commands as runnable labs: `ASCII`, `BBOX`, `RETRO`, `STUDENTHELLO`, `SHELLO`, `STUDENTECHO`, `SECHO`, `IDX`, `BOOLEAN`, `CASE`, `CHRISTMAS`, `COBOL`, `CODASYL`, `NORMALIZE`, and `SIX`.
+
+These should be proof-labeled and connected to transcripts, HELP/CMDHELP output, and SelfDoc evidence when promoted into curriculum.

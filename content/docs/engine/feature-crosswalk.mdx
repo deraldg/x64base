@@ -7,7 +7,7 @@ This page is a reviewed website derivative of the local SelfDoc report:
 
 `D:\code\ccode\labtalk\reports\selfdoc\x64base_engine_feature_crosswalk_v1.md`
 
-The report was generated from local source evidence plus harvested HELP/manualgen tables. It found `24` feature lanes, `290` harvested HELP commands, and source evidence across the configured scanner globs.
+The report was generated from local source evidence plus harvested HELP/manualgen tables. It found `28` feature lanes, `290` harvested HELP commands, and source evidence across the configured scanner globs.
 
 Status language:
 
@@ -38,6 +38,8 @@ Status language:
 | Triggers, rules, and validation hooks | runtime-evidenced | `TRIGGER`, `RULE`, `VALIDATE`, `VALIDATE UNIQUE`, field constraints |
 | Filtering, searching, predicates, and WHERE cache | runtime-evidenced | `SET FILTER`, `LOCATE`, `FIND`, `SEEK`, `WHERE`, `WHERECACHE`, `SMARTLIST` |
 | Relations and relation-aware browsing | runtime-evidenced | `REL`, `RELATIONS`, `SET RELATION`, `ERSATZ`, `RBROWSE` |
+| DDL schema fetch, validation, DBF creation, seeds, and sidecars | runtime-evidenced | `DDL`; fetch/validate/create DBF forms; sidecar metadata; seed forms with implementation caveats |
+| Data Dictionary catalog inspection and DDICT bridge | source-evidenced | `DDICT`; DD* compatibility aliases; DATA_DICTIONARY_* catalog names; read-only inspection contract |
 
 ## Index, APIs, and integration
 
@@ -45,8 +47,10 @@ Status language:
 | --- | --- | --- |
 | Open Index API and index backends | runtime-evidenced | `INDEX`, `REINDEX`, `SET INDEX`, `SET ORDER`, `SEEK`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB`; V32 defaults to `.cnx`, V64 defaults to `.cdx` |
 | SQL bridge, CSV import/export, DBF copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT`, `AUTODBF`; `IMPORT` reads CSV into an open DBF and `EXPORT` writes CSV by default |
+| External app, shell, image, web, URL, SFTP, and archive boundaries | runtime-evidenced | `EDIT`, `TEXT`, `IMAGE`, `WEB`, `SFTP`, `PSHELL`, `BANG`, `ZIP`; external app/network/filesystem risks are separate from DBF mutation |
 | Remote and system integration surfaces | runtime-evidenced | `SFTP`, `PSHELL`, `WEB`, `ZIP`; platform zip backends |
 | Security and policy surfaces | runtime-evidenced | `SECURITY`, security policy/runtime/signature headers |
+| Education, retro, ASCII, blackbox, and student extension commands | runtime-evidenced | `ASCII`, `BBOX`, `RETRO`, `SHELLO`, `STUDENTHELLO`, `IDX`, `BOOLEAN`, `CASE`, `CHRISTMAS`, `COBOL`, `CODASYL`, `NORMALIZE`, `SIX` |
 
 ## Language, UI, and observability
 
@@ -57,8 +61,8 @@ Status language:
 | Messaging, error/status, and output routing | runtime-evidenced | `MSGMGR`, `ERROR STATUS`, `ERROR CLEAR`, message catalog, output router |
 | Location, locale, and language support | runtime-evidenced | locale docs and message-manager integration lanes |
 | Command timing and diagnostics | runtime-evidenced | timing/profile/chrono evidence plus `STATUS`, `BETA`, `CMDHELPCHK` diagnostic surfaces |
-| Open GUI API, TUI, wxWidgets, and browser lanes | runtime-evidenced | `BROWSETUI`, `BROWSETV`, `BROWSER`, `SMARTBROWSE`, `SIMPLEBROWSE`, GUI docs |
-| SelfDoc, HELP metadata, contracts, and manualgen pipeline | runtime-evidenced | `HELP`, `CMDHELP`, `CMDHELPCHK`, `MANUAL`, `MANSTAR`, `DRAWIO`, SelfDoc/manualgen tooling |
+| Open GUI API, TUI, wxWidgets, and browser lanes | runtime-evidenced | `BROWSETUI`, `BROWSETV`, `BROWSER`, `BROWSE`, `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, `SMARTLIST`, GUI docs |
+| SelfDoc, HELP metadata, contracts, MAINT, Blackbox, and manualgen pipeline | runtime-evidenced | `HELP`, `CMDHELP`, `CMDHELPCHK`, `MAINT`, `BBOX`, `MANUAL`, `MANSTAR`, `DRAWIO`, SelfDoc/manualgen/comment/contract tooling |
 
 ## Manualgen result
 

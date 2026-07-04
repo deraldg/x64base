@@ -10,7 +10,7 @@ The website should be fed from the documentation system, not hand-maintained fro
 The authority order is:
 
 1. Runtime/source behavior in `D:\code\ccode`.
-2. HELP, metadata, command registration, comments, contracts, and canary evidence.
+2. HELP, metadata, command registration, comments, `@dottalk.usage`, `@dottalk.contract`, contract scans, and canary evidence.
 3. SelfDoc reports and manualgen manifests.
 4. Reviewed manual sections.
 5. Website pages in `D:\dev\x64base-site`.
@@ -20,7 +20,8 @@ When a DotTalk++ command or function is added, the expected flow is:
 ```text
 source change
   -> command/function registration
-  -> HELP / metadata / comments / usage contracts
+  -> source header usage contracts and source comments
+  -> HELP / metadata / comments evidence / contract scans
   -> SelfDoc and CMDHELPCHK validation
   -> manualgen inventory / validate / dry-run
   -> reviewed manual section
@@ -53,8 +54,24 @@ Generated outputs include:
 - Do not claim a lane is complete when the evidence says active beta, canary, or review-needed.
 - Keep generated reports local until reviewed, then summarize them on the website.
 - Command and function pages should cite the extraction snapshot and should be regenerated when HELP/CMDHELP/usage contracts change.
+- Commands that launch external apps, perform network requests, write files, write HELP DATA, or write DBFs must carry explicit `mutates:` and `risk:` fields before being promoted as stable docs.
+
+## Procedural curation
+
+The repeatable curation loop is:
+
+```text
+scan source headers
+-> harvest comments and usage contracts
+-> rebuild or inspect HELP/CMDHELP surfaces
+-> run CMDHELPCHK or report-only validators
+-> run manualgen inventory/validate/dry-run
+-> review generated sections
+-> update website derivatives
+```
+
+`CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `BBOX`, and contract tools all belong in this loop. Their documentation should state mutation boundaries explicitly so a report-only inspection command does not get mistaken for a promotion command.
 
 ## Current limitation
 
 Manualgen currently validates the manual structure but requires Python `>= 3.12`. The latest run used Python `3.11.0`, so validation failed on that environment check only. Boundary failures were `0`, and the dry-run manual artifact was still generated for review.
-
