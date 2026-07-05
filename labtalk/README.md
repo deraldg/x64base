@@ -13,6 +13,8 @@ Current starting points:
 - `LABTALK_SDLC_FRAMEWORK_v0.md`
 - `LABTALK_DEVELOPER_PROFILE_v0.md`
 - `D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
+- `D:/code/ccode/docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md`
+- `D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md`
 - `registries/apps.yaml`
 - `registries/labs.yaml`
 - `registries/concepts.yaml`
@@ -20,6 +22,7 @@ Current starting points:
 - `registries/portal.yaml`
 - `labs/database_literacy_starter/LAB_DATABASE_LITERACY_STARTER_v0.md`
 - `diagrams/LABTALK_VISUALS_v0.md`
+- `diagrams/LABTALK_SDLC_DIAGRAMS_v0.md`
 
 Working rule:
 

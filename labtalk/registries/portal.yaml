@@ -29,6 +29,10 @@ sections:
         label: DotTalk++ SDLC Charter
         kind: markdown
         path: D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - id: doc.sdlc_pldc_planning
+        label: SDLC / PLDC Planning Adoption
+        kind: markdown
+        path: D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
       - id: doc.developer_profile
         label: Developer Profile
         kind: markdown
@@ -83,6 +87,16 @@ sections:
         kind: diagram
         path: D:/code/ccode/labtalk/diagrams/selfdoc_contract_lane_v1.drawio
         status: generated
+      - id: diagram.labtalk_sdlc
+        label: LabTalk SDLC Diagrams
+        kind: markdown
+        path: D:/code/ccode/labtalk/diagrams/LABTALK_SDLC_DIAGRAMS_v0.md
+        status: maintained
+      - id: diagram.dottalkpp_sdlc
+        label: DotTalk++ SDLC Diagrams
+        kind: markdown
+        path: D:/code/ccode/docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md
+        status: maintained
       - id: diagram.selfdoc_contract_lane_mermaid
         label: SelfDoc Contract Lane Mermaid
         kind: markdown
