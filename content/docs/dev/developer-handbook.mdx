@@ -9,6 +9,9 @@ Use `D:\code\ccode` as the authoritative local source tree for DotTalk++ / x64ba
 
 Use `D:\dev\x64base-site` as the website publication tree.
 
+Use `C:\x64base\dottalk-webui\public-site` as the local runtime mirror for the
+built website before GitHub Pages publication.
+
 The site content was updated from a scan of:
 
 - CMake build configuration.
@@ -35,6 +38,9 @@ See [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication).
 - Runtime/engineering truth belongs first in `D:\code\ccode`.
 - Publication-ready manuals, contracts, and diagrams should be reviewed there before site promotion.
 - The website should mirror or curate those reviewed materials, not replace them.
+- Website publication should flow through `D:\dev\x64base-site` to
+  `C:\x64base\dottalk-webui\public-site`, then to GitHub Pages and
+  `x64base.com`.
 - If a technical claim diverges between the two trees, fix `D:\code\ccode` first and then republish the site.
 
 ## Education goal

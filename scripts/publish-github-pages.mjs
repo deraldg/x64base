@@ -107,6 +107,8 @@ if (!fs.existsSync(outDir)) {
   throw new Error("Expected ./out after build.");
 }
 
+run(npmCommand, ["run", "stage:cx64base"]);
+
 removeDeployContents();
 copyDir(outDir, deployDir);
 ensureMarkers();

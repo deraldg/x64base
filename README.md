@@ -46,7 +46,7 @@ Copy `out/` contents into your Apache `DocumentRoot` (or a vhost directory). Opt
 
 See `apache/DEPLOYMENT.md` for full details and reverse-proxy alternative.
 
-## Publish cycle: laptop -> GitHub Pages -> x64base.com
+## Publish cycle: laptop -> C:\x64base -> GitHub Pages -> x64base.com
 
 The live public site is served by GitHub Pages from:
 
@@ -66,9 +66,17 @@ That command:
 
 1. pulls/rebases `.gh-pages-deploy` from `origin/gh-pages`,
 2. runs the static Next export,
-3. refreshes `.gh-pages-deploy` from `out/`,
-4. writes `CNAME` and `.nojekyll`,
-5. commits and pushes `gh-pages`.
+3. stages the built site to `C:\x64base\dottalk-webui\public-site`,
+4. refreshes `.gh-pages-deploy` from `out/`,
+5. writes `CNAME` and `.nojekyll`,
+6. commits and pushes `gh-pages`.
+
+To stage only the local runtime mirror after a build:
+
+```bash
+npm run build
+npm run stage:cx64base
+```
 
 After publishing, verify:
 
