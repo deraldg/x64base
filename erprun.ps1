@@ -5,6 +5,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$target = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "run-wx.ps1"
+$target = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "run-erp.ps1"
 & $target @AppArgs
 exit $LASTEXITCODE

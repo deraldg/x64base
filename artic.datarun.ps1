@@ -5,6 +5,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$target = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "run-wx.ps1"
-& $target @AppArgs
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $scriptDir "arctictalk.datarun.ps1") @AppArgs
 exit $LASTEXITCODE

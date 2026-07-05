@@ -1,0 +1,54 @@
+```mermaid
+flowchart TB
+  subgraph Inputs["Read-Only Inputs"]
+    src["src/ and include/"]
+    helpArtifacts["data/help/help_artifacts.dbf\nand HELP artifact homes"]
+    metaFiles["metadata DBF/CDX/LMDB presence\nSYS* catalog homes"]
+    diagramHomes["diagram homes\nsystem and user lanes"]
+    tools["loose tools\n*.py *.ps1 *.dts manifests"]
+    reportsHome["generated output homes\nreports diagrams patches evidence"]
+  end
+
+  subgraph Probes["SelfDoc Inventory Probes"]
+    sourceProbe["source_contract_inventory_probe"]
+    helpProbe["help_artifacts_summary_probe"]
+    metaProbe["metadata_catalog_presence_probe"]
+    diagramProbe["diagram_catalog_presence_probe"]
+    toolingProbe["loose_tooling_inventory_probe"]
+    homesProbe["generated_output_homes_probe"]
+    crosswalkProbe["command_help_crosswalk_probe"]
+    chkProbe["cmdhelpchk_v2_probe\nplan only"]
+  end
+
+  subgraph Outputs["Report-Only Outputs"]
+    invReports["docs/generated/reports/selfdoc_*"]
+    candidates["manifest update proposals\nnot automatic manifest rewrites"]
+    review["human review gate"]
+  end
+
+  src --> sourceProbe
+  helpArtifacts --> helpProbe
+  metaFiles --> metaProbe
+  diagramHomes --> diagramProbe
+  tools --> toolingProbe
+  reportsHome --> homesProbe
+  sourceProbe --> crosswalkProbe
+  helpProbe --> crosswalkProbe
+  crosswalkProbe --> chkProbe
+
+  sourceProbe --> invReports
+  helpProbe --> invReports
+  metaProbe --> invReports
+  diagramProbe --> invReports
+  toolingProbe --> invReports
+  homesProbe --> invReports
+  crosswalkProbe --> invReports
+  chkProbe --> invReports
+
+  invReports --> candidates
+  candidates --> review
+
+  guard["Non-mutation guard\nno DBF writes\nno HELP rebuild\nno CMDHELPCHK edits\nno source repair\nno file moves"]
+  Probes -. "must obey" .-> guard
+  guard -. "blocks direct promotion" .-> review
+```

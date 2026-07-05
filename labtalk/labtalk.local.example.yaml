@@ -1,0 +1,12 @@
+# Machine-local LabTalk configuration example.
+# Copy to labtalk.local.yaml and adjust paths if needed.
+
+paths:
+  ccode_root: D:/code/ccode
+  labtalk_root: D:/code/ccode/labtalk
+  dottalkpp_exe: D:/code/ccode/dottalkpp/bin/dottalkpp.exe
+  dottalkpp_workdir: D:/code/ccode
+
+tools:
+  python: python
+  powershell: powershell.exe

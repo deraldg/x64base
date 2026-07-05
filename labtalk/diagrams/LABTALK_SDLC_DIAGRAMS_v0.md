@@ -236,3 +236,4 @@ flowchart LR
     stub -->|"first useful behavior"| dev
     planned -->|"registry or entry point"| stub
 ```
+
