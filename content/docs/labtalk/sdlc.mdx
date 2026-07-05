@@ -1,0 +1,76 @@
+---
+title: "Laboratory Campus SDLC"
+description: "How the Laboratory Campus tracks real, development, stubbed, and planned work."
+---
+
+The Laboratory Campus uses a proof-aware SDLC for planning, collaboration, and
+student-facing material.
+
+The maintained source lives in the repository:
+
+- `labtalk/LABTALK_SDLC_FRAMEWORK_v0.md`
+- `labtalk/diagrams/LABTALK_SDLC_DIAGRAMS_v0.md`
+- `docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md`
+
+This website page is a public summary. It is not the authority.
+
+## Campus State Model
+
+Campus material is classified with explicit truth states:
+
+| State | Meaning |
+|---|---|
+| real | Working behavior exists and evidence is linked. |
+| dev | Useful implementation exists but is not fully promoted. |
+| plugged/stubbed | Registry row, portal entry, or placeholder exists, but behavior is partial. |
+| planned | Documented intent only. |
+
+## Current SDLC Board
+
+| State | Current examples |
+|---|---|
+| real | DotTalk++ Runtime Systems Lab; HELP / CMDHELP / CMDHELPCHK Lab |
+| dev | SelfDoc First Lab; Database Literacy Starter; Case Library; LabTalk Portal |
+| plugged/stubbed | Historical Data Systems Trail; Dataset Library |
+| planned | Proof Dashboard; Static Campus HTML Snapshot; native LABTALK command; Jupyter/LMS delivery |
+
+## Promotion Path
+
+```text
+idea
+-> planned
+-> plugged/stubbed
+-> dev
+-> real
+-> student_ready
+-> publication_ready
+```
+
+Promotion requires proof. If proof becomes stale, the item is demoted rather
+than left ambiguous.
+
+## Case Studies
+
+Case studies move separately from runtime features because they mix source
+memory, historical documents, media, runtime evidence, and student-facing
+explanation.
+
+```text
+source_memory
+-> source_document_seen
+-> normalized_case_draft
+-> runtime_readable
+-> lab_candidate
+-> reviewed_case
+-> student_case
+-> publication_case
+```
+
+Runtime-readable does not mean historically verified or publication-ready.
+
+## Planning Software
+
+Campus planning will later map to Planner, Microsoft Project, OpenProject, or
+another planning tool. Those tools will track work packages and gates, but the
+maintained repository documents remain the authority.
+

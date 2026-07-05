@@ -1,0 +1,60 @@
+---
+title: "DotTalk++ SDLC"
+description: "Runtime SDLC, proof gates, and maintenance boundaries for DotTalk++."
+---
+
+DotTalk++ is large enough to have its own SDLC.
+
+The maintained source lives in the repository:
+
+- `docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
+- `docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md`
+- `docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md`
+
+This website page is a public summary. It is not the authority.
+
+## Ownership
+
+DotTalk++ SDLC owns:
+
+- runtime behavior,
+- command implementation,
+- storage and indexing behavior,
+- HELP / CMDHELP / CMDHELPCHK alignment,
+- build and smoke proof,
+- maintenance surfaces such as MAINT, BBOX, DDICT, and MANUAL.
+
+LabTalk and the Laboratory Campus may teach DotTalk++ behavior, but DotTalk++
+owns whether that behavior is real.
+
+## Evidence Ladder
+
+```text
+source_defined
+-> runtime_observed
+-> help_documented
+-> validated
+-> professional_ready
+-> lab_ready
+```
+
+LabTalk should not package DotTalk++ behavior as real until DotTalk++ SDLC has
+runtime evidence, and preferably validation for student-facing use.
+
+## Feature Status Language
+
+| State | Meaning |
+|---|---|
+| runtime-evidenced | Implemented or supported command plus source evidence. |
+| source-evidenced | Source evidence exists, but matching runtime proof is incomplete. |
+| help-catalog-evidenced | HELP catalog evidence exists, but source mapping needs review. |
+| planned-or-in-progress | Planning or diagnostic lane; do not market as complete. |
+| review-needed | No strong evidence from the current pass. |
+
+## PLDC Boundary
+
+PLDC is used for deliverable packages: labs, lessons, dashboards, class packs,
+public pages, and release bundles.
+
+PLDC cannot promote behavior past SDLC evidence.
+
