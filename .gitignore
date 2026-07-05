@@ -1,5 +1,7 @@
 ﻿# Build trees
 /build/
+/build-*/
+/build_*/
 /out/
 /dist/
 /bin/
@@ -7,6 +9,10 @@
 /CMakeCache.txt
 /CMakeFiles/
 /cmake-build-*/
+build.ninja
+cmake_install.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
 /.vs/
 *.vcxproj.user
 *.VC.db
@@ -31,6 +37,87 @@
 *.tmp
 *.cache
 
+# Local environments
+.venv/
+.vscode/
+
+# Local runtime state
+/dottalkpp/user/
+/dottalkpp/logs/
+/dottalkpp/test_reports/
+/dottalkpp/test_reports2/
+/dottalkpp/junk/
+/dottalkpp/data/.relations/
+/dottalkpp/data/logs/
+/dottalkpp/data/tmp/
+/dottalkpp/data/logfile.txt
+/dottalkpp/data/tmp_stdin_quit.txt
+/dottalkpp/dottalkpp_runtime_*.csv
+/dottalkpp/dottalkpp_runtime_*.txt
+/dottalkpp/dottalkpp_tree*.txt
+/dottalkpp/data/lmdb/**/data.mdb
+/dottalkpp/data/lmdb/**/lock.mdb
+/dottalkpp/data/lmdb/**/backups/
+/docs/locale/repairs/rollback/
+/docs/manuals/developer/manualgen/generated/
+/docs/datadict/backups/
+/docs/datadict/reports/
+/docs/messaging/apply/
+/docs/messaging/backups/
+/docs/messaging/reports/
+/docs/messaging/sandbox/
+/docs/manuals/developer/manualgen/reports/
+/docs/manuals/developer/manualgen/runlog/
+/docs/manuals/developer/proofs/
+
+# Local staging, backups, and ad hoc work areas
+/_drops/
+/_incoming/
+/_mdo_*_tmp/
+/x64base/
+/.mdo_backups/
+/.backup-rename-cli/
+/AI_logs/
+/TMP/
+/backups/
+/memo_backup/
+/nppBackup/
+
+# Root-level export bundles and captures
+/*.zip
+/*.7z
+/*.rar
+/*.tar
+/*.gz
+/*.jpg
+/*.jpeg
+/*.png
+/*.mhtml
+/*.sqlite
+/*.db
+/*.mdb
+/*.part-*
+
+# Root-level generated inventories and accidental litter
+/flattened_sources.txt
+/dottalkpp_tree.txt
+/--runtime-root
+/-Filter
+/-Pattern
+/-RepoRoot
+/=
+/Unknown
+/tmp_function_smoke.dts
+/tmp_smoke_curated_lanes_*.txt
+/tmp_stage_smoke_curated_lanes_*.txt
+/tmp_stage_sync_list.txt
+/x64base.com.txt
+/cmd_ddict.cpp.review_candidate
+
+# Local documentation drop-ins and review scratch
+/docs/_drops/homegrown/
+*.review_candidate
+
 # Python helpers
 __pycache__/
 *.pyc
@@ -40,3 +127,7 @@ __pycache__/
 
 # Test results
 /results/
+
+# Experimental TUI build byproducts
+/tv_test/build/
+/tvhc/build/
