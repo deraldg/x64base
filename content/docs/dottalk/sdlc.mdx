@@ -5,6 +5,12 @@ description: "Runtime SDLC, proof gates, and maintenance boundaries for DotTalk+
 
 DotTalk++ is large enough to have its own SDLC.
 
+![x64base / DotTalk++ operational SDLC promotion workflow](/images/sdlc/dottalk-operational-sdlc-promotion-workflow.jpg)
+
+The current promotion workflow starts in primary development, moves through
+curated staging, optional runtime proof, and GitHub publication, then feeds the
+website/manual evidence loop.
+
 The maintained source lives in the repository:
 
 - `docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
@@ -28,6 +34,8 @@ LabTalk and the Laboratory Campus may teach DotTalk++ behavior, but DotTalk++
 owns whether that behavior is real.
 
 ## Evidence Ladder
+
+![DotTalk++ runtime promotion path](/images/sdlc/dottalk-runtime-promotion-path.svg)
 
 ```text
 source_defined
@@ -57,4 +65,3 @@ PLDC is used for deliverable packages: labs, lessons, dashboards, class packs,
 public pages, and release bundles.
 
 PLDC cannot promote behavior past SDLC evidence.
-
