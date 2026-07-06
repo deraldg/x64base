@@ -1,20 +1,271 @@
 ---
 title: "Getting Started: FAQ"
-description: "Common questions about formats, tools, and the learning-first approach."
+description: "Common questions about x64base products, tools, lanes, formats, proof status, and the learning-first architecture."
 ---
 
-## Is this a clone of classic xBase?
+This FAQ is organized by how the project is actually described on the site: products, tools, lanes, formats, and proof status.
 
-No. x64base is a **lineage evolution**: it keeps the practical clarity of xBase tables while modernizing to 64-bit
-formats, explicit specs, and a teachable tooling ecosystem.
+## Products
 
-## What file formats are used?
+### Is this a clone of classic xBase?
 
-- **DBF_64** for table records
-- **FPT64** for memo data
+No. x64base is a **lineage evolution**. It keeps the practical clarity of xBase tables, work areas, records, indexes, and command-driven workflows while modernizing the architecture around 64-bit formats, explicit specifications, object-oriented runtime services, documentation metadata, and cross-platform build lanes.
 
-See: [DBF_64 Specification](/docs/engine/dbf-64-specification), [FPT64 Memo Format](/docs/engine/fpt64-memo-format)
+See: [Engine Architecture](/docs/engine/architecture), [Ecosystem Feature Comparison](/docs/engine/ecosystem-feature-comparison)
 
-## Why so much emphasis on education?
+### What is x64base?
 
-Because file formats and relational thinking are best learned by *inspection and repetition*.
+x64base is the database/runtime side of the system. It handles DBF-family table work, work areas, cursor state, records, fields, memos, indexing, metadata, validation, and relation-aware runtime behavior exposed through DotTalk++.
+
+It is best described today as **active beta engine work**, not a finished standalone commercial database product.
+
+See: [x64base Engine](/products/x64base-engine), [Feature Crosswalk](/docs/engine/feature-crosswalk)
+
+### What is DotTalk++?
+
+DotTalk++ is the canonical command shell and runtime vocabulary for x64base. It exposes commands for opening tables, browsing records, moving cursors, loading workspaces, inspecting relations, mutating data, generating help, validating metadata, and running repeatable scripts.
+
+DotTalk++ is active beta. Some command families are runtime-proven; others are canaries, integration surfaces, or planned lanes.
+
+See: [DotTalk++](/products/dottalk), [DotTalk++ Language Guide](/docs/dottalk/language-guide)
+
+### What is DotScript?
+
+DotScript is the productized script form of the DotTalk++ command language. It is for repeatable command files, labs, validation runs, and automation.
+
+Current documented syntax includes variables, comments, line continuation, `IF` / `ELSE` / `ENDIF`, `LOOP` / `ENDLOOP`, `WHILE` / `ENDWHILE`, `UNTIL` / `ENDUNTIL`, `SCAN` / `ENDSCAN`, one-level subscript nesting, and CSV/DBF import-export workflows.
+
+See: [DotScript](/products/dotscript), [DotScript Language Guide](/docs/dottalk/dotscript-language-guide)
+
+### What is DotTalk++ Workbench?
+
+DotTalk++ Workbench is the family name for GUI, TUI, CLI, browser, and preview surfaces over the same runtime concepts. The goal is parallel visibility: a table, workspace, relation, command, or proof should be inspectable from more than one surface without changing the underlying runtime truth.
+
+See: [Parallel GUI/TUI](/products/parallel-gui-tui), [Parallel GUI/TUI Docs](/docs/talk-family/parallel-gui-tui)
+
+### What is Arctic?
+
+Arctic is the code name for the DotTalk++ Workbench TUI surface. It should not be used as the product family name. Use **DotTalk++ Workbench** for the family and **Arctic TUI** for the terminal interface lane.
+
+See: [Arctic TUI](/docs/talk-family/arctic), [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence)
+
+### What is the Laboratory Campus?
+
+The Laboratory Campus is the learning and collaboration layer for x64base and DotTalk++. LabTalk remains the project mark and legacy name, but public copy increasingly emphasizes the campus.
+
+The campus is **alpha**: it mixes planning material, existing evidence, in-development labs, datasets, cases, GUI experiments, and proof-backed lessons.
+
+See: [Laboratory Campus](/products/labtalk), [Laboratory Campus Overview](/docs/labtalk/overview)
+
+## Tools And Commands
+
+### What are workspaces and areas?
+
+Workspaces are wrappers over active database areas. An area is the runtime place where a table, cursor position, index order, relation state, memo behavior, metadata, and buffering state can be inspected and controlled.
+
+This is why x64base is described as an object-oriented hybrid: classic xBase ideas remain visible, but the runtime organizes them through explicit service objects and work-area state.
+
+See: [Engine Architecture](/docs/engine/architecture), [Getting Started Overview](/docs/getting-started/overview)
+
+### What are TupTalk, TableTalk, and RelTalk?
+
+- **TupTalk** names tuple-facing relation output and joined record views.
+- **TableTalk** names table buffering, including dirty and stale table state.
+- **RelTalk** names relation-facing workflows such as relation trees, descendant summaries, and relation-aware browse output.
+
+These are lanes and product names around actual runtime concerns, not interchangeable labels.
+
+See: [TupTalk](/docs/talk-family/tuptalk), [TableTalk](/docs/talk-family/tabletalk), [RelTalk](/docs/talk-family/reltalk)
+
+### What browsing and listing tools exist?
+
+The site documents several table and browser surfaces, including `SMARTLIST`, `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, `BROWSE`, `BROWSER`, `BROWSETUI`, `ERSATZ`, and `RBROWSE`.
+
+`SB` is an alias for `SMARTBROWSE`. Browser names should be documented from command evidence, not inferred from labels.
+
+See: [Command Catalog](/docs/dottalk/command-catalog), [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence)
+
+### What commands mutate data?
+
+Data mutation needs special treatment because it changes records or buffered state. Important mutator families include `REPLACE`, `CALC`, `CALCWRITE`, and multi-record/multi-replace workflows such as `MULTIREP`.
+
+Mutation behavior must be documented against buffering state: unbuffered writes, table-buffered writes, dirty rows, stale fields, validation failures, and commit/writeback boundaries are not the same thing.
+
+See: [DotTalk++ Data Mutators](/docs/dottalk/data-mutators), [SET Family](/docs/dottalk/set-family)
+
+### Does DotTalk++ support external tools?
+
+Yes, some command families call external apps, shell behavior, images, web URLs, or helper tools. These commands should be documented with the same care as database commands because they cross a boundary outside the runtime.
+
+See: [Command Catalog](/docs/dottalk/command-catalog), [Coding Standards](/docs/dev/coding-standards)
+
+### Are there education commands?
+
+Yes. The Laboratory Campus documentation tracks education-facing commands and lessons, including areas such as `ASCII`, `SHELLO`, `RETRO`, timed `IDX` labs, pre/post polling hooks, student code hooks, datasets, and proof transcripts.
+
+See: [Education Features](/docs/labtalk/education-features), [Laboratory Campus Examples](/docs/labtalk/examples)
+
+## Lanes
+
+### What is a lane?
+
+A lane is a named workstream with its own proof status. Examples include engine work, DotTalk++ commands, DotScript, SelfDoc, manual generation, Laboratory Campus lessons, GUI/TUI surfaces, historical source preservation, and the proposed application UI DSL.
+
+Lanes prevent the site from flattening active, planned, proven, and experimental work into one vague product claim.
+
+See: [Current Work Lanes](/docs/dev/current-lanes), [Website Documentation Matrix](/docs/dev/website-documentation-matrix)
+
+### What is the SelfDoc lane?
+
+SelfDoc is the documentation and metadata lane that collects command help, source comments, contracts, metadata, proof reports, and manual-generation artifacts. It is part of the system architecture, not just a publishing chore.
+
+The long-term goal is vertical content generation: a command or feature update should flow from source and HELP metadata through SelfDoc/MDO reports into manuals, diagrams, and website sections.
+
+See: [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline), [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication)
+
+### What is the Master Documentation Organizer?
+
+The Master Documentation Organizer is the organizing layer for generated and curated documentation. It is intended to help gather command contracts, metadata, help text, proof artifacts, diagrams, screenshots, and manuals into repeatable publication paths.
+
+See: [Important Documents](/docs/dev/important-documents), [Website Documentation Matrix](/docs/dev/website-documentation-matrix)
+
+### What is the application UI DSL lane?
+
+It is a planned lane for user-defined menus, windows, dialogs, controls, and event handlers in DotTalk++ / DotScript style.
+
+DotTalk++ can already write database/runtime programs. It does **not** yet provide a finished FoxPro-style screen/menu/dialog language for custom applications. That gap is documented honestly as planned work.
+
+Example direction:
+
+```text
+CREATE MENU MainMenu
+CREATE WINDOW CustomerWin
+CREATE DIALOG EditCustomer
+DEFINE BUTTON Save
+ON CLICK DO save_customer
+```
+
+See: [Application UI DSL Lane](/docs/dev/application-ui-dsl-lane)
+
+### What is the historical source lineage lane?
+
+It preserves earlier xBase, XDLL, xBase2, original C-era DotTalk work, recovery folders, AI-assisted false starts, and modern DotTalk++ with checksums, labels, and feature tags.
+
+This lane exists because the project history matters: the modern system is larger than the original code, but the original source provides important provenance.
+
+See: [Historical Source Lineage](/docs/dev/historical-source-lineage)
+
+## Formats And Engine
+
+### What table formats are used?
+
+The project works with DBF-family formats, including classic/MS-DOS DBF, VFP-style DBF, and x64 DBF_64 work. DBF_64 is the newer 64-bit table direction, not the only DBF flavor named on the site.
+
+See: [DBF Flavors and Index Defaults](/docs/engine/dbf-flavors-and-indexes), [DBF_64 Specification](/docs/engine/dbf-64-specification)
+
+### What memo formats are used?
+
+FPT64 is the documented 64-bit memo direction. The memo subsystem is also discussed as an object-oriented architecture with `MemoRef`, `MemoManager`, `MemoObject`, and `MemoStore` concepts.
+
+See: [FPT64 Memo Format](/docs/engine/fpt64-memo-format), [Engine Architecture](/docs/engine/architecture)
+
+### What indexing work exists?
+
+The site documents INX, CNX, CDX, and LMDB-backed indexing work, including default and optional index choices by DBF flavor where known. Some indexing work is runtime-proven; some is active integration work.
+
+See: [Indexing Rules](/docs/engine/indexing-rules), [CDX / LMDB Indexing](/docs/engine/cdx-lmdb-indexing)
+
+### Does x64base support CSV import and export?
+
+Yes, CSV import/export and DBF/CSV workflows are part of the documented command and DotScript surface. Those flows should be tied to command evidence and not described as a generic spreadsheet feature.
+
+See: [DotScript Language Guide](/docs/dottalk/dotscript-language-guide), [Command Catalog](/docs/dottalk/command-catalog)
+
+### Does x64base support DDL?
+
+DDL is documented as a command family and should be tracked with command catalog evidence, data dictionary behavior, schema/proof artifacts, and any limits discovered by runtime tests.
+
+See: [Command Catalog](/docs/dottalk/command-catalog), [Feature Crosswalk](/docs/engine/feature-crosswalk)
+
+### What about record locking, triggers, buffering, and cursor control?
+
+These are commercial-database-style feature areas tracked in the engine and command documentation. The site should distinguish runtime-proven behavior from active or planned work.
+
+Buffering is especially important: TableTalk tracks table-buffer state such as dirty rows, stale fields, validation failures, and writeback behavior.
+
+See: [Feature Crosswalk](/docs/engine/feature-crosswalk), [DotTalk++ Data Mutators](/docs/dottalk/data-mutators), [SET Family](/docs/dottalk/set-family)
+
+### What about language, locale, currency, and international support?
+
+The system tracks locale, language, settings, and field/data type work as part of the engine and SET-command family. International currency and locale behavior should be documented from actual command coverage, field-type behavior, and tests.
+
+See: [SET Family](/docs/dottalk/set-family), [Feature Crosswalk](/docs/engine/feature-crosswalk)
+
+## Interfaces
+
+### What interfaces exist today?
+
+The documented interface surfaces include:
+
+- DotTalk++ CLI command shell.
+- Arctic TUI code-name surface.
+- DotTalk++ Workbench GUI and preview lanes.
+- Python/Tk preview tools.
+- Website documentation and product pages.
+
+Each surface should point back to runtime evidence when possible.
+
+See: [Parallel GUI/TUI](/docs/talk-family/parallel-gui-tui), [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence)
+
+### Can users build their own GUI screens in DotTalk++ today?
+
+Not yet as a finished user-facing language. Current GUI/TUI functionality is mainly supplied by existing templates, workbench surfaces, and external code. A DotTalk++ UI definition language is a proposed lane, not a completed feature.
+
+See: [Application UI DSL Lane](/docs/dev/application-ui-dsl-lane)
+
+### Is the website itself an x64base product?
+
+Yes, conceptually. The website is part of the product system because it publishes x64base/DotTalk++ documentation, proof artifacts, diagrams, screenshots, generated content, and curated explanations.
+
+Practically, the website is currently a separate static site project. The intended direction is to keep aligning it with the SelfDoc/MDO vertical feed so source truth, HELP, contracts, manuals, and website pages do not drift.
+
+See: [Website Documentation Matrix](/docs/dev/website-documentation-matrix), [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication)
+
+## Status And Proof
+
+### What does runtime-proven mean?
+
+Runtime-proven means the behavior has current evidence: source, command output, screenshots, transcripts, smoke tests, generated reports, or reviewed artifacts. It does not mean every edge case is complete.
+
+See: [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence), [Feature Crosswalk](/docs/engine/feature-crosswalk)
+
+### What is active beta versus alpha?
+
+x64base and DotTalk++ are active beta: real runtime behavior exists, but the project is still evolving.
+
+The Laboratory Campus is alpha: it combines collaboration planning, teaching material, existing screenshots, datasets, cases, and in-development tools.
+
+Planned lanes, such as the application UI DSL, should stay labeled as planned until implemented and proven.
+
+See: [Current Work Lanes](/docs/dev/current-lanes), [Laboratory Campus SDLC](/docs/labtalk/sdlc)
+
+### Why so much emphasis on education?
+
+Because database systems become understandable when learners can inspect the layers: file formats, fields, indexes, work areas, relations, buffers, commands, help text, diagrams, and proof artifacts.
+
+The educational goal is not to simplify the system into slogans. It is to make the real machinery visible enough to learn, test, extend, and document.
+
+See: [Laboratory Campus Overview](/docs/labtalk/overview), [Education Features](/docs/labtalk/education-features)
+
+### How should new features be documented?
+
+New commands, functions, field types, or interface behavior should move through the same vertical path:
+
+```text
+source / command -> usage contract -> HELP / metadata -> SelfDoc report
+-> proof artifact -> manual section -> website section
+```
+
+That is the repeatable path the site is trying to expose.
+
+See: [Coding Standards](/docs/dev/coding-standards), [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline)
