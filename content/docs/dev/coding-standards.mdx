@@ -15,17 +15,29 @@ These standards are part of the SelfDoc system. Code should be readable by a mai
 
 ## Command Header Contracts
 
+Contracts are not decorative comments. They are the public source-of-truth layer
+that lets DotTalk++ connect implementation, HELP, CMDHELP, SelfDoc, manualgen,
+diagrams, website pages, and runtime proof. If a command can be run by a user,
+called from DotScript, surfaced in HELP, included in CMDHELPCHK, or promoted to
+the website, it needs a contract.
+
+The contract should be close to the implementation, easy to harvest, and honest
+about status. A reader should be able to tell whether the command is read-only,
+session-mutating, table-mutating, filesystem-mutating, network-active,
+externally active, or publication-active without reading the whole command body.
+
 Every command intended for HELP, CMDHELP, SelfDoc, manualgen, or the website should have a leading `@dottalk.usage v1` block or an equivalent reviewed contract. Preferred fields:
 
 ```text
 @dottalk.usage v1
 owner: DOT|COMMAND
 command: COMMAND
+aliases: ALIAS1, ALIAS2
 category: ...
 status: supported|experimental|sample-extension|...
 noargs: usage|report|status|...
-effect: report|display|mixed|network-or-file|...
-mutates: none|session|filesystem|helpdata|dbf|sidecar|...
+effect: report|display|evaluate|mutate|rebuild|session-control|mixed|network-or-file|...
+mutates: none|session|shell-exit-state|table-data|table-buffer|memo|index|filesystem|helpdata|metadata|manualgen|sidecar|...
 usage-access: COMMAND USAGE
 summary:
   Short behavior statement.
@@ -40,6 +52,11 @@ risk:
   launches_external_app: yes|no
   network_access: yes|no
   mutates_table_data: yes|no
+  writes_table_buffer: yes|no
+  writes_memo: yes|no
+  mutates_index: yes|no
+  requires_open_table: yes|no
+  requires_current_record: yes|no
 related:
   HELP
   CMDHELPCHK
@@ -47,6 +64,65 @@ related:
 ```
 
 These headers are harvested into comments evidence, HELP/CMDHELP rows, validation reports, manualgen, diagrams, and website pages.
+
+### Required Contract Questions
+
+Before a command is considered documented, its contract should answer:
+
+- What is the canonical command name?
+- Are there aliases or compatibility spellings?
+- Is it current, planned, experimental, canary, sample-extension, or deprecated?
+- What happens with no arguments?
+- Does it read or write table records?
+- Does it write a table buffer instead of the physical DBF?
+- Does it mark fields dirty or stale?
+- Does it write memo payloads or memo object references?
+- Does it mutate indexes, index metadata, order state, or LMDB/CDX/CNX files?
+- Does it read or write ordinary files?
+- Does it launch an editor, browser, image viewer, shell, URL handler, SFTP/SSH tool, or other external app?
+- Does it touch HELP DATA, CMDHELPCHK, SelfDoc, manualgen, metadata, message catalogs, or publication artifacts?
+- What proof or smoke path should validate it?
+
+### Mutation Classes
+
+Use narrow mutation labels. Avoid saying only `mutates: yes`.
+
+| Class | Meaning |
+| --- | --- |
+| `none` | Report-only or display-only. |
+| `session` | Changes in-memory state such as selected area, order, filter, paths, language, or shell flags. |
+| `table-data` | Writes physical DBF records, deletes/recalls records, appends rows, packs/zaps, or changes stored field values. |
+| `table-buffer` | Writes buffered table state and may mark dirty or stale fields without immediate physical writeback. |
+| `memo` | Writes memo payloads, memo object IDs, or memo sidecar/backing-store state. |
+| `index` | Rebuilds, updates, attaches, selects, or mutates INX/CNX/CDX/LMDB index state. |
+| `filesystem` | Creates, deletes, copies, fetches, edits, exports, imports, or rewrites ordinary files. |
+| `external-app` | Opens an editor, image viewer, URL, shell, SFTP/SSH, browser, or platform launcher. |
+| `helpdata` | Mutates HELP, CMDHELP, message, locale, or generated help catalogs. |
+| `metadata` | Mutates Data Dictionary, SYS*, metadata, SelfDoc, comments, or contract tables. |
+| `manualgen` | Mutates manual catalog, accepted manual sections, generated manuals, or publication shelves. |
+
+### Special Command Families
+
+Some families require extra care because they can look harmless while crossing a
+real boundary.
+
+- **Data mutators**: `REPLACE`, `REPLACE_MULTI`, `MULTIREP`, `CALCWRITE`, assignment-capable `CALC`, `APPEND`, `APPEND BLANK`, `DELETE`, `RECALL`, `PACK`, and `ZAP` must state physical-write versus buffered-write behavior.
+- **Index mutators**: `INDEX`, `REINDEX`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB`, `SET CDX`, `SET CNX`, `SET LMDB`, `SET ORDER`, and related compact forms must state whether table data, index files, order state, or backend environments are changed.
+- **Filesystem and external tools**: `COPY`, `EXPORT`, `IMPORT`, `DDL FETCH`, `WEB`, `URL`, `IMAGE`, `EDIT`, shell commands, SFTP/SSH, archive, and zip commands must state path resolution, writes, external launch behavior, and network behavior.
+- **SelfDoc/help/manual commands**: `HELP`, `CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `MANSTAR`, `BBOX`, message-manager commands, and contract scanners must say whether they are report-only or authorized to mutate catalogs.
+- **Session lifecycle**: `QUIT`, `EXIT`, `CLOSE`, `WORKSPACE`, `SELECT`, `USE`, `SET`, and path/language settings must state whether they mutate only session state or also close files, release areas, or change persistent data.
+
+### DOTREF And Registry Alignment
+
+For user-facing commands, three surfaces should stay aligned:
+
+1. Runtime registration in the command registry.
+2. Source contract in the implementation file.
+3. Native DotTalk++ reference entry in `include/dotref.hpp`.
+
+Compatibility-only or historical material can live in `foxref.hpp`, but current
+DotTalk++ commands belong in DOTREF. If a command is intentionally omitted from
+DOTREF, the omission should be documented as internal, deprecated, or hidden.
 
 ## Comments and Collection
 
