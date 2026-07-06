@@ -1,0 +1,66 @@
+---
+title: "Website Documentation Matrix"
+description: "Matrix of x64base.com sections, document lanes, data-mining feeds, proof artifacts, and publication status."
+---
+
+This matrix documents how the website is fed by the documentation system. It is
+not a claim that every page is fully automated today. The current site is a
+reviewed publication surface with a growing set of repeatable feeds from
+source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
+
+## Proof Rules
+
+| Status | Meaning | Promotion Rule |
+| --- | --- | --- |
+| runtime-evidenced | Source and runtime output or screenshots show the behavior. | Can be described as current behavior with conservative wording. |
+| source-evidenced | Source, headers, registries, or contracts show the behavior. | Can be documented as implemented/source-defined, but should avoid runtime claims until tested. |
+| help-catalog-evidenced | HELP, CMDHELP, command catalog, or metadata lists the surface. | Can seed catalog pages, then requires source/runtime review. |
+| generated-reviewed | A report, matrix, manual section, or diagram was generated and reviewed before publication. | Can be promoted to website/manual copy with provenance. |
+| planned-or-in-progress | The lane is real planning or active development, but not complete. | Keep under development docs and avoid product-complete wording. |
+| review-needed | A scanner, memory note, or draft found something not yet verified. | Do not promote as a stable website claim. |
+
+## Website Section Matrix
+
+| Website Area | Public Pages | Primary Feed Lanes | Proof / Data-Mining Inputs | Current Publication State |
+| --- | --- | --- | --- | --- |
+| Home and top-level positioning | `/`, `/about`, `/products` | Project truth, product naming, licensing, contributor review | `content/docs/dev/project-truth.mdx`, product pages, brand rules, local source review | Reviewed framing; not intended to carry detailed proof tables. |
+| x64base Engine docs | `/docs/engine/*` | Source/runtime lane, SelfDoc feature crosswalk, DBF headers, index/memo lanes, ecosystem research | `include/xbase.hpp`, `include/xbase_vfp.hpp`, `include/xbase_64.hpp`, command source, `labtalk/reports/selfdoc/x64base_engine_feature_crosswalk_v1.*`, x64 canary scripts | Partly generated and reviewed. Feature crosswalk and x64 capacity math carry explicit evidence labels. |
+| DotTalk++ docs | `/docs/dottalk/*` | HELP/CMDHELP lane, command registry, usage contracts, DotScript/manualgen lane | command source, `@dottalk.usage` blocks, `CMDHELP`, `CMDHELPCHK`, manualgen dry-runs, command/function catalog generators | Reviewed derivative pages exist. Command/function catalogs should be regenerated when command registration or HELP changes. |
+| Data mutator safety | `/docs/dottalk/data-mutators`, SET/buffer docs | Mutation audit lane, TableTalk buffer lane, stale/dirty proof, scalar function review | `REPLACE`, `CALC`, `CALCWRITE`, `MULTIREP`, `COMMIT`, `ROLLBACK`, `SET TABLE BUFFER`, dirty/stale runtime transcripts | Current page is explicitly mutation-sensitive and should be refreshed after mutator or scalar-evaluator changes. |
+| DotTalk++ Workbench / Parallel GUI/TUI | `/docs/talk-family/*`, product pages | GUI/TUI boundary lane, Arctic TUI code-name lane, workbench naming lane | runtime screenshots, GUI source docs, `BROWSETUI`, `BROWSETV`, `BROWSE`, `SMARTBROWSE`, `SB`, workbench pages | Reviewed naming corrected: family is DotTalk++ Workbench; Arctic is the TUI code name; UI DSL is planned. |
+| Laboratory Campus | `/docs/labtalk/*` | Education lane, runtime evidence lane, campus planning lane | education commands, screenshots, SDLC diagrams, portal screenshots, lab/curriculum pages | Alpha/collaboration area. Pages must preserve the difference between existing features, planned labs, and collaboration proposals. |
+| Runtime evidence gallery | `/docs/labtalk/runtime-evidence` | Evidence curation lane, screenshot/media lane | `public/images/evidence/*.jpg`, screenshot captions, runtime transcript notes | Curated website proof surface. Screenshots are evidence artifacts and should be replaced when current UI changes. |
+| Important documents shelf | `/docs/dev/important-documents` | MDO lane, AI-friendly summaries, manual publication lane | SelfDoc/MDO summaries, diagrams, manualgen reports, reviewed document inventory | Current public shelf for the most important document layers. Manuals are planned for publication only after reviewed generation. |
+| SelfDoc publication path | `/docs/dev/selfdoc-feed-pipeline`, `/docs/dev/selfdoc-website-publication` | Source-to-website feed lane, manualgen lane, contract scan lane | `tools/manualgen`, `tools/selfdoc`, comments/contracts scanners, generated reports, promotion rules | Reviewed process docs. Automation is partial; the rules are intentionally stricter than the current tooling. |
+| Historical source lineage | `/docs/dev/historical-source-lineage` | Preservation lane, provenance lane, historical source inventory | `public/artifacts/source-lineage/source-lineage-seed.csv`, local historical folders, checksums, source review notes | Active preservation page with proof labels. Historical code is evidence, not automatic current product behavior. |
+| Application UI DSL lane | `/docs/dev/application-ui-dsl-lane` | Planned UI language lane, xBase ecosystem comparison, atomic SAY/GET research | comparison notes, historical xBase UI concepts, current DotTalk++ GUI/TUI boundary | Planned lane only. Do not imply `CREATE MENU`, `CREATE WINDOW`, or dialog DSL syntax is implemented. |
+| Coding standards and safeguards | `/docs/dev/coding-standards` | Contract lane, comments collection lane, mutation/risk annotations | header standards, `@dottalk.usage`, `@dottalk.contract`, scanners, command safety review | Reviewed policy. Should become an enforcement checklist for source comments and website promotion. |
+| News, licensing, brand | `/news`, `/licensing`, `/brand` | Human review, third-party acknowledgement, trademark/license lane | package manifests, local dependency review, license notices, brand usage notes | Reviewed manually. These sections should not be generated from code scanners alone. |
+
+## Data-Mining Feed Matrix
+
+| Data-Mining Feed | Extracts | Website Targets | Proof Gate |
+| --- | --- | --- | --- |
+| Command registry and HELP scan | command names, aliases, usage, HELP text, mutation risk | command catalog, command families, DotScript guide, data mutators | `CMDHELPCHK` clean enough for reviewed promotion. |
+| Source contract scan | `@dottalk.usage`, `@dottalk.contract`, comments, mutates/risk fields | coding standards, command/function pages, API docs | Source path and reviewed status preserved. |
+| Engine feature crosswalk | feature families, evidence status, source/HELP anchors | engine feature crosswalk, current lanes, product capability summaries | Runtime/source/help status labels retained. |
+| Manualgen inventory/validate/dry-run | manual sections, missing anchors, boundary warnings | important documents, generated manuals, downloadable manual artifacts | Validation result and Python/tooling version recorded. |
+| Runtime transcript and screenshot curation | command output, GUI/TUI proof, website proof screenshots | runtime evidence gallery, Laboratory Campus proof pages, workbench pages | Caption includes product name, date, proof target, and known staleness. |
+| Diagram promotion | Mermaid, Draw.io, SDLC visuals, workflow diagrams | SelfDoc lane diagrams, important documents, publication pipeline pages | Diagram source and generated image kept together when possible. |
+| Historical source inventory | path, size, timestamp, checksum, source family, truth level | historical source lineage, source museum artifacts | Checksums and truth-level labels preserved. |
+| Ecosystem research matrix | outside product capability comparisons, current x64base status | ecosystem context, feature comparison, x64 capacity lesson | External claims separated from x64base source/runtime proof. |
+
+## Proofed Site Checklist
+
+A website page is proofed when the page can answer four questions:
+
+1. What source or document lane fed this page?
+2. What proof level is being claimed?
+3. What artifact, command, report, screenshot, or source path backs it?
+4. What needs to be regenerated when the underlying command, function, or lane changes?
+
+The site currently meets this standard best for engine feature crosswalks,
+data mutators, x64 capacity math, runtime evidence, historical source lineage,
+and the SelfDoc publication pages. The weaker areas are still the fully
+automated regeneration loop and final manual publication, which are documented
+as planned/developing rather than complete.

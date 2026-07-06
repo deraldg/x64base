@@ -33,7 +33,7 @@ still applies unless specifically marked production-ready.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Primary role | Educational-first open xBase/DBF architecture, self-documenting runtime, workbench family, and 64-bit DBF-style research system | Open xBase compiler/runtime | Open Clipper/xBase compiler/runtime | Commercial Clipper/xBase modernization platform | .NET xBase dialect/compiler | Commercial DBF/database products and utilities | DBF read/write libraries |
 | License / business model | Project/open architecture, alpha | Open source | Open source | Commercial | Mixed/open/commercial ecosystem | Commercial | Open source packages |
-| C++ codebase | Yes | Mostly C | Mostly C | Closed/commercial | .NET/C# ecosystem | Closed/commercial | Python |
+| C++ codebase | Yes | Mostly C runtime/compiler code, not a C++ OO codebase claim | Mostly C runtime/compiler code, not a C++ OO codebase claim | Closed/commercial | .NET/C# ecosystem | Closed/commercial | Python |
 | Compilable application/runtime | Yes | Yes | Yes | Yes | Yes | Yes, product dependent | No, library use |
 | Source can be changed | Yes | Yes | Yes | No, product source closed | Partly, depends on component | No | Yes |
 | Production maturity | Alpha / educational / research | Mature open-source project | Mature legacy/open-source project | Mature commercial platform | Active .NET migration/compiler ecosystem | Mature commercial/legacy tools | Mature for utility/file tasks |
@@ -63,7 +63,7 @@ still applies unless specifically marked production-ready.
 | Loops | Yes: `LOOP`, `ENDLOOP`, `WHILE`, `UNTIL`, `SCAN`, `ENDSCAN` | Yes | Yes | Yes | Yes | Yes | Python |
 | Script nesting | Yes, currently one level | Yes/language dependent | Yes | Yes | Yes | Product dependent | Python |
 | Scalar functions | Yes, runtime catalog present; SYSFUNC promotion lane still maturing | Yes | Yes | Yes | Yes | Yes | Python/library functions |
-| Object-oriented support | Hybrid/object-oriented DB areas, memos, workspaces | Yes | Yes | Yes | Yes | Product dependent | Python objects |
+| Object-oriented support | Hybrid C++ object model for DB areas, memos, workspaces, and workbench services | Language-level class/object features exist, but the public implementation is mostly C and should not be described as C++ OO architecture | Language-level class/object features exist, but the public implementation is mostly C and should not be described as C++ OO architecture | Yes, Xbase++ platform/language support | Yes, .NET class/object model | Product dependent; do not generalize classic DBF tools as OO | Python object APIs, not DBF engine OO architecture |
 | Compile to native/runtime application | Yes | Yes | Yes | Yes | Yes/.NET | Yes/product dependent | No |
 
 ## Data Mutation And Safety

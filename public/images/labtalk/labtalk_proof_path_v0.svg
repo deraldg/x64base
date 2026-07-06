@@ -1,56 +1,119 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
-  <title id="title">LabTalk Proof Path</title>
-  <desc id="desc">A left-to-right diagram showing concept to app to dataset to command to proof to case to lesson.</desc>
-  <rect width="1280" height="420" fill="#fafafa"/>
-  <text x="640" y="68" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827">LabTalk Proof-Aware Learning Path</text>
-  <text x="640" y="104" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#4b5563">Lessons stay connected to live or reviewed evidence</text>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="500" viewBox="0 0 1280 500" role="img" aria-labelledby="title desc">
+  <title id="title">Laboratory Campus Proof-Aware Learning Path</title>
+  <desc id="desc">A refined proof-aware learning path that moves from concept to app, dataset, command, proof, case, and lesson while preserving source, evidence, and review gates.</desc>
   <defs>
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
-      <path d="M2,2 L10,6 L2,10 Z" fill="#374151"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7fbfc"/>
+      <stop offset="1" stop-color="#e8eef4"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1f7a68"/>
+      <stop offset="0.33" stop-color="#2d6fb2"/>
+      <stop offset="0.66" stop-color="#7858b7"/>
+      <stop offset="1" stop-color="#bb5f6b"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1e293b" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#31506b"/>
     </marker>
+    <style>
+      .title { font-family: Segoe UI, Arial, sans-serif; font-size: 36px; font-weight: 760; fill: #102033; }
+      .subtitle { font-family: Segoe UI, Arial, sans-serif; font-size: 17px; fill: #526274; }
+      .stepTitle { font-family: Segoe UI, Arial, sans-serif; font-size: 18px; font-weight: 750; fill: #111827; }
+      .stepText { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; fill: #475569; }
+      .gateText { font-family: Segoe UI, Arial, sans-serif; font-size: 12px; font-weight: 720; letter-spacing: 1.2px; fill: #f8fafc; }
+      .node { fill: #ffffff; stroke: #d7e0ea; stroke-width: 1.3; filter: url(#shadow); }
+      .connector { stroke: #31506b; stroke-width: 2.2; marker-end: url(#arrow); }
+    </style>
   </defs>
 
-  <g font-family="Segoe UI, Arial, sans-serif">
+  <rect width="1280" height="500" fill="url(#bg)"/>
+  <path d="M0 410 C190 364 350 458 555 404 C780 344 1006 352 1280 392 L1280 500 L0 500 Z" fill="#dbe9ed" opacity="0.72"/>
+  <text x="70" y="74" class="title">Proof-Aware Learning Path</text>
+  <text x="72" y="106" class="subtitle">Lessons stay tied to the source, dataset, command, runtime proof, and reviewed case that produced them.</text>
+
+  <rect x="70" y="152" width="1140" height="10" rx="5" fill="url(#rail)"/>
+
+  <g transform="translate(46 188)">
     <g>
-      <rect x="60" y="180" width="132" height="74" rx="10" fill="#e8f3ef" stroke="#1f6f52" stroke-width="2"/>
-      <text x="126" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#143f30">Concept</text>
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#1f7a68"/>
+      <path d="M58 -31 H82 M70 -43 V-19" stroke="#e6fffb" stroke-width="4" stroke-linecap="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Concept</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">database idea</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">or lesson goal</text>
     </g>
-    <g>
-      <rect x="238" y="180" width="132" height="74" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
-      <text x="304" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#312e81">App</text>
+    <line class="connector" x1="146" y1="58" x2="178" y2="58"/>
+    <g transform="translate(186 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#2d6fb2"/>
+      <path d="M58 -40 H82 V-22 H58 Z M62 -16 H78" fill="none" stroke="#eaf3ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">App</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">portal, shell,</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">Workbench, Arctic</text>
     </g>
-    <g>
-      <rect x="416" y="180" width="132" height="74" rx="10" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
-      <text x="482" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#111827">Dataset</text>
+    <line class="connector" x1="332" y1="58" x2="364" y2="58"/>
+    <g transform="translate(372 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#476fb3"/>
+      <path d="M56 -42 H84 V-20 H56 Z M60 -35 H80 M60 -28 H80" fill="none" stroke="#eaf3ff" stroke-width="3.5" stroke-linecap="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Dataset</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">DBF, CSV, SQL,</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">fixed records</text>
     </g>
-    <g>
-      <rect x="594" y="180" width="132" height="74" rx="10" fill="#fff1df" stroke="#aa5b00" stroke-width="2"/>
-      <text x="660" y="214" text-anchor="middle" font-size="20" font-weight="700" fill="#6f3b00">Command</text>
-      <text x="660" y="237" text-anchor="middle" font-size="14" fill="#6f3b00">or Script</text>
+    <line class="connector" x1="518" y1="58" x2="550" y2="58"/>
+    <g transform="translate(558 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#7858b7"/>
+      <path d="M56 -35 L66 -25 L84 -43" fill="none" stroke="#f2ecff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Command</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">DotTalk++ or</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">DotScript run</text>
     </g>
-    <g>
-      <rect x="772" y="180" width="132" height="74" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
-      <text x="838" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#164e63">Proof</text>
+    <line class="connector" x1="704" y1="58" x2="736" y2="58"/>
+    <g transform="translate(744 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#9b5ca0"/>
+      <path d="M55 -31 C63 -44 77 -44 85 -31 C77 -18 63 -18 55 -31 Z M70 -31 h0.1" fill="none" stroke="#fff1fb" stroke-width="4" stroke-linecap="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Proof</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">transcript, image,</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">report, checksum</text>
     </g>
-    <g>
-      <rect x="950" y="180" width="132" height="74" rx="10" fill="#fdf2f8" stroke="#be185d" stroke-width="2"/>
-      <text x="1016" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#831843">Case</text>
+    <line class="connector" x1="890" y1="58" x2="922" y2="58"/>
+    <g transform="translate(930 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#bb5f6b"/>
+      <path d="M57 -42 H83 V-20 H57 Z M63 -35 H77 M63 -28 H75" fill="none" stroke="#fff0f2" stroke-width="3.5" stroke-linecap="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Case</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">historical or</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">engineering story</text>
     </g>
-    <g>
-      <rect x="1128" y="180" width="132" height="74" rx="10" fill="#fefce8" stroke="#a16207" stroke-width="2"/>
-      <text x="1194" y="225" text-anchor="middle" font-size="20" font-weight="700" fill="#713f12">Lesson</text>
+    <line class="connector" x1="1076" y1="58" x2="1108" y2="58"/>
+    <g transform="translate(1116 0)">
+      <rect class="node" x="0" y="0" width="140" height="116" rx="8"/>
+      <circle cx="70" cy="-31" r="26" fill="#a56b25"/>
+      <path d="M56 -22 C62 -40 78 -40 84 -22 M62 -22 H78" fill="none" stroke="#fff6e7" stroke-width="4" stroke-linecap="round"/>
+      <text x="70" y="34" text-anchor="middle" class="stepTitle">Lesson</text>
+      <text x="70" y="61" text-anchor="middle" class="stepText">student-facing</text>
+      <text x="70" y="81" text-anchor="middle" class="stepText">manual or lab</text>
     </g>
   </g>
 
-  <g stroke="#374151" stroke-width="3" marker-end="url(#arrow)">
-    <line x1="196" y1="217" x2="232" y2="217"/>
-    <line x1="374" y1="217" x2="410" y2="217"/>
-    <line x1="552" y1="217" x2="588" y2="217"/>
-    <line x1="730" y1="217" x2="766" y2="217"/>
-    <line x1="908" y1="217" x2="944" y2="217"/>
-    <line x1="1086" y1="217" x2="1122" y2="217"/>
+  <g transform="translate(72 366)">
+    <rect x="0" y="0" width="1136" height="72" rx="8" fill="#102033"/>
+    <rect x="22" y="20" width="172" height="32" rx="8" fill="#1f7a68"/>
+    <text x="108" y="41" text-anchor="middle" class="gateText">SOURCE DEFINES</text>
+    <rect x="224" y="20" width="172" height="32" rx="8" fill="#2d6fb2"/>
+    <text x="310" y="41" text-anchor="middle" class="gateText">HELP EXPLAINS</text>
+    <rect x="426" y="20" width="172" height="32" rx="8" fill="#7858b7"/>
+    <text x="512" y="41" text-anchor="middle" class="gateText">RUNTIME PROVES</text>
+    <rect x="628" y="20" width="172" height="32" rx="8" fill="#9b5ca0"/>
+    <text x="714" y="41" text-anchor="middle" class="gateText">SELFDOC PRESERVES</text>
+    <rect x="830" y="20" width="172" height="32" rx="8" fill="#bb5f6b"/>
+    <text x="916" y="41" text-anchor="middle" class="gateText">MDO REVIEWS</text>
+    <rect x="1032" y="20" width="82" height="32" rx="8" fill="#d6ad45"/>
+    <text x="1073" y="41" text-anchor="middle" class="gateText">PUBLISH</text>
   </g>
-
-  <text x="640" y="330" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#374151">Example: EDREF concept -> DotTalk++ script -> runtime transcript -> case-backed student lab</text>
 </svg>

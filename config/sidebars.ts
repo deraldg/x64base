@@ -74,6 +74,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
       { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
       { label: "Important Documents", href: "/docs/dev/important-documents" },
+      { label: "Website Documentation Matrix", href: "/docs/dev/website-documentation-matrix" },
       { label: "Historical Source Lineage", href: "/docs/dev/historical-source-lineage" },
       { label: "Application UI DSL Lane", href: "/docs/dev/application-ui-dsl-lane" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },

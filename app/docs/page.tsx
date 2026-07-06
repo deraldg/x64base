@@ -11,6 +11,7 @@ import {
   GraduationCap,
   LayoutPanelTop,
   MonitorCog,
+  Network,
   Ruler,
   ScrollText,
   TerminalSquare
@@ -81,6 +82,12 @@ const sectionSummary = [
     description: "See how local documentation layers feed generated manuals and the public website.",
     href: "/docs/dev/selfdoc-website-publication",
     icon: ScrollText
+  },
+  {
+    title: "Website documentation matrix",
+    description: "Map each public section to its source lane, data-mining feed, proof artifact, and status.",
+    href: "/docs/dev/website-documentation-matrix",
+    icon: Network
   },
   {
     title: "Parallel GUI/TUI",
