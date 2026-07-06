@@ -31,7 +31,7 @@ still applies unless specifically marked production-ready.
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Primary role | Educational-first open xBase/DBF architecture, self-documenting runtime, and 64-bit DBF-style research system | Open xBase compiler/runtime | Open Clipper/xBase compiler/runtime | Commercial Clipper/xBase modernization platform | .NET xBase dialect/compiler | Commercial DBF/database products and utilities | DBF read/write libraries |
+| Primary role | Educational-first open xBase/DBF architecture, self-documenting runtime, workbench family, and 64-bit DBF-style research system | Open xBase compiler/runtime | Open Clipper/xBase compiler/runtime | Commercial Clipper/xBase modernization platform | .NET xBase dialect/compiler | Commercial DBF/database products and utilities | DBF read/write libraries |
 | License / business model | Project/open architecture, alpha | Open source | Open source | Commercial | Mixed/open/commercial ecosystem | Commercial | Open source packages |
 | C++ codebase | Yes | Mostly C | Mostly C | Closed/commercial | .NET/C# ecosystem | Closed/commercial | Python |
 | Compilable application/runtime | Yes | Yes | Yes | Yes | Yes | Yes, product dependent | No, library use |
@@ -42,14 +42,14 @@ still applies unless specifically marked production-ready.
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 64-bit DBF-style table architecture | Yes, project focus | Not same claim | Not same claim | 64-bit Windows platform support, not same DBF_64 claim | Not same claim | No, classic DBF family | No |
-| 64-bit memo architecture | Yes, FPT64 lane | No/unknown | No/unknown | No/unknown | No/unknown | Classic DBT/FPT | No, classic memo support only |
-| 64-bit indexing architecture | Yes, CDX/LMDB/x64 index lanes | Classic RDD/index ecosystem | Classic index ecosystem | DBF/NTX/CDX engines | Runtime dependent | Classic indexes/tools | Usually no persistent index support |
+| 64-bit DBF-style table architecture | Yes, active `DBF_64` lane with wide header/runtime metrics and boundary-canary proof beyond the old 16-bit geometry ceilings | Not same claim | Not same claim | 64-bit Windows platform support, not same DBF_64 claim | Not same claim | No, classic DBF family | No |
+| 64-bit memo architecture | Yes, DTX/FPT64 lane with 64-bit object ids and offsets | No/unknown | No/unknown | No/unknown | No/unknown | Classic DBT/FPT | No, classic memo support only |
+| 64-bit indexing architecture | Partial: x64 `RecNo` intent exists, flavor-aware default index attachment is active, but backend proof is still mixed across CDX/CNX/LMDB lanes | Classic RDD/index ecosystem | Classic index ecosystem | DBF/NTX/CDX engines | Runtime dependent | Classic indexes/tools | Usually no persistent index support |
 | 32-bit/classic DBF support | Yes, MS-DOS/classic lane | Yes | Yes | Yes | Dialect/runtime dependent | Yes | Yes |
 | VFP DBF support | Yes, VFP headers/types lane | DBF/RDD dependent | DBF/RDD dependent | Yes | VFP dialect/runtime work | Yes | Yes in selected libraries |
 | VFP currency field support | Yes | DBF/RDD dependent | DBF/RDD dependent | Likely/product dependent | Runtime dependent | Yes in VFP/dBASE variants | Yes in `dbf`; read support varies |
 | Memo fields | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
-| Vectored long table/field names with fallback mangling | Yes, x64 lane | Not same claim | Not same claim | Product dependent | .NET/runtime dependent | Product dependent | No |
+| Vectored long table/field names with fallback mangling | Yes, x64 metadata supports 128-byte table/field names with classic 10-byte fallback descriptor tokens | Not same claim | Not same claim | Product dependent | .NET/runtime dependent | Product dependent | No |
 | Custom field types | Planned/developing x64 extension lane | Not same claim | Not same claim | Product/runtime dependent | .NET type system | Product dependent | Conversion hooks only |
 
 ## Language And Runtime
@@ -62,7 +62,7 @@ still applies unless specifically marked production-ready.
 | Conditionals | Yes: `IF`, `ELSE`, `ENDIF` | Yes | Yes | Yes | Yes | Yes | Python |
 | Loops | Yes: `LOOP`, `ENDLOOP`, `WHILE`, `UNTIL`, `SCAN`, `ENDSCAN` | Yes | Yes | Yes | Yes | Yes | Python |
 | Script nesting | Yes, currently one level | Yes/language dependent | Yes | Yes | Yes | Product dependent | Python |
-| Scalar functions | Yes, developing catalog | Yes | Yes | Yes | Yes | Yes | Python/library functions |
+| Scalar functions | Yes, runtime catalog present; SYSFUNC promotion lane still maturing | Yes | Yes | Yes | Yes | Yes | Python/library functions |
 | Object-oriented support | Hybrid/object-oriented DB areas, memos, workspaces | Yes | Yes | Yes | Yes | Product dependent | Python objects |
 | Compile to native/runtime application | Yes | Yes | Yes | Yes | Yes/.NET | Yes/product dependent | No |
 
@@ -73,7 +73,7 @@ still applies unless specifically marked production-ready.
 | Record mutation | Yes: `REPLACE` | Yes | Yes | Yes | Yes | Yes | API assignment/write |
 | Calculated mutation | Yes: `CALC`, `CALCWRITE` | Yes/language expressions | Yes | Yes | Yes | Product dependent | Python expressions |
 | Multi-field mutation | Yes: `MULTIREP` / replace multi lane | Yes/app code | Yes/app code | Yes/app code | Yes/app code | Product dependent | Python code |
-| Buffered table editing | Yes: table buffer, dirty/stale, commit/rollback | Varies by RDD/runtime | Varies | Yes/mature product behavior | Runtime/database dependent | Product dependent | Object/write semantics only |
+| Buffered table editing | Yes: table buffer, dirty/stale, commit/rollback lifecycle | Varies by RDD/runtime | Varies | Yes/mature product behavior | Runtime/database dependent | Product dependent | Object/write semantics only |
 | Dirty/stale state reporting | Yes | Runtime dependent | Runtime dependent | Product dependent | Database dependent | Product dependent | No native DBF engine state |
 | Commit/rollback | Partial: table-buffer lifecycle, not full ACID RDBMS claim | Backend dependent | Backend dependent | Product/database dependent | Database dependent | Product dependent | No native DBF transaction engine |
 | Record locking | Yes | Yes | Yes | Yes | Runtime/database dependent | Yes/product dependent | Usually limited/no full lock manager |
@@ -87,7 +87,7 @@ still applies unless specifically marked production-ready.
 | Workspace wrapper over areas | Yes | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
 | Relations | Yes: `REL`, relation tree, relation-aware browse | Yes/xBase model | Yes | Yes | Runtime dependent | Yes/product dependent | No native |
 | Tuple/grid relational view | Yes | App/library dependent | App/library dependent | Product/app dependent | App dependent | Product dependent | No |
-| Built-in SQL bridge | Partial: SQL/SQLite/import/export bridge | Yes, SQL/ODBC listed | Extensions/libraries likely | Yes, Universal SQL | .NET data access | Yes/product dependent | External Python SQL only |
+| Built-in SQL bridge | Partial: SQL, SQLite, import/export, and DDL bridge lanes | Yes, SQL/ODBC listed | Extensions/libraries likely | Yes, Universal SQL | .NET data access | Yes/product dependent | External Python SQL only |
 | Full SQL server/RDBMS | No | No, but can bridge | No, but can bridge | Can bridge to server DBs | Uses .NET DBs | Product dependent | No |
 | Referential validation | Partial: relations, rules, validation hooks | App/RDD dependent | App/RDD dependent | Product/database dependent | Database dependent | Product dependent | No native |
 | Database triggers | Yes: `TRIGGER`, `RULE`, `VALIDATE` lanes | App/RDD/SQL dependent | App/RDD/SQL dependent | Product/database dependent | Database dependent | Product dependent | No native |
@@ -103,39 +103,39 @@ still applies unless specifically marked production-ready.
 | DBF import/export | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes |
 | SQL import/export | Yes, scoped bridge | Yes/ODBC/SQL backends | Likely via libs | Yes | Yes via .NET | Yes/product dependent | Python ecosystem |
 | Memo import/export | Yes, developing with known CSV newline caveats | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
-| Data dictionary / metadata catalogs | Yes, DDICT/selfdoc/metadata lanes | Documentation/tool dependent | Tool dependent | Product/workbench dependent | Tool dependent | Product dependent | No |
+| Data dictionary / metadata catalogs | Yes, DDICT, META, SelfDoc, manualgen, and website-feed lanes | Documentation/tool dependent | Tool dependent | Product/workbench dependent | Tool dependent | Product dependent | No |
 
 ## UI, Tools, And Developer Experience
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | CLI interface | Yes | Yes | Yes | Yes | Yes/tooling | Product dependent | Script/API only |
-| TUI interface | Yes: Arctic code name for TUI | Yes | Yes | Yes/text mode | Possible | Legacy/product dependent | No |
-| GUI interface | Yes: Parallel GUI/TUI lane | Yes, UI backends | Yes, GT/GUI support | Yes, Workbench/GUI/web | .NET GUI possible | Yes | No native GUI |
-| User-defined menus/windows/dialogs | Planned UI DSL lane; supplied templates today | Via GUI libraries | Via GUI libraries | Yes | Yes through .NET/VO GUI paths | Yes/product dependent | No native GUI |
+| TUI interface | Yes: Arctic TUI code-name surface inside the ArcticTalk / DotTalk++ Workbench family | Yes | Yes | Yes/text mode | Possible | Legacy/product dependent | No |
+| GUI interface | Yes: Parallel GUI/TUI lane with wxWidgets C++ and Python/Tk workbench lanes | Yes, UI backends | Yes, GT/GUI support | Yes, Workbench/GUI/web | .NET GUI possible | Yes | No native GUI |
+| User-defined menus/windows/dialogs | Planned UI DSL lane; current workbench menus/windows are supplied by the active frontends | Via GUI libraries | Via GUI libraries | Yes | Yes through .NET/VO GUI paths | Yes/product dependent | No native GUI |
 | Smart table browser/listing | Yes: SmartList, SmartBrowser, `SB` alias | App/library dependent | App/library dependent | Product dependent | App dependent | Product dependent | No |
 | Web/application server | Not main claim | Yes/service/web possible | Some ecosystem support | Yes | .NET web possible | Product dependent | No |
 | External app commands | Yes: edit/image/web/url/shell lanes | App code | App code | Product/app code | .NET app code | Product dependent | Python code |
-| Build tooling | CMake/WSL/MSVC, POSIX/Mac requirements being documented | hbmk2/build tooling | Build tooling | Commercial Workbench | Visual Studio/.NET tooling | Product installers/tools | Python packaging |
+| Build tooling | CMake/WSL/MSVC plus active wx/Tk/GUI lanes; POSIX/Mac requirements still being hardened | hbmk2/build tooling | Build tooling | Commercial Workbench | Visual Studio/.NET tooling | Product installers/tools | Python packaging |
 
 ## Internationalization, Locale, And Data Types
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Language/runtime localization | Yes, message catalog and locale lanes in progress | Yes/ecosystem | Likely/verify | Product/framework dependent | .NET globalization available | Product dependent | Python locale/libs |
+| Language/runtime localization | Yes, seeded runtime message catalog plus locale lanes in progress | Yes/ecosystem | Likely/verify | Product/framework dependent | .NET globalization available | Product dependent | Python locale/libs |
 | International text/codepages | In progress; classic/VFP codepage work should be documented carefully | Yes | Likely | Yes/product dependent | .NET Unicode/globalization | Product dependent | Varies by library |
 | Currency data type | Yes, VFP currency/newer type support evidenced | DBF/RDD dependent | DBF/RDD dependent | Yes/product dependent | Runtime dependent | Yes in VFP/dBASE variants | `dbf` supports Decimal currency |
 | Date/datetime/logical/numeric types | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Message catalog | Yes | Tooling/ecosystem | Tooling/ecosystem | Product/framework dependent | .NET resources | Product dependent | Python ecosystem |
-| Locale-aware formatting | In progress | Yes/ecosystem | Likely | Yes | Yes | Product dependent | Python ecosystem |
+| Message catalog | Yes, runtime catalog, import/reset/reload scripts, and GUI message-contract lane | Tooling/ecosystem | Tooling/ecosystem | Product/framework dependent | .NET resources | Product dependent | Python ecosystem |
+| Locale-aware formatting | In progress; messaging and language seams are in place before wider shell replacement | Yes/ecosystem | Likely | Yes | Yes | Product dependent | Python ecosystem |
 
 ## Documentation And SelfDoc
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Built-in help | Yes | Yes | Yes | Yes | Yes | Yes | Package docs |
-| Self-documenting source/contracts | Yes, major lane | Not same claim | Not same claim | Product docs/workbench | Tooling/docs | Product docs | No |
-| Manual generation | Yes, manualgen/MDO lanes | hbdoc/tooling exists | Tooling likely | Product docs | Tooling/docs | Product docs | No |
+| Self-documenting source/contracts | Yes, major lane with usage contracts, comment harvesting, and command-help feeds | Not same claim | Not same claim | Product docs/workbench | Tooling/docs | Product docs | No |
+| Manual generation | Yes, manualgen/MDO lanes plus website publication feed | hbdoc/tooling exists | Tooling likely | Product docs | Tooling/docs | Product docs | No |
 | AI-friendly documentation layer | Yes, planned/developing | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
 | Website generated from docs | Developing vertical content generation | Project website/docs | Project docs | Product website/docs | Project docs | Product docs | Package docs |
 
