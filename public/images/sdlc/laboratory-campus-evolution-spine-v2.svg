@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520" role="img" aria-labelledby="title desc">
+  <title id="title">Laboratory Campus Evolution Spine</title>
+  <desc id="desc">A polished evolution spine showing operational publishing, documentation and SelfDoc, and Laboratory Campus lanes moving toward proof-backed publication.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbfc"/>
+      <stop offset="1" stop-color="#e8f1f3"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2aa58e"/>
+      <stop offset="0.36" stop-color="#4c88c7"/>
+      <stop offset="0.7" stop-color="#8068c7"/>
+      <stop offset="1" stop-color="#c37769"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#506371" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .title { font-family: Segoe UI, Arial, sans-serif; font-size: 38px; font-weight: 760; fill: #162331; }
+      .sub { font-family: Segoe UI, Arial, sans-serif; font-size: 17px; fill: #586875; }
+      .lane { font-family: Segoe UI, Arial, sans-serif; font-size: 15px; font-weight: 760; fill: #172432; }
+      .item { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; fill: #4f5f69; }
+      .chip { font-family: Segoe UI, Arial, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; fill: #60727c; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="520" fill="url(#bg)"/>
+  <path d="M0 406 C190 355 341 438 535 389 C760 332 906 371 1096 327 C1180 307 1234 273 1280 242 L1280 520 L0 520 Z" fill="#dcebed" opacity=".72"/>
+  <text x="72" y="76" class="title">Laboratory Campus Evolution Spine</text>
+  <text x="74" y="108" class="sub">A shared path from development work to documentation, proof artifacts, campus lessons, and public publication.</text>
+
+  <g transform="translate(92 170)">
+    <path d="M0 95 C148 26 290 41 424 98 C580 164 716 157 874 92 C984 47 1077 45 1096 55" fill="none" stroke="#cedce1" stroke-width="28" stroke-linecap="round"/>
+    <path d="M0 95 C148 26 290 41 424 98 C580 164 716 157 874 92 C984 47 1077 45 1096 55" fill="none" stroke="url(#spine)" stroke-width="10" stroke-linecap="round"/>
+
+    <g filter="url(#shadow)">
+      <g transform="translate(0 58)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#ffffff" stroke="#c8d7dc"/>
+        <text x="22" y="35" class="lane">Develop</text>
+        <text x="22" y="63" class="item">source, runtime,</text>
+        <text x="22" y="83" class="item">commands, fixes</text>
+        <text x="22" y="111" class="chip">OPERATIONAL</text>
+      </g>
+
+      <g transform="translate(214 0)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#ffffff" stroke="#c8d7dc"/>
+        <text x="22" y="35" class="lane">Stage</text>
+        <text x="22" y="63" class="item">local mirror, build,</text>
+        <text x="22" y="83" class="item">smoke checks</text>
+        <text x="22" y="111" class="chip">C:\x64base</text>
+      </g>
+
+      <g transform="translate(428 72)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#ffffff" stroke="#c8d7dc"/>
+        <text x="22" y="35" class="lane">Document</text>
+        <text x="22" y="63" class="item">HELP, metadata,</text>
+        <text x="22" y="83" class="item">SelfDoc, MDO</text>
+        <text x="22" y="111" class="chip">DOC LANE</text>
+      </g>
+
+      <g transform="translate(642 76)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#ffffff" stroke="#c8d7dc"/>
+        <text x="22" y="35" class="lane">Campus</text>
+        <text x="22" y="63" class="item">labs, datasets,</text>
+        <text x="22" y="83" class="item">cases, lessons</text>
+        <text x="22" y="111" class="chip">ALPHA</text>
+      </g>
+
+      <g transform="translate(856 10)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#ffffff" stroke="#c8d7dc"/>
+        <text x="22" y="35" class="lane">Proof</text>
+        <text x="22" y="63" class="item">screenshots, reports,</text>
+        <text x="22" y="83" class="item">transcripts, hashes</text>
+        <text x="22" y="111" class="chip">EVIDENCE</text>
+      </g>
+
+      <g transform="translate(1068 36)">
+        <rect x="0" y="0" width="190" height="126" rx="10" fill="#162331"/>
+        <text x="22" y="35" class="lane" fill="#f8fbfc">Publish</text>
+        <text x="22" y="63" class="item" fill="#cddce0">manuals, diagrams,</text>
+        <text x="22" y="83" class="item" fill="#cddce0">x64base.com</text>
+        <text x="22" y="111" class="chip" fill="#a7f3e7">REVIEWED</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(74 442)">
+    <rect x="0" y="0" width="1132" height="38" rx="19" fill="#ffffff" stroke="#c9d7dc"/>
+    <circle cx="29" cy="19" r="8" fill="#2aa58e"/>
+    <text x="48" y="24" class="item">Runtime proves</text>
+    <circle cx="208" cy="19" r="8" fill="#4c88c7"/>
+    <text x="227" y="24" class="item">Source defines</text>
+    <circle cx="385" cy="19" r="8" fill="#8068c7"/>
+    <text x="404" y="24" class="item">SelfDoc preserves</text>
+    <circle cx="610" cy="19" r="8" fill="#c37769"/>
+    <text x="629" y="24" class="item">Reviewed material promotes to manuals, diagrams, and the website</text>
+  </g>
+</svg>
