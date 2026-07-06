@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">Laboratory Campus Visual</title>
+  <desc id="desc">A refined abstract campus visual for the Laboratory Campus, showing a central portal, connected labs, evidence paths, datasets, cases, and interface surfaces without a heavy chart layout.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7fbfd"/>
+      <stop offset="0.52" stop-color="#e9f1f4"/>
+      <stop offset="1" stop-color="#dde9ec"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c9ded7"/>
+      <stop offset="0.5" stop-color="#dfe5dd"/>
+      <stop offset="1" stop-color="#d8dde8"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5bd0c4"/>
+      <stop offset="1" stop-color="#4f7fc2"/>
+    </linearGradient>
+    <linearGradient id="warm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3c86c"/>
+      <stop offset="1" stop-color="#e4825c"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#6385d8"/>
+    </linearGradient>
+    <linearGradient id="rose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0a1b3"/>
+      <stop offset="1" stop-color="#c86b88"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-25%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#58717b" flood-opacity="0.26"/>
+    </filter>
+    <filter id="fineShadow" x="-20%" y="-25%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#3d5560" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .kicker { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 2px; fill: #24616d; }
+      .title { font-family: Segoe UI, Arial, sans-serif; font-size: 44px; font-weight: 760; fill: #162331; }
+      .sub { font-family: Segoe UI, Arial, sans-serif; font-size: 18px; fill: #52626d; }
+      .small { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; font-weight: 650; fill: #1f3340; }
+      .tiny { font-family: Segoe UI, Arial, sans-serif; font-size: 11px; font-weight: 750; letter-spacing: 1.2px; fill: #58707b; }
+      .path { fill: none; stroke: #7b93a0; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 2 12; opacity: .65; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="760" fill="url(#sky)"/>
+  <path d="M0 520 C150 476 272 514 407 472 C565 424 704 420 873 461 C1024 498 1125 484 1280 438 L1280 760 L0 760 Z" fill="url(#ground)"/>
+  <path d="M0 595 C180 550 340 606 520 562 C730 511 904 554 1090 520 C1164 506 1225 486 1280 464" fill="none" stroke="#b7c9cd" stroke-width="2"/>
+  <path d="M48 174 C220 112 334 169 506 125 C716 72 916 96 1228 61" fill="none" stroke="#d1dde1" stroke-width="2"/>
+
+  <text x="72" y="86" class="kicker">LABORATORY CAMPUS</text>
+  <text x="72" y="139" class="title">Learning Around Live Systems</text>
+  <text x="74" y="176" class="sub">Runtime evidence, source documentation, datasets, cases, and interface experiments organized as a campus.</text>
+
+  <g transform="translate(260 285)">
+    <path class="path" d="M94 204 C225 122 330 101 488 111 C633 121 730 161 856 83"/>
+    <path class="path" d="M130 286 C282 240 403 249 532 282 C660 315 744 303 891 240"/>
+    <path class="path" d="M312 105 C398 163 448 209 504 308"/>
+    <path class="path" d="M700 116 C622 166 578 210 524 308"/>
+
+    <g filter="url(#shadow)">
+      <path d="M388 188 L512 116 L638 188 L638 334 L388 334 Z" fill="#f7fbfc" stroke="#c7d7dc" stroke-width="2"/>
+      <path d="M512 116 L638 188 L512 260 L388 188 Z" fill="#e0eef0"/>
+      <path d="M416 205 L512 260 L512 334 L416 279 Z" fill="#f6fbfc"/>
+      <path d="M608 205 L512 260 L512 334 L608 279 Z" fill="#dfecef"/>
+      <path d="M467 194 L512 168 L557 194 L557 265 L467 265 Z" fill="url(#glass)"/>
+      <path d="M512 168 L557 194 L512 220 L467 194 Z" fill="#91eee4" opacity=".8"/>
+      <path d="M500 235 H524 M500 251 H524" stroke="#e9fffb" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g filter="url(#fineShadow)">
+      <g transform="translate(0 155)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#e6f2ef"/>
+        <rect x="56" y="62" width="72" height="45" rx="6" fill="#d9f4ed"/>
+        <text x="92" y="166" text-anchor="middle" class="small">Runtime Lab</text>
+      </g>
+
+      <g transform="translate(180 16)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#f7ead2"/>
+        <rect x="53" y="60" width="78" height="47" rx="6" fill="url(#warm)" opacity=".9"/>
+        <text x="92" y="166" text-anchor="middle" class="small">History Lab</text>
+      </g>
+
+      <g transform="translate(712 12)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#ece8fb"/>
+        <rect x="55" y="60" width="74" height="47" rx="6" fill="url(#violet)" opacity=".92"/>
+        <text x="92" y="166" text-anchor="middle" class="small">SelfDoc Lab</text>
+      </g>
+
+      <g transform="translate(890 152)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#f8e5eb"/>
+        <rect x="55" y="60" width="74" height="47" rx="6" fill="url(#rose)" opacity=".9"/>
+        <text x="92" y="166" text-anchor="middle" class="small">Case Library</text>
+      </g>
+
+      <g transform="translate(650 330)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#e6eef8"/>
+        <rect x="56" y="61" width="72" height="46" rx="6" fill="#9bc4ea"/>
+        <text x="92" y="166" text-anchor="middle" class="small">Interface Lab</text>
+      </g>
+
+      <g transform="translate(258 330)">
+        <path d="M0 48 L92 0 L184 48 L184 136 L0 136 Z" fill="#ffffff" stroke="#c7d7dc" stroke-width="2"/>
+        <path d="M92 0 L184 48 L92 96 L0 48 Z" fill="#eff4e6"/>
+        <rect x="56" y="62" width="72" height="45" rx="6" fill="#c6dc8f"/>
+        <text x="92" y="166" text-anchor="middle" class="small">Dataset Library</text>
+      </g>
+    </g>
+
+    <g transform="translate(418 372)">
+      <rect x="0" y="0" width="226" height="46" rx="23" fill="#183442" opacity=".94"/>
+      <circle cx="31" cy="23" r="10" fill="#5bd0c4"/>
+      <text x="54" y="28" class="tiny" fill="#eaf8fa">PROOF-GATED PUBLICATION</text>
+    </g>
+  </g>
+</svg>
