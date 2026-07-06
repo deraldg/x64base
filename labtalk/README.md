@@ -1,6 +1,7 @@
-# LabTalk
+# Laboratory Campus / LabTalk
 
-LabTalk is a living laboratory campus for computing education.
+The **Laboratory Campus** is the public education and collaboration frame for
+this lane. **LabTalk** remains the project mark and local workspace name.
 
 This workspace contains the LabTalk campus architecture, education map, and
 registries. Runtime integration code belongs in `D:/code/ccode/src/labtalk`.
@@ -12,6 +13,7 @@ Current starting points:
 - `LABTALK_PORTAL_CONCEPT_v0.md`
 - `LABTALK_SDLC_FRAMEWORK_v0.md`
 - `LABTALK_DEVELOPER_PROFILE_v0.md`
+- `LABTALK_DEVELOPMENT_ENVIRONMENTS_v0.md`
 - `D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
 - `D:/code/ccode/docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md`
 - `D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md`
@@ -27,9 +29,10 @@ Current starting points:
 Working rule:
 
 ```text
-LabTalk can reference DotTalk++ source, cases, datasets, HELP, contracts, and
-proof artifacts, but student-facing claims should be proof-backed or clearly
-labeled as simulation, design intent, or historical review material.
+Laboratory Campus / LabTalk can reference DotTalk++ source, cases, datasets,
+HELP, contracts, and proof artifacts, but student-facing claims should be
+proof-backed or clearly labeled as simulation, design intent, or historical
+review material.
 ```
 
 First runnable slice:
