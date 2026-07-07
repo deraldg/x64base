@@ -1,8 +1,8 @@
 1:"$Sreact.fragment"
-2:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
-5:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+2:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+5:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 6:"$Sreact.suspense"
-3:Tbd2,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+3:Tdaa,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>The <strong>Laboratory Campus</strong> is the learning and collaboration layer for x64base
 and DotTalk++. LabTalk® remains the project mark and legacy name, but public
 copy should increasingly emphasize the campus.</p>
@@ -13,7 +13,7 @@ copy should increasingly emphasize the campus.</p>
 <li>historical data systems from punch cards to cloud computing and AI</li>
 <li>self-documenting systems</li>
 <li>datasets and cases</li>
-<li>GUI and portal experiments</li>
+<li>GUI, pycrud, and portal experiments</li>
 <li>proof-backed lessons</li>
 </ul>
 <h2 id="what-it-is"><a class="no-underline" href="#what-it-is">What It Is</a></h2>
@@ -31,6 +31,11 @@ source artifact.</p>
 campus to source-defined teaching mechanisms: timed <code>IDX</code> sort/index labs,
 student command and function extension hooks, pre/post polling hooks, and
 source-derived command/function catalogs.</p>
+<p>The local LabTalk portal also exposes <strong>pycrud</strong> as a launcher-backed campus
+tool. pycrud is a small Python/Tk CRUD and relational teaching surface with a
+local FastAPI bridge (<code>pydottalk_api</code>) for schema, fixtures, header metadata,
+and table readback. It belongs in LabTalk as a practical GUI/database literacy
+lab, not as the DotTalk++ engine itself.</p>
 <h2 id="current-position"><a class="no-underline" href="#current-position">Current Position</a></h2>
 <p>The Laboratory Campus is <strong>alpha</strong>. It is a hybrid of planning material,
 implemented pieces, and in-development collaboration areas. Public pages should
@@ -43,11 +48,12 @@ finished packaged distribution unless that package has been explicitly released.
 <li><a href="/docs/labtalk/sdlc">Laboratory Campus SDLC</a></li>
 <li><a href="/docs/labtalk/database-evolution">Database Evolution Path</a></li>
 <li><a href="/docs/labtalk/education-features">Education Features</a></li>
+<li><a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a></li>
 <li><a href="/docs/dottalk/command-catalog">Command Catalog</a></li>
 <li><a href="/docs/dottalk/function-catalog">Function Catalog</a></li>
 <li><a href="/docs/labtalk/non-profit-guide">Non-profit guide</a></li>
 <li><a href="/docs/labtalk/examples">Examples</a></li>
 <li><a href="/licensing/labtalk-non-profit-license">LabTalk non-profit license</a></li>
-</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/labtalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/labtalk","className":"hover:text-fg","children":"Laboratory Campus"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Laboratory Campus"}],["$","p",null,{"className":"mt-2 text-muted","children":"An alpha collaboration campus for planning, in-development labs, and existing x64base/DotTalk++ learning evidence."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,"$L4"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"XV_I1tdK00UHLw0Rk7n0T"}
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products","className":"hover:text-fg","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/labtalk",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/products/labtalk","className":"hover:text-fg","children":"Laboratory Campus"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Laboratory Campus"}],["$","p",null,{"className":"mt-2 text-muted","children":"An alpha collaboration campus for planning, in-development labs, and existing x64base/DotTalk++ learning evidence."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,"$L4"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"aCWre_7MSswEN-3qJV3t_"}
 4:["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]
 7:null
