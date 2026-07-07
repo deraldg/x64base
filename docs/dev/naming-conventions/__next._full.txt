@@ -1,0 +1,316 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+4:I[37457,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+5:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+b:I[68027,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"default",1]
+:HL["/_next/static/chunks/1gffh545ty016.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","docs","dev","naming-conventions",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","dev/naming-conventions","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1gffh545ty016.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2m6iehl1ztiog.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mrh2-p_w84d.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L5",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L5",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L5",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L5",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L5",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L5",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L5",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L5",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L5",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L5",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L6",["$L7"],"$L8"]}],{},null,false,null]},null,false,"$@9"]},null,false,"$@9"]},null,false,null],"$La",false]],"m":"$undefined","G":["$b",["$Lc"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"O-PpjSa6MdrX7icxScrDz"}
+d:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+e:"$Sreact.suspense"
+11:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"ViewportBoundary"]
+13:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"MetadataBoundary"]
+7:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true,"nonce":"$undefined"}]
+8:["$","$Ld",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@f"}]}]
+10:[]
+9:"$W10"
+a:["$","$1","h",{"children":[null,["$","$L11",null,{"children":"$L12"}],["$","div",null,{"hidden":true,"children":["$","$L13",null,{"children":["$","$e",null,{"name":"Next.Metadata","children":"$L14"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+c:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1gffh545ty016.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+15:I[87771,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+6:["$","div",null,{"className":"flex gap-8","children":[["$","$L15",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":"$L16"}],"$L17","$L18","$L19","$L1a"]}]]}]
+16:["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/naming-conventions",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs/dev/naming-conventions","className":"hover:text-fg","children":"Naming Conventions"}],null]}]]}]
+17:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Naming Conventions"}]
+18:["$","p",null,{"className":"mt-2 text-muted","children":"Source, command, script, and documentation naming conventions for DotTalk++ / x64base."}]
+1b:T3c96,<p>This page records current naming conventions and intended direction. It is a development standard, not a claim that every historical file already conforms.</p>
+<h2 id="source-file-prefixes"><a class="no-underline" href="#source-file-prefixes">Source file prefixes</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Prefix</th><th>Meaning</th><th>Examples / notes</th></tr></thead><tbody><tr><td><code>cmd_</code></td><td>DotTalk++ command implementation.</td><td>User-facing shell commands, command aliases, usage contracts, and mutation boundaries.</td></tr><tr><td><code>edu_</code></td><td>Education-facing command or lesson helper.</td><td><code>ASCII</code>, <code>RETRO</code>, <code>BBOX</code>, <code>BOOLEAN</code>, <code>COBOL</code>, normalization, and teaching commands.</td></tr><tr><td><code>fn_</code></td><td>Expression/scalar function registration or implementation.</td><td>Function catalog, student function hooks, and expression helpers.</td></tr><tr><td><code>gui_</code></td><td>GUI-neutral service or GUI bridge.</td><td>Shared model/session/runtime adapter code used by wx, Python/Tk preview, browser, or future GUI lanes.</td></tr><tr><td><code>memo_</code></td><td>Memo subsystem source.</td><td>Memo store, object, manager, reference, display, and verification surfaces.</td></tr><tr><td><code>dbf_</code></td><td>DBF storage or DBF creation behavior.</td><td>DBF record/header/creation logic.</td></tr><tr><td><code>cdx_</code>, <code>cnx_</code>, <code>lmdb_</code></td><td>Index backend or index bridge behavior.</td><td>Keep logical index names separate from backend-specific mechanics.</td></tr><tr><td><code>shell_</code></td><td>Command shell support behavior.</td><td>Parser, evaluation helpers, command dispatch support, and shell bridge utilities.</td></tr><tr><td><code>command_</code></td><td>Registry, catalog, or command metadata support.</td><td>Public command list, command output, command catalog, and registry helpers.</td></tr><tr><td><code>app_</code></td><td>Application-specific sample or legacy app lane.</td><td>Should not be confused with the core engine unless promoted by contract.</td></tr><tr><td><code>pre_</code>, <code>post_</code></td><td>Lifecycle hooks.</td><td>Pre/post polling and command lifecycle observation.</td></tr><tr><td><code>test_</code></td><td>Unit, smoke, or harness code.</td><td>Keep separate from runtime commands unless intentionally compiled into a test target.</td></tr></tbody></table>
+<h2 id="unofficial-search-families"><a class="no-underline" href="#unofficial-search-families">Unofficial search families</a></h2>
+<p>Not every useful code group is a formal prefix. Some families are practical search handles: they help developers find related commands, helpers, tests, generated reports, and proof scripts. They are useful for navigation, but they are not stable API promises unless promoted by a source contract.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Search family</th><th>What it usually finds</th><th>Representative source/proof areas</th></tr></thead><tbody><tr><td><code>rel</code>, <code>relation</code>, <code>relations</code></td><td>relation graph commands, relation status, relation enumeration, relation-aware browsing</td><td><code>src/cli/cmd_rel.cpp</code>, <code>src/cli/cmd_relations.cpp</code>, <code>src/cli/rel_enum_engine.cpp</code>, <code>src/cli/relations_status.cpp</code>, <code>include/workspace/relation_state.hpp</code>, <code>dottalkpp/data/scripts/canaries/rel_enum_x64.dts</code></td></tr><tr><td><code>sql</code>, <code>sqlite</code></td><td>SQL bridge, SQLite adapter, SQL import/export, SQL command helpers</td><td><code>src/cli/cmd_sql.cpp</code>, <code>src/cli/cmd_sql_select.cpp</code>, <code>src/cli/cmd_importsql.cpp</code>, <code>src/sqlite/sqlite_adapter.cpp</code>, <code>include/sql_ref.hpp</code>, <code>dottalkpp/data/scripts/canaries/sqlite_smoke.dts</code></td></tr><tr><td><code>ddl</code>, <code>schema</code></td><td>DDL fetch/validate/create paths, schema creation, field manager, DBF creation from specs</td><td><code>src/cli/cmd_ddl.cpp</code>, <code>src/cli/cmd_schemas.cpp</code>, <code>src/cli/cmd_fieldmgr.cpp</code>, <code>scripts/DDL_VALIDATE_ALL.dts</code>, <code>scripts/DDL_CREATE_EMPTY.dts</code></td></tr><tr><td><code>set</code></td><td>session settings, path settings, order/index settings, filters, relations, buffering, locale-like state</td><td><code>src/cli/cmd_set.cpp</code>, <code>src/cli/cmd_setorder.cpp</code>, <code>src/cli/cmd_setindex.cpp</code>, <code>src/cli/cmd_set_relation.cpp</code>, <code>src/cli/settings.cpp</code></td></tr><tr><td><code>smart</code></td><td>smart list/browser command surfaces and output/query helpers</td><td><code>src/cli/cmd_smartlist.cpp</code>, <code>src/cli/cmd_smart_browser.cpp</code>, <code>src/cli/smartlist_query.cpp</code>, <code>src/cli/smartlist_output.cpp</code>, <code>dottalkpp/data/scripts/canaries/smartlist_order_matrix.dts</code></td></tr><tr><td><code>browse</code>, <code>browser</code></td><td>CLI browser, smart browser, simple browser, relation browser, GUI/browser adapters</td><td><code>src/cli/browse/</code>, <code>src/cli/cmd_browse.cpp</code>, <code>src/cli/cmd_browser.cpp</code>, <code>src/browser/</code>, <code>include/browser/</code></td></tr><tr><td><code>calc</code>, <code>replace</code>, <code>mutat</code></td><td>data mutation, expression evaluation, buffered/unbuffered editing, dirty/stale state</td><td><code>src/cli/cmd_calc.cpp</code>, <code>src/cli/cmd_calcwrite.cpp</code>, <code>src/cli/cmd_replace.cpp</code>, <code>src/cli/cmd_replace_multi.cpp</code>, <code>src/dli/replace_api.cpp</code>, <code>dottalkpp/data/scripts/calc_write_test.dts</code></td></tr><tr><td><code>help</code>, <code>cmdhelp</code>, <code>manual</code>, <code>selfdoc</code></td><td>help metadata, CMDHELPCHK, source contracts, manual generation, website feed lanes</td><td><code>src/cli/cmdhelp.cpp</code>, <code>src/help/</code>, <code>src/manual/</code>, <code>selfdoc/</code>, <code>tools/manualgen/</code>, <code>dottalkpp/docs/generated/reports/</code></td></tr><tr><td><code>ddict</code>, <code>datadict</code></td><td>data dictionary catalog, read helpers, source maps, dictionary reports</td><td><code>src/datadict/</code>, <code>include/datadict/</code>, <code>tools/datadict/</code>, <code>docs/datadict/</code></td></tr><tr><td><code>lmdb</code>, <code>cdx</code>, <code>cnx</code>, <code>index</code></td><td>index backends, index attachment, index format detection, index proof scripts</td><td><code>src/xindex/</code>, <code>src/cdx/</code>, <code>src/cnx/</code>, <code>include/xindex/</code>, <code>dottalkpp/data/scripts/index_*_smoke.dts</code></td></tr></tbody></table>
+<p>Search families should be documented as discovery aids. If a family becomes a product-facing contract, promote it into the command catalog, DOTREF/help metadata, and this page's formal prefix or command-family sections.</p>
+<h2 id="necessary-directory-trees"><a class="no-underline" href="#necessary-directory-trees">Necessary directory trees</a></h2>
+<p>The development tree is intentionally wider than the public product tree. The useful mental model is not "everything ships"; it is "source, proof, generated documentation, and staged publication each have a role."</p>
+<h3 id="development-tree"><a class="no-underline" href="#development-tree">Development tree</a></h3>
+<pre><code class="language-text">D:\code\ccode
+|-- src\                 runtime source: CLI, xbase, indexes, memo, GUI bridges
+|-- include\             public/internal headers and engine contracts
+|-- dottalkpp\           runtime data, scripts, generated reports, maintenance lanes
+|-- selfdoc\             documentation collection and source-contract probes
+|-- labtalk\             Laboratory Campus plans, reports, products, and lessons
+|-- tools\               manualgen, datadict, help, and support tooling
+|-- scripts\             smoke scripts, build helpers, and DTS examples
+|-- tests\               regression and manual test surfaces
+|-- docs\                source-side specifications and design records
+|-- apps\                app/workbench experiments
+|-- pycrud\              Python CRUD/GUI lane
+|-- py\                  Python helpers and experiments
+|-- contracts\           contract and coding-standard support material
+|-- cases\               case-study and proof material
+|-- samples\             sample data/code surfaces
+|-- results\             generated or captured run results
+|-- build*\              local build outputs, not product truth
+`-- third_party\         external dependencies and vendored support
+</code></pre>
+<h3 id="public-website-source-and-staged-product-tree"><a class="no-underline" href="#public-website-source-and-staged-product-tree">Public website source and staged product tree</a></h3>
+<pre><code class="language-text">D:\dev\x64base-site
+|-- app\                 Next.js route pages and public section shells
+|-- content\             MDX documentation and product copy
+|-- config\              navigation/sidebar/site configuration
+|-- components\          shared website components
+|-- public\              images, diagrams, screenshots, and static assets
+`-- scripts\             build, export, and staging helpers
+
+C:\x64base
+|-- dottalk-webui\public-site\   staged static website mirror
+|-- dottalkpp\                   staged runtime/source mirror when synced
+|-- pycrud\                      staged Python CRUD/GUI lane when synced
+`-- README / manifests           publication and staging notes
+</code></pre>
+<p>The <code>C:\x64base</code> tree is the publication staging area. Generated data such as Bible SQL and LMDB artifacts should be regenerated as needed rather than treated as permanent source truth.</p>
+<h2 id="command-implementation-convention"><a class="no-underline" href="#command-implementation-convention">Command implementation convention</a></h2>
+<p>Command files should use <code>cmd_&#x3C;canonical_command>.cpp</code> where practical. The command's public identity should be aligned across:</p>
+<ol>
+<li>command registration in the shell.</li>
+<li>the source contract near the implementation.</li>
+<li>DOTREF entry in <code>include/dotref.hpp</code>.</li>
+<li>HELP/CMDHELP/CMDHELPCHK rows.</li>
+<li>website command catalog and manualgen output.</li>
+</ol>
+<p>Compatibility or historical references can live in <code>foxref.hpp</code>; current DotTalk++ commands belong in DOTREF unless intentionally hidden or internal.</p>
+<h2 id="command-shell-lambda-registration"><a class="no-underline" href="#command-shell-lambda-registration">Command-shell lambda registration</a></h2>
+<p>Some commands are registered directly in the command shell with lambda handlers rather than as standalone <code>cmd_*.cpp</code> functions. That is allowed, but it needs a convention because lambda registration is easy to lose in documentation scans.</p>
+<p>Lambda-registered commands should:</p>
+<ul>
+<li>use an explicit canonical command name and alias list in the registration call.</li>
+<li>include a nearby <code>@dottalk.usage v1</code> contract or reference a reviewed contract block.</li>
+<li>state whether the lambda is report-only, session-mutating, table-mutating, filesystem-mutating, external-app-active, or network-active.</li>
+<li>remain small; if the lambda grows beyond simple dispatch/glue, move behavior into a named helper or <code>cmd_*.cpp</code> implementation.</li>
+<li>be visible to command catalog generation, DOTREF review, and CMDHELPCHK.</li>
+<li>avoid hiding mutators, filesystem writers, or external app launchers inside inline lambdas.</li>
+</ul>
+<p>Preferred shape:</p>
+<pre><code class="language-text">registry.registerCommand("COMMAND", aliases, [](ShellContext&#x26; ctx, Args args) {
+  return run_named_command_helper(ctx, args);
+});
+</code></pre>
+<p>Avoid putting complex business logic directly inside the lambda. The lambda should usually bind command syntax to a named implementation, not become the implementation.</p>
+<h2 id="education-command-convention"><a class="no-underline" href="#education-command-convention">Education command convention</a></h2>
+<p>Education commands use <code>edu_</code> when they are primarily teaching surfaces. If an education command is also a normal command-shell command, document both identities:</p>
+<ul>
+<li>source file prefix: <code>edu_</code></li>
+<li>shell command: public command name such as <code>ASCII</code>, <code>RETRO</code>, <code>BBOX</code>, or <code>IDX</code></li>
+<li>lesson lane: Laboratory Campus / education feature page</li>
+<li>proof: transcript, screenshot, source contract, or <code>.dts</code> lab</li>
+</ul>
+<p>Student extension examples should live under extension paths and use explicit sample status. They should not overwrite core command names.</p>
+<h2 id="function-convention"><a class="no-underline" href="#function-convention">Function convention</a></h2>
+<p>Function implementations and registrations should use <code>fn_</code> or a clearly grouped function catalog source. Functions should state:</p>
+<ul>
+<li>canonical function name.</li>
+<li>aliases, if any.</li>
+<li>argument count and type expectations.</li>
+<li>return type.</li>
+<li>whether evaluation is pure or can read/mutate external state.</li>
+<li>whether the function is core, sample-extension, or planned.</li>
+</ul>
+<p>Scalar functions used by mutating commands such as <code>CALC</code>, <code>CALCWRITE</code>, and <code>REPLACE</code> deserve extra review because expression behavior can become data mutation.</p>
+<h2 id="script-and-proof-naming"><a class="no-underline" href="#script-and-proof-naming">Script and proof naming</a></h2>
+<p><code>.dts</code> files should be named for intent and risk:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Use</th></tr></thead><tbody><tr><td><code>*_smoke.dts</code></td><td>Small smoke proof.</td></tr><tr><td><code>*_canary.dts</code></td><td>Probe for a specific behavior or regression.</td></tr><tr><td><code>*_regression*.dts</code></td><td>Regression script with expected behavior.</td></tr><tr><td><code>*_mutation*.dts</code></td><td>Script that changes data; should use sandbox/disposable data.</td></tr><tr><td><code>*_verify*.dts</code></td><td>Readback or validation script.</td></tr><tr><td><code>cmdhelpchk_*</code></td><td>HELP/CMDHELP/CMDHELPCHK evidence lane.</td></tr><tr><td><code>SOURCE_COMMENT_*</code></td><td>Source comment and contract collection lane.</td></tr><tr><td><code>MCC_*</code></td><td>My Community College dataset/proof lane.</td></tr></tbody></table>
+<p>Every promoted <code>.dts</code> lesson should state:</p>
+<ul>
+<li>required dataset.</li>
+<li>expected read/write behavior.</li>
+<li>whether it is safe observation or mutation.</li>
+<li>expected output or transcript anchor.</li>
+<li>proof status.</li>
+</ul>
+<h2 id="documentation-convention"><a class="no-underline" href="#documentation-convention">Documentation convention</a></h2>
+<p>Website and manual pages should avoid presenting active lanes as finished products. Use these status labels consistently:</p>
+<ul>
+<li>runtime-evidenced</li>
+<li>source-evidenced</li>
+<li>help-catalog-evidenced</li>
+<li>generated-reviewed</li>
+<li>planned-or-in-progress</li>
+<li>review-needed</li>
+</ul>
+<p>If a page describes a planned lane, it should name the lane and avoid implying the command syntax is implemented.</p>19:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$1b"},"children":null}]}]
+1a:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dev/onboarding-guide","className":"text-muted hover:text-fg","children":["← ","Onboarding Guide"]}]}],["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dev/coding-standards","className":"text-muted hover:text-fg","children":["Coding Standards"," →"]}]}]]}]
+12:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1c:I[27201,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"IconMark"]
+f:null
+14:[["$","title","0",{"children":"Naming Conventions — x64base"}],["$","meta","1",{"name":"description","content":"Source, command, script, and documentation naming conventions for DotTalk++ / x64base."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/dev/naming-conventions/"}],["$","meta","3",{"property":"og:title","content":"Naming Conventions"}],["$","meta","4",{"property":"og:description","content":"Source, command, script, and documentation naming conventions for DotTalk++ / x64base."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/dev/naming-conventions/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Naming Conventions"}],["$","meta","12",{"name":"twitter:description","content":"Source, command, script, and documentation naming conventions for DotTalk++ / x64base."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"icon","href":"/favicon.svg"}],["$","$L1c","15",{}]]

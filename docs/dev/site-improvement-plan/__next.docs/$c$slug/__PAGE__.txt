@@ -1,0 +1,156 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+a:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+c:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+d:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":"$L3"}],"$L4","$L5","$L6","$L7"]}]]}],["$L8"],"$L9"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"O-PpjSa6MdrX7icxScrDz"}
+3:["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$La",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$La",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/site-improvement-plan",{"className":"flex items-center gap-2","children":[["$","$La",null,{"href":"/docs/dev/site-improvement-plan","className":"hover:text-fg","children":"Site Improvement Plan"}],null]}]]}]
+4:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Site Improvement Plan"}]
+5:["$","p",null,{"className":"mt-2 text-muted","children":"Response plan for x64base.com documentation deficiencies, academic review, and under-development lanes."}]
+b:T1cc1,<p>This page tracks website deficiencies without confusing active development with absence. x64base is a live research and hobby project; some gaps are real documentation defects, while others are lanes that intentionally remain marked alpha, planned, or review-needed.</p>
+<h2 id="reading-deficiencies-correctly"><a class="no-underline" href="#reading-deficiencies-correctly">Reading deficiencies correctly</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Reported issue</th><th>Current interpretation</th><th>Correction path</th></tr></thead><tbody><tr><td>Onboarding is not portable enough</td><td>Real documentation deficiency. Local paths are useful evidence, but public quickstarts need clone/build/test examples.</td><td>Keep local paths on proof pages; make Getting Started portable.</td></tr><tr><td>Curriculum is skeletal</td><td>Real deficiency in public pedagogy, not a lack of source material. Many <code>.dts</code> examples already exist.</td><td>Promote <code>.dts</code> scripts into labs with prerequisites, expected output, mutation status, and review notes.</td></tr><tr><td>Visuals and diagrams are uneven</td><td>Mixed. Some diagrams and screenshots exist; some older graphics are evidence artifacts, not final design assets.</td><td>Curate diagrams by page role: proof image, teaching diagram, architecture map, or publication graphic.</td></tr><tr><td>Roadmap/status could be clearer</td><td>Partly fixed by Current Work Lanes and Website Matrix, but still needs a reader-friendly roadmap.</td><td>Add a compact roadmap table with current, next, and collaboration-needed columns.</td></tr><tr><td>Prior work and citations are thin</td><td>Real academic-presentation deficiency.</td><td>Add a Prior Work / Bibliography page for xBase, DBF, FoxPro, Clipper, Harbour, VFP, indexing, database education, and documentation systems.</td></tr><tr><td>Contribution/onboarding is thin</td><td>Real collaboration deficiency.</td><td>Expand Onboarding and Contribution Guide with issue types, review rules, proof labels, and safe first tasks.</td></tr><tr><td>Manual generation is not visible enough</td><td>Under-development lane. Manualgen exists, but reviewed generated manuals should not be published before proof gates.</td><td>Publish generated manuals only after inventory, validation, dry-run, review, and version stamping.</td></tr><tr><td>Application UI DSL is missing</td><td>Planned feature lane, not a hidden completed feature.</td><td>Keep CREATE MENU/WINDOW/DIALOG examples under planned UI DSL until implemented.</td></tr></tbody></table>
+<h2 id="correction-lanes"><a class="no-underline" href="#correction-lanes">Correction lanes</a></h2>
+<h3 id="1-portable-start-path"><a class="no-underline" href="#1-portable-start-path">1. Portable start path</a></h3>
+<p>Status: active correction.</p>
+<ul>
+<li>Keep <a href="/docs/getting-started/installation">Installation</a> for detailed platform notes.</li>
+<li>Keep <a href="/docs/getting-started/quickstart">Quickstart</a> focused on clone/build/run examples.</li>
+<li>Distinguish public GitHub checkout from Derald's local source tree and <code>C:\x64base</code> staging mirror.</li>
+</ul>
+<h3 id="2-dts-to-lab-promotion"><a class="no-underline" href="#2-dts-to-lab-promotion">2. DTS-to-lab promotion</a></h3>
+<p>Status: active correction.</p>
+<p>The project already has many <code>.dts</code> examples. The website should classify them before promoting them:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Class</th><th>Examples</th><th>Promotion rule</th></tr></thead><tbody><tr><td>Safe observation</td><td><code>version.dts</code>, <code>workspace_load_x64_canary.dts</code>, <code>rel_enum_x64.dts</code></td><td>Good for beginner labs after expected output is recorded.</td></tr><tr><td>Index/order canaries</td><td><code>cnx_tag_smoke.dts</code>, <code>smartlist_order_matrix.dts</code>, <code>order_engine_shakedown.dts</code></td><td>Good for index lessons when backend state and diagnostics are explained.</td></tr><tr><td>Mutation canaries</td><td><code>mcc_mutation_*</code>, <code>calc_write_test.dts</code>, <code>commit_rollback_test.dts</code></td><td>Must require sandbox/disposable data and pre/post checks.</td></tr><tr><td>Metadata/SelfDoc scripts</td><td><code>cmdhelpchk_*</code>, <code>SOURCE_COMMENT_*</code>, <code>datadict_smoke.dts</code></td><td>Good for documentation-system lessons after proof labels are added.</td></tr><tr><td>Quarantine/legacy scripts</td><td>older regression and experimental scripts</td><td>Keep as historical evidence unless reviewed.</td></tr></tbody></table>
+<h3 id="3-academic-and-education-review"><a class="no-underline" href="#3-academic-and-education-review">3. Academic and education review</a></h3>
+<p>Status: opening soon.</p>
+<p>The project is preparing to invite academic interest. Desired input includes:</p>
+<ul>
+<li>CS professors for algorithms, data structures, systems programming, runtime design, and language lessons.</li>
+<li>database professors for relational theory, DBF lineage, indexing, locking, triggers, buffering, and mutation safety.</li>
+<li>technical writing teachers for documentation standards, manual structure, comment collection, terminology, and student-facing explanations.</li>
+<li>general education specialists for prerequisites, accessibility, assessment, and the shape of the Laboratory Campus.</li>
+<li>instructors from different schools of learning to review whether lessons work through reading, repetition, diagrams, command practice, and project work.</li>
+</ul>
+<h3 id="4-documentation-proof-gates"><a class="no-underline" href="#4-documentation-proof-gates">4. Documentation proof gates</a></h3>
+<p>Status: active policy.</p>
+<p>Website updates should retain the same proof classes used by the documentation matrix:</p>
+<ul>
+<li>runtime-evidenced</li>
+<li>source-evidenced</li>
+<li>help-catalog-evidenced</li>
+<li>generated-reviewed</li>
+<li>planned-or-in-progress</li>
+<li>review-needed</li>
+</ul>
+<p>A missing polished lesson is a deficiency. A planned lane labeled planned is not a deficiency unless the site implies it is finished.</p>
+<h3 id="5-roadmap-cleanup"><a class="no-underline" href="#5-roadmap-cleanup">5. Roadmap cleanup</a></h3>
+<p>Status: next correction.</p>
+<p>The site should add a short roadmap page with:</p>
+<ul>
+<li>current proven runtime surfaces.</li>
+<li>active beta/canary surfaces.</li>
+<li>planned lanes.</li>
+<li>academic-review requests.</li>
+<li>manual/publication gates.</li>
+</ul>
+<h3 id="6-citation-and-prior-work-layer"><a class="no-underline" href="#6-citation-and-prior-work-layer">6. Citation and prior-work layer</a></h3>
+<p>Status: next correction.</p>
+<p>Add a Prior Work page and citation block covering:</p>
+<ul>
+<li>DBF-family file formats.</li>
+<li>xBase, dBASE, FoxPro, Clipper, Harbour, xHarbour, Alaska Xbase++, and XSharp context.</li>
+<li>database education and relational-model teaching.</li>
+<li>reproducible research and documentation-generation practices.</li>
+</ul>
+<h2 id="operating-rule"><a class="no-underline" href="#operating-rule">Operating rule</a></h2>
+<p>The site should be honest enough for academic review: do not hide unfinished work, but do not call unfinished work a product feature. Use lanes, proof labels, and examples to show exactly where the project stands.</p>6:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$b"},"children":null}]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$La",null,{"href":"/docs/dev/current-lanes","className":"text-muted hover:text-fg","children":["← ","Current Work Lanes"]}]}],["$","div",null,{"children":["$","$La",null,{"href":"/docs/dev/important-documents","className":"text-muted hover:text-fg","children":["Important Documents"," →"]}]}]]}]
+8:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+9:["$","$Lc",null,{"children":["$","$d",null,{"name":"Next.MetadataOutlet","children":"$@e"}]}]
+e:null

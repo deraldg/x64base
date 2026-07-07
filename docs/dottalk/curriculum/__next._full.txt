@@ -7,7 +7,7 @@ a:I[68027,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-
 :HL["/_next/static/chunks/1gffh545ty016.css","style"]
 :HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"P":null,"c":["","docs","dottalk","curriculum",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","dottalk/curriculum","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1gffh545ty016.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2m6iehl1ztiog.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mrh2-p_w84d.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L5",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L5",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L5",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L5",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L5",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L5",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L5",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L5",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L5",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L5",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L6",[["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true,"nonce":"$undefined"}]],"$L7"]}],{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"45yBSRybiC_lTHJ1dLYEj"}
+0:{"P":null,"c":["","docs","dottalk","curriculum",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","dottalk/curriculum","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1gffh545ty016.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2m6iehl1ztiog.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mrh2-p_w84d.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","$L5",null,{"href":"/","className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","$L5",null,{"href":"/docs/dev/selfdoc-website-publication","className":"text-muted hover:text-fg","children":"SelfDoc → Website"}],["$","$L5",null,{"href":"/about/contributors","className":"text-muted hover:text-fg","children":"Contributors"}],["$","$L5",null,{"href":"/licensing/third-party-acknowledgements","className":"text-muted hover:text-fg","children":"Third-party credits"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","$L5",null,{"href":"/docs","className":"text-muted hover:text-fg","children":"Documentation"}],["$","$L5",null,{"href":"/products","className":"text-muted hover:text-fg","children":"Products"}],["$","$L5",null,{"href":"/licensing","className":"text-muted hover:text-fg","children":"Licensing"}],["$","$L5",null,{"href":"/brand","className":"text-muted hover:text-fg","children":"Brand"}],["$","$L5",null,{"href":"/news","className":"text-muted hover:text-fg","children":"News"}],["$","$L5",null,{"href":"/contact","className":"text-muted hover:text-fg","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L6",[["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true,"nonce":"$undefined"}]],"$L7"]}],{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"O-PpjSa6MdrX7icxScrDz"}
 c:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 d:"$Sreact.suspense"
 10:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"ViewportBoundary"]
@@ -18,16 +18,177 @@ f:[]
 9:["$","$1","h",{"children":[null,["$","$L10",null,{"children":"$L11"}],["$","div",null,{"hidden":true,"children":["$","$L12",null,{"children":["$","$d",null,{"name":"Next.Metadata","children":"$L13"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
 b:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1gffh545ty016.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
 14:I[87771,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
-6:["$","div",null,{"className":"flex gap-8","children":[["$","$L14",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":["$L15","$L16"]}],"$L17","$L18"]}]}],"$L19","$L1a","$L1b","$L1c"]}]]}]
-15:["$","$L5",null,{"href":"/","className":"hover:text-fg","children":"Home"}]
-16:["$","span",null,{"className":"text-border","children":"/"}]
-17:["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}]
-18:["$","li","/docs/dottalk/curriculum",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs/dottalk/curriculum","className":"hover:text-fg","children":"DotTalk++ Curriculum"}],null]}]
-19:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotTalk++ Curriculum"}]
-1a:["$","p",null,{"className":"mt-2 text-muted","children":"Teaching progression, labs, and lesson sequencing."}]
-1b:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"<blockquote>\n<p>This page is a scaffold for your curriculum.</p>\n</blockquote>\n<h2 id=\"module-1--tables-and-records\"><a class=\"no-underline\" href=\"#module-1--tables-and-records\">Module 1 — Tables and records</a></h2>\n<ul>\n<li>what a record is</li>\n<li>field typing</li>\n<li>fixed-length records</li>\n</ul>\n<h2 id=\"module-2--memos\"><a class=\"no-underline\" href=\"#module-2--memos\">Module 2 — Memos</a></h2>\n<ul>\n<li>pointers</li>\n<li>block storage</li>\n<li>integrity checks</li>\n</ul>\n<h2 id=\"module-3--indexes\"><a class=\"no-underline\" href=\"#module-3--indexes\">Module 3 — Indexes</a></h2>\n<ul>\n<li>keys</li>\n<li>ordering</li>\n<li>rebuild and verify</li>\n</ul>\n<h2 id=\"module-4--relational-thinking\"><a class=\"no-underline\" href=\"#module-4--relational-thinking\">Module 4 — Relational thinking</a></h2>\n<ul>\n<li>selection</li>\n<li>projection</li>\n<li>join reasoning (RelTalk)</li>\n</ul>"},"children":null}]}]
-1c:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dottalk/examples","className":"text-muted hover:text-fg","children":["← ","Examples"]}]}],["$","div",null,{"children":["$","$L5",null,{"href":"/docs/talk-family/tuptalk","className":"text-muted hover:text-fg","children":["TupTalk"," →"]}]}]]}]
+6:["$","div",null,{"className":"flex gap-8","children":[["$","$L14",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":"$L15"}],"$L16","$L17","$L18","$L19"]}]]}]
+15:["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dottalk/curriculum",{"className":"flex items-center gap-2","children":[["$","$L5",null,{"href":"/docs/dottalk/curriculum","className":"hover:text-fg","children":"DotTalk++ Curriculum"}],null]}]]}]
+16:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotTalk++ Curriculum"}]
+17:["$","p",null,{"className":"mt-2 text-muted","children":"Teaching progression, labs, and lesson sequencing."}]
+1a:T22d0,<p>This curriculum is under development. That is not a defect by itself: the Laboratory Campus is intentionally being shaped from live engine work, <code>.dts</code> scripts, runtime evidence, and outside review.</p>
+<p>The current goal is to turn existing DotTalk++ examples into repeatable lessons with prerequisites, expected output, mutation warnings, and proof labels.</p>
+<h2 id="curriculum-status"><a class="no-underline" href="#curriculum-status">Curriculum status</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Area</th><th>Current state</th><th>Next correction</th></tr></thead><tbody><tr><td>Tables and records</td><td>Runtime-evidenced through DBF examples, browse/list commands, and MCC scripts.</td><td>Add a student lab sheet with expected output.</td></tr><tr><td>Memos</td><td>Source/canary-evidenced with memo lanes and format docs.</td><td>Add a safe read-only memo inspection lab before write labs.</td></tr><tr><td>Indexes</td><td>Runtime-evidenced through CNX/CDX/LMDB canaries and timed <code>IDX</code> labs.</td><td>Split production indexing from education timing labs.</td></tr><tr><td>Relations</td><td>Runtime-evidenced through ERSATZ, workspace, relation tree, and tuple grid examples.</td><td>Add diagrams and assessment prompts.</td></tr><tr><td>Mutation safety</td><td>Runtime-evidenced through <code>REPLACE</code>, <code>CALCWRITE</code>, table buffering, dirty/stale, commit, and rollback.</td><td>Require sandbox datasets and pre/post state checks.</td></tr><tr><td>Documentation literacy</td><td>Source/help-evidenced through HELP, CMDHELPCHK, SelfDoc, comments, and contracts.</td><td>Convert source-to-website flow into a student exercise.</td></tr></tbody></table>
+<h2 id="module-1---tables-and-records"><a class="no-underline" href="#module-1---tables-and-records">Module 1 - Tables and records</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>define records, fields, field types, work areas, and current record state.</li>
+<li>inspect fixed-length records without hiding the file-format reality.</li>
+<li>compare classic DBF, VFP DBF, and DBF_64 where evidence exists.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\canaries\dottalk_beta0_smoke_baseline_0_1.dts
+dottalkpp\data\scripts\canaries\create_sample_dbf_matrix.dts
+tests\manual\dotscript\core\MCC_TIER1_CORE_SURFACE_AND_INDEX_SAFE_V1.DTS
+tests\manual\dotscript\focused\version.dts
+</code></pre>
+<p>Lesson shape:</p>
+<ol>
+<li>open a known table.</li>
+<li>list fields and records.</li>
+<li>inspect current area and cursor state.</li>
+<li>compare a command transcript with the website command catalog.</li>
+</ol>
+<h2 id="module-2---memos"><a class="no-underline" href="#module-2---memos">Module 2 - Memos</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>explain why memo fields are not ordinary fixed-width field payloads.</li>
+<li>distinguish memo references, memo stores, memo objects, and memo integrity checks.</li>
+<li>understand why FPT64/DTX work is a 64-bit architecture lane, not just a larger file.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\canaries\memo_shakedown.dts
+dottalkpp\data\scripts\MEMO_X64_REOPEN_CANARY_20260513.dts
+dottalkpp\data\scripts\memo_tests.dts
+</code></pre>
+<p>Next correction: publish a read-only memo lab before any mutation lab so students can learn pointers, blocks, and integrity without risking sample data.</p>
+<h2 id="module-3---indexes"><a class="no-underline" href="#module-3---indexes">Module 3 - Indexes</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>define key expressions, order state, tags, rebuilds, and verification.</li>
+<li>compare education timing (<code>IDX</code>) with persistent index work (<code>CNX</code>, <code>CDX</code>, <code>LMDB</code>).</li>
+<li>read diagnostics honestly, including mismatch or stale backend states.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\canaries\cnx_tag_smoke.dts
+dottalkpp\data\scripts\canaries\order_engine_shakedown.dts
+dottalkpp\data\scripts\canaries\smartlist_order_matrix.dts
+dottalkpp\data\scripts\canaries\lmdb_open_shakedown.dts
+tests\manual\dotscript\focused\CNX_TAG_SMOKE.dts
+tests\manual\dotscript\focused\list_ordered_students_cnx_baseline_x32_v2.dts
+</code></pre>
+<p>Lesson shape:</p>
+<ol>
+<li>build or attach an index.</li>
+<li>change order.</li>
+<li>list ordered records.</li>
+<li>record what changed in session state versus files.</li>
+<li>compare a clean proof with a diagnostic proof.</li>
+</ol>
+<h2 id="module-4---relational-thinking"><a class="no-underline" href="#module-4---relational-thinking">Module 4 - Relational thinking</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>distinguish selection, projection, relation traversal, tuple output, and joined readback.</li>
+<li>use workspaces as wrappers over active DB areas.</li>
+<li>inspect relation trees without pretending the system is a full SQL server.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\cases\ersatz_mini_test.dts
+dottalkpp\data\scripts\canaries\rel_enum_x64.dts
+dottalkpp\data\scripts\canaries\workspace_load_x64_canary.dts
+tests\manual\dotscript\focused\ERSATZ_REL_ENUM_BROWSER.dts
+tests\manual\dotscript\focused\Workspace Relation SaveLoad Smoke Test DTSHEMA 2 live path.dts
+</code></pre>
+<h2 id="module-5---dotscript-and-automation"><a class="no-underline" href="#module-5---dotscript-and-automation">Module 5 - DotScript and automation</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>write repeatable command files.</li>
+<li>use variables, comments, line continuation, <code>IF</code>, <code>LOOP</code>, <code>WHILE</code>, <code>UNTIL</code>, <code>SCAN</code>, and one-level nesting where supported.</li>
+<li>separate safe observation scripts from mutating scripts.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\canaries\dt_var_date_concat_calc_smoketest_full_start.dts
+dottalkpp\data\scripts\cases\calc_regression_test.dts
+tests\manual\dotscript\metadata\METADATA_CONTINUATION_SMOKE_v2.dts
+tests\manual\dotscript\focused\calc_numeric_literal_1000_probe.dts
+</code></pre>
+<h2 id="module-6---mutation-safety"><a class="no-underline" href="#module-6---mutation-safety">Module 6 - Mutation safety</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>explain physical writes versus buffered writes.</li>
+<li>inspect dirty and stale state.</li>
+<li>treat <code>REPLACE</code>, <code>CALC</code>, <code>CALCWRITE</code>, and <code>MULTIREP</code> as special commands requiring proof.</li>
+<li>use disposable or sandbox datasets for mutation labs.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\canaries\mcc_mutation_trinity_disposable_driver.dts
+dottalkpp\data\scripts\canaries\mcc_mutation_x64_disposable_canary.dts
+dottalkpp\data\scripts\calc_write_test.dts
+dottalkpp\data\scripts\commit_rollback_test.dts
+tests\manual\dotscript\core\MCC_TIER3_SANDBOX_MUTATION_CANARIES_V1.DTS
+</code></pre>
+<h2 id="module-7---self-documenting-systems"><a class="no-underline" href="#module-7---self-documenting-systems">Module 7 - Self-documenting systems</a></h2>
+<p>Learning goals:</p>
+<ul>
+<li>trace a command from source contract to HELP/CMDHELP, SelfDoc, manualgen, and website publication.</li>
+<li>understand comments as collected evidence, not decorative prose.</li>
+<li>classify a claim as runtime-evidenced, source-evidenced, help-catalog-evidenced, planned, or review-needed.</li>
+</ul>
+<p>Candidate <code>.dts</code> examples:</p>
+<pre><code class="language-text">dottalkpp\data\scripts\help\cmdhelpchk_metadata_probe.dts
+dottalkpp\data\scripts\help\cmdhelpchk_syscmd_locate_matrix_v1.dts
+dottalkpp\data\scripts\comments\SOURCE_COMMENT_SCHEMA_CREATE.dts
+dottalkpp\data\scripts\comments\SOURCE_COMMENT_READBACK_VALIDATION.dts
+tests\manual\dotscript\datadict\datadict_smoke.dts
+</code></pre>
+<h2 id="academic-input-needed"><a class="no-underline" href="#academic-input-needed">Academic input needed</a></h2>
+<p>The curriculum needs outside review before it should be described as a finished academic course. Desired input includes:</p>
+<ul>
+<li>technical writing review for lesson structure, terminology, scaffolding, and manual style.</li>
+<li>CS faculty review for data structures, algorithms, language/runtime framing, and systems lessons.</li>
+<li>database faculty review for xBase lineage, DBF formats, relational theory, indexing, locking, validation, and mutation safety.</li>
+<li>general education review for accessibility, learning paths, assessment, and the shape of the Laboratory Campus.</li>
+<li>feedback from different schools of learning so labs can support inspection, repetition, diagrams, command practice, and project-based learning.</li>
+</ul>18:["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$1a"},"children":null}]}]
+19:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L5",null,{"href":"/docs/dottalk/examples","className":"text-muted hover:text-fg","children":["← ","Examples"]}]}],["$","div",null,{"children":["$","$L5",null,{"href":"/docs/talk-family/tuptalk","className":"text-muted hover:text-fg","children":["TupTalk"," →"]}]}]]}]
 11:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-1d:I[27201,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"IconMark"]
+1b:I[27201,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"IconMark"]
 e:null
-13:[["$","title","0",{"children":"DotTalk++ Curriculum — x64base"}],["$","meta","1",{"name":"description","content":"Teaching progression, labs, and lesson sequencing."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/dottalk/curriculum/"}],["$","meta","3",{"property":"og:title","content":"DotTalk++ Curriculum"}],["$","meta","4",{"property":"og:description","content":"Teaching progression, labs, and lesson sequencing."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/dottalk/curriculum/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"DotTalk++ Curriculum"}],["$","meta","12",{"name":"twitter:description","content":"Teaching progression, labs, and lesson sequencing."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"icon","href":"/favicon.svg"}],["$","$L1d","15",{}]]
+13:[["$","title","0",{"children":"DotTalk++ Curriculum — x64base"}],["$","meta","1",{"name":"description","content":"Teaching progression, labs, and lesson sequencing."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/dottalk/curriculum/"}],["$","meta","3",{"property":"og:title","content":"DotTalk++ Curriculum"}],["$","meta","4",{"property":"og:description","content":"Teaching progression, labs, and lesson sequencing."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/dottalk/curriculum/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"DotTalk++ Curriculum"}],["$","meta","12",{"name":"twitter:description","content":"Teaching progression, labs, and lesson sequencing."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"icon","href":"/favicon.svg"}],["$","$L1b","15",{}]]
