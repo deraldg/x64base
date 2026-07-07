@@ -17,7 +17,7 @@ It presents the system as a set of laboratories:
 - historical data systems from punch cards to cloud computing and AI
 - self-documenting systems
 - datasets and cases
-- GUI and portal experiments
+- GUI, pycrud, and portal experiments
 - proof-backed lessons
 
 ## What It Is
@@ -43,6 +43,12 @@ campus to source-defined teaching mechanisms: timed `IDX` sort/index labs,
 student command and function extension hooks, pre/post polling hooks, and
 source-derived command/function catalogs.
 
+The local LabTalk portal also exposes **pycrud** as a launcher-backed campus
+tool. pycrud is a small Python/Tk CRUD and relational teaching surface with a
+local FastAPI bridge (`pydottalk_api`) for schema, fixtures, header metadata,
+and table readback. It belongs in LabTalk as a practical GUI/database literacy
+lab, not as the DotTalk++ engine itself.
+
 ## Current Position
 
 The Laboratory Campus is **alpha**. It is a hybrid of planning material,
@@ -57,6 +63,7 @@ finished packaged distribution unless that package has been explicitly released.
 - [Laboratory Campus SDLC](/docs/labtalk/sdlc)
 - [Database Evolution Path](/docs/labtalk/database-evolution)
 - [Education Features](/docs/labtalk/education-features)
+- [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence)
 - [Command Catalog](/docs/dottalk/command-catalog)
 - [Function Catalog](/docs/dottalk/function-catalog)
 - [Non-profit guide](/docs/labtalk/non-profit-guide)

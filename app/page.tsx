@@ -50,6 +50,12 @@ const ecosystem = [
     href: "/products/reltalk",
     desc: "A relation-focused layer for joins, algebra, and connected data exploration.",
     icon: GitBranch
+  },
+  {
+    title: "Laboratory Campus / LabTalk",
+    href: "/products/labtalk",
+    desc: "The education and collaboration campus for labs, proof-backed lessons, pycrud, and runtime evidence.",
+    icon: GraduationCap
   }
 ];
 
