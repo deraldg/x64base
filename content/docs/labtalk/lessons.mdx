@@ -1,0 +1,79 @@
+---
+title: "Lesson Platform"
+description: "How the Laboratory Campus curates student lessons, career lessons, proof links, and review gates."
+---
+
+The Laboratory Campus lesson platform is the place where LabTalk turns live
+system work, source evidence, cases, datasets, and career experience into
+organized lessons.
+
+It is intentionally registry-first. Local lesson records begin in:
+
+```text
+D:\code\ccode\labtalk\registries\lessons.yaml
+```
+
+Lesson drafts live under:
+
+```text
+D:\code\ccode\labtalk\lessons\student
+D:\code\ccode\labtalk\lessons\career
+```
+
+## Lesson Rule
+
+Campus lessons should preserve the proof-aware path:
+
+```text
+concept -> app -> dataset -> command -> proof -> case -> lesson
+```
+
+That means a lesson should not be detached prose. It should say what concept it
+teaches, which app or lab exposes it, which dataset or artifact is involved,
+which command or workflow the learner can inspect, what proof exists, and what
+review gate remains.
+
+## Lesson Lanes
+
+| Lane | Purpose | Current status |
+| --- | --- | --- |
+| Student lessons | Learner-facing or learner-candidate lessons with setup, steps, observations, questions, and proof links. | Draft and proof-linked seed lessons exist. |
+| Career lessons | Lessons learned while building x64base, DotTalk++, LabTalk, proof systems, documentation systems, and legacy-system recovery paths. | Draft shelf created. |
+| Instructor review | Notes for setup safety, expected observations, assessment, and classroom use. | Planned as lessons mature. |
+| External suggestions | Ideas and review notes from educators, technical writers, database practitioners, students, and collaborators. | Open through the suggestion path. |
+
+## Seed Lesson Records
+
+| Lesson | Lane | Proof state | Next gate |
+| --- | --- | --- | --- |
+| Records, Fields, and Tables | Student | `runtime_observed` | Add reviewed worksheet questions and HELP/CMDHELP readback. |
+| Comments to Contracts to HELP | Student | `validated` | Convert proof readback into student questions and instructor notes. |
+| Data Systems History Trail | Student | `case_registered` | Use the storyboard PPTX as local source material while separating live runtime demos from reviewed history and simulations. |
+| Proof-First Development Lessons | Career | `source_defined` | Add dated build notes and one before/after example. |
+| Turning Legacy Systems into Learning Labs | Career | `case_registered` | Add source-memory boundaries and reviewed public wording. |
+
+The LabTalk / DotTalk++ systems storyboard deck already fits this lesson model
+in two ways: as the source artifact for the
+[Database Evolution Path](/docs/labtalk/database-evolution), and as a
+resume-style career artifact for the [Career Lessons](/docs/labtalk/career-lessons)
+lane. The hosted site summarizes the deck and keeps the large PPTX in the local
+artifact set instead of bundling it into the public website source.
+
+## Status Vocabulary
+
+| Status | Meaning |
+| --- | --- |
+| `idea` | Captured, but not shaped. |
+| `draft` | Lesson text exists, but proof/review may be incomplete. |
+| `proof_linked` | The lesson points to at least one concrete proof artifact. |
+| `student_ready_pending` | Strong candidate, but needs final setup/safety/review work. |
+| `student_ready` | Reviewed for learner use with proof, safety notes, expected observations, and instructor guidance. |
+
+## Suggest or Review a Lesson
+
+The website is open to lesson suggestions, academic review, and career-lesson
+prompts. Start with [Suggest a Lesson](/docs/labtalk/suggest-a-lesson) or the
+[Contribution Guide](/docs/dev/contribution-guide).
+
+Good suggestions identify the audience, concept, proof need, and what kind of
+review the lesson requires.

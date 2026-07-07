@@ -1,0 +1,76 @@
+---
+title: "Student Lessons"
+description: "Learner-facing and learner-candidate lessons for the Laboratory Campus."
+---
+
+Student lessons are the learner-facing side of LabTalk. They should be clear
+enough for a student to know what to do, what to observe, what is proven, and
+what remains under review.
+
+These pages are not claiming a finished curriculum. They are the starting shelf
+for curated, proof-backed student material.
+
+## Current Student Lesson Seeds
+
+| Lesson | Teaches | Evidence state | Current gate |
+| --- | --- | --- | --- |
+| Records, Fields, and Tables | Tables, records, fields, field types, work areas, and current record state. | `runtime_observed` | Add worksheet questions and HELP/CMDHELP readback. |
+| Comments to Contracts to HELP | How source comments, contracts, HELP output, and validation reports can form one evidence chain. | `validated` | Add step-by-step student questions and instructor notes. |
+| Data Systems History Trail | How to separate live runtime proof, reviewed history, source memory, and simulation. | `case_registered` | Separate runtime demos from reviewed historical claims. |
+
+## First Lesson Shape
+
+Every promoted student lesson should answer:
+
+1. What concept is the student learning?
+2. What app, lab, command, dataset, or artifact exposes it?
+3. What should the student do?
+4. What output or observation should they expect?
+5. What proof backs the claim?
+6. What safety or mutation warning applies?
+7. What is still a draft, simulation, or review-needed claim?
+
+## Candidate Path: Records, Fields, and Tables
+
+The first beginner lesson follows the database literacy starter:
+
+```text
+concept.database.table
+-> app.dottalkpp.runtime
+-> dataset.students
+-> USE / FIELDS / STRUCT / LIST
+-> proof.lab.database_literacy_starter.first_run
+-> lesson.student.records_fields_tables
+```
+
+The student goal is simple: inspect a table, identify fields and records, then
+explain the difference between table structure and current row state.
+
+## Candidate Path: Self-Documenting Systems
+
+The first advanced lesson follows the SelfDoc lab:
+
+```text
+source comment
+-> @dottalk.usage contract
+-> comments evidence
+-> CMDHELP
+-> CMDHELPCHK
+-> proof.lab.selfdoc.comments_to_contracts.first_run
+-> lesson.student.selfdoc_comments_to_help
+```
+
+The student goal is to classify a claim as source-defined, help-documented,
+validated, or review-needed.
+
+## Review Needed
+
+Useful student-lesson review includes:
+
+- CS review for data structures, runtime state, algorithms, and systems framing.
+- database review for DBF records, indexing, relations, mutation safety, and lineage.
+- technical writing review for lesson structure, terminology, setup, and clarity.
+- general education review for accessibility, sequencing, assessment, and classroom fit.
+
+Use [Suggest a Lesson](/docs/labtalk/suggest-a-lesson) to propose a new student
+lesson or review one of these seeds.

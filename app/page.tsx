@@ -97,6 +97,13 @@ export default function HomePage() {
             workspaces, APIs, and DotTalk++ also documents itself through SelfDoc and a Master
             Documentation Organizer.
           </p>
+          <Link
+            href="/docs/labtalk/runtime-evidence"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+          >
+            Runtime evidence gallery
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/docs/getting-started/overview"
@@ -251,7 +258,8 @@ export default function HomePage() {
           <div className="rounded-lg border border-border bg-bg/35 p-4">
             <div className="font-mono text-xs uppercase text-muted">thesis</div>
             <p className="mt-3 text-sm leading-6 text-fg">
-              x64base studies a larger 64-bit file/runtime model without abandoning the table workflow.
+              x64base uses its own metadata and documentation infrastructure to describe,
+              validate, and increasingly prove itself.
             </p>
           </div>
           <div className="rounded-lg border border-border bg-bg/35 p-4 sm:col-span-3">

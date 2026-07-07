@@ -23,6 +23,36 @@ The website is a downstream publication surface. It may reorganize and summarize
 material, but it should not invent technical truth that the local runtime tree
 cannot support.
 
+## Project center of gravity
+
+The database engine is the center of gravity for x64base. The project should be
+understood first through its table runtime, DBF-family storage work, x64 table
+extensions, memo objects, index backends, work areas, relation graph, buffering,
+locking, validation, and data-mutation rules.
+
+The surrounding system is the teaching and analysis layer. DotTalk++, SelfDoc,
+MDO, manuals, diagrams, the Laboratory Campus, and the website are important
+because they make the database engine inspectable and teachable. They collect
+the evidence, organize it, and explain it; they do not become a substitute for
+runtime truth.
+
+SelfDoc and MDO are now part of the system architecture. They started as
+cooperating project-documentation conversations and are being shaped into a
+repeatable publication loop:
+
+```text
+source / runtime behavior
+-> HELP / command metadata
+-> comments / contracts / proof scripts
+-> SelfDoc reports
+-> MDO organization
+-> manuals / diagrams / curriculum / website
+```
+
+This is the working partnership model for the project: implementation and
+documentation develop together, with the database engine remaining the primary
+truth source and the documentation system keeping the work visible.
+
 ## Ownership boundary
 
 The current repository boundary is deliberate:

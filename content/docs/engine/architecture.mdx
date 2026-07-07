@@ -13,6 +13,22 @@ description: "Observed architecture from the local DotTalk++ / x64base source tr
 - **Co-development** - the implementation and documentation system are developed together. SelfDoc and the Master Documentation Organizer are part of the architecture, not a separate publishing chore.
 - **Open cross-platform architecture** - the runtime should remain portable across Windows, WSL/Linux, Ubuntu, and macOS while keeping UI and index integrations behind open boundaries.
 
+## Database core and teaching system
+
+The database engine is the core architecture. Tables, records, fields, work
+areas, indexes, memos, relations, buffering, locking, validation, and mutation
+behavior are the project root.
+
+DotTalk++, SelfDoc, MDO, manualgen, diagrams, and the Laboratory Campus are the
+analysis and teaching architecture around that root. Their purpose is to keep
+the engine observable: commands can be run, behavior can be proved, contracts
+can be collected, documentation can be generated, and lessons can remain tied to
+runtime truth.
+
+This is why the documentation system is part of the architecture. It is not only
+a website workflow. It is the mechanism that keeps the database work, the
+teaching work, and the analyst work aligned.
+
 ## Major subsystems
 
 The local project is organized around these implementation areas:
