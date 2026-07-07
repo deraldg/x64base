@@ -1,0 +1,84 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+6:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+9:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+a:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rESjOVG9FHxsn4MtbclTD"}
+7:Tca9,<p>The Laboratory Campus is open to lesson suggestions and review. Useful input can
+come from students, teachers, CS faculty, database practitioners, technical
+writers, curriculum reviewers, non-profit partners, and experienced developers.</p>
+<p>For now, the intake path is static and email-based. A writable form can come
+later after the project chooses durable storage and moderation rules.</p>
+<h2 id="what-to-suggest"><a class="no-underline" href="#what-to-suggest">What to Suggest</a></h2>
+<p>Good suggestions fit one of these lanes:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Lane</th><th>Examples</th></tr></thead><tbody><tr><td>Student lesson</td><td>A lab on records, indexes, relations, DotScript, mutation safety, HELP/CMDHELP, or database history.</td></tr><tr><td>Career lesson</td><td>A lesson learned while building, recovering, documenting, testing, or teaching systems.</td></tr><tr><td>Review request</td><td>Feedback on prerequisites, learning sequence, accessibility, proof labels, or classroom safety.</td></tr><tr><td>Proof gap</td><td>A place where the site claims something but needs stronger evidence or clearer status.</td></tr><tr><td>Dataset or case idea</td><td>A small inspectable dataset, historical case, or classroom scenario that could support a lesson.</td></tr></tbody></table>
+<h2 id="suggestion-template"><a class="no-underline" href="#suggestion-template">Suggestion Template</a></h2>
+<p>Use this structure:</p>
+<pre><code class="language-text">Title:
+Suggested lane: student lesson | career lesson | review | proof gap | dataset/case
+Audience:
+Concepts:
+Relevant page or file:
+What the learner should do:
+Expected observation:
+What proof exists:
+What still needs review:
+Safety or mutation risk:
+Your role or background:
+</code></pre>
+<h2 id="email-intake"><a class="no-underline" href="#email-intake">Email Intake</a></h2>
+<p>Send suggestions to <a href="mailto:deraldg@msn.com?subject=LabTalk%20lesson%20suggestion">deraldg@msn.com</a>.</p>
+<p>Include "LabTalk lesson suggestion" in the subject and paste the template into
+the message body. For academic review, mention whether your perspective is CS,
+databases, technical writing, curriculum, general education, learning theory, or
+industry practice.</p>
+<h2 id="review-rules"><a class="no-underline" href="#review-rules">Review Rules</a></h2>
+<p>Lesson suggestions are strongest when they preserve these boundaries:</p>
+<ul>
+<li>live runtime proof is different from source-defined behavior.</li>
+<li>source memory is different from reviewed historical fact.</li>
+<li>a simulation can be useful, but it must be labeled.</li>
+<li>student-ready material needs setup, safety notes, expected observations, and proof links.</li>
+<li>a draft can be public when the status is honest.</li>
+</ul>
+<h2 id="related-pages"><a class="no-underline" href="#related-pages">Related Pages</a></h2>
+<ul>
+<li><a href="/docs/labtalk/lessons">Lesson Platform</a></li>
+<li><a href="/docs/labtalk/student-lessons">Student Lessons</a></li>
+<li><a href="/docs/labtalk/career-lessons">Career Lessons</a></li>
+<li><a href="/docs/dev/contribution-guide">Contribution Guide</a></li>
+<li><a href="/docs/dev/site-improvement-plan">Site Improvement Plan</a></li>
+</ul>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/suggest-a-lesson",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/docs/labtalk/suggest-a-lesson","className":"hover:text-fg","children":"Suggest a Lesson"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Suggest a Lesson"}],["$","p",null,{"className":"mt-2 text-muted","children":"How educators, students, technical writers, and collaborators can suggest Laboratory Campus lessons and reviews."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$7"},"children":null}]}],"$L8"]}]
+4:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+5:["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]
+8:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L6",null,{"href":"/docs/labtalk/career-lessons","className":"text-muted hover:text-fg","children":["← ","Career Lessons"]}]}],["$","div",null,{"children":["$","$L6",null,{"href":"/docs/labtalk/runtime-evidence","className":"text-muted hover:text-fg","children":["Runtime Evidence Gallery"," →"]}]}]]}]
+b:null
