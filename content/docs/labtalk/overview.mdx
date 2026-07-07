@@ -37,6 +37,22 @@ The [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence) records reviewed 
 
 ![Laboratory Campus evolution spine](/images/sdlc/laboratory-campus-evolution-spine-v2.svg)
 
+## Repository Boundary
+
+The Laboratory Campus is a **consumer layer**, not a replacement authority for
+the engine.
+
+- `x64base` remains the owner of engine/runtime truth, including command
+  semantics, cursor state, relations, indexing, and the Arctic GUI/TUI
+  workbench surfaces.
+- `DotTalk++` remains the best runtime/manual identity for the command shell and
+  teaching shell surfaces.
+- `LabTalk` owns the portal, registries, labs, proofs, assignments, and campus
+  overlays that consume runtime truth.
+
+That means the campus may launch, explain, and sequence runtime behavior, but
+it should not silently redefine the behavior that belongs to the runtime.
+
 ## Core Pattern
 
 Campus material should follow a proof-aware path:
