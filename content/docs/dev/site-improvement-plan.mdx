@@ -1,0 +1,97 @@
+---
+title: "Site Improvement Plan"
+description: "Response plan for x64base.com documentation deficiencies, academic review, and under-development lanes."
+---
+
+This page tracks website deficiencies without confusing active development with absence. x64base is a live research and hobby project; some gaps are real documentation defects, while others are lanes that intentionally remain marked alpha, planned, or review-needed.
+
+## Reading deficiencies correctly
+
+| Reported issue | Current interpretation | Correction path |
+| --- | --- | --- |
+| Onboarding is not portable enough | Real documentation deficiency. Local paths are useful evidence, but public quickstarts need clone/build/test examples. | Keep local paths on proof pages; make Getting Started portable. |
+| Curriculum is skeletal | Real deficiency in public pedagogy, not a lack of source material. Many `.dts` examples already exist. | Promote `.dts` scripts into labs with prerequisites, expected output, mutation status, and review notes. |
+| Visuals and diagrams are uneven | Mixed. Some diagrams and screenshots exist; some older graphics are evidence artifacts, not final design assets. | Curate diagrams by page role: proof image, teaching diagram, architecture map, or publication graphic. |
+| Roadmap/status could be clearer | Partly fixed by Current Work Lanes and Website Matrix, but still needs a reader-friendly roadmap. | Add a compact roadmap table with current, next, and collaboration-needed columns. |
+| Prior work and citations are thin | Real academic-presentation deficiency. | Add a Prior Work / Bibliography page for xBase, DBF, FoxPro, Clipper, Harbour, VFP, indexing, database education, and documentation systems. |
+| Contribution/onboarding is thin | Real collaboration deficiency. | Expand Onboarding and Contribution Guide with issue types, review rules, proof labels, and safe first tasks. |
+| Manual generation is not visible enough | Under-development lane. Manualgen exists, but reviewed generated manuals should not be published before proof gates. | Publish generated manuals only after inventory, validation, dry-run, review, and version stamping. |
+| Application UI DSL is missing | Planned feature lane, not a hidden completed feature. | Keep CREATE MENU/WINDOW/DIALOG examples under planned UI DSL until implemented. |
+
+## Correction lanes
+
+### 1. Portable start path
+
+Status: active correction.
+
+- Keep [Installation](/docs/getting-started/installation) for detailed platform notes.
+- Keep [Quickstart](/docs/getting-started/quickstart) focused on clone/build/run examples.
+- Distinguish public GitHub checkout from Derald's local source tree and `C:\x64base` staging mirror.
+
+### 2. DTS-to-lab promotion
+
+Status: active correction.
+
+The project already has many `.dts` examples. The website should classify them before promoting them:
+
+| Class | Examples | Promotion rule |
+| --- | --- | --- |
+| Safe observation | `version.dts`, `workspace_load_x64_canary.dts`, `rel_enum_x64.dts` | Good for beginner labs after expected output is recorded. |
+| Index/order canaries | `cnx_tag_smoke.dts`, `smartlist_order_matrix.dts`, `order_engine_shakedown.dts` | Good for index lessons when backend state and diagnostics are explained. |
+| Mutation canaries | `mcc_mutation_*`, `calc_write_test.dts`, `commit_rollback_test.dts` | Must require sandbox/disposable data and pre/post checks. |
+| Metadata/SelfDoc scripts | `cmdhelpchk_*`, `SOURCE_COMMENT_*`, `datadict_smoke.dts` | Good for documentation-system lessons after proof labels are added. |
+| Quarantine/legacy scripts | older regression and experimental scripts | Keep as historical evidence unless reviewed. |
+
+### 3. Academic and education review
+
+Status: opening soon.
+
+The project is preparing to invite academic interest. Desired input includes:
+
+- CS professors for algorithms, data structures, systems programming, runtime design, and language lessons.
+- database professors for relational theory, DBF lineage, indexing, locking, triggers, buffering, and mutation safety.
+- technical writing teachers for documentation standards, manual structure, comment collection, terminology, and student-facing explanations.
+- general education specialists for prerequisites, accessibility, assessment, and the shape of the Laboratory Campus.
+- instructors from different schools of learning to review whether lessons work through reading, repetition, diagrams, command practice, and project work.
+
+### 4. Documentation proof gates
+
+Status: active policy.
+
+Website updates should retain the same proof classes used by the documentation matrix:
+
+- runtime-evidenced
+- source-evidenced
+- help-catalog-evidenced
+- generated-reviewed
+- planned-or-in-progress
+- review-needed
+
+A missing polished lesson is a deficiency. A planned lane labeled planned is not a deficiency unless the site implies it is finished.
+
+### 5. Roadmap cleanup
+
+Status: next correction.
+
+The site should add a short roadmap page with:
+
+- current proven runtime surfaces.
+- active beta/canary surfaces.
+- planned lanes.
+- academic-review requests.
+- manual/publication gates.
+
+### 6. Citation and prior-work layer
+
+Status: next correction.
+
+Add a Prior Work page and citation block covering:
+
+- DBF-family file formats.
+- xBase, dBASE, FoxPro, Clipper, Harbour, xHarbour, Alaska Xbase++, and XSharp context.
+- database education and relational-model teaching.
+- reproducible research and documentation-generation practices.
+
+## Operating rule
+
+The site should be honest enough for academic review: do not hide unfinished work, but do not call unfinished work a product feature. Use lanes, proof labels, and examples to show exactly where the project stands.

@@ -78,6 +78,12 @@ const sectionSummary = [
     icon: GitBranch
   },
   {
+    title: "Site improvement plan",
+    description: "Track documentation deficiencies, under-development lanes, and academic review needs.",
+    href: "/docs/dev/site-improvement-plan",
+    icon: FileText
+  },
+  {
     title: "SelfDoc publication",
     description: "See how local documentation layers feed generated manuals and the public website.",
     href: "/docs/dev/selfdoc-website-publication",

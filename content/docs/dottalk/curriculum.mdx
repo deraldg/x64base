@@ -3,28 +3,168 @@ title: "DotTalk++ Curriculum"
 description: "Teaching progression, labs, and lesson sequencing."
 ---
 
-> This page is a scaffold for your curriculum.
+This curriculum is under development. That is not a defect by itself: the Laboratory Campus is intentionally being shaped from live engine work, `.dts` scripts, runtime evidence, and outside review.
 
-## Module 1 — Tables and records
+The current goal is to turn existing DotTalk++ examples into repeatable lessons with prerequisites, expected output, mutation warnings, and proof labels.
 
-- what a record is
-- field typing
-- fixed-length records
+## Curriculum status
 
-## Module 2 — Memos
+| Area | Current state | Next correction |
+| --- | --- | --- |
+| Tables and records | Runtime-evidenced through DBF examples, browse/list commands, and MCC scripts. | Add a student lab sheet with expected output. |
+| Memos | Source/canary-evidenced with memo lanes and format docs. | Add a safe read-only memo inspection lab before write labs. |
+| Indexes | Runtime-evidenced through CNX/CDX/LMDB canaries and timed `IDX` labs. | Split production indexing from education timing labs. |
+| Relations | Runtime-evidenced through ERSATZ, workspace, relation tree, and tuple grid examples. | Add diagrams and assessment prompts. |
+| Mutation safety | Runtime-evidenced through `REPLACE`, `CALCWRITE`, table buffering, dirty/stale, commit, and rollback. | Require sandbox datasets and pre/post state checks. |
+| Documentation literacy | Source/help-evidenced through HELP, CMDHELPCHK, SelfDoc, comments, and contracts. | Convert source-to-website flow into a student exercise. |
 
-- pointers
-- block storage
-- integrity checks
+## Module 1 - Tables and records
 
-## Module 3 — Indexes
+Learning goals:
 
-- keys
-- ordering
-- rebuild and verify
+- define records, fields, field types, work areas, and current record state.
+- inspect fixed-length records without hiding the file-format reality.
+- compare classic DBF, VFP DBF, and DBF_64 where evidence exists.
 
-## Module 4 — Relational thinking
+Candidate `.dts` examples:
 
-- selection
-- projection
-- join reasoning (RelTalk)
+```text
+dottalkpp\data\scripts\canaries\dottalk_beta0_smoke_baseline_0_1.dts
+dottalkpp\data\scripts\canaries\create_sample_dbf_matrix.dts
+tests\manual\dotscript\core\MCC_TIER1_CORE_SURFACE_AND_INDEX_SAFE_V1.DTS
+tests\manual\dotscript\focused\version.dts
+```
+
+Lesson shape:
+
+1. open a known table.
+2. list fields and records.
+3. inspect current area and cursor state.
+4. compare a command transcript with the website command catalog.
+
+## Module 2 - Memos
+
+Learning goals:
+
+- explain why memo fields are not ordinary fixed-width field payloads.
+- distinguish memo references, memo stores, memo objects, and memo integrity checks.
+- understand why FPT64/DTX work is a 64-bit architecture lane, not just a larger file.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\canaries\memo_shakedown.dts
+dottalkpp\data\scripts\MEMO_X64_REOPEN_CANARY_20260513.dts
+dottalkpp\data\scripts\memo_tests.dts
+```
+
+Next correction: publish a read-only memo lab before any mutation lab so students can learn pointers, blocks, and integrity without risking sample data.
+
+## Module 3 - Indexes
+
+Learning goals:
+
+- define key expressions, order state, tags, rebuilds, and verification.
+- compare education timing (`IDX`) with persistent index work (`CNX`, `CDX`, `LMDB`).
+- read diagnostics honestly, including mismatch or stale backend states.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\canaries\cnx_tag_smoke.dts
+dottalkpp\data\scripts\canaries\order_engine_shakedown.dts
+dottalkpp\data\scripts\canaries\smartlist_order_matrix.dts
+dottalkpp\data\scripts\canaries\lmdb_open_shakedown.dts
+tests\manual\dotscript\focused\CNX_TAG_SMOKE.dts
+tests\manual\dotscript\focused\list_ordered_students_cnx_baseline_x32_v2.dts
+```
+
+Lesson shape:
+
+1. build or attach an index.
+2. change order.
+3. list ordered records.
+4. record what changed in session state versus files.
+5. compare a clean proof with a diagnostic proof.
+
+## Module 4 - Relational thinking
+
+Learning goals:
+
+- distinguish selection, projection, relation traversal, tuple output, and joined readback.
+- use workspaces as wrappers over active DB areas.
+- inspect relation trees without pretending the system is a full SQL server.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\cases\ersatz_mini_test.dts
+dottalkpp\data\scripts\canaries\rel_enum_x64.dts
+dottalkpp\data\scripts\canaries\workspace_load_x64_canary.dts
+tests\manual\dotscript\focused\ERSATZ_REL_ENUM_BROWSER.dts
+tests\manual\dotscript\focused\Workspace Relation SaveLoad Smoke Test DTSHEMA 2 live path.dts
+```
+
+## Module 5 - DotScript and automation
+
+Learning goals:
+
+- write repeatable command files.
+- use variables, comments, line continuation, `IF`, `LOOP`, `WHILE`, `UNTIL`, `SCAN`, and one-level nesting where supported.
+- separate safe observation scripts from mutating scripts.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\canaries\dt_var_date_concat_calc_smoketest_full_start.dts
+dottalkpp\data\scripts\cases\calc_regression_test.dts
+tests\manual\dotscript\metadata\METADATA_CONTINUATION_SMOKE_v2.dts
+tests\manual\dotscript\focused\calc_numeric_literal_1000_probe.dts
+```
+
+## Module 6 - Mutation safety
+
+Learning goals:
+
+- explain physical writes versus buffered writes.
+- inspect dirty and stale state.
+- treat `REPLACE`, `CALC`, `CALCWRITE`, and `MULTIREP` as special commands requiring proof.
+- use disposable or sandbox datasets for mutation labs.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\canaries\mcc_mutation_trinity_disposable_driver.dts
+dottalkpp\data\scripts\canaries\mcc_mutation_x64_disposable_canary.dts
+dottalkpp\data\scripts\calc_write_test.dts
+dottalkpp\data\scripts\commit_rollback_test.dts
+tests\manual\dotscript\core\MCC_TIER3_SANDBOX_MUTATION_CANARIES_V1.DTS
+```
+
+## Module 7 - Self-documenting systems
+
+Learning goals:
+
+- trace a command from source contract to HELP/CMDHELP, SelfDoc, manualgen, and website publication.
+- understand comments as collected evidence, not decorative prose.
+- classify a claim as runtime-evidenced, source-evidenced, help-catalog-evidenced, planned, or review-needed.
+
+Candidate `.dts` examples:
+
+```text
+dottalkpp\data\scripts\help\cmdhelpchk_metadata_probe.dts
+dottalkpp\data\scripts\help\cmdhelpchk_syscmd_locate_matrix_v1.dts
+dottalkpp\data\scripts\comments\SOURCE_COMMENT_SCHEMA_CREATE.dts
+dottalkpp\data\scripts\comments\SOURCE_COMMENT_READBACK_VALIDATION.dts
+tests\manual\dotscript\datadict\datadict_smoke.dts
+```
+
+## Academic input needed
+
+The curriculum needs outside review before it should be described as a finished academic course. Desired input includes:
+
+- technical writing review for lesson structure, terminology, scaffolding, and manual style.
+- CS faculty review for data structures, algorithms, language/runtime framing, and systems lessons.
+- database faculty review for xBase lineage, DBF formats, relational theory, indexing, locking, validation, and mutation safety.
+- general education review for accessibility, learning paths, assessment, and the shape of the Laboratory Campus.
+- feedback from different schools of learning so labs can support inspection, repetition, diagrams, command practice, and project-based learning.

@@ -124,6 +124,8 @@ Compatibility-only or historical material can live in `foxref.hpp`, but current
 DotTalk++ commands belong in DOTREF. If a command is intentionally omitted from
 DOTREF, the omission should be documented as internal, deprecated, or hidden.
 
+Command-shell lambda registration is allowed, but lambda handlers still need command contracts, DOTREF review, and catalog visibility. Inline lambdas should stay small and delegate meaningful behavior to named helpers or `cmd_*.cpp` implementations when the command grows. See [Naming Conventions](/docs/dev/naming-conventions).
+
 ## Comments and Collection
 
 - Put command-level contracts at the top of the implementation file.

@@ -1,0 +1,185 @@
+---
+title: "Naming Conventions"
+description: "Source, command, script, and documentation naming conventions for DotTalk++ / x64base."
+---
+
+This page records current naming conventions and intended direction. It is a development standard, not a claim that every historical file already conforms.
+
+## Source file prefixes
+
+| Prefix | Meaning | Examples / notes |
+| --- | --- | --- |
+| `cmd_` | DotTalk++ command implementation. | User-facing shell commands, command aliases, usage contracts, and mutation boundaries. |
+| `edu_` | Education-facing command or lesson helper. | `ASCII`, `RETRO`, `BBOX`, `BOOLEAN`, `COBOL`, normalization, and teaching commands. |
+| `fn_` | Expression/scalar function registration or implementation. | Function catalog, student function hooks, and expression helpers. |
+| `gui_` | GUI-neutral service or GUI bridge. | Shared model/session/runtime adapter code used by wx, Python/Tk preview, browser, or future GUI lanes. |
+| `memo_` | Memo subsystem source. | Memo store, object, manager, reference, display, and verification surfaces. |
+| `dbf_` | DBF storage or DBF creation behavior. | DBF record/header/creation logic. |
+| `cdx_`, `cnx_`, `lmdb_` | Index backend or index bridge behavior. | Keep logical index names separate from backend-specific mechanics. |
+| `shell_` | Command shell support behavior. | Parser, evaluation helpers, command dispatch support, and shell bridge utilities. |
+| `command_` | Registry, catalog, or command metadata support. | Public command list, command output, command catalog, and registry helpers. |
+| `app_` | Application-specific sample or legacy app lane. | Should not be confused with the core engine unless promoted by contract. |
+| `pre_`, `post_` | Lifecycle hooks. | Pre/post polling and command lifecycle observation. |
+| `test_` | Unit, smoke, or harness code. | Keep separate from runtime commands unless intentionally compiled into a test target. |
+
+## Unofficial search families
+
+Not every useful code group is a formal prefix. Some families are practical search handles: they help developers find related commands, helpers, tests, generated reports, and proof scripts. They are useful for navigation, but they are not stable API promises unless promoted by a source contract.
+
+| Search family | What it usually finds | Representative source/proof areas |
+| --- | --- | --- |
+| `rel`, `relation`, `relations` | relation graph commands, relation status, relation enumeration, relation-aware browsing | `src/cli/cmd_rel.cpp`, `src/cli/cmd_relations.cpp`, `src/cli/rel_enum_engine.cpp`, `src/cli/relations_status.cpp`, `include/workspace/relation_state.hpp`, `dottalkpp/data/scripts/canaries/rel_enum_x64.dts` |
+| `sql`, `sqlite` | SQL bridge, SQLite adapter, SQL import/export, SQL command helpers | `src/cli/cmd_sql.cpp`, `src/cli/cmd_sql_select.cpp`, `src/cli/cmd_importsql.cpp`, `src/sqlite/sqlite_adapter.cpp`, `include/sql_ref.hpp`, `dottalkpp/data/scripts/canaries/sqlite_smoke.dts` |
+| `ddl`, `schema` | DDL fetch/validate/create paths, schema creation, field manager, DBF creation from specs | `src/cli/cmd_ddl.cpp`, `src/cli/cmd_schemas.cpp`, `src/cli/cmd_fieldmgr.cpp`, `scripts/DDL_VALIDATE_ALL.dts`, `scripts/DDL_CREATE_EMPTY.dts` |
+| `set` | session settings, path settings, order/index settings, filters, relations, buffering, locale-like state | `src/cli/cmd_set.cpp`, `src/cli/cmd_setorder.cpp`, `src/cli/cmd_setindex.cpp`, `src/cli/cmd_set_relation.cpp`, `src/cli/settings.cpp` |
+| `smart` | smart list/browser command surfaces and output/query helpers | `src/cli/cmd_smartlist.cpp`, `src/cli/cmd_smart_browser.cpp`, `src/cli/smartlist_query.cpp`, `src/cli/smartlist_output.cpp`, `dottalkpp/data/scripts/canaries/smartlist_order_matrix.dts` |
+| `browse`, `browser` | CLI browser, smart browser, simple browser, relation browser, GUI/browser adapters | `src/cli/browse/`, `src/cli/cmd_browse.cpp`, `src/cli/cmd_browser.cpp`, `src/browser/`, `include/browser/` |
+| `calc`, `replace`, `mutat` | data mutation, expression evaluation, buffered/unbuffered editing, dirty/stale state | `src/cli/cmd_calc.cpp`, `src/cli/cmd_calcwrite.cpp`, `src/cli/cmd_replace.cpp`, `src/cli/cmd_replace_multi.cpp`, `src/dli/replace_api.cpp`, `dottalkpp/data/scripts/calc_write_test.dts` |
+| `help`, `cmdhelp`, `manual`, `selfdoc` | help metadata, CMDHELPCHK, source contracts, manual generation, website feed lanes | `src/cli/cmdhelp.cpp`, `src/help/`, `src/manual/`, `selfdoc/`, `tools/manualgen/`, `dottalkpp/docs/generated/reports/` |
+| `ddict`, `datadict` | data dictionary catalog, read helpers, source maps, dictionary reports | `src/datadict/`, `include/datadict/`, `tools/datadict/`, `docs/datadict/` |
+| `lmdb`, `cdx`, `cnx`, `index` | index backends, index attachment, index format detection, index proof scripts | `src/xindex/`, `src/cdx/`, `src/cnx/`, `include/xindex/`, `dottalkpp/data/scripts/index_*_smoke.dts` |
+
+Search families should be documented as discovery aids. If a family becomes a product-facing contract, promote it into the command catalog, DOTREF/help metadata, and this page's formal prefix or command-family sections.
+
+## Necessary directory trees
+
+The development tree is intentionally wider than the public product tree. The useful mental model is not "everything ships"; it is "source, proof, generated documentation, and staged publication each have a role."
+
+### Development tree
+
+```text
+D:\code\ccode
+|-- src\                 runtime source: CLI, xbase, indexes, memo, GUI bridges
+|-- include\             public/internal headers and engine contracts
+|-- dottalkpp\           runtime data, scripts, generated reports, maintenance lanes
+|-- selfdoc\             documentation collection and source-contract probes
+|-- labtalk\             Laboratory Campus plans, reports, products, and lessons
+|-- tools\               manualgen, datadict, help, and support tooling
+|-- scripts\             smoke scripts, build helpers, and DTS examples
+|-- tests\               regression and manual test surfaces
+|-- docs\                source-side specifications and design records
+|-- apps\                app/workbench experiments
+|-- pycrud\              Python CRUD/GUI lane
+|-- py\                  Python helpers and experiments
+|-- contracts\           contract and coding-standard support material
+|-- cases\               case-study and proof material
+|-- samples\             sample data/code surfaces
+|-- results\             generated or captured run results
+|-- build*\              local build outputs, not product truth
+`-- third_party\         external dependencies and vendored support
+```
+
+### Public website source and staged product tree
+
+```text
+D:\dev\x64base-site
+|-- app\                 Next.js route pages and public section shells
+|-- content\             MDX documentation and product copy
+|-- config\              navigation/sidebar/site configuration
+|-- components\          shared website components
+|-- public\              images, diagrams, screenshots, and static assets
+`-- scripts\             build, export, and staging helpers
+
+C:\x64base
+|-- dottalk-webui\public-site\   staged static website mirror
+|-- dottalkpp\                   staged runtime/source mirror when synced
+|-- pycrud\                      staged Python CRUD/GUI lane when synced
+`-- README / manifests           publication and staging notes
+```
+
+The `C:\x64base` tree is the publication staging area. Generated data such as Bible SQL and LMDB artifacts should be regenerated as needed rather than treated as permanent source truth.
+
+## Command implementation convention
+
+Command files should use `cmd_<canonical_command>.cpp` where practical. The command's public identity should be aligned across:
+
+1. command registration in the shell.
+2. the source contract near the implementation.
+3. DOTREF entry in `include/dotref.hpp`.
+4. HELP/CMDHELP/CMDHELPCHK rows.
+5. website command catalog and manualgen output.
+
+Compatibility or historical references can live in `foxref.hpp`; current DotTalk++ commands belong in DOTREF unless intentionally hidden or internal.
+
+## Command-shell lambda registration
+
+Some commands are registered directly in the command shell with lambda handlers rather than as standalone `cmd_*.cpp` functions. That is allowed, but it needs a convention because lambda registration is easy to lose in documentation scans.
+
+Lambda-registered commands should:
+
+- use an explicit canonical command name and alias list in the registration call.
+- include a nearby `@dottalk.usage v1` contract or reference a reviewed contract block.
+- state whether the lambda is report-only, session-mutating, table-mutating, filesystem-mutating, external-app-active, or network-active.
+- remain small; if the lambda grows beyond simple dispatch/glue, move behavior into a named helper or `cmd_*.cpp` implementation.
+- be visible to command catalog generation, DOTREF review, and CMDHELPCHK.
+- avoid hiding mutators, filesystem writers, or external app launchers inside inline lambdas.
+
+Preferred shape:
+
+```text
+registry.registerCommand("COMMAND", aliases, [](ShellContext& ctx, Args args) {
+  return run_named_command_helper(ctx, args);
+});
+```
+
+Avoid putting complex business logic directly inside the lambda. The lambda should usually bind command syntax to a named implementation, not become the implementation.
+
+## Education command convention
+
+Education commands use `edu_` when they are primarily teaching surfaces. If an education command is also a normal command-shell command, document both identities:
+
+- source file prefix: `edu_`
+- shell command: public command name such as `ASCII`, `RETRO`, `BBOX`, or `IDX`
+- lesson lane: Laboratory Campus / education feature page
+- proof: transcript, screenshot, source contract, or `.dts` lab
+
+Student extension examples should live under extension paths and use explicit sample status. They should not overwrite core command names.
+
+## Function convention
+
+Function implementations and registrations should use `fn_` or a clearly grouped function catalog source. Functions should state:
+
+- canonical function name.
+- aliases, if any.
+- argument count and type expectations.
+- return type.
+- whether evaluation is pure or can read/mutate external state.
+- whether the function is core, sample-extension, or planned.
+
+Scalar functions used by mutating commands such as `CALC`, `CALCWRITE`, and `REPLACE` deserve extra review because expression behavior can become data mutation.
+
+## Script and proof naming
+
+`.dts` files should be named for intent and risk:
+
+| Pattern | Use |
+| --- | --- |
+| `*_smoke.dts` | Small smoke proof. |
+| `*_canary.dts` | Probe for a specific behavior or regression. |
+| `*_regression*.dts` | Regression script with expected behavior. |
+| `*_mutation*.dts` | Script that changes data; should use sandbox/disposable data. |
+| `*_verify*.dts` | Readback or validation script. |
+| `cmdhelpchk_*` | HELP/CMDHELP/CMDHELPCHK evidence lane. |
+| `SOURCE_COMMENT_*` | Source comment and contract collection lane. |
+| `MCC_*` | My Community College dataset/proof lane. |
+
+Every promoted `.dts` lesson should state:
+
+- required dataset.
+- expected read/write behavior.
+- whether it is safe observation or mutation.
+- expected output or transcript anchor.
+- proof status.
+
+## Documentation convention
+
+Website and manual pages should avoid presenting active lanes as finished products. Use these status labels consistently:
+
+- runtime-evidenced
+- source-evidenced
+- help-catalog-evidenced
+- generated-reviewed
+- planned-or-in-progress
+- review-needed
+
+If a page describes a planned lane, it should name the lane and avoid implying the command syntax is implemented.

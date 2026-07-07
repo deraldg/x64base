@@ -3,24 +3,75 @@ title: "Getting Started: Quickstart"
 description: "Run the real DotTalk++ command surfaces instead of placeholder x64base commands."
 ---
 
-The local project is command-shell first. Use DotTalk++ scripts and commands rather than invented package-style examples.
+The project is command-shell first. Use DotTalk++ scripts and commands rather than invented package-style examples.
+
+This page separates public clone/build examples from Derald's local development paths. Local evidence pages may still cite `D:\code\ccode` because that is the active development tree, but a new reader should be able to start from a normal checkout.
+
+## Clone
+
+```powershell
+git clone https://github.com/deraldg/x64base.git
+cd x64base
+```
+
+The staging/publishing workflow currently mirrors active development into `C:\x64base`, but outside contributors should treat the GitHub checkout as the portable starting point.
 
 ## Build shape
 
 The CMake project is `DotTalkpp` and uses C++20.
 
-Common local configuration starts from these build options:
+Windows / Visual Studio build shape:
 
 ```powershell
-cmake -S D:\code\ccode -B D:\code\ccode\build -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_INDEX=ON -D DOTTALK_WITH_RELATIONS=ON -D BUILD_TESTING=ON
-cmake --build D:\code\ccode\build --config Release --target dottalkpp
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_INDEX=ON -D DOTTALK_WITH_RELATIONS=ON -D BUILD_TESTING=ON
+cmake --build build --config Release --target dottalkpp
+```
+
+WSL / Ubuntu build shape:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake ninja-build git pkg-config
+cmake -S . -B build-posix -G Ninja \
+  -D DOTTALK_WITH_INDEX=ON \
+  -D DOTTALK_WITH_RELATIONS=ON \
+  -D BUILD_TESTING=ON
+cmake --build build-posix
+```
+
+macOS build shape:
+
+```bash
+xcode-select --install
+brew install cmake ninja pkg-config
+cmake -S . -B build-macos -G Ninja \
+  -D DOTTALK_WITH_INDEX=ON \
+  -D DOTTALK_WITH_RELATIONS=ON \
+  -D BUILD_TESTING=ON
+cmake --build build-macos
 ```
 
 GUI lanes are optional:
 
 ```powershell
-cmake -S D:\code\ccode -B D:\code\ccode\build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
+cmake -S . -B build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
+cmake --build build-wx-check --config Release
 ```
+
+## Run a script example
+
+The repository contains many `.dts` examples and canaries. Good starting classes are:
+
+```text
+dottalkpp\data\scripts\canaries\dottalk_beta0_smoke_baseline_0_1.dts
+dottalkpp\data\scripts\canaries\workspace_load_x64_canary.dts
+dottalkpp\data\scripts\canaries\smartlist_order_matrix.dts
+tests\manual\dotscript\core\MCC_TIER1_CORE_SURFACE_AND_INDEX_SAFE_V1.DTS
+tests\manual\dotscript\core\MCC_TIER2_OBSERVATION_CANARIES_V1.DTS
+tests\manual\dotscript\core\MCC_TIER3_SANDBOX_MUTATION_CANARIES_V1.DTS
+```
+
+Run commands vary by current build output and launcher lane. The important public standard is that examples should name their required dataset, expected mutation level, and proof status.
 
 ## Runtime commands to recognize
 

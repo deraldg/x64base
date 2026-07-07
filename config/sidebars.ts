@@ -73,6 +73,7 @@ export const docsSidebar: SidebarGroup[] = [
     items: [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
       { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
+      { label: "Site Improvement Plan", href: "/docs/dev/site-improvement-plan" },
       { label: "Important Documents", href: "/docs/dev/important-documents" },
       { label: "Website Documentation Matrix", href: "/docs/dev/website-documentation-matrix" },
       { label: "Historical Source Lineage", href: "/docs/dev/historical-source-lineage" },
@@ -81,6 +82,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
       { label: "SelfDoc Feed Pipeline", href: "/docs/dev/selfdoc-feed-pipeline" },
       { label: "Onboarding Guide", href: "/docs/dev/onboarding-guide" },
+      { label: "Naming Conventions", href: "/docs/dev/naming-conventions" },
       { label: "Coding Standards", href: "/docs/dev/coding-standards" },
       { label: "Contribution Guide", href: "/docs/dev/contribution-guide" }
     ]
