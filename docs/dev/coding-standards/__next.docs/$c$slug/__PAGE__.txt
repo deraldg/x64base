@@ -3,14 +3,14 @@
 d:I[22016,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
 f:I[97367,["/_next/static/chunks/41qf-oxhf11mm.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 10:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":["$L3","$L4"]}],"$L5","$L6"]}]}],"$L7","$L8","$L9","$La"]}]]}],["$Lb"],"$Lc"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"GdN7ONtruYkll7zG_zkXz"}
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":["$L3","$L4"]}],"$L5","$L6"]}]}],"$L7","$L8","$L9","$La"]}]]}],["$Lb"],"$Lc"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"XV_I1tdK00UHLw0Rk7n0T"}
 3:["$","$Ld",null,{"href":"/","className":"hover:text-fg","children":"Home"}]
 4:["$","span",null,{"className":"text-border","children":"/"}]
 5:["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$Ld",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}]
 6:["$","li","/docs/dev/coding-standards",{"className":"flex items-center gap-2","children":[["$","$Ld",null,{"href":"/docs/dev/coding-standards","className":"hover:text-fg","children":"Coding Standards"}],null]}]
 7:["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Coding Standards"}]
 8:["$","p",null,{"className":"mt-2 text-muted","children":"Source contracts, comments, usage headers, and safeguards for repeatable DotTalk++ / x64base development."}]
-e:Tfdb,<p>These standards are part of the SelfDoc system. Code should be readable by a maintainer, harvestable by tools, and honest about its mutation and proof boundaries.</p>
+e:T290b,<p>These standards are part of the SelfDoc system. Code should be readable by a maintainer, harvestable by tools, and honest about its mutation and proof boundaries.</p>
 <h2 id="code"><a class="no-underline" href="#code">Code</a></h2>
 <ul>
 <li>Prefer small functions with explicit ownership.</li>
@@ -20,15 +20,25 @@ e:Tfdb,<p>These standards are part of the SelfDoc system. Code should be readabl
 <li>Preserve existing worktree changes; do not use broad rewrites for narrow documentation or command updates.</li>
 </ul>
 <h2 id="command-header-contracts"><a class="no-underline" href="#command-header-contracts">Command Header Contracts</a></h2>
+<p>Contracts are not decorative comments. They are the public source-of-truth layer
+that lets DotTalk++ connect implementation, HELP, CMDHELP, SelfDoc, manualgen,
+diagrams, website pages, and runtime proof. If a command can be run by a user,
+called from DotScript, surfaced in HELP, included in CMDHELPCHK, or promoted to
+the website, it needs a contract.</p>
+<p>The contract should be close to the implementation, easy to harvest, and honest
+about status. A reader should be able to tell whether the command is read-only,
+session-mutating, table-mutating, filesystem-mutating, network-active,
+externally active, or publication-active without reading the whole command body.</p>
 <p>Every command intended for HELP, CMDHELP, SelfDoc, manualgen, or the website should have a leading <code>@dottalk.usage v1</code> block or an equivalent reviewed contract. Preferred fields:</p>
 <pre><code class="language-text">@dottalk.usage v1
 owner: DOT|COMMAND
 command: COMMAND
+aliases: ALIAS1, ALIAS2
 category: ...
 status: supported|experimental|sample-extension|...
 noargs: usage|report|status|...
-effect: report|display|mixed|network-or-file|...
-mutates: none|session|filesystem|helpdata|dbf|sidecar|...
+effect: report|display|evaluate|mutate|rebuild|session-control|mixed|network-or-file|...
+mutates: none|session|shell-exit-state|table-data|table-buffer|memo|index|filesystem|helpdata|metadata|manualgen|sidecar|...
 usage-access: COMMAND USAGE
 summary:
   Short behavior statement.
@@ -43,12 +53,110 @@ risk:
   launches_external_app: yes|no
   network_access: yes|no
   mutates_table_data: yes|no
+  writes_table_buffer: yes|no
+  writes_memo: yes|no
+  mutates_index: yes|no
+  requires_open_table: yes|no
+  requires_current_record: yes|no
 related:
   HELP
   CMDHELPCHK
 @dottalk.end
 </code></pre>
 <p>These headers are harvested into comments evidence, HELP/CMDHELP rows, validation reports, manualgen, diagrams, and website pages.</p>
+<h3 id="required-contract-questions"><a class="no-underline" href="#required-contract-questions">Required Contract Questions</a></h3>
+<p>Before a command is considered documented, its contract should answer:</p>
+<ul>
+<li>What is the canonical command name?</li>
+<li>Are there aliases or compatibility spellings?</li>
+<li>Is it current, planned, experimental, canary, sample-extension, or deprecated?</li>
+<li>What happens with no arguments?</li>
+<li>Does it read or write table records?</li>
+<li>Does it write a table buffer instead of the physical DBF?</li>
+<li>Does it mark fields dirty or stale?</li>
+<li>Does it write memo payloads or memo object references?</li>
+<li>Does it mutate indexes, index metadata, order state, or LMDB/CDX/CNX files?</li>
+<li>Does it read or write ordinary files?</li>
+<li>Does it launch an editor, browser, image viewer, shell, URL handler, SFTP/SSH tool, or other external app?</li>
+<li>Does it touch HELP DATA, CMDHELPCHK, SelfDoc, manualgen, metadata, message catalogs, or publication artifacts?</li>
+<li>What proof or smoke path should validate it?</li>
+</ul>
+<h3 id="mutation-classes"><a class="no-underline" href="#mutation-classes">Mutation Classes</a></h3>
+<p>Use narrow mutation labels. Avoid saying only <code>mutates: yes</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Class</th><th>Meaning</th></tr></thead><tbody><tr><td><code>none</code></td><td>Report-only or display-only.</td></tr><tr><td><code>session</code></td><td>Changes in-memory state such as selected area, order, filter, paths, language, or shell flags.</td></tr><tr><td><code>table-data</code></td><td>Writes physical DBF records, deletes/recalls records, appends rows, packs/zaps, or changes stored field values.</td></tr><tr><td><code>table-buffer</code></td><td>Writes buffered table state and may mark dirty or stale fields without immediate physical writeback.</td></tr><tr><td><code>memo</code></td><td>Writes memo payloads, memo object IDs, or memo sidecar/backing-store state.</td></tr><tr><td><code>index</code></td><td>Rebuilds, updates, attaches, selects, or mutates INX/CNX/CDX/LMDB index state.</td></tr><tr><td><code>filesystem</code></td><td>Creates, deletes, copies, fetches, edits, exports, imports, or rewrites ordinary files.</td></tr><tr><td><code>external-app</code></td><td>Opens an editor, image viewer, URL, shell, SFTP/SSH, browser, or platform launcher.</td></tr><tr><td><code>helpdata</code></td><td>Mutates HELP, CMDHELP, message, locale, or generated help catalogs.</td></tr><tr><td><code>metadata</code></td><td>Mutates Data Dictionary, SYS*, metadata, SelfDoc, comments, or contract tables.</td></tr><tr><td><code>manualgen</code></td><td>Mutates manual catalog, accepted manual sections, generated manuals, or publication shelves.</td></tr></tbody></table>
+<h3 id="special-command-families"><a class="no-underline" href="#special-command-families">Special Command Families</a></h3>
+<p>Some families require extra care because they can look harmless while crossing a
+real boundary.</p>
+<ul>
+<li><strong>Data mutators</strong>: <code>REPLACE</code>, <code>REPLACE_MULTI</code>, <code>MULTIREP</code>, <code>CALCWRITE</code>, assignment-capable <code>CALC</code>, <code>APPEND</code>, <code>APPEND BLANK</code>, <code>DELETE</code>, <code>RECALL</code>, <code>PACK</code>, and <code>ZAP</code> must state physical-write versus buffered-write behavior.</li>
+<li><strong>Index mutators</strong>: <code>INDEX</code>, <code>REINDEX</code>, <code>CDX</code>, <code>CNX</code>, <code>LMDB</code>, <code>BUILDLMDB</code>, <code>SET CDX</code>, <code>SET CNX</code>, <code>SET LMDB</code>, <code>SET ORDER</code>, and related compact forms must state whether table data, index files, order state, or backend environments are changed.</li>
+<li><strong>Filesystem and external tools</strong>: <code>COPY</code>, <code>EXPORT</code>, <code>IMPORT</code>, <code>DDL FETCH</code>, <code>WEB</code>, <code>URL</code>, <code>IMAGE</code>, <code>EDIT</code>, shell commands, SFTP/SSH, archive, and zip commands must state path resolution, writes, external launch behavior, and network behavior.</li>
+<li><strong>SelfDoc/help/manual commands</strong>: <code>HELP</code>, <code>CMDHELP</code>, <code>CMDHELPCHK</code>, <code>MAINT</code>, <code>DDICT</code>, <code>MANUAL</code>, <code>MANSTAR</code>, <code>BBOX</code>, message-manager commands, and contract scanners must say whether they are report-only or authorized to mutate catalogs.</li>
+<li><strong>Session lifecycle</strong>: <code>QUIT</code>, <code>EXIT</code>, <code>CLOSE</code>, <code>WORKSPACE</code>, <code>SELECT</code>, <code>USE</code>, <code>SET</code>, and path/language settings must state whether they mutate only session state or also close files, release areas, or change persistent data.</li>
+</ul>
+<h3 id="dotref-and-registry-alignment"><a class="no-underline" href="#dotref-and-registry-alignment">DOTREF And Registry Alignment</a></h3>
+<p>For user-facing commands, three surfaces should stay aligned:</p>
+<ol>
+<li>Runtime registration in the command registry.</li>
+<li>Source contract in the implementation file.</li>
+<li>Native DotTalk++ reference entry in <code>include/dotref.hpp</code>.</li>
+</ol>
+<p>Compatibility-only or historical material can live in <code>foxref.hpp</code>, but current
+DotTalk++ commands belong in DOTREF. If a command is intentionally omitted from
+DOTREF, the omission should be documented as internal, deprecated, or hidden.</p>
 <h2 id="comments-and-collection"><a class="no-underline" href="#comments-and-collection">Comments and Collection</a></h2>
 <ul>
 <li>Put command-level contracts at the top of the implementation file.</li>
