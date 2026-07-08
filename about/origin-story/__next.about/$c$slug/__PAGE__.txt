@@ -1,8 +1,8 @@
 1:"$Sreact.fragment"
-2:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
-4:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
-5:"$Sreact.suspense"
-3:T645,<p>x64base® is the synthesis of three threads that started in 1993:</p>
+2:I[22016,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+5:I[97367,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+3:T8f5,<p>x64base® is the synthesis of three threads that started in 1993:</p>
 <ol>
 <li><strong>Practical engineering</strong> — building stable data tools that keep working year after year.</li>
 <li><strong>Teaching</strong> — treating file formats and relational thinking as learnable, inspectable systems.</li>
@@ -10,6 +10,14 @@
 </ol>
 <p>From the beginning, the aim was <em>transparent computing</em>: you can open the files, understand the structures,
 and reason about performance and correctness without magic.</p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/story/transparent-engine-model.png" alt="Transparent educational engine model used as a metaphor for visible runtime architecture"></a></p>
+<p>The metaphor is close to the transparent educational engine models of the
+1960s and 1970s: the point was not decoration, but visibility. A learner could
+see pistons, rods, gears, and timing relationships that would normally be hidden
+inside metal. x64base and DotTalk++ carry the same idea into database software:
+tables, headers, memos, indexes, work areas, buffers, HELP text, metadata,
+contracts, and proof artifacts should be inspectable instead of sealed behind a
+black box.</p>
 <p>By 2026, that mindset becomes a complete ecosystem:</p>
 <ul>
 <li>A canonical 64-bit engine (DBF_64 + FPT64)</li>
@@ -25,5 +33,6 @@ to reject AI assistance; it is to make every AI-assisted change reviewable,
 traceable, and bounded by source truth, usage contracts, proof scripts, and
 human release judgment.</p>
 <p>This website organizes that ecosystem into a stable, readable structure: product pages, documentation, licensing,
-curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about","className":"hover:text-fg","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about/origin-story","className":"hover:text-fg","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rESjOVG9FHxsn4MtbclTD"}
-6:null
+curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about","className":"hover:text-fg","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","$L2",null,{"href":"/about/origin-story","className":"hover:text-fg","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$3"},"children":null}]}]]}],null,"$L4"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"3MYV44Kdj8wMMrsOvxOYU"}
+4:["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]
+7:null

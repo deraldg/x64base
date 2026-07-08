@@ -1,0 +1,227 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+6:I[22016,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+9:I[97367,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+a:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"3MYV44Kdj8wMMrsOvxOYU"}
+7:T2055,<h2 id="snapshot"><a class="no-underline" href="#snapshot">Snapshot</a></h2>
+<p>This page records the observed Windows release payload from the local build on
+July 7, 2026:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>File</th><th align="right">Size</th><th>Role</th></tr></thead><tbody><tr><td><code>dottalkpp.exe</code></td><td align="right">6,675,456 bytes</td><td>DotTalk++ command shell, x64base runtime surface, scripting, HELP, browser, relation, metadata, and TUI-enabled command host.</td></tr><tr><td><code>lmdb.dll</code></td><td align="right">82,432 bytes</td><td>LMDB runtime used as the physical backend for LMDB-backed index environments.</td></tr><tr><td><code>sqlite3.dll</code></td><td align="right">1,077,760 bytes</td><td>SQLite runtime used by SQLite and SQL bridge lanes.</td></tr></tbody></table>
+<p>The important point is that LMDB and SQLite are streamlined external runtime
+dependencies. They are not what makes <code>dottalkpp.exe</code> larger.</p>
+<h2 id="dynamic-dependencies"><a class="no-underline" href="#dynamic-dependencies">Dynamic dependencies</a></h2>
+<p>PE inspection of <code>dottalkpp.exe</code> shows that the executable imports:</p>
+<ul>
+<li><code>sqlite3.dll</code></li>
+<li><code>lmdb.dll</code></li>
+<li>Windows system libraries such as <code>KERNEL32.dll</code>, <code>USER32.dll</code>, <code>SHELL32.dll</code>,
+<code>ADVAPI32.dll</code>, <code>WINHTTP.dll</code>, and <code>WS2_32.dll</code></li>
+<li>MSVC runtime libraries such as <code>MSVCP140.dll</code>, <code>VCRUNTIME140.dll</code>,
+<code>VCRUNTIME140_1.dll</code>, and Universal CRT DLLs</li>
+</ul>
+<p>That means SQLite and LMDB are dynamically loaded support libraries. Their code
+is not statically folded into the DotTalk++ executable.</p>
+<h2 id="why-the-executable-is-larger"><a class="no-underline" href="#why-the-executable-is-larger">Why the executable is larger</a></h2>
+<p><code>dottalkpp.exe</code> is larger because it is the full application runtime, not a thin
+launcher. The release build links the command shell and internal libraries that
+make DotTalk++ the canonical human-facing surface for x64base.</p>
+<p>The build links or includes:</p>
+<ul>
+<li>DotTalk++ command handlers across the <code>cmd_*</code> family.</li>
+<li><code>src/xbase</code> table runtime, work areas, cursor state, field handling, locking,
+record views, and DBF flavor handling.</li>
+<li><code>src/xindex</code> index infrastructure and CDX/LMDB command bridges.</li>
+<li><code>src/memo</code> memo manager, memo object/reference/store concepts, and memo proof
+surfaces.</li>
+<li>DotScript parsing, variables, control flow, expression evaluation, and scalar
+function support.</li>
+<li>HELP, SelfDoc, command reflection, function catalogs, metadata mining,
+message catalogs, and manual/report generation support.</li>
+<li>Relation, tuple, workspace, DDL, import/export, CSV, SQL, data dictionary, and
+validation command lanes.</li>
+<li>Browser, SmartList, table buffering, dirty/stale state, and TUI integration
+hooks.</li>
+<li>Turbo Vision/TUI support for the Arctic terminal lane.</li>
+</ul>
+<p>This is why the executable is best described as a compact native runtime host
+with a broad command/documentation surface, not as a minimal embedded database
+library.</p>
+<h2 id="observed-binary-layout"><a class="no-underline" href="#observed-binary-layout">Observed binary layout</a></h2>
+<p>The observed release executable contains these main PE sections:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Section</th><th align="right">Approximate size</th><th>Meaning</th></tr></thead><tbody><tr><td><code>.text</code></td><td align="right">5.36 MB</td><td>Compiled code. This is the command shell, engine services, parsers, catalogs, and runtime logic.</td></tr><tr><td><code>.rdata</code></td><td align="right">1.06 MB</td><td>Read-only data such as constants, command/help tables, strings, import tables, type metadata, and runtime catalogs.</td></tr><tr><td><code>.data</code></td><td align="right">0.10 MB</td><td>Writable initialized data.</td></tr><tr><td><code>.pdata</code></td><td align="right">0.13 MB</td><td>x64 exception/unwind metadata.</td></tr><tr><td><code>.rsrc</code></td><td align="right">small</td><td>Windows resource data.</td></tr><tr><td><code>.reloc</code></td><td align="right">small</td><td>Relocation metadata.</td></tr></tbody></table>
+<p>Most of the footprint is therefore DotTalk++ code and read-only runtime data.</p>
+<h2 id="largest-object-contributors"><a class="no-underline" href="#largest-object-contributors">Largest object contributors</a></h2>
+<p>The release build produced hundreds of object files. The largest observed
+contributors before linking included:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Object file</th><th align="right">Approximate object size</th><th>Why it is large</th></tr></thead><tbody><tr><td><code>cmdhelp.obj</code></td><td align="right">2.79 MB</td><td>Command help and command-surface reflection.</td></tr><tr><td><code>fox_standard_catalog.obj</code></td><td align="right">1.69 MB</td><td>xBase/Fox-style reference and catalog material.</td></tr><tr><td><code>helpdata_source_miner.obj</code></td><td align="right">1.46 MB</td><td>HELP/SelfDoc source-mining support.</td></tr><tr><td><code>cmd_ddl.obj</code></td><td align="right">1.42 MB</td><td>DDL command family and schema behavior.</td></tr><tr><td><code>shell_commands.obj</code></td><td align="right">1.25 MB</td><td>Main command dispatch and shell command integration.</td></tr><tr><td><code>schema_loader.obj</code></td><td align="right">1.10 MB</td><td>Workspace/schema loading support.</td></tr><tr><td><code>extension_manifest.obj</code></td><td align="right">1.10 MB</td><td>Extension manifest handling.</td></tr><tr><td><code>cmd_ersatz.obj</code></td><td align="right">1.08 MB</td><td>ERSATZ workspace/relation loading behavior.</td></tr><tr><td><code>cmd_workspace.obj</code></td><td align="right">1.00 MB</td><td>Workspace command family.</td></tr><tr><td><code>helpdata_messages.obj</code></td><td align="right">0.95 MB</td><td>Runtime/help message data handling.</td></tr></tbody></table>
+<p>These are documentation, command, metadata, schema, and workspace-heavy areas.
+That matches the current x64base thesis: the runtime uses its own metadata and
+documentation infrastructure to describe, validate, and increasingly prove
+itself.</p>
+<h2 id="build-flags-observed"><a class="no-underline" href="#build-flags-observed">Build flags observed</a></h2>
+<p>The local release build used optimization and dynamic MSVC runtime linking:</p>
+<pre><code class="language-text">/O2
+/Ob2
+/MD
+/std:c++20
+NDEBUG
+</code></pre>
+<p>It also enabled several DotTalk++ feature flags:</p>
+<pre><code class="language-text">DOTTALK_WITH_DEV=1
+DOTTALK_PROFILE_DEV=1
+DOTTALK_EXTRA_DIAGNOSTICS=1
+DOTTALK_WITH_RELATIONS=1
+DOTTALK_XEXPR_AVAILABLE=1
+DOTTALK_WITH_INDEX=1
+DOTTALK_TV_AVAILABLE=1
+DOTTALK_SQLITE_AVAILABLE=1
+</code></pre>
+<p>Those flags explain why the current release build includes developer,
+diagnostic, relation, expression, index, TUI, and SQLite command surfaces. A
+smaller distribution build could be created later by intentionally separating
+developer/selfdoc tooling, command catalogs, TUI support, or optional surfaces,
+but the current beta build keeps them together because they are part of the
+proof and documentation loop.</p>
+<h2 id="documentation-rule"><a class="no-underline" href="#documentation-rule">Documentation rule</a></h2>
+<p>When documenting the runtime footprint:</p>
+<ul>
+<li>Do say that DotTalk++ is a compact native runtime compared with framework-heavy
+app stacks.</li>
+<li>Do say that LMDB and SQLite are streamlined external DLL dependencies.</li>
+<li>Do not imply that <code>dottalkpp.exe</code> is only a database kernel.</li>
+<li>Do not blame the size on SQLite or LMDB; they are dynamically imported.</li>
+<li>Do explain that the executable contains the command shell, engine services,
+scripting, SelfDoc/HELP, metadata, browsers, relations, and TUI hooks.</li>
+</ul>
+<p>See also <a href="/docs/engine/architecture">Engine Architecture</a>, <a href="/docs/engine/cdx-lmdb-indexing">CDX and LMDB
+Indexing</a>, and <a href="/products/dottalk">DotTalk++</a>.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/","className":"hover:text-fg","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/docs","className":"hover:text-fg","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/engine/runtime-footprint",{"className":"flex items-center gap-2","children":[["$","$L6",null,{"href":"/docs/engine/runtime-footprint","className":"hover:text-fg","children":"Runtime Footprint and Dependencies"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Runtime Footprint and Dependencies"}],["$","p",null,{"className":"mt-2 text-muted","children":"Observed DotTalk++ release executable size, dynamic dependencies, and why the CLI runtime is larger than LMDB and SQLite."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$7"},"children":null}]}],"$L8"]}]
+4:["$","script","script-0",{"src":"/_next/static/chunks/1w54xsrycck2r.js","async":true}]
+5:["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]
+8:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","$L6",null,{"href":"/docs/engine/architecture","className":"text-muted hover:text-fg","children":["← ","Architecture"]}]}],["$","div",null,{"children":["$","$L6",null,{"href":"/docs/engine/xbase-ecosystem-context","className":"text-muted hover:text-fg","children":["xBase Ecosystem Context"," →"]}]}]]}]
+b:null

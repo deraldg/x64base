@@ -1,14 +1,14 @@
 1:"$Sreact.fragment"
-2:I[87771,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
-6:I[22016,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
-9:I[97367,["/_next/static/chunks/2m6iehl1ztiog.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+2:I[87771,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],"Sidebar"]
+6:I[22016,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
+9:I[97367,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 a:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rESjOVG9FHxsn4MtbclTD"}
-7:T2d7d,<p>This page records visual evidence from the local runtime. These images are evidence artifacts for the manual and website, not product screenshots claiming a finished release.</p>
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"3MYV44Kdj8wMMrsOvxOYU"}
+7:T2f3f,<p>This page records visual evidence from the local runtime. These images are evidence artifacts for the manual and website, not product screenshots claiming a finished release.</p>
 <p>Evidence date: July 3, 2026.</p>
 <p>Screenshot media is curated like the rest of the documentation system: stable filename, evidence ID, source capture, caption, interpretation boundary, and review-before-promotion. Duplicate captures are not repeated unless they show a distinct runtime state.</p>
 <h2 id="dottalk-workbench-workspace-areas"><a class="no-underline" href="#dottalk-workbench-workspace-areas">DotTalk++ Workbench Workspace Areas</a></h2>
-<p><img src="/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg" alt="DotTalk++ Workbench workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/arctictalk-workspace-areas-12-relations-evidence-20260703.jpg" alt="DotTalk++ Workbench workspace areas showing 12 loaded DBF areas and active TEACHERS.DBF"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ Workbench GUI evidence is running against <code>TEACHERS.DBF</code>. The captured build/window may still show the older Arctic code-name text; the product-family name is DotTalk++ Workbench.</li>
@@ -17,7 +17,7 @@ a:"$Sreact.suspense"
 <li>GUI mirror reports 12 GUI areas created from the <code>mcc_x64.dtschema</code> workspace.</li>
 </ul>
 <h2 id="table-browser-and-cdxlmdb-evidence"><a class="no-underline" href="#table-browser-and-cdxlmdb-evidence">Table Browser and CDX/LMDB Evidence</a></h2>
-<p><img src="/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg" alt="DotTalk++ Workbench TEACHERS.DBF browse grid with CDX/LMDB order status"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/arctictalk-teachers-browse-cdx-evidence-20260703.jpg" alt="DotTalk++ Workbench TEACHERS.DBF browse grid with CDX/LMDB order status"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>Browse grid displays <code>TEACHERS.DBF</code> fields including <code>TID</code>, <code>LNAME</code>, <code>FNAME</code>, <code>DEPT_ID</code>, <code>EMAIL</code>, <code>HIRE_DATE</code>, and <code>TENURED</code>.</li>
@@ -26,7 +26,7 @@ a:"$Sreact.suspense"
 <li>Output pane shows <code>SET ORDER</code> CDX metadata mismatch diagnostics with a <code>.cdx</code> container and <code>.cdx.d</code> LMDB environment path. This is useful evidence for the CDX/LMDB diagnostics lane and should be documented as a diagnostic state, not a clean success state.</li>
 </ul>
 <h2 id="command-output-readback"><a class="no-underline" href="#command-output-readback">Command Output Readback</a></h2>
-<p><img src="/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg" alt="DotTalk++ Workbench workspace table view with command output readback"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/arctictalk-workspace-command-output-evidence-20260703.jpg" alt="DotTalk++ Workbench workspace table view with command output readback"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ Workbench can show table/workspace state and command-output readback in the same GUI.</li>
@@ -34,7 +34,7 @@ a:"$Sreact.suspense"
 <li>This supports the policy that GUI evidence should cite visible runtime text, not only visual layout.</li>
 </ul>
 <h2 id="labtalk-portal"><a class="no-underline" href="#labtalk-portal">LabTalk Portal</a></h2>
-<p><img src="/images/evidence/labtalk-portal-docs-index-evidence-20260703.jpg" alt="LabTalk Portal docs index and README preview"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/labtalk-portal-docs-index-evidence-20260703.jpg" alt="LabTalk Portal docs index and README preview"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>LabTalk Portal has a section navigator with <code>Docs</code>, <code>Apps</code>, <code>Labs</code>, <code>Concepts</code>, <code>Proofs</code>, <code>Diagrams</code>, <code>Runtime</code>, and <code>Launchers</code>.</li>
@@ -42,7 +42,7 @@ a:"$Sreact.suspense"
 <li>The preview pane resolves a document record with ID, section, kind, and local path.</li>
 </ul>
 <h2 id="arctic-tui-tuple-and-record-browser"><a class="no-underline" href="#arctic-tui-tuple-and-record-browser">Arctic TUI Tuple and Record Browser</a></h2>
-<p><img src="/images/evidence/arctictalk-tui-tuple-grid-record-evidence-20260703.jpg" alt="Arctic terminal TUI showing tuple grid and record popup"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/arctictalk-tui-tuple-grid-record-evidence-20260703.jpg" alt="Arctic terminal TUI showing tuple grid and record popup"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>Terminal/TUI shell shows the Arctic code-name surface with menus and command/output panes.</li>
@@ -51,7 +51,7 @@ a:"$Sreact.suspense"
 <li>This supports the SmartBrowser/TupTalk/RelTalk evidence lane: tuple output, relation readback, and record inspection are visible in the runtime.</li>
 </ul>
 <h2 id="dottalk-cli-startup-and-bibletalk-evidence"><a class="no-underline" href="#dottalk-cli-startup-and-bibletalk-evidence">DotTalk++ CLI Startup and BibleTalk Evidence</a></h2>
-<p><img src="/images/evidence/dottalk-cli-startup-bibletalk-evidence-20260703.jpg" alt="DotTalk++ CLI startup showing build, SQLite availability, EDU_BIBLETALK, and command prompt hints"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/dottalk-cli-startup-bibletalk-evidence-20260703.jpg" alt="DotTalk++ CLI startup showing build, SQLite availability, EDU_BIBLETALK, and command prompt hints"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ CLI starts with the <code>dottalk++ beta-0</code> banner and DotTalk++ build timestamp.</li>
@@ -61,7 +61,7 @@ a:"$Sreact.suspense"
 <li>Developer/status hints include <code>CMDHELPCHK</code>, <code>GPS</code>, <code>WORKSPACE</code>, and <code>ERSATZ</code>.</li>
 </ul>
 <h2 id="dottalk-cli-workspace-and-relation-load"><a class="no-underline" href="#dottalk-cli-workspace-and-relation-load">DotTalk++ CLI Workspace and Relation Load</a></h2>
-<p><img src="/images/evidence/dottalk-cli-workspace-relation-load-evidence-20260703.jpg" alt="DotTalk++ CLI workspace load showing ERSATZ, SETPATH, REL lines, and 12 areas with 15 relations restored"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/dottalk-cli-workspace-relation-load-evidence-20260703.jpg" alt="DotTalk++ CLI workspace load showing ERSATZ, SETPATH, REL lines, and 12 areas with 15 relations restored"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ CLI runs <code>ersatz load</code>.</li>
@@ -72,7 +72,7 @@ a:"$Sreact.suspense"
 <li><code>ERSATZ</code> loads <code>default.erz</code> with <code>SETUP=x64</code>, <code>WORKSPACE=mcc_x64.dtschema</code>, and the path <code>enroll -> classes -> tassign -> teachers</code>.</li>
 </ul>
 <h2 id="dottalk-cli-relation-tree-and-tuple-grid"><a class="no-underline" href="#dottalk-cli-relation-tree-and-tuple-grid">DotTalk++ CLI Relation Tree and Tuple Grid</a></h2>
-<p><img src="/images/evidence/dottalk-cli-relation-tree-tuple-grid-evidence-20260703.jpg" alt="DotTalk++ CLI relation tree and tuple grid showing current root record, descendant summary, and joined tuple rows"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/dottalk-cli-relation-tree-tuple-grid-evidence-20260703.jpg" alt="DotTalk++ CLI relation tree and tuple grid showing current root record, descendant summary, and joined tuple rows"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ CLI shows the current root record with fields including <code>SID</code>, <code>LNAME</code>, <code>FNAME</code>, <code>DOB</code>, <code>GENDER</code>, <code>MAJOR</code>, <code>ENROLL_D</code>, <code>GPA</code>, and <code>EMAIL</code>.</li>
@@ -81,7 +81,7 @@ a:"$Sreact.suspense"
 <li>Tuple grid includes joined fields such as <code>STUDENTS.LNAME</code>, <code>STUDENTS.FNAME</code>, <code>enroll.CLS_ID</code>, <code>GRADE</code>, <code>classes.CLS_ID</code>, <code>tassign.CLS_ID</code>, <code>TID</code>, and <code>teachers.LNAME</code>.</li>
 </ul>
 <h2 id="dottalk-workbench-preview"><a class="no-underline" href="#dottalk-workbench-preview">DotTalk++ Workbench Preview</a></h2>
-<p><img src="/images/evidence/dottalk-workbench-preview-empty-workspace-evidence-20260703.jpg" alt="DotTalk++ Workbench Preview showing empty workspace graph and bootstrap service notes"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/dottalk-workbench-preview-empty-workspace-evidence-20260703.jpg" alt="DotTalk++ Workbench Preview showing empty workspace graph and bootstrap service notes"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>DotTalk++ Workbench Preview opens with menu groups for <code>File</code>, <code>Workspace</code>, <code>Run</code>, <code>Table</code>, <code>Record</code>, <code>Index</code>, <code>Lists</code>, <code>Browse</code>, <code>Rel</code>, <code>Tuple</code>, <code>Cmd</code>, <code>Language</code>, and <code>Help</code>.</li>
@@ -90,7 +90,7 @@ a:"$Sreact.suspense"
 <li>This is preview/bootstrap evidence for the Workbench surface, not a loaded workspace proof.</li>
 </ul>
 <h2 id="website-documentation-evidence"><a class="no-underline" href="#website-documentation-evidence">Website Documentation Evidence</a></h2>
-<p><img src="/images/evidence/x64base-website-faq-live-evidence-20260703.jpg" alt="x64base website FAQ page showing live documentation navigation and DBF format links"></p>
+<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/evidence/x64base-website-faq-live-evidence-20260703.jpg" alt="x64base website FAQ page showing live documentation navigation and DBF format links"></a></p>
 <p>Observed evidence:</p>
 <ul>
 <li>The live site is open at <code>x64base.com/docs/getting-started/faq/</code>.</li>

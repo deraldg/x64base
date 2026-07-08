@@ -47,7 +47,7 @@
         <text x="22" y="35" class="lane">Stage</text>
         <text x="22" y="63" class="item">local mirror, build,</text>
         <text x="22" y="83" class="item">smoke checks</text>
-        <text x="22" y="111" class="chip">C:\x64base</text>
+        <text x="22" y="111" class="chip">local staging mirror</text>
       </g>
 
       <g transform="translate(428 72)">
