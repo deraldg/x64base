@@ -3,8 +3,8 @@
 6:I[22016,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/1w54xsrycck2r.js"],""]
 9:I[97367,["/_next/static/chunks/2k2wnl4ijudpi.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
 a:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"aj3vr8FwITS0933JuSJzp"}
-7:Tc2c,<h2 id="core-rule"><a class="no-underline" href="#core-rule">Core rule</a></h2>
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"72bL9Cg1gLbzHxEY8X4Q7"}
+7:T1cc4,<h2 id="core-rule"><a class="no-underline" href="#core-rule">Core rule</a></h2>
 <p><code>implementation checkout</code> is the implementation truth.</p>
 <p><code>website source tree</code> is the public publication surface.</p>
 <p>The site should present reviewed, provenance-aware derivatives of the runtime,
@@ -14,22 +14,101 @@ technical truth on its own.</p>
 <ul>
 <li>Public GitHub repo: <a href="https://github.com/deraldg/x64base">deraldg/x64base</a></li>
 <li>Local implementation tree: <code>implementation checkout</code></li>
+<li>Local DotTalk++ runtime tree: <code>DotTalk++ runtime tree</code></li>
+<li>Local Laboratory Campus tree: <code>Laboratory Campus tree</code></li>
 <li>Local site tree: <code>website source tree</code></li>
 <li>Local runtime mirror: <code>local staging mirror</code></li>
+<li>Public reviewed derivative: <a href="https://x64base.com/">x64base.com</a></li>
 </ul>
+<h2 id="observed-maintainer-flow"><a class="no-underline" href="#observed-maintainer-flow">Observed maintainer flow</a></h2>
+<p>Use this as the normal direction of travel:</p>
+<pre><code class="language-text">source/runtime:
+implementation checkout -> local staging mirror -> GitHub repository
+
+website:
+website source tree -> build/public artifact -> GitHub Pages -> x64base.com
+</code></pre>
 <h2 id="shared-document-model"><a class="no-underline" href="#shared-document-model">Shared document model</a></h2>
 <p>Use this split:</p>
 <ul>
 <li>Runtime/source/contracts/manual truth lives in <code>implementation checkout</code></li>
 <li>Public website framing and navigation live in <code>website source tree</code></li>
-<li>Built website output is staged through <code>local staging mirror</code>
-before GitHub Pages publication</li>
+<li><code>local staging mirror</code> is the clean staging mirror for source/runtime promotion</li>
+<li>Built website output moves through reviewed build/public artifacts before
+GitHub Pages publication</li>
 <li>Shared diagrams and publication artifacts should be promoted from reviewed
 SelfDoc/manual outputs, not rewritten from memory</li>
 </ul>
 <h2 id="repeatable-feed"><a class="no-underline" href="#repeatable-feed">Repeatable feed</a></h2>
 <p>For the report-only source-to-website feed, see <a href="/docs/dev/selfdoc-feed-pipeline">SelfDoc Feed Pipeline</a>.</p>
 <p>When commands or functions are added to DotTalk++, they should flow through registration, HELP, metadata, comments, usage contracts, SelfDoc/CMDHELPCHK validation, manualgen, and then the public command/function/API pages.</p>
+<h2 id="simplex-and-duplex-gates"><a class="no-underline" href="#simplex-and-duplex-gates">Simplex and duplex gates</a></h2>
+<p>The website, manuals, and implementation tree are connected, but they do not
+have equal authority.</p>
+<p>Rule 1: most technical data on <code>x64base.com</code> must be derived, harvested,
+calculated, or reviewed from the implementation checkout. The website may frame
+and organize that information, but it should not become the source of runtime,
+command, field-format, index, memo, HELP, or manual truth.</p>
+<p>Rule 2: the manual may contribute reviewed sections, diagrams, and summaries to
+the website. The manual must not consume website copy as technical truth unless
+the website artifact is explicitly non-derivable from the implementation tree
+and is maintained separately as a public artifact.</p>
+<p>Rule 3: <code>README.*</code> files are sacred orientation artifacts. They may be
+improved, annotated, or superseded, but a replacement must be versioned so the
+older README remains recoverable and comparable. Do not casually overwrite a
+README during website, manual, or staging work.</p>
+<p>Use these gates:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Path</th><th>Gate Type</th><th>Rule</th></tr></thead><tbody><tr><td>implementation checkout -> manual</td><td>Simplex default</td><td>Source, HELP, metadata, comments, contracts, canaries, and SelfDoc/manualgen reports feed the manual.</td></tr><tr><td>implementation checkout -> website</td><td>Simplex default</td><td>Website pages should be derivatives of source/runtime/manual evidence, not hand-written replacements for it.</td></tr><tr><td>manual -> website</td><td>Duplex, reviewed</td><td>Reviewed manual sections may promote into website summaries when proof labels and source anchors remain intact.</td></tr><tr><td>website -> manual</td><td>Blocked by default</td><td>Do not let website prose become manual truth. Only ingest website-owned artifacts that are non-derivable elsewhere.</td></tr><tr><td>website-owned artifact -> manual</td><td>Exception gate</td><td>Allowed for public-only artifacts such as curated screenshots, branding/UX copy, published contact details, or hosted downloads, when the artifact has an owner and provenance.</td></tr><tr><td>manual -> implementation checkout</td><td>Review gate</td><td>Manual discoveries should become source contracts, TODOs, tests, HELP changes, or SelfDoc tasks before they become runtime claims.</td></tr><tr><td>README replacement</td><td>Versioned artifact gate</td><td>Preserve the prior README version before replacing it; README history is part of project provenance.</td></tr></tbody></table>
+<p>If a manual chat wants to "steal" from the website, it should first ask whether
+the website text is derivative of the implementation tree. If yes, the manual
+should return to the original source/manualgen/SelfDoc evidence. If no, the
+manual may cite or ingest the website artifact only after recording why that
+artifact is independently maintained.</p>
 <h2 id="front-end-naming-rule"><a class="no-underline" href="#front-end-naming-rule">Front-end naming rule</a></h2>
 <ul>
 <li><code>DotTalk++ Workbench</code> is the family name for front-end/workbench surfaces</li>
@@ -39,6 +118,13 @@ SelfDoc/manual outputs, not rewritten from memory</li>
 <li><code>Foxtalk</code> and fox-derived names remain valid lineage/subsystem names</li>
 <li>Classic FoxPro-style syntax may remain for historical and educational reasons</li>
 <li>DotTalk++ should not be described as a clone</li>
+</ul>
+<h2 id="route-bucket-naming-rule"><a class="no-underline" href="#route-bucket-naming-rule">Route-bucket naming rule</a></h2>
+<ul>
+<li>short route buckets such as <code>/docs/dottalk/*</code> may remain stable for continuity</li>
+<li>those route buckets are not the preferred public brand</li>
+<li>visible page titles, navigation labels, and prose should use <code>DotTalk++</code></li>
+<li>historical names should be explained, not silently promoted into top-level branding</li>
 </ul>
 <h2 id="educational-goal"><a class="no-underline" href="#educational-goal">Educational goal</a></h2>
 <p>The stack is meant to teach full-stack thinking from beginning to end:</p>
