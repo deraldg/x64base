@@ -65,6 +65,8 @@ Generated outputs include:
 - Keep generated reports local until reviewed, then summarize them on the website.
 - Command and function pages should cite the extraction snapshot and should be regenerated when HELP/CMDHELP/usage contracts change.
 - Commands that launch external apps, perform network requests, write files, write HELP DATA, or write DBFs must carry explicit `mutates:` and `risk:` fields before being promoted as stable docs.
+- Treat source/manual-to-website as the normal simplex flow. Treat website-to-manual as blocked unless the web artifact is separately maintained and not derivable from the implementation checkout.
+- Treat `README.*` files as sacred orientation artifacts. If a README must be replaced, preserve the previous version as a versioned artifact before promotion.
 
 ## Procedural curation
 
@@ -83,6 +85,25 @@ scan source headers
 ```
 
 `CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `BBOX`, and contract tools all belong in this loop. Their documentation should state mutation boundaries explicitly so a report-only inspection command does not get mistaken for a promotion command.
+
+## Manual and website intake gate
+
+Manual generation should not scrape public website prose as a shortcut for
+technical truth. The website is a publication derivative; the manual should
+consume the same upstream evidence that fed the website whenever that evidence
+exists.
+
+Allowed manual intake from the website is limited to artifacts that are:
+
+1. not derivable from source, HELP, metadata, SelfDoc, MDO, or manualgen;
+2. intentionally maintained as website/public artifacts; and
+3. labeled with provenance and owner.
+
+Examples include curated screenshots, public navigation/framing copy, contact
+details, branding pages, hosted-download metadata, or a website-only media
+artifact. Runtime claims, command syntax, file-format claims, index behavior,
+data-mutator behavior, and engine feature claims must go back to the
+implementation checkout and generated evidence lanes.
 
 ## Diagram lane
 

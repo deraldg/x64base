@@ -5,6 +5,58 @@ description: "Source, command, script, and documentation naming conventions for 
 
 This page records current naming conventions and intended direction. It is a development standard, not a claim that every historical file already conforms.
 
+## Publication naming boundary
+
+The project has both historical lineage names and current public product names.
+Those are not interchangeable on publication surfaces.
+
+Use this rule:
+
+| Context | Preferred published name | Notes |
+| --- | --- | --- |
+| Engine, storage runtime, shared core, repository center of gravity | `x64base` | Use for DBF-family runtime truth, x64 table architecture, memo/index/work-area internals, and the main public engine repo. |
+| Interactive runtime shell, DotScript/manual/help command surface | `DotTalk++` | This is the canonical runtime/manual identity. Use it in page titles, prose, manual sections, screenshots, and command-surface explanations. |
+| Education/campus/portal/assignments/proof orchestration | `LabTalk` | Consumer/overlay layer, not engine truth. |
+| GUI/TUI aligned workbench family | `DotTalk++ Workbench` | Public family name for aligned front ends. |
+| TUI codename under the workbench lane | `Arctic` | Keep as codename/sub-lane, not the primary project identity. |
+| Historical Fox lineage references | `FoxPro`, `Foxtalk`, `foxref` | Keep only where historical explanation or compatibility lineage matters. Do not let these become current product branding. |
+| Historical route bucket / internal content grouping | `dottalk` | Acceptable as a slug or internal directory bucket for continuity, but not as the preferred published product name. |
+
+### Route and folder rule
+
+The website may keep historical, short, or compatibility-safe route buckets such as:
+
+```text
+content/docs/dottalk
+/docs/dottalk/*
+```
+
+That does **not** mean the public-facing product name should revert to `dottalk`.
+
+Publication rule:
+
+- slugs and folder names may stay stable for continuity.
+- visible page titles, navigation labels, product copy, and prose should use the current published identity.
+- if a route bucket is historical, the page should still present the canonical name in the title and description.
+
+Therefore:
+
+- `/docs/dottalk/command-catalog` is acceptable as a stable route.
+- the page title should still say `Command Catalog` under the `DotTalk++` documentation family.
+- navigation labels should prefer `DotTalk++`, not bare `dottalk`, unless a historical note is intended.
+
+### Drift-prevention rule
+
+When a name appears in source, docs, or the site, ask which layer owns it:
+
+1. historical lineage
+2. source-tree bucket
+3. runtime/manual identity
+4. engine/platform identity
+5. consumer/education identity
+
+If the answer is only `historical lineage` or `source-tree bucket`, do not promote it into top-level branding by accident.
+
 ## Source file prefixes
 
 | Prefix | Meaning | Examples / notes |

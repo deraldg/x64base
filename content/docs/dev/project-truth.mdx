@@ -7,8 +7,13 @@ This page reflects a local scan of `implementation checkout`, treated as the aut
 
 ## Source snapshot
 
-- Local path: `implementation checkout`
+- Primary implementation checkout: `implementation checkout`
+- DotTalk++ runtime tree: `DotTalk++ runtime tree`
+- Laboratory Campus / LabTalk tree: `Laboratory Campus tree`
+- Clean staging mirror: `local staging mirror`
+- Staged DotTalk++ mirror: `staged DotTalk++ runtime tree`
 - Website source: `website source tree`
+- Public website: [x64base.com](https://x64base.com/)
 - Public GitHub repo: [deraldg/x64base](https://github.com/deraldg/x64base)
 - Additional public repo homes: [deraldg/dottalkpp](https://github.com/deraldg/dottalkpp), [deraldg/labtalk](https://github.com/deraldg/labtalk)
 - Git branch: `homegrown-cnx-20251112-branch`
@@ -22,6 +27,39 @@ The root `README.md` is not present in the local working tree. The current site 
 The website is a downstream publication surface. It may reorganize and summarize
 material, but it should not invent technical truth that the local runtime tree
 cannot support.
+
+## Promotion and authority convention
+
+Normal source flow:
+
+```text
+implementation checkout -> local staging mirror -> GitHub repository
+```
+
+Normal website flow:
+
+```text
+website source tree -> build/public artifact -> GitHub Pages -> x64base.com
+```
+
+Normal documentation evidence flow:
+
+```text
+implementation checkout source/runtime
+-> HELP / metadata / comments / contracts
+-> SelfDoc / MDO / manualgen reports
+-> reviewed manual sections
+-> reviewed website summaries
+```
+
+Course-correction rule:
+
+- do not reverse the authority chain by copying website prose into manuals or
+  source-side technical truth
+- if a website page describes command behavior, file formats, index rules, memo
+  storage, mutation behavior, locale behavior, GUI/runtime ownership, or other
+  technical truths, return to the implementation checkout and re-derive the
+  claim from source, HELP, metadata, runtime proof, or reviewed manuals
 
 ## Project center of gravity
 
@@ -64,6 +102,14 @@ The current repository boundary is deliberate:
   assignments, and education-facing overlays.
 - `DotTalk++` remains the runtime/manual identity, but source ownership is
   still primarily centered on `x64base` until a cleaner split is justified.
+
+For publication naming:
+
+- `x64base` is the engine/platform name.
+- `DotTalk++` is the runtime shell/manual/help identity.
+- `LabTalk` is the campus/education consumer layer.
+- historical/internal buckets such as `dottalk` may remain in slugs or folders,
+  but should not silently replace the published `DotTalk++` identity in prose or navigation.
 
 Use the lowest authority that can prove the claim:
 

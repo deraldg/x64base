@@ -92,6 +92,26 @@ This keeps the public manual honest. If a feature is runtime-evidenced, the
 manual can say so. If it is source-evidenced, canary, planned, or
 review-needed, the manual should carry that status instead of smoothing it over.
 
+## Manual / Website Boundary
+
+The manual and website can exchange reviewed material, but the direction matters.
+The normal flow is simplex: implementation truth feeds SelfDoc/MDO/manualgen,
+then reviewed manual sections and website pages. The website should not become
+the manual's source of technical truth.
+
+The manual may take from the website only when the target artifact is
+website-owned, separately maintained, and not derivable from the implementation
+checkout. Examples include curated screenshots, public-only media, navigation
+framing, contact details, branding, and hosted-download metadata. For commands,
+functions, file formats, engine features, index behavior, table buffering, or
+DotScript syntax, the manual must return to source/runtime/HELP/metadata/SelfDoc
+evidence instead of copying website prose.
+
+`README.*` files have a stricter preservation rule. They are orientation and
+provenance artifacts, not disposable generated output. A README may be improved
+or superseded, but if it is replaced the prior version must be preserved as a
+versioned artifact so the project history remains auditable.
+
 ## AI-Friendly Documentation
 
 AI-friendly documents are useful because the project is broad, but they are not

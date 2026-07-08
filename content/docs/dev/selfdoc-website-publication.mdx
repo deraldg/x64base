@@ -17,8 +17,23 @@ technical truth on its own.
 
 - Public GitHub repo: [deraldg/x64base](https://github.com/deraldg/x64base)
 - Local implementation tree: `implementation checkout`
+- Local DotTalk++ runtime tree: `DotTalk++ runtime tree`
+- Local Laboratory Campus tree: `Laboratory Campus tree`
 - Local site tree: `website source tree`
 - Local runtime mirror: `local staging mirror`
+- Public reviewed derivative: [x64base.com](https://x64base.com/)
+
+## Observed maintainer flow
+
+Use this as the normal direction of travel:
+
+```text
+source/runtime:
+implementation checkout -> local staging mirror -> GitHub repository
+
+website:
+website source tree -> build/public artifact -> GitHub Pages -> x64base.com
+```
 
 ## Shared document model
 
@@ -26,8 +41,9 @@ Use this split:
 
 - Runtime/source/contracts/manual truth lives in `implementation checkout`
 - Public website framing and navigation live in `website source tree`
-- Built website output is staged through `local staging mirror`
-  before GitHub Pages publication
+- `local staging mirror` is the clean staging mirror for source/runtime promotion
+- Built website output moves through reviewed build/public artifacts before
+  GitHub Pages publication
 - Shared diagrams and publication artifacts should be promoted from reviewed
   SelfDoc/manual outputs, not rewritten from memory
 
@@ -36,6 +52,44 @@ Use this split:
 For the report-only source-to-website feed, see [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline).
 
 When commands or functions are added to DotTalk++, they should flow through registration, HELP, metadata, comments, usage contracts, SelfDoc/CMDHELPCHK validation, manualgen, and then the public command/function/API pages.
+
+## Simplex and duplex gates
+
+The website, manuals, and implementation tree are connected, but they do not
+have equal authority.
+
+Rule 1: most technical data on `x64base.com` must be derived, harvested,
+calculated, or reviewed from the implementation checkout. The website may frame
+and organize that information, but it should not become the source of runtime,
+command, field-format, index, memo, HELP, or manual truth.
+
+Rule 2: the manual may contribute reviewed sections, diagrams, and summaries to
+the website. The manual must not consume website copy as technical truth unless
+the website artifact is explicitly non-derivable from the implementation tree
+and is maintained separately as a public artifact.
+
+Rule 3: `README.*` files are sacred orientation artifacts. They may be
+improved, annotated, or superseded, but a replacement must be versioned so the
+older README remains recoverable and comparable. Do not casually overwrite a
+README during website, manual, or staging work.
+
+Use these gates:
+
+| Path | Gate Type | Rule |
+| --- | --- | --- |
+| implementation checkout -> manual | Simplex default | Source, HELP, metadata, comments, contracts, canaries, and SelfDoc/manualgen reports feed the manual. |
+| implementation checkout -> website | Simplex default | Website pages should be derivatives of source/runtime/manual evidence, not hand-written replacements for it. |
+| manual -> website | Duplex, reviewed | Reviewed manual sections may promote into website summaries when proof labels and source anchors remain intact. |
+| website -> manual | Blocked by default | Do not let website prose become manual truth. Only ingest website-owned artifacts that are non-derivable elsewhere. |
+| website-owned artifact -> manual | Exception gate | Allowed for public-only artifacts such as curated screenshots, branding/UX copy, published contact details, or hosted downloads, when the artifact has an owner and provenance. |
+| manual -> implementation checkout | Review gate | Manual discoveries should become source contracts, TODOs, tests, HELP changes, or SelfDoc tasks before they become runtime claims. |
+| README replacement | Versioned artifact gate | Preserve the prior README version before replacing it; README history is part of project provenance. |
+
+If a manual chat wants to "steal" from the website, it should first ask whether
+the website text is derivative of the implementation tree. If yes, the manual
+should return to the original source/manualgen/SelfDoc evidence. If no, the
+manual may cite or ingest the website artifact only after recording why that
+artifact is independently maintained.
 
 ## Front-end naming rule
 
@@ -46,6 +100,13 @@ When commands or functions are added to DotTalk++, they should flow through regi
 - `Foxtalk` and fox-derived names remain valid lineage/subsystem names
 - Classic FoxPro-style syntax may remain for historical and educational reasons
 - DotTalk++ should not be described as a clone
+
+## Route-bucket naming rule
+
+- short route buckets such as `/docs/dottalk/*` may remain stable for continuity
+- those route buckets are not the preferred public brand
+- visible page titles, navigation labels, and prose should use `DotTalk++`
+- historical names should be explained, not silently promoted into top-level branding
 
 ## Educational goal
 
