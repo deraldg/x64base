@@ -1,0 +1,199 @@
+AI Portal Collection Point
+==========================
+
+Status: source-side seed for AI-assisted work in the DotTalk++ / x64base /
+Laboratory Campus ecosystem.
+
+Purpose
+-------
+
+This folder is the intake point for AI-facing rules, handoffs, source truth
+notes, documentation-lane policy, and preservation guidance. It should point AI
+work back to source/runtime/HELP/metadata/SelfDoc/MDO evidence rather than
+letting website or chat prose drift into technical truth.
+
+Contact Points
+--------------
+
+Start here before making source, manual, website, or documentation-lane
+changes:
+
+- AI orientation: AI_README.md
+- Authority order: docs/governance/authority_order.md
+- Manual safety: docs/governance/manual_safety_rules.md
+- Evidence rules: docs/manuals/developer/dev/dev-00-evidence-rules.md
+- Contributor/dev rules: docs/manuals/developer/dev/dev-17-contributor-rules.md
+- Documentation authority and generation:
+  dottalkpp/docs/Documentation_Authority_and_Generation_Rules.md
+- DotTalk++ / DotScript developer handoff:
+  DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md
+- DotTalk++ command reference guide:
+  DOTTALKPP_COMMAND_REFERENCE_GUIDE_V1.md
+- Command reference usage harvest:
+  docs/manuals/command_reference/COMMAND_REFERENCE_USAGE_CONTRACT_HARVEST_V1.md
+- Usage contract seed: contracts/usaage.contract
+- Informal live rules: rules/rules.txt
+- README clobber protection: rules/README_CLOBBER_PROTECTION_RULE.md
+- Source-side rule lane: src/rules/README.md
+
+These are contacts, not replacements for source truth. If a contact conflicts
+with runtime/source behavior, record the conflict and route it through SelfDoc,
+MDO, HELP, metadata, contracts, or manualgen before promoting a public claim.
+
+Locations and Relationships
+---------------------------
+
+Use this section to correct memory drift inside long AI sessions.
+
+Primary implementation checkout:
+
+- D:/code/ccode
+- Git remote: https://github.com/deraldg/x64base.git
+- Role: source/runtime truth for x64base, DotTalk++, Laboratory Campus, SelfDoc,
+  MDO, manualgen, tests, proofs, and generated evidence.
+
+DotTalk++ runtime tree:
+
+- D:/code/ccode/dottalkpp
+- Role: runtime data, scripts, HELP, generated docs, maintenance lanes, local
+  DotTalk++ assets, and application-level examples.
+
+Laboratory Campus / LabTalk tree:
+
+- D:/code/ccode/labtalk
+- Role: alpha collaboration campus, lessons, labs, evidence, portal material,
+  diagrams, reports, and proof-backed learning artifacts.
+
+Local staging mirror:
+
+- C:/x64base
+- Git remote: https://github.com/deraldg/x64base.git
+- Role: clean staging/promotion mirror for source code and publishable runtime
+  material. Keep generated heavy local artifacts out unless the staging rule for
+  that artifact explicitly says otherwise.
+
+Staged DotTalk++ mirror:
+
+- C:/x64base/dottalkpp
+- Role: staged DotTalk++ runtime tree used before GitHub publication.
+
+Website source checkout:
+
+- D:/dev/x64base-site
+- Git remote: https://github.com/deraldg/x64base.git
+- Current source branch observed: codex/lean-sites-publish
+- Role: local source for x64base.com pages, public assets, route structure,
+  website-only framing, and publication build scripts.
+
+Public website:
+
+- https://x64base.com/
+- Role: public reviewed derivative of implementation, manual, SelfDoc, MDO,
+  proof, diagram, and website-owned artifacts.
+- Publishing: GitHub Pages from the same GitHub repository. The public pages are
+  built output, not source truth.
+
+Important public documentation anchors:
+
+- https://x64base.com/docs/
+- https://x64base.com/docs/dev/important-documents/
+- https://x64base.com/docs/dev/selfdoc-feed-pipeline/
+- https://x64base.com/docs/dev/selfdoc-website-publication/
+- https://x64base.com/docs/dev/website-documentation-matrix/
+- https://x64base.com/docs/labtalk/overview/
+
+Other local work surfaces:
+
+- D:/dev/dottalk-webui
+- Role: local web-interface/workbench development surface when present. Treat as
+  a related development checkout, not the implementation authority unless a
+  specific lane says so.
+
+Promotion / Staging Convention
+------------------------------
+
+Normal source-code flow:
+
+D:/code/ccode -> C:/x64base -> GitHub repository
+
+Normal website flow:
+
+D:/dev/x64base-site -> build/public artifact -> GitHub Pages -> x64base.com
+
+Normal documentation evidence flow:
+
+D:/code/ccode source/runtime
+  -> HELP / metadata / comments / contracts
+  -> SelfDoc / MDO / manualgen reports
+  -> reviewed manual sections
+  -> reviewed website summaries
+
+Website-only artifact flow:
+
+D:/dev/x64base-site public asset
+  -> reviewed website page
+  -> manual only if the artifact is non-derivable elsewhere, separately
+     maintained, provenance-labeled, and owned.
+
+Do not reverse the authority chain by copying website prose into manuals or
+source docs as technical truth. If the website text describes command behavior,
+file formats, data mutation, indexes, memo storage, triggers, buffering, record
+locking, locale, SQL/relational behavior, or runtime claims, return to the
+implementation checkout and regenerate or re-review the evidence.
+
+Core Gates
+----------
+
+Rule 1: most technical data and information on x64base.com must be derived,
+harvested, calculated, or reviewed from the implementation checkout. The website
+may frame and organize that information, but it is not the source of truth for
+runtime behavior, command syntax, file formats, index behavior, memo behavior,
+HELP, metadata, or manual truth.
+
+Rule 2: manuals may contribute reviewed sections, diagrams, summaries, and
+publication-ready explanations to the website. Manuals must not consume website
+copy as technical truth unless the website artifact is not derivable from the
+implementation checkout and is maintained separately as a public artifact.
+
+Rule 3: README.* files are sacred orientation and provenance artifacts. They may
+be improved, annotated, or superseded, but if replaced the prior version must be
+preserved as a versioned artifact. Do not clobber README files during website,
+manual, staging, or AI-assisted work.
+
+Promotion Direction
+-------------------
+
+Normal simplex flow:
+
+implementation checkout
+  -> HELP / metadata / contracts / SelfDoc / MDO / manualgen
+  -> reviewed manual
+  -> reviewed website summary
+
+Allowed duplex flow:
+
+reviewed manual section -> reviewed website summary
+
+Blocked by default:
+
+website prose -> manual technical truth
+
+Allowed exception:
+
+website-owned public artifact -> manual
+
+The exception is valid only when the artifact is non-derivable elsewhere,
+separately maintained, provenance-labeled, and owned. Examples include curated
+screenshots, public-only media, branding/navigation framing, contact details,
+and hosted-download metadata.
+
+AI Safety Notes
+---------------
+
+- Do not treat chat output or website prose as source truth.
+- Do not silently promote planned or canary behavior into stable documentation.
+- Do not let SelfDoc, MDO, metadata, HELP, comments, contracts, catalog pages,
+  manualgen, and website pages drift apart.
+- For commands, functions, file formats, mutation behavior, buffering, locking,
+  indexing, triggers, or runtime claims, return to implementation evidence.
+- Preserve README files and other orientation artifacts before replacement.

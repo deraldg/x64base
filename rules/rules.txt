@@ -1,0 +1,53 @@
+KEEP RULES ON THIS PAGE UNTIL WE ORGANIZE IT FORMALLY
+
+AI Agents: Seek AI Portal/Seed (Add Location)
+
+PRIMARY PROJECTS: X64BASE. DOTTALK++, PYDOTTALK, X64BASE.COM, LABTALK PORTAL
+
+github/deraldg/x64base
+
+handoff long cd++ builds scripts to the deweloper to run from the command line
+
+We are using x64base to create our documentation system, which in turn is helping us to develop x64base and the Laboratory Campus. LabTalk is the legacy/project mark; public copy should increasingly emphasize Laboratory Campus.
+
+SOURCE / MANUAL / WEBSITE GATES
+
+Rule 1: Most technical data and information on x64base.com must be derived, harvested, calculated, or reviewed from the implementation checkout. The website can frame and organize the material, but it is not the source of truth for runtime behavior, command syntax, file formats, index behavior, memo behavior, HELP, metadata, or manual truth.
+
+Rule 2: Manuals may contribute reviewed sections, diagrams, summaries, and publication-ready explanations to the website. Manuals must not consume website copy as technical truth unless the website artifact is not derivable from the implementation checkout and is maintained separately as a public artifact.
+
+Rule 3: README.* files are sacred orientation and provenance artifacts. They may be improved, annotated, or superseded, but if replaced the prior version must be preserved as a versioned artifact. Do not clobber README.* files during website, manual, staging, or AI-assisted work.
+
+Normal promotion flow:
+implementation checkout -> HELP / metadata / contracts / SelfDoc / MDO / manualgen -> reviewed manual -> reviewed website summary.
+
+Blocked by default:
+website prose -> manual technical truth.
+
+Allowed exception:
+website-owned public artifact -> manual, only when the artifact is non-derivable elsewhere, separately maintained, provenance-labeled, and owned.
+
+If you have to create the same code three times, turn it into a function so you don't have to track the snippet in different files that will drift.
+If you don't have a file you need ask for it, don't guess.
+Honor all contracts like the "USAGE" contract.
+Documentation is as important as funtionality.
+Staging repo is c:\x64base
+Dev repo is d:\code\ccode\
+The dottalkpp runtime is in ccode, \code\ccode\dottalkpp
+The local website is d:\dev\x64base-site, the website is x64base.com
+
+The list command is for the developer, use smartlist instead. List is manually cursor driven, smartlist uses automatic cursor control.
+
+Don't let the SELFDOC/MDO/METADATA/HELP/COMMENTS/CATALOG Systems drift, or get omitted. Enforce the documentaton lanes and work back and forth with x64base engine.
+
+The information opens up from collecting mininig, and catagorizing source code that trickles up into the help system, the metadata, the manual, SDLC /Website,
+
+Labtalk is at ccode\labtalk
+
+Do not clobber README.* files. See rules\README_CLOBBER_PROTECTION_RULE.md.
+
+
+
+
+
+
