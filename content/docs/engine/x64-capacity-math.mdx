@@ -8,6 +8,18 @@ question is not only "what is the maximum?" The real question is:
 
 **Which part of the system still decides the maximum?**
 
+## Current explanatory diagrams
+
+Diagram attachments: `DIAG-X64GEOM-005`, `DIAG-X64SELFDESC-006`
+
+![Trinity headers](/images/engine/trinity_headers_v1.svg)
+
+![x64 self-describing DBF](/images/engine/x64_self_describing_dbf_v1.svg)
+
+Current sources:
+- `docs/manuals/assets/diagrams/trinity_headers_v1.svg`
+- `docs/manuals/assets/diagrams/x64_self_describing_dbf_v1.svg`
+
 A table format can put a 64-bit record count in the header, but the system is
 not truly x64 all the way if navigation, locks, memo pointers, index payloads,
 or GUI APIs still pass record numbers through 16-bit or 32-bit slots.
@@ -143,7 +155,7 @@ For x64base, that exercise produces real engineering lanes:
 
 ## Source notes
 
-- x64base local source evidence: `include/xbase.hpp`, `include\xbase_vfp.hpp`, `include\xbase_64.hpp`, `include\memo\dtx_format.hpp`, and `include\memo\memostore.hpp`.
+- x64base local source evidence: `include/xbase.hpp`, `include/xbase_vfp.hpp`, `include/xbase_64.hpp`, `include/memo/dtx_format.hpp`, and `include/memo/memostore.hpp`.
 - dBASE/BDE limits: [dBASE BDE Limits](https://www.dbase.com/Knowledgebase/faq/dBASE_Limits_FAQ.html).
 - Visual FoxPro limits: [Visual FoxPro System Capacities](https://www.yaldex.com/fox_pro_tutorial/html/6e27027b-806b-4f96-b7e5-5f24af2901e0.htm).
 - Alaska Xbase++ DBFDBE limits: [DBFDBE data component](https://doc.alaska-software.com/content/dbespec_h2_dbfdbe_data_component.cxp).

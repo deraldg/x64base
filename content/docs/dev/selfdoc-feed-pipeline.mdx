@@ -52,6 +52,10 @@ Generated outputs include:
 - `labtalk/reports/selfdoc/x64base_engine_feature_crosswalk_v1.md`
 - `docs/manuals/developer/generated/x64base_engine_feature_crosswalk_manual_section_v1.md`
 - `docs/manuals/developer/manualgen/generated/manualgen_build_dry_runs/<run>/developer_manual_build_dry_run.md`
+- `docs/manuals/developer/manualgen/reports/help-topic-to-manual-section-map-v1.csv`
+- `docs/manuals/developer/manualgen/reports/help-topic-to-website-section-map-v1.csv`
+- `docs/manuals/developer/manualgen/reports/shared-message-to-surface-map-v1.csv`
+- `docs/manuals/developer/manualgen/reports/diagram-publication-attachment-matrix-v1.csv`
 
 ## Promotion rules
 
@@ -79,6 +83,28 @@ scan source headers
 ```
 
 `CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `BBOX`, and contract tools all belong in this loop. Their documentation should state mutation boundaries explicitly so a report-only inspection command does not get mistaken for a promotion command.
+
+## Diagram lane
+
+Diagrams are not decoration. They are attached explanatory views over the same
+evidence spine.
+
+Current rule:
+
+```text
+prove or verify the lane
+-> identify manual and website targets
+-> attach a canonical diagram source
+-> render/promote a website asset only after review
+-> preserve the attachment row so the public image never becomes orphan truth
+```
+
+The current attachment ledger is:
+
+- `docs/manuals/developer/manualgen/reports/diagram-publication-attachment-matrix-v1.csv`
+
+That ledger crosswalks canonical manual SVGs, LabTalk diagram sources, and
+promoted site image assets so the publication surface stays traceable.
 
 ## Current limitation
 

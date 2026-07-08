@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#fbfbff"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">Index Order: CNX, CDX, and LMDB</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Users reason about logical order; backends implement persistence.</text>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 Z" fill="#374151"/></marker></defs>
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-size="16">
+    <rect x="75" y="150" width="185" height="90" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="167" y="188">SET INDEX</text><text x="167" y="211" font-size="13">attach container</text>
+    <rect x="315" y="150" width="185" height="90" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="407" y="188">SET ORDER</text><text x="407" y="211" font-size="13">select tag</text>
+    <rect x="555" y="112" width="185" height="78" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="647" y="156">CNX</text>
+    <rect x="555" y="228" width="185" height="78" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="647" y="261">CDX</text><text x="647" y="282" font-size="13">logical surface</text>
+    <rect x="765" y="228" width="125" height="78" rx="8" fill="#e5e7eb" stroke="#4b5563"/><text x="827" y="261">LMDB</text><text x="827" y="282" font-size="13">backend</text>
+    <rect x="315" y="360" width="185" height="78" rx="8" fill="#fee2e2" stroke="#dc2626"/><text x="407" y="393">Logical</text><text x="407" y="414" font-size="13">record order</text>
+  </g>
+  <g stroke="#374151" stroke-width="2.3" fill="none" marker-end="url(#arrow)">
+    <path d="M260 195 H315"/><path d="M500 186 C530 160 535 151 555 151"/><path d="M500 204 C530 245 535 267 555 267"/><path d="M740 267 H765"/><path d="M407 240 V360"/>
+  </g>
+</svg>

@@ -24,6 +24,30 @@ lanes: source/runtime proof, HELP explanation, metadata normalization, SelfDoc
 review, provenance preservation, and promotion into manuals, diagrams, and the
 website.
 
+## Diagram Attachment Governance
+
+The diagram lane now has an explicit attachment map in the implementation tree:
+
+- `docs/manuals/developer/manualgen/reports/diagram-publication-attachment-matrix-v1.csv`
+
+That matrix exists so images on the site do not drift into orphan visuals with
+no canonical home. Each promoted diagram should answer:
+
+1. Which canonical source asset or Mermaid/Draw.io source owns it?
+2. Which manual chapter consumes it?
+3. Which public page consumes it?
+4. What proof level and review status does it carry?
+
+Current promoted site image families already visible here include:
+
+- SelfDoc / publication SDLC images under `public/images/sdlc`
+- runtime evidence screenshots under `public/images/evidence`
+- LabTalk campus/proof diagrams under `public/images/labtalk`
+
+The goal is to keep diagrams attached to the same evidence spine as manuals and
+command documentation, not to let image assets become a parallel undocumented
+truth system.
+
 ## Document Layers
 
 | Layer | Role | Website Status |
