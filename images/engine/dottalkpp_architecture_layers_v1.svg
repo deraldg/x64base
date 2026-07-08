@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f7f8fa"/>
+  <text x="48" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#1f2937">DotTalk++ Working Model</text>
+  <text x="48" y="86" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#4b5563">Four cooperating layers keep command input, storage, logic, and projection separate.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="90" y="125" width="780" height="72" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="125" y="157" font-size="22" font-weight="700" fill="#1e3a8a">Command Layer</text>
+    <text x="125" y="181" font-size="15" fill="#1e40af">CLI, DotScript, HELP, command discovery, automation</text>
+    <rect x="90" y="218" width="780" height="72" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="125" y="250" font-size="22" font-weight="700" fill="#14532d">Data Layer</text>
+    <text x="125" y="274" font-size="15" fill="#166534">DBF tables, records, fields, work areas, indexes, memos</text>
+    <rect x="90" y="311" width="780" height="72" rx="8" fill="#fef3c7" stroke="#d97706"/>
+    <text x="125" y="343" font-size="22" font-weight="700" fill="#78350f">Logic Layer</text>
+    <text x="125" y="367" font-size="15" fill="#92400e">Expressions, predicates, functions, validation, control flow</text>
+    <rect x="90" y="404" width="780" height="72" rx="8" fill="#f3e8ff" stroke="#9333ea"/>
+    <text x="125" y="436" font-size="22" font-weight="700" fill="#581c87">Projection Layer</text>
+    <text x="125" y="460" font-size="15" fill="#6b21a8">LIST, SMARTLIST, TUPLE, ERSATZ, SMARTBROWSE, SIMPLEBROWSE</text>
+  </g>
+</svg>
