@@ -90,6 +90,14 @@ BUILD_PYDOTTALK
 DOTTALK_PROFILE
 ```
 
+The current Windows release payload keeps `dottalkpp.exe`, `lmdb.dll`, and
+`sqlite3.dll` separate. LMDB and SQLite are streamlined dynamic dependencies;
+the larger `dottalkpp.exe` is the compiled command/runtime host containing the
+shell, engine services, scripting, HELP/SelfDoc, metadata, browser, relation,
+workspace, and TUI-enabled command surfaces.
+
+See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
+
 ## Current focus
 
 The current useful work is not broad feature expansion. The local tree points toward validation, congruence, GUI/runtime bridging, metadata reports, CDX/LMDB lifecycle cleanup, memo proof, and keeping browser/workspace smoke paths honest.

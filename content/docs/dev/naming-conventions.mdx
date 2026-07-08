@@ -48,7 +48,7 @@ The development tree is intentionally wider than the public product tree. The us
 ### Development tree
 
 ```text
-D:\code\ccode
+implementation checkout
 |-- src\                 runtime source: CLI, xbase, indexes, memo, GUI bridges
 |-- include\             public/internal headers and engine contracts
 |-- dottalkpp\           runtime data, scripts, generated reports, maintenance lanes
@@ -72,7 +72,7 @@ D:\code\ccode
 ### Public website source and staged product tree
 
 ```text
-D:\dev\x64base-site
+website source tree
 |-- app\                 Next.js route pages and public section shells
 |-- content\             MDX documentation and product copy
 |-- config\              navigation/sidebar/site configuration
@@ -80,14 +80,14 @@ D:\dev\x64base-site
 |-- public\              images, diagrams, screenshots, and static assets
 `-- scripts\             build, export, and staging helpers
 
-C:\x64base
+local staging mirror
 |-- dottalk-webui\public-site\   staged static website mirror
 |-- dottalkpp\                   staged runtime/source mirror when synced
 |-- pycrud\                      staged Python CRUD/GUI lane when synced
 `-- README / manifests           publication and staging notes
 ```
 
-The `C:\x64base` tree is the publication staging area. Generated data such as Bible SQL and LMDB artifacts should be regenerated as needed rather than treated as permanent source truth.
+The `local staging mirror` tree is the publication staging area. Generated data such as Bible SQL and LMDB artifacts should be regenerated as needed rather than treated as permanent source truth.
 
 ## Command implementation convention
 

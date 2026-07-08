@@ -17,6 +17,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "x64base Engine",
     items: [
       { label: "Architecture", href: "/docs/engine/architecture" },
+      { label: "Runtime Footprint", href: "/docs/engine/runtime-footprint" },
       { label: "xBase Ecosystem Context", href: "/docs/engine/xbase-ecosystem-context" },
       { label: "Ecosystem Feature Comparison", href: "/docs/engine/ecosystem-feature-comparison" },
       { label: "x64 Capacity Math", href: "/docs/engine/x64-capacity-math" },
@@ -60,6 +61,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "Laboratory Campus",
     items: [
       { label: "Overview", href: "/docs/labtalk/overview" },
+      { label: "Cases and Storyboard", href: "/docs/labtalk/cases-storyboard" },
       { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },
       { label: "Education Features", href: "/docs/labtalk/education-features" },
       { label: "Lesson Platform", href: "/docs/labtalk/lessons" },

@@ -3,7 +3,7 @@ title: "Getting Started: Installation"
 description: "Local build shape for the DotTalk++ / x64base source tree."
 ---
 
-The authoritative local source tree is `D:\code\ccode`.
+The authoritative local source tree is `implementation checkout`.
 
 The project is a CMake C++20 project named `DotTalkpp`. The root CMake file exposes build options for indexing, relations, education, Turbo Vision, GUI-neutral services, wxWidgets, tests, and optional Python bindings.
 
@@ -20,7 +20,7 @@ The project is a CMake C++20 project named `DotTalkpp`. The root CMake file expo
 ## CLI build shape
 
 ```powershell
-cd D:\code\ccode
+cd implementation checkout
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_INDEX=ON -D DOTTALK_WITH_RELATIONS=ON -D BUILD_TESTING=ON
 cmake --build build --config Release --target dottalkpp
 ```
@@ -28,7 +28,7 @@ cmake --build build --config Release --target dottalkpp
 ## GUI build shape
 
 ```powershell
-cd D:\code\ccode
+cd implementation checkout
 cmake -S . -B build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
 cmake --build build-wx-check --config Release
 ```
@@ -66,6 +66,10 @@ The POSIX lane should keep path handling, case sensitivity, newline behavior, fi
 ## macOS build requirements
 
 Use Xcode Command Line Tools plus Homebrew packages for the macOS lane.
+
+Current status: the macOS build path is documented as a planned/portable build
+lane, but it has **not been tested yet**. Treat the commands below as the
+expected starting point for validation, not as a verified release build recipe.
 
 ```bash
 xcode-select --install

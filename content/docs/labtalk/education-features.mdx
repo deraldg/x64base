@@ -11,14 +11,14 @@ contains enough structure to seed this alpha campus area.
 
 | Feature | Source Evidence | Campus Reading |
 | --- | --- | --- |
-| Education command family | `D:\code\ccode\src\edu\edu_*.cpp` and `D:\code\ccode\src\cli\shell_commands.cpp` | Built-in teaching commands are source-defined and registered through the central command surface. |
-| Reference and retro commands | `D:\code\ccode\src\edu\edu_ascii_table.cpp`, `src\cli\cmd_retro.cpp`, and `src\cli\cmd_bbox.cpp` | `ASCII`, `RETRO`, and `BBOX` are public education-facing commands and should be treated as campus material. |
-| Timed index/sort lab | `D:\code\ccode\src\cli\cmd_idx.cpp` and `D:\code\ccode\docs\teaching\TEACHING_POINT_LEDGER.md` | `IDX` is a memory-only educational index lab; it supports `STD` and `BUBBLE` sort choices and reports build/sort elapsed time, comparisons, and swaps. |
-| DBF sort path | `D:\code\ccode\src\cli\cmd_sort.cpp` | `SORT` creates a sorted DBF copy, supports key expressions, `FOR`, `WHILE`, `FIELDS`, `UNIQUE`, and reports scanned/selected/written counts. |
-| Student command hooks | `D:\code\ccode\src\ext\cmd\cmd_student_hello.cpp`, `cmd_student_echo.cpp`, and `src\ext\ext_policy.hpp` | Student commands may self-register from the extension area while built-in command names remain protected. |
-| Student function hooks | `D:\code\ccode\src\ext\fn\fn_student_text_autoreg.cpp` | Student functions demonstrate the same registry-compatible pattern for learner-created expression helpers. |
-| Pre/post polling hooks | `D:\code\ccode\src\cli\pre_poll.cpp`, `post_poll.cpp`, and `cmd_polling.cpp` | Current hooks emit `[POLL PRE]` and `[POLL POST]`; `cmd_polling.cpp` is a placeholder for future polling/integration command work. |
-| Vertical publication rule | `D:\code\ccode\docs\contracts\WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md` | Website pages are downstream derivatives of runtime/source, HELP, metadata, CMDHELPCHK, SelfDoc, and manualgen. |
+| Education command family | `src/edu/edu_*.cpp` and `src/cli/shell_commands.cpp` | Built-in teaching commands are source-defined and registered through the central command surface. |
+| Reference and retro commands | `src/edu/edu_ascii_table.cpp`, `src\cli\cmd_retro.cpp`, and `src\cli\cmd_bbox.cpp` | `ASCII`, `RETRO`, and `BBOX` are public education-facing commands and should be treated as campus material. |
+| Timed index/sort lab | `src/cli/cmd_idx.cpp` and `docs/teaching/TEACHING_POINT_LEDGER.md` | `IDX` is a memory-only educational index lab; it supports `STD` and `BUBBLE` sort choices and reports build/sort elapsed time, comparisons, and swaps. |
+| DBF sort path | `src/cli/cmd_sort.cpp` | `SORT` creates a sorted DBF copy, supports key expressions, `FOR`, `WHILE`, `FIELDS`, `UNIQUE`, and reports scanned/selected/written counts. |
+| Student command hooks | `src/ext/cmd/cmd_student_hello.cpp`, `cmd_student_echo.cpp`, and `src\ext\ext_policy.hpp` | Student commands may self-register from the extension area while built-in command names remain protected. |
+| Student function hooks | `src/ext/fn/fn_student_text_autoreg.cpp` | Student functions demonstrate the same registry-compatible pattern for learner-created expression helpers. |
+| Pre/post polling hooks | `src/cli/pre_poll.cpp`, `post_poll.cpp`, and `cmd_polling.cpp` | Current hooks emit `[POLL PRE]` and `[POLL POST]`; `cmd_polling.cpp` is a placeholder for future polling/integration command work. |
+| Vertical publication rule | `docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md` | Website pages are downstream derivatives of runtime/source, HELP, metadata, CMDHELPCHK, SelfDoc, and manualgen. |
 
 ## Timed Sort and Index Labs
 

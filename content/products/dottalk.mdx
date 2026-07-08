@@ -28,10 +28,21 @@ See [DotScript](/products/dotscript) and [DotScript Language Guide](/docs/dottal
 
 DotTalk++ is active beta. Some areas are runtime-proven and others are canaries or integration surfaces. Site copy should preserve those boundaries instead of flattening everything into "complete".
 
+## Runtime footprint
+
+The current Windows release build is intentionally more than a thin launcher.
+`dottalkpp.exe` carries the command shell, DBF runtime surface, scripting,
+SelfDoc/HELP, metadata, workspace, relation, browser, and TUI hooks. SQLite and
+LMDB are kept as separate DLL dependencies rather than being folded into the
+executable.
+
+See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
+
 ## References
 
 - [Current Project Truth](/docs/dev/project-truth)
 - [Language Guide](/docs/dottalk/language-guide)
+- [Runtime Footprint](/docs/engine/runtime-footprint)
 - [DotTalk++ SDLC](/docs/dottalk/sdlc)
 - [Syntax](/docs/dottalk/syntax)
 - [REPL](/docs/dottalk/repl)

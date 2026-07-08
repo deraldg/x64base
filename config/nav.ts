@@ -5,6 +5,7 @@ export const topNav: NavItem[] = [
   { label: "Products", href: "/products" },
   { label: "LabTalk", href: "/products/labtalk" },
   { label: "Documentation", href: "/docs" },
+  { label: "Downloads", href: "/downloads" },
   { label: "Licensing", href: "/licensing" },
   { label: "Brand", href: "/brand" },
   { label: "News", href: "/news" },

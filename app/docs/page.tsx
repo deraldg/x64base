@@ -106,6 +106,12 @@ const sectionSummary = [
     description: "Follow the alpha education and collaboration area for database literacy and runtime proof work.",
     href: "/docs/labtalk/overview",
     icon: GraduationCap
+  },
+  {
+    title: "Cases and storyboard",
+    description: "Find the LabTalk / DotTalk++ storyboard deck, case-study families, and proof-aware case path.",
+    href: "/docs/labtalk/cases-storyboard",
+    icon: Archive
   }
 ];
 

@@ -5,6 +5,7 @@ import {
   BarChart3,
   Boxes,
   Database,
+  Download,
   LayoutPanelTop,
   FileCode2,
   GitBranch,
@@ -79,6 +80,33 @@ const lanes = [
     text: "Use DotTalk++, DotTalk++ Workbench, Parallel GUI/TUI, Arctic TUI, and Laboratory Campus material for labs, front-end learning, command literacy, and database fundamentals.",
     href: "/docs/dottalk/curriculum",
     icon: GraduationCap
+  }
+];
+
+const startPoints = [
+  {
+    title: "Downloads",
+    text: "Source, build notes, runtime footprint, command catalog, and evidence starting points.",
+    href: "/downloads",
+    icon: Download
+  },
+  {
+    title: "Cases & storyboard",
+    text: "The visible doorway into campus cases, source-memory stories, and the systems storyboard deck.",
+    href: "/docs/labtalk/cases-storyboard",
+    icon: GraduationCap
+  },
+  {
+    title: "Runtime footprint",
+    text: "Why dottalkpp.exe is the full command/runtime host while LMDB and SQLite stay external.",
+    href: "/docs/engine/runtime-footprint",
+    icon: Database
+  },
+  {
+    title: "Important documents",
+    text: "SelfDoc, MDO, generated manuals, diagrams, matrices, and reviewed documentation layers.",
+    href: "/docs/dev/important-documents",
+    icon: ScrollText
   }
 ];
 
@@ -181,12 +209,41 @@ export default function HomePage() {
         })}
       </section>
 
+      <section className="rounded-lg border border-border bg-card/35 p-5">
+        <div className="grid gap-4 md:grid-cols-[0.75fr_1.25fr] md:items-center">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">start points</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight">A practical place to begin.</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Source, build notes, runtime evidence, and generated-documentation paths are gathered
+              without turning the homepage into a release page.
+            </p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-4">
+            {startPoints.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
+                >
+                  <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
+                  <div className="mt-3 text-sm font-semibold text-fg">{item.title}</div>
+                  <p className="mt-1 text-xs leading-5 text-muted">{item.text}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">documentation</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">Readable status for real implementation work.</h2>
           <p className="mt-4 leading-7 text-muted">
-            The site tracks the local `D:\code\ccode` truth: C++20 CMake build options, DotTalk++
+            The site tracks reviewed implementation truth: C++20 CMake build options, DotTalk++
             command surfaces, workspaces over DbArea objects, object-oriented memos, custom field type
             hooks, Open Index API, Open GUI API, and runtime validation work.
           </p>

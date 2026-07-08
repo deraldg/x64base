@@ -54,9 +54,9 @@ function refreshMirror() {
     path.join(mirrorDir, "MIRROR_SOURCE.txt"),
     [
       "x64base.com local mirror",
-      `source: ${root}`,
-      `build: ${outDir}`,
-      `target: ${mirrorDir}`,
+      "source: website source tree",
+      "build: static export output",
+      "target: local staging mirror",
       `staged_at_utc: ${new Date().toISOString()}`,
       "",
     ].join("\n"),

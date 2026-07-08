@@ -32,6 +32,9 @@ export function Footer() {
               <Link href="/licensing/third-party-acknowledgements" className="text-muted hover:text-fg">
                 Third-party credits
               </Link>
+              <Link href="/downloads" className="text-muted hover:text-fg">
+                Downloads
+              </Link>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
@@ -40,6 +43,9 @@ export function Footer() {
             </Link>
             <Link href="/products" className="text-muted hover:text-fg">
               Products
+            </Link>
+            <Link href="/downloads" className="text-muted hover:text-fg">
+              Downloads
             </Link>
             <Link href="/licensing" className="text-muted hover:text-fg">
               Licensing

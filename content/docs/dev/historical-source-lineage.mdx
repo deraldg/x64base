@@ -101,25 +101,25 @@ Each artifact should be described with a small record:
 
 | Family | Evidence path | Current read |
 | --- | --- | --- |
-| 1993 xBase | `D:\code\xbase\xbase.zip` | Original archive includes `xbase/`, `xbase2/`, and `xdll/` members with 1993 and 1995 timestamps. |
-| XDLL | `D:\code\XDLL` and `D:\code\xbase\xbase.zip` | DLL/export style branch with real index calls and distinct checksums. |
-| xBase2 / DotTalk 1995 | `D:\code\xbase2` | Strong historical candidate. Contains `DOTTALK.C`, DBF core, command layer, and real block-oriented `XBINDEX.C`. |
-| gTalk / DotTalk recovery | `D:\code\gTalk` | Useful recovery and build-lane evidence. Index layer is a stub in this branch. |
-| DotTalk old code recovery | `C:\Users\deral\DotTalk\old code` | Buildable/minimal recovery branch with prompt shell and DBF commands; index functions are stubbed. |
+| 1993 xBase | `archive/source-lineage/1993-xbase/xbase.zip` | Original archive includes `xbase/`, `xbase2/`, and `xdll/` members with 1993 and 1995 timestamps. |
+| XDLL | `archive/source-lineage/1993-1996-xdll` and `archive/source-lineage/1993-xbase/xbase.zip` | DLL/export style branch with real index calls and distinct checksums. |
+| xBase2 / DotTalk 1995 | `archive/source-lineage/1995-xbase2-dottalk` | Strong historical candidate. Contains `DOTTALK.C`, DBF core, command layer, and real block-oriented `XBINDEX.C`. |
+| gTalk / DotTalk recovery | `archive/source-lineage/2025-gtalk-recovery` | Useful recovery and build-lane evidence. Index layer is a stub in this branch. |
+| DotTalk old code recovery | `archive/source-lineage/dottalk-old-code` | Buildable/minimal recovery branch with prompt shell and DBF commands; index functions are stubbed. |
 | AI-assisted false starts | Multiple local folders and notes | Preserve as experimental evidence, not product truth. Label Gemini/Grok/ChatGPT/Copilot work when known. |
-| Modern DotTalk++ / x64base | `D:\code\ccode` | Current active product line and runtime truth source. |
+| Modern DotTalk++ / x64base | `implementation checkout` | Current active product line and runtime truth source. |
 
 ## Index lineage correction
 
-The recovered DotTalk folders under `C:\Users\deral\DotTalk` and `D:\code\gTalk`
-have index vocabulary but stubbed index behavior. However, `D:\code\xbase2`
+The recovered DotTalk folders under `archive/source-lineage/dottalk-old-code` and `archive/source-lineage/2025-gtalk-recovery`
+have index vocabulary but stubbed index behavior. However, `archive/source-lineage/1995-xbase2-dottalk`
 contains real historical index work:
 
-- `D:\code\xbase2\XBINDEX.C` implements block-oriented index routines such as
+- `archive/source-lineage/1995-xbase2-dottalk/XBINDEX.C` implements block-oriented index routines such as
   `make_index`, `first_key`, `next_key`, `find_key`, `add_key`, `openix`,
   `creatix`, block retrieval, free-list handling, insertion, split, and search
   helpers.
-- `D:\code\xbase2\XBCMDS.C` wires that index engine into `open_index`,
+- `archive/source-lineage/1995-xbase2-dottalk/XBCMDS.C` wires that index engine into `open_index`,
   `build_index`, `find`, and relation positioning.
 
 Website and manual copy should say the older index engine exists in the

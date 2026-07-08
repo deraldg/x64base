@@ -5,7 +5,7 @@ description: "Repeatable path from source, HELP, metadata, contracts, and manual
 
 The website should be fed from the documentation system, not hand-maintained from memory.
 
-![SelfDoc core doctrine and Stage A through Stage F promotion ladder](/images/sdlc/selfdoc-core-doctrine-stage-ladder.svg)
+[![SelfDoc core doctrine and Stage A through Stage F promotion ladder](/images/sdlc/selfdoc-core-doctrine-stage-ladder.svg)](/docs/labtalk/cases-storyboard)
 
 The doctrine is intentionally simple: runtime proves, source defines, HELP
 explains, metadata organizes, and SelfDoc preserves. Public manuals and diagrams
@@ -15,11 +15,11 @@ should only be promoted after that chain has been reviewed.
 
 The authority order is:
 
-1. Runtime/source behavior in `D:\code\ccode`.
+1. Runtime/source behavior in `implementation checkout`.
 2. HELP, metadata, command registration, comments, `@dottalk.usage`, `@dottalk.contract`, contract scans, and canary evidence.
 3. SelfDoc reports and manualgen manifests.
 4. Reviewed manual sections.
-5. Website pages in `D:\dev\x64base-site`.
+5. Website pages in `website source tree`.
 
 When a DotTalk++ command or function is added, the expected flow is:
 
@@ -39,11 +39,11 @@ source change
 The current repeatable feed uses:
 
 ```powershell
-cd D:\code\ccode
-python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer inventory
-python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer validate
-python tools\manualgen\manualgen.py --repo-root D:\code\ccode --manual developer build-dry-run
-python tools\selfdoc\build_engine_feature_crosswalk.py --repo-root D:\code\ccode
+cd implementation checkout
+python tools\manualgen\manualgen.py --repo-root implementation checkout --manual developer inventory
+python tools\manualgen\manualgen.py --repo-root implementation checkout --manual developer validate
+python tools\manualgen\manualgen.py --repo-root implementation checkout --manual developer build-dry-run
+python tools\selfdoc\build_engine_feature_crosswalk.py --repo-root implementation checkout
 ```
 
 Generated outputs include:
@@ -64,7 +64,7 @@ Generated outputs include:
 
 ## Procedural curation
 
-![Parallel lanes for visual curation, narrative curation, provenance, metadata, HELP, and source proof](/images/sdlc/parallel-lanes-visual-curation.svg)
+[![Parallel lanes for visual curation, narrative curation, provenance, metadata, HELP, and source proof](/images/sdlc/parallel-lanes-visual-curation.svg)](/docs/labtalk/cases-storyboard)
 
 The repeatable curation loop is:
 

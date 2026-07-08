@@ -23,10 +23,26 @@ Use "runtime-proven" only when a smoke path or command surface has current evide
 
 Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.
 
+## Runtime payload
+
+The observed Windows release payload separates the main DotTalk++ executable
+from the embedded data-engine DLLs:
+
+- `dottalkpp.exe` - command/runtime host and canonical shell surface.
+- `lmdb.dll` - LMDB backend dependency for LMDB-backed index environments.
+- `sqlite3.dll` - SQLite dependency for SQL and SQLite lanes.
+
+The executable is larger than the two DLLs because it contains the x64base
+command surface, engine integration, scripting, SelfDoc/HELP, metadata,
+workspace, relation, browser, and TUI-enabled runtime logic.
+
+See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
+
 ## References
 
 - [Current Project Truth](/docs/dev/project-truth)
 - [Architecture](/docs/engine/architecture)
+- [Runtime Footprint](/docs/engine/runtime-footprint)
 - [Indexing Rules](/docs/engine/indexing-rules)
 - [Error Codes](/docs/engine/error-codes)
 - [API Reference](/docs/engine/api-reference)

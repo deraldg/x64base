@@ -1,0 +1,145 @@
+---
+title: "Runtime Footprint and Dependencies"
+description: "Observed DotTalk++ release executable size, dynamic dependencies, and why the CLI runtime is larger than LMDB and SQLite."
+---
+
+## Snapshot
+
+This page records the observed Windows release payload from the local build on
+July 7, 2026:
+
+| File | Size | Role |
+| --- | ---: | --- |
+| `dottalkpp.exe` | 6,675,456 bytes | DotTalk++ command shell, x64base runtime surface, scripting, HELP, browser, relation, metadata, and TUI-enabled command host. |
+| `lmdb.dll` | 82,432 bytes | LMDB runtime used as the physical backend for LMDB-backed index environments. |
+| `sqlite3.dll` | 1,077,760 bytes | SQLite runtime used by SQLite and SQL bridge lanes. |
+
+The important point is that LMDB and SQLite are streamlined external runtime
+dependencies. They are not what makes `dottalkpp.exe` larger.
+
+## Dynamic dependencies
+
+PE inspection of `dottalkpp.exe` shows that the executable imports:
+
+- `sqlite3.dll`
+- `lmdb.dll`
+- Windows system libraries such as `KERNEL32.dll`, `USER32.dll`, `SHELL32.dll`,
+  `ADVAPI32.dll`, `WINHTTP.dll`, and `WS2_32.dll`
+- MSVC runtime libraries such as `MSVCP140.dll`, `VCRUNTIME140.dll`,
+  `VCRUNTIME140_1.dll`, and Universal CRT DLLs
+
+That means SQLite and LMDB are dynamically loaded support libraries. Their code
+is not statically folded into the DotTalk++ executable.
+
+## Why the executable is larger
+
+`dottalkpp.exe` is larger because it is the full application runtime, not a thin
+launcher. The release build links the command shell and internal libraries that
+make DotTalk++ the canonical human-facing surface for x64base.
+
+The build links or includes:
+
+- DotTalk++ command handlers across the `cmd_*` family.
+- `src/xbase` table runtime, work areas, cursor state, field handling, locking,
+  record views, and DBF flavor handling.
+- `src/xindex` index infrastructure and CDX/LMDB command bridges.
+- `src/memo` memo manager, memo object/reference/store concepts, and memo proof
+  surfaces.
+- DotScript parsing, variables, control flow, expression evaluation, and scalar
+  function support.
+- HELP, SelfDoc, command reflection, function catalogs, metadata mining,
+  message catalogs, and manual/report generation support.
+- Relation, tuple, workspace, DDL, import/export, CSV, SQL, data dictionary, and
+  validation command lanes.
+- Browser, SmartList, table buffering, dirty/stale state, and TUI integration
+  hooks.
+- Turbo Vision/TUI support for the Arctic terminal lane.
+
+This is why the executable is best described as a compact native runtime host
+with a broad command/documentation surface, not as a minimal embedded database
+library.
+
+## Observed binary layout
+
+The observed release executable contains these main PE sections:
+
+| Section | Approximate size | Meaning |
+| --- | ---: | --- |
+| `.text` | 5.36 MB | Compiled code. This is the command shell, engine services, parsers, catalogs, and runtime logic. |
+| `.rdata` | 1.06 MB | Read-only data such as constants, command/help tables, strings, import tables, type metadata, and runtime catalogs. |
+| `.data` | 0.10 MB | Writable initialized data. |
+| `.pdata` | 0.13 MB | x64 exception/unwind metadata. |
+| `.rsrc` | small | Windows resource data. |
+| `.reloc` | small | Relocation metadata. |
+
+Most of the footprint is therefore DotTalk++ code and read-only runtime data.
+
+## Largest object contributors
+
+The release build produced hundreds of object files. The largest observed
+contributors before linking included:
+
+| Object file | Approximate object size | Why it is large |
+| --- | ---: | --- |
+| `cmdhelp.obj` | 2.79 MB | Command help and command-surface reflection. |
+| `fox_standard_catalog.obj` | 1.69 MB | xBase/Fox-style reference and catalog material. |
+| `helpdata_source_miner.obj` | 1.46 MB | HELP/SelfDoc source-mining support. |
+| `cmd_ddl.obj` | 1.42 MB | DDL command family and schema behavior. |
+| `shell_commands.obj` | 1.25 MB | Main command dispatch and shell command integration. |
+| `schema_loader.obj` | 1.10 MB | Workspace/schema loading support. |
+| `extension_manifest.obj` | 1.10 MB | Extension manifest handling. |
+| `cmd_ersatz.obj` | 1.08 MB | ERSATZ workspace/relation loading behavior. |
+| `cmd_workspace.obj` | 1.00 MB | Workspace command family. |
+| `helpdata_messages.obj` | 0.95 MB | Runtime/help message data handling. |
+
+These are documentation, command, metadata, schema, and workspace-heavy areas.
+That matches the current x64base thesis: the runtime uses its own metadata and
+documentation infrastructure to describe, validate, and increasingly prove
+itself.
+
+## Build flags observed
+
+The local release build used optimization and dynamic MSVC runtime linking:
+
+```text
+/O2
+/Ob2
+/MD
+/std:c++20
+NDEBUG
+```
+
+It also enabled several DotTalk++ feature flags:
+
+```text
+DOTTALK_WITH_DEV=1
+DOTTALK_PROFILE_DEV=1
+DOTTALK_EXTRA_DIAGNOSTICS=1
+DOTTALK_WITH_RELATIONS=1
+DOTTALK_XEXPR_AVAILABLE=1
+DOTTALK_WITH_INDEX=1
+DOTTALK_TV_AVAILABLE=1
+DOTTALK_SQLITE_AVAILABLE=1
+```
+
+Those flags explain why the current release build includes developer,
+diagnostic, relation, expression, index, TUI, and SQLite command surfaces. A
+smaller distribution build could be created later by intentionally separating
+developer/selfdoc tooling, command catalogs, TUI support, or optional surfaces,
+but the current beta build keeps them together because they are part of the
+proof and documentation loop.
+
+## Documentation rule
+
+When documenting the runtime footprint:
+
+- Do say that DotTalk++ is a compact native runtime compared with framework-heavy
+  app stacks.
+- Do say that LMDB and SQLite are streamlined external DLL dependencies.
+- Do not imply that `dottalkpp.exe` is only a database kernel.
+- Do not blame the size on SQLite or LMDB; they are dynamically imported.
+- Do explain that the executable contains the command shell, engine services,
+  scripting, SelfDoc/HELP, metadata, browsers, relations, and TUI hooks.
+
+See also [Engine Architecture](/docs/engine/architecture), [CDX and LMDB
+Indexing](/docs/engine/cdx-lmdb-indexing), and [DotTalk++](/products/dottalk).

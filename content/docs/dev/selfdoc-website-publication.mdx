@@ -5,9 +5,9 @@ description: "How DotTalk++ / x64base SelfDoc and runtime documents feed the pub
 
 ## Core rule
 
-`D:\code\ccode` is the implementation truth.
+`implementation checkout` is the implementation truth.
 
-`D:\dev\x64base-site` is the public publication surface.
+`website source tree` is the public publication surface.
 
 The site should present reviewed, provenance-aware derivatives of the runtime,
 contracts, HELP, metadata, manuals, and diagrams. It should not invent
@@ -16,17 +16,17 @@ technical truth on its own.
 ## Public source
 
 - Public GitHub repo: [deraldg/x64base](https://github.com/deraldg/x64base)
-- Local implementation tree: `D:\code\ccode`
-- Local site tree: `D:\dev\x64base-site`
-- Local runtime mirror: `C:\x64base\dottalk-webui\public-site`
+- Local implementation tree: `implementation checkout`
+- Local site tree: `website source tree`
+- Local runtime mirror: `local staging mirror`
 
 ## Shared document model
 
 Use this split:
 
-- Runtime/source/contracts/manual truth lives in `D:\code\ccode`
-- Public website framing and navigation live in `D:\dev\x64base-site`
-- Built website output is staged through `C:\x64base\dottalk-webui\public-site`
+- Runtime/source/contracts/manual truth lives in `implementation checkout`
+- Public website framing and navigation live in `website source tree`
+- Built website output is staged through `local staging mirror`
   before GitHub Pages publication
 - Shared diagrams and publication artifacts should be promoted from reviewed
   SelfDoc/manual outputs, not rewritten from memory
