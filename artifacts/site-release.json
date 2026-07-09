@@ -2,10 +2,10 @@
   "site": "x64base.com",
   "package_version": "0.1.0",
   "source_branch": "codex/lean-sites-publish",
-  "source_commit": "df9e34131988698da503974e11db8c6b2e5dd6c0",
-  "published_at_utc": "2026-07-09T05:13:53.394Z",
+  "source_commit": "6d978d1d084d38ce53b969c6aa4f967ae5e95962",
+  "published_at_utc": "2026-07-09T20:19:38.328Z",
   "publish_mode": "github-pages",
-  "source_root": "D:/dev/x64base-site",
+  "source_root": "website source tree",
   "deploy_branch": "gh-pages",
   "deploy_repo": "deraldg/x64base"
 }

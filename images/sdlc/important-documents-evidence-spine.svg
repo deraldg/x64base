@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Important documents evidence spine</title>
+  <desc id="desc">A publication map showing source and runtime evidence flowing through help, contracts, SelfDoc, MDO, manual generation, artifact support, and x64base website pages.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef8fb"/>
+      <stop offset="0.52" stop-color="#f8fbfd"/>
+      <stop offset="1" stop-color="#eaf4f2"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2aa895"/>
+      <stop offset="0.45" stop-color="#4e7ed1"/>
+      <stop offset="1" stop-color="#c7776a"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0c1a22" flood-opacity="0.13"/>
+    </filter>
+    <style>
+      .title{font:700 42px Inter,Segoe UI,Arial,sans-serif;fill:#132033}
+      .subtitle{font:400 20px Inter,Segoe UI,Arial,sans-serif;fill:#607180}
+      .label{font:700 19px Inter,Segoe UI,Arial,sans-serif;fill:#132033}
+      .body{font:400 16px Inter,Segoe UI,Arial,sans-serif;fill:#5e6f7e}
+      .mono{font:700 13px "JetBrains Mono",Consolas,monospace;letter-spacing:.08em;fill:#607180}
+      .small{font:600 14px Inter,Segoe UI,Arial,sans-serif;fill:#334657}
+      .card{fill:#ffffff;stroke:#cddce3;stroke-width:1.5}
+      .soft{fill:#f4f9fb;stroke:#d9e7ec;stroke-width:1.2}
+      .gate{fill:#132033}
+      .white{fill:#fff}
+      .accentA{fill:#2aa895}
+      .accentB{fill:#4e7ed1}
+      .accentC{fill:#8464cb}
+      .accentD{fill:#c7776a}
+      .accentE{fill:#d6a43a}
+    </style>
+  </defs>
+
+  <rect width="1280" height="720" rx="0" fill="url(#bg)"/>
+  <path d="M0 590 C190 545 342 640 555 595 C760 552 848 472 1035 510 C1158 535 1210 615 1280 580 L1280 720 L0 720 Z" fill="#dcecef" opacity=".82"/>
+  <path d="M105 370 C250 255 380 470 520 350 C670 220 770 480 925 330 C1040 222 1125 372 1190 300" fill="none" stroke="url(#flow)" stroke-width="18" stroke-linecap="round" opacity=".25"/>
+  <path d="M105 370 C250 255 380 470 520 350 C670 220 770 480 925 330 C1040 222 1125 372 1190 300" fill="none" stroke="url(#flow)" stroke-width="5" stroke-linecap="round"/>
+
+  <text x="72" y="84" class="title">Important Documents Evidence Spine</text>
+  <text x="72" y="122" class="subtitle">Source truth feeds reviewed manuals, artifact support, and public website summaries.</text>
+
+  <g filter="url(#shadow)">
+    <rect class="card" x="72" y="218" width="176" height="164" rx="14"/>
+    <circle class="accentA" cx="106" cy="252" r="13"/>
+    <text class="label" x="128" y="258">Source</text>
+    <text class="body" x="104" y="296">runtime behavior</text>
+    <text class="body" x="104" y="320">commands, headers</text>
+    <text class="body" x="104" y="344">tests, transcripts</text>
+    <text class="mono" x="104" y="372">PROVES</text>
+
+    <rect class="card" x="286" y="276" width="176" height="164" rx="14"/>
+    <circle class="accentB" cx="320" cy="310" r="13"/>
+    <text class="label" x="342" y="316">Contracts</text>
+    <text class="body" x="318" y="354">HELP, CMDHELP</text>
+    <text class="body" x="318" y="378">usage comments</text>
+    <text class="body" x="318" y="402">metadata fields</text>
+    <text class="mono" x="318" y="430">EXPLAINS</text>
+
+    <rect class="card" x="500" y="210" width="176" height="164" rx="14"/>
+    <circle class="accentC" cx="534" cy="244" r="13"/>
+    <text class="label" x="556" y="250">SelfDoc</text>
+    <text class="body" x="532" y="288">reports, scans</text>
+    <text class="body" x="532" y="312">MDO curation</text>
+    <text class="body" x="532" y="336">proof labels</text>
+    <text class="mono" x="532" y="364">ORGANIZES</text>
+
+    <rect class="card" x="714" y="304" width="176" height="164" rx="14"/>
+    <circle class="accentD" cx="748" cy="338" r="13"/>
+    <text class="label" x="770" y="344">Manualgen</text>
+    <text class="body" x="746" y="382">inventory</text>
+    <text class="body" x="746" y="406">validate, dry-run</text>
+    <text class="body" x="746" y="430">reviewed sections</text>
+    <text class="mono" x="746" y="458">PROMOTES</text>
+
+    <rect class="card" x="928" y="226" width="176" height="164" rx="14"/>
+    <circle class="accentE" cx="962" cy="260" r="13"/>
+    <text class="label" x="984" y="266">Artifacts</text>
+    <text class="body" x="960" y="304">manual bundles</text>
+    <text class="body" x="960" y="328">downloads, reports</text>
+    <text class="body" x="960" y="352">accessible text</text>
+    <text class="mono" x="960" y="380">SUPPORTS</text>
+
+    <rect class="gate" x="1088" y="430" width="122" height="116" rx="14"/>
+    <text class="white label" x="1118" y="469">Site</text>
+    <text class="white body" x="1118" y="504">reviewed</text>
+    <text class="white body" x="1118" y="528">summaries</text>
+  </g>
+
+  <g>
+    <path d="M250 305 L280 328" stroke="#7e96a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M462 342 L495 304" stroke="#7e96a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M676 302 L710 348" stroke="#7e96a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M890 372 L922 318" stroke="#7e96a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M1104 332 L1140 425" stroke="#7e96a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <rect class="soft" x="72" y="606" width="1136" height="56" rx="18"/>
+  <circle class="accentA" cx="110" cy="634" r="10"/>
+  <text class="small" x="130" y="640">Runtime proves</text>
+  <circle class="accentB" cx="296" cy="634" r="10"/>
+  <text class="small" x="316" y="640">HELP and contracts explain</text>
+  <circle class="accentC" cx="554" cy="634" r="10"/>
+  <text class="small" x="574" y="640">SelfDoc and MDO organize</text>
+  <circle class="accentD" cx="830" cy="634" r="10"/>
+  <text class="small" x="850" y="640">Manualgen promotes</text>
+  <circle class="accentE" cx="1045" cy="634" r="10"/>
+  <text class="small" x="1065" y="640">Artifact room supports</text>
+</svg>
