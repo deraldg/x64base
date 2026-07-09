@@ -63,9 +63,37 @@ const ecosystem = [
 const quickLinks = [
   { title: "Engine architecture", href: "/docs/engine/architecture" },
   { title: "Open Engine APIs", href: "/docs/engine/api-reference" },
+  { title: "Indexing rules", href: "/docs/engine/indexing-rules" },
   { title: "DotScript language guide", href: "/docs/dottalk/dotscript-language-guide" },
   { title: "Application UI DSL lane", href: "/docs/dev/application-ui-dsl-lane" },
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
+];
+
+const openArchitectureLanes = [
+  {
+    title: "Open Index API",
+    text: "Indexing is not a sealed implementation detail. x64base publishes attach, rebuild, order, seek, and verification seams so CNX, CDX, LMDB, INX, and teaching-lab formats can be reasoned about as architecture.",
+    href: "/docs/engine/api-reference",
+    icon: Database
+  },
+  {
+    title: "Workbench Front Ends",
+    text: "GUI, TUI, and scriptable workbench surfaces are consumers of the same runtime truth. Ordering, cursor state, relations, validation, and command execution stay in DotTalk++ and the engine, not in duplicate UI logic.",
+    href: "/docs/dev/application-ui-dsl-lane",
+    icon: LayoutPanelTop
+  },
+  {
+    title: "Custom Commands and Functions",
+    text: "Built-in commands stay centrally governed, while student and local extensions can self-register through protected extension lanes. The same pattern supports custom functions, controlled hooks, and curriculum work.",
+    href: "/docs/labtalk/education-features",
+    icon: TerminalSquare
+  },
+  {
+    title: "Polling, Triggers, and Lifecycle Hooks",
+    text: "Pre/post polling seams, command lifecycle observation, mutation hooks, and relation/order maintenance are treated as explicit integration boundaries. They belong to the engine contract, not to ad hoc side effects.",
+    href: "/docs/labtalk/education-features",
+    icon: GitBranch
+  }
 ];
 
 const lanes = [
@@ -185,6 +213,43 @@ export default function HomePage() {
                 API reference
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-card/40 p-6">
+        <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">open architecture</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">The extension seams are part of the product.</h2>
+            <p className="mt-4 leading-7 text-muted">
+              x64base is not only a DBF runtime. It is an intentionally open
+              architecture for index backends, workbench front ends, custom
+              commands and functions, student code hooks, polling, triggers,
+              and runtime lifecycle observation. That work should remain
+              visible on the public surface because it is part of how the
+              engine is meant to be learned, extended, and proved.
+            </p>
+            <div className="mt-5 space-y-2 text-sm leading-6 text-muted">
+              <p>Live runtime evidence already includes central command registration, Open Index API boundaries, education hooks, and order-aware traversal work.</p>
+              <p>That means the architecture is open by design, not by accident.</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {openArchitectureLanes.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-lg border border-border bg-bg/35 p-4 transition hover:border-brand/60"
+                >
+                  <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
+                  <h3 className="mt-3 text-base font-semibold tracking-tight text-fg">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted">{item.text}</p>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
