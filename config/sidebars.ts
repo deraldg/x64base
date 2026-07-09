@@ -84,6 +84,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Website Documentation Matrix", href: "/docs/dev/website-documentation-matrix" },
       { label: "Historical Source Lineage", href: "/docs/dev/historical-source-lineage" },
       { label: "Application UI DSL Lane", href: "/docs/dev/application-ui-dsl-lane" },
+      { label: "Developer Profile", href: "/docs/dev/developer-profile" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },
       { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
       { label: "SelfDoc Feed Pipeline", href: "/docs/dev/selfdoc-feed-pipeline" },

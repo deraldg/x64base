@@ -43,6 +43,12 @@ const quickLinks = [
     description: "Current project truth, handbook, onboarding, and standards.",
     href: "/docs/dev/project-truth",
     icon: FileText
+  },
+  {
+    title: "Local Artifact Room",
+    description: "Open the temporary DotTalk++ artifact/manual support site.",
+    href: "http://localhost:3000/",
+    icon: Archive
   }
 ];
 
@@ -81,6 +87,12 @@ const sectionSummary = [
     title: "Site improvement plan",
     description: "Track documentation deficiencies, under-development lanes, and academic review needs.",
     href: "/docs/dev/site-improvement-plan",
+    icon: FileText
+  },
+  {
+    title: "Developer profile",
+    description: "Professional background behind the database, documentation, and education layers.",
+    href: "/docs/dev/developer-profile",
     icon: FileText
   },
   {
@@ -159,6 +171,36 @@ export default function DocsLandingPage() {
           );
         })}
       </div>
+
+      <section className="rounded-2xl border border-border bg-card/30 p-6">
+        <div className="grid gap-5 md:grid-cols-[0.85fr_1.15fr] md:items-center">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact support</p>
+            <h2 className="mt-3 text-lg font-semibold tracking-tight">The larger DotTalk++ artifacts have a temporary local room.</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              x64base.com stays the main website. The local artifact room handles manuals,
+              generated references, downloads, proof packets, and governance while the public
+              home is being settled.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Card
+              title="Open artifact room"
+              description="Local support site at localhost:3000."
+              href="http://localhost:3000/"
+            >
+              <Archive className="h-5 w-5 text-brand" aria-hidden="true" />
+            </Card>
+            <Card
+              title="Publication rules"
+              description="How implementation truth, manuals, and artifact support should connect."
+              href="/docs/dev/selfdoc-website-publication"
+            >
+              <ScrollText className="h-5 w-5 text-brand" aria-hidden="true" />
+            </Card>
+          </div>
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-border bg-card/30 p-6">
         <div className="max-w-3xl">

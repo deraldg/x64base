@@ -97,7 +97,7 @@ function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
         source_commit: sourceCommit,
         published_at_utc: new Date().toISOString(),
         publish_mode: "github-pages",
-        source_root: "D:/dev/x64base-site",
+        source_root: "website source tree",
         deploy_branch: "gh-pages",
         deploy_repo: repo,
       },
@@ -127,7 +127,7 @@ ensureDeployRepo();
 const sourceStatus = output("git", ["status", "--short"]);
 if (sourceStatus) {
   throw new Error(
-    "Refusing to publish from a dirty source worktree. Commit or stash source changes in D:/dev/x64base-site first.",
+    "Refusing to publish from a dirty source worktree. Commit or stash source changes in the website source tree first.",
   );
 }
 

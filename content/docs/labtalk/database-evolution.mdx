@@ -33,6 +33,45 @@ laboratory, not only as a history lecture.
 | ERP, imaging, auto-ID, and industrial data | Transactions connect documents, products, shipping, invoicing, and process data | Data becomes the connective tissue of the organization |
 | Cloud computing and AI | Distributed services, large datasets, model-assisted work, and governance | AI literacy depends on knowing what the data means and how it was produced |
 
+## Database Families Map
+
+The evolution path also needs a high-level map of modern database families. This
+is not a replacement for the case-study flow below. It is a taxonomy students
+can use while the campus builds evidence-backed cases over time.
+
+Current case coverage is intentionally narrower than the full database
+landscape. The public case-study path should only expand when we have reviewed
+source material, a dataset or simulation, a command/UI demonstration, and a
+proof artifact for that database family.
+
+| Family | Structural Idea | Common Strengths | Campus Status |
+| --- | --- | --- | --- |
+| Relational / RDBMS | Schemas, tables, rows, columns, keys, SQL, joins, constraints, and transactions. | Strong consistency, ACID transactions, mature tooling, ERP/finance/HR/inventory workflows. | Core teaching lane. x64base models table, tuple, order, relation, and business-record thinking without claiming to be a full SQL server. |
+| Document stores | Semi-structured JSON/BSON-style documents with flexible shape. | Nested records, dynamic schema, content/user/event data. | Context lane. Useful when comparing schema overlays and metadata, but not yet a case-study family. |
+| Key-value stores | Associative key to value storage, often optimized for simple lookup. | Speed, caching, session state, embedded lookup, backend indexing. | Context lane. LMDB-backed index work gives x64base a key-value-adjacent backend story, but the public case flow should not present a separate key-value case yet. |
+| Wide-column / column-family stores | Sparse distributed tables grouped by column family. | Horizontal scale and high write throughput. | Future context only. No current public case study. |
+| Graph databases | Nodes, edges, and properties optimized for relationship traversal. | Relationship queries, recommendation, fraud, dependency analysis. | Conceptual comparison lane. RelTalk and relation browsing can introduce relationship thinking without claiming graph-database implementation. |
+| Columnar analytical databases | Column-oriented storage for scan, compression, and aggregate workloads. | BI, warehousing, dashboards, large aggregations. | Future context only. x64base orders and filters can support analytical lessons, but not a columnar engine claim. |
+| Time-series databases | Timestamped, append-heavy data with retention and range-query patterns. | Metrics, monitoring, sensors, financial ticks. | Future context only. No current public case study. |
+| Search engines | Inverted indexes for full-text search and relevance ranking. | Search, faceting, log and document indexing. | Future context only. Index lessons may mention the family, but search-engine behavior is not a current case. |
+| Object databases | Direct persistence of objects and object graphs. | Object-oriented domain models and embedded/specialized apps. | Context lane. x64base is an object-oriented hybrid internally, but DBF-family records remain the public teaching anchor. |
+| Distributed SQL / NewSQL | Relational semantics with horizontal and multi-region distribution. | ACID plus cloud/global scale. | Future context only. No current public case study. |
+| Ledger / blockchain databases | Append-only or cryptographically verifiable record chains. | Auditability, tamper resistance, compliance trails. | Future context only. Do not add to case flow until a reviewed audit/provenance lesson exists. |
+| In-memory databases | Data held primarily in RAM for low-latency workloads. | Real-time analytics and high-speed transactional paths. | Context lane. Useful when discussing buffers and runtime state, but not a separate case family yet. |
+
+In x64base terms, the current work sits at the intersection of a few families:
+
+- **Relational**: schema, tuples, work areas, relations, orders, and business records.
+- **Embedded / file-based**: DBF-family heritage, local tables, memos, indexes, and inspectable files.
+- **Key-value-adjacent**: LMDB-backed index storage used as an implementation backend, not as the user-facing data model.
+- **Document-adjacent**: JSON and metadata overlays as schema and documentation aids, not as a replacement for DBF-family table truth.
+- **Analytical-adjacent**: filters, orders, browses, and reports can support analytical lessons, but x64base should not be described as a columnar OLAP database.
+
+The concise public description is: x64base is an educational, object-oriented
+hybrid in the xBase/DBF lineage with relational, embedded, metadata, and
+backend-indexing ideas. It should not be described as a full polyglot database
+engine until runtime evidence and case coverage justify that stronger claim.
+
 ## Deck Storyboard
 
 The current deck organizes the path as a classroom sequence:

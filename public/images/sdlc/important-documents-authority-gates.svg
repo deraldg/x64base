@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 620" role="img" aria-labelledby="title desc">
+  <title id="title">Manual website artifact authority gates</title>
+  <desc id="desc">A gate diagram showing source evidence feeding manuals, the artifact room, and x64base website summaries, with blocked copying from website prose back into manual truth.</desc>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7fbfc"/>
+      <stop offset="1" stop-color="#e8f2f0"/>
+    </linearGradient>
+    <filter id="shadow2" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#132033" flood-opacity=".12"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#587080"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#2aa895"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#d28c3d"/>
+    </marker>
+    <style>
+      .title{font:700 40px Inter,Segoe UI,Arial,sans-serif;fill:#132033}
+      .subtitle{font:400 19px Inter,Segoe UI,Arial,sans-serif;fill:#607180}
+      .label{font:700 22px Inter,Segoe UI,Arial,sans-serif;fill:#132033}
+      .body{font:400 16px Inter,Segoe UI,Arial,sans-serif;fill:#5e6f7e}
+      .small{font:700 13px "JetBrains Mono",Consolas,monospace;letter-spacing:.08em;fill:#607180}
+      .card{fill:#fff;stroke:#cad9df;stroke-width:1.5}
+      .dark{fill:#132033}
+      .ok{fill:#2aa895}
+      .warn{fill:#d28c3d}
+      .block{fill:#c95454}
+      .white{fill:#fff}
+      .line{fill:none;stroke:#587080;stroke-width:3;marker-end:url(#arrow)}
+      .greenLine{fill:none;stroke:#2aa895;stroke-width:4;marker-end:url(#arrowGreen)}
+      .orangeLine{fill:none;stroke:#d28c3d;stroke-width:4;marker-end:url(#arrowOrange)}
+      .blockedLine{fill:none;stroke:#c95454;stroke-width:4;stroke-dasharray:10 8}
+    </style>
+  </defs>
+
+  <rect width="1280" height="620" fill="url(#bg2)"/>
+  <text x="70" y="76" class="title">Manual, Artifact, and Website Authority Gates</text>
+  <text x="70" y="113" class="subtitle">The same evidence can feed several surfaces, but authority only moves through reviewed gates.</text>
+
+  <g filter="url(#shadow2)">
+    <rect class="card" x="70" y="212" width="238" height="170" rx="16"/>
+    <text x="104" y="254" class="label">Implementation</text>
+    <text x="104" y="292" class="body">source, runtime, HELP</text>
+    <text x="104" y="318" class="body">metadata, contracts</text>
+    <text x="104" y="344" class="body">tests, transcripts</text>
+    <text x="104" y="370" class="small">AUTHORITY</text>
+
+    <rect class="card" x="412" y="140" width="238" height="150" rx="16"/>
+    <text x="446" y="182" class="label">Manuals</text>
+    <text x="446" y="220" class="body">reviewed sections</text>
+    <text x="446" y="246" class="body">status labels</text>
+    <text x="446" y="272" class="small">REVIEWED</text>
+
+    <rect class="card" x="412" y="354" width="238" height="150" rx="16"/>
+    <text x="446" y="396" class="label">Artifact Room</text>
+    <text x="446" y="434" class="body">larger bundles</text>
+    <text x="446" y="460" class="body">proof packets, downloads</text>
+    <text x="446" y="486" class="small">SUPPORT</text>
+
+    <rect class="dark" x="782" y="238" width="238" height="170" rx="16"/>
+    <text x="816" y="280" class="white label">x64base.com</text>
+    <text x="816" y="318" class="white body">main public website</text>
+    <text x="816" y="344" class="white body">reviewed summaries</text>
+    <text x="816" y="370" class="white body">navigation and story</text>
+
+    <rect class="card" x="1092" y="238" width="118" height="170" rx="16"/>
+    <text x="1120" y="282" class="label">Reader</text>
+    <text x="1120" y="320" class="body">starts at</text>
+    <text x="1120" y="346" class="body">main site</text>
+  </g>
+
+  <path class="greenLine" d="M308 268 C345 240 368 218 405 208"/>
+  <text x="321" y="218" class="small" fill="#2aa895">SIMPLEX SOURCE FEED</text>
+
+  <path class="greenLine" d="M308 326 C348 360 372 400 405 428"/>
+  <text x="318" y="405" class="small" fill="#2aa895">GENERATED ARTIFACT FEED</text>
+
+  <path class="orangeLine" d="M650 212 C708 226 740 258 775 292"/>
+  <text x="668" y="250" class="small" fill="#d28c3d">REVIEWED PROMOTION</text>
+
+  <path class="orangeLine" d="M650 430 C710 410 742 382 775 350"/>
+  <text x="662" y="412" class="small" fill="#d28c3d">SELECTED LINKS</text>
+
+  <path class="line" d="M1020 323 L1084 323"/>
+
+  <path class="blockedLine" d="M792 398 C682 560 474 570 430 506"/>
+  <circle class="block" cx="604" cy="545" r="18"/>
+  <text x="598" y="553" class="white label">x</text>
+  <text x="634" y="551" class="small" fill="#c95454">BLOCKED: WEBSITE PROSE IS NOT MANUAL TRUTH</text>
+
+  <g>
+    <rect x="70" y="500" width="220" height="54" rx="16" fill="#e6f5f1" stroke="#b6ddd4"/>
+    <circle class="ok" cx="102" cy="527" r="10"/>
+    <text x="122" y="533" class="body">source-derived</text>
+    <rect x="316" y="500" width="220" height="54" rx="16" fill="#fff3df" stroke="#ead2a6"/>
+    <circle class="warn" cx="348" cy="527" r="10"/>
+    <text x="368" y="533" class="body">reviewed promotion</text>
+    <rect x="562" y="500" width="220" height="54" rx="16" fill="#f9e8e8" stroke="#ecc0c0"/>
+    <circle class="block" cx="594" cy="527" r="10"/>
+    <text x="614" y="533" class="body">blocked shortcut</text>
+  </g>
+</svg>

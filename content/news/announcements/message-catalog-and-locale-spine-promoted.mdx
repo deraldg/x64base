@@ -1,0 +1,16 @@
+---
+title: "Message catalog and locale spine promoted"
+description: "Runtime messaging work now has a clearer seeded path for language-aware shell output and future localization."
+date: "2026-07-09"
+---
+
+The runtime messaging lane has advanced beyond a loose collection of hard-coded console strings.
+
+Current work now centers on:
+
+- a runtime message catalog path
+- locale spine tables and fallback structure
+- command-surface integration through `SET LANGUAGE`, `SET LOCALE`, and related messaging controls
+- a repeatable seeded path rather than one-off output edits
+
+English remains the working seeded language, but the schema direction now supports future multilingual help, manual, and publication work without having to redesign the entire system later.

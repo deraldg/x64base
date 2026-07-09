@@ -1,0 +1,22 @@
+---
+title: "Open architecture doctrine published"
+description: "The manuals and site now present indexing, GUI, and extension seams as first-class x64base architecture."
+date: "2026-07-09"
+---
+
+The current publication pass makes the x64base architecture story explicit instead of leaving it implied.
+
+This update aligns the public narrative around several active seams:
+
+- `INX`, `CNX`, `CDX`, and `LMDB` as distinct indexing families with different roles
+- `SCX` and `SIX` as educational and lab-facing index experiments
+- CLI, TUI, ERSATZ, wx, and Python workbench lanes as consumers of runtime truth
+- command, function, trigger, polling, and documentation seams as intentional extension points
+
+The practical rule remains simple:
+
+1. the engine owns database truth
+2. front ends and browsers consume that truth
+3. HELP, metadata, SelfDoc, manuals, and the site describe and validate it
+
+This release is not a branding rewrite. It is an architecture clarification pass so students and contributors can see where experimentation is welcome and where runtime ownership must remain centralized.

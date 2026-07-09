@@ -69,6 +69,9 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
+const artifactRoomUrl = "http://localhost:3000/";
+const siteNoticeVersion = "Website preview v2026.07.09";
+
 const openArchitectureLanes = [
   {
     title: "Open Index API",
@@ -153,6 +156,14 @@ export default function HomePage() {
             workspaces, APIs, and DotTalk++ also documents itself through SelfDoc and a Master
             Documentation Organizer.
           </p>
+          <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
+            <p className="mt-2">
+              AI-assisted site generated from the DotTalk++ / x64base documentation
+              ecostructure. Active development may leave inconsistencies, stale
+              references, or claims needing source/runtime verification.
+            </p>
+          </div>
           <Link
             href="/docs/labtalk/runtime-evidence"
             className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
@@ -240,7 +251,7 @@ export default function HomePage() {
               const Icon = item.icon;
               return (
                 <Link
-                  key={item.href}
+                  key={`${item.title}-${item.href}`}
                   href={item.href}
                   className="rounded-lg border border-border bg-bg/35 p-4 transition hover:border-brand/60"
                 >
@@ -299,6 +310,42 @@ export default function HomePage() {
                 </Link>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-card/45 p-6">
+        <div className="grid gap-5 md:grid-cols-[0.8fr_1.2fr] md:items-center">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact room</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight">DotTalk++ support materials live beside the main site.</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              x64base.com remains the main website. The local DotTalk++ artifact room is the temporary
+              support surface for larger manuals, generated references, proof packets, downloads, and
+              governance notes while its public home is being settled.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <a
+              href={artifactRoomUrl}
+              className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
+            >
+              <ScrollText className="h-5 w-5 text-brand" aria-hidden="true" />
+              <div className="mt-3 text-sm font-semibold text-fg">Open local artifact room</div>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Manuals, DotScript, reference exports, generated docs, downloads, and governance.
+              </p>
+            </a>
+            <Link
+              href="/docs/dev/important-documents"
+              className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
+            >
+              <FileCode2 className="h-5 w-5 text-brand" aria-hidden="true" />
+              <div className="mt-3 text-sm font-semibold text-fg">Read the connection rules</div>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Shows how x64base, SelfDoc, manuals, and the artifact room stay in sync.
+              </p>
+            </Link>
           </div>
         </div>
       </section>

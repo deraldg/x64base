@@ -1,0 +1,16 @@
+---
+title: "Regression and canary scripts curated"
+description: "Regression entrypoints are being normalized around self-bootstrapping DotScript runs instead of ad hoc historical scripts."
+date: "2026-07-08"
+---
+
+The regression lane is being cleaned up so it can serve as a real canary system rather than a pile of historical scripts.
+
+Current working rules:
+
+- each regression script should set up its own environment
+- path-only and path-plus-open bootstraps stay explicit
+- useful historical scripts are repaired, not blindly retained
+- obsolete or misleading scripts are retired
+
+This work also supports future student and operator refresh paths, because a controlled regression lane is the easiest way to prove that documentation and runtime behavior still agree.
