@@ -27,6 +27,10 @@ website prose -> manual technical truth.
 Allowed exception:
 website-owned public artifact -> manual, only when the artifact is non-derivable elsewhere, separately maintained, provenance-labeled, and owned.
 
+WEB-LEVEL DIAGNOSTIC FEEDBACK
+
+If x64base.com exposes a source/runtime/math/capacity inconsistency from a generated or reviewed feed, treat it as a first-class diagnostic, not as a simple website copy bug. Promote it into a named vector such as max_areas, max_record_length, max_field_length, max_table_name, max_field_name, memo_object_id_width, index_key_length, header_mirror_width, or x64_extension_width; preserve source evidence, public claim, proof status, and fix status before updating manual or website text.
+
 If you have to create the same code three times, turn it into a function so you don't have to track the snippet in different files that will drift.
 If you don't have a file you need ask for it, don't guess.
 Honor all contracts like the "USAGE" contract.

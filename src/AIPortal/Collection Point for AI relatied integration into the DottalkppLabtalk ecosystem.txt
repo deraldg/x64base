@@ -128,6 +128,55 @@ D:/code/ccode source/runtime
   -> reviewed manual sections
   -> reviewed website summaries
 
+Web-Level Diagnostic Feedback
+-----------------------------
+
+The public website can expose diagnostics when generated or reviewed source
+facts reach the publication layer and reveal a contradiction. Treat these as
+first-class feedback artifacts, not as ordinary page copy defects.
+
+Observed high-meta examples:
+
+- The x64 capacity/math documentation exposed an _int16 boundary issue from the
+  feed. That became evidence that web-level documentation can surface source or
+  runtime inconsistencies and drive repairs back into the implementation lane.
+- On July 8-9, 2026, the same capacity/math lane surfaced an arbitrary record
+  length inconsistency. That inconsistency may remain visible temporarily as a
+  runtime proof artifact until the source, tests, manuals, and website claim are
+  reconciled.
+
+When a web-level diagnostic appears, promote it into a named capacity or system
+vector before fixing public prose. Candidate vectors include:
+
+- max_areas
+- max_record_length
+- max_field_length
+- max_fields
+- max_records
+- max_table_name
+- max_field_name
+- memo_object_id_width
+- index_key_length
+- header_mirror_width
+- x64_extension_width
+
+Each vector should preserve:
+
+- source/runtime evidence
+- current generated or public claim
+- observed inconsistency
+- proof or canary status
+- fix status
+- manual target
+- website target
+
+Highest-meta rule:
+
+web diagnostic -> named vector -> source/runtime proof -> manual/web update
+
+Do not patch the website around these findings unless the vector, evidence, and
+authority path are recorded.
+
 Website-only artifact flow:
 
 D:/dev/x64base-site public asset
