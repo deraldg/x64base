@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">SelfDoc feed pipeline from implementation evidence to manuals and website pages</title>
+  <desc id="desc">A source-derived documentation pipeline with implementation evidence, HELP and metadata, SelfDoc and MDO curation, manual generation, reviewed public website pages, and a blocked website-to-manual shortcut.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f7fbfa"/>
+      <stop offset="1" stop-color="#e7f0ed"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#14342b" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 Z" fill="#356b74"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 Z" fill="#a5483f"/>
+    </marker>
+    <style>
+      .bg { fill: url(#bg); }
+      .title { fill: #14231f; font: 800 40px Inter, Segoe UI, sans-serif; }
+      .subtitle { fill: #566863; font: 500 19px Inter, Segoe UI, sans-serif; }
+      .lane-label { fill: #6a7c77; font: 800 13px Inter, Segoe UI, sans-serif; letter-spacing: 2px; }
+      .card { fill: #ffffff; stroke: #cfdcd8; stroke-width: 2; filter: url(#shadow); }
+      .card-dark { fill: #12251f; stroke: #12251f; stroke-width: 2; filter: url(#shadow); }
+      .card-soft { fill: #eef7f2; stroke: #bad7ca; stroke-width: 2; }
+      .card-warn { fill: #fff6f2; stroke: #dbb0a5; stroke-width: 2; }
+      .head { fill: #14231f; font: 800 24px Inter, Segoe UI, sans-serif; }
+      .head-dark { fill: #ffffff; font: 800 24px Inter, Segoe UI, sans-serif; }
+      .body { fill: #53645f; font: 500 16px Inter, Segoe UI, sans-serif; }
+      .body-dark { fill: #dbe9e4; font: 500 16px Inter, Segoe UI, sans-serif; }
+      .mono { fill: #243630; font: 700 15px Cascadia Mono, Consolas, monospace; }
+      .mono-dark { fill: #bde5d7; font: 700 15px Cascadia Mono, Consolas, monospace; }
+      .arrow { fill: none; stroke: #356b74; stroke-width: 4; marker-end: url(#arrow); }
+      .arrow-soft { fill: none; stroke: #7aa7a6; stroke-width: 3; stroke-dasharray: 9 7; marker-end: url(#arrow); }
+      .blocked { fill: none; stroke: #a5483f; stroke-width: 4; stroke-dasharray: 10 8; marker-end: url(#arrow-red); }
+      .small { fill: #61716c; font: 600 14px Inter, Segoe UI, sans-serif; }
+      .badge { fill: #e7f1ee; stroke: #c7d8d2; stroke-width: 1.5; }
+      .badge-text { fill: #28463d; font: 800 13px Inter, Segoe UI, sans-serif; }
+      .x { stroke: #a5483f; stroke-width: 5; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1400" height="820" rx="0"/>
+  <text class="title" x="70" y="72">SelfDoc Feed Pipeline</text>
+  <text class="subtitle" x="70" y="108">Runtime proves. Source defines. HELP explains. Metadata organizes. SelfDoc preserves. MDO promotes.</text>
+
+  <text class="lane-label" x="70" y="168">UPSTREAM EVIDENCE</text>
+  <text class="lane-label" x="537" y="168">COLLECT AND NORMALIZE</text>
+  <text class="lane-label" x="950" y="168">REVIEWED PUBLICATION</text>
+
+  <rect class="card-dark" x="70" y="195" width="320" height="178" rx="14"/>
+  <text class="head-dark" x="98" y="240">Implementation Checkout</text>
+  <text class="body-dark" x="98" y="276">C++ source, runtime behavior,</text>
+  <text class="body-dark" x="98" y="300">commands, tables, indexes, memos,</text>
+  <text class="body-dark" x="98" y="324">mutators, scripts, tests, proofs.</text>
+  <rect class="badge" x="98" y="338" width="148" height="26" rx="13"/>
+  <text class="badge-text" x="113" y="356">AUTHORITY</text>
+
+  <rect class="card" x="70" y="430" width="320" height="178" rx="14"/>
+  <text class="head" x="98" y="475">HELP and Contracts</text>
+  <text class="body" x="98" y="511">HELP, CMDHELP, usage blocks,</text>
+  <text class="body" x="98" y="535">comments, metadata, canaries,</text>
+  <text class="body" x="98" y="559">mutation and risk labels.</text>
+  <text class="mono" x="98" y="590">@dottalk.usage / @contract</text>
+
+  <rect class="card" x="535" y="195" width="330" height="178" rx="14"/>
+  <text class="head" x="563" y="240">SelfDoc Collectors</text>
+  <text class="body" x="563" y="276">Report-only scans collect facts</text>
+  <text class="body" x="563" y="300">without mutating source truth.</text>
+  <text class="body" x="563" y="324">Uncertain findings stay labeled.</text>
+  <text class="mono" x="563" y="356">inventory / validate / dry-run</text>
+
+  <rect class="card" x="535" y="430" width="330" height="178" rx="14"/>
+  <text class="head" x="563" y="475">MDO Curation</text>
+  <text class="body" x="563" y="511">Organizes reports into lanes,</text>
+  <text class="body" x="563" y="535">manual sections, diagrams,</text>
+  <text class="body" x="563" y="559">evidence shelves, and crosswalks.</text>
+  <text class="mono" x="563" y="590">proof level + review state</text>
+
+  <rect class="card-soft" x="1000" y="195" width="320" height="178" rx="14"/>
+  <text class="head" x="1028" y="240">Manual Generation</text>
+  <text class="body" x="1028" y="276">Reviewed manual sections carry</text>
+  <text class="body" x="1028" y="300">source anchors, status labels,</text>
+  <text class="body" x="1028" y="324">and repeatable provenance.</text>
+  <text class="mono" x="1028" y="356">manualgen output</text>
+
+  <rect class="card-soft" x="1000" y="430" width="320" height="178" rx="14"/>
+  <text class="head" x="1028" y="475">x64base.com Pages</text>
+  <text class="body" x="1028" y="511">Public summaries, diagrams,</text>
+  <text class="body" x="1028" y="535">command/function/API pages,</text>
+  <text class="body" x="1028" y="559">and reviewed evidence links.</text>
+  <text class="mono" x="1028" y="590">publication derivative</text>
+
+  <path class="arrow" d="M 390 284 C 445 284, 475 284, 535 284"/>
+  <path class="arrow" d="M 390 519 C 445 519, 475 519, 535 519"/>
+  <path class="arrow" d="M 700 373 L 700 430"/>
+  <path class="arrow" d="M 865 284 C 925 284, 950 284, 1000 284"/>
+  <path class="arrow" d="M 865 519 C 925 519, 950 519, 1000 519"/>
+  <path class="arrow-soft" d="M 1160 373 L 1160 430"/>
+
+  <path class="blocked" d="M 1000 615 C 835 690, 650 690, 390 610"/>
+  <line class="x" x1="662" y1="662" x2="690" y2="690"/>
+  <line class="x" x1="690" y1="662" x2="662" y2="690"/>
+  <text class="small" x="705" y="683">blocked shortcut: website prose is not manual truth</text>
+
+  <rect class="card-warn" x="70" y="690" width="1250" height="72" rx="14"/>
+  <text class="head" x="98" y="733">Gate rule:</text>
+  <text class="body" x="230" y="733">Promote only reviewed, status-labeled derivatives. Return runtime claims to source, HELP, metadata, SelfDoc, MDO, and manualgen evidence.</text>
+</svg>
