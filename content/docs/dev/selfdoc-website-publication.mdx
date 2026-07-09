@@ -53,6 +53,34 @@ For the report-only source-to-website feed, see [SelfDoc Feed Pipeline](/docs/de
 
 When commands or functions are added to DotTalk++, they should flow through registration, HELP, metadata, comments, usage contracts, SelfDoc/CMDHELPCHK validation, manualgen, and then the public command/function/API pages.
 
+## DotTalk++ artifact/manual-room preview
+
+A local DotTalk++ artifact/manual-room preview now supports this publication
+model:
+
+- Local-only preview: [http://localhost:3001/](http://localhost:3001/)
+- Manuals: [http://localhost:3001/manuals/](http://localhost:3001/manuals/)
+- DotScript: [http://localhost:3001/dotscript/](http://localhost:3001/dotscript/)
+- Reference: [http://localhost:3001/reference/](http://localhost:3001/reference/)
+- Generated Docs: [http://localhost:3001/generated/](http://localhost:3001/generated/)
+- Downloads: [http://localhost:3001/downloads/](http://localhost:3001/downloads/)
+- Governance: [http://localhost:3001/governance/](http://localhost:3001/governance/)
+
+Its role is artifact support: larger manuals, generated reports, command and
+function reference exports, proof packets, accessibility text versions,
+downloadable bundles, and governance manifests. x64base.com remains the main
+public website and the engine/ecosystem home.
+
+The current preview is intentionally local. Before this is published, the
+localhost links must be replaced with the approved public target, the route and
+artifact manifest must be reviewed, and the public-content guard must pass.
+
+Authority rule: the artifact/manual-room site is downstream from implementation
+evidence, HELP, metadata, SelfDoc, MDO, and manualgen. It may feed selected
+summary links back to x64base.com, but it must not become a substitute source
+for command syntax, file formats, mutator behavior, indexing behavior, or
+runtime truth.
+
 ## Simplex and duplex gates
 
 The website, manuals, and implementation tree are connected, but they do not
@@ -79,8 +107,11 @@ Use these gates:
 | --- | --- | --- |
 | implementation checkout -> manual | Simplex default | Source, HELP, metadata, comments, contracts, canaries, and SelfDoc/manualgen reports feed the manual. |
 | implementation checkout -> website | Simplex default | Website pages should be derivatives of source/runtime/manual evidence, not hand-written replacements for it. |
+| implementation checkout -> DotTalk++ artifact/manual room | Simplex default | Manuals, references, generated docs, downloads, proof packets, and governance should derive from source/runtime/HELP/metadata/SelfDoc/MDO/manualgen evidence. |
 | manual -> website | Duplex, reviewed | Reviewed manual sections may promote into website summaries when proof labels and source anchors remain intact. |
+| DotTalk++ artifact/manual room -> website | Duplex, reviewed | The artifact room may contribute selected summary links, route maps, and downloadable artifact notices to x64base.com after review. |
 | website -> manual | Blocked by default | Do not let website prose become manual truth. Only ingest website-owned artifacts that are non-derivable elsewhere. |
+| website -> DotTalk++ artifact/manual room | Blocked by default | Do not let ecosystem prose become technical manual truth unless the artifact is website-owned and non-derivable elsewhere. |
 | website-owned artifact -> manual | Exception gate | Allowed for public-only artifacts such as curated screenshots, branding/UX copy, published contact details, or hosted downloads, when the artifact has an owner and provenance. |
 | manual -> implementation checkout | Review gate | Manual discoveries should become source contracts, TODOs, tests, HELP changes, or SelfDoc tasks before they become runtime claims. |
 | README replacement | Versioned artifact gate | Preserve the prior README version before replacing it; README history is part of project provenance. |
