@@ -46,7 +46,7 @@ Copy `out/` contents into your Apache `DocumentRoot` (or a vhost directory). Opt
 
 See `apache/DEPLOYMENT.md` for full details and reverse-proxy alternative.
 
-## Publish cycle: laptop -> C:\x64base -> GitHub Pages -> x64base.com
+## Publish cycle: D:\dev\x64base-site -> build/public artifact -> GitHub Pages -> x64base.com
 
 The live public site is served by GitHub Pages from:
 
@@ -77,6 +77,22 @@ To stage only the local runtime mirror after a build:
 npm run build
 npm run stage:cx64base
 ```
+
+Observed maintainer source/promotion split:
+
+- implementation/runtime truth: `D:\code\ccode`
+- clean staging mirror for source/runtime promotion: `C:\x64base`
+- website source truth: `D:\dev\x64base-site`
+
+Normal flows:
+
+```text
+D:\code\ccode -> C:\x64base -> GitHub repository
+D:\dev\x64base-site -> build/public artifact -> GitHub Pages -> x64base.com
+```
+
+Do not reverse the authority chain by copying website prose into manuals or
+source-side technical truth.
 
 After publishing, verify:
 

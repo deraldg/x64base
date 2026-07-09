@@ -5,12 +5,18 @@ description: "How to work from the local DotTalk++ / x64base truth."
 
 ## Source of truth
 
-Use `implementation checkout` as the authoritative local source tree for DotTalk++ / x64base work.
+Use the `implementation checkout` as the authoritative source tree for
+DotTalk++ / x64base work.
 
-Use `website source tree` as the website publication tree.
+Use the `website source tree` as the website publication tree.
 
-Use `local staging mirror` as the local runtime mirror for the
-built website before GitHub Pages publication.
+Use the `local staging mirror` as the clean source/runtime promotion mirror.
+
+Observed local subtrees:
+
+- `DotTalk++ runtime tree`
+- `Laboratory Campus / LabTalk tree`
+- `staged DotTalk++ runtime tree`
 
 The site content was updated from a scan of:
 
@@ -38,10 +44,12 @@ See [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication).
 - Runtime/engineering truth belongs first in `implementation checkout`.
 - Publication-ready manuals, contracts, and diagrams should be reviewed there before site promotion.
 - The website should mirror or curate those reviewed materials, not replace them.
-- Website publication should flow through `website source tree` to
-  `local staging mirror`, then to GitHub Pages and
-  `x64base.com`.
-- If a technical claim diverges between the two trees, fix `implementation checkout` first and then republish the site.
+- Website publication should flow through the `website source tree` to
+  built/public artifacts, then to GitHub Pages and `x64base.com`.
+- Source/runtime publication should flow through the `implementation checkout`
+  to the `local staging mirror`, then to GitHub.
+- If a technical claim diverges between the two trees, fix the implementation checkout
+  first and then republish the site.
 
 ## Education goal
 

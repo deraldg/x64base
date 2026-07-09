@@ -1,0 +1,42 @@
+{
+  "generated_on": "2026-07-08",
+  "purpose": "Curated current important-document bundle staged for x64base.com downloads.",
+  "authority_note": "These files are reviewed derivatives or direct source-side artifacts staged for download. Technical truth still originates in the implementation checkout, not in the website copy.",
+  "items": [
+    {
+      "file": "DotTalkPP_x64base_Manual_Preview_V1.docx",
+      "label": "DotTalk++ / x64base Manual Preview",
+      "source": "docs/manuals/dist/DotTalkPP_x64base_Manual_Preview_V1.docx"
+    },
+    {
+      "file": "developer_manual_publication_v1.md",
+      "label": "Current primary reader manual artifact",
+      "source": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md"
+    },
+    {
+      "file": "manual_family_runtime_surface_crosswalk_v1.md",
+      "label": "Manual family runtime surface crosswalk",
+      "source": "docs/manuals/developer/manualgen/reports/manual_family_runtime_surface_crosswalk_v1.md"
+    },
+    {
+      "file": "messaging_locale_runtime_surface_crosswalk_v1.md",
+      "label": "Messaging and locale runtime surface crosswalk",
+      "source": "docs/manuals/developer/manualgen/reports/messaging_locale_runtime_surface_crosswalk_v1.md"
+    },
+    {
+      "file": "messaging_locale_command_surface_crosswalk_v1.md",
+      "label": "Messaging and locale command surface crosswalk",
+      "source": "docs/manuals/developer/manualgen/reports/messaging_locale_command_surface_crosswalk_v1.md"
+    },
+    {
+      "file": "MDO-381E_MANUAL_FAMILY_RUNTIME_SURFACE_ALIGNMENT_MILESTONE_PACKET.md",
+      "label": "Manual family runtime surface alignment milestone packet",
+      "source": "docs/manuals/developer/manualgen/review_packets/MDO-381E_MANUAL_FAMILY_RUNTIME_SURFACE_ALIGNMENT_MILESTONE_PACKET.md"
+    },
+    {
+      "file": "MDO-382E_MESSAGING_AND_LOCALE_RUNTIME_SURFACE_ALIGNMENT_PACKET.md",
+      "label": "Messaging and locale runtime surface alignment packet",
+      "source": "docs/manuals/developer/manualgen/review_packets/MDO-382E_MESSAGING_AND_LOCALE_RUNTIME_SURFACE_ALIGNMENT_PACKET.md"
+    }
+  ]
+}
