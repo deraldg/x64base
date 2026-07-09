@@ -1,0 +1,11 @@
+{
+  "site": "x64base.com",
+  "package_version": "0.1.0",
+  "source_branch": "codex/lean-sites-publish",
+  "source_commit": "2d3130cbab8493baa16660aa1a870cc4d9e5c8d4",
+  "published_at_utc": "2026-07-09T04:41:39.681Z",
+  "publish_mode": "github-pages",
+  "source_root": "D:/dev/x64base-site",
+  "deploy_branch": "gh-pages",
+  "deploy_repo": "deraldg/x64base"
+}
