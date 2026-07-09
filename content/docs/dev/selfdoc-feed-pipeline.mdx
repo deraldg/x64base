@@ -1,22 +1,52 @@
 ---
 title: "SelfDoc Feed Pipeline"
-description: "Repeatable path from source, HELP, metadata, contracts, and manualgen into the website."
+description: "How source, HELP, metadata, SelfDoc, MDO, manualgen, diagrams, and the website stay aligned."
 ---
 
-The website should be fed from the documentation system, not hand-maintained from memory.
+The SelfDoc feed is the repeatable path from implementation evidence to manuals,
+diagrams, and public website pages. It exists so x64base and DotTalk++ can
+describe themselves without turning memory, chat notes, or website prose into
+technical truth.
 
-[![SelfDoc core doctrine and Stage A through Stage F promotion ladder](/images/sdlc/selfdoc-core-doctrine-stage-ladder.svg)](/docs/labtalk/cases-storyboard)
+[![SelfDoc feed pipeline from implementation evidence through HELP, metadata, SelfDoc, MDO, manualgen, and website publication](/images/sdlc/selfdoc-feed-pipeline-map.svg)](/docs/labtalk/cases-storyboard)
 
-The doctrine is intentionally simple: runtime proves, source defines, HELP
-explains, metadata organizes, and SelfDoc preserves. Public manuals and diagrams
-should only be promoted after that chain has been reviewed.
+The doctrine is intentionally strict:
 
-## Source of truth
+- runtime proves;
+- source defines;
+- HELP explains;
+- metadata organizes;
+- SelfDoc preserves;
+- MDO curates;
+- manualgen packages;
+- the website publishes reviewed derivatives.
+
+## What The Feed Does
+
+The feed gives every public technical claim a path back to evidence. A command
+page should not merely say that a command exists; it should be traceable to
+registration, HELP, usage contracts, source comments, command-reference harvests,
+runtime proof, or a reviewed manual section. A diagram should not be decorative;
+it should be attached to the same evidence spine as the text it explains.
+
+This matters most for the surfaces that can drift quickly:
+
+| Surface | Why It Needs The Feed |
+| --- | --- |
+| Commands and functions | Names, aliases, arguments, mutation behavior, and proof status change as the shell grows. |
+| SET family and settings | Runtime defaults, scoped behavior, and command families need source-derived readback. |
+| Data mutators | `REPLACE`, `CALC`, `CALCWRITE`, `MULTIREP`, import/export, commit, rollback, and table-buffer commands need explicit dirty/stale/risk labels. |
+| File formats | DBF, VFP, MS-DOS, DBF_64, memo, and index claims must trace back to headers, readers, writers, probes, or specs. |
+| Workspaces and areas | Workspace wrappers, dbarea behavior, relations, buffers, and cursor control are runtime concepts, not brochure claims. |
+| Diagrams and screenshots | Visuals are curated artifacts; they need owners, attachment rows, and review state. |
+
+## Authority Order
 
 The authority order is:
 
 1. Runtime/source behavior in `implementation checkout`.
-2. HELP, metadata, command registration, comments, `@dottalk.usage`, `@dottalk.contract`, contract scans, and canary evidence.
+2. HELP, metadata, command registration, comments, `@dottalk.usage`,
+   `@dottalk.contract`, contract scans, and canary evidence.
 3. SelfDoc reports and manualgen manifests.
 4. Reviewed manual sections.
 5. Website pages in `website source tree`.
@@ -34,9 +64,28 @@ source change
   -> website command/function/API pages
 ```
 
-## Current report-only feed
+The website is allowed to organize, summarize, and teach. It is not allowed to
+become the upstream authority for runtime behavior.
 
-The current repeatable feed uses:
+## Feed Lanes
+
+The current feed is not one monolithic generator. It is a set of lanes that
+should converge before public promotion.
+
+| Lane | Inputs | Outputs | Promotion Gate |
+| --- | --- | --- | --- |
+| Source/runtime lane | C++ source, headers, build files, scripts, runtime transcripts, canaries | implementation facts, proof notes, smoke outcomes | Must be source- or runtime-evidenced. |
+| HELP lane | HELP, CMDHELP, CMDHELPCHK, command metadata, help tables | command descriptions, argument notes, missing-topic reports | Must preserve command identity and status. |
+| Contract lane | `@dottalk.usage`, `@dottalk.contract`, comments, mutation labels | usage contracts, risk flags, public command safety notes | Mutating commands must say what they mutate. |
+| SelfDoc lane | scanners, inventories, crosswalk builders, report-only probes | CSV/MD reports, feature crosswalks, candidate findings | Uncertain findings stay labeled. |
+| MDO lane | organized report shelves, section maps, diagram ledgers | manual sections, publication decisions, attachment maps | MDO curates; it does not erase source uncertainty. |
+| Manualgen lane | inventories, validate runs, dry-run builds, accepted sections | reviewed manuals and downloadable/manual-ready artifacts | Validate before publication; note environment limits. |
+| Website lane | reviewed manual sections, evidence summaries, public media | x64base.com pages and diagrams | Publication derivative only. |
+
+## Current Report-Only Feed
+
+The current repeatable feed uses report-only commands from the implementation
+checkout:
 
 ```powershell
 cd implementation checkout
@@ -57,18 +106,44 @@ Generated outputs include:
 - `docs/manuals/developer/manualgen/reports/shared-message-to-surface-map-v1.csv`
 - `docs/manuals/developer/manualgen/reports/diagram-publication-attachment-matrix-v1.csv`
 
-## Promotion rules
+These outputs are evidence shelves. They are not automatically public copy.
+
+## Status Labels
+
+Public pages should preserve status instead of smoothing it over.
+
+| Label | Meaning |
+| --- | --- |
+| runtime-evidenced | Observed in a runtime transcript, smoke test, canary, or generated proof output. |
+| source-evidenced | Found in source, headers, command registration, parser code, or build files. |
+| help-catalog-evidenced | Present in HELP/CMDHELP/help-data/catalog surfaces. |
+| manual-reviewed | Accepted into a reviewed manual section or manualgen lane. |
+| planned | A real lane or design goal, but not implemented. |
+| canary | Exists as a probe, experiment, or limited proof path. |
+| review-needed | Scanner output or memory note found something that still needs human or runtime confirmation. |
+
+## Promotion Rules
 
 - Do not auto-promote uncertain scanner output into public copy.
-- Preserve status labels: runtime-evidenced, source-evidenced, help-catalog-evidenced, planned, canary, review-needed.
-- Do not claim a lane is complete when the evidence says active beta, canary, or review-needed.
-- Keep generated reports local until reviewed, then summarize them on the website.
-- Command and function pages should cite the extraction snapshot and should be regenerated when HELP/CMDHELP/usage contracts change.
-- Commands that launch external apps, perform network requests, write files, write HELP DATA, or write DBFs must carry explicit `mutates:` and `risk:` fields before being promoted as stable docs.
-- Treat source/manual-to-website as the normal simplex flow. Treat website-to-manual as blocked unless the web artifact is separately maintained and not derivable from the implementation checkout.
-- Treat `README.*` files as sacred orientation artifacts. If a README must be replaced, preserve the previous version as a versioned artifact before promotion.
+- Preserve status labels: runtime-evidenced, source-evidenced,
+  help-catalog-evidenced, manual-reviewed, planned, canary, review-needed.
+- Do not claim a lane is complete when the evidence says active beta, canary, or
+  review-needed.
+- Keep generated reports local until reviewed, then summarize them on the
+  website.
+- Command and function pages should cite the extraction snapshot and should be
+  regenerated when HELP/CMDHELP/usage contracts change.
+- Commands that launch external apps, perform network requests, write files,
+  write HELP DATA, or write DBFs must carry explicit `mutates:` and `risk:`
+  fields before being promoted as stable docs.
+- Treat source/manual-to-website as the normal simplex flow. Treat
+  website-to-manual as blocked unless the web artifact is separately maintained
+  and not derivable from the implementation checkout.
+- Treat `README.*` files as sacred orientation artifacts. If a README must be
+  replaced, preserve the previous version as a versioned artifact before
+  promotion.
 
-## Procedural curation
+## Procedural Curation
 
 [![Parallel lanes for visual curation, narrative curation, provenance, metadata, HELP, and source proof](/images/sdlc/parallel-lanes-visual-curation.svg)](/docs/labtalk/cases-storyboard)
 
@@ -84,9 +159,12 @@ scan source headers
 -> update website derivatives
 ```
 
-`CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `BBOX`, and contract tools all belong in this loop. Their documentation should state mutation boundaries explicitly so a report-only inspection command does not get mistaken for a promotion command.
+`CMDHELP`, `CMDHELPCHK`, `MAINT`, `DDICT`, `MANUAL`, `BBOX`, and contract tools
+all belong in this loop. Their documentation should state mutation boundaries
+explicitly so a report-only inspection command does not get mistaken for a
+promotion command.
 
-## Manual and website intake gate
+## Manual And Website Intake Gate
 
 Manual generation should not scrape public website prose as a shortcut for
 technical truth. The website is a publication derivative; the manual should
@@ -105,7 +183,7 @@ artifact. Runtime claims, command syntax, file-format claims, index behavior,
 data-mutator behavior, and engine feature claims must go back to the
 implementation checkout and generated evidence lanes.
 
-## Diagram lane
+## Diagram Lane
 
 Diagrams are not decoration. They are attached explanatory views over the same
 evidence spine.
@@ -127,6 +205,9 @@ The current attachment ledger is:
 That ledger crosswalks canonical manual SVGs, LabTalk diagram sources, and
 promoted site image assets so the publication surface stays traceable.
 
-## Current limitation
+## Current Limitation
 
-Manualgen currently validates the manual structure but requires Python `>= 3.12`. The latest run used Python `3.11.0`, so validation failed on that environment check only. Boundary failures were `0`, and the dry-run manual artifact was still generated for review.
+Manualgen currently validates the manual structure but requires Python `>= 3.12`.
+The latest run used Python `3.11.0`, so validation failed on that environment
+check only. Boundary failures were `0`, and the dry-run manual artifact was
+still generated for review.

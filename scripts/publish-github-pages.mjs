@@ -8,6 +8,7 @@ const deployDir = path.join(root, ".gh-pages-deploy");
 const domain = "x64base.com";
 const repo = "deraldg/x64base";
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const packageJsonPath = path.join(root, "package.json");
 
 function run(command, args, options = {}) {
   console.log(`$ ${[command, ...args].join(" ")}`);
@@ -24,6 +25,11 @@ function output(command, args, options = {}) {
     shell: process.platform === "win32" && command.endsWith(".cmd"),
     encoding: "utf8",
   }).trim();
+}
+
+function readPackageVersion() {
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+  return packageJson.version ?? "0.0.0";
 }
 
 function assertInside(child, parent) {
@@ -78,6 +84,30 @@ function ensureMarkers() {
   fs.writeFileSync(path.join(deployDir, ".nojekyll"), "\n", "utf8");
 }
 
+function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
+  const artifactDir = path.join(outDir, "artifacts");
+  fs.mkdirSync(artifactDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(artifactDir, "site-release.json"),
+    `${JSON.stringify(
+      {
+        site: "x64base.com",
+        package_version: packageVersion,
+        source_branch: sourceBranch,
+        source_commit: sourceCommit,
+        published_at_utc: new Date().toISOString(),
+        publish_mode: "github-pages",
+        source_root: "D:/dev/x64base-site",
+        deploy_branch: "gh-pages",
+        deploy_repo: repo,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+}
+
 function commitAndPush() {
   run("git", ["add", "-A"], { cwd: deployDir });
   const status = output("git", ["status", "--short"], { cwd: deployDir });
@@ -96,8 +126,14 @@ ensureDeployRepo();
 
 const sourceStatus = output("git", ["status", "--short"]);
 if (sourceStatus) {
-  console.warn("Source worktree has uncommitted changes; publishing current working tree.");
+  throw new Error(
+    "Refusing to publish from a dirty source worktree. Commit or stash source changes in D:/dev/x64base-site first.",
+  );
 }
+
+const sourceCommit = output("git", ["rev-parse", "HEAD"]);
+const sourceBranch = output("git", ["branch", "--show-current"]);
+const packageVersion = readPackageVersion();
 
 run("git", ["fetch", "origin", "gh-pages"], { cwd: deployDir });
 run("git", ["pull", "--rebase", "origin", "gh-pages"], { cwd: deployDir });
@@ -106,6 +142,8 @@ run(npmCommand, ["run", "build"]);
 if (!fs.existsSync(outDir)) {
   throw new Error("Expected ./out after build.");
 }
+
+writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion });
 
 run(npmCommand, ["run", "stage:cx64base"]);
 
@@ -117,4 +155,7 @@ const commit = commitAndPush();
 
 console.log(`Published ${commit} to ${repo}:gh-pages`);
 console.log(`Live URL: https://${domain}/`);
+console.log(`Source commit: ${sourceCommit}`);
+console.log(`Source branch: ${sourceBranch}`);
+console.log("Release metadata: /artifacts/site-release.json");
 console.log("Verify Pages settings with: gh api repos/deraldg/x64base/pages");

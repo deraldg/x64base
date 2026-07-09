@@ -145,11 +145,64 @@ Current tooling includes `tools/comments/upsert_source_comment_contract.py` for 
 - `DDL FETCH`, `WEB FETCH`, `IMAGE`, `EDIT`, shell, and SFTP-style commands must document external app, network, and filesystem boundaries separately from table mutation.
 - Manualgen publication replacement requires review; dry-run artifacts are not automatic publications.
 
+## Accessibility and Inclusive Design Standards
+
+x64base is a scholastic system, so accessibility and inclusive design are
+ground-level engineering requirements. Public pages, generated manuals,
+diagrams, downloads, and UI surfaces should target WCAG 2.2 AA-style behavior
+unless a platform constraint is explicitly documented.
+
+Use these requirements for website work, generated documentation, GUI/TUI work,
+manuals, and published artifacts:
+
+- Non-text content needs a text alternative. Image links need real link text,
+  `alt` text, or an `aria-label`; complex diagrams need captions and a nearby
+  text summary.
+- Color must never be the only signal. Status should include text labels such
+  as `runtime-evidenced`, `planned`, `canary`, `review-needed`, or `public-ready`.
+- Normal prose must remain readable with browser zoom and operating-system
+  scaling. Avoid fixed pixel-only layouts that force horizontal scrolling for
+  ordinary reading.
+- Keyboard navigation is required for links, menus, tabs, cards, downloads,
+  forms, and command surfaces. Visible focus state is required.
+- Pages should use semantic landmarks and heading order: one logical `h1`,
+  meaningful `h2`/`h3` hierarchy, `header`, `nav`, `main`, and `footer` where
+  appropriate.
+- Icon-only controls need accessible names. Decorative icons should be hidden
+  from assistive technology.
+- Tables need real headers. Command catalogs, function catalogs, feature
+  matrices, and comparison tables should remain understandable to screen
+  readers.
+- Code blocks should not be the only explanation. Provide a short prose
+  summary for command examples, DotScript examples, and generated snippets.
+- Motion should respect `prefers-reduced-motion`; avoid flashing or decorative
+  animation that can interfere with reading.
+- Downloadable PDFs, DOCX files, large reports, and decks should have an HTML
+  or Markdown summary when possible, plus type, date, source/provenance, proof
+  status, and accessibility status.
+
+Accessibility status is part of provenance. Promoted artifacts should carry
+labels such as:
+
+```text
+accessibility:
+  alt_text: ready|needed|not-applicable
+  text_summary: ready|needed|not-applicable
+  keyboard_path: checked|needed|not-applicable
+  contrast_review: checked|needed
+  screen_reader_review: checked|needed
+```
+
+Generated reports may start as `needed`, but reviewed website/manual promotion
+should not hide that status.
+
 ## Docs
 
 - Short paragraphs.
 - Include command examples.
 - Define terms once and reuse consistently.
 - Preserve proof labels.
+- Preserve accessibility labels for promoted diagrams, screenshots, manuals,
+  downloads, and generated reports.
 - Link website pages back to command catalogs, feature crosswalks, SelfDoc reports, and manualgen artifacts.
 - Treat the website as a reviewed derivative of source, contracts, HELP, metadata, comments evidence, CMDHELPCHK, and manualgen.

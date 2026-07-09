@@ -65,11 +65,19 @@ npm run publish:github-pages
 That command:
 
 1. pulls/rebases `.gh-pages-deploy` from `origin/gh-pages`,
-2. runs the static Next export,
-3. stages the built site to `C:\x64base\dottalk-webui\public-site`,
-4. refreshes `.gh-pages-deploy` from `out/`,
-5. writes `CNAME` and `.nojekyll`,
-6. commits and pushes `gh-pages`.
+2. refuses to publish if `D:\dev\x64base-site` has uncommitted source changes,
+3. runs the static Next export,
+4. writes `out/artifacts/site-release.json` with source commit provenance,
+5. stages the built site to `C:\x64base\dottalk-webui\public-site`,
+6. refreshes `.gh-pages-deploy` from `out/`,
+7. writes `CNAME` and `.nojekyll`,
+8. commits and pushes `gh-pages`.
+
+Publish policy:
+
+- source edits must be committed before publish,
+- `gh-pages` is the deployed artifact history,
+- `out/artifacts/site-release.json` records the source branch and commit used for a publish.
 
 To stage only the local runtime mirror after a build:
 
