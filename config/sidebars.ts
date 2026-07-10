@@ -71,7 +71,8 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Runtime Evidence Gallery", href: "/docs/labtalk/runtime-evidence" },
       { label: "SelfDoc Lane Diagrams", href: "/docs/labtalk/selfdoc-lane" },
       { label: "Non-Profit Guide", href: "/docs/labtalk/non-profit-guide" },
-      { label: "Examples", href: "/docs/labtalk/examples" }
+      { label: "Examples", href: "/docs/labtalk/examples" },
+      { label: "Academic Positioning", href: "/docs/labtalk/academic-positioning" }
     ]
   },
   {
@@ -91,7 +92,8 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Onboarding Guide", href: "/docs/dev/onboarding-guide" },
       { label: "Naming Conventions", href: "/docs/dev/naming-conventions" },
       { label: "Coding Standards", href: "/docs/dev/coding-standards" },
-      { label: "Contribution Guide", href: "/docs/dev/contribution-guide" }
+      { label: "Contribution Guide", href: "/docs/dev/contribution-guide" },
+      { label: "Experimental Work", href: "/docs/dev/experimental" }
     ]
   }
 ];

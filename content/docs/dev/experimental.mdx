@@ -1,0 +1,118 @@
+---
+title: "Experimental and Research Lanes"
+description: "Low-priority inventory of DotTalk++ developer experiments, prototypes, research notes, and graduation gates."
+---
+
+This page keeps experimental DotTalk++ work visible without presenting it as a
+finished product surface. It is intentionally a low-priority developer page.
+
+The inventory distinguishes four states:
+
+| State | Meaning |
+| --- | --- |
+| Developer command | Registered source exists, but the surface remains intended for development or controlled use. |
+| Prototype | Code or a benchmark artifact exists, but integration and proof are incomplete. |
+| Partial precursor | A narrower implemented mechanism supports part of a larger research direction. |
+| Research note | The idea is recorded, but no general implementation has been proven. |
+
+## Current Experimental Inventory
+
+| Lane | Current evidence | Honest status | Next gate |
+| --- | --- | --- | --- |
+| Hierarchical data service | `src/dewey/cmd_hier.cpp`, `hierarchy_service.cpp`, shell registration, and usage contract | **Developer command.** `HIER` can create, add, insert, move, delete, rebuild, validate, and list hierarchy nodes in the current `DbArea`. Several operations mutate table data. | Disposable-data runtime canary, schema contract, failure-path tests, and reviewed HELP output. |
+| Dewey-style hierarchical indexing | `dewey_index.hpp`, `dewey_benchmark.hpp`, `tests/dewey_benchmark.cpp`, and a regression script | **Prototype assets.** Interfaces and benchmark material exist, but this page does not claim a validated production index implementation or current benchmark result. | Reconcile prototype interfaces, build the benchmark independently, record datasets and results, then decide whether it belongs in the engine or teaching layer. |
+| Dewey Decimal education surface | `src/edu/edu_dewey_decimal.cpp` | **Empty placeholder by contract.** It exports no shell command and is intentionally behavior-neutral. | Define the educational objective before adding a command, lesson, or runtime behavior. |
+| Rushmore-inspired search optimization | Simple active-CDX fast path in `src/cli/cmd_locate.cpp`; FoxPro search comparison notes under `tests` | **Partial precursor plus research notes.** Simple predicates may use the active CDX tag. No general Rushmore-compatible bitmap or multi-predicate optimizer is claimed. | Define optimizer scope, measurement method, fallback semantics, diagnostics, and indexed/non-indexed comparison canaries. |
+| Application UI DSL | [Application UI DSL Lane](/docs/dev/application-ui-dsl-lane) | **Planned language lane.** Menu, window, dialog, control, and event syntax is design material, not an implemented DotScript GUI system. | Parser contract, backend-neutral object model, one TUI proof, one GUI proof, and explicit unsupported syntax. |
+| Tuple stream deltas | `TUPLEDELTA` command contract and source | **Experimental skeleton.** The catalog states that the loader remains incomplete until tuple-stream storage is finalized. | Storage contract, deterministic fixtures, insert/delete/update proof, and failure tests. |
+| Automatic DBF creation from CSV | `AUTODBF` command contract and source | **Experimental command.** Useful schema/import behavior exists, but generated field inference and mutation safety require careful review. | Disposable-data canary matrix covering headers, generated names, types, malformed rows, and rollback expectations. |
+| Maintenance and manual catalog surfaces | `MAINT` and `MANUAL` command contracts and source | **Experimental documentation tools.** They expose internal maintenance and manual-generation catalogs. | Stable catalog schema, read-only guarantees where intended, and SelfDoc/manual proof gates. |
+| Educational black-box lab | `BBOX` command contract and source | **Experimental education command.** It teaches the data-to-processing-to-information model. | Reviewed learner objective, expected output, instructor notes, and lesson assessment. |
+
+## Hierarchical Work
+
+The `HIER` command is more than an idea, but less than a supported general
+hierarchical database product. Its source contract identifies it as a
+`dev-hierarchy` command and warns that it can mutate hierarchy fields in the
+current table.
+
+Current command forms include:
+
+```text
+HIER CREATE ROOT <node_id>
+HIER ADD CHILD <parent_id> <node_id>
+HIER INSERT BETWEEN <left_id> <right_id> <node_id>
+HIER MOVE <node_id> TO <new_parent_id>
+HIER DELETE <node_id>
+HIER DELETE SUBTREE <node_id>
+HIER REBUILD
+HIER VALIDATE
+HIER CHILDREN <node_id>
+HIER SUBTREE <node_id>
+```
+
+This deserves controlled experiments around path rebuilding, subtree movement,
+orphan detection, cycles, duplicate node identifiers, ordering, and rollback.
+Until those experiments are repeatable, the website should call it a developer
+command rather than a supported database model.
+
+## Dewey Work
+
+The repository currently contains two related but distinct Dewey directions:
+
+1. **Dewey-style coordinates for hierarchy indexing.** Prototype interfaces and
+   benchmark material explore subtree, direct-child, insert-between, and
+   path-to-root operations.
+2. **Dewey Decimal as educational material.** The current education translation
+   unit is explicitly an empty placeholder. It should not appear in the command
+   catalog as an available learner command.
+
+The naming overlap should not be allowed to blur the distinction between a
+hierarchical coordinate scheme and a library-classification lesson. Each needs
+its own contract, examples, and proof state.
+
+## Rushmore Work
+
+The current source has an important precursor: `LOCATE` can use a simple CDX
+fast path when a simple predicate matches the active tag. Complex predicates
+fall back to selector and expression evaluation.
+
+That is evidence of index-assisted search, but it is not enough to claim a
+general Rushmore implementation. A broader Rushmore-inspired lane would need to
+make these decisions explicit:
+
+- which predicate shapes are optimizable;
+- whether multiple indexed predicates can be combined;
+- whether candidate-record sets or bitmaps are used;
+- how deleted, filtered, scoped, and ordered views interact;
+- when the engine falls back to sequential evaluation;
+- how the chosen plan is explained to the learner or developer;
+- how correctness and performance are measured separately.
+
+The initial research artifact should compare the existing simple-CDX path with
+the fallback scan on fixed datasets. Naming can come later; behavior and proof
+should come first.
+
+## Graduation Rules
+
+An experiment should not move into supported documentation because a source
+file exists. Promotion requires an appropriate subset of these gates:
+
+1. **Ownership** - identify the engine, DotTalk++, workbench, SelfDoc, or campus
+   owner.
+2. **Contract** - document usage, effects, mutation, risk, prerequisites, and
+   unsupported cases.
+3. **Build** - prove the intended Windows and POSIX build surfaces.
+4. **Runtime** - run repeatable canaries against controlled data.
+5. **Safety** - use disposable data for mutating experiments and prove failure
+   behavior.
+6. **Help** - align runtime usage, DOTREF, CMDHELP, metadata, and command catalog.
+7. **Measurement** - record dataset, machine context, command, result, and
+   limitations for performance claims.
+8. **Review** - promote only after source, runtime, and documentation evidence
+   agree.
+
+See [Current Work Lanes](/docs/dev/current-lanes),
+[Coding Standards](/docs/dev/coding-standards), and the
+[Website Documentation Matrix](/docs/dev/website-documentation-matrix) for the
+larger status and publication system.
