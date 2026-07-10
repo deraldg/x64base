@@ -45,9 +45,9 @@ const quickLinks = [
     icon: FileText
   },
   {
-    title: "Local Artifact Room",
-    description: "Open the temporary DotTalk++ artifact/manual support site.",
-    href: "http://localhost:3000/",
+    title: "DotTalk++ Artifact Room",
+    description: "Open the DotTalk++ artifact/manual support site.",
+    href: "http://derald.com/",
     icon: Archive
   }
 ];
@@ -176,18 +176,18 @@ export default function DocsLandingPage() {
         <div className="grid gap-5 md:grid-cols-[0.85fr_1.15fr] md:items-center">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact support</p>
-            <h2 className="mt-3 text-lg font-semibold tracking-tight">The larger DotTalk++ artifacts have a temporary local room.</h2>
+            <h2 className="mt-3 text-lg font-semibold tracking-tight">The larger DotTalk++ artifacts have a support room.</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com stays the main website. The local artifact room handles manuals,
-              generated references, downloads, proof packets, and governance while the public
-              home is being settled.
+              x64base.com stays the main website. The artifact room at derald.com handles manuals,
+              generated references, downloads, proof packets, and governance. Links use HTTP until
+              the SSL certificate is ready.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Card
               title="Open artifact room"
-              description="Local support site at localhost:3000."
-              href="http://localhost:3000/"
+              description="DotTalk++ artifact and manual support site."
+              href="http://derald.com/"
             >
               <Archive className="h-5 w-5 text-brand" aria-hidden="true" />
             </Card>

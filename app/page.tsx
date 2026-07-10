@@ -69,7 +69,7 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
-const artifactRoomUrl = "http://localhost:3000/";
+const artifactRoomUrl = "http://derald.com/";
 const siteNoticeVersion = "Website preview v2026.07.09";
 
 const openArchitectureLanes = [
@@ -320,9 +320,9 @@ export default function HomePage() {
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact room</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight">DotTalk++ support materials live beside the main site.</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com remains the main website. The local DotTalk++ artifact room is the temporary
+              x64base.com remains the main website. The DotTalk++ artifact room at derald.com is the
               support surface for larger manuals, generated references, proof packets, downloads, and
-              governance notes while its public home is being settled.
+              governance notes. It is linked with plain HTTP while its SSL certificate finishes settling.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -331,7 +331,7 @@ export default function HomePage() {
               className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
             >
               <ScrollText className="h-5 w-5 text-brand" aria-hidden="true" />
-              <div className="mt-3 text-sm font-semibold text-fg">Open local artifact room</div>
+              <div className="mt-3 text-sm font-semibold text-fg">Open artifact room</div>
               <p className="mt-1 text-xs leading-5 text-muted">
                 Manuals, DotScript, reference exports, generated docs, downloads, and governance.
               </p>

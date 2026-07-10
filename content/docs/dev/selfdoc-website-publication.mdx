@@ -53,27 +53,27 @@ For the report-only source-to-website feed, see [SelfDoc Feed Pipeline](/docs/de
 
 When commands or functions are added to DotTalk++, they should flow through registration, HELP, metadata, comments, usage contracts, SelfDoc/CMDHELPCHK validation, manualgen, and then the public command/function/API pages.
 
-## DotTalk++ artifact/manual-room preview
+## DotTalk++ artifact/manual room
 
-A local DotTalk++ artifact/manual-room preview now supports this publication
-model:
+The DotTalk++ artifact/manual room now supports this publication model from its
+public HTTP home while SSL is still settling:
 
-- Local-only preview: [http://localhost:3000/](http://localhost:3000/)
-- Manuals: [http://localhost:3000/manuals/](http://localhost:3000/manuals/)
-- DotScript: [http://localhost:3000/dotscript/](http://localhost:3000/dotscript/)
-- Reference: [http://localhost:3000/reference/](http://localhost:3000/reference/)
-- Generated Docs: [http://localhost:3000/generated/](http://localhost:3000/generated/)
-- Downloads: [http://localhost:3000/downloads/](http://localhost:3000/downloads/)
-- Governance: [http://localhost:3000/governance/](http://localhost:3000/governance/)
+- Artifact room: [http://derald.com/](http://derald.com/)
+- Manuals: [http://derald.com/manuals/](http://derald.com/manuals/)
+- DotScript: [http://derald.com/dotscript/](http://derald.com/dotscript/)
+- Reference: [http://derald.com/reference/](http://derald.com/reference/)
+- Generated Docs: [http://derald.com/generated/](http://derald.com/generated/)
+- Downloads: [http://derald.com/downloads/](http://derald.com/downloads/)
+- Governance: [http://derald.com/governance/](http://derald.com/governance/)
 
 Its role is artifact support: larger manuals, generated reports, command and
 function reference exports, proof packets, accessibility text versions,
 downloadable bundles, and governance manifests. x64base.com remains the main
 public website and the engine/ecosystem home.
 
-The current preview is intentionally local. Before this is published, the
-localhost links must be replaced with the approved public target, the route and
-artifact manifest must be reviewed, and the public-content guard must pass.
+The route and artifact manifest must remain reviewed, and the public-content
+guard must pass before publication. Move these links to HTTPS only after the
+certificate is verified.
 
 Authority rule: the artifact/manual-room site is downstream from implementation
 evidence, HELP, metadata, SelfDoc, MDO, and manualgen. It may feed selected
