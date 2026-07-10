@@ -47,7 +47,7 @@ const quickLinks = [
   {
     title: "DotTalk++ Artifact Room",
     description: "Open the DotTalk++ artifact/manual support site.",
-    href: "http://derald.com/",
+    href: "http://www.derald.com/",
     icon: Archive
   }
 ];
@@ -178,7 +178,7 @@ export default function DocsLandingPage() {
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact support</p>
             <h2 className="mt-3 text-lg font-semibold tracking-tight">The larger DotTalk++ artifacts have a support room.</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com stays the main website. The artifact room at derald.com handles manuals,
+              x64base.com stays the main website. The artifact room at www.derald.com handles manuals,
               generated references, downloads, proof packets, and governance. Links use HTTP until
               the SSL certificate is ready.
             </p>
@@ -187,7 +187,7 @@ export default function DocsLandingPage() {
             <Card
               title="Open artifact room"
               description="DotTalk++ artifact and manual support site."
-              href="http://derald.com/"
+              href="http://www.derald.com/"
             >
               <Archive className="h-5 w-5 text-brand" aria-hidden="true" />
             </Card>
