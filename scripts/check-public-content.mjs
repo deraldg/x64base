@@ -33,6 +33,10 @@ const blocked = [
   {
     name: "retired derald.com support host",
     pattern: /\b(?:www\.)?derald\.com\b/gi
+  },
+  {
+    name: "Next client navigation on static hosting",
+    pattern: /\bfrom\s+["']next\/link["']/g
   }
 ];
 

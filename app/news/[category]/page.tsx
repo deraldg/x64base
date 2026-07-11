@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { notFound } from "next/navigation";
 import { getAllNewsPosts, getNewsPostsByCategory } from "@/lib/news";
 

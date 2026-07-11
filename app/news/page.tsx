@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { Card } from "@/components/Card";
 import { getAllNewsPosts } from "@/lib/news";
 

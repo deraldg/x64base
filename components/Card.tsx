@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import clsx from "clsx";
 
 export function Card({

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 
 export type Crumb = { label: string; href: string };
 

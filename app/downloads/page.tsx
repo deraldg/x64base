@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { Archive, BookOpen, Download, FileText, Github, PackageCheck, ScrollText } from "lucide-react";
 import { Card } from "@/components/Card";
 

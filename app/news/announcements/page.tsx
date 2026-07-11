@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { getNewsPostsByCategory } from "@/lib/news";
 
 export default function AnnouncementsPage() {

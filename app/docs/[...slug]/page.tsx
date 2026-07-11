@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { Sidebar } from "@/components/Sidebar";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Prose } from "@/components/Prose";

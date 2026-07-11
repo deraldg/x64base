@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import type { ComponentProps } from "react";
 
 function Anchor(props: ComponentProps<"a">) {

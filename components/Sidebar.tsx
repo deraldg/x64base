@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import type { SidebarGroup } from "@/config/sidebars";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/StaticLink";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import clsx from "clsx";
