@@ -1,0 +1,41 @@
+flowchart TB
+  classDef authority fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef x64 fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef dot fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef gate fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef blocked fill:#fbeceb,stroke:#a74b43,color:#331918,stroke-width:2px
+  classDef output fill:#f7f7f4,stroke:#606a73,color:#1e2429,stroke-width:2px
+
+  truth["Shared upstream authority\nimplementation source + runtime proof + HELP + metadata\ncontracts + CMDHELPCHK + SelfDoc + MDO/manualgen"]:::authority
+  review{"Human review and promotion gates\nstatus, provenance, public-content, accessibility, route ownership"}:::gate
+
+  subgraph x64lane["x64base.com publication lane"]
+    x64source["x64base.com source tree\necosystem framing and documentation source"]:::x64
+    x64repo["deraldg/x64base\nwebsite source + gh-pages history"]:::x64
+    x64site["x64base.com\nmain engine, product, campus, story, and governance entry point"]:::x64
+    x64source --> x64repo --> x64site
+  end
+
+  subgraph dotlane["dottalkpp.com publication lane"]
+    dotsource["dottalkpp.com source tree\nfocused technical-library source"]:::dot
+    dotrepo["deraldg/dottalkpp\nmain + GitHub Actions/Pages history"]:::dot
+    dotsite["dottalkpp.com\nmanuals, DotScript, references, generated docs, downloads"]:::dot
+    dotsource --> dotrepo --> dotsite
+  end
+
+  truth --> review
+  review -->|"reviewed ecosystem summaries"| x64source
+  review -->|"reviewed manuals, references, reports, bundles"| dotsource
+
+  x64site -->|"deep technical and artifact links"| dotsite
+  dotsite -->|"engine, product, campus, and project-context links"| x64site
+  dotsite -->|"reviewed artifact notices and route summaries"| review
+
+  separate["Independent releases\nnot mirrors: separate source trees, route ownership, builds, and histories"]:::output
+  x64repo --> separate
+  dotrepo --> separate
+
+  blocked["Blocked reverse authority\nwebsite prose must not become runtime or manual truth\nexcept separately owned, non-derivable public artifacts"]:::blocked
+  x64site -.-> blocked
+  dotsite -.-> blocked
+  blocked -.-> truth

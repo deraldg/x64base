@@ -1,0 +1,42 @@
+flowchart TB
+  classDef authority fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef process fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef site fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef gate fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef output fill:#f7f7f4,stroke:#606a73,color:#1e2429,stroke-width:2px
+
+  truth["DotTalk++ evidence spine\nsource + runtime + HELP/CMDHELP + contracts\nmetadata + SelfDoc + proof reports"]:::authority
+  manualgen["MDO and manualgen\nreview decisions, inventories, validation, manifests, snapshots"]:::authority
+  publicOnly["Separately maintained public artifacts\naccessibility companions, curated media, hosted bundles"]:::authority
+
+  curation["Artifact-room curation\nclassify, proof-label, version, summarize, and govern access"]:::process
+  source["dottalkpp.com source tree\nNext.js static documentation site"]:::process
+
+  subgraph rooms["Focused technical rooms"]
+    manuals["Manuals\nuser, developer, SelfDoc, MDO, versioned snapshots"]:::site
+    dotscript["DotScript guide\nsyntax, variables, control flow, examples, mutation safety"]:::site
+    reference["Reference\ncommands, functions, SET family, mutators, formats, HELP"]:::site
+    generated["Generated documentation\nSelfDoc reports, contracts, proof indexes, manualgen outputs"]:::site
+    downloads["Downloads\nmanual bundles, proof packets, accessible text, archives"]:::site
+    governance["Governance\nsource authority, README preservation, proof and publication gates"]:::site
+  end
+
+  guard{"Artifact publication gates\nproof and review status\nsource/provenance anchors\naccessibility metadata\nno local paths or private artifacts"}:::gate
+  github["deraldg/dottalkpp\nmain source branch -> GitHub Actions static build"]:::output
+  pages["GitHub Pages artifact\nindependently versioned technical publication"]:::output
+  live["dottalkpp.com\nFOCUSED MANUAL / REFERENCE / ARTIFACT ROOM"]:::output
+
+  truth --> curation
+  manualgen --> curation
+  publicOnly --> curation
+  curation --> source
+  source --> manuals
+  source --> dotscript
+  source --> reference
+  source --> generated
+  source --> downloads
+  source --> governance
+  rooms --> guard
+  guard --> github
+  github --> pages
+  pages --> live

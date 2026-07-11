@@ -16,6 +16,16 @@ This v1 map supersedes the simpler boundary sketch below when authority or
 development status matters. The older sketch remains useful as a compact
 historical visual.
 
+## Public Website Architecture Pack
+
+Use this pack to distinguish the main ecosystem website, the focused DotTalk++
+artifact room, and their controlled connection paths:
+
+- `x64base_com_site_architecture_v1.mmd`
+- `dottalkpp_com_site_architecture_v1.mmd`
+- `x64base_dottalkpp_public_sites_connection_v1.mmd`
+- `X64BASE_DOTTALKPP_PUBLIC_SITES_ARCHITECTURE_v1.md`
+
 ## Campus Map
 
 Use this when explaining LabTalk at the highest level.
