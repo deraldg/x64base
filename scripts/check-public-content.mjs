@@ -29,6 +29,10 @@ const blocked = [
   {
     name: "temporary local artifact path",
     pattern: /\b(AppData|codex-clipboard|Local[\\/]Temp)\b/gi
+  },
+  {
+    name: "retired derald.com support host",
+    pattern: /\b(?:www\.)?derald\.com\b/gi
   }
 ];
 

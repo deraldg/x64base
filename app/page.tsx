@@ -69,7 +69,7 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
-const artifactRoomUrl = "http://www.derald.com/";
+const artifactRoomUrl = "http://dottalkpp.com/";
 const siteNoticeVersion = "Website preview v2026.07.09";
 
 const openArchitectureLanes = [
@@ -320,9 +320,9 @@ export default function HomePage() {
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact room</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight">DotTalk++ support materials live beside the main site.</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com remains the main website. The DotTalk++ artifact room at www.derald.com is the
-              support surface for larger manuals, generated references, proof packets, downloads, and
-              governance notes. It is linked with plain HTTP while its SSL certificate finishes settling.
+              x64base.com remains the main website. The GitHub Pages-backed DotTalk++ artifact room at
+              dottalkpp.com is the support surface for larger manuals, generated references, proof packets,
+              downloads, and governance notes. It uses HTTP while its SSL certificate finishes settling.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
