@@ -15,6 +15,7 @@ function run(command, args, options = {}) {
   return execFileSync(command, args, {
     stdio: "inherit",
     cwd: options.cwd ?? root,
+    env: { ...process.env, ...(options.env ?? {}) },
     shell: process.platform === "win32" && command.endsWith(".cmd"),
   });
 }
@@ -137,7 +138,9 @@ const packageVersion = readPackageVersion();
 
 run("git", ["fetch", "origin", "gh-pages"], { cwd: deployDir });
 run("git", ["pull", "--rebase", "origin", "gh-pages"], { cwd: deployDir });
-run(npmCommand, ["run", "build"]);
+run(npmCommand, ["run", "build"], {
+  env: { NEXT_PUBLIC_SITE_VERSION: sourceCommit.slice(0, 12) },
+});
 
 if (!fs.existsSync(outDir)) {
   throw new Error("Expected ./out after build.");
