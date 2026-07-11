@@ -67,6 +67,21 @@ function scanFile(file) {
       });
     }
   }
+
+  if ([".md", ".mdx"].includes(path.extname(file))) {
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      if (!/^\s*\|/.test(line)) continue;
+      const withoutInlineCode = line.replace(/`[^`]*`/g, "");
+      if (!/<\/?[A-Za-z][^>]*>/.test(withoutInlineCode)) continue;
+      findings.push({
+        file: path.relative(root, file),
+        line: i + 1,
+        rule: "raw HTML-like token in Markdown table",
+        text: line.trim().slice(0, 220)
+      });
+    }
+  }
 }
 
 for (const dir of scanRoots) {
