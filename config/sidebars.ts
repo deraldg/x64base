@@ -89,6 +89,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Developer Profile", href: "/docs/dev/developer-profile" },
       { label: "Developer Handbook", href: "/docs/dev/developer-handbook" },
       { label: "SelfDoc Website Publication", href: "/docs/dev/selfdoc-website-publication" },
+      { label: "Public Site Architecture", href: "/docs/dev/public-site-architecture" },
       { label: "SelfDoc Feed Pipeline", href: "/docs/dev/selfdoc-feed-pipeline" },
       { label: "HELP / Message / SelfDoc DFD", href: "/docs/dev/help-message-selfdoc-dfd" },
       { label: "Onboarding Guide", href: "/docs/dev/onboarding-guide" },

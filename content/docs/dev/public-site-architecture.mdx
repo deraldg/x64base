@@ -1,0 +1,67 @@
+---
+title: "x64base.com and dottalkpp.com Architecture"
+description: "Separate architecture maps for the main x64base ecosystem website, the DotTalk++ artifact room, and the governed connections between them."
+---
+
+The two public sites share an upstream evidence spine but serve different readers
+and publication duties. They are complementary, independently versioned sites,
+not mirrors.
+
+**Inspect the diagrams:** select any diagram to open its full-resolution SVG and
+use browser zoom for detailed labels and flows.
+
+## x64base.com
+
+[![Architecture of x64base.com from implementation evidence and Laboratory Campus proof through the website source tree, public sections, publication gates, GitHub Pages, and the live main ecosystem website](/images/sdlc/x64base-com-site-architecture-v1.svg)](/images/sdlc/x64base-com-site-architecture-v1.svg)
+
+`x64base.com` is the main ecosystem and engine website. Its public surface owns:
+
+- engine, DBF-family, memo, index, relation, and API documentation;
+- DotTalk++, DotScript, workbench, and related product framing;
+- Laboratory Campus, cases, education, evidence, and collaboration entry points;
+- project truth, development lanes, standards, DFDs, and publication governance;
+- selected public media, evidence summaries, and curated download routes.
+
+Its technical claims derive from implementation, runtime, HELP, metadata,
+contracts, proof, SelfDoc, MDO/manualgen, and reviewed manual/diagram evidence.
+Its maintained website source tree produces a versioned GitHub Pages publication
+in `deraldg/x64base`.
+
+## dottalkpp.com
+
+[![Architecture of dottalkpp.com from DotTalk++ evidence, MDO and manualgen, and separately maintained public artifacts through focused technical rooms, publication gates, GitHub Actions, and GitHub Pages](/images/sdlc/dottalkpp-com-site-architecture-v1.svg)](/images/sdlc/dottalkpp-com-site-architecture-v1.svg)
+
+`dottalkpp.com` is the focused technical library and artifact room. Its public
+surface owns:
+
+- curated and versioned manuals;
+- the DotScript language guide;
+- command, function, mutator, format, and HELP references;
+- generated SelfDoc, contract, proof, and manualgen reports;
+- reviewed downloads, proof packets, accessibility companions, and archives;
+- source, artifact, README-preservation, and publication governance.
+
+Its maintained source tree is versioned in `deraldg/dottalkpp`, built by GitHub
+Actions, and published through GitHub Pages to `dottalkpp.com`.
+
+## Connections Between The Sites
+
+[![Governed connection map showing the shared upstream authority, independent x64base.com and dottalkpp.com publication lanes, reciprocal reader links, reviewed artifact notices, and blocked reverse authority](/images/sdlc/x64base-dottalkpp-public-sites-connection-v1.svg)](/images/sdlc/x64base-dottalkpp-public-sites-connection-v1.svg)
+
+| Connection | Direction | Rule |
+| --- | --- | --- |
+| Technical evidence | Upstream to both sites | Source/runtime/HELP/metadata/contracts/proof remain authoritative. |
+| Ecosystem navigation | `x64base.com -> dottalkpp.com` | Send readers to deeper manuals, references, generated reports, and artifacts. |
+| Project context | `dottalkpp.com -> x64base.com` | Send readers to engine, products, Laboratory Campus, history, and governance context. |
+| Artifact notices | Reviewed duplex | dottalkpp.com may contribute reviewed route summaries and downloadable-artifact notices to x64base.com. |
+| Manual/website reverse flow | Blocked by default | Public prose does not become runtime or manual truth. |
+| Public-only exception | Review gate | A separately owned, non-derivable artifact may flow upstream only with provenance. |
+| Release history | Independent | Each site keeps its own source tree, build, routes, and version history. |
+
+The shared rule is simple: **one evidence spine, two publication roles**.
+x64base.com explains the ecosystem; dottalkpp.com carries the deeper technical
+library. Neither site replaces source or runtime authority.
+
+See [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication),
+[Website Documentation Matrix](/docs/dev/website-documentation-matrix), and
+[Important Documents](/docs/dev/important-documents).
