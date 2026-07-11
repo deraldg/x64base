@@ -1,0 +1,78 @@
+flowchart TB
+  maintainer["E1 Maintainer"]
+  runtimeUser["E2 Runtime user"]
+  translator["E3 Locale / wording reviewer"]
+
+  p21(["P2.1 Implement command or function and usage contract"])
+  p22(["P2.2 Register command / function identity"])
+  p23(["P2.3 Generate compiled message fallback"])
+  p24(["P2.4 Generate reviewed message CSV snapshot"])
+  p25(["P2.5 Reset, import, and index active message workspace"])
+  p26(["P2.6 Load runtime message provider"])
+  p27(["P2.7 Resolve symbol, locale, fallback chain, and variables"])
+  p31(["P3.1 Mine source contracts and stable message symbols"])
+  p32(["P3.2 Merge curated reference and metadata evidence"])
+  p33(["P3.3 Build HELP DATA v2 artifacts"])
+  p34(["P3.4 Route HELP, CMDHELP, DOTHELP, FOXHELP, and EDREF requests"])
+  p35(["P3.5 Run CMDHELPCHK and identity crosswalk"])
+
+  d21[("D2.1 Source implementations and @dottalk.usage / @dottalk.contract")]
+  d22[("D2.2 Central command / function registries")]
+  d23[("D2.3 helpdata_messages.hpp / .cpp compiled fallback")]
+  d24[("D2.4 Message seed CSVs and reviewed DTS wrappers")]
+  d25[("D2.5 SYSTEM_MESSAGES and SYSTEM_MESSAGE_TEXT DBF / DTX")]
+  d26[("D2.6 Messaging CDX and LMDB indexes")]
+  d31[("D3.1 dotref.hpp, foxref.hpp, edref.hpp compatibility artifacts")]
+  d32[("D3.2 HELP_DATA topic, section, line, artifact stores")]
+  d33[("D3.3 SYSCMD, SYSSUBCMD, SYSFUNC, SYSARGS, SYSMSG metadata")]
+  d34[("D3.4 CMDHELPCHK reports, warnings, and drift evidence")]
+
+  resetGate{"G2.1 Destructive reset/import authorization"}
+  validationGate{"G3.1 Identity and coverage gate"}
+
+  maintainer --> p21
+  p21 --> d21
+  d21 --> p22
+  p22 --> d22
+  d21 --> p23
+  p23 --> d23
+  d23 --> p24
+  translator -->|"reviewed locale rows"| p24
+  p24 --> d24
+  d24 --> resetGate
+  maintainer -->|"RUN_REVIEWED authorization"| resetGate
+  resetGate --> p25
+  p25 --> d25
+  p25 --> d26
+
+  d23 --> p26
+  d25 --> p26
+  d26 --> p26
+  p26 --> p27
+  runtimeUser -->|"command, locale, variables"| p27
+  p27 -->|"runtime message / recovery text"| runtimeUser
+
+  d21 --> p31
+  d22 --> p31
+  d23 --> p31
+  p31 --> p32
+  d31 --> p32
+  d33 --> p32
+  p32 --> p33
+  p33 --> d32
+  runtimeUser -->|"HELP request"| p34
+  d31 --> p34
+  d32 --> p34
+  d33 --> p34
+  p34 -->|"organized help response"| runtimeUser
+
+  d21 --> p35
+  d22 --> p35
+  d31 --> p35
+  d32 --> p35
+  d33 --> p35
+  p35 --> d34
+  p35 --> validationGate
+
+  d23 -. "bootstrap fallback remains available" .-> p27
+  p31 -. "raw runtime strings excluded by default" .-> d32

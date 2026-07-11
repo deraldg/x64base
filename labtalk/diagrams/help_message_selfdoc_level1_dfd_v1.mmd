@@ -1,0 +1,101 @@
+flowchart TB
+  developer["E1 Developer / maintainer"]
+  user["E2 Runtime user / student"]
+  reviewer["E3 Reviewer / MDO curator"]
+  reader["E4 Manual / website reader"]
+  assistant["E5 External tool / AI assistant"]
+
+  p1(["P1 Define and register runtime behavior"])
+  p2(["P2 Build and resolve messages"])
+  p3(["P3 Assemble HELP DATA and references"])
+  p4(["P4 Collect and normalize metadata"])
+  p5(["P5 Validate identity, coverage, and drift"])
+  p6(["P6 Inventory and preserve provenance"])
+  p7(["P7 Capture runtime and review proof"])
+  p8(["P8 Curate MDO work orders and decisions"])
+  p9(["P9 Inventory, validate, and package manuals"])
+  p10(["P10 Promote diagrams, manuals, catalogs, and pages"])
+
+  d1[("D1 Source, headers, registries, usage and contract blocks")]
+  d2[("D2 Compiled fallback messages and generated reference headers")]
+  d3[("D3 Active messaging workspace: SYSTEM_MESSAGES, SYSTEM_MESSAGE_TEXT, DTX, CDX / LMDB")]
+  d4[("D4 HELP DATA v2: topics, sections, lines, artifacts")]
+  d5[("D5 Metadata catalogs: SYSCMD, SYSSUBCMD, SYSFUNC, SYSARGS, SYSMSG")]
+  d6[("D6 Validation reports and candidate crosswalks")]
+  d7[("D7 SelfDoc manifests, policies, inventories, and provenance reports")]
+  d8[("D8 Proof registry, transcripts, hashes, screenshots, and canaries")]
+  d9[("D9 MDO work orders, review packets, section maps, and diagram ledgers")]
+  d10[("D10 Manualgen inventories, manifests, parity reports, and draft workspaces")]
+  d11[("D11 Reviewed publication artifacts")]
+  d12[("D12 x64base.com and dottalkpp.com published surfaces")]
+
+  g1{"G1 Build / runtime proof gate"}
+  g2{"G2 Reviewed metadata mutation gate"}
+  g3{"G3 CMDHELPCHK / drift gate"}
+  g4{"G4 Human promotion gate"}
+  g5{"G5 Public-content and provenance gate"}
+
+  developer -->|"source changes and contracts"| p1
+  p1 --> d1
+  d1 --> p2
+  d1 --> p3
+  d1 --> p4
+  p1 --> g1
+  user -->|"commands and locale"| p2
+  p2 -->|"compiled baseline generation"| d2
+  p2 -->|"reviewed runtime seed / load"| d3
+  d2 -->|"fallback text"| p2
+  d3 -->|"symbol + locale override"| p2
+  p2 -->|"resolved messages"| user
+
+  d2 --> p3
+  d3 --> p3
+  d5 --> p3
+  p3 --> d4
+  p4 -->|"report-only candidates"| d6
+  d6 --> g2
+  reviewer -->|"explicit authorization"| g2
+  g2 -->|"reviewed import and index rebuild"| d5
+
+  d1 --> p5
+  d2 --> p5
+  d4 --> p5
+  d5 --> p5
+  p5 --> d6
+  p5 --> g3
+  g3 --> p7
+
+  assistant -->|"candidate scans and prose; non-authoritative"| p6
+  d1 --> p6
+  d4 --> p6
+  d5 --> p6
+  d6 --> p6
+  p6 --> d7
+
+  g1 --> p7
+  user -->|"runtime observations"| p7
+  p7 --> d8
+  d7 --> p8
+  d8 --> p8
+  d4 --> p8
+  d5 --> p8
+  d6 --> p8
+  p8 --> d9
+  reviewer -->|"accept, reject, defer, relabel"| p8
+
+  d9 --> p9
+  d7 --> p9
+  d8 --> p9
+  p9 --> d10
+  d10 --> g4
+  reviewer --> g4
+  g4 --> p10
+  d9 --> p10
+  p10 --> d11
+  d11 --> g5
+  g5 --> d12
+  d12 --> reader
+  reader -->|"issue / review feedback"| d8
+
+  d12 -. "blocked as technical authority" .-> p9
+  d12 -. "website-only artifact exception requires provenance" .-> g4

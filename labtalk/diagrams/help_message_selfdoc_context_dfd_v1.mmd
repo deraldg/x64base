@@ -1,0 +1,17 @@
+flowchart TB
+  developer["Developer / maintainer"]
+  user["Runtime user / student"]
+  reviewer["Reviewer / MDO curator"]
+  reader["Manual and website reader"]
+  external["External tools / AI assistants"]
+
+  system(["P0 DotTalk++ HELP, messaging, metadata, SelfDoc, MDO, manual and publication system"])
+
+  developer -->|"implementation, contracts, curated wording"| system
+  user -->|"commands, locale, HELP requests"| system
+  system -->|"runtime output, HELP, diagnostics"| user
+  external -->|"candidate findings only"| system
+  system -->|"reports, crosswalks, review packets"| reviewer
+  reviewer -->|"authorization, rejection, status labels"| system
+  system -->|"reviewed manuals, diagrams, catalogs, pages"| reader
+  reader -->|"issues and review feedback; never direct authority"| system

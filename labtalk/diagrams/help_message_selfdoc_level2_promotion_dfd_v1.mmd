@@ -1,0 +1,83 @@
+flowchart TB
+  developer["E1 Developer"]
+  reviewer["E2 Reviewer / MDO curator"]
+  educator["E3 Educator / technical writer"]
+  reader["E4 Public reader"]
+  ai["E5 AI / external analysis tool"]
+
+  p41(["P4.1 Run report-only collectors and probes"])
+  p42(["P4.2 Classify findings, confidence, ownership, and status"])
+  p43(["P4.3 Preserve manifests, hashes, paths, and provenance"])
+  p44(["P4.4 Capture runtime transcripts, screenshots, and canaries"])
+  p45(["P4.5 Crosswalk HELP, metadata, messages, commands, manuals, diagrams, and website targets"])
+  p46(["P4.6 Open MDO work order and assemble review packet"])
+  p47(["P4.7 Run manualgen inventory, validate, parity, and dry-run"])
+  p48(["P4.8 Review and promote narrative / diagram candidate"])
+  p49(["P4.9 Build and publish versioned static artifacts"])
+  p50(["P4.10 Intake feedback as an issue or evidence candidate"])
+
+  d41[("D4.1 Source, HELP DATA, metadata, messages, and validator reports")]
+  d42[("D4.2 SelfDoc tool and pipeline manifests")]
+  d43[("D4.3 SelfDoc inventories, candidate reports, and policy records")]
+  d44[("D4.4 LabTalk proof registry and proof artifacts")]
+  d45[("D4.5 Crosswalk CSVs and attachment / section maps")]
+  d46[("D4.6 MDO work orders, review packets, decision ledgers")]
+  d47[("D4.7 Manualgen logs, manifests, validation reports, draft workspace")]
+  d48[("D4.8 Canonical manual sections and diagram sources")]
+  d49[("D4.9 Website source and artifact/manual-room manifests")]
+  d50[("D4.10 Versioned x64base.com and dottalkpp.com output")]
+
+  nonmutation{"G4.1 Report-only / non-mutation gate"}
+  evidenceGate{"G4.2 Evidence honesty and status gate"}
+  reviewGate{"G4.3 Human acceptance gate"}
+  publicGate{"G4.4 Public-content, link, provenance, and build gate"}
+  reverseGate{"G4.5 Website-to-manual reverse-flow gate"}
+
+  d41 --> p41
+  ai -->|"candidate extraction only"| p41
+  p41 --> nonmutation
+  nonmutation --> p42
+  p42 --> d43
+  p42 --> evidenceGate
+  p43 --> d42
+  p43 --> d43
+  developer --> p43
+
+  developer -->|"runtime or test run"| p44
+  p44 --> d44
+  d41 --> p45
+  d43 --> p45
+  d44 --> p45
+  p45 --> d45
+
+  d43 --> p46
+  d44 --> p46
+  d45 --> p46
+  p46 --> d46
+  reviewer --> p46
+  educator --> p46
+
+  d46 --> p47
+  d42 --> p47
+  d45 --> p47
+  p47 --> d47
+  d47 --> evidenceGate
+  evidenceGate --> reviewGate
+  reviewer --> reviewGate
+  educator --> reviewGate
+  reviewGate --> p48
+  p48 --> d48
+  p48 --> d49
+  d48 --> publicGate
+  d49 --> publicGate
+  publicGate --> p49
+  p49 --> d50
+  d50 --> reader
+
+  reader --> p50
+  p50 --> d44
+  p50 --> d46
+
+  d50 -. "technical prose intake blocked by default" .-> reverseGate
+  reverseGate -. "allowed only for separately maintained public-only artifacts" .-> p46
+  d48 -. "reviewed manual may feed website summary" .-> d49

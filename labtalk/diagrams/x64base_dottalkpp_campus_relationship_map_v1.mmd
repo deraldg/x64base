@@ -1,0 +1,56 @@
+flowchart TB
+  classDef active fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef partial fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef alpha fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef governed fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef output fill:#f7f7f4,stroke:#606a73,color:#1e2429,stroke-width:2px
+
+  subgraph runtime["Runtime authority"]
+    engine["x64base engine services\nACTIVE\nDbArea/workspaces, classic/VFP/x64 DBF,\nmemos, indexes, relations, buffering, locking"]:::active
+    shell["DotTalk++ command and runtime identity\nACTIVE\ncommand shell, expression/function surface,\nHELP routing, validation, automation host"]:::active
+    script["DotScript\nACTIVE / EVOLVING\nrepeatable .dts command files, variables,\nIF and loop/scan control structures"]:::partial
+    api["Open API lanes\nIN DEVELOPMENT\nindex lifecycle and GUI-neutral services"]:::partial
+    customIndex["Student and custom index extension lane\nACTIVE STUBS + PLANNED ATTACHMENT CONTRACT\nSIX single-tag and SCX compound labs;\nSNX reserved/container groundwork; REINDEX CUSTOM opt-in"]:::partial
+
+    engine -->|"provides database services to"| shell
+    shell -->|"executes"| script
+    engine -->|"is being exposed through"| api
+    shell -->|"is being exposed through"| api
+    api -->|"future backend/adapter boundary"| customIndex
+    shell -->|"SIX, SCX, REINDEX CUSTOM"| customIndex
+  end
+
+  subgraph evidenceLane["Evidence and self-documentation"]
+    help["HELP, metadata, contracts, CMDHELPCHK\nACTIVE / PARTIAL\nexplanation, identity, organization, drift checks"]:::active
+    evidence["Evidence and proof artifacts\nACTIVE\nsource contracts, runtime canaries, transcripts,\nHELP readback, tests, screenshots, hashes"]:::active
+    selfdoc["SelfDoc\nACTIVE, REPORT-ONLY BY DEFAULT\ncollects, classifies, crosswalks,\nand preserves provenance"]:::governed
+    mdo["MDO and manualgen\nGOVERNED / EVOLVING\nreview packets, decisions, validation,\ndraft assembly, promotion records"]:::governed
+    publish["Reviewed derivatives\nVERSIONED OUTPUTS\nmanuals, diagrams, catalogs, x64base.com,\nand DotTalk++ artifact-room material"]:::output
+
+    shell -->|"exposes and validates"| help
+    engine -->|"source and runtime behavior"| evidence
+    shell -->|"commands, scripts, and canaries"| evidence
+    help -->|"explanation and validation evidence"| evidence
+    evidence -->|"candidate facts with status"| selfdoc
+    selfdoc -->|"provenance-preserving reports"| mdo
+    mdo -->|"human-reviewed promotion"| publish
+  end
+
+  subgraph campusLane["Laboratory Campus / LabTalk consumer layer"]
+    campus["Laboratory Campus / LabTalk\nACTIVE ALPHA\nportal, registries, datasets, cases, labs,\nproof overlays, collaboration and planning"]:::alpha
+    curriculum["Curriculum and lesson paths\nDRAFT / EVOLVING\ndatabase literacy, SelfDoc systems, history,\nmutation safety, scripting, indexes and relations"]:::alpha
+    lms["Delivery and extension lanes\nRESERVED / EXPERIMENTAL\nlocal portal, provider-neutral LMS queue,\nGUI and external-tool experiments"]:::partial
+
+    campus -->|"organizes and hosts"| curriculum
+    campus -->|"coordinates"| lms
+    shell -->|"runtime consumed by labs"| campus
+    evidence -->|"proof state consumed by"| campus
+    publish -->|"reviewed teaching/reference material"| campus
+    curriculum -->|"runs commands and scripts"| shell
+    curriculum -->|"requires attached proof"| evidence
+    customIndex -->|"algorithm and extension labs"| curriculum
+  end
+
+  authority["Boundary rule\nLaboratory Campus may launch, sequence, explain, and teach.\nIt does not redefine x64base or DotTalk++ runtime behavior."]:::output
+  campus -.-> authority
+  authority -.-> engine
