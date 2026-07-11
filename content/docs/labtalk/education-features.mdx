@@ -14,6 +14,7 @@ contains enough structure to seed this alpha campus area.
 | Education command family | `src/edu/edu_*.cpp` and `src/cli/shell_commands.cpp` | Built-in teaching commands are source-defined and registered through the central command surface. |
 | Reference and retro commands | `src/edu/edu_ascii_table.cpp`, `src\cli\cmd_retro.cpp`, and `src\cli\cmd_bbox.cpp` | `ASCII`, `RETRO`, and `BBOX` are public education-facing commands and should be treated as campus material. |
 | Timed index/sort lab | `src/cli/cmd_idx.cpp` and `docs/teaching/TEACHING_POINT_LEDGER.md` | `IDX` is a memory-only educational index lab; it supports `STD` and `BUBBLE` sort choices and reports build/sort elapsed time, comparisons, and swaps. |
+| Student/custom index families | `src/edu/edu_six.cpp`, `src/cli/cmd_scx.cpp`, `src/cli/cmd_reindex.cpp`, `include/snx/*`, and `src/edu/edu_snx.cpp` | `SIX` and `SCX` provide opt-in local index labs; `SNX` preserves a future slot and partial container groundwork. A general user-supplied index attachment contract remains planned. |
 | DBF sort path | `src/cli/cmd_sort.cpp` | `SORT` creates a sorted DBF copy, supports key expressions, `FOR`, `WHILE`, `FIELDS`, `UNIQUE`, and reports scanned/selected/written counts. |
 | Student command hooks | `src/ext/cmd/cmd_student_hello.cpp`, `cmd_student_echo.cpp`, and `src\ext\ext_policy.hpp` | Student commands may self-register from the extension area while built-in command names remain protected. |
 | Student function hooks | `src/ext/fn/fn_student_text_autoreg.cpp` | Student functions demonstrate the same registry-compatible pattern for learner-created expression helpers. |
@@ -46,6 +47,32 @@ Its output path records:
 That makes it suitable for a campus algorithm lab where students compare `STD` versus `BUBBLE` against the same table.
 
 Plain `SORT` is also lab-ready, but it currently reports operation counts rather than elapsed time. It is useful for teaching DBF output creation, key expressions, `FOR`/`WHILE` predicates, field projection, deleted-record handling, and `UNIQUE` suppression.
+
+## Student and Custom Index Systems
+
+DotTalk++ reserves index families for learner and downstream experimentation:
+
+```text
+SIX CREATE students.six TAG LNAME FIELD 2
+SIX BUILD students.six
+SIX INFO students.six
+REINDEX CUSTOM
+```
+
+`SIX` is a registered single-tag educational stub. `SCX` is the current compound
+student/custom family. `REINDEX CUSTOM` opts into both while ordinary
+`REINDEX ALL` deliberately leaves them out. This keeps experiments from being
+mistaken for the normal table-flavor defaults.
+
+`SNX` must be described more carefully: format and catalog groundwork exists,
+but its education translation unit is an empty placeholder and its shell command
+is not registered. It represents reserved extension space, not a finished command.
+
+The intended next architecture step is a documented adapter lifecycle through
+which students or users can attach their own indexing systems: detect/open,
+bind to an area/schema, build, seek/navigate, verify, report timing, close, and
+emit proof. That general attachment contract is planned; the current `SIX` and
+`SCX` paths are laboratories for shaping and testing it.
 
 ## Reference, Retro, and Blackbox Commands
 

@@ -1,0 +1,124 @@
+---
+title: "LMS Communications Lane"
+description: "Proof-labeled documentation for the provider-neutral LabTalk LMS queue, CLI, portal status command, and reserved Moodle integration boundary."
+---
+
+The Laboratory Campus now has a small, provider-neutral communications boundary
+for future learning-management-system work. The current implementation can
+create and inspect local integration messages; it **cannot deliver them to an
+LMS**.
+
+## Current Status
+
+| Capability | State | Evidence |
+| --- | --- | --- |
+| Versioned LMS message envelope | implemented locally | `labtalk/lms/contracts/lms_message_v1.schema.json` |
+| Durable JSON outbox | implemented locally | `labtalk/lms/queue/outbox` |
+| Status, queue inspection, and enqueue CLI | implemented locally | `src/labtalk/lms/cli.py` |
+| Provider-neutral pipe and reserved transport | implemented locally | `src/labtalk/lms/pipe.py` |
+| Portal status command | implemented locally | `lms.pipe.status` in the LabTalk portal registry |
+| Moodle provider registration | candidate only | provider row has no endpoint, credential, or function mapping |
+| Live LMS delivery | **disabled** | `live_delivery: false` |
+
+The candidate provider is **Moodle LMS**, but this is not a claim that LabTalk
+currently connects to Moodle. No Moodle site URL, access token, student record,
+grade, or live network operation is stored or enabled in this lane.
+
+## Communications Boundary
+
+```text
+Laboratory Campus lesson or assignment intent
+                    |
+                    v
+          labtalk.lms.message.v1
+                    |
+                    v
+             local JSON outbox
+                    |
+                    v
+           reserved transport -X-> Moodle external services
+                                  future and separately approved
+```
+
+A queued file records local integration intent. It is not proof that Moodle or
+any other provider accepted an operation. A future adapter must return a
+provider receipt before the campus can report successful delivery.
+
+## Local Interfaces
+
+From the repository's `labtalk` directory, the pipe can be inspected without
+network delivery:
+
+```powershell
+python ..\src\labtalk\lms\cli.py --queue .\lms\queue\outbox status
+python ..\src\labtalk\lms\cli.py --queue .\lms\queue\outbox list
+```
+
+The portal exposes the same status boundary:
+
+```powershell
+python .\portal\labtalk_portal.py --run-item lms.pipe.status
+```
+
+The CLI also supports controlled enqueueing of development envelopes. Enqueueing
+does not activate a provider transport.
+
+## Verification Record
+
+The first curated status transcript is
+`labtalk/proofs/runs/20260710_180641_lms_pipe_status.txt`.
+
+Its observed result was:
+
+```text
+return_code: 0
+provider_candidate: moodle
+transport: reserved
+live_delivery: false
+queued_messages: 0
+schema_version: labtalk.lms.message.v1
+```
+
+Three unit tests also pass for this initial slice. The transcript proves that
+the local status interface ran successfully; it does not prove Moodle
+connectivity.
+
+## Filed Source Documents
+
+| Document or implementation | Repository-relative location | Role |
+| --- | --- | --- |
+| LMS lane overview | `labtalk/lms/README.md` | Architecture, safety boundary, CLI usage, and future gates |
+| LMS registry | `labtalk/registries/lms.yaml` | Portal-visible items, states, provider candidate, and delivery flag |
+| Communications pipe | `src/labtalk/lms/pipe.py` | Queue and reserved-transport behavior |
+| CLI interface | `src/labtalk/lms/cli.py` | Status, list, and enqueue commands |
+| Message contract | `labtalk/lms/contracts/lms_message_v1.schema.json` | Provider-neutral envelope schema |
+| Portal integration | `labtalk/portal/labtalk_portal.py` | Registry-driven command execution and transcript capture |
+| Verification transcript | `labtalk/proofs/runs/20260710_180641_lms_pipe_status.txt` | Runtime-observed local status proof |
+
+## Moodle Credit and References
+
+Moodle is credited as the first **future provider candidate**, not as bundled
+software or an active service. Moodle describes Moodle LMS as open-source
+software, and its developer documentation provides an External Services and Web
+Service framework for integrations.
+
+- [Moodle LMS](https://moodle.com/lms/)
+- [Moodle open-source overview](https://moodle.com/about/open-source/)
+- [Moodle External Services developer documentation](https://moodledev.io/docs/5.0/apis/subsystems/external)
+
+Moodle and the Moodle logo are identifiers of their respective owner. Listing
+Moodle here does not imply sponsorship, endorsement, certification, or an active
+technical relationship.
+
+## Gates Before Live Delivery
+
+1. Select and administer a sandbox Moodle site.
+2. Approve the exact Moodle external functions LabTalk may invoke.
+3. Map each LabTalk operation to one approved provider function.
+4. Keep tokens outside source control, queue payloads, transcripts, and logs.
+5. Add idempotency, retry, receipt, redaction, and audit behavior.
+6. Prove the adapter in a sandbox without student or grade data.
+7. Perform a separate privacy, security, and instructional review before any
+   live-delivery flag can change.
+
+Until those gates are met, the honest state remains **reserved/local-only**.

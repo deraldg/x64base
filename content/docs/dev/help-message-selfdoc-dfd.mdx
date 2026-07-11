@@ -1,0 +1,113 @@
+---
+title: "HELP, Message, and SelfDoc Data-Flow Diagrams"
+description: "A source-derived context, Level 1, and Level 2 DFD pack for DotTalk++ HELP, runtime messages, metadata, CMDHELPCHK, SelfDoc, proof, MDO, manualgen, diagrams, and publication."
+---
+
+This diagram pack maps the documentation system as a set of authorities,
+processes, data stores, review gates, and published derivatives. The maintained
+Mermaid sources live under `labtalk/diagrams` in the implementation repository;
+the SVGs on this page are reviewed renderings.
+
+For the larger boundary around the database engine, DotTalk++, DotScript, this
+documentation system, and the Laboratory Campus, see the
+[Ecosystem Relationship Map](/docs/engine/architecture#ecosystem-relationship-map).
+
+The governing doctrine is:
+
+```text
+Runtime proves.
+Source defines.
+HELP explains.
+Metadata organizes.
+CMDHELPCHK validates.
+SelfDoc preserves provenance.
+MDO curates.
+Manualgen packages reviewed drafts.
+Manuals, diagrams, and websites publish derivatives.
+```
+
+**Inspect the diagrams:** select any diagram to open its full-resolution SVG.
+Use browser zoom to examine individual processes, stores, gates, and flows, then
+return to this page for the accompanying definitions.
+
+## Context DFD
+
+[![Context data-flow diagram for the DotTalk++ HELP, message, metadata, SelfDoc, MDO, manual, and publication system](/images/sdlc/help-message-selfdoc-context-dfd-v1.svg)](/images/sdlc/help-message-selfdoc-context-dfd-v1.svg)
+
+External tools and AI assistants may submit candidate findings. They do not
+become authority without source, runtime, evidence, and human review gates.
+
+## Level 1: Complete System Flow
+
+[![Level 1 data-flow diagram showing source, compiled messages, runtime message stores, HELP DATA, metadata, validation, SelfDoc, proof, MDO, manualgen, and website publication](/images/sdlc/help-message-selfdoc-level1-dfd-v1.svg)](/images/sdlc/help-message-selfdoc-level1-dfd-v1.svg)
+
+The main stores remain deliberately separate:
+
+| Store family | Role |
+| --- | --- |
+| Source and registries | Implementation, command/function identity, comments, usage, and contracts |
+| Compiled fallback messages and reference headers | Bootstrap-safe generated runtime/reference artifacts |
+| Active messaging workspace | Locale-aware `SYSTEM_MESSAGES` and `SYSTEM_MESSAGE_TEXT` DBF/DTX data plus CDX/LMDB indexes |
+| HELP DATA v2 | Topics, sections, lines, and typed artifacts used for organized explanation |
+| Metadata catalogs | `SYSCMD`, `SYSSUBCMD`, `SYSFUNC`, `SYSARGS`, and `SYSMSG` normalization and crosswalk data |
+| SelfDoc and proof | Manifests, policies, reports, transcripts, hashes, screenshots, and canaries |
+| MDO and manualgen | Work orders, decisions, maps, validation reports, manifests, and draft workspaces |
+| Publication | Reviewed manual sections, canonical diagram sources, website source, artifact manifests, and versioned public output |
+
+## Level 2: Runtime Messages, HELP, and Metadata
+
+[![Level 2 DFD for source contracts, compiled fallback messages, runtime locale catalogs, HELP DATA assembly, metadata, and CMDHELPCHK](/images/sdlc/help-message-selfdoc-level2-runtime-dfd-v1.svg)](/images/sdlc/help-message-selfdoc-level2-runtime-dfd-v1.svg)
+
+The runtime message resolver follows an override/fallback model:
+
+1. keep compiled fallback text available for startup and recovery;
+2. load the active messaging workspace when reviewed DBF/DTX artifacts exist;
+3. resolve by message symbol and locale;
+4. apply locale fallback and message variables;
+5. emit runtime output without making HELP DATA a startup dependency.
+
+HELP DATA is assembled from source contracts, registries, stable message
+symbols, compatibility references, metadata, and curated prose. Raw runtime
+strings are not mined into HELP DATA by default. `CMDHELPCHK` compares identity
+and coverage across these stores and emits drift evidence rather than silently
+repairing authority surfaces.
+
+## Level 2: SelfDoc, Proof, MDO, and Publication
+
+[![Level 2 DFD for report-only SelfDoc probes, proof capture, MDO review, manualgen validation, diagram attachment, and website publication](/images/sdlc/help-message-selfdoc-level2-promotion-dfd-v1.svg)](/images/sdlc/help-message-selfdoc-level2-promotion-dfd-v1.svg)
+
+The promotion side is conservative:
+
+- collectors and probes are report-only by default;
+- scanner confidence and status labels survive curation;
+- runtime transcripts and screenshots are evidence, not automatic claims;
+- MDO records accept, reject, defer, and relabel decisions;
+- manualgen inventories, validates, checks parity, and builds draft workspaces;
+- human review authorizes narrative and diagram promotion;
+- public-content, provenance, route, and build guards run before publication;
+- website technical prose cannot flow backward into the manual by default.
+
+## Gate Matrix
+
+| Gate | Protects | Required signal |
+| --- | --- | --- |
+| Build/runtime proof | Runtime claims | Build, smoke, canary, or runtime observation |
+| Reviewed metadata mutation | Live DBFs and indexes | Explicit authorization, schema review, import path, backup/rollback |
+| CMDHELPCHK/drift | Command/help identity | Cross-lane validation and classified findings |
+| Evidence honesty | Status and confidence | Source/runtime/help/manual labels retained |
+| Human promotion | Manuals and diagrams | Accepted MDO decision or equivalent reviewed packet |
+| Public-content/provenance | Website and artifact room | Clean build, valid links, no local paths, attachment/provenance record |
+| Reverse-flow exception | Manual authority | Public-only artifact is separately maintained and non-derivable upstream |
+
+## Current-State Qualification
+
+This is a consolidated **source-derived draft**, not a claim that every target
+generator is complete. The message loader, compiled fallback, HELP DATA model,
+SelfDoc manifests, proof registry, manualgen report-only commands, and website
+publication gates exist in current source. Some canonical metadata population,
+reference-header generation, automatic crosswalks, and end-to-end promotion
+steps remain partial or reviewed procedures.
+
+See [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline),
+[SelfDoc Website Publication](/docs/dev/selfdoc-website-publication), and
+[Coding Standards](/docs/dev/coding-standards).

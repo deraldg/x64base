@@ -22,6 +22,22 @@ Diagram attachment: `DIAG-ARCHLAYERS-009`
 Canonical source:
 `docs/manuals/assets/diagrams/dottalkpp_architecture_layers_v1.svg`
 
+## Ecosystem Relationship Map
+
+[![Curated relationship map for x64base engine services, DotTalk++, DotScript, SelfDoc, MDO, reviewed publication, and the Laboratory Campus consumer layer](/images/engine/x64base-dottalkpp-campus-relationship-map-v1.svg)](/images/engine/x64base-dottalkpp-campus-relationship-map-v1.svg)
+
+Select the diagram to inspect the full-resolution SVG. This is a system-context
+map rather than an entity-relationship model: its arrows describe authority,
+execution, evidence, consumption, and reviewed promotion. Status labels keep
+active runtime behavior separate from alpha, partial, experimental, and reserved
+work.
+
+The most important boundary is that the Laboratory Campus consumes and organizes
+DotTalk++ and x64base evidence. It may launch, sequence, explain, and teach the
+runtime, but it does not redefine engine or command behavior. The curriculum is
+an evolving crosswalk and collection of proof-backed paths; it is not yet a
+fixed seven-module syllabus.
+
 ## Database core and teaching system
 
 The database engine is the core architecture. Tables, records, fields, work
@@ -81,6 +97,26 @@ The engine should maintain explicit open boundaries for:
 - Open Index API - index creation, rebuild, verification, lookup, order selection, and backend-neutral lifecycle calls.
 - Open GUI API - GUI-neutral services for table browsing, workspace inspection, command execution, validation reports, and editor/view synchronization.
 - DotScript - repeatable command files over the same shell/runtime concepts.
+
+### Student and Custom Index Extension Lane
+
+The source reserves index space for students, researchers, and downstream users
+to experiment without colliding with the core INX, CNX, and CDX/LMDB families.
+The current surface is intentionally mixed-status:
+
+| Surface | Current evidence | Status |
+| --- | --- | --- |
+| `SIX` | Registered command with `CREATE`, `BUILD`, and `INFO` over the local single-tag index stub. | Active educational stub |
+| `SCX` | Student/local compound index-file lab family and the current second custom slot. | Active educational stub |
+| `REINDEX CUSTOM` | Explicitly runs `SIX + SCX`; `REINDEX ALL` excludes them by design. | Active opt-in dispatcher |
+| `SNX` | Header/container/catalog groundwork exists, but `edu_snx.cpp` exports no command and shell registration is disabled. | Reserved and partial |
+| User-supplied backend attachment | Intended adapter boundary for custom indexing systems through the Open Index API. | Planned contract |
+
+This proves an extension laboratory and reserved namespace, not yet a universal
+plug-in ABI. The goal is for a student or user to implement an index family,
+attach it through a documented lifecycle interface, exercise it against a
+`DbArea`, compare behavior and timing, and preserve results as proof artifacts
+without changing the core index guarantees.
 
 ## Current build surface
 
