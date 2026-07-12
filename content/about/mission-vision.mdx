@@ -1,50 +1,147 @@
 ---
 title: "Mission & Vision"
-description: "Why x64base exists and where it’s going."
+description: "x64base, DotTalk++, and the configurable Laboratory Campus: one glass-but-real system for building and learning data systems."
 ---
 
 ## Mission
 
-To democratize database literacy by providing clear, stable, transparent tools that teach as much as they perform.
+Build a configurable Laboratory Campus where people learn data systems by
+using, inspecting, and helping to build the same engine, language,
+documentation, and proof tools that operate the campus.
+
+x64base exists to make database literacy practical and visible. It should run
+well enough to support real work while remaining transparent enough for a
+learner to trace a table, command, schema, index, document, decision, and proof
+back to the system that produced it.
 
 ## Vision
 
-A world where students, developers, and communities understand data structures, file formats, and relational thinking
-through approachable, historically grounded tools.
+A self-describing, increasingly self-hosting learning ecosystem in which:
 
-## Core Identity
+- **x64base is the stateful data substrate** for tables, records, fields,
+  memos, indexes, relations, work areas, validation, and storage lifecycles.
+- **DotTalk++ is the executable campus language** for commands, scripts,
+  observation, repeatable labs, and proof readback.
+- **HELP, metadata, contracts, SelfDoc, and MDO are institutional memory**:
+  they explain, organize, validate, preserve, and publish what the system does.
+- **The Laboratory Campus is the configurable learning environment** that
+  turns live project work into labs, lessons, cases, datasets, tools, and
+  learning paths.
+- **Students, developers, educators, and AI collaborators share governed
+  evidence** instead of receiving separate simplified stories.
 
-x64base begins with the database engine. The DBF runtime, 64-bit table work,
-memo/index architecture, work areas, relations, buffering, locking, validation,
-and data-mutation behavior are the technical center of the project.
+The long-term goal is not merely a database product with training attached. It
+is a place where the database, its development process, and its curriculum are
+made from the same inspectable materials.
 
-The outside-visible thesis is broader than "64-bit xBase": x64base is a
-database system that uses its own metadata and documentation infrastructure to
-describe, validate, and increasingly prove itself.
+## The Campus Thesis
 
-Around that core, DotTalk++, SelfDoc, the Master Documentation Organizer, and
-the Laboratory Campus form the teaching and analysis system. They exist to
-explain the engine, test it, document it, preserve its history, and make its
-behavior teachable. They should not be described as replacing the database
-engine; they are the system that helps the engine become visible, reviewable,
-and learnable.
+```text
+Everything is data.
+Everything can become a lesson.
+Everything important should be inspectable.
+```
 
-SelfDoc and MDO also record the way the project is actually being built. They
-began as cooperating project-documentation conversations and are now becoming
-part of the system itself: a repeatable path from source, HELP, comments,
-contracts, proofs, and review into manuals, diagrams, curriculum, and public
-website sections.
+That is a direction with proof gates, not a claim that every part is already
+self-hosted. The current system still uses source files, YAML registries,
+runtime transcripts, generated reports, and companion tools. Those assets move
+toward x64base-backed curation through explicit import, validation, export, and
+recovery proof.
 
-## Academic Collaboration Direction
+## Glass but Real
 
-x64base is under active development. Some visible gaps are not abandoned features; they are lanes that have not yet reached the right proof, documentation, or curriculum shape for public release.
+"Glass" means observable, explainable, and traceable. It does not mean fragile
+or toy-like.
 
-The next phase is to open the project to academic interest and outside review. Desired input includes:
+The engine and campus should:
 
-- computer science professors who can evaluate current theory, algorithms, data structures, runtime design, and systems-programming lessons.
-- database professors and practitioners who can review DBF lineage, relational modeling, indexing, locking, triggers, table buffering, and data-mutation lessons.
-- technical writing teachers who can advise on documentation standards, student-facing explanations, manual structure, terminology, and proof-backed publication.
-- general education specialists who can help shape the Laboratory Campus as a learning environment instead of only a technical reference shelf.
-- researchers and instructors from different schools of learning who can help test whether examples, labs, diagrams, and assessments support more than one learning style.
+- run reasonably well on supported paths;
+- expose state, cost, and failure honestly;
+- distinguish implemented, runtime-proven, source-defined, simulated,
+  historical, planned, and experimental material;
+- preserve reproducible evidence;
+- teach why mutation boundaries, reliability, backup, recovery, and validation
+  matter.
 
-The goal is not to present every lane as finished. The goal is to make the project transparent enough that educators and technical reviewers can help decide what should become lessons, what should remain experimental, and what needs stronger evidence before public claims are made.
+## Co-development Is Curriculum
+
+The system develops recursively:
+
+```text
+x64base behavior
+-> DotTalk++ command or script
+-> source, HELP, metadata, and contract evidence
+-> SelfDoc preservation and MDO organization
+-> manual, diagram, lab, lesson, and website derivative
+-> review exposes drift, weak proof, or hidden behavior
+-> findings return to the engine, language, metadata, and tests
+```
+
+A new feature becomes a state lesson. A bug becomes a lesson in assumptions and
+proof. A documentation correction becomes a lesson in authority. A generator
+becomes a lesson in how data becomes an explanation. Students learn not only
+the finished answer, but how a real system is examined and strengthened.
+
+## Tools Are Part of the Campus
+
+The campus progressively exposes the same tools used to build it: DotTalk++ and
+DotScript, source review and AI-assisted exploration, SelfDoc, MDO/manualgen,
+validators, diagram generators, portal registries, build systems, and
+publication checks.
+
+Beginners receive a usable path first. They can then open the glass and follow
+the deeper tooling, evidence, and decisions behind it.
+
+## The AI Portal
+
+The AI Portal is intended to give an AI collaborator a rapid, task-specific
+introduction to the ecosystem. It follows curated, typed jumps between projects
+and artifacts, checks authority and proof, and assembles a bounded context
+packet for a series of related tasks.
+
+The AI Portal lane is **Alpha/Experimental**. It is not production autonomous
+memory, an independent source of truth, or permission to bypass human approval.
+Generated context may be incomplete or stale; it must explain its evidence and
+default to read-only preparation.
+
+[Read the AI Portal Alpha/Experimental lane](/docs/labtalk/ai-portal).
+
+## One Campus, Three Journeys
+
+```text
+learner: concept -> example -> data -> command -> observation -> proof -> lesson
+developer: request -> source -> change -> test -> proof -> documentation -> publication
+AI collaborator: task -> curated context -> constraints -> action -> verification -> closeout
+```
+
+These are different entrances into the same evidence system.
+
+## Public Identity
+
+> x64base is building a glass-but-real Laboratory Campus where the database is
+> infrastructure and subject, DotTalk++ is the teaching language, documentation
+> is executable institutional memory, and development itself becomes
+> proof-backed curriculum.
+
+The project is more than a product, but it is not less than one. The engine and
+tools must remain useful, testable, and honestly described while the campus
+grows around them.
+
+<img
+  src="/images/brand/x64base-smiling-database-site-icon.jpg"
+  alt="Selected x64base smiling database site icon"
+  width="280"
+  height="417"
+/>
+
+The smiling database mark is the selected site icon for this publication pass.
+
+## Collaboration Direction
+
+The campus welcomes review from computer science and database educators,
+technical-writing instructors, general-education specialists, learning-science
+researchers, practitioners, students, and maintainers.
+
+The goal is not to present every lane as finished. The goal is to make the
+system transparent enough to decide what should become curriculum, what should
+remain experimental, and what requires stronger evidence before promotion.

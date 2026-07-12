@@ -62,6 +62,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "Laboratory Campus",
     items: [
       { label: "Overview", href: "/docs/labtalk/overview" },
+      { label: "AI Portal — Alpha/Experimental", href: "/docs/labtalk/ai-portal" },
       { label: "Cases and Storyboard", href: "/docs/labtalk/cases-storyboard" },
       { label: "Database Evolution Path", href: "/docs/labtalk/database-evolution" },
       { label: "Education Features", href: "/docs/labtalk/education-features" },

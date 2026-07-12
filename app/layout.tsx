@@ -14,24 +14,40 @@ export const metadata: Metadata = {
     template: "%s — x64base"
   },
   description:
-    "DotTalk++ / x64base is an active beta educational database runtime for DBF-style tables, indexes, memos, metadata, command shells, browsers, and GUI experiments.",
+    "x64base and DotTalk++ form the glass-but-real substrate of a configurable Laboratory Campus for building, inspecting, documenting, and teaching data systems.",
   openGraph: {
     type: "website",
     title: "x64base",
     description:
-      "An active beta educational database runtime for DBF-style tables, indexes, memos, metadata, command shells, browsers, and GUI experiments.",
+      "A glass-but-real database engine, language, documentation system, and configurable Laboratory Campus.",
     url: "https://x64base.com",
     siteName: "x64base",
-    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "x64base" }]
+    images: [
+      {
+        url: "/og.png",
+        width: 1730,
+        height: 909,
+        alt: "x64base — A glass-box database engine and configurable Laboratory Campus"
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title: "x64base",
     description:
-      "An active beta educational database runtime for DBF-style tables, indexes, memos, metadata, command shells, browsers, and GUI experiments.",
-    images: ["/og.svg"]
+      "A glass-but-real database engine, language, documentation system, and configurable Laboratory Campus.",
+    images: ["/og.png"]
   },
-  icons: [{ rel: "icon", url: "/favicon.svg" }]
+  icons: {
+    icon: [
+      {
+        url: "/images/brand/x64base-smiling-database-site-icon.jpg",
+        type: "image/jpeg"
+      }
+    ],
+    shortcut: ["/images/brand/x64base-smiling-database-site-icon.jpg"],
+    apple: ["/images/brand/x64base-smiling-database-site-icon.jpg"]
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

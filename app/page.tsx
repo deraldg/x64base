@@ -18,7 +18,7 @@ const proofPoints = [
   { label: "Project mode", value: "Co-development", href: "/docs/dev/recursive-co-development" },
   { label: "Runtime", value: "DotTalk++" },
   { label: "Documentation", value: "SelfDoc + MDO" },
-  { label: "Architecture", value: "Open cross-platform" }
+  { label: "Campus", value: "Configurable + proof-aware" }
 ];
 
 const ecosystem = [
@@ -55,7 +55,7 @@ const ecosystem = [
   {
     title: "Laboratory Campus / LabTalk",
     href: "/products/labtalk",
-    desc: "The education and collaboration campus for labs, proof-backed lessons, pycrud, and runtime evidence.",
+    desc: "The configurable education and collaboration campus where engine work, tools, documentation, and proof become lessons.",
     icon: GraduationCap
   }
 ];
@@ -70,7 +70,7 @@ const quickLinks = [
 ];
 
 const artifactRoomUrl = "http://dottalkpp.com/";
-const siteNoticeVersion = "Website preview v2026.07.09";
+const siteNoticeVersion = "Website preview v2026.07.12";
 
 const openArchitectureLanes = [
   {
@@ -148,13 +148,13 @@ export default function HomePage() {
         <div className="max-w-2xl">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">x64base</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg md:text-6xl">
-            A 64-bit database engine for the xBase lineage.
+            A glass-box database engine for building and teaching data systems.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted">
-            x64base is an open, cross-platform database architecture being built in co-development with
-            its documentation system. The same runtime that develops DBF_64 tables, FPT64 memos, indexes,
-            workspaces, APIs, and DotTalk++ also documents itself through SelfDoc and a Master
-            Documentation Organizer.
+            x64base is the stateful substrate of a configurable Laboratory Campus. DotTalk++ makes the
+            engine executable and observable; SelfDoc and MDO turn source, HELP, metadata, contracts, and
+            proof into documentation and curriculum. The goal is a glass-but-real system whose development
+            can be inspected, taught, and improved from the same evidence.
           </p>
           <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
