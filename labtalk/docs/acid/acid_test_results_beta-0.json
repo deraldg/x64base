@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "assessment": "beta-0",
+  "verified_on": "2026-07-11",
+  "overall_rating": "Unverified",
+  "allowed_ratings": [
+    "Compliant",
+    "Partial",
+    "Not compliant",
+    "Unverified",
+    "Not applicable"
+  ],
+  "results": [],
+  "note": "Baseline contract only. No repeatable runtime ACID tests are registered yet."
+}
