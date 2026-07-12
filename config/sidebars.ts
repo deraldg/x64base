@@ -17,6 +17,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "x64base Engine",
     items: [
       { label: "Architecture", href: "/docs/engine/architecture" },
+      { label: "ACID and the Glass-Box Engine", href: "/docs/engine/acid-and-glass-box" },
       { label: "Runtime Footprint", href: "/docs/engine/runtime-footprint" },
       { label: "xBase Ecosystem Context", href: "/docs/engine/xbase-ecosystem-context" },
       { label: "Ecosystem Feature Comparison", href: "/docs/engine/ecosystem-feature-comparison" },
@@ -80,6 +81,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "Developer Resources",
     items: [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
+      { label: "Recursive Co-development", href: "/docs/dev/recursive-co-development" },
       { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
       { label: "Site Improvement Plan", href: "/docs/dev/site-improvement-plan" },
       { label: "Important Documents", href: "/docs/dev/important-documents" },

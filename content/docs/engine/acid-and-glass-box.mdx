@@ -1,0 +1,99 @@
+---
+title: "ACID and the Glass-Box Engine"
+description: "A scoped, evidence-first analysis of transactional guarantees in DotTalk++ and x64base."
+---
+
+> **Current status: architectural analysis, not an ACID compliance claim.**
+> The beta-0 evidence rating remains **Unverified** until repeatable failure,
+> concurrency, reopen, and recovery tests establish each guarantee.
+
+<a href="/docs/labtalk/cases-storyboard"><img src="/images/story/transparent-engine-model.png" alt="Transparent educational engine model illustrating the glass-box architecture metaphor" title="Glass-box engine figure" width="380" align="right"></a>
+
+## The central distinction
+
+A glass-box educational architecture does not inherently weaken ACID.
+Visibility and transactional guarantees are separate dimensions. DotTalk++ can
+show buffers, stale fields, locks, commit boundaries, and recovery evidence
+without changing the correctness of the mechanisms underneath them.
+
+The useful question is not whether the engine exposes its state. It is whether
+each operation, storage lane, and failure boundary provides a tested guarantee.
+
+| Finding | Meaning | Example |
+| --- | --- | --- |
+| Educational tradeoff | Complexity is exposed or staged deliberately for learning. | Showing dirty and stale fields before commit. |
+| Implementation gap | A required mechanism is absent or incomplete. | A persistent cross-store recovery journal remains a stub. |
+| Transactional guarantee | Repeatable evidence establishes a scoped behavior. | A crash/reopen test proves an acknowledged write survives. |
+
+## Two important corrections
+
+### Buffered state is not persistent inconsistency
+
+A tuple-buffer edit can be dirty or stale while the persistent DBF and its
+indexes remain unchanged. The risk boundary occurs when a direct mutation or
+commit updates one participating store without updating, invalidating,
+rebuilding, or recovering the others.
+
+The current `COMMIT` contract says partial commit is possible and that CDX/LMDB
+rebuild is outside the command. These are explicit engineering and test
+boundaries, not evidence for a broad compliance or failure claim.
+
+### Inspection does not weaken isolation
+
+Showing a user their own pending changes does not weaken isolation. Isolation
+depends on session visibility, lock scope, versioning, conflict detection, and
+concurrent operation ordering. Buffering and per-record commit-lock mechanisms
+exist in source; the effective isolation model still requires captured
+multi-session tests.
+
+## ACID by property
+
+| Property | Current rating | What exists | What must still be proved |
+| --- | --- | --- | --- |
+| Atomicity | Unverified | Pre-commit table-buffer rollback and per-record commit locking. | Interruption and recovery across DBF, memo, and index writes. |
+| Consistency | Unverified | Visible dirty/stale state and validation mechanisms. | Invariants after direct mutation, successful commit, failed commit, and recovery. |
+| Isolation | Unverified | Buffered state and commit locking mechanisms. | Dirty-read, repeatable-read, lost-update, conflict, and visibility behavior. |
+| Durability | Unverified | LMDB-local commits and memo flush operations. | Acknowledgement, reopen, forced termination, and power-loss behavior for every store. |
+
+## Scope before score
+
+ACID ratings belong to an operation and storage lane, not to a product name
+alone.
+
+- buffered x64 mutation
+- direct mutation
+- LMDB-local mutation
+- DBF + LMDB combined operation
+- DBF + memo combined operation
+- legacy index lane
+
+A strong local guarantee cannot be generalized to a multi-store operation it
+does not cover.
+
+## Source-defined limits
+
+- `COMMIT` documents `partial_commit_possible: yes`.
+- `COMMIT` does not rebuild CDX or LMDB indexes.
+- persistent commit-journal and rollback-journal hooks are currently stubs.
+- LMDB-local transactions do not prove a coordinated DBF + memo + index
+  transaction.
+
+These observations explain why the formal rating remains `Unverified`. They do
+not diminish the value of the glass-box design; they identify exactly what the
+project must test and harden.
+
+## ACID as a lesson
+
+ACID is both an engineering objective and a Laboratory Campus lesson. A learner
+should be able to predict a guarantee, observe participating state, inject a
+safe failure into disposable data, reopen the stores, and assign an
+evidence-backed rating. A failed test is useful when preserved honestly because
+it converts an abstract acronym into a concrete requirement.
+
+The canonical source analysis and lab contract live in the engine repository:
+
+- `labtalk/docs/acid/acid_glass_box_analysis_v1.md`
+- `labtalk/docs/acid/acid_assessment_beta-0.md`
+- `labtalk/labs/acid/LAB_ACID_EDUCATIONAL_CONTRACT_v0.md`
+
+This public page is a reviewed derivative of those source documents.

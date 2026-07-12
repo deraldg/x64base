@@ -1,0 +1,94 @@
+---
+title: "Recursive Co-development"
+description: "How implementation, SelfDoc, Laboratory Campus, manuals, and public documentation recursively improve one another."
+---
+
+## One system, cooperating projects
+
+x64base is developed through cooperating systems rather than a one-way sequence
+from code to documentation. Runtime behavior produces evidence; metadata and
+SelfDoc organize it; the Laboratory Campus turns reviewed evidence into labs,
+cases, diagrams, and lessons; public documentation exposes omissions and
+contradictions that return to implementation work.
+
+This is **recursion** in the engineering sense: the outputs of one governed pass
+become inputs to the next pass through the system.
+
+## Three primary coproject systems
+
+### 1. x64base and DotTalk++ implementation
+
+The engine, command runtime, DotScript, contracts, HELP surfaces, and executable
+behavior live in the implementation repository. That source and its captured
+runtime evidence remain the primary technical truth.
+
+### 2. Metadata, SelfDoc, and Laboratory Campus
+
+Metadata and SelfDoc collect, validate, organize, and preserve provenance.
+Laboratory Campus, with LabTalk retained as its project and historical name,
+turns reviewed material into diagrams, datasets, cases, demonstrations, labs,
+and lessons.
+
+### 3. Public documentation systems
+
+Generated manuals, x64base.com, and the supporting DotTalk++ artifact site
+publish reviewed derivatives. They are also diagnostic surfaces: organizing the
+system for readers reveals missing contracts, stale HELP, contradictory claims,
+and absent proof.
+
+## The recursive loop
+
+```text
+engine behavior
+    -> runtime evidence and source contracts
+    -> HELP, metadata, and SelfDoc collection
+    -> reviewed reports, diagrams, cases, and lessons
+    -> manuals and public documentation
+    -> review reveals gaps, drift, and contradictions
+    -> findings return to metadata and implementation
+    -> the next pass produces stronger evidence
+```
+
+The loop is recursive, but not circular authority. Public prose does not become
+engine truth merely because it is published. Generated material cannot promote
+itself. Provenance, status labels, and review gates control every return path.
+
+## LabTalk is broader than an executable
+
+Laboratory Campus is a hybrid collaboration layer containing implemented
+components, developing labs, datasets, runtime demonstrations, help systems,
+GUI and portal experiments, planning material, and proof artifacts. An
+incomplete public repository boundary does not make the working local coproject
+empty.
+
+## Governing doctrine
+
+> **Runtime proves, source defines, HELP explains, metadata organizes, and
+> SelfDoc preserves.**
+
+The website publishes reviewed derivatives of that chain. Its review then
+recurses into the next engineering pass, making documentation an active
+instrument of development rather than an after-the-fact report.
+
+## Authority and safeguards
+
+- Runtime and source remain authoritative for implementation claims.
+- SelfDoc and metadata preserve provenance rather than manufacturing proof.
+- Existing, developing, planned, and experimental work must retain honest
+  status labels.
+- Website review may identify a source defect; changing public prose alone does
+  not repair it.
+- Manual and website exchange follows governed simplex and duplex gates.
+- Canonical `README.*` files are preserved and versioned when replaced.
+
+## Follow the system
+
+- [SelfDoc feed pipeline](/docs/dev/selfdoc-feed-pipeline)
+- [SelfDoc website publication](/docs/dev/selfdoc-website-publication)
+- [Laboratory Campus overview](/docs/labtalk/overview)
+- [Important documents](/docs/dev/important-documents)
+- [HELP, message, and SelfDoc data-flow diagrams](/docs/dev/help-message-selfdoc-dfd)
+
+This page is a reviewed derivative of
+`labtalk/docs/co-development/recursive_coproject_model_v1.md` in the
+implementation repository.

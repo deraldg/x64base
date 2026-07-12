@@ -46,3 +46,22 @@ body {
       "Liberation Mono", "Courier New", monospace;
   }
 }
+.prose img[title="Glass-box engine figure"] {
+  float: right;
+  width: min(34%, 380px);
+  min-width: 256px;
+  height: auto;
+  margin: 0 0 1.5rem 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .prose img[title="Glass-box engine figure"] {
+    float: none;
+    display: block;
+    width: min(100%, 380px);
+    min-width: 0;
+    margin: 0 auto 1.5rem;
+  }
+}

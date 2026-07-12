@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const proofPoints = [
-  { label: "Project mode", value: "Co-development" },
+  { label: "Project mode", value: "Co-development", href: "/docs/dev/recursive-co-development" },
   { label: "Runtime", value: "DotTalk++" },
   { label: "Documentation", value: "SelfDoc + MDO" },
   { label: "Architecture", value: "Open cross-platform" }
@@ -196,12 +196,28 @@ export default function HomePage() {
           </div>
 
           <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {proofPoints.map((item) => (
-              <div key={item.label} className="rounded-lg border border-border bg-card/55 p-4">
-                <dt className="text-xs text-muted">{item.label}</dt>
-                <dd className="mt-1 font-mono text-sm text-fg">{item.value}</dd>
-              </div>
-            ))}
+            {proofPoints.map((item) => {
+              const content = (
+                <>
+                  <dt className="text-xs text-muted">{item.label}</dt>
+                  <dd className="mt-1 font-mono text-sm text-fg">{item.value}</dd>
+                </>
+              );
+
+              return "href" in item ? (
+                <Link
+                  key={item.label}
+                  href={item.href!}
+                  className="rounded-lg border border-border bg-card/55 p-4 transition hover:border-brand/60"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={item.label} className="rounded-lg border border-border bg-card/55 p-4">
+                  {content}
+                </div>
+              );
+            })}
           </dl>
         </div>
 
@@ -252,7 +268,7 @@ export default function HomePage() {
               return (
                 <Link
                   key={`${item.title}-${item.href}`}
-                  href={item.href}
+                  href={item.href!}
                   className="rounded-lg border border-border bg-bg/35 p-4 transition hover:border-brand/60"
                 >
                   <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
@@ -271,7 +287,7 @@ export default function HomePage() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href!}
               className="group rounded-lg border border-border bg-card/70 p-5 shadow-soft transition hover:border-brand/60 hover:bg-card/90"
             >
               <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
@@ -301,7 +317,7 @@ export default function HomePage() {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href!}
                   className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
                 >
                   <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
@@ -364,7 +380,7 @@ export default function HomePage() {
           {quickLinks.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href!}
               className="rounded-lg border border-border bg-card/55 p-4 text-sm font-semibold text-fg transition hover:border-brand/60"
             >
               {item.title}
