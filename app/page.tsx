@@ -147,7 +147,7 @@ export default function HomePage() {
       <section className="grid min-h-[620px] items-center gap-10 lg:grid-cols-[0.92fr_1.08fr]">
         <div className="max-w-2xl">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">x64base</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg md:text-6xl">
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg md:text-5xl">
             A glass-box database engine for building and teaching data systems.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted">
