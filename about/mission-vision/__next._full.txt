@@ -1,16 +1,16 @@
 1:"$Sreact.fragment"
-2:I[62319,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
-3:I[39756,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-4:I[37457,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-a:I[68027,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+2:I[62319,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+a:I[68027,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
 :HL["/_next/static/chunks/1cby66opjn_az.css","style"]
 :HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"P":null,"c":["","about","mission-vision",""],"q":"","i":false,"f":[[["",{"children":["about",{"children":[["slug","mission-vision","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1cby66opjn_az.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/31poiajmkm-bn.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=7c3a39d30896","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=7c3a39d30896","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=7c3a39d30896","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/licensing/third-party-acknowledgements?v=7c3a39d30896","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=7c3a39d30896","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=7c3a39d30896","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=7c3a39d30896","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=7c3a39d30896","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/licensing?v=7c3a39d30896","children":"Licensing"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/brand?v=7c3a39d30896","children":"Brand"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=7c3a39d30896","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=7c3a39d30896","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":["$L5",{"children":["$L6",{"children":["$L7",{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"RnfEB5yZ8shR3FC3ON6Uy"}
-d:I[97367,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+0:{"P":null,"c":["","about","mission-vision",""],"q":"","i":false,"f":[[["",{"children":["about",{"children":[["slug","mission-vision","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1cby66opjn_az.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/39bcy6qe9b3tl.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=local-preview","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","p",null,{"className":"mt-4 text-xs text-muted","children":"x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and LabTalk® are trademarks of Derald R Grimwood Jr."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=local-preview","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=local-preview","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/licensing/third-party-acknowledgements?v=local-preview","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=local-preview","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm md:grid-cols-3","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=local-preview","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=local-preview","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=local-preview","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/licensing?v=local-preview","children":"Licensing"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/brand?v=local-preview","children":"Brand"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=local-preview","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=local-preview","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":["$L5",{"children":["$L6",{"children":["$L7",{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"DYONhb6P0R2Cj3QZXSFHp"}
+d:I[97367,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 e:"$Sreact.suspense"
-11:I[97367,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
-13:I[97367,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+11:I[97367,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+13:I[97367,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
 5:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
 6:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
 7:["$","$1","c",{"children":["$Lc",null,["$","$Ld",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@f"}]}]]}]
@@ -18,41 +18,112 @@ e:"$Sreact.suspense"
 8:"$W10"
 9:["$","$1","h",{"children":[null,["$","$L11",null,{"children":"$L12"}],["$","div",null,{"hidden":true,"children":["$","$L13",null,{"children":["$","$e",null,{"name":"Next.Metadata","children":"$L14"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
 b:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1cby66opjn_az.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
-15:Tcd9,<h2 id="mission"><a class="no-underline" href="#mission">Mission</a></h2>
-<p>To democratize database literacy by providing clear, stable, transparent tools that teach as much as they perform.</p>
+15:T1b19,<h2 id="mission"><a class="no-underline" href="#mission">Mission</a></h2>
+<p>Build a configurable Laboratory Campus where people learn data systems by
+using, inspecting, and helping to build the same engine, language,
+documentation, and proof tools that operate the campus.</p>
+<p>x64base exists to make database literacy practical and visible. It should run
+well enough to support real work while remaining transparent enough for a
+learner to trace a table, command, schema, index, document, decision, and proof
+back to the system that produced it.</p>
 <h2 id="vision"><a class="no-underline" href="#vision">Vision</a></h2>
-<p>A world where students, developers, and communities understand data structures, file formats, and relational thinking
-through approachable, historically grounded tools.</p>
-<h2 id="core-identity"><a class="no-underline" href="#core-identity">Core Identity</a></h2>
-<p>x64base begins with the database engine. The DBF runtime, 64-bit table work,
-memo/index architecture, work areas, relations, buffering, locking, validation,
-and data-mutation behavior are the technical center of the project.</p>
-<p>The outside-visible thesis is broader than "64-bit xBase": x64base is a
-database system that uses its own metadata and documentation infrastructure to
-describe, validate, and increasingly prove itself.</p>
-<p>Around that core, DotTalk++, SelfDoc, the Master Documentation Organizer, and
-the Laboratory Campus form the teaching and analysis system. They exist to
-explain the engine, test it, document it, preserve its history, and make its
-behavior teachable. They should not be described as replacing the database
-engine; they are the system that helps the engine become visible, reviewable,
-and learnable.</p>
-<p>SelfDoc and MDO also record the way the project is actually being built. They
-began as cooperating project-documentation conversations and are now becoming
-part of the system itself: a repeatable path from source, HELP, comments,
-contracts, proofs, and review into manuals, diagrams, curriculum, and public
-website sections.</p>
-<h2 id="academic-collaboration-direction"><a class="no-underline" href="#academic-collaboration-direction">Academic Collaboration Direction</a></h2>
-<p>x64base is under active development. Some visible gaps are not abandoned features; they are lanes that have not yet reached the right proof, documentation, or curriculum shape for public release.</p>
-<p>The next phase is to open the project to academic interest and outside review. Desired input includes:</p>
+<p>A self-describing, increasingly self-hosting learning ecosystem in which:</p>
 <ul>
-<li>computer science professors who can evaluate current theory, algorithms, data structures, runtime design, and systems-programming lessons.</li>
-<li>database professors and practitioners who can review DBF lineage, relational modeling, indexing, locking, triggers, table buffering, and data-mutation lessons.</li>
-<li>technical writing teachers who can advise on documentation standards, student-facing explanations, manual structure, terminology, and proof-backed publication.</li>
-<li>general education specialists who can help shape the Laboratory Campus as a learning environment instead of only a technical reference shelf.</li>
-<li>researchers and instructors from different schools of learning who can help test whether examples, labs, diagrams, and assessments support more than one learning style.</li>
+<li><strong>x64base is the stateful data substrate</strong> for tables, records, fields,
+memos, indexes, relations, work areas, validation, and storage lifecycles.</li>
+<li><strong>DotTalk++ is the executable campus language</strong> for commands, scripts,
+observation, repeatable labs, and proof readback.</li>
+<li><strong>HELP, metadata, contracts, SelfDoc, and MDO are institutional memory</strong>:
+they explain, organize, validate, preserve, and publish what the system does.</li>
+<li><strong>The Laboratory Campus is the configurable learning environment</strong> that
+turns live project work into labs, lessons, cases, datasets, tools, and
+learning paths.</li>
+<li><strong>Students, developers, educators, and AI collaborators share governed
+evidence</strong> instead of receiving separate simplified stories.</li>
 </ul>
-<p>The goal is not to present every lane as finished. The goal is to make the project transparent enough that educators and technical reviewers can help decide what should become lessons, what should remain experimental, and what needs stronger evidence before public claims are made.</p>c:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=7c3a39d30896","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=7c3a39d30896","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/mission-vision",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/mission-vision?v=7c3a39d30896","children":"Mission & Vision"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Mission & Vision"}],["$","p",null,{"className":"mt-2 text-muted","children":"Why x64base exists and where it’s going."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$15"},"children":null}]}]]}]
+<p>The long-term goal is not merely a database product with training attached. It
+is a place where the database, its development process, and its curriculum are
+made from the same inspectable materials.</p>
+<h2 id="the-campus-thesis"><a class="no-underline" href="#the-campus-thesis">The Campus Thesis</a></h2>
+<pre><code class="language-text">Everything is data.
+Everything can become a lesson.
+Everything important should be inspectable.
+</code></pre>
+<p>That is a direction with proof gates, not a claim that every part is already
+self-hosted. The current system still uses source files, YAML registries,
+runtime transcripts, generated reports, and companion tools. Those assets move
+toward x64base-backed curation through explicit import, validation, export, and
+recovery proof.</p>
+<h2 id="glass-but-real"><a class="no-underline" href="#glass-but-real">Glass but Real</a></h2>
+<p>"Glass" means observable, explainable, and traceable. It does not mean fragile
+or toy-like.</p>
+<p>The engine and campus should:</p>
+<ul>
+<li>run reasonably well on supported paths;</li>
+<li>expose state, cost, and failure honestly;</li>
+<li>distinguish implemented, runtime-proven, source-defined, simulated,
+historical, planned, and experimental material;</li>
+<li>preserve reproducible evidence;</li>
+<li>teach why mutation boundaries, reliability, backup, recovery, and validation
+matter.</li>
+</ul>
+<h2 id="co-development-is-curriculum"><a class="no-underline" href="#co-development-is-curriculum">Co-development Is Curriculum</a></h2>
+<p>The system develops recursively:</p>
+<pre><code class="language-text">x64base behavior
+-> DotTalk++ command or script
+-> source, HELP, metadata, and contract evidence
+-> SelfDoc preservation and MDO organization
+-> manual, diagram, lab, lesson, and website derivative
+-> review exposes drift, weak proof, or hidden behavior
+-> findings return to the engine, language, metadata, and tests
+</code></pre>
+<p>A new feature becomes a state lesson. A bug becomes a lesson in assumptions and
+proof. A documentation correction becomes a lesson in authority. A generator
+becomes a lesson in how data becomes an explanation. Students learn not only
+the finished answer, but how a real system is examined and strengthened.</p>
+<h2 id="tools-are-part-of-the-campus"><a class="no-underline" href="#tools-are-part-of-the-campus">Tools Are Part of the Campus</a></h2>
+<p>The campus progressively exposes the same tools used to build it: DotTalk++ and
+DotScript, source review and AI-assisted exploration, SelfDoc, MDO/manualgen,
+validators, diagram generators, portal registries, build systems, and
+publication checks.</p>
+<p>Beginners receive a usable path first. They can then open the glass and follow
+the deeper tooling, evidence, and decisions behind it.</p>
+<h2 id="the-ai-portal"><a class="no-underline" href="#the-ai-portal">The AI Portal</a></h2>
+<p>The AI Portal is intended to give an AI collaborator a rapid, task-specific
+introduction to the ecosystem. It follows curated, typed jumps between projects
+and artifacts, checks authority and proof, and assembles a bounded context
+packet for a series of related tasks.</p>
+<p>The AI Portal lane is <strong>Alpha/Experimental</strong>. It is not production autonomous
+memory, an independent source of truth, or permission to bypass human approval.
+Generated context may be incomplete or stale; it must explain its evidence and
+default to read-only preparation.</p>
+<p><a href="/docs/labtalk/ai-portal">Read the AI Portal Alpha/Experimental lane</a>.</p>
+<h2 id="one-campus-three-journeys"><a class="no-underline" href="#one-campus-three-journeys">One Campus, Three Journeys</a></h2>
+<pre><code class="language-text">learner: concept -> example -> data -> command -> observation -> proof -> lesson
+developer: request -> source -> change -> test -> proof -> documentation -> publication
+AI collaborator: task -> curated context -> constraints -> action -> verification -> closeout
+</code></pre>
+<p>These are different entrances into the same evidence system.</p>
+<h2 id="public-identity"><a class="no-underline" href="#public-identity">Public Identity</a></h2>
+<blockquote>
+<p>x64base is building a glass-but-real Laboratory Campus where the database is
+infrastructure and subject, DotTalk++ is the teaching language, documentation
+is executable institutional memory, and development itself becomes
+proof-backed curriculum.</p>
+</blockquote>
+<p>The project is more than a product, but it is not less than one. The engine and
+tools must remain useful, testable, and honestly described while the campus
+grows around them.</p>
+<p><img src="/images/brand/x64base-smiling-database-site-icon.jpg" alt="Selected x64base smiling database site icon" width="280" height="417"></p>
+<p>The smiling database mark is the selected site icon for this publication pass.</p>
+<h2 id="collaboration-direction"><a class="no-underline" href="#collaboration-direction">Collaboration Direction</a></h2>
+<p>The campus welcomes review from computer science and database educators,
+technical-writing instructors, general-education specialists, learning-science
+researchers, practitioners, students, and maintainers.</p>
+<p>The goal is not to present every lane as finished. The goal is to make the
+system transparent enough to decide what should become curriculum, what should
+remain experimental, and what requires stronger evidence before promotion.</p>c:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=local-preview","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=local-preview","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/mission-vision",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/mission-vision?v=local-preview","children":"Mission & Vision"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Mission & Vision"}],["$","p",null,{"className":"mt-2 text-muted","children":"x64base, DotTalk++, and the configurable Laboratory Campus: one glass-but-real system for building and learning data systems."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$15"},"children":null}]}]]}]
 12:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-16:I[27201,["/_next/static/chunks/31poiajmkm-bn.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+16:I[27201,["/_next/static/chunks/39bcy6qe9b3tl.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
 f:null
-14:[["$","title","0",{"children":"Mission & Vision — x64base"}],["$","meta","1",{"name":"description","content":"Why x64base exists and where it’s going."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/about/mission-vision/"}],["$","meta","3",{"property":"og:title","content":"Mission & Vision"}],["$","meta","4",{"property":"og:description","content":"Why x64base exists and where it’s going."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/about/mission-vision/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Mission & Vision"}],["$","meta","12",{"name":"twitter:description","content":"Why x64base exists and where it’s going."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"icon","href":"/favicon.svg"}],["$","$L16","15",{}]]
+14:[["$","title","0",{"children":"Mission & Vision — x64base"}],["$","meta","1",{"name":"description","content":"x64base, DotTalk++, and the configurable Laboratory Campus: one glass-but-real system for building and learning data systems."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/about/mission-vision/"}],["$","meta","3",{"property":"og:title","content":"Mission & Vision"}],["$","meta","4",{"property":"og:description","content":"x64base, DotTalk++, and the configurable Laboratory Campus: one glass-but-real system for building and learning data systems."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/about/mission-vision/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Mission & Vision"}],["$","meta","12",{"name":"twitter:description","content":"x64base, DotTalk++, and the configurable Laboratory Campus: one glass-but-real system for building and learning data systems."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L16","17",{}]]
