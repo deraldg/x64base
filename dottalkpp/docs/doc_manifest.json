@@ -1,0 +1,137 @@
+{
+  "documentation_root": "docs",
+  "generated_root": "docs/generated",
+  "do_not_hand_edit": [
+    "docs/generated"
+  ],
+  "authority_lanes": {
+    "source_registry": {
+      "description": "Current source command registry, function catalog, and @dottalk.usage blocks.",
+      "status": "authoritative when current source is built and CMDHELPCHK passes"
+    },
+    "help_catalog": {
+      "path": "data/help",
+      "files": [
+        "commands.dbf",
+        "commands.dbt",
+        "cmd_args.dbf",
+        "cmd_args.dbt",
+        "help_topic.dbf",
+        "help_section.dbf",
+        "help_line.dbf",
+        "help_artifacts.dbf",
+        "help_artifacts.dbt"
+      ],
+      "status": "authoritative structured help catalog after HELP build/readback"
+    },
+    "metadata_compact": {
+      "path": "data/dbf/x64/metadata",
+      "tables": [
+        "SYSCMD",
+        "SYSSUBCMD",
+        "SYSENTVAR",
+        "SYSFUNC",
+        "SYSHELP",
+        "SYSMSG",
+        "SYSARGS",
+        "SYSFLDDIC"
+      ],
+      "status": "preferred beta metadata lane unless a run explicitly selects long-form SYSTEM_*"
+    },
+    "metadata_indexes": {
+      "path": "data/indexes/x64/metadata",
+      "status": "index/readback support for compact and long-form metadata catalogs"
+    },
+    "metadata_lmdb": {
+      "path": "data/lmdb/x64/metadata",
+      "status": "physical LMDB support for metadata index acceleration"
+    },
+    "runtime_proofs": {
+      "paths": [
+        "data/scripts/canaries",
+        "data/scripts/main",
+        "data/scripts/suites",
+        "data/tests",
+        "data/logs"
+      ],
+      "status": "proof and canary evidence, not public prose by default"
+    },
+    "workspace_relation_context": {
+      "paths": [
+        "data/workspaces",
+        "user/public/workspaces"
+      ],
+      "status": "workspace, relation, ERSATZ, and eventual ERD input material"
+    },
+    "curated_narrative": {
+      "paths": [
+        "docs",
+        "docs/cases",
+        "help"
+      ],
+      "status": "human-authored explanatory material; subordinate to runtime and metadata when factual conflict exists"
+    }
+  },
+  "curated_publication_inputs": [
+    {
+      "id": "mission.x64base_laboratory_campus.v1",
+      "path": "docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md",
+      "authority": "CURATED",
+      "status": "design-intended",
+      "website_targets": [
+        "/about/mission-vision",
+        "/docs/labtalk/overview",
+        "/docs/labtalk/ai-portal"
+      ]
+    },
+    {
+      "id": "media.x64base_identity.2026_07_12",
+      "path": "docs/media/x64base_identity_2026_07_12/README.md",
+      "authority": "CURATED",
+      "status": "project-owner-supplied",
+      "selected_site_icon": "docs/media/x64base_identity_2026_07_12/05-x64-smiling-database-site-icon.jpg"
+    }
+  ],
+  "exclude_by_default": [
+    "data/backup",
+    "data/scripts/backup",
+    "data/scripts/scripts/backup",
+    "data/tmp",
+    "junk",
+    "__pycache__",
+    "bin",
+    "bin-wsl"
+  ],
+  "generated_targets": {
+    "commands": "docs/generated/commands",
+    "functions": "docs/generated/functions",
+    "metadata": "docs/generated/metadata",
+    "relations": "docs/generated/relations",
+    "runtime_proofs": "docs/generated/runtime-proofs",
+    "canaries": "docs/generated/canaries",
+    "reports": "docs/generated/reports",
+    "site_fragments": "docs/generated/site"
+  },
+  "validation_gates": [
+    "CMDHELPCHK ENV",
+    "CMDHELPCHK FUNCTIONS",
+    "CMDHELPCHK HELP",
+    "CMDHELPCHK META",
+    "CMDHELPCHK REF",
+    "CMDHELPCHK CONGRUENCE",
+    "DOCCHECK"
+  ],
+  "pilot_generation_targets": [
+    "DOCGEN COMMAND APPEND",
+    "DOCGEN CANARY APPEND_BLANK_ROUTING",
+    "DOCGEN PROOF X64_CDX_STUDENTS_LNAME",
+    "DOCGEN WORKSPACE MCC_X64"
+  ],
+  "policy": {
+    "website_is_publication_surface": true,
+    "generated_docs_are_disposable": true,
+    "publish_legacy": false,
+    "publish_canaries": true,
+    "metadata_lane": "compact_sys"
+  }
+}

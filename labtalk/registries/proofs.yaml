@@ -1,0 +1,110 @@
+# LabTalk proof registry v0
+
+proof_states:
+  - id: idea
+    meaning: Concept captured, not reviewed.
+  - id: source_defined
+    meaning: Current source declares behavior or contract.
+  - id: runtime_observed
+    meaning: Runtime transcript or smoke output exists.
+  - id: help_documented
+    meaning: HELP or CMDHELP exposes the behavior.
+  - id: validated
+    meaning: CMDHELPCHK, SelfDoc, or another validator checked it.
+  - id: case_registered
+    meaning: Case registry knows the teaching context.
+  - id: runtime_lab_candidate
+    meaning: Lab is identified but needs proof attachment.
+  - id: student_ready
+    meaning: Reviewed for student-facing use.
+  - id: simulated
+    meaning: Demonstration is intentionally simulated, not live runtime.
+  - id: historical_review_needed
+    meaning: Historical claim needs source or fact review.
+
+proofs:
+  - id: proof.edref.topic_exists
+    label: EDREF topic exists
+    state: source_defined
+    source: D:/code/ccode/include/edref.hpp
+  - id: proof.case.registry_exists
+    label: Case registry exists
+    state: case_registered
+    source: D:/code/ccode/docs/cases/REGISTRY_CASES_v0.csv
+  - id: proof.help.cmdhelp_source_exists
+    label: CMDHELP source exists
+    state: source_defined
+    source: D:/code/ccode/src/cli/cmdhelp.cpp
+  - id: proof.selfdoc.comments_workflow_exists
+    label: Comments to HELP workflow exists
+    state: source_defined
+    source: D:/code/ccode/docs/maintenance/COMMENTS_HELP_PROOF_WORKFLOW_v1.md
+  - id: proof.lab.database_literacy_starter.first_run
+    label: Database Literacy Starter first portal/runtime transcript
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260702_155913_runtime_database_literacy_starter.txt
+    item_id: runtime.database_literacy_starter
+    return_code: 0
+    notes: Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.
+  - id: proof.lab.selfdoc.comments_to_contracts.first_run
+    label: SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run
+    state: validated
+    source: D:/code/ccode/labtalk/proofs/runs/20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt
+    item_id: runtime.selfdoc.comments_to_contracts.first_lab
+    return_code: 0
+    related:
+      - D:/code/ccode/labtalk/reports/selfdoc/lab_selfdoc_first_crosswalk_v0.md
+    notes: Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP and CMDHELPCHK.
+  - id: proof.product.manualgen.board_preserved
+    label: Manualgen product board and map preservation
+    state: validated
+    source: D:/code/ccode/labtalk/products/manualgen_product_preservation_v0.md
+    item_id: doc.manualgen_product_board
+    related:
+      - D:/code/ccode/labtalk/products/manualgen_product_board_v0.html
+      - D:/code/ccode/labtalk/products/manualgen_product_map_v0.md
+      - D:/code/ccode/tools/manualgen/README.md
+      - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_validate_summary_v1.csv
+      - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_build_dry_run_summary_v1.csv
+    notes: Preserves the first Manualgen product board and records initial hardening evidence using repo-local vcpkg Python 3.12.9.
+  - id: proof.portal.truth_audit.latest
+    label: Portal truth audit latest report
+    state: validated
+    source: D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.md
+    item_id: doc.portal_truth_audit
+    related:
+      - D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.json
+      - D:/dev/x64base-site/content/docs/labtalk/sdlc.mdx
+      - D:/dev/x64base-site/content/docs/labtalk/selfdoc-lane.mdx
+      - D:/dev/x64base-site/content/docs/dev/selfdoc-website-publication.mdx
+    notes: Captures the portal collection-of-truths audit across LabTalk registries, local proof records, and x64base.com SelfDoc/SDLC publication pages.
+  - id: proof.ai_friendly.assimilation_docs_seed
+    label: AI Friendly assimilation portal and book seeded
+    state: source_defined
+    source: D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+    item_id: doc.ai_assimilation_portal
+    related:
+      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+      - D:/code/ccode/docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+      - D:/code/ccode/src/cli/cmd_maint.cpp
+    notes: Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context is unavailable.
+  - id: proof.ai_friendly.maint_ai_assimilate.first_run
+    label: MAINT AI ASSIMILATE first portal/runtime transcript
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260705_182913_runtime_maint_ai_assimilate.txt
+    item_id: runtime.maint_ai_assimilate
+    return_code: 0
+    related:
+      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+      - D:/code/ccode/src/cli/cmd_maint.cpp
+    notes: Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the onboarding readback.
+  - id: proof.ai_portal.lane_registered
+    label: AI Portal Alpha/Experimental lane registered
+    state: source_defined
+    source: D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+    item_id: plan.ai_portal.hardening.v1
+    related:
+      - D:/code/ccode/labtalk/registries/ai_portal.yaml
+      - D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
+    notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.

@@ -1,0 +1,105 @@
+# Laboratory Campus AI Portal hardening lane registry v1
+
+work_items:
+  - id: lane.ai_portal.hardening
+    label: AI Portal Hardening Lane
+    kind: work_lane
+    status: alpha_experimental
+    path: ai_portal/README.md
+    owner: Laboratory Campus / AI Friendly
+    started: 2026-07-12
+    objective: Build a proof-aware task context compiler over the x64base, DotTalk++, SelfDoc, MDO, and Laboratory Campus ecosystem.
+    next_gate: aiportal.gate.aph0
+
+  - id: plan.ai_portal.hardening.v1
+    label: AI Portal Hardening Lane Plan v1
+    kind: lane_plan
+    status: alpha_experimental_active_plan
+    path: ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+    proof_state: design_intended
+
+  - id: aiportal.gate.aph0
+    label: APH-0 Preserve and Stabilize
+    kind: lane_gate
+    status: in_progress
+    priority: critical
+    objective: Preserve current work, resolve portal drift, make startup reproducible, and establish baseline tests.
+    promotion_requires:
+      - zero unexplained missing portal paths
+      - supported clean-checkout startup
+      - registry-loading and audit tests
+
+  - id: aiportal.gate.aph1
+    label: APH-1 Typed Registry Graph
+    kind: lane_gate
+    status: pending
+    priority: critical
+    objective: Define and validate typed nodes, edges, task recipes, proof records, and packet records.
+    depends_on: [aiportal.gate.aph0]
+    promotion_requires:
+      - strict graph validation
+      - referential integrity
+      - broken-fixture diagnostics
+
+  - id: aiportal.gate.aph2
+    label: APH-2 Task Context Compiler
+    kind: lane_gate
+    status: pending
+    priority: critical
+    objective: Generate deterministic, bounded, read-only task context packets with authority and proof explanations.
+    depends_on: [aiportal.gate.aph1]
+    milestone: first_usable_ai_portal_mvp
+    promotion_requires:
+      - four seed task recipes
+      - deterministic packet output
+      - evidence completeness and context limits
+
+  - id: aiportal.gate.aph3
+    label: APH-3 Guarded Execution
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Execute prepared work only through reviewed, risk-classified adapters and explicit approval gates.
+    depends_on: [aiportal.gate.aph2]
+    promotion_requires:
+      - read-only default
+      - capability and path enforcement
+      - timeout, cancellation, redaction, and transcript tests
+
+  - id: aiportal.gate.aph4
+    label: APH-4 Task-Centered Portal Experience
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Make task preparation, jump explanation, readiness, risk, and packet preview the primary portal journey.
+    depends_on: [aiportal.gate.aph2, aiportal.gate.aph3]
+    milestone: hardened_local_portal
+    promotion_requires:
+      - task-first workflow
+      - responsive background work
+      - GUI and CLI packet equivalence
+
+  - id: aiportal.gate.aph5
+    label: APH-5 x64base Self-Hosting
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Curate the portal graph, packets, proofs, and run history with x64base while retaining portable recovery exports.
+    depends_on: [aiportal.gate.aph2]
+    promotion_requires:
+      - deterministic import and export
+      - recovery proof
+      - degraded read-only startup
+
+  - id: aiportal.gate.aph6
+    label: APH-6 Teaching and Evaluation Loop
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Turn portal development into DotTalk++ lessons and measure AI cold-start performance against the static baseline.
+    depends_on: [aiportal.gate.aph4, aiportal.gate.aph5]
+    milestone: full_intent
+    promotion_requires:
+      - proof-backed portal lessons
+      - reproducible evaluation suite
+      - documented feedback routing
