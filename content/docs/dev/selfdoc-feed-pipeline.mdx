@@ -8,7 +8,9 @@ diagrams, and public website pages. It exists so x64base and DotTalk++ can
 describe themselves without turning memory, chat notes, or website prose into
 technical truth.
 
-[![SelfDoc feed pipeline from implementation evidence through HELP, metadata, SelfDoc, MDO, manualgen, and website publication](/images/sdlc/selfdoc-feed-pipeline-map.svg)](/docs/labtalk/cases-storyboard)
+[![SelfDoc evidence-to-publication pipeline with authority, promotion gates, reviewed outputs, and recursive drift feedback](/images/sdlc/selfdoc-feed-pipeline-map-v2.svg)](/images/sdlc/selfdoc-feed-pipeline-map-v2.svg)
+
+Select the diagram to inspect the full-resolution evidence and promotion map. The feedback path is intentional: publication review can report drift, but corrections return to the owning source or metadata lane.
 
 The doctrine is intentionally strict:
 
@@ -145,7 +147,20 @@ Public pages should preserve status instead of smoothing it over.
 
 ## Procedural Curation
 
-[![Parallel lanes for visual curation, narrative curation, provenance, metadata, HELP, and source proof](/images/sdlc/parallel-lanes-visual-curation.svg)](/docs/labtalk/cases-storyboard)
+[![Six coordinated procedural-curation lanes showing collection, explanation, normalization, preservation, MDO review, packaging, artifacts, and promotion gates](/images/sdlc/parallel-lanes-procedural-curation-v2.svg)](/images/sdlc/parallel-lanes-procedural-curation-v2.svg)
+
+Select the diagram for a full-resolution inspection view. Each lane has a named
+responsibility, a durable artifact, and an explicit gate; no lane can silently
+promote its own output.
+
+| Step | Owner | Durable Artifact | Required Gate |
+| --- | --- | --- | --- |
+| Collect | Source/runtime maintainer | Evidence snapshot, transcript, canary, or source citation | Behavior is observed or source-evidenced. |
+| Explain | HELP and contract owner | Command identity, usage, mutation, and risk semantics | `CMDHELPCHK` and contract validation agree. |
+| Normalize | Metadata curator | Registry row, alias/family mapping, status, and provenance | Identity is reconciled and uncertainty remains labeled. |
+| Preserve | SelfDoc lane | Versioned report, crosswalk, proof link, or drift finding | Provenance is retained; scanner output is not auto-promoted. |
+| Curate | MDO reviewer | Accept, defer, reject, and target-attachment decision | A human owner approves both claim and publication target. |
+| Package | Manual and website maintainers | Reviewed section, diagram, page, and release metadata | Build, route checks, and public-content guard pass. |
 
 The repeatable curation loop is:
 

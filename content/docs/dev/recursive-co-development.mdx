@@ -1,83 +1,134 @@
 ---
 title: "Recursive Co-development"
-description: "How implementation, SelfDoc, Laboratory Campus, manuals, and public documentation recursively improve one another."
+description: "How x64base, DotTalk++, SelfDoc, and reviewed documentation form one recursive development architecture."
 ---
 
-## One system, cooperating projects
+## Not code first, documentation later
 
-x64base is developed through cooperating systems rather than a one-way sequence
-from code to documentation. Runtime behavior produces evidence; metadata and
-SelfDoc organize it; the Laboratory Campus turns reviewed evidence into labs,
-cases, diagrams, and lessons; public documentation exposes omissions and
-contradictions that return to implementation work.
+Co-development does not mean that an engine is built first and documented
+afterward. **x64base, DotTalk++, and their documentation infrastructure are
+interdependent parts of one working system.**
 
-This is **recursion** in the engineering sense: the outputs of one governed pass
-become inputs to the next pass through the system.
+- **x64base is the stateful database engine.** It owns tables, fields, records,
+  memos, indexes, relations, work areas, buffers, validation, and storage
+  lifecycles.
+- **DotTalk++ is the engine's executable language and observation surface.** It
+  names operations, invokes engine behavior, exposes state, runs DotScript, and
+  supplies the command boundary used by people, tests, GUIs, and automation.
+- **HELP, messages, metadata, contracts, SelfDoc, and MDO are the explanatory
+  and verification structure.** They preserve what operations are called, how
+  they are used, what they mutate, their development status, and the evidence
+  supporting them.
 
-## Three primary coproject systems
+Documentation is therefore not merely a report *about* the engine. Its
+registrations, contracts, HELP identities, status records, validation reports,
+and missing-proof findings actively shape engine and runtime work. Source and
+runtime remain authoritative, but documentation completeness is itself an
+engineering test.
 
-### 1. x64base and DotTalk++ implementation
+## The engine/runtime/documentation triad
 
-The engine, command runtime, DotScript, contracts, HELP surfaces, and executable
-behavior live in the implementation repository. That source and its captured
-runtime evidence remain the primary technical truth.
+| Layer | Primary responsibility | Co-development dependency |
+| --- | --- | --- |
+| x64base engine | Own database state and storage behavior. | Exposes stable concepts, lifecycle hooks, validation state, and observable outcomes. |
+| DotTalk++ runtime | Name, execute, script, and inspect engine operations. | Every command needs registration, HELP identity, contracts, messages, status, and proof paths. |
+| Documentation system | Explain, inventory, crosswalk, validate, preserve, and publish. | Missing documentation reveals unstable names, hidden mutation boundaries, incomplete contracts, or insufficient evidence. |
 
-### 2. Metadata, SelfDoc, and Laboratory Campus
+None of these layers substitutes for another. Together they make the system
+inspectable, teachable, testable, and increasingly self-describing.
 
-Metadata and SelfDoc collect, validate, organize, and preserve provenance.
-Laboratory Campus, with LabTalk retained as its project and historical name,
-turns reviewed material into diagrams, datasets, cases, demonstrations, labs,
-and lessons.
-
-### 3. Public documentation systems
-
-Generated manuals, x64base.com, and the supporting DotTalk++ artifact site
-publish reviewed derivatives. They are also diagnostic surfaces: organizing the
-system for readers reveals missing contracts, stale HELP, contradictory claims,
-and absent proof.
-
-## The recursive loop
+## Recursion is the operating model
 
 ```text
-engine behavior
-    -> runtime evidence and source contracts
-    -> HELP, metadata, and SelfDoc collection
-    -> reviewed reports, diagrams, cases, and lessons
-    -> manuals and public documentation
-    -> review reveals gaps, drift, and contradictions
-    -> findings return to metadata and implementation
-    -> the next pass produces stronger evidence
+x64base state and storage behavior
+    -> DotTalk++ commands, scripts, inspection, and runtime evidence
+    -> HELP + messages + registrations + usage/mutation contracts
+    -> metadata normalization + SelfDoc preservation + MDO review
+    -> manuals + diagrams + Laboratory Campus lessons + public pages
+    -> review exposes drift, missing contracts, hidden behavior, or weak proof
+    -> findings return to x64base, DotTalk++, metadata, and tests
+    -> the next pass strengthens both behavior and explanation
 ```
 
-The loop is recursive, but not circular authority. Public prose does not become
-engine truth merely because it is published. Generated material cannot promote
-itself. Provenance, status labels, and review gates control every return path.
+The loop is recursive, but authority is not circular. Website prose does not
+become engine truth merely because it is published. Generated material cannot
+promote itself. Provenance, status labels, and human review govern every return
+path.
 
-## LabTalk is broader than an executable
+## How documentation changes implementation
 
-Laboratory Campus is a hybrid collaboration layer containing implemented
-components, developing labs, datasets, runtime demonstrations, help systems,
-GUI and portal experiments, planning material, and proof artifacts. An
-incomplete public repository boundary does not make the working local coproject
-empty.
+The documentation system applies concrete engineering pressure:
+
+- a command without stable registration and HELP identity is incomplete;
+- a mutator without usage, mutation, risk, stale, and dirty semantics is
+  incomplete;
+- an engine feature without an observable command or API path is difficult to
+  teach or prove;
+- a public claim without source or runtime provenance is blocked;
+- contradictory HELP, metadata, and behavior become a drift finding;
+- a missing failure transcript or canary becomes a proof requirement;
+- manual and website organization expose gaps in the engine's conceptual model.
+
+The constraint also works in reverse. Documentation cannot promise a
+transaction, index, field type, API, or command behavior that x64base and
+DotTalk++ do not actually support. That bidirectional constraint is the center
+of co-development.
+
+## Three cooperating systems
+
+### 1. The x64base and DotTalk++ engine/runtime pair
+
+x64base supplies database state and behavior. DotTalk++ makes that behavior
+readable, executable, scriptable, inspectable, and available to parallel
+CLI/TUI/GUI work. Their source and captured runtime evidence are primary
+technical truth.
+
+### 2. Embedded documentation and Laboratory Campus
+
+HELP, messages, metadata, contracts, SelfDoc, and MDO collect and preserve the
+system's own definitions and evidence. Laboratory Campus, with LabTalk retained
+as its project and historical name, turns reviewed material into diagrams,
+datasets, cases, demonstrations, labs, and lessons.
+
+### 3. Manuals and website systems
+
+Generated manuals, [x64base.com](https://x64base.com/), and
+[dottalkpp.com](https://dottalkpp.com/) publish reviewed derivatives. They are
+also active diagnostic surfaces: making the system coherent for readers reveals
+omissions and contradictions that recurse into the next development pass.
+
+## The websites are development instruments
+
+The two sites operate at different scales:
+
+| Website | Primary role | Co-development feedback |
+| --- | --- | --- |
+| x64base.com | Main ecosystem and public integration surface for the engine, DotTalk++, products, architecture, Laboratory Campus, evidence, downloads, and governance. | Tests whether the entire system can be explained coherently without unsupported claims or hidden status. |
+| dottalkpp.com | Deeper manual, DotScript, generated-reference, relationship, and artifact room. | Tests documentary depth, artifact continuity, cross-links, generated output, and whether detailed material remains navigable. |
+
+A route that cannot be populated from governed evidence, a command family that
+cannot be organized coherently, an orphan diagram, a broken cross-site
+relationship, or contradictory status copy is a **development finding**. It
+returns through MDO and SelfDoc to the responsible metadata, HELP, source, test,
+manual, or website lane.
+
+The websites do not redefine runtime truth. They test whether that truth is
+complete, reachable, internally consistent, and teachable. In that sense,
+x64base.com and dottalkpp.com are part of the recursive development apparatus,
+not advertisements added after the work is done.
 
 ## Governing doctrine
 
-> **Runtime proves, source defines, HELP explains, metadata organizes, and
-> SelfDoc preserves.**
-
-The website publishes reviewed derivatives of that chain. Its review then
-recurses into the next engineering pass, making documentation an active
-instrument of development rather than an after-the-fact report.
+> **Runtime proves, source defines, HELP explains, metadata organizes, SelfDoc
+> preserves, MDO curates, and reviewed publication teaches.**
 
 ## Authority and safeguards
 
 - Runtime and source remain authoritative for implementation claims.
 - SelfDoc and metadata preserve provenance rather than manufacturing proof.
-- Existing, developing, planned, and experimental work must retain honest
-  status labels.
-- Website review may identify a source defect; changing public prose alone does
-  not repair it.
+- Existing, developing, planned, and experimental work retain honest status.
+- Website review may identify a source defect; changing prose alone does not
+  repair it.
 - Manual and website exchange follows governed simplex and duplex gates.
 - Canonical `README.*` files are preserved and versioned when replaced.
 
@@ -85,9 +136,9 @@ instrument of development rather than an after-the-fact report.
 
 - [SelfDoc feed pipeline](/docs/dev/selfdoc-feed-pipeline)
 - [SelfDoc website publication](/docs/dev/selfdoc-website-publication)
+- [HELP, message, and SelfDoc data-flow diagrams](/docs/dev/help-message-selfdoc-dfd)
 - [Laboratory Campus overview](/docs/labtalk/overview)
 - [Important documents](/docs/dev/important-documents)
-- [HELP, message, and SelfDoc data-flow diagrams](/docs/dev/help-message-selfdoc-dfd)
 
 This page is a reviewed derivative of
 `labtalk/docs/co-development/recursive_coproject_model_v1.md` in the

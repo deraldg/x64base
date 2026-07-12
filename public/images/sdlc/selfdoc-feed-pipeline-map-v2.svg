@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="760" viewBox="0 0 1440 760" role="img" aria-labelledby="title desc">
+  <title id="title">SelfDoc evidence-to-publication pipeline</title>
+  <desc id="desc">Implementation evidence passes through explanation, organization, preservation, curation, packaging, and publication gates. Review findings feed back to source and metadata.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#536273"/></marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#173044" flood-opacity=".13"/></filter>
+  </defs>
+  <rect width="1440" height="760" fill="#f5f8fa"/>
+  <text x="64" y="72" font-family="Inter,Segoe UI,sans-serif" font-size="36" font-weight="700" fill="#152536">SelfDoc Feed Pipeline</text>
+  <text x="64" y="108" font-family="Inter,Segoe UI,sans-serif" font-size="18" fill="#536273">Evidence moves forward through governed gates; review findings recurse into the next engineering pass.</text>
+
+  <rect x="64" y="148" width="1312" height="94" rx="8" fill="#142536"/>
+  <text x="92" y="184" font-family="Inter,Segoe UI,sans-serif" font-size="14" font-weight="700" fill="#7fd7cf">AUTHORITY SPINE</text>
+  <text x="92" y="219" font-family="ui-monospace,Consolas,monospace" font-size="21" fill="#fff">runtime proves  ·  source defines  ·  HELP explains  ·  metadata organizes  ·  SelfDoc preserves</text>
+
+  <g filter="url(#shadow)" font-family="Inter,Segoe UI,sans-serif">
+    <g transform="translate(64 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#2f7d69" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#2f7d69"/><text x="20" y="51" font-size="15" font-weight="700" fill="#2f7d69">1 · PROVE / DEFINE</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">Implementation</text><text x="20" y="119" font-size="15" fill="#536273">runtime · source</text><text x="20" y="145" font-size="15" fill="#536273">contracts · canaries</text></g>
+    <g transform="translate(278 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#3c6f9e" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#3c6f9e"/><text x="20" y="51" font-size="15" font-weight="700" fill="#3c6f9e">2 · EXPLAIN</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">HELP</text><text x="20" y="119" font-size="15" fill="#536273">HELP · CMDHELP</text><text x="20" y="145" font-size="15" fill="#536273">usage · messages</text></g>
+    <g transform="translate(492 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#785b98" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#785b98"/><text x="20" y="51" font-size="15" font-weight="700" fill="#785b98">3 · ORGANIZE</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">Metadata</text><text x="20" y="119" font-size="15" fill="#536273">registries · catalogs</text><text x="20" y="145" font-size="15" fill="#536273">crosswalks · status</text></g>
+    <g transform="translate(706 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#b1662d" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#b1662d"/><text x="20" y="51" font-size="15" font-weight="700" fill="#b1662d">4 · PRESERVE</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">SelfDoc</text><text x="20" y="119" font-size="15" fill="#536273">collection · checks</text><text x="20" y="145" font-size="15" fill="#536273">reports · provenance</text></g>
+    <g transform="translate(920 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#a04655" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#a04655"/><text x="20" y="51" font-size="15" font-weight="700" fill="#a04655">5 · CURATE</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">MDO</text><text x="20" y="119" font-size="15" fill="#536273">review · reconcile</text><text x="20" y="145" font-size="15" fill="#536273">accept · defer</text></g>
+    <g transform="translate(1134 300)"><rect width="180" height="174" rx="8" fill="#fff" stroke="#4e6575" stroke-width="2"/><rect width="180" height="12" rx="6" fill="#4e6575"/><text x="20" y="51" font-size="15" font-weight="700" fill="#4e6575">6 · PUBLISH</text><text x="20" y="86" font-size="23" font-weight="700" fill="#152536">Manual + Web</text><text x="20" y="119" font-size="15" fill="#536273">manualgen · diagrams</text><text x="20" y="145" font-size="15" fill="#536273">reviewed derivatives</text></g>
+  </g>
+  <g stroke="#536273" stroke-width="3" marker-end="url(#arrow)"><path d="M244 387H270"/><path d="M458 387H484"/><path d="M672 387H698"/><path d="M886 387H912"/><path d="M1100 387H1126"/></g>
+
+  <g font-family="Inter,Segoe UI,sans-serif">
+    <rect x="64" y="532" width="302" height="112" rx="8" fill="#e8f3ef" stroke="#2f7d69"/><text x="84" y="564" font-size="14" font-weight="700" fill="#2f7d69">INPUT EVIDENCE</text><text x="84" y="594" font-size="17" fill="#152536">source · runtime · contracts · HELP</text><text x="84" y="620" font-size="15" fill="#536273">No chat-memory or website-first truth.</text>
+    <rect x="398" y="532" width="302" height="112" rx="8" fill="#eef2f8" stroke="#3c6f9e"/><text x="418" y="564" font-size="14" font-weight="700" fill="#3c6f9e">PROMOTION GATES</text><text x="418" y="594" font-size="17" fill="#152536">identity · status · provenance · review</text><text x="418" y="620" font-size="15" fill="#536273">Uncertainty survives promotion.</text>
+    <rect x="732" y="532" width="302" height="112" rx="8" fill="#f8f0e7" stroke="#b1662d"/><text x="752" y="564" font-size="14" font-weight="700" fill="#b1662d">REVIEWED OUTPUTS</text><text x="752" y="594" font-size="17" fill="#152536">manuals · diagrams · command pages</text><text x="752" y="620" font-size="15" fill="#536273">Public copy remains a derivative.</text>
+    <rect x="1066" y="532" width="248" height="112" rx="8" fill="#f5ebee" stroke="#a04655"/><text x="1086" y="564" font-size="14" font-weight="700" fill="#a04655">DRIFT FEEDBACK</text><text x="1086" y="594" font-size="17" fill="#152536">gaps · conflicts · stale claims</text><text x="1086" y="620" font-size="15" fill="#536273">Return to source or metadata.</text>
+  </g>
+  <path d="M1190 650C1190 710 160 710 160 650" fill="none" stroke="#a04655" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+  <text x="540" y="722" font-family="Inter,Segoe UI,sans-serif" font-size="15" font-weight="700" fill="#a04655">RECURSIVE REVIEW PATH · findings start the next governed pass</text>
+</svg>
