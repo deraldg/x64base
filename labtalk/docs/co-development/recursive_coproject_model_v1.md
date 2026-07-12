@@ -6,41 +6,113 @@ Date: 2026-07-11
 
 ## Definition
 
-x64base is developed through cooperating systems rather than a one-way sequence
-from code to documentation. Runtime behavior produces evidence; metadata and
-SelfDoc organize it; the Laboratory Campus turns reviewed evidence into labs,
-cases, diagrams, and lessons; public documentation exposes omissions and
-contradictions that return to implementation work.
+Co-development does not mean that an engine is built first and documented
+later. x64base, DotTalk++, and their documentation infrastructure are developed
+as interdependent parts of one system:
 
-This is recursion in the engineering sense: the outputs of one pass become
-inputs to the next pass through the same governed system.
+- **x64base is the stateful database engine**: tables, fields, records, memos,
+  indexes, relations, work areas, buffers, validation, and storage lifecycles.
+- **DotTalk++ is the engine's executable language and observation surface**: it
+  names operations, invokes engine behavior, exposes state, runs DotScript, and
+  provides the command boundary used by people, tests, GUIs, and automation.
+- **HELP, messages, metadata, contracts, SelfDoc, and MDO are the system's
+  explanatory and verification structure**: they preserve what operations are
+  called, how they are used, what they mutate, what status they have, and which
+  evidence supports them.
+
+The documentation layer is therefore not merely a report about the engine. Its
+contracts, registrations, HELP identities, status records, and validation gaps
+actively shape implementation work. Runtime and source remain authoritative,
+but documentation completeness is itself an engineering test.
+
+This is recursion in the engineering sense: engine and command work produce
+evidence; the documentation system turns that evidence into structured
+knowledge; review of that knowledge finds missing or contradictory behavior;
+those findings become inputs to the next engine, command, metadata, and proof
+pass.
+
+## The engine/runtime/documentation triad
+
+| Layer | Primary responsibility | Co-development dependency |
+| --- | --- | --- |
+| x64base engine | Own database state and storage behavior. | Must expose stable concepts, lifecycle hooks, validation state, and observable outcomes. |
+| DotTalk++ runtime | Name, execute, script, and inspect engine operations. | Commands require registration, HELP identity, contracts, messages, status, and proof paths. |
+| Documentation system | Explain, inventory, crosswalk, validate, preserve, and publish. | Missing documentation reveals missing contracts, unstable names, hidden mutation boundaries, or insufficient runtime evidence. |
+
+None of these layers is a substitute for another. Together they make the
+system inspectable, teachable, testable, and increasingly self-describing.
 
 ## Three primary coproject systems
 
-1. **x64base and DotTalk++ implementation** - the engine, command runtime,
-   DotScript, contracts, HELP surfaces, and executable behavior. This repository
-   is the primary technical truth.
-2. **Metadata, SelfDoc, and Laboratory Campus** - collection, validation,
+1. **x64base engine and DotTalk++ runtime** - a tightly coupled engine/language
+   pair. x64base supplies state and behavior; DotTalk++ supplies the readable
+   command, scripting, inspection, and automation surface over that behavior.
+   Their source and captured runtime evidence are primary technical truth.
+2. **Embedded documentation and Laboratory Campus** - HELP, messages,
+   metadata, contracts, SelfDoc, and MDO provide collection, validation,
    provenance, proof preservation, diagrams, datasets, cases, labs, and lessons.
-3. **Public documentation systems** - reviewed manuals, x64base.com, and the
-   supporting DotTalk++ artifact site. Publication is a consumer and diagnostic
+3. **Public documentation and website systems** - reviewed manuals,
+   x64base.com, and dottalkpp.com. Publication is a consumer and diagnostic
    surface, not an independent source of engine truth.
+
+## The websites are development instruments
+
+The websites have separate but cooperating responsibilities:
+
+- **x64base.com is the primary ecosystem website and public integration
+  surface.** It must reconcile the engine, DotTalk++, product status,
+  architecture, Laboratory Campus, evidence, development lanes, downloads, and
+  governance into one coherent public model.
+- **dottalkpp.com is the deeper documentation and artifact room.** It provides
+  space for manuals, DotScript material, generated references, relationship
+  views, larger reviewed artifacts, and developer-facing detail that should not
+  overwhelm the primary site.
+
+Their role is active rather than ornamental. A route that cannot be populated
+from governed evidence, a command family that cannot be organized coherently,
+an orphan diagram, a broken cross-site relationship, or contradictory status
+copy is a development finding. Those findings return through MDO and SelfDoc to
+the responsible metadata, HELP, source, test, manual, or site lane.
+
+The websites therefore test whether the system can explain itself at two
+scales: x64base.com tests ecosystem coherence; dottalkpp.com tests documentary
+depth and artifact continuity. Neither site can redefine runtime truth, but
+both can expose where runtime truth is incomplete, inaccessible, or poorly
+structured.
 
 ## Recursive loop
 
 ```text
-engine behavior
-    -> runtime evidence and source contracts
-    -> HELP, metadata, and SelfDoc collection
-    -> reviewed reports, diagrams, cases, and lessons
-    -> manuals and public documentation
-    -> review reveals gaps, drift, and contradictions
-    -> findings return to metadata and implementation
-    -> the next pass produces stronger evidence
+x64base state and storage behavior
+    -> DotTalk++ commands, scripts, inspection, and runtime evidence
+    -> HELP + messages + registrations + usage/mutation contracts
+    -> metadata normalization + SelfDoc preservation + MDO review
+    -> manuals + diagrams + Laboratory Campus lessons + public pages
+    -> review exposes drift, missing contracts, hidden behavior, or weak proof
+    -> findings return to x64base, DotTalk++, metadata, and tests
+    -> the next pass strengthens both behavior and explanation
 ```
 
 The loop is controlled by provenance and review gates. Website prose cannot
 silently become engine truth, and generated material cannot promote itself.
+
+## What documentation changes in development
+
+The documentation system exerts concrete pressure on implementation:
+
+- a command without a stable registration and HELP identity is incomplete;
+- a mutator without usage, mutation, risk, stale, and dirty semantics is
+  incomplete;
+- an engine feature without an observable command/API path is difficult to
+  teach or prove;
+- a public claim without source or runtime provenance is blocked;
+- contradictory HELP, metadata, and behavior become a drift finding;
+- a missing failure transcript or canary becomes a proof requirement;
+- manual and website organization expose gaps in the engine's conceptual model.
+
+Conversely, the engine constrains documentation: public prose cannot promise a
+transaction, index, field type, API, or command behavior that source and runtime
+do not support. This bidirectional constraint is the core of co-development.
 
 ## LabTalk is broader than an executable
 
