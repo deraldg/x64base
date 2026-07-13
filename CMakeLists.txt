@@ -33,14 +33,15 @@ endif()
 # User Options
 # ============================================================
 
-option(DOTTALK_WITH_TV        "Enable Turbo Vision features" ON)
+option(DOTTALK_WITH_TV        "Enable Turbo Vision features" OFF)
 option(DOTTALK_WITH_GUI       "Build GUI-neutral application services" OFF)
 option(DOTTALK_WITH_WX        "Build wxWidgets windowed GUI frontend" OFF)
 option(DOTTALK_TV_TESTS       "Build Turbo Vision probe tests" ON)
-option(DOTTALK_WITH_INDEX     "Enable xindex (indexing) support" ON)
+option(DOTTALK_WITH_INDEX     "Enable LMDB-backed xindex support" OFF)
 option(DOTTALK_WITH_EDUCATION "Enable education support" ON)
 option(BUILD_PYDOTTALK        "Build Python bindings" OFF)
 option(DOTTALK_WITH_RELATIONS "Enable relationship support" ON)
+option(DOTTALK_BUILD_METACOLLECT "Build the developer metadata collector" OFF)
 
 # Transitional / developer-only command surfaces.
 # Build profile: use this to steer capacity and diagnostics defaults.
@@ -91,8 +92,6 @@ endif()
 set(_TV_ENV "$ENV{TVISION_ROOT}")
 if (_TV_ENV)
     set(TVISION_ROOT "${_TV_ENV}" CACHE PATH "Local Turbo Vision source tree")
-elseif (EXISTS "D:/code/tvision/CMakeLists.txt")
-    set(TVISION_ROOT "D:/code/tvision" CACHE PATH "Local Turbo Vision source tree")
 elseif (EXISTS "${CMAKE_SOURCE_DIR}/../tvision/CMakeLists.txt")
     set(TVISION_ROOT "${CMAKE_SOURCE_DIR}/../tvision" CACHE PATH "Local Turbo Vision source tree")
 else()
@@ -103,10 +102,6 @@ endif()
 set(_VCPKG_ENV "$ENV{VCPKG_ROOT}")
 if (_VCPKG_ENV)
     set(VCPKG_ROOT "${_VCPKG_ENV}" CACHE PATH "vcpkg root (hint)")
-elseif (EXISTS "C:/Users/deral/vcpkg/.vcpkg-root")
-    set(VCPKG_ROOT "C:/Users/deral/vcpkg" CACHE PATH "vcpkg root (hint)")
-elseif (EXISTS "D:/vcpkg/.vcpkg-root")
-    set(VCPKG_ROOT "D:/vcpkg" CACHE PATH "vcpkg root (hint)")
 else()
     set(VCPKG_ROOT "" CACHE PATH "vcpkg root (hint)")
 endif()
@@ -209,6 +204,9 @@ else()
     endif()
 endif()
 
+# JSON is used by the DDL/schema command surface and is a core dependency.
+find_package(nlohmann_json CONFIG REQUIRED)
+
 # ============================================================
 # Target Helper
 # ============================================================
@@ -275,6 +273,8 @@ function(dottalk_apply_common_settings target_name)
     else()
         target_compile_definitions(${target_name} PRIVATE DOTTALK_SQLITE_AVAILABLE=0)
     endif()
+
+    target_link_libraries(${target_name} PRIVATE nlohmann_json::nlohmann_json)
 endfunction()
 
 # ============================================================
@@ -357,7 +357,7 @@ message(STATUS "  DOTTALK_WITH_DEV      : ${DOTTALK_WITH_DEV}")
 message(STATUS "  DOTTALK_EXTRA_DIAGN.  : ${DOTTALK_EXTRA_DIAGNOSTICS}")
 message(STATUS "  DOTTALK_WITH_INDEX    : ${DOTTALK_WITH_INDEX}")
 message(STATUS "  DOTTALK_WITH_RELATIONS: ${DOTTALK_WITH_RELATIONS}")
-message(STATUS "  DOTTALK_WITH_EDUCATON : ${DOTTALK_WITH_EDUCATION}")
+message(STATUS "  DOTTALK_WITH_EDUCATION: ${DOTTALK_WITH_EDUCATION}")
 message(STATUS "  xexpr found           : ${_xexpr_found}")
 message(STATUS "  DOTTALK_WITH_TV       : ${DOTTALK_WITH_TV}")
 message(STATUS "  DOTTALK_WITH_GUI      : ${DOTTALK_WITH_GUI}")
@@ -378,7 +378,7 @@ message(STATUS "===================================")
 # Option B: dt_meta static library plus standalone developer executable.
 # Safety boundary: no HELP DATA rebuild, no CMDHELPCHK mutation, no DBF writes.
 
-if(NOT TARGET dt_meta)
+if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET dt_meta)
     add_library(dt_meta STATIC
         src/cli/expr/date/date_arith.cpp
         src/cli/expr/date/date_utils.cpp
@@ -401,7 +401,7 @@ if(NOT TARGET dt_meta)
     target_compile_features(dt_meta PUBLIC cxx_std_17)
 endif()
 
-if(NOT TARGET metacollect)
+if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET metacollect)
     add_executable(metacollect
         src/tools/metacollect_main.cpp
     )
@@ -409,3 +409,12 @@ if(NOT TARGET metacollect)
     target_link_libraries(metacollect PRIVATE dt_meta)
 endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
+
+if(TARGET dottalkpp)
+    install(TARGETS dottalkpp RUNTIME DESTINATION bin)
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/dottalkpp/data/"
+            DESTINATION data
+            PATTERN "logs" EXCLUDE
+            PATTERN "tmp" EXCLUDE
+            PATTERN "*.mdb" EXCLUDE)
+endif()

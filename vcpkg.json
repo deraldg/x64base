@@ -1,12 +1,27 @@
 {
   "name": "dottalkpp",
-  "version-string": "0.6",
+  "version-string": "0.6.0-beta",
   "dependencies": [
-    "sqlite3",
-    "tvision",
-    "pybind11",
     "lmdb",
     "nlohmann-json",
-    "wxwidgets"
-  ]
+    "sqlite3"
+  ],
+  "features": {
+    "index": {
+      "description": "Enable the LMDB-backed xindex command surface",
+      "dependencies": []
+    },
+    "tv": {
+      "description": "Turbo Vision TUI support",
+      "dependencies": ["tvision"]
+    },
+    "wx": {
+      "description": "wxWidgets GUI support",
+      "dependencies": ["wxwidgets"]
+    },
+    "python": {
+      "description": "Python bindings",
+      "dependencies": ["pybind11"]
+    }
+  }
 }

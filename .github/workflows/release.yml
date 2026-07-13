@@ -1,0 +1,41 @@
+name: Release beta
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows-beta:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake --preset windows-core
+      - name: Build and test
+        run: |
+          cmake --build --preset windows-core --parallel
+          ctest --preset windows-core
+      - name: Install
+        shell: pwsh
+        run: |
+          $name = "x64base-$env:GITHUB_REF_NAME-windows-x64"
+          cmake --install build/windows-core --config Release --prefix "stage/$name"
+          Copy-Item LICENSE,README.md,CHANGELOG.md,RELEASE_NOTES.md "stage/$name"
+          Compress-Archive -Path "stage/$name" -DestinationPath "stage/$name.zip"
+          (Get-FileHash "stage/$name.zip" -Algorithm SHA256).Hash.ToLower() + "  $name.zip" |
+            Set-Content "stage/$name.zip.sha256"
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $name = "x64base-$env:GITHUB_REF_NAME-windows-x64"
+          gh release create $env:GITHUB_REF_NAME `
+            "stage/$name.zip" `
+            "stage/$name.zip.sha256" `
+            --draft `
+            --title "x64base $env:GITHUB_REF_NAME" `
+            --notes-file RELEASE_NOTES.md

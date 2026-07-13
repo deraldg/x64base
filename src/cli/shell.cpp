@@ -34,9 +34,6 @@
 #include "cli/output_router.hpp"
 #include "cli/fn_autoreg.hpp"
 
-// Indexing
-#include <lmdb.h>
-
 // top include
 #include "xbase.hpp"
 #include "xbase_vfp.hpp"

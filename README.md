@@ -1,10 +1,23 @@
 # DotTalk++ / x64base
 
-**An educational-first, open, object-oriented hybrid xBase/DBF runtime and documentation system built in modern C++.**
+**Open, inspect, index, relate, and script DBF-family data with a modern C++20 runtime.**
+
+[![CI](https://github.com/deraldg/x64base/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/deraldg/x64base/actions/workflows/ci.yml)
+
+> **Current state:** active beta research software. The public `main` branch is
+> the canonical collaboration and release branch. No production-readiness or
+> cross-format atomic-transaction guarantee is made.
 
 DotTalk++ / x64base is a working beta research and teaching system for DBF-style database ideas: tables, records, fields, work areas, indexes, memos, relations, metadata, HELP, scripts, browsers, and GUI/TUI experiments.
 
 It is not currently presented as a finished commercial database product or a drop-in clone of Visual FoxPro, Harbour, Alaska Xbase++, or dBASE. It is a lineage evolution: a modern C++ architecture that preserves the visible, teachable parts of xBase while exploring larger DBF-family structures, self-documenting metadata, and repeatable educational workflows.
+
+```text
+USE students
+SET ORDER TO TAG lname
+SEEK "WHITE"
+SMARTLIST NEXT 5
+```
 
 ## Website
 
@@ -23,7 +36,9 @@ Start here:
 - [Data Mutators](https://x64base.com/docs/dottalk/data-mutators/)
 - [Historical Source Lineage](https://x64base.com/docs/dev/historical-source-lineage/)
 
-The website is the preferred public summary. This README is intentionally short so the GitHub landing page does not duplicate the manual.
+The website is the preferred public manual. This repository is authoritative
+for public source, build instructions, tests, licensing, and releases. Website
+claims should cite a commit, test, or clearly labeled planned lane.
 
 ## Current Position
 
@@ -174,11 +189,38 @@ The project has historical roots in earlier ANSI C xBase/DotTalk work from the 1
 
 The current preservation lane records source families, checksums, evidence labels, and feature tags so historical code can be studied without confusing it with current runtime truth.
 
-## Build Notes
+## Quick Start
 
-The active development environment has included Windows/MSVC, WSL/Ubuntu, and POSIX-oriented build lanes. Requirements and exact build recipes are still being curated into the public docs.
+Requirements for the portable core build:
 
-The repository uses CMake and vcpkg metadata. See the project files and website docs for current build guidance rather than treating this README as the full installation manual.
+- CMake 3.21 or newer;
+- a C++20 compiler;
+- Ninja or another supported CMake generator.
+
+```sh
+cmake --preset core
+cmake --build --preset core
+ctest --preset core
+```
+
+The core preset disables optional TUI, GUI, Python, and LMDB-backed index
+commands. LMDB itself remains a baseline dependency because the runtime
+message catalog maintains LMDB mirrors. Enable optional surfaces explicitly
+through the documented presets or CMake options. See
+[`docs/getting-started/BUILDING.md`](docs/getting-started/BUILDING.md) for
+Windows, Linux/WSL, macOS, and vcpkg instructions.
+
+## Public Project Model
+
+- `main` is the canonical public source, CI, and release branch.
+- Feature and research branches may run ahead, but are not public runtime truth
+  until promoted through a reviewed pull request.
+- Local implementation or staging directories are maintainer workflow details,
+  not alternate public authorities.
+- Releases identify the commit, supported build profile, artifacts, checksums,
+  and known limitations.
+
+See [`docs/PUBLIC_PROJECT_MODEL.md`](docs/PUBLIC_PROJECT_MODEL.md).
 
 ## Status Language
 
@@ -206,7 +248,9 @@ xBase / SAP / ERP background
 
 ## License
 
-To be defined.
+The repository contains a **tentative MIT license** pending final maintainer and
+legal review. See [`LICENSE`](LICENSE). The tentative label is intentional and
+must remain visible until the review is complete.
 
 ## Final Note
 
