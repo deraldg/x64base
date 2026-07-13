@@ -106,17 +106,19 @@ void cmd_STUDENTHELLO(xbase::DbArea&, std::istringstream& in)
 }
 
 static bool s_registered = []() {
-    dli::registry().add("STUDENTHELLO",
+    dli::register_extension_command("STUDENTHELLO",
         [](xbase::DbArea& A, std::istringstream& S) {
             cmd_STUDENTHELLO(A, S);
             relations_api::refresh_if_enabled();
-        });
+        },
+        "src/ext/cmd/cmd_student_hello.cpp");
 
-    dli::registry().add("SHELLO",
+    dli::register_extension_command("SHELLO",
         [](xbase::DbArea& A, std::istringstream& S) {
             cmd_STUDENTHELLO(A, S);
             relations_api::refresh_if_enabled();
-        });
+        },
+        "src/ext/cmd/cmd_student_hello.cpp");
 
     return true;
 }();

@@ -4,6 +4,7 @@
 #include "expr/date/date_utils.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "shell_lexicon.hpp"
+#include "shell_var_utils.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -103,6 +104,15 @@ static std::string quote_dottalk_string(const std::string& raw) {
 
 bool eval_for_varbang(xbase::DbArea& A, const std::string& expr, VarBangEval& out, std::string& err) {
     std::string src = textio::trim(expr);
+    if (src.empty()) { err = "empty expression"; return false; }
+
+    std::string expanded;
+    std::string macro_err_name;
+    if (!expand_macros_outside_quotes(src, expanded, macro_err_name)) {
+        err = "undefined variable: " + macro_err_name;
+        return false;
+    }
+    src = textio::trim(expanded);
     if (src.empty()) { err = "empty expression"; return false; }
 
     // Clock-only fast path

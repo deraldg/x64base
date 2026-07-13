@@ -237,6 +237,47 @@ std::optional<std::filesystem::path> resolve_workspace_schema_token(const std::f
     return std::nullopt;
 }
 
+std::filesystem::path normalize_workspace_schema_extension(std::filesystem::path path) {
+    if (!path.has_extension()) {
+        path.replace_extension(".dtschema");
+    }
+    return path;
+}
+
+std::filesystem::path resolve_workspace_schema_save_target(const std::string& token_text) {
+    std::filesystem::path path(strip_matching_quotes(token_text));
+    path = normalize_workspace_schema_extension(std::move(path));
+    if (path.is_absolute()) {
+        return path;
+    }
+    return dottalk::paths::get_slot(dottalk::paths::Slot::WORKSPACES) / path;
+}
+
+bool path_is_under_root(const std::filesystem::path& path, const std::filesystem::path& root) {
+    if (path.empty() || root.empty()) {
+        return false;
+    }
+    std::error_code ec;
+    const auto relative = std::filesystem::relative(path, root, ec);
+    if (ec || relative.empty()) {
+        return false;
+    }
+    const std::string text = relative.generic_string();
+    return text != ".." && text.rfind("../", 0) != 0;
+}
+
+std::filesystem::path relativize_schema_path(const std::filesystem::path& path,
+                                             const std::filesystem::path& preferred_root) {
+    if (path_is_under_root(path, preferred_root)) {
+        std::error_code ec;
+        const auto relative = std::filesystem::relative(path, preferred_root, ec);
+        if (!ec && !relative.empty()) {
+            return relative;
+        }
+    }
+    return path;
+}
+
 std::optional<std::filesystem::path> workspace_load_schema_from_cli_output(const std::string& output,
                                                                            const std::string& command_text) {
     std::istringstream stream(output);
@@ -989,6 +1030,22 @@ std::string order_backend(const xbase::DbArea& area) {
         return "xindex";
     }
     return "orderstate";
+}
+
+std::string schema_index_type(const xbase::DbArea& area) {
+    if (orderstate::isCdx(area) || area.kind() == xbase::AreaKind::V64 || area.kind() == xbase::AreaKind::V128) {
+        return "CDX";
+    }
+    if (orderstate::isInx(area)) {
+        return "INX";
+    }
+    if (orderstate::isCnx(area)) {
+        return "CNX";
+    }
+    if (area.kind() == xbase::AreaKind::V32) {
+        return "CNX";
+    }
+    return {};
 }
 
 bool output_clears_relations(const std::string& output) {
@@ -1795,6 +1852,107 @@ std::size_t Session::mirror_workspace_load_schema(const std::filesystem::path& s
     return opened;
 }
 
+bool Session::save_workspace_schema(const std::filesystem::path& schema_path,
+                                    std::vector<StatusMessage>& messages,
+                                    std::filesystem::path* saved_path) const {
+    if (schema_path.empty()) {
+        messages.push_back(warning("gui.workspace.schema_name_missing",
+                                   "WORKSPACE SAVE needs a schema file name."));
+        return false;
+    }
+
+    const auto target = normalize_workspace_schema_extension(schema_path);
+    const auto parent = target.parent_path();
+    std::error_code ec;
+    if (!parent.empty()) {
+        std::filesystem::create_directories(parent, ec);
+        if (ec) {
+            messages.push_back(error("gui.workspace.schema_dir_create_failed",
+                                     "WORKSPACE SAVE could not create the schema directory.",
+                                     parent.string() + ": " + ec.message()));
+            return false;
+        }
+    }
+
+    std::ofstream file(target, std::ios::binary | std::ios::trunc);
+    if (!file) {
+        messages.push_back(error("gui.workspace.schema_write_failed",
+                                 "WORKSPACE SAVE could not open the schema file for writing.",
+                                 target.string()));
+        return false;
+    }
+
+    for (const auto& area : impl_->areas) {
+        if (!area->area.isOpen()) {
+            continue;
+        }
+
+        const auto index_type = schema_index_type(area->area);
+        const auto dbf_root = index_type == "CDX"
+            ? dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X64)
+            : dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X32);
+        const auto index_root = index_type == "CDX"
+            ? dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES_X64)
+            : dottalk::paths::get_slot(dottalk::paths::Slot::INDEXES_X32);
+
+        const auto dbf_token = relativize_schema_path(area->path, dbf_root).generic_string();
+        const auto alias_stem = area->display_name.empty()
+            ? std::string{}
+            : std::filesystem::path(area->display_name).stem().string();
+        const auto path_stem = area->path.stem().string();
+        const bool keep_alias = !alias_stem.empty() &&
+                                lower_ascii(alias_stem) != lower_ascii(path_stem) &&
+                                lower_ascii(alias_stem) != lower_ascii(area->area.logicalName());
+
+        file << "AREA " << visible_area_id(area->id)
+             << "|dbf=\"" << dbf_token << "\"";
+        if (!index_type.empty()) {
+            file << "|indextype=" << index_type;
+        }
+        if (orderstate::hasOrder(area->area)) {
+            const auto container = relativize_schema_path(std::filesystem::path(orderstate::orderName(area->area)),
+                                                          index_root)
+                                       .generic_string();
+            if (!container.empty()) {
+                file << "|index=\"" << container << "\"";
+            }
+            const std::string tag = trim_ascii(orderstate::activeTag(area->area));
+            if (!tag.empty()) {
+                file << "|tag=\"" << tag << "\"";
+            }
+        }
+        if (keep_alias) {
+            file << "|alias=\"" << alias_stem << "\"";
+        }
+        file << "\n";
+    }
+
+    for (const auto& relation : impl_->relations) {
+        if (relation.parent.empty() || relation.child.empty() || relation.parent_key.empty()) {
+            continue;
+        }
+        file << "RELATION " << relation.parent
+             << " " << relation.child
+             << " ON " << relation.parent_key << "\n";
+    }
+
+    file.flush();
+    if (!file) {
+        messages.push_back(error("gui.workspace.schema_write_failed",
+                                 "WORKSPACE SAVE could not finish writing the schema file.",
+                                 target.string()));
+        return false;
+    }
+
+    if (saved_path) {
+        *saved_path = target;
+    }
+    messages.push_back(info("gui.workspace.saved",
+                            "WORKSPACE SAVE wrote the current GUI workspace schema.",
+                            target.string()));
+    return true;
+}
+
 bool Session::mirror_workspace_add_table(const std::filesystem::path& path,
                                          std::vector<StatusMessage>& messages) {
     std::error_code ec;
@@ -2135,6 +2293,20 @@ CommandResult Session::run_command(const CommandRequest& request) {
 
         return workspace_open_mirrored;
     };
+    auto build_cli_request = [&](const std::string& cli_text) {
+        RuntimeCliRequest cli_request;
+        cli_request.command = cli_text;
+        if (const auto* area = impl_->active_area(); area && area->area.isOpen()) {
+            cli_request.active_table_path = area->path;
+            cli_request.active_record_number = area->area.recno64();
+            if (orderstate::hasOrder(area->area)) {
+                cli_request.active_index_container = std::filesystem::path(orderstate::orderName(area->area));
+                cli_request.active_index_tag = orderstate::activeTag(area->area);
+                cli_request.active_index_ascending = orderstate::isAscending(area->area);
+            }
+        }
+        return cli_request;
+    };
 
     if (verb == "help" || verb == "aiuto" || verb == "?") {
         out << "DotTalk++ Workbench command lane\n\n"
@@ -2148,7 +2320,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             << "                    open every DBF in a directory as GUI areas\n"
             << "  workspace close   close all GUI work areas\n"
             << "  workspace load|save <name.dtschema>\n"
-            << "                    DTSchema contract skeletons\n"
+            << "                    load or save the current GUI workspace schema\n"
             << "  list | browse     summarize the active browse snapshot\n"
             << "  status            summarize GUI session status\n"
             << "  structure         list fields for the active area\n"
@@ -2281,14 +2453,46 @@ CommandResult Session::run_command(const CommandRequest& request) {
                 << "Indexes: workspace graph service pending\n"
                 << "Browsers/lists: workspace graph service pending\n"
                 << "ERSATZ presets: workspace graph service pending\n"
-                << "DTSchema load/save: bootstrap menu active; graph service pending";
+                << "DTSchema load/save: runtime schema service active; graph service pending";
         } else if (action == "load" || action == "save" || action == "saveas") {
-            const std::string name = remove_first_tokens(dispatch_command, 2);
-            result.messages.push_back(info("gui.workspace.dtschema_skeleton",
-                                           "DTSchema load/save is registered as a GUI workspace contract skeleton."));
-            out << "WORKSPACE " << lower_ascii(action) << "\n"
-                << "DTSchema: " << (name.empty() ? std::string("(not provided)") : name) << "\n"
-                << "The .dtschema graph service is pending; this command is now reserved by the workbench.";
+            const std::string name = trim_ascii(remove_first_tokens(dispatch_command, 2));
+            if (name.empty()) {
+                result.messages.push_back(warning("gui.workspace.schema_name_missing",
+                                                  "WORKSPACE LOAD/SAVE needs a schema file name."));
+                out << "Usage:\n"
+                    << "  workspace load <name.dtschema>\n"
+                    << "  workspace save <name.dtschema>";
+            } else if (action == "load") {
+                const auto schema = resolve_workspace_schema_token(std::filesystem::path(strip_matching_quotes(name)));
+                if (!schema) {
+                    result.messages.push_back(warning("gui.workspace.schema_missing",
+                                                      "WORKSPACE LOAD could not find the schema file.",
+                                                      name));
+                    out << "WORKSPACE LOAD\n"
+                        << "Schema not found: " << name;
+                } else {
+                    const auto opened = mirror_workspace_load_schema(*schema, result.messages);
+                    out << "WORKSPACE LOAD\n"
+                        << "Schema: " << schema->string() << "\n"
+                        << "Opened GUI areas: " << opened << "\n";
+                    if (impl_->active_area_id != 0) {
+                        if (const auto* area = impl_->active_area()) {
+                            out << "Active area: " << visible_area_id(area->id)
+                                << "  " << area->display_name << "\n";
+                        }
+                    }
+                }
+            } else {
+                std::filesystem::path saved_path;
+                const bool saved = save_workspace_schema(resolve_workspace_schema_save_target(name),
+                                                         result.messages,
+                                                         &saved_path);
+                out << "WORKSPACE " << upper_ascii(action) << "\n"
+                    << "Schema: " << normalize_workspace_schema_extension(saved_path.empty()
+                        ? resolve_workspace_schema_save_target(name)
+                        : saved_path).string() << "\n"
+                    << (saved ? "Workspace schema saved." : "Workspace schema was not saved.");
+            }
         } else {
             result.messages.push_back(warning("gui.workspace.unknown",
                                               "Unknown workspace command.",
@@ -2314,7 +2518,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             << "Indexes: workspace graph service pending\n"
             << "Browsers/lists: workspace graph service pending\n"
             << "ERSATZ presets: workspace graph service pending\n"
-            << "DTSchema load/save: bootstrap menu active; graph service pending";
+            << "DTSchema load/save: runtime schema service active; graph service pending";
     } else if (verb == "status") {
         const auto* area = impl_->active_area();
         out << "GUI SESSION STATUS\n"
@@ -2496,12 +2700,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
         }
     } else if (verb == "cli") {
         const std::string cli_command = remove_first_token(command);
-        const auto* area = impl_->active_area();
-        RuntimeCliResult cli = impl_->shell_runtime->run(RuntimeCliRequest{
-            cli_command,
-            area ? area->path : std::filesystem::path{},
-            area ? area->area.recno64() : 0
-        });
+        RuntimeCliResult cli = impl_->shell_runtime->run(build_cli_request(cli_command));
         if (!cli.attempted) {
             out << cli.detail;
             result.messages.push_back(warning("gui.command.cli_unavailable",
@@ -2532,12 +2731,7 @@ CommandResult Session::run_command(const CommandRequest& request) {
             return result;
         }
 
-        const auto* area = impl_->active_area();
-        RuntimeCliResult cli = impl_->shell_runtime->run(RuntimeCliRequest{
-            dispatch_command,
-            area ? area->path : std::filesystem::path{},
-            area ? area->area.recno64() : 0
-        });
+        RuntimeCliResult cli = impl_->shell_runtime->run(build_cli_request(dispatch_command));
         if (cli.attempted) {
             write_cli_result(out, cli);
             const bool output_workspace_mirrored = mirror_cli_result_to_gui(cli, dispatch_command);

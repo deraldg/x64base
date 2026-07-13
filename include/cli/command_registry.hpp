@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -17,6 +18,20 @@ namespace xbase { class DbArea; }
 namespace dli {
 
 using Handler = std::function<void(xbase::DbArea& area, std::istringstream& args)>;
+
+enum class CommandOrigin : std::uint8_t {
+    Core = 0,
+    Extension,
+    Function,
+};
+
+const char* to_string(CommandOrigin origin) noexcept;
+
+struct CommandRegistration {
+    CommandOrigin origin{CommandOrigin::Core};
+    bool protected_name{true};
+    std::string source;
+};
 
 /**
  * Handlers may throw this to request a clean shutdown (EXIT/QUIT).
@@ -40,7 +55,23 @@ struct RunResult {
 
 class CommandRegistry final {
 public:
-    void add(const std::string& name, Handler h);
+    /**
+     * Historical registration path. It now means "core/built-in" and protects
+     * the command name from later extension overwrite.
+     */
+    bool add(const std::string& name, Handler h);
+
+    bool add_builtin(const std::string& name,
+                     Handler h,
+                     std::string source = {});
+
+    bool add_extension(const std::string& name,
+                       Handler h,
+                       std::string source = {});
+
+    bool add_function(const std::string& name,
+                      Handler h,
+                      std::string source = {});
 
     /**
      * Legacy contract: returns "keep shell alive".
@@ -62,14 +93,28 @@ public:
                       std::istringstream& args);
 
     const std::unordered_map<std::string, Handler>& map() const noexcept { return map_; }
+    const std::unordered_map<std::string, CommandRegistration>& registrations() const noexcept { return registrations_; }
+
+    bool is_protected(const std::string& name) const;
+    std::optional<CommandRegistration> registration_info(const std::string& name) const;
 
 private:
+    bool add_with_origin(const std::string& name,
+                         Handler h,
+                         CommandOrigin origin,
+                         bool protect_name,
+                         std::string source);
+
     std::unordered_map<std::string, Handler> map_;
+    std::unordered_map<std::string, CommandRegistration> registrations_;
 };
 
 CommandRegistry& registry();
 void register_command(const std::string& name, Handler h);
+bool register_extension_command(const std::string& name, Handler h, std::string source = {});
+bool register_function_command(const std::string& name, Handler h, std::string source = {});
 const std::unordered_map<std::string, Handler>& map();
+const std::unordered_map<std::string, CommandRegistration>& registrations();
 
 /**
  * Quote-aware argv tokens for the currently executing command.

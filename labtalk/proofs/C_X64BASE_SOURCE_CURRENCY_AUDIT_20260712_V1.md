@@ -159,6 +159,14 @@ content, staged working-copy content, and Git index/commit inclusion. A local
 build can consume an untracked file and cannot by itself prove GitHub
 completeness.
 
+A subsequent full blob comparison found 58 tracked C/C++ paths whose C working
+copies matched development but whose committed blobs were stale. The explicit
+set was staged after correcting eight whitespace-hygiene findings in
+authoritative development. Six of those paths then matched their existing
+committed content, leaving 52 substantive current-source updates. The final
+pre-commit Git-index audit covered all 980 C/C++ and header paths and reported
+zero missing paths and zero content differences from `D:\code\ccode`.
+
 ## Build interpretation
 
 The staging executable linked successfully at 2026-07-12 20:59:32, but it was

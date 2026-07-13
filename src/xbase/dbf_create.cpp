@@ -127,10 +127,6 @@ static bool validate_lengths_for_flavor(const std::vector<FieldSpec>& fields,
             err = "only X64 character fields may currently exceed 255 bytes";
             return false;
         }
-        if (flavor == Flavor::X64 && f.type == 'C' && f.len > 4096u) {
-            err = "X64 C type length must be between 1 and 4096";
-            return false;
-        }
     }
     return true;
 }
@@ -388,14 +384,12 @@ static bool write_x64_dbf(const std::string& path,
                           std::string& err)
 {
     bool hasMemo = false;
-    std::uint16_t recLen = 1; // delete flag
-
     std::vector<std::string> fieldNames;
     std::vector<std::uint32_t> fieldLengths;
     fieldNames.reserve(fields.size());
     fieldLengths.reserve(fields.size());
 
-    std::uint32_t recLenWide = 1; // delete flag
+    std::uint64_t recLenWide = 1; // delete flag
     for (const auto& f : fields)
     {
         if (f.len == 0) {
@@ -407,33 +401,21 @@ static bool write_x64_dbf(const std::string& path,
             return false;
         }
         recLenWide += f.len;
-        if (recLenWide > static_cast<std::uint32_t>(std::numeric_limits<std::uint16_t>::max())) {
-            err = "X64 record length exceeds current compatible 16-bit record-size mirror";
-            return false;
-        }
         if (f.type == 'M') hasMemo = true;
         fieldNames.push_back(f.name);
         fieldLengths.push_back(f.len);
     }
-    recLen = static_cast<std::uint16_t>(recLenWide);
 
     const std::string tableName = std::filesystem::path(path).stem().string();
     const std::vector<char> metaBlock =
         xbase::x64_build_name_metadata(tableName, fieldNames, fieldLengths);
 
-    const std::size_t hdrLenWide =
+    const std::uint64_t hdrLenWide =
         sizeof(xbase::VfpHeader) +
         sizeof(xbase::LargeHeaderExtension) +
         fields.size() * sizeof(xbase::VfpField) +
         1 +
         metaBlock.size();
-
-    if (hdrLenWide > static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max())) {
-        err = "X64 header/metadata section is too large for current compatible header";
-        return false;
-    }
-
-    const std::uint16_t hdrLen = static_cast<std::uint16_t>(hdrLenWide);
 
     std::error_code ec;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
@@ -458,8 +440,8 @@ static bool write_x64_dbf(const std::string& path,
     hdr.mm             = static_cast<std::uint8_t>(lt.tm_mon + 1);
     hdr.dd             = static_cast<std::uint8_t>(lt.tm_mday);
     hdr.num_recs       = 0;
-    hdr.header_size    = hdrLen;
-    hdr.record_size    = recLen;
+    hdr.header_size    = xbase::x64_compatible_u16_mirror(hdrLenWide);
+    hdr.record_size    = xbase::x64_compatible_u16_mirror(recLenWide);
     hdr.in_transaction = 0;
     hdr.encrypted      = 0;
     hdr.table_flags    = hasMemo ? 0x02 : 0x00;
@@ -474,8 +456,8 @@ static bool write_x64_dbf(const std::string& path,
 
     xbase::LargeHeaderExtension ext{};
     ext.record_count   = 0;
-    ext.data_start_64  = hdrLen;
-    ext.record_size_64 = recLen;
+    ext.data_start_64  = hdrLenWide;
+    ext.record_size_64 = recLenWide;
     ext.autoq_next     = 1;
     ext.table_flags    = hasMemo ? xbase::DBF64_FLAG_HAS_MEMO : 0;
     if (!metaBlock.empty()) {
@@ -492,16 +474,21 @@ static bool write_x64_dbf(const std::string& path,
         return false;
     }
 
-    std::uint32_t offset = 1; // delete flag byte
+    std::uint64_t offset = 1; // delete flag byte
 
     for (const auto& f : fields)
     {
+        if (offset > static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())) {
+            err = "X64 field displacement exceeds current compatible descriptor limit";
+            return false;
+        }
+
         xbase::VfpField vf{};
         const std::string fn = descriptor_name_for(f);
         std::memcpy(vf.name, fn.c_str(), fn.size());
 
         vf.type         = f.type;
-        vf.displacement = offset;
+        vf.displacement = static_cast<std::uint32_t>(offset);
         vf.length       = descriptor_length_for(f, true);
         vf.decimals     = f.dec;
         vf.reserved1    = 0;
@@ -516,7 +503,7 @@ static bool write_x64_dbf(const std::string& path,
             return false;
         }
 
-        offset = static_cast<std::uint32_t>(offset + f.len);
+        offset += f.len;
     }
 
     out.put((char)0x0D);

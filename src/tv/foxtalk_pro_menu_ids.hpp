@@ -1,6 +1,6 @@
 #pragma once
 
-// Professional Foxtalk menu command ids.
+// Professional ArcticTalk/Foxtalk menu command ids.
 // Kept separate from foxtalk_ids.hpp so the command desktop can evolve
 // without disturbing the existing window/status command id contract.
 namespace foxtalk {

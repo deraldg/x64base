@@ -78,7 +78,6 @@ static void print_bang_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::BangUsageText);
 }
-
 static bool env_truthy(const char* value)
 {
     if (!value)

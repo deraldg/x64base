@@ -39,7 +39,7 @@ std::string format_workspace_graph_text(const ListAreasResult& areas,
     graph << "Indexes: workspace graph service pending\n";
     graph << "Browsers/lists: workspace graph service pending\n";
     graph << "ERSATZ presets: workspace graph service pending\n";
-    graph << "DTSchema load/save: bootstrap menu active; graph service pending\n";
+    graph << "DTSchema load/save: routed through DotTalk++ runtime schema commands; graph service pending\n";
     return graph.str();
 }
 
@@ -101,7 +101,7 @@ std::string format_workspace_graph_text(const WorkspaceModel& model,
 
     graph << "\nBrowsers/lists: workspace graph service pending\n";
     graph << "ERSATZ presets: runtime output available; visual presets pending\n";
-    graph << "DTSchema load/save: bootstrap menu active; graph service pending\n";
+    graph << "DTSchema load/save: routed through DotTalk++ runtime schema commands; graph service pending\n";
     return graph.str();
 }
 

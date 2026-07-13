@@ -191,6 +191,26 @@ inline bool x64_should_use_descriptor_name_fallback(uint32_t table_flags) noexce
     return !x64_has_name_vector_metadata(table_flags);
 }
 
+inline std::uint16_t x64_compatible_u16_mirror(std::uint64_t value) noexcept
+{
+    return (value > static_cast<std::uint64_t>(std::numeric_limits<std::uint16_t>::max()))
+        ? std::numeric_limits<std::uint16_t>::max()
+        : static_cast<std::uint16_t>(value);
+}
+
+inline bool x64_compatible_u16_matches(std::uint16_t mirror, std::uint64_t wide) noexcept
+{
+    if (mirror == 0) {
+        return true;
+    }
+
+    if (wide <= static_cast<std::uint64_t>(std::numeric_limits<std::uint16_t>::max())) {
+        return mirror == static_cast<std::uint16_t>(wide);
+    }
+
+    return mirror == std::numeric_limits<std::uint16_t>::max();
+}
+
 inline std::string x64_resolve_field_name_or_fallback(uint32_t table_flags,
                                                       const std::string& metadata_name,
                                                       const std::string& fallback_name)
@@ -430,28 +450,13 @@ inline bool validate_large_header_extension(const VfpHeader& vh,
         return fail("x64 record_size_64 is zero");
     }
 
-    // Current DbArea setters accept int16_t. Until the common runtime surface
-    // is widened, reject values that would overflow that API instead of
-    // truncating/casting them into negative or corrupted geometry.
-    if (ext.data_start_64 >
-        static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max())) {
-        return fail("x64 data_start_64 exceeds current DbArea range");
-    }
-
-    if (ext.record_size_64 >
-        static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max())) {
-        return fail("x64 record_size_64 exceeds current DbArea range");
-    }
-
     // The compatible VFP-style header should mirror the x64 extension geometry
     // when those compatible fields are populated.
-    if (vh.header_size != 0 &&
-        ext.data_start_64 != static_cast<std::uint64_t>(vh.header_size)) {
+    if (!x64_compatible_u16_matches(vh.header_size, ext.data_start_64)) {
         return fail("x64 data_start_64 disagrees with compatible header_size");
     }
 
-    if (vh.record_size != 0 &&
-        ext.record_size_64 != static_cast<std::uint64_t>(vh.record_size)) {
+    if (!x64_compatible_u16_matches(vh.record_size, ext.record_size_64)) {
         return fail("x64 record_size_64 disagrees with compatible record_size");
     }
 
@@ -508,8 +513,8 @@ inline void readHeader(DbArea& area, std::fstream& fp) {
     // DbArea and let the legacy 32-bit mirror clamp only where required.
     area.setRecordCount64(ext.record_count);
 
-    area.setDataStart(static_cast<int16_t>(ext.data_start_64));
-    area.setRecordLength(static_cast<int16_t>(ext.record_size_64));
+    area.setDataStart(ext.data_start_64);
+    area.setRecordLength(ext.record_size_64);
     area.setAutoQNext64(ext.autoq_next);
     area.setTableFlags(ext.table_flags);
 }

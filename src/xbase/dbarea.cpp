@@ -79,6 +79,8 @@ void DbArea::close() {
     _crn = 0;
     _crn64 = 0;
     _rec_count64 = 0;
+    _data_start64 = 0;
+    _record_length64 = 0;
     _del = NOT_DELETED;
 
     _memo_kind = MemoKind::NONE;
@@ -113,7 +115,7 @@ void DbArea::setFilename(std::string path) {
 }
 
 int DbArea::recordLength() const noexcept {
-    return _hdr.cpr;
+    return recLength();
 }
 
 // ---------- runtime capability model ----------------------------------------

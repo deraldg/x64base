@@ -16,7 +16,7 @@
 //
 //   NOTE:
 //   - If CNX/INX/CDX is NOT specified, WORKSPACE OPEN uses the table flavor:
-//     v64/v128 -> CDX(LMDB), v32 -> CNX. Use NOINDEX to suppress this.
+//     true x64/v128 -> CDX(LMDB), classic VFP/v32 -> CNX. Use NOINDEX to suppress this.
 //     (DBF sidecars like memo are handled by the DBF open path, not by WORKSPACE.)
 //   - TABLE flag will TABLE-ON each opened workarea (open DBF areas only).
 //
@@ -92,7 +92,7 @@
 //   WORKSPACE ADD is additive and preserves existing open areas.
 //   WORKSPACE CLOSE closes all open work areas and clears relation/session state.
 //   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
-//   Default index policy is flavor-aware: v64/v128 uses CDX(LMDB), v32 uses CNX.
+//   Default index policy is flavor-aware: true x64/v128 uses CDX(LMDB), classic VFP/v32 uses CNX.
 //   DDL owns schema/definition work; WORKSPACE owns live session/work-area state.
 //
 // related:
@@ -119,6 +119,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
 #include "xindex/index_manager.hpp"
 #include "cli/dirty_prompt.hpp"
@@ -643,17 +644,23 @@ static inline bool parse_noindex_ci(const std::string& token) {
            ci_equal(token, "none") || ci_equal(token, "physical");
 }
 
+static bool area_prefers_cdx_auto_index(const xbase::DbArea& A) {
+    return A.versionByte() == xbase::DBF_VERSION_64 || A.kind() == xbase::AreaKind::V128;
+}
+
 static IndexMode default_index_mode_for_area(const xbase::DbArea& A) {
+    if (area_prefers_cdx_auto_index(A)) return IndexMode::ForceCdx;
+
     switch (A.kind()) {
-        case xbase::AreaKind::V64:
-        case xbase::AreaKind::V128:
-            return IndexMode::ForceCdx;
-        case xbase::AreaKind::V32:
-            return IndexMode::ForceCnx;
-        case xbase::AreaKind::Tup:
-        case xbase::AreaKind::Unknown:
-        default:
-            return IndexMode::None;
+    case xbase::AreaKind::V32:
+    case xbase::AreaKind::V64:   // classic VFP stays in the CNX/INX lane
+        return IndexMode::ForceCnx;
+    case xbase::AreaKind::V128:
+        return IndexMode::ForceCdx;
+    case xbase::AreaKind::Tup:
+    case xbase::AreaKind::Unknown:
+    default:
+        return IndexMode::None;
     }
 }
 
@@ -662,7 +669,10 @@ static IndexMode effective_index_mode_for_area(const xbase::DbArea& A, IndexMode
     return requested;
 }
 
-static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, IndexMode mode, bool fallback) {
+static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath,
+                                                  IndexMode mode,
+                                                  bool fallback,
+                                                  bool allow_cnx_cdx_compat = true) {
     auto file_ok = [](const fs::path& p) {
         std::error_code ec;
         return fs::exists(p, ec) && !ec && fs::is_regular_file(p, ec) && !ec;
@@ -677,10 +687,11 @@ static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath, Index
     };
 
     auto cnx_candidates = [&](const fs::path& baseDir) -> std::vector<fs::path> {
-        return {
-            (baseDir / stem).concat(kCnxPrimaryExt),
-            (baseDir / stem).concat(kCnxCompatExt)
-        };
+        std::vector<fs::path> out{(baseDir / stem).concat(kCnxPrimaryExt)};
+        if (allow_cnx_cdx_compat) {
+            out.push_back((baseDir / stem).concat(kCnxCompatExt));
+        }
+        return out;
     };
 
     const fs::path sibDir = dbfPath.parent_path().empty() ? fs::current_path() : dbfPath.parent_path();
@@ -777,7 +788,8 @@ static std::optional<fs::path> find_index_for_open_area(const xbase::DbArea& A,
                                                         bool fallback) {
     const IndexMode effective = effective_index_mode_for_area(A, requested);
     if (effective == IndexMode::None || effective == IndexMode::Auto) return std::nullopt;
-    return find_index_for_dbf(dbfPath, effective, fallback);
+    const bool allow_cnx_cdx_compat = (requested != IndexMode::Auto);
+    return find_index_for_dbf(dbfPath, effective, fallback, allow_cnx_cdx_compat);
 }
 
 static bool attach_workspace_index(xbase::DbArea& A,
@@ -1895,7 +1907,7 @@ static void workspace_print_usage() {
     std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
     std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
     std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-    std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: v64/v128 CDX, v32 CNX.\n";
+    std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
 }
 
 std::string workspace_last_loaded_file() {
@@ -2162,7 +2174,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
                 std::cout << "  - WORKSPACE OPEN dbf uses the DBF slot directly.\n";
                 std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-                std::cout << "  - Without CNX/INX/CDX, indexes are chosen by DBF flavor: v64/v128 CDX, v32 CNX.\n";
+                std::cout << "  - Without CNX/INX/CDX, indexes are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
             }
             // WORKSPACE OPEN performs a structural reset first (schema_close_all),
             // then may open zero, one, or many tables. Refresh after the

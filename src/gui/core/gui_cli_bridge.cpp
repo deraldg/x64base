@@ -194,6 +194,25 @@ bool should_seed_active_table(const std::string& command) {
              verb == "exit");
 }
 
+void emit_active_index_seed(std::ofstream& out, const RuntimeCliRequest& request) {
+    if (request.active_index_container.empty()) {
+        out << "SET ORDER TO 0\n";
+        return;
+    }
+
+    if (script_token_needs_quoting(request.active_index_container)) {
+        out << "* GUI CLI bridge skipped active-index seeding because the path needs shell quoting.\n";
+        return;
+    }
+
+    out << "SET INDEX TO " << request.active_index_container.string() << "\n";
+    const std::string tag = trim_ascii(request.active_index_tag);
+    if (!tag.empty()) {
+        out << "SET ORDER TO " << tag << "\n";
+    }
+    out << (request.active_index_ascending ? "ASCEND\n" : "DESCEND\n");
+}
+
 std::filesystem::path gui_data_root_for_cli() {
     const auto data = dottalk::paths::get_slot(dottalk::paths::Slot::DATA);
     if (!data.empty()) {
@@ -268,6 +287,7 @@ RuntimeCliResult run_runtime_cli_command(const RuntimeCliRequest& request) {
         if (!request.active_table_path.empty() && should_seed_active_table(command)) {
             if (!script_token_needs_quoting(request.active_table_path)) {
                 out << "USE " << request.active_table_path.string() << " NOINDEX\n";
+                emit_active_index_seed(out, request);
                 if (request.active_record_number > 0) {
                     out << "GOTO " << request.active_record_number << "\n";
                 }

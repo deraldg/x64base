@@ -10,6 +10,8 @@
 
 #include <cctype>
 #include <iostream>
+#include <optional>
+#include <string>
 #include <vector>
 
 using xbase::DbArea;
@@ -27,15 +29,96 @@ static inline void ltrim_stream(std::istringstream& iss) {
         iss.get();
 }
 
-void CommandRegistry::add(const std::string& name, Handler h) {
-    map_[name] = std::move(h);
+static std::string normalize_key(std::string name)
+{
+    return textio::up(textio::trim(std::move(name)));
+}
+
+const char* to_string(CommandOrigin origin) noexcept
+{
+    switch (origin) {
+        case CommandOrigin::Core: return "core";
+        case CommandOrigin::Extension: return "extension";
+        case CommandOrigin::Function: return "function";
+    }
+    return "unknown";
+}
+
+bool CommandRegistry::add(const std::string& name, Handler h)
+{
+    return add_builtin(name, std::move(h));
+}
+
+bool CommandRegistry::add_builtin(const std::string& name,
+                                  Handler h,
+                                  std::string source)
+{
+    return add_with_origin(name, std::move(h), CommandOrigin::Core, true, std::move(source));
+}
+
+bool CommandRegistry::add_extension(const std::string& name,
+                                    Handler h,
+                                    std::string source)
+{
+    return add_with_origin(name, std::move(h), CommandOrigin::Extension, false, std::move(source));
+}
+
+bool CommandRegistry::add_function(const std::string& name,
+                                   Handler h,
+                                   std::string source)
+{
+    return add_with_origin(name, std::move(h), CommandOrigin::Function, true, std::move(source));
+}
+
+bool CommandRegistry::add_with_origin(const std::string& name,
+                                      Handler h,
+                                      CommandOrigin origin,
+                                      bool protect_name,
+                                      std::string source)
+{
+    const std::string key = normalize_key(name);
+    if (key.empty()) return false;
+
+    const auto existing = registrations_.find(key);
+    if (existing != registrations_.end() && existing->second.protected_name) {
+        if (origin == CommandOrigin::Extension) return false;
+        if (origin == CommandOrigin::Function &&
+            existing->second.origin == CommandOrigin::Core) {
+            return false;
+        }
+    }
+
+    // Core registration is allowed to reclaim a name that an extension may have
+    // registered during static initialization. This keeps built-ins protected
+    // even if extension objects initialize before shell bootstrap.
+    map_[key] = std::move(h);
+    registrations_[key] = CommandRegistration{
+        origin,
+        protect_name || origin == CommandOrigin::Core,
+        std::move(source)
+    };
+    return true;
+}
+
+bool CommandRegistry::is_protected(const std::string& name) const
+{
+    const auto it = registrations_.find(normalize_key(name));
+    return it != registrations_.end() && it->second.protected_name;
+}
+
+std::optional<CommandRegistration>
+CommandRegistry::registration_info(const std::string& name) const
+{
+    const auto it = registrations_.find(normalize_key(name));
+    if (it == registrations_.end()) return std::nullopt;
+    return it->second;
 }
 
 RunResult CommandRegistry::try_run(DbArea& area,
                                    const std::string& normalized_key,
                                    std::istringstream& args)
 {
-    auto it = map_.find(normalized_key);
+    auto it = map_.find(normalize_key(normalized_key));
     if (it == map_.end()) {
         return {
             RunStatus::UnknownCommand,
@@ -113,8 +196,20 @@ void register_command(const std::string& name, dli::Handler h) {
     registry().add(name, std::move(h));
 }
 
+bool register_extension_command(const std::string& name, dli::Handler h, std::string source) {
+    return registry().add_extension(name, std::move(h), std::move(source));
+}
+
+bool register_function_command(const std::string& name, dli::Handler h, std::string source) {
+    return registry().add_function(name, std::move(h), std::move(source));
+}
+
 const std::unordered_map<std::string, dli::Handler>& map() {
     return registry().map();
+}
+
+const std::unordered_map<std::string, CommandRegistration>& registrations() {
+    return registry().registrations();
 }
 
 } // namespace dli

@@ -120,7 +120,7 @@ static std::string resolve_arg(xbase::DbArea& A, const ArgTok& tok)
 
 static void register_builtin_fn(const dottalk::expr::BuiltinFnSpec& spec)
 {
-    dli::registry().add(spec.name,
+    dli::registry().add_function(spec.name,
         [&spec](xbase::DbArea& A, std::istringstream& in)
     {
         std::string tail;
@@ -155,7 +155,8 @@ static void register_builtin_fn(const dottalk::expr::BuiltinFnSpec& spec)
         catch (...) {
             std::cout << spec.name << ": evaluation error.\n";
         }
-    });
+    },
+    "src/cli/fn_autoreg.cpp");
 }
 
 static void register_all_builtins() {

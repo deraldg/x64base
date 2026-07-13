@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <limits>
+#include <stdexcept>
 
 #if DOTTALK_WITH_INDEX
   #include "xindex/index_manager.hpp"
@@ -39,14 +41,37 @@ static inline void write_u64_le(char* p, std::uint64_t v) noexcept
     std::memcpy(p, &v, sizeof(v));
 }
 
+static inline std::streampos checked_record_pos_(const DbArea& area, std::uint64_t recno64)
+{
+    if (recno64 < 1) {
+        throw std::runtime_error("DbArea: invalid record number");
+    }
+
+    const auto data_start = area.dataStart64();
+    const auto rec_len = area.recLength64();
+    const auto row_index = recno64 - 1;
+
+    if (rec_len != 0 &&
+        row_index > ((std::numeric_limits<std::uint64_t>::max() - data_start) / rec_len)) {
+        throw std::runtime_error("DbArea: record offset overflow");
+    }
+
+    const auto offset64 = data_start + row_index * rec_len;
+    if (offset64 > static_cast<std::uint64_t>(std::numeric_limits<std::streamoff>::max())) {
+        throw std::runtime_error("DbArea: record offset exceeds stream range");
+    }
+
+    return static_cast<std::streampos>(static_cast<std::streamoff>(offset64));
+}
+
 } // namespace
 
 bool DbArea::readCurrent()
 {
     if (_crn == 0) return false;
 
-    std::streampos pos =
-        _hdr.data_start + static_cast<std::streamoff>((_crn - 1) * _hdr.cpr);
+    const std::streampos pos =
+        checked_record_pos_(*this, static_cast<std::uint64_t>(_crn));
 
     _fp.seekg(pos, std::ios::beg);
     _fp.read(_recbuf.data(), _recbuf.size());
@@ -70,8 +95,8 @@ bool DbArea::writeCurrent()
 
     storeFieldsToBuffer();
 
-    std::streampos pos =
-        _hdr.data_start + static_cast<std::streamoff>((_crn - 1) * _hdr.cpr);
+    const std::streampos pos =
+        checked_record_pos_(*this, static_cast<std::uint64_t>(_crn));
 
     _fp.seekp(pos, std::ios::beg);
     _fp.write(_recbuf.data(), _recbuf.size());

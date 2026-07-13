@@ -1,9 +1,12 @@
 #include "gui/core/async_session.hpp"
 #include "gui/core/localization.hpp"
+#include "gui/core/session.hpp"
+#include "common/path_state.hpp"
 
 #include <chrono>
 #include <condition_variable>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -37,6 +40,18 @@ public:
         return changed_.wait_for(lock, timeout, [&] {
             for (const auto& event : events_) {
                 if (event.kind == kind) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    bool wait_for_progress(TaskState state, std::chrono::milliseconds timeout) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        return changed_.wait_for(lock, timeout, [&] {
+            for (const auto& event : events_) {
+                if (event.kind == GuiEventKind::task_progress && event.progress.state == state) {
                     return true;
                 }
             }
@@ -188,6 +203,10 @@ int main() {
         if (!require(collector.has_progress(TaskState::running), "running progress was not published")) {
             return EXIT_FAILURE;
         }
+        if (!require(collector.wait_for_progress(TaskState::completed, std::chrono::seconds(5)),
+                     "completed progress event was not received")) {
+            return EXIT_FAILURE;
+        }
         if (!require(collector.has_progress(TaskState::completed), "completed progress was not published")) {
             return EXIT_FAILURE;
         }
@@ -225,6 +244,45 @@ int main() {
         session.cancel_pending();
         if (!require(collector.has_cancelled_pending(), "pending cancellation was not published")) {
             return EXIT_FAILURE;
+        }
+    }
+
+    {
+        dottalk::gui::Session session;
+        const auto students = dottalk::paths::get_slot(dottalk::paths::Slot::DBF_X64) / "students.dbf";
+        std::error_code ec;
+        if (std::filesystem::is_regular_file(students, ec) && !ec) {
+            const auto opened = session.open_table(OpenTableRequest{students});
+            if (!require(opened.ok, "GUI session could not open the students table for workspace save/load smoke")) {
+                return EXIT_FAILURE;
+            }
+
+            const auto schema = std::filesystem::temp_directory_path() / "dottalk_gui_core_workspace_smoke.dtschema";
+            std::filesystem::remove(schema, ec);
+
+            const auto saved = session.run_command(CommandRequest{
+                "workspace save " + schema.string()
+            });
+            if (!require(saved.ok, "workspace save command did not return success")) {
+                return EXIT_FAILURE;
+            }
+            if (!require(std::filesystem::is_regular_file(schema, ec) && !ec,
+                         "workspace save did not write the requested schema file")) {
+                return EXIT_FAILURE;
+            }
+
+            (void)session.run_command(CommandRequest{"workspace close"});
+            const auto loaded = session.run_command(CommandRequest{
+                "workspace load " + schema.string()
+            });
+            if (!require(loaded.ok, "workspace load command did not return success")) {
+                return EXIT_FAILURE;
+            }
+
+            const auto areas = session.list_areas();
+            if (!require(areas.areas.size() == 1, "workspace load did not restore the saved GUI area")) {
+                return EXIT_FAILURE;
+            }
         }
     }
 
