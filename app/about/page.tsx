@@ -7,15 +7,16 @@ export const metadata: Metadata = {
 };
 
 const items = [
+  { title: "Mission & Vision", description: "The Laboratory Campus direction and the project’s proof-backed purpose.", href: "/about/mission-vision" },
   {
     title: "Origin Story (1993–2026)",
     description: "How the x64base lineage began and why it matters.",
     href: "/about/origin-story"
   },
   { title: "Timeline", description: "Key milestones from 1993 to 2026.", href: "/about/timeline" },
-  { title: "Brand Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
-  { title: "Mission & Vision", description: "Why x64base exists and where it’s going.", href: "/about/mission-vision" },
-  { title: "Contributors", description: "Human and AI contributors recognized in the project record.", href: "/about/contributors" }
+  { title: "Project Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
+  { title: "Contributors", description: "Human and AI contributors recognized in the project record.", href: "/about/contributors" },
+  { title: "Project Identity & Notices", description: "Naming, visual identity, attribution, and trademark notes.", href: "/brand" }
 ];
 
 export default function AboutPage() {
@@ -25,7 +26,7 @@ export default function AboutPage() {
         <h1 className="text-3xl font-semibold tracking-tight">About</h1>
         <p className="text-muted">
           x64base is built on three decades of engineering, teaching, and historical computing experience.
-          This section captures the lineage, intent, and brand foundations.
+          This section captures the lineage, intent, mission, and project foundations.
         </p>
       </header>
 

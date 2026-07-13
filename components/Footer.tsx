@@ -10,10 +10,6 @@ export function Footer() {
             <p className="mt-2 text-sm text-muted">
               A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026.
             </p>
-            <p className="mt-4 text-xs text-muted">
-              x64base™, xBase_64™, DotTalk++™, TupTalk™, TableTalk™, RelTalk™, Arctic™, and
-              LabTalk™ are claimed trademarks of Derald R Grimwood Jr.; registration status is under review.
-            </p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs">
               <a
                 href="https://github.com/deraldg/x64base"
@@ -29,7 +25,7 @@ export function Footer() {
               <Link href="/about/contributors" className="text-muted hover:text-fg">
                 Contributors
               </Link>
-              <Link href="/licensing/third-party-acknowledgements" className="text-muted hover:text-fg">
+              <Link href="/docs/dev/third-party-acknowledgements" className="text-muted hover:text-fg">
                 Third-party credits
               </Link>
               <Link href="/downloads" className="text-muted hover:text-fg">
@@ -37,7 +33,7 @@ export function Footer() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 text-sm">
             <Link href="/docs" className="text-muted hover:text-fg">
               Documentation
             </Link>
@@ -46,12 +42,6 @@ export function Footer() {
             </Link>
             <Link href="/downloads" className="text-muted hover:text-fg">
               Downloads
-            </Link>
-            <Link href="/licensing" className="text-muted hover:text-fg">
-              Licensing
-            </Link>
-            <Link href="/brand" className="text-muted hover:text-fg">
-              Brand
             </Link>
             <Link href="/news" className="text-muted hover:text-fg">
               News
@@ -62,9 +52,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
           <span>© 1993–2026 Derald R Grimwood Jr. All rights reserved.</span>
-          <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/licensing" className="hover:text-fg">Project notice</Link>
+            <Link href="/brand" className="hover:text-fg">Identity notes</Link>
+            <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
+          </div>
         </div>
       </div>
     </footer>
