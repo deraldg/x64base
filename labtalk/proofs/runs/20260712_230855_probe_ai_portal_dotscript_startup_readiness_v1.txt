@@ -1,0 +1,224 @@
+LabTalk proof transcript
+timestamp: 20260712_230855
+item_id: probe.ai_portal.dotscript_startup_readiness.v1
+label: Run DotTalk++ / DotScript Startup Readiness Probe
+kind: dottalk_script
+command_line: C:\x64base\dottalkpp\bin\dottalkpp.exe --script C:\x64base\labtalk\ai_portal\probes\dotscript_startup_readiness_v1.dts
+return_code: 0
+process_return_code: 0
+output_acceptance: accepted
+
+OUTPUT ACCEPTANCE
+=================
+accepted
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : C:\x64base\dottalkpp\bin
+  DATA       : C:\x64base\dottalkpp\data
+  DBF        : C:\x64base\dottalkpp\data\dbf
+  INDEXES    : C:\x64base\dottalkpp\data\indexes
+  LMDB       : C:\x64base\dottalkpp\data\lmdb
+  WORKSPACES : C:\x64base\dottalkpp\data\workspaces
+  SCHEMAS    : C:\x64base\dottalkpp\data\schemas
+  PROJECTS   : C:\x64base\dottalkpp\data\projects
+  SCRIPTS    : C:\x64base\dottalkpp\data\scripts
+  TESTS      : C:\x64base\dottalkpp\data\tests
+  HELP       : C:\x64base\dottalkpp\data\help
+  LOGS       : C:\x64base\dottalkpp\data\logs
+  TMP        : C:\x64base\dottalkpp\data\tmp
+INIT: processing system .ini C:\x64base\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini C:\x64base\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-06, b466a9ce dirty)  (Jul 12 2026 23:00:04)
+DotTalk++ build Jul 12 2026 23:00:04
+SQLite available: 1, version: 3.50.4
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . ; AI_DOTSCRIPT_READINESS_BEGIN
+. MAINT AI assimilate
+  purpose       : durable AI development-partner fast start when prior chat/provider memory is unavailable
+  root entry    : AI_PORTAL.md
+  portal launch : launch_portal.ps1
+  first reads   :
+    1. AI_PORTAL.md
+    2. labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    3. labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+    4. labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    5. labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+  rule          : use repo-local evidence and contracts; do not rely on lost chat history or model memory
+  boundary      : MAINT AI reports onboarding paths only; portal execution remains external and guarded
+. Usage:
+  DOTSCRIPT USAGE
+  DOTSCRIPT <file>
+  DOTSCRIPT @<file>
+  DOTSCRIPT TRACE
+  DOTSCRIPT TRACE ON|OFF
+  DOTSCRIPT TRACE <file>
+  DOTSCRIPT TRACE @<file>
+  DOTSCRIPT TRACE ON|OFF <file>
+  DOTSCRIPT TRACE ON|OFF @<file>
+Notes:
+  - Bare names resolve as typed, .dts, scripts/, then tests/.
+  - Lines beginning with *, //, &&, or ; after trimming are skipped.
+  - DOTSCRIPT executes commands; side effects depend on script contents.
+  - OUT/OUTPUT tees full command output to a transcript file.
+  - Nesting is limited to main script plus one subscript.
+. CMDHELP DOTSCRIPT
+Matched topics: DOT|DOTSCRIPT FOX|DOTSCRIPT
+
+DOT|DOTSCRIPT
+=============
+
+SUMMARY
+-------
+Run a DotTalk script file (test harness / automation).
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+SYNTAX
+------
+DOTSCRIPT <file.dts>
+
+FOX|DOTSCRIPT
+=============
+
+SUMMARY
+-------
+Run a DotTalk script file (test harness / automation).
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+SYNTAX
+------
+DOTSCRIPT <file.dts>
+. DOTSCRIPT
+  DOTSCRIPT <file.dts>
+  Run a DotTalk script file (test harness / automation).
+
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+. CMDHELP DO
+
+FOX|DO
+======
+
+SUMMARY
+-------
+Execute a program. (Use DOTSCRIPT instead.)
+
+SYNTAX
+------
+DO <program> [WITH <args>]
+. CMDHELP ECHO
+
+FOX|ECHO
+========
+
+SUMMARY
+-------
+Print text to the console.
+
+SYNTAX
+------
+ECHO <text>
+. CMDHELP SMARTLIST
+Matched topics: DOT|SMARTLIST FOX|SMARTLIST
+
+DOT|SMARTLIST
+=============
+
+SUMMARY
+-------
+Order-aware list output with predicate support
+LIST-style output with SQL-grade filtering (order-aware).
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+
+SYNTAX
+------
+SMARTLIST
+SMARTLIST <n>
+SMARTLIST ALL
+SMARTLIST DEBUG
+SMARTLIST DELETED
+SMARTLIST FOR <expr>
+SMARTLIST [ALL|DELETED|<n>] [DEBUG] [FOR <expr>]
+
+EXAMPLE
+-------
+SMARTLIST
+SMARTLIST 20
+SMARTLIST ALL FOR GPA >= 3.5
+SMARTLIST FOR LNAME LIKE "SMI%"
+
+NOTE
+----
+Preferred listing command for user-facing ordered output
+Respects active order and active filter where available
+Uses expression/predicate services rather than ad-hoc string matching
+
+FOX|SMARTLIST
+=============
+
+SUMMARY
+-------
+Order-aware list output with predicate support
+LIST-style output with SQL-grade filtering (order-aware).
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+
+SYNTAX
+------
+SMARTLIST
+SMARTLIST <n>
+SMARTLIST ALL
+SMARTLIST DEBUG
+SMARTLIST DELETED
+SMARTLIST FOR <expr>
+SMARTLIST [ALL|DELETED|<n>] [DEBUG] [FOR <expr>]
+
+EXAMPLE
+-------
+SMARTLIST
+SMARTLIST 20
+SMARTLIST ALL FOR GPA >= 3.5
+SMARTLIST FOR LNAME LIKE "SMI%"
+
+NOTE
+----
+Preferred listing command for user-facing ordered output
+Respects active order and active filter where available
+Uses expression/predicate services rather than ad-hoc string matching
+. Usage:
+  CMDHELPCHK
+  CMDHELPCHK USAGE
+  CMDHELPCHK REF
+  CMDHELPCHK REFLECT
+  CMDHELPCHK ARTIFACTS [dir] [limit]
+  CMDHELPCHK V2 [dir] [limit]
+  CMDHELPCHK <dir> [limit]
+
+Modes:
+  REF/REFLECT  Validate reflected command/function metadata.
+  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.
+  <dir>        Validate legacy commands.dbf/.dbt in a help directory.
+. ; AI_DOTSCRIPT_READINESS_END
+. SHUTDOWN: processing C:\x64base\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+(none)

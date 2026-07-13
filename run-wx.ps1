@@ -9,5 +9,9 @@ $ErrorActionPreference = "Stop"
 
 Invoke-DotTalkWxRuntime `
     -EntryScriptPath $MyInvocation.MyCommand.Path `
-    -WxRelativeExe "build-wx-fixed-local\src\gui\wx\Release\dottalk_wx.exe" `
+    -WxRelativeExeCandidates @(
+        "build\src\gui\wx\Release\dottalk_wx.exe",
+        "build\src\gui\wx\Debug\dottalk_wx.exe",
+        "build-wx-fixed-local\src\gui\wx\Release\dottalk_wx.exe"
+    ) `
     -AppArgs $AppArgs

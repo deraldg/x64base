@@ -86,14 +86,14 @@ std::vector<SubcommandInfo> collect_set_subcommands()
     add("POLLING",      "SET POLLING",      "inline", "inline", "core",   true, {"SET POLLING ON|OFF"});
     add("TABLE BUFFER", "SET TABLE BUFFER", "inline", "inline", "buffer", true, {"SET TABLE BUFFER ON|OFF [ALL]"});
 
-    // Dev / transitional
-    add("FILTER",    "SET FILTER",    "conditional_routed", "cmd_SETFILTER",      "core",      false, {"SET FILTER TO <expr>"});
-    add("CASE",      "SET CASE",      "conditional_routed", "cmd_SETCASE",       "core",      false, {"SET CASE [ON|OFF]"});
-    add("RELATION",  "SET RELATION",  "conditional_routed", "cmd_SET_RELATION",   "workspace", false, {"SET RELATION <args...>"});
-    add("RELATIONS", "SET RELATIONS", "conditional_routed", "cmd_SET_RELATIONS",  "workspace", false, {"SET RELATIONS <args...>"});
-    add("CNX",       "SET CNX",       "conditional_routed", "cmd_SETCNX",         "index",     false, {"SET CNX [TO] <container.cnx>"});
-    add("CDX",       "SET CDX",       "conditional_routed", "cmd_SETCDX",         "index",     false, {"SET CDX [TO] <container.cdx>"});
-    add("LMDB",      "SET LMDB",      "conditional_routed", "cmd_SETLMDB",        "index",     false, {"SET LMDB <args...>"});
+    // Public routed / conditional surfaces
+    add("FILTER",    "SET FILTER",    "conditional_routed", "cmd_SETFILTER",      "core",      true, {"SET FILTER TO <expr>"});
+    add("CASE",      "SET CASE",      "conditional_routed", "cmd_SETCASE",       "core",      true, {"SET CASE [ON|OFF]"});
+    add("RELATION",  "SET RELATION",  "conditional_routed", "cmd_SET_RELATION",   "workspace", true, {"SET RELATION <args...>"});
+    add("RELATIONS", "SET RELATIONS", "conditional_routed", "cmd_SET_RELATIONS",  "workspace", true, {"SET RELATIONS <args...>"});
+    add("CNX",       "SET CNX",       "conditional_routed", "cmd_SETCNX",         "index",     true, {"SET CNX [TO] <container.cnx>"});
+    add("CDX",       "SET CDX",       "conditional_routed", "cmd_SETCDX",         "index",     true, {"SET CDX [TO] <container.cdx>"});
+    add("LMDB",      "SET LMDB",      "conditional_routed", "cmd_SETLMDB",        "index",     true, {"SET LMDB <args...>"});
 
     return out;
 }

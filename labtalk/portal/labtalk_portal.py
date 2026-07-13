@@ -6,6 +6,7 @@ Small local campus launcher for LabTalk registries.
 from __future__ import annotations
 
 import os
+import json
 import shlex
 import subprocess
 import sys
@@ -24,6 +25,14 @@ except Exception as exc:  # pragma: no cover - visible startup failure
 
 LABTALK_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LABTALK_ROOT.parent
+TOOLS_ROOT = REPO_ROOT / "tools"
+if TOOLS_ROOT.exists() and str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
+try:
+    from version_info import title_with_version
+except Exception:  # pragma: no cover - startup fallback
+    def title_with_version(name: str, root: Path | None = None, fallback_version: str = "0.6") -> str:
+        return name
 REGISTRY_ROOT = LABTALK_ROOT / "registries"
 PORTAL_REGISTRY = REGISTRY_ROOT / "portal.yaml"
 LOCAL_CONFIG = LABTALK_ROOT / "labtalk.local.yaml"
@@ -31,6 +40,24 @@ LOCAL_CONFIG_EXAMPLE = LABTALK_ROOT / "labtalk.local.example.yaml"
 DEFAULT_DOTTALKPP_EXE = REPO_ROOT / "dottalkpp" / "bin" / "dottalkpp.exe"
 DEFAULT_DOTTALKPP_WORKDIR = REPO_ROOT
 DEFAULT_PROOF_RUNS = LABTALK_ROOT / "proofs" / "runs"
+DEFAULT_PORTAL_REPORTS = LABTALK_ROOT / "reports" / "portal"
+RUNNABLE_KINDS = {
+    "dottalk_script",
+    "dottalk_command",
+    "powershell_launcher",
+    "lab_script",
+    "python_tool",
+    "wsl_launcher",
+}
+DEFAULT_DOTSCRIPT_REJECT_OUTPUT_PATTERNS = (
+    "Unknown command:",
+    "DOTSCRIPT: script not found",
+    "DOTSCRIPT: transcript open failed",
+    "DOTSCRIPT: nesting limit reached",
+)
+CHECKED_PATH_FIELDS = ("path", "source", "root", "script")
+CHECKED_LIST_PATH_FIELDS = ("related", "evidence", "docs", "launchers")
+DERIVED_FROM_FIELD = "derived_from"
 
 
 @dataclass
@@ -59,11 +86,18 @@ def load_local_config() -> dict[str, Any]:
     return {}
 
 
-def normalize_path(value: str) -> Path:
+def normalize_path(value: str, base: Path | None = None) -> Path:
     path = Path(value)
     if not path.is_absolute():
-        path = LABTALK_ROOT / path
+        path = (base or LABTALK_ROOT) / path
     return path
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.resolve())
+    except OSError:
+        return str(path)
 
 
 def windows_path_to_wsl(path: Path) -> str:
@@ -107,6 +141,86 @@ def compact_scalar(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def item_relative_base(item: PortalItem, field: str) -> Path:
+    if field in {"docs", "launchers"}:
+        root_value = item.data.get("root")
+        if isinstance(root_value, str) and root_value.strip():
+            return normalize_path(root_value)
+    return LABTALK_ROOT
+
+
+def item_paths(item: PortalItem) -> list[tuple[str, Path]]:
+    paths: list[tuple[str, Path]] = []
+    for field in CHECKED_PATH_FIELDS:
+        value = item.data.get(field)
+        if isinstance(value, str) and value.strip():
+            paths.append((field, normalize_path(value)))
+    for field in CHECKED_LIST_PATH_FIELDS:
+        value = item.data.get(field)
+        if isinstance(value, list):
+            for entry in value:
+                if isinstance(entry, str) and entry.strip():
+                    paths.append((field, normalize_path(entry, item_relative_base(item, field))))
+    return paths
+
+
+def derived_from_paths(item: PortalItem) -> list[Path]:
+    """Return the source artifacts from which a generated item was derived."""
+    value = item.data.get(DERIVED_FROM_FIELD)
+    entries = value if isinstance(value, list) else [value]
+    return [
+        normalize_path(entry)
+        for entry in entries
+        if isinstance(entry, str) and entry.strip()
+    ]
+
+
+def first_openable_derived_from_path(item: PortalItem) -> Path | None:
+    return next((path for path in derived_from_paths(item) if path.exists()), None)
+
+
+def provenance_state(item: PortalItem) -> tuple[str, list[Path]]:
+    """Validate diagram-level provenance without guessing missing sources."""
+    if item.kind not in {"diagram", "image"} and not item.item_id.startswith("diagram."):
+        return "", []
+    sources = derived_from_paths(item)
+    if not sources:
+        return "provenance_missing", []
+    artifact = first_openable_path(item)
+    artifact_resolved = artifact.resolve() if artifact else None
+    if artifact_resolved and any(source.resolve() == artifact_resolved for source in sources):
+        return "provenance_partial", sources
+    if any(not source.exists() for source in sources):
+        return "provenance_target_missing", sources
+    if item.data.get("public_url") and any(source.is_absolute() for source in sources):
+        return "provenance_not_public_safe", sources
+    return "provenance_ok", sources
+
+
+def first_openable_path(item: PortalItem) -> Path | None:
+    for _field, path in item_paths(item):
+        if path.exists():
+            return path
+    return None
+
+
+def item_truth_checks(item: PortalItem) -> list[str]:
+    checks: list[str] = []
+    paths = item_paths(item)
+    if paths:
+        for field, path in paths:
+            state = "ok" if path.exists() else "missing"
+            checks.append(f"{field}: {state} - {display_path(path)}")
+    elif item.kind in RUNNABLE_KINDS and item.kind != "dottalk_command":
+        checks.append("path: missing - runnable item has no checked path")
+
+    if item.kind in RUNNABLE_KINDS:
+        checks.append("runnable: registered")
+    if item.data.get("proof") or item.data.get("proof_state") or item.section_id == "portal.proofs":
+        checks.append("proof: linked")
+    return checks
+
+
 def render_details(item: PortalItem) -> str:
     lines = [
         item.label,
@@ -129,19 +243,40 @@ def render_details(item: PortalItem) -> str:
                 lines.append(f"  - {compact_scalar(entry)}")
         else:
             lines.append(f"{key}: {compact_scalar(value)}")
+
+    checks = item_truth_checks(item)
+    if checks:
+        lines.extend(["", "Truth checks:"])
+        for check in checks:
+            lines.append(f"  - {check}")
     return "\n".join(lines).rstrip() + "\n"
 
 
 def dottalk_paths(local_config: dict[str, Any]) -> tuple[Path, Path]:
     paths = local_config.get("paths", {}) if isinstance(local_config, dict) else {}
-    exe = Path(str(paths.get("dottalkpp_exe", DEFAULT_DOTTALKPP_EXE)))
-    workdir = Path(str(paths.get("dottalkpp_workdir", DEFAULT_DOTTALKPP_WORKDIR)))
+    exe_value = paths.get("dottalkpp_exe")
+    workdir_value = paths.get("dottalkpp_workdir")
+    exe = (
+        normalize_path(str(exe_value), REPO_ROOT)
+        if exe_value
+        else DEFAULT_DOTTALKPP_EXE
+    )
+    workdir = (
+        normalize_path(str(workdir_value), REPO_ROOT)
+        if workdir_value
+        else DEFAULT_DOTTALKPP_WORKDIR
+    )
     return exe, workdir
 
 
 def powershell_path(local_config: dict[str, Any]) -> str:
     tools = local_config.get("tools", {}) if isinstance(local_config, dict) else {}
     return str(tools.get("powershell", "powershell.exe"))
+
+
+def python_path(local_config: dict[str, Any]) -> str:
+    tools = local_config.get("tools", {}) if isinstance(local_config, dict) else {}
+    return str(tools.get("python", sys.executable))
 
 
 def wsl_path(local_config: dict[str, Any]) -> str:
@@ -186,12 +321,50 @@ def proof_output_dir(item: PortalItem) -> Path:
     return DEFAULT_PROOF_RUNS
 
 
+def configured_string_list(item: PortalItem, field: str) -> list[str]:
+    value = item.data.get(field, [])
+    if value is None:
+        return []
+    if not isinstance(value, list) or not all(
+        isinstance(entry, str) and entry.strip() for entry in value
+    ):
+        raise ValueError(f"{field} must be a list of nonblank strings: {item.item_id}")
+    return [entry.strip() for entry in value]
+
+
+def output_acceptance_issues(item: PortalItem, stdout: str, stderr: str) -> list[str]:
+    """Return proof-output failures that the process exit code cannot express."""
+    combined = f"{stdout}\n{stderr}"
+    case_sensitive = bool(item.data.get("output_patterns_case_sensitive", False))
+    searchable = combined if case_sensitive else combined.casefold()
+
+    required = configured_string_list(item, "required_output_patterns")
+    rejected = configured_string_list(item, "reject_output_patterns")
+    if item.kind == "dottalk_script" and bool(
+        item.data.get("use_default_dotscript_reject_patterns", True)
+    ):
+        rejected = [*DEFAULT_DOTSCRIPT_REJECT_OUTPUT_PATTERNS, *rejected]
+
+    issues: list[str] = []
+    for pattern in required:
+        needle = pattern if case_sensitive else pattern.casefold()
+        if needle not in searchable:
+            issues.append(f"required output missing: {pattern}")
+    for pattern in dict.fromkeys(rejected):
+        needle = pattern if case_sensitive else pattern.casefold()
+        if needle in searchable:
+            issues.append(f"rejected output present: {pattern}")
+    return issues
+
+
 def write_transcript(
     item: PortalItem,
     command_line: list[str],
     return_code: int,
     stdout: str,
     stderr: str,
+    acceptance_issues: list[str] | None = None,
+    process_return_code: int | None = None,
 ) -> Path:
     out_dir = proof_output_dir(item)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -205,28 +378,209 @@ def write_transcript(
         f"kind: {item.kind}",
         f"command_line: {' '.join(command_line)}",
         f"return_code: {return_code}",
-        "",
-        "STDOUT",
-        "======",
-        stdout.rstrip(),
-        "",
-        "STDERR",
-        "======",
-        stderr.rstrip(),
-        "",
     ]
-    path.write_text("\n".join(body), encoding="utf-8")
+    if process_return_code is not None:
+        body.append(f"process_return_code: {process_return_code}")
+    if acceptance_issues is not None:
+        body.extend(
+            [
+                f"output_acceptance: {'rejected' if acceptance_issues else 'accepted'}",
+                "",
+                "OUTPUT ACCEPTANCE",
+                "=================",
+                *(acceptance_issues or ["accepted"]),
+            ]
+        )
+    body.extend(
+        [
+            "",
+            "STDOUT",
+            "======",
+            stdout.rstrip() or "(none)",
+            "",
+            "STDERR",
+            "======",
+            stderr.rstrip() or "(none)",
+        ]
+    )
+    path.write_text("\n".join(body) + "\n", encoding="utf-8")
     return path
 
 
+def audit_portal() -> dict[str, Any]:
+    sections, items = load_portal_items()
+    seen: dict[str, int] = {}
+    duplicates: list[str] = []
+    missing_paths: list[dict[str, str]] = []
+    runnable_count = 0
+    proof_like_count = 0
+    section_rows: list[dict[str, Any]] = []
+    item_rows: list[dict[str, Any]] = []
+
+    for section in sections:
+        section_id = str(section.get("id", ""))
+        registry_value = section.get("registry")
+        registry_state = "inline"
+        registry_path = ""
+        if registry_value:
+            resolved = normalize_path(str(registry_value))
+            registry_path = display_path(resolved)
+            registry_state = "ok" if resolved.exists() else "missing"
+            if not resolved.exists():
+                missing_paths.append(
+                    {
+                        "item_id": section_id,
+                        "label": str(section.get("label", section_id)),
+                        "field": "registry",
+                        "path": registry_path,
+                    }
+                )
+        section_rows.append(
+            {
+                "id": section_id,
+                "label": str(section.get("label", section_id)),
+                "registry_state": registry_state,
+                "registry_path": registry_path,
+            }
+        )
+
+    for item in items:
+        seen[item.item_id] = seen.get(item.item_id, 0) + 1
+        if seen[item.item_id] == 2:
+            duplicates.append(item.item_id)
+        if item.kind in RUNNABLE_KINDS:
+            runnable_count += 1
+        if item.data.get("proof") or item.data.get("proof_state") or item.section_id == "portal.proofs":
+            proof_like_count += 1
+
+        path_states: list[dict[str, str]] = []
+        for field, path in item_paths(item):
+            state = "ok" if path.exists() else "missing"
+            row = {"field": field, "state": state, "path": display_path(path)}
+            path_states.append(row)
+            if state == "missing":
+                missing_paths.append(
+                    {
+                        "item_id": item.item_id,
+                        "label": item.label,
+                        "field": field,
+                        "path": row["path"],
+                    }
+                )
+
+        item_rows.append(
+            {
+                "id": item.item_id,
+                "label": item.label,
+                "section": item.section_id,
+                "kind": item.kind,
+                "status": str(item.data.get("status", "")),
+                "truth_state": str(item.data.get("truth_state", "")),
+                "proof_state": str(item.data.get("proof_state", item.data.get("state", ""))),
+                "paths": path_states,
+                "runnable": item.kind in RUNNABLE_KINDS,
+                "provenance_state": provenance_state(item)[0],
+                "derived_from": [display_path(path) for path in provenance_state(item)[1]],
+            }
+        )
+
+    return {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "labtalk_root": display_path(LABTALK_ROOT),
+        "repo_root": display_path(REPO_ROOT),
+        "portal_registry": display_path(PORTAL_REGISTRY),
+        "section_count": len(sections),
+        "item_count": len(items),
+        "runnable_count": runnable_count,
+        "proof_like_count": proof_like_count,
+        "duplicate_item_ids": duplicates,
+        "missing_paths": missing_paths,
+        "sections": section_rows,
+        "items": item_rows,
+    }
+
+
+def portal_audit_summary(audit: dict[str, Any]) -> str:
+    return (
+        f"sections={audit['section_count']} "
+        f"items={audit['item_count']} "
+        f"runnable={audit['runnable_count']} "
+        f"proof_like={audit['proof_like_count']} "
+        f"missing_paths={len(audit['missing_paths'])} "
+        f"duplicate_ids={len(audit['duplicate_item_ids'])}"
+    )
+
+
+def write_portal_audit(audit: dict[str, Any]) -> tuple[Path, Path]:
+    DEFAULT_PORTAL_REPORTS.mkdir(parents=True, exist_ok=True)
+    json_path = DEFAULT_PORTAL_REPORTS / "portal_truth_audit_latest.json"
+    md_path = DEFAULT_PORTAL_REPORTS / "portal_truth_audit_latest.md"
+
+    json_path.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+
+    lines = [
+        "# LabTalk Portal Truth Audit",
+        "",
+        f"Generated: {audit['generated_at']}",
+        "",
+        "## Summary",
+        "",
+        f"- Sections: {audit['section_count']}",
+        f"- Items: {audit['item_count']}",
+        f"- Runnable items: {audit['runnable_count']}",
+        f"- Proof-like records: {audit['proof_like_count']}",
+        f"- Missing paths: {len(audit['missing_paths'])}",
+        f"- Duplicate item IDs: {len(audit['duplicate_item_ids'])}",
+        "",
+        "## Missing Paths",
+        "",
+    ]
+    if audit["missing_paths"]:
+        lines.append("| Item | Field | Path |")
+        lines.append("|---|---|---|")
+        for row in audit["missing_paths"]:
+            lines.append(f"| `{row['item_id']}` | `{row['field']}` | `{row['path']}` |")
+    else:
+        lines.append("No missing paths found.")
+
+    lines.extend(["", "## Duplicate IDs", ""])
+    if audit["duplicate_item_ids"]:
+        for item_id in audit["duplicate_item_ids"]:
+            lines.append(f"- `{item_id}`")
+    else:
+        lines.append("No duplicate item IDs found.")
+
+    lines.extend(["", "## Sections", "", "| Section | Registry |", "|---|---|"])
+    for section in audit["sections"]:
+        registry = section["registry_state"]
+        if section["registry_path"]:
+            registry = f"{registry}: `{section['registry_path']}`"
+        lines.append(f"| `{section['id']}` | {registry} |")
+
+    lines.extend(["", "## Items", "", "| Item | Section | Kind | Paths |", "|---|---|---|---|"])
+    for item in audit["items"]:
+        path_text = "none"
+        if item["paths"]:
+            path_text = "<br>".join(
+                f"`{row['field']}` {row['state']}: `{row['path']}`" for row in item["paths"]
+            )
+        lines.append(f"| `{item['id']}` | `{item['section']}` | `{item['kind']}` | {path_text} |")
+
+    lines.extend(["", "## Diagram Provenance", "", "| Diagram | State | Sources |", "|---|---|---|"])
+    provenance_items = [item for item in audit["items"] if item["provenance_state"]]
+    if provenance_items:
+        for item in provenance_items:
+            sources = "<br>".join(f"`{source}`" for source in item["derived_from"]) or "none"
+            lines.append(f"| `{item['id']}` | `{item['provenance_state']}` | {sources} |")
+    else:
+        lines.append("| none | `provenance_missing` | none |")
+
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return md_path, json_path
+
+
 def run_item(item: PortalItem, local_config: dict[str, Any]) -> tuple[int, Path]:
-    if item.kind not in {
-        "dottalk_script",
-        "dottalk_command",
-        "powershell_launcher",
-        "lab_script",
-        "wsl_launcher",
-    }:
+    if item.kind not in RUNNABLE_KINDS:
         raise ValueError(f"Item is not runnable: {item.item_id}")
 
     if item.kind == "wsl_launcher":
@@ -257,6 +611,39 @@ def run_item(item: PortalItem, local_config: dict[str, Any]) -> tuple[int, Path]
             "",
         )
         return 0, transcript
+
+    if item.kind == "python_tool":
+        script_value = item.data.get("script")
+        if not script_value:
+            raise ValueError("python_tool item is missing script")
+        script = normalize_path(str(script_value))
+        if not script.exists():
+            raise FileNotFoundError(str(script))
+        arguments = item.data.get("arguments", [])
+        if not isinstance(arguments, list) or not all(
+            isinstance(argument, (str, int, float)) for argument in arguments
+        ):
+            raise ValueError("python_tool arguments must be a list of scalar values")
+        command_line = [
+            python_path(local_config),
+            str(script),
+            *(str(value) for value in arguments),
+        ]
+        result = subprocess.run(
+            command_line,
+            cwd=str(LABTALK_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=int(item.data.get("timeout_seconds", 120)),
+        )
+        transcript = write_transcript(
+            item,
+            command_line,
+            result.returncode,
+            result.stdout,
+            result.stderr,
+        )
+        return result.returncode, transcript
 
     if item.kind in {"powershell_launcher", "lab_script"}:
         path_value = item.data.get("path")
@@ -334,14 +721,20 @@ def run_item(item: PortalItem, local_config: dict[str, Any]) -> tuple[int, Path]
             text=True,
             timeout=60,
         )
+        acceptance_issues = output_acceptance_issues(item, result.stdout, result.stderr)
+        return_code = result.returncode
+        if acceptance_issues and return_code == 0:
+            return_code = 3
         transcript = write_transcript(
             item,
             command_line,
-            result.returncode,
+            return_code,
             result.stdout,
             result.stderr,
+            acceptance_issues=acceptance_issues,
+            process_return_code=result.returncode,
         )
-        return result.returncode, transcript
+        return return_code, transcript
     finally:
         if temp_script and temp_script.exists():
             try:
@@ -394,7 +787,7 @@ def load_portal_items() -> tuple[list[dict[str, Any]], list[PortalItem]]:
 class LabTalkPortal(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("LabTalk Portal")
+        self.title(title_with_version("LabTalk Portal", REPO_ROOT))
         self.geometry("1020x660")
         self.minsize(840, 520)
 
@@ -444,10 +837,16 @@ class LabTalkPortal(tk.Tk):
 
         self.open_button = ttk.Button(actions, text="Open", command=self._open_current)
         self.open_button.grid(row=0, column=0, sticky="w")
+        self.open_source_button = ttk.Button(
+            actions, text="Open source artifact", command=self._open_current_source
+        )
+        self.open_source_button.grid(row=0, column=1, sticky="w", padx=(6, 0))
         self.run_button = ttk.Button(actions, text="Run", command=self._run_current)
-        self.run_button.grid(row=0, column=1, sticky="w", padx=(6, 0))
+        self.run_button.grid(row=0, column=2, sticky="w", padx=(6, 0))
         self.refresh_button = ttk.Button(actions, text="Refresh", command=self._refresh)
-        self.refresh_button.grid(row=0, column=2, sticky="w", padx=(6, 0))
+        self.refresh_button.grid(row=0, column=3, sticky="w", padx=(6, 0))
+        self.audit_button = ttk.Button(actions, text="Audit", command=self._audit)
+        self.audit_button.grid(row=0, column=4, sticky="w", padx=(6, 0))
 
         self.detail = tk.Text(right, wrap="word", width=64)
         self.detail.grid(row=1, column=0, sticky="nsew")
@@ -455,6 +854,7 @@ class LabTalkPortal(tk.Tk):
 
         self.status = ttk.Label(self, text="", anchor="w")
         self.status.grid(row=2, column=0, columnspan=3, sticky="ew", padx=12, pady=(0, 8))
+        self._sync_action_buttons()
 
     def _load_sections(self) -> None:
         self.section_list.delete(0, tk.END)
@@ -476,6 +876,7 @@ class LabTalkPortal(tk.Tk):
         self.item_list.delete(0, tk.END)
         self.current_item = None
         self._show_text("")
+        self._sync_action_buttons()
         if not section:
             return
         section_id = str(section.get("id", ""))
@@ -501,6 +902,7 @@ class LabTalkPortal(tk.Tk):
             return
         self.current_item = items[idx]
         self._show_text(render_details(self.current_item))
+        self._sync_action_buttons()
         self._set_status(f"Selected {self.current_item.item_id}")
 
     def _show_text(self, value: str) -> None:
@@ -512,32 +914,61 @@ class LabTalkPortal(tk.Tk):
     def _set_status(self, value: str) -> None:
         self.status.configure(text=value)
 
+    def _sync_action_buttons(self) -> None:
+        item = self.current_item
+        can_open = bool(item and first_openable_path(item))
+        can_open_source = bool(item and first_openable_derived_from_path(item))
+        can_run = bool(item and item.kind in RUNNABLE_KINDS)
+        self.open_button.configure(state="normal" if can_open else "disabled")
+        self.open_source_button.configure(state="normal" if can_open_source else "disabled")
+        self.run_button.configure(state="normal" if can_run else "disabled")
+
     def _open_current(self) -> None:
         item = self.current_item
         if not item:
             return
 
-        path_value = item.data.get("path") or item.data.get("source") or item.data.get("root")
-        if path_value:
-            try:
-                path = normalize_path(str(path_value))
-                open_path(path)
-                self._set_status(f"Opened {path}")
-            except Exception as exc:
-                messagebox.showerror("Open failed", str(exc))
-                self._set_status(f"Open failed: {exc}")
+        path = first_openable_path(item)
+        if not path:
+            self._set_status(f"No openable path for {item.item_id}")
             return
 
-        command = item.data.get("command")
-        if command:
-            messagebox.showinfo(
-                "Runtime launch planned",
-                f"Runtime command is registered but not executed in P0:\n\n{command}",
-            )
-            self._set_status(f"Runtime launch planned: {command}")
+        try:
+            open_path(path)
+            self._set_status(f"Opened {path}")
+        except Exception as exc:
+            messagebox.showerror("Open failed", str(exc))
+            self._set_status(f"Open failed: {exc}")
+
+    def _open_current_source(self) -> None:
+        item = self.current_item
+        if not item:
             return
 
-        messagebox.showinfo("No action", "This item has no openable path or command yet.")
+        paths = [path for path in derived_from_paths(item) if path.exists()]
+        if not paths:
+            self._set_status(f"No source artifact for {item.item_id}")
+            return
+
+        path = paths[0]
+        if len(paths) > 1:
+            chooser = tk.Toplevel(self)
+            chooser.title("Choose source artifact")
+            ttk.Label(chooser, text=f"Sources for {item.label}").pack(anchor="w", padx=12, pady=8)
+            for source in paths:
+                ttk.Button(
+                    chooser,
+                    text=display_path(source),
+                    command=lambda selected=source, window=chooser: (open_path(selected), window.destroy()),
+                ).pack(fill="x", padx=12, pady=3)
+            return
+
+        try:
+            open_path(path)
+            self._set_status(f"Opened source artifact {path}")
+        except Exception as exc:
+            messagebox.showerror("Open source artifact failed", str(exc))
+            self._set_status(f"Open source artifact failed: {exc}")
 
     def _dottalk_paths(self) -> tuple[Path, Path]:
         return dottalk_paths(self.local_config)
@@ -560,13 +991,7 @@ class LabTalkPortal(tk.Tk):
         if not item:
             return
 
-        if item.kind not in {
-            "dottalk_script",
-            "dottalk_command",
-            "powershell_launcher",
-            "lab_script",
-            "wsl_launcher",
-        }:
+        if item.kind not in RUNNABLE_KINDS:
             messagebox.showinfo("Run unavailable", "This item is not a runtime launch target.")
             return
 
@@ -664,13 +1089,43 @@ class LabTalkPortal(tk.Tk):
             for item in self.items:
                 self.items_by_section.setdefault(item.section_id, []).append(item)
             self._load_sections()
+            self._sync_action_buttons()
             self._set_status("Registries refreshed.")
         except Exception as exc:
             messagebox.showerror("Refresh failed", str(exc))
             self._set_status(f"Refresh failed: {exc}")
 
+    def _audit(self) -> None:
+        try:
+            audit = audit_portal()
+            md_path, json_path = write_portal_audit(audit)
+            self._show_text(
+                "Portal truth audit complete\n"
+                "===========================\n\n"
+                f"{portal_audit_summary(audit)}\n\n"
+                f"Markdown: {md_path}\n"
+                f"JSON: {json_path}\n"
+            )
+            self._set_status(f"Audit written: {md_path}")
+        except Exception as exc:
+            messagebox.showerror("Audit failed", str(exc))
+            self._set_status(f"Audit failed: {exc}")
+
 
 def main() -> int:
+    if len(sys.argv) in {2, 3} and sys.argv[1] in {"--audit", "--audit-write"}:
+        try:
+            audit = audit_portal()
+            print(portal_audit_summary(audit))
+            if sys.argv[1] == "--audit-write":
+                md_path, json_path = write_portal_audit(audit)
+                print(f"markdown={md_path}")
+                print(f"json={json_path}")
+        except Exception as exc:
+            print(f"Audit failed: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
     if len(sys.argv) == 3 and sys.argv[1] == "--run-item":
         _, items = load_portal_items()
         item = next((candidate for candidate in items if candidate.item_id == sys.argv[2]), None)

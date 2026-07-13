@@ -1,0 +1,425 @@
+# Laboratory Campus AI Portal hardening lane registry v1
+
+context_seeds:
+  - id: seed.ai_portal.development_source_authority.v1
+    label: Development Source Authority Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority: maintainer_declared
+    authority_root: D:/code/ccode
+    packet_priority: first
+    rule: Begin source and runtime work in the authoritative development tree; preserve existing work and inspect the current branch rather than inventing one.
+
+  - id: seed.ai_portal.branch_continuity.v1
+    label: Cross-Chat Branch Continuity Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority: maintainer_declared
+    packet_priority: first
+    rule: A new AI chat is not authority to create, switch, rename, or reset a branch; branch operations require an explicit maintainer instruction.
+
+  - id: seed.ai_portal.publication_chain.v1
+    label: Curated Publication Chain Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority: maintainer_declared
+    packet_priority: first
+    flow: D:/code/ccode -> C:/x64base -> github.com/deraldg/x64base
+    rule: Promote only reviewed, relevant, clean work from development to staging; commit and push from staging.
+
+  - id: seed.ai_portal.permission_boundary.v1
+    label: AI Mutation Permission Boundary Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority: maintainer_declared
+    packet_priority: first
+    rule: Workflow knowledge is not standing permission to mutate, stage, commit, push, publish, clean, reset, delete, or change branches.
+
+  - id: seed.ai_portal.dottalkpp_runtime_learning.v1
+    label: DotTalk++ Runtime Learning Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    authority: source_runtime_help_and_proof
+    packet_priority: first
+    evidence:
+      - D:/code/ccode/DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md
+      - D:/code/ccode/src/cli/cmd_dotscript.cpp
+      - D:/code/ccode/docs/maintenance/MAINTENANCE_SCRIPT_ROOT_POLICY_v1.md
+    rule: Learn the current DotTalk++ command surface from source, the installed runtime, HELP, and a proven task-neighbor script before authoring DotScript.
+
+  - id: seed.ai_portal.dotscript_no_guessing.v1
+    label: DotScript No-Guessing Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    authority: source_runtime_help_and_proof
+    packet_priority: first
+    rule: Do not translate remembered xBase, SQL, shell, or programming-language syntax into DotScript; every executable command needs current syntax, state, effect, and readback evidence.
+
+  - id: seed.ai_portal.dotscript_execution_gate.v1
+    label: DotScript Execution Readiness Gate Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    authority: maintainer_declared
+    packet_priority: first
+    readiness_states: [UNASSIMILATED, ORIENTED, SYNTAX_BACKED, SANDBOX_PROVEN, AUTHORIZED_FOR_TARGET]
+    rule: A zero process exit code is not proof; inspect the full transcript for unknown commands, state/path errors, unintended targets, and missing readback before promotion.
+
+  - id: seed.ai_portal.source_mutation_contract_preflight.v1
+    label: Source Mutation Contract Preflight Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory
+    path: ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    authority: maintainer_and_active_contract_shelf
+    packet_priority: first
+    evidence:
+      - D:/code/ccode/docs/contracts/README.md
+      - D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+      - D:/code/ccode/docs/contracts/CONTRACT_LIFECYCLE_V1.md
+      - D:/code/ccode/docs/contracts/CONTRACT_INTAKE_QUEUE_V1.md
+    rule: Before mutating authoritative source, read the contract shelf, registry, lifecycle, every applicable subsystem contract, and nearby source contract/usage blocks; stop and report conflicts before patching.
+
+  - id: seed.ai_portal.external_ai_change_package.v1
+    label: External AI Change Package Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory_for_external_ai
+    path: ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+    authority: maintainer_declared_intake_contract
+    packet_priority: first
+    applies_to: [chatgpt, gemini, grok, copilot, hosted_ai, external_patch]
+    rule: Outside AI proposals must identify an exact public baseline commit and return a scoped manifest, unified patch, honest test plan, risks, contract evidence, and unresolved conflicts for local review.
+
+  - id: seed.ai_portal.sdlc_fast_start.v1
+    label: AI Portal SDLC Fast-Start Seed v1
+    kind: mandatory_context_seed
+    status: active_mandatory_for_all_tasks
+    path: ai_portal/SDLC_FAST_START_SEED_V1.md
+    authority: maintained_sdlc_and_pldc_doctrine
+    packet_priority: first
+    applies_to: [all_ai_portal_tasks]
+    evidence:
+      - D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+      - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+    required_fields: [id, title, area, owning_lifecycle, sdlc_lane, truth_state, proof_state, risk_class, source_path, website_path, next_gate, owner, status]
+    rule: Every AI task, package, proof, promotion, and publication must enter the owning SDLC, preserve its state fields, and leave the next gate explicit; PLDC cannot bypass SDLC evidence.
+
+task_recipes:
+  - id: recipe.ai_portal.x64base_development_change.v1
+    label: Resume or Begin an x64base Development Change
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority_root: D:/code/ccode
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.development_source_authority.v1
+      - seed.ai_portal.branch_continuity.v1
+      - seed.ai_portal.permission_boundary.v1
+      - seed.ai_portal.source_mutation_contract_preflight.v1
+    completion_requires:
+      - relevant development files identified
+      - current branch and working state inspected
+      - applicable contracts and source contract blocks read
+      - contract constraints and drift impact reported
+      - development proof result reported
+
+  - id: recipe.ai_portal.x64base_stage_and_publish.v1
+    label: Stage and Publish Verified x64base Work
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    source_root: D:/code/ccode
+    staging_root: C:/x64base
+    publication_target: github.com/deraldg/x64base
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.publication_chain.v1
+      - seed.ai_portal.permission_boundary.v1
+    completion_requires:
+      - clean relevant files selected from development
+      - staging comparison and proof reported
+      - staging commit and GitHub push reported separately
+
+  - id: recipe.ai_portal.reconcile_public_only_change.v1
+    label: Reconcile a Public-Only Change into Development
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    authority_root: D:/code/ccode
+    public_staging_root: C:/x64base
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.development_source_authority.v1
+      - seed.ai_portal.publication_chain.v1
+      - seed.ai_portal.branch_continuity.v1
+    completion_requires:
+      - public commit and files identified
+      - development counterparts inspected and reconciled
+      - development proof completed before republishing
+
+  - id: recipe.ai_portal.x64base_public_documentation.v1
+    label: Update x64base Public Documentation or Website
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    website_root: D:/dev/x64base-site
+    runtime_authority_root: D:/code/ccode
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.development_source_authority.v1
+      - seed.ai_portal.permission_boundary.v1
+    completion_requires:
+      - runtime claims traced to source and proof
+      - website and runtime repository states kept distinct
+      - publication state reported without implying runtime proof
+
+  - id: recipe.ai_portal.dotscript_authoring_readiness.v1
+    label: Prepare AI-Authored DotScript Safely
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    authority_root: D:/code/ccode
+    runtime_probe: probe.ai_portal.dotscript_startup_readiness.v1
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.dottalkpp_runtime_learning.v1
+      - seed.ai_portal.dotscript_no_guessing.v1
+      - seed.ai_portal.dotscript_execution_gate.v1
+      - seed.ai_portal.permission_boundary.v1
+    completion_requires:
+      - readiness probe transcript reviewed
+      - proven task-neighbor script selected
+      - command evidence table completed
+      - profile bootstrap and safety header present
+      - sandbox transcript has no unexplained errors
+      - target mutation separately authorized
+
+  - id: recipe.ai_portal.source_mutation_contract_preflight.v1
+    label: Prepare an x64base Source Mutation Against Contracts
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    authority_root: D:/code/ccode
+    contract_root: D:/code/ccode/docs/contracts
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.development_source_authority.v1
+      - seed.ai_portal.source_mutation_contract_preflight.v1
+      - seed.ai_portal.permission_boundary.v1
+    completion_requires:
+      - source target and owning subsystem identified
+      - contract shelf registry and lifecycle read
+      - subsystem contracts and source annotations read
+      - constraints and proposed behavioral effects recorded
+      - conflict or drift surfaced before mutation
+      - proof and dependent HELP/metadata/documentation updates identified
+
+  - id: recipe.ai_portal.external_ai_change_package_intake.v1
+    label: Request and Integrate an External AI Change Package
+    kind: task_recipe_seed
+    status: active_seed
+    path: ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+    public_repository: https://github.com/deraldg/x64base
+    public_entry: https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md
+    integration_authority_root: D:/code/ccode
+    publication_staging_root: C:/x64base
+    requires_seeds:
+      - seed.ai_portal.sdlc_fast_start.v1
+      - seed.ai_portal.development_source_authority.v1
+      - seed.ai_portal.source_mutation_contract_preflight.v1
+      - seed.ai_portal.external_ai_change_package.v1
+      - seed.ai_portal.permission_boundary.v1
+    completion_requires:
+      - exact external baseline commit recorded
+      - package manifest and scope reviewed
+      - contracts and source annotations verified locally
+      - patch reconciled selectively against current development
+      - development compile and proof completed
+      - staged publication and website states reported separately
+
+readiness_probes:
+  - id: probe.ai_portal.dotscript_startup_readiness.v1
+    label: Run DotTalk++ / DotScript Startup Readiness Probe
+    kind: dottalk_script
+    status: runnable_report_only
+    script: ai_portal/probes/dotscript_startup_readiness_v1.dts
+    proof_output_dir: proofs/runs
+    safety: REPORT_ONLY
+    mutation: none_intended
+    proof_state: runtime_observed
+    readiness_result: ORIENTED
+    proof: proofs/runs/20260712_230855_probe_ai_portal_dotscript_startup_readiness_v1.txt
+    observed_warning: Runtime initialization reported a missing optional BibleTalk SQLite seed before the readiness probe; the guarded DotScript probe itself completed with both markers, no unknown commands, and output_acceptance accepted.
+    required_output_patterns:
+      - AI_DOTSCRIPT_READINESS_BEGIN
+      - AI_DOTSCRIPT_READINESS_END
+      - DOTSCRIPT USAGE
+      - CMDHELP DOTSCRIPT
+    reject_output_patterns:
+      - "DOTSCRIPT: script not found"
+      - "DOTSCRIPT: transcript open failed"
+      - "DOTSCRIPT: nesting limit reached"
+    proof_expectations:
+      - AI_DOTSCRIPT_READINESS_BEGIN and AI_DOTSCRIPT_READINESS_END are present
+      - DOTSCRIPT usage is visible
+      - CMDHELP and DOTHELP resolve DOTSCRIPT
+      - no Unknown command or runtime path/state error is ignored
+      - transcript content, not only process exit code, is reviewed
+
+  - id: probe.ai_portal.maint_ai_portal_readback.v1
+    label: Prove Native MAINT AI Portal Readback
+    kind: dottalk_script
+    status: proof_passed
+    script: ai_portal/probes/maint_ai_portal_readback_v1.dts
+    proof_output_dir: proofs/runs
+    safety: REPORT_ONLY
+    mutation: none
+    truth_state: runtime_observed
+    proof_state: validated
+    proof: proofs/runs/20260712_230855_probe_ai_portal_maint_ai_portal_readback_v1.txt
+    observed_result: Staged current runtime produced both markers, current root/seed paths, Alpha Python/registry boundary, and no-native-autonomous-runtime wording; output acceptance passed with process return code zero.
+    required_output_patterns:
+      - AI_PORTAL_MAINT_READBACK_BEGIN
+      - AI_PORTAL_MAINT_READBACK_END
+      - "root entry    : AI_PORTAL.md"
+      - "portal state  : Alpha/Experimental"
+      - "no native autonomous AI runtime"
+      - "SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+    reject_output_patterns:
+      - "portal link   : not started"
+      - "Unknown command"
+      - "DOTSCRIPT: script not found"
+      - "DOTSCRIPT: transcript open failed"
+    proof_expectations:
+      - native MAINT AI output names the root entry and mandatory SDLC/contract seeds
+      - output labels the portal Alpha and Python/registry based
+      - output states that no native autonomous AI runtime exists
+      - command remains read-only and does not launch the portal
+
+work_items:
+  - id: lane.ai_portal.hardening
+    label: AI Portal Hardening Lane
+    kind: work_lane
+    status: alpha_experimental
+    path: ai_portal/README.md
+    owner: Laboratory Campus / AI Friendly
+    started: 2026-07-12
+    objective: Build a proof-aware fast-start and task-context system through which AI development partners can enter the x64base environment without relying on prior chat memory.
+    audience: ai_development_partners
+    not_audience: student_ai_access_portal
+    next_gate: aiportal.gate.aph0
+
+  - id: concept.ai_portal.seed_connection_prototype.v1
+    label: AI Fast-Start Seed Connection Prototype Note v1
+    kind: prototype_direction
+    status: design_intended
+    path: ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md
+    audience: ai_development_partners
+    objective: Connect task intent to the smallest mandatory seed set with explicit reasons, ordering, missing-context checks, conflicts, and readiness.
+    boundary: Read-only deterministic prototype first; no autonomous mutation authority and no student AI access surface.
+
+  - id: plan.ai_portal.hardening.v1
+    label: AI Portal Hardening Lane Plan v1
+    kind: lane_plan
+    status: alpha_experimental_active_plan
+    path: ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+    proof_state: design_intended
+
+  - id: aiportal.gate.aph0
+    label: APH-0 Preserve and Stabilize
+    kind: lane_gate
+    status: in_progress
+    priority: critical
+    objective: Preserve current work, resolve portal drift, make startup reproducible, and establish baseline tests.
+    promotion_requires:
+      - zero unexplained missing portal paths
+      - supported clean-checkout startup
+      - registry-loading and audit tests
+
+  - id: aiportal.gate.aph1
+    label: APH-1 Typed Registry Graph
+    kind: lane_gate
+    status: pending
+    priority: critical
+    objective: Define and validate typed nodes, edges, task recipes, proof records, and packet records.
+    depends_on: [aiportal.gate.aph0]
+    promotion_requires:
+      - strict graph validation
+      - referential integrity
+      - broken-fixture diagnostics
+      - explicit seed-to-seed and task-to-seed connection fields
+
+  - id: aiportal.gate.aph2
+    label: APH-2 Task Context Compiler
+    kind: lane_gate
+    status: pending
+    priority: critical
+    objective: Generate deterministic, bounded, read-only task context packets with authority and proof explanations.
+    depends_on: [aiportal.gate.aph1]
+    milestone: first_usable_ai_portal_mvp
+    promotion_requires:
+      - four seed task recipes
+      - deterministic packet output
+      - evidence completeness and context limits
+      - every selected seed has a visible selection reason
+    current_evidence:
+      - four task recipe seeds registered
+      - mandatory development authority seeds registered
+      - context compiler and packet proof still pending
+
+  - id: aiportal.gate.aph3
+    label: APH-3 Guarded Execution
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Execute prepared work only through reviewed, risk-classified adapters and explicit approval gates.
+    depends_on: [aiportal.gate.aph2]
+    promotion_requires:
+      - read-only default
+      - capability and path enforcement
+      - timeout, cancellation, redaction, and transcript tests
+
+  - id: aiportal.gate.aph4
+    label: APH-4 Task-Centered Portal Experience
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Make task preparation, jump explanation, readiness, risk, and packet preview the primary portal journey.
+    depends_on: [aiportal.gate.aph2, aiportal.gate.aph3]
+    milestone: hardened_local_portal
+    promotion_requires:
+      - task-first workflow
+      - responsive background work
+      - GUI and CLI packet equivalence
+
+  - id: aiportal.gate.aph5
+    label: APH-5 x64base Self-Hosting
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Curate the portal graph, packets, proofs, and run history with x64base while retaining portable recovery exports.
+    depends_on: [aiportal.gate.aph2]
+    promotion_requires:
+      - deterministic import and export
+      - recovery proof
+      - degraded read-only startup
+
+  - id: aiportal.gate.aph6
+    label: APH-6 Teaching and Evaluation Loop
+    kind: lane_gate
+    status: pending
+    priority: high
+    objective: Turn portal development into DotTalk++ lessons and measure AI cold-start performance against the static baseline.
+    depends_on: [aiportal.gate.aph4, aiportal.gate.aph5]
+    milestone: full_intent
+    promotion_requires:
+      - proof-backed portal lessons
+      - reproducible evaluation suite
+      - documented feedback routing

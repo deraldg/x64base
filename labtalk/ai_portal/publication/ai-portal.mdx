@@ -1,0 +1,97 @@
+---
+title: "AI Portal — Alpha/Experimental"
+description: "A machine-facing fast-start system for AI development partners entering the x64base environment."
+---
+
+## What the AI Portal Is
+
+The AI Portal is a machine-facing fast-start and task-context system for AI
+development partners working with x64base.
+
+It is **not** a student portal for accessing an AI service. Its job is to help a
+new or resumed AI understand project authority, contracts, runtime behavior,
+safety gates, and proof requirements without relying on lost chat history.
+
+It enters through the maintained DotTalk++, maintenance, LabTalk, and PLDC
+lifecycles. It does not create a parallel AI workflow or let publication bypass
+an SDLC proof gate.
+
+The public repository entry point is:
+
+[Open the x64base AI Portal on GitHub](https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md)
+
+## Mandatory Status
+
+The AI Portal lane is **Alpha/Experimental**. It is not autonomous project
+memory, an independent source of truth, or permission to bypass maintainer
+review.
+
+```text
+task request
+-> select relevant seeds
+-> identify authority and contracts
+-> explain every selected connection
+-> expose missing or contradictory context
+-> assemble a bounded fast-start packet
+-> prepare guarded work and proof requirements
+```
+
+## Current Fast-Start Seeds
+
+The current repository seeds cover:
+
+- development locations, branch continuity, and publication authority;
+- owning SDLC, current lane, truth/proof state, risk, and next gate;
+- mandatory contract review before source-code mutation;
+- DotTalk++ and DotScript learning/readiness;
+- outside-AI change-package intake;
+- task recipes, permission boundaries, and proof expectations.
+
+## Working With ChatGPT, Gemini, Grok, or Copilot
+
+An outside AI should receive:
+
+1. the GitHub AI Portal entry;
+2. the exact public commit used as its baseline;
+3. the target file or subsystem;
+4. the permitted and excluded scope;
+5. the expected proof.
+
+The request and returned package should also name the owning lifecycle, current
+SDLC lane, truth state, proof state, risk class, and next gate.
+
+It should return a unified patch package with a manifest, contracts read, risks,
+and a test plan. That package is reviewed and selectively applied in the
+authoritative development tree, `D:\code\ccode`.
+
+## Authority and Publication Flow
+
+```text
+D:\code\ccode
+  authoritative development and runtime proof
+        |
+        | proven relevant files
+        v
+C:\x64base
+  curated Git publication staging
+        |
+        v
+github.com/deraldg/x64base
+  public snapshot used by outside AI systems
+```
+
+The website is a separate downstream publication. When verified behavior
+changes public documentation, `D:\dev\x64base-site` is updated and built after
+the source change is proven.
+
+## Future Seed Connector
+
+The next prototype should stay small and inspectable: take a task statement,
+select only the necessary seeds through explicit registry relationships,
+explain why each seed was selected, and show missing context, conflicts,
+permissions, and readiness.
+
+It does not need a student chat UI, embeddings, or autonomous execution to
+prove the fast-start concept.
+
+See [Mission & Vision](/about/mission-vision), [Current Project Truth](/docs/dev/project-truth), [Recursive Co-development](/docs/dev/recursive-co-development), and [Current Work Lanes](/docs/dev/current-lanes).

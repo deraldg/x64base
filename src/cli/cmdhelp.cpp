@@ -1075,6 +1075,11 @@ static bool load_help_line_table(const std::string& dir, DbfTable& out) {
     return read_dbf_with_memo(dbf, std::string(), out);
 }
 
+static std::string topic_suffix(const std::string& topickey);
+static int catalog_rank(const std::string& key);
+static int kind_rank(const std::string& kind_raw);
+static int source_rank(const std::string& source_raw);
+
 static void print_count_map(const std::string& title, const std::unordered_map<std::string, int>& counts) {
     std::vector<std::pair<std::string, int>> rows(counts.begin(), counts.end());
     std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) {
@@ -1084,6 +1089,127 @@ static void print_count_map(const std::string& title, const std::unordered_map<s
     out() << "\n" << title << ":\n";
     for (const auto& kv : rows) {
         out() << "  " << std::left << std::setw(18) << kv.first << " " << kv.second << "\n";
+    }
+}
+
+static std::vector<std::string> sorted_topic_keys(const std::set<std::string>& topics) {
+    std::vector<std::string> out(topics.begin(), topics.end());
+    std::sort(out.begin(), out.end(), [](const std::string& a, const std::string& b) {
+        const int ca = catalog_rank(a);
+        const int cb = catalog_rank(b);
+        if (ca != cb) return ca < cb;
+        const std::string as = topic_suffix(a);
+        const std::string bs = topic_suffix(b);
+        if (as != bs) return as < bs;
+        return a < b;
+    });
+    return out;
+}
+
+static void print_current_help_topics(const std::string& dir) {
+    DbfTable tbl;
+    if (!load_help_line_table(dir, tbl)) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentReadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentExpectedFile);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
+        return;
+    }
+
+    const int ix_topic_key = dbf_field_index(tbl, "TOPICKEY");
+    if (ix_topic_key < 0) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentMissingColumns);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentNeedColumns);
+        return;
+    }
+
+    std::set<std::string> topics;
+    for (const auto& r : tbl.rows) {
+        const std::string topic = dbf_cell(r, ix_topic_key);
+        if (!topic.empty()) topics.insert(topic);
+    }
+
+    out() << "CMDHELP Topics (current HELP DATA)\n"
+          << "  directory : " << dir << "\n"
+          << "  topics    : " << topics.size() << "\n\n";
+
+    for (const auto& topic : sorted_topic_keys(topics)) {
+        out() << "  " << topic << "\n";
+    }
+}
+
+enum class CurrentHelpGroupMode {
+    Kind,
+    Source
+};
+
+static void print_current_help_grouped(const std::string& dir, CurrentHelpGroupMode mode) {
+    DbfTable tbl;
+    if (!load_help_line_table(dir, tbl)) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentReadFailed,
+            {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentExpectedFile);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
+        return;
+    }
+
+    const int ix_topic_key = dbf_field_index(tbl, "TOPICKEY");
+    const int ix_group = dbf_field_index(tbl, mode == CurrentHelpGroupMode::Kind ? "KIND" : "SOURCE");
+    if (ix_topic_key < 0 || ix_group < 0) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP",
+            dottalk::helpdata::MessageId::CmdHelpCurrentMissingColumns);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentNeedColumns);
+        return;
+    }
+
+    struct Bucket {
+        int line_count{0};
+        std::set<std::string> topics;
+    };
+    std::unordered_map<std::string, Bucket> grouped;
+
+    for (const auto& r : tbl.rows) {
+        const std::string topic = dbf_cell(r, ix_topic_key);
+        const std::string group = dbf_cell(r, ix_group);
+        auto& bucket = grouped[group.empty() ? "(blank)" : group];
+        ++bucket.line_count;
+        if (!topic.empty()) bucket.topics.insert(topic);
+    }
+
+    std::vector<std::pair<std::string, Bucket>> rows(grouped.begin(), grouped.end());
+    std::sort(rows.begin(), rows.end(),
+              [&](const auto& a, const auto& b) {
+                  const int ra = (mode == CurrentHelpGroupMode::Kind)
+                      ? kind_rank(a.first)
+                      : source_rank(a.first);
+                  const int rb = (mode == CurrentHelpGroupMode::Kind)
+                      ? kind_rank(b.first)
+                      : source_rank(b.first);
+                  if (ra != rb) return ra < rb;
+                  return a.first < b.first;
+              });
+
+    out() << "CMDHELP "
+          << (mode == CurrentHelpGroupMode::Kind ? "KIND" : "SOURCE")
+          << " view (current HELP DATA)\n"
+          << "  directory : " << dir << "\n"
+          << "  buckets   : " << rows.size() << "\n\n";
+
+    for (const auto& row : rows) {
+        out() << row.first
+              << "  [lines=" << row.second.line_count
+              << ", topics=" << row.second.topics.size() << "]\n";
+        for (const auto& topic : sorted_topic_keys(row.second.topics)) {
+            out() << "  - " << topic << "\n";
+        }
+        out() << "\n";
     }
 }
 
@@ -2047,6 +2173,12 @@ static void render_current_topic_help(const std::string& dir,
 static void cmdhelp_usage() {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpUsageTitle);
     cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpUsageBodyText);
+    out() << "  CMDHELP REPORT TOPICS\n";
+    out() << "  CMDHELP REPORT KIND\n";
+    out() << "  CMDHELP REPORT SOURCE\n";
+    out() << "  CMDHELP TOPICS\n";
+    out() << "  CMDHELP KIND\n";
+    out() << "  CMDHELP SOURCE\n";
     out() << "  CMDHELP <topic> PREVIEW LOCALE <locale>\n";
     out() << "  CMDHELP <topic> LOCALE <locale>\n";
     out() << "\n";
@@ -2057,6 +2189,9 @@ static void cmdhelp_usage() {
     out() << "  "
           << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpUsageNoteLegacy)
           << "\n";
+    out() << "  REPORT TOPICS lists current HELP DATA topic keys.\n";
+    out() << "  REPORT KIND groups current HELP DATA by KIND and shows topic membership.\n";
+    out() << "  REPORT SOURCE groups current HELP DATA by SOURCE and shows topic membership.\n";
     out() << "  Locale preview is explicit-only; plain CMDHELP remains canonical/source HELP.\n";
 }
 
@@ -2174,8 +2309,44 @@ void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
             report_legacy_helpdata(resolve_help_dir_arg(dir_arg).string());
             return;
         }
+        if (words.size() >= 2) {
+            const std::string mode = up(words[1]);
+            if (mode == "TOPICS") {
+                const std::string dir_arg = (words.size() >= 3) ? words[2] : ".";
+                print_current_help_topics(resolve_help_dir_arg(dir_arg).string());
+                return;
+            }
+            if (mode == "KIND") {
+                const std::string dir_arg = (words.size() >= 3) ? words[2] : ".";
+                print_current_help_grouped(resolve_help_dir_arg(dir_arg).string(), CurrentHelpGroupMode::Kind);
+                return;
+            }
+            if (mode == "SOURCE") {
+                const std::string dir_arg = (words.size() >= 3) ? words[2] : ".";
+                print_current_help_grouped(resolve_help_dir_arg(dir_arg).string(), CurrentHelpGroupMode::Source);
+                return;
+            }
+        }
         const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
         print_current_help_report(resolve_help_dir_arg(dir_arg).string());
+        return;
+    }
+
+    if (firstU == "TOPICS") {
+        const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
+        print_current_help_topics(resolve_help_dir_arg(dir_arg).string());
+        return;
+    }
+
+    if (firstU == "KIND") {
+        const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
+        print_current_help_grouped(resolve_help_dir_arg(dir_arg).string(), CurrentHelpGroupMode::Kind);
+        return;
+    }
+
+    if (firstU == "SOURCE") {
+        const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
+        print_current_help_grouped(resolve_help_dir_arg(dir_arg).string(), CurrentHelpGroupMode::Source);
         return;
     }
 

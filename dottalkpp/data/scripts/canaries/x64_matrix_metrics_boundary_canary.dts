@@ -29,7 +29,10 @@ ECHO ============================================================
 ECHO X64 MATRIX / METRICS BOUNDARY CANARY
 ECHO ============================================================
 
-DO ..\..\X64
+* Self-bootstrap without nested DOTSCRIPT dependency.
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
 WORKSPACE CLOSE
 
 ERASE x64_metrics_mid_canary CONFIRM

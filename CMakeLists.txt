@@ -30,6 +30,45 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 endif()
 
 # ============================================================
+# Version Metadata
+# ============================================================
+
+set(DOTTALKPP_VERSION_LABEL "${PROJECT_VERSION}")
+
+execute_process(
+    COMMAND git -C "${CMAKE_SOURCE_DIR}" rev-parse --short=8 HEAD
+    OUTPUT_VARIABLE DOTTALKPP_GIT_SHA
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+execute_process(
+    COMMAND git -C "${CMAKE_SOURCE_DIR}" log -1 --format=%cs
+    OUTPUT_VARIABLE DOTTALKPP_VERSION_DATE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+execute_process(
+    COMMAND git -C "${CMAKE_SOURCE_DIR}" status --porcelain
+    OUTPUT_VARIABLE _dottalk_git_status
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+
+if (NOT DOTTALKPP_GIT_SHA)
+    set(DOTTALKPP_GIT_SHA "nogit")
+endif()
+
+if (NOT DOTTALKPP_VERSION_DATE)
+    string(TIMESTAMP DOTTALKPP_VERSION_DATE "%Y-%m-%d")
+endif()
+
+if (_dottalk_git_status)
+    set(DOTTALKPP_GIT_DIRTY 1)
+else()
+    set(DOTTALKPP_GIT_DIRTY 0)
+endif()
+
+# ============================================================
 # User Options
 # ============================================================
 
@@ -213,10 +252,25 @@ endif()
 # Target Helper
 # ============================================================
 
+function(dottalk_apply_version_metadata target_name)
+    if (NOT TARGET ${target_name})
+        return()
+    endif()
+
+    target_compile_definitions(${target_name} PRIVATE
+        DOTTALKPP_VERSION=\"${DOTTALKPP_VERSION_LABEL}\"
+        DOTTALKPP_VERSION_DATE=\"${DOTTALKPP_VERSION_DATE}\"
+        DOTTALKPP_GIT_SHA=\"${DOTTALKPP_GIT_SHA}\"
+        DOTTALKPP_GIT_DIRTY=${DOTTALKPP_GIT_DIRTY}
+    )
+endfunction()
+
 function(dottalk_apply_common_settings target_name)
     if (NOT TARGET ${target_name})
         return()
     endif()
+
+    dottalk_apply_version_metadata(${target_name})
 
     target_compile_definitions(${target_name} PRIVATE
         DOTTALK_PROFILE_${DOTTALK_PROFILE}=1
@@ -311,6 +365,11 @@ if (TARGET dottalkpp)
     endif()
 endif()
 
+foreach(_dottalk_gui_target IN ITEMS dottalk_wx dottalk_wx_next)
+    dottalk_apply_version_metadata(${_dottalk_gui_target})
+endforeach()
+unset(_dottalk_gui_target)
+
 if (BUILD_PYDOTTALK)
     if (TARGET pydottalk)
         dottalk_apply_common_settings(pydottalk)
@@ -365,6 +424,7 @@ message(STATUS "  DOTTALK_WITH_WX       : ${DOTTALK_WITH_WX}")
 message(STATUS "  DOTTALK_TV_TESTS      : ${DOTTALK_TV_TESTS}")
 message(STATUS "  BUILD_PYDOTTALK       : ${BUILD_PYDOTTALK}")
 message(STATUS "  BUILD_TESTING         : ${BUILD_TESTING}")
+message(STATUS "  version metadata      : v${DOTTALKPP_VERSION_LABEL} ${DOTTALKPP_VERSION_DATE} ${DOTTALKPP_GIT_SHA} dirty=${DOTTALKPP_GIT_DIRTY}")
 message(STATUS "  TVISION_ROOT          : ${TVISION_ROOT}")
 message(STATUS "  VCPKG_ROOT            : ${VCPKG_ROOT}")
 message(STATUS "  sqlite found          : ${_sqlite_found}")

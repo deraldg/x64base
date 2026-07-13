@@ -18,6 +18,17 @@
 //   HELP
 //   HELP USAGE
 //   HELP GIANT
+//   HELP GIANT USAGE
+//   HELP GIANT TOPICS
+//   HELP GIANT KIND
+//   HELP GIANT SOURCE
+//   HELP GIANT <topic>
+//   HELP /GIANT
+//   HELP /GIANT USAGE
+//   HELP /GIANT TOPICS
+//   HELP /GIANT KIND
+//   HELP /GIANT SOURCE
+//   HELP /GIANT <topic>
 //   HELP BETA
 //   HELP PS
 //   HELP SQL
@@ -33,7 +44,10 @@
 //   HELP with no arguments prints the top-level help router.
 //   HELP <command> normalizes through the reflected command catalog first.
 //   HELP FUNCTION <name> checks reflected function metadata and catalog docs.
-//   HELP GIANT delegates to the full command catalog.
+//   HELP GIANT is the readable full HELP DATA report surface.
+//   HELP GIANT TOPICS/KIND/SOURCE expose organized report slices.
+//   HELP GIANT <topic> renders the assembled topic through current HELP DATA.
+//   HELP GIANT respects normal shell paging via SET PAGING ON|OFF.
 //   HELP is read-only for table data and path state.
 //
 // risk:
@@ -265,6 +279,34 @@ inline void show_beta_router(const std::string& restUp)
 inline void print_help_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::HelpUsageText);
+}
+
+inline void print_help_giant_usage()
+{
+    out()
+        << "HELP GIANT\n"
+        << "  Full HELP DATA console report.\n\n"
+        << "Usage:\n"
+        << "  HELP GIANT\n"
+        << "  HELP GIANT USAGE\n"
+        << "  HELP GIANT TOPICS\n"
+        << "  HELP GIANT KIND\n"
+        << "  HELP GIANT SOURCE\n"
+        << "  HELP GIANT <topic>\n"
+        << "  HELP /GIANT\n"
+        << "  HELP /GIANT USAGE\n"
+        << "  HELP /GIANT TOPICS\n"
+        << "  HELP /GIANT KIND\n"
+        << "  HELP /GIANT SOURCE\n"
+        << "  HELP /GIANT <topic>\n\n"
+        << "Notes:\n"
+        << "  HELP GIANT is the readable front door over CMDHELP report surfaces.\n"
+        << "  HELP /GIANT is an alias for the same surface.\n"
+        << "  HELP GIANT TOPICS lists current topic keys.\n"
+        << "  HELP GIANT KIND groups help rows by KIND and shows topic membership.\n"
+        << "  HELP GIANT SOURCE groups help rows by SOURCE and shows topic membership.\n"
+        << "  HELP GIANT <topic> renders the assembled topic from current HELP DATA.\n"
+        << "  Output paging is controlled by SET PAGING ON|OFF.\n";
 }
 
 // Normalize HELP topic via EntryVariantInfo.
@@ -515,8 +557,30 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
     const std::string restUp = uptrim(rest);
 
     if (restUp == "GIANT" || restUp == "/GIANT") {
-        std::istringstream empty;
-        cmd_CMDHELP(area, empty);
+        std::istringstream giant("REPORT");
+        cmd_CMDHELP(area, giant);
+        return;
+    }
+
+    if (restUp.rfind("GIANT ", 0) == 0 || restUp.rfind("/GIANT ", 0) == 0) {
+        const bool slash = restUp.rfind("/GIANT ", 0) == 0;
+        const std::size_t prefix_len = slash ? 7u : 6u;
+        std::string giant_rest = rest.substr(prefix_len);
+        const std::string giant_up = uptrim(giant_rest);
+
+        if (giant_up == "USAGE" || giant_up == "HELP" || giant_up == "?") {
+            print_help_giant_usage();
+            return;
+        }
+
+        if (giant_up == "TOPICS" || giant_up == "KIND" || giant_up == "SOURCE") {
+            std::istringstream giant(std::string("REPORT ") + giant_up);
+            cmd_CMDHELP(area, giant);
+            return;
+        }
+
+        std::istringstream giant(giant_rest);
+        cmd_CMDHELP(area, giant);
         return;
     }
 

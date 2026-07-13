@@ -46,8 +46,8 @@ def add_pydottalk_search_paths() -> None:
 
     candidates.extend([
         repo / "build" / "python",
-        repo / "build-gui-lmdb-check" / "python",
-        repo / "build-pro-md" / "python",
+        repo / "build" / "python" / "Release",
+        repo / "build" / "python" / "Debug",
     ])
 
     for candidate in candidates:

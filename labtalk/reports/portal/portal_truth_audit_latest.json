@@ -1,0 +1,3712 @@
+{
+  "generated_at": "2026-07-12T22:39:32",
+  "labtalk_root": "C:\\x64base\\labtalk",
+  "repo_root": "C:\\x64base",
+  "portal_registry": "C:\\x64base\\labtalk\\registries\\portal.yaml",
+  "section_count": 13,
+  "item_count": 180,
+  "runnable_count": 32,
+  "proof_like_count": 49,
+  "duplicate_item_ids": [],
+  "missing_paths": [
+    {
+      "item_id": "project.db_converter",
+      "label": "DB_Converter",
+      "field": "root",
+      "path": "D:\\code\\ccode\\Side Projects\\DB_Converter"
+    },
+    {
+      "item_id": "project.db_converter",
+      "label": "DB_Converter",
+      "field": "docs",
+      "path": "D:\\code\\ccode\\Side Projects\\DB_Converter\\README.md"
+    },
+    {
+      "item_id": "project.db_converter",
+      "label": "DB_Converter",
+      "field": "launchers",
+      "path": "D:\\code\\ccode\\Side Projects\\DB_Converter\\Start-DBConverter.ps1"
+    },
+    {
+      "item_id": "project.sqlite_gui",
+      "label": "SQLite GUI Prototype",
+      "field": "root",
+      "path": "D:\\code\\ccode\\sqlite-gui"
+    },
+    {
+      "item_id": "lesson.student.properties_of_valid_data",
+      "label": "The Properties of Valid Data",
+      "field": "path",
+      "path": "C:\\x64base\\labtalk\\lessons\\student\\properties_of_valid_data_v0.md"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portal.docs",
+      "label": "Docs",
+      "registry_state": "inline",
+      "registry_path": ""
+    },
+    {
+      "id": "portal.ai_friendly",
+      "label": "AI Friendly",
+      "registry_state": "inline",
+      "registry_path": ""
+    },
+    {
+      "id": "portal.ai_portal_work",
+      "label": "AI Portal Work \u2014 Alpha/Experimental",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\ai_portal.yaml"
+    },
+    {
+      "id": "portal.apps",
+      "label": "Apps",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\apps.yaml"
+    },
+    {
+      "id": "portal.projects",
+      "label": "Projects",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\projects.yaml"
+    },
+    {
+      "id": "portal.lms",
+      "label": "LMS",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\lms.yaml"
+    },
+    {
+      "id": "portal.labs",
+      "label": "Labs",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\labs.yaml"
+    },
+    {
+      "id": "portal.lessons",
+      "label": "Lessons",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\lessons.yaml"
+    },
+    {
+      "id": "portal.concepts",
+      "label": "Concepts",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\concepts.yaml"
+    },
+    {
+      "id": "portal.proofs",
+      "label": "Proofs",
+      "registry_state": "ok",
+      "registry_path": "C:\\x64base\\labtalk\\registries\\proofs.yaml"
+    },
+    {
+      "id": "portal.diagrams",
+      "label": "Diagrams",
+      "registry_state": "inline",
+      "registry_path": ""
+    },
+    {
+      "id": "portal.runtime",
+      "label": "Runtime",
+      "registry_state": "inline",
+      "registry_path": ""
+    },
+    {
+      "id": "portal.launchers",
+      "label": "Launchers",
+      "registry_state": "inline",
+      "registry_path": ""
+    }
+  ],
+  "items": [
+    {
+      "id": "doc.readme",
+      "label": "LabTalk README",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\README.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.campus_architecture",
+      "label": "Campus Architecture",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\LABTALK_CAMPUS_ARCHITECTURE_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.education_map",
+      "label": "Education Map",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\LABTALK_EDUCATION_MAP_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.portal_concept",
+      "label": "Portal Concept",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\LABTALK_PORTAL_CONCEPT_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.sdlc_framework",
+      "label": "SDLC Framework",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\LABTALK_SDLC_FRAMEWORK_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.dottalkpp_sdlc_charter",
+      "label": "DotTalk++ SDLC Charter",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.sdlc_pldc_planning",
+      "label": "SDLC / PLDC Planning Adoption",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.developer_profile",
+      "label": "Developer Profile",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\LABTALK_DEVELOPER_PROFILE_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.database_literacy_starter",
+      "label": "Database Literacy Starter Lab",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\labs\\database_literacy_starter\\LAB_DATABASE_LITERACY_STARTER_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.selfdoc_comments_to_contracts",
+      "label": "SelfDoc Comments to Contracts Lab",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\labs\\self_documenting_systems\\LAB_SELFDOC_COMMENTS_TO_CONTRACTS_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.manualgen_product_map",
+      "label": "Manualgen Product Map",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\products\\manualgen_product_map_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.manualgen_product_board",
+      "label": "Manualgen Product Board",
+      "section": "portal.docs",
+      "kind": "html",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\products\\manualgen_product_board_v0.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.manualgen_product_preservation",
+      "label": "Manualgen Product Preservation",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\products\\manualgen_product_preservation_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.x64base_project_truth",
+      "label": "x64base.com Current Project Truth",
+      "section": "portal.docs",
+      "kind": "mdx",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\dev\\project-truth.mdx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.x64base_labtalk_sdlc",
+      "label": "x64base.com LabTalk SDLC Page",
+      "section": "portal.docs",
+      "kind": "mdx",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\sdlc.mdx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.x64base_selfdoc_lane",
+      "label": "x64base.com SelfDoc Lane Page",
+      "section": "portal.docs",
+      "kind": "mdx",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\selfdoc-lane.mdx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.x64base_selfdoc_publication",
+      "label": "x64base.com SelfDoc Website Publication",
+      "section": "portal.docs",
+      "kind": "mdx",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\dev\\selfdoc-website-publication.mdx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.portal_truth_audit",
+      "label": "Portal Truth Audit",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\reports\\portal\\portal_truth_audit_latest.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.x64base_campus_mission_vision",
+      "label": "x64base Laboratory Campus Mission and Vision",
+      "section": "portal.docs",
+      "kind": "markdown",
+      "status": "curated_design_intent",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\dottalkpp\\docs\\architecture\\X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_portal_root_entry",
+      "label": "Root AI Portal Fast-Start Entry",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "active_seed_entry",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\AI_PORTAL.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_root_readme",
+      "label": "Root AI README",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\AI_README.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_rules",
+      "label": "Root AI / Project Rules",
+      "section": "portal.ai_friendly",
+      "kind": "text",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\rules\\rules.txt"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_readme_clobber_rule",
+      "label": "README Clobber Protection Rule",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "source_rule",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\rules\\README_CLOBBER_PROTECTION_RULE.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_assimilation_portal",
+      "label": "AI Assimilation Portal",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_ASSIMILATION_PORTAL_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_assimilation_book",
+      "label": "AI Assimilation Book",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_ASSIMILATION_BOOK_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_friendly_dashboard",
+      "label": "AI Friendly Dashboard",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_FRIENDLY_DASHBOARD_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_friendly_manifest",
+      "label": "AI Friendly Lane Manifest",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_FRIENDLY_LANE_MANIFEST_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_friendly_workflow",
+      "label": "AI Friendly Workflow",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_FRIENDLY_WORKFLOW_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "doc.ai_interaction_intake",
+      "label": "AI Interaction Intake Queue",
+      "section": "portal.ai_friendly",
+      "kind": "markdown",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\ai-friendly\\AI_INTERACTION_INTAKE_QUEUE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.maint_ai",
+      "label": "MAINT AI",
+      "section": "portal.ai_friendly",
+      "kind": "dottalk_command",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.maint_ai_assimilate",
+      "label": "MAINT AI ASSIMILATE",
+      "section": "portal.ai_friendly",
+      "kind": "dottalk_command",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.maint_ai_visibility",
+      "label": "MAINT AI VISIBILITY",
+      "section": "portal.ai_friendly",
+      "kind": "dottalk_command",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.development_source_authority.v1",
+      "label": "Development Source Authority Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.branch_continuity.v1",
+      "label": "Cross-Chat Branch Continuity Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.publication_chain.v1",
+      "label": "Curated Publication Chain Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.permission_boundary.v1",
+      "label": "AI Mutation Permission Boundary Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.dottalkpp_runtime_learning.v1",
+      "label": "DotTalk++ Runtime Learning Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_dotscript.cpp"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\MAINTENANCE_SCRIPT_ROOT_POLICY_v1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.dotscript_no_guessing.v1",
+      "label": "DotScript No-Guessing Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.dotscript_execution_gate.v1",
+      "label": "DotScript Execution Readiness Gate Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.source_mutation_contract_preflight.v1",
+      "label": "Source Mutation Contract Preflight Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\README.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_REGISTRY_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_LIFECYCLE_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_INTAKE_QUEUE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.external_ai_change_package.v1",
+      "label": "External AI Change Package Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory_for_external_ai",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\EXTERNAL_AI_CHANGE_PACKAGE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "seed.ai_portal.sdlc_fast_start.v1",
+      "label": "AI Portal SDLC Fast-Start Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory_for_all_tasks",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\SDLC_FAST_START_SEED_V1.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_SDLC_FRAMEWORK_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.x64base_development_change.v1",
+      "label": "Resume or Begin an x64base Development Change",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.x64base_stage_and_publish.v1",
+      "label": "Stage and Publish Verified x64base Work",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.reconcile_public_only_change.v1",
+      "label": "Reconcile a Public-Only Change into Development",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.x64base_public_documentation.v1",
+      "label": "Update x64base Public Documentation or Website",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.dotscript_authoring_readiness.v1",
+      "label": "Prepare AI-Authored DotScript Safely",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.source_mutation_contract_preflight.v1",
+      "label": "Prepare an x64base Source Mutation Against Contracts",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "recipe.ai_portal.external_ai_change_package_intake.v1",
+      "label": "Request and Integrate an External AI Change Package",
+      "section": "portal.ai_portal_work",
+      "kind": "task_recipe_seed",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\EXTERNAL_AI_CHANGE_PACKAGE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "probe.ai_portal.dotscript_startup_readiness.v1",
+      "label": "Run DotTalk++ / DotScript Startup Readiness Probe",
+      "section": "portal.ai_portal_work",
+      "kind": "dottalk_script",
+      "status": "runnable_report_only",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\probes\\dotscript_startup_readiness_v1.dts"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "probe.ai_portal.maint_ai_portal_readback.v1",
+      "label": "Prove Native MAINT AI Portal Readback",
+      "section": "portal.ai_portal_work",
+      "kind": "dottalk_script",
+      "status": "runnable_report_only",
+      "truth_state": "source_defined",
+      "proof_state": "proof_pending",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\probes\\maint_ai_portal_readback_v1.dts"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lane.ai_portal.hardening",
+      "label": "AI Portal Hardening Lane",
+      "section": "portal.ai_portal_work",
+      "kind": "work_lane",
+      "status": "alpha_experimental",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\README.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.ai_portal.seed_connection_prototype.v1",
+      "label": "AI Fast-Start Seed Connection Prototype Note v1",
+      "section": "portal.ai_portal_work",
+      "kind": "prototype_direction",
+      "status": "design_intended",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "plan.ai_portal.hardening.v1",
+      "label": "AI Portal Hardening Lane Plan v1",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_plan",
+      "status": "alpha_experimental_active_plan",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph0",
+      "label": "APH-0 Preserve and Stabilize",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "in_progress",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph1",
+      "label": "APH-1 Typed Registry Graph",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph2",
+      "label": "APH-2 Task Context Compiler",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph3",
+      "label": "APH-3 Guarded Execution",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph4",
+      "label": "APH-4 Task-Centered Portal Experience",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph5",
+      "label": "APH-5 x64base Self-Hosting",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "aiportal.gate.aph6",
+      "label": "APH-6 Teaching and Evaluation Loop",
+      "section": "portal.ai_portal_work",
+      "kind": "lane_gate",
+      "status": "pending",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.dottalkpp.runtime",
+      "label": "DotTalk++ Runtime Systems Lab",
+      "section": "portal.apps",
+      "kind": "runtime_lab",
+      "status": "active_source",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.dottalkpp.help",
+      "label": "DotTalk++ HELP and CMDHELP Lab",
+      "section": "portal.apps",
+      "kind": "help_lab",
+      "status": "active_source",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.dottalkpp.selfdoc",
+      "label": "DotTalk++ Self-Documenting Systems Lab",
+      "section": "portal.apps",
+      "kind": "proof_lab",
+      "status": "active_source",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.dottalkpp.ai_friendly",
+      "label": "DotTalk++ / LabTalk AI Friendly Lane",
+      "section": "portal.apps",
+      "kind": "ai_visibility_lab",
+      "status": "seed_source",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.labtalk.ai_portal",
+      "label": "Laboratory Campus AI Portal",
+      "section": "portal.apps",
+      "kind": "experimental_context_lab",
+      "status": "alpha_experimental",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.labtalk.case_library",
+      "label": "LabTalk Case Library",
+      "section": "portal.apps",
+      "kind": "case_library",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\cases"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "app.labtalk.dataset_library",
+      "label": "LabTalk Dataset Library",
+      "section": "portal.apps",
+      "kind": "dataset_library",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\data"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.runtime",
+      "label": "x64base / DotTalk++ Runtime",
+      "section": "portal.projects",
+      "kind": "runtime_project",
+      "status": "active_beta",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\governance\\REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.public_staging",
+      "label": "x64base Curated Public Staging",
+      "section": "portal.projects",
+      "kind": "publication_staging_project",
+      "status": "active_curated_staging",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "C:\\x64base"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.campus",
+      "label": "LabTalk Campus",
+      "section": "portal.projects",
+      "kind": "campus_project",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\portal\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\ROOT_AI_PORTAL_ENTRY_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SDLC_FAST_START_SEED_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\EXTERNAL_AI_CHANGE_PACKAGE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_CAMPUS_ARCHITECTURE_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.lms",
+      "label": "LabTalk LMS Communications Lane",
+      "section": "portal.projects",
+      "kind": "integration_project",
+      "status": "reserved_local_only",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lms"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lms\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lms\\contracts\\lms_message_v1.schema.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.staging",
+      "label": "LabTalk Above-Runtime Staging",
+      "section": "portal.projects",
+      "kind": "staging_project",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "C:\\labtalk"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "C:\\labtalk\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "C:\\labtalk\\STAGING_POLICY.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "C:\\labtalk\\publication\\labtalk-website-pipeline.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "C:\\labtalk\\registries\\projects.yaml"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "C:\\labtalk\\registries\\intake.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.website",
+      "label": "x64base.com Website Publication",
+      "section": "portal.projects",
+      "kind": "publication_project",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.ai_friendly",
+      "label": "AI Friendly Lane",
+      "section": "portal.projects",
+      "kind": "knowledge_project",
+      "status": "seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_PORTAL_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_BOOK_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_FRIENDLY_DASHBOARD_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.pycrud",
+      "label": "pycrud Companion",
+      "section": "portal.projects",
+      "kind": "companion_app_project",
+      "status": "prototype",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\pycrud"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\pycrud\\README.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\pycrud\\pydottalk_api\\README.md"
+        },
+        {
+          "field": "launchers",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\run-pycrud.ps1"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.db_converter",
+      "label": "DB_Converter",
+      "section": "portal.projects",
+      "kind": "migration_project",
+      "status": "prototype",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\Side Projects\\DB_Converter"
+        },
+        {
+          "field": "docs",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\Side Projects\\DB_Converter\\README.md"
+        },
+        {
+          "field": "launchers",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\Side Projects\\DB_Converter\\Start-DBConverter.ps1"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.dottalk_webui",
+      "label": "DotTalk Web UI Prototypes",
+      "section": "portal.projects",
+      "kind": "web_ui_project",
+      "status": "local_prototype",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalk-webui"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalk-webui\\selfdoc-lane.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.sqlite_gui",
+      "label": "SQLite GUI Prototype",
+      "section": "portal.projects",
+      "kind": "gui_project",
+      "status": "local_prototype",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\sqlite-gui"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lms.lane.overview",
+      "label": "LMS Work Lane Overview",
+      "section": "portal.lms",
+      "kind": "markdown",
+      "status": "reserved_local_only",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lms\\README.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lms.message.contract",
+      "label": "LMS Message Envelope v1",
+      "section": "portal.lms",
+      "kind": "json_schema",
+      "status": "active_local_contract",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lms\\contracts\\lms_message_v1.schema.json"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lms.outbox",
+      "label": "Reserved LMS Outbox",
+      "section": "portal.lms",
+      "kind": "directory",
+      "status": "local_queue",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lms\\queue\\outbox"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lms.pipe.status",
+      "label": "Check LMS Pipe Status",
+      "section": "portal.lms",
+      "kind": "python_tool",
+      "status": "runnable_local_only",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\src\\labtalk\\lms\\cli.py"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lms.moodle.transport",
+      "label": "Moodle Web-Service Transport",
+      "section": "portal.lms",
+      "kind": "reserved_integration",
+      "status": "future",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lab.database_literacy.starter",
+      "label": "Database Literacy Starter",
+      "section": "portal.labs",
+      "kind": "registry_item",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\labs\\database_literacy_starter\\database_literacy_starter_v0.dts"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\edref.hpp"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\cases\\CASE_ENG_010_INDEX_NAVIGATION_CDX_LMDB.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\cases\\CASE_ENG_020_SEEK_VS_SCAN.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lab.selfdoc.comments_to_contracts",
+      "label": "Self-Documenting Systems - Comments to Contracts to HELP",
+      "section": "portal.labs",
+      "kind": "registry_item",
+      "status": "first_runnable",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\labs\\self_documenting_systems\\run_selfdoc_first_lab.ps1"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmdhelp.cpp"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\command_helpchk.cpp"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\contracts\\contract_scan.py"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\comments\\upsert_source_comment_contract.py"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lab.history.data_systems_trail",
+      "label": "Historical Data Systems Trail",
+      "section": "portal.labs",
+      "kind": "registry_item",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.properties_of_valid_data",
+      "label": "The Properties of Valid Data",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "idea",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "missing",
+          "path": "C:\\x64base\\labtalk\\lessons\\student\\properties_of_valid_data_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.records_fields_tables",
+      "label": "Records, Fields, and Tables",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lessons\\student\\records_fields_tables_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.selfdoc_comments_to_help",
+      "label": "Comments to Contracts to HELP",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "proof_linked",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lessons\\student\\comments_to_contracts_to_help_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.database_history_trail",
+      "label": "Data Systems History Trail",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lessons\\student\\data_systems_history_trail_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_EDUCATION_MAP_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.proof_first_development",
+      "label": "Proof-First Development Lessons",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lessons\\career\\proof_first_development_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.career.legacy_systems_as_labs",
+      "label": "Turning Legacy Systems into Learning Labs",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\lessons\\career\\legacy_systems_as_labs_v0.md"
+        },
+        {
+          "field": "evidence",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.table",
+      "label": "Table",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.record",
+      "label": "Record",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.field",
+      "label": "Field",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.schema",
+      "label": "Schema",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.index",
+      "label": "Index",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.network",
+      "label": "Network Database",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.database.xbase",
+      "label": "xBase Platform",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.runtime.state",
+      "label": "Runtime State",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.runtime.command_shell",
+      "label": "Command Shell",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.source.comments",
+      "label": "Source Comments",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.contract.usage",
+      "label": "Usage Contract",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.help.runtime",
+      "label": "Runtime Help",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.selfdoc.validation",
+      "label": "SelfDoc Validation",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.metadata.catalog",
+      "label": "Metadata Catalog",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.storage.file",
+      "label": "File Storage",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.storage.fixed_record",
+      "label": "Fixed Record",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.case.history",
+      "label": "Historical Case",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.case.engineering",
+      "label": "Engineering Case",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.evidence.review",
+      "label": "Evidence Review",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.ai_literacy.explainability",
+      "label": "AI Explainability",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.ai_friendly.assimilation",
+      "label": "AI Assimilation",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.ai_friendly.visibility",
+      "label": "AI Work Visibility",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "idea",
+      "label": "idea",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "source_defined",
+      "label": "source_defined",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime_observed",
+      "label": "runtime_observed",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "help_documented",
+      "label": "help_documented",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "validated",
+      "label": "validated",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "case_registered",
+      "label": "case_registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime_lab_candidate",
+      "label": "runtime_lab_candidate",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "student_ready",
+      "label": "student_ready",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "simulated",
+      "label": "simulated",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "historical_review_needed",
+      "label": "historical_review_needed",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.edref.topic_exists",
+      "label": "EDREF topic exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\edref.hpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.case.registry_exists",
+      "label": "Case registry exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "case_registered",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\cases\\REGISTRY_CASES_v0.csv"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.help.cmdhelp_source_exists",
+      "label": "CMDHELP source exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmdhelp.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.selfdoc.comments_workflow_exists",
+      "label": "Comments to HELP workflow exists",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\COMMENTS_HELP_PROOF_WORKFLOW_v1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lab.database_literacy_starter.first_run",
+      "label": "Database Literacy Starter first portal/runtime transcript",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260702_155913_runtime_database_literacy_starter.txt"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.lab.selfdoc.comments_to_contracts.first_run",
+      "label": "SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\selfdoc\\lab_selfdoc_first_crosswalk_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.product.manualgen.board_preserved",
+      "label": "Manualgen product board and map preservation",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_preservation_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_board_v0.html"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\products\\manualgen_product_map_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\manualgen\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_validate_summary_v1.csv"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\manuals\\developer\\manualgen\\reports\\mdo_226_build_dry_run_summary_v1.csv"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.portal.truth_audit.latest",
+      "label": "Portal truth audit latest report",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\reports\\portal\\portal_truth_audit_latest.json"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\sdlc.mdx"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\labtalk\\selfdoc-lane.mdx"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\content\\docs\\dev\\selfdoc-website-publication.mdx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_friendly.assimilation_docs_seed",
+      "label": "AI Friendly assimilation portal and book seeded",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_PORTAL_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_BOOK_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_FRIENDLY_DASHBOARD_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_maint.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_friendly.maint_ai_assimilate.first_run",
+      "label": "MAINT AI ASSIMILATE first portal/runtime transcript",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260705_182913_runtime_maint_ai_assimilate.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_PORTAL_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ASSIMILATION_BOOK_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_maint.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.lane_registered",
+      "label": "AI Portal Alpha/Experimental lane registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\dottalkpp\\docs\\architecture\\X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.dotscript_startup_readiness.v1",
+      "label": "DotTalk++ / DotScript startup readiness probe v1",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\20260712_195729_probe_ai_portal_dotscript_startup_readiness_v1.txt"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\probes\\dotscript_startup_readiness_v1.dts"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_dotscript.cpp"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.source_mutation_contract_gate.v1",
+      "label": "Source mutation contract preflight registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_REGISTRY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\contracts\\CONTRACT_LIFECYCLE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.seed_connection_prototype_direction.v1",
+      "label": "AI fast-start seed connection prototype direction registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "design_intended",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.root_entry_and_external_package.v1",
+      "label": "Root AI Portal entry and external change-package contract defined",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\ROOT_AI_PORTAL_ENTRY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SDLC_FAST_START_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\EXTERNAL_AI_CHANGE_PACKAGE_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.sdlc_fast_start.v1",
+      "label": "AI Portal SDLC fast-start seed registered",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SDLC_FAST_START_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_SDLC_FRAMEWORK_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_contract_lane_drawio",
+      "label": "SelfDoc Contract Lane Draw.io",
+      "section": "portal.diagrams",
+      "kind": "diagram",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\selfdoc_contract_lane_v1.drawio"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "C:\\x64base\\tools\\diagram\\diagram_seed_selfdoc_lane_v1.meta"
+      ]
+    },
+    {
+      "id": "diagram.labtalk_sdlc",
+      "label": "LabTalk SDLC Diagrams",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "maintained",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\LABTALK_SDLC_DIAGRAMS_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.dottalkpp_sdlc",
+      "label": "DotTalk++ SDLC Diagrams",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "maintained",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\docs\\maintenance\\diagrams\\DOTTALKPP_SDLC_DIAGRAMS_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_contract_lane_mermaid",
+      "label": "SelfDoc Contract Lane Mermaid",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\selfdoc_contract_lane_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_ok",
+      "derived_from": [
+        "C:\\x64base\\tools\\diagram\\diagram_seed_selfdoc_lane_v1.meta"
+      ]
+    },
+    {
+      "id": "diagram.selfdoc_mdo_dataflow_map",
+      "label": "SelfDoc / MDO Dataflow Map",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\SELFDOC_MDO_DATAFLOW_MAP_v0.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_mdo_authority_dataflow",
+      "label": "SelfDoc / MDO Authority Dataflow",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\selfdoc_mdo_authority_dataflow_v0.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_probe_pipeline_dataflow",
+      "label": "SelfDoc Probe Pipeline Dataflow",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\selfdoc_probe_pipeline_dataflow_v0.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_metacollect_metadata_dataflow",
+      "label": "SelfDoc metacollect Metadata Dataflow",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\selfdoc_metacollect_metadata_dataflow_v0.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.mdo_manualgen_publication_dataflow",
+      "label": "MDO Manualgen Publication Dataflow",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\mdo_manualgen_publication_dataflow_v0.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.mdo_guarded_help_cmdhelpchk_dataflow",
+      "label": "MDO Guarded HELP/CMDHELPCHK Dataflow",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\diagrams\\mdo_guarded_help_cmdhelpchk_dataflow_v0.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.selfdoc_contract_lane_webui",
+      "label": "DotTalk++ SelfDoc Lane Web Interface",
+      "section": "portal.diagrams",
+      "kind": "html",
+      "status": "local_web",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\dottalk-webui\\selfdoc-lane.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.x64base_labtalk_sdlc_operational",
+      "label": "x64base.com LabTalk Operational SDLC Image",
+      "section": "portal.diagrams",
+      "kind": "image",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\public\\images\\sdlc\\laboratory-campus-operational-sdlc.svg"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "diagram.x64base_selfdoc_contract_lane",
+      "label": "x64base.com SelfDoc Contract Lane Mermaid",
+      "section": "portal.diagrams",
+      "kind": "markdown",
+      "status": "downstream_publication_truth",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\dev\\x64base-site\\public\\diagrams\\selfdoc\\selfdoc_contract_lane_v1.mmd"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "provenance_missing",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.database_literacy_starter",
+      "label": "Run Database Literacy Starter",
+      "section": "portal.runtime",
+      "kind": "dottalk_script",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\labs\\database_literacy_starter\\database_literacy_starter_v0.dts"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.help",
+      "label": "HELP",
+      "section": "portal.runtime",
+      "kind": "dottalk_command",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.case_list",
+      "label": "CASE LIST",
+      "section": "portal.runtime",
+      "kind": "dottalk_command",
+      "status": "runnable_review_path",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.cmdhelp",
+      "label": "CMDHELP",
+      "section": "portal.runtime",
+      "kind": "dottalk_command",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "runtime.selfdoc.comments_to_contracts.first_lab",
+      "label": "Run SelfDoc Comments to Contracts Lab",
+      "section": "portal.runtime",
+      "kind": "lab_script",
+      "status": "runnable",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\labtalk\\labs\\self_documenting_systems\\run_selfdoc_first_lab.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.cli",
+      "label": "DotTalk++ CLI",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\datarun.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.erp",
+      "label": "ERP Runtime",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\erprun.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.bible",
+      "label": "BibleTalk Runtime",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\biblerun.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.wx",
+      "label": "wx GUI",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\wx.run.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.wx_next",
+      "label": "wx Next GUI",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\wx.next.run.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.tk",
+      "label": "ArcticTalk Tk GUI",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\tk.run.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.tk_wsl",
+      "label": "ArcticTalk Tk GUI (WSL)",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\tk.run.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.run_cli",
+      "label": "run-cli.ps1",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-cli.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.run_erp",
+      "label": "run-erp.ps1",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-erp.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.run_bible",
+      "label": "run-bible.ps1",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-bible.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.run_wx",
+      "label": "run-wx.ps1",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-wx.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.run_wx_next",
+      "label": "run-wx-next.ps1",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-wx-next.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.arctictalk_runtime",
+      "label": "ArcticTalk Runtime",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\arctictalk.datarun.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.arctictalk_runtime_wsl",
+      "label": "ArcticTalk Runtime (WSL)",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\arctictalk.datarun.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.artic_runtime",
+      "label": "Artic Runtime Alias",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\artic.datarun.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.artic_runtime_wsl",
+      "label": "Artic Runtime Alias (WSL)",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\artic.datarun.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.pydottalk",
+      "label": "PyDotTalk",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-pydottalk.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.pycrud",
+      "label": "pycrud GUI + API",
+      "section": "portal.launchers",
+      "kind": "powershell_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "C:\\x64base\\run-pycrud.ps1"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.wsl_build",
+      "label": "WSL Build DotTalk++",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\wsl_build_dottalkpp.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.wsl_cli",
+      "label": "WSL DotTalk++ CLI",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\datarun_wsl.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "launcher.wsl_runtime",
+      "label": "WSL DotTalk++ Runtime",
+      "section": "portal.launchers",
+      "kind": "wsl_launcher",
+      "status": "interactive",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "C:\\x64base\\wslrun.sh"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    }
+  ]
+}

@@ -16,8 +16,11 @@ ECHO ============================================================
 ECHO INDEX X32 INX/CNX SMOKE v2
 ECHO ============================================================
 
-DO X32
+* Self-bootstrap without nested DOTSCRIPT dependency.
+SET PATH DBF DBF/x32
+SET PATH INDEXES INDEXES/x32
 WORKSPACE CLOSE
+ERASE students_x32_idxtest CONFIRM
 WORKSPACE OPEN DBF
 
 ECHO
@@ -99,6 +102,7 @@ TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
 ECHO
 ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
 CLOSE
+ERASE students_x32_idxtest CONFIRM
 ECHO Suggested manual cleanup if needed:
 ECHO ERASE students_x32_idxtest.dbf and students_x32_idxtest_lname.inx from X32 paths.
 

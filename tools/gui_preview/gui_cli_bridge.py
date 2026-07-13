@@ -50,10 +50,9 @@ def find_dottalkpp_executable() -> pathlib.Path | None:
     root = _repo_root()
     candidates.extend([
         root / "build" / "src" / "Release" / exe_name,
-        root / "build-msvc" / "src" / "Release" / exe_name,
-        root / "build-wx-fixed-local" / "src" / "Release" / exe_name,
-        root / "build-wx-fixed-local" / "src" / "Debug" / exe_name,
-        root / "build-gui-local" / "src" / "Release" / exe_name,
+        root / "build" / "src" / "Debug" / exe_name,
+        root / "build-wsl" / "src" / exe_name,
+        root / "build-wsl" / exe_name,
     ])
     return _first_existing(candidates)
 

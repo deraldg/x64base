@@ -4,8 +4,7 @@ set -euo pipefail
 export VCPKG_ROOT="${VCPKG_ROOT:-$HOME/vcpkg}"
 
 SRC="/mnt/d/code/ccode"
-BROOT="$HOME/wsl-build/ccode"
-BUILD="$BROOT/build-wsl"
+BUILD="$SRC/build-wsl"
 
 OUTDIR="$SRC/dottalkpp/bin-wsl"
 OUTBIN="$OUTDIR/dottalkpp"
@@ -76,7 +75,6 @@ fi
 
 preflight_wsl_system_packages
 
-mkdir -p "$BROOT"
 rm -rf "$BUILD"
 
 # Swap in WSL manifest so vcpkg does not try to build Windows-only pieces.

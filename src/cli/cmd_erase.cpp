@@ -12,8 +12,13 @@
 // Behavior:
 //   - Resolves <table> to a .dbf path (adds .dbf if missing).
 //   - Resolves relative table names through the active SETPATH DBF slot.
-//   - Deletes the DBF plus known sidecars with the same stem in the same directory:
-//       .fpt .dbt .inx .cnx .cdx .idx .dtx .dti.json .schema.json
+//   - Deletes the DBF plus known DBF-sidecars in the same directory:
+//       .fpt .dbt .dtx .dti.json .schema.json
+//   - Also deletes matching public index files through the active INDEXES slot:
+//       .inx .cnx .cdx .idx
+//   - Also deletes the matching LMDB backend directory for the public .cdx
+//     through the active LMDB slot:
+//       <stem>.cdx.d
 //   - Safety gate: without CONFIRM, it prints what it *would* delete and does nothing.
 
 // @dottalk.usage v1
@@ -26,7 +31,7 @@
 // mutates: filesystem
 // usage-access: ERASE USAGE
 // summary:
-//   Physically delete a DBF table file and known same-stem sidecar files.
+//   Physically delete a DBF table file plus known same-stem sidecars across DBF, INDEXES, and LMDB roots.
 //
 // usage:
 //   ERASE USAGE
@@ -41,7 +46,7 @@
 // notes:
 //   ERASE USAGE prints usage and does not inspect or delete files.
 //   Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
-//   CONFIRM physically deletes the DBF and known same-stem sidecars.
+//   CONFIRM physically deletes the DBF, matching index containers/files, and matching LMDB backend directory when present.
 //
 // risk:
 //   deletes_filesystem: ERASE ... CONFIRM
@@ -83,6 +88,15 @@ static bool ieq(const std::string& a, const std::string& b) {
     for (size_t i = 0; i < a.size(); ++i) {
         if (std::toupper(static_cast<unsigned char>(a[i])) !=
             std::toupper(static_cast<unsigned char>(b[i]))) return false;
+    }
+    return true;
+}
+
+static bool istarts_with(const std::string& s, const std::string& prefix) {
+    if (prefix.size() > s.size()) return false;
+    for (size_t i = 0; i < prefix.size(); ++i) {
+        if (std::toupper(static_cast<unsigned char>(s[i])) !=
+            std::toupper(static_cast<unsigned char>(prefix[i]))) return false;
     }
     return true;
 }
@@ -136,30 +150,56 @@ static bool try_resolve_existing(const fs::path& in, fs::path& out) {
 }
 
 static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
-    // Same directory, same stem
-    const fs::path dir  = dbf_path.parent_path();
+    // Same logical table stem across DBF, INDEXES, and LMDB roots.
+    const fs::path dir = dbf_path.parent_path();
     const std::string stem = dbf_path.stem().string(); // "clients" from "clients.dbf"
 
     std::vector<fs::path> files;
-    files.reserve(12);
+    files.reserve(16);
 
     // Primary
     files.push_back(dbf_path);
 
-    // Traditional DBF sidecars (optional)
+    // Traditional DBF sidecars (optional, same DBF directory)
     files.push_back(dir / (stem + ".fpt"));
     files.push_back(dir / (stem + ".dbt"));
-
-    // Index containers / common index files (optional)
-    files.push_back(dir / (stem + ".inx"));
-    files.push_back(dir / (stem + ".cnx"));
-    files.push_back(dir / (stem + ".cdx"));
-    files.push_back(dir / (stem + ".idx"));
-
-    // DotTalk++ sidecars (optional)
     files.push_back(dir / (stem + ".dtx"));         // memo sidecar
     files.push_back(dir / (stem + ".dti.json"));    // indexing stub sidecar
     files.push_back(dir / (stem + ".schema.json")); // schema sidecar
+
+    // Public index containers/files (optional, active INDEXES root)
+    const fs::path inx = dottalk::paths::resolve_index(stem + ".inx");
+    const fs::path cnx = dottalk::paths::resolve_index(stem + ".cnx");
+    const fs::path cdx = dottalk::paths::resolve_index(stem + ".cdx");
+    const fs::path idx = dottalk::paths::resolve_index(stem + ".idx");
+    files.push_back(inx);
+    files.push_back(cnx);
+    files.push_back(cdx);
+    files.push_back(idx);
+
+    // LMDB backend env for the public CDX container (optional, active LMDB root)
+    files.push_back(dottalk::paths::resolve_lmdb_env_for_cdx(cdx));
+
+    // Single-index families often include tag suffixes, for example:
+    //   students_lname.inx
+    //   students_gpa.idx
+    // When ERASE targets the table, treat these as belonging to the same
+    // table and remove them too from the active INDEXES root.
+    const fs::path index_dir = cdx.parent_path();
+    std::error_code walk_ec;
+    if (!index_dir.empty() && fs::exists(index_dir, walk_ec) && !walk_ec) {
+        for (const auto& entry : fs::directory_iterator(index_dir, walk_ec)) {
+            if (walk_ec) break;
+            if (!entry.is_regular_file()) continue;
+            const fs::path candidate = entry.path();
+            const std::string ext = candidate.extension().string();
+            if (!ieq(ext, ".inx") && !ieq(ext, ".idx")) continue;
+            const std::string candidate_stem = candidate.stem().string();
+            if (istarts_with(candidate_stem, stem)) {
+                files.push_back(candidate);
+            }
+        }
+    }
 
     // Dedup
     std::sort(files.begin(), files.end(), [](const fs::path& a, const fs::path& b){
@@ -235,7 +275,8 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
     std::vector<fs::path> existing;
     existing.reserve(files.size());
     for (const auto& f : files) {
-        if (fs::exists(f, ec)) existing.push_back(f);
+        ec.clear();
+        if (fs::exists(f, ec) && !ec) existing.push_back(f);
     }
 
     if (existing.empty()) {
@@ -260,13 +301,24 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
 
     for (const auto& f : existing) {
         ec.clear();
-        fs::remove(f, ec);
+        std::uintmax_t removed = 0;
+        if (fs::is_directory(f, ec)) {
+            ec.clear();
+            removed = fs::remove_all(f, ec);
+        } else {
+            fs::remove(f, ec);
+            removed = ec ? 0u : 1u;
+        }
         if (ec) {
             ++failed;
             std::cout << "  FAILED: " << s8(f.filename()) << "  (" << ec.message() << ")\n";
         } else {
             ++deleted;
-            std::cout << "  Deleted: " << s8(f.filename()) << "\n";
+            if (removed > 1) {
+                std::cout << "  Deleted: " << s8(f.filename()) << "  (" << removed << " entries)\n";
+            } else {
+                std::cout << "  Deleted: " << s8(f.filename()) << "\n";
+            }
         }
     }
 

@@ -22,6 +22,18 @@ static const CommandDoc HELP_DOC = {
     {
         "HELP",
         "HELP <command>",
+        "HELP GIANT",
+        "HELP GIANT USAGE",
+        "HELP GIANT TOPICS",
+        "HELP GIANT KIND",
+        "HELP GIANT SOURCE",
+        "HELP GIANT <topic>",
+        "HELP /GIANT",
+        "HELP /GIANT USAGE",
+        "HELP /GIANT TOPICS",
+        "HELP /GIANT KIND",
+        "HELP /GIANT SOURCE",
+        "HELP /GIANT <topic>",
         "HELP FUNCTION <name>",
         "HELP FUNCTIONS",
         "HELP PREDICATES",
@@ -35,6 +47,10 @@ static const CommandDoc HELP_DOC = {
     {
         "HELP",
         "HELP COUNT",
+        "HELP GIANT",
+        "HELP GIANT USAGE",
+        "HELP GIANT TOPICS",
+        "HELP /GIANT SOURCE",
         "HELP FUNCTION ALLTRIM",
         "HELP PREDICATES",
         "HELP /FOX SET ORDER"
@@ -42,7 +58,11 @@ static const CommandDoc HELP_DOC = {
 
     {
         "Default lookup checks reflected metadata, then command_catalog docs, then legacy references",
-        "HELP GIANT prints the full command catalog/report path"
+        "HELP GIANT is the readable full HELP DATA report surface",
+        "HELP /GIANT is an alias for the same HELP DATA surface",
+        "HELP GIANT TOPICS/KIND/SOURCE expose organized HELP DATA slices",
+        "HELP GIANT <topic> renders the assembled topic through current HELP DATA",
+        "HELP GIANT respects normal shell paging through SET PAGING ON|OFF"
     },
 
     {}
@@ -348,6 +368,31 @@ static const CommandDoc COLOR_DOC = {
     {}
 };
 
+static const CommandDoc CONCAT_DOC = {
+    "CONCAT",
+    "Concatenate one or more expressions into a single printed string",
+
+    {
+        "CONCAT <expr1>[, <expr2> ...]",
+        "STRCAT <expr1>[, <expr2> ...]",
+        "CONCAT(<expr1>, <expr2>, ...)"
+    },
+
+    {
+        "CONCAT \"hello\", \" \", \"world\"",
+        "CONCAT FNAME, \" \", LNAME",
+        "STRCAT(\"A\", \"B\", \"C\")"
+    },
+
+    {
+        "CONCAT is the shell command surface over the same string-function family used by CALC",
+        "When a table is open, bare identifiers can resolve as fields; otherwise they remain literal text",
+        "STRCAT is an alias of CONCAT"
+    },
+
+    {}
+};
+
 // First advanced-command usage pass. These docs intentionally describe public
 // usage and architectural boundaries without changing parser/runtime behavior.
 
@@ -637,6 +682,39 @@ static const CommandDoc COMMIT_DOC = {
     }
 };
 
+static const CommandDoc REGRESSION_DOC = {
+    "REGRESSION",
+    "Launch curated DotTalk++ regression DotScript entrypoints",
+
+    {
+        "REGRESSION LIST",
+        "REGRESSION SHOW <name>",
+        "REGRESSION RUN <name>",
+        "REGRESSION <name>",
+        "REGRESSION ALL"
+    },
+
+    {
+        "REGRESSION LIST",
+        "REGRESSION SHOW NONDESTRUCTIVE",
+        "REGRESSION RUN INDEX_X32",
+        "REGRESSION RUN X64_METRICS",
+        "REGRESSION RUN HARVEST",
+        "REGRESSION INDEX_X64",
+        "REGRESSION ALL"
+    },
+
+    {
+        "REGRESSION delegates script execution to DOTSCRIPT",
+        "Curated entries are expected to bootstrap their own runtime environment",
+        "LIST is intentionally smaller than the full historical script estate",
+        "Dev-only warning/repro canaries stay out unless intentionally promoted",
+        "HARVEST is the top-layer proof path for recently promoted command/help/regression surfaces"
+    },
+
+    {}
+};
+
 } // anonymous namespace
 
 const CommandDoc* get(const std::string& command)
@@ -661,6 +739,7 @@ const CommandDoc* get(const std::string& command)
     if (c == "VERSION") return &VERSION_DOC;
     if (c == "REFRESH") return &REFRESH_DOC;
     if (c == "COLOR") return &COLOR_DOC;
+    if (c == "CONCAT" || c == "STRCAT") return &CONCAT_DOC;
 
     if (c == "LIST") return &LIST_DOC;
     if (c == "SMARTLIST" || c == "SL") return &SMARTLIST_DOC;
@@ -674,6 +753,7 @@ const CommandDoc* get(const std::string& command)
     if (c == "REL" || c == "RELATION" || c == "RELATIONS") return &REL_DOC;
     if (c == "WORKSPACE" || c == "SCHEMAS") return &WORKSPACE_DOC;
     if (c == "COMMIT") return &COMMIT_DOC;
+    if (c == "REGRESSION" || c == "REGRESS") return &REGRESSION_DOC;
 
     return nullptr;
 }

@@ -2,11 +2,18 @@
 # Copy to labtalk.local.yaml and adjust paths if needed.
 
 paths:
-  ccode_root: D:/code/ccode
-  labtalk_root: D:/code/ccode/labtalk
-  dottalkpp_exe: D:/code/ccode/dottalkpp/bin/dottalkpp.exe
-  dottalkpp_workdir: D:/code/ccode
+  # Relative paths are resolved from the repository root.
+  ccode_root: .
+  labtalk_root: labtalk
+  dottalkpp_exe: dottalkpp/bin/dottalkpp.exe
+  dottalkpp_workdir: .
 
 tools:
   python: python
   powershell: powershell.exe
+
+lms:
+  provider: moodle
+  enabled: false
+  queue_dir: lms/queue/outbox
+  token_environment_variable: LABTALK_MOODLE_TOKEN

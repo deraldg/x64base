@@ -1,0 +1,154 @@
+# LabTalk lesson registry v0
+
+schema:
+  id: Stable lesson identifier.
+  title: Display title.
+  lane: student | career | instructor | review
+  status: idea | draft | proof_linked | student_ready_pending | student_ready
+  path: Repo-local lesson document path, relative to the LabTalk root.
+  proof_state: Current evidence state from registries/proofs.yaml.
+  next_gate: The next review or proof step before promotion.
+
+lessons:
+  - id: lesson.student.properties_of_valid_data
+    title: The Properties of Valid Data
+    kind: lesson
+    lane: student
+    status: idea
+    audience: [student, self-learner, instructor]
+    path: lessons/student/properties_of_valid_data_v0.md
+    website_path: /docs/labtalk/student-lessons
+    concepts:
+      - concept.database.table
+      - concept.database.record
+      - concept.database.field
+      - concept.database.schema
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.help
+    labs:
+      - lab.database_literacy.starter
+    commands: [HELP, FIELDS, STRUCT, CREATE, APPEND BLANK, REPLACE]
+    proof_state: source_defined
+    next_gate: Define one runnable student exercise showing why valid data depends on field shape, type, range, and mutation rules before promoting this idea to a draft lesson.
+
+  - id: lesson.student.records_fields_tables
+    title: Records, Fields, and Tables
+    kind: lesson
+    lane: student
+    status: draft
+    audience: [student, self-learner, instructor]
+    path: lessons/student/records_fields_tables_v0.md
+    website_path: /docs/labtalk/student-lessons
+    concepts:
+      - concept.database.table
+      - concept.database.record
+      - concept.database.field
+      - concept.runtime.state
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.help
+    labs:
+      - lab.database_literacy.starter
+    commands: [HELP, USE, FIELDS, STRUCT, LIST]
+    datasets: [dataset.students, dataset.teachers]
+    proofs:
+      - proof.lab.database_literacy_starter.first_run
+    proof_state: runtime_observed
+    next_gate: Add a reviewed student worksheet with expected observations and HELP/CMDHELP readback.
+
+  - id: lesson.student.selfdoc_comments_to_help
+    title: Comments to Contracts to HELP
+    kind: lesson
+    lane: student
+    status: proof_linked
+    audience: [advanced student, developer, maintainer]
+    path: lessons/student/comments_to_contracts_to_help_v0.md
+    website_path: /docs/labtalk/student-lessons
+    concepts:
+      - concept.source.comments
+      - concept.contract.usage
+      - concept.help.runtime
+      - concept.selfdoc.validation
+    apps:
+      - app.dottalkpp.help
+      - app.dottalkpp.selfdoc
+    labs:
+      - lab.selfdoc.comments_to_contracts
+    commands: [CMDHELP, CMDHELPCHK]
+    proofs:
+      - proof.lab.selfdoc.comments_to_contracts.first_run
+    proof_state: validated
+    next_gate: Convert the proof readback into step-by-step student questions and instructor notes.
+
+  - id: lesson.student.database_history_trail
+    title: Data Systems History Trail
+    kind: lesson
+    lane: student
+    status: draft
+    audience: [student, instructor]
+    path: lessons/student/data_systems_history_trail_v0.md
+    website_path: /docs/labtalk/student-lessons
+    concepts:
+      - concept.case.history
+      - concept.storage.fixed_record
+      - concept.database.network
+      - concept.database.xbase
+      - concept.ai_literacy.explainability
+    apps:
+      - app.labtalk.case_library
+      - app.labtalk.dataset_library
+    labs:
+      - lab.history.data_systems_trail
+    commands: [CASE, COBOL, CODASYL, HELP]
+    evidence:
+      - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+      - D:/code/ccode/labtalk/LABTALK_EDUCATION_MAP_v0.md
+    proof_state: case_registered
+    next_gate: Separate live runtime demonstrations from reviewed history and simulations.
+
+  - id: lesson.career.proof_first_development
+    title: Proof-First Development Lessons
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, technical writer]
+    path: lessons/career/proof_first_development_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.evidence.review
+      - concept.contract.usage
+      - concept.selfdoc.validation
+    apps:
+      - app.dottalkpp.selfdoc
+      - app.labtalk.case_library
+    proofs:
+      - proof.portal.truth_audit.latest
+      - proof.ai_friendly.assimilation_docs_seed
+    proof_state: source_defined
+    next_gate: Add dated build notes and one concrete before/after example from the current LabTalk work.
+
+  - id: lesson.career.legacy_systems_as_labs
+    title: Turning Legacy Systems into Learning Labs
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, educator, maintainer]
+    path: lessons/career/legacy_systems_as_labs_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.case.history
+      - concept.database.xbase
+      - concept.evidence.review
+      - concept.ai_literacy.explainability
+    apps:
+      - app.dottalkpp.runtime
+      - app.labtalk.case_library
+      - app.labtalk.dataset_library
+    proofs:
+      - proof.case.registry_exists
+      - proof.lab.database_literacy_starter.first_run
+    evidence:
+      - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+    proof_state: case_registered
+    next_gate: Add career-source notes, source memory boundaries, and reviewed public wording.

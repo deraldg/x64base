@@ -40,7 +40,8 @@ struct BetaItem {
 // Minimal seed set; extend anytime.
 inline const std::vector<Item>& catalog() {
     static const std::vector<Item> k = {
-        {"USE",       "USE <table> [IN <n>]", "Open a DBF in a work area.", true},
+        {"USE",       "USE <table> [NOINDEX]",
+                 "Open a DBF in the current work area, auto-attach memo storage, and auto-attach flavor-appropriate indexes unless NOINDEX is specified.", true},
 
         {"CLOSE",     "CLOSE [ALL] | CLOSE DATABASES",
                  "Close the current work area or close all open tables (FoxPro: CLOSE TABLES/DATABASES/ALL).", true},
@@ -447,8 +448,18 @@ inline const std::vector<Item>& catalog() {
 
         {"TUPTALK", "TUPTALK", "DotTalk++ tuple/logical-row command.", true},
 
+        {"ARCTICTALK", "ARCTICTALK",
+        R"(Launch the ArcticTalk Turbo Vision TUI shell.
+
+        Example:
+            ARCTICTALK
+
+        Notes:
+            Intended for keyboard-driven browsing and diagnostics.
+            Exits back to the DotTalk++ CLI.)", true},
+
         {"FOXTALK", "FOXTALK",
-        R"(Launch the Turbo Vision (FoxPro-style) TUI shell.
+        R"(Legacy alias for the ArcticTalk Turbo Vision TUI shell.
 
         Example:
             FOXTALK
@@ -557,7 +568,7 @@ inline const std::vector<Item>& catalog() {
             COLOR DEFAULT
 
         Notes:
-            Used by FOXTALK/Turbo Vision palette wiring.)", true},
+            Used by ArcticTalk/Foxtalk Turbo Vision palette wiring.)", true},
 
         {"TVISION",   "TVISION", "Turbo Vision diagnostics / demos.", true},
 

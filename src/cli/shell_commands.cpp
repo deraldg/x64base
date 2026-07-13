@@ -180,8 +180,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     if (include_ui_cmds) {
         registry().add("TVISION",    [](DbArea& A, std::istringstream& S){ cmd_TVISION(A,S); });
         registry().add("FOXPRO",     [](DbArea& A, std::istringstream& S){ cmd_FOXPRO(A,S); });
+        registry().add("ARCTICTALK", [](DbArea& A, std::istringstream& S){ cmd_FOXTALK(A,S); });
         registry().add("FOXTALK",    [](DbArea& A, std::istringstream& S){ cmd_FOXTALK(A,S); });
-        registry().add("TURBOTALK",  [](DbArea& A, std::istringstream& S){ cmd_FOXTALK(A,S); });
         registry().add("GENERIC",    [](DbArea& A, std::istringstream& S){ cmd_GENERIC(A,S); });
         registry().add("BROWSETV",   [](DbArea& A, std::istringstream& S){ cmd_BROWSETV(A,S); });
         registry().add("RECORD",     [](DbArea& A, std::istringstream& S){ cmd_RECORD(A,S); });
@@ -377,7 +377,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("DIR",       [](DbArea& A, std::istringstream& S){ cmd_DIR(A,S);       });
     registry().add("BELL",      [](DbArea& A, std::istringstream& S){ cmd_BELL(A,S);      });
     registry().add("COLOR",     [](DbArea& A, std::istringstream& S){ cmd_COLOR(A,S);     });
-    registry().add("CHRISTMAS", [](DbArea& A, std::istringstream& S){ cmd_CHRISTMAS(A,S); });
+    registry().add("CHRISTMAS", [](DbArea& A, std::istringstream& S){ edu_CHRISTMAS(A,S); });
+    registry().add("HANUKKAH",  [](DbArea& A, std::istringstream& S){ edu_HANUKKAH(A,S);  });
+
 
     registry().add("!",         [](DbArea& A, std::istringstream& S) { cmd_BANG(A,S); });
     registry().add("BANG",      [](DbArea& A, std::istringstream& S) { cmd_BANG(A,S); });
@@ -390,6 +392,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // expression function self-registration.
     registry().add("CALC",      [](DbArea& A, std::istringstream& S){ cmd_CALC(A,S);       });
     registry().add("CALCWRITE", [](DbArea& A, std::istringstream& S){ cmd_CALCWRITE(A,S);  });
+    registry().add("CONCAT",    [](DbArea& A, std::istringstream& S){ cmd_CONCAT(A,S);     });
+    registry().add("STRCAT",    [](DbArea& A, std::istringstream& S){ cmd_CONCAT(A,S);     });
     registry().add("BOOLEAN",   [](DbArea& A, std::istringstream& S){ edu_BOOLEAN(A,S);    });
     registry().add("FORMULA",   [](DbArea& A, std::istringstream& S){ edu_FORMULA(A,S);    });
     registry().add("EVALUATE",  [](DbArea& A, std::istringstream& S){ edu_EVALUATE(A,S);   });
@@ -450,6 +454,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // references, beta notes, and PowerShell notes.
     registry().add("HELP",         [](DbArea& A, std::istringstream& S){ cmd_HELP(A,S);        });
     registry().add("TEST",         [](DbArea& A, std::istringstream& S){ cmd_TEST(A,S);        });
+    registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });
     registry().add("FOXSTANDARD",  [](DbArea& A, std::istringstream& S){ cmd_FOXSTANDARD(A,S); });
@@ -479,6 +484,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("CMDHELP",      [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);      });
     registry().add("COMMANDSHELP", [](DbArea& A, std::istringstream& S){ cmd_CMDHELP(A,S);      });
     registry().add("CMDHELPCHK",   [](DbArea& A, std::istringstream& S){ cmd_CMDHELPCHK(A,S);   });
+    registry().add("EXITS",        [](DbArea& A, std::istringstream& S){ cmd_EXITS(A,S);        });
     registry().add("CMDREL",       [](DbArea& A, std::istringstream& S){ cmd_CMDREL(A,S);       });
     registry().add("CMDARGCHK",    [](DbArea& A, std::istringstream& S){ cmd_CMDARGCHK(A,S);    });
     registry().add("CANARY",       [](DbArea& A, std::istringstream& S){ cmd_CATALOGCANARY(A,S);});

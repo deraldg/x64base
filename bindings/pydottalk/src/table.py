@@ -63,31 +63,29 @@ class Table:
     # ---- record access ----
 
     def read(self) -> Dict[str, Any]:
-        """
-        Returns current record as a dict keyed by field name.
-        """
-        raw = self._a.readCurrent()  # assumed list-like
-        names = self.field_names()
-
-        if isinstance(raw, dict):
-            return raw  # future-proof if binding changes
-
-        # map list/tuple to dict
-        out = {}
-        for i, name in enumerate(names):
-            if i < len(raw):
-                out[name] = raw[i]
-            else:
-                out[name] = None
-        return out
+        """Return the current record as a name-keyed dict."""
+        if hasattr(self._a, "read_record"):
+            return dict(self._a.read_record())
+        self._a.readCurrent()
+        return {name: self.get(name) for name in self.field_names()}
 
     def get(self, field_name: str) -> Any:
+        if hasattr(self._a, "get_field"):
+            return self._a.get_field(field_name)
         idx = self._field_index(field_name)
         return self._a.get(idx)
 
     def set(self, field_name: str, value: Any) -> None:
+        if hasattr(self._a, "set_field"):
+            self._a.set_field(field_name, value)
+            return
         idx = self._field_index(field_name)
         self._a.set(idx, value)
+
+    def memo_text(self, field_name: str) -> Any:
+        if hasattr(self._a, "get_memo_text"):
+            return self._a.get_memo_text(field_name)
+        return self.get(field_name)
 
     def write(self) -> None:
         self._a.writeCurrent()
@@ -111,15 +109,28 @@ class Table:
 
     # ---- iteration ----
 
-    def records(self, limit: Optional[int] = None) -> Iterator[Dict[str, Any]]:
+    def records(
+        self,
+        limit: Optional[int] = None,
+        *,
+        skip_deleted: bool = True,
+    ) -> Iterator[Dict[str, Any]]:
+        if hasattr(self._a, "scan_records"):
+            rows = self._a.scan_records(skip_deleted=skip_deleted)
+            for i, row in enumerate(rows):
+                if limit is not None and i >= limit:
+                    break
+                yield dict(row)
+            return
+
         self.top()
         count = 0
-
         while not self.eof():
-            yield self.read()
-            count += 1
-            if limit is not None and count >= limit:
-                break
+            if not skip_deleted or not self.is_deleted():
+                yield self.read()
+                count += 1
+                if limit is not None and count >= limit:
+                    break
             self.skip(1)
 
     # ---- helpers ----

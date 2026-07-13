@@ -57,16 +57,150 @@ sections:
         label: Manualgen Product Preservation
         kind: markdown
         path: products/manualgen_product_preservation_v0.md
+      - id: doc.x64base_project_truth
+        label: x64base.com Current Project Truth
+        kind: mdx
+        path: D:/dev/x64base-site/content/docs/dev/project-truth.mdx
+        status: downstream_publication_truth
+      - id: doc.x64base_labtalk_sdlc
+        label: x64base.com LabTalk SDLC Page
+        kind: mdx
+        path: D:/dev/x64base-site/content/docs/labtalk/sdlc.mdx
+        status: downstream_publication_truth
+      - id: doc.x64base_selfdoc_lane
+        label: x64base.com SelfDoc Lane Page
+        kind: mdx
+        path: D:/dev/x64base-site/content/docs/labtalk/selfdoc-lane.mdx
+        status: downstream_publication_truth
+      - id: doc.x64base_selfdoc_publication
+        label: x64base.com SelfDoc Website Publication
+        kind: mdx
+        path: D:/dev/x64base-site/content/docs/dev/selfdoc-website-publication.mdx
+        status: downstream_publication_truth
+      - id: doc.portal_truth_audit
+        label: Portal Truth Audit
+        kind: markdown
+        path: reports/portal/portal_truth_audit_latest.md
+        status: generated
+      - id: doc.x64base_campus_mission_vision
+        label: x64base Laboratory Campus Mission and Vision
+        kind: markdown
+        path: ../dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
+        status: curated_design_intent
+        proof_state: design_intended
+
+  - id: portal.ai_friendly
+    label: AI Friendly
+    description: AI Friendly lane, assimilation portal, user visibility, and runtime readback.
+    items:
+      - id: doc.ai_portal_root_entry
+        label: Root AI Portal Fast-Start Entry
+        kind: markdown
+        path: ../AI_PORTAL.md
+        status: active_seed_entry
+        proof_state: source_defined
+      - id: doc.ai_root_readme
+        label: Root AI README
+        kind: markdown
+        path: ../AI_README.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_rules
+        label: Root AI / Project Rules
+        kind: text
+        path: ../rules/rules.txt
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_readme_clobber_rule
+        label: README Clobber Protection Rule
+        kind: markdown
+        path: ../rules/README_CLOBBER_PROTECTION_RULE.md
+        status: source_rule
+        proof_state: source_defined
+      - id: doc.ai_assimilation_portal
+        label: AI Assimilation Portal
+        kind: markdown
+        path: ../docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_assimilation_book
+        label: AI Assimilation Book
+        kind: markdown
+        path: ../docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_friendly_dashboard
+        label: AI Friendly Dashboard
+        kind: markdown
+        path: ../docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_friendly_manifest
+        label: AI Friendly Lane Manifest
+        kind: markdown
+        path: ../docs/ai-friendly/AI_FRIENDLY_LANE_MANIFEST_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_friendly_workflow
+        label: AI Friendly Workflow
+        kind: markdown
+        path: ../docs/ai-friendly/AI_FRIENDLY_WORKFLOW_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: doc.ai_interaction_intake
+        label: AI Interaction Intake Queue
+        kind: markdown
+        path: ../docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md
+        status: seed
+        proof_state: source_defined
+      - id: runtime.maint_ai
+        label: MAINT AI
+        kind: dottalk_command
+        command: MAINT AI
+        status: runnable
+        proof_output_dir: proofs/runs
+      - id: runtime.maint_ai_assimilate
+        label: MAINT AI ASSIMILATE
+        kind: dottalk_command
+        command: MAINT AI ASSIMILATE
+        status: runnable
+        proof_output_dir: proofs/runs
+      - id: runtime.maint_ai_visibility
+        label: MAINT AI VISIBILITY
+        kind: dottalk_command
+        command: MAINT AI VISIBILITY
+        status: runnable
+        proof_output_dir: proofs/runs
+
+  - id: portal.ai_portal_work
+    label: AI Portal Work — Alpha/Experimental
+    description: Machine-facing fast-start and task-context work for AI development partners entering x64base. It is not a student AI-access portal, production autonomous memory, or an independent authority source.
+    registry: registries/ai_portal.yaml
 
   - id: portal.apps
     label: Apps
     description: Registered LabTalk campus apps.
     registry: registries/apps.yaml
 
+  - id: portal.projects
+    label: Projects
+    description: Registered project families, source roots, publication surfaces, and active prototypes.
+    registry: registries/projects.yaml
+
+  - id: portal.lms
+    label: LMS
+    description: Reserved provider-neutral LMS interface and communications pipe; Moodle is the first candidate.
+    registry: registries/lms.yaml
+
   - id: portal.labs
     label: Labs
     description: Registered LabTalk labs and lab candidates.
     registry: registries/labs.yaml
+
+  - id: portal.lessons
+    label: Lessons
+    description: Student and career lesson records for the LabTalk lesson platform.
+    registry: registries/lessons.yaml
 
   - id: portal.concepts
     label: Concepts
@@ -86,6 +220,7 @@ sections:
         label: SelfDoc Contract Lane Draw.io
         kind: diagram
         path: diagrams/selfdoc_contract_lane_v1.drawio
+        derived_from: ../tools/diagram/diagram_seed_selfdoc_lane_v1.meta
         status: generated
       - id: diagram.labtalk_sdlc
         label: LabTalk SDLC Diagrams
@@ -101,6 +236,7 @@ sections:
         label: SelfDoc Contract Lane Mermaid
         kind: markdown
         path: diagrams/selfdoc_contract_lane_v1.mmd
+        derived_from: ../tools/diagram/diagram_seed_selfdoc_lane_v1.meta
         status: generated
       - id: diagram.selfdoc_mdo_dataflow_map
         label: SelfDoc / MDO Dataflow Map
@@ -137,6 +273,16 @@ sections:
         kind: html
         path: ../dottalk-webui/selfdoc-lane.html
         status: local_web
+      - id: diagram.x64base_labtalk_sdlc_operational
+        label: x64base.com LabTalk Operational SDLC Image
+        kind: image
+        path: D:/dev/x64base-site/public/images/sdlc/laboratory-campus-operational-sdlc.svg
+        status: downstream_publication_truth
+      - id: diagram.x64base_selfdoc_contract_lane
+        label: x64base.com SelfDoc Contract Lane Mermaid
+        kind: markdown
+        path: D:/dev/x64base-site/public/diagrams/selfdoc/selfdoc_contract_lane_v1.mmd
+        status: downstream_publication_truth
 
   - id: portal.runtime
     label: Runtime
@@ -262,6 +408,11 @@ sections:
         label: PyDotTalk
         kind: powershell_launcher
         path: ../run-pydottalk.ps1
+        status: interactive
+      - id: launcher.pycrud
+        label: pycrud GUI + API
+        kind: powershell_launcher
+        path: ../run-pycrud.ps1
         status: interactive
       - id: launcher.wsl_build
         label: WSL Build DotTalk++
