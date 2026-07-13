@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "check:public-content": "node scripts/check-public-content.mjs",
-    "build": "node scripts/check-public-content.mjs && next build && node scripts/build-sites-dist.mjs",
+    "build": "node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/build-sites-dist.mjs",
     "start": "next start",
     "lint": "next lint",
     "build:apache": "node scripts/build-apache-static.mjs",

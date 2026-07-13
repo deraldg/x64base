@@ -1,81 +1,98 @@
 ---
 title: "AI Portal — Alpha/Experimental"
-description: "The Alpha/Experimental AI-facing entrance to the Laboratory Campus: typed project jumps, proof-aware task context, and guarded action planning."
+description: "A machine-facing fast-start system for AI development partners entering the x64base environment."
 ---
+
+## What the AI Portal Is
+
+The AI Portal is a machine-facing fast-start and task-context system for AI
+development partners working with x64base.
+
+It is **not** a student portal for accessing an AI service. Its job is to help a
+new or resumed AI understand project authority, contracts, runtime behavior,
+safety gates, and proof requirements without relying on lost chat history.
+
+It enters through the maintained DotTalk++, maintenance, LabTalk, and PLDC
+lifecycles. It does not create a parallel AI workflow or let publication bypass
+an SDLC proof gate.
+
+The public repository entry point is:
+
+[Open the x64base AI Portal on GitHub](https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md)
 
 ## Mandatory Status
 
-The AI Portal lane is **Alpha/Experimental**.
-
-It must not be described as production autonomous memory, an independent source
-of project truth, or a safety boundary that can replace source, runtime, HELP,
-metadata, contracts, review, or human authorization.
-
-## Purpose
-
-The AI Portal is the AI-facing entrance to the Laboratory Campus. It is being
-designed to prepare an AI for a specific series of project tasks without
-requiring the model to ingest the entire ecosystem or depend on lost chat
-history.
-
-Its intended path is:
+The AI Portal lane is **Alpha/Experimental**. It is not autonomous project
+memory, an independent source of truth, or permission to bypass maintainer
+review.
 
 ```text
-task
--> owning project and lane
--> curated, typed jumps between artifacts
--> authority, freshness, risk, and proof checks
--> bounded task context packet
--> guarded action plan
--> proof readback and durable closeout
+task request
+-> select relevant seeds
+-> identify authority and contracts
+-> explain every selected connection
+-> expose missing or contradictory context
+-> assemble a bounded fast-start packet
+-> prepare guarded work and proof requirements
 ```
 
-The working metaphor is **frontal memory**. The implementation must remain
-inspectable: every included artifact should identify why it was selected, what
-authority it has, what evidence supports it, and what remains missing.
+## Current Fast-Start Seeds
 
-## What Exists Today
+The current repository seeds cover:
 
-- repo-local AI orientation and assimilation documents;
-- LabTalk project, app, lesson, concept, proof, and portal registries;
-- a local registry browser and launcher;
-- read-only `MAINT AI` orientation commands;
-- runtime transcripts and truth-audit reports;
-- the APH-0 through APH-6 hardening plan.
+- development locations, branch continuity, and publication authority;
+- owning SDLC, current lane, truth/proof state, risk, and next gate;
+- mandatory contract review before source-code mutation;
+- DotTalk++ and DotScript learning/readiness;
+- outside-AI change-package intake;
+- task recipes, permission boundaries, and proof expectations.
 
-These pieces are useful but do not yet constitute validated autonomous project
-memory.
+## Working With ChatGPT, Gemini, Grok, or Copilot
 
-## Hardening Gates
+An outside AI should receive:
 
-| Gate | Outcome |
-| --- | --- |
-| APH-0 | Preserve the lane, remove unexplained drift, make startup reproducible, and establish tests. |
-| APH-1 | Turn flat registry metadata into a validated graph of typed, directional synapses. |
-| APH-2 | Compile deterministic, bounded, read-only task context packets—the first useful MVP. |
-| APH-3 | Add reviewed capabilities, risk classes, approvals, containment, cancellation, and proof transcripts. |
-| APH-4 | Make task preparation and jump explanation the primary portal experience. |
-| APH-5 | Curate the graph and packet history in x64base with deterministic portable exports and recovery. |
-| APH-6 | Turn portal behavior into DotTalk++ lessons and measure cold-start task performance. |
+1. the GitHub AI Portal entry;
+2. the exact public commit used as its baseline;
+3. the target file or subsystem;
+4. the permitted and excluded scope;
+5. the expected proof.
 
-## Safety and Authority
+The request and returned package should also name the owning lifecycle, current
+SDLC lane, truth state, proof state, risk class, and next gate.
 
-- Read-only preparation is the default.
-- A registry record cannot grant itself execution authority.
-- Missing or contradictory evidence must be visible before action.
-- Mutating operations require explicit, separately reviewed capabilities and
-  approval.
-- A generated packet is working context, not a new source of runtime truth.
-- Website summaries remain downstream reviewed derivatives.
+It should return a unified patch package with a manifest, contracts read, risks,
+and a test plan. That package is reviewed and selectively applied in the
+maintainer-controlled authoritative development tree identified by the current
+AI Portal location seed.
 
-## Campus Role
+## Authority and Publication Flow
 
-The AI Portal is both an engineering tool and a lesson. Its graph records,
-context budgets, validation failures, safety gates, transcripts, and evaluation
-results should become inspectable DotTalk++ and Laboratory Campus material.
+```text
+authoritative development tree
+  source mutation and runtime proof
+        |
+        | proven relevant files
+        v
+curated Git publication staging
+  reviewed public projection
+        |
+        v
+github.com/deraldg/x64base
+  public snapshot used by outside AI systems
+```
 
-This makes AI participation part of the same co-development loop as engine,
-documentation, proof, and curriculum work—without pretending the experimental
-portal is already complete.
+The website is a separate downstream publication. When verified behavior
+changes public documentation, its separately maintained source is updated and
+built only after the source change is proven.
 
-See [Mission & Vision](/about/mission-vision), [Laboratory Campus Overview](/docs/labtalk/overview), [Recursive Co-development](/docs/dev/recursive-co-development), and [Current Work Lanes](/docs/dev/current-lanes).
+## Future Seed Connector
+
+The next prototype should stay small and inspectable: take a task statement,
+select only the necessary seeds through explicit registry relationships,
+explain why each seed was selected, and show missing context, conflicts,
+permissions, and readiness.
+
+It does not need a student chat UI, embeddings, or autonomous execution to
+prove the fast-start concept.
+
+See [Mission & Vision](/about/mission-vision), [Current Project Truth](/docs/dev/project-truth), [Recursive Co-development](/docs/dev/recursive-co-development), and [Current Work Lanes](/docs/dev/current-lanes).
