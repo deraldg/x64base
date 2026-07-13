@@ -1,4 +1,10 @@
 import { Card } from "@/components/Card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About x64base — History, Purpose, and Architecture",
+  description: "The history, purpose, evidence model, and research architecture behind x64base and DotTalk++."
+};
 
 const items = [
   {

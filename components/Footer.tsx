@@ -8,11 +8,11 @@ export function Footer() {
           <div className="max-w-xl">
             <div className="font-semibold">x64base</div>
             <p className="mt-2 text-sm text-muted">
-              A true 64-bit evolution of the xBase lineage. Born in 1993. Reimagined for 2026.
+              A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026.
             </p>
             <p className="mt-4 text-xs text-muted">
-              x64base®, xBase_64®, DotTalk++®, TupTalk®, TableTalk®, RelTalk®, Arctic®, and
-              LabTalk® are trademarks of Derald R Grimwood Jr.
+              x64base™, xBase_64™, DotTalk++™, TupTalk™, TableTalk™, RelTalk™, Arctic™, and
+              LabTalk™ are claimed trademarks of Derald R Grimwood Jr.; registration status is under review.
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs">
               <a

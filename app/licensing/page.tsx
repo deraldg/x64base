@@ -1,17 +1,23 @@
 import { Card } from "@/components/Card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "x64base Licensing — Tentative MIT Status",
+  description: "Current tentative MIT licensing status for the x64base public source, pending final review."
+};
 
 const items = [
-  { href: "/licensing/overview", title: "Overview", description: "How the hybrid licensing model fits together." },
-  { href: "/licensing/mit-license-engine", title: "MIT License (Engine)", description: "Open licensing for the core engine." },
+  { href: "/licensing/overview", title: "Overview", description: "The current tentative decision and remaining review gate." },
+  { href: "/licensing/mit-license-engine", title: "Tentative MIT License", description: "Proposed licensing for the public engine and runtime source." },
   {
     href: "/licensing/dottalk-educational-license",
     title: "DotTalk++ Educational License",
-    description: "Use DotTalk++ in classrooms and curricula."
+    description: "Planned guidance; no separate educational license is active."
   },
   {
     href: "/licensing/labtalk-non-profit-license",
     title: "LabTalk Non-Profit License",
-    description: "Free usage for non-profits and learning labs."
+    description: "Planned guidance; no separate non-profit license is active."
   },
   {
     href: "/licensing/third-party-acknowledgements",
@@ -26,8 +32,9 @@ export default function LicensingPage() {
       <header className="max-w-2xl space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">Tentative Licensing Agreement</h1>
         <p className="text-muted">
-          x64base uses a hybrid model: open licensing for the core engine, educational licensing for DotTalk++,
-          and a free non-profit edition via LabTalk.
+          The public repository currently carries a tentative MIT license pending final maintainer and legal
+          review. Earlier hybrid-license pages are retained only to clarify that separate educational and
+          non-profit terms are planned, not active grants.
         </p>
       </header>
 

@@ -1,6 +1,12 @@
 import Link from "@/components/StaticLink";
 import { Archive, BookOpen, Download, FileText, Github, PackageCheck, ScrollText } from "lucide-react";
 import { Card } from "@/components/Card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Download DotTalk++ — Source, Beta Builds, and Manuals",
+  description: "Find the canonical x64base source, CI artifacts, draft beta releases, checksums, manuals, and known limitations."
+};
 
 const startingPoints = [
   {
@@ -104,9 +110,8 @@ export default function DownloadsPage() {
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">downloads</p>
         <h1 className="text-3xl font-semibold tracking-tight">A place to start</h1>
         <p className="text-muted">
-          This page collects the practical starting points for x64base and DotTalk++. It is not a
-          packaged-product storefront; it points to source, build notes, runtime evidence, command
-          references, and the current release-shape documentation.
+          Start with the canonical source and its green CI artifacts. Versioned beta ZIPs, checksums,
+          release notes, and known limitations appear on GitHub Releases when a release gate passes.
         </p>
       </header>
 
@@ -115,18 +120,18 @@ export default function DownloadsPage() {
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Current public source</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
-              The canonical public project location is GitHub. Built runtime bundles should be
-              treated as staged artifacts only when they are explicitly published and versioned.
+              The public <code>main</code> branch is authoritative for source, CI, licensing, and
+              releases. Feature branches and local maintainer trees are not public runtime truth.
             </p>
           </div>
           <a
-            href="https://github.com/deraldg/x64base"
+            href="https://github.com/deraldg/x64base/releases"
             target="_blank"
             rel="noreferrer"
             className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-border bg-bg/40 px-4 py-2 text-sm font-semibold text-fg transition hover:border-brand/60"
           >
             <Github size={16} aria-hidden="true" />
-            GitHub
+            GitHub Releases
           </a>
         </div>
       </section>
@@ -134,23 +139,22 @@ export default function DownloadsPage() {
       <section className="rounded-lg border border-border bg-card/40 p-5">
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Observed maintainer layout</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Public authority model</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Outside contributors should start from GitHub. The current maintainer workflow also
-              uses explicit local source, staging, and website trees so publication work does not
-              silently replace implementation truth.
+              Outside contributors need one source of truth: the public <code>main</code> branch.
+              Local implementation, staging, website, and generated-manual trees are maintainer
+              workflow details until promoted through a reviewed public change.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border/70 bg-bg/30 p-4">
-              <h3 className="text-sm font-semibold tracking-tight">Local source and staging paths</h3>
+              <h3 className="text-sm font-semibold tracking-tight">What is authoritative</h3>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
-                <li><span className="font-medium text-fg">implementation checkout</span>: primary implementation/source truth</li>
-                <li><span className="font-medium text-fg">DotTalk++ runtime tree</span>: runtime/help/data tree inside the implementation checkout</li>
-                <li><span className="font-medium text-fg">Laboratory Campus / LabTalk tree</span>: campus/portal consumer layer</li>
-                <li><span className="font-medium text-fg">local staging mirror</span>: clean source/runtime promotion mirror</li>
-                <li><span className="font-medium text-fg">website source tree</span>: reviewed publication source checkout</li>
+                <li><span className="font-medium text-fg">Source:</span> public <code>main</code></li>
+                <li><span className="font-medium text-fg">Build proof:</span> green CI for the referenced commit</li>
+                <li><span className="font-medium text-fg">Distribution:</span> tagged GitHub release with checksum</li>
+                <li><span className="font-medium text-fg">Limitations:</span> release notes and Current State page</li>
               </ul>
             </div>
 
@@ -158,16 +162,16 @@ export default function DownloadsPage() {
               <h3 className="text-sm font-semibold tracking-tight">Promotion convention</h3>
               <div className="mt-3 space-y-3 text-sm leading-6 text-muted">
                 <p>
-                  <span className="font-medium text-fg">Normal source flow:</span>
+                  <span className="font-medium text-fg">Source flow:</span>
                   <br />
-                  <code>implementation checkout -&gt; local staging mirror -&gt; GitHub repository</code>
+                  <code>feature branch -&gt; review + CI -&gt; public main</code>
                 </p>
                 <p>
-                  <span className="font-medium text-fg">Normal website flow:</span>
+                  <span className="font-medium text-fg">Website flow:</span>
                   <br />
-                  <code>website source tree -&gt; build/public artifact -&gt; GitHub Pages -&gt; x64base.com</code>
+                  <code>main evidence -&gt; reviewed site source -&gt; verified deployment</code>
                 </p>
-                <p>Do not reverse the authority chain by copying website prose into manuals or source-side technical truth.</p>
+                <p>Website prose explains evidence; it does not create implementation truth.</p>
               </div>
             </div>
           </div>

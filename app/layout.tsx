@@ -10,16 +10,16 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" }
 export const metadata: Metadata = {
   metadataBase: new URL("https://x64base.com"),
   title: {
-    default: "x64base — DotTalk++ database runtime lab",
+    default: "x64base — A C++20 DBF Runtime and DotTalk++ Shell",
     template: "%s — x64base"
   },
   description:
-    "x64base and DotTalk++ form the glass-but-real substrate of a configurable Laboratory Campus for building, inspecting, documenting, and teaching data systems.",
+    "Open, inspect, index, relate, and script DBF-family data with the active-beta x64base C++20 runtime and DotTalk++ shell.",
   openGraph: {
     type: "website",
     title: "x64base",
     description:
-      "A glass-but-real database engine, language, documentation system, and configurable Laboratory Campus.",
+      "An active-beta C++20 DBF-family runtime and inspectable DotTalk++ command shell.",
     url: "https://x64base.com",
     siteName: "x64base",
     images: [
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "x64base",
     description:
-      "A glass-but-real database engine, language, documentation system, and configurable Laboratory Campus.",
+      "An active-beta C++20 DBF-family runtime and inspectable DotTalk++ command shell.",
     images: ["/og.png"]
   },
   icons: {
