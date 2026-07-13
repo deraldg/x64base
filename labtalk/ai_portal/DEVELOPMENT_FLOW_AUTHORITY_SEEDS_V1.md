@@ -48,6 +48,13 @@ relevant subset promoted from `D:\code\ccode`. Before committing, compare the
 staged copy with the intended development files and run proof appropriate to the
 change.
 
+That comparison has three required states: the authoritative development file,
+the `C:\x64base` working-copy file, and the Git index/commit that will actually
+be pushed. A byte-identical untracked file can participate in a local CMake
+build while remaining absent from GitHub. Working-copy equality and a
+successful build therefore do not prove publication completeness; verify every
+required source with `git ls-files` or the equivalent committed-blob check.
+
 The GitHub `main` branch is canonical for the current **public snapshot** only.
 It is not the authority over active development in `D:\code\ccode`.
 
@@ -103,8 +110,10 @@ For runtime/source work, continue in this order:
 1. change and prove the work in `D:\code\ccode`;
 2. select only the clean, relevant files for `C:\x64base`;
 3. compare staged files with the intended development result;
-4. test the staged/public form in proportion to risk;
-5. commit and push from `C:\x64base` only when authorized.
+4. verify that every required staged source is tracked in the intended Git
+   commit, not merely present in the C working tree;
+5. test the staged/public form in proportion to risk;
+6. commit and push from `C:\x64base` only when authorized.
 
 ## Mandatory Long-Build Operator Handoff
 

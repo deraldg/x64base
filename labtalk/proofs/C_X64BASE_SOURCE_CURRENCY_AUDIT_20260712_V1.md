@@ -138,6 +138,19 @@ and several staging files are modified or untracked. Promotion must therefore
 use an explicit reviewed path list. A bulk mirror, blanket `git add`, or branch
 comparison alone would be unsafe.
 
+### Post-audit publication correction — 2026-07-12
+
+The initial promotion verified development-to-staging working-copy hashes but
+did not separately require a committed-blob check for every build input. Human
+review of the development build exposed that `src/cli/cmd_concat.cpp` was
+byte-identical in `C:\x64base` and participated in the staged CMake build, but
+was still untracked and therefore absent from publication commit `fdb882a0`.
+
+The correction gate is now explicit: source currency must verify development
+content, staged working-copy content, and Git index/commit inclusion. A local
+build can consume an untracked file and cannot by itself prove GitHub
+completeness.
+
 ## Build interpretation
 
 The staging executable linked successfully at 2026-07-12 20:59:32, but it was
