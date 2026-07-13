@@ -2,10 +2,27 @@
 #include "dli/screen.hpp"
 #include "dli/replace_api.hpp"
 #include "xbase.hpp"                    // Full DbArea definition
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <iostream>
 
 namespace dli {
+namespace {
+#ifdef _WIN32
+constexpr int key_return = VK_RETURN;
+constexpr int key_escape = VK_ESCAPE;
+constexpr int key_f2 = VK_F2;
+constexpr int key_f3 = VK_F3;
+constexpr int key_f4 = VK_F4;
+#else
+constexpr int key_return = '\n';
+constexpr int key_escape = 27;
+constexpr int key_f2 = -2;
+constexpr int key_f3 = -3;
+constexpr int key_f4 = -4;
+#endif
+} // namespace
 
 BrowseController::BrowseController(xbase::DbArea& db)
     : m_db(db)
@@ -23,6 +40,7 @@ void BrowseController::run() {
     while (m_running) {
         redraw();
 
+#ifdef _WIN32
         HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
         INPUT_RECORD rec;
         DWORD n = 0;
@@ -31,6 +49,11 @@ void BrowseController::run() {
         if (rec.EventType == KEY_EVENT && rec.Event.KeyEvent.bKeyDown) {
             handle_key(rec.Event.KeyEvent.wVirtualKeyCode);
         }
+#else
+        const int key = std::cin.get();
+        if (key == std::char_traits<char>::eof()) break;
+        handle_key(key);
+#endif
     }
 
     screen_clear(true);
@@ -115,22 +138,22 @@ void BrowseController::draw_grid_view() {
 // ====================== KEY HANDLING ======================
 void BrowseController::handle_key(int vk) {
     if (m_inEdit) {
-        if (vk == VK_RETURN)      commit_edit();
-        else if (vk == VK_ESCAPE) cancel_edit();
+        if (vk == key_return)      commit_edit();
+        else if (vk == key_escape) cancel_edit();
         return;
     }
 
     switch (vk) {
-        case VK_F2:
+        case key_f2:
             if (m_currentFields.size() > 1) {
                 start_edit(m_currentFields[1].first);
             }
             break;
 
-        case VK_F3:   // Next record
+        case key_f3:   // Next record
             break;
 
-        case VK_F4:   // Previous record
+        case key_f4:   // Previous record
             break;
 
         case 'G':
@@ -141,7 +164,7 @@ void BrowseController::handle_key(int vk) {
             switch_mode(BrowseMode::Form);
             break;
 
-        case VK_ESCAPE:
+        case key_escape:
         case 'Q':
             m_running = false;
             break;

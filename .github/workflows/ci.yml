@@ -31,14 +31,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Initialize current MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
       - name: Configure
-        run: cmake --preset windows-core
+        run: cmake --preset core-vcpkg
       - name: Build
-        run: cmake --build --preset windows-core --parallel
+        run: cmake --build --preset core-vcpkg --parallel
       - name: Test
-        run: ctest --preset windows-core
+        run: ctest --preset core-vcpkg
       - name: Install release shape
-        run: cmake --install build/windows-core --config Release --prefix stage
+        run: cmake --install build/core-vcpkg --prefix stage
       - uses: actions/upload-artifact@v4
         with:
           name: x64base-${{ github.sha }}-windows-x64
