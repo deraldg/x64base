@@ -1,0 +1,109 @@
+# LabTalk app registry v0
+
+apps:
+  - id: app.dottalkpp.runtime
+    name: DotTalk++ Runtime Systems Lab
+    kind: runtime_lab
+    status: active_source
+    languages: [c++, dotscript]
+    root: D:/code/ccode/src
+    concepts:
+      - concept.database.table
+      - concept.database.index
+      - concept.runtime.state
+      - concept.runtime.command_shell
+    cases:
+      - case.eng_010.index_navigation
+      - case.eng_020.seek_vs_scan
+      - case.eng_030.buffering_commit
+      - case.eng_050.file_engine_separation
+    notes: DotTalk++ executes and exposes database/runtime behavior for LabTalk.
+
+  - id: app.dottalkpp.help
+    name: DotTalk++ HELP and CMDHELP Lab
+    kind: help_lab
+    status: active_source
+    languages: [c++, dbf]
+    root: D:/code/ccode/src/cli
+    commands: [HELP, DOTHELP, FOXHELP, CMDHELP, CMDHELPCHK]
+    concepts:
+      - concept.help.runtime
+      - concept.contract.usage
+      - concept.selfdoc.validation
+    cases:
+      - case.eng_040.metadata_data_dictionary
+      - case.hist_090.dottalk_labtalk_ai_future
+    notes: Help surfaces turn source, contracts, catalogs, and messages into user-visible explanation.
+
+  - id: app.dottalkpp.selfdoc
+    name: DotTalk++ Self-Documenting Systems Lab
+    kind: proof_lab
+    status: active_source
+    languages: [c++, python, dbf, markdown]
+    root: D:/code/ccode
+    concepts:
+      - concept.source.comments
+      - concept.contract.usage
+      - concept.selfdoc.validation
+      - concept.metadata.catalog
+    cases:
+      - case.eng_040.metadata_data_dictionary
+    notes: Studies comments, contracts, SelfDoc reports, metadata, and validation workflows.
+
+  - id: app.dottalkpp.ai_friendly
+    name: DotTalk++ / LabTalk AI Friendly Lane
+    kind: ai_visibility_lab
+    status: seed_source
+    languages: [markdown, c++, yaml]
+    root: D:/code/ccode/docs/ai-friendly
+    commands:
+      - MAINT AI
+      - MAINT AI ASSIMILATE
+      - MAINT AI DASHBOARD
+      - MAINT AI VISIBILITY
+    concepts:
+      - concept.ai_literacy.explainability
+      - concept.ai_friendly.assimilation
+      - concept.ai_friendly.visibility
+      - concept.evidence.review
+      - concept.contract.usage
+    cases:
+      - case.hist_090.dottalk_labtalk_ai_future
+    notes: Captures, distills, anchors, routes, and exposes AI-assisted project knowledge for future AI or second-opinion review.
+
+  - id: app.labtalk.ai_portal
+    name: Laboratory Campus AI Portal
+    kind: experimental_context_lab
+    status: alpha_experimental
+    languages: [python, yaml, markdown, dotscript]
+    root: D:/code/ccode/labtalk/ai_portal
+    concepts:
+      - concept.ai_friendly.assimilation
+      - concept.ai_friendly.visibility
+      - concept.evidence.review
+      - concept.contract.usage
+    notes: Alpha/Experimental task-context and teaching lane for typed project/artifact synapses, bounded context packets, guarded action planning, x64base curation, and DotTalk++ lessons. It is not production autonomous memory or an independent authority source.
+
+  - id: app.labtalk.case_library
+    name: LabTalk Case Library
+    kind: case_library
+    status: draft
+    languages: [markdown, csv, yaml]
+    root: D:/code/ccode/docs/cases
+    concepts:
+      - concept.case.history
+      - concept.case.engineering
+      - concept.evidence.review
+    notes: Normalized historical and engineering cases used across LabTalk labs.
+
+  - id: app.labtalk.dataset_library
+    name: LabTalk Dataset Library
+    kind: dataset_library
+    status: draft
+    languages: [dbf, csv, fixed-record, json, sql]
+    root: D:/code/ccode/dottalkpp/data
+    concepts:
+      - concept.database.table
+      - concept.database.schema
+      - concept.storage.file
+    notes: Catalogs student datasets and historical/simulated specimens.

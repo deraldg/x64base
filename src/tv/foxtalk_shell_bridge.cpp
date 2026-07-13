@@ -106,7 +106,7 @@ void ShellBridge::handleHelp(std::istringstream& tok)
 
     if (topic.empty()) {
         std::cout
-            << "TurboTalk help\n"
+            << "ArcticTalk help\n"
             << "  Enter or Run executes the command field.\n"
             << "  Keys: F2 Output, F3 Record View, F4 Workspace, Ctrl-Q Command.\n"
             << "  Command history: Up/Down; HISTORY STATUS | CLEAR | FRESH | KEEP.\n"

@@ -91,6 +91,15 @@ static std::string dt_len(const std::vector<std::string>& args) {
     return args.empty() ? "0" : std::to_string(args[0].size());
 }
 
+static std::string dt_concat(const std::vector<std::string>& args) {
+    std::string out;
+    std::size_t total = 0;
+    for (const auto& arg : args) total += arg.size();
+    out.reserve(total);
+    for (const auto& arg : args) out += arg;
+    return out;
+}
+
 // --------------------------------------------------
 // EMPTY() — corrected implementation
 // --------------------------------------------------
@@ -282,9 +291,36 @@ static std::string dt_val(const std::vector<std::string>& args) {
 
 static std::string dt_str(const std::vector<std::string>& args) {
     if (args.empty()) return "";
+
+    double value = 0.0;
+    try {
+        value = std::stod(args[0]);
+    } catch (...) {
+        return "";
+    }
+
+    int width = 10;
+    int decimals = 0;
+    try {
+        if (args.size() >= 2) width = std::stoi(args[1]);
+        if (args.size() >= 3) decimals = std::stoi(args[2]);
+    } catch (...) {
+        return "";
+    }
+
+    if (width <= 0) return "";
+    if (decimals < 0) decimals = 0;
+
     std::ostringstream oss;
-    oss << std::stod(args[0]);
-    return oss.str();
+    oss << std::fixed << std::setprecision(decimals) << value;
+    const std::string rendered = oss.str();
+
+    if (static_cast<int>(rendered.size()) > width) {
+        return std::string(static_cast<std::size_t>(width), '*');
+    }
+
+    return std::string(static_cast<std::size_t>(width - static_cast<int>(rendered.size())), ' ')
+         + rendered;
 }
 
 static std::string dt_transform(const std::vector<std::string>& args) {
@@ -306,6 +342,8 @@ static const BuiltinFnSpec kStringFns[] = {
     { "RIGHT",2,2,&dt_right },
     { "SUBSTR",2,3,&dt_substr },
     { "LEN",1,1,&dt_len },
+    { "CONCAT",1,32,&dt_concat },
+    { "STRCAT",1,32,&dt_concat },
     { "EMPTY",1,1,&dt_empty },
     { "SOUNDEX",1,1,&dt_soundex },
     { "AT",2,2,&dt_at },

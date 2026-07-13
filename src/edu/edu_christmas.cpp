@@ -104,7 +104,7 @@ static void print_christmas_usage_contract()
         << "Notes:\n"
         << "  - CHRISTMAS USAGE does not print the tree.\n";
 }
-void cmd_CHRISTMAS(xbase::DbArea& A, std::istringstream& in)
+void edu_CHRISTMAS(xbase::DbArea& A, std::istringstream& in)
 {
     // CHRISTMAS_USAGE_CONTRACT_BRANCH
     {

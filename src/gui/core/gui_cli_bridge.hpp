@@ -10,6 +10,9 @@ struct RuntimeCliRequest {
     std::string command;
     std::filesystem::path active_table_path;
     std::uint64_t active_record_number = 0;
+    std::filesystem::path active_index_container;
+    std::string active_index_tag;
+    bool active_index_ascending = true;
 };
 
 struct RuntimeCliResult {

@@ -3,11 +3,11 @@
 //
 // Flavor-aware decision flow:
 // - If user explicitly supplies an extension:
-//     v32 accepts .inx / .cnx
-//     v64 accepts .cdx only
+//     classic xBase/VFP accepts .inx / .cnx
+//     true x64/v128 accepts .cdx only
 // - If user supplies no extension:
-//     v32 prefers .cnx, then .inx
-//     v64 prefers .cdx
+//     classic xBase/VFP prefers .cnx, then .inx
+//     true x64/v128 prefers .cdx
 //
 // CDX notes:
 // - CDX public container is attached through order state
@@ -62,8 +62,8 @@
 // notes:
 //   SET INDEX requires an open table except for usage.
 //   Explicit extensions are validated by table flavor.
-//   v32 tables accept INX or CNX.
-//   v64 tables require CDX.
+//   Classic xBase/VFP tables accept INX or CNX.
+//   True x64/v128 tables require CDX.
 //   SET INDEX TO with no container uses the current DBF stem.
 //   Bare container names resolve through the INDEXES path slot.
 //   CDX attachment also requires the LMDB environment to exist.
@@ -95,6 +95,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
 #include "cdx/cdx.hpp"
@@ -165,8 +166,19 @@ static bool has_explicit_extension(const fs::path& p) {
     return p.has_extension() && !p.extension().string().empty();
 }
 
-static bool is_v64_area(const xbase::DbArea& A) {
-    return A.kind() == xbase::AreaKind::V64;
+static bool is_v32_area(const xbase::DbArea& A) {
+    return A.kind() == xbase::AreaKind::V32;
+}
+
+static bool is_x64_cdx_area(const xbase::DbArea& A) {
+    return A.versionByte() == xbase::DBF_VERSION_64 ||
+           A.kind() == xbase::AreaKind::V128;
+}
+
+static bool is_classic_tag_area(const xbase::DbArea& A) {
+    return is_v32_area(A) ||
+           (A.kind() == xbase::AreaKind::V64 &&
+            A.versionByte() != xbase::DBF_VERSION_64);
 }
 
 
@@ -182,10 +194,6 @@ static bool is_setindex_usage_request(const std::string& raw)
         t = up_copy(textio::trim(t.substr(10)));
     }
     return t.empty() || t == "USAGE" || t == "HELP" || t == "?";
-}
-
-static bool is_v32_area(const xbase::DbArea& A) {
-    return A.kind() == xbase::AreaKind::V32;
 }
 
 static std::string default_index_token_for_area(const xbase::DbArea& A) {
@@ -243,7 +251,7 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
         return false;
     }
 
-    if (is_v32_area(A)) {
+    if (is_classic_tag_area(A)) {
         if (ext != ".inx" && ext != ".cnx") {
             err = msg(MessageId::SetIndexV32AcceptsInxOrCnxText);
             return false;
@@ -251,7 +259,7 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
         return true;
     }
 
-    if (is_v64_area(A)) {
+    if (is_x64_cdx_area(A)) {
         if (ext != ".cdx") {
             err = msg(MessageId::SetIndexV64RequiresCdxText);
             return false;
@@ -281,7 +289,7 @@ static bool choose_container_path_for_flavor(const xbase::DbArea& A,
     }
 
     // No explicit extension: choose by flavor policy.
-    if (is_v32_area(A)) {
+    if (is_classic_tag_area(A)) {
         fs::path cnx = base;
         fs::path inx = base;
         cnx.replace_extension(".cnx");
@@ -301,7 +309,7 @@ static bool choose_container_path_for_flavor(const xbase::DbArea& A,
         return false;
     }
 
-    if (is_v64_area(A)) {
+    if (is_x64_cdx_area(A)) {
         fs::path cdx = base;
         cdx.replace_extension(".cdx");
 

@@ -72,6 +72,56 @@ std::size_t ordered_start_index(const std::vector<std::uint64_t>& recnos,
     return static_cast<std::size_t>(index);
 }
 
+bool gps_visible_record(xbase::DbArea& area, std::uint64_t recno) {
+    if (recno == 0 || recno > area.recCount64() ||
+        recno > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
+        return false;
+    }
+    if (!area.gotoRec(static_cast<int32_t>(recno)) || !area.readCurrent()) {
+        return false;
+    }
+    return !area.isDeleted();
+}
+
+std::uint64_t compute_gps_logical_row(xbase::DbArea& area, std::uint64_t physical_record) {
+    if (physical_record == 0 || physical_record > area.recCount64()) {
+        return 0;
+    }
+
+    std::uint64_t logical = 0;
+    cli::OrderIterSpec spec{};
+    std::string err;
+    (void)cli::order_iterate_recnos(
+        area,
+        [&](std::uint64_t recno) -> bool {
+            if (!gps_visible_record(area, recno)) {
+                return true;
+            }
+            ++logical;
+            return recno != physical_record;
+        },
+        &spec,
+        &err);
+    return logical;
+}
+
+void populate_cursor_state(TableSnapshot& snapshot, xbase::DbArea& area, int32_t saved_recno) {
+    snapshot.physical_record_number = saved_recno > 0 ? static_cast<std::uint64_t>(saved_recno) : 0;
+    snapshot.current_record_number = snapshot.physical_record_number;
+    snapshot.ordered = orderstate::hasOrder(area);
+    snapshot.order_ascending = orderstate::isAscending(area);
+    if (snapshot.ordered) {
+        snapshot.order_name = orderstate::orderName(area);
+        snapshot.order_tag = orderstate::activeTag(area);
+    }
+
+    snapshot.logical_record_number = compute_gps_logical_row(area, snapshot.physical_record_number);
+    if (saved_recno > 0 && saved_recno <= area.recCount()) {
+        (void)area.gotoRec(saved_recno);
+        (void)area.readCurrent();
+    }
+}
+
 } // namespace
 
 AreaInfo gui_area_info_from_dbarea(AreaId area_id,
@@ -126,9 +176,7 @@ TableSnapshot gui_snapshot_from_dbarea(AreaId area_id,
         const std::uint64_t total = area.recCount64();
         snapshot.total_records = total;
         const int32_t saved_recno = area.recno();
-        if (saved_recno > 0) {
-            snapshot.current_record_number = static_cast<std::uint64_t>(saved_recno);
-        }
+        populate_cursor_state(snapshot, area, saved_recno);
 
         if (total == 0 || max_records == 0) {
             snapshot.truncated = total > 0;

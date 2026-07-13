@@ -64,6 +64,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
@@ -360,9 +361,14 @@ static bool is_v32_area(const DbArea& a)
     return a.kind() == AreaKind::V32;
 }
 
-static bool is_v64_tag_area(const DbArea& a)
+static bool is_x64_cdx_area(const DbArea& a)
 {
-    return a.kind() == AreaKind::V64 || a.kind() == AreaKind::V128;
+    return a.versionByte() == xbase::DBF_VERSION_64 || a.kind() == AreaKind::V128;
+}
+
+static bool is_classic_tag_area(const DbArea& a)
+{
+    return is_v32_area(a) || (a.kind() == AreaKind::V64 && a.versionByte() != xbase::DBF_VERSION_64);
 }
 
 static bool file_exists_best_effort(const fs::path& p)
@@ -385,13 +391,13 @@ static std::vector<fs::path> auto_attach_candidates_for(const DbArea& a,
         if (!p.empty()) out.push_back(p);
     };
 
-    if (is_v64_tag_area(a)) {
+    if (is_x64_cdx_area(a)) {
         add(idx_root / (base + ".cdx"));
         add(dbf_dir / (base + ".cdx"));
         return out;
     }
 
-    if (is_v32_area(a)) {
+    if (is_classic_tag_area(a)) {
         add(idx_root / (base + ".cnx"));
         add(idx_root / (base + ".inx"));
         add(dbf_dir / (base + ".cnx"));
@@ -454,13 +460,12 @@ static bool activate_tag_container_for_use(DbArea& a,
 // change this function only.
 static const char* valid_index_types_for(const DbArea& a)
 {
+    if (is_x64_cdx_area(a)) return "CDX";
+    if (is_classic_tag_area(a)) return "CNX, INX";
     switch (a.kind()) {
-        case AreaKind::V32:  return "CNX, INX";
-        case AreaKind::V64:  return "CDX";
-        case AreaKind::V128: return "CDX";
-        case AreaKind::Tup:  return "TUP";
-        case AreaKind::Unknown:
-        default:             return "(unknown)";
+    case AreaKind::Tup:  return "TUP";
+    case AreaKind::Unknown:
+    default:             return "(unknown)";
     }
 }
 

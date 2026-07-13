@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -91,7 +92,10 @@ TableIdentity build_identity(const xbase::DbArea& a) {
     TableIdentity t;
     t.kind        = kind_to_string_(a.kind());
     t.version     = a.versionByte();
-    t.rec_len     = static_cast<std::uint32_t>(a.recLength());
+    t.rec_len     =
+        (a.recLength64() > static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()))
+            ? std::numeric_limits<std::uint32_t>::max()
+            : static_cast<std::uint32_t>(a.recLength64());
     t.field_count = static_cast<std::uint32_t>(a.fieldCount());
     t.schema_hash = hash_schema_(a);
     t.source      = a.filename();

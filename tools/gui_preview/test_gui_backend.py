@@ -145,7 +145,7 @@ def main() -> int:
     categories = {action.category for action in catalog}
     require(
         {"Table", "Record", "Index", "Lists", "Browse", "Rel", "Tuple", "Cmd"} <= categories,
-        "Python GUI command catalog missing TurboTalk-derived categories",
+        "Python GUI command catalog missing DotTalk++ Workbench-derived categories",
     )
     require(
         any(action.command == "ZAP" or (action.label.startswith("Zap") and action.kind == CommandActionKind.INFO)

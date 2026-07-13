@@ -58,35 +58,90 @@
         "DOTTALK_WITH_INDEX": "ON",
         "VCPKG_MANIFEST_FEATURES": "index"
       }
+    },
+    {
+      "name": "pro-md",
+      "displayName": "DotTalk++ development (MSVC, /MD, TV + index)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "tv;index",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
+        "DOTTALK_WITH_TV": "ON",
+        "BUILD_PYDOTTALK": "OFF"
+      }
+    },
+    {
+      "name": "pro-md-labtalk",
+      "displayName": "DotTalk++ + pydottalk development (MSVC, /MD)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64"
+      },
+      "binaryDir": "${sourceDir}/build-labtalk",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "tv;index;python",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
+        "DOTTALK_WITH_TV": "ON",
+        "BUILD_PYDOTTALK": "ON"
+      }
+    },
+    {
+      "name": "ansi-mt",
+      "displayName": "ANSI (MSVC, /MT, no TV)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64"
+      },
+      "binaryDir": "${sourceDir}/build-ansi-mt",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
+        "DOTTALK_WITH_TV": "OFF"
+      }
+    },
+    {
+      "name": "wsl",
+      "displayName": "WSL (Linux, Ninja, no TV)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-wsl",
+      "cacheVariables": {
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
+        "DOTTALK_WITH_TV": "OFF"
+      }
     }
   ],
   "buildPresets": [
     { "name": "core", "configurePreset": "core" },
     { "name": "core-vcpkg", "configurePreset": "core-vcpkg" },
     { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release" },
-    { "name": "index-vcpkg", "configurePreset": "index-vcpkg" }
+    { "name": "index-vcpkg", "configurePreset": "index-vcpkg" },
+    { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release" },
+    { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release" },
+    { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release" },
+    { "name": "wsl-Release", "configurePreset": "wsl", "configuration": "Release" }
   ],
   "testPresets": [
-    {
-      "name": "core",
-      "configurePreset": "core",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "core-vcpkg",
-      "configurePreset": "core-vcpkg",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "windows-core",
-      "configurePreset": "windows-core",
-      "configuration": "Release",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "index-vcpkg",
-      "configurePreset": "index-vcpkg",
-      "output": { "outputOnFailure": true }
-    }
+    { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
+    { "name": "core-vcpkg", "configurePreset": "core-vcpkg", "output": { "outputOnFailure": true } },
+    { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "index-vcpkg", "configurePreset": "index-vcpkg", "output": { "outputOnFailure": true } },
+    { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "wsl-Release", "configurePreset": "wsl", "output": { "outputOnFailure": true } }
   ]
 }

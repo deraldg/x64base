@@ -37,8 +37,6 @@ inline const std::unordered_map<std::string, std::string>& ShortcutResolver::get
         { "BTV",          "TVISION" },
         { "LU",           "LMDB_UTIL"},
         { "REPEAT",       "ECHO" },
-        { "TURBOTALK",    "FOXTALK"},
-
         // ---- Misc / legacy aliases ----------------------------------------
         { "!",            "BANG" },
         { "?",            "FORMULA" },

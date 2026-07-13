@@ -27,7 +27,9 @@ void cmd_RECORDVIEW(DbArea&, std::istringstream&);
 void cmd_RECORD(DbArea&, std::istringstream&);
 void cmd_BROWSETV(DbArea&, std::istringstream&);
 void cmd_FOX_PALETTE(DbArea&, std::istringstream&);
-void cmd_CHRISTMAS(DbArea&, std::istringstream&);
+
+void edu_CHRISTMAS(DbArea&, std::istringstream&);
+void edu_HANUKKAH(DbArea&, std::istringstream&);
 
 // TABLES
 void cmd_USE(DbArea&, std::istringstream&);
@@ -167,6 +169,7 @@ void cmd_LIST_LMDB(DbArea&, std::istringstream&);
 void cmd_REPLACE(DbArea&, std::istringstream&);
 void cmd_CALC(DbArea&, std::istringstream&);
 void cmd_CALCWRITE(DbArea&, std::istringstream&);
+void cmd_CONCAT(DbArea&, std::istringstream&);
 void cmd_REPLACE_MULTI(DbArea&, std::istringstream&);			// DIRECT TABLE WRITES ONLY
 
 //   RMDBS
@@ -194,6 +197,7 @@ void cmd_PSHELL(DbArea&, std::istringstream&);
 void cmd_CMDHELP(DbArea&, std::istringstream&);
 void cmd_CMDHELPCHK(DbArea&, std::istringstream&);
 void cmd_CMDARGCHK(DbArea&, std::istringstream&);
+void cmd_EXITS(DbArea&, std::istringstream&);
 void cmd_FOXSTANDARD(DbArea&, std::istringstream&);
 
 void cmd_MCC(DbArea&, std::istringstream&);
@@ -297,6 +301,7 @@ void edu_ERP(DbArea&, std::istringstream&);
 
 // DOTSCRIPT
 void cmd_DOTSCRIPT(DbArea&, std::istringstream&);
+void cmd_REGRESSION(DbArea&, std::istringstream&);
 void cmd_LOOP(DbArea&, std::istringstream&);
 void cmd_ENDLOOP(DbArea&, std::istringstream&);
 void cmd_WHILE(DbArea&, std::istringstream&);

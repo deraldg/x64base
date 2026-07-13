@@ -8,8 +8,8 @@
 // category: maintenance
 // status: experimental
 // mutates: none
-// summary: Inspect DotTalk++ maintenance lanes, cookbooks, status, contracts, and protected-system boundaries.
-// syntax: MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|CONTRACTS [USAGE|STATUS|SCAN|REGISTRY|INTAKE|DRIFT|GATES]]
+// summary: Inspect DotTalk++ maintenance lanes, cookbooks, status, AI Portal onboarding, contracts, and protected-system boundaries.
+// syntax: MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|AI [USAGE|STATUS|DASHBOARD|ASSIMILATE|BOOK|INTAKE|GATES|VISIBILITY]|CONTRACTS [USAGE|STATUS|SCAN|REGISTRY|INTAKE|DRIFT|GATES]]
 // usage: MAINT
 // usage: MAINT USAGE
 // usage: MAINT STATUS
@@ -19,6 +19,15 @@
 // usage: MAINT BBOX
 // usage: MAINT DOCS
 // usage: MAINT GUI
+// usage: MAINT AI
+// usage: MAINT AI USAGE
+// usage: MAINT AI STATUS
+// usage: MAINT AI DASHBOARD
+// usage: MAINT AI ASSIMILATE
+// usage: MAINT AI BOOK
+// usage: MAINT AI INTAKE
+// usage: MAINT AI GATES
+// usage: MAINT AI VISIBILITY
 // usage: MAINT CONTRACTS
 // usage: MAINT CONTRACTS USAGE
 // usage: MAINT CONTRACTS STATUS
@@ -29,6 +38,8 @@
 // usage: MAINT CONTRACTS GATES
 // note: MAINT is read-only first wave.
 // note: MAINT does not run maintenance scripts or mutate HELP, CMDHELPCHK, DBFs, source, runtime scripts, or publications.
+// note: MAINT AI is a read-only native visibility surface for AI Portal partner onboarding, curation, and routing.
+// note: The AI Portal is an Alpha Python/registry surface; MAINT AI does not launch it or authorize mutation.
 // note: MAINT CONTRACTS is the first contract-lane manager mode; it reports docs/tooling only and does not edit the registry.
 // note: MAINT explains the maintenance/SDLC control surface; BBOX teaches the Blackbox model.
 // related: BBOX
@@ -124,7 +135,7 @@ void print_gui() {
     cli::cmdout::print_line("MAINT GUI - open architecture GUI synchronization lane");
     cli::cmdout::print_line("");
     cli::cmdout::print_line("Purpose:");
-    cli::cmdout::print_line("  keep wxWidgets, Python/Tkinter, and TurboTalk/FoxTalk aligned over one");
+    cli::cmdout::print_line("  keep wxWidgets, Python/Tkinter, and ArcticTalk/FoxTalk aligned over one");
     cli::cmdout::print_line("  DotTalk++ / x64base runtime truth.");
     cli::cmdout::print_line("");
     cli::cmdout::print_line("Primary docs:");
@@ -143,6 +154,142 @@ void print_gui() {
     cli::cmdout::print_line("  GUI message seeds live in dottalkpp/data/messaging/gui_messages.csv.");
     cli::cmdout::print_line("  C++ and Python consume generated GUI message adapters.");
     cli::cmdout::print_line("  This is aligned with the messaging lane, but not yet one physical DBF-backed catalog.");
+}
+
+void print_ai_usage() {
+    cli::cmdout::print_line("MAINT AI - read-only AI Portal partner visibility");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("Usage:");
+    cli::cmdout::print_line("  MAINT AI");
+    cli::cmdout::print_line("  MAINT AI USAGE");
+    cli::cmdout::print_line("  MAINT AI STATUS");
+    cli::cmdout::print_line("  MAINT AI DASHBOARD");
+    cli::cmdout::print_line("  MAINT AI ASSIMILATE");
+    cli::cmdout::print_line("  MAINT AI BOOK");
+    cli::cmdout::print_line("  MAINT AI INTAKE");
+    cli::cmdout::print_line("  MAINT AI GATES");
+    cli::cmdout::print_line("  MAINT AI VISIBILITY");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("Notes:");
+    cli::cmdout::print_line("  - MAINT AI is read-only.");
+    cli::cmdout::print_line("  - It does not import chat, run scanners, mutate queues, edit HELP, or publish manuals.");
+    cli::cmdout::print_line("  - The Alpha AI Portal is Python/registry based; this native command reports its entry paths only.");
+    cli::cmdout::print_line("  - AI interaction material is source material until distilled, anchored, and routed.");
+}
+
+void print_ai_status() {
+    cli::cmdout::print_line("MAINT AI status");
+    cli::cmdout::print_line("  lane          : AI Portal / AI Friendly");
+    cli::cmdout::print_line("  mode          : Alpha Python/registry portal plus read-only native visibility");
+    cli::cmdout::print_line("  root entry    : AI_PORTAL.md");
+    cli::cmdout::print_line("  portal        : labtalk/portal/labtalk_portal.py");
+    cli::cmdout::print_line("  seeds         : labtalk/ai_portal");
+    cli::cmdout::print_line("  registry      : labtalk/registries/ai_portal.yaml");
+    cli::cmdout::print_line("  legacy docs   : docs/ai-friendly");
+    cli::cmdout::print_line("  dashboard     : docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md");
+    cli::cmdout::print_line("  book          : docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md");
+    cli::cmdout::print_line("  manifest      : docs/ai-friendly/AI_FRIENDLY_LANE_MANIFEST_V1.md");
+    cli::cmdout::print_line("  workflow      : docs/ai-friendly/AI_FRIENDLY_WORKFLOW_V1.md");
+    cli::cmdout::print_line("  intake queue  : docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md");
+    cli::cmdout::print_line("  purpose       : fast-start AI development partners with durable authority, SDLC, contracts, and proof");
+    cli::cmdout::print_line("  native scope  : reports paths only; does not launch the portal or grant source mutation");
+}
+
+void print_ai_dashboard() {
+    cli::cmdout::print_line("MAINT AI dashboard");
+    cli::cmdout::print_line("  user surface  : docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md");
+    cli::cmdout::print_line("  shows         : lane state, status buckets, authority levels, work log, review needs, proof needs, drift risks");
+    cli::cmdout::print_line("  current state : seeded");
+    cli::cmdout::print_line("  portal state  : Alpha/Experimental");
+    cli::cmdout::print_line("  portal entry  : AI_PORTAL.md");
+    cli::cmdout::print_line("  portal launch : launch_portal.ps1");
+    cli::cmdout::print_line("  implementation: Python plus reviewed YAML/Markdown registries; no native autonomous AI runtime");
+}
+
+void print_ai_assimilate() {
+    cli::cmdout::print_line("MAINT AI assimilate");
+    cli::cmdout::print_line("  purpose       : durable AI development-partner fast start when prior chat/provider memory is unavailable");
+    cli::cmdout::print_line("  root entry    : AI_PORTAL.md");
+    cli::cmdout::print_line("  portal launch : launch_portal.ps1");
+    cli::cmdout::print_line("  first reads   :");
+    cli::cmdout::print_line("    1. AI_PORTAL.md");
+    cli::cmdout::print_line("    2. labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md");
+    cli::cmdout::print_line("    3. labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md");
+    cli::cmdout::print_line("    4. labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md");
+    cli::cmdout::print_line("    5. labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md");
+    cli::cmdout::print_line("  rule          : use repo-local evidence and contracts; do not rely on lost chat history or model memory");
+    cli::cmdout::print_line("  boundary      : MAINT AI reports onboarding paths only; portal execution remains external and guarded");
+}
+
+void print_ai_intake() {
+    cli::cmdout::print_line("MAINT AI intake");
+    cli::cmdout::print_line("  queue         : docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md");
+    cli::cmdout::print_line("  shape         : ID, Source, Classification, Candidate route, Evidence anchor, Status, Notes");
+    cli::cmdout::print_line("  seed rows     : AIF-001 through AIF-004");
+    cli::cmdout::print_line("  rule          : add distilled candidates, not entire conversations");
+    cli::cmdout::print_line("  preference    : existing destinations before new documents");
+}
+
+void print_ai_gates() {
+    cli::cmdout::print_line("MAINT AI gates");
+    cli::cmdout::print_line("  1. capture only interaction material with reuse value");
+    cli::cmdout::print_line("  2. classify the candidate route and evidence class");
+    cli::cmdout::print_line("  3. distill long material into a small durable artifact");
+    cli::cmdout::print_line("  4. anchor to source, proof, HELP/CMDHELP, CMDHELPCHK, SelfDoc, contracts, LabTalk, or manualgen");
+    cli::cmdout::print_line("  5. route to the existing lane before creating new AI Friendly material");
+    cli::cmdout::print_line("  6. promote only with honest authority status");
+}
+
+void print_ai_visibility() {
+    cli::cmdout::print_line("MAINT AI visibility");
+    cli::cmdout::print_line("  user needs to see:");
+    cli::cmdout::print_line("    - what AI is working on");
+    cli::cmdout::print_line("    - what evidence it read");
+    cli::cmdout::print_line("    - what files or systems it touched");
+    cli::cmdout::print_line("    - whether mutation was performed or only proposed");
+    cli::cmdout::print_line("    - where each useful interaction was routed");
+    cli::cmdout::print_line("    - what still needs review, proof, or promotion");
+    cli::cmdout::print_line("");
+    cli::cmdout::print_line("  authority levels:");
+    cli::cmdout::print_line("    chat-only, captured, draft, design-intended, source-defined, runtime-proven,");
+    cli::cmdout::print_line("    HELP-documented, CMDHELPCHK-validated, publication-ready, student-ready, rejected, superseded");
+}
+
+void print_ai(const std::string& topic) {
+    const std::string subtopic = upper_copy(after_first_word(topic));
+
+    if (subtopic.empty() || subtopic == "STATUS") {
+        print_ai_status();
+        return;
+    }
+    if (subtopic == "USAGE" || subtopic == "HELP" || subtopic == "?") {
+        print_ai_usage();
+        return;
+    }
+    if (subtopic == "DASHBOARD") {
+        print_ai_dashboard();
+        return;
+    }
+    if (subtopic == "ASSIMILATE" || subtopic == "ASSIMILATION" || subtopic == "BOOK" ||
+        subtopic == "PORTAL" || subtopic == "ONBOARD" || subtopic == "ONBOARDING") {
+        print_ai_assimilate();
+        return;
+    }
+    if (subtopic == "INTAKE" || subtopic == "QUEUE") {
+        print_ai_intake();
+        return;
+    }
+    if (subtopic == "GATES") {
+        print_ai_gates();
+        return;
+    }
+    if (subtopic == "VISIBILITY" || subtopic == "VISIBLE") {
+        print_ai_visibility();
+        return;
+    }
+
+    cli::cmdout::print_info("MAINT", "unknown AI topic: " + trim_copy(after_first_word(topic)));
+    print_ai_usage();
 }
 
 void print_contracts_usage() {
@@ -294,6 +441,11 @@ void cmd_MAINT(xbase::DbArea& area, std::istringstream& iss) {
     }
     if (topic == "GUI" || topic == "UIS" || topic == "UI") {
         print_gui();
+        return;
+    }
+    if (starts_with_word(topic, "AI") || starts_with_word(topic, "AIFRIENDLY") ||
+        starts_with_word(topic, "AI-FRIENDLY") || starts_with_word(topic, "AI_FRIENDLY")) {
+        print_ai(topic);
         return;
     }
     if (starts_with_word(topic, "CONTRACTS") || starts_with_word(topic, "CONTRACT")) {

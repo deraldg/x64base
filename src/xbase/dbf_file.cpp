@@ -44,6 +44,39 @@ static inline bool ends_with_ci_local(const std::string& s, const std::string& s
     return true;
 }
 
+static inline std::size_t checked_record_buffer_size_(const DbArea& area)
+{
+    const auto len64 = area.recLength64();
+    if (len64 == 0 ||
+        len64 > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
+        throw std::runtime_error("DbArea: record length exceeds addressable buffer size");
+    }
+    return static_cast<std::size_t>(len64);
+}
+
+static inline std::streampos checked_record_pos_(const DbArea& area, std::uint64_t recno64)
+{
+    if (recno64 < 1) {
+        throw std::runtime_error("DbArea: invalid record number");
+    }
+
+    const auto data_start = area.dataStart64();
+    const auto rec_len = area.recLength64();
+    const auto row_index = recno64 - 1;
+
+    if (rec_len != 0 &&
+        row_index > ((std::numeric_limits<std::uint64_t>::max() - data_start) / rec_len)) {
+        throw std::runtime_error("DbArea: record offset overflow");
+    }
+
+    const auto offset64 = data_start + row_index * rec_len;
+    if (offset64 > static_cast<std::uint64_t>(std::numeric_limits<std::streamoff>::max())) {
+        throw std::runtime_error("DbArea: record offset exceeds stream range");
+    }
+
+    return static_cast<std::streampos>(static_cast<std::streamoff>(offset64));
+}
+
 // ---- helpers exposed in header ----
 std::string dbNameWithExt(std::string s) {
     while (!s.empty() && s.back() == ' ') s.pop_back();
@@ -125,7 +158,7 @@ void DbArea::open(const std::string& filename)
         _rec_count64 = static_cast<std::uint64_t>(_hdr.num_of_recs);
     }
 
-    _recbuf.assign(static_cast<size_t>(_hdr.cpr), ' ');
+    _recbuf.assign(checked_record_buffer_size_(*this), ' ');
 
     // 1-based field values
     _fd.assign(_fields.size() + 1, std::string{});
@@ -209,8 +242,7 @@ bool DbArea::gotoRec(int32_t recno) {
     _crn64 = static_cast<std::uint64_t>(recno);
 
     const std::streampos pos =
-        static_cast<std::streampos>(_hdr.data_start) +
-        static_cast<std::streamoff>((recno - 1) * _hdr.cpr);
+        checked_record_pos_(*this, static_cast<std::uint64_t>(recno));
 
     _fp.seekg(pos, std::ios::beg);
     return readCurrent();
@@ -246,7 +278,7 @@ bool DbArea::appendBlank() {
     // open() positions to BOF when num_of_recs == 0.
     _fp.clear();
 
-    std::vector<char> blank(static_cast<size_t>(_hdr.cpr), ' ');
+    std::vector<char> blank(checked_record_buffer_size_(*this), ' ');
     blank[0] = NOT_DELETED;
 
     // For an empty DBF created with a trailing 0x1A EOF marker, append should
@@ -310,7 +342,7 @@ bool DbArea::appendBlank() {
 
     // Defensive reset: do not let the previous current record leak into the
     // newly appended blank row if the decode path is imperfect.
-    _recbuf.assign(static_cast<size_t>(_hdr.cpr), ' ');
+    _recbuf.assign(checked_record_buffer_size_(*this), ' ');
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
     _del = NOT_DELETED;

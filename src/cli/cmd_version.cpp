@@ -30,6 +30,7 @@
 
 #include "cmd_version.hpp"
 #include "cli/command_output.hpp"
+#include "dottalk/version.hpp"
 #include "help/helpdata_messages.hpp"
 #include <algorithm>
 #include <chrono>
@@ -39,6 +40,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #if defined(_WIN32)
 #  include <windows.h>
@@ -47,12 +49,6 @@
 #elif defined(__linux__)
 #  include <unistd.h>
 #endif
-
-#ifndef DOTTALKPP_VERSION
-// #define DOTTALKPP_VERSION "alpha-v15.0"
-#define DOTTALKPP_VERSION "beta-0"
-#endif
-
 
 namespace {
 static std::string version_trim(std::string s)
@@ -152,7 +148,7 @@ void cmd_VERSION(xbase::DbArea& area, std::istringstream& args) {
     const std::string stamp = version_build_stamp();
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::VersionBannerLineText,
-        {{"version", DOTTALKPP_VERSION}, {"stamp", stamp}});
+        {{"version", dottalk::version::display_version()}, {"stamp", stamp}});
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::VersionBuildLineText,
         {{"stamp", stamp}});

@@ -23,7 +23,7 @@ TMenuBar* buildMenuBar(TRect bounds)
 
     TMenu* root = new TMenu(
         *new TSubMenu("~S~ys", kbAltS)
-            + *new TMenuItem("~A~bout DotTalk++ / TurboTalk...", cmFtSysAbout, kbNoKey, hcNoContext, "ABOUT")
+            + *new TMenuItem("~A~bout DotTalk++ / ArcticTalk...", cmFtSysAbout, kbNoKey, hcNoContext, "ABOUT")
             + *new TMenuItem("~V~ersion / Build Info", cmFtSysVersion, kbNoKey, hcNoContext, "VERSION")
             + *new TMenuItem("Runtime ~S~tatus", cmFtSysStatus, kbNoKey, hcNoContext, "STATUS")
             + *new TMenuItem("~P~aths / Environment", cmFtSysPaths, kbNoKey, hcNoContext, "SET PATH")
@@ -33,7 +33,7 @@ TMenuBar* buildMenuBar(TRect bounds)
             + *new TMenuItem("Color ~A~mber", cmFtSysColorAmber, kbNoKey, hcNoContext, "COLOR AMBER")
             + newLine()
             + *new TMenuItem("~S~hell Escape...", cmFtSysShell, kbNoKey, hcNoContext, "!")
-            + *new TMenuItem("E~x~it TurboTalk", cmTalkExit, kbAltX, hcNoContext, "Alt-X")
+            + *new TMenuItem("E~x~it ArcticTalk", cmTalkExit, kbAltX, hcNoContext, "Alt-X")
 
       + *new TSubMenu("~F~ile", kbAltF)
             + *new TMenuItem("~O~pen Table...", cmFtFileUse, kbNoKey, hcNoContext, "USE")
@@ -249,7 +249,7 @@ TMenuBar* buildMenuBar(TRect bounds)
             + *new TMenuItem("~B~rowser Help", cmFtHelpBrowser, kbNoKey, hcNoContext, "HELP SIMPLEBROWSER")
             + newLine()
             + *new TMenuItem("~K~eys Cheat Sheet", cmFtHelpKeys, kbNoKey, hcNoContext, "KEYS")
-            + *new TMenuItem("~A~bout TurboTalk...", cmFtHelpAbout, kbNoKey, hcNoContext, "ABOUT")
+            + *new TMenuItem("~A~bout ArcticTalk...", cmFtHelpAbout, kbNoKey, hcNoContext, "ABOUT")
     );
 
     return new TMenuBar(bounds, root);

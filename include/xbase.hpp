@@ -169,9 +169,15 @@ public:
     bool replaceFieldStored(int field1, const std::string& stored_value, std::string* err = nullptr);
 
     // ---- Record size ------------------------------------------------------
-    int  recLength() const noexcept { return _hdr.cpr; }
+    int  recLength() const noexcept {
+        return (_record_length64 > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
+            ? std::numeric_limits<int>::max()
+            : static_cast<int>(_record_length64);
+    }
     int  recordLength() const noexcept;
     int  cpr() const noexcept { return recLength(); }
+    std::uint64_t recLength64() const noexcept { return _record_length64; }
+    std::uint64_t dataStart64() const noexcept { return _data_start64; }
 
     // ---- Runtime truth (CANONICAL) ----------------------------------------
     const std::string& filename() const noexcept { return _dbf_abs_path; }
@@ -278,6 +284,12 @@ public:
         _rec_count64 = (hdr.num_of_recs < 0)
             ? 0u
             : static_cast<uint64_t>(hdr.num_of_recs);
+        _data_start64 = (hdr.data_start < 0)
+            ? 0u
+            : static_cast<uint64_t>(static_cast<std::uint16_t>(hdr.data_start));
+        _record_length64 = (hdr.cpr < 0)
+            ? 0u
+            : static_cast<uint64_t>(static_cast<std::uint16_t>(hdr.cpr));
     }
     void setRecordCount(int32_t n) noexcept {
         _hdr.num_of_recs = n;
@@ -295,11 +307,19 @@ public:
             ? std::numeric_limits<int32_t>::max()
             : static_cast<int32_t>(n);
     }
-    void setDataStart(int16_t start) noexcept {
-        _hdr.data_start = start;
+    void setDataStart(std::uint64_t start) noexcept {
+        _data_start64 = start;
+        _hdr.data_start =
+            (start > static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max()))
+                ? 0
+                : static_cast<int16_t>(start);
     }
-    void setRecordLength(int16_t len) noexcept {
-        _hdr.cpr = len;
+    void setRecordLength(std::uint64_t len) noexcept {
+        _record_length64 = len;
+        _hdr.cpr =
+            (len > static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max()))
+                ? 0
+                : static_cast<int16_t>(len);
     }
     void setLastUpdated(uint8_t yy, uint8_t mm, uint8_t dd) noexcept {
         _hdr.last_updated[0] = yy;
@@ -341,6 +361,8 @@ private:
     int32_t  _crn{0};
     uint64_t _crn64{0};
     uint64_t _rec_count64{0};
+    uint64_t _data_start64{0};
+    uint64_t _record_length64{0};
     char     _del{NOT_DELETED};
 
     // ===== Runtime kind ====================================================

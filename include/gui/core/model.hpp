@@ -169,6 +169,12 @@ struct TableSnapshot {
     std::vector<TableRow> rows;
     std::uint64_t total_records {0};
     std::uint64_t current_record_number {0};
+    std::uint64_t physical_record_number {0};
+    std::uint64_t logical_record_number {0};
+    bool ordered {false};
+    std::string order_name;
+    std::string order_tag;
+    bool order_ascending {true};
     bool truncated {false};
     std::vector<StatusMessage> messages;
 };

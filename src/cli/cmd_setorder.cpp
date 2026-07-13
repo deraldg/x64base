@@ -13,14 +13,14 @@
 // Notes:
 // - For bare tag forms, an already-attached compatible container is preferred.
 // - If no suitable container is attached, fallback is flavor-aware:
-//     v32 -> <table>.cnx
-//     v64 -> <table>.cdx
+//     classic xBase/VFP -> <table>.cnx
+//     true x64/v128 -> <table>.cdx
 // - For IN <alias>, target area is modified without changing the selected area.
 // - Numeric tag-number orders remain reserved/minimal for now.
 //
 // Policy:
-// - v32: CNX is the tag-container path.
-// - v64: CDX (LMDB-backed) is the tag-container path.
+// - classic xBase/VFP: CNX is the tag-container path.
+// - true x64/v128: CDX (LMDB-backed) is the tag-container path.
 // - INX remains valid for SET INDEX attachment, but tag activation via
 //   SET ORDER is intentionally not handled here.
 //
@@ -63,8 +63,8 @@
 //   SET ORDER 0, PHYSICAL, NATURAL, and PHYS clear active order.
 //   Bare tag forms prefer an already-attached compatible container.
 //   If no suitable container is attached, fallback is flavor-aware.
-//   v32 tables default to CNX.
-//   v64 tables default to CDX.
+//   Classic xBase/VFP tables default to CNX.
+//   True x64/v128 tables default to CDX.
 //   IN <alias> modifies the target area without changing the selected area.
 //   INX activation is intentionally not handled by SET ORDER.
 //
@@ -91,6 +91,7 @@
 #include <algorithm>
 
 #include "xbase.hpp"
+#include "xbase_64.hpp"
 #include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
 #include "cdx/cdx.hpp"
@@ -207,8 +208,15 @@ static inline bool is_v32_area(const xbase::DbArea& area) {
     return area.kind() == xbase::AreaKind::V32;
 }
 
-static inline bool is_v64_area(const xbase::DbArea& area) {
-    return area.kind() == xbase::AreaKind::V64;
+static inline bool is_x64_cdx_area(const xbase::DbArea& area) {
+    return area.versionByte() == xbase::DBF_VERSION_64 ||
+           area.kind() == xbase::AreaKind::V128;
+}
+
+static inline bool is_classic_tag_area(const xbase::DbArea& area) {
+    return is_v32_area(area) ||
+           (area.kind() == xbase::AreaKind::V64 &&
+            area.versionByte() != xbase::DBF_VERSION_64);
 }
 
 static fs::path resolve_index_path(const xbase::DbArea& area,
@@ -385,17 +393,17 @@ static std::string preferred_attached_container_for_flavor(const xbase::DbArea& 
     const bool isCdx = orderstate::isCdx(area);
     const bool isCnx = orderstate::isCnx(area);
 
-    if (is_v32_area(area) && isCnx) return name;
-    if (is_v64_area(area) && isCdx) return name;
+    if (is_classic_tag_area(area) && isCnx) return name;
+    if (is_x64_cdx_area(area) && isCdx) return name;
 
     return std::string{};
 }
 
 static std::string default_container_for_flavor(const xbase::DbArea& area) {
-    if (is_v32_area(area)) {
+    if (is_classic_tag_area(area)) {
         return resolve_index_path(area, "", ".cnx").string();
     }
-    if (is_v64_area(area)) {
+    if (is_x64_cdx_area(area)) {
         return resolve_index_path(area, "", ".cdx").string();
     }
     return resolve_index_path(area, "", ".cdx").string();
@@ -417,7 +425,7 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
         return false;
     }
 
-    if (is_v32_area(area)) {
+    if (is_classic_tag_area(area)) {
         if (isCdx) {
             err = msg(MessageId::SetOrderV32UsesCnxNotCdxText);
             return false;
@@ -425,7 +433,7 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
         return true;
     }
 
-    if (is_v64_area(area)) {
+    if (is_x64_cdx_area(area)) {
         if (!isCdx) {
             err = msg(MessageId::SetOrderV64RequiresCdxText);
             return false;
@@ -689,7 +697,7 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         const std::string first = toks[i];
         const std::string second = toks[i + 1];
 
-        const std::string defaultExt = is_v32_area(*target) ? ".cnx" : ".cdx";
+        const std::string defaultExt = is_classic_tag_area(*target) ? ".cnx" : ".cdx";
         container = resolve_index_path(*target, first, defaultExt).string();
         tag = up_copy(second);
 

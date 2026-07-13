@@ -39,14 +39,37 @@ static inline void write_u64_le(char* p, std::uint64_t v) noexcept
     std::memcpy(p, &v, sizeof(v));
 }
 
+static inline bool calc_record_pos(const DbArea& area,
+                                   std::uint64_t recno,
+                                   std::streamoff& pos) noexcept
+{
+    if (recno == 0) return false;
+
+    const std::uint64_t base = area.dataStart64();
+    const std::uint64_t reclen = area.recLength64();
+    if (reclen == 0) return false;
+
+    const std::uint64_t index = recno - 1;
+    if (index > (std::numeric_limits<std::uint64_t>::max() / reclen)) return false;
+    const std::uint64_t rowOffset = index * reclen;
+    if (rowOffset > (std::numeric_limits<std::uint64_t>::max() - base)) return false;
+
+    const std::uint64_t abs = base + rowOffset;
+    if (abs > static_cast<std::uint64_t>(std::numeric_limits<std::streamoff>::max())) return false;
+
+    pos = static_cast<std::streamoff>(abs);
+    return true;
+}
+
 } // namespace
 
 bool DbArea::readCurrent()
 {
     if (_crn == 0) return false;
 
-    std::streampos pos =
-        _hdr.data_start + static_cast<std::streamoff>((_crn - 1) * _hdr.cpr);
+    std::streamoff posOff = 0;
+    if (!calc_record_pos(*this, recno64(), posOff)) return false;
+    const std::streampos pos = posOff;
 
     _fp.seekg(pos, std::ios::beg);
     _fp.read(_recbuf.data(), _recbuf.size());
@@ -70,8 +93,9 @@ bool DbArea::writeCurrent()
 
     storeFieldsToBuffer();
 
-    std::streampos pos =
-        _hdr.data_start + static_cast<std::streamoff>((_crn - 1) * _hdr.cpr);
+    std::streamoff posOff = 0;
+    if (!calc_record_pos(*this, recno64(), posOff)) return false;
+    const std::streampos pos = posOff;
 
     _fp.seekp(pos, std::ios::beg);
     _fp.write(_recbuf.data(), _recbuf.size());

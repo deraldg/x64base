@@ -162,8 +162,8 @@ inline void readHeader(DbArea& area, std::fstream& fp) {
         area.setKind(detect_area_kind_from_version(vh.version));
         area.setLastUpdated(vh.yy, vh.mm, vh.dd);
         area.setRecordCount(static_cast<int32_t>(vh.num_recs));
-        area.setDataStart(static_cast<int16_t>(vh.header_size));
-        area.setRecordLength(static_cast<int16_t>(vh.record_size));
+        area.setDataStart(static_cast<std::uint64_t>(vh.header_size));
+        area.setRecordLength(static_cast<std::uint64_t>(vh.record_size));
         return;
     }
 

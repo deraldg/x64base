@@ -76,7 +76,6 @@ static void print_bang_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::BangUsageText);
 }
-
 } // namespace
 
 

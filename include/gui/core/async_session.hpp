@@ -5,8 +5,10 @@
 // role: GUI worker dispatch and lifetime boundary
 // owner: DotTalk++ GUI open-architecture lane
 // contract: AsyncSession owns the worker thread through RAII; destruction must stop the queue and join the worker.
+// authority: AsyncSession schedules Session-backed work; it does not own alternate database semantics.
 // threading: UI adapters submit work and consume events; worker code must not touch toolkit widgets directly.
 // database: database behavior belongs to Session / DotTalk++ runtime services, not toolkit-specific GUI code.
+// reuse: queued GUI work may orchestrate shared services or CLI bridges, but must not invent a frontend-only DBF/index/relation behavior layer.
 // safety: queued work is mutex-protected; pending work may be cancelled, but active work completes before join.
 // docs: docs/ui/GUI_THREADING_RAII_CONTRACT_V1.md
 // @dottalk.contract.end

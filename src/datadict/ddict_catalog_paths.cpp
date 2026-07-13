@@ -72,9 +72,11 @@ std::vector<fs::path> catalog_candidates() {
         candidates.push_back(root / "data" / "datadict");
         candidates.push_back(root / "data" / "metadata" / "datadict");
         candidates.push_back(root / "dottalkpp" / "data" / "metadata" / "datadict");
+        candidates.push_back(root / "dottalkpp" / "data" / "datadict" / "datadict");
     }
     candidates.push_back(fs::path("data") / "metadata" / "datadict");
     candidates.push_back(fs::path("dottalkpp") / "data" / "metadata" / "datadict");
+    candidates.push_back(fs::path("dottalkpp") / "data" / "datadict" / "datadict");
     return candidates;
 }
 

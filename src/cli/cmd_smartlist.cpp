@@ -166,7 +166,6 @@ static inline bool is_uint(const std::string& s) {
     for (unsigned char c : s) if (!std::isdigit(c)) return false;
     return true;
 }
-
 static inline std::string trim(std::string s) {
     auto sp = [](unsigned char c){ return c==' '||c=='\t'||c=='\r'||c=='\n'; };
     while (!s.empty() && sp((unsigned char)s.front())) s.erase(s.begin());

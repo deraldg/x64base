@@ -73,8 +73,8 @@ def main() -> int:
 
     # 1) ensure the built extension directory is first on sys.path
     # Current CMake build places pydottalk here:
-    #   <repo>\build\python\pydottalk.cp312-win_amd64.pyd
-    rel_dir = os.environ.get("PYDOTTALK_BIN") or str(repo / "build" / "python")
+    #   <repo>\build-labtalk\python\pydottalk.cp312-win_amd64.pyd
+    rel_dir = os.environ.get("PYDOTTALK_BIN") or str(repo / "build-labtalk" / "python")
     _sys_path_prepend(rel_dir)
 
     # 2) import

@@ -4,6 +4,7 @@
 #include "expr/date/date_utils.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "shell_lexicon.hpp"
+#include "shell_var_utils.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -89,20 +90,17 @@ static inline bool is_quoted_literal(const std::string& s) {
     return ((a == '"' && b == '"') || (a == '\'' && b == '\''));
 }
 
-static std::string quote_dottalk_string(const std::string& raw) {
-    std::string out;
-    out.reserve(raw.size() + 2);
-    out.push_back('"');
-    for (char c : raw) {
-        if (c == '"') out.append("\"\"");
-        else out.push_back(c);
-    }
-    out.push_back('"');
-    return out;
-}
-
 bool eval_for_varbang(xbase::DbArea& A, const std::string& expr, VarBangEval& out, std::string& err) {
     std::string src = textio::trim(expr);
+    if (src.empty()) { err = "empty expression"; return false; }
+
+    std::string expanded;
+    std::string macro_err_name;
+    if (!expand_macros_outside_quotes(src, expanded, macro_err_name)) {
+        err = "undefined variable: " + macro_err_name;
+        return false;
+    }
+    src = textio::trim(expanded);
     if (src.empty()) { err = "empty expression"; return false; }
 
     // Clock-only fast path

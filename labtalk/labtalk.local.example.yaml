@@ -1,0 +1,19 @@
+# Machine-local LabTalk configuration example.
+# Copy to labtalk.local.yaml and adjust paths if needed.
+
+paths:
+  # Relative paths are resolved from the repository root.
+  ccode_root: .
+  labtalk_root: labtalk
+  dottalkpp_exe: dottalkpp/bin/dottalkpp.exe
+  dottalkpp_workdir: .
+
+tools:
+  python: python
+  powershell: powershell.exe
+
+lms:
+  provider: moodle
+  enabled: false
+  queue_dir: lms/queue/outbox
+  token_environment_variable: LABTALK_MOODLE_TOKEN

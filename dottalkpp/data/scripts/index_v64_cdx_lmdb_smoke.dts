@@ -18,8 +18,12 @@ ECHO ============================================================
 ECHO INDEX V64 CDX/LMDB SMOKE v2
 ECHO ============================================================
 
-DO SANDBOX
+* Self-bootstrap without nested DOTSCRIPT dependency.
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
 WORKSPACE CLOSE
+ERASE students_cdx_smoke CONFIRM
 
 ECHO
 ECHO --- OPEN ORIGINAL STUDENTS AND CONFIRM V64/CDX ---
@@ -70,7 +74,10 @@ TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
 
 ECHO
 ECHO --- BUILD/ATTACH CDX FOR DISPOSABLE COPY ---
-BUILDLMDB AUTO
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG LNAME
+BUILDLMDB CLEAN YES
 SET INDEX TO students_cdx_smoke
 SET ORDER TO TAG LNAME
 AREA
@@ -108,6 +115,7 @@ TUPLE SID,LNAME,FNAME,DOB,MAJOR,GPA
 ECHO
 ECHO --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
 CLOSE
+ERASE students_cdx_smoke CONFIRM
 ECHO Suggested manual cleanup if needed:
 ECHO ERASE students_cdx_smoke.dbf and students_cdx_smoke.cdx / LMDB sidecars from SANDBOX paths.
 

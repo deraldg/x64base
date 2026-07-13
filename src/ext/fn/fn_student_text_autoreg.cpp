@@ -61,7 +61,7 @@ static std::string fn_STU_REPEAT(const std::vector<std::string>& argv)
 
 static void register_builtin_fn(const dottalk::expr::BuiltinFnSpec& spec)
 {
-    dli::registry().add(spec.name,
+    dli::register_extension_command(spec.name,
         [&spec](xbase::DbArea& A, std::istringstream& in)
     {
         // Student text functions deliberately do not resolve DBF field
@@ -109,7 +109,8 @@ static void register_builtin_fn(const dottalk::expr::BuiltinFnSpec& spec)
         catch (...) {
             std::cout << spec.name << ": evaluation error.\n";
         }
-    });
+    },
+    "src/ext/fn/fn_student_text_autoreg.cpp");
 }
 
 // ------------------------------------------------------------

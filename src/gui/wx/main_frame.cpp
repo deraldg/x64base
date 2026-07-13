@@ -1,5 +1,9 @@
 #include "main_frame.hpp"
 
+#include "datadict/ddict_catalog_paths.hpp"
+#include "datadict/ddict_object_resolver.hpp"
+#include "datadict/ddict_read_helpers.hpp"
+#include "dottalk/version.hpp"
 #include "gui/core/gui_command_catalog.hpp"
 #include "gui/core/gui_workspace_format.hpp"
 
@@ -30,6 +34,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -55,6 +60,8 @@ enum : int {
     IdSetDbfSkeleton,
     IdSetIndexSkeleton,
     IdRunScan,
+    IdDDictRefresh,
+    IdDDictFilter,
     IdLanguageEnUs,
     IdLanguageEs,
     IdLanguageFr,
@@ -114,6 +121,202 @@ std::string upper_ascii(std::string value) {
 bool is_record_view_command(const std::string& command) {
     const std::string token = upper_ascii(trim_ascii(command));
     return token == "RECORDVIEW" || token == "RECORD VIEW";
+}
+
+std::string ddict_value(const dottalk::datadict::DDictRow& row, const std::string& key) {
+    return dottalk::datadict::value_of(row, key);
+}
+
+bool is_objid_text(const std::string& value) {
+    return upper_ascii(trim_ascii(value)).rfind("OBJ_", 0) == 0;
+}
+
+bool is_srcid_text(const std::string& value) {
+    return upper_ascii(trim_ascii(value)).rfind("SRC_", 0) == 0;
+}
+
+std::string object_label(const dottalk::datadict::DDictRow* row) {
+    if (!row) {
+        return {};
+    }
+    const std::string name = ddict_value(*row, "NAME");
+    const std::string owner = ddict_value(*row, "OWNER");
+    if (!owner.empty()) {
+        return owner + "." + name;
+    }
+    return name;
+}
+
+const dottalk::datadict::DDictRow* find_source_row(
+    const std::vector<dottalk::datadict::DDictRow>& sources,
+    const std::string& source_id) {
+    const std::string want = upper_ascii(trim_ascii(source_id));
+    for (const auto& row : sources) {
+        if (upper_ascii(ddict_value(row, "SRCID")) == want) {
+            return &row;
+        }
+    }
+    return nullptr;
+}
+
+std::filesystem::path resolve_source_path(const std::filesystem::path& catalog_dir,
+                                          const std::string& source_path) {
+    namespace fs = std::filesystem;
+    if (source_path.empty()) {
+        return {};
+    }
+
+    fs::path candidate(source_path);
+    if (candidate.is_absolute()) {
+        return candidate;
+    }
+
+    std::error_code ec;
+    fs::path cwd = fs::current_path(ec);
+    if (ec) {
+        cwd = ".";
+    }
+
+    std::vector<fs::path> roots{cwd};
+    fs::path cursor = catalog_dir;
+    for (int i = 0; i < 8 && !cursor.empty(); ++i) {
+        roots.push_back(cursor);
+        roots.push_back(cursor / "..");
+        cursor = cursor.parent_path();
+    }
+    for (const auto& root : roots) {
+        fs::path resolved = root / candidate;
+        if (fs::exists(resolved, ec)) {
+            return fs::weakly_canonical(resolved, ec);
+        }
+    }
+    return cwd / candidate;
+}
+
+std::string read_source_preview(const std::filesystem::path& path) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    if (path.empty() || !fs::exists(path, ec) || !fs::is_regular_file(path, ec)) {
+        return "Source file not found:\n" + path.string();
+    }
+    const auto bytes = fs::file_size(path, ec);
+    if (ec) {
+        return "Unable to inspect source file:\n" + path.string();
+    }
+    constexpr std::uintmax_t kMaxPreviewBytes = 512 * 1024;
+    if (bytes > kMaxPreviewBytes) {
+        return "Source file is too large for inline preview (" + std::to_string(bytes) +
+               " bytes):\n" + path.string();
+    }
+
+    std::ifstream in(path, std::ios::binary);
+    if (!in) {
+        return "Unable to open source file:\n" + path.string();
+    }
+    std::ostringstream out;
+    out << in.rdbuf();
+    return out.str();
+}
+
+std::string gui_version_label() {
+    return dottalk::version::display_version();
+}
+
+std::string workbench_title(const std::string& display_name = {}) {
+    std::string title = "DotTalk++ Workbench " + gui_version_label();
+    if (!display_name.empty()) {
+        title += " - " + display_name;
+    }
+    return title;
+}
+
+std::string quote_command_path(const std::filesystem::path& path) {
+    const std::string text = path.string();
+    if (text.find_first_of(" \t") == std::string::npos) {
+        return text;
+    }
+    return "\"" + text + "\"";
+}
+
+std::string record_status_text(const TableSnapshot& snapshot) {
+    if (snapshot.physical_record_number == 0) {
+        return "Recno: none | Logical row: none | Order: physical";
+    }
+    std::string order = "physical";
+    if (snapshot.ordered) {
+        order = snapshot.order_ascending ? "ASC" : "DESC";
+        if (!snapshot.order_tag.empty()) {
+            order += " tag " + snapshot.order_tag;
+        }
+        if (!snapshot.order_name.empty()) {
+            order += " [" + std::filesystem::path(snapshot.order_name).filename().string() + "]";
+        }
+    }
+    return "Recno: " + std::to_string(snapshot.physical_record_number) +
+           " | Logical row: " + std::to_string(snapshot.logical_record_number) +
+           " | Order: " + order;
+}
+
+struct ErsatzResultRow {
+    std::string section;
+    std::vector<std::string> values;
+};
+
+std::vector<std::string> split_pipe_values(const std::string& line) {
+    std::vector<std::string> values;
+    std::istringstream stream(line);
+    std::string value;
+    while (std::getline(stream, value, '|')) {
+        values.push_back(trim_ascii(value));
+    }
+    return values;
+}
+
+bool looks_like_ersatz_output(const std::string& output) {
+    const std::string upper = upper_ascii(output);
+    return upper.find("ERSATZ") != std::string::npos ||
+           upper.find("REL ENUM") != std::string::npos ||
+           upper.find("REL LIST") != std::string::npos ||
+           upper.find("RELATIONS (TREE)") != std::string::npos;
+}
+
+std::vector<ErsatzResultRow> parse_ersatz_result_rows(const std::string& output) {
+    std::vector<ErsatzResultRow> rows;
+    if (!looks_like_ersatz_output(output)) {
+        return rows;
+    }
+
+    std::string section = "ERSATZ";
+    std::istringstream stream(output);
+    std::string line;
+    while (std::getline(stream, line)) {
+        const std::string trimmed = trim_ascii(line);
+        if (trimmed.empty()) {
+            continue;
+        }
+
+        const bool has_pipe = trimmed.find('|') != std::string::npos;
+        if (!has_pipe) {
+            const std::string upper = upper_ascii(trimmed);
+            if (upper.find("REL ENUM") != std::string::npos ||
+                upper.find("REL LIST") != std::string::npos ||
+                upper.find("CURRENT STUDENT") != std::string::npos ||
+                upper.find("STUDENT") != std::string::npos ||
+                upper.find("WALK ") == 0) {
+                section = trimmed;
+            }
+            continue;
+        }
+
+        auto values = split_pipe_values(trimmed);
+        values.erase(std::remove_if(values.begin(), values.end(), [](const std::string& value) {
+            return value.empty();
+        }), values.end());
+        if (values.size() >= 3) {
+            rows.push_back(ErsatzResultRow{section, std::move(values)});
+        }
+    }
+    return rows;
 }
 
 int record_view_column_count(const std::vector<TableColumn>& columns) {
@@ -201,14 +404,15 @@ const GuiEvent& DotTalkCoreEvent::payload() const noexcept {
 }
 
 MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
-    : wxFrame(nullptr, wxID_ANY, gui_text(GuiTextId::AppTitle, locale), wxDefaultPosition, wxSize(1100, 720)),
+    : wxFrame(nullptr, wxID_ANY, workbench_title(), wxDefaultPosition, wxSize(1100, 720)),
       locale_(std::move(locale)) {
     BuildMenu();
     BuildLayout();
-    CreateStatusBar(3);
+    CreateStatusBar(4);
     SetStatusText(gui_text(GuiTextId::Ready, locale_), 0);
     SetStatusText(gui_text(GuiTextId::NoOpenAreas, locale_), 1);
     SetStatusText("0 rows", 2);
+    SetStatusText("Recno: none | Logical row: none | Order: physical", 3);
 
     session_ = std::make_unique<AsyncSession>([this](GuiEvent event) {
         wxQueueEvent(this, new DotTalkCoreEvent(wxEVT_DOTTALK_CORE, GetId(), std::move(event)));
@@ -237,11 +441,24 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
     Bind(wxEVT_BUTTON, &MainFrame::OnRefresh, this, IdRefresh);
     Bind(wxEVT_BUTTON, &MainFrame::OnCloseArea, this, IdCloseArea);
     Bind(wxEVT_BUTTON, &MainFrame::OnRunCommand, this, IdRunCommand);
+    Bind(wxEVT_BUTTON, &MainFrame::OnDDictRefresh, this, IdDDictRefresh);
+    Bind(wxEVT_CHOICE, &MainFrame::OnDDictFilterChanged, this, IdDDictFilter);
     Bind(wxEVT_TEXT_ENTER, &MainFrame::OnRunCommand, this, IdRunCommand);
     Bind(wxEVT_LISTBOX, &MainFrame::OnAreaSelected, this, IdAreas);
     if (grid_) {
         grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnBrowseCellSelected, this);
         grid_->Bind(wxEVT_CHAR_HOOK, &MainFrame::OnRecordViewKeyDown, this);
+    }
+    if (ddict_objects_grid_) {
+        ddict_objects_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnDDictObjectSelected, this);
+    }
+    for (wxGrid* detail : {ddict_fields_grid_, ddict_tags_grid_, ddict_relations_grid_, ddict_evidence_grid_}) {
+        if (detail) {
+            detail->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnDDictDetailSelected, this);
+        }
+    }
+    if (ddict_source_grid_) {
+        ddict_source_grid_->Bind(wxEVT_GRID_SELECT_CELL, &MainFrame::OnDDictDetailSelected, this);
     }
     Bind(wxEVT_DOTTALK_CORE, &MainFrame::OnCoreEvent, this);
 
@@ -251,6 +468,7 @@ MainFrame::MainFrame(std::filesystem::path initial_table, LocaleContext locale)
         session_->submit_list_areas();
     }
     AppendLog("startup: init.ini, dottalkpp.ini, and dotscript.ini searched by GUI session.");
+    LoadDDictCatalog();
 }
 
 MainFrame::~MainFrame() {
@@ -270,7 +488,7 @@ void MainFrame::BuildMenu() {
     workspace->Append(IdWorkspaceLoadRuntime, "WORKSPACE LOAD Schema...");
     workspace->Append(IdWorkspaceClose, "WORKSPACE CLOSE");
     workspace->AppendSeparator();
-    workspace->Append(IdOpenWorkspace, "Load Bootstrap Workspace File...");
+    workspace->Append(IdOpenWorkspace, "Load Workspace Schema...");
     workspace->Append(IdSaveWorkspace, gui_text(GuiTextId::SaveWorkspace, locale_));
     workspace->Append(IdSaveWorkspaceAs, gui_text(GuiTextId::SaveWorkspaceAs, locale_) + "...");
     workspace->AppendSeparator();
@@ -348,6 +566,7 @@ void MainFrame::BuildLayout() {
     close_area_button_ = new wxButton(root, IdCloseArea, gui_text(GuiTextId::CloseArea, locale_));
     command_label_ = new wxStaticText(root, wxID_ANY, gui_text(GuiTextId::Command, locale_));
     command_ = new wxTextCtrl(root, IdRunCommand, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    command_->Bind(wxEVT_KEY_DOWN, &MainFrame::OnCommandKeyDown, this);
     run_button_ = new wxButton(root, IdRunCommand, gui_text(GuiTextId::Run, locale_));
 
     toolbar->Add(open_button_, 0, wxRIGHT, 6);
@@ -384,6 +603,61 @@ void MainFrame::BuildLayout() {
     relations_grid_->CreateGrid(0, 0);
     configure_readonly_grid(relations_grid_);
 
+    auto* ddict_panel = new wxPanel(notebook_, wxID_ANY);
+    auto* ddict_sizer = new wxBoxSizer(wxVERTICAL);
+    auto* ddict_toolbar = new wxBoxSizer(wxHORIZONTAL);
+    ddict_refresh_button_ = new wxButton(ddict_panel, IdDDictRefresh, "Refresh");
+    ddict_filter_ = new wxChoice(ddict_panel, IdDDictFilter);
+    ddict_filter_->Append("All objects");
+    ddict_filter_->Append("Tables");
+    ddict_filter_->Append("Fields");
+    ddict_filter_->Append("Tags");
+    ddict_filter_->Append("Evidence");
+    ddict_filter_->Append("Profiles");
+    ddict_filter_->SetSelection(0);
+    ddict_status_ = new wxStaticText(ddict_panel, wxID_ANY, "DDict: not loaded");
+    ddict_toolbar->Add(ddict_refresh_button_, 0, wxRIGHT, 6);
+    ddict_toolbar->Add(ddict_filter_, 0, wxRIGHT, 12);
+    ddict_toolbar->Add(ddict_status_, 1, wxALIGN_CENTER_VERTICAL);
+    ddict_sizer->Add(ddict_toolbar, 0, wxEXPAND | wxALL, 6);
+
+    auto* ddict_splitter = new wxSplitterWindow(ddict_panel, wxID_ANY);
+    ddict_objects_grid_ = new wxGrid(ddict_splitter, wxID_ANY);
+    ddict_objects_grid_->CreateGrid(0, 0);
+    configure_readonly_grid(ddict_objects_grid_, 56);
+    ddict_detail_notebook_ = new wxNotebook(ddict_splitter, wxID_ANY);
+    ddict_fields_grid_ = new wxGrid(ddict_detail_notebook_, wxID_ANY);
+    ddict_tags_grid_ = new wxGrid(ddict_detail_notebook_, wxID_ANY);
+    ddict_relations_grid_ = new wxGrid(ddict_detail_notebook_, wxID_ANY);
+    ddict_evidence_grid_ = new wxGrid(ddict_detail_notebook_, wxID_ANY);
+    auto* ddict_source_panel = new wxPanel(ddict_detail_notebook_, wxID_ANY);
+    ddict_source_grid_ = new wxGrid(ddict_source_panel, wxID_ANY);
+    for (wxGrid* detail : {ddict_fields_grid_, ddict_tags_grid_, ddict_relations_grid_, ddict_evidence_grid_}) {
+        detail->CreateGrid(0, 0);
+        configure_readonly_grid(detail, 56);
+    }
+    ddict_source_grid_->CreateGrid(0, 0);
+    configure_readonly_grid(ddict_source_grid_, 56);
+    auto* ddict_source_sizer = new wxBoxSizer(wxVERTICAL);
+    ddict_source_sizer->Add(ddict_source_grid_, 0, wxEXPAND | wxALL, 4);
+    ddict_source_text_ = new wxTextCtrl(ddict_source_panel,
+                                        wxID_ANY,
+                                        "",
+                                        wxDefaultPosition,
+                                        wxDefaultSize,
+                                        wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
+    ddict_source_sizer->Add(ddict_source_text_, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 4);
+    ddict_source_panel->SetSizer(ddict_source_sizer);
+    ddict_detail_notebook_->AddPage(ddict_fields_grid_, "Fields");
+    ddict_detail_notebook_->AddPage(ddict_tags_grid_, "Tags");
+    ddict_detail_notebook_->AddPage(ddict_relations_grid_, "Relations");
+    ddict_detail_notebook_->AddPage(ddict_evidence_grid_, "Evidence");
+    ddict_detail_notebook_->AddPage(ddict_source_panel, "Source");
+    ddict_splitter->SplitHorizontally(ddict_objects_grid_, ddict_detail_notebook_, 260);
+    ddict_splitter->SetMinimumPaneSize(120);
+    ddict_sizer->Add(ddict_splitter, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
+    ddict_panel->SetSizer(ddict_sizer);
+
     grid_ = new wxGrid(notebook_, wxID_ANY);
     grid_->CreateGrid(0, 0);
     configure_readonly_grid(grid_, 72);
@@ -401,6 +675,7 @@ void MainFrame::BuildLayout() {
     notebook_->AddPage(tables_grid_, "Tables");
     notebook_->AddPage(indexes_grid_, "Indexes");
     notebook_->AddPage(relations_grid_, "Relations");
+    notebook_->AddPage(ddict_panel, "DDict");
     notebook_->AddPage(workspace_graph_, gui_text(GuiTextId::WorkspaceGraph, locale_));
     notebook_->AddPage(grid_, gui_text(GuiTextId::Browse, locale_));
     notebook_->AddPage(structure_grid_, gui_text(GuiTextId::Structure, locale_));
@@ -527,7 +802,7 @@ void MainFrame::OnWorkspaceOpenDirectory(wxCommandEvent&) {
 
 void MainFrame::OnWorkspaceLoadRuntime(wxCommandEvent&) {
     wxFileDialog dialog(this,
-                        "WORKSPACE LOAD name.dtschemas",
+                        "Load workspace schema",
                         "",
                         "",
                         "DotTalk++ workspace schemas (*.dtschemas;*.dtschema)|*.dtschemas;*.dtschema|All files (*.*)|*.*",
@@ -536,10 +811,7 @@ void MainFrame::OnWorkspaceLoadRuntime(wxCommandEvent&) {
         return;
     }
 
-    const std::filesystem::path path(dialog.GetPath().ToStdString());
-    const std::string command = "workspace load " + path.string();
-    AppendLog("> " + command);
-    session_->submit_command(CommandRequest{command});
+    LoadWorkspaceFile(std::filesystem::path(dialog.GetPath().ToStdString()));
 }
 
 void MainFrame::OnWorkspaceClose(wxCommandEvent&) {
@@ -551,7 +823,7 @@ void MainFrame::OnWorkspaceClose(wxCommandEvent&) {
 
 void MainFrame::OnOpenWorkspace(wxCommandEvent&) {
     wxFileDialog dialog(this,
-                        "Load bootstrap workspace file",
+                        "Load workspace schema",
                         "",
                         "",
                         "DotTalk++ schema (*.dtschema;*.dtschemas)|*.dtschema;*.dtschemas|All files (*.*)|*.*",
@@ -572,7 +844,7 @@ void MainFrame::OnSaveWorkspace(wxCommandEvent& event) {
 
 void MainFrame::OnSaveWorkspaceAs(wxCommandEvent&) {
     wxFileDialog dialog(this,
-                        "Save workspace",
+                        "Save workspace schema",
                         "",
                         "workspace.dtschema",
                         "DotTalk++ schema (*.dtschema)|*.dtschema|All files (*.*)|*.*",
@@ -676,6 +948,7 @@ void MainFrame::OnRunCommand(wxCommandEvent&) {
     if (text.empty()) {
         return;
     }
+    AddCommandHistory(text);
     if (is_record_view_command(text)) {
         command_->Clear();
         ShowRecordView();
@@ -685,6 +958,20 @@ void MainFrame::OnRunCommand(wxCommandEvent&) {
     SetStatusText(gui_text(GuiTextId::RunningCommand, locale_), 0);
     command_->Clear();
     session_->submit_command(CommandRequest{text});
+}
+
+void MainFrame::OnCommandKeyDown(wxKeyEvent& event) {
+    const int key = event.GetKeyCode();
+    if (key == WXK_UP) {
+        if (RecallCommandHistory(-1)) {
+            return;
+        }
+    } else if (key == WXK_DOWN) {
+        if (RecallCommandHistory(1)) {
+            return;
+        }
+    }
+    event.Skip();
 }
 
 void MainFrame::OnAreaSelected(wxCommandEvent& event) {
@@ -721,6 +1008,50 @@ void MainFrame::OnBrowseCellSelected(wxGridEvent& event) {
         }
         session_->submit_move_cursor(MoveCursorRequest{current_area_id_, recno});
     } catch (...) {
+    }
+    event.Skip();
+}
+
+void MainFrame::OnDDictRefresh(wxCommandEvent&) {
+    LoadDDictCatalog();
+    SelectWorkbenchPage(WorkbenchPage::DDict);
+}
+
+void MainFrame::OnDDictFilterChanged(wxCommandEvent&) {
+    ApplyDDictObjects();
+    if (!ddict_selected_objid_.empty()) {
+        SelectDDictObject(ddict_selected_objid_);
+    }
+}
+
+void MainFrame::OnDDictObjectSelected(wxGridEvent& event) {
+    const int row = event.GetRow();
+    if (row >= 0 && static_cast<std::size_t>(row) < ddict_visible_object_rows_.size()) {
+        const auto& object = ddict_objects_[ddict_visible_object_rows_[static_cast<std::size_t>(row)]];
+        ApplyDDictSelection(ddict_value(object, "OBJID"));
+    }
+    event.Skip();
+}
+
+void MainFrame::OnDDictDetailSelected(wxGridEvent& event) {
+    auto* grid = dynamic_cast<wxGrid*>(event.GetEventObject());
+    if (!grid) {
+        event.Skip();
+        return;
+    }
+
+    const int row = event.GetRow();
+    const int col = event.GetCol();
+    if (row >= 0 && col >= 0) {
+        const std::string value = grid->GetCellValue(row, col).ToStdString();
+        if (is_objid_text(value)) {
+            SelectDDictObject(value);
+        } else if (is_srcid_text(value)) {
+            ApplyDDictSource(value);
+            if (ddict_detail_notebook_) {
+                ddict_detail_notebook_->SetSelection(4);
+            }
+        }
     }
     event.Skip();
 }
@@ -926,6 +1257,284 @@ void MainFrame::ApplyRelations(const WorkspaceModel& model) {
     relations_grid_->AutoSizeColumns(false);
 }
 
+void MainFrame::LoadDDictCatalog() {
+    ddict_catalog_dir_ = dottalk::datadict::find_catalog_dir();
+    ddict_objects_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDOBJECT");
+    ddict_attributes_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDATTR");
+    ddict_edges_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDEDGE");
+    ddict_evidence_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDEVID");
+    ddict_sources_ = dottalk::datadict::read_dbf_table(ddict_catalog_dir_, "DDSOURCE");
+
+    ApplyDDictObjects();
+    if (!ddict_objects_.empty()) {
+        SelectDDictObject(ddict_selected_objid_.empty() ? ddict_value(ddict_objects_.front(), "OBJID")
+                                                        : ddict_selected_objid_);
+    } else {
+        ApplyDDictDetails(nullptr);
+    }
+
+    if (ddict_status_) {
+        ddict_status_->SetLabel("DDict: " + std::to_string(ddict_objects_.size()) +
+                                " objects, " + std::to_string(ddict_attributes_.size()) +
+                                " attributes, " + std::to_string(ddict_edges_.size()) +
+                                " relations, " + std::to_string(ddict_sources_.size()) +
+                                " sources | " + ddict_catalog_dir_.string());
+    }
+}
+
+void MainFrame::ApplyDDictObjects() {
+    if (!ddict_objects_grid_) {
+        return;
+    }
+
+    ddict_visible_object_rows_.clear();
+    const int filter = ddict_filter_ ? ddict_filter_->GetSelection() : 0;
+    for (std::size_t row = 0; row < ddict_objects_.size(); ++row) {
+        const auto& object = ddict_objects_[row];
+        const std::string type = upper_ascii(ddict_value(object, "OBJTYPE"));
+        bool show = true;
+        if (filter == 1) {
+            show = type == "CATALOG_TABLE";
+        } else if (filter == 2) {
+            show = type == "CATALOG_FIELD";
+        } else if (filter == 3) {
+            show = type == "CATALOG_TAG";
+        } else if (filter == 4) {
+            show = type.find("EVID") != std::string::npos;
+        } else if (filter == 5) {
+            show = ddict_value(object, "OWNER") == "DDPROFILE" || ddict_value(object, "PROFILE").find("PROFILE") != std::string::npos;
+        }
+        if (show) {
+            ddict_visible_object_rows_.push_back(row);
+        }
+    }
+
+    reset_grid(ddict_objects_grid_, static_cast<int>(ddict_visible_object_rows_.size()), 7);
+    ddict_objects_grid_->SetColLabelValue(0, "OBJID");
+    ddict_objects_grid_->SetColLabelValue(1, "Type");
+    ddict_objects_grid_->SetColLabelValue(2, "Name");
+    ddict_objects_grid_->SetColLabelValue(3, "Owner");
+    ddict_objects_grid_->SetColLabelValue(4, "Status");
+    ddict_objects_grid_->SetColLabelValue(5, "Profile");
+    ddict_objects_grid_->SetColLabelValue(6, "Source");
+
+    for (std::size_t visible = 0; visible < ddict_visible_object_rows_.size(); ++visible) {
+        const auto& object = ddict_objects_[ddict_visible_object_rows_[visible]];
+        const int grid_row = static_cast<int>(visible);
+        ddict_objects_grid_->SetRowLabelValue(grid_row, std::to_string(visible + 1));
+        ddict_objects_grid_->SetCellValue(grid_row, 0, ddict_value(object, "OBJID"));
+        ddict_objects_grid_->SetCellValue(grid_row, 1, ddict_value(object, "OBJTYPE"));
+        ddict_objects_grid_->SetCellValue(grid_row, 2, ddict_value(object, "NAME"));
+        ddict_objects_grid_->SetCellValue(grid_row, 3, ddict_value(object, "OWNER"));
+        ddict_objects_grid_->SetCellValue(grid_row, 4, ddict_value(object, "STATUS"));
+        ddict_objects_grid_->SetCellValue(grid_row, 5, ddict_value(object, "PROFILE"));
+        ddict_objects_grid_->SetCellValue(grid_row, 6, ddict_value(object, "SRCID"));
+    }
+    ddict_objects_grid_->AutoSizeColumns(false);
+}
+
+void MainFrame::ApplyDDictSelection(const std::string& token) {
+    const auto* object = dottalk::datadict::resolve_object(ddict_objects_, token);
+    if (!object) {
+        return;
+    }
+    ddict_selected_objid_ = ddict_value(*object, "OBJID");
+    ApplyDDictDetails(object);
+    if (ddict_status_) {
+        ddict_status_->SetLabel("DDict: " + object_label(object) + " | " + ddict_selected_objid_);
+    }
+}
+
+void MainFrame::ApplyDDictDetails(const dottalk::datadict::DDictRow* object) {
+    auto by_id = dottalk::datadict::object_index(ddict_objects_);
+    const std::string objid = object ? ddict_value(*object, "OBJID") : "";
+    const std::string owner = object ? ddict_value(*object, "NAME") : "";
+
+    std::vector<const dottalk::datadict::DDictRow*> fields;
+    std::vector<const dottalk::datadict::DDictRow*> tags;
+    std::vector<const dottalk::datadict::DDictRow*> attrs;
+    std::vector<const dottalk::datadict::DDictRow*> evidence;
+    std::vector<const dottalk::datadict::DDictRow*> edges;
+
+    if (object) {
+        for (const auto& row : ddict_objects_) {
+            const std::string type = upper_ascii(ddict_value(row, "OBJTYPE"));
+            if (ddict_value(row, "OWNER") == owner && type == "CATALOG_FIELD") {
+                fields.push_back(&row);
+            } else if (ddict_value(row, "OWNER") == owner && type == "CATALOG_TAG") {
+                tags.push_back(&row);
+            }
+        }
+        for (const auto& row : ddict_attributes_) {
+            if (ddict_value(row, "OBJID") == objid) {
+                attrs.push_back(&row);
+            }
+            const std::string evid = ddict_value(row, "EVID");
+            if (!evid.empty()) {
+                for (const auto& ev : ddict_evidence_) {
+                    if (ddict_value(ev, "EVID") == evid) {
+                        evidence.push_back(&ev);
+                    }
+                }
+            }
+        }
+        for (const auto& row : ddict_evidence_) {
+            if (ddict_value(row, "OBJID") == objid) {
+                evidence.push_back(&row);
+            }
+        }
+        for (const auto& row : ddict_edges_) {
+            if (ddict_value(row, "FROMOBJ") == objid || ddict_value(row, "TOOBJ") == objid) {
+                edges.push_back(&row);
+            }
+        }
+    }
+
+    reset_grid(ddict_fields_grid_, static_cast<int>(fields.size() + attrs.size()), 5);
+    ddict_fields_grid_->SetColLabelValue(0, "Kind");
+    ddict_fields_grid_->SetColLabelValue(1, "Name");
+    ddict_fields_grid_->SetColLabelValue(2, "Value");
+    ddict_fields_grid_->SetColLabelValue(3, "OBJID");
+    ddict_fields_grid_->SetColLabelValue(4, "Ref");
+    int out_row = 0;
+    for (const auto* field : fields) {
+        ddict_fields_grid_->SetCellValue(out_row, 0, "FIELD");
+        ddict_fields_grid_->SetCellValue(out_row, 1, ddict_value(*field, "NAME"));
+        ddict_fields_grid_->SetCellValue(out_row, 2, ddict_value(*field, "STATUS"));
+        ddict_fields_grid_->SetCellValue(out_row, 3, ddict_value(*field, "OBJID"));
+        ddict_fields_grid_->SetCellValue(out_row, 4, ddict_value(*field, "SRCID"));
+        ++out_row;
+    }
+    for (const auto* attr : attrs) {
+        ddict_fields_grid_->SetCellValue(out_row, 0, "ATTR");
+        ddict_fields_grid_->SetCellValue(out_row, 1, ddict_value(*attr, "ATTRNAME"));
+        ddict_fields_grid_->SetCellValue(out_row, 2, ddict_value(*attr, "ATTRVAL"));
+        ddict_fields_grid_->SetCellValue(out_row, 3, ddict_value(*attr, "OBJID"));
+        ddict_fields_grid_->SetCellValue(out_row, 4, ddict_value(*attr, "EVID"));
+        ++out_row;
+    }
+    ddict_fields_grid_->AutoSizeColumns(false);
+
+    reset_grid(ddict_tags_grid_, static_cast<int>(tags.size()), 4);
+    ddict_tags_grid_->SetColLabelValue(0, "Tag");
+    ddict_tags_grid_->SetColLabelValue(1, "Status");
+    ddict_tags_grid_->SetColLabelValue(2, "OBJID");
+    ddict_tags_grid_->SetColLabelValue(3, "Source");
+    for (std::size_t row = 0; row < tags.size(); ++row) {
+        const int grid_row = static_cast<int>(row);
+        ddict_tags_grid_->SetCellValue(grid_row, 0, ddict_value(*tags[row], "NAME"));
+        ddict_tags_grid_->SetCellValue(grid_row, 1, ddict_value(*tags[row], "STATUS"));
+        ddict_tags_grid_->SetCellValue(grid_row, 2, ddict_value(*tags[row], "OBJID"));
+        ddict_tags_grid_->SetCellValue(grid_row, 3, ddict_value(*tags[row], "SRCID"));
+    }
+    ddict_tags_grid_->AutoSizeColumns(false);
+
+    reset_grid(ddict_relations_grid_, static_cast<int>(edges.size()), 7);
+    ddict_relations_grid_->SetColLabelValue(0, "Direction");
+    ddict_relations_grid_->SetColLabelValue(1, "Type");
+    ddict_relations_grid_->SetColLabelValue(2, "From");
+    ddict_relations_grid_->SetColLabelValue(3, "From Label");
+    ddict_relations_grid_->SetColLabelValue(4, "To");
+    ddict_relations_grid_->SetColLabelValue(5, "To Label");
+    ddict_relations_grid_->SetColLabelValue(6, "EVID");
+    for (std::size_t row = 0; row < edges.size(); ++row) {
+        const auto& edge = *edges[row];
+        const std::string from = ddict_value(edge, "FROMOBJ");
+        const std::string to = ddict_value(edge, "TOOBJ");
+        const auto from_it = by_id.find(from);
+        const auto to_it = by_id.find(to);
+        const int grid_row = static_cast<int>(row);
+        ddict_relations_grid_->SetCellValue(grid_row, 0, from == objid ? "OUT" : "IN");
+        ddict_relations_grid_->SetCellValue(grid_row, 1, ddict_value(edge, "EDGETYPE"));
+        ddict_relations_grid_->SetCellValue(grid_row, 2, from);
+        ddict_relations_grid_->SetCellValue(grid_row, 3, from_it == by_id.end() ? "" : object_label(from_it->second));
+        ddict_relations_grid_->SetCellValue(grid_row, 4, to);
+        ddict_relations_grid_->SetCellValue(grid_row, 5, to_it == by_id.end() ? "" : object_label(to_it->second));
+        ddict_relations_grid_->SetCellValue(grid_row, 6, ddict_value(edge, "EVID"));
+    }
+    ddict_relations_grid_->AutoSizeColumns(false);
+
+    reset_grid(ddict_evidence_grid_, static_cast<int>(evidence.size()), 6);
+    ddict_evidence_grid_->SetColLabelValue(0, "EVID");
+    ddict_evidence_grid_->SetColLabelValue(1, "OBJID");
+    ddict_evidence_grid_->SetColLabelValue(2, "Object");
+    ddict_evidence_grid_->SetColLabelValue(3, "Source");
+    ddict_evidence_grid_->SetColLabelValue(4, "Kind");
+    ddict_evidence_grid_->SetColLabelValue(5, "Confidence");
+    for (std::size_t row = 0; row < evidence.size(); ++row) {
+        const auto& ev = *evidence[row];
+        const std::string ev_objid = ddict_value(ev, "OBJID");
+        const auto ev_it = by_id.find(ev_objid);
+        const int grid_row = static_cast<int>(row);
+        ddict_evidence_grid_->SetCellValue(grid_row, 0, ddict_value(ev, "EVID"));
+        ddict_evidence_grid_->SetCellValue(grid_row, 1, ev_objid);
+        ddict_evidence_grid_->SetCellValue(grid_row, 2, ev_it == by_id.end() ? "" : object_label(ev_it->second));
+        ddict_evidence_grid_->SetCellValue(grid_row, 3, ddict_value(ev, "SRCID"));
+        ddict_evidence_grid_->SetCellValue(grid_row, 4, ddict_value(ev, "KIND"));
+        ddict_evidence_grid_->SetCellValue(grid_row, 5, ddict_value(ev, "CONF"));
+    }
+    ddict_evidence_grid_->AutoSizeColumns(false);
+
+    ApplyDDictSource(object ? ddict_value(*object, "SRCID") : "");
+}
+
+void MainFrame::ApplyDDictSource(const std::string& source_id) {
+    if (!ddict_source_grid_ || !ddict_source_text_) {
+        return;
+    }
+
+    const auto* source = find_source_row(ddict_sources_, source_id);
+    reset_grid(ddict_source_grid_, source ? 1 : 0, 6);
+    ddict_source_grid_->SetColLabelValue(0, "SRCID");
+    ddict_source_grid_->SetColLabelValue(1, "Path");
+    ddict_source_grid_->SetColLabelValue(2, "Kind");
+    ddict_source_grid_->SetColLabelValue(3, "Bytes");
+    ddict_source_grid_->SetColLabelValue(4, "Profile");
+    ddict_source_grid_->SetColLabelValue(5, "Resolved Path");
+
+    if (!source) {
+        ddict_source_text_->SetValue(source_id.empty()
+            ? "No source id is attached to the selected dictionary row."
+            : "Source id not found in DDSOURCE: " + source_id);
+        return;
+    }
+
+    const std::string source_path = ddict_value(*source, "PATH");
+    const auto resolved_path = resolve_source_path(ddict_catalog_dir_, source_path);
+    ddict_source_grid_->SetCellValue(0, 0, ddict_value(*source, "SRCID"));
+    ddict_source_grid_->SetCellValue(0, 1, source_path);
+    ddict_source_grid_->SetCellValue(0, 2, ddict_value(*source, "KIND"));
+    ddict_source_grid_->SetCellValue(0, 3, ddict_value(*source, "BYTES"));
+    ddict_source_grid_->SetCellValue(0, 4, ddict_value(*source, "PROFILE"));
+    ddict_source_grid_->SetCellValue(0, 5, resolved_path.string());
+    ddict_source_grid_->AutoSizeColumns(false);
+
+    std::ostringstream preview;
+    preview << "SRCID: " << ddict_value(*source, "SRCID") << "\n"
+            << "PATH : " << source_path << "\n"
+            << "FILE : " << resolved_path.string() << "\n\n"
+            << read_source_preview(resolved_path);
+    ddict_source_text_->SetValue(preview.str());
+}
+
+void MainFrame::SelectDDictObject(const std::string& token) {
+    const auto* object = dottalk::datadict::resolve_object(ddict_objects_, token);
+    if (!object) {
+        return;
+    }
+    const std::string objid = ddict_value(*object, "OBJID");
+    ApplyDDictSelection(objid);
+    for (std::size_t visible = 0; visible < ddict_visible_object_rows_.size(); ++visible) {
+        if (ddict_value(ddict_objects_[ddict_visible_object_rows_[visible]], "OBJID") == objid) {
+            const int row = static_cast<int>(visible);
+            ddict_objects_grid_->SetGridCursor(row, 0);
+            ddict_objects_grid_->SelectRow(row);
+            ddict_objects_grid_->MakeCellVisible(row, 0);
+            break;
+        }
+    }
+}
+
 void MainFrame::OnCoreEvent(DotTalkCoreEvent& event) {
     const auto& payload = event.payload();
     if (!payload.label.empty()) {
@@ -960,6 +1569,8 @@ void MainFrame::OnCoreEvent(DotTalkCoreEvent& event) {
             } else {
                 ApplySnapshot(TableSnapshot{});
                 SetStatusText(gui_text(GuiTextId::NoOpenAreas, locale_), 1);
+                SetStatusText("0 rows", 2);
+                SetStatusText("Recno: none | Logical row: none | Order: physical", 3);
             }
         }
         break;
@@ -984,6 +1595,7 @@ void MainFrame::OnCoreEvent(DotTalkCoreEvent& event) {
             if (scan_task_ids_.erase(payload.task_id) > 0) {
                 ShowTextWindow("SCAN Results", payload.command->output);
             }
+            ShowErsatzResultsWindow(payload.command->output);
         }
         break;
     case GuiEventKind::task_progress:
@@ -1047,9 +1659,8 @@ void MainFrame::ApplySnapshot(const TableSnapshot& snapshot) {
                       gui_text(GuiTextId::RowsShownOf, locale_) + " " +
                       std::to_string(snapshot.total_records),
                   2);
-    SetTitle(snapshot.display_name.empty()
-                 ? gui_text(GuiTextId::AppTitle, locale_)
-                 : gui_text(GuiTextId::AppTitle, locale_) + " - " + snapshot.display_name);
+    SetStatusText(record_status_text(snapshot), 3);
+    SetTitle(workbench_title(snapshot.display_name));
     UpdateWorkspaceGraph();
     applying_snapshot_ = false;
     RefreshRecordView();
@@ -1099,7 +1710,7 @@ void MainFrame::ShowRecordView() {
     if (!record_view_frame_) {
         record_view_frame_ = new wxFrame(this,
                                          wxID_ANY,
-                                         "Record View",
+                                         "Record View " + gui_version_label(),
                                          wxDefaultPosition,
                                          record_view_size(current_snapshot_.columns));
         record_view_panel_ = new wxPanel(record_view_frame_, wxID_ANY);
@@ -1129,7 +1740,7 @@ void MainFrame::RefreshRecordView() {
 
     if (current_area_id_ == 0 || current_snapshot_.area_id != current_area_id_ ||
         current_snapshot_.columns.empty()) {
-        record_view_frame_->SetTitle("Record View");
+        record_view_frame_->SetTitle("Record View " + gui_version_label());
         if (record_view_panel_->GetSizer()) {
             record_view_panel_->SetSizer(nullptr, true);
         }
@@ -1164,8 +1775,8 @@ void MainFrame::RefreshRecordView() {
         return;
     }
 
-    record_view_frame_->SetTitle("Record View - " + current_snapshot_.display_name + " #" +
-                                 std::to_string(recno));
+    record_view_frame_->SetTitle("Record View " + gui_version_label() + " - " +
+                                 current_snapshot_.display_name + " #" + std::to_string(recno));
     record_view_frame_->SetMinSize(record_view_size(current_snapshot_.columns));
     if (record_view_panel_->GetSizer()) {
         record_view_panel_->SetSizer(nullptr, true);
@@ -1328,9 +1939,11 @@ void MainFrame::UpdateLocalizedText() {
     if (current_area_id_ == 0) {
         SetStatusText(gui_text(GuiTextId::Ready, locale_), 0);
         SetStatusText(gui_text(GuiTextId::NoOpenAreas, locale_), 1);
-        SetTitle(gui_text(GuiTextId::AppTitle, locale_));
+        SetStatusText("0 rows", 2);
+        SetStatusText("Recno: none | Logical row: none | Order: physical", 3);
+        SetTitle(workbench_title());
     } else {
-        SetTitle(gui_text(GuiTextId::AppTitle, locale_));
+        SetTitle(workbench_title(current_snapshot_.display_name));
     }
     Layout();
     UpdateWorkspaceGraph();
@@ -1344,12 +1957,14 @@ int MainFrame::PageIndex(WorkbenchPage page) const {
         return 1;
     case WorkbenchPage::Relations:
         return 2;
-    case WorkbenchPage::Workspace:
+    case WorkbenchPage::DDict:
         return 3;
-    case WorkbenchPage::Browse:
+    case WorkbenchPage::Workspace:
         return 4;
-    case WorkbenchPage::Structure:
+    case WorkbenchPage::Browse:
         return 5;
+    case WorkbenchPage::Structure:
+        return 6;
     }
     return 0;
 }
@@ -1367,6 +1982,7 @@ void MainFrame::UpdateWorkbenchPageText() {
     notebook_->SetPageText(PageIndex(WorkbenchPage::Tables), "Tables");
     notebook_->SetPageText(PageIndex(WorkbenchPage::Indexes), "Indexes");
     notebook_->SetPageText(PageIndex(WorkbenchPage::Relations), "Relations");
+    notebook_->SetPageText(PageIndex(WorkbenchPage::DDict), "DDict");
     notebook_->SetPageText(PageIndex(WorkbenchPage::Workspace), gui_text(GuiTextId::WorkspaceGraph, locale_));
     notebook_->SetPageText(PageIndex(WorkbenchPage::Browse), gui_text(GuiTextId::Browse, locale_));
     notebook_->SetPageText(PageIndex(WorkbenchPage::Structure), gui_text(GuiTextId::Structure, locale_));
@@ -1387,46 +2003,19 @@ void MainFrame::UpdateWorkspaceGraph() {
 }
 
 void MainFrame::LoadWorkspaceFile(const std::filesystem::path& path) {
-    std::ifstream in(path);
-    if (!in.is_open()) {
-        wxMessageBox("Unable to open workspace file: " + path.string(), "Workspace", wxOK | wxICON_ERROR, this);
-        return;
-    }
-
     current_workspace_path_ = path;
-    std::vector<std::filesystem::path> tables;
-    std::string line;
-    while (std::getline(in, line)) {
-        if (line.rfind("table=", 0) == 0) {
-            tables.emplace_back(line.substr(6));
-        }
-    }
-
-    for (const auto area_id : area_ids_) {
-        session_->submit_close_area(CloseAreaRequest{area_id});
-    }
-    for (const auto& table : tables) {
-        OpenTable(table);
-    }
-    AppendLog("workspace loaded: " + path.string());
+    const std::string command = "workspace load " + quote_command_path(path);
+    AppendLog("> " + command);
+    SetStatusText(gui_text(GuiTextId::RunningCommand, locale_), 0);
+    session_->submit_command(CommandRequest{command});
 }
 
 void MainFrame::SaveWorkspaceFile(const std::filesystem::path& path) {
-    std::ofstream out(path, std::ios::trunc);
-    if (!out.is_open()) {
-        wxMessageBox("Unable to save workspace file: " + path.string(), "Workspace", wxOK | wxICON_ERROR, this);
-        return;
-    }
-
-    out << "# dottalkpp gui workspace v1\n";
-    out << "kind=dtschema\n";
-    for (const auto& area : area_infos_) {
-        if (!area.path.empty()) {
-            out << "table=" << area.path.string() << "\n";
-        }
-    }
     current_workspace_path_ = path;
-    AppendLog("workspace saved: " + path.string());
+    const std::string command = "workspace save " + quote_command_path(path);
+    AppendLog("> " + command);
+    SetStatusText(gui_text(GuiTextId::RunningCommand, locale_), 0);
+    session_->submit_command(CommandRequest{command});
 }
 
 void MainFrame::ShowTextWindow(const std::string& title, const std::string& body) {
@@ -1444,10 +2033,99 @@ void MainFrame::ShowTextWindow(const std::string& title, const std::string& body
     dialog->Show();
 }
 
+void MainFrame::ShowErsatzResultsWindow(const std::string& output) {
+    const auto rows = parse_ersatz_result_rows(output);
+    if (rows.empty()) {
+        return;
+    }
+
+    std::size_t value_columns = 0;
+    for (const auto& row : rows) {
+        value_columns = std::max(value_columns, row.values.size());
+    }
+
+    auto* dialog = new wxDialog(this,
+                                wxID_ANY,
+                                "ERSATZ Result Browser",
+                                wxDefaultPosition,
+                                wxSize(1100, 620),
+                                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+    auto* sizer = new wxBoxSizer(wxVERTICAL);
+    auto* title = new wxStaticText(dialog,
+                                   wxID_ANY,
+                                   "ERSATZ relation/tuple results");
+    sizer->Add(title, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 8);
+
+    auto* grid = new wxGrid(dialog, wxID_ANY);
+    grid->CreateGrid(static_cast<int>(rows.size()), static_cast<int>(value_columns + 1));
+    grid->SetColLabelValue(0, "Section");
+    for (std::size_t col = 0; col < value_columns; ++col) {
+        grid->SetColLabelValue(static_cast<int>(col + 1), "Value " + std::to_string(col + 1));
+    }
+
+    configure_readonly_grid(grid);
+    for (std::size_t row = 0; row < rows.size(); ++row) {
+        const int grid_row = static_cast<int>(row);
+        grid->SetRowLabelValue(grid_row, std::to_string(row + 1));
+        grid->SetCellValue(grid_row, 0, rows[row].section);
+        for (std::size_t col = 0; col < rows[row].values.size(); ++col) {
+            grid->SetCellValue(grid_row, static_cast<int>(col + 1), rows[row].values[col]);
+        }
+    }
+    grid->AutoSizeColumns(false);
+    if (grid->GetNumberRows() > 0 && grid->GetNumberCols() > 0) {
+        grid->SetGridCursor(0, 0);
+        grid->SelectRow(0);
+    }
+
+    sizer->Add(grid, 1, wxEXPAND | wxALL, 8);
+    sizer->Add(dialog->CreateSeparatedButtonSizer(wxOK), 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
+    dialog->SetSizer(sizer);
+    dialog->Show();
+}
+
 void MainFrame::AppendLog(const std::string& text) {
     if (log_) {
         log_->AppendText(text + "\n");
     }
+}
+
+void MainFrame::AddCommandHistory(const std::string& text) {
+    if (text.empty()) {
+        return;
+    }
+    if (command_history_.empty() || command_history_.back() != text) {
+        command_history_.push_back(text);
+    }
+    command_history_index_ = -1;
+    command_history_draft_.clear();
+}
+
+bool MainFrame::RecallCommandHistory(int direction) {
+    if (!command_ || command_history_.empty()) {
+        return false;
+    }
+
+    if (command_history_index_ < 0) {
+        command_history_draft_ = command_->GetValue().ToStdString();
+        if (direction > 0) {
+            return true;
+        }
+        command_history_index_ = static_cast<int>(command_history_.size()) - 1;
+    } else {
+        command_history_index_ += direction;
+    }
+
+    if (command_history_index_ < 0 || command_history_index_ >= static_cast<int>(command_history_.size())) {
+        command_history_index_ = -1;
+        command_->SetValue(command_history_draft_);
+        command_->SetInsertionPointEnd();
+        return true;
+    }
+
+    command_->SetValue(command_history_[static_cast<std::size_t>(command_history_index_)]);
+    command_->SetInsertionPointEnd();
+    return true;
 }
 
 } // namespace dottalk::gui::wxui

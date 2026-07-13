@@ -70,6 +70,17 @@ bool should_seed_active_table(const std::string& command) {
              verb == "setpath");
 }
 
+bool same_index_container(const std::filesystem::path& left, const std::filesystem::path& right) {
+    if (left.empty() && right.empty()) {
+        return true;
+    }
+    if (left.empty() || right.empty()) {
+        return false;
+    }
+    return std::filesystem::absolute(left).lexically_normal() ==
+           std::filesystem::absolute(right).lexically_normal();
+}
+
 std::filesystem::path gui_data_root_for_shell() {
     const auto data = dottalk::paths::get_slot(dottalk::paths::Slot::DATA);
     if (!data.empty()) {
@@ -320,7 +331,46 @@ private:
                     out << "USE " << active_path.string() << " NOINDEX\n";
                     shell_active_table_path_ = active_path;
                     shell_active_record_number_ = 0;
+                    shell_active_index_container_.clear();
+                    shell_active_index_tag_.clear();
+                    shell_active_index_ascending_ = true;
                 }
+
+                if (request.active_index_container.empty()) {
+                    if (!shell_active_index_container_.empty() || !shell_active_index_tag_.empty()) {
+                        out << "SET ORDER TO 0\n";
+                        shell_active_index_container_.clear();
+                        shell_active_index_tag_.clear();
+                        shell_active_index_ascending_ = true;
+                    }
+                } else if (!command_token_needs_quoting(request.active_index_container)) {
+                    const std::filesystem::path index_container =
+                        std::filesystem::absolute(request.active_index_container).lexically_normal();
+                    if (!same_index_container(index_container, shell_active_index_container_)) {
+                        out << "SET INDEX TO " << index_container.string() << "\n";
+                        shell_active_index_container_ = index_container;
+                        shell_active_index_tag_.clear();
+                        shell_active_index_ascending_ = true;
+                    }
+
+                    const std::string requested_tag = trim_ascii(request.active_index_tag);
+                    if (requested_tag.empty() && !shell_active_index_tag_.empty()) {
+                        out << "SET INDEX TO " << index_container.string() << "\n";
+                        shell_active_index_tag_.clear();
+                        shell_active_index_ascending_ = true;
+                    } else if (!requested_tag.empty() && requested_tag != shell_active_index_tag_) {
+                        out << "SET ORDER TO " << requested_tag << "\n";
+                        shell_active_index_tag_ = requested_tag;
+                    }
+
+                    if (request.active_index_ascending != shell_active_index_ascending_) {
+                        out << (request.active_index_ascending ? "ASCEND\n" : "DESCEND\n");
+                        shell_active_index_ascending_ = request.active_index_ascending;
+                    }
+                } else {
+                    out << "* GUI persistent bridge skipped active-index seeding because the path needs shell quoting.\n";
+                }
+
                 if (request.active_record_number > 0 &&
                     request.active_record_number != shell_active_record_number_) {
                     out << "GOTO " << request.active_record_number << "\n";
@@ -397,6 +447,9 @@ private:
         data_seeded_ = false;
         shell_active_table_path_.clear();
         shell_active_record_number_ = 0;
+        shell_active_index_container_.clear();
+        shell_active_index_tag_.clear();
+        shell_active_index_ascending_ = true;
     }
 
     ScriptShellRuntime fallback_;
@@ -412,6 +465,9 @@ private:
     std::atomic<std::uint64_t> next_marker_id_ {0};
     std::filesystem::path shell_active_table_path_;
     std::uint64_t shell_active_record_number_ {0};
+    std::filesystem::path shell_active_index_container_;
+    std::string shell_active_index_tag_;
+    bool shell_active_index_ascending_ {true};
     bool data_seeded_ {false};
     bool process_exited_ {false};
     DWORD process_exit_code_ {0};

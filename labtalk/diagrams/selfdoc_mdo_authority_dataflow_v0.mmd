@@ -1,0 +1,57 @@
+```mermaid
+flowchart LR
+  subgraph A["Authority Inputs"]
+    source["Source files\nsrc/ include/"]
+    runtime["Runtime behavior\ncommands functions smoke scripts"]
+    comments["Source comments\n@dottalk.usage and contracts"]
+  end
+
+  subgraph B["Explanation And Organization"]
+    help["HELP / CMDHELP\nuser-facing explanation"]
+    helpdata["HELP DATA DBFs\ntopics sections lines artifacts"]
+    metadata["Metadata lane\ncandidate CSVs and live SYS* catalogs"]
+    cmdhelpchk["CMDHELPCHK\nvalidation and drift checks"]
+  end
+
+  subgraph C["Provenance And Promotion"]
+    selfdoc["SelfDoc\nprovenance tool and pipeline manifests"]
+    mdo["MDO / manualgen\nwork orders review packets reports"]
+    manuals["Manuals\npromoted narrative views"]
+    diagrams["Diagrams\npromoted structural views"]
+    labtalk["LabTalk\nlocal proof-backed teaching labs"]
+  end
+
+  source --> help
+  runtime --> help
+  comments --> help
+  source --> metadata
+  runtime --> metadata
+  comments --> metadata
+  help --> helpdata
+  helpdata --> cmdhelpchk
+  metadata --> cmdhelpchk
+  source --> cmdhelpchk
+
+  help --> selfdoc
+  helpdata --> selfdoc
+  metadata --> selfdoc
+  cmdhelpchk --> selfdoc
+  selfdoc --> mdo
+  help --> mdo
+  metadata --> mdo
+  cmdhelpchk --> mdo
+
+  mdo --> manuals
+  mdo --> diagrams
+  selfdoc --> diagrams
+  selfdoc --> labtalk
+  manuals --> labtalk
+  diagrams --> labtalk
+
+  runtime -. "proves" .-> labtalk
+  source -. "defines" .-> labtalk
+  help -. "explains" .-> labtalk
+  metadata -. "organizes" .-> labtalk
+  cmdhelpchk -. "validates" .-> labtalk
+  selfdoc -. "preserves provenance" .-> labtalk
+```

@@ -6059,10 +6059,15 @@ const std::vector<MessageDef>& all_messages()
             "  MAINT BBOX\n"
             "  MAINT DOCS\n"
             "  MAINT GUI\n"
+            "  MAINT AI\n"
+            "  MAINT AI ASSIMILATE\n"
             "  MAINT CONTRACTS\n"
             "Notes:\n"
             "  - MAINT is read-only first wave.\n"
             "  - MAINT inspects maintenance lanes, cookbooks, status, and boundaries.\n"
+            "  - MAINT AI is a read-only native visibility surface for AI Portal partner onboarding and routing.\n"
+            "  - MAINT AI ASSIMILATE points new or second-opinion AI development partners to the repo-local AI Portal.\n"
+            "  - The AI Portal is an Alpha Python/registry surface; MAINT AI does not launch it or grant mutation authority.\n"
             "  - MAINT does not run scripts or mutate HELP, CMDHELPCHK, DBFs, source, runtime scripts, or publications."
         },
         {
@@ -6092,6 +6097,7 @@ const std::vector<MessageDef>& all_messages()
             "  manualgen   - developer manual generation and MAN* catalog evidence\n"
             "  datadict    - DD* / DATA_DICTIONARY_* catalog and DDICT evidence\n"
             "  messaging   - message catalog, language/locale, and output text migration\n"
+            "  ai-friendly - AI-assisted work capture, curation, routing, and user visibility\n"
             "  blackbox    - data in, processing, information out teaching model\n"
             "  maintenance - SDLC cookbooks, gates, boundaries, and closeouts"
         },
@@ -6840,7 +6846,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:HELP",
             "HINT",
             "INFO",
-            "Type HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name>, or HELP <command>"
+            "Type HELP GIANT, HELP /GIANT, HELP GIANT TOPICS, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name>, or HELP <command>"
         },
         {
             MessageId::HelpUsageText,
@@ -6848,7 +6854,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:HELP",
             "USAGE",
             "INFO",
-            "DotTalk++ Help System\n\n  HELP GIANT            - full command catalog\n  HELP BETA             - beta checklist\n  HELP PS / PSHELL      - PowerShell helpers\n  HELP SQL              - SQL reference (SQLite + MSSQL)\n  HELP PREDICATES       - COUNT/LOCATE syntax\n  HELP FUNCTION <name>  - expression function help\n  HELP FUNCTIONS        - list documented expression functions\n  HELP /FOX <topic>     - FoxPro compatibility reference\n  HELP /DOT <topic>     - DotTalk-native command reference\n  HELP /ED <topic>      - educational/system concepts\n  HELP <command>        - default topic lookup"
+            "DotTalk++ Help System\n\n  HELP GIANT            - full HELP DATA report\n  HELP GIANT USAGE      - GIANT surface usage\n  HELP GIANT TOPICS     - list current HELP DATA topics\n  HELP GIANT KIND       - group current HELP DATA by kind\n  HELP GIANT SOURCE     - group current HELP DATA by source\n  HELP /GIANT ...       - alias for GIANT help surface\n  HELP BETA             - beta checklist\n  HELP PS / PSHELL      - PowerShell helpers\n  HELP SQL              - SQL reference (SQLite + MSSQL)\n  HELP PREDICATES       - COUNT/LOCATE syntax\n  HELP FUNCTION <name>  - expression function help\n  HELP FUNCTIONS        - list documented expression functions\n  HELP /FOX <topic>     - FoxPro compatibility reference\n  HELP /DOT <topic>     - DotTalk-native command reference\n  HELP /ED <topic>      - educational/system concepts\n  HELP <command>        - default topic lookup\n\n  Paging for long HELP GIANT output follows SET PAGING ON|OFF."
         },
         {
             MessageId::CmdHelpCurrentLoadFailed,
@@ -9030,8 +9036,8 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetIndexTagRequiresNameText, "en-US", "TAG requires a name." },
         { MessageId::SetIndexUnexpectedTrailingTokenText, "en-US", "unexpected trailing token '{token}'." },
         { MessageId::SetIndexUnsupportedContainerText, "en-US", "unsupported index container: {path}\nSupported: .inx, .cnx, .cdx" },
-        { MessageId::SetIndexV32AcceptsInxOrCnxText, "en-US", "v32 tables accept INX or CNX, not CDX.\nUse .inx or .cnx for this table." },
-        { MessageId::SetIndexV64RequiresCdxText, "en-US", "v64 tables require CDX (LMDB-backed).\nUse .cdx for this table." },
+        { MessageId::SetIndexV32AcceptsInxOrCnxText, "en-US", "Classic xBase/VFP tables accept INX or CNX, not CDX.\nUse .inx or .cnx for this table." },
+        { MessageId::SetIndexV64RequiresCdxText, "en-US", "True x64/v128 tables require CDX (LMDB-backed).\nUse .cdx for this table." },
         { MessageId::SetIndexUnknownFlavorText, "en-US", "unknown/unsupported table flavor for current area." },
         { MessageId::SetIndexNoValidV32IndexText, "en-US", "no valid v32 index found for '{token}'.\nLooked for .cnx, then .inx." },
         { MessageId::SetIndexUnableOpenCdxContainerText, "en-US", "unable to open CDX container." },
@@ -9084,8 +9090,8 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::SetOrderUnableOpenCdxContainerText, "en-US", "unable to open CDX container." },
         { MessageId::SetOrderUnableReadCdxTagDirectoryText, "en-US", "unable to read CDX tag directory." },
         { MessageId::SetOrderTagNotFoundInContainerText, "en-US", "tag '{tag}' not found in {container}" },
-        { MessageId::SetOrderV32UsesCnxNotCdxText, "en-US", "v32 tables use CNX for SET ORDER tag activation, not CDX." },
-        { MessageId::SetOrderV64RequiresCdxText, "en-US", "v64 tables require CDX for SET ORDER." },
+        { MessageId::SetOrderV32UsesCnxNotCdxText, "en-US", "Classic xBase/VFP tables use CNX for SET ORDER tag activation, not CDX." },
+        { MessageId::SetOrderV64RequiresCdxText, "en-US", "True x64/v128 tables require CDX for SET ORDER." },
         { MessageId::SetOrderOpenCdxContainerNotFoundText, "en-US", "openCdx: container not found: {container}" },
         { MessageId::SetOrderOpenCdxEnvMissingText, "en-US", "openCdx: LMDB env missing: {env}" },
         { MessageId::SetOrderOpenCdxBackendOpenFailedText, "en-US", "openCdx: backend open() failed [container={container}, env={env}]" },
@@ -9859,9 +9865,17 @@ const std::vector<MessageTextDef>& all_message_texts()
             "  MAINT COOKBOOK\n"
             "  MAINT BOUNDARY\n"
             "  MAINT BBOX\n"
+            "  MAINT DOCS\n"
+            "  MAINT GUI\n"
+            "  MAINT AI\n"
+            "  MAINT AI ASSIMILATE\n"
+            "  MAINT CONTRACTS\n"
             "Notes:\n"
             "  - MAINT is read-only first wave.\n"
             "  - MAINT inspects maintenance lanes, cookbooks, status, and boundaries.\n"
+            "  - MAINT AI is a read-only native visibility surface for AI Portal partner onboarding and routing.\n"
+            "  - MAINT AI ASSIMILATE points new or second-opinion AI development partners to the repo-local AI Portal.\n"
+            "  - The AI Portal is an Alpha Python/registry surface; MAINT AI does not launch it or grant mutation authority.\n"
             "  - MAINT does not run scripts or mutate HELP, CMDHELPCHK, DBFs, source, runtime scripts, or publications." },
         { MessageId::MaintStatusText, "en-US",
             "MAINT STATUS\n"
@@ -9879,6 +9893,7 @@ const std::vector<MessageTextDef>& all_message_texts()
             "  manualgen   - developer manual generation and MAN* catalog evidence\n"
             "  datadict    - DD* / DATA_DICTIONARY_* catalog and DDICT evidence\n"
             "  messaging   - message catalog, language/locale, and output text migration\n"
+            "  ai-friendly - AI-assisted work capture, curation, routing, and user visibility\n"
             "  gui         - wx, Python/Tkinter, and TUI synchronization over shared runtime contracts\n"
             "  contracts   - durable rules, usage contracts, registry, intake, and drift review\n"
             "  blackbox    - data in, processing, information out teaching model\n"
@@ -10027,8 +10042,8 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::HelpNoDotTalkTopicFound,  "en-US", "No DotTalk help found for: {command}" },
         { MessageId::HelpNoEducationalTopicFound, "en-US", "No educational help found for: {command}" },
         { MessageId::HelpNoTopicFound,         "en-US", "No help found for: {command}" },
-        { MessageId::HelpTopLevelHint,         "en-US", "Type HELP GIANT, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name>, or HELP <command>" },
-        { MessageId::HelpUsageText,            "en-US", "DotTalk++ Help System\n\n  HELP GIANT            - full command catalog\n  HELP BETA             - beta checklist\n  HELP PS / PSHELL      - PowerShell helpers\n  HELP SQL              - SQL reference (SQLite + MSSQL)\n  HELP PREDICATES       - COUNT/LOCATE syntax\n  HELP FUNCTION <name>  - expression function help\n  HELP FUNCTIONS        - list documented expression functions\n  HELP /FOX <topic>     - FoxPro compatibility reference\n  HELP /DOT <topic>     - DotTalk-native command reference\n  HELP /ED <topic>      - educational/system concepts\n  HELP <command>        - default topic lookup" },
+        { MessageId::HelpTopLevelHint,         "en-US", "Type HELP GIANT, HELP /GIANT, HELP GIANT TOPICS, HELP BETA, HELP PS, HELP SQL, HELP FUNCTION <name>, or HELP <command>" },
+        { MessageId::HelpUsageText,            "en-US", "DotTalk++ Help System\n\n  HELP GIANT            - full HELP DATA report\n  HELP GIANT USAGE      - GIANT surface usage\n  HELP GIANT TOPICS     - list current HELP DATA topics\n  HELP GIANT KIND       - group current HELP DATA by kind\n  HELP GIANT SOURCE     - group current HELP DATA by source\n  HELP /GIANT ...       - alias for GIANT help surface\n  HELP BETA             - beta checklist\n  HELP PS / PSHELL      - PowerShell helpers\n  HELP SQL              - SQL reference (SQLite + MSSQL)\n  HELP PREDICATES       - COUNT/LOCATE syntax\n  HELP FUNCTION <name>  - expression function help\n  HELP FUNCTIONS        - list documented expression functions\n  HELP /FOX <topic>     - FoxPro compatibility reference\n  HELP /DOT <topic>     - DotTalk-native command reference\n  HELP /ED <topic>      - educational/system concepts\n  HELP <command>        - default topic lookup\n\n  Paging for long HELP GIANT output follows SET PAGING ON|OFF." },
         { MessageId::CmdHelpCurrentLoadFailed, "en-US", "could not load current HELP DATA lines from \"{dir}\"." },
         { MessageId::CmdHelpBuildTip,          "en-US", "Tip: run CMDHELP BUILD . <source-root>" },
         { MessageId::CmdHelpNoTopicMatched,    "en-US", "no current HELP DATA topic matched \"{topic}\"." },

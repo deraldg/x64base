@@ -1,0 +1,146 @@
+# LabTalk project registry v0
+
+projects:
+  - id: project.x64base.runtime
+    name: x64base / DotTalk++ Runtime
+    kind: runtime_project
+    status: active_beta
+    root: D:/code/ccode
+    owner_repo: deraldg/x64base
+    lanes: [engine, cli, dotscript, help, selfdoc, contracts, gui, maintenance]
+    docs:
+      - README.md
+      - AI_PORTAL.md
+      - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
+      - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+    publication_staging: C:/x64base
+    publication_target: github.com/deraldg/x64base
+    notes: Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to C:/x64base for publication.
+
+  - id: project.x64base.public_staging
+    name: x64base Curated Public Staging
+    kind: publication_staging_project
+    status: active_curated_staging
+    root: C:/x64base
+    owner_repo: deraldg/x64base
+    upstream_authority: project.x64base.runtime
+    publication_target: github.com/deraldg/x64base
+    lanes: [curation, clean_staging, public_snapshot, commit, push]
+    notes: Receives only reviewed, relevant, clean work from D:/code/ccode. Commits and GitHub pushes originate here. This tree and GitHub main are public projections, not competing development authority.
+
+  - id: project.labtalk.campus
+    name: LabTalk Campus
+    kind: campus_project
+    status: active_seed
+    root: D:/code/ccode/labtalk
+    owner_repo: deraldg/labtalk
+    lanes: [portal, ai_portal, labs, cases, assignments, proofs, registries, lms, communications]
+    docs:
+      - README.md
+      - portal/README.md
+      - ai_portal/README.md
+      - ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+      - ai_portal/SDLC_FAST_START_SEED_V1.md
+      - ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+      - ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+      - LABTALK_CAMPUS_ARCHITECTURE_v0.md
+    notes: Consumer and teaching layer over DotTalk++ runtime truth, including a reserved provider-neutral LMS communications lane. Its AI Portal sublane is machine-facing fast-start context for AI development partners, not a student AI-access portal.
+
+  - id: project.labtalk.lms
+    name: LabTalk LMS Communications Lane
+    kind: integration_project
+    status: reserved_local_only
+    root: D:/code/ccode/labtalk/lms
+    provider_candidate: moodle
+    runtime_root: D:/code/ccode/src/labtalk/lms
+    lanes: [lms_interface, message_contract, local_outbox, moodle_future]
+    docs:
+      - README.md
+      - contracts/lms_message_v1.schema.json
+    notes: Local-only queue and transport contract; no endpoint, credential, student data, or live delivery is configured.
+
+  - id: project.labtalk.staging
+    name: LabTalk Above-Runtime Staging
+    kind: staging_project
+    status: seed
+    root: C:/labtalk
+    owner_repo: deraldg/labtalk
+    lanes: [product, publication, ai, cross_repo, review, intake]
+    docs:
+      - C:/labtalk/README.md
+      - C:/labtalk/STAGING_POLICY.md
+      - C:/labtalk/publication/labtalk-website-pipeline.md
+      - C:/labtalk/registries/projects.yaml
+      - C:/labtalk/registries/intake.yaml
+    notes: Local staging area for LabTalk work above DotTalk++ / x64base runtime scope.
+
+  - id: project.x64base.website
+    name: x64base.com Website Publication
+    kind: publication_project
+    status: downstream_publication_truth
+    root: D:/dev/x64base-site
+    owner_repo: deraldg/x64base
+    website: https://x64base.com/
+    lanes: [public_docs, selfdoc_publication, labtalk_publication]
+    docs:
+      - README.md
+      - D:/code/ccode/docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md
+    notes: Public documentation surface; publication is not runtime proof.
+
+  - id: project.ai_friendly
+    name: AI Friendly Lane
+    kind: knowledge_project
+    status: seed
+    root: D:/code/ccode
+    lanes: [assimilation, dashboard, intake, workflow, second_opinion, ai_portal_hardening]
+    docs:
+      - AI_PORTAL.md
+      - AI_README.md
+      - docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+      - docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+      - docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+      - labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+    notes: Routes AI-assisted work into durable, anchored project knowledge.
+
+  - id: project.pycrud
+    name: pycrud Companion
+    kind: companion_app_project
+    status: prototype
+    root: D:/code/ccode/pycrud
+    lanes: [crud_gui, fastapi_backend, xbase_json, dottalk_hook]
+    docs:
+      - README.md
+      - pydottalk_api/README.md
+    launchers:
+      - ../run-pycrud.ps1
+    notes: SQLAlchemy/Tk CRUD surface with optional DotTalk++ backend hook.
+
+  - id: project.db_converter
+    name: DB_Converter
+    kind: migration_project
+    status: prototype
+    root: D:/code/ccode/Side Projects/DB_Converter
+    lanes: [dbf_to_sql, pydottalk, sqlite_sink, migration_smoke]
+    docs:
+      - README.md
+    launchers:
+      - Start-DBConverter.ps1
+    notes: DBF/x64 to SQL conversion lane using pydottalk and SQLite.
+
+  - id: project.dottalk_webui
+    name: DotTalk Web UI Prototypes
+    kind: web_ui_project
+    status: local_prototype
+    root: D:/code/ccode/dottalk-webui
+    lanes: [selfdoc_ui, local_web, prototype]
+    docs:
+      - selfdoc-lane.html
+    notes: Local web UI experiments for DotTalk++/SelfDoc presentation.
+
+  - id: project.sqlite_gui
+    name: SQLite GUI Prototype
+    kind: gui_project
+    status: local_prototype
+    root: D:/code/ccode/sqlite-gui
+    lanes: [sqlite, gui, prototype]
+    notes: Local SQLite GUI experiment lane.

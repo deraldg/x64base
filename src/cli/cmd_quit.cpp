@@ -1,3 +1,40 @@
+// src/cli/cmd_quit.cpp
+// @dottalk.usage v1
+// owner: DOT|QUIT
+// command: QUIT
+// aliases: EXIT
+// category: shell
+// status: supported
+// noargs: execute
+// effect: session-control
+// mutates: shell-exit-state
+// usage-access: QUIT USAGE
+// summary:
+//   Request DotTalk++ shell shutdown without mutating open table data,
+//   HELP data, metadata catalogs, manualgen artifacts, or source files.
+//
+// usage:
+//   QUIT
+//   EXIT
+//
+// notes:
+//   QUIT and EXIT share the same implementation.
+//   Extra arguments print usage and do not request shell shutdown.
+//   QUIT sets only the shell-exit request flag; cleanup remains owned by the
+//   surrounding shell/session lifecycle.
+//
+// risk:
+//   exits_shell: yes
+//   writes_dbf_record: no
+//   writes_table_buffer: no
+//   writes_files: no
+//   launches_external_app: no
+//   network_access: no
+//
+// related:
+//   HELP
+//   ABOUT
+//
 #include "cli/cmd_quit.hpp"
 
 #include <atomic>

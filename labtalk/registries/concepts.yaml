@@ -1,0 +1,63 @@
+# LabTalk concept registry v0
+
+concepts:
+  - id: concept.database.table
+    label: Table
+    edref: TABLE_RECORD_FIELD
+  - id: concept.database.record
+    label: Record
+    edref: TABLE_RECORD_FIELD
+  - id: concept.database.field
+    label: Field
+    edref: TABLE_RECORD_FIELD
+  - id: concept.database.schema
+    label: Schema
+    edref: SCHEMA
+  - id: concept.database.index
+    label: Index
+    edref: INDEX
+  - id: concept.database.network
+    label: Network Database
+    edref: RELATION
+  - id: concept.database.xbase
+    label: xBase Platform
+    edref: MODEL
+  - id: concept.runtime.state
+    label: Runtime State
+    edref: STATE
+  - id: concept.runtime.command_shell
+    label: Command Shell
+    edref: SEQUENTIAL
+  - id: concept.source.comments
+    label: Source Comments
+    edref: EDUCATIONAL_USE
+  - id: concept.contract.usage
+    label: Usage Contract
+    edref: EDUCATIONAL_USE
+  - id: concept.help.runtime
+    label: Runtime Help
+    edref: EDUCATIONAL_USE
+  - id: concept.selfdoc.validation
+    label: SelfDoc Validation
+    edref: TESTING
+  - id: concept.metadata.catalog
+    label: Metadata Catalog
+    edref: METADATA
+  - id: concept.storage.file
+    label: File Storage
+    edref: SCHEMA
+  - id: concept.storage.fixed_record
+    label: Fixed Record
+    edref: SCHEMA
+  - id: concept.case.history
+    label: Historical Case
+    edref: EDUCATIONAL_USE
+  - id: concept.case.engineering
+    label: Engineering Case
+    edref: TESTING
+  - id: concept.evidence.review
+    label: Evidence Review
+    edref: TESTING
+  - id: concept.ai_literacy.explainability
+    label: AI Explainability
+    edref: EDUCATIONAL_USE

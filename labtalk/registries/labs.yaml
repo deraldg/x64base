@@ -1,0 +1,86 @@
+# LabTalk lab registry v0
+
+labs:
+  - id: lab.database_literacy.starter
+    title: Database Literacy Starter
+    status: draft
+    audience: [student, self-learner, instructor]
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.help
+    concepts:
+      - concept.database.table
+      - concept.database.record
+      - concept.database.field
+      - concept.database.index
+      - concept.runtime.state
+    commands: [HELP, CASE, USE, FIELDS, STRUCT, LIST, SET ORDER, SEEK, SCAN]
+    datasets: [dataset.students, dataset.teachers]
+    cases:
+      - case.eng_010.index_navigation
+      - case.eng_020.seek_vs_scan
+    lab_doc: D:/code/ccode/labtalk/labs/database_literacy_starter/LAB_DATABASE_LITERACY_STARTER_v0.md
+    script: D:/code/ccode/labtalk/labs/database_literacy_starter/database_literacy_starter_v0.dts
+    evidence:
+      - D:/code/ccode/include/edref.hpp
+      - D:/code/ccode/docs/cases/CASE_ENG_010_INDEX_NAVIGATION_CDX_LMDB.md
+      - D:/code/ccode/docs/cases/CASE_ENG_020_SEEK_VS_SCAN.md
+    proof_state: runtime_observed
+    proof:
+      - proof.lab.database_literacy_starter.first_run
+    next_gate: Add table-backed STUDENTS/TEACHERS commands and HELP/CMDHELP readback.
+
+  - id: lab.selfdoc.comments_to_contracts
+    title: Self-Documenting Systems - Comments to Contracts to HELP
+    status: first_runnable
+    audience: [student, developer, maintainer]
+    apps:
+      - app.dottalkpp.help
+      - app.dottalkpp.selfdoc
+    concepts:
+      - concept.source.comments
+      - concept.contract.usage
+      - concept.help.runtime
+      - concept.selfdoc.validation
+    commands: [CMDHELP, CMDHELPCHK]
+    cases:
+      - case.eng_040.metadata_data_dictionary
+      - case.hist_090.dottalk_labtalk_ai_future
+    lab_doc: D:/code/ccode/labtalk/labs/self_documenting_systems/LAB_SELFDOC_COMMENTS_TO_CONTRACTS_v0.md
+    script: D:/code/ccode/labtalk/labs/self_documenting_systems/run_selfdoc_first_lab.ps1
+    runtime_script: D:/code/ccode/labtalk/labs/self_documenting_systems/cmdhelp_cmdhelpchk_selfdoc_v0.dts
+    crosswalk: D:/code/ccode/labtalk/reports/selfdoc/lab_selfdoc_first_crosswalk_v0.md
+    evidence:
+      - D:/code/ccode/src/cli/cmdhelp.cpp
+      - D:/code/ccode/src/cli/command_helpchk.cpp
+      - D:/code/ccode/tools/contracts/contract_scan.py
+      - D:/code/ccode/tools/comments/upsert_source_comment_contract.py
+    proof_state: validated
+    proof:
+      - proof.lab.selfdoc.comments_to_contracts.first_run
+    next_gate: Review first proof artifact, then add one additional documentation command to the crosswalk.
+
+  - id: lab.history.data_systems_trail
+    title: Historical Data Systems Trail
+    status: draft
+    audience: [student, instructor]
+    apps:
+      - app.dottalkpp.runtime
+      - app.labtalk.case_library
+      - app.labtalk.dataset_library
+    concepts:
+      - concept.case.history
+      - concept.storage.fixed_record
+      - concept.database.network
+      - concept.database.xbase
+      - concept.ai_literacy.explainability
+    commands: [CASE, COBOL, CODASYL, REL ENUM, HELP]
+    cases:
+      - case.hist_000.data_trail_overview
+      - case.hist_010.cobol_connected_computers
+      - case.hist_020.jumps_73c
+      - case.hist_030.unisys_codasyl_alcoa
+      - case.hist_040.xbase_platform
+      - case.hist_090.dottalk_labtalk_ai_future
+    proof_state: case_registered
+    next_gate: Separate live runtime demos from simulated historical labs.

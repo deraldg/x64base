@@ -375,7 +375,7 @@ static unsigned short turboEditorDialog(int dialog, ...)
 
     case edFind:
     case edReplace:
-        return messageBox("Find/replace dialogs are not wired into TurboTalk yet.",
+        return messageBox("Find/replace dialogs are not wired into ArcticTalk yet.",
                           mfInformation | mfOKButton);
 
     case edSearchFailed:
@@ -547,7 +547,7 @@ void TFoxtalkApp::createOutputWindow()
 {
     clampGeometryToDesktop(layout_.output, canonicalOutputGeometry(), 20, 6);
 
-    outWin_ = new FoxtalkOutputWindow(rectFromGeometry(layout_.output), "TurboTalk Output", 0);
+    outWin_ = new FoxtalkOutputWindow(rectFromGeometry(layout_.output), "ArcticTalk Output", 0);
     deskTop->insert(outWin_);
 }
 
@@ -608,8 +608,8 @@ namespace {
 
 bool isNestedTvCommand(const std::string& cmd)
 {
-    return cmd == "FOXTALK" ||
-           cmd == "TURBOTALK" ||
+    return cmd == "ARCTICTALK" ||
+           cmd == "FOXTALK" ||
            cmd == "TVISION" ||
            cmd == "BROWSETV" ||
            cmd == "BROWSETUI";
@@ -682,7 +682,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
 
         if (isSubappExitCommand(cmd) && restUpper.empty()) {
             xbase::clear_shell_exit_request();
-            std::cout << "Leaving TurboTalk; returning to DotTalk++ shell.\n";
+            std::cout << "Leaving ArcticTalk; returning to DotTalk++ shell.\n";
             showMessage("Returning to DotTalk++ shell.");
             TEvent quit{};
             quit.what = evCommand;
@@ -702,7 +702,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
 
         if (cmd == "HISTORY") {
             if (restUpper.empty() || restUpper == "STATUS") {
-                std::cout << "TurboTalk history: "
+                std::cout << "ArcticTalk history: "
                           << (layout_.persistHistory ? "persistent" : "fresh per session")
                           << ", entries: " << layout_.history.size() << "\n";
                 std::cout << "Usage: HISTORY STATUS | CLEAR | FRESH | KEEP\n";
@@ -718,7 +718,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
                     cmdWin_->setInputText("");
                 saveStateFromWindows();
                 saveLayoutStateForCurrentDesktop(layout_);
-                std::cout << "TurboTalk command history cleared.\n";
+                std::cout << "ArcticTalk command history cleared.\n";
                 showMessage("History cleared.");
                 return;
             }
@@ -732,7 +732,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
                     cmdWin_->setInputText("");
                 saveStateFromWindows();
                 saveLayoutStateForCurrentDesktop(layout_);
-                std::cout << "TurboTalk command history is now fresh per session.\n";
+                std::cout << "ArcticTalk command history is now fresh per session.\n";
                 showMessage("History persistence off.");
                 return;
             }
@@ -741,7 +741,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
                 layout_.persistHistory = true;
                 saveStateFromWindows();
                 saveLayoutStateForCurrentDesktop(layout_);
-                std::cout << "TurboTalk command history will persist across sessions.\n";
+                std::cout << "ArcticTalk command history will persist across sessions.\n";
                 showMessage("History persistence on.");
                 return;
             }
@@ -752,8 +752,8 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
         }
 
         if (isNestedTvCommand(cmd)) {
-            std::cout << cmd << " is not launched from inside TurboTalk. Use the outer CLI unless this app is explicitly integrated.\n";
-            showMessage("Nested TVision app blocked inside TurboTalk.");
+            std::cout << cmd << " is not launched from inside ArcticTalk. Use the outer CLI unless this app is explicitly integrated.\n";
+            showMessage("Nested TVision app blocked inside ArcticTalk.");
             return;
         }
 
@@ -761,7 +761,7 @@ void TFoxtalkApp::executeCommandLine(const std::string& line)
             const bool opened = rest.empty() ? openTextEditorDialog() : openTextEditor(rest);
             if (opened) {
                 const std::string openedMsg = rest.empty() ? std::string(".") : (std::string(": ") + rest);
-                std::cout << "TurboTalk editor opened" << openedMsg << "\n";
+                std::cout << "ArcticTalk editor opened" << openedMsg << "\n";
                 showMessage(rest.empty() ? "Editor opened." : ("Editor: " + rest));
             }
             else {
@@ -1101,11 +1101,11 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmHelp:            return run("HELP");
         case cmSelfTest:        return run("/SELFTEST 300");
         case cmHistorySizeStub: return info("History sizing remains fixed for now.");
-        case cmVerbosityStub:   return info("Message verbosity is a future TurboTalk preference.");
+        case cmVerbosityStub:   return info("Message verbosity is a future ArcticTalk preference.");
         case cmOutputModeStub:  return info("Output routing remains command-driven for now.");
         case cmPaletteColor:    return prefill("COLOR ");
-        case cmKeysStub:        return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes TurboTalk");
-        case cmAboutStub:       return info("TurboTalk (DotTalk++) - Turbo Vision / MagicBLOT command desktop.");
+        case cmKeysStub:        return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes ArcticTalk");
+        case cmAboutStub:       return info("ArcticTalk (DotTalk++) - Turbo Vision / MagicBLOT command desktop.");
 
         // System.
         case cmFtSysAbout:       return run("ABOUT");
@@ -1189,7 +1189,7 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtRecDelete:      return run("DELETE");
         case cmFtRecRecall:      return run("RECALL");
         case cmFtRecPack:        return run("PACK");
-        case cmFtRecZapSafe:     return info("ZAP is destructive. For now TurboTalk only reminds you; type ZAP manually if intentional.");
+        case cmFtRecZapSafe:     return info("ZAP is destructive. For now ArcticTalk only reminds you; type ZAP manually if intentional.");
         case cmFtRecLock:        return run("LOCK");
         case cmFtRecUnlock:      return run("UNLOCK");
 
@@ -1227,8 +1227,8 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtBrowseCurrent:  return run("BROWSE");
         case cmFtBrowseSimple:   return prefill("SIMPLEBROWSER ");
         case cmFtBrowseSmart:    return prefill("SMARTBROWSER ");
-        case cmFtBrowseText:     return info("BROWSETUI is not launched inside TurboTalk yet. Use the outer CLI until it is integrated.");
-        case cmFtBrowseTv:       return info("BROWSETV is not launched inside TurboTalk yet. Use the outer CLI until it is integrated.");
+        case cmFtBrowseText:     return info("BROWSETUI is not launched inside ArcticTalk yet. Use the outer CLI until it is integrated.");
+        case cmFtBrowseTv:       return info("BROWSETV is not launched inside ArcticTalk yet. Use the outer CLI until it is integrated.");
         case cmFtBrowseDev:      return run("BROWSER");
         case cmFtBrowseRecord:   return run("RECORDVIEW");
         case cmFtBrowseChildren: return prefill("SIMPLEBROWSER SHOW CHILDREN LIMIT 20");
@@ -1298,10 +1298,10 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtHelpRelations:  return run("HELP REL");
         case cmFtHelpTuple:      return run("HELP TUPLE");
         case cmFtHelpBrowser:    return run("HELP SIMPLEBROWSER");
-        case cmFtHelpKeys:       return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes TurboTalk");
+        case cmFtHelpKeys:       return info("Keys: Enter/Run executes | Up/Down history | F10 Menu | Ctrl-Q Command | F2 Output | F3 Record | F4 Workspace | Alt-Z/Ctrl-F5 Command | Alt-O/Ctrl-F6 Output | Alt-X closes ArcticTalk");
         case cmFtWinClearOutput: if (outWin_ && outWin_->logView()) { outWin_->logView()->clearAll(); showMessage("Output cleared."); } return true;
 
-        case cmFtHelpAbout:      return info("TurboTalk is the Turbo Vision / MagicBLOT command desktop for DotTalk++.");
+        case cmFtHelpAbout:      return info("ArcticTalk is the Turbo Vision / MagicBLOT command desktop for DotTalk++.");
     }
 
     return false;
