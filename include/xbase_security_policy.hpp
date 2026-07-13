@@ -168,6 +168,12 @@ inline void enforce_host_commands_allowed(const config& cfg)
     enforce(cfg.allow_host_commands,
             "Host shell command execution is not permitted under this policy.");
 }
+
+inline void enforce_network_allowed(const config& cfg)
+{
+    enforce(cfg.allow_network,
+            "Network access is not permitted under this policy.");
+}
 } // namespace policy
 } // namespace security
 } // namespace xbase

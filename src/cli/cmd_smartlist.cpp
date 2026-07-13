@@ -109,9 +109,6 @@
 #include <unordered_set>
 #include <vector>
 
-// LMDB (CDX.d pilot)
-#include <lmdb.h>
-
 extern "C" xbase::XBaseEngine* shell_engine();
 
 namespace {

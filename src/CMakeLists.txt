@@ -163,13 +163,9 @@ foreach(_dev_optional IN ITEMS
   endif()
 endforeach()
 
-if (NOT DOTTALK_WITH_DEV)
-  foreach(_devsrc IN LISTS DOTTALKPP_DEV_SOURCES)
-    if (EXISTS "${_devsrc}")
-      list(REMOVE_ITEM DOTTALKPP_SOURCES "${_devsrc}")
-    endif()
-  endforeach()
-endif()
+# These implementations remain linked because supported core commands delegate
+# to them internally (for example COMMIT/REINDEX and the SET dispatcher).
+# DOTTALK_WITH_DEV controls registration and visibility, not link availability.
 
 # 2.8) Platform-select ABOUT info implementation
 # Prevent both platform files from being compiled at once.
@@ -199,6 +195,11 @@ endif()
 
 # 3) Define the main CLI executable
 add_executable(dottalkpp ${DOTTALKPP_SOURCES})
+
+# The runtime message catalog maintains LMDB mirrors even when the optional
+# interactive index command surface is disabled.
+find_package(unofficial-lmdb CONFIG REQUIRED)
+target_link_libraries(dottalkpp PRIVATE unofficial::lmdb::lmdb)
 
 # Common shared infrastructure extracted from CLI.
 # src/common stays excluded from the glob above, so these are added explicitly.
@@ -288,7 +289,7 @@ target_include_directories(dottalkpp PRIVATE
 
 # 5) Warnings
 if (MSVC)
-  target_compile_options(dottalkpp PRIVATE /W4 /permissive-)
+  target_compile_options(dottalkpp PRIVATE /W4 /permissive- /MP)
 else()
   target_compile_options(dottalkpp PRIVATE -Wall -Wextra -Wpedantic)
 endif()

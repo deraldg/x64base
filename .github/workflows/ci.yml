@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-policy:
+    name: Repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate public-source policy
+        run: python tools/ci/source_policy.py
+
+  windows-core:
+    name: Windows / MSVC core
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize current MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        run: cmake --preset core-vcpkg
+      - name: Build
+        run: cmake --build --preset core-vcpkg --parallel
+      - name: Test
+        run: ctest --preset core-vcpkg
+      - name: Install release shape
+        run: cmake --install build/core-vcpkg --prefix stage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x64base-${{ github.sha }}-windows-x64
+          path: stage/
+          if-no-files-found: error
+          retention-days: 14
+
+  ubuntu-core:
+    name: Ubuntu / GCC core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake --preset core-vcpkg
+      - name: Build
+        run: cmake --build --preset core-vcpkg --parallel
+      - name: Test
+        run: ctest --preset core-vcpkg

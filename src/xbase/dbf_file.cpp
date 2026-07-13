@@ -26,9 +26,7 @@
 #include <windows.h>
 #endif
 
-#if DOTTALK_WITH_INDEX
-  #include "xindex/index_manager.hpp"
-#endif
+#include "xindex/index_manager.hpp"  // completes the always-present manager type
 
 namespace xbase {
 

@@ -6,7 +6,9 @@
 #include <vector>
 #include <cstdint>
 
+#if DOTTALK_WITH_INDEX
 #include <lmdb.h>
+#endif
 
 #include "xbase.hpp"
 #include "workareas.hpp"
@@ -54,6 +56,7 @@ static inline bool file_exists(const std::filesystem::path& p) {
     return std::filesystem::exists(p, ec);
 }
 
+#if DOTTALK_WITH_INDEX
 static inline std::filesystem::path lmdb_envdir_from_cdx(const std::filesystem::path& cdxPath) {
     std::filesystem::path p = cdxPath;
     p += ".d";
@@ -173,6 +176,17 @@ static bool collect_lmdb_cdx_recnos(const std::string& cdxPathStr,
     cleanup();
     return !out.empty();
 }
+#else
+static bool collect_lmdb_cdx_recnos(const std::string&,
+                                    const std::string&,
+                                    int,
+                                    bool,
+                                    std::vector<uint32_t>& out)
+{
+    out.clear();
+    return false;
+}
+#endif
 
 } // namespace
 

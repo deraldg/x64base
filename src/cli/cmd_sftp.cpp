@@ -52,6 +52,7 @@
 //   SFTP USAGE prints usage and does not start the sftp client.
 //   This command stages a temporary sftp batch file and invokes the system sftp client.
 //   Password embedding in URLs is deliberately not supported.
+//   Set DOTTALK_ALLOW_HOST_COMMANDS=1 and DOTTALK_ALLOW_NETWORK=1 to enable transfer.
 //
 // risk:
 //   network_access: LS/GET/PUT
@@ -76,6 +77,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/external_process_policy.hpp"
 
 using xbase::DbArea;
 namespace fs = std::filesystem;
@@ -489,6 +491,15 @@ void cmd_SFTP(DbArea&, std::istringstream& S)
 
     sub = uppercase_copy(sub);
 
+    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
+        sftp_usage();
+        return;
+    }
+
+    if (!cli::security::authorize_external_process("SFTP", true)) {
+        return;
+    }
+
     if (sub == "LS" || sub == "DIR") {
         cmd_sftp_ls(S);
         return;
@@ -501,11 +512,6 @@ void cmd_SFTP(DbArea&, std::istringstream& S)
 
     if (sub == "PUT" || sub == "SEND") {
         cmd_sftp_put(S);
-        return;
-    }
-
-    if (sub == "USAGE" || sub == "HELP" || sub == "?") {
-        sftp_usage();
         return;
     }
 
