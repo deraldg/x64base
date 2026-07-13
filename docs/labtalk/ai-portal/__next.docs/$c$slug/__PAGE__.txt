@@ -1,99 +1,81 @@
 1:"$Sreact.fragment"
-2:I[87771,["/_next/static/chunks/2af46gx7s1767.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
-8:I[97367,["/_next/static/chunks/2af46gx7s1767.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+2:I[87771,["/_next/static/chunks/2fq5vt6jfau6-.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
+8:I[97367,["/_next/static/chunks/2fq5vt6jfau6-.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 9:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"CR6NEyiEC96b7KXH2nply"}
-6:T107c,<h2 id="mandatory-status"><a class="no-underline" href="#mandatory-status">Mandatory Status</a></h2>
-<p>The AI Portal lane is <strong>Alpha/Experimental</strong>.</p>
-<p>It must not be described as production autonomous memory, an independent source
-of project truth, or a safety boundary that can replace source, runtime, HELP,
-metadata, contracts, review, or human authorization.</p>
-<h2 id="purpose"><a class="no-underline" href="#purpose">Purpose</a></h2>
-<p>The AI Portal is the AI-facing entrance to the Laboratory Campus. It is being
-designed to prepare an AI for a specific series of project tasks without
-requiring the model to ingest the entire ecosystem or depend on lost chat
-history.</p>
-<p>Its intended path is:</p>
-<pre><code class="language-text">task
--> owning project and lane
--> curated, typed jumps between artifacts
--> authority, freshness, risk, and proof checks
--> bounded task context packet
--> guarded action plan
--> proof readback and durable closeout
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"07w-MWMdoJKJAXYniOVcl"}
+6:T108f,<h2 id="what-the-ai-portal-is"><a class="no-underline" href="#what-the-ai-portal-is">What the AI Portal Is</a></h2>
+<p>The AI Portal is a machine-facing fast-start and task-context system for AI
+development partners working with x64base.</p>
+<p>It is <strong>not</strong> a student portal for accessing an AI service. Its job is to help a
+new or resumed AI understand project authority, contracts, runtime behavior,
+safety gates, and proof requirements without relying on lost chat history.</p>
+<p>It enters through the maintained DotTalk++, maintenance, LabTalk, and PLDC
+lifecycles. It does not create a parallel AI workflow or let publication bypass
+an SDLC proof gate.</p>
+<p>The public repository entry point is:</p>
+<p><a href="https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md">Open the x64base AI Portal on GitHub</a></p>
+<h2 id="mandatory-status"><a class="no-underline" href="#mandatory-status">Mandatory Status</a></h2>
+<p>The AI Portal lane is <strong>Alpha/Experimental</strong>. It is not autonomous project
+memory, an independent source of truth, or permission to bypass maintainer
+review.</p>
+<pre><code class="language-text">task request
+-> select relevant seeds
+-> identify authority and contracts
+-> explain every selected connection
+-> expose missing or contradictory context
+-> assemble a bounded fast-start packet
+-> prepare guarded work and proof requirements
 </code></pre>
-<p>The working metaphor is <strong>frontal memory</strong>. The implementation must remain
-inspectable: every included artifact should identify why it was selected, what
-authority it has, what evidence supports it, and what remains missing.</p>
-<h2 id="what-exists-today"><a class="no-underline" href="#what-exists-today">What Exists Today</a></h2>
+<h2 id="current-fast-start-seeds"><a class="no-underline" href="#current-fast-start-seeds">Current Fast-Start Seeds</a></h2>
+<p>The current repository seeds cover:</p>
 <ul>
-<li>repo-local AI orientation and assimilation documents;</li>
-<li>LabTalk project, app, lesson, concept, proof, and portal registries;</li>
-<li>a local registry browser and launcher;</li>
-<li>read-only <code>MAINT AI</code> orientation commands;</li>
-<li>runtime transcripts and truth-audit reports;</li>
-<li>the APH-0 through APH-6 hardening plan.</li>
+<li>development locations, branch continuity, and publication authority;</li>
+<li>owning SDLC, current lane, truth/proof state, risk, and next gate;</li>
+<li>mandatory contract review before source-code mutation;</li>
+<li>DotTalk++ and DotScript learning/readiness;</li>
+<li>outside-AI change-package intake;</li>
+<li>task recipes, permission boundaries, and proof expectations.</li>
 </ul>
-<p>These pieces are useful but do not yet constitute validated autonomous project
-memory.</p>
-<h2 id="hardening-gates"><a class="no-underline" href="#hardening-gates">Hardening Gates</a></h2>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<table><thead><tr><th>Gate</th><th>Outcome</th></tr></thead><tbody><tr><td>APH-0</td><td>Preserve the lane, remove unexplained drift, make startup reproducible, and establish tests.</td></tr><tr><td>APH-1</td><td>Turn flat registry metadata into a validated graph of typed, directional synapses.</td></tr><tr><td>APH-2</td><td>Compile deterministic, bounded, read-only task context packets—the first useful MVP.</td></tr><tr><td>APH-3</td><td>Add reviewed capabilities, risk classes, approvals, containment, cancellation, and proof transcripts.</td></tr><tr><td>APH-4</td><td>Make task preparation and jump explanation the primary portal experience.</td></tr><tr><td>APH-5</td><td>Curate the graph and packet history in x64base with deterministic portable exports and recovery.</td></tr><tr><td>APH-6</td><td>Turn portal behavior into DotTalk++ lessons and measure cold-start task performance.</td></tr></tbody></table>
-<h2 id="safety-and-authority"><a class="no-underline" href="#safety-and-authority">Safety and Authority</a></h2>
-<ul>
-<li>Read-only preparation is the default.</li>
-<li>A registry record cannot grant itself execution authority.</li>
-<li>Missing or contradictory evidence must be visible before action.</li>
-<li>Mutating operations require explicit, separately reviewed capabilities and
-approval.</li>
-<li>A generated packet is working context, not a new source of runtime truth.</li>
-<li>Website summaries remain downstream reviewed derivatives.</li>
-</ul>
-<h2 id="campus-role"><a class="no-underline" href="#campus-role">Campus Role</a></h2>
-<p>The AI Portal is both an engineering tool and a lesson. Its graph records,
-context budgets, validation failures, safety gates, transcripts, and evaluation
-results should become inspectable DotTalk++ and Laboratory Campus material.</p>
-<p>This makes AI participation part of the same co-development loop as engine,
-documentation, proof, and curriculum work—without pretending the experimental
-portal is already complete.</p>
-<p>See <a href="/about/mission-vision">Mission &#x26; Vision</a>, <a href="/docs/labtalk/overview">Laboratory Campus Overview</a>, <a href="/docs/dev/recursive-co-development">Recursive Co-development</a>, and <a href="/docs/dev/current-lanes">Current Work Lanes</a>.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=8184c765e287","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs?v=8184c765e287","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/ai-portal",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/labtalk/ai-portal?v=8184c765e287","children":"AI Portal — Alpha/Experimental"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"AI Portal — Alpha/Experimental"}],["$","p",null,{"className":"mt-2 text-muted","children":"The Alpha/Experimental AI-facing entrance to the Laboratory Campus: typed project jumps, proof-aware task context, and guarded action planning."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$6"},"children":null}]}],"$L7"]}]
+<h2 id="working-with-chatgpt-gemini-grok-or-copilot"><a class="no-underline" href="#working-with-chatgpt-gemini-grok-or-copilot">Working With ChatGPT, Gemini, Grok, or Copilot</a></h2>
+<p>An outside AI should receive:</p>
+<ol>
+<li>the GitHub AI Portal entry;</li>
+<li>the exact public commit used as its baseline;</li>
+<li>the target file or subsystem;</li>
+<li>the permitted and excluded scope;</li>
+<li>the expected proof.</li>
+</ol>
+<p>The request and returned package should also name the owning lifecycle, current
+SDLC lane, truth state, proof state, risk class, and next gate.</p>
+<p>It should return a unified patch package with a manifest, contracts read, risks,
+and a test plan. That package is reviewed and selectively applied in the
+maintainer-controlled authoritative development tree identified by the current
+AI Portal location seed.</p>
+<h2 id="authority-and-publication-flow"><a class="no-underline" href="#authority-and-publication-flow">Authority and Publication Flow</a></h2>
+<pre><code class="language-text">authoritative development tree
+  source mutation and runtime proof
+        |
+        | proven relevant files
+        v
+curated Git publication staging
+  reviewed public projection
+        |
+        v
+github.com/deraldg/x64base
+  public snapshot used by outside AI systems
+</code></pre>
+<p>The website is a separate downstream publication. When verified behavior
+changes public documentation, its separately maintained source is updated and
+built only after the source change is proven.</p>
+<h2 id="future-seed-connector"><a class="no-underline" href="#future-seed-connector">Future Seed Connector</a></h2>
+<p>The next prototype should stay small and inspectable: take a task statement,
+select only the necessary seeds through explicit registry relationships,
+explain why each seed was selected, and show missing context, conflicts,
+permissions, and readiness.</p>
+<p>It does not need a student chat UI, embeddings, or autonomous execution to
+prove the fast-start concept.</p>
+<p>See <a href="/about/mission-vision">Mission &#x26; Vision</a>, <a href="/docs/dev/project-truth">Current Project Truth</a>, <a href="/docs/dev/recursive-co-development">Recursive Co-development</a>, and <a href="/docs/dev/current-lanes">Current Work Lanes</a>.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=local-preview","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs?v=local-preview","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/ai-portal",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/labtalk/ai-portal?v=local-preview","children":"AI Portal — Alpha/Experimental"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"AI Portal — Alpha/Experimental"}],["$","p",null,{"className":"mt-2 text-muted","children":"A machine-facing fast-start system for AI development partners entering the x64base environment."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$6"},"children":null}]}],"$L7"]}]
 4:["$","script","script-0",{"src":"/_next/static/chunks/3zguxvz6lw9iq.js","async":true}]
 5:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
-7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/overview?v=8184c765e287","children":["← ","Overview"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/cases-storyboard?v=8184c765e287","children":["Cases and Storyboard"," →"]}]}]]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/overview?v=local-preview","children":["← ","Overview"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/cases-storyboard?v=local-preview","children":["Cases and Storyboard"," →"]}]}]]}]
 a:null
