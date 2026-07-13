@@ -90,18 +90,6 @@ static inline bool is_quoted_literal(const std::string& s) {
     return ((a == '"' && b == '"') || (a == '\'' && b == '\''));
 }
 
-static std::string quote_dottalk_string(const std::string& raw) {
-    std::string out;
-    out.reserve(raw.size() + 2);
-    out.push_back('"');
-    for (char c : raw) {
-        if (c == '"') out.append("\"\"");
-        else out.push_back(c);
-    }
-    out.push_back('"');
-    return out;
-}
-
 bool eval_for_varbang(xbase::DbArea& A, const std::string& expr, VarBangEval& out, std::string& err) {
     std::string src = textio::trim(expr);
     if (src.empty()) { err = "empty expression"; return false; }
