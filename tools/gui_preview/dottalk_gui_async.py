@@ -11,7 +11,7 @@ from enum import Enum
 from typing import Any
 
 from gui_cli_bridge import run_cli_command
-from dottalk_gui_backend import PythonAreaSession, resolve_workspace_schema_token
+from dottalk_gui_backend import PythonAreaSession
 from dottalk_gui_command_catalog import command_catalog
 from gui_contract import EVENT_KINDS, TASK_STATES
 
@@ -75,6 +75,13 @@ def _strip_matching_quotes(value: str) -> str:
     return value
 
 
+def _quote_command_path(path: pathlib.Path) -> str:
+    text = str(path)
+    if any(ch in text for ch in " \t"):
+        return f'"{text}"'
+    return text
+
+
 SHELL_SHORTCUTS = {
     "H": "HELP",
     "FH": "FOXHELP",
@@ -86,7 +93,6 @@ SHELL_SHORTCUTS = {
     "BTV": "TVISION",
     "LU": "LMDB_UTIL",
     "REPEAT": "ECHO",
-    "TURBOTALK": "FOXTALK",
     "!": "BANG",
     "?": "FORMULA",
     "UNDELETE": "RECALL",
@@ -188,7 +194,7 @@ def _workspace_graph_text(session: PythonAreaSession) -> str:
         f"Relations: {len(session.relations)}",
         "Browsers/lists: workspace graph service pending",
         "ERSATZ presets: runtime output available; visual presets pending",
-        "DTSchema load/save: bootstrap menu active; graph service pending",
+        "DTSchema load/save: routed through DotTalk++ runtime schema commands; graph service pending",
     ]
     return "\n".join(lines)
 
@@ -268,7 +274,7 @@ def command_output(text: str, session: PythonAreaSession) -> str:
             "                    open every DBF in a directory as GUI areas\n"
             "  workspace close   close all GUI work areas\n"
             "  workspace load|save <name.dtschema>\n"
-            "                    load/save DTSchema workspace files\n"
+            "                    route DTSchema load/save through DotTalk++ runtime commands\n"
             "  list | browse     summarize the active browse snapshot\n"
             "  status            summarize GUI session status\n"
             "  structure         list fields for the active area\n"
@@ -367,28 +373,42 @@ def command_output(text: str, session: PythonAreaSession) -> str:
             return _workspace_graph_text(session)
         if action == "load":
             name = dispatch_command.split(maxsplit=2)[2] if len(dispatch_command.split(maxsplit=2)) >= 3 else "(not provided)"
-            schema = resolve_workspace_schema_token(pathlib.Path(_strip_matching_quotes(name))) if name != "(not provided)" else None
-            if schema is None:
+            if name == "(not provided)":
+                return "Usage: workspace load <name.dtschema>"
+            area = session.active_area()
+            cli = run_cli_command(
+                dispatch_command,
+                area.path if area is not None else None,
+                area.recno if area is not None else 0,
+            )
+            if not cli.attempted:
                 return "\n".join([
                     "WORKSPACE LOAD",
                     f"DTSchema: {name}",
-                    "Schema file was not found by the Python workbench resolver.",
+                    cli.detail,
                 ])
-            opened = session.mirror_workspace_load_schema(schema)
-            return "\n".join([
-                "WORKSPACE LOAD",
-                f"DTSchema: {schema}",
-                f"Opened GUI areas: {opened}",
-                f"Indexes: {len(session.indexes)}",
-                f"Relations: {len(session.relations)}",
-            ])
+            output = _format_cli_result(cli)
+            if cli.ok:
+                for note in session.mirror_cli_output(dispatch_command, cli.output):
+                    output += "\n" + note
+            return output
         if action in {"save", "saveas"}:
             name = dispatch_command.split(maxsplit=2)[2] if len(dispatch_command.split(maxsplit=2)) >= 3 else "(not provided)"
-            return "\n".join([
-                f"WORKSPACE {action}",
-                f"DTSchema: {name}",
-                "Schema save remains a GUI bootstrap file operation in this Python lane.",
-            ])
+            if name == "(not provided)":
+                return f"Usage: workspace {action} <name.dtschema>"
+            area = session.active_area()
+            cli = run_cli_command(
+                dispatch_command,
+                area.path if area is not None else None,
+                area.recno if area is not None else 0,
+            )
+            if not cli.attempted:
+                return "\n".join([
+                    f"WORKSPACE {action.upper()}",
+                    f"DTSchema: {name}",
+                    cli.detail,
+                ])
+            return _format_cli_result(cli)
         return "\n".join([
             "WORKSPACE COMMANDS",
             "  workspace list",
@@ -464,6 +484,20 @@ def command_output(text: str, session: PythonAreaSession) -> str:
             f"Recno: {area.recno}",
             f"BOF: {'yes' if area.recno == 0 else 'no'}",
             f"EOF: {'yes' if area.recno > int(area.snapshot.get('record_count', 0)) else 'no'}",
+        ])
+    if verb == "gps":
+        area = session.active_area()
+        if area is None:
+            return "GPS: no current GUI work area is selected."
+        return "\n".join([
+            "GPS",
+            f"Area: {_visible_area_id(area.area_id)}",
+            f"Table: {area.display_name}",
+            f"Recno: {area.recno}",
+            "Logical row: unavailable in pure Python preview",
+            "Order: unavailable in pure Python preview",
+            f"Records: {area.snapshot.get('record_count', 0)}",
+            f"Path: {area.path}",
         ])
     if verb == "recno":
         area = session.active_area()

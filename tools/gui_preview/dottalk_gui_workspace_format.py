@@ -68,6 +68,6 @@ def format_workspace_graph_text(areas: list[PythonArea],
         "",
         "Browsers/lists: workspace graph service pending",
         "ERSATZ presets: runtime output available; visual presets pending",
-        "DTSchema load/save: bootstrap menu active; graph service pending",
+        "DTSchema load/save: routed through DotTalk++ runtime schema commands; graph service pending",
     ])
     return "\n".join(lines)

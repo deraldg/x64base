@@ -31,6 +31,22 @@ from dottalk_gui_text import (
     text,
 )
 
+GUI_VERSION = "beta-0"
+
+
+def _quote_command_path(path: pathlib.Path) -> str:
+    text = str(path)
+    if any(ch in text for ch in " \t"):
+        return f'"{text}"'
+    return text
+
+
+def _workbench_title(locale: LocaleContext, display_name: str = "") -> str:
+    title = f"{text('gui.app.title', locale)} {GUI_VERSION} Preview"
+    if display_name:
+        title += f" - {display_name}"
+    return title
+
 
 class WorkbenchPage(Enum):
     TABLES = "tables"
@@ -38,6 +54,46 @@ class WorkbenchPage(Enum):
     RELATIONS = "relations"
     WORKSPACE = "workspace"
     BROWSE = "browse"
+    STRUCTURE = "structure"
+
+
+def _looks_like_ersatz_output(output: str) -> bool:
+    upper = output.upper()
+    return (
+        "ERSATZ" in upper
+        or "REL ENUM" in upper
+        or "REL LIST" in upper
+        or "RELATIONS (TREE)" in upper
+    )
+
+
+def _parse_ersatz_result_rows(output: str) -> list[tuple[str, list[str]]]:
+    if not _looks_like_ersatz_output(output):
+        return []
+
+    rows: list[tuple[str, list[str]]] = []
+    section = "ERSATZ"
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "|" not in line:
+            upper = line.upper()
+            if (
+                "REL ENUM" in upper
+                or "REL LIST" in upper
+                or "CURRENT STUDENT" in upper
+                or "STUDENT" in upper
+                or upper.startswith("WALK ")
+            ):
+                section = line
+            continue
+
+        values = [part.strip() for part in line.split("|")]
+        values = [value for value in values if value]
+        if len(values) >= 3:
+            rows.append((section, values))
+    return rows
 
 
 class DotTalkPreview(tk.Tk):
@@ -46,13 +102,14 @@ class DotTalkPreview(tk.Tk):
                  locale: LocaleContext | None = None) -> None:
         super().__init__()
         self.locale = locale or locale_context_from_environment()
-        self.title(text("gui.app.title", self.locale) + " Preview")
+        self.title(_workbench_title(self.locale))
         self.geometry("1120x720")
         self.minsize(820, 520)
 
         self.session = AsyncSession()
         self.status = tk.StringVar(value=text("gui.status.ready", self.locale))
         self.detail = tk.StringVar(value=text("gui.area.none_open", self.locale))
+        self.record_status = tk.StringVar(value="Recno: none | Logical row: unavailable | Order: unavailable")
         self.current_area_id = 0
         self.workspace_areas: list[PythonArea] = []
         self.workspace_indexes: list[PythonIndexInfo] = []
@@ -67,6 +124,9 @@ class DotTalkPreview(tk.Tk):
         self.close_button: ttk.Button | None = None
         self.command_label: ttk.Label | None = None
         self.command_entry: ttk.Entry | None = None
+        self.command_history: list[str] = []
+        self.command_history_index: int | None = None
+        self.command_history_draft = ""
         self.run_button: ttk.Button | None = None
         self.area_label: ttk.Label | None = None
         self.notebook: ttk.Notebook | None = None
@@ -115,7 +175,7 @@ class DotTalkPreview(tk.Tk):
         )
         workspace_menu.add_separator()
         workspace_menu.add_command(
-            label="Load Bootstrap Workspace File...",
+            label="Load Workspace Schema...",
             command=self.load_workspace,
         )
         workspace_menu.add_command(
@@ -207,6 +267,8 @@ class DotTalkPreview(tk.Tk):
         self.command_entry = ttk.Entry(toolbar)
         self.command_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.command_entry.bind("<Return>", lambda _event: self.run_command())
+        self.command_entry.bind("<Up>", self._on_command_history_previous)
+        self.command_entry.bind("<Down>", self._on_command_history_next)
         self.run_button = ttk.Button(toolbar, text=text("gui.action.run", self.locale), command=self.run_command)
         self.run_button.pack(side=tk.LEFT, padx=(6, 0))
         ttk.Label(toolbar, textvariable=self.detail).pack(side=tk.LEFT, padx=12)
@@ -312,6 +374,25 @@ class DotTalkPreview(tk.Tk):
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
         self.notebook.add(table_frame, text=text("gui.tab.browse", self.locale))
+
+        structure_frame = ttk.Frame(self.notebook)
+        self.structure_tree = ttk.Treeview(
+            structure_frame,
+            show="tree headings",
+            columns=("name", "type", "length", "decimals"),
+        )
+        self._configure_model_tree(
+            self.structure_tree,
+            (("name", "Field", 170), ("type", "Type", 140), ("length", "Length", 90),
+             ("decimals", "Decimals", 90)),
+        )
+        structure_scroll = ttk.Scrollbar(structure_frame, orient=tk.VERTICAL, command=self.structure_tree.yview)
+        self.structure_tree.configure(yscrollcommand=structure_scroll.set)
+        self.structure_tree.grid(row=0, column=0, sticky="nsew")
+        structure_scroll.grid(row=0, column=1, sticky="ns")
+        structure_frame.columnconfigure(0, weight=1)
+        structure_frame.rowconfigure(0, weight=1)
+        self.notebook.add(structure_frame, text=text("gui.tab.structure", self.locale))
         panes.add(self.notebook, weight=4)
         self._update_workspace_graph()
         self._select_workbench_page(WorkbenchPage.WORKSPACE)
@@ -329,6 +410,7 @@ class DotTalkPreview(tk.Tk):
         status_bar = ttk.Frame(outer)
         status_bar.pack(fill=tk.X, pady=(8, 0))
         ttk.Label(status_bar, textvariable=self.status).pack(side=tk.LEFT)
+        ttk.Label(status_bar, textvariable=self.record_status).pack(side=tk.RIGHT)
 
     def _language_menu_items(self) -> tuple[tuple[str, str], ...]:
         return (
@@ -348,7 +430,8 @@ class DotTalkPreview(tk.Tk):
 
     def _refresh_localized_chrome(self) -> None:
         self._build_menu()
-        self.title(text("gui.app.title", self.locale) + " Preview")
+        display_name = str(self.current_snapshot.get("display_name", "") or "")
+        self.title(_workbench_title(self.locale, display_name))
         if self.open_button is not None:
             self.open_button.configure(text=text("gui.action.open_table", self.locale))
         if self.refresh_button is not None:
@@ -372,6 +455,7 @@ class DotTalkPreview(tk.Tk):
             self.status.set(text("gui.status.ready", self.locale))
             if self.current_area_id == 0:
                 self.detail.set(text("gui.area.none_open", self.locale))
+                self.record_status.set("Recno: none | Logical row: unavailable | Order: unavailable")
         self._update_workspace_graph()
 
     def _workbench_page_index(self, page: WorkbenchPage) -> int:
@@ -385,6 +469,8 @@ class DotTalkPreview(tk.Tk):
             return 3
         if page == WorkbenchPage.BROWSE:
             return 4
+        if page == WorkbenchPage.STRUCTURE:
+            return 5
         return 0
 
     def _select_workbench_page(self, page: WorkbenchPage) -> None:
@@ -414,6 +500,10 @@ class DotTalkPreview(tk.Tk):
             self._workbench_page_index(WorkbenchPage.BROWSE),
             text=text("gui.tab.browse", self.locale),
         )
+        self.notebook.tab(
+            self._workbench_page_index(WorkbenchPage.STRUCTURE),
+            text=text("gui.tab.structure", self.locale),
+        )
 
     def show_about(self) -> None:
         messagebox.showinfo(
@@ -431,11 +521,13 @@ class DotTalkPreview(tk.Tk):
 
     def load_workspace(self) -> None:
         filename = filedialog.askopenfilename(
-            title="Load bootstrap workspace file",
+            title="Load workspace schema",
             filetypes=[("DotTalk++ schema", "*.dtschema *.dtschemas"), ("All files", "*.*")],
         )
         if filename:
-            self._load_workspace_file(pathlib.Path(filename))
+            path = pathlib.Path(filename)
+            self.current_workspace_path = path
+            self._submit_visible_command(f"workspace load {_quote_command_path(path)}")
 
     def workspace_open_directory(self) -> None:
         directory = filedialog.askdirectory(title="WORKSPACE OPEN <dir>")
@@ -506,26 +598,30 @@ class DotTalkPreview(tk.Tk):
 
     def workspace_load_runtime(self) -> None:
         filename = filedialog.askopenfilename(
-            title="WORKSPACE LOAD name.dtschemas",
+            title="Load workspace schema",
             filetypes=[("DotTalk++ workspace schemas", "*.dtschemas *.dtschema"), ("All files", "*.*")],
         )
         if filename:
-            self._submit_visible_command(f"workspace load {pathlib.Path(filename)}")
+            path = pathlib.Path(filename)
+            self.current_workspace_path = path
+            self._submit_visible_command(f"workspace load {_quote_command_path(path)}")
 
     def save_workspace(self) -> None:
         if self.current_workspace_path is None:
             self.save_workspace_as()
             return
-        self._save_workspace_file(self.current_workspace_path)
+        self._submit_visible_command(f"workspace save {_quote_command_path(self.current_workspace_path)}")
 
     def save_workspace_as(self) -> None:
         filename = filedialog.asksaveasfilename(
-            title="Save workspace",
+            title="Save workspace schema",
             defaultextension=".dtschema",
             filetypes=[("DotTalk++ schema", "*.dtschema"), ("All files", "*.*")],
         )
         if filename:
-            self._save_workspace_file(pathlib.Path(filename))
+            path = pathlib.Path(filename)
+            self.current_workspace_path = path
+            self._submit_visible_command(f"workspace save {_quote_command_path(path)}")
 
     def open_workspace_root(self) -> None:
         root = gui_data_root() / "workspaces"
@@ -691,41 +787,23 @@ class DotTalkPreview(tk.Tk):
     def _existing_lifecycle_scripts(self, names: tuple[str, ...]) -> list[pathlib.Path]:
         data = gui_data_root()
         root = data.parent
+        gui_bin = pathlib.Path(os.environ["DOTTALKPP_GUI_BIN"]) if os.environ.get("DOTTALKPP_GUI_BIN") else None
         found: list[pathlib.Path] = []
         for name in names:
-            for candidate in (data / name, root / name, pathlib.Path.cwd() / name):
+            candidates: list[pathlib.Path] = []
+            if gui_bin is not None:
+                candidates.append(gui_bin / name)
+            candidates.extend((
+                data / name,
+                root / "bin" / name,
+                root / name,
+                pathlib.Path.cwd() / name,
+            ))
+            for candidate in candidates:
                 if candidate.is_file():
                     found.append(candidate.resolve())
                     break
         return found
-
-    def _load_workspace_file(self, path: pathlib.Path) -> None:
-        tables: list[pathlib.Path] = []
-        try:
-            for line in path.read_text(encoding="utf-8").splitlines():
-                if line.startswith("table="):
-                    tables.append(pathlib.Path(line[6:]))
-        except OSError as exc:
-            messagebox.showerror("Workspace", str(exc))
-            return
-        self.current_workspace_path = path
-        for area in list(self.workspace_areas):
-            self.session.submit_close_area(area.area_id)
-        for table in tables:
-            self._start_load(table)
-        self._log(f"workspace loaded: {path}")
-
-    def _save_workspace_file(self, path: pathlib.Path) -> None:
-        lines = ["# dottalkpp gui workspace v1", "kind=dtschema"]
-        for area in self.workspace_areas:
-            lines.append(f"table={area.path}")
-        try:
-            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        except OSError as exc:
-            messagebox.showerror("Workspace", str(exc))
-            return
-        self.current_workspace_path = path
-        self._log(f"workspace saved: {path}")
 
     def _show_text_window(self, title: str, body: str) -> None:
         window = tk.Toplevel(self)
@@ -735,6 +813,50 @@ class DotTalkPreview(tk.Tk):
         text_box.insert("1.0", body)
         text_box.configure(state=tk.DISABLED)
         text_box.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+
+    def _show_ersatz_results_window(self, output: str) -> None:
+        rows = _parse_ersatz_result_rows(output)
+        if not rows:
+            return
+
+        value_columns = max(len(values) for _section, values in rows)
+        window = tk.Toplevel(self)
+        window.title("ERSATZ Result Browser")
+        window.geometry("980x560")
+
+        body = ttk.Frame(window, padding=8)
+        body.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(body, text="ERSATZ relation/tuple results").pack(anchor=tk.W)
+
+        columns = ("section",) + tuple(f"value_{index}" for index in range(1, value_columns + 1))
+        result_frame = ttk.Frame(body)
+        result_frame.pack(fill=tk.BOTH, expand=True, pady=(6, 0))
+        tree = ttk.Treeview(result_frame, show="tree headings", columns=columns)
+        tree.heading("#0", text="#")
+        tree.column("#0", width=52, minwidth=44, stretch=False, anchor=tk.E)
+        tree.heading("section", text="Section")
+        tree.column("section", width=260, minwidth=160, stretch=True)
+        for index in range(1, value_columns + 1):
+            key = f"value_{index}"
+            tree.heading(key, text=f"Value {index}")
+            tree.column(key, width=130, minwidth=80, stretch=True)
+
+        xscroll = ttk.Scrollbar(result_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        yscroll = ttk.Scrollbar(result_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        tree.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        xscroll.grid(row=1, column=0, sticky="ew")
+        result_frame.columnconfigure(0, weight=1)
+        result_frame.rowconfigure(0, weight=1)
+
+        for row_number, (section, values) in enumerate(rows, start=1):
+            padded_values = values + [""] * (value_columns - len(values))
+            tree.insert("", tk.END, text=str(row_number), values=(section, *padded_values))
+
+        close_row = ttk.Frame(body)
+        close_row.pack(fill=tk.X, pady=(8, 0))
+        ttk.Button(close_row, text="Close", command=window.destroy).pack(side=tk.RIGHT)
 
     def _open_initial_path(self, path: pathlib.Path) -> None:
         if not path.exists():
@@ -761,6 +883,7 @@ class DotTalkPreview(tk.Tk):
         if not command:
             self._log("warning: " + text("gui.command.empty", self.locale))
             return
+        self._add_command_history(command)
         if command.upper() == "RECORDVIEW":
             self.command_entry.delete(0, tk.END)
             self.open_record_view()
@@ -769,6 +892,43 @@ class DotTalkPreview(tk.Tk):
         self.status.set(text("gui.status.running_command", self.locale))
         self.command_entry.delete(0, tk.END)
         self.session.submit_command(command)
+
+    def _add_command_history(self, command: str) -> None:
+        if not command:
+            return
+        if not self.command_history or self.command_history[-1] != command:
+            self.command_history.append(command)
+        self.command_history_index = None
+        self.command_history_draft = ""
+
+    def _recall_command_history(self, direction: int) -> str:
+        if self.command_entry is None or not self.command_history:
+            return "break"
+
+        if self.command_history_index is None:
+            self.command_history_draft = self.command_entry.get()
+            if direction > 0:
+                return "break"
+            self.command_history_index = len(self.command_history) - 1
+        else:
+            self.command_history_index += direction
+
+        if self.command_history_index < 0 or self.command_history_index >= len(self.command_history):
+            self.command_history_index = None
+            value = self.command_history_draft
+        else:
+            value = self.command_history[self.command_history_index]
+
+        self.command_entry.delete(0, tk.END)
+        self.command_entry.insert(0, value)
+        self.command_entry.icursor(tk.END)
+        return "break"
+
+    def _on_command_history_previous(self, _event: tk.Event) -> str:
+        return self._recall_command_history(-1)
+
+    def _on_command_history_next(self, _event: tk.Event) -> str:
+        return self._recall_command_history(1)
 
     def _start_load(self, path: pathlib.Path) -> None:
         self.status.set(text("gui.status.opening_table", self.locale))
@@ -805,10 +965,12 @@ class DotTalkPreview(tk.Tk):
             elif event.kind == EventKind.TABLE_SNAPSHOT_READY:
                 self._apply_snapshot(event.payload)
             elif event.kind == EventKind.COMMAND_FINISHED:
-                self._log(str(event.payload))
+                output = str(event.payload)
+                self._log(output)
                 if event.task_id in self.scan_task_ids:
                     self.scan_task_ids.discard(event.task_id)
-                    self._show_text_window("SCAN Results", str(event.payload))
+                    self._show_text_window("SCAN Results", output)
+                self._show_ersatz_results_window(output)
             elif event.messages:
                 self._log("; ".join(event.messages))
 
@@ -913,15 +1075,20 @@ class DotTalkPreview(tk.Tk):
         if not data:
             self.status.set(text("gui.status.ready", self.locale))
             self.detail.set(text("gui.area.none_open", self.locale))
+            self.record_status.set("Recno: none | Logical row: unavailable | Order: unavailable")
+            self.title(_workbench_title(self.locale))
+            self._apply_structure(data)
             self._update_workspace_graph()
             self.applying_snapshot = False
             return
 
+        self._apply_structure(data)
         self._set_snapshot_status(data)
         self.detail.set(
             f"{data.get('path')} | fields {len(fields)} | rec len {data.get('record_length')} | "
             f"backend {data.get('backend')}"
         )
+        self.title(_workbench_title(self.locale, str(data.get("display_name", "") or "")))
         self._log(f"backend: {data.get('backend')}")
         for field in fields:
             self._log(
@@ -936,6 +1103,37 @@ class DotTalkPreview(tk.Tk):
         record_count = int(data.get("record_count", 0))
         truncated = " (truncated)" if data.get("truncated") else ""
         self.status.set(f"{len(rows)} {text('gui.status.rows_shown_of', self.locale)} {record_count}{truncated}")
+        current_record = int(data.get("current_record_number", 0) or 0)
+        logical_record = int(data.get("logical_record_number", 0) or 0)
+        order_label = str(data.get("order_label", "") or "unavailable")
+        if current_record > 0 and logical_record > 0:
+            self.record_status.set(
+                f"Recno: {current_record} | Logical row: {logical_record} | Order: {order_label}"
+            )
+        elif current_record > 0:
+            self.record_status.set(
+                f"Recno: {current_record} | Logical row: unavailable | Order: {order_label}"
+            )
+        else:
+            self.record_status.set("Recno: none | Logical row: unavailable | Order: unavailable")
+
+    def _apply_structure(self, data: dict[str, object]) -> None:
+        if not hasattr(self, "structure_tree"):
+            return
+        self.structure_tree.delete(*self.structure_tree.get_children())
+        fields = list(data.get("fields", [])) if data else []
+        for row_number, field in enumerate(fields, start=1):
+            self.structure_tree.insert(
+                "",
+                tk.END,
+                text=str(row_number),
+                values=(
+                    str(field.get("name", "")),
+                    field_type_name(str(field.get("type", ""))),
+                    field.get("length", ""),
+                    field.get("decimals", ""),
+                ),
+            )
 
     def _update_workspace_graph(self) -> None:
         if not hasattr(self, "workspace_graph"):
