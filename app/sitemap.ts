@@ -30,7 +30,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...walkMdx("about").map((r) => `/about/${r.slug.join("/")}`),
     ...walkMdx("products").map((r) => `/products/${r.slug[0]}`),
     ...walkMdx("docs").map((r) => `/docs/${r.slug.join("/")}`),
-    ...walkMdx("licensing").map((r) => `/licensing/${r.slug.join("/")}`),
     ...walkMdx("brand").map((r) => `/brand/${r.slug.join("/")}`)
   ];
 

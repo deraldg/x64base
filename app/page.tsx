@@ -18,7 +18,7 @@ const proofPoints = [
   { label: "Public source", value: "main", href: "https://github.com/deraldg/x64base" },
   { label: "Status", value: "Active beta" },
   { label: "Quality gate", value: "CI + CTest" },
-  { label: "License", value: "Tentative MIT" }
+  { label: "Direction", value: "Laboratory Campus", href: "/about/mission-vision" }
 ];
 
 const ecosystem = [
@@ -254,7 +254,7 @@ SMARTLIST NEXT 5`}
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">Research extensions surround a smaller public core.</h2>
             <p className="mt-4 leading-7 text-muted">
               The canonical public baseline is the DBF runtime, DotTalk++ shell, build, tests,
-              license, and releases. Index backends, workbenches, student hooks, polling, triggers,
+              and releases. Index backends, workbenches, student hooks, polling, triggers,
               SelfDoc, and Laboratory Campus work remain visible as separately labeled research or
               education lanes.
             </p>
@@ -460,13 +460,6 @@ SMARTLIST NEXT 5`}
         })}
       </section>
 
-      <section className="rounded-lg border border-border bg-card/45 p-6 text-sm leading-6 text-muted">
-        <p>
-          x64base, xBase_64, DotTalk++, DotTalk++ Workbench, TupTalk, TableTalk, RelTalk,
-          Arctic, and LabTalk are project marks used to describe the engine, teaching shell,
-          workbench surfaces, table-buffering lane, TUI code-name surface, and related tooling.
-        </p>
-      </section>
     </div>
   );
 }

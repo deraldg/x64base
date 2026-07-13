@@ -1,20 +1,20 @@
 import { Card } from "@/components/Card";
 
 const items = [
-  { href: "/brand/trademarks", title: "Trademarks", description: "Marks, attribution, and usage rules." },
-  { href: "/brand/usage-guide", title: "Usage Guide", description: "Tone, wording, and naming conventions." },
   { href: "/brand/visual-identity", title: "Visual Identity", description: "Palette, type, and iconography." },
-  { href: "/brand/logo-concepts", title: "Logo Concepts", description: "Concept directions and application notes." }
+  { href: "/brand/usage-guide", title: "Usage Guide", description: "Tone, wording, and naming conventions." },
+  { href: "/brand/logo-concepts", title: "Logo Concepts", description: "Concept directions and application notes." },
+  { href: "/brand/trademarks", title: "Trademark Notes", description: "Attribution and status notes for project names." }
 ];
 
 export default function BrandPage() {
   return (
     <div className="space-y-8">
       <header className="max-w-2xl space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Brand</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Project Identity</h1>
         <p className="text-muted">
-          Technical, educational, historical, and modern. This section gathers trademark language, usage guidance,
-          and the visual identity system.
+          Supporting notes for naming, visual consistency, and attribution. The engine, Laboratory Campus,
+          documentation, and learning work remain the primary public story.
         </p>
       </header>
 

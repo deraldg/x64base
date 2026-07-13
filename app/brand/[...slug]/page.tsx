@@ -27,7 +27,7 @@ export default async function BrandSlugPage({ params }: { params: Promise<{ slug
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },
-          { label: "Brand", href: "/brand" },
+          { label: "Project Identity", href: "/brand" },
           { label: frontmatter.title ?? slug[slug.length - 1], href: `/brand/${slug.join("/")}` }
         ]}
       />

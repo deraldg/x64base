@@ -1,48 +1,41 @@
-import { Card } from "@/components/Card";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "x64base Licensing — Tentative MIT Status",
-  description: "Current tentative MIT licensing status for the x64base public source, pending final review."
+  title: "x64base Project Notice",
+  description: "A concise notice about the tentative license status of the public x64base source."
 };
-
-const items = [
-  { href: "/licensing/overview", title: "Overview", description: "The current tentative decision and remaining review gate." },
-  { href: "/licensing/mit-license-engine", title: "Tentative MIT License", description: "Proposed licensing for the public engine and runtime source." },
-  {
-    href: "/licensing/dottalk-educational-license",
-    title: "DotTalk++ Educational License",
-    description: "Planned guidance; no separate educational license is active."
-  },
-  {
-    href: "/licensing/labtalk-non-profit-license",
-    title: "LabTalk Non-Profit License",
-    description: "Planned guidance; no separate non-profit license is active."
-  },
-  {
-    href: "/licensing/third-party-acknowledgements",
-    title: "Third-Party Acknowledgements",
-    description: "Credits and official links for libraries, tools, and website dependencies."
-  }
-];
 
 export default function LicensingPage() {
   return (
-    <div className="space-y-8">
+    <article className="max-w-3xl space-y-8">
       <header className="max-w-2xl space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Tentative Licensing Agreement</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted">Project notice</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Licensing status</h1>
         <p className="text-muted">
-          The public repository currently carries a tentative MIT license pending final maintainer and legal
-          review. Earlier hybrid-license pages are retained only to clarify that separate educational and
-          non-profit terms are planned, not active grants.
+          x64base is a research and education project. The public source currently carries a tentative MIT
+          license while final maintainer and legal review remains open.
         </p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {items.map((i) => (
-          <Card key={i.href} title={i.title} description={i.description} href={i.href} />
-        ))}
+      <section className="space-y-3 rounded-lg border border-border bg-card/45 p-6 text-sm leading-7 text-muted">
+        <p>
+          The repository’s root <code>LICENSE</code> file is the only current project license statement.
+          No separate educational, non-profit, subscription, pricing, or commercial licensing program is
+          being presented on this website.
+        </p>
+        <p>
+          Third-party components remain subject to their own terms and attribution requirements.
+        </p>
+      </section>
+
+      <div className="flex flex-wrap gap-4 text-sm">
+        <a className="font-semibold text-brand hover:underline" href="https://github.com/deraldg/x64base/blob/main/LICENSE">
+          Read the repository notice
+        </a>
+        <a className="text-muted hover:text-fg hover:underline" href="/docs/dev/third-party-acknowledgements">
+          Third-party credits
+        </a>
       </div>
-    </div>
+    </article>
   );
 }
