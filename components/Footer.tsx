@@ -54,11 +54,7 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
           <span>© 1993–2026 Derald R Grimwood Jr. All rights reserved.</span>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/licensing" className="hover:text-fg">Project notice</Link>
-            <Link href="/brand" className="hover:text-fg">Identity notes</Link>
-            <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
-          </div>
+          <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
         </div>
       </div>
     </footer>

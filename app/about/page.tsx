@@ -16,7 +16,8 @@ const items = [
   { title: "Timeline", description: "Key milestones from 1993 to 2026.", href: "/about/timeline" },
   { title: "Project Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
   { title: "Contributors", description: "Human and AI contributors recognized in the project record.", href: "/about/contributors" },
-  { title: "Project Identity & Notices", description: "Naming, visual identity, attribution, and trademark notes.", href: "/brand" }
+  { title: "Project Identity", description: "Naming, visual identity, attribution, and trademark notes.", href: "/brand" },
+  { title: "Project Notice", description: "A concise statement of the public source’s tentative license status.", href: "/licensing" }
 ];
 
 export default function AboutPage() {
