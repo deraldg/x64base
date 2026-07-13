@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 const proofPoints = [
-  { label: "Project mode", value: "Co-development", href: "/docs/dev/recursive-co-development" },
-  { label: "Runtime", value: "DotTalk++" },
-  { label: "Documentation", value: "SelfDoc + MDO" },
-  { label: "Campus", value: "Configurable + proof-aware" }
+  { label: "Public source", value: "main", href: "https://github.com/deraldg/x64base" },
+  { label: "Status", value: "Active beta" },
+  { label: "Quality gate", value: "CI + CTest" },
+  { label: "License", value: "Tentative MIT" }
 ];
 
 const ecosystem = [
@@ -69,8 +69,7 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
-const artifactRoomUrl = "http://dottalkpp.com/";
-const siteNoticeVersion = "Website preview v2026.07.12";
+const siteNoticeVersion = "Active beta — public main is canonical";
 
 const openArchitectureLanes = [
   {
@@ -148,22 +147,26 @@ export default function HomePage() {
         <div className="max-w-2xl">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">x64base</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg md:text-5xl">
-            A glass-box database engine for building and teaching data systems.
+            Open, inspect, index, relate, and script DBF-family data.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted">
-            x64base is the stateful substrate of a configurable Laboratory Campus. DotTalk++ makes the
-            engine executable and observable; SelfDoc and MDO turn source, HELP, metadata, contracts, and
-            proof into documentation and curriculum. The goal is a glass-but-real system whose development
-            can be inspected, taught, and improved from the same evidence.
+            x64base is a C++20 research runtime for visible, teachable xBase ideas: tables, records,
+            fields, indexes, memos, relations, and commands. DotTalk++ is the command shell that makes
+            those layers executable and inspectable.
           </p>
           <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
             <p className="mt-2">
-              AI-assisted site generated from the DotTalk++ / x64base documentation
-              ecostructure. Active development may leave inconsistencies, stale
-              references, or claims needing source/runtime verification.
+              Research software, not a production DBMS. Public claims should resolve to a commit,
+              passing test, release artifact, or clearly labeled planned lane.
             </p>
           </div>
+          <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-bg/70 p-4 font-mono text-sm leading-6 text-fg">
+{`USE students
+SET ORDER TO TAG lname
+SEEK "WHITE"
+SMARTLIST NEXT 5`}
+          </pre>
           <Link
             href="/docs/labtalk/runtime-evidence"
             className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
@@ -176,14 +179,14 @@ export default function HomePage() {
               href="/docs/getting-started/overview"
               className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-bg transition hover:bg-brand/85"
             >
-              Start reading
+              Build from source
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
             <Link
-              href="/products"
+              href="/docs/getting-started/quickstart"
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
             >
-              View products
+              Quickstart
             </Link>
             <a
               href="https://github.com/deraldg/x64base"
@@ -248,14 +251,12 @@ export default function HomePage() {
         <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">open architecture</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">The extension seams are part of the product.</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Research extensions surround a smaller public core.</h2>
             <p className="mt-4 leading-7 text-muted">
-              x64base is not only a DBF runtime. It is an intentionally open
-              architecture for index backends, workbench front ends, custom
-              commands and functions, student code hooks, polling, triggers,
-              and runtime lifecycle observation. That work should remain
-              visible on the public surface because it is part of how the
-              engine is meant to be learned, extended, and proved.
+              The canonical public baseline is the DBF runtime, DotTalk++ shell, build, tests,
+              license, and releases. Index backends, workbenches, student hooks, polling, triggers,
+              SelfDoc, and Laboratory Campus work remain visible as separately labeled research or
+              education lanes.
             </p>
             <div className="mt-5 space-y-2 text-sm leading-6 text-muted">
               <p>Live runtime evidence already includes central command registration, Open Index API boundaries, education hooks, and order-aware traversal work.</p>
@@ -326,42 +327,6 @@ export default function HomePage() {
                 </Link>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-border bg-card/45 p-6">
-        <div className="grid gap-5 md:grid-cols-[0.8fr_1.2fr] md:items-center">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact room</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight">DotTalk++ support materials live beside the main site.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com remains the main website. The GitHub Pages-backed DotTalk++ artifact room at
-              dottalkpp.com is the support surface for larger manuals, generated references, proof packets,
-              downloads, and governance notes. It uses HTTP while its SSL certificate finishes settling.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <a
-              href={artifactRoomUrl}
-              className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
-            >
-              <ScrollText className="h-5 w-5 text-brand" aria-hidden="true" />
-              <div className="mt-3 text-sm font-semibold text-fg">Open artifact room</div>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                Manuals, DotScript, reference exports, generated docs, downloads, and governance.
-              </p>
-            </a>
-            <Link
-              href="/docs/dev/important-documents"
-              className="rounded-lg border border-border bg-bg/30 p-4 transition hover:border-brand/60"
-            >
-              <FileCode2 className="h-5 w-5 text-brand" aria-hidden="true" />
-              <div className="mt-3 text-sm font-semibold text-fg">Read the connection rules</div>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                Shows how x64base, SelfDoc, manuals, and the artifact room stay in sync.
-              </p>
-            </Link>
           </div>
         </div>
       </section>

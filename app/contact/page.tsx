@@ -1,4 +1,10 @@
 import Link from "@/components/StaticLink";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Contact x64base",
+  description: "Contact x64base about technical review, academic use, licensing, security, or collaboration."
+};
 
 export default function ContactPage() {
   return (
@@ -38,7 +44,7 @@ export default function ContactPage() {
 
       <section className="rounded-2xl border border-border bg-card/20 p-6 text-sm text-muted">
         <p>
-          x64base® <br />© 1993–2026 Derald R Grimwood Jr
+          x64base™ <br />© 1993–2026 Derald R Grimwood Jr
         </p>
       </section>
     </div>

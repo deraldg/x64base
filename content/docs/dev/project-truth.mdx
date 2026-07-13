@@ -1,216 +1,53 @@
 ---
 title: "Current Project Truth"
-description: "Observed state from the local DotTalk++ / x64base checkout."
+description: "Canonical public authority, evidence order, beta status, and current limitations for x64base."
 ---
 
-This page reflects a local scan of `implementation checkout`, treated as the authoritative DotTalk++ / x64base source tree.
+## Canonical public source
 
-## Source snapshot
+The public [`main` branch](https://github.com/deraldg/x64base) is authoritative
+for collaboration, CI, licensing, releases, and public technical claims.
 
-- Primary implementation checkout: `implementation checkout`
-- DotTalk++ runtime tree: `DotTalk++ runtime tree`
-- Laboratory Campus / LabTalk tree: `Laboratory Campus tree`
-- Clean staging mirror: `local staging mirror`
-- Staged DotTalk++ mirror: `staged DotTalk++ runtime tree`
-- Website source: `website source tree`
-- Public website: [x64base.com](https://x64base.com/)
-- Public GitHub repo: [deraldg/x64base](https://github.com/deraldg/x64base)
-- Additional public repo homes: [deraldg/dottalkpp](https://github.com/deraldg/dottalkpp), [deraldg/labtalk](https://github.com/deraldg/labtalk)
-- Git branch: `homegrown-cnx-20251112-branch`
-- Observed commit: `bed0828e` (`Add reviewed runtime message catalog reset/reload workflow`)
-- CMake project: `DotTalkpp`
-- Project version: `0.6`
-- Language standard: C++20
+Local implementation trees, recovery branches, staging mirrors, generated
+manual trees, and this website may contain newer experiments. They do not
+supersede public `main` until source, tests, and documentation are promoted
+through a reviewed public change.
 
-The root `README.md` is not present in the local working tree. The current site copy therefore uses the local CMake files, command reference, GUI docs, database safety docs, source layout, and generated manual artifacts as the truth source.
+## Evidence order
 
-The website is a downstream publication surface. It may reorganize and summarize
-material, but it should not invent technical truth that the local runtime tree
-cannot support.
+1. Tagged release, checksum, release notes, and known limitations.
+2. Green `main` CI for the referenced commit.
+3. Repeatable CTest or runtime proof stored with that commit.
+4. Source evidence labeled active beta or canary.
+5. Design work labeled planned.
 
-## Promotion and authority convention
-
-Normal source flow:
-
-```text
-implementation checkout -> local staging mirror -> GitHub repository
-```
-
-Normal website flow:
-
-```text
-website source tree -> build/public artifact -> GitHub Pages -> x64base.com
-```
-
-Normal documentation evidence flow:
-
-```text
-implementation checkout source/runtime
--> HELP / metadata / comments / contracts
--> SelfDoc / MDO / manualgen reports
--> reviewed manual sections
--> reviewed website summaries
-```
-
-Companion artifact-room flow:
-
-```text
-implementation checkout source/runtime
--> SelfDoc / MDO / manualgen / reviewed manual artifacts
--> DotTalk++ artifact/manual-room preview
--> selected x64base.com summaries and links
-```
-
-The canonical DotTalk++ artifact/manual-room site is available at
-[http://dottalkpp.com/](http://dottalkpp.com/). It is the GitHub Pages-backed artifact support surface for
-manuals, DotScript guides, command/function reference exports, generated
-documentation, downloads, proof packets, accessibility text versions, and
-governance manifests. x64base.com remains the main public website. The artifact
-room uses HTTP links until the SSL certificate is ready.
-
-Current artifact-room routes:
-
-- [Manuals](http://dottalkpp.com/manuals/)
-- [DotScript](http://dottalkpp.com/dotscript/)
-- [Reference](http://dottalkpp.com/reference/)
-- [Generated Docs](http://dottalkpp.com/generated/)
-- [Downloads](http://dottalkpp.com/downloads/)
-- [Governance](http://dottalkpp.com/governance/)
-
-These public links should remain checked by the public-content guard and moved
-to HTTPS only after certificate validation succeeds.
-
-Course-correction rule:
-
-- do not reverse the authority chain by copying website prose into manuals or
-  source-side technical truth
-- if a website page describes command behavior, file formats, index rules, memo
-  storage, mutation behavior, locale behavior, GUI/runtime ownership, or other
-  technical truths, return to the implementation checkout and re-derive the
-  claim from source, HELP, metadata, runtime proof, or reviewed manuals
-
-## Project center of gravity
-
-The database engine is the center of gravity for x64base. The project should be
-understood first through its table runtime, DBF-family storage work, x64 table
-extensions, memo objects, index backends, work areas, relation graph, buffering,
-locking, validation, and data-mutation rules.
-
-The surrounding system is the teaching and analysis layer. DotTalk++, SelfDoc,
-MDO, manuals, diagrams, the Laboratory Campus, and the website are important
-because they make the database engine inspectable and teachable. They collect
-the evidence, organize it, and explain it; they do not become a substitute for
-runtime truth.
-
-SelfDoc and MDO are now part of the system architecture. They started as
-cooperating project-documentation conversations and are being shaped into a
-repeatable publication loop:
-
-```text
-source / runtime behavior
--> HELP / command metadata
--> comments / contracts / proof scripts
--> SelfDoc reports
--> MDO organization
--> manuals / diagrams / curriculum / website
-```
-
-This is the working partnership model for the project: implementation and
-documentation develop together, with the database engine remaining the primary
-truth source and the documentation system keeping the work visible.
-
-## Ownership boundary
-
-The current repository boundary is deliberate:
-
-- `x64base` owns engine/runtime truth and shared front-end workbench code.
-- Arctic GUI/TUI work remains under the runtime/engine tree, not under a
-  separate campus repository.
-- `LabTalk` is a consumer layer for portal, registries, labs, proofs,
-  assignments, and education-facing overlays.
-- `DotTalk++` remains the runtime/manual identity, but source ownership is
-  still primarily centered on `x64base` until a cleaner split is justified.
-
-For publication naming:
-
-- `x64base` is the engine/platform name.
-- `DotTalk++` is the runtime shell/manual/help identity.
-- the DotTalk++ artifact/manual-room site is the support surface for manuals,
-  references, generated documentation, proof packets, and downloads; it is
-  local preview only until a public repository/domain is approved
-- `LabTalk` is the campus/education consumer layer.
-- historical/internal buckets such as `dottalk` may remain in slugs or folders,
-  but should not silently replace the published `DotTalk++` identity in prose or navigation.
-
-Use the lowest authority that can prove the claim:
-
-- runtime/engine behavior -> `x64base`
-- workbench surfaces over runtime truth -> `x64base`
-- campus/portal/proof orchestration -> `labtalk`
+Documentation, SelfDoc, MDO, and website prose explain evidence. They do not
+create runtime truth by themselves.
 
 ## Current status
 
-DotTalk++ / x64base should be described as a working educational and research runtime in active beta, not as a finished commercial database product.
+DotTalk++ / x64base is active beta research and education software, not a
+finished commercial database product.
 
-Current proven or active areas include:
+The public baseline contains a C++20 DBF-family runtime, DotTalk++ command
+shell, work areas, fields and records, memo architecture, index lanes,
+relations, scripts, HELP/metadata work, and optional UI experiments. Each lane
+must carry its own test and maturity status; the existence of source does not
+prove production readiness.
 
-- DBF-style table runtime, cursor state, records, fields, work areas, and table inspection.
-- x64-family table and metadata work.
-- INX, CNX, CDX, and LMDB-backed index work.
-- Memo subsystem with object-oriented architecture and canary coverage.
-- DotTalk++ command shell and DotScript automation.
-- HELP, command reflection, `CMDHELPCHK`, and metadata congruence work.
-- Relation-aware browsing through `ERSATZ` / `RBROWSE`.
-- Table listing plus record and tuple browsing through `SMARTLIST`, `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, `BROWSE`, `BROWSER`, and `BROWSETUI`.
-- TableTalk is the table-buffering lane: `SET TABLE BUFFER`, `TABLE`, dirty/stale state, `COMMIT`, `ROLLBACK`, and buffered mutator behavior.
-- Data dictionary readers, catalog paths, and object resolver code.
-- Python binding experiments through `pydottalk`.
-- Indexing architecture across INX, CNX, CDX, LMDB, Open Index API boundaries, and backend diagnostics.
-- GUI work across wxWidgets, Python/Tk preview tools, pycrud, and Turbo Vision-style TUI surfaces.
-- GUI/front-end branding uses `DotTalk++ Workbench` as the family name.
-- `Parallel GUI/TUI` is the public product lane for aligned graphical and terminal interfaces.
-- `Arctic` remains the TUI code name.
-- `Foxtalk` lineage names remain only where they still explain the subsystem story.
+## Important limitations
 
-See [Engine Feature Crosswalk](/docs/engine/feature-crosswalk) for the current evidence-backed hierarchy and [Current Work Lanes](/docs/dev/current-lanes) for the non-front-page lane inventory.
+- No atomic transaction guarantee spans DBF, memo, and index persistence.
+- x64 widening is backend- and command-path-specific, not universal unlimited
+  scale.
+- GUI/TUI, Python, SelfDoc, and Laboratory Campus work are optional research or
+  education lanes around the public core.
+- The root MIT license is tentative pending final review.
+- Binary artifacts are supported only when published as a versioned GitHub
+  release with checksums.
+- The separate DotTalk++ artifact domain is not promoted while its HTTPS
+  certificate is unhealthy.
 
-## Build configuration truth
-
-The top-level CMake options define the real build surface:
-
-```text
-DOTTALK_WITH_TV        ON by default
-DOTTALK_WITH_GUI       OFF by default
-DOTTALK_WITH_WX        OFF by default
-DOTTALK_TV_TESTS       ON by default
-DOTTALK_WITH_INDEX     ON by default
-DOTTALK_WITH_EDUCATION ON by default
-BUILD_PYDOTTALK        OFF by default
-DOTTALK_WITH_RELATIONS ON by default
-DOTTALK_PROFILE        DEV or PROD
-```
-
-The build also wires `metacollect` as a developer executable for low-level metadata and reflection collection. Its CMake comment explicitly says it must not rebuild HELP data, mutate `CMDHELPCHK`, write DBFs, or mutate publication artifacts.
-
-## Command surface truth
-
-The command reference shows active command surfaces including:
-
-- `BUILDLMDB` for materializing LMDB-backed tag databases from current table data.
-- `CMDHELPCHK` for reflection and HELP/catalog validation.
-- `ERSATZ` and `RBROWSE` for relation-aware browsing.
-- `SMARTLIST`, `SIMPLEBROWSE` / `SB`, and `SMARTBROWSE` / `SM` / `SMART` for table, tuple, and record browsing.
-- `WORKSPACE` commands for opening, saving, loading, and closing workspaces.
-- `DDL` commands for schema-oriented DBF creation and validation work.
-- `DRAWIO` helpers for opening diagram tooling, with metadata-generated diagrams still a future direction.
-
-## Website wording rule
-
-Use these words carefully:
-
-- Use "active beta", "runtime-proven", "active", "partial", "experimental", and "canary" when that is the observed state.
-- Avoid presenting x64base as complete, commercial, or production-finished.
-- Avoid claiming DBF_64 and FPT64 are the only storage truth. The local tree contains DBF-style runtime work, x32 and x64-family work, memo systems, xindex backends, data dictionary code, and metadata catalogs.
-- Treat DotTalk++ as the canonical runtime and teaching shell, not merely a small scripting add-on.
-- Treat the website as a reviewed derivative of SelfDoc/contracts/manual work,
-  not as an independent source of technical truth.
+See [Current Work Lanes](/docs/dev/current-lanes),
+[Getting Started](/docs/getting-started/quickstart), and
+[Downloads](/downloads).

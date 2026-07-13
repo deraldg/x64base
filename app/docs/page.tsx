@@ -45,9 +45,9 @@ const quickLinks = [
     icon: FileText
   },
   {
-    title: "DotTalk++ Artifact Room",
-    description: "Open the DotTalk++ artifact/manual support site.",
-    href: "http://dottalkpp.com/",
+    title: "Releases and Manuals",
+    description: "Find versioned builds, checksums, known limitations, and reviewed manuals.",
+    href: "/downloads",
     icon: Archive
   }
 ];
@@ -175,19 +175,19 @@ export default function DocsLandingPage() {
       <section className="rounded-2xl border border-border bg-card/30 p-6">
         <div className="grid gap-5 md:grid-cols-[0.85fr_1.15fr] md:items-center">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">artifact support</p>
-            <h2 className="mt-3 text-lg font-semibold tracking-tight">The larger DotTalk++ artifacts have a support room.</h2>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">release support</p>
+            <h2 className="mt-3 text-lg font-semibold tracking-tight">Builds and manuals follow the public release gate.</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              x64base.com stays the main website. The GitHub Pages-backed artifact room at dottalkpp.com
-              handles manuals, generated references, downloads, proof packets, and governance. Links use
-              HTTP until the SSL certificate is ready.
+              x64base.com remains the public documentation site. Versioned binaries, checksums, source
+              archives, and release notes belong on GitHub Releases. The separate artifact domain is not
+              promoted until its HTTPS certificate is healthy.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Card
-              title="Open artifact room"
-              description="DotTalk++ artifact and manual support site."
-              href="http://dottalkpp.com/"
+              title="Open releases and manuals"
+              description="Versioned artifacts, checksums, limitations, and reviewed documents."
+              href="/downloads"
             >
               <Archive className="h-5 w-5 text-brand" aria-hidden="true" />
             </Card>

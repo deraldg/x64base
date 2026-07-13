@@ -1,110 +1,45 @@
 ---
 title: "Getting Started: Quickstart"
-description: "Run the real DotTalk++ command surfaces instead of placeholder x64base commands."
+description: "Clone, build, test, and run the canonical public DotTalk++ / x64base source."
 ---
 
-The project is command-shell first. Use DotTalk++ scripts and commands rather than invented package-style examples.
-
-This page separates public clone/build examples from Derald's local development paths. Local evidence pages may still cite `implementation checkout` because that is the active development tree, but a new reader should be able to start from a normal checkout.
-
-## Clone
+## Clone, build, and test
 
 ```powershell
 git clone https://github.com/deraldg/x64base.git
 cd x64base
+cmake --preset windows-core
+cmake --build --preset windows-core --parallel
+ctest --preset windows-core
 ```
 
-The staging/publishing workflow currently mirrors active development into `local staging mirror`, but outside contributors should treat the GitHub checkout as the portable starting point.
+On Linux, WSL, or macOS, use `core-vcpkg` in place of `windows-core`.
 
-## Build shape
+## First command sequence
 
-The CMake project is `DotTalkpp` and uses C++20.
-
-Windows / Visual Studio build shape:
-
-```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_INDEX=ON -D DOTTALK_WITH_RELATIONS=ON -D BUILD_TESTING=ON
-cmake --build build --config Release --target dottalkpp
-```
-
-WSL / Ubuntu build shape:
-
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake ninja-build git pkg-config
-cmake -S . -B build-posix -G Ninja \
-  -D DOTTALK_WITH_INDEX=ON \
-  -D DOTTALK_WITH_RELATIONS=ON \
-  -D BUILD_TESTING=ON
-cmake --build build-posix
-```
-
-macOS build shape:
-
-```bash
-xcode-select --install
-brew install cmake ninja pkg-config
-cmake -S . -B build-macos -G Ninja \
-  -D DOTTALK_WITH_INDEX=ON \
-  -D DOTTALK_WITH_RELATIONS=ON \
-  -D BUILD_TESTING=ON
-cmake --build build-macos
-```
-
-GUI lanes are optional:
-
-```powershell
-cmake -S . -B build-wx-check -G "Visual Studio 17 2022" -A x64 -D DOTTALK_WITH_GUI=ON -D DOTTALK_WITH_WX=ON -D DOTTALK_WITH_INDEX=ON
-cmake --build build-wx-check --config Release
-```
-
-## Run a script example
-
-The repository contains many `.dts` examples and canaries. Good starting classes are:
+Run the built `dottalkpp` executable from a directory containing a disposable
+copy of the sample data, then try:
 
 ```text
-dottalkpp\data\scripts\canaries\dottalk_beta0_smoke_baseline_0_1.dts
-dottalkpp\data\scripts\canaries\workspace_load_x64_canary.dts
-dottalkpp\data\scripts\canaries\smartlist_order_matrix.dts
-tests\manual\dotscript\core\MCC_TIER1_CORE_SURFACE_AND_INDEX_SAFE_V1.DTS
-tests\manual\dotscript\core\MCC_TIER2_OBSERVATION_CANARIES_V1.DTS
-tests\manual\dotscript\core\MCC_TIER3_SANDBOX_MUTATION_CANARIES_V1.DTS
+USE students
+STRUCT
+LIST NEXT 5
+SET ORDER TO TAG lname
+SEEK "WHITE"
+SMARTLIST NEXT 5
 ```
 
-Run commands vary by current build output and launcher lane. The important public standard is that examples should name their required dataset, expected mutation level, and proof status.
-
-## Runtime commands to recognize
-
-These are real command surfaces from the local command reference:
-
-```text
-HELP
-HELP <command>
-CMDHELPCHK
-CMDHELPCHK REF
-WORKSPACE OPEN DBF
-WORKSPACE OPEN DBF CDX
-WORKSPACE SAVE <name>
-WORKSPACE LOAD <name>
-BUILDLMDB
-ERSATZ
-ERSATZ TREE
-ERSATZ GRID
-RBROWSE
-SMARTBROWSE
-SMART
-SM
-SIMPLEBROWSE
-SB
-SMARTLIST
-REL LIST ALL
-DDL VALIDATE <schema.json> USING <validator.json>
-DDL CREATE DBF <output.dbf> FROM <schema.json>
-DRAWIO OPEN
-```
+Use `HELP <command>` for the current command contract. Mutation commands such
+as `REPLACE`, `CALCWRITE`, `DELETE`, `COMMIT`, and `PACK` should be exercised
+only against disposable data.
 
 ## Reality check
 
-Some commands are runtime-proven, some are active beta, and some are canary/integration surfaces. The site should preserve that distinction.
+- `main` is the canonical public source.
+- A green CI run proves only the selected build/test profiles.
+- LMDB index commands, TUI, GUI, Python, education, and SelfDoc lanes require their own evidence; the LMDB library itself is a baseline message-catalog dependency.
+- `COMMIT` is a best-effort buffer apply operation, not an atomic transaction
+  across DBF, memo, and index stores.
 
-For the current scan source, see [Current Project Truth](/docs/dev/project-truth).
+See [Installation](/docs/getting-started/installation),
+[Current Project Truth](/docs/dev/project-truth), and [Downloads](/downloads).
