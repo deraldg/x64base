@@ -31,7 +31,7 @@ if (DOTTALK_WITH_INDEX AND TARGET xindex)
 endif()
 
 if (MSVC)
-  target_compile_options(memo PRIVATE /W4 /permissive-)
+  target_compile_options(memo PRIVATE /W4 /permissive- /MP)
 else()
   target_compile_options(memo PRIVATE -Wall -Wextra -Wpedantic)
 endif()

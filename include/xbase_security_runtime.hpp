@@ -22,6 +22,7 @@ using policy::enforce_no_plaintext_secrets;
 using policy::enforce_no_unsafe_paths;
 using policy::enforce_no_elevated_writes;
 using policy::enforce_host_commands_allowed;
+using policy::enforce_network_allowed;
 
 // ------------------------------------------------------------
 // 1. Runtime Context
@@ -126,6 +127,11 @@ inline void on_store_secret(const context& ctx)
 inline void on_host_command_begin(const context& ctx)
 {
     require_host_commands_allowed(ctx);
+}
+
+inline void on_network_begin(const context& ctx)
+{
+    enforce_network_allowed(ctx.policy);
 }
 
 } // namespace runtime

@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from table import Table
 
-t = Table(r"D:\code\ccode\dottalkpp\data\xdbf\students.dbf")
+repo_root = Path(__file__).resolve().parents[3]
+t = Table(str(repo_root / "dottalkpp" / "data" / "dbf" / "sandbox" / "STUDENTS.dbf"))
 t.open()
 
 print("fields:", t.field_names())

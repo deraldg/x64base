@@ -2,12 +2,66 @@
   "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 16
+    "minor": 21,
+    "patch": 0
   },
   "configurePresets": [
     {
+      "name": "core-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "DOTTALK_PROFILE": "PROD",
+        "DOTTALK_WITH_DEV": "OFF",
+        "DOTTALK_WITH_INDEX": "OFF",
+        "DOTTALK_WITH_TV": "OFF",
+        "DOTTALK_WITH_GUI": "OFF",
+        "DOTTALK_WITH_WX": "OFF",
+        "BUILD_PYDOTTALK": "OFF",
+        "DOTTALK_BUILD_METACOLLECT": "OFF"
+      }
+    },
+    {
+      "name": "core",
+      "displayName": "Portable core (system dependencies)",
+      "inherits": "core-base",
+      "generator": "Ninja"
+    },
+    {
+      "name": "core-vcpkg",
+      "displayName": "Portable core (vcpkg)",
+      "inherits": "core-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "windows-core",
+      "displayName": "Windows core (MSVC + vcpkg)",
+      "inherits": "core-base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "index-vcpkg",
+      "displayName": "Core plus LMDB indexing (vcpkg)",
+      "inherits": "core-base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "DOTTALK_WITH_INDEX": "ON",
+        "VCPKG_MANIFEST_FEATURES": "index"
+      }
+    },
+    {
       "name": "pro-md",
-      "displayName": "dottalk pro (MSVC, /MD, TV via vcpkg)",
+      "displayName": "DotTalk++ development (MSVC, /MD, TV + index)",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64"
@@ -16,13 +70,17 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "tv;index",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
-        "DOTTALK_WITH_TV": "ON"
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
+        "DOTTALK_WITH_TV": "ON",
+        "BUILD_PYDOTTALK": "OFF"
       }
     },
     {
       "name": "pro-md-labtalk",
-      "displayName": "dottalk pro + pydottalk (MSVC, /MD, TV via vcpkg)",
+      "displayName": "DotTalk++ + pydottalk development (MSVC, /MD)",
       "generator": "Visual Studio 17 2022",
       "architecture": {
         "value": "x64"
@@ -31,7 +89,10 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_MANIFEST_FEATURES": "tv;index;python",
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
         "DOTTALK_WITH_TV": "ON",
         "BUILD_PYDOTTALK": "ON"
       }
@@ -46,6 +107,8 @@
       "binaryDir": "${sourceDir}/build-ansi-mt",
       "cacheVariables": {
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
         "DOTTALK_WITH_TV": "OFF"
       }
     },
@@ -55,14 +118,30 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-wsl",
       "cacheVariables": {
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_WITH_INDEX": "ON",
         "DOTTALK_WITH_TV": "OFF"
       }
     }
   ],
   "buildPresets": [
-    { "name": "pro-md-Release",  "configurePreset": "pro-md",  "configuration": "Release" },
-    { "name": "pro-md-labtalk-Release",  "configurePreset": "pro-md-labtalk",  "configuration": "Release" },
+    { "name": "core", "configurePreset": "core" },
+    { "name": "core-vcpkg", "configurePreset": "core-vcpkg" },
+    { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release" },
+    { "name": "index-vcpkg", "configurePreset": "index-vcpkg" },
+    { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release" },
+    { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release" },
     { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release" },
-    { "name": "wsl-Release",     "configurePreset": "wsl",     "configuration": "Release" }
+    { "name": "wsl-Release", "configurePreset": "wsl", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
+    { "name": "core-vcpkg", "configurePreset": "core-vcpkg", "output": { "outputOnFailure": true } },
+    { "name": "windows-core", "configurePreset": "windows-core", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "index-vcpkg", "configurePreset": "index-vcpkg", "output": { "outputOnFailure": true } },
+    { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "wsl-Release", "configurePreset": "wsl", "output": { "outputOnFailure": true } }
   ]
 }

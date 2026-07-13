@@ -44,14 +44,12 @@
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "help/helpdata_messages.hpp"
-#include "xbase_security_policy.hpp"
-#include "xbase_security_runtime.hpp"
+#include "cli/external_process_policy.hpp"
 
 #include <string>
 #include <cstdlib>
 #include <cctype>
 #include <algorithm>
-#include <exception>
 #include <iostream>
 #include <sstream>
 
@@ -78,34 +76,6 @@ static void print_bang_usage()
 {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::BangUsageText);
 }
-static bool env_truthy(const char* value)
-{
-    if (!value)
-        return false;
-
-    std::string v = bang_upper(textio::trim(value));
-    return v == "1" || v == "TRUE" || v == "YES" || v == "ON";
-}
-
-static xbase::security::policy::config bang_security_policy()
-{
-    auto cfg = xbase::security::policy::standard_profile();
-    cfg.allow_host_commands = env_truthy(std::getenv("DOTTALK_ALLOW_HOST_COMMANDS"));
-    return cfg;
-}
-
-static bool authorize_host_command()
-{
-    try {
-        xbase::security::runtime::context ctx(bang_security_policy());
-        xbase::security::runtime::on_host_command_begin(ctx);
-        return true;
-    } catch (const std::exception& ex) {
-        std::cout << "BANG blocked: " << ex.what() << "\n"
-                  << "Set DOTTALK_ALLOW_HOST_COMMANDS=1 to allow host shell execution.\n";
-        return false;
-    }
-}
 } // namespace
 
 
@@ -119,7 +89,7 @@ void cmd_BANG(xbase::DbArea&, std::istringstream& iss) {
         return;
     }
 
-    if (!authorize_host_command())
+    if (!cli::security::authorize_external_process("BANG", false))
         return;
 
 #ifdef _WIN32

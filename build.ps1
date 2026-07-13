@@ -61,6 +61,16 @@ if ($Toolchain) {
   Write-Warning "vcpkg toolchain not found. Set VCPKG_ROOT or pass -VcpkgRoot."
 }
 
+$ManifestFeatures = @()
+if (-not $NoIndex) { $ManifestFeatures += 'index' }
+if (-not $NoTV) { $ManifestFeatures += 'tv' }
+if ($WithWx) { $ManifestFeatures += 'wx' }
+if ($WithPyDotTalk) { $ManifestFeatures += 'python' }
+$ManifestFeatureValue = $ManifestFeatures -join ';'
+if ($ManifestFeatureValue) {
+  Write-Host "Features:  $ManifestFeatureValue"
+}
+
 # --- 1) Detect mixed-environment CMake cache and clean ---
 $Cache = Join-Path $BuildDir 'CMakeCache.txt'
 if ($UseNinja) {
@@ -124,7 +134,11 @@ $configureArgs = @(
 )
 if (-not $UseNinja) { $configureArgs += @('-A','x64') }
 if ($Toolchain) {
-  $configureArgs += @('-D', "CMAKE_TOOLCHAIN_FILE=$Toolchain", '-D', "VCPKG_TARGET_TRIPLET=$VcpkgTriplet")
+  $configureArgs += @(
+    '-D', "CMAKE_TOOLCHAIN_FILE=$Toolchain",
+    '-D', "VCPKG_TARGET_TRIPLET=$VcpkgTriplet",
+    '-D', "VCPKG_MANIFEST_FEATURES=$ManifestFeatureValue"
+  )
 }
 if ($WithPyDotTalk -and $PythonExe) {
   $pythonRoot = Split-Path -Parent $PythonExe
@@ -186,7 +200,9 @@ if ($exe) {
 if ($WithPyDotTalk) {
   $pydCandidates = @(
     (Join-Path $BuildDir "python\pydottalk.cp312-win_amd64.pyd"),
+    (Join-Path $BuildDir "python\pydottalk.cp313-win_amd64.pyd"),
     (Join-Path $BuildDir "python\pydottalk.cp311-win_amd64.pyd"),
+    (Join-Path $BuildDir "$Config\pydottalk.cp313-win_amd64.pyd"),
     (Join-Path $BuildDir "$Config\pydottalk.cp312-win_amd64.pyd"),
     (Join-Path $BuildDir "$Config\pydottalk.cp311-win_amd64.pyd")
   )

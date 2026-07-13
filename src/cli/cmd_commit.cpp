@@ -5,6 +5,8 @@
 // Contract:
 // - TABLE ON buffers changes; no OS locking should occur during REPLACE/DELETE.
 // - COMMIT applies buffered changes with locking at commit time.
+// - COMMIT is not an atomic transaction across DBF, memo, and index storage.
+//   It reports staged failure precisely and retains retry information.
 // - COMMIT ALL commits all open areas with buffered changes.
 // - COMMIT does not rebuild CDX/LMDB. CDX/LMDB has a runtime lifecycle:
 //   key-field mutations, append, delete, and recall are handled by mutation hooks.
@@ -27,7 +29,7 @@
 // usage-access: COMMIT USAGE
 // summary:
 //   Apply buffered TABLE changes to the current area or all open buffered areas,
-//   locking records at commit time and preserving legacy index rebuild compatibility.
+//   locking records at commit time and reporting persistence-stage failures.
 //
 // usage:
 //   COMMIT USAGE
@@ -48,6 +50,7 @@
 //   COMMIT does not rebuild CDX or LMDB containers.
 //   Legacy INX/IDX and CNX rebuild behavior remains only for legacy index families.
 //   COMMIT is a data mutation command when buffers contain changes.
+//   COMMIT is a best-effort buffer apply operation, not an atomic transaction.
 //
 // risk:
 //   writes_dbf_records: yes when buffered changes exist
@@ -73,6 +76,7 @@
 #include <cctype>
 #include <cstdint>
 #include <limits>
+#include <vector>
 
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
@@ -91,6 +95,22 @@ extern "C" xbase::XBaseEngine* shell_engine();
 using cli::Settings;
 
 namespace {
+
+enum class CommitStatus {
+    NoChanges,
+    Complete,
+    PartialRecordFailure,
+    FinalizeFailure,
+};
+
+struct CommitResult {
+    CommitStatus status{CommitStatus::NoChanges};
+    int applied_ok{0};
+    int applied_fail{0};
+
+    bool complete() const noexcept { return status == CommitStatus::Complete; }
+    bool attempted() const noexcept { return status != CommitStatus::NoChanges; }
+};
 
 
 static void print_commit_usage()
@@ -261,28 +281,41 @@ static bool auto_reindex_if_needed(xbase::DbArea& A,
         if (talk) std::cout << "COMMIT: rebuilding CNX...\n";
         std::istringstream args("");
         cmd_REBUILD(A, args);
+        if (dottalk::table::is_stale(area0)) {
+            std::cout << "COMMIT: CNX rebuild did not clear stale state.\n";
+            return false;
+        }
         return true;
     }
 
     if (talk) std::cout << "COMMIT: reindexing INX/IDX...\n";
     std::istringstream args("");
     cmd_REINDEX(A, args);
+    if (dottalk::table::is_stale(area0)) {
+        std::cout << "COMMIT: INX/IDX reindex did not clear stale state.\n";
+        return false;
+    }
     return true;
 }
 
-static void commit_one_area(xbase::DbArea& A,
-                            int area0,
-                            bool talk,
-                            bool interactive_rebuild)
+static CommitResult commit_one_area(xbase::DbArea& A,
+                                    int area0,
+                                    bool talk,
+                                    bool interactive_rebuild)
 {
     auto& tb = dottalk::table::get_tb(area0);
 
     if (tb.empty()) {
         if (talk) std::cout << "COMMIT: no changes in buffer.\n";
-        return;
+        return {};
     }
 
     CursorRestore restore(A);
+
+    // A later memo/index/journal failure must not make the pending operation
+    // disappear. Updates and deletes are safe to reapply on retry; COMMIT does
+    // not currently materialize CHANGE_INSERT in apply_one_recno().
+    const auto pending_before = tb.changes;
 
     // Iterate unique recnos in the multimap.
     int applied_ok = 0;
@@ -305,33 +338,7 @@ static void commit_one_area(xbase::DbArea& A,
         }
     }
 
-    if (applied_fail == 0) {
-        if (auto* mm = A.memoManagerPtr()) {
-            std::string memo_err;
-            if (!mm->flush(&memo_err) && talk) {
-                std::cout << "COMMIT: memo flush failed"
-                          << (memo_err.empty() ? std::string{} : std::string(" (" + memo_err + ")"))
-                          << "\n";
-            }
-        }
-
-        // Mark not-dirty before any legacy rebuild command that may refuse dirty TABLE state.
-        dottalk::table::set_dirty(area0, false);
-
-        (void)auto_reindex_if_needed(A, area0, talk, interactive_rebuild);
-
-        // Persistent TABLE BUFFER stub hook. Future implementation should
-        // close/archive/truncate the journal after the physical commit succeeds.
-        (void)dottalk::table::journal_note_commit(area0);
-
-        // Clean/fresh.
-        tb.clear();
-        dottalk::table::set_dirty(area0, false);
-        dottalk::table::set_stale(area0, false);
-        dottalk::table::clear_stale_fields(area0);
-
-        if (talk) std::cout << "COMMIT: done. (" << applied_ok << " recs)\n";
-    } else {
+    if (applied_fail != 0) {
         // Keep dirty/stale; buffer still contains remaining failed recnos.
         dottalk::table::set_dirty(area0, true);
         if (talk) {
@@ -341,7 +348,49 @@ static void commit_one_area(xbase::DbArea& A,
             std::cout << "COMMIT: partial. OK=" << applied_ok
                       << " FAIL=" << applied_fail << ".\n";
         }
+        return {CommitStatus::PartialRecordFailure, applied_ok, applied_fail};
     }
+
+    if (auto* mm = A.memoManagerPtr()) {
+        std::string memo_err;
+        if (!mm->flush(&memo_err)) {
+            tb.changes = pending_before;
+            dottalk::table::set_dirty(area0, true);
+            std::cout << "COMMIT: failed during memo flush"
+                      << (memo_err.empty() ? std::string{} : std::string(" (" + memo_err + ")"))
+                      << "; buffer retained for retry. DBF writes may already have occurred.\n";
+            return {CommitStatus::FinalizeFailure, applied_ok, 1};
+        }
+    }
+
+    // Legacy rebuild commands refuse a dirty TABLE state. Temporarily expose
+    // the already-applied record stage as clean, then restore dirty state if
+    // the rebuild does not prove success by clearing stale state.
+    dottalk::table::set_dirty(area0, false);
+    if (!auto_reindex_if_needed(A, area0, talk, interactive_rebuild)) {
+        tb.changes = pending_before;
+        dottalk::table::set_dirty(area0, true);
+        std::cout << "COMMIT: failed during index finalization; buffer retained for retry. "
+                     "DBF and memo writes may already have occurred.\n";
+        return {CommitStatus::FinalizeFailure, applied_ok, 1};
+    }
+
+    // Persistent TABLE BUFFER stub hook. A future implementation must return
+    // false when the durable journal cannot record/finalize the commit.
+    if (!dottalk::table::journal_note_commit(area0)) {
+        tb.changes = pending_before;
+        dottalk::table::set_dirty(area0, true);
+        std::cout << "COMMIT: failed during journal finalization; buffer retained for retry.\n";
+        return {CommitStatus::FinalizeFailure, applied_ok, 1};
+    }
+
+    tb.clear();
+    dottalk::table::set_dirty(area0, false);
+    dottalk::table::set_stale(area0, false);
+    dottalk::table::clear_stale_fields(area0);
+
+    if (talk) std::cout << "COMMIT: complete. (" << applied_ok << " recs)\n";
+    return {CommitStatus::Complete, applied_ok, 0};
 }
 
 } // namespace
@@ -383,12 +432,14 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
             std::cout << "COMMIT: cannot determine current area.\n";
             return;
         }
-        commit_one_area(A, area0, talk, interactive_rebuild);
+        (void)commit_one_area(A, area0, talk, interactive_rebuild);
         return;
     }
 
     // COMMIT ALL
+    int attempted = 0;
     int committed = 0;
+    int failed = 0;
     for (int i = 0; i < xbase::MAX_AREA; ++i) {
         auto& Ai = eng->area(i);
         if (!Ai.isOpen()) continue;
@@ -397,11 +448,17 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
         auto& tb = dottalk::table::get_tb(i);
         if (tb.empty()) continue;
 
-        commit_one_area(Ai, i, talk, interactive_rebuild);
-        ++committed;
+        const CommitResult result = commit_one_area(Ai, i, talk, interactive_rebuild);
+        if (!result.attempted()) continue;
+        ++attempted;
+        if (result.complete()) ++committed;
+        else                   ++failed;
     }
 
-    if (committed == 0) {
+    if (attempted == 0) {
         std::cout << "COMMIT ALL: no buffered changes.\n";
+    } else {
+        std::cout << "COMMIT ALL: complete=" << committed
+                  << " failed=" << failed << ".\n";
     }
 }

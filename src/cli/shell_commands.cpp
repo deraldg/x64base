@@ -137,7 +137,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Non-positioning (should preserve cursor): no refresh here
     registry().add("COUNT",        [](DbArea& A, std::istringstream& S){ cmd_COUNT(A,S);    });
     registry().add("LIST",         [](DbArea& A, std::istringstream& S){ cmd_LIST(A,S);     });
+#if DOTTALK_WITH_INDEX
     registry().add("LIST_LMDB",    [](DbArea& A, std::istringstream& S){ cmd_LIST_LMDB(A,S);});
+#endif
     registry().add("DISPLAY",      [](DbArea& A, std::istringstream& S){ cmd_DISPLAY(A,S);  });
     registry().add("GPS",          [](DbArea& A, std::istringstream& S){ cmd_GPS(A,S);      });
 
@@ -235,7 +237,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Cursor movers (seek/find/order): rely on cursor hook
     registry().add("FIND",         [](DbArea& A, std::istringstream& S){ cmd_FIND(A,S);     });
     registry().add("SEEK",         [](DbArea& A, std::istringstream& S){ cmd_SEEK(A,S);     });
+#if DOTTALK_WITH_INDEX
     registry().add("SETORDER",     [](DbArea& A, std::istringstream& S){ cmd_SETORDER(A,S); relations_api::refresh_if_enabled(); });
+#endif
 
     // General SET-family commands. SET UNIQUE is a multi-word command key.
     // SETPATH changes path slots, not open table state.
