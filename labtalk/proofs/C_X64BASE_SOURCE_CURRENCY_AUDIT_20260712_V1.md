@@ -146,6 +146,14 @@ review of the development build exposed that `src/cli/cmd_concat.cpp` was
 byte-identical in `C:\x64base` and participated in the staged CMake build, but
 was still untracked and therefore absent from publication commit `fdb882a0`.
 
+The resulting committed-blob audit covered all 980 current C/C++ and header
+paths under `src`, `include`, and `bindings`. It found the coherent `EXITS`
+source set in the same state: `src/cli/cmd_exits.cpp`,
+`src/cli/extension_manifest.cpp`, and `src/cli/extension_manifest.hpp` were
+byte-identical in development and staging and available to the local glob-based
+build, but were not tracked by the publication commit. All four files were then
+selected explicitly for Git publication.
+
 The correction gate is now explicit: source currency must verify development
 content, staged working-copy content, and Git index/commit inclusion. A local
 build can consume an untracked file and cannot by itself prove GitHub
