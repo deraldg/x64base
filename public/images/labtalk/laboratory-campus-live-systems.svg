@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="campus-title campus-desc">
+  <title id="campus-title">Learning Around Live Systems</title>
+  <desc id="campus-desc">An isometric laboratory campus with a central x64base systems building connected by paths to Runtime, History, SelfDoc, Case, Dataset, and Interface laboratories.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4fafc"/>
+      <stop offset="1" stop-color="#e7f1f3"/>
+    </linearGradient>
+    <linearGradient id="campus-ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dcece4"/>
+      <stop offset="0.55" stop-color="#e9eee1"/>
+      <stop offset="1" stop-color="#dde6ef"/>
+    </linearGradient>
+    <linearGradient id="tower-front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5ac8c4"/>
+      <stop offset="1" stop-color="#3d6fb4"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#17384a" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .sans { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .label { font: 700 14px Inter, "Segoe UI", Arial, sans-serif; fill: #183142; text-anchor: middle; }
+      .sub { font: 500 11px Inter, "Segoe UI", Arial, sans-serif; fill: #607681; text-anchor: middle; }
+      .path { fill: none; stroke: #aec2c5; stroke-width: 16; stroke-linecap: round; opacity: .72; }
+      .path-line { fill: none; stroke: #f7fbf9; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 10; opacity: .95; }
+      .window { fill: #dff7f6; stroke: #7fb0ba; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="760" fill="url(#sky)"/>
+  <path d="M0 536 C185 462 345 521 508 475 C680 427 798 538 966 494 C1095 461 1178 461 1280 430 L1280 760 L0 760Z" fill="url(#campus-ground)"/>
+  <path d="M48 176 C332 83 654 109 910 87 C1050 76 1148 72 1228 61" fill="none" stroke="#cddde2" stroke-width="2"/>
+
+  <g class="sans">
+    <text x="72" y="86" font-size="14" font-weight="800" letter-spacing="2.2" fill="#266a78">LABORATORY CAMPUS</text>
+    <text x="72" y="139" font-size="44" font-weight="750" fill="#17283a">Learning Around Live Systems</text>
+    <text x="74" y="177" font-size="17" fill="#566c79">Explore working systems, their evidence, their history, and the lessons built from them.</text>
+  </g>
+
+  <!-- Walkways are drawn first so every route visibly terminates at a building. -->
+  <g aria-hidden="true">
+    <path class="path" d="M640 520 C540 520 438 487 350 433"/>
+    <path class="path-line" d="M640 520 C540 520 438 487 350 433"/>
+    <path class="path" d="M640 500 C583 425 544 384 500 338"/>
+    <path class="path-line" d="M640 500 C583 425 544 384 500 338"/>
+    <path class="path" d="M676 497 C753 416 817 373 892 337"/>
+    <path class="path-line" d="M676 497 C753 416 817 373 892 337"/>
+    <path class="path" d="M688 535 C830 535 962 505 1088 449"/>
+    <path class="path-line" d="M688 535 C830 535 962 505 1088 449"/>
+    <path class="path" d="M620 556 C560 593 500 629 444 655"/>
+    <path class="path-line" d="M620 556 C560 593 500 629 444 655"/>
+    <path class="path" d="M694 555 C756 592 816 624 868 650"/>
+    <path class="path-line" d="M694 555 C756 592 816 624 868 650"/>
+  </g>
+
+  <!-- Runtime Systems Lab -->
+  <g transform="translate(244 352)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#d7efea" stroke="#a7cbd0"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#d0e5e5" stroke="#a7cbd0"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#ffffff" stroke="#a7cbd0"/>
+    <rect x="111" y="91" width="55" height="23" rx="4" fill="#62bdb3"/>
+    <path d="M120 99h16m-16 7h25" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <rect class="window" x="18" y="68" width="20" height="30"/>
+    <rect class="window" x="48" y="82" width="20" height="30"/>
+  </g>
+  <text class="label" x="343" y="527">Runtime Lab</text>
+  <text class="sub" x="343" y="546">commands · state · proof</text>
+
+  <!-- History Lab -->
+  <g transform="translate(402 258)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#fae7bd" stroke="#d6bf91"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#ead9b6" stroke="#d6bf91"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#fffdf8" stroke="#d6bf91"/>
+    <circle cx="143" cy="100" r="23" fill="#f39a67"/>
+    <path d="M143 87v14l10 7M125 100h4m28 0h4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <rect x="17" y="66" width="52" height="10" rx="2" fill="#b87b54" opacity=".75"/>
+    <rect x="22" y="84" width="42" height="10" rx="2" fill="#b87b54" opacity=".55"/>
+  </g>
+  <text class="label" x="501" y="433">History Lab</text>
+  <text class="sub" x="501" y="452">lineage · cases · context</text>
+
+  <!-- SelfDoc Lab -->
+  <g transform="translate(794 256)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#e8e3fb" stroke="#c2badf"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#ddd9ef" stroke="#c2badf"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#fff" stroke="#c2badf"/>
+    <rect x="115" y="82" width="56" height="43" rx="6" fill="#817fe2"/>
+    <path d="M125 94h36M125 103h29M125 112h33" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M17 67l25 11 25-4v35l-25 4-25-11Z" fill="#f7f5ff" stroke="#8f89bd"/>
+  </g>
+  <text class="label" x="893" y="431">SelfDoc Lab</text>
+  <text class="sub" x="893" y="450">contracts · HELP · validation</text>
+
+  <!-- Case Library -->
+  <g transform="translate(990 367)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#f7dde6" stroke="#d9afbd"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#ead1da" stroke="#d9afbd"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#fff" stroke="#d9afbd"/>
+    <path d="M116 88h46v34h-46zM122 81h19l5 7h16" fill="#df7898" stroke="#c86786" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="19" y="68" width="48" height="8" rx="2" fill="#ba748a" opacity=".7"/>
+    <rect x="24" y="84" width="43" height="8" rx="2" fill="#ba748a" opacity=".5"/>
+  </g>
+  <text class="label" x="1089" y="542">Case Library</text>
+  <text class="sub" x="1089" y="561">stories · decisions · review</text>
+
+  <!-- Dataset Library -->
+  <g transform="translate(346 574)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#e8f0cf" stroke="#b9c99b"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#dce7c5" stroke="#b9c99b"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#fff" stroke="#b9c99b"/>
+    <ellipse cx="143" cy="89" rx="26" ry="8" fill="#a9c86b"/>
+    <path d="M117 89v27c0 5 12 9 26 9s26-4 26-9V89M117 102c0 5 12 9 26 9s26-4 26-9" fill="#b9d57c" stroke="#8fad58" stroke-width="2"/>
+    <path d="M18 69h51M18 83h51M18 97h51M35 63v48M52 63v55" stroke="#8ba667" stroke-width="2" opacity=".8"/>
+  </g>
+  <text class="label" x="445" y="742">Dataset Library</text>
+
+  <!-- Interface Lab -->
+  <g transform="translate(770 570)" filter="url(#shadow)">
+    <path d="M0 30 L108 0 L198 41 L91 72Z" fill="#dceafb" stroke="#aec5dc"/>
+    <path d="M0 30 L91 72 L91 151 L0 109Z" fill="#d0dfef" stroke="#aec5dc"/>
+    <path d="M91 72 L198 41 L198 120 L91 151Z" fill="#fff" stroke="#aec5dc"/>
+    <rect x="114" y="82" width="58" height="38" rx="4" fill="#76acd8"/>
+    <path d="M143 120v9m-14 0h28" stroke="#5b7e9c" stroke-width="3" stroke-linecap="round"/>
+    <rect x="18" y="67" width="52" height="39" rx="3" fill="#f5fbff" stroke="#7fa6c6"/>
+    <path d="M24 76h39M24 84h18M24 93h31" stroke="#7fa6c6" stroke-width="2"/>
+  </g>
+  <text class="label" x="869" y="738">Interface Lab</text>
+
+  <!-- Central x64base Systems Hall -->
+  <g transform="translate(548 422)" filter="url(#shadow)">
+    <path d="M0 47 L112 0 L224 47 L112 95Z" fill="#cfe8ea" stroke="#8fbac2" stroke-width="2"/>
+    <path d="M0 47 L112 95 L112 205 L0 157Z" fill="#d8e8eb" stroke="#8fbac2" stroke-width="2"/>
+    <path d="M112 95 L224 47 L224 157 L112 205Z" fill="#f9fdfd" stroke="#8fbac2" stroke-width="2"/>
+    <path d="M67 73 L112 50 L157 73 L112 97Z" fill="#61d2cb"/>
+    <path d="M67 73 L112 97 L112 146 L67 122Z" fill="#4ca1bd"/>
+    <path d="M112 97 L157 73 L157 122 L112 146Z" fill="url(#tower-front)"/>
+    <path d="M124 108h21M124 118h21M124 128h14" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    <rect x="143" y="144" width="42" height="43" rx="4" fill="#244c64"/>
+    <circle cx="164" cy="163" r="3" fill="#60d2cc"/>
+    <rect class="window" x="21" y="94" width="20" height="27"/>
+    <rect class="window" x="51" y="107" width="20" height="27"/>
+  </g>
+  <rect x="542" y="662" width="238" height="50" rx="25" fill="#17384a"/>
+  <circle cx="570" cy="687" r="10" fill="#5dd4cc"/>
+  <text class="sans" x="594" y="682" font-size="10" font-weight="800" letter-spacing="1.25" fill="#a6c0c9">x64base SYSTEMS HALL</text>
+  <text class="sans" x="594" y="699" font-size="9.5" fill="#d9e6e9">source → runtime → evidence → lesson</text>
+</svg>
