@@ -327,6 +327,16 @@ Changed:
 Verified:
 - build, runtime command, report, readback, or reason verification was not run
 
+AI-facing docs updated (or reason not applicable):
+- path and what changed
+- OR: "no lane state changed this session"
+
 Still open:
 - review, proof, drift, or promotion gate
 ```
+
+The third block is the **closeout-updates-startup** gate (AIF-006). If the
+session changed lane state — objective, branch, authority pointer, contract,
+dashboard status, intake row — the AI-facing document describing that state
+must be updated in the same session, or the omission explicitly justified. See
+`AI_PORTAL.md` -> "Closeout Updates Startup".

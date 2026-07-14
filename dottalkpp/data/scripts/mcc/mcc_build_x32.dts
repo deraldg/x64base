@@ -1,0 +1,325 @@
+* ===========================================================================
+* MCC_BUILD_X32.DTS          STAGE 1 OF 3
+* MS-DOS / x32 tables + CNX indexes, from the untouched MCC archive.
+*
+* Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety:  MUTATING
+* Purpose: Build the x32 sample foundation. Every later flavor derives from it.
+* Inputs:  data\dbf\og\*.DBF        (extract_mcc_og.ps1; never written)
+* Outputs: data\dbf\x32\*.dbf
+*          data\indexes\x32\*.cnx
+* Mutation: DBF, CNX
+* Gate:    run reset_mcc_fixtures.ps1 -Execute first, or CNX CREATE will refuse
+*          the existing containers and this becomes a REINDEX, not a rebuild.
+*
+* ---------------------------------------------------------------------------
+* THE CHAIN
+*     MyCommunityCollege.zip  ->  og  ->  x32  ->  vfp  ->  x64
+*                                        THIS
+*
+* The archive is already dBase III / MS-DOS, so og -> x32 is a flavor-preserving
+* copy. It is still routed through COPY AS MSDOS rather than a file copy, so the
+* x32 set has the same one-command provenance as every other stage.
+*
+* ---------------------------------------------------------------------------
+* PATH RULES (maintainer, 2026-07-14)
+*   - two directories minimum before any work: DBF and INDEXES
+*   - default homes for x32 / vfp / x64 data: data\dbf\<lane>
+*   - index directories: data\indexes\<lane>
+*   - index names match table names
+*   - data\lmdb is x64 ONLY -- no LMDB on this lane
+*
+* Destination paths are relative to the DATA ROOT.
+*     COPY TO DBF\x32\<T>   ->  data\dbf\x32\<T>.dbf     CORRECT
+*     COPY TO ..\x32\<T>    ->  dottalkpp\x32\<T>.dbf    WRONG -- climbs above
+*                                                        data\. This silently
+*                                                        wrote 36 files to three
+*                                                        junk directories on
+*                                                        2026-07-14 and reported
+*                                                        nothing.
+*
+* Do NOT use "DO X32" here: the DOTSCRIPT resolver resolves relative to the
+* INVOKING script's directory, so from scripts\mcc\ it cannot see data\x32.dts.
+* It reports the miss and CONTINUES with the slots unchanged. Inline them.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_build_x32.dts OUT tmp\mcc_x32.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC STAGE 1/3 -- x32 / MS-DOS  (+ CNX indexes)
+ECHO   og -> x32
+ECHO ========================================================
+
+* ===========================================================================
+* PHASE 1 -- flavor conversion, og -> x32
+* ===========================================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/og
+SET PATH INDEXES INDEXES/x32
+ECHO [SETUP] DBF -> DBF/og   INDEXES -> INDEXES/x32
+
+SELECT 0
+
+ECHO [1/12] BUILDING
+USE BUILDING NOINDEX
+COPY TO DBF\x32\BUILDING AS MSDOS OVERWRITE
+
+ECHO [2/12] CLASSES
+USE CLASSES NOINDEX
+COPY TO DBF\x32\CLASSES AS MSDOS OVERWRITE
+
+ECHO [3/12] COURSES
+USE COURSES NOINDEX
+COPY TO DBF\x32\COURSES AS MSDOS OVERWRITE
+
+ECHO [4/12] DEPT
+USE DEPT NOINDEX
+COPY TO DBF\x32\DEPT AS MSDOS OVERWRITE
+
+ECHO [5/12] ENROLL
+USE ENROLL NOINDEX
+COPY TO DBF\x32\ENROLL AS MSDOS OVERWRITE
+
+ECHO [6/12] MAJORS
+USE MAJORS NOINDEX
+COPY TO DBF\x32\MAJORS AS MSDOS OVERWRITE
+
+ECHO [7/12] ROOMS
+USE ROOMS NOINDEX
+COPY TO DBF\x32\ROOMS AS MSDOS OVERWRITE
+
+ECHO [8/12] STUDENTS
+USE STUDENTS NOINDEX
+COPY TO DBF\x32\STUDENTS AS MSDOS OVERWRITE
+
+ECHO [9/12] STUD_MAJ
+USE STUD_MAJ NOINDEX
+COPY TO DBF\x32\STUD_MAJ AS MSDOS OVERWRITE
+
+ECHO [10/12] TASSIGN
+USE TASSIGN NOINDEX
+COPY TO DBF\x32\TASSIGN AS MSDOS OVERWRITE
+
+ECHO [11/12] TEACHERS
+USE TEACHERS NOINDEX
+COPY TO DBF\x32\TEACHERS AS MSDOS OVERWRITE
+
+ECHO [12/12] TERMS
+USE TERMS NOINDEX
+COPY TO DBF\x32\TERMS AS MSDOS OVERWRITE
+
+* NOINDEX above is deliberate. The og tables have no indexes of their own, but
+* the INDEXES slot points at another lane's containers, and USE would happily
+* auto-attach one -- setting a logical order on the SOURCE of a copy. Open the
+* originals in physical order. Nothing should be attached to og, ever.
+
+* ===========================================================================
+* PHASE 2 -- CNX containers, batch-rebuilt
+* ===========================================================================
+* x32 uses CNX: a sorted index by tag, BATCH REBUILD ONLY. No runtime tag
+* mutation on this lane -- that is a CDX (x64) capability. REINDEX CNX is the
+* only way these tags get built.
+*
+* Tag set harvested from the live containers 2026-07-14, NOT from the schema
+* notes -- the notes under-declare. Confirmed identical across x32 and x64.
+*
+* On a virgin run every CNX CREATE must say "created:". If it says "file
+* already exists", the reset did not run and this is a REINDEX, not a rebuild.
+
+ECHO ========================================================
+ECHO PHASE 2 -- CNX containers + batch REINDEX
+ECHO Every CNX CREATE must report "created:".
+ECHO "file already exists" means the reset did not run.
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x32
+SET PATH INDEXES INDEXES/x32
+ECHO [SETUP] DBF -> DBF/x32   INDEXES -> INDEXES/x32
+
+ECHO --- BUILDING ---
+SELECT 0
+USE BUILDING
+CNX CREATE
+CNX ADDTAG BLDG
+REINDEX CNX
+CNX TAGS
+
+ECHO --- STUDENTS ---
+SELECT 1
+USE STUDENTS
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG MAJOR
+CNX ADDTAG LNAME
+CNX ADDTAG FNAME
+CNX ADDTAG DOB
+CNX ADDTAG GPA
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TEACHERS ---
+SELECT 2
+USE TEACHERS
+CNX CREATE
+CNX ADDTAG TID
+CNX ADDTAG DEPT_ID
+CNX ADDTAG LNAME
+CNX ADDTAG FNAME
+REINDEX CNX
+CNX TAGS
+
+ECHO --- COURSES ---
+SELECT 3
+USE COURSES
+CNX CREATE
+CNX ADDTAG CID
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- CLASSES ---
+SELECT 4
+USE CLASSES
+CNX CREATE
+CNX ADDTAG CLS_ID
+CNX ADDTAG TERM
+CNX ADDTAG CID
+CNX ADDTAG ROOM
+CNX ADDTAG TID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- ENROLL ---
+SELECT 5
+USE ENROLL
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG CLS_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- ROOMS ---
+SELECT 6
+USE ROOMS
+CNX CREATE
+CNX ADDTAG ROOM
+CNX ADDTAG BLDG
+REINDEX CNX
+CNX TAGS
+
+ECHO --- MAJORS ---
+SELECT 7
+USE MAJORS
+CNX CREATE
+CNX ADDTAG MAJOR
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- DEPT ---
+SELECT 8
+USE DEPT
+CNX CREATE
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TERMS ---
+SELECT 9
+USE TERMS
+CNX CREATE
+CNX ADDTAG TERM
+REINDEX CNX
+CNX TAGS
+
+ECHO --- STUD_MAJ ---
+SELECT 10
+USE STUD_MAJ
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG MAJOR
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TASSIGN ---
+SELECT 11
+USE TASSIGN
+CNX CREATE
+CNX ADDTAG CLS_ID
+CNX ADDTAG TID
+REINDEX CNX
+CNX TAGS
+
+* ===========================================================================
+* PROOF -- freshness, then logical order
+* ===========================================================================
+* A record count alone is not proof the copy landed. On 2026-07-14 the copies
+* went to a junk directory and the readback opened the OLD tables, which
+* happened to match. Assert the DATA, not just the shape.
+*
+*   virgin STUDENTS : 200 records, record 1 = 50000000 Taylor Quinn
+*   stale  STUDENTS : 201 records, record 1 = 50000000 Taylor Derald
+
+ECHO ========================================================
+ECHO PROOF -- freshness assertion. DO NOT SKIM.
+ECHO
+ECHO   STUDENTS must be EXACTLY 200 records.
+ECHO   Record 1 under TAG SID must read: 50000000 Taylor Quinn
+ECHO
+ECHO   201 records, or FNAME "Derald", means the COPY did not land
+ECHO   and you are looking at a stale table. STOP.
+ECHO
+ECHO   All 12 areas must be under dbf\x32 -- NOT dbf\og.
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x32
+SET PATH INDEXES INDEXES/x32
+WORKSPACE OPEN DBF
+WORKSPACE
+
+SELECT STUDENTS
+SHOW TABLE
+SHOW COLUMNS
+COUNT
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- normal-use pattern: order by LNAME ---
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- ENROLL: must be 686 ---
+SELECT ENROLL
+COUNT
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,CLS_ID NEXT 5
+
+ECHO --- TEACHERS: must be 20 ---
+SELECT TEACHERS
+COUNT
+
+WORKSPACE SAVE mcc_x32
+
+ECHO ========================================================
+ECHO STAGE 1/3 COMPLETE -- x32
+ECHO
+ECHO A zero exit code is NOT proof. The runner reports unknown
+ECHO commands and continues. Review the whole transcript.
+ECHO
+ECHO Reject on:
+ECHO   - CNX CREATE saying "file already exists" (reset did not run)
+ECHO   - STUDENTS reporting 201 records or FNAME "Derald"
+ECHO   - WORKSPACE areas under dbf\og instead of dbf\x32
+ECHO   - REINDEX FAIL count above zero
+ECHO   - SMARTLIST not in logical tag order
+ECHO
+ECHO Next: DOTSCRIPT TRACE scripts\mcc\mcc_build_vfp.dts OUT tmp\mcc_vfp.log
+ECHO ========================================================

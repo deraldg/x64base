@@ -1,0 +1,329 @@
+* ===========================================================================
+* MCC_BUILD_X64_LMDB.DTS
+* Build CDX index containers and tags for the x64 MCC tables, then build the
+* LMDB backing store from those CDX containers.
+*
+* Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety:  MUTATING
+* Purpose: Produce indexes/x64/*.cdx (PUBLISHED) and the LMDB backing store
+*          under lmdb/x64/*.cdx.d (DERIVED - NEVER PUBLISHED).
+* Inputs:  dottalkpp/data/dbf/x64/*.DBF   (from mcc_build_x64.dts)
+* Outputs: dottalkpp/data/indexes/x64/*.cdx     <- commit these
+*          dottalkpp/data/lmdb/x64/*.cdx.d/     <- gitignored, 53 GB class
+* Mutation: CDX containers, lmdb-index-backend, filesystem, order-state
+* Fixture: regenerable from dbf/x64 + this script
+* Gate:    maintainer authorization required
+*
+* ---------------------------------------------------------------------------
+* CORRECTED 2026-07-14 -- the first draft of this script was wrong.
+*
+* It used  INDEX ON <field> TAG <name>  to build CDX tags, and  SETLMDB  to
+* "materialize" the LMDB env. Both were wrong:
+*
+*   INDEX ON   builds an INX file, not a CDX tag.
+*              (DOTTALKPP_COMMAND_REFERENCE_GUIDE_V1.md: "Build an INX index
+*              file from the current table using a field key")
+*   SETLMDB    only SELECTS LMDB-backed ordering for an already-built env.
+*              (cmd_setlmdb.cpp: "select LMDB-backed ordering per area")
+*   BUILDLMDB  is the builder.
+*              (cmd_buildlmdb.cpp: "BUILDLMDB for CDX containers -> LMDB
+*              backing store", "data\indexes\students.cdx -> data\lmdb\
+*              students.cdx.d")
+*
+* The proven pipeline, per 154 occurrences of "BUILDLMDB CLEAN YES" across the
+* .dts corpus and the canonical script
+* dottalkpp/data/scripts/comments/SOURCE_COMMENT_IMPORT_ONLY.dts:
+*
+*     SET PATH DBF / INDEXES / LMDB
+*     SELECT <n>
+*     USE <table>
+*     CDX CREATE
+*     CDX ADDTAG <field>
+*     BUILDLMDB CLEAN YES
+*
+* ---------------------------------------------------------------------------
+* RESOLVED DRIFT: expression indexes are NOT a DotTalk++ capability.
+*
+* dbf/x64/community_college_x64_schema.txt suggests composite keys:
+*     STUDENTS:  INDEX ON UPPER(LNAME+FNAME) TAG NAME
+*     CLASSES:   INDEX ON TERM+CID+STR(SEC,2) TAG TCSEC
+*
+* Three independent sources say otherwise:
+*   1. src/cli/cmd_index.cpp usage block:      INDEX ON <field> TAG <name>
+*   2. DOTTALKPP_COMMAND_REFERENCE_GUIDE_V1:   "using a field key"
+*   3. Every INDEX ON in the entire .dts corpus (40+ statements): bare fields.
+*      Zero expressions. Not one UPPER(), not one concatenation.
+*
+* The schema file says "create in FoxPro". It is FoxPro advice that was never
+* DotTalk++ practice. Composite tags NAME and TCSEC are therefore NOT built.
+* Single-field tags only, below.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_build_x64_lmdb.dts OUT tmp\mcc_x64_lmdb.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC x64 -- CDX containers + LMDB backing store
+ECHO CDX  -> indexes/x64/*.cdx      (PUBLISHED)
+ECHO LMDB -> lmdb/x64/*.cdx.d       (DERIVED, gitignored)
+ECHO ========================================================
+
+* --- Bootstrap state explicitly (Readiness Seed 3) --------------------------
+* Do NOT use "DO X64" here. The DOTSCRIPT resolver resolves relative to the
+* INVOKING SCRIPT'S directory (scripts/mcc/), not the data root -- it would
+* look for scripts/mcc/X64.dts, miss, REPORT the miss, and CONTINUE with the
+* path slots unchanged. That exact failure hit mcc_build_x32.dts on
+* 2026-07-14: PATH DBF stayed on DBF/og, so the script indexed the ORIGINALS
+* and wrote 11 stray .cnx files into indexes/ root.
+*
+* The profile is three lines. Inline them. Each .dts sets its own environment.
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [SETUP] DBF -> DBF/x64   INDEXES -> INDEXES/x64   LMDB -> LMDB/x64
+
+* ===========================================================================
+* One table per block: open, create container, add tags, build LMDB.
+* BUILDLMDB CLEAN YES archives any existing env first, then rebuilds without
+* the destructive prompt path. CLEAN and YES are both required for a
+* non-interactive rebuild (cmd_buildlmdb.cpp workflow policy).
+* ===========================================================================
+
+* ---------------------------------------------------------------------------
+* TAG SET -- harvested from the live x32 containers on 2026-07-14 and confirmed
+* by the maintainer as identical for x64. NOT taken from the schema notes.
+*
+* The x32 run proved the schema notes UNDER-DESCRIBE the real indexes. Every
+* CNX CREATE reported "file already exists" and every CNX ADDTAG reported "tag
+* already exists", so REINDEX rebuilt tags the script had never declared:
+*
+*     STUDENTS   notes: SID          actual: SID MAJOR LNAME FNAME DOB GPA
+*     CLASSES    notes: CLS_ID       actual: CLS_ID TERM CID ROOM TID
+*     TEACHERS   notes: TID DEPT_ID  actual: TID DEPT_ID LNAME FNAME
+*     ROOMS      notes: ROOM         actual: ROOM BLDG
+*     MAJORS     notes: MAJOR        actual: MAJOR DEPT_ID
+*     STUD_MAJ   notes: SID          actual: SID MAJOR
+*     TASSIGN    notes: CLS_ID       actual: CLS_ID TID
+*     BUILDING   notes: (none)       actual: BLDG
+*
+* A build script that only appears to work because the containers already exist
+* is not a rebuild lane. Declaring the real set makes this reproducible from an
+* EMPTY indexes/x64 directory.
+*
+* Authority: live containers + maintainer confirmation. Not the schema prose.
+* ---------------------------------------------------------------------------
+
+ECHO --- BUILDING ---
+SELECT 0
+USE BUILDING
+CDX CREATE
+CDX ADDTAG BLDG
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- STUDENTS ---
+SELECT 1
+USE STUDENTS
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG MAJOR
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+CDX ADDTAG DOB
+CDX ADDTAG GPA
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TEACHERS ---
+SELECT 2
+USE TEACHERS
+CDX CREATE
+CDX ADDTAG TID
+CDX ADDTAG DEPT_ID
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- COURSES ---
+SELECT 3
+USE COURSES
+CDX CREATE
+CDX ADDTAG CID
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- CLASSES ---
+SELECT 4
+USE CLASSES
+CDX CREATE
+CDX ADDTAG CLS_ID
+CDX ADDTAG TERM
+CDX ADDTAG CID
+CDX ADDTAG ROOM
+CDX ADDTAG TID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- ENROLL ---
+SELECT 5
+USE ENROLL
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG CLS_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- ROOMS ---
+SELECT 6
+USE ROOMS
+CDX CREATE
+CDX ADDTAG ROOM
+CDX ADDTAG BLDG
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- MAJORS ---
+SELECT 7
+USE MAJORS
+CDX CREATE
+CDX ADDTAG MAJOR
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- DEPT ---
+SELECT 8
+USE DEPT
+CDX CREATE
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TERMS ---
+SELECT 9
+USE TERMS
+CDX CREATE
+CDX ADDTAG TERM
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- STUD_MAJ ---
+SELECT 10
+USE STUD_MAJ
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG MAJOR
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TASSIGN ---
+SELECT 11
+USE TASSIGN
+CDX CREATE
+CDX ADDTAG CLS_ID
+CDX ADDTAG TID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+* ===========================================================================
+* PROOF -- logical order, not file existence
+* ===========================================================================
+* Proving a .cdx file EXISTS is not proof the index orders records correctly.
+* Open the set, attach, select the tag, and read the records back in order.
+* SMARTLIST rather than LIST, because logical order is the behavior under test
+* (AI_BABY_BOOTSTRAP_CARD: "Use SMARTLIST rather than LIST for order/index
+* testing unless LIST itself is the target").
+*
+* USE auto-attaches flavor-appropriate indexes -- x64/v128 prefer CDX -- so an
+* explicit SET INDEX should not be needed after the containers exist. It is
+* issued anyway so the transcript shows the attach explicitly rather than
+* relying on an implicit one.
+
+ECHO ========================================================
+ECHO PROOF -- open the set, read back in logical order
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+WORKSPACE OPEN DBF
+WORKSPACE
+
+ECHO Areas must be under dbf\x64 -- NOT dbf\og. If they are under og,
+ECHO the path slots did not switch and everything above is invalid.
+
+ECHO --- STUDENTS under CDX tag order ---
+SELECT STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 10
+
+ECHO --- STUDENTS under LMDB-backed ordering (same tag, same order expected) ---
+SETLMDB STUDENTS SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 10
+
+* SETLMDB 0 clears ordering (physical). NOT "SETLMDB PHYSICAL" -- that form
+* does not exist. The 2026-07-14 run proved it: SETLMDB PHYSICAL treated
+* PHYSICAL as a container name and failed with
+*     "openCdx: LMDB env missing: ...\PHYSICAL.cdx.d"
+* Per SET LMDB USAGE: "SET LMDB 0 clears ordering and closes the current
+* index manager."
+*
+* NOTE: mcc_exhaustive_full_regression_canaries_lmdb.dts uses SETLMDB PHYSICAL
+* in several places. It is failing there too, silently. Worth a look.
+
+SETLMDB 0
+
+ECHO --- ENROLL under CDX tag order ---
+SELECT ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,CLS_ID NEXT 10
+
+* ===========================================================================
+* SAVE THE WORKSPACE
+* ===========================================================================
+* WORKSPACE SAVE persists the open areas plus the relations graph (if one
+* exists), indexes, and tags. That makes the whole fixture set reopenable in
+* one step instead of twelve, and captures the index/tag state we just built.
+
+ECHO ========================================================
+ECHO SAVE -- persist areas + relations + indexes + tags
+ECHO ========================================================
+
+WORKSPACE SAVE mcc_x64
+
+ECHO ========================================================
+ECHO MCC x64 index build complete.
+ECHO
+ECHO REVIEW THE FULL TRANSCRIPT. A zero exit code is NOT proof --
+ECHO the DotScript runner reports unknown commands and continues.
+ECHO
+ECHO Reject or investigate:
+ECHO   - Unknown command
+ECHO   - CDX CREATE refusing an existing container (it will NOT overwrite;
+ECHO     on a rebuild over an existing set this is expected, not an error --
+ECHO     but confirm the existing tags are the ones you want)
+ECHO   - missing table, field, or tag errors
+ECHO   - BUILDLMDB prompting instead of proceeding (CLEAN YES should prevent)
+ECHO   - SMARTLIST output NOT in logical tag order
+ECHO   - CDX and LMDB orderings DISAGREEING for the same tag
+ECHO   - known canary: ROOMS has failed SETLMDB in past runs
+ECHO     (see mcc_exhaustive_full_regression_canaries_lmdb.dts)
+ECHO
+ECHO Commit:  indexes/x64/*.cdx
+ECHO Ignore:  lmdb/x64/*.cdx.d/   (rebuild with this script)
+ECHO
+ECHO Default BUILDLMDB mapsize is 128 MiB (MEDIUM). The MCC tables are small
+ECHO (84 KB total), so no preset override is used. If a table ever outgrows
+ECHO the map, use BUILDLMDB CLEAN MAPSIZE <n> YES.
+ECHO ========================================================

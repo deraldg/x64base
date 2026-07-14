@@ -222,9 +222,18 @@ Changed:
 Verified:
 - build, runtime command, report, or readback
 
+AI-facing docs updated (or reason not applicable):
+- path and what changed
+- OR: "no lane state changed this session"
+
 Still open:
 - review, proof, drift, or promotion gate
 ```
+
+The third block is the closeout-updates-startup gate (AIF-006). A session that
+changes lane state must also update the onboarding document that describes that
+state. The repo is the memory; if the front door goes stale, the memory lies.
+See `AI_PORTAL.md` -> "Closeout Updates Startup".
 
 ## 16. Final Rule
 

@@ -1,0 +1,291 @@
+* ===========================================================================
+* MCC_BUILD_VFP.DTS          STAGE 2 OF 3
+* Visual FoxPro tables + CNX indexes, derived from the x32 set.
+*
+* Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety:  MUTATING
+* Purpose: Second link in the sample-data chain.
+* Inputs:  data\dbf\x32\*.dbf       (mcc_build_x32.dts)
+* Outputs: data\dbf\vfp\*.dbf
+*          data\indexes\vfp\*.cnx
+* Mutation: DBF, CNX
+* Gate:    mcc_build_x32.dts must have completed cleanly first.
+*
+* THE CHAIN
+*     MyCommunityCollege.zip  ->  og  ->  x32  ->  vfp  ->  x64
+*                                                 THIS
+*
+* PATHS: destinations are relative to the DATA ROOT.
+*     COPY TO DBF\vfp\<T>  ->  data\dbf\vfp\<T>.dbf
+* Never "..\vfp\" -- that climbs ABOVE data\ and writes to dottalkpp\vfp\.
+*
+* WATCH FOR: "AS VFP writes free-table 10-byte descriptor field names" and
+* "COPY AS free-table fails if 10-byte descriptor names would collide."
+* The MCC field names are all <=10 chars, so a collision is unlikely -- but a
+* per-table COPY failure would not stop the run. The freshness assertion at the
+* bottom is what catches a short set.
+*
+* No LMDB on this lane. LMDB backs CDX, and CDX is x64 only.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_build_vfp.dts OUT tmp\mcc_vfp.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC STAGE 2/3 -- VFP  (+ CNX indexes)
+ECHO   x32 -> vfp
+ECHO ========================================================
+
+* ===========================================================================
+* PHASE 1 -- flavor conversion, x32 -> vfp
+* ===========================================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x32
+SET PATH INDEXES INDEXES/vfp
+ECHO [SETUP] DBF -> DBF/x32 (source)   INDEXES -> INDEXES/vfp (target)
+
+SELECT 0
+
+ECHO [1/12] BUILDING
+USE BUILDING NOINDEX
+COPY TO DBF\vfp\BUILDING AS VFP OVERWRITE
+
+ECHO [2/12] CLASSES
+USE CLASSES NOINDEX
+COPY TO DBF\vfp\CLASSES AS VFP OVERWRITE
+
+ECHO [3/12] COURSES
+USE COURSES NOINDEX
+COPY TO DBF\vfp\COURSES AS VFP OVERWRITE
+
+ECHO [4/12] DEPT
+USE DEPT NOINDEX
+COPY TO DBF\vfp\DEPT AS VFP OVERWRITE
+
+ECHO [5/12] ENROLL
+USE ENROLL NOINDEX
+COPY TO DBF\vfp\ENROLL AS VFP OVERWRITE
+
+ECHO [6/12] MAJORS
+USE MAJORS NOINDEX
+COPY TO DBF\vfp\MAJORS AS VFP OVERWRITE
+
+ECHO [7/12] ROOMS
+USE ROOMS NOINDEX
+COPY TO DBF\vfp\ROOMS AS VFP OVERWRITE
+
+ECHO [8/12] STUDENTS
+USE STUDENTS NOINDEX
+COPY TO DBF\vfp\STUDENTS AS VFP OVERWRITE
+
+ECHO [9/12] STUD_MAJ
+USE STUD_MAJ NOINDEX
+COPY TO DBF\vfp\STUD_MAJ AS VFP OVERWRITE
+
+ECHO [10/12] TASSIGN
+USE TASSIGN NOINDEX
+COPY TO DBF\vfp\TASSIGN AS VFP OVERWRITE
+
+ECHO [11/12] TEACHERS
+USE TEACHERS NOINDEX
+COPY TO DBF\vfp\TEACHERS AS VFP OVERWRITE
+
+ECHO [12/12] TERMS
+USE TERMS NOINDEX
+COPY TO DBF\vfp\TERMS AS VFP OVERWRITE
+
+* NOINDEX: open the source in physical order. Do not let an index attach and
+* set a logical order on the source of a copy.
+
+* ===========================================================================
+* PHASE 2 -- CNX containers
+* ===========================================================================
+* Every CNX CREATE must report "created:". "file already exists" means the
+* reset did not run and this is a REINDEX, not a rebuild.
+
+ECHO ========================================================
+ECHO PHASE 2 -- CNX containers + batch REINDEX
+ECHO Every CNX CREATE must report "created:".
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/vfp
+SET PATH INDEXES INDEXES/vfp
+ECHO [SETUP] DBF -> DBF/vfp   INDEXES -> INDEXES/vfp
+
+ECHO --- BUILDING ---
+SELECT 0
+USE BUILDING
+CNX CREATE
+CNX ADDTAG BLDG
+REINDEX CNX
+CNX TAGS
+
+ECHO --- STUDENTS ---
+SELECT 1
+USE STUDENTS
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG MAJOR
+CNX ADDTAG LNAME
+CNX ADDTAG FNAME
+CNX ADDTAG DOB
+CNX ADDTAG GPA
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TEACHERS ---
+SELECT 2
+USE TEACHERS
+CNX CREATE
+CNX ADDTAG TID
+CNX ADDTAG DEPT_ID
+CNX ADDTAG LNAME
+CNX ADDTAG FNAME
+REINDEX CNX
+CNX TAGS
+
+ECHO --- COURSES ---
+SELECT 3
+USE COURSES
+CNX CREATE
+CNX ADDTAG CID
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- CLASSES ---
+SELECT 4
+USE CLASSES
+CNX CREATE
+CNX ADDTAG CLS_ID
+CNX ADDTAG TERM
+CNX ADDTAG CID
+CNX ADDTAG ROOM
+CNX ADDTAG TID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- ENROLL ---
+SELECT 5
+USE ENROLL
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG CLS_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- ROOMS ---
+SELECT 6
+USE ROOMS
+CNX CREATE
+CNX ADDTAG ROOM
+CNX ADDTAG BLDG
+REINDEX CNX
+CNX TAGS
+
+ECHO --- MAJORS ---
+SELECT 7
+USE MAJORS
+CNX CREATE
+CNX ADDTAG MAJOR
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- DEPT ---
+SELECT 8
+USE DEPT
+CNX CREATE
+CNX ADDTAG DEPT_ID
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TERMS ---
+SELECT 9
+USE TERMS
+CNX CREATE
+CNX ADDTAG TERM
+REINDEX CNX
+CNX TAGS
+
+ECHO --- STUD_MAJ ---
+SELECT 10
+USE STUD_MAJ
+CNX CREATE
+CNX ADDTAG SID
+CNX ADDTAG MAJOR
+REINDEX CNX
+CNX TAGS
+
+ECHO --- TASSIGN ---
+SELECT 11
+USE TASSIGN
+CNX CREATE
+CNX ADDTAG CLS_ID
+CNX ADDTAG TID
+REINDEX CNX
+CNX TAGS
+
+* ===========================================================================
+* PROOF
+* ===========================================================================
+
+ECHO ========================================================
+ECHO PROOF -- freshness assertion. DO NOT SKIM.
+ECHO
+ECHO   STUDENTS must be EXACTLY 200 records.
+ECHO   Record 1 under TAG SID must read: 50000000 Taylor Quinn
+ECHO
+ECHO   201 records, or FNAME "Derald", means the COPY did not land
+ECHO   and you are looking at the stale hand-edited table. STOP.
+ECHO
+ECHO   All 12 areas must be under dbf\vfp.
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/vfp
+SET PATH INDEXES INDEXES/vfp
+WORKSPACE OPEN DBF
+WORKSPACE
+
+SELECT STUDENTS
+SHOW TABLE
+SHOW COLUMNS
+COUNT
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- normal-use pattern: order by LNAME ---
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- ENROLL: must be 686 ---
+SELECT ENROLL
+COUNT
+
+ECHO --- CLASSES: must be 200 ---
+SELECT CLASSES
+COUNT
+
+ECHO --- TEACHERS: must be 20 ---
+SELECT TEACHERS
+COUNT
+
+WORKSPACE SAVE mcc_vfp
+
+ECHO ========================================================
+ECHO STAGE 2/3 COMPLETE -- VFP
+ECHO
+ECHO Reject on:
+ECHO   - CNX CREATE saying "file already exists"
+ECHO   - STUDENTS reporting 201 records or FNAME "Derald"
+ECHO   - a descriptor-name collision on COPY AS VFP
+ECHO   - fewer than 12 areas
+ECHO
+ECHO Next: DOTSCRIPT TRACE scripts\mcc\mcc_build_x64.dts OUT tmp\mcc_x64.log
+ECHO ========================================================
