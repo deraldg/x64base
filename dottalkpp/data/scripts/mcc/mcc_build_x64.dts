@@ -1,0 +1,316 @@
+* ===========================================================================
+* MCC_BUILD_X64.DTS          STAGE 3 OF 3
+* x64 tables + CDX indexes + LMDB backing store, derived from the VFP set.
+*
+* Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety:  MUTATING
+* Purpose: Final link in the sample-data chain. This is the lane the engine
+*          is actively developed against.
+* Inputs:  data\dbf\vfp\*.dbf       (mcc_build_vfp.dts)
+* Outputs: data\dbf\x64\*.dbf
+*          data\indexes\x64\*.cdx        <- PUBLISHED (commit these)
+*          data\lmdb\x64\*.cdx.d         <- DERIVED (gitignored; regenerate)
+* Mutation: DBF, CDX, LMDB backing store, order-state
+* Gate:    mcc_build_vfp.dts must have completed cleanly first.
+*
+* THE CHAIN
+*     MyCommunityCollege.zip  ->  og  ->  x32  ->  vfp  ->  x64
+*                                                          THIS
+*
+* WHY LMDB IS NOT PUBLISHED
+* LMDB is a derived backend, not a stored format. BUILDLMDB materializes it
+* from the CDX container. Measured 53 GB across data\lmdb on 2026-07-14. The
+* CDX is committed; the LMDB is regenerated locally by this script. That is
+* what makes it safe to gitignore.
+*
+* Commands, per their usage contracts:
+*     CDX CREATE / CDX ADDTAG   build the container and its tags
+*     BUILDLMDB CLEAN YES       build the LMDB store FROM the CDX container
+*     SETLMDB <stem> <tag>      only SELECTS an already-built LMDB ordering
+*     INDEX ON                  builds an INX file -- a DIFFERENT lane. Not used.
+*
+* x64 supports runtime index tag mutation. x32/VFP (CNX) do not.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_build_x64.dts OUT tmp\mcc_x64.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC STAGE 3/3 -- x64  (+ CDX indexes + LMDB)
+ECHO   vfp -> x64
+ECHO ========================================================
+
+* ===========================================================================
+* PHASE 1 -- flavor conversion, vfp -> x64
+* ===========================================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/vfp
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [SETUP] DBF -> DBF/vfp (source)   INDEXES -> INDEXES/x64   LMDB -> LMDB/x64
+
+SELECT 0
+
+ECHO [1/12] BUILDING
+USE BUILDING NOINDEX
+COPY TO DBF\x64\BUILDING AS X64 VECTOR OVERWRITE
+
+ECHO [2/12] CLASSES
+USE CLASSES NOINDEX
+COPY TO DBF\x64\CLASSES AS X64 VECTOR OVERWRITE
+
+ECHO [3/12] COURSES
+USE COURSES NOINDEX
+COPY TO DBF\x64\COURSES AS X64 VECTOR OVERWRITE
+
+ECHO [4/12] DEPT
+USE DEPT NOINDEX
+COPY TO DBF\x64\DEPT AS X64 VECTOR OVERWRITE
+
+ECHO [5/12] ENROLL
+USE ENROLL NOINDEX
+COPY TO DBF\x64\ENROLL AS X64 VECTOR OVERWRITE
+
+ECHO [6/12] MAJORS
+USE MAJORS NOINDEX
+COPY TO DBF\x64\MAJORS AS X64 VECTOR OVERWRITE
+
+ECHO [7/12] ROOMS
+USE ROOMS NOINDEX
+COPY TO DBF\x64\ROOMS AS X64 VECTOR OVERWRITE
+
+ECHO [8/12] STUDENTS
+USE STUDENTS NOINDEX
+COPY TO DBF\x64\STUDENTS AS X64 VECTOR OVERWRITE
+
+ECHO [9/12] STUD_MAJ
+USE STUD_MAJ NOINDEX
+COPY TO DBF\x64\STUD_MAJ AS X64 VECTOR OVERWRITE
+
+ECHO [10/12] TASSIGN
+USE TASSIGN NOINDEX
+COPY TO DBF\x64\TASSIGN AS X64 VECTOR OVERWRITE
+
+ECHO [11/12] TEACHERS
+USE TEACHERS NOINDEX
+COPY TO DBF\x64\TEACHERS AS X64 VECTOR OVERWRITE
+
+ECHO [12/12] TERMS
+USE TERMS NOINDEX
+COPY TO DBF\x64\TERMS AS X64 VECTOR OVERWRITE
+
+* ===========================================================================
+* PHASE 2 -- CDX containers + tags, then the LMDB backing store
+* ===========================================================================
+* Every CDX CREATE must report "created:". "file already exists" means the
+* reset did not run and this is a rebuild of stale containers.
+*
+* BUILDLMDB CLEAN YES: CLEAN archives any existing env first, YES authorizes
+* the destructive rebuild without a prompt. Default mapsize 128 MiB (MEDIUM);
+* the MCC tables are tiny, so no override.
+
+ECHO ========================================================
+ECHO PHASE 2 -- CDX containers + tags, then BUILDLMDB
+ECHO Every CDX CREATE must report "created:".
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [SETUP] DBF -> DBF/x64   INDEXES -> INDEXES/x64   LMDB -> LMDB/x64
+
+ECHO --- BUILDING ---
+SELECT 0
+USE BUILDING
+CDX CREATE
+CDX ADDTAG BLDG
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- STUDENTS ---
+SELECT 1
+USE STUDENTS
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG MAJOR
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+CDX ADDTAG DOB
+CDX ADDTAG GPA
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TEACHERS ---
+SELECT 2
+USE TEACHERS
+CDX CREATE
+CDX ADDTAG TID
+CDX ADDTAG DEPT_ID
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- COURSES ---
+SELECT 3
+USE COURSES
+CDX CREATE
+CDX ADDTAG CID
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- CLASSES ---
+SELECT 4
+USE CLASSES
+CDX CREATE
+CDX ADDTAG CLS_ID
+CDX ADDTAG TERM
+CDX ADDTAG CID
+CDX ADDTAG ROOM
+CDX ADDTAG TID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- ENROLL ---
+SELECT 5
+USE ENROLL
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG CLS_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- ROOMS ---
+SELECT 6
+USE ROOMS
+CDX CREATE
+CDX ADDTAG ROOM
+CDX ADDTAG BLDG
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- MAJORS ---
+SELECT 7
+USE MAJORS
+CDX CREATE
+CDX ADDTAG MAJOR
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- DEPT ---
+SELECT 8
+USE DEPT
+CDX CREATE
+CDX ADDTAG DEPT_ID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TERMS ---
+SELECT 9
+USE TERMS
+CDX CREATE
+CDX ADDTAG TERM
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- STUD_MAJ ---
+SELECT 10
+USE STUD_MAJ
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG MAJOR
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+ECHO --- TASSIGN ---
+SELECT 11
+USE TASSIGN
+CDX CREATE
+CDX ADDTAG CLS_ID
+CDX ADDTAG TID
+BUILDLMDB CLEAN YES
+CDX TAGS
+
+* ===========================================================================
+* PROOF
+* ===========================================================================
+* NOTE: dbf\x64 also holds TEST64.dbf, which is not part of MCC. WORKSPACE
+* therefore reports 13 areas here, not 12. Expected.
+
+ECHO ========================================================
+ECHO PROOF -- freshness assertion. DO NOT SKIM.
+ECHO
+ECHO   STUDENTS must be EXACTLY 200 records.
+ECHO   Record 1 under TAG SID must read: 50000000 Taylor Quinn
+ECHO
+ECHO   201 records, or FNAME "Derald", means the COPY did not land
+ECHO   and you are looking at the stale hand-edited table. STOP.
+ECHO
+ECHO   SHOW TABLE must report a v64 header, not dBase III.
+ECHO   WORKSPACE reports 13 areas: TEST64.dbf is not part of MCC.
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+WORKSPACE OPEN DBF
+WORKSPACE
+
+SELECT STUDENTS
+SHOW TABLE
+SHOW COLUMNS
+COUNT
+
+ECHO --- CDX tag order ---
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- normal-use pattern: order by LNAME ---
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+ECHO --- LMDB-backed ordering: same tag, same order expected ---
+SETLMDB STUDENTS SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+SETLMDB 0
+
+ECHO --- ENROLL: must be 686 ---
+SELECT ENROLL
+COUNT
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,CLS_ID NEXT 5
+
+ECHO --- TEACHERS: must be 20 ---
+SELECT TEACHERS
+COUNT
+
+WORKSPACE SAVE mcc_x64
+
+ECHO ========================================================
+ECHO STAGE 3/3 COMPLETE -- x64. THE SAMPLE FOUNDATION IS BUILT.
+ECHO
+ECHO Reject on:
+ECHO   - CDX CREATE saying "file already exists"
+ECHO   - STUDENTS reporting 201 records or FNAME "Derald"
+ECHO   - BUILDLMDB prompting instead of proceeding
+ECHO   - CDX and LMDB orderings DISAGREEING for the same tag
+ECHO   - SHOW TABLE reporting a dBase III header
+ECHO
+ECHO Commit:  data\dbf\{x32,vfp,x64}  and  data\indexes\{x32,vfp,x64}
+ECHO Ignore:  data\lmdb  (derived; rebuild with mcc_build_x64_lmdb.dts)
+ECHO
+ECHO Next: DOTSCRIPT TRACE scripts\mcc\mcc_demo.dts OUT tmp\mcc_demo.log
+ECHO       (read-only tour of normal database operations)
+ECHO ========================================================

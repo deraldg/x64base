@@ -60,6 +60,15 @@ DartConfiguration.tcl
 /dottalkpp/data/lmdb/**/backups/
 /docs/locale/repairs/rollback/
 /docs/manuals/developer/manualgen/generated/
+/docs/datadict/backups/
+/docs/datadict/reports/
+/docs/messaging/apply/
+/docs/messaging/backups/
+/docs/messaging/reports/
+/docs/messaging/sandbox/
+/docs/manuals/developer/manualgen/reports/
+/docs/manuals/developer/manualgen/runlog/
+/docs/manuals/developer/proofs/
 
 # Local staging, backups, and ad hoc work areas
 /_drops/
@@ -87,6 +96,11 @@ DartConfiguration.tcl
 /*.sqlite
 /*.db
 /*.mdb
+*.sqlite
+*.db
+*.mdb
+/dottalkpp/data/biblebase/
+/dottalkpp/data/cascade_precision_erp/*.sqlite
 /*.part-*
 
 # Root-level generated inventories and accidental litter
@@ -98,6 +112,16 @@ DartConfiguration.tcl
 /-RepoRoot
 /=
 /Unknown
+/tmp_function_smoke.dts
+/tmp_smoke_curated_lanes_*.txt
+/tmp_stage_smoke_curated_lanes_*.txt
+/tmp_stage_sync_list.txt
+/x64base.com.txt
+/cmd_ddict.cpp.review_candidate
+
+# Local documentation drop-ins and review scratch
+/docs/_drops/homegrown/
+*.review_candidate
 
 # Python helpers
 __pycache__/
@@ -108,4 +132,64 @@ __pycache__/
 
 # Test results
 /results/
-/dottalk-webui/public-site/
+
+# Experimental TUI build byproducts
+/tv_test/build/
+/tvhc/build/
+
+# Third-party build checkouts / FetchContent source drops inside dev builds
+/FoxApp/build/_deps/
+/python_misc/build/_deps/
+/scripts/build/_deps/
+
+# Placeholder concept lanes kept out of repo noise until activated
+/cookbooks/
+/pipelines/
+
+# ---------------------------------------------------------------------------
+# Editing sidecars and pre-edit snapshots (2026-07-14)
+#
+# These are development-tree working artifacts. They are never publishable and
+# must not be promoted to C:\x64base. Observed leaking into staging as 815
+# untracked files, dominated by dotref.hpp.bak_phase5_* and *.before_mdo_*.
+#
+# See docs/agents/CURRENT_TARGET.md and AI_PORTAL.md
+# ("What C:\x64base Is - and Is Not").
+# ---------------------------------------------------------------------------
+*.bak
+*.bak_*
+*.before_mdo_*
+*.orig
+*.rej
+*.save
+*.SAVE
+*.save.txt
+
+# Backup lanes - working copies, never publishable
+/dottalkpp/data/backup/
+**/backup/
+
+# ---------------------------------------------------------------------------
+# LMDB index environments (2026-07-14)
+#
+# LMDB is a DERIVED index backend. It is materialized from the CDX container
+# via SETLMDB (see src/cli/cmd_setlmdb.cpp: DbArea -> IndexManager ->
+# CdxBackend -> LMDB env, stored as <stem>.cdx.d/).
+#
+# Measured 53 GB in dottalkpp/data/lmdb on 2026-07-14. It must never reach
+# C:\x64base or GitHub. Publish the CDX; regenerate the LMDB locally with
+# dottalkpp/data/scripts/mcc/mcc_build_x64_lmdb.dts.
+# ---------------------------------------------------------------------------
+/dottalkpp/data/lmdb/
+**/*.cdx.d/
+
+# ---------------------------------------------------------------------------
+# MCC extracted originals (2026-07-14)
+#
+# data/dbf/og is DERIVED. extract_mcc_og.ps1 unpacks it from the canonical
+# MyCommunityCollege.zip, which IS published. Publishing both would ship the
+# same 84 KB twice and invite them to drift apart.
+#
+# The zip is the origin. og is a working copy of it.
+# ---------------------------------------------------------------------------
+/dottalkpp/data/dbf/og/

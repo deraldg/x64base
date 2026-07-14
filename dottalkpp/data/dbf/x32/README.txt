@@ -18,7 +18,9 @@ Notes:
 - Files are written as dBase III (version 0x03) with no memo fields for
   maximum compatibility with FoxPro 2.6a.
 - Field names are <=10 chars and uppercase; dates are YYYYMMDD.
-- Suggested indexes (create in FoxPro):
+- Indexes.
+
+  HISTORICAL -- FoxPro 2.6a origin. Retained as provenance. NOT DotTalk++ syntax:
     STUDENTS:  INDEX ON SID TAG SID, INDEX ON UPPER(LNAME+FNAME) TAG NAME
     TEACHERS:  INDEX ON TID TAG TID, INDEX ON DEPT_ID TAG DEPT
     COURSES:   INDEX ON CID TAG CID, INDEX ON DEPT_ID TAG DEPT
@@ -30,6 +32,49 @@ Notes:
     TERMS:     INDEX ON TERM TAG TERM
     STUD_MAJ:  INDEX ON SID TAG SID
     TASSIGN:   INDEX ON CLS_ID TAG CLS
+
+  DOTTALK++ -- current, contract-backed.
+
+    DotTalk++ INDEX ON takes a FIELD KEY, not an expression. Per the usage
+    contract in src/cli/cmd_index.cpp:
+
+        INDEX ON <field> TAG <name>
+
+    The two composite tags above -- NAME (UPPER(LNAME+FNAME)) and TCSEC
+    (TERM+CID+STR(SEC,2)) -- are FoxPro expression indexes. They CANNOT be
+    built in DotTalk++ and have no DotTalk++ equivalent. Do not copy them.
+
+    Field-key tags for this dataset:
+
+        STUDENTS:  SID
+        TEACHERS:  TID, DEPT_ID
+        COURSES:   CID, DEPT_ID
+        CLASSES:   CLS_ID
+        ENROLL:    SID, CLS_ID
+        ROOMS:     ROOM
+        MAJORS:    MAJOR
+        DEPT:      DEPT_ID
+        TERMS:     TERM
+        STUD_MAJ:  SID
+        TASSIGN:   CLS_ID
+        BUILDING:  (none defined)
+
+    This is an x32 (v32 / MS-DOS) table set, so the index lane is CNX -- a
+    sorted index by tag. It is BATCH REBUILD ONLY. Runtime tag mutation is NOT
+    supported on this lane; that is a CDX (x64) capability.
+
+        USE <table>
+        CNX CREATE
+        CNX ADDTAG <field>
+        REINDEX CNX
+
+    There is no BUILDLMDB here. LMDB backs CDX containers, and CDX is the x64
+    lane. Per USE: "x32 tables prefer CNX, then INX."
+
+    Reproducible build script: dottalkpp/data/scripts/mcc/mcc_build_x32.dts
+
+  Corrected 2026-07-14. The FoxPro block had been read as DotTalk++ syntax by
+  both humans and AI. It is not, and never was.
 
 Sample relationships:
   STUDENTS.SID  -> ENROLL.SID, STUD_MAJ.SID

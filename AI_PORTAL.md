@@ -31,10 +31,10 @@ for the assigned task.
 D:\code\ccode
   authoritative development source and runtime work
         |
-        | reviewed, relevant files only
+        | reviewed, relevant, clean files only
         v
 C:\x64base
-  curated Git publication staging
+  clean Git publication staging repository
         |
         | commit and push
         v
@@ -45,6 +45,39 @@ github.com/deraldg/x64base
 GitHub is the public baseline, not authority over unpublished development work.
 An outside AI must identify the exact public commit on which its proposal is
 based.
+
+### What `C:\x64base` Is — and Is Not
+
+Maintainer-declared, 2026-07-14. This statement supersedes any other
+description of `C:\x64base` in this repository.
+
+`C:\x64base` **is** the clean staging repository that publishes to
+`github.com/deraldg/x64base`. It is a promotion gate, not a workspace.
+
+`C:\x64base` is **not**:
+
+- a backup copy of `D:\code\ccode`;
+- a second development tree;
+- a competing source authority;
+- a place to make original changes.
+
+Consequences:
+
+- Original work happens in `D:\code\ccode` and is promoted outward. Never the
+  reverse.
+- Only reviewed, relevant, clean files are promoted. Development litter —
+  `*.bak_*` sidecars, `*.before_mdo_*` snapshots, scratch notes, generated
+  reports, runtime data churn — must not ride along.
+- Staging cleanliness is a publication property. Because
+  `src/CMakeLists.txt` uses `file(GLOB_RECURSE ...)`, an untracked `.cpp` in
+  staging will compile locally while remaining absent from GitHub. A green
+  build does not prove publication completeness. Verify with `git ls-files`.
+- Development-tree dirtiness in `D:\code\ccode` is normal and is **not** a
+  release risk signal. Release readiness is judged from staged validation
+  state in `C:\x64base`.
+
+Any document that describes `C:\x64base` as a backup is stale. Report it as
+drift rather than acting on it.
 
 ## Source Mutation Rule
 
@@ -110,3 +143,87 @@ Report each state separately:
 - website commit and pushed branch.
 
 Never claim a later state merely because an earlier one succeeded.
+
+### Closeout Updates Startup (AIF-006)
+
+If a session changed **lane state** — a new or superseded contract, a promoted
+item, a new commit or branch, a dashboard status change, a new intake row, or a
+corrected authority statement — then closeout must also update the AI-facing
+document that describes that state:
+
+| If this changed | Update |
+| --- | --- |
+| The current objective | `docs/agents/CURRENT_TARGET.md` |
+| Branch, remote, or authority pointers | `AI_README.md` |
+| Lane status or work log | `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` |
+| A candidate's review status | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` |
+
+This is not a separate remembered chore. It is part of closeout. A session is
+not complete until this step is done, or explicitly declined with a stated
+reason (for example: "read-only review, no lane state changed").
+
+Rationale, recorded so it is not relitigated: on 2026-07-14
+`docs/agents/CURRENT_TARGET.md` was found to name a directory that did not
+exist and to describe `C:\x64base` as a backup rather than the staging
+repository. It had drifted for weeks because updating onboarding material was
+an unenforced good intention rather than a gate. The rest of this project's
+evidence system exists to prevent exactly that failure mode; onboarding
+material was the one lane not covered by it.
+
+An AI-facing doc update is never self-certifying. It is proposed, reviewed, and
+promoted like any other contract or HELP change, under the authority order in
+`docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`.
+
+## AI Session Operator Contract
+
+Purpose: keep AI work aligned with the real promotion flow and avoid false risk
+signals from development-only state.
+
+### Evaluation Rule
+
+Do **not** treat `D:\code\ccode` working-tree dirtiness as release risk by
+itself. Release and publish readiness are judged from the staged validation
+state in `C:\x64base`.
+
+### Required Status Reporting Format
+
+Report all progress and closeout by stage:
+
+1. **Dev** (`D:\code\ccode`)
+2. **Promoted to Staging** (`C:\x64base`)
+3. **Validated in Staging** (build / confirm / test / proof)
+4. **Published** (commit, branch, remote push status)
+
+Never claim a later stage succeeded because an earlier stage succeeded.
+
+### Mutation Guard
+
+Default to report-only unless mutation is explicitly authorized. For source
+mutations, state target files, subsystem, expected behavior change, and
+validation plan before applying edits.
+
+## Local-Access AI Rule
+
+The Outside-AI Delivery Rule above governs hosted AI systems that cannot write
+to disk. Some AI partners **do** have direct write access to `D:\code\ccode`.
+They are not thereby exempt from any gate — write access is a capability, not
+an authorization.
+
+A local-access AI must:
+
+- complete the same mandatory reads, contract preflight, and SDLC lane
+  declaration required of any other partner;
+- obtain explicit maintainer authorization before mutating, and keep the
+  change narrowly scoped to the authorized task;
+- make original changes only in `D:\code\ccode`, never directly in
+  `C:\x64base` or on GitHub;
+- preserve dirty and untracked maintainer work rather than "cleaning" it;
+- treat DBF/CDX/LMDB data, HELP tables, metadata catalogs, generated
+  catalogs, publication outputs, fixtures, backups, and archives as
+  report-only unless the current task names that mutation;
+- leave branch operations to the maintainer;
+- report by stage, and never report a stage it did not reach.
+
+Direct file access removes the packaging step. It does not remove the gate.
+An AI that can edit the repository without being asked is the failure mode this
+portal exists to prevent.
