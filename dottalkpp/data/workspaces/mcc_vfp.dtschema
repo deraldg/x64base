@@ -1,0 +1,13 @@
+DTSHEMA 2
+AREA 0 | dbf=BUILDING.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\BUILDING.cnx | indextype=CNX | tag=BLDG | alias=BUILDING
+AREA 1 | dbf=CLASSES.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\CLASSES.cnx | indextype=CNX | tag=CLS_ID | alias=CLASSES
+AREA 2 | dbf=COURSES.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\COURSES.cnx | indextype=CNX | tag=CID | alias=COURSES
+AREA 3 | dbf=DEPT.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\DEPT.cnx | indextype=CNX | tag=DEPT_ID | alias=DEPT
+AREA 4 | dbf=ENROLL.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\ENROLL.cnx | indextype=CNX | tag=SID | alias=ENROLL
+AREA 5 | dbf=MAJORS.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\MAJORS.cnx | indextype=CNX | tag=MAJOR | alias=MAJORS
+AREA 6 | dbf=ROOMS.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\ROOMS.cnx | indextype=CNX | tag=ROOM | alias=ROOMS
+AREA 7 | dbf=STUD_MAJ.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\STUD_MAJ.cnx | indextype=CNX | tag=SID | alias=STUD_MAJ
+AREA 8 | dbf=STUDENTS.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\STUDENTS.cnx | indextype=CNX | tag=LNAME | alias=STUDENTS
+AREA 9 | dbf=TASSIGN.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\TASSIGN.cnx | indextype=CNX | tag=CLS_ID | alias=TASSIGN
+AREA 10 | dbf=TEACHERS.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\TEACHERS.cnx | indextype=CNX | tag=TID | alias=TEACHERS
+AREA 11 | dbf=TERMS.dbf | index=D:\code\ccode\dottalkpp\data\indexes\x32\TERMS.cnx | indextype=CNX | tag=TERM | alias=TERMS

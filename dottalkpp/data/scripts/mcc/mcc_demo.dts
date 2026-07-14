@@ -1,0 +1,183 @@
+* ===========================================================================
+* MCC_DEMO.DTS
+* A guided tour of normal DotTalk++ database operations against the freshly
+* built sample data.
+*
+* Status:  READ-ONLY DEMO
+* Safety:  REPORT_ONLY -- no writes, no mutations, no index changes
+* Purpose: Prove the sample foundation works, and show the shape of ordinary
+*          use. This is the script the documentation and HELP files point at.
+* Inputs:  data\dbf\x64\*.dbf + data\indexes\x64\*.cdx  (mcc_build_x64.dts)
+* Outputs: transcript only
+* Mutation: NONE
+* Gate:    none -- read-only
+*
+* ---------------------------------------------------------------------------
+* THE SHAPE OF NORMAL USE
+*
+*     USE <table>
+*     SET INDEX TO <table>        (CNX or CDX, chosen by flavor)
+*     SET ORDER TO TAG <tag>
+*
+* After that, ordinary database operations are available.
+*
+* AREA DISCIPLINE. There are 256 zero-based work areas. Each holds one table
+* plus its sidecars. Almost every other operation depends on knowing which
+* area you are in:
+*
+*     SELECT STUDENTS      by name
+*     SELECT 8             by number
+*
+* Knowing which AREA you are working in matters as much as knowing which
+* RECORD you are changing.
+*
+*     WORKSPACE            with no arguments, a read-only report of open areas
+*
+* ---------------------------------------------------------------------------
+* INDEX FLAVOR IS AUTOMATIC
+*     x64 / v128  ->  CDX   (runtime tag mutation supported)
+*     x32 / VFP   ->  CNX   (sorted index by tag; batch REINDEX only)
+* USE attaches the right one. You do not have to ask for it.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_demo.dts OUT tmp\mcc_demo.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO MCC DEMO -- normal database operations
+ECHO Read-only. Nothing here mutates anything.
+ECHO ========================================================
+
+* --- Two directories minimum, before any work ------------------------------
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [SETUP] DBF -> DBF/x64   INDEXES -> INDEXES/x64   LMDB -> LMDB/x64
+
+* ===========================================================================
+* 1. OPEN THE WHOLE SET AND LOOK AT IT
+* ===========================================================================
+* WORKSPACE opens every table in the DBF slot at once, attaching each table's
+* index by name. WORKSPACE with no arguments then reports what is open.
+
+ECHO ========================================================
+ECHO 1. OPEN THE SET
+ECHO ========================================================
+
+WORKSPACE OPEN DBF
+WORKSPACE
+
+* ===========================================================================
+* 2. THE THREE-LINE OPENING MOVE
+* ===========================================================================
+
+ECHO ========================================================
+ECHO 2. USE / SET INDEX / SET ORDER
+ECHO ========================================================
+
+SELECT STUDENTS
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+
+SHOW TABLE
+SHOW COLUMNS
+
+* ===========================================================================
+* 3. READ IN LOGICAL ORDER
+* ===========================================================================
+* SMARTLIST honours the active tag order. LIST does not -- it walks the table
+* physically. When order is what you are testing, SMARTLIST is the command.
+
+ECHO ========================================================
+ECHO 3. SMARTLIST -- ascending by LNAME
+ECHO ========================================================
+
+TOP
+SMARTLIST 10
+
+ECHO ========================================================
+ECHO 4. DESC -- reverse the order, same tag
+ECHO ========================================================
+
+DESC
+TOP
+SMARTLIST 10
+
+ECHO ========================================================
+ECHO 5. TOP -- back to the first record in ASCENDING order
+ECHO ========================================================
+* Bare "ASC" does not undo DESC -- it takes an argument, and the 2026-07-14 run
+* proved it: "ASC expects 1 argument(s)." The runner reported the error and
+* CONTINUED, so the table stayed DESCENDING and the DESC state leaked into the
+* LIST FOR below. The output looked fine; the order was wrong.
+*
+* Re-issuing SET ORDER TO TAG restores ascending, which is the default.
+
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST 5
+
+* ===========================================================================
+* 6. QUERY
+* ===========================================================================
+
+ECHO ========================================================
+ECHO 6. LIST FOR -- a predicate over the table
+ECHO ========================================================
+
+LIST FOR LNAME = WHITE
+
+* ===========================================================================
+* 7. RELATIONS -- the point of the sample set
+* ===========================================================================
+* MCC is a relational fixture, not just twelve loose tables:
+*
+*     STUDENTS.SID     -> ENROLL.SID, STUD_MAJ.SID
+*     STUDENTS.MAJOR   -> MAJORS.MAJOR
+*     CLASSES.CLS_ID   -> ENROLL.CLS_ID, TASSIGN.CLS_ID
+*     CLASSES.CID      -> COURSES.CID
+*     COURSES.DEPT_ID  -> DEPT.DEPT_ID
+*     ROOMS.BLDG       -> BUILDING.BLDG
+*
+* WORKSPACE SAVE persists the relations graph alongside the areas, which is
+* why the workspace file is worth more than a list of filenames.
+
+ECHO ========================================================
+ECHO 7. ENROLL -- the child side, ordered by SID
+ECHO ========================================================
+
+SELECT ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,CLS_ID NEXT 10
+
+ECHO ========================================================
+ECHO 8. AREA REPORT -- where am I?
+ECHO ========================================================
+
+WORKSPACE
+
+ECHO ========================================================
+ECHO DEMO COMPLETE. Nothing was mutated.
+ECHO
+ECHO ---------------------------------------------------------
+ECHO DESTRUCTIVE OPERATIONS -- shown, NOT run.
+ECHO
+ECHO These change data. They are deliberately absent from this
+ECHO read-only demo. Run them only against a disposable fixture,
+ECHO never against the sample foundation -- every help file and
+ECHO lesson downstream assumes this data is virgin.
+ECHO
+ECHO     REPLACE LNAME WITH GRIMWOOD
+ECHO     CALC GPA = GPA + 1
+ECHO
+ECHO If you do mutate the sample data, restore it:
+ECHO     .\dottalkpp\scripts\mcc\reset_mcc_fixtures.ps1 -Execute
+ECHO     then re-run stages 1..3.
+ECHO ---------------------------------------------------------
+ECHO ========================================================

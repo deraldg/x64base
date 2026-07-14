@@ -1,0 +1,13 @@
+DTSHEMA 2
+AREA 0 | dbf=BUILDING.dbf | index=BUILDING.cnx | indextype=CNX | tag=BLDG | alias=BUILDING
+AREA 1 | dbf=CLASSES.dbf | index=CLASSES.cnx | indextype=CNX | tag=CLS_ID | alias=CLASSES
+AREA 2 | dbf=COURSES.dbf | index=COURSES.cnx | indextype=CNX | tag=CID | alias=COURSES
+AREA 3 | dbf=DEPT.dbf | index=DEPT.cnx | indextype=CNX | tag=DEPT_ID | alias=DEPT
+AREA 4 | dbf=ENROLL.dbf | index=ENROLL.cnx | indextype=CNX | tag=SID | alias=ENROLL
+AREA 5 | dbf=MAJORS.dbf | index=MAJORS.cnx | indextype=CNX | tag=MAJOR | alias=MAJORS
+AREA 6 | dbf=ROOMS.dbf | index=ROOMS.cnx | indextype=CNX | tag=ROOM | alias=ROOMS
+AREA 7 | dbf=STUD_MAJ.dbf | index=STUD_MAJ.cnx | indextype=CNX | tag=SID | alias=STUD_MAJ
+AREA 8 | dbf=STUDENTS.dbf | index=STUDENTS.cnx | indextype=CNX | tag=LNAME | alias=STUDENTS
+AREA 9 | dbf=TASSIGN.dbf | index=TASSIGN.cnx | indextype=CNX | tag=CLS_ID | alias=TASSIGN
+AREA 10 | dbf=TEACHERS.dbf | index=TEACHERS.cnx | indextype=CNX | tag=TID | alias=TEACHERS
+AREA 11 | dbf=TERMS.dbf | index=TERMS.cnx | indextype=CNX | tag=TERM | alias=TERMS

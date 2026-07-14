@@ -5,6 +5,18 @@ Date: 2026-07-12
 Scope: Laboratory Campus AI onboarding, task context assembly, guarded
 execution, x64base curation, and DotTalk++ teaching integration
 
+## Product Identity
+
+The AI Portal is a machine-facing fast-start system for AI development
+partners entering the x64base environment. It is not a student-facing portal
+for access to an AI service. Laboratory Campus teaching may study or consume
+its reviewed artifacts, but that is separate from the portal's primary role.
+
+Seeds carry durable orientation, authority, workflow, contracts, runtime
+learning, safety, task recipes, and proof expectations. The near-term design
+problem is to connect those seeds simply and transparently into the smallest
+sufficient task packet.
+
 ## Mission
 
 Build an AI-facing entrance to the Laboratory Campus that can rapidly collect

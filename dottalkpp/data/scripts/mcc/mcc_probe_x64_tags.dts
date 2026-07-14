@@ -1,0 +1,124 @@
+* ===========================================================================
+* MCC_PROBE_X64_TAGS.DTS
+* Report the tag set actually present in the x64 CDX containers.
+*
+* Status:  READ-ONLY PROBE
+* Safety:  REPORT_ONLY
+* Purpose: Harvest the real x64 CDX tag inventory so mcc_build_x64_lmdb.dts
+*          can declare it, rather than assuming it mirrors x32.
+* Inputs:  dottalkpp/data/dbf/x64/*.DBF, dottalkpp/data/indexes/x64/*.cdx
+* Outputs: transcript only
+* Mutation: NONE. No CREATE, no ADDTAG, no BUILDLMDB, no REINDEX.
+* Fixture: none touched
+* Gate:    none -- read-only
+*
+* WHY THIS EXISTS
+* ---------------
+* On 2026-07-14 the x32 run proved the schema notes under-describe the real
+* index state. Every CNX CREATE said "file already exists" and every CNX ADDTAG
+* said "tag already exists": the containers held tags the build script had never
+* declared (STUDENTS had SID MAJOR LNAME FNAME DOB GPA, not just SID).
+*
+* The script only appeared to work because it was rebuilding containers it had
+* not created. Delete the index directory and it would have silently produced a
+* thinner index set.
+*
+* Rather than assume the x64 lane mirrors x32, harvest it. The containers are
+* the authority, not the prose.
+*
+*   DOTSCRIPT TRACE scripts\mcc\mcc_probe_x64_tags.dts OUT tmp\mcc_x64_tags.log
+* ===========================================================================
+
+SET ECHO OFF
+
+ECHO ========================================================
+ECHO x64 CDX TAG INVENTORY -- read-only probe
+ECHO Source of truth: the containers, not the schema notes.
+ECHO ========================================================
+
+WORKSPACE CLOSE
+SET PATH DBF DBF/x64
+SET PATH INDEXES INDEXES/x64
+SET PATH LMDB LMDB/x64
+ECHO [SETUP] DBF -> DBF/x64   INDEXES -> INDEXES/x64   LMDB -> LMDB/x64
+
+WORKSPACE OPEN DBF
+WORKSPACE
+
+ECHO Areas must be under dbf\x64. If they say og, stop -- the slots
+ECHO did not switch and this probe is reporting the wrong tables.
+
+ECHO ========================================================
+ECHO CDX INFO + TAGS per table
+ECHO ========================================================
+
+ECHO --- BUILDING ---
+SELECT BUILDING
+CDX INFO
+CDX TAGS
+
+ECHO --- STUDENTS ---
+SELECT STUDENTS
+SHOW TABLE
+CDX INFO
+CDX TAGS
+
+ECHO --- TEACHERS ---
+SELECT TEACHERS
+CDX INFO
+CDX TAGS
+
+ECHO --- COURSES ---
+SELECT COURSES
+CDX INFO
+CDX TAGS
+
+ECHO --- CLASSES ---
+SELECT CLASSES
+CDX INFO
+CDX TAGS
+
+ECHO --- ENROLL ---
+SELECT ENROLL
+CDX INFO
+CDX TAGS
+
+ECHO --- ROOMS ---
+SELECT ROOMS
+CDX INFO
+CDX TAGS
+
+ECHO --- MAJORS ---
+SELECT MAJORS
+CDX INFO
+CDX TAGS
+
+ECHO --- DEPT ---
+SELECT DEPT
+CDX INFO
+CDX TAGS
+
+ECHO --- TERMS ---
+SELECT TERMS
+CDX INFO
+CDX TAGS
+
+ECHO --- STUD_MAJ ---
+SELECT STUD_MAJ
+CDX INFO
+CDX TAGS
+
+ECHO --- TASSIGN ---
+SELECT TASSIGN
+CDX INFO
+CDX TAGS
+
+ECHO ========================================================
+ECHO Probe complete. Nothing was mutated.
+ECHO
+ECHO Send this transcript back. The tag lists above become the
+ECHO CDX ADDTAG declarations in mcc_build_x64_lmdb.dts, so that
+ECHO script can rebuild the x64 index set from an EMPTY
+ECHO indexes/x64 directory -- which is what makes it a fixture
+ECHO rebuild lane rather than a REINDEX in disguise.
+ECHO ========================================================

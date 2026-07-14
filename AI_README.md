@@ -8,7 +8,33 @@ Use this file when prior chat history, hosted memory, or model-specific context
 is unavailable. It points to the repo-local AI portal, seed documents, and
 runtime start points.
 
-## Start Here
+## THIS FILE IS THE ONE FRONT DOOR
+
+There are several onboarding documents in this repo — `AI_PORTAL.md`,
+`AI_ASSIMILATION_PORTAL_V1.md`, `AI_ASSIMILATION_BOOK_V1.md`,
+`AI_BABY_BOOTSTRAP_CARD.md`, `labtalk/ai_portal/README.md`. They overlap because
+they grew at different times. **Do not try to read all of them first.** They are
+depth-on-demand, not a queue.
+
+Start here, in this order, and stop when you have enough for the task:
+
+| Step | Read | Why |
+| --- | --- | --- |
+| 0 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
+| 1 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
+| 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
+| 3 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
+| 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
+| 5 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
+| 6 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
+
+Everything else — the assimilation book, the bootstrap card, the older portal
+docs — is context you pull *when the task needs it*, not a mandatory prefix.
+
+The older ordered list below is retained for continuity, but the table above is
+the canonical entry sequence.
+
+## Start Here (legacy list — superseded by the table above)
 
 Read these files first, in order:
 
@@ -327,6 +353,16 @@ Changed:
 Verified:
 - build, runtime command, report, readback, or reason verification was not run
 
+AI-facing docs updated (or reason not applicable):
+- path and what changed
+- OR: "no lane state changed this session"
+
 Still open:
 - review, proof, drift, or promotion gate
 ```
+
+The third block is the **closeout-updates-startup** gate (AIF-006). If the
+session changed lane state — objective, branch, authority pointer, contract,
+dashboard status, intake row — the AI-facing document describing that state
+must be updated in the same session, or the omission explicitly justified. See
+`AI_PORTAL.md` -> "Closeout Updates Startup".

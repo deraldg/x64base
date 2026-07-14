@@ -27,6 +27,17 @@ The user should be able to see:
 | LabTalk portal integration | active seed | `labtalk/registries/portal.yaml` |
 | AI Portal hardening lane | Alpha/Experimental — active | `labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md` |
 | Generated report integration | not started | future report under `docs/ai-friendly/reports` |
+| Closeout-updates-startup gate (AIF-006) | **promoted 2026-07-14** | `AI_PORTAL.md` -> "Closeout Updates Startup" |
+| Session closeout convention | **active** | `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md` |
+| MCC databuild lane (sample foundation) | **runtime-proven 2026-07-14** | `dottalkpp/data/scripts/mcc/README.md` |
+
+## Session Log
+
+Newest first. Each row is a durable closeout; the chat is not the record.
+
+| Date | Session | Lane state changed | Closeout |
+| --- | --- | --- | --- |
+| 2026-07-14 | MCC databuild, hygiene, AI portal corrections | Databuild lane runtime-proven; AIF-006 promoted; `CURRENT_TARGET` corrected; index-expression drift repaired (13 files); first clean PR merged to GitHub main (`c8826725`) | `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md` |
 
 ## User Status Buckets
 
@@ -68,6 +79,8 @@ Use this table when reading any AI Friendly item:
 | 2026-07-04 | Seed AI Friendly lane | docs only | LabTalk docs, contract lifecycle, agent bootstrap card, SelfDoc lab docs | Created lane manifest, workflow, intake queue. |
 | 2026-07-04 | Add user visibility surface | docs only | AI Friendly seed docs | Created dashboard and linked it from README. |
 | 2026-07-04 | Add new-AI assimilation portal/book | docs and MAINT visibility | AI Friendly docs, agent bootstrap card, DotScript handoff | Created durable onboarding path for new or second-opinion AI. |
+| 2026-07-14 | Publish SDLC-first website and AI Portal update | website source, validated artifacts, staging mirror, GitHub Pages, and private Sites source/version | Website publication contract, AI Portal seeds, maintainer build transcript, live cache-bypassed readback | Website source `f29471e0` is pushed on `codex/lean-sites-publish`; `C:\x64base\dottalk-webui\public-site` is synchronized; GitHub Pages commit `cb907fc6` is built and live without local-drive text; the social card and replacement Campus graphic are live. Private Sites version 12 is saved from the same source, but its owner-only deployment failed in the Sites authentication callback service with HTTP 400, so Sites remains on version 11 pending service repair. |
+| 2026-07-14 | Restore useful version 11 AI Portal detail | website source, validated artifacts, staging mirror, GitHub Pages, and private Sites source/version | Direct comparison of Sites version 11 source `8184c765` with current website source plus maintainer build and live readback | Commit `c499ec7e` restores the implementation inventory, APH-0 through APH-6 hardening roadmap, frontal-memory explanation, detailed safety rules, and Campus role without reverting the newer fast-start and SDLC model. `C:\x64base\dottalk-webui\public-site` is synchronized and GitHub Pages commit `2a4c6cf6` is built and live with all restored sections and no local-drive text. Private Sites version 13 is saved from the same source, but its owner-only deployment again failed in the Sites authentication callback service with HTTP 400; Sites remains on version 11 pending service repair. |
 
 ## Items Needing User Review
 
