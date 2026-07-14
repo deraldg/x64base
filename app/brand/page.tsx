@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Card } from "@/components/Card";
 
 const items = [
@@ -17,6 +18,19 @@ export default function BrandPage() {
           documentation, and learning work remain the primary public story.
         </p>
       </header>
+
+      <figure className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
+        <Image
+          src="/images/brand/x64base-campus-social-card.png"
+          alt="x64base — A glass-box database engine and configurable Laboratory Campus"
+          width={1730}
+          height={909}
+          className="h-auto w-full"
+        />
+        <figcaption className="border-t border-border px-4 py-3 text-sm text-muted">
+          Current x64base and Laboratory Campus social card.
+        </figcaption>
+      </figure>
 
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((i) => (

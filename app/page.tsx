@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 const proofPoints = [
-  { label: "Public source", value: "main", href: "https://github.com/deraldg/x64base" },
-  { label: "Status", value: "Active beta" },
-  { label: "Quality gate", value: "CI + CTest" },
-  { label: "Direction", value: "Laboratory Campus", href: "/about/mission-vision" }
+  { label: "Project mode", value: "Co-development", href: "/docs/dev/recursive-co-development" },
+  { label: "Runtime", value: "DotTalk++" },
+  { label: "SDLC", value: "Proof-gated", href: "/docs/dottalk/sdlc" },
+  { label: "Campus", value: "Configurable + proof-aware", href: "/docs/labtalk/sdlc" }
 ];
 
 const ecosystem = [
@@ -69,7 +69,7 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
-const siteNoticeVersion = "Active beta — public main is canonical";
+const siteNoticeVersion = "Active beta — proof-gated SDLC";
 
 const openArchitectureLanes = [
   {
@@ -147,26 +147,21 @@ export default function HomePage() {
         <div className="max-w-2xl">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">x64base</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg md:text-5xl">
-            Open, inspect, index, relate, and script DBF-family data.
+            A glass-box database engine for building and teaching data systems.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted">
-            x64base is a C++20 research runtime for visible, teachable xBase ideas: tables, records,
-            fields, indexes, memos, relations, and commands. DotTalk++ is the command shell that makes
-            those layers executable and inspectable.
+            x64base is the stateful substrate of a configurable Laboratory Campus. DotTalk++ makes the
+            engine executable and observable; SelfDoc and MDO turn source, HELP, metadata, contracts, and
+            proof into documentation and curriculum. The goal is a glass-but-real system whose development
+            can be inspected, taught, and improved from the same evidence.
           </p>
           <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
             <p className="mt-2">
-              Research software, not a production DBMS. Public claims should resolve to a commit,
-              passing test, release artifact, or clearly labeled planned lane.
+              Runtime claims move through source, contracts, tests, maintainer review, and publication
+              gates. Experimental and planned lanes remain labeled until their evidence is complete.
             </p>
           </div>
-          <pre className="mt-4 overflow-x-auto rounded-lg border border-border bg-bg/70 p-4 font-mono text-sm leading-6 text-fg">
-{`USE students
-SET ORDER TO TAG lname
-SEEK "WHITE"
-SMARTLIST NEXT 5`}
-          </pre>
           <Link
             href="/docs/labtalk/runtime-evidence"
             className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
@@ -179,14 +174,14 @@ SMARTLIST NEXT 5`}
               href="/docs/getting-started/overview"
               className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-bg transition hover:bg-brand/85"
             >
-              Build from source
+              Start reading
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
             <Link
-              href="/docs/getting-started/quickstart"
+              href="/products"
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
             >
-              Quickstart
+              View products
             </Link>
             <a
               href="https://github.com/deraldg/x64base"
@@ -251,12 +246,12 @@ SMARTLIST NEXT 5`}
         <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">open architecture</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Research extensions surround a smaller public core.</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">The extension seams are part of the product.</h2>
             <p className="mt-4 leading-7 text-muted">
-              The canonical public baseline is the DBF runtime, DotTalk++ shell, build, tests,
-              and releases. Index backends, workbenches, student hooks, polling, triggers,
-              SelfDoc, and Laboratory Campus work remain visible as separately labeled research or
-              education lanes.
+              x64base is not only a DBF runtime. It is an intentionally open architecture for index
+              backends, workbench front ends, custom commands and functions, student code hooks,
+              polling, triggers, and runtime lifecycle observation. That work remains visible because
+              it is part of how the engine is learned, extended, reviewed, and proved.
             </p>
             <div className="mt-5 space-y-2 text-sm leading-6 text-muted">
               <p>Live runtime evidence already includes central command registration, Open Index API boundaries, education hooks, and order-aware traversal work.</p>

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: "x64base",
     images: [
       {
-        url: "/og.png",
+        url: "/images/brand/x64base-campus-social-card.png",
         width: 1730,
         height: 909,
         alt: "x64base — A glass-box database engine and configurable Laboratory Campus"
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: "x64base",
     description:
       "An active-beta C++20 DBF-family runtime and inspectable DotTalk++ command shell.",
-    images: ["/og.png"]
+    images: ["/images/brand/x64base-campus-social-card.png"]
   },
   icons: {
     icon: [
