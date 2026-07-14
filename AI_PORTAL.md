@@ -174,6 +174,28 @@ An AI-facing doc update is never self-certifying. It is proposed, reviewed, and
 promoted like any other contract or HELP change, under the authority order in
 `docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`.
 
+### Leave a Session Closeout
+
+Updating the scattered pointers (above) keeps the *current state* correct. But a
+pointer does not tell the next session *what happened* or *why*. For that, a
+session that changed lane state also drops a dated closeout:
+
+```text
+docs/maintenance/SESSION_CLOSEOUT_<topic>_<YYYY-MM-DD>.md
+```
+
+Template: `docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md`.
+Worked example: `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md`.
+
+Then add one row to the **Session Log** in
+`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`.
+
+Why a closeout and not just the pointers: the pointers are a snapshot; the
+closeout is the trail. A new session's fastest true start is "read the newest
+session closeout" — it resumes from one file instead of re-deriving state from
+the whole tree. This is what turns the portal from a filing cabinet into a
+memory. The chat is never the record; the closeout is.
+
 ## AI Session Operator Contract
 
 Purpose: keep AI work aligned with the real promotion flow and avoid false risk
