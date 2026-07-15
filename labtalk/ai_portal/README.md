@@ -6,80 +6,65 @@ Owner: Laboratory Campus / AI Friendly / DotTalk++ integration
 
 ## Purpose
 
-This lane turns the current LabTalk registry browser and static AI assimilation
-documents into a task-oriented AI Portal.
+The AI Portal is a machine-facing orientation and context system for AI
+development partners. It prepares a new or resumed AI for a specific project
+task using explicit authority, contracts, runtime evidence, proof states, safety
+gates, and task recipes.
 
-The AI Portal is **for AI to access the development environment as a partner**.
-It is not a student portal for accessing an AI service. Its first job is to give
-a new or resumed AI a fast, accurate start using durable project seeds rather
-than chat memory.
+It is not:
 
-The portal should prepare an AI for a specific series of project tasks by
-following curated, typed jumps between projects and artifacts, selecting the
-smallest sufficient evidence set, and producing an inspectable task context
-packet.
+- a student portal for consuming an AI service;
+- an autonomous source of project truth;
+- standing permission to mutate, build, stage, commit, push, or publish;
+- a replacement for DotTalk++ SDLC, LabTalk SDLC, contracts, HELP, SelfDoc, MDO,
+  manualgen, or publication review.
 
-The working metaphor is **frontal memory**. The implementation must remain
-explicit and reproducible:
+## Canonical Startup
+
+Do not use the reference shelf below as a competing first-read queue.
+
+Start at repository-root `AI_README.md`, which defines the one canonical order:
+newest closeout, current target, authority seeds, local-access checklist where
+applicable, SDLC entry, contract preflight, and DotScript readiness.
+
+## Reference Shelf — Depth on Demand
+
+Read only the items required by the assigned task:
+
+| Area | Reference |
+| --- | --- |
+| Authority and publication chain | `DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` |
+| Acting-agent failure modes | `LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` |
+| Owning lifecycle and task state | `SDLC_FAST_START_SEED_V1.md` |
+| Source mutation preflight | `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
+| DotScript readiness | `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` |
+| Hosted/outside AI handoff | `EXTERNAL_AI_CHANGE_PACKAGE_V1.md` |
+| Promotion mechanics | `PROMOTION_MODEL_SEED_V1.md` |
+| Seed connection prototype | `SEED_CONNECTION_PROTOTYPE_NOTE_V1.md` |
+| Shell/loop architecture | `../diagrams/DOTTALKPP_SHELL_DISPATCH_AND_LOOP_CAPTURE_V1.md` |
+| Portal implementation | `../portal/README.md` |
+| LabTalk lifecycle | `../LABTALK_SDLC_FRAMEWORK_v0.md` |
+| Recursive co-development doctrine | `../docs/co-development/recursive_coproject_model_v1.md` |
+| Typed registry and gate status | `../registries/ai_portal.yaml` |
+| Older assimilation context | `../../docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`, `AI_ASSIMILATION_BOOK_V1.md` |
+
+## Working Model
 
 ```text
 task request
--> typed project and artifact jumps
--> authority and proof checks
--> bounded task context packet
--> guarded action plan
--> proof readback
--> SelfDoc / MDO / Laboratory Campus feedback
+-> classify project, lifecycle, lane, truth, proof, and risk
+-> follow explicit task-to-seed requirements
+-> verify authority and public baseline
+-> select the smallest sufficient evidence set
+-> explain every selected connection
+-> expose missing or contradictory context
+-> produce a bounded inspectable task packet
+-> require explicit permission before guarded action
+-> capture proof and readback
+-> route durable results to contracts, SelfDoc, MDO, LabTalk, or publication
 ```
 
-## First Reads
-
-1. `DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`
-2. `SDLC_FAST_START_SEED_V1.md`
-3. `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`
-4. `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`
-5. `SEED_CONNECTION_PROTOTYPE_NOTE_V1.md`
-6. `../diagrams/DOTTALKPP_SHELL_DISPATCH_AND_LOOP_CAPTURE_V1.md`
-7. `EXTERNAL_AI_CHANGE_PACKAGE_V1.md`
-8. `AI_PORTAL_HARDENING_LANE_V1.md`
-9. `../portal/README.md`
-10. `../LABTALK_PORTAL_CONCEPT_v0.md`
-11. `../../AI_README.md`
-12. `../../docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
-13. `../../docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
-14. `../docs/co-development/recursive_coproject_model_v1.md`
-15. `../registries/ai_portal.yaml`
-
-## Delivery Posture
-
-The lane is organized around usable increments rather than one long portal
-rewrite.
-
-- First usable target: task recipes plus deterministic context packets.
-- Near-term prototype: connect task intent to the smallest required set of
-  seeds, explain every connection, and expose missing or conflicting context.
-- Hardened target: guarded execution and a task-centered portal interface.
-- Full intent target: x64base-backed curation and a DotTalk++ teaching loop.
-- If a gate runs for more than two weeks without a reviewable artifact, split
-  or reduce that gate before continuing.
-
-The planning baseline is substantially shorter than seven months. Dates remain
-estimates; proof and safe integration determine promotion.
-
-## Mandatory Public Status
-
-The AI Portal lane is **Alpha/Experimental**. Portal, manual, website, and
-generated-summary references must retain that label until graph validation,
-context sufficiency, guarded execution, recovery, and evaluation gates are
-complete. The portal must not be presented as production autonomous memory or
-as an independent source of project truth.
-
-Student and teaching systems may later consume reviewed AI Portal artifacts,
-but student access to AI is not the purpose or primary interface of this lane.
-
-## Authority Boundary
-
-This lane organizes and packages truth. It does not manufacture truth.
+The portal organizes and packages truth; it does not manufacture it.
 
 ```text
 Source defines.
@@ -87,47 +72,66 @@ Runtime proves.
 HELP explains.
 Metadata organizes.
 SelfDoc preserves provenance.
-MDO assembles reviewed documentation.
+MDO/manualgen assembles reviewed documentation.
 The AI Portal selects and explains task-relevant context.
 ```
 
-Raw AI conversation, portal prose, generated packets, and public website copy
-remain derivative material unless promoted through the existing evidence and
-review lanes.
-
-For x64base source and publication work, the mandatory location chain is:
+## Authority Boundary
 
 ```text
 D:\code\ccode -> C:\x64base -> github.com/deraldg/x64base
-development      clean staging  public snapshot
-authority
+development      disposable    public snapshot
+authority        staging
 ```
 
-The current development branch is discovered from the workspace. A new AI chat
-must not create or switch branches without an explicit maintainer instruction.
-The full cold-start and closeout rules are registered in
-`DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`.
+Original implementation belongs in authoritative development. Public `main` is
+the baseline available to outside AI, not authority over unpublished development.
+A new chat is not permission to create, switch, rename, or reset a branch.
 
-Every task must also enter through `SDLC_FAST_START_SEED_V1.md`, declare its
-owning lifecycle and current SDLC lane, and preserve truth, proof, risk, gate,
-and closeout state through implementation and publication.
+## Delivery Posture
 
-An AI is not DotScript-ready merely because it knows xBase or has read a
-language summary. Before AI-authored `.dts` execution, the portal requires the
-runtime-learning, syntax-evidence, bootstrap, safety-classification, and
-transcript-review gates in `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`.
+The lane is delivered as bounded, reviewable increments:
 
-Before source-code mutation, an AI must complete the contract preflight in
-`SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`: read the contract shelf, registry,
-lifecycle, subsystem contracts, and applicable source usage/contract blocks;
-then identify constraints and drift before applying a patch.
+- **First useful surface:** authority seeds, task recipes, readiness probes, and
+  explicit proof states.
+- **Near-term prototype:** deterministic selection of the smallest required seed
+  set, with reasons, conflicts, omissions, and readiness shown.
+- **Hardened target:** guarded execution through reviewed, risk-classified
+  adapters and explicit approval gates.
+- **Full intent:** x64base-backed curation, portable recovery, and a teaching and
+  evaluation loop.
 
-## Tracking
+## Current Gates
 
-Milestones and their current state are registered in:
+| Gate | State | Objective |
+| --- | --- | --- |
+| APH-0 Preserve and Stabilize | in progress | reproducible startup, zero unexplained missing paths, registry/audit baseline |
+| APH-1 Typed Registry Graph | pending | typed nodes/edges, referential integrity, broken-fixture diagnostics |
+| APH-2 Task Context Compiler | pending | deterministic bounded context packets with visible selection reasons |
+| APH-3 Guarded Execution | pending | read-only default, capability/path controls, timeout, cancellation, redaction, transcripts |
+| APH-4 Task-Centered Experience | pending | task-first GUI/CLI packet preparation and readiness views |
+| APH-5 x64base Self-Hosting | pending | deterministic import/export, recovery proof, degraded read-only startup |
+| APH-6 Teaching and Evaluation | pending | portal lessons and reproducible cold-start evaluation |
 
-```text
-labtalk/registries/ai_portal.yaml
-```
+The typed registry is `labtalk/registries/ai_portal.yaml`. Registry rows and
+probes do not by themselves prove runtime behavior.
 
-The LabTalk portal exposes that registry as the `AI Portal Work` section.
+## Mandatory Public Status
+
+All portal, manual, website, and generated-summary references must retain the
+**Alpha/Experimental** label until graph validation, context sufficiency, guarded
+execution, recovery, and evaluation gates are complete.
+
+The portal must not be presented as autonomous memory, independent authority, or
+a production AI runtime.
+
+## Closeout
+
+A state-changing portal task must:
+
+- report development, staging, proof, commit, push, and website states separately;
+- update `CURRENT_TARGET`, `AI_README`, dashboard, or intake queue when their
+  described state changes;
+- leave a dated closeout under `docs/maintenance/`;
+- add that closeout to the dashboard Session Log;
+- state the next gate and residual risk.
