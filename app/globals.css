@@ -46,7 +46,7 @@ body {
       "Liberation Mono", "Courier New", monospace;
   }
 }
-.prose img[title="Glass-box engine figure"] {
+.prose img[title="x64base Glass Engine"] {
   float: right;
   width: min(34%, 380px);
   min-width: 256px;
@@ -57,7 +57,7 @@ body {
 }
 
 @media (max-width: 768px) {
-  .prose img[title="Glass-box engine figure"] {
+  .prose img[title="x64base Glass Engine"] {
     float: none;
     display: block;
     width: min(100%, 380px);
