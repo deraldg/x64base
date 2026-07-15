@@ -65,3 +65,13 @@ body {
     margin: 0 auto 1.5rem;
   }
 }
+
+/* Origin Story: same figure, centered (not floated) */
+.prose img[title="x64base Glass Engine figure"] {
+  display: block;
+  width: min(100%, 380px);
+  height: auto;
+  margin: 1.5rem auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
