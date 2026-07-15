@@ -1,140 +1,102 @@
 # Current Target
 
-Status: active.
-Updated: 2026-07-14.
-Supersedes: the 2026-06-29 cleanup/relocation target (closed as stale; see
-History below).
+Status: **active — review branch prepared**.
+Updated: 2026-07-15.
+Public baseline audited: `b9d480215c036178ba99b5109a8a2489ee89b215` on `main`.
+Review branch: `ai-portal-consistency-20260715`.
 
 ## Authority Restatement
 
 ```text
 D:\code\ccode              authoritative development source and runtime truth
-C:\x64base                 clean staging repository -> github.com/deraldg/x64base
+C:\x64base                 disposable curated publication staging
 github.com/deraldg/x64base public snapshot
 ```
 
-`C:\x64base` is the **clean staging repository**, maintainer-declared
-2026-07-14. It is not a backup. Earlier text in this file called it a backup;
-that was wrong and has been removed. The authoritative statement lives in
-`AI_PORTAL.md` under "What `C:\x64base` Is — and Is Not".
+`C:\x64base` is a promotion gate generated from the public baseline plus the
+reviewed paths selected from development. It is not a backup, a second source
+authority, or the place for original implementation work.
 
-## Task
+## Current Task
 
-Restore `C:\x64base` to a clean staging state, so that what is published to
-`github.com/deraldg/x64base` is exactly the reviewed, relevant subset of
-`D:\code\ccode`.
+Reconcile the public AI-facing state after the 2026-07-15 cold-clone fixes were
+published to `main`.
 
-## Staging State — RESOLVED 2026-07-14
+The correction is documentation-only and addresses:
 
-`C:\x64base` is now clean and on `main`.
+1. stale publication-pending statements;
+2. an obsolete current objective and staging HEAD;
+3. a duplicate AI intake ID;
+4. dashboard buckets that disagree with the intake queue;
+5. development-only edition proof being described without a public-source
+   qualifier;
+6. multiple competing onboarding orders.
 
-| Check | State |
+No runtime behavior, build configuration, source code, HELP data, fixtures,
+indexes, generated catalogs, or branch history is changed by this task.
+
+## Entry State
+
+Public `main` contains four commits after the prior `2675cdcd` baseline:
+
+| Commit | Public effect |
 | --- | --- |
-| Remote | `https://github.com/deraldg/x64base.git` |
-| Checked-out branch | **`main`**, tracking `origin/main` |
-| HEAD | `a625ea1d` — *Merge pull request #6 from deraldg/codex/labtalk-dottalk-sdlc-planning* |
-| Position vs `origin/main` | even |
+| `fcac7f3b` | Added the build front door, promotion model, contracts, proof records, and staging tooling. |
+| `730434d2` | Corrected `BUILDING.md` to describe only presets present on public `main`. |
+| `46e02159` | Published the self-contained cold-clone launcher and MCC databuild corrections. |
+| `b9d48021` | Corrected the printed DotScript annotation from invalid `<-` syntax to `&&`. |
 
-### What the earlier confusion was
+The full cold-clone path is public and certified for `pro-md`:
 
-The staging repo had been sitting on `codex/labtalk-dottalk-sdlc-planning` with
-a two-day-old remote cache. That branch's 11 commits **had already been merged**
-as PR #6, and GitHub had auto-deleted the branch on merge. Local `origin/*` refs
-still showed it, because nobody had fetched.
+```text
+clone -> configure/build -> datarun -> MCC databuild -> LMDB -> ordered query
+```
 
-Lesson, recorded so it is not relearned: **`origin/*` refs are a cache, not the
-remote.** Working-copy and remote-tracking state do not prove GitHub state. Check
-`.git/FETCH_HEAD` age, or run `git ls-remote`, before reasoning about what is
-published.
+The larger product/index edition system remains implemented and proven in the
+authoritative development lane but is not yet present as public edition presets
+on `main`. `BUILDING.md` is the public authority for what a fresh clone can run.
 
-### Safety nets left in place
+## Previous Target — Resolved
 
-- `git stash` `stash@{0}` — the 101 tracked modifications that were in the
-  staging working tree before the reset. All 13 modified C++/header files were
-  verified byte-identical to `D:\code\ccode`, so nothing original was lost.
-- `$HOME\x64base_uncommitted_2026-07-14.patch` — same content as a patch file.
-- `rescue-codex-sdlc` — local branch pinned to the pre-merge branch tip.
+The previous target was to restore `C:\x64base` to clean staging, prove the MCC
+databuild lane, and publish the first clean correction set. That work was
+completed on 2026-07-14 and followed by the cold-clone publication on
+2026-07-15.
 
-All three are redundant now that the merge story is understood. Drop them when
-you are satisfied.
+The old recorded staging HEAD `a625ea1d` and the old “first clean PR” steps are
+historical state, not current instructions. Their detailed evidence remains in:
 
-There is also an **older, pre-existing `stash@{1}`** — *"local staged gui and
-source work before github sync"*, from `upgrade/selfdoc-usage-contract`. It
-predates this work and was not touched. Review before discarding.
-
-## Expected Fix
-
-1. Stop the litter at the source: `.gitignore` in `D:\code\ccode` now excludes
-   `*.bak_*` and `*.before_mdo_*` sidecar patterns, so they are never promoted.
-2. Confirm the promotion filter honours those patterns before the next sync.
-3. Verify publication completeness with `git ls-files`, not a green build.
-   `src/CMakeLists.txt` uses `file(GLOB_RECURSE ...)`, so an untracked `.cpp`
-   in staging compiles locally while remaining absent from GitHub.
-
-## Next — the first clean PR
-
-Staging is on `main` and clean. The work below lands as one reviewable PR
-against a current baseline.
-
-**Done in `D:\code\ccode`, uncommitted:**
-
-1. `.gitignore` — sidecar patterns (`*.bak_*`, `*.before_mdo_*`, `*.save`) and
-   the LMDB exclusion (`/dottalkpp/data/lmdb/`, `**/*.cdx.d/`). 53 GB measured.
-2. Sidecar purge — 148 files, 15.1 MB removed. Manifest in
-   `docs/maintenance/SIDECAR_PURGE_20260714-094942.txt`.
-3. AI portal authority corrections + the AIF-006 closeout gate.
-4. Index-expression contract drift repaired across 13 files. See
-   `docs/contracts/reports/CONTRACT_DRIFT_INDEX_EXPRESSION_2026-07-14.md`.
-5. MCC fixture rebuild lane — `dottalkpp/data/scripts/mcc/`.
-
-**Not yet run:**
-
-6. `dottalkpp/scripts/mcc/extract_mcc_og.ps1` — unpack the canonical archive.
-7. The three flavor scripts under `DOTSCRIPT TRACE`. They are
-   `CANDIDATE / REVIEW_BEFORE_EXECUTION` and have never been executed. A zero
-   exit code is not proof; review the transcripts.
-8. `tools/staging/promote_data_fixtures.ps1` — dev -> staging, LMDB blocked by
-   a hard deny-list gate that throws rather than let a `*.cdx.d` through.
-9. Branch, commit, push, PR.
-
-## Deliberately Out Of Scope
-
-- **Development-tree hygiene beyond sidecars.** Root-level scratch `.txt` files,
-  `src/gui.zip`, `src/$envVCPKG_ROOT = ...txt`. A separate lane. Do not let it
-  creep into the fixture PR.
-- **`stash@{1}` in `C:\x64base`** — pre-existing parked work from
-  `upgrade/selfdoc-usage-contract`. Not this task's business.
+- `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md`
+- `docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md`
 
 ## Do Not Touch
 
-- Do not clean, reset, or broadly stage the `D:\code\ccode` working tree.
-  A dirty development tree is normal and is not a release risk signal.
-- Do not make original changes in `C:\x64base`. Promote from `D:\code\ccode`.
-- Do not mutate DBF data, HELP tables, metadata catalogs, generated catalogs,
-  publication outputs, runtime fixtures, backups, or archives unless the
-  current task explicitly authorizes it.
-- Do not create, switch, or rename branches without explicit instruction.
+- Do not clean, reset, or broadly stage `D:\code\ccode`; a dirty development tree
+  is normal and is not a release-risk signal.
+- Do not make original runtime/source changes in `C:\x64base` or on GitHub.
+- Do not mutate DBF/CNX/CDX/LMDB data, HELP tables, metadata catalogs, generated
+  catalogs, publications, fixtures, backups, or archives unless a task names
+  that mutation explicitly.
+- Do not create, switch, rename, delete, or force-update branches without
+  explicit maintainer authorization.
+- Do not describe development-only source as present on public `main`.
 
-## Proof Needed
+## Proof Required for This Target
 
-- `git status --short` in each root before and after any promotion pass.
-- A `git ls-files` check that every source required by the CMake glob is
-  tracked.
-- A relocation checklist before any file moves.
+- Compare the correction branch against `main`; only the declared AI-facing
+  Markdown/YAML state files may change.
+- Confirm every historical closeout remains historical; publication outcomes are
+  appended rather than rewriting the original session account.
+- Confirm `AI_README.md`, `AI_PORTAL.md`, and `labtalk/ai_portal/README.md` point
+  to one canonical onboarding order.
+- Confirm every `AIF-*` intake ID is unique.
+- Confirm dashboard bucket summaries agree with the intake queue.
+- Confirm edition statements distinguish authoritative-development proof from
+  public-source availability.
 
-## History
+## Next Gate
 
-The previous target (2026-06-29) described two clean x64base repo copies, named
-`D:\code\ccode\x64base` as the recent staged GitHub version, and treated
-`C:\x64base` as its backup.
-
-That target is closed as stale on two counts, both verified 2026-07-14:
-
-- `D:\code\ccode\x64base` **does not exist** on disk.
-- `C:\x64base` is the staging repository, not a backup, and is checked out on
-  `codex/labtalk-dottalk-sdlc-planning` — not the
-  `upgrade/selfdoc-usage-contract` branch that target recorded.
-
-An onboarding document drifting this far out of date is the failure mode the
-closeout-updates-startup gate is meant to prevent. That gate is queued as
-`AIF-006` in `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md`.
+Review and merge the documentation-only correction branch. After merge, reconcile
+the same state in authoritative development if it is not already present there.
+The next runtime assignment is not implied by this document; it begins only when
+the maintainer assigns it and the applicable contract preflight is complete.
