@@ -1,160 +1,150 @@
 # Edition System Publication Plan (Path A) v1
 
-Status: **plan — not yet executed.**
-Written: 2026-07-14. Updated: 2026-07-15.
+Status: **plan — not yet executed**.
+Written: 2026-07-14.
+Updated: 2026-07-15.
 Owning lifecycle: DotTalk++ SDLC (build + publication).
-Depends on: Path B — **done and certified** (see Status Update below).
 
-## Status Update — 2026-07-15
+## Current State
 
-Two things changed since this plan was written, and both make Path A more
-concrete, not less:
+Two separate publication states must not be confused:
 
-1. **Path B is published and cold-clone certified.** `BUILDING.md` is honest on
-   `main` (commit `730434d2`). More importantly, the certification *method* this
-   plan depends on is no longer theoretical — it was executed end to end:
-   a fresh clone of `main` ran `cmake --preset pro-md` (configure, 29.7s, vcpkg
-   restored tvision/sqlite/nlohmann_json) and `cmake --build --preset
-   pro-md-Release --target dottalkpp`, producing
-   `build/src/Release/dottalkpp.exe` from `730434d2 dirty=0`. So the cold-clone
-   gate below is a proven procedure; Path A just runs it against the *edition*
-   presets instead of `pro-md`.
+1. **Path B / public `pro-md` stranger journey is complete.**
+   - `BUILDING.md` describes presets that actually exist on public `main`.
+   - A fresh clone was proved through configure, build, runtime staging, MCC
+     databuild, LMDB generation, and ordered query.
+   - Location-honesty and runtime-staging fixes were published in
+     `46e021594bee25fd40fe9b79e318c691e1a714a0`.
+   - The printed DotScript annotation was corrected in
+     `b9d480215c036178ba99b5109a8a2489ee89b215`.
 
-2. **"Builds the exe" is not the finish line — the full journey is.** A stranger
-   who builds `dottalkpp.exe` still has to **set up the runtime environment and
-   build the databases and indexes from the scripts** before anything is
-   testable. The published DBFs and CDX/CNX indexes are in a clone, but the LMDB
-   environments are gitignored (derived, 53 GB) — so a fresh clone genuinely
-   cannot exercise the full x64 LMDB path until it runs the databuild. "Valid
-   for a stranger" therefore means the whole arc — build → runtime setup →
-   databuild → query — not just a green compile. The Definition of Done below is
-   expanded accordingly.
+2. **Path A / edition-system source publication is still open.**
+   - Products `LEAN`, `PROFESSIONAL`, `EDUCATIONAL`, and `DEVELOPMENT` exist and
+     have proof in the authoritative development tree.
+   - Index modes `NONE`, `LEGACY`, and `LMDB` exist and have development proof.
+   - The coherent edition changeset and dedicated `windows-*` presets are not
+     yet on public `main`.
+   - Public `BUILDING.md` therefore correctly tells a fresh clone to use the
+     older public presets such as `pro-md`, `windows-core`, `index-vcpkg`, and
+     `wsl`.
 
-3. **The vcpkg env-var split is confirmed real.** The certified `pro-md` build
-   needed `VCPKG_ROOT`; other presets read `VCPKG_INSTALLATION_ROOT`. Setting
-   only one fails half the presets. Reconciling this is still a Path A task
-   (step 7).
+This plan publishes the edition system itself. The already-published cold-clone
+fixes are prerequisites and proof method, not remaining Path A work.
 
-4. **The FULL journey is now certified for `pro-md`, not just the build.** On
-   2026-07-15 a fresh clone went clone -> build -> `datarun` -> databuild ->
-   ordered query, entirely under the clone root, running the clone's own
-   `730434d2` exe. This required fixing two location-honesty bugs that only a
-   cold clone exposes: `launch-common.ps1` asserted (and failed on) the
-   destination exe instead of staging the source build output + its DLLs; and
-   `build_mcc_demo_bases.ps1` / `reset_mcc_fixtures.ps1` / `extract_mcc_og.ps1`
-   defaulted `$Root` to a hardcoded dev path. See
-   `SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md`. The Definition
-   of Done's "build -> runtime setup -> databuild -> query" arc is therefore a
-   demonstrated procedure; Path A runs the same arc against the edition presets.
-   (Publication of these fixes to `main` is pending: `launch-common.ps1` via
-   git, the three `mcc/*.ps1` via the manifest.)
+## Why This Plan Exists
 
-## Why this plan exists
+The edition system spans build configuration, source guards, target composition,
+package manifests, and tests. It cannot be safely published by copying selected
+files from a mixed development working tree.
 
-The edition build system — products `LEAN` / `PROFESSIONAL` / `EDUCATIONAL` /
-`DEVELOPMENT`, index modes `NONE` / `LEGACY` / `LMDB`, and the `windows-*`
-presets — exists in development (Codex's engine-edition-separation work) but is
-**not on `main`**. A cold clone of `main` has only the older presets
-(`core`, `pro-md`, `index-vcpkg`, `wsl`, ...). Its `CMakePresets.json` uses
-`DOTTALK_WITH_INDEX`, not `DOTTALK_PRODUCT` / `DOTTALK_INDEX_MODE`.
+The public repository must receive one coherent, reviewable changeset that:
 
-Path B (done) made `BUILDING.md` honest about that gap. Path A closes it by
-publishing the edition system itself, certified.
+- defines `DOTTALK_PRODUCT` and `DOTTALK_INDEX_MODE`;
+- includes every source guard and provider boundary those options require;
+- includes the matching tests and package allow-lists;
+- builds from a fresh clone without relying on unpublished local files;
+- survives the full stranger journey, not merely compilation.
 
-## Why the manifest is NOT the tool here
+## Authority and Publication Route
 
-Engine source and build config do not travel through `PROMOTE.manifest` /
-`rebuild-staging.ps1`. That overlay carries development's *current* file state,
-and the working tree holds experimental uncommitted changes. Source must publish
-as a **coherent, build-tested git changeset**. See
-`labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md` -> "The manifest does NOT carry
-engine source".
+```text
+D:\code\ccode
+  authoritative development source and proof
+        |
+        | coherent reviewed Git changeset
+        v
+review branch based on public main
+        |
+        | cold-clone certification
+        v
+main
+```
 
-## The coherent changeset
+`PROMOTE.manifest` is not the engine-source transport. It carries the curated
+public data/documentation projection. Engine source and build configuration must
+travel through a coherent Git changeset.
 
-These must move to `main` **together**, or the build breaks:
+## Required Changeset
 
-- `CMakePresets.json` — the new `windows-lean-*`, `windows-educational-lmdb`,
-  `windows-development-lmdb` presets.
-- `CMakeLists.txt` — `DOTTALK_PRODUCT`, `DOTTALK_INDEX_MODE`, the component
-  resolution, and the `DOTTALK_HAS_XINDEX` compile definitions.
-- `src/` edition guards — every `#if`/`#ifdef DOTTALK_HAS_XINDEX` (and related)
-  branch the modes depend on, plus the `xbase` / `xindex` separation
-  (`xbase.lib` neutral hooks; `xindex.lib` provider).
-- Any `src/tests/` and `CTest` registrations named in the proof matrix
-  (`dottalkpp_profile_smoke`, `dottalkpp_lmdb_backend_smoke`,
-  `package_manifest_*`).
-- The package-manifest allow-lists referenced by those tests.
+Identify the exact edition-work commit range in authoritative development. The
+changeset is expected to include, as one consistent unit:
 
-**Do not hand-pick these by eye.** The authoritative source of the changeset is
-Codex's committed engine-edition work in development. Identify it by diffing the
-edition-work commit range against `main`, not by guessing file lists. A missing
-guard yields a clone that configures but fails to compile a given mode.
+- `CMakePresets.json` edition/index presets;
+- root and subsystem `CMakeLists.txt` composition logic;
+- `DOTTALK_PRODUCT`, `DOTTALK_INDEX_MODE`, and `DOTTALK_HAS_XINDEX` definitions;
+- xbase/xindex provider separation and every related source guard;
+- product command/source allow-lists;
+- package manifests and leak-detection tests;
+- profile, binding, provider, and runtime smoke tests;
+- only the documentation required to explain the source being published.
 
-## Procedure (maintainer / operator run)
+Do not reconstruct this list by memory or hand-pick files from a dirty tree.
+Diff the committed development edition work against current public `main` and
+review the resulting dependency-complete set.
 
-1. **Identify the changeset.** In development, find Codex's edition-separation
-   commits (see the two `SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_*`
-   records). Confirm the set builds locally in development for at least
-   `NONE`, `LEGACY`, and `LMDB`.
-2. **Branch off `main`.** `git switch -c edition-system origin/main` in a clone
-   or the staging tree. Never build the edition changeset directly onto the
-   published `main` before it is certified.
-3. **Apply the changeset** to the branch — cherry-pick the commits, or apply a
-   reviewed diff. Keep it to the build system + guards + tests; no unrelated
-   dev churn.
-4. **Certify with a COLD CLONE.** This is the gate, and the procedure is
-   proven — it was run for `pro-md` on 2026-07-15 and produced a working exe.
-   Run the same steps against the edition presets. From a fresh clone of the
-   branch, on a clean machine (with `VCPKG_ROOT` set — see step 7):
-   ```powershell
-   cmake --preset windows-lean-table
-   cmake --build --preset windows-lean-table --target dottalkpp pydottalk
-   ctest --preset windows-lean-table
-   cmake --preset windows-development-lmdb
-   cmake --build --preset windows-development-lmdb --target dottalkpp
-   ```
-   All must configure, build, and pass. A build on the developer's own machine
-   is not this test — it must be a fresh clone, because that is what a stranger
-   gets. This is a long, maintainer-operated build (operator-handoff rule).
-   Then continue past the compile to the **full journey** (see Definition of
-   Done): run the databuild from the same clone and query it. A build that
-   compiles but whose databuild or runtime fails is not certified.
-5. **Merge to `main`** only after the cold clone is green.
-6. **Flip `BUILDING.md`** — replace the "Editions (in development)" section with
-   the real product × index-mode tables and the `windows-*` build commands.
-   Now the doc follows proven source, which is the correct order.
-7. **Reconcile the vcpkg env-var split** while here: presets disagree
-   (`VCPKG_ROOT` vs `VCPKG_INSTALLATION_ROOT`). Pick one and update all presets,
-   or document both. A fresh cloner setting only one currently fails half the
-   presets.
+## Procedure
 
-## Definition of done
+1. **Identify the development changeset.**
+   - Locate the committed edition-separation range.
+   - Confirm local development proof for at least `NONE`, `LEGACY`, and `LMDB`.
+   - Record the exact base and head commits.
 
-The full stranger journey, proven from a cold clone — not just a compile:
+2. **Create a review branch from current public `main`.**
+   - Do not implement original engine changes directly in disposable staging.
+   - Do not rewrite public history.
 
-- A cold clone of `main` **builds** `dottalkpp.exe` from a documented `windows-*`
-  preset with no undocumented prerequisites.
-- From that same clone, the stranger **sets up the runtime environment and
-  builds the databases and indexes** via `dottalkpp/scripts/mcc/
-  build_mcc_demo_bases.ps1` — including the LMDB environments, which are not
-  shipped and must be generated.
-- From that same clone, the built runtime **runs and answers a query**
-  (`USE STUDENTS` / `SET ORDER TO TAG LNAME` / `SMARTLIST 10` returns the
-  roster).
-- `BUILDING.md` describes only presets that exist on `main` (now including the
-  editions), **and** its "After the build" section spells out the runtime-setup
-  + databuild step clearly enough that the stranger is never stranded between a
-  built exe and a working query.
-- The edition proof records (`XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md` etc.) no
-  longer reference presets absent from `main`.
-- The vcpkg env-var split is reconciled (one variable, or both documented).
-- The whole run — build, databuild, query — is recorded as passing in a session
-  closeout, the way the `pro-md` cold-clone build was on 2026-07-15.
+3. **Apply only the coherent edition changeset.**
+   - Exclude unrelated development churn.
+   - Reconcile conflicts against current `main` rather than silently taking one
+     side.
 
-## Not done here
+4. **Reconcile the vcpkg environment-variable split.**
+   - Presets currently reference both `VCPKG_ROOT` and
+     `VCPKG_INSTALLATION_ROOT`.
+   - Standardize on one variable or deliberately support and document both.
 
-This plan is written; it is not executed. Executing it requires the maintainer
-(and ideally the original engine author) on a build machine. An AI agent should
-not hand-assemble the source changeset or claim the build passes without the
-cold-clone certification above.
+5. **Cold-clone certify the review branch.**
+   The maintainer operates the long build. At minimum prove representative table,
+   legacy-index, LMDB, and product profiles, including bindings where selected.
+
+6. **Run the full journey from the same clone.**
+   - build the selected runtime;
+   - stage the executable and runtime DLLs using the published launcher;
+   - run the MCC databuild;
+   - generate required LMDB environments;
+   - query `STUDENTS` in logical order and assert expected source paths and data.
+
+7. **Review public documentation against the certified clone.**
+   - Update `BUILDING.md` only after the presets exist and pass.
+   - Update AI Portal/dashboard language from "development-only" to public only
+     when the merge has actually occurred.
+   - Regenerate dependent manual sections through manualgen rather than editing a
+     combined output by hand.
+
+8. **Merge and record the result.**
+   - Merge only after the cold-clone gate passes.
+   - Leave a dated closeout with exact commands, commits, artifacts, transcripts,
+     and residual risks.
+
+## Definition of Done
+
+Path A is complete only when all of the following are true:
+
+- public `main` contains the coherent product × index-mode implementation;
+- documented edition presets exist in the public `CMakePresets.json`;
+- representative edition/index combinations configure, build, and pass tests
+  from a fresh clone;
+- the same clone completes runtime staging, databuild, LMDB generation, and an
+  ordered query;
+- package allow-lists fail closed and do not leak excluded components;
+- public docs describe only the options actually present and certified;
+- development, review branch, staging, public commit, and website states are
+  reported separately;
+- the vcpkg variable policy is consistent and documented.
+
+## Not Done Here
+
+This document does not publish the edition source, authorize a branch merge, or
+claim the development proof is public proof. The edition-system implementation
+remains development-proven and publication-pending until the procedure above is
+completed.
