@@ -8,7 +8,7 @@ the full stranger journey, proven end to end from `C:\scratch\dudetest`.
 The question was "is ours valid?" — can a stranger clone the public repo and
 get a working database. The answer is now demonstrated, not hoped:
 
-```
+```text
 clone  ->  cmake --preset pro-md + build  ->  datarun (stages exe+DLLs)
        ->  build_mcc_demo_bases.ps1  (reset -> extract -> x32 -> vfp -> x64 -> LMDB)
        ->  ordered query
@@ -68,19 +68,20 @@ deeper — a printed example must run verbatim *including its annotation*, in th
 target language's real comment syntax. Fixed in dev; rides the next publish
 (manifest channel, with the other `mcc/*.ps1`).
 
-## Publication — not yet on `main`
+## Publication — not yet on `main` (state at session close)
 
-Only the local dev tree and the `C:\scratch\dudetest` clone have these fixes.
-To make a fresh GitHub clone inherit them:
+Only the local dev tree and the `C:\scratch\dudetest` clone had these fixes when
+this session originally closed. To make a fresh GitHub clone inherit them:
 
 - **`launch-common.ps1`** reaches `main` through git (source/tooling channel,
   like `datarun.ps1` and `src/`) — a commit to `main`, cold-clone re-verified.
 - **`dottalkpp/scripts/mcc/*.ps1`** reach `main` through `PROMOTE.manifest` /
   `rebuild-staging.ps1`.
 
-Both channels must go out; the clone-copy done this session only proved them.
+Both channels had to go out; the clone-copy done during the session only proved
+them.
 
-## Open / deferred
+## Open / deferred at session close
 
 - **BibleTalk startup quote** fails on a clone (`biblebase\*.sqlite` seed not
   published). Degrades gracefully; decide whether to ship the seed or quiet the
@@ -97,9 +98,23 @@ Both channels must go out; the clone-copy done this session only proved them.
   for `pro-md`; the edition presets still need the same treatment (see
   `EDITION_PUBLICATION_PLAN_A_V1.md`).
 
-## Report by stage
+## Report by stage at session close
 
 Dev changed: `launch-common.ps1`, three `mcc/*.ps1`, BUILDING.md, the Plan A
 doc, the checklist, the intake queue, this closeout. Promoted to staging: not
 yet. Validated: cold-clone build + full databuild + ordered query, all green
 under a fresh clone. Pushed: not yet (maintainer git step).
+
+## Publication update — 2026-07-15
+
+The pending publication described above was subsequently completed on public
+`main`:
+
+| Commit | Published result |
+| --- | --- |
+| `46e021594bee25fd40fe9b79e318c691e1a714a0` | Published the self-staging launcher, runtime DLL staging, location-honest MCC scripts, corrected `BUILDING.md` journey, refreshed fixtures, and the cold-clone certification record. |
+| `b9d480215c036178ba99b5109a8a2489ee89b215` | Corrected the printed `DO X64` annotation to valid DotScript/xBase `&&` comment syntax. |
+
+Publication state is now **complete for the fixes covered by this closeout**.
+The larger edition-system Path A remains separate and unexecuted; public
+`BUILDING.md` continues to describe only presets actually present on `main`.
