@@ -124,6 +124,15 @@ files rather than from the maintainer in chat.
   `DO X64` — the default DBF path is `data\dbf`, not a lane, so a bare `USE`
   fails. Any printed getting-started sequence must run start-to-finish on a
   clone exactly as written.
+- [ ] **Annotate example commands in the target language's comment syntax.** A
+  printed "try it" line that carries an inline note must use a comment the target
+  shell actually parses, because the user pastes the whole line. In the
+  certification session the databuild banner annotated `DO X64` with `<- sets the
+  x64 lane` — not DotScript syntax — so pasting the line failed; the maintainer
+  had to delete the annotation to proceed. DotScript's inline comment is `&&`
+  (xBase-style): `DO X64   && sets the x64 lane`. This shipped in `46e02159` and
+  needed a follow-up fix. Same root as the `DO X64` omission: the example must
+  run verbatim, annotation and all.
 - [ ] **Certify by cold clone.** None of the above is caught on the dev tree.
   Clone `main` fresh, build, run the released entry points verbatim, and confirm
   every path reads the clone root — not `D:\`.

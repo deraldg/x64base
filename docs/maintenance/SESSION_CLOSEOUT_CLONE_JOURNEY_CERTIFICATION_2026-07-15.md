@@ -57,6 +57,17 @@ machine (dev tree present) and only surfaced on a genuine cold clone. The
 cold-clone test is the only test that catches it. Recorded in
 `LOCAL_ACCESS_AGENT_CHECKLIST_V1.md`.
 
+## Correction — banner comment syntax (post-`46e02159`)
+
+The `DO X64` fix shipped in `46e02159` with a defect of its own: the databuild
+banner annotated the line as `DO X64   <- sets the x64 lane`, and `<-` is not a
+DotScript comment. Pasting the whole line failed; the maintainer had to delete
+the annotation to run the verification. Corrected to xBase-style inline comment
+syntax: `DO X64   && sets the x64 lane`. This is the same lesson one level
+deeper — a printed example must run verbatim *including its annotation*, in the
+target language's real comment syntax. Fixed in dev; rides the next publish
+(manifest channel, with the other `mcc/*.ps1`).
+
 ## Publication — not yet on `main`
 
 Only the local dev tree and the `C:\scratch\dudetest` clone have these fixes.
