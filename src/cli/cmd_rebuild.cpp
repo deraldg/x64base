@@ -1,0 +1,270 @@
+// src/cli/cmd_rebuild.cpp
+// REBUILD [<name-or-path.cnx>]
+//
+// CNX rebuild (legacy compound index)
+//
+// Policy:
+// - Rebuilds the CNX container once
+// - CNX backend itself rebuilds all tags in the container
+// - Requires clean TABLE (or explicit COMMIT)
+//
+// Architecture:
+// - Public CNX container resolves via INDEXES
+// - CNX remains a legacy/flat structure (no LMDB backend)
+//
+// Relationship to REINDEX:
+// - REINDEX CNX -> calls REBUILD
+// - This file is the CNX execution engine / orchestrator
+
+// @dottalk.usage v1
+// owner: DOT|REBUILD
+// command: REBUILD
+// category: index
+// status: supported
+// noargs: mutate
+// effect: rebuild
+// mutates: cnx-index table-stale-state
+// usage-access: REBUILD USAGE
+// summary:
+//   Rebuild a CNX container for the current table, using the active CNX or a
+//   supplied CNX name/path and clearing TABLE stale state on success.
+//
+// usage:
+//   REBUILD USAGE
+//   REBUILD
+//   REBUILD <name-or-path.cnx>
+//
+// notes:
+//   REBUILD with no arguments uses the current CNX or defaults to <table>.cnx.
+//   REBUILD requires an open table except for REBUILD USAGE.
+//   REBUILD prompts to COMMIT dirty TABLE buffers before rebuilding.
+//   REBUILD refuses to continue if the table remains dirty after COMMIT.
+//   REBUILD opens the CNX tag directory once for reporting.
+//   The CNX backend rebuilds all tags in the container in one rebuild call.
+//   On success, TABLE STALE is cleared for the current area when table buffering is enabled.
+//
+// risk:
+//   writes_index_file: yes
+//   reads_cnx_tagdir: yes
+//   may_commit_buffered_table_data: yes when dirty TABLE is accepted
+//   clears_stale_state: yes on success
+//   mutates_table_data: indirectly through COMMIT prompt only
+//   requires_open_table: yes except usage
+//
+// related:
+//   REINDEX
+//   CNX
+//   COMMIT
+//   TABLE
+//
+
+#include "xbase.hpp"
+
+#include "cnx/cnx.hpp"
+#include "cnx/cnx_backend.hpp"
+#include "cli/path_resolver.hpp"
+#include "cli/order_state.hpp"
+#include "cli/table_state.hpp"
+
+#include <cctype>
+#include <filesystem>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+extern "C" xbase::XBaseEngine* shell_engine(void);
+
+// forward declare
+void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
+
+namespace {
+
+static inline std::string up_copy(std::string s)
+{
+    for (auto& c : s) {
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    return s;
+}
+
+static int resolve_current_index(xbase::DbArea& A)
+{
+    if (auto* eng = shell_engine()) {
+        for (int i = 0; i < xbase::MAX_AREA; ++i) {
+            if (&eng->area(i) == &A) return i;
+        }
+    }
+    return -1;
+}
+
+static bool prompt_yes_no(const std::string& prompt, bool default_no = true)
+{
+    std::cout << prompt;
+    std::cout << (default_no ? " (y/N) " : " (Y/n) ");
+
+    std::string line;
+    std::getline(std::cin, line);
+
+    if (line.empty()) return !default_no;
+
+    const char c = static_cast<char>(std::toupper(static_cast<unsigned char>(line[0])));
+    return c == 'Y';
+}
+
+static std::string normalize_field_name(std::string s)
+{
+    const auto nul = s.find('\0');
+    if (nul != std::string::npos) s.resize(nul);
+
+    while (!s.empty() && s.back() == ' ') s.pop_back();
+
+    for (auto& c : s) {
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    return s;
+}
+
+static fs::path resolve_cnx_token(const std::string& tok)
+{
+    fs::path p = dottalk::paths::resolve_index(tok);
+    if (!p.has_extension()) p.replace_extension(".cnx");
+    return p;
+}
+
+static fs::path default_cnx_for_open_table(const xbase::DbArea& A)
+{
+    if (orderstate::hasOrder(A) && orderstate::isCnx(A)) {
+        const std::string active = orderstate::orderName(A);
+        if (!active.empty()) return fs::path(active);
+    }
+
+    std::string stem = A.dbfBasename();
+    if (stem.empty()) stem = A.logicalName();
+    if (stem.empty()) stem = "table";
+
+    return resolve_cnx_token(stem);
+}
+
+static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb)
+{
+    if (area0 < 0) return true;
+    if (!dottalk::table::is_enabled(area0)) return true;
+    if (!dottalk::table::is_dirty(area0)) return true;
+
+    std::ostringstream oss;
+    oss << verb << ": TABLE has uncommitted changes. Commit now and continue?";
+    if (!prompt_yes_no(oss.str(), true)) {
+        std::cout << verb << ": canceled (dirty table).\n";
+        return false;
+    }
+
+    std::istringstream empty;
+    cmd_COMMIT(A, empty);
+
+    if (dottalk::table::is_dirty(area0)) {
+        std::cout << verb << ": still dirty after COMMIT; canceling.\n";
+        return false;
+    }
+
+    return true;
+}
+
+static void print_help()
+{
+    std::cout
+        << "Usage:\n"
+        << "  REBUILD USAGE\n"
+        << "  REBUILD\n"
+        << "  REBUILD <name-or-path.cnx>\n"
+        << "Notes:\n"
+        << "  - Rebuilds the CNX container once.\n"
+        << "  - No args uses current CNX or defaults to <table>.cnx.\n"
+        << "  - Dirty TABLE buffers are committed only after confirmation.\n";
+}
+
+} // namespace
+
+void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
+{
+    std::string arg;
+    if (in >> arg) {
+        const std::string up = up_copy(arg);
+        if (up == "USAGE" || up == "HELP" || up == "?" ||
+            up == "/?" || up == "-H" || up == "--HELP") {
+            print_help();
+            return;
+        }
+    }
+
+    const int area0 = resolve_current_index(A);
+    if (!ensure_clean_or_commit(A, area0, "REBUILD")) return;
+
+    if (!A.isOpen()) {
+        std::cout << "REBUILD: no table open.\n";
+        return;
+    }
+
+    fs::path cnx_path;
+    if (!arg.empty()) cnx_path = resolve_cnx_token(arg);
+    else              cnx_path = default_cnx_for_open_table(A);
+
+    if (!fs::exists(cnx_path)) {
+        std::cout << "REBUILD: CNX not found: " << cnx_path.string() << "\n";
+        return;
+    }
+
+    std::cout << "REINDEX CNX -> REBUILD\n";
+    std::cout << "CNX container: " << cnx_path.string() << "\n";
+
+    // Read tagdir once for reporting only.
+    cnxfile::CNXHandle* h = nullptr;
+    if (!cnxfile::open(cnx_path.string(), h) || !h) {
+        std::cout << "REBUILD: unable to open CNX\n";
+        return;
+    }
+
+    std::vector<cnxfile::TagInfo> tags;
+    if (!cnxfile::read_tagdir(h, tags)) {
+        std::cout << "REBUILD: failed to read tag directory\n";
+        cnxfile::close(h);
+        return;
+    }
+
+    cnxfile::close(h);
+
+    try {
+        xindex::CnxBackend b(A, cnx_path.string(), orderstate::activeTag(A));
+
+        if (!b.open(cnx_path.string())) {
+            std::cout << "REBUILD: backend open failed\n";
+            return;
+        }
+
+        b.rebuild();
+        b.close();
+
+        // Report once per tag, but rebuild only happened once.
+        for (const auto& t : tags) {
+            const std::string tag = normalize_field_name(t.name);
+            std::cout << "  [" << t.tag_id << "] " << tag << " : OK\n";
+        }
+
+        if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
+            dottalk::table::set_stale(area0, false);
+            dottalk::table::clear_stale_fields(area0);
+            std::cout << "REBUILD: TABLE STALE cleared (fresh)\n";
+        }
+
+        std::cout << "REBUILD: done  OK=" << tags.size()
+                  << "  SKIP=0  FAIL=0\n";
+    }
+    catch (const std::exception& e) {
+        std::cout << "REBUILD: FAIL (" << e.what() << ")\n";
+    }
+    catch (...) {
+        std::cout << "REBUILD: FAIL\n";
+    }
+}

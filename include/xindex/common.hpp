@@ -9,8 +9,8 @@
 
 namespace xindex {
 
-inline constexpr char kIndexKind[]     = "IDX";   // family identifier
-inline constexpr char kDefaultExt[]    = ".idx";  // canonical extension
+inline constexpr char kIndexKind[]     = "IDX";   // legacy local-index-stub family marker (SCX/SIX lab files)
+inline constexpr char kDefaultExt[]    = ".inx";  // public single-order default extension
 inline constexpr uint32_t kFileVersion = 1;
 
 // Name for the *persistent* backend in this bundle

@@ -1,104 +1,134 @@
-// src/cli/cmd_go.cpp — GO
+// src/cli/cmd_go.cpp
+// FoxPro-style GO router.
 //
 // Supported forms:
+//   GO
+//   GO TOP | BOTTOM | FIRST | LAST
+//   GO [TO] <recno>
+//   GO RECORD <recno>
+//   GO +/-<n>
+
+// @dottalk.usage v1
+// owner: DOT|GO
+// command: GO
+// category: navigation
+// status: supported
+// noargs: navigate
+// effect: navigate
+// mutates: cursor
+// usage-access: GO USAGE
+// summary:
+//   Refresh the current record, move to table/order endpoints, move to an
+//   absolute record number, or skip relative to the current record.
+//
+// usage:
+//   GO
+//   GO USAGE
 //   GO TOP
 //   GO BOTTOM
-//   GO [TO] n         (e.g., GO 10, GO TO 10)
-//   GO RECORD n
+//   GO FIRST
+//   GO LAST
+//   GO TO <recno>
+//   GO RECORD <recno>
+//   GO <recno>
+//   GO +<n>
+//   GO -<n>
 //
-// Behavior:
-//   • Silent on success (FoxPro-style).
-//   • Prints concise errors on bad input.
-//   • Delegates to engine: top(), bottom(), gotoRec(n).
+// notes:
+//   GO with no arguments refreshes/re-reads the current record through the navigation layer.
+//   GO TOP/BOTTOM/FIRST/LAST move to logical endpoints.
+//   GO <recno>, GO TO <recno>, and GO RECORD <recno> navigate absolutely.
+//   GO +/-<n> delegates to relative skip.
+//   GO USAGE prints usage before navigation.
 //
-// Registrar example (shell.cpp):
-//   void cmd_GO(xbase::DbArea&, std::istringstream&);
-//   registry.add("GO", &cmd_GO);
+// risk:
+//   mutates_cursor: yes except usage
+//   mutates_table_data: no
+//
+// related:
+//   GOTO
+//   TOP
+//   BOTTOM
+//   SKIP
+//
 
 #include <sstream>
 #include <string>
-#include <cctype>
-#include <iostream>
-#include <limits>
-#include <algorithm>
 
 #include "xbase.hpp"
-#include "textio.hpp"
+#include "cli/command_output.hpp"
+#include "cli/nav_move.hpp"
+#include "help/helpdata_messages.hpp"
 
-using namespace textio;
+namespace {
 
-static inline std::string upcopy(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
-    return s;
+void print_go_usage()
+{
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::GoUsageText);
 }
 
-// Parse integer with optional leading +/-
-static bool try_parse_int(const std::string& s, int& out) {
-    if (s.empty()) return false;
-    size_t i = 0;
-    if (s[0] == '+' || s[0] == '-') i = 1;
-    if (i == s.size()) return false;
-    for (; i < s.size(); ++i) {
-        if (!std::isdigit(static_cast<unsigned char>(s[i])))
-            return false;
-    }
-    try {
-        long long v = std::stoll(s);
-        if (v < static_cast<long long>(std::numeric_limits<int>::min()) ||
-            v > static_cast<long long>(std::numeric_limits<int>::max()))
-            return false;
-        out = static_cast<int>(v);
-        return true;
-    } catch (...) { return false; }
-}
+} // namespace
 
-void cmd_GO(xbase::DbArea& A, std::istringstream& in) {
+void cmd_GO(xbase::DbArea& A, std::istringstream& in)
+{
     std::string tok;
     if (!(in >> tok)) {
-        std::cout << "GO: expected TOP, BOTTOM, TO n, RECORD n, or a record number.\n";
+        // Placeholder for relationship refresh; for now, just re-read current.
+        cli::nav::refresh_current(A, "GO");
         return;
     }
-    const std::string U = upcopy(tok);
 
-    try {
-        if (U == "TOP")    { A.top();    return; }
-        if (U == "BOTTOM") { A.bottom(); return; }
+    const std::string u = cli::nav::upper_copy(tok);
 
-        if (U == "TO") {
-            std::string nTok;
-            if (!(in >> nTok)) { std::cout << "GO: expected a record number after TO.\n"; return; }
-            int n;
-            if (!try_parse_int(nTok, n) || n <= 0) { std::cout << "GO: record number must be a positive integer.\n"; return; }
-            A.gotoRec(n);
-            return;
-        }
-
-        if (U == "RECORD") {
-            std::string nTok;
-            if (!(in >> nTok)) { std::cout << "GO: expected a record number after RECORD.\n"; return; }
-            int n;
-            if (!try_parse_int(nTok, n) || n <= 0) { std::cout << "GO: record number must be a positive integer.\n"; return; }
-            A.gotoRec(n);
-            return;
-        }
-
-        // GO <n>
-        int n;
-        if (try_parse_int(tok, n) && n > 0) {
-            A.gotoRec(n);
-            return;
-        }
-
-        if (U == "IN") {
-            std::cout << "GO: 'IN <alias>' not supported yet (SELECT the area, then GO ...).\n";
-            return;
-        }
-
-        std::cout << "GO: unrecognized form. Use TOP, BOTTOM, TO n, RECORD n, or a number.\n";
-    } catch (const std::exception& e) {
-        std::cout << "GO: " << e.what() << "\n";
-    } catch (...) {
-        std::cout << "GO: unexpected error.\n";
+    if (u == "USAGE" || u == "HELP" || u == "?") {
+        print_go_usage();
+        return;
     }
+
+    if (u == "TOP") {
+        cli::nav::go_endpoint(A, cli::nav::Endpoint::Top, "GO");
+        return;
+    }
+    if (u == "BOTTOM") {
+        cli::nav::go_endpoint(A, cli::nav::Endpoint::Bottom, "GO");
+        return;
+    }
+    if (u == "FIRST") {
+        cli::nav::go_endpoint(A, cli::nav::Endpoint::First, "GO");
+        return;
+    }
+    if (u == "LAST") {
+        cli::nav::go_endpoint(A, cli::nav::Endpoint::Last, "GO");
+        return;
+    }
+
+    if (u == "TO" || u == "RECORD") {
+        std::string nTok;
+        int n = 0;
+        if (!(in >> nTok) || !cli::nav::try_parse_int_token(nTok, n) || n <= 0) {
+            cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
+            cli::cmdout::show_command_syntax("GO");
+            return;
+        }
+        cli::nav::go_absolute(A, n, "GO");
+        return;
+    }
+
+    if (u == "IN") {
+        cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoAreaQualifierNotSupportedYetText);
+        return;
+    }
+
+    int n = 0;
+    if (cli::nav::try_parse_int_token(tok, n)) {
+        if (!tok.empty() && (tok[0] == '+' || tok[0] == '-')) {
+            cli::nav::skip_relative(A, n, "GO");
+        } else {
+            cli::nav::go_absolute(A, n, "GO");
+        }
+        return;
+    }
+
+    cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoUnrecognizedCommandFormText);
+    cli::cmdout::show_command_syntax("GO");
 }

@@ -31,7 +31,7 @@ LabTalk is not:
 
 - a required dependency of the x64base engine
 - a replacement for DotTalk++
-- a finished licensed distribution unless explicitly packaged and released
+- a distribution with decided licensing; current status: To be determined.
 
 ## Developer Context
 

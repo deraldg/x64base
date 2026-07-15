@@ -1,7 +1,10 @@
 # After add_library(pydottalk MODULE ...)
 
 if (TARGET xbase)
-  target_link_libraries(pydottalk PRIVATE xbase)
+  target_link_libraries(pydottalk PRIVATE
+    xbase
+    memo
+  )
 elseif (TARGET xindex)
   target_link_libraries(pydottalk PRIVATE xindex)
 endif()

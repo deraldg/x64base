@@ -1,6 +1,6 @@
 # DotTalk++ / x64base
 
-**An educational-first, open, object-oriented hybrid xBase/DBF runtime and documentation system built in modern C++.**
+**An educational-first, object-oriented hybrid xBase/DBF runtime and documentation system built in modern C++.**
 
 DotTalk++ / x64base is a working beta research and teaching system for DBF-style database ideas: tables, records, fields, work areas, indexes, memos, relations, metadata, HELP, scripts, browsers, and GUI/TUI experiments.
 
@@ -11,6 +11,9 @@ It is not currently presented as a finished commercial database product or a dro
 The public documentation site is now live:
 
 **https://x64base.com/**
+
+`main` is the canonical public source snapshot; the development repository
+remains the engineering authority.
 
 Start here:
 
@@ -178,6 +181,10 @@ The current preservation lane records source families, checksums, evidence label
 
 The active development environment has included Windows/MSVC, WSL/Ubuntu, and POSIX-oriented build lanes. Requirements and exact build recipes are still being curated into the public docs.
 
+A local POSIX / WSL quickstart now lives here:
+
+- [docs/getting-started/POSIX_WSL_QUICKSTART.md](docs/getting-started/POSIX_WSL_QUICKSTART.md)
+
 The repository uses CMake and vcpkg metadata. See the project files and website docs for current build guidance rather than treating this README as the full installation manual.
 
 ## Status Language
@@ -206,7 +213,7 @@ xBase / SAP / ERP background
 
 ## License
 
-To be defined.
+To be determined.
 
 ## Final Note
 

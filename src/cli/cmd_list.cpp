@@ -1,51 +1,223 @@
 // src/cli/cmd_list.cpp
+//
+// @dottalk.usage v1
+// owner: DOT|LIST
+// command: LIST
+// category: report
+// status: supported
+// noargs: report
+// effect: report
+// mutates: cursor
+// usage-access: LIST USAGE
+// summary:
+//   Display rows from the current work area using classic LIST-style output,
+//   honoring active order/index state and optional filtering modes.
+//
+// usage:
+//   LIST
+//   LIST USAGE
+//   LIST TOP
+//   LIST BOTTOM
+//   LIST ALL
+//   LIST <limit>
+//   LIST DELETED
+//   LIST FOR <predicate>
+//   LIST TOP <limit>
+//   LIST BOTTOM <limit>
+//
+// notes:
+//   LIST requires an open table except for LIST USAGE.
+//   LIST with no arguments displays from the current cursor position.
+//   LIST ALL starts at the top and removes the default output limit.
+//   TOP and BOTTOM move to an endpoint before listing.
+//   DELETED selects deleted records using physical traversal.
+//   FOR applies an expression predicate after normalization.
+//   Active order/index state is honored when possible; LIST falls back to physical order with a note.
+//   LIST is read-only for table data and restores cursor position best-effort.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: temporary during scan
+//   cursor_restore: best effort
+//   mutates_table_data: no
+//   uses_table_buffer_overlay: when TABLE buffer is available
+//
+// related:
+//   SMARTLIST
+//   SET ORDER
+//   SET INDEX
+//   COUNT
+//   LOCATE
+//
 #include "xbase.hpp"
-#include "predicates.hpp"
 #include "textio.hpp"
-#include "order_state.hpp"
+#include "filters/filter_registry.hpp"
+#include "cli/expr/api.hpp"
+#include "cli/expr/ast.hpp"
+#include "cli/expr/glue_xbase.hpp"
+#include "cli/expr/parse_utils.hpp"
+#include "cli/expr/line_parse_utils.hpp"
+#include "value_normalize.hpp"
+#include "cli/order_state.hpp"
+#include "cli/order_iterator.hpp"
+#include "cli/nav_move.hpp"
+#include "cli/expr/normalize_where.hpp"
+#include "workareas.hpp"
+#include "workspace/workarea_utils.hpp"
+#include "../xbase/cursor_hook.hpp"
+#include "cursor_status.hpp"
+
+// Shared SMARTLIST helpers reused here where appropriate.
+// LIST keeps its own navigation / summary / cursor-report behavior.
+#include "cli/smartlist_query.hpp"
+#include "cli/smartlist_output.hpp"
+#include "cli/table_object.hpp"
+#include "cli/table_state.hpp"
 
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <limits>
 #include <cctype>
 #include <algorithm>
 #include <sstream>
 #include <vector>
-#include <fstream>
-#include <filesystem>
+#include <cstdlib>
+#include <cstdint>
+#include <type_traits>
+#include <utility>
+#include <memory>
+
+extern "C" xbase::XBaseEngine* shell_engine();
 
 namespace {
 
-// ANSI helpers
-constexpr const char* RESET    = "\x1b[0m";
-constexpr const char* BG_AMBER = "\x1b[48;5;214m"; // fallback: "\x1b[43m"
-constexpr const char* BG_RED   = "\x1b[41m";
-constexpr const char* FG_WHITE = "\x1b[97m";
+struct CursorRestore {
+    xbase::DbArea* a{nullptr};
+    int32_t saved{0};
+    bool active{false};
 
-//constexpr const char* save_color ;
+    explicit CursorRestore(xbase::DbArea& area) : a(&area) {
+        saved = area.recno();
+        active = (saved >= 1 && saved <= area.recCount());
+    }
 
-inline bool is_uint(const std::string& s) {
-    return !s.empty() && std::all_of(s.begin(), s.end(),
-        [](unsigned char c){ return std::isdigit(c)!=0; });
-}
+    void cancel() noexcept { active = false; }
 
-struct Options {
-    bool all{false};            // LIST ALL (show deleted too)
-    int  limit{20};             // default page size
-    bool haveFilter{false};     // LIST [N|ALL] FOR <fld> <op> <value...>
-    std::string fld, op, val;
+    ~CursorRestore() {
+        if (!active || !a) return;
+        try {
+            a->gotoRec(saved);
+            a->readCurrent();
+        } catch (...) {
+            // best-effort
+        }
+    }
 };
 
-Options parse_opts(std::istringstream& iss) {
-    Options o{};
-    std::string tok;
+enum class DelFilter {
+    Any,
+    OnlyDeleted,
+    OnlyAlive
+};
 
-    // Optional first token: ALL or number
-    std::streampos save = iss.tellg();
+enum class StartPos {
+    Here,
+    Top,
+    Bottom
+};
+
+struct Options {
+    bool all{false};
+    int  limit{20};
+    StartPos start{StartPos::Here};
+
+    DelFilter del{DelFilter::Any};
+
+    bool haveCompiledFor{false};
+    std::string forExpr;
+};
+
+static inline std::string upper_copy(std::string s) {
+    for (char& c : s) {
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    return s;
+}
+
+static int resolve_area_index(xbase::DbArea& a) {
+    xbase::XBaseEngine* eng = shell_engine();
+    if (!eng) return -1;
+
+    for (int i = 0; i < xbase::MAX_AREA; ++i) {
+        try {
+            if (&eng->area(i) == &a) return i;
+        } catch (...) {
+        }
+    }
+
+    return -1;
+}
+
+static void print_list_row(xbase::DbArea& area,
+                           dottalk::table::Table* table_view,
+                           int32_t rn,
+                           int recw)
+{
+    if (table_view) {
+        try {
+            const bool physical_deleted = area.isDeleted();
+            dottalk::table::Row row = table_view->snapshot_view(static_cast<int>(rn));
+            cli::smartlist::print_row(area, row, recw, physical_deleted);
+            return;
+        } catch (...) {
+            // LIST is a developer tool; if the overlay path is unavailable,
+            // fall back to the physical DbArea row rather than abort output.
+        }
+    }
+
+    cli::smartlist::print_row(area, recw);
+}
+
+static void print_list_usage()
+{
+    std::cout << "Usage:\n"
+              << "  LIST\n"
+              << "  LIST USAGE\n"
+              << "  LIST TOP [ALL|<limit>|DELETED] [FOR <predicate>]\n"
+              << "  LIST BOTTOM [ALL|<limit>|DELETED] [FOR <predicate>]\n"
+              << "  LIST ALL [FOR <predicate>]\n"
+              << "  LIST <limit> [FOR <predicate>]\n"
+              << "  LIST DELETED\n"
+              << "  LIST FOR <predicate>\n"
+              << "\n"
+              << "Notes:\n"
+              << "  LIST honors active order/index state when possible.\n"
+              << "  LIST falls back to physical order with a note if ordered traversal is unavailable.\n"
+              << "  LIST is read-only for table data and restores cursor position best-effort.\n";
+}
+
+static Options parse_opts(std::istringstream& iss) {
+    Options o{};
+
+    std::string tok;
+    auto save = iss.tellg();
+    if (iss >> tok) {
+        if (textio::ieq(tok, "TOP")) {
+            o.start = StartPos::Top;
+        } else if (textio::ieq(tok, "BOTTOM")) {
+            o.start = StartPos::Bottom;
+        } else {
+            iss.clear();
+            iss.seekg(save);
+        }
+    }
+
+    save = iss.tellg();
     if (iss >> tok) {
         if (textio::ieq(tok, "ALL")) {
             o.all = true;
+        } else if (textio::ieq(tok, "DELETED")) {
+            o.del = DelFilter::OnlyDeleted;
         } else if (is_uint(tok)) {
             o.limit = std::max(0, std::stoi(tok));
         } else {
@@ -54,275 +226,397 @@ Options parse_opts(std::istringstream& iss) {
         }
     }
 
-    // Optional: FOR <fld> <op> <value...>
     save = iss.tellg();
-    std::string forWord;
-    if (iss >> forWord) {
-        if (textio::ieq(forWord, "FOR")) {
-            if (iss >> o.fld >> o.op) {
-                std::string rest;
-                std::getline(iss, rest);
-                o.val = textio::trim(rest);
-                o.haveFilter = !o.fld.empty() && !o.op.empty() && !o.val.empty();
+    std::string w;
+    if (iss >> w && textio::ieq(w, "FOR")) {
+        std::string a;
+        if (iss >> a) {
+            const std::string ua = upper_copy(a);
+
+            if (ua == "DELETED") {
+                o.del = DelFilter::OnlyDeleted;
+                return o;
             }
+            if (ua == "!DELETED" || ua == "~DELETED") {
+                o.del = DelFilter::OnlyAlive;
+                return o;
+            }
+
+            std::string rest_of_line;
+            std::getline(iss, rest_of_line);
+            std::string expr = a;
+            const std::string tail = textio::trim(rest_of_line);
+            if (!tail.empty()) expr += " " + tail;
+
+            const std::string cleaned = textio::trim(strip_line_comments(expr));
+            if (!cleaned.empty()) {
+                o.haveCompiledFor = true;
+                o.forExpr = cleaned;
+            }
+            return o;
         } else {
             iss.clear();
             iss.seekg(save);
         }
+    } else {
+        iss.clear();
+        iss.seekg(save);
     }
+
     return o;
 }
 
-// width = digits(recCount), min 3 so small tables still look nice
-int recno_width(const xbase::DbArea& a) {
-    int n = std::max(1, a.recCount());
-    int w = 0;
-    while (n) { n /= 10; ++w; }
-    return std::max(3, w);
+static cli::smartlist::QuerySpec make_query_spec(
+    const Options& opt,
+    const std::shared_ptr<dottalk::expr::Expr>& prog)
+{
+    cli::smartlist::QuerySpec spec{};
+    spec.all = opt.all;
+    spec.limit = opt.limit;
+    spec.debug = false;
+    spec.expr_prog = prog;
+
+    switch (opt.del) {
+        case DelFilter::OnlyDeleted:
+            spec.del = cli::smartlist::DelFilter::OnlyDeleted;
+            break;
+        case DelFilter::OnlyAlive:
+            spec.del = cli::smartlist::DelFilter::OnlyAlive;
+            break;
+        case DelFilter::Any:
+        default:
+            spec.del = cli::smartlist::DelFilter::Any;
+            break;
+    }
+
+    return spec;
 }
 
-inline void print_del_flag(bool isDel) {
-    if (isDel) {
-        // deleted: red background + white '*'
-        std::cout << BG_RED << FG_WHITE << '*' << RESET;
+static std::int64_t compute_physical_logical_row(xbase::DbArea& a,
+                                                 int32_t physical_recno,
+                                                 const cli::smartlist::QuerySpec& qspec)
+{
+    if (physical_recno < 1 || physical_recno > a.recCount()) return 0;
+
+    xbase::cursor_hook::Guard suppress_cursor;
+    std::int64_t logical_row = 0;
+
+    for (int32_t rn = 1; rn <= physical_recno; ++rn) {
+        if (!a.gotoRec(rn) || !a.readCurrent()) continue;
+        if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+        ++logical_row;
+    }
+    return logical_row;
+}
+
+static std::int64_t compute_ordered_logical_row(xbase::DbArea& a,
+                                                const std::vector<uint64_t>& recnos_asc,
+                                                const cli::OrderIterSpec& spec,
+                                                int32_t physical_recno,
+                                                const cli::smartlist::QuerySpec& qspec)
+{
+    if (physical_recno < 1 || physical_recno > a.recCount()) return 0;
+
+    xbase::cursor_hook::Guard suppress_cursor;
+    std::int64_t logical_row = 0;
+
+    if (spec.ascending) {
+        for (uint64_t rn64 : recnos_asc) {
+            const int32_t rn = static_cast<int32_t>(rn64);
+            if (!a.gotoRec(rn) || !a.readCurrent()) continue;
+            if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+            ++logical_row;
+            if (rn == physical_recno) return logical_row;
+        }
     } else {
-        // not deleted: amber background space
-        std::cout << BG_AMBER << ' ' << RESET;
+        for (auto it = recnos_asc.rbegin(); it != recnos_asc.rend(); ++it) {
+            const int32_t rn = static_cast<int32_t>(*it);
+            if (!a.gotoRec(rn) || !a.readCurrent()) continue;
+            if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+            ++logical_row;
+            if (rn == physical_recno) return logical_row;
+        }
+    }
+
+    return 0;
+}
+
+static const char* backend_name(const cli::OrderIterSpec& spec) {
+    switch (spec.backend) {
+        case cli::OrderBackend::Natural: return "natural";
+        case cli::OrderBackend::Inx:     return "inx";
+        case cli::OrderBackend::Cnx:     return "cnx";
+        case cli::OrderBackend::Cdx:
+            return (spec.cdx_mode == cli::CdxExecMode::Lmdb) ? "cdx(lmdb)" : "cdx(fallback)";
+        case cli::OrderBackend::Isx:     return "isx";
+        case cli::OrderBackend::Csx:     return "csx";
+        default:                         return "ordered";
     }
 }
 
-void print_header(const xbase::DbArea& a, int recw) {
-    const auto& Fs = a.fields();
-    // Columns: [status(1)] [space] [recno(recw)] [space] [fields...]
-    std::cout << ' ' << ' ' << std::setw(recw) << "" << " ";
-    for (const auto& f : Fs) {
-        std::cout << std::left << std::setw(static_cast<int>(f.length)) << f.name << " ";
+static void print_order_banner(const cli::OrderIterSpec& spec) {
+    if (spec.backend == cli::OrderBackend::Natural) return;
+
+    std::cout << "; ORDER: file '" << spec.container_path << "'";
+    if (!spec.tag.empty()) {
+        std::cout << "  TAG '" << upper_copy(spec.tag) << "'";
     }
-    std::cout << std::right << "\n";
+    if (spec.backend == cli::OrderBackend::Cdx) {
+        std::cout << "  MODE " << ((spec.cdx_mode == cli::CdxExecMode::Lmdb) ? "LMDB" : "FALLBACK");
+    }
+    std::cout << "  " << (spec.ascending ? "ASC" : "DESC") << "\n";
 }
 
-void print_row(const xbase::DbArea& a, int recw) {
-    const auto& Fs = a.fields();
-    print_del_flag(a.isDeleted());
-    std::cout << " " << std::setw(recw) << a.recno() << " ";
-    for (int i = 1; i <= static_cast<int>(Fs.size()); ++i) {
-        std::string s = a.get(i);
-        int w = static_cast<int>(Fs[static_cast<size_t>(i-1)].length);
-        if (static_cast<int>(s.size()) > w) s.resize(static_cast<size_t>(w));
-        std::cout << std::left << std::setw(w) << s << " ";
-    }
-    std::cout << std::right << "\n";
+static void print_cursor_line(xbase::DbArea& a, const char* reason) {
+    const std::size_t cur = workareas::current_slot();
+    const int area_first = 0;
+    const int area_last =
+        workareas::count() > 0 ? static_cast<int>(workareas::count() - 1) : 0;
+
+    auto snap = xbase::cursor_status::build_snapshot(
+        a,
+        reason,
+        area_first,
+        area_last
+    );
+    snap.area_index = static_cast<int>(cur);
+
+    std::cout << xbase::cursor_status::format_cursor_line(snap) << "\n";
 }
 
-// ---- helpers to read little-endian ints safely from a stream ----
-static bool rd_u16(std::istream& in, uint16_t& v) {
-    unsigned char b[2];
-    if (!in.read(reinterpret_cast<char*>(b), 2)) return false;
-    v = static_cast<uint16_t>(b[0] | (b[1] << 8));
+static void print_summary(xbase::DbArea& a,
+                          int printed,
+                          const Options& opt,
+                          const cli::OrderIterSpec& spec,
+                          const cli::smartlist::QuerySpec& qspec)
+{
+    const int32_t physical =
+        (a.recno() >= 1 && a.recno() <= a.recCount()) ? a.recno() : 0;
+
+    std::int64_t logical = 0;
+
+    if (spec.backend == cli::OrderBackend::Natural) {
+        logical = compute_physical_logical_row(a, physical, qspec);
+    } else {
+        std::vector<uint64_t> recnos_asc;
+        cli::OrderIterSpec tmp_spec{};
+        std::string err;
+
+        if (cli::order_collect_recnos_asc(a, recnos_asc, &tmp_spec, &err) && !recnos_asc.empty()) {
+            logical = compute_ordered_logical_row(a, recnos_asc, tmp_spec, physical, qspec);
+        }
+    }
+
+    (void)logical; // cursor_status will compute/report using area state
+
+    if (spec.backend == cli::OrderBackend::Natural) {
+        if (!opt.all) {
+            std::cout << printed << " record(s) listed (limit " << opt.limit
+                      << "). Use LIST ALL to show more.\n";
+        } else {
+            std::cout << printed << " record(s) listed.\n";
+        }
+        print_cursor_line(a, "LIST");
+        return;
+    }
+
+    std::cout << printed << " " << backend_name(spec) << " indexed record(s)";
+    if (!spec.tag.empty()) {
+        std::cout << " (tag=" << upper_copy(spec.tag) << ")";
+    }
+    if (!opt.all) {
+        std::cout << " listed (limit " << opt.limit << "). Use LIST ALL to show more.\n";
+    } else {
+        std::cout << " listed.\n";
+    }
+    print_cursor_line(a, "LIST");
+}
+
+static bool list_from_recnos(xbase::DbArea& a,
+                             const std::vector<uint64_t>& recnos_asc,
+                             const cli::OrderIterSpec& spec,
+                             const Options& opt,
+                             const cli::smartlist::QuerySpec& qspec,
+                             int recw,
+                             int32_t start_rn,
+                             dottalk::table::Table* table_view)
+{
+    xbase::cursor_hook::Guard suppress_cursor;
+
+    int printed = 0;
+    bool started = (start_rn == 0);
+
+    if (spec.ascending) {
+        for (uint64_t rn : recnos_asc) {
+            if (!started) {
+                if (static_cast<int32_t>(rn) != start_rn) continue;
+                started = true;
+            }
+            if (!a.gotoRec(static_cast<int32_t>(rn)) || !a.readCurrent()) continue;
+            if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+            print_list_row(a, table_view, static_cast<int32_t>(rn), recw);
+            ++printed;
+            if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
+        }
+    } else {
+        for (auto it = recnos_asc.rbegin(); it != recnos_asc.rend(); ++it) {
+            const uint64_t rn = *it;
+            if (!started) {
+                if (static_cast<int32_t>(rn) != start_rn) continue;
+                started = true;
+            }
+            if (!a.gotoRec(static_cast<int32_t>(rn)) || !a.readCurrent()) continue;
+            if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+            print_list_row(a, table_view, static_cast<int32_t>(rn), recw);
+            ++printed;
+            if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
+        }
+    }
+
+    print_summary(a, printed, opt, spec, qspec);
     return true;
-}
-static bool rd_u32(std::istream& in, uint32_t& v) {
-    unsigned char b[4];
-    if (!in.read(reinterpret_cast<char*>(b), 4)) return false;
-    v = static_cast<uint32_t>(b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24));
-    return true;
-}
-
-// Try multiple index encodings until one succeeds.
-bool load_inx_recnos(const std::string& path, int32_t maxRecno, std::vector<uint32_t>& out, std::string* err) {
-    namespace fs = std::filesystem;
-    out.clear();
-
-    std::ifstream f(path, std::ios::binary);
-    if (!f) { if (err) *err = "cannot open"; return false; }
-
-    auto valid_rn = [&](uint32_t rn){ return rn >= 1u && rn <= static_cast<uint32_t>(maxRecno); };
-
-    // -------------- Try v1: "1INX" magic --------------
-    {
-        f.clear(); f.seekg(0);
-        char magic[4]{};
-        if (f.read(magic, 4)) {
-            if (std::string(magic, 4) == "1INX") {
-                uint16_t skip=0, nameLen=0;
-                if (!rd_u16(f, skip) || !rd_u16(f, nameLen)) { if (err) *err = "short header"; return false; }
-                if (nameLen > 8192) { if (err) *err = "name too long"; return false; }
-                f.seekg(nameLen, std::ios::cur);
-                uint32_t count=0;
-                if (!rd_u32(f, count)) { if (err) *err = "short count"; return false; }
-
-                out.reserve(count);
-                for (uint32_t i = 0; i < count; ++i) {
-                    uint16_t klen=0;
-                    if (!rd_u16(f, klen)) { if (err) *err = "short entry (klen)"; return false; }
-                    f.seekg(klen, std::ios::cur);
-                    uint32_t rn=0;
-                    if (!rd_u32(f, rn)) { if (err) *err = "short entry (recno)"; return false; }
-                    if (!valid_rn(rn)) continue;
-                    out.push_back(rn);
-                }
-                if (!out.empty()) return true;
-                // if empty, try other formats before failing
-            }
-        }
-    }
-
-    // -------------- Try v0a: [u16 nameLen][name][u32 count][(u16 klen)(key)(u32 rn)] --------------
-    {
-        f.clear(); f.seekg(0);
-        uint16_t nameLen=0;
-        if (rd_u16(f, nameLen) && nameLen <= 8192) {
-            f.seekg(nameLen, std::ios::cur);
-            uint32_t count=0;
-            if (rd_u32(f, count)) {
-                std::vector<uint32_t> tmp; tmp.reserve(count);
-                bool ok=true;
-                for (uint32_t i=0; i<count; ++i) {
-                    uint16_t klen=0; uint32_t rn=0;
-                    if (!rd_u16(f, klen)) { ok=false; break; }
-                    f.seekg(klen, std::ios::cur);
-                    if (!rd_u32(f, rn)) { ok=false; break; }
-                    if (!valid_rn(rn)) continue;
-                    tmp.push_back(rn);
-                }
-                if (ok && !tmp.empty()) { out.swap(tmp); return true; }
-            }
-        }
-    }
-
-    // -------------- Try v0b: [u32 count][(u16 klen)(key)(u32 rn)] --------------
-    {
-        f.clear(); f.seekg(0);
-        uint32_t count=0;
-        if (rd_u32(f, count) && count < 10'000'000u) {
-            std::vector<uint32_t> tmp; tmp.reserve(count);
-            bool ok=true;
-            for (uint32_t i=0; i<count; ++i) {
-                uint16_t klen=0; uint32_t rn=0;
-                if (!rd_u16(f, klen)) { ok=false; break; }
-                f.seekg(klen, std::ios::cur);
-                if (!rd_u32(f, rn)) { ok=false; break; }
-                if (!valid_rn(rn)) continue;
-                tmp.push_back(rn);
-            }
-            if (ok && !tmp.empty()) { out.swap(tmp); return true; }
-        }
-    }
-
-    // -------------- Try v0c: [u32 count][(u32 rn)(u16 klen)(key)] --------------
-    {
-        f.clear(); f.seekg(0);
-        uint32_t count=0;
-        if (rd_u32(f, count) && count < 10'000'000u) {
-            std::vector<uint32_t> tmp; tmp.reserve(count);
-            bool ok=true;
-            for (uint32_t i=0; i<count; ++i) {
-                uint32_t rn=0; uint16_t klen=0;
-                if (!rd_u32(f, rn)) { ok=false; break; }
-                if (!rd_u16(f, klen)) { ok=false; break; }
-                f.seekg(klen, std::ios::cur);
-                if (!valid_rn(rn)) continue;
-                tmp.push_back(rn);
-            }
-            if (ok && !tmp.empty()) { out.swap(tmp); return true; }
-        }
-    }
-
-    if (err) *err = "unrecognized index format";
-    return false;
 }
 
 } // namespace
 
-// Shell entrypoint
 void cmd_LIST(xbase::DbArea& a, std::istringstream& iss) {
-    if (!a.isOpen()) { std::cout << "No table open.\n"; return; }
+    CursorRestore _restore_(a);
+
+    const std::streampos arg_start = iss.tellg();
+    std::string first_arg;
+    if (iss >> first_arg) {
+        if (textio::ieq(first_arg, "USAGE") ||
+            textio::ieq(first_arg, "HELP") ||
+            first_arg == "/?" || first_arg == "?") {
+            print_list_usage();
+            return;
+        }
+        iss.clear();
+        if (arg_start != std::streampos(-1)) {
+            iss.seekg(arg_start);
+        }
+    } else {
+        iss.clear();
+        if (arg_start != std::streampos(-1)) {
+            iss.seekg(arg_start);
+        }
+    }
+
+    if (!a.isOpen()) {
+        std::cout << "No table open.\n";
+        return;
+    }
 
     Options opt = parse_opts(iss);
-    const int32_t total = a.recCount();
-    if (total <= 0) { std::cout << "(empty)\n"; return; }
 
-    // If ALL, always start from the top; else from current (or top if unset)
-    if (opt.all) a.top(); else if (a.recno() <= 0) a.top();
-
-    const int recw = recno_width(a);
-    print_header(a, recw);
-
-    // If an index is active, list rows in its order and return.
-    if (orderstate::hasOrder(a)) {
-        const std::string inxPath = orderstate::orderName(a);
-
-        std::vector<uint32_t> recnos;
-        std::string err;
-        if (!load_inx_recnos(inxPath, a.recCount(), recnos, &err)) {
-            std::cout << "Failed to open index: " << inxPath
-                      << " (" << err << ")\n";
-            // fall through to physical order
+    std::shared_ptr<dottalk::expr::Expr> _prog;
+    if (opt.haveCompiledFor) {
+        std::string norm = normalize_unquoted_rhs_literals(a, opt.forExpr);
+        auto cr = dottalk::expr::compile_where(norm);
+        if (cr) {
+            _prog = std::shared_ptr<dottalk::expr::Expr>(std::move(cr.program));
         } else {
-            const bool asc = orderstate::isAscending(a); // ← NEW: honor ASCEND/DESCEND
-            int printed = 0;
-
-            if (asc) {
-                for (uint32_t rn : recnos) {
-                    if (!a.gotoRec(static_cast<int32_t>(rn))) continue;
-                    if (!a.readCurrent()) continue;
-                    if (a.isDeleted() && !opt.all) continue;
-                    if (opt.haveFilter && !predicates::eval(a, opt.fld, opt.op, opt.val))
-                        continue;
-
-                    print_row(a, recw);
-                    ++printed;
-                    if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
-                }
-            } else {
-                for (auto it = recnos.rbegin(); it != recnos.rend(); ++it) {
-                    uint32_t rn = *it;
-                    if (!a.gotoRec(static_cast<int32_t>(rn))) continue;
-                    if (!a.readCurrent()) continue;
-                    if (a.isDeleted() && !opt.all) continue;
-                    if (opt.haveFilter && !predicates::eval(a, opt.fld, opt.op, opt.val))
-                        continue;
-
-                    print_row(a, recw);
-                    ++printed;
-                    if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
-                }
-            }
-
-            if (!opt.all) {
-                std::cout << printed << " record(s) listed (limit "
-                          << opt.limit << "). Use LIST ALL to show more.\n";
-            } else {
-                std::cout << printed << " record(s) listed.\n";
-            }
-            return; // don't run the physical-order loop
+            std::cout << "; LIST FOR error: " << cr.error << " - ignoring FOR.\n";
+            opt.haveCompiledFor = false;
         }
-        // change color back to save_color
     }
 
-    // Fallback: physical order (unchanged)
-    int printed = 0;
-    const int32_t start = opt.all ? 1 : a.recno();
-    for (int32_t rn = start; rn <= total; ++rn) {
-        if (!a.gotoRec(rn)) break;
-        if (!a.readCurrent()) continue;
+    cli::smartlist::QuerySpec qspec = make_query_spec(opt, _prog);
 
-        // default LIST skips deleted unless ALL
-        if (!opt.all && a.isDeleted()) continue;
-
-        if (opt.haveFilter && !predicates::eval(a, opt.fld, opt.op, opt.val))
-            continue;
-
-        print_row(a, recw);
-        ++printed;
-
-        if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
+    const int32_t total = a.recCount();
+    if (total <= 0) {
+        std::cout << "(empty)\n";
+        return;
     }
 
-    if (!opt.all) {
-        std::cout << printed << " record(s) listed (limit "
-                  << opt.limit << "). Use LIST ALL to show more.\n";
-    } else {
-        std::cout << printed << " record(s) listed.\n";
+    bool nav_ok = true;
+    switch (opt.start) {
+        case StartPos::Top:
+            nav_ok = cli::nav::go_endpoint(a, cli::nav::Endpoint::Top, "LIST");
+            break;
+        case StartPos::Bottom:
+            nav_ok = cli::nav::go_endpoint(a, cli::nav::Endpoint::Bottom, "LIST");
+            break;
+        case StartPos::Here:
+        default:
+            if (opt.all) nav_ok = a.top();
+            else if (a.recno() <= 0) nav_ok = a.top();
+            break;
+    }
+    if (!nav_ok) return;
+
+    const int recw = cli::smartlist::recno_width(a);
+    cli::smartlist::print_header(a, recw);
+
+    xbase::XBaseEngine* eng = shell_engine();
+    const int area0 = resolve_area_index(a);
+    std::unique_ptr<dottalk::table::Table> table_view;
+
+    if (eng && area0 >= 0) {
+        try {
+            table_view = std::make_unique<dottalk::table::Table>(*eng, area0);
+        } catch (...) {
+            table_view.reset();
+        }
+    }
+
+    // Explicit LIST DELETED must use physical traversal.
+    // Active order/index streams generally exclude deleted records, so an
+    // ordered pass cannot be the source of truth for deleted-only inspection.
+    if (orderstate::hasOrder(a) && opt.del != DelFilter::OnlyDeleted) {
+        cli::OrderIterSpec spec{};
+        std::vector<uint64_t> recnos_asc;
+        std::string err;
+
+        const bool ok = cli::order_collect_recnos_asc(a, recnos_asc, &spec, &err);
+
+        int32_t start_rn = 0;
+        if (!opt.all && a.recno() >= 1 && a.recno() <= a.recCount()) {
+            // LIST without ALL is cursor-relative. However, when an active
+            // SET FILTER or LIST FOR predicate is present, starting from a
+            // current record that does not pass the predicate can produce a
+            // false empty result under ordered traversal. In that case, start
+            // from the top of the ordered stream and let pass_all_filters()
+            // decide row visibility.
+            const int32_t cur = a.recno();
+            xbase::cursor_hook::Guard suppress_cursor_for_probe;
+            if (a.gotoRec(cur) && a.readCurrent() && cli::smartlist::pass_all_filters(a, qspec)) {
+                start_rn = cur;
+            }
+        }
+
+        if (ok && !recnos_asc.empty()) {
+            print_order_banner(spec);
+            list_from_recnos(a, recnos_asc, spec, opt, qspec, recw, start_rn, table_view.get());
+            return;
+        }
+
+        if (!err.empty()) {
+            std::cout << "; LIST order note: " << err << " - falling back to physical order\n";
+        } else {
+            std::cout << "; LIST order note: ordered backend unavailable - falling back to physical order\n";
+        }
+    }
+
+    {
+        xbase::cursor_hook::Guard suppress_cursor;
+
+        int printed = 0;
+        const int32_t start = opt.all ? 1 : a.recno();
+
+        for (int32_t rn = start; rn <= total; ++rn) {
+            if (!a.gotoRec(rn) || !a.readCurrent()) continue;
+            if (!cli::smartlist::pass_all_filters(a, qspec)) continue;
+            print_list_row(a, table_view.get(), rn, recw);
+            ++printed;
+            if (!opt.all && opt.limit > 0 && printed >= opt.limit) break;
+        }
+
+        cli::OrderIterSpec natural_spec{};
+        natural_spec.backend = cli::OrderBackend::Natural;
+        natural_spec.cdx_mode = cli::CdxExecMode::Fallback;
+        natural_spec.ascending = true;
+
+        print_summary(a, printed, opt, natural_spec, qspec);
     }
 }

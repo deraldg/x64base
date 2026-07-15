@@ -15,16 +15,8 @@ target_include_directories(xbase
     ${CMAKE_SOURCE_DIR}/include
 )
 
-target_compile_definitions(xbase
-  PUBLIC DOTTALK_WITH_INDEX=$<BOOL:${DOTTALK_WITH_INDEX}>
-)
-
-if (DOTTALK_WITH_INDEX AND TARGET xindex)
-  target_link_libraries(xbase PUBLIC xindex)
-endif()
-
 if (MSVC)
-  target_compile_options(xbase PRIVATE /W4 /permissive-)
+  target_compile_options(xbase PRIVATE /W4 /permissive- /MP)
 else()
   target_compile_options(xbase PRIVATE -Wall -Wextra -Wpedantic)
 endif()

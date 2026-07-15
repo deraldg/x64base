@@ -1,117 +1,520 @@
+// src/cli/cmd_seek.cpp
+//
+// SEEK
+//
+// Dev-tool contract:
+// - FoxPro-style: if an active order exists, "SEEK <value>" uses the active tag.
+// - If active order is CDX, prefer the area-local IndexManager / CDX backend.
+// - Otherwise fall back to sequential scan on the requested field.
+// - This file must NOT own raw LMDB state directly.
+//
+// Supported forms:
+//   SEEK USAGE
+//   SEEK <value>
+//   SEEK <value> IN <field>
+//   SEEK <field> = <value>
+//   SEEK <field> <value>
+//   SEEK TRACE ON|OFF
+//
+// Notes:
+// - SEEK USAGE is a usage-contract probe and works without an open table.
+// - Bare SEEK with no open table preserves current behavior: "(empty)".
+// - Exact-match semantics by default.
+// - SET NEAR ON allows active-order SEEK to land on the first near key
+//   in the current index direction when no exact key exists.
+// - Comparison is case-insensitive trimmed character comparison,
+//   matching the previous dev-tool behavior.
+// - When routed through CDX, iteration follows the current active direction
+//   and returns the first exact record encountered in that order.
+
+// @dottalk.usage v1
+// owner: DOT|SEEK
+// command: SEEK
+// category: navigation
+// status: supported
+// noargs: usage
+// effect: navigate
+// mutates: cursor seek-trace-state
+// usage-access: SEEK USAGE
+// summary:
+//   Seek a value through the active order/tag or by scanning a specified field.
+//
+// usage:
+//   SEEK USAGE
+//   SEEK <value> IN <field> [TRACE ON|OFF]
+//   SEEK <field> = <value> [TRACE ON|OFF]
+//   SEEK <field> <value> [TRACE ON|OFF]
+//   SEEK <value>
+//   SEEK TRACE ON
+//   SEEK TRACE OFF
+//
+// notes:
+//   SEEK USAGE works without an open table.
+//   Bare SEEK with no open table preserves existing behavior and prints (empty).
+//   SEEK <value> uses the active order/tag when one is set.
+//   SET NEAR affects near-match reporting policy.
+//   SEEK may temporarily move the cursor while searching and leaves the cursor on a found/near match.
+//
+// risk:
+//   mutates_cursor: yes on match/near match
+//   mutates_seek_trace_state: SEEK TRACE ON|OFF
+//   mutates_table_data: no
+//
+// related:
+//   FIND
+//   INDEXSEEK
+//   SET ORDER
+//   SET NEAR
+//
+
+#include "xbase.hpp"
+#include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
+#include "textio.hpp"
+#include "cli/command_output.hpp"
+#include "cli/order_state.hpp"
+#include "cli/settings.hpp"
+#include "../xbase/cursor_hook.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <algorithm>
-#include "xbase.hpp"
-#include "textio.hpp"
-#include "record_view.hpp"
+#include <vector>
 
-// SEEK <field> [=] <value>  — case-insensitive exact match on display value
-
-// Remove trailing '#' comments that are outside quotes.
-static std::string strip_inline_comment(std::string s) {
-    bool in_single = false, in_double = false;
-    for (size_t i = 0; i < s.size(); ++i) {
-        char c = s[i];
-        if (c == '"'  && !in_single) in_double = !in_double;
-        else if (c == '\'' && !in_double) in_single = !in_single;
-        else if (c == '#' && !in_single && !in_double) { s.resize(i); break; }
-    }
-    return textio::trim(std::move(s));
+namespace dottalk::near {
+bool get_near() noexcept;
 }
 
-// If the full command slipped through, remove the leading verb (case-insensitive).
-static std::string maybe_strip_verb(std::string s, const char* verb) {
-    s = textio::trim(std::move(s));
-    if (s.empty()) return s;
-    std::istringstream ss(s);
-    std::string first; ss >> first;
-    if (textio::ieq(first, verb)) {
-        std::string tail; std::getline(ss, tail);
-        return textio::trim(tail);
+namespace {
+
+static bool g_seek_trace = false;
+
+struct CursorRestore {
+    xbase::DbArea* a{nullptr};
+    int32_t saved{0};
+    bool active{false};
+
+    explicit CursorRestore(xbase::DbArea& area) : a(&area) {
+        try {
+            saved = area.recno();
+            active = (saved >= 1 && saved <= area.recCount());
+        } catch (...) {
+            active = false;
+        }
+    }
+
+    ~CursorRestore() {
+        if (!active || !a) return;
+        try {
+            if (a->gotoRec(saved)) {
+                (void)a->readCurrent();
+            }
+        } catch (...) {
+            // best-effort restore only
+        }
+    }
+
+    void dismiss() noexcept {
+        active = false;
+    }
+
+    CursorRestore(const CursorRestore&) = delete;
+    CursorRestore& operator=(const CursorRestore&) = delete;
+};
+
+static inline std::string trim_copy(const std::string& s) {
+    return textio::trim(s);
+}
+
+static inline std::string upper_copy(std::string s) {
+    for (char& c : s) {
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     }
     return s;
 }
 
-// Dequote "..." or '...'
-static std::string dequote(std::string s) {
-    s = textio::trim(std::move(s));
+static inline std::string strip_outer_quotes(std::string s) {
+    s = trim_copy(s);
     if (s.size() >= 2) {
-        char a = s.front(), b = s.back();
-        if ((a == '"' && b == '"') || (a == '\'' && b == '\'')) {
-            s.erase(s.begin());
-            s.pop_back();
+        const char a = s.front();
+        const char b = s.back();
+        if ((a == '"' && b == '"') ||
+            (a == '\'' && b == '\'')) {
+            s = s.substr(1, s.size() - 2);
         }
     }
     return s;
 }
 
-static std::string tolower_copy(std::string s) {
-    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return s;
+static inline std::string norm_seek_text(std::string s) {
+    return upper_copy(trim_copy(s));
 }
 
-// Case-insensitive, trim-aware field resolver
-static int resolve_field_index(xbase::DbArea& db, const std::string& nameIn) {
-    const std::string name = textio::trim(nameIn);
-    const auto F = db.fields(); // if your API is db.table().fields(), use that
-    for (int i = 0; i < static_cast<int>(F.size()); ++i) {
-        if (textio::ieq(textio::trim(F[i].name), name)) return i;
+static inline bool ieq(const std::string& a, const char* b) {
+    if (!b) return false;
+    size_t m = 0;
+    while (b[m] != '\0') ++m;
+    if (a.size() != m) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        const unsigned char ca = static_cast<unsigned char>(a[i]);
+        const unsigned char cb = static_cast<unsigned char>(b[i]);
+        if (std::tolower(ca) != std::tolower(cb)) return false;
     }
-    return -1;
+    return true;
 }
 
-// Show available fields (same UX as INDEX)
-static void show_available_fields(xbase::DbArea& db) {
-    try {
-        const auto F = db.fields();
-        if (!F.empty()) {
-            std::cout << "Available:\n";
-            for (const auto& m : F) std::cout << "  " << textio::trim(m.name) << "\n";
+static int find_field_1based(const xbase::DbArea& a, const std::string& name_ci) {
+    const auto& fds = a.fields();
+    for (size_t i = 0; i < fds.size(); ++i) {
+        if (ieq(fds[i].name, name_ci.c_str())) {
+            return static_cast<int>(i) + 1;
         }
-    } catch (...) { /* ignore */ }
+    }
+    return 0;
 }
 
-void cmd_SEEK(xbase::DbArea& db, std::istringstream& iss) {
-    // Parse: SEEK <field> [=] <value>
-    std::string rest = strip_inline_comment(iss.str());
-    rest = maybe_strip_verb(rest, "SEEK");
-    if (rest.empty()) { std::cout << "Usage: SEEK <field> <value>\n"; return; }
+static void seek_usage() {
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekUsageText);
+}
 
-    std::istringstream args(rest);
-    std::string fld;
-    if (!(args >> fld)) { std::cout << "Usage: SEEK <field> <value>\n"; return; }
-
-    std::string tail; std::getline(args, tail); // everything after field
-    tail = textio::trim(tail);
-    if (!tail.empty() && tail.front() == '=') tail.erase(tail.begin()); // allow optional '='
-    std::string value = dequote(textio::trim(tail));
-
-    // Resolve field
-    const int fi = resolve_field_index(db, fld);
-    if (fi < 0) {
-        std::cout << "Unknown field: " << fld << "\n";
-        show_available_fields(db);
+static void emit_seek_trace_line(xbase::DbArea& a,
+                                 const std::string& curU,
+                                 const std::string& needleU)
+{
+    if (!g_seek_trace || !cli::Settings::devDiagnosticsEnabled()) {
         return;
     }
 
-    // Empty table?
-    if (!db.top()) { std::cout << "Empty table.\n"; return; }
+    cli::cmdout::print_line(
+        "; SEEK TRACE: recno=" + std::to_string(a.recno()) +
+        " val='" + curU +
+        "' needle='" + needleU + "'");
+}
 
-    const std::string needle = tolower_copy(textio::trim(value));
+static int compare_field_value(xbase::DbArea& a, int fld, const std::string& needleU) {
+    const std::string curU = norm_seek_text(a.get(fld));
+    emit_seek_trace_line(a, curU, needleU);
 
-    // Linear scan (case-insensitive equality on display value)
-    do {
-        if (!db.readCurrent()) continue;
-        RecordView rv(db);
-        std::string cur = textio::rtrim(rv.getString(fi));
-        if (tolower_copy(textio::trim(cur)) == needle) {
-            std::cout << "Found at " << db.recno() << ".\n";
+    if (curU < needleU) return -1;
+    if (curU > needleU) return 1;
+    return 0;
+}
+
+static bool field_value_matches(xbase::DbArea& a, int fld, const std::string& needleU) {
+    return compare_field_value(a, fld, needleU) == 0;
+}
+
+static bool seek_via_cdx_active_order(xbase::DbArea& a,
+                                      int fld,
+                                      const std::string& fieldU,
+                                      const std::string& needleU,
+                                      bool allow_near,
+                                      int& found_recno,
+                                      int& near_recno) {
+    found_recno = 0;
+    near_recno = 0;
+
+    if (!orderstate::hasOrder(a)) return false;
+    if (!orderstate::isCdx(a)) return false;
+
+    const std::string path   = orderstate::orderName(a);
+    const std::string tagRaw = orderstate::activeTag(a);
+    const std::string tagU   = upper_copy(tagRaw);
+
+    if (path.empty() || tagU.empty()) return false;
+
+    // Only use active-order CDX path when SEEK is targeting the active tag.
+    if (fieldU != tagU) return false;
+
+    auto& im = xindex::ensure_manager(a);
+    std::string err;
+
+    if (!im.hasBackend() || !im.isCdx() || im.containerPath() != path) {
+        if (!im.openCdx(path, tagU, &err)) {
+            return false;
+        }
+    } else {
+        if (!im.setTag(tagU, &err)) {
+            return false;
+        }
+    }
+
+    if (!im.hasBackend() || !im.isCdx() || im.containerPath() != path || im.activeTag().empty()) {
+        return false;
+    }
+
+    auto cur = im.scan(xindex::Key{}, xindex::Key{});
+    if (!cur) return false;
+
+    xindex::Key k;
+    xindex::RecNo r;
+
+    const bool asc = orderstate::isAscending(a);
+    bool ok = asc ? cur->first(k, r) : cur->last(k, r);
+
+    {
+        xbase::cursor_hook::Guard suppress_cursor;
+
+        while (ok) {
+            const int32_t rn = static_cast<int32_t>(r);
+            if (rn > 0 && rn <= a.recCount()) {
+                try {
+                    if (a.gotoRec(rn) && a.readCurrent()) {
+                        if (a.isDeleted()) {
+                            // skip deleted for this dev-tool behavior, same as old fallback
+                        } else {
+                            const int cmp = compare_field_value(a, fld, needleU);
+
+                            if (cmp == 0) {
+                                found_recno = rn;
+                                return true;
+                            }
+
+                            // SET NEAR is an ordered-key policy.  In ascending
+                            // order, the near candidate is the first key >= the
+                            // requested key.  In descending order, it is the
+                            // first key <= the requested key while walking the
+                            // active descending order.
+                            if (allow_near && near_recno == 0) {
+                                if ((asc && cmp > 0) || (!asc && cmp < 0)) {
+                                    near_recno = rn;
+                                }
+                            }
+                        }
+                    }
+                } catch (...) {
+                    // keep scanning
+                }
+            }
+
+            ok = asc ? cur->next(k, r) : cur->prev(k, r);
+        }
+    }
+
+    return true; // CDX path was used, but no exact match found
+}
+
+static bool seek_via_sequential_scan(xbase::DbArea& a,
+                                     int fld,
+                                     const std::string& needleU,
+                                     int& found_recno) {
+    found_recno = 0;
+
+    const int32_t total = a.recCount();
+
+    {
+        xbase::cursor_hook::Guard suppress_cursor;
+
+        for (int32_t rn = 1; rn <= total; ++rn) {
+            try {
+                if (!a.gotoRec(rn) || !a.readCurrent()) continue;
+                if (a.isDeleted()) continue;
+            } catch (...) {
+                continue;
+            }
+
+            if (field_value_matches(a, fld, needleU)) {
+                found_recno = rn;
+                return true;
+            }
+        }
+    }
+
+    return true;
+}
+
+} // anonymous namespace
+
+void cmd_SEEK(xbase::DbArea& a, std::istringstream& iss)
+{
+    // Usage contract probes must work without an open table.
+    // Preserve bare SEEK no-open behavior: "(empty)".
+    {
+        std::string first;
+        if (iss >> first) {
+            if (ieq(first, "USAGE") || ieq(first, "HELP") || ieq(first, "?")) {
+                seek_usage();
+                return;
+            }
+
+            // Defensive compatibility for dispatchers/scripts that include
+            // the command token in the argument stream.
+            if (ieq(first, "SEEK")) {
+                std::string second;
+                if (iss >> second && (ieq(second, "USAGE") || ieq(second, "HELP") || ieq(second, "?"))) {
+                    seek_usage();
+                    return;
+                }
+            }
+
+            iss.clear();
+            iss.seekg(0);
+        }
+    }
+
+    if (!a.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekEmptyText);
+        return;
+    }
+
+    CursorRestore restore(a);
+
+    // Allow: SEEK TRACE ON|OFF
+    {
+        std::string first;
+        if (iss >> first) {
+            if (ieq(first, "TRACE")) {
+                std::string onoff;
+                iss >> onoff;
+                if (ieq(onoff, "ON")) g_seek_trace = true;
+                else if (ieq(onoff, "OFF")) g_seek_trace = false;
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekTraceStatusText,
+                    {{"state", g_seek_trace ? "ON" : "OFF"}});
+                return;
+            }
+            iss.clear();
+            iss.seekg(0);
+        }
+    }
+
+    // Tokenize remaining args.
+    std::vector<std::string> toks;
+    for (std::string t; iss >> t; ) {
+        toks.push_back(t);
+    }
+
+    if (toks.empty()) {
+        seek_usage();
+        return;
+    }
+
+    // Some shells re-inject the command name as the first token.
+    if (!toks.empty() && ieq(toks[0], "SEEK")) {
+        toks.erase(toks.begin());
+        if (toks.empty()) {
+            seek_usage();
             return;
         }
-    } while (db.skip(1));
+    }
 
- // where the SEEK linear scan fails
-    std::cout << "SEEK: Not found.\n";
+    if (toks.size() == 2 && ieq(toks[0], "TRACE")) {
+        if (ieq(toks[1], "ON")) g_seek_trace = true;
+        else if (ieq(toks[1], "OFF")) g_seek_trace = false;
+        else {
+            seek_usage();
+            return;
+        }
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SeekTraceStatusText,
+            {{"state", g_seek_trace ? "ON" : "OFF"}});
+        return;
+    }
 
+    // Optional trailing TRACE ON|OFF
+    if (toks.size() >= 2 && ieq(toks[toks.size() - 2], "TRACE")) {
+        const std::string onoff = toks.back();
+        if (ieq(onoff, "ON")) g_seek_trace = true;
+        else if (ieq(onoff, "OFF")) g_seek_trace = false;
+        toks.resize(toks.size() - 2);
+        if (toks.empty()) {
+            seek_usage();
+            return;
+        }
+    }
+
+    std::string field;
+    std::string value;
+
+    // FoxPro-style: SEEK <value> uses current order/tag if present.
+    if (toks.size() == 1) {
+        value = toks[0];
+        if (orderstate::hasOrder(a)) {
+            field = orderstate::activeTag(a);
+        }
+        if (field.empty()) {
+            seek_usage();
+            return;
+        }
+    } else if (toks.size() >= 3 && ieq(toks[1], "IN")) {
+        // SEEK <value> IN <field>
+        value = toks[0];
+        field = toks[2];
+    } else if (toks.size() >= 3 && toks[1] == "=") {
+        // SEEK <field> = <value>
+        field = toks[0];
+        value = toks[2];
+    } else if (toks.size() >= 2) {
+        // SEEK <field> <value>
+        field = toks[0];
+        value = toks[1];
+    } else {
+        seek_usage();
+        return;
+    }
+
+    if (field.empty() || value.empty()) {
+        seek_usage();
+        return;
+    }
+
+    const int fld = find_field_1based(a, field);
+    if (fld <= 0) {
+        cli::cmdout::print_prefixed_message(
+            "SEEK",
+            dottalk::helpdata::MessageId::SeekUnknownFieldText,
+            {{"field", field}});
+        return;
+    }
+
+    const std::string fieldU  = upper_copy(field);
+    const std::string needleU = norm_seek_text(strip_outer_quotes(value));
+
+    int found_recno = 0;
+    int near_recno = 0;
+    bool routed = false;
+    const bool allow_near = dottalk::near::get_near();
+
+    // Prefer active CDX order when SEEK targets the active tag.
+    if (orderstate::hasOrder(a) && orderstate::isCdx(a)) {
+        routed = seek_via_cdx_active_order(a, fld, fieldU, needleU, allow_near, found_recno, near_recno);
+    }
+
+    // Fallback: sequential scan on field.
+    if (!routed) {
+        routed = seek_via_sequential_scan(a, fld, needleU, found_recno);
+    }
+
+    if (found_recno > 0) {
+        try {
+            if (a.gotoRec(found_recno) && a.readCurrent()) {
+                restore.dismiss(); // keep cursor on found record
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekFoundAtText,
+                    {{"recno", std::to_string(found_recno)}});
+                return;
+            }
+        } catch (...) {
+            // fall through
+        }
+    }
+
+    if (allow_near && near_recno > 0) {
+        try {
+            if (a.gotoRec(near_recno) && a.readCurrent()) {
+                restore.dismiss(); // keep cursor on near record
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::SeekNearMatchAtText,
+                    {{"recno", std::to_string(near_recno)}});
+                return;
+            }
+        } catch (...) {
+            // fall through
+        }
+    }
+
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SeekNotFoundText);
 }

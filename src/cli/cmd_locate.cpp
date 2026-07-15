@@ -1,116 +1,414 @@
 // src/cli/cmd_locate.cpp
-// LOCATE [FOR <expr>]   (boolean ops + parentheses supported)
-// Also accepts: LOCATE <field> <op> <value>  (shorthand; we compile it)
 
-#include <iostream>
+// @dottalk.usage v1
+// owner: DOT|LOCATE
+// command: LOCATE
+// category: navigation
+// status: supported
+// noargs: usage
+// effect: locate
+// mutates: cursor locate-state continue-state
+// usage-access: LOCATE USAGE
+// summary:
+//   Locate the first record matching a predicate, using simple CDX fast-path
+//   when possible and selector-backed scanning otherwise.
+//
+// usage:
+//   LOCATE USAGE
+//   LOCATE FOR <expr>
+//   LOCATE <field> <op> <value>
+//
+// examples:
+//   LOCATE FOR LNAME = Smith
+//   LOCATE LNAME = Smith
+//   LOCATE FOR BALANCE > 100
+//
+// notes:
+//   LOCATE requires an open table except for LOCATE USAGE.
+//   LOCATE with no predicate shows usage.
+//   LOCATE clears previous LOCATE and CONTINUE bridge state before searching.
+//   Simple predicates on the active CDX tag may use the CDX fast path.
+//   Complex predicates are evaluated through the selector and expression path.
+//   LOCATE positions on the first matching record.
+//   LOCATE updates locate state and CONTINUE bridge state after a match.
+//   LOCATE is read-only for table data but mutates cursor/search state.
+//
+// risk:
+//   reads_table_records: yes
+//   mutates_cursor: yes when match found
+//   mutates_locate_state: yes
+//   mutates_continue_state: yes
+//   mutates_table_data: no
+//   uses_index_fast_path: when simple predicate matches active CDX tag
+//
+// related:
+//   CONTINUE
+//   FIND
+//   SEEK
+//   COUNT
+//   SET FILTER
+//
+
+#include <cctype>
+#include <cstdlib>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <memory>
-#include <cctype>
 #include <utility>
+#include <vector>
 
 #include "xbase.hpp"
+#include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "textio.hpp"
-#include "predicate_eval.hpp"   // predx::eval_expr for simple triplets
-#include "xbase_field_getters.hpp"  // xfg helpers
+#include "predicate_eval.hpp"
+#include "xbase_field_getters.hpp"
+#include "cli/order_state.hpp"
+#include "cli/scan_selector.hpp"
+#include "cli/expr/normalize_where.hpp"
+#include "cli/command_output.hpp"
+#include "help/helpdata_messages.hpp"
+#include "cli/expr/api.hpp"
+#include "cli/expr/for_parser.hpp"
+#include "cli/expr/glue_xbase.hpp"
+#include "cli/expr/text_compare.hpp"
 
-// DotTalk++ expression engine
-#include "dottalk/expr/api.hpp"
-#include "dottalk/expr/for_parser.hpp"
+#include "locate_state.hpp"
 
-// Map DbArea getters to evaluator glue -> use xfg helpers
-#define DOTTALK_GET_FIELD_STR(area, name)  xfg::getFieldAsString(area, name)
-#define DOTTALK_GET_FIELD_NUM(area, name)  xfg::getFieldAsNumber(area, name)
-#include "dottalk/expr/glue_xbase.hpp"
-
-// ---------------------------------------------------------------------------
-// Forward declarations for the GLOBAL implementations you have in src/cli/expr
 namespace dottalk { namespace expr { struct CompileResult; } }
 bool extract_for_clause(std::istringstream& iss, std::string& out);
 dottalk::expr::CompileResult compile_where(const std::string& text);
-// ---------------------------------------------------------------------------
 
-// Trim both ends (ASCII)
+// -----------------------------------------------------------------------------
+// CONTINUE bridge
+// -----------------------------------------------------------------------------
+
+namespace locate_continue_bridge {
+    static std::string g_where_text;
+    static bool g_use_dottalk = false;
+    static bool g_active = false;
+
+    void clear() {
+        g_where_text.clear();
+        g_use_dottalk = false;
+        g_active = false;
+    }
+
+    void set(const std::string& where_text, bool use_dottalk) {
+        g_where_text = where_text;
+        g_use_dottalk = use_dottalk;
+        g_active = !g_where_text.empty();
+    }
+
+    bool get(std::string& where_text, bool& use_dottalk) {
+        if (!g_active || g_where_text.empty()) return false;
+        where_text = g_where_text;
+        use_dottalk = g_use_dottalk;
+        return true;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// helpers
+// -----------------------------------------------------------------------------
+
 static std::string trim(std::string s) {
-    auto issp = [](unsigned char c){ return std::isspace(c)!=0; };
-    while (!s.empty() && issp((unsigned char)s.front())) s.erase(s.begin());
-    while (!s.empty() && issp((unsigned char)s.back()))  s.pop_back();
+    auto issp = [](unsigned char c){ return std::isspace(c); };
+    while (!s.empty() && issp(s.front())) s.erase(s.begin());
+    while (!s.empty() && issp(s.back()))  s.pop_back();
     return s;
 }
 
-// Simple heuristic to decide if expression likely needs full boolean parser
-static bool looks_complex_where(const std::string& s) {
-    std::string U = s;
-    for (auto& c : U) c = (char)std::toupper((unsigned char)c);
-    return U.find(" AND ") != std::string::npos
-        || U.find(" OR ")  != std::string::npos
-        || U.find(".AND.") != std::string::npos
-        || U.find(".OR.")  != std::string::npos
-        || U.find(".NOT.") != std::string::npos
-        || U.find('(')     != std::string::npos
-        || U.find(')')     != std::string::npos;
+static std::string upper_copy(std::string s) {
+    for (auto& c : s) c = static_cast<char>(std::toupper((unsigned char)c));
+    return s;
 }
 
-void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss) {
-    if (!A.isOpen()) { std::cout << "No table open.\n"; return; }
+static std::string unquote(std::string s) {
+    s = trim(std::move(s));
+    if (s.size() >= 2) {
+        char q = s.front();
+        if ((q == '"' || q == '\'') && s.back() == q) {
+            s = s.substr(1, s.size() - 2);
+        }
+    }
+    return s;
+}
 
-    // Try explicit: LOCATE ... FOR <expr>
-    std::string where_text;
-    bool has_where = ::extract_for_clause(iss, where_text); // GLOBAL symbol in your build
+static bool looks_complex_where(const std::string& s) {
+    std::string U = upper_copy(s);
+    return U.find(" AND ") != std::string::npos ||
+           U.find(" OR ")  != std::string::npos ||
+           U.find('(')     != std::string::npos;
+}
 
-    // If no explicit FOR was found, accept "LOCATE <field> <op> <value>".
+static bool expression_has_function_call(const std::string& expr) {
+    const auto lp = expr.find('(');
+    if (lp == std::string::npos) return false;
+
+    const auto rp = expr.find(')', lp + 1);
+    if (rp == std::string::npos) return false;
+
+    return true;
+}
+
+
+static bool is_locate_usage_request(std::string raw)
+{
+    std::string t = upper_copy(trim(std::move(raw)));
+    if (t.rfind("LOCATE ", 0) == 0) {
+        t = upper_copy(trim(t.substr(7)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
+}
+
+static void print_locate_usage()
+{
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateUsageText);
+}
+
+// -----------------------------------------------------------------------------
+// simple compare
+// -----------------------------------------------------------------------------
+
+struct SimpleCmp {
+    bool ok{false};
+    std::string field;
+    std::string op;
+    std::string value;
+};
+
+static SimpleCmp parse_simple_cmp(const std::string& text) {
+    SimpleCmp out{};
+    std::istringstream iss(text);
+
+    if (!(iss >> out.field)) return out;
+    if (!(iss >> out.op))    return out;
+
     std::string rest;
+    std::getline(iss, rest);
+    rest = trim(rest);
+    if (rest.empty()) return out;
+
+    out.ok = true;
+    out.value = unquote(rest);
+    return out;
+}
+
+static bool parse_number_like(const std::string& src, double& out) {
+    std::string s = trim(src);
+    if (s.empty()) return false;
+
+    // Allow thousands separators in command-side numeric literals.
+    std::string compact;
+    compact.reserve(s.size());
+    for (char ch : s) {
+        if (ch != ',') compact.push_back(ch);
+    }
+
+    char* end = nullptr;
+    out = std::strtod(compact.c_str(), &end);
+    if (end == compact.c_str()) return false;
+    while (*end) {
+        if (!std::isspace(static_cast<unsigned char>(*end))) return false;
+        ++end;
+    }
+    return true;
+}
+
+static int compare_scalar_values(std::string lhs, std::string rhs) {
+    lhs = trim(std::move(lhs));
+    rhs = trim(std::move(rhs));
+
+    double ln = 0.0;
+    double rn = 0.0;
+    if (parse_number_like(lhs, ln) && parse_number_like(rhs, rn)) {
+        if (ln < rn) return -1;
+        if (ln > rn) return 1;
+        return 0;
+    }
+
+    if (!predx::get_case_sensitive()) {
+        lhs = upper_copy(lhs);
+        rhs = upper_copy(rhs);
+    }
+
+    if (lhs < rhs) return -1;
+    if (lhs > rhs) return 1;
+    return 0;
+}
+
+static bool eval_simple_cmp_on_current(xbase::DbArea& A,
+                                       const SimpleCmp& sc)
+{
+    const std::string lhs = xfg::getFieldAsString(A, sc.field);
+    const std::string rhs = sc.value;
+    const std::string op = upper_copy(trim(sc.op));
+
+    const int cmp = compare_scalar_values(lhs, rhs);
+
+    if (op == "=" || op == "==") return cmp == 0;
+    if (op == "<>" || op == "!=" || op == "#") return cmp != 0;
+    if (op == ">")  return cmp > 0;
+    if (op == ">=") return cmp >= 0;
+    if (op == "<")  return cmp < 0;
+    if (op == "<=") return cmp <= 0;
+
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+// selector
+// -----------------------------------------------------------------------------
+
+static bool selector_match_expr_current(xbase::DbArea& A,
+                                        const std::string& expr)
+{
+    cli::scan::SelectionSpec spec{};
+    spec.scan_mode = cli::scan::ScanMode::Current;
+    spec.use_expr = !expr.empty();
+    spec.expr = expr;
+    return cli::scan::match_current(A, spec);
+}
+
+// -----------------------------------------------------------------------------
+// CDX fast path
+// -----------------------------------------------------------------------------
+
+static bool try_locate_cdx_simple(xbase::DbArea& A,
+                                  const std::string& where_text,
+                                  int& found_recno)
+{
+#if !DOTTALK_HAS_XINDEX
+    (void)A; (void)where_text;
+    found_recno = 0;
+    return false;
+#else
+    found_recno = 0;
+
+    if (!orderstate::hasOrder(A) || !orderstate::isCdx(A)) return false;
+
+    const SimpleCmp sc = parse_simple_cmp(where_text);
+    if (!sc.ok) return false;
+
+    if (xfg::resolve_field_index_std(A, sc.field) <= 0) return false;
+
+    const std::string tagU = upper_copy(orderstate::activeTag(A));
+    if (tagU != upper_copy(sc.field)) return false;
+
+    auto& im = xindex::ensure_manager(A);
+    auto cur = im.scan(xindex::Key{}, xindex::Key{});
+    if (!cur) return false;
+
+    xindex::Key k;
+    xindex::RecNo r;
+
+    bool ok = orderstate::isAscending(A) ? cur->first(k, r)
+                                         : cur->last(k, r);
+
+    while (ok) {
+        int32_t rn = static_cast<int32_t>(r);
+
+        if (rn > 0 && rn <= A.recCount()) {
+            if (A.gotoRec(rn) && A.readCurrent()) {
+                if (selector_match_expr_current(A, "") &&
+                    eval_simple_cmp_on_current(A, sc))
+                {
+                    found_recno = rn;
+                    return true;
+                }
+            }
+        }
+
+        ok = orderstate::isAscending(A) ? cur->next(k, r)
+                                       : cur->prev(k, r);
+    }
+
+    return true;
+#endif
+}
+
+// -----------------------------------------------------------------------------
+// main
+// -----------------------------------------------------------------------------
+
+void cmd_LOCATE(xbase::DbArea& A, std::istringstream& iss)
+{
+    const std::string raw_args = iss.str();
+    if (is_locate_usage_request(raw_args)) {
+        print_locate_usage();
+        return;
+    }
+
+    if (!A.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::NoOpenTable);
+        return;
+    }
+
+    locate_state::clear();
+    locate_continue_bridge::clear();
+
+    std::string where_text;
+    bool has_where = extract_for_clause(iss, where_text);
+
     if (!has_where) {
-        std::ostringstream os; os << iss.rdbuf();
-        rest = trim(os.str());
-        if (rest.empty()) {
-            std::cout << "Syntax: LOCATE [FOR <expr>]  or  LOCATE <field> <op> <value>\n";
+        std::ostringstream os;
+        os << iss.rdbuf();
+        where_text = trim(os.str());
+
+        if (where_text.empty()) {
+            print_locate_usage();
             return;
         }
-        where_text = rest;  // compile as-is
-        has_where  = true;
     }
 
-    // Decide engine
-    const bool use_dottalk = looks_complex_where(where_text) || (where_text.find('(') != std::string::npos);
+    // Normalize simple DotTalk++ predicates only.
+    // Function predicates must pass through unchanged so the native
+    // expression evaluator receives the real expression text:
+    //     LEFT(LNAME,1) = "W"
+    //     SOUNDEX(LNAME) = SOUNDEX("WHITE")
+    //     UPPER(LNAME) = "WHITE"
+    if (!expression_has_function_call(where_text)) {
+        where_text = normalize_unquoted_rhs_literals(A, where_text);
+    }
 
-    // Compile predicate (DotTalk path)
-    std::unique_ptr<dottalk::expr::Expr> prog;
-    if (use_dottalk) {
-        auto cr = ::compile_where(where_text); // GLOBAL symbol in your build
-        if (!cr) {
-            std::cout << "Syntax error in FOR: " << cr.error << "\n";
+    const bool use_dottalk = looks_complex_where(where_text);
+
+    // --- CDX fast path
+    if (!use_dottalk) {
+        int found_recno = 0;
+
+        if (try_locate_cdx_simple(A, where_text, found_recno)) {
+            if (found_recno > 0) {
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateFoundText);
+                locate_state::set_after_match(where_text, A.recno(), false);
+                locate_continue_bridge::set(where_text, false);
+            } else {
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
+            }
             return;
         }
-        prog = std::move(cr.program);
     }
 
-    // Scan from TOP; stop at first match
-    if (!A.top()) { std::cout << "Not Located.\n"; return; }
+    // --- fallback scan
+    if (!A.top()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
+        return;
+    }
 
     do {
         if (!A.readCurrent()) continue;
-        if (A.isDeleted()) continue; // honor deleted filter
 
-        bool match = false;
-        if (use_dottalk && prog) {
-            auto rv = dottalk::expr::glue::make_record_view(A);
-            match = prog->eval(rv);
-        } else {
-            // Keep predx support for bare triplets if you still want it.
-            // Accept both "FOR fld op val" and "fld op val"
-            std::string trip = where_text;
-            std::string U = where_text;
-            for (auto& c : U) c = (char)std::toupper((unsigned char)c);
-            if (U.rfind("FOR", 0) != 0) trip = "FOR " + where_text;
-            match = predx::eval_expr(A, trip);
-        }
+        bool match = selector_match_expr_current(A, where_text);
 
         if (match) {
-            std::cout << "Located.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateFoundText);
+            locate_state::set_after_match(where_text, A.recno(), use_dottalk);
+            locate_continue_bridge::set(where_text, use_dottalk);
             return;
         }
+
     } while (A.skip(1));
 
-    std::cout << "Not Located.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::LocateNotFoundText);
 }

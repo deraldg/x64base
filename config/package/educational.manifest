@@ -1,0 +1,9 @@
+# EDUCATIONAL: full tracked help plus the small x32 teaching dataset.
+dottalkpp/bin/dottalkpp.ini
+dottalkpp/bin/init.ini
+dottalkpp/bin/shutdown.ini
+dottalkpp/data/dbf/help/**
+dottalkpp/data/help/**
+dottalkpp/data/dbf/x32/*.dbf
+dottalkpp/data/indexes/x32/*.cnx
+dottalkpp/data/workspaces/mcc_x32.dtschema

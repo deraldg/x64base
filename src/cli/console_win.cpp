@@ -2,82 +2,134 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+
 #include "cli/console.hpp"
-#include <iostream>
+
 #include <conio.h>
 #include <windows.h>
 
-// ====== Global style knobs (Windows) =======================================
-// Toggle to force ASCII frame if your font or environment has trouble with Unicode.
+#include <iostream>
+#include <string>
+
+// ====== Config ==============================================================
 static constexpr bool kUseAsciiFrame = false;
 
-// Colors/styles (ANSI SGR)
-static const char* kReset        = "\x1b[0m";
-static const char* kFrameStyle   = "\x1b[30;43m";   // black fg (30) on amber/yellow bg (43)
-static const char* kHeaderStyle  = "\x1b[1;32m";    // bold green (example; header text set by caller)
+static const char* kReset      = "\x1b[0m";
+static const char* kFrameStyle = "\x1b[30;43m";
+// ============================================================================
 
-// Frame glyphs
-static const char* kTL = kUseAsciiFrame ? "+" : "┌";
-static const char* kTR = kUseAsciiFrame ? "+" : "┐";
-static const char* kBL = kUseAsciiFrame ? "+" : "└";
-static const char* kBR = kUseAsciiFrame ? "+" : "┘";
-static const char* kHZ = kUseAsciiFrame ? "-" : "─";
-static const char* kVT = kUseAsciiFrame ? "|" : "│";
-// ==========================================================================
+static void write_w(HANDLE h, int x, int y, const std::wstring& s)
+{
+    if (h == INVALID_HANDLE_VALUE || h == nullptr) return;
 
-struct WinConsole : Console {
-    WinConsole() {
-        // Enable ANSI VT processing so cursor moves & colors work
-        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (h != INVALID_HANDLE_VALUE) {
+    COORD pos{};
+    pos.X = static_cast<SHORT>(x);
+    pos.Y = static_cast<SHORT>(y);
+    SetConsoleCursorPosition(h, pos);
+
+    DWORD written = 0;
+    WriteConsoleW(h, s.c_str(), static_cast<DWORD>(s.size()), &written, nullptr);
+}
+
+struct WinConsole : Console
+{
+    HANDLE hOut{ INVALID_HANDLE_VALUE };
+
+    WinConsole()
+    {
+        hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        if (hOut != INVALID_HANDLE_VALUE && hOut != nullptr) {
             DWORD mode = 0;
-            if (GetConsoleMode(h, &mode)) {
-                SetConsoleMode(h, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            if (GetConsoleMode(hOut, &mode)) {
+                SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
             }
         }
-        // UTF-8 out (helps with box glyphs)
+
         SetConsoleOutputCP(CP_UTF8);
     }
 
-    void clear() override { std::cout << "\x1b[2J\x1b[H"; }
-
-    void move_to(int x,int y) override {
-        std::cout << "\x1b[" << (y+1) << ";" << (x+1) << "H";
+    void clear() override
+    {
+        std::cout << "\x1b[2J\x1b[H";
     }
 
-    void draw_text(int x,int y,const std::string&s,int clip=-1) override {
-        move_to(x,y);
-        if (clip>=0 && (int)s.size()>clip) std::cout << s.substr(0,(size_t)clip);
-        else std::cout << s;
+    void move_to(int x, int y) override
+    {
+        std::cout << "\x1b[" << (y + 1) << ";" << (x + 1) << "H";
     }
 
-    void draw_frame(int l,int t,int w,int h) override {
-        if (w<2 || h<2) return;
+    void draw_text(int x, int y, const std::string& s, int clip = -1) override
+    {
+        move_to(x, y);
+        if (clip >= 0 && static_cast<int>(s.size()) > clip)
+            std::cout << s.substr(0, static_cast<std::size_t>(clip));
+        else
+            std::cout << s;
+    }
 
-        // Corners (amber bg)
-        draw_text(l,       t,       std::string(kFrameStyle) + kTL + kReset);
-        draw_text(l+w-1,   t,       std::string(kFrameStyle) + kTR + kReset);
-        draw_text(l,       t+h-1,   std::string(kFrameStyle) + kBL + kReset);
-        draw_text(l+w-1,   t+h-1,   std::string(kFrameStyle) + kBR + kReset);
+    void draw_frame(int l, int t, int w, int h) override
+    {
+        if (w < 2 || h < 2) return;
 
-        // Horizontal edges
-        for (int i=1;i<w-1;i++){
-            draw_text(l+i, t,       std::string(kFrameStyle) + kHZ + kReset);
-            draw_text(l+i, t+h-1,   std::string(kFrameStyle) + kHZ + kReset);
+        if (kUseAsciiFrame) {
+            for (int i = 0; i < w; ++i) {
+                draw_text(l + i, t, "-");
+                draw_text(l + i, t + h - 1, "-");
+            }
+            for (int y = t; y < t + h; ++y) {
+                draw_text(l, y, "|");
+                draw_text(l + w - 1, y, "|");
+            }
+            draw_text(l, t, "+");
+            draw_text(l + w - 1, t, "+");
+            draw_text(l, t + h - 1, "+");
+            draw_text(l + w - 1, t + h - 1, "+");
+            return;
         }
-        // Vertical edges
-        for (int y=t+1;y<t+h-1;y++){
-            draw_text(l,     y,     std::string(kFrameStyle) + kVT + kReset);
-            draw_text(l+w-1, y,     std::string(kFrameStyle) + kVT + kReset);
+
+        const wchar_t TL = L'\u250C'; // ┌
+        const wchar_t TR = L'\u2510'; // ┐
+        const wchar_t BL = L'\u2514'; // └
+        const wchar_t BR = L'\u2518'; // ┘
+        const wchar_t H  = L'\u2500'; // ─
+        const wchar_t V  = L'\u2502'; // │
+
+        std::wstring top;
+        top += TL;
+        top.append(static_cast<std::size_t>(w - 2), H);
+        top += TR;
+
+        std::wstring mid;
+        mid += V;
+        mid.append(static_cast<std::size_t>(w - 2), L' ');
+        mid += V;
+
+        std::wstring bot;
+        bot += BL;
+        bot.append(static_cast<std::size_t>(w - 2), H);
+        bot += BR;
+
+        write_w(hOut, l, t, top);
+
+        for (int i = 1; i < h - 1; ++i) {
+            write_w(hOut, l, t + i, mid);
         }
+
+        write_w(hOut, l, t + h - 1, bot);
     }
 
-    int get_key() override { return _getch(); }
+    int get_key() override
+    {
+        return _getch();
+    }
 
-    Size size() override {
-        Size s{80,25};
+    Size size() override
+    {
+        Size s{80, 25};
         CONSOLE_SCREEN_BUFFER_INFO info{};
-        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info)) {
+        if (hOut != INVALID_HANDLE_VALUE && hOut != nullptr &&
+            GetConsoleScreenBufferInfo(hOut, &info)) {
             s.cols = info.srWindow.Right  - info.srWindow.Left + 1;
             s.rows = info.srWindow.Bottom - info.srWindow.Top  + 1;
         }
@@ -85,5 +137,9 @@ struct WinConsole : Console {
     }
 };
 
-Console* make_console() { return new WinConsole(); }
+Console* make_console()
+{
+    return new WinConsole();
+}
+
 #endif // _WIN32

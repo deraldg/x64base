@@ -1,4 +1,9 @@
-# src/xindex/CMakeLists.txt
+# File: src/xindex/CMakeLists.txt
+# Purpose: Build the xindex library and wire optional LMDB-backed index
+#          support.
+# Boundary: Keep backend selection and library linkage here; command/runtime
+#           policy lives in the CLI and engine layers.
+
 cmake_minimum_required(VERSION 3.20)
 
 file(GLOB_RECURSE XINDEX_SOURCES CONFIGURE_DEPENDS
@@ -8,7 +13,20 @@ file(GLOB_RECURSE XINDEX_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 
+# LEGACY retains the manager and file-backed index providers while omitting the
+# direct LMDB backend. NONE never enters this directory or creates xindex.
+if (NOT DOTTALK_WITH_INDEX)
+  list(FILTER XINDEX_SOURCES EXCLUDE REGEX ".*/lmdb_backend\\.cpp$")
+endif()
+
 add_library(xindex STATIC ${XINDEX_SOURCES})
+
+# Explicitly add CNX sources that live outside src/xindex.
+target_sources(xindex PRIVATE
+  "${CMAKE_SOURCE_DIR}/src/xindex/cnx_backend.cpp"
+  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_document.cpp"
+  "${CMAKE_SOURCE_DIR}/src/cnx/cnx_file.cpp"
+)
 
 target_include_directories(xindex
   PUBLIC
@@ -16,11 +34,20 @@ target_include_directories(xindex
 )
 
 target_compile_definitions(xindex
-  PUBLIC DOTTALK_WITH_INDEX=$<BOOL:${DOTTALK_WITH_INDEX}>
+  PUBLIC
+    DOTTALK_HAS_XINDEX=1
+    DOTTALK_WITH_INDEX=$<BOOL:${DOTTALK_WITH_INDEX}>
 )
 
+target_link_libraries(xindex PUBLIC xbase)
+
 if (MSVC)
-  target_compile_options(xindex PRIVATE /W4 /permissive-)
+  target_compile_options(xindex PRIVATE /W4 /permissive- /MP)
 else()
   target_compile_options(xindex PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+if (DOTTALK_WITH_INDEX)
+  find_package(unofficial-lmdb CONFIG REQUIRED)
+  target_link_libraries(xindex PRIVATE unofficial::lmdb::lmdb)
 endif()

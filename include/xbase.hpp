@@ -1,3 +1,10 @@
+// File: include/xbase.hpp
+// Purpose: Core xBase engine types, constants, and DbArea/XBaseEngine contracts.
+// Boundary: This header defines engine-facing runtime state only. CLI, shell,
+//           messaging, and help-surface policy must stay outside this layer.
+// Notes: Supports mixed runtime flavors plus the memo/index hooks needed by
+//        higher layers without exposing CLI behavior here.
+
 #pragma once
 #include <cstdint>
 #include <string>
@@ -7,20 +14,68 @@
 #include <memory>
 #include <stdexcept>
 #include <optional>
+#include <limits>
+#include <utility>
 
-// Forward-declare to avoid heavy include & circular deps in the header.
-// Define DbArea's destructor in a .cpp that includes "xindex/index_manager.hpp".
-namespace xindex { class IndexManager; }
+#include "memo/memo_context.hpp"
+
+namespace dottalk::memo { class MemoManager; }
 
 namespace xbase {
 
 // ---- Constants -------------------------------------------------------------
-constexpr int     MAX_FIELDS         = 128;
-constexpr int     MAX_INDEX          = 5;
-constexpr int     MAX_AREA           = 25;
-constexpr char    IS_DELETED         = '*';
-constexpr char    NOT_DELETED        = ' ';
-constexpr uint8_t HEADER_TERM_BYTE   = 0x0D;
+constexpr int         MAX_FIELDS         = 128;
+constexpr int         MAX_INDEX          = 5;
+constexpr int         MAX_AREA           = 256;
+constexpr char        IS_DELETED         = '*';
+constexpr char        NOT_DELETED        = ' ';
+constexpr uint8_t     HEADER_TERM_BYTE   = 0x0D;
+
+// ---- Runtime Area Kind / Capability ---------------------------------------
+enum class AreaKind : uint8_t {
+    Unknown = 0,
+    V32,
+    V64,
+    V128,
+    Tup
+};
+
+enum class AreaCapability : uint64_t {
+    None        = 0,
+    ReadRows    = 1ull << 0,
+    WriteRows   = 1ull << 1,
+    DeleteRows  = 1ull << 2,
+    Seek        = 1ull << 3,
+    Filter      = 1ull << 4,
+    Order       = 1ull << 5,
+    Relations   = 1ull << 6,
+    Memo        = 1ull << 7,
+    TupleOps    = 1ull << 8
+};
+
+// Centralized version-byte -> runtime kind mapping.
+inline AreaKind detect_area_kind_from_version(std::uint8_t ver) noexcept
+{
+    switch (ver) {
+        case 0x03: // ClassicNoMemo
+        case 0x83: // ClassicWithMemo
+        case 0xF5: // Fox26Memo
+            return AreaKind::V32;
+
+        case 0x30: // VfpBase
+        case 0x31: // VfpAutoInc
+        case 0x32: // VfpVar
+        case 0x64: // xbase_64 dialect
+            return AreaKind::V64;
+
+        default:
+            return AreaKind::Unknown;
+    }
+}
+
+// ---- Memo field storage contract ------------------------------------------
+constexpr std::uint8_t LEGACY_MEMO_FIELD_LEN = 10; // pre-x64: plain fixed-width text slot
+constexpr std::uint8_t X64_MEMO_FIELD_LEN    = 8;  // x64: uint64 object-id slot
 
 // ---- On-disk structures (packed) ------------------------------------------
 #pragma pack(push, 1)
@@ -47,7 +102,7 @@ struct FieldRec {
 struct FieldDef {
     std::string name;
     char        type{};       // 'C','N','D','L', etc.
-    uint8_t     length{};     // total bytes
+    uint32_t    length{};     // total bytes (runtime truth; X64 may exceed legacy descriptor byte)
     uint8_t     decimals{};   // for 'N'
 };
 
@@ -62,82 +117,277 @@ namespace {
     }
 }
 
-
-// ---- DbArea ----------------------------------------------------------------
+// ---- DbArea ---------------------------------------------------------------
 class DbArea {
 public:
-    DbArea();
-    ~DbArea();                                   // defined out-of-line in a .cpp
+    enum class MemoKind { NONE, FPT, DBT };
 
-    // Non-copyable, movable
+    // ---- Lifecycle --------------------------------------------------------
+    DbArea();
+    ~DbArea();
+
     DbArea(const DbArea&)            = delete;
     DbArea& operator=(const DbArea&) = delete;
-    DbArea(DbArea&&)                 = default;
-    DbArea& operator=(DbArea&&)      = default;
 
-    // Open/close
-    void open(const std::string& filename);
+    DbArea(DbArea&&);
+    DbArea& operator=(DbArea&&);
+
+    // ---- Open / Close -----------------------------------------------------
+    void open(const std::string& abs_filename);
     void close();
-    bool isOpen() const noexcept { return static_cast<bool>(_fp); }
+
+    // ---- State ------------------------------------------------------------
+    bool isOpen() const noexcept { return _fp.is_open(); }
     bool isDeleted() const;
 
-    // Navigation
+    // ---- Runtime kind / capability ---------------------------------------
+    AreaKind kind() const noexcept { return _kind; }
+    void setKind(AreaKind k) noexcept { _kind = k; }
+    bool supports(AreaCapability cap) const noexcept;
+
+    // ---- Navigation -------------------------------------------------------
     bool gotoRec(int32_t recno);
     bool top();
     bool bottom();
     bool skip(int delta);
 
-    // Record I/O
+    // ---- Record I/O -------------------------------------------------------
     bool readCurrent();
     bool writeCurrent();
     bool appendBlank();
     bool deleteCurrent();
 
-    // ---- Accessors expected by the rest of the app -------------------------
-    // Canonical: recLength()
-    int         recLength()   const noexcept { return _hdr.cpr; } // bytes per record
-    // Legacy alias: recordLength() retained for compatibility
-    int         recordLength() const noexcept;                    // defined in .cpp (compat)
-    std::string filename()     const;                             // full path or base name
-    void        setFilename(std::string path);                    // helper to set on open/create
+    // Core engine-owned replace entry point.
+    // Contract:
+    // - field1 is 1-based and already resolved by caller
+    // - stored_value is already normalized into on-disk form
+    // - performs the core write/update path only
+    // - no TABLE buffering / shell integration behavior belongs here
+    bool replaceFieldStored(int field1, const std::string& stored_value, std::string* err = nullptr);
 
-    // Field access (1-based)
+    // ---- Record size ------------------------------------------------------
+    int  recLength() const noexcept {
+        return (_record_length64 > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
+            ? std::numeric_limits<int>::max()
+            : static_cast<int>(_record_length64);
+    }
+    int  recordLength() const noexcept;
+    int  cpr() const noexcept { return recLength(); }
+    std::uint64_t recLength64() const noexcept { return _record_length64; }
+    std::uint64_t dataStart64() const noexcept { return _data_start64; }
+
+    // ---- Runtime truth (CANONICAL) ----------------------------------------
+    const std::string& filename() const noexcept { return _dbf_abs_path; }
+    const std::string& dbfDir() const noexcept { return _dbf_dir; }
+    const std::string& dbfBasename() const noexcept { return _dbf_basename; }
+    const std::string& logicalName() const noexcept { return _logical_name; }
+
+    // ---- Memo sidecar facts (co-located with DBF) -------------------------
+    const std::string& memoPath() const noexcept { return _memo_abs_path; }
+    MemoKind           memoKind() const noexcept { return _memo_kind; }
+
+    // ---- Memo manager / context (per-area) --------------------------------
+    dottalk::memo::MemoManager& memoManager();
+
+    dottalk::memo::MemoManager* memoManagerPtr() noexcept {
+        return _memo_mgr.get();
+    }
+
+    const dottalk::memo::MemoManager* memoManagerPtr() const noexcept {
+        return _memo_mgr.get();
+    }
+
+    dottalk::memo::MemoContext& memoContext() noexcept { return _memo_ctx; }
+    const dottalk::memo::MemoContext& memoContext() const noexcept { return _memo_ctx; }
+
+    // ---- Field access (1-based) -------------------------------------------
     const std::vector<FieldDef>& fields() const { return _fields; }
-    std::string get(int idx) const;              // 1-based
-    bool        set(int idx, const std::string& val); // 1-based
+    std::string get(int idx) const;
+    bool        set(int idx, const std::string& val);
 
-    // Info
-    int32_t     recno()      const { return _crn; }
-    int32_t     recCount()   const { return _hdr.num_of_recs; }
-    int         fieldCount() const { return static_cast<int>(_fields.size()); }
-    int         cpr()        const noexcept { return recLength(); }   // prefer recLength()
-    std::string name()       const { return _db_name; }
+    // ---- Info -------------------------------------------------------------
+    int32_t recno() const noexcept {
+        return (_crn64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
+            ? std::numeric_limits<int32_t>::max()
+            : static_cast<int32_t>(_crn64);
+    }
+    int32_t recCount() const noexcept {
+        return (_rec_count64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
+            ? std::numeric_limits<int32_t>::max()
+            : static_cast<int32_t>(_rec_count64);
+    }
+
+    uint64_t recno64() const noexcept    { return _crn64; }
+    uint64_t recCount64() const noexcept { return _rec_count64; }
+
+    bool bof() const noexcept { return _crn64 == 0; }
+    bool eof() const noexcept { return _rec_count64 == 0 || _crn64 > _rec_count64; }
+    int  fieldCount() const { return static_cast<int>(_fields.size()); }
+
+    // ---- Legacy compatibility --------------------------------------------
+    std::string name() const { return _logical_name; }
+    void        setFilename(std::string path);
+
+    // ---- Resolved runtime names ------------------------------------------
+    // These setters receive final names resolved by dialect-specific loaders
+    // such as xbase_64.hpp. DbArea stores runtime truth only; it does not
+    // mirror or own the underlying vector metadata blocks.
+    void setLogicalName(std::string name) {
+        _logical_name = std::move(name);
+        _db_name = _logical_name;
+    }
+
+    bool setFieldName(int field1, std::string name) {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
+        _fields[static_cast<std::size_t>(field1 - 1)].name = std::move(name);
+        return true;
+    }
+
+    bool setFieldLength(int field1, std::uint32_t len) {
+        if (field1 < 1 || field1 > static_cast<int>(_fields.size())) return false;
+        _fields[static_cast<std::size_t>(field1 - 1)].length = len;
+        return true;
+    }
+
+    // ---- Internal lifecycle helpers --------------------------------------
+    void _compute_paths_and_names_(const std::string& abs_dbf_path);
+    void _clear_paths_and_names_() noexcept;
+
+    // ---- VFP loader / compatibility setters -------------------------------
+    void clearFields() noexcept {
+        _fields.clear();
+        _rawFields.clear();
+    }
+    void addField(FieldDef fd) {
+        _fields.push_back(std::move(fd));
+    }
+    void addRawField(FieldRec fr) {
+        _rawFields.push_back(std::move(fr));
+    }
+    void setVersionByte(uint8_t ver) noexcept {
+        _dbf_version_byte = ver;
+        _hdr.version = ver;
+    }
+    uint8_t versionByte() const noexcept {
+        return _dbf_version_byte;
+    }
+    void setHeader(const HeaderRec& hdr) noexcept {
+        _hdr = hdr;
+        _dbf_version_byte = hdr.version;
+        _rec_count64 = (hdr.num_of_recs < 0)
+            ? 0u
+            : static_cast<uint64_t>(hdr.num_of_recs);
+        _data_start64 = (hdr.data_start < 0)
+            ? 0u
+            : static_cast<uint64_t>(static_cast<std::uint16_t>(hdr.data_start));
+        _record_length64 = (hdr.cpr < 0)
+            ? 0u
+            : static_cast<uint64_t>(static_cast<std::uint16_t>(hdr.cpr));
+    }
+    void setRecordCount(int32_t n) noexcept {
+        _hdr.num_of_recs = n;
+        _rec_count64 = (n < 0) ? 0u : static_cast<uint64_t>(n);
+    }
+    void setRecordCount64(uint64_t n) noexcept {
+        _rec_count64 = n;
+        _hdr.num_of_recs = (n > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
+            ? std::numeric_limits<int32_t>::max()
+            : static_cast<int32_t>(n);
+    }
+    void setRecno64(uint64_t n) noexcept {
+        _crn64 = n;
+        _crn = (n > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
+            ? std::numeric_limits<int32_t>::max()
+            : static_cast<int32_t>(n);
+    }
+    void setDataStart(std::uint64_t start) noexcept {
+        _data_start64 = start;
+        _hdr.data_start =
+            (start > static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max()))
+                ? 0
+                : static_cast<int16_t>(start);
+    }
+    void setRecordLength(std::uint64_t len) noexcept {
+        _record_length64 = len;
+        _hdr.cpr =
+            (len > static_cast<std::uint64_t>(std::numeric_limits<int16_t>::max()))
+                ? 0
+                : static_cast<int16_t>(len);
+    }
+    void setLastUpdated(uint8_t yy, uint8_t mm, uint8_t dd) noexcept {
+        _hdr.last_updated[0] = yy;
+        _hdr.last_updated[1] = mm;
+        _hdr.last_updated[2] = dd;
+    }
+
+    // ---- 64-bit DBF compatibility additions -------------------------------
+    void setAutoQNext64(uint64_t v) noexcept {
+        _autoq_next64 = v;
+    }
+    uint64_t autoQNext64() const noexcept {
+        return _autoq_next64;
+    }
+
+    void setTableFlags(uint32_t v) noexcept {
+        _table_flags = v;
+    }
+    uint32_t tableFlags() const noexcept {
+        return _table_flags;
+    }
 
 private:
-    // Storage
+    // ===== Storage =========================================================
     std::fstream _fp;
-    std::string  _db_name;         // base name (e.g., "CUSTOMER")
-    std::string  _filename;        // full path or provided name
-    HeaderRec    _hdr{};           // header as read from the file
+    HeaderRec    _hdr{};
 
-    // Schema & buffers
-    std::vector<FieldDef>  _fields;      // normalized field defs
-    std::vector<FieldRec>  _rawFields;   // on-disk field descriptors
-    std::vector<char>      _recbuf;      // raw record buffer
+    // ===== Schema & buffers ===============================================
+    std::vector<FieldDef>  _fields;
+    std::vector<FieldRec>  _rawFields;
+    std::vector<char>      _recbuf;
 
     // Current record values (1-based indexing: slot 0 unused)
     std::vector<std::string> _fd;
-    // Snapshot used by indexing to compute old/new keys on update
+    // Snapshot retained for physical before/after record state.
     std::vector<std::string> _fd_snapshot;
 
-    // Cursor state
-    int32_t _crn{0};               // current record number (1-based; 0 = BOF)
-    char    _del{NOT_DELETED};     // deletion flag for current record
+    // ===== Cursor state ====================================================
+    int32_t  _crn{0};
+    uint64_t _crn64{0};
+    uint64_t _rec_count64{0};
+    uint64_t _data_start64{0};
+    uint64_t _record_length64{0};
+    char     _del{NOT_DELETED};
 
-    // Per-area index manager (incomplete type here; owned & destroyed in .cpp)
-    std::unique_ptr<xindex::IndexManager> _idx;
+    // ===== Runtime kind ====================================================
+    AreaKind _kind{AreaKind::Unknown};
 
-    // Internals
+    // ===== Per-area managers ==============================================
+    dottalk::memo::MemoContext _memo_ctx;
+    std::unique_ptr<dottalk::memo::MemoManager> _memo_mgr;
+
+    // ===== Runtime descriptors (CANONICAL) ================================
+    std::string _dbf_abs_path;
+    std::string _dbf_dir;
+    std::string _dbf_basename;
+    std::string _dbf_ext;
+    std::string _logical_name;
+
+    // Memo sidecar
+    std::string _memo_abs_path;
+    MemoKind    _memo_kind{MemoKind::NONE};
+
+    // ===== Legacy storage (DEPRECATED, mapped internally) =================
+    std::string _db_name;
+    std::string _filename;
+
+    // ===== VFP compatibility additions =====================================
+    uint8_t     _dbf_version_byte{0x03};
+
+    // ===== 64-bit DBF compatibility additions ==============================
+    uint64_t    _autoq_next64{0};
+    uint32_t    _table_flags{0};
+
+    // ===== Internals =======================================================
     void        readHeader();
     void        readFields();
     bool        loadFieldsFromBuffer();
@@ -145,8 +395,8 @@ private:
     static std::string rtrim(std::string s);
 
     // Index helpers
-    int         findFieldCI(const std::string& name) const; // returns 1-based idx or 0
-    int         firstCharField() const;                      // 1-based idx or 0
+    int         findFieldCI(const std::string& name) const;
+    int         firstCharField() const;
     std::vector<uint8_t> encodeKeyFrom(const std::vector<std::string>& vals) const;
     std::vector<uint8_t> currentKey()  const { return encodeKeyFrom(_fd); }
     std::vector<uint8_t> snapshotKey() const { return encodeKeyFrom(_fd_snapshot); }
@@ -156,9 +406,24 @@ private:
 class XBaseEngine {
 public:
     XBaseEngine();
-    DbArea& area(int idx) { if (idx < 0 || idx >= MAX_AREA) throw std::out_of_range("area"); return *_areas[idx]; }
-    void selectArea(int idx) { if (idx < 0 || idx >= MAX_AREA) throw std::out_of_range("area"); _current = idx; }
-    int  currentArea() const { return _current; }
+    DbArea* areaPtr(int idx) noexcept {
+        if (idx < 0 || idx >= MAX_AREA) return nullptr;
+        return _areas[idx].get();
+    }
+    const DbArea* areaPtr(int idx) const noexcept {
+        if (idx < 0 || idx >= MAX_AREA) return nullptr;
+        return _areas[idx].get();
+    }
+    DbArea& area(int idx) {
+        if (idx < 0 || idx >= MAX_AREA) throw std::out_of_range("area");
+        return *_areas[idx];
+    }
+    void selectArea(int idx) {
+        if (idx < 0 || idx >= MAX_AREA) throw std::out_of_range("area");
+        _current = idx;
+    }
+    int currentArea() const { return _current; }
+
 private:
     std::array<std::unique_ptr<DbArea>, MAX_AREA> _areas;
     int _current{0};
@@ -169,6 +434,4 @@ std::string dbNameWithExt(std::string s); // ensure .dbf
 
 } // namespace xbase
 
-// ---- Legacy alias (global scope) -------------------------------------------
-// Old code refers to ::DbArea; keep that working without a duplicate class.
 using DbArea = xbase::DbArea;

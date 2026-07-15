@@ -1,7 +1,48 @@
 // src/cli/cmd_foxhelp.cpp
+// @dottalk.usage v1
+// owner: DOT|FOXHELP
+// command: FOXHELP
+// category: help
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: FOXHELP USAGE
+// summary:
+//   List or search the static FoxPro-style command catalog.
+//
+// usage:
+//   FOXHELP
+//   FOXHELP USAGE
+//   FOXHELP <name>
+//   FOXHELP <search>
+//   FH
+//   FH <name>
+//   FH <search>
+//
+// notes:
+//   FOXHELP with no arguments lists the FoxPro-style command subset.
+//   FOXHELP <name> prints an exact catalog item when found.
+//   FOXHELP <search> searches the catalog and prints matching items.
+//   FH is a short alias for FOXHELP.
+//   FOXHELP is a read-only help/report command.
+//
+// risk:
+//   reads_static_catalog: yes
+//   mutates_table_data: no
+//   mutates_session: no
+//
+// related:
+//   HELP
+//   CMDHELP
+//   FOXSTANDARD
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "foxref.hpp"
+#include "cli/command_output.hpp"
+#include "cli/output_router.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -13,23 +54,39 @@
 
 using xbase::DbArea;
 
-// helper: uppercase copy
-static std::string up(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
-    return s;
+namespace {
+std::ostream& out() {
+    return cli::OutputRouter::instance().out();
+}
+}
+
+static void print_foxhelp_usage() {
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpUsageText);
+}
+
+static bool is_foxhelp_usage_request(std::string raw) {
+    std::string t = textio::up(textio::trim(std::move(raw)));
+    if (t.rfind("FOXHELP ", 0) == 0) {
+        t = textio::up(textio::trim(t.substr(8)));
+    } else if (t.rfind("FH ", 0) == 0) {
+        t = textio::up(textio::trim(t.substr(3)));
+    }
+    return t == "USAGE" || t == "HELP" || t == "?";
 }
 
 static void print_item(const foxref::Item& it) {
-    // NAME  [supported/unsupported]
-    std::cout << std::left << std::setw(14) << it.name
-              << (it.supported ? " " : " (unsupported) ") << "\n";
-    //   syntax
+    out() << std::left << std::setw(14) << it.name;
+    if (it.supported) {
+        out() << " \n";
+    } else {
+        out() << " " << cli::cmdout::message_text(dottalk::helpdata::MessageId::FoxHelpUnsupportedSuffixText) << "\n";
+    }
+
     if (it.syntax && *it.syntax)
-        std::cout << "  " << it.syntax << "\n";
-    //   summary
+        out() << "  " << it.syntax << "\n";
+
     if (it.summary && *it.summary)
-        std::cout << "  " << it.summary << "\n";
+        out() << "  " << it.summary << "\n";
 }
 
 static void do_foxhelp(std::istringstream& in) {
@@ -37,45 +94,50 @@ static void do_foxhelp(std::istringstream& in) {
     std::getline(in, rest);
     rest = textio::trim(rest);
 
+    if (is_foxhelp_usage_request(rest)) {
+        print_foxhelp_usage();
+        return;
+    }
+
     if (rest.empty()) {
-        // no args: list a compact catalog
-        std::cout << "FoxPro-style commands (subset):\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpSubsetTitleText);
         for (const auto& it : foxref::catalog()) {
-            std::cout << "  " << std::left << std::setw(12) << it.name;
+            out() << "  " << std::left << std::setw(12) << it.name;
             if (it.supported) {
-                std::cout << " - " << it.summary << "\n";
+                out() << " - " << it.summary << "\n";
             } else {
-                std::cout << " - " << it.summary << " [unsupported]\n";
+                out() << " - " << it.summary << " "
+                      << cli::cmdout::message_text(dottalk::helpdata::MessageId::FoxHelpUnsupportedSuffixText)
+                      << "\n";
             }
         }
-        std::cout << "Tip: FOXHELP <NAME> for details, e.g. FOXHELP INDEX\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpTipText);
         return;
     }
 
-    // single token lookups first
-    {
-        if (const auto* hit = foxref::find(rest); hit) {
-            print_item(*hit);
-            return;
-        }
+    if (const auto* hit = foxref::find(rest); hit) {
+        print_item(*hit);
+        return;
     }
 
-    // tokenized search across name/syntax
     auto results = foxref::search(rest);
     if (!results.empty()) {
-        std::cout << "Matches for \"" << rest << "\":\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::FoxHelpMatchesTitleText,
+            {{"command", rest}});
         for (const auto* it : results) {
             print_item(*it);
-            std::cout << "\n";
+            out() << "\n";
         }
         return;
     }
 
-    std::cout << "No help found for: " << rest << "\n";
-    std::cout << "Try FOXHELP (no args) to list commands.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::FoxHelpNoTopicText,
+        {{"command", rest}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::FoxHelpTryListHintText);
 }
 
-// Public handlers (what shell.cpp registers)
 void cmd_FOXHELP(DbArea& /*A*/, std::istringstream& in) {
     do_foxhelp(in);
 }

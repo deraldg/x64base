@@ -1,136 +1,127 @@
-// src/xindex/dbarea_adapt.cpp
+// src/xbase/dbarea_adapt.cpp
+// Adapter layer between xindex and xbase::DbArea.
+//
+// Keep this file thin. DbArea already exposes the canonical runtime truth for
+// filename, record count, record length, fields, current record, and deleted
+// status. Do not rediscover those facts by probing navigation unless there is
+// no direct DbArea API.
+
 #include "xindex/dbarea_adapt.hpp"
 #include "xbase.hpp"
-#include "record_view.hpp"   // for A.get(1-based)
-#include <string>
+
 #include <algorithm>
 #include <cctype>
-#include "xbase.hpp"
+#include <string>
 
 namespace xindex {
 
-std::string db_filename(const xbase::DbArea& a) {
-#ifdef XINDEX_DB_FILENAME
-    // Use the project’s mapping if provided
-    return std::string(XINDEX_DB_FILENAME(a));
-#else
-    // Safe fallback: unknown
-    return std::string{};
-#endif
-}
-
-int db_record_length(const xbase::DbArea& a) {
-#ifdef XINDEX_DB_RECORD_LENGTH
-    // Use the project’s mapping if provided
-    return static_cast<int>(XINDEX_DB_RECORD_LENGTH(a));
-#else
-    // Safe fallback: unknown
-    return -1;
-#endif
-}
-
-
 // ---- helpers ---------------------------------------------------------------
 static inline std::string trim(std::string s) {
-    auto notsp = [](unsigned char c){ return !std::isspace(c); };
+    auto notsp = [](unsigned char c) { return !std::isspace(c); };
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), notsp));
     s.erase(std::find_if(s.rbegin(), s.rend(), notsp).base(), s.end());
     return s;
 }
 
-// Best-effort field lookup by name (case-insensitive) using only what DbArea exposes via STRUCT/FIELDS paths.
-// If your DbArea has a faster API, you can replace this later.
-static int field_index_ci_fallback(const xbase::DbArea& A, const std::string& name) {
-    // We try to guess via RecordView’s 1-based get() and a simple STRUCT-like probe.
-    // If you have a header/metadata accessor, wire it here instead.
-    // Return -1 when unknown.
-    try {
-        // Heuristic: many DbArea implementations expose a small number of fields (<=256).
-        // We can’t read names directly, so we just fail gracefully.
-        (void)A; (void)name;
-    } catch(...) {}
+static inline bool ieq(std::string a, std::string b) {
+    auto up = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+        return s;
+    };
+    return up(std::move(a)) == up(std::move(b));
+}
+
+// Return a 0-based field index for adapter callers, or -1 when unknown.
+static int field_index_ci(const xbase::DbArea& a, const std::string& name) {
+    const auto& fields = a.fields();
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        if (ieq(fields[i].name, name)) {
+            return static_cast<int>(i);
+        }
+    }
     return -1;
 }
 
+struct RecGuard {
+    xbase::DbArea& a;
+    int saved{0};
+
+    explicit RecGuard(xbase::DbArea& area) : a(area), saved(area.recno()) {}
+
+    ~RecGuard() {
+        if (saved > 0 && a.recno() != saved) {
+            (void)a.gotoRec(saved);
+        }
+    }
+
+    RecGuard(const RecGuard&) = delete;
+    RecGuard& operator=(const RecGuard&) = delete;
+};
 
 // ---- required adapter funcs ------------------------------------------------
+std::string db_filename(const xbase::DbArea& a) {
+    return a.filename();
+}
+
+int db_record_length(const xbase::DbArea& a) {
+    return a.recordLength();
+}
+
 int db_recno(const xbase::DbArea& a) {
     return a.recno();
 }
 
 int db_record_count(const xbase::DbArea& a) {
-    // Fast path if you later add a macro mapping to a native method.
-#ifdef XINDEX_DB_RECORD_COUNT
-    return XINDEX_DB_RECORD_COUNT(const_cast<xbase::DbArea&>(a));
-#else
-    // Generic: binary search the last valid recno using gotoRec().
-    auto& A = const_cast<xbase::DbArea&>(a);
-    int saved = A.recno();
-
-    int lo = 0, hi = 1;
-    while (A.gotoRec(hi)) { lo = hi; hi <<= 1; }    // exponential probe
-    while (lo < hi) {
-        int mid = lo + (hi - lo + 1) / 2;
-        if (A.gotoRec(mid)) lo = mid; else hi = mid - 1;
-    }
-
-    if (saved > 0) A.gotoRec(saved);
-    return lo; // 0 if no records
-#endif
+    return a.recCount();
 }
 
 std::string db_get_string(const xbase::DbArea& a, int recno, const std::string& field) {
-    auto& A = const_cast<xbase::DbArea&>(a);
-    int saved = A.recno();
-    std::string out;
+    if (recno <= 0) {
+        return {};
+    }
 
-    int idx0 = field_index_ci_fallback(a, field);
+    const int idx0 = field_index_ci(a, field);
     if (idx0 < 0) {
-        // Fall back to first field if we can’t resolve; keeps the system running.
-        idx0 = 0;
+        return {};
     }
-    if (recno > 0 && A.gotoRec(recno)) {
-        out = A.get(idx0 + 1); // RecordView pattern: DbArea::get is 1-based
+
+    auto& A = const_cast<xbase::DbArea&>(a);
+    RecGuard guard(A);
+
+    if (!A.gotoRec(recno)) {
+        return {};
     }
-    if (saved > 0) A.gotoRec(saved);
-    return out;
+
+    return A.get(idx0 + 1); // DbArea::get is 1-based.
 }
 
 double db_get_double(const xbase::DbArea& a, int recno, const std::string& field) {
     std::string s = trim(db_get_string(a, recno, field));
-    if (s.empty()) return 0.0;
-    try { return std::stod(s); } catch (...) { return 0.0; }
+    if (s.empty()) {
+        return 0.0;
+    }
+
+    try {
+        return std::stod(s);
+    } catch (...) {
+        return 0.0;
+    }
 }
 
-bool db_is_deleted(const xbase::DbArea& /*a*/, int /*recno*/) {
-#ifdef XINDEX_DB_IS_DELETED
+bool db_is_deleted(const xbase::DbArea& a, int recno) {
+    if (recno <= 0) {
+        return false;
+    }
+
     auto& A = const_cast<xbase::DbArea&>(a);
-    int saved = A.recno();
-    bool del = false;
-    if (recno > 0 && A.gotoRec(recno)) del = XINDEX_DB_IS_DELETED(A, recno);
-    if (saved > 0) A.gotoRec(saved);
-    return del;
-#else
-    // Safe default: treat as not-deleted until we wire a real flag.
-    return false;
-#endif
-}
+    RecGuard guard(A);
 
-// --- optional adapters: only compile if you've opted in ---
-#if defined(XINDEX_ADAPT_HAS_FILENAME)
-std::string db_filename(const xbase::DbArea& /*a*/) {
-    // TODO: wire to a.realFilename() when DbArea exposes it.
-    // Returning empty keeps STATUS "File:" blank instead of failing to build.
-    return {};
-}
-#endif
+    if (!A.gotoRec(recno)) {
+        return false;
+    }
 
-#if defined(XINDEX_ADAPT_HAS_RECLEN)
-int db_record_length(const xbase::DbArea& /*a*/) {
-    // TODO: wire to a.recordLength() when DbArea exposes it.
-    // Returning 0 keeps STATUS "Bytes/rec:" blank/zero until then.
-    return 0;
+    return A.isDeleted();
 }
-#endif
 
 } // namespace xindex
