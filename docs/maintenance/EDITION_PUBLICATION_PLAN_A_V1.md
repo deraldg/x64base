@@ -46,8 +46,10 @@ concrete, not less:
    `SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md`. The Definition
    of Done's "build -> runtime setup -> databuild -> query" arc is therefore a
    demonstrated procedure; Path A runs the same arc against the edition presets.
-   (Publication of these fixes to `main` is pending: `launch-common.ps1` via
-   git, the three `mcc/*.ps1` via the manifest.)
+   These prerequisite fixes are now published on `main`: the location-honest
+   launcher and MCC journey in `46e021594bee25fd40fe9b79e318c691e1a714a0`,
+   followed by the valid DotScript `&&` banner correction in
+   `b9d480215c036178ba99b5109a8a2489ee89b215`.
 
 ## Why this plan exists
 
