@@ -1,266 +1,133 @@
 # AI README
 
-Root start point for a new AI assistant working in this repo.
+Root start point for a new or resumed AI assistant working in this repository.
 
-## Purpose
+## One Canonical Front Door
 
-Use this file when prior chat history, hosted memory, or model-specific context
-is unavailable. It points to the repo-local AI portal, seed documents, and
-runtime start points.
+This file defines the canonical entry order. Other onboarding documents are
+reference shelves or task-specific depth, not competing startup queues.
 
-## THIS FILE IS THE ONE FRONT DOOR
-
-There are several onboarding documents in this repo — `AI_PORTAL.md`,
-`AI_ASSIMILATION_PORTAL_V1.md`, `AI_ASSIMILATION_BOOK_V1.md`,
-`AI_BABY_BOOTSTRAP_CARD.md`, `labtalk/ai_portal/README.md`. They overlap because
-they grew at different times. **Do not try to read all of them first.** They are
-depth-on-demand, not a queue.
-
-Start here, in this order, and stop when you have enough for the task:
+Read in this order and stop when the current task has enough grounded context:
 
 | Step | Read | Why |
 | --- | --- | --- |
-| 0 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
-| 1 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
-| 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
-| 3 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
-| 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
-| 5 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
-| 6 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
+| 0 | newest `docs/maintenance/SESSION_CLOSEOUT_*.md` | Fastest true resume: what changed, what was proved, and what remains open. |
+| 1 | `docs/agents/CURRENT_TARGET.md` | Current objective and public baseline. |
+| 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Authority roots, promotion chain, branch continuity, and permission boundary. |
+| 3 | `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` when the AI can write or run local tools | Failure modes specific to an acting agent. |
+| 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Owning lifecycle, lane, proof state, risk, and next gate. |
+| 5 | `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` before source changes | Mandatory contract preflight. |
+| 6 | `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` before writing or running DotScript | Current syntax, state, mutation classification, and transcript proof. |
+| 7 | `labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md` for hosted/outside proposals | Exact-baseline package and local-integration contract. |
 
-Everything else — the assimilation book, the bootstrap card, the older portal
-docs — is context you pull *when the task needs it*, not a mandatory prefix.
+Then inspect only the contracts, source, tests, HELP, proof, and publication
+material needed for the assigned task.
 
-The older ordered list below is retained for continuity, but the table above is
-the canonical entry sequence.
-
-## Start Here (legacy list — superseded by the table above)
-
-Read these files first, in order:
-
-1. `docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
-2. `docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
-3. `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`
-4. `docs/agents/AI_BABY_BOOTSTRAP_CARD.md`
-5. `docs/agents/CURRENT_TARGET.md`
-6. `DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md`
-7. `docs/contracts/README.md`
-8. `docs/contracts/CONTRACT_LIFECYCLE_V1.md`
-9. `labtalk/README.md`
-10. `labtalk/portal/README.md`
-11. `labtalk/ai_portal/README.md`
-
-If a file is missing, record that as drift and continue with the next available
-repo-local source.
-
-## AI Portal
-
-The AI assimilation portal is the durable front door:
-
-```text
-docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
-```
-
-The seed book is:
-
-```text
-docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
-```
-
-The local collection point is:
-
-```text
-src/AIPortal/
-```
-
-## Repository Info
-
-Local workspace:
+## Authority
 
 ```text
 D:\code\ccode
+  authoritative development source, runtime truth, and development history
+        |
+        | reviewed coherent source changes and selected public projection
+        v
+C:\x64base
+  disposable curated publication staging
+        |
+        | reviewed commit and push
+        v
+github.com/deraldg/x64base
+  public snapshot
 ```
 
-Current observed Git remote and branch at the time this file was updated:
+`C:\x64base` is not a backup, second development tree, or source authority.
+Original work belongs in `D:\code\ccode`. A public-only change is not integrated
+until reconciled into authoritative development and proved there.
+
+## Git Pointers
+
+Static onboarding text must not pretend a transient local development branch is
+current.
 
 ```text
-origin: https://github.com/deraldg/x64base.git
-branch: homegrown-cnx-20251112-branch
+Public repository: https://github.com/deraldg/x64base
+Public branch:     main
+Development root:  D:\code\ccode
+Development branch: discover locally; never guess or inherit from an old chat
 ```
 
-Always re-check before making Git decisions:
+Before any Git decision, inspect the actual workspace and remote:
 
 ```powershell
 git remote -v
 git branch --show-current
 git status --short
+git ls-remote --heads origin
 ```
 
-Repository boundary pointers:
+`origin/*` refs are a cache, not proof of current GitHub state.
 
-- `docs/governance/README.md`
-- `docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md`
-- `docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
+## Task Classification
 
-Current public repository identities documented in governance:
+At task start classify the work as one or more of:
 
-- `deraldg/x64base` owns runtime/source truth.
-- `deraldg/dottalkpp` is currently a product/runtime identity, not a forced
-  source split.
-- `deraldg/labtalk` owns campus, portal, labs, proofs, and teaching overlays.
+- authoritative development;
+- publication staging;
+- public-repository review or correction;
+- website/publication;
+- read-only audit.
 
-## Source Locations
+Record:
 
-Use the repo-local source map before searching broadly:
+```text
+Current request:
+Owning lifecycle:
+SDLC lane:
+Authority root:
+Public baseline commit:
+Files and contracts read:
+Truth state:
+Proof state:
+Risk class:
+Mutation scope:
+Smallest safe action:
+Proof plan:
+Next gate:
+Residual risk:
+```
+
+Unknown fields remain `unknown`; they are not guessed.
+
+## Source and Runtime Start Points
 
 | Area | First locations |
 | --- | --- |
-| C++ runtime and command shell | `src/cli`, `src/xbase`, `src/xindex`, `src/memo`, `src/cnx`, `include` |
-| Build and dependency metadata | `CMakeLists.txt`, `CMakePresets.json`, `vcpkg.json`, `vcpkg-wsl.json`, `cmake` |
-| Python bindings and bridge work | `bindings/pydottalk`, `src/bindings`, `python_misc`, `py`, `run-pydottalk.ps1` |
-| GUI/TUI/workbench lanes | `src/gui`, `src/tv`, `docs/gui`, `run-wx.ps1`, `run-wx-next.ps1`, `tk.run.ps1` |
-| Runtime scripts and data | `dottalkpp/data`, `dottalkpp/data/scripts`, `dottalkpp/data/dbf` |
-| Documentation, contracts, governance | `docs`, `docs/contracts`, `docs/governance`, `docs/maintenance` |
-| AI Friendly and agent bootstrap | `docs/ai-friendly`, `docs/agents`, `AI_README.md` |
-| LabTalk campus and portal | `labtalk`, `labtalk/portal`, `labtalk/registries`, `labtalk/labs`, `labtalk/proofs` |
-| LabTalk above-runtime staging | `C:\labtalk` |
-| Tools and maintenance scripts | `tools`, `scripts`, `dottalkpp/scripts/maintenance`, root launchers |
-| Side projects and prototypes | `pycrud`, `Side Projects`, `sqlite-gui`, `dottalk-webui` |
+| CLI and runtime | `src/cli`, `src/xbase`, `src/xindex`, `src/memo`, `include` |
+| Build | `CMakeLists.txt`, `CMakePresets.json`, `vcpkg.json`, `cmake` |
+| Bindings | `bindings/pydottalk`, `src/bindings`, `run-pydottalk.ps1` |
+| GUI/TUI | `src/gui`, `src/tv`, `docs/gui` |
+| Runtime scripts/data | `dottalkpp/data`, `dottalkpp/data/scripts`, `dottalkpp/data/dbf` |
+| Contracts/governance | `docs/contracts`, `docs/database`, `docs/governance` |
+| AI Portal | `AI_PORTAL.md`, `labtalk/ai_portal`, `labtalk/registries/ai_portal.yaml` |
+| LabTalk | `labtalk`, `labtalk/portal`, `labtalk/labs`, `labtalk/proofs` |
+| Website source | `D:\dev\x64base-site` |
 
-Authority rule: source defines runtime behavior; runtime proof validates it;
-HELP/manual/website text must not outrun source and proof.
-
-## Website And Publication Locations
-
-Public website:
+Authority order:
 
 ```text
-https://x64base.com/
+source defines
+runtime/tests prove
+HELP explains
+metadata organizes
+SelfDoc preserves provenance
+MDO/manualgen assembles reviewed documentation
+website summarizes reviewed truth
+AI Portal selects task-relevant context
 ```
 
-Public docs start points:
+## Native Read-Only Orientation
 
-- `https://x64base.com/docs/`
-- `https://x64base.com/docs/getting-started/overview/`
-- `https://x64base.com/docs/engine/feature-crosswalk/`
-- `https://x64base.com/docs/dottalk/dotscript-language-guide/`
-- `https://x64base.com/docs/dev/selfdoc-website-publication/`
-- `https://x64base.com/docs/dev/important-documents/`
-
-Repo-local website/publication pointers:
-
-- `README.md`
-- `docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md`
-- `docs/maintenance/SELF_DOC_APPS_INDEX_v1.md`
-- `docs/maintenance/SELF_DOC_SUBSYSTEM_MATRIX_v1.md`
-- `labtalk/portal/README.md`
-- `C:\labtalk\README.md`
-- `C:\labtalk\STAGING_POLICY.md`
-- `C:\labtalk\publication\labtalk-website-pipeline.md`
-
-The website is a publication surface, not runtime proof. When website text and
-source/runtime evidence disagree, follow the authority order in
-`docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`.
-
-## Promotion And Staging Convention
-
-Use this as the default local authority map:
-
-- primary implementation/source truth: `D:\code\ccode`
-- DotTalk++ runtime tree: `D:\code\ccode\dottalkpp`
-- Laboratory Campus / LabTalk tree: `D:\code\ccode\labtalk`
-- clean staging mirror: `C:\x64base`
-- staged DotTalk++ mirror: `C:\x64base\dottalkpp`
-- website source tree: `D:\dev\x64base-site`
-
-Normal source flow:
-
-```text
-D:\code\ccode -> C:\x64base -> GitHub repository
-```
-
-Normal website flow:
-
-```text
-D:\dev\x64base-site -> build/public artifact -> GitHub Pages -> x64base.com
-```
-
-Normal documentation evidence flow:
-
-```text
-D:\code\ccode source/runtime
--> HELP / metadata / comments / contracts
--> SelfDoc / MDO / manualgen reports
--> reviewed manual sections
--> reviewed website summaries
-```
-
-Do not reverse the authority chain by copying website prose into manuals or
-source docs as technical truth.
-
-## LabTalk Portal
-
-Launch the LabTalk portal from the repo root:
-
-```powershell
-python .\labtalk\portal\labtalk_portal.py
-```
-
-or:
-
-```powershell
-.\launch_portal.ps1
-```
-
-Portal docs:
-
-```text
-labtalk/portal/README.md
-```
-
-Headless checks:
-
-```powershell
-python .\labtalk\portal\labtalk_portal.py --audit-write
-python .\labtalk\portal\labtalk_portal.py --run-item runtime.database_literacy_starter
-```
-
-Active **Alpha/Experimental** AI Portal hardening work:
-
-```text
-labtalk/ai_portal/README.md
-labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
-labtalk/registries/ai_portal.yaml
-```
-
-## Runtime Start Points
-
-Main DotTalk++ runtime:
-
-```powershell
-& D:\code\ccode\build\src\Release\dottalkpp.exe
-```
-
-Build:
-
-```powershell
-cmake --build build --config Release --target dottalkpp
-```
-
-Convenience launchers from the repo root:
-
-```powershell
-.\run-cli.ps1
-.\run-erp.ps1
-.\run-bible.ps1
-.\run-wx.ps1
-.\run-pydottalk.ps1
-.\run-pycrud.ps1
-```
-
-## Native Orientation Commands
-
-Inside DotTalk++ prefer read-only orientation first:
+Inside DotTalk++ begin with read-only surfaces:
 
 ```text
 MAINT
@@ -274,95 +141,55 @@ CMDHELPCHK
 HELP
 ```
 
-## Coding Standards, Conventions, And Rules
-
-Start with pointers instead of inventing a new style guide:
-
-- `.editorconfig` for charset, indentation, final newline, whitespace, and line
-  ending defaults.
-- `.gitattributes` for CRLF/LF and binary file handling.
-- `.gitignore` for generated build/runtime artifacts and local state.
-- `.github/PULL_REQUEST_TEMPLATE.md` for expected PR review shape.
-- `.github/CODEOWNERS` for ownership hints.
-- `.github/copilot-instructions.md` for GitHub Copilot-specific repository
-  instructions.
-- `docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md` for runtime SDLC gates.
-- `docs/maintenance/MAINTENANCE_SCRIPT_ROOT_POLICY_v1.md` for script placement
-  and regression bootstrap rules.
-- `docs/contracts/README.md` and `docs/contracts/CONTRACT_LIFECYCLE_V1.md` for
-  durable rules and contract promotion.
-- `docs/database/DATABASE_SAFETY_CONTRACT_V1.md` for database mutation safety.
-- `docs/database/VALUE_LOCALE_COLLATION_CONTRACT_V1.md` for value, locale, and
-  collation policy.
-- `docs/governance/manual_safety_rules.md` and
-  `docs/governance/authority_order.md` for manual/governance rules.
-
-Observed local formatting defaults:
-
-- UTF-8.
-- Spaces, 4-space indentation by default.
-- CRLF by default for most files.
-- LF for `.sh`, `.yml`, and `.yaml`.
-- Markdown does not trim trailing whitespace by `.editorconfig`.
-
-General implementation conventions:
-
-- Prefer existing subsystem patterns over new abstractions.
-- Keep edits scoped to the owning lane.
-- Do not silently move runtime truth into LabTalk or publication surfaces.
-- For runtime behavior changes, identify HELP/CMDHELP/CMDHELPCHK and proof
-  impact.
-- For `.dts` regression scripts, bootstrap the runtime environment explicitly;
-  see `docs/maintenance/MAINTENANCE_SCRIPT_ROOT_POLICY_v1.md`.
+Before authoring DotScript, query the current runtime and inspect a proven
+neighbor script. Do not translate remembered xBase, SQL, or shell syntax into
+DotScript.
 
 ## Working Rules
 
-- Do not rely on lost chat history or model memory.
-- Use repo-local evidence.
-- Preserve dirty and untracked work unless the user explicitly authorizes
-  cleanup.
-- Inspect source and authority docs before changing files.
-- Treat raw AI interaction material as source material, not authority.
-- Promote only after material is classified, distilled, anchored, routed, and
-  reviewed.
-- Default to report-only when touching DBF/CDX/LMDB data, HELP tables,
-  metadata, generated catalogs, manuals, proofs, backups, or archives.
+- Write access is capability, not authorization.
+- Preserve dirty and untracked maintainer work.
+- Do not clean, reset, broadly stage, delete, change branches, commit, push, or
+  publish without current-task authorization.
+- Treat DBF/CDX/CNX/LMDB data, HELP tables, metadata catalogs, generated
+  catalogs, publications, fixtures, backups, and archives as report-only unless
+  explicitly named for mutation.
+- Ground public documentation against the public target, not unpublished dev.
+- A successful build does not prove publication completeness; verify required
+  source is tracked.
+- Long clean builds are maintainer-operated unless explicitly authorized.
+- A zero DotScript process exit code is not proof; inspect the transcript and
+  assert source path plus specific data.
 
-## Minimal New-AI Checklist
+## Publication State Rule
 
-```text
-Current request:
-Owning lane:
-Files read:
-Source of truth:
-Generated/candidate files:
-Mutation risk:
-Smallest safe action:
-Proof/test:
-Residual risk:
-```
+Development proof and public availability are separate states. For example, the
+product/index edition system may be implemented and proved in authoritative
+development while public `main` still exposes only the presets documented in
+`BUILDING.md`. Label both states explicitly.
 
-## Closeout Shape
+## Closeout
 
-After meaningful work, report:
+After meaningful work report each reached stage separately:
 
 ```text
-Changed:
-- path and purpose
-
-Verified:
-- build, runtime command, report, readback, or reason verification was not run
-
-AI-facing docs updated (or reason not applicable):
-- path and what changed
-- OR: "no lane state changed this session"
-
-Still open:
-- review, proof, drift, or promotion gate
+Changed in development:
+Development proof:
+Promoted to staging:
+Staging proof:
+Committed:
+Pushed/published:
+Website state:
+AI-facing state documents updated:
+Still open / next gate:
 ```
 
-The third block is the **closeout-updates-startup** gate (AIF-006). If the
-session changed lane state — objective, branch, authority pointer, contract,
-dashboard status, intake row — the AI-facing document describing that state
-must be updated in the same session, or the omission explicitly justified. See
-`AI_PORTAL.md` -> "Closeout Updates Startup".
+If lane state changed, update the relevant startup pointer in the same task:
+
+- current objective -> `docs/agents/CURRENT_TARGET.md`;
+- branch/remote/authority pointers -> `AI_README.md`;
+- lane status/session log -> `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`;
+- candidate status -> `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md`.
+
+Also leave a dated `docs/maintenance/SESSION_CLOSEOUT_<topic>_<YYYY-MM-DD>.md`
+for state-changing work. The chat is not the durable record.
