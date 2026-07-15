@@ -55,7 +55,8 @@ repo-local source.
 
 ## AI Portal
 
-The AI assimilation portal is the durable front door:
+The canonical startup order is the table at the top of this file. The older AI
+assimilation portal remains a depth-on-demand context source:
 
 ```text
 docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
@@ -81,12 +82,16 @@ Local workspace:
 D:\code\ccode
 ```
 
-Current observed Git remote and branch at the time this file was updated:
+Public repository identity:
 
 ```text
 origin: https://github.com/deraldg/x64base.git
-branch: homegrown-cnx-20251112-branch
+public branch: main
 ```
+
+The development branch is current workspace state and must be discovered
+locally. Do not preserve a transient development branch name here as a current
+instruction.
 
 Always re-check before making Git decisions:
 

@@ -4,8 +4,8 @@ Status: **Alpha/Experimental**
 Audience: AI development partners and maintainers
 Published location: repository root as `AI_PORTAL.md`
 
-This is the fast-start entrance for ChatGPT, Codex, Gemini, Grok, Copilot, and
-other AI systems asked to review or change x64base.
+This is the public AI Portal summary for ChatGPT, Codex, Gemini, Grok, Copilot,
+and other AI systems asked to review or change x64base.
 
 It is not a student portal for accessing an AI service. It prepares an AI to
 work as a development partner using repo-local authority, contracts, runtime
@@ -13,14 +13,19 @@ evidence, safety gates, and task recipes.
 
 ## Mandatory Start
 
-Read these in order before proposing changes:
+`AI_README.md` is the one canonical front door. Follow its ordered table first:
+newest session closeout, current target, authority seed, local-access checklist
+when applicable, SDLC fast start, source-mutation gate, and DotScript readiness
+when `.dts` work is involved.
 
-1. [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
-2. [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
-3. [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
-4. [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
-5. [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
-6. [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
+After that canonical start, use these task-specific sources only when relevant:
+
+- [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
+- [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
+- [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
+- [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
+- [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
+- [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
 
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
