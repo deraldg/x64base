@@ -1,96 +1,70 @@
 # Building DotTalk++ / x64base
 
-This is the front door for building the engine. It tells you which **edition**
-to build and the one command that builds it. The detailed proof and rationale
-live in the linked records at the bottom; this page is the "just build it" path.
+The front door for building the engine from a fresh clone. It describes the
+build presets **that exist in this repository right now**. There is no prebuilt
+binary here — this is a development-stage project; you build the runtime
+yourself, then run the data build.
 
-There is **no prebuilt binary in the repository** — this is a development-stage
-project. You build the runtime yourself (onboarding steps 3–4), then run the
-data build (step 5). See `dottalkpp/data/scripts/mcc/README.md` for step 5.
+If a command below fails, that is a bug in this page — please report it. This
+page is meant to describe only what a cold clone actually contains.
 
-## The two choices
+## Prerequisites (Windows)
 
-A build is defined by two independent axes.
+- **Visual Studio 2022** (MSVC v143, "Desktop development with C++").
+- **CMake ≥ 3.21** (the Visual Studio installer can provide it).
+- **vcpkg** — clone and bootstrap from https://github.com/microsoft/vcpkg
+- **Set the vcpkg environment variable.** The presets reference two names for
+  historical reasons; set **both** to your vcpkg checkout so every preset
+  resolves:
 
-### 1. Product — how much of the system is included
+  ```powershell
+  $env:VCPKG_ROOT              = "C:\path\to\vcpkg"
+  $env:VCPKG_INSTALLATION_ROOT = "C:\path\to\vcpkg"
+  ```
 
-Set with `-D DOTTALK_PRODUCT=<name>`.
+  Dependencies are declared in `vcpkg.json` and restored automatically on the
+  first configure (manifest mode).
 
-| Product | For | Includes |
-| --- | --- | --- |
-| `LEAN` | A minimal, shippable database runtime. | Core engine + essential education surface only. |
-| `PROFESSIONAL` | A production-oriented runtime. | Core engine; professional composition. |
-| `EDUCATIONAL` | Students and classrooms. | Core + the LabTalk campus / full education surface. |
-| `DEVELOPMENT` | Working on the engine itself. | Everything: LabTalk, maintenance, external tools, developer aliases. |
+## Choose a build
 
-The exact component composition per product (LabTalk, maintenance, external,
-dev, education essentials) is defined and maintained in the architecture
-decision record — see below. Treat that record as authority for what each
-edition contains; this table is the intent, not the contract.
+Pick the preset that matches what you want. All are defined in
+`CMakePresets.json`.
 
-### 2. Index mode — which indexing engine is compiled in
+| Preset | Toolchain | Index engine | GUI/TUI | For |
+| --- | --- | --- | --- | --- |
+| `windows-core` | MSVC + vcpkg | none | none | The simplest Windows build of the core engine. |
+| `index-vcpkg` | Ninja + vcpkg | **LMDB** | none | Core plus LMDB indexing. |
+| `pro-md` | MSVC + vcpkg (/MD) | **LMDB** | Turbo Vision | Full DotTalk++ development build. |
+| `pro-md-labtalk` | MSVC + vcpkg (/MD) | **LMDB** | Turbo Vision + Python | Development build with the pydottalk bindings. |
+| `ansi-mt` | MSVC (/MT static) | LMDB | none | ANSI, static runtime, no TV. |
+| `core` / `core-vcpkg` | Ninja | none | none | Portable core (system deps / vcpkg). |
+| `wsl` | Ninja (Linux) | LMDB | none | Building under WSL. |
 
-Set with `-D DOTTALK_INDEX_MODE=<name>`. Runtime-proven, per the build proof
-matrix:
+**If you just want a working database runtime on Windows, use `pro-md`** — it is
+the fullest build (indexing + the Turbo Vision UI) and is the one named for
+day-to-day development.
 
-| Index mode | Build graph | What you get |
-| --- | --- | --- |
-| `NONE` | `xbase` + `memo` + `xexpr`; **no** `xindex` library | Physical DBF open/read/CRUD. No `SEEK`, no index commands. |
-| `LEGACY` | `xbase` + `xindex` **without** the LMDB backend | CNX attach / order / `SEEK`. No LMDB commands. |
-| `LMDB` | `xbase` + full `xindex` | Full index surface: CNX + CDX + native LMDB persistence. |
-
-Key architecture point: **`xbase.lib` no longer owns `xindex`.** The table
-engine exposes neutral optional hooks; `xindex.lib` depends on `xbase` and
-installs those hooks when an index manager is attached. A `NONE` build omits the
-`xindex` target and library entirely.
-
-One honest caveat, straight from the proof matrix: `dottalkpp.exe` still links
-LMDB independently for the runtime message catalog, so `DOTTALK_INDEX_MODE=NONE`
-means *no xindex engine* — not yet *no LMDB dependency anywhere*. The Python
-module and `xbase` library need no xindex in `NONE`.
-
-## Canonical builds (Windows presets)
-
-These presets pin a product + index mode together. Copy-paste to build. Verified
-against `CMakePresets.json` and the build proof matrix, 2026-07-14.
+## Build it
 
 ```powershell
-# LEAN, physical only (no index engine)
-cmake --preset windows-lean-table
-cmake --build --preset windows-lean-table --target dottalkpp pydottalk
-ctest --preset windows-lean-table
+# Full Windows development build (indexing + TV)
+cmake --preset pro-md
+cmake --build --preset pro-md-Release --target dottalkpp
 
-# LEAN with LMDB indexing
-cmake --preset windows-lean-lmdb
-cmake --build --preset windows-lean-lmdb --target dottalkpp
-ctest --preset windows-lean-lmdb
-
-# EDUCATIONAL with LMDB (students / classroom)
-cmake --preset windows-educational-lmdb
-
-# DEVELOPMENT with LMDB (working on the engine)
-cmake --preset windows-development-lmdb
+# Or the minimal core engine
+cmake --preset windows-core
+cmake --build --preset windows-core --target dottalkpp
 ```
 
-## Compatibility note
-
-The older `DOTTALK_WITH_INDEX` boolean still works and now maps onto the modes:
-
-- `DOTTALK_WITH_INDEX=ON`  → `LMDB`
-- `DOTTALK_WITH_INDEX=OFF` (with no explicit mode) → `LEGACY`
-- only an explicit `DOTTALK_INDEX_MODE=NONE` removes `xindex`
+Note: configure-preset names and build-preset names differ — the build presets
+carry a `-Release` suffix (e.g. `pro-md` configures, `pro-md-Release` builds).
 
 ## After the build
 
-The runtime has no sample data until you build it. Run the data build:
+The runtime has no sample data until you build it. Then:
 
 ```powershell
 .\dottalkpp\scripts\mcc\build_mcc_demo_bases.ps1
-```
-
-Then try it:
-
-```powershell
 .\datarun.ps1
 ```
 ```text
@@ -102,22 +76,24 @@ SMARTLIST 10
 
 Full walkthrough: `dottalkpp/data/scripts/mcc/README.md`.
 
-## Proof and rationale (authority)
+## Editions (in development — not yet in this repository)
 
-This page summarizes; these records own the detail and the evidence:
+A larger build-composition system is being developed: named **products**
+(`LEAN`, `PROFESSIONAL`, `EDUCATIONAL`, `DEVELOPMENT`) and explicit **index
+modes** (`NONE`, `LEGACY`, `LMDB`), with dedicated presets. It is **not on the
+public repository yet** — do not expect `DOTTALK_PRODUCT` or `windows-lean-*`
+presets in this clone.
 
-- `docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md` — what is built and
-  proven for each mode (NONE / LEGACY / LMDB), with the runtime evidence and the
-  registered CTest proofs.
-- `docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md` — why the
-  index engine is optional and how `xbase` / `xindex` are separated.
-- `docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md` — the plan
-  behind the edition split.
+The design and proof records for that in-progress work:
 
-If this page and those records ever disagree, the records win — and the
-disagreement is a drift bug worth fixing.
+- `docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md`
+- `docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md`
+- `docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md`
+
+When the edition system is published and certified with a cold-clone build, this
+page will describe it. Until then, use the presets in the table above.
 
 ## License
 
-To be determined. Editions intended for distribution (LEAN, PROFESSIONAL) will
-need this settled before public release.
+To be determined. Editions intended for distribution will need this settled
+before public release.

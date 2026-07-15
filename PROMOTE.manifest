@@ -52,6 +52,7 @@ BUILDING.md
 docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md
 docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md
 docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md
+docs/maintenance/EDITION_PUBLICATION_PLAN_A_V1.md
 
 # --- AI-facing docs --------------------------------------------------------
 docs/agents/CURRENT_TARGET.md
