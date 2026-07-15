@@ -1,15 +1,49 @@
 # Current Target
 
-Status: resolved.
+Status: active.
 Updated: 2026-07-15.
-Supersedes: the 2026-06-29 cleanup/relocation target (closed as stale; see
-History below).
+Supersedes: the completed staging-restoration/publication target recorded below.
 
-## Resolution Update — 2026-07-15
+## Current Objective — Reconcile Public Corrections Into Development
+
+Public AI Portal consistency work was completed through:
+
+- `100169433b583e5f51eafdeea130607d71942376` — public-state reconciliation;
+- `a0cf52654c4f8e834e969e3c2524fd397d627a95` — canonical AI startup path.
+
+Those changes were made against the public GitHub snapshot. They are not yet
+integrated project work under the authority contract because this session could
+not inspect or modify the authoritative development tree:
+
+```text
+D:\code\ccode
+```
+
+The next local-access session must:
+
+1. inspect the current development versions of the affected Markdown files;
+2. reconcile the public corrections selectively without overwriting newer local
+   facts;
+3. record the actual development branch and working-tree state;
+4. verify the reconciled documents against development source and runtime proof;
+5. promote through `C:\x64base` only if a reviewed development-to-public delta
+   remains.
+
+Primary handoff:
+
+```text
+docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md
+```
+
+Do not reverse the authority chain by treating the GitHub versions as newer
+truth merely because they were published later.
+
+## Previous Objective Resolution — 2026-07-15
 
 The staging-restoration and first-publication objective recorded below is
-complete. Public `main` is now at
-`b9d480215c036178ba99b5109a8a2489ee89b215`.
+complete. The public state at completion was
+`b9d480215c036178ba99b5109a8a2489ee89b215`; later documentation-only
+reconciliation advanced `main` through the commits listed above.
 
 The cold-clone fixes were published in:
 
@@ -18,12 +52,8 @@ The cold-clone fixes were published in:
 - `b9d480215c036178ba99b5109a8a2489ee89b215` — valid DotScript `&&` comment
   syntax in the printed `DO X64` example.
 
-No replacement development objective has been declared in this file. The next
-AI session must use the maintainer's current request and inspect the current
-workspace rather than treating the historical task below as active work.
-
 The remaining sections are preserved as the state and reasoning that existed
-when this target was active on 2026-07-14.
+when this previous target was active on 2026-07-14.
 
 ## Authority Restatement
 
