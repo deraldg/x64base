@@ -1,9 +1,29 @@
 # Current Target
 
-Status: active.
-Updated: 2026-07-14.
+Status: resolved.
+Updated: 2026-07-15.
 Supersedes: the 2026-06-29 cleanup/relocation target (closed as stale; see
 History below).
+
+## Resolution Update — 2026-07-15
+
+The staging-restoration and first-publication objective recorded below is
+complete. Public `main` is now at
+`b9d480215c036178ba99b5109a8a2489ee89b215`.
+
+The cold-clone fixes were published in:
+
+- `46e021594bee25fd40fe9b79e318c691e1a714a0` — self-contained clone journey,
+  location-honest launch/databuild scripts, and proof records;
+- `b9d480215c036178ba99b5109a8a2489ee89b215` — valid DotScript `&&` comment
+  syntax in the printed `DO X64` example.
+
+No replacement development objective has been declared in this file. The next
+AI session must use the maintainer's current request and inspect the current
+workspace rather than treating the historical task below as active work.
+
+The remaining sections are preserved as the state and reasoning that existed
+when this target was active on 2026-07-14.
 
 ## Authority Restatement
 
