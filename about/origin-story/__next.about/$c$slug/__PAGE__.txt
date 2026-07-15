@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/04n5y5h0jutbp.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/209b7qb2hcp6g.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T909,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
+2:T99d,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
 <ol>
 <li><strong>Practical engineering</strong> — building stable data tools that keep working year after year.</li>
 <li><strong>Teaching</strong> — treating file formats and relational thinking as learnable, inspectable systems.</li>
@@ -10,7 +10,7 @@
 <p>From the beginning, the aim was <em>transparent computing</em>: you can open the files, understand the structures,
 and reason about performance and correctness without magic.</p>
 <a href="/docs/labtalk/cases-storyboard" class="">
-  <img src="/images/story/transparent-engine-model.png" alt="Transparent educational engine model used as a metaphor for visible runtime architecture">
+  <img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine: a transparent cutaway showing DBF table storage, CDX and DDX indexes, commit, rollback, and a transaction log, feeding data out through CLI, TUI, GUI, and API ports — a metaphor for a visible, inspectable runtime">
 </a>
 <p>The metaphor is close to the transparent educational engine models of the
 1960s and 1970s: the point was not decoration, but visibility. A learner could
@@ -34,6 +34,6 @@ to reject AI assistance; it is to make every AI-assisted change reviewable,
 traceable, and bounded by source truth, usage contracts, proof scripts, and
 human release judgment.</p>
 <p>This website organizes that ecosystem into a stable, readable structure: product pages, documentation, licensing,
-curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=92c6c642d945","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=92c6c642d945","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=92c6c642d945","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"67ppS7I4J-jfMr-5t7d24"}
+curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=a1223a36a89e","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=a1223a36a89e","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=a1223a36a89e","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Q8sgvDVlcEuhs-6vt2BOF"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
