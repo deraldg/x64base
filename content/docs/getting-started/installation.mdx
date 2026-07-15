@@ -11,9 +11,37 @@ starting point. The project requires CMake 3.21 or newer and a C++20 compiler.
 - Git and CMake 3.21 or newer.
 - Visual Studio 2022 on Windows, or GCC/Clang plus Ninja on Linux, WSL, and macOS.
 - vcpkg for the core JSON/SQLite dependencies and optional feature lanes.
-- `VCPKG_INSTALLATION_ROOT` set to the vcpkg installation directory.
+- The vcpkg environment set. The presets reference two variable names for
+  historical reasons; set **both** to your vcpkg checkout so every preset
+  resolves:
+
+  ```powershell
+  $env:VCPKG_ROOT              = "path\to\vcpkg"
+  $env:VCPKG_INSTALLATION_ROOT = "path\to\vcpkg"
+  ```
+
+Dependencies are declared in `vcpkg.json` and restored on the first configure
+(manifest mode).
+
+## Full working build (Windows)
+
+`pro-md` is the fullest build on `main` — the core engine plus LMDB indexing and
+the Turbo Vision UI. Use it if you want a working database runtime.
+
+```powershell
+git clone https://github.com/deraldg/x64base.git
+cd x64base
+cmake --preset pro-md
+cmake --build --preset pro-md-Release --target dottalkpp
+```
+
+Configure-preset and build-preset names differ — the build preset carries a
+`-Release` suffix (`pro-md` configures, `pro-md-Release` builds).
 
 ## Windows core
+
+The smallest public build proof — no LMDB index commands, no Turbo Vision,
+wxWidgets, Python bindings, or developer-only command visibility:
 
 ```powershell
 git clone https://github.com/deraldg/x64base.git
@@ -22,6 +50,9 @@ cmake --preset windows-core
 cmake --build --preset windows-core --parallel
 ctest --preset windows-core
 ```
+
+LMDB itself remains a base dependency because the runtime message catalog
+maintains LMDB mirrors.
 
 ## Linux, WSL, or macOS core
 
@@ -32,11 +63,6 @@ cmake --preset core-vcpkg
 cmake --build --preset core-vcpkg --parallel
 ctest --preset core-vcpkg
 ```
-
-The core profile disables LMDB index commands, Turbo Vision, wxWidgets, Python
-bindings, and developer-only command visibility. LMDB itself remains a base
-dependency because the runtime message catalog maintains LMDB mirrors. This is
-the smallest public build proof.
 
 ## Optional indexing lane
 
@@ -49,6 +75,36 @@ ctest --preset index-vcpkg
 The vcpkg manifest exposes separate `index`, `tv`, `wx`, and `python` features.
 Do not place personal dependency paths in tracked build files; use environment
 variables or an untracked `CMakeUserPresets.json`.
+
+## After the build
+
+A fresh clone has no sample data until you build it. From the repo root, run the
+self-contained databuild, then start the runtime — see the
+[Quickstart](/docs/getting-started/quickstart) for the full sequence:
+
+```powershell
+.\dottalkpp\scripts\mcc\build_mcc_demo_bases.ps1
+.\datarun.ps1
+```
+
+Inside the shell, run `DO X64` to select the x64 lane before `USE STUDENTS`: the
+default DBF path is `data\dbf`, not a lane, so a bare `USE` will not find the
+table.
+
+## Editions (in development — not yet in this repository)
+
+A larger build-composition system is being developed: named **products**
+(`LEAN`, `PROFESSIONAL`, `EDUCATIONAL`, `DEVELOPMENT`) and explicit **index
+modes** (`NONE`, `LEGACY`, `LMDB`), selected through dedicated `windows-lean-*`,
+`windows-educational-lmdb`, and `windows-development-lmdb` presets and the
+`DOTTALK_PRODUCT` / `DOTTALK_INDEX_MODE` options. `LEAN` strips most education,
+maintenance, and developer surfaces down to a small distributable runtime.
+
+This system is **not on the public `main` branch yet** — a fresh clone of `main`
+will not have `DOTTALK_PRODUCT` or the `windows-lean-*` presets, so build only
+the presets listed above for now. Once the edition system is published and
+certified with a cold-clone build, this page will document the full
+product × index-mode build commands.
 
 ## Verify
 

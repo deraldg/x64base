@@ -1,43 +1,71 @@
 ---
 title: "Getting Started: Quickstart"
-description: "Clone, build, test, and run the canonical public DotTalk++ / x64base source."
+description: "Clone, build, build the sample databases, and run the DotTalk++ / x64base runtime."
 ---
 
-## Clone, build, and test
+## Clone and build
+
+The fullest working build on the public `main` branch is `pro-md` — the core
+engine plus LMDB indexing and the Turbo Vision UI. Use it if you want a working
+database runtime.
 
 ```powershell
 git clone https://github.com/deraldg/x64base.git
 cd x64base
-cmake --preset windows-core
-cmake --build --preset windows-core --parallel
-ctest --preset windows-core
+cmake --preset pro-md
+cmake --build --preset pro-md-Release --target dottalkpp
 ```
 
-On Linux, WSL, or macOS, use `core-vcpkg` in place of `windows-core`.
+Configure-preset and build-preset names differ: `pro-md` configures,
+`pro-md-Release` builds. For the smallest build instead, use `windows-core`
+(or `core-vcpkg` on Linux, WSL, or macOS) — see
+[Installation](/docs/getting-started/installation).
 
-## First command sequence
+## Build the sample databases
 
-Run the built `dottalkpp` executable from a directory containing a disposable
-copy of the sample data, then try:
+A fresh clone has no sample data until you build it. One script does the whole
+job and is self-contained — it resets, extracts the canonical archive, and
+builds all three DBF lanes (MS-DOS, VFP, x64) plus the x64 LMDB indexes:
+
+```powershell
+.\dottalkpp\scripts\mcc\build_mcc_demo_bases.ps1
+```
+
+It warns before overwriting and waits for you to type `YES`.
+
+## Run and query
+
+```powershell
+.\datarun.ps1
+```
+
+`datarun.ps1` stages the freshly built `dottalkpp.exe` and its runtime DLLs into
+`dottalkpp\bin`, then starts the shell. Set the lane and query:
 
 ```text
-USE students
-STRUCT
-LIST NEXT 5
-SET ORDER TO TAG lname
-SEEK "WHITE"
-SMARTLIST NEXT 5
+DO X64                  && sets the x64 lane (dbf, indexes, lmdb)
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+SMARTLIST 10
 ```
 
-Use `HELP <command>` for the current command contract. Mutation commands such
-as `REPLACE`, `CALCWRITE`, `DELETE`, `COMMIT`, and `PACK` should be exercised
-only against disposable data.
+Run `DO X64` first: the default DBF path is `data\dbf`, not a lane, so a bare
+`USE STUDENTS` will not find the table. `DO X64` points the DBF, index, and LMDB
+paths at the x64 lane (`DO X32` and `DO VFP` select the other flavors). Ordered
+by `LNAME`, record one reads `Anderson`.
+
+Use `HELP` followed by a command name for the current command contract. Mutation
+commands such as `REPLACE`, `CALCWRITE`, `DELETE`, `COMMIT`, and `PACK` should be
+exercised only against disposable data — never the sample foundation.
 
 ## Reality check
 
 - `main` is the canonical public source.
 - A green CI run proves only the selected build/test profiles.
-- LMDB index commands, TUI, GUI, Python, education, and SelfDoc lanes require their own evidence; the LMDB library itself is a baseline message-catalog dependency.
+- On x64, ordered reads are LMDB-backed. The shipped `.cnx` / `.cdx` containers
+  let you open and read a table, but `SET ORDER TO TAG` on x64 needs the LMDB
+  environments the databuild above generates (they are derived, not shipped).
 - `COMMIT` is a best-effort buffer apply operation, not an atomic transaction
   across DBF, memo, and index stores.
 
