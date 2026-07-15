@@ -32,7 +32,11 @@ task request
 -> SelfDoc / MDO / Laboratory Campus feedback
 ```
 
-## First Reads
+## Reference Shelf — Depth on Demand
+
+`AI_README.md` defines the one canonical startup order. Do not treat the list
+below as another mandatory first-read sequence. Pull these sources only when the
+current task needs their additional depth.
 
 1. `DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`
 2. `SDLC_FAST_START_SEED_V1.md`
