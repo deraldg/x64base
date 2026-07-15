@@ -48,11 +48,17 @@
 
 [CmdletBinding()]
 param(
-    [string] $Root = "D:\code\ccode",
+    [string] $Root,
     [switch] $Execute
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $Root) {
+    # Derive the repo root from this script's own location -- never hardcode a
+    # dev path. <repo>\dottalkpp\scripts\mcc\reset_mcc_fixtures.ps1
+    $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+}
 
 $root = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\')
 $dtp  = Join-Path $root "dottalkpp"

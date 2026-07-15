@@ -55,12 +55,19 @@
 
 [CmdletBinding()]
 param(
-    [string] $Root = "D:\code\ccode",
+    [string] $Root,
     [switch] $Yes,
     [switch] $WhatIf
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $Root) {
+    # Derive the repo root from this script's own location so the databuild
+    # runs against WHATEVER clone it lives in -- never a hardcoded dev path.
+    #   <repo>\dottalkpp\scripts\mcc\build_mcc_demo_bases.ps1
+    $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+}
 
 $root    = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\')
 $dtp     = Join-Path $root "dottalkpp"
@@ -273,8 +280,12 @@ Write-Host ""
 Write-Host "  Then try it:"
 Write-Host ""
 Write-Host "      .\datarun.ps1"
+Write-Host "      DO X64                  <- sets the x64 lane (dbf, indexes, lmdb)"
 Write-Host "      USE STUDENTS"
 Write-Host "      SET INDEX TO STUDENTS"
 Write-Host "      SET ORDER TO TAG LNAME"
 Write-Host "      SMARTLIST 10"
+Write-Host ""
+Write-Host "  DO X64 first -- the default DBF path is data\dbf, not a lane, so a"
+Write-Host "  bare USE STUDENTS will not find the table. (DO X32 / DO VFP work too.)"
 Write-Host ""

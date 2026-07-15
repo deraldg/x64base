@@ -104,6 +104,30 @@ files rather than from the maintainer in chat.
   publishing a doc that describes source, verify the described source is on the
   target — ideally by the same cold clone a stranger would do.
 
+## Releasing entry-point scripts
+
+- [ ] **A released script must resolve its own location, never hardcode a dev
+  path.** In the cold-clone certification session (2026-07-15) the launcher and
+  all three databuild scripts reached back to `D:\code\ccode` from a clone:
+  `launch-common.ps1` looked for the exe under a dev-resolved root, and
+  `build_mcc_demo_bases.ps1` / `reset_mcc_fixtures.ps1` / `extract_mcc_og.ps1`
+  defaulted `$Root = "D:\code\ccode"`. On the maintainer's machine everything
+  "worked" because the dev tree was present; only a genuine cold clone exposed
+  it. Derive the root from `$PSScriptRoot`; make `-Root` an override, not the
+  default.
+- [ ] **A released script must stage what it needs, not assume it exists.** The
+  launcher asserted the destination exe (which a clone lacks) instead of copying
+  the build output in; it also has to carry the runtime DLLs (`lmdb`, `sqlite3`,
+  `tvision`), which are gitignored and absent from a clone's `bin/`.
+- [ ] **Released "try it" instructions must set the environment first.** The
+  databuild banner and `BUILDING.md` told the user `USE STUDENTS` with no
+  `DO X64` — the default DBF path is `data\dbf`, not a lane, so a bare `USE`
+  fails. Any printed getting-started sequence must run start-to-finish on a
+  clone exactly as written.
+- [ ] **Certify by cold clone.** None of the above is caught on the dev tree.
+  Clone `main` fresh, build, run the released entry points verbatim, and confirm
+  every path reads the clone root — not `D:\`.
+
 ## When you finish
 
 - [ ] Leave a dated session closeout in `docs/maintenance/` (see the closeout

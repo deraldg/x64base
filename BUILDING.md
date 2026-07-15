@@ -61,18 +61,40 @@ carry a `-Release` suffix (e.g. `pro-md` configures, `pro-md-Release` builds).
 
 ## After the build
 
-The runtime has no sample data until you build it. Then:
+The runtime has no sample data until you build it. Build the demo databases
+(this is self-contained — it resets, extracts the canonical archive, and builds
+all three lanes plus the x64 LMDB indexes):
 
 ```powershell
 .\dottalkpp\scripts\mcc\build_mcc_demo_bases.ps1
+```
+
+It warns before overwriting and waits for you to type `YES`. Then run the
+shell and query:
+
+```powershell
 .\datarun.ps1
 ```
 ```text
+DO X64
 USE STUDENTS
 SET INDEX TO STUDENTS
 SET ORDER TO TAG LNAME
 SMARTLIST 10
 ```
+
+`DO X64` first: the default DBF path is `data\dbf`, not a lane, so a bare
+`USE STUDENTS` won't find the table. `DO X64` points DBF/INDEXES/LMDB at the
+x64 lane (`DO X32` and `DO VFP` select the other flavors). Record 1 by `LNAME`
+should read `Anderson`.
+
+Notes:
+- `datarun.ps1` copies the freshly-built `dottalkpp.exe` (and its runtime DLLs)
+  from your build output into `dottalkpp\bin` automatically — you don't stage it
+  by hand. This currently expects a **`pro-md`** build (`build\src\Release`).
+- On x64, ordered reads are LMDB-backed, so the `SET ORDER` above needs the
+  LMDB envs that `build_mcc_demo_bases.ps1` builds. The `.cnx`/`.cdx` shipped in
+  the repo let you open and read, but ordered x64 access requires that databuild.
 
 Full walkthrough: `dottalkpp/data/scripts/mcc/README.md`.
 

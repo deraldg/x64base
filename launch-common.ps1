@@ -64,20 +64,111 @@ function Set-DotTalkLastExitCode {
     }
 }
 
+function Resolve-DotTalkBuiltExe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Layout
+    )
+
+    # Different presets build to different roots:
+    #   pro-md          -> build\src\Release
+    #   windows-core    -> build\windows-core\src\Release
+    #   core / index-*  -> build\<preset>\...
+    #   pro-md-labtalk  -> build-labtalk\src\Release
+    #   ansi-mt         -> build-ansi-mt\src\Release
+    # Find the most recently built dottalkpp.exe across those roots so datarun
+    # works regardless of which preset the user built.
+    $searchRoots = @(
+        $Layout.BuildRoot,
+        (Join-Path $Layout.RepoRoot "build-labtalk"),
+        (Join-Path $Layout.RepoRoot "build-ansi-mt")
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+
+    $candidates = foreach ($root in $searchRoots) {
+        Get-ChildItem -LiteralPath $root -Recurse -Filter "dottalkpp.exe" -File -ErrorAction SilentlyContinue
+    }
+
+    $newest = @($candidates) | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    if ($newest) {
+        return $newest.FullName
+    }
+
+    # Nothing built yet; return the canonical pro-md path so the caller's
+    # existence check produces a clear "build first" error.
+    return $Layout.BuildExe
+}
+
 function Update-DotTalkRuntimeExe {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$Layout
     )
 
-    Assert-DotTalkPath -LiteralPath $Layout.BuildExe -Label "Built executable"
-    Assert-DotTalkPath -LiteralPath $Layout.RuntimeExe -Label "Runtime executable path"
+    # Stage the freshly-built exe into dottalkpp/bin, then run it. Assert the
+    # SOURCE (a build output); the destination must NOT be required to pre-exist
+    # -- on a fresh clone dottalkpp/bin has no exe (*.exe is gitignored) and this
+    # function's whole job is to create it.
+    $builtExe = Resolve-DotTalkBuiltExe -Layout $Layout
+    Assert-DotTalkPath -LiteralPath $builtExe -Label "Built executable"
+
+    $runtimeDir = Split-Path -Parent $Layout.RuntimeExe
+    if (-not (Test-Path -LiteralPath $runtimeDir)) {
+        New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null
+    }
 
     try {
-        Copy-Item -LiteralPath $Layout.BuildExe -Destination $Layout.RuntimeExe -Force
+        Copy-Item -LiteralPath $builtExe -Destination $Layout.RuntimeExe -Force
     }
     catch {
-        Write-Warning "Runtime executable is locked; running existing copy at $($Layout.RuntimeExe)"
+        if (Test-Path -LiteralPath $Layout.RuntimeExe) {
+            Write-Warning "Runtime executable is locked; running existing copy at $($Layout.RuntimeExe)"
+        }
+        else {
+            throw "Could not stage runtime executable from $builtExe to $($Layout.RuntimeExe): $($_.Exception.Message)"
+        }
+    }
+
+    # The exe is dynamically linked; it will not load without its runtime DLLs
+    # (lmdb.dll, sqlite3.dll, tvision.dll, and any transitive deps). On a fresh
+    # clone bin/ has none of these (*.dll is gitignored). Stage the FULL runtime
+    # DLL set -- the union of whatever applocal deployed beside the exe and the
+    # vcpkg dynamic bin -- so we never have to know which specific libraries are
+    # DLLs vs statically linked. Copying extra DLLs is harmless; missing one is
+    # a hard load failure.
+    $buildDir = Split-Path -Parent $builtExe
+    $dllSources = @(
+        $buildDir,
+        (Join-Path $Layout.BuildRoot "vcpkg_installed\x64-windows\bin"),
+        (Join-Path $Layout.RepoRoot  "vcpkg_installed\x64-windows\bin")
+    )
+    if ($env:VCPKG_ROOT) {
+        $dllSources += (Join-Path $env:VCPKG_ROOT "installed\x64-windows\bin")
+    }
+    $dllSources = @($dllSources | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique)
+
+    $staged = 0
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($dir in $dllSources) {
+        foreach ($dll in @(Get-ChildItem -LiteralPath $dir -Filter *.dll -File -ErrorAction SilentlyContinue)) {
+            # First source wins: the exe-adjacent (applocal) copy takes
+            # precedence over the vcpkg bin copy.
+            if ($seen.Add($dll.Name)) {
+                $dest = Join-Path $runtimeDir $dll.Name
+                try {
+                    Copy-Item -LiteralPath $dll.FullName -Destination $dest -Force
+                    $staged++
+                }
+                catch {
+                    if (-not (Test-Path -LiteralPath $dest)) {
+                        Write-Warning "Could not stage runtime dependency $($dll.Name): $($_.Exception.Message)"
+                    }
+                }
+            }
+        }
+    }
+
+    if ($staged -eq 0) {
+        Write-Warning "No runtime DLLs staged into $runtimeDir. If the exe fails to load (lmdb.dll / sqlite3.dll / tvision.dll not found), build with a vcpkg preset first so vcpkg_installed is populated."
     }
 }
 
