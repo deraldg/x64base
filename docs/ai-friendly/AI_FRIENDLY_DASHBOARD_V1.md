@@ -29,6 +29,7 @@ The user should be able to see:
 | Generated report integration | not started | future report under `docs/ai-friendly/reports` |
 | Closeout-updates-startup gate (AIF-006) | **promoted 2026-07-14** | `AI_PORTAL.md` -> "Closeout Updates Startup" |
 | Session closeout convention | **active** | `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md` |
+| Public AI Portal consistency audit | **published 2026-07-15; authoritative-development reconciliation pending** | `docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md` |
 | MCC databuild lane (sample foundation) | **runtime-proven 2026-07-14** | `dottalkpp/data/scripts/mcc/README.md` |
 | Cold-clone journey and released-entry-point hardening (AIF-016) | **published and certified 2026-07-15** | `docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md` |
 | Developer profile publication boundary (AIF-012) | **historical review needed; public branch exposure confirmed 2026-07-14** | `labtalk/LABTALK_DEVELOPER_PROFILE_v0.md` |
@@ -42,6 +43,7 @@ Newest first. Each row is a durable closeout; the chat is not the record.
 
 | Date | Session | Lane state changed | Closeout |
 | --- | --- | --- | --- |
+| 2026-07-15 | AI Portal public consistency audit | Corrected public state drift through PRs #8 and #9, established one canonical startup path, closed an overbroad draft unmerged, and set authoritative-development reconciliation as the next gate. | `docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md` |
 | 2026-07-15 | Cold-clone journey certification and publication | Proved clone -> build -> runtime staging -> databuild -> ordered query; published location-honest launch/databuild fixes in `46e02159` and corrected DotScript banner syntax in `b9d48021`. | `docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md` |
 | 2026-07-14 | x64base engine/edition separation implementation | Inverted xbase/xindex, proved LEAN + NONE CLI and Python builds, split product commands/sources, and replaced recursive packaging with tracked allow-lists; project licensing: To be determined. | `docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_IMPLEMENTATION_2026-07-14.md` |
 | 2026-07-14 | x64base engine/edition separation research | Separated index capability from product edition; proposed LEAN essentials versus full education; measured source and package risks; recorded the implementation/proof plan; project licensing: To be determined. | `docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_RESEARCH_2026-07-14.md` |
@@ -96,6 +98,7 @@ Use this table when reading any AI Friendly item:
 | 2026-07-14 | Implement engine/index and lean/education product separation | CMake, C++, Python, manifests, docs, tests | xbase/xindex lifecycle, CLI registry, pydottalk, build graph, runtime command transcript, tracked package inputs | `xbase` is table-only and optional-provider neutral; LEAN + NONE builds without xindex; full LabTalk and index commands are absent; product allow-lists replace recursive data installation. Project licensing: To be determined. Public source publication remains pending Path A. |
 | 2026-07-14 | Research engine/index and lean/education product separation | docs only | Current xbase/xindex/CMake graph, command and HELP metadata, DD-001/DD-002/DD-004, data install contents, project status, vcpkg notices, official third-party terms | Added AIF-015 and a staged separation plan. Confirmed two independent build axes, proposed `EDU_ESSENTIALS` versus `LABTALK_FULL`, and found that the prior recursive install could package ignored/untracked artifacts. |
 | 2026-07-15 | Certify and publish the cold-clone journey | launcher and MCC script fixes, fixtures, build/publication docs, proof record | Fresh clone build, runtime staging, MCC rebuild, LMDB build, ordered readback, public commit inspection | A fresh clone proved the full journey. Location-honest fixes published in `46e02159`; printed DotScript comment corrected in `b9d48021`. |
+| 2026-07-15 | Reconcile public AI Portal state and startup paths | public Markdown only | AI Portal authority seeds, current target, dashboard, intake queue, cold-clone closeout, Path A plan, public PR/commit state | PR #7 was rejected as overbroad; PRs #8 and #9 merged narrowly. Public consistency is corrected; authoritative-development reconciliation remains the next gate. |
 
 ## Items Needing User Review
 
@@ -108,6 +111,7 @@ Use this table when reading any AI Friendly item:
 
 | Item | Needed proof | Route |
 | --- | --- | --- |
+| AI Portal public-to-development reconciliation | Compare the affected public Markdown files with their current `D:\code\ccode` versions, preserve newer local facts, and verify the reconciled development state before any promotion. | `docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md` |
 | AI Portal hardening APH-0 | Baseline tests, reproducible startup, and zero unexplained missing paths | `labtalk/ai_portal` |
 | xindex mutation hardening | Add attached-index replace/append/delete/recall/pack synchronization, public CDX/LMDB workflow, and stale/collation rejection tests | `docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md` |
 | LEAN catalog completeness | Add HELP/DDICT/script component leak tests beyond the proven source, command, manifest, and installed-runtime boundaries | `docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md` |
@@ -123,12 +127,12 @@ Use this table when reading any AI Friendly item:
 | Raw chat is treated as authority. | Keep chat material as source material until distilled and anchored. |
 | Useful interactions are hoarded instead of curated. | Capture only material with reuse value. |
 | Claims outrun source/runtime proof. | Use authority levels and proof gates before promotion. |
+| Public-only correction is mistaken for integrated development state. | Reconcile into `D:\code\ccode` before treating the public edit as project authority. |
 
 ## Next Practical Step
 
-Continue the focused proof backlog in
-`docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md`: attached-index
-mutation synchronization, the public CDX/LMDB workflow, and stale/collation
-rejection. In parallel, extend component identity into HELP, DDICT, and script
-catalogs so the proven source/command/package boundary also fails closed for
-metadata.
+Reconcile the AI Portal consistency corrections from public `main` into the
+current authoritative development tree at `D:\code\ccode`. Preserve any newer
+local facts, verify the resulting documents against development source and
+runtime evidence, and promote again only if a reviewed development-to-public
+delta remains.
