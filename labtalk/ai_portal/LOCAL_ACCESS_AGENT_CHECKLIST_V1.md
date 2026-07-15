@@ -52,6 +52,12 @@ document. It is not hypothetical.
   matches `plan_message_catalog_lmdb.py` (a source file). Use
   `[/\\]lmdb[/\\]`. A loose pattern in the founding session raised a false
   alarm on 21 innocent files.
+- [ ] **One `git add` call, not a loop.** `git add` accepts many paths at once:
+  `git add -- $paths`. Firing `git add` once per file (`$paths | % { git add
+  $_ }`) spawns hundreds of back-to-back git processes that collide on
+  `index.lock`; one crashes, leaves a stale lock, and every later call fails.
+  This happened in the founding session and staged zero files. Fix: remove
+  `.git/index.lock`, then a single add.
 
 ## Working with the filesystem
 

@@ -1,0 +1,108 @@
+# PROMOTE.manifest -- what publishes from development to the public repo
+# ===========================================================================
+# Authority chain:
+#     D:\code\ccode  (this tree = source of truth, full history, git)
+#         |  files matched below, minus .gitignore deny-list
+#         v
+#     C:\x64base     (DISPOSABLE staging -- regenerated, not precious)
+#         |  git commit + push
+#         v
+#     github.com/deraldg/x64base   (public snapshot)
+#
+# This file is an ALLOW-LIST, not an ignore-list. Staging holds far less than
+# development, so the publishable set is small and explicit. A deny-list
+# ("everything except...") would be enormous and fragile; an allow-list is not.
+#
+# It is the counterpart to .gitignore, which they do NOT overlap:
+#     .gitignore       = "never version this, anywhere"  (deny; universal)
+#     PROMOTE.manifest = "of the clean files, these publish"  (allow; selective)
+# A file can be git-tracked in development yet absent here -- that is a lane
+# that is versioned but not yet published (sandbox, messaging, metadata, ...).
+#
+# HOW IT IS USED
+#   tools/staging/rebuild-staging.ps1 clones github/main into C:\x64base (the
+#   full baseline), then overlays every file matched below from development,
+#   applying the .gitignore deny-list as a hard guard. Result: staging == the
+#   published baseline plus development's current version of the promoted set.
+#   Because staging is rebuilt this way, an AI wiping C:\x64base costs nothing.
+#
+# FORMAT
+#   - '#' begins a comment; blank lines ignored.
+#   - Every other line is a path or glob, relative to the development root.
+#   - '**' recurses. Matching uses the shell's own globbing.
+#   - The rebuild script re-applies the .gitignore deny-list after matching, so
+#     an accidental broad glob still cannot leak LMDB, *.cdx.d, *.exe, og/, or
+#     scratch. Defense in depth.
+#
+# WHAT IS DELIBERATELY NOT HERE (covered by .gitignore, regenerated on clone)
+#   dottalkpp/data/lmdb/**        53 GB, derived from CDX by BUILDLMDB
+#   **/*.cdx.d/                   LMDB environments
+#   dottalkpp/data/dbf/og/**      extracted from the zip by extract_mcc_og.ps1
+#   **/*.exe                      no compiled runtime -- dev stage
+#   zz_* **/table.cnx **/table.cdx  probe/scratch
+# ===========================================================================
+
+# --- entry + hygiene -------------------------------------------------------
+.gitignore
+AI_PORTAL.md
+AI_README.md
+BUILDING.md
+
+# --- build editions: proof + rationale (authority for BUILDING.md) ---------
+docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md
+docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md
+docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md
+
+# --- AI-facing docs --------------------------------------------------------
+docs/agents/CURRENT_TARGET.md
+docs/ai-friendly/*.md
+docs/contracts/*.md
+docs/contracts/reports/*.md
+docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md
+docs/maintenance/SESSION_CLOSEOUT_*.md
+docs/maintenance/SIDECAR_PURGE_*.txt
+
+# --- AI portal seeds -------------------------------------------------------
+labtalk/ai_portal/*.md
+
+# --- runtime scaffold (structure + ini; the exe is NOT published) ----------
+dottalkpp/bin/*.ini
+
+# --- databuild lane --------------------------------------------------------
+dottalkpp/scripts/mcc/*.ps1
+dottalkpp/data/scripts/mcc/*
+
+# --- MCC sample data: the canonical origin + three built flavors -----------
+dottalkpp/data/dbf/MyCommunityCollege.zip
+dottalkpp/data/dbf/mcc_schema.txt
+dottalkpp/data/dbf/community_college_schema.txt
+dottalkpp/data/dbf/community_college_x64_schema.txt
+dottalkpp/data/dbf/x32/*.DBF
+dottalkpp/data/dbf/vfp/*.dbf
+dottalkpp/data/dbf/x64/*.DBF
+dottalkpp/data/dbf/x64/community_college_x64_schema.txt
+dottalkpp/data/indexes/x32/*.cnx
+dottalkpp/data/indexes/vfp/*.cnx
+dottalkpp/data/indexes/x64/*.cdx
+dottalkpp/data/workspaces/mcc_x32.dtschema
+dottalkpp/data/workspaces/mcc_vfp.dtschema
+dottalkpp/data/workspaces/mcc_x64.dtschema
+
+# --- HELP lane (our system data -- kept) -----------------------------------
+dottalkpp/data/dbf/help/**
+dottalkpp/data/help/**
+
+# --- schema-note drift fixes that live outside dbf/ ------------------------
+dottalkpp/data/dbf/x32/README.txt
+dottalkpp/data/help/DATA_INDEX_README.txt
+dottalkpp/data/help/V32_help/DATA_INDEX_README.txt
+src/data/DATA_INDEX_README.txt
+mcc/community_college_schema.txt
+mcc/README.txt
+dottalkpp/docs/My_Comminty_College_README.txt
+dottalkpp/docs/My_Comminty_College_Data_Schema_README.txt
+
+# --- tools -----------------------------------------------------------------
+tools/hygiene/*.ps1
+tools/staging/*.ps1
+PROMOTE.manifest

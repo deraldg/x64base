@@ -77,6 +77,10 @@ described as runtime-proven until code and tests prove them.
   - queue for implied or missing contracts before they graduate into the registry.
 - `CONTRACT_MANAGER_MODE_V1.md`
   - decision record for `MAINT CONTRACTS` as the first manager surface.
+- `WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md`
+  - rule for how SelfDoc/runtime/manual lanes feed the public website and GitHub-facing publication story.
+- `DOTTALK_EXTENSION_EXIT_CONTRACT_V1.md`
+  - SAP-style protected extension exit model, including C++ usage-contract rules and non-C++ document control.
 - `reports/CONTRACT_SCAN_BASELINE_V1.md`
   - first report-proven inventory checkpoint for the lane.
 

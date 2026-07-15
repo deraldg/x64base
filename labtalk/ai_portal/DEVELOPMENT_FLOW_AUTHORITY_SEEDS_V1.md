@@ -43,6 +43,13 @@ github.com/deraldg/x64base
   public projection / snapshot
 ```
 
+`C:\x64base` is **disposable staging, not a second authority.** It is
+regenerated from `D:\code\ccode` + `PROMOTE.manifest` by
+`tools/staging/rebuild-staging.ps1`, so an AI wiping it costs nothing. The
+mechanics of this — the allow-list manifest, the two-filter separation from
+`.gitignore`, and why development must keep its own git history — are in
+`PROMOTION_MODEL_SEED_V1.md`. Read it before changing how promotion works.
+
 `C:\x64base` is not a competing development source. It receives the clean,
 relevant subset promoted from `D:\code\ccode`. Before committing, compare the
 staged copy with the intended development files and run proof appropriate to the

@@ -124,3 +124,4 @@ When an AI agent creates or relies on a contract:
 - write the contract or update the registry,
 - keep the evidence class honest,
 - prefer small source/test hooks that make the contract checkable.
+
