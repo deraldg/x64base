@@ -62,13 +62,21 @@ Use this from the laptop site root:
 npm run publish:github-pages
 ```
 
+When `C:\x64base\dottalk-webui\public-site` must remain absent, publish only
+the GitHub Pages artifact:
+
+```bash
+npm run publish:github-pages -- --skip-cx64base
+```
+
 That command:
 
 1. pulls/rebases `.gh-pages-deploy` from `origin/gh-pages`,
 2. refuses to publish if `D:\dev\x64base-site` has uncommitted source changes,
 3. runs the static Next export,
 4. writes `out/artifacts/site-release.json` with source commit provenance,
-5. stages the built site to `C:\x64base\dottalk-webui\public-site`,
+5. stages the built site to `C:\x64base\dottalk-webui\public-site` unless
+   `--skip-cx64base` is supplied,
 6. refreshes `.gh-pages-deploy` from `out/`,
 7. writes `CNAME` and `.nojekyll`,
 8. commits and pushes `gh-pages`.

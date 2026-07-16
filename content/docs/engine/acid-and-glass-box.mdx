@@ -7,7 +7,35 @@ description: "A scoped, evidence-first analysis of transactional guarantees in D
 > The beta-0 evidence rating remains **Unverified** until repeatable failure,
 > concurrency, reopen, and recovery tests establish each guarantee.
 
-<a href="/docs/labtalk/cases-storyboard"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine cutaway illustrating the glass-box architecture — visible DBF storage, CDX and DDX indexes, commit, rollback, and transaction log" title="x64base Glass Engine" width="380" align="right"></a>
+<a href="/images/story/x64base-glass-engine.png"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine cutaway: eight DBF work areas, record pointers, a vector header, CDX and LMDB-backed index lanes, commit, rollback, transaction log, command router, and CLI, TUI, GUI, and API ports" title="x64base Glass Engine"></a>
+
+*Open the image for the full-resolution labels.*
+
+### Reading the numbered metaphor
+
+This is a working interpretation of an educational illustration, not a capture
+of live runtime state. Numbers inside the transparent **DBF TABLE STORAGE** bank
+use a different namespace from the numbered plaques on the machinery.
+
+| Mark | Proposed reading | Confidence |
+| --- | --- | --- |
+| Lower plaques `1`–`8` | Logical work areas A1–A8. | High |
+| Upper plaques `1, 2, –, 1, –, 1, –, 5` | Current `RECNO()` pointers for A1–A8: areas 1, 2, 4, 6, and 8 are positioned on records 1, 2, 1, 1, and 5. A blank means no current positioned record is shown; the art cannot distinguish closed, empty, BOF, or EOF. | Medium-high |
+| Component `2` | Descriptor and metadata plane: the x64 vector header and the secondary index descriptor lane. | Medium |
+| Component `4` | CDX logical order and indexed lookup path. | High |
+| Component `5` | Result dispatch toward the CLI, TUI, GUI, and API ports. | Medium |
+| Component `6` | Durable file and storage substrate: the engine's base. | Medium |
+| Component `7` | Buffered mutation, validation, and locking: the valve bank before commit. | Medium |
+| Component `8` | Transaction journal and recovery path. | High |
+| Component `9` | Front command router and the distributed execution/control loop. | High at the router; medium for the repeated `9` plaques. |
+
+The upper values look like per-area record pointers, not transaction IDs. A
+transaction could involve those positioned tuple buffers, but the image does
+not establish that. The printed `DDX INDEX` label is also not a current x64base
+implementation term; read it as a stylized secondary index/descriptor lane.
+Current implementation-facing terminology is **CDX logical container with an
+LMDB-backed index environment**. Text labels take precedence over the inferred
+number key.
 
 ## The central distinction
 

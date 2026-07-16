@@ -46,32 +46,14 @@ body {
       "Liberation Mono", "Courier New", monospace;
   }
 }
-.prose img[title="x64base Glass Engine"] {
-  float: right;
-  width: min(34%, 380px);
-  min-width: 256px;
-  height: auto;
-  margin: 0 0 1.5rem 2rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-}
-
-@media (max-width: 768px) {
-  .prose img[title="x64base Glass Engine"] {
-    float: none;
-    display: block;
-    width: min(100%, 380px);
-    min-width: 0;
-    margin: 0 auto 1.5rem;
-  }
-}
-
-/* Origin Story: same figure, centered (not floated) */
-.prose img[title="x64base Glass Engine figure"] {
+.prose img[title^="x64base Glass Engine"] {
+  float: none;
   display: block;
-  width: min(100%, 380px);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   height: auto;
-  margin: 1.5rem auto;
+  margin: 1.5rem auto 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
 }
