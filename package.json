@@ -11,7 +11,6 @@
     "lint": "next lint",
     "build:apache": "node scripts/build-apache-static.mjs",
     "build:sites": "node scripts/build-sites-artifact.mjs",
-    "stage:cx64base": "node scripts/stage-cx64base.mjs",
     "publish:github-pages": "node scripts/publish-github-pages.mjs"
   },
   "dependencies": {

@@ -9,12 +9,6 @@ const domain = "x64base.com";
 const repo = "deraldg/x64base";
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const packageJsonPath = path.join(root, "package.json");
-const publishArgs = new Set(process.argv.slice(2));
-const skipCx64baseStage = publishArgs.delete("--skip-cx64base");
-
-if (publishArgs.size > 0) {
-  throw new Error(`Unknown publish option(s): ${[...publishArgs].join(", ")}`);
-}
 
 function run(command, args, options = {}) {
   console.log(`$ ${[command, ...args].join(" ")}`);
@@ -153,12 +147,6 @@ if (!fs.existsSync(outDir)) {
 }
 
 writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion });
-
-if (skipCx64baseStage) {
-  console.log("Skipping C:\\x64base runtime mirror (--skip-cx64base).");
-} else {
-  run(npmCommand, ["run", "stage:cx64base"]);
-}
 
 removeDeployContents();
 copyDir(outDir, deployDir);
