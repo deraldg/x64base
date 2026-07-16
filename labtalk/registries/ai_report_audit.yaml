@@ -1,0 +1,49 @@
+# AI-authored report audit policy v1
+
+report_audit:
+  schema: ai-report-audit-v1
+  status: active_mandatory
+  contract: labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md
+  closeout_glob: docs/maintenance/SESSION_CLOSEOUT_*.md
+  template: docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md
+  project_registry: labtalk/registries/projects.yaml
+
+  required_fields:
+    - ai_report_audit.schema
+    - ai_report_audit.report_id
+    - ai_report_audit.recorded_at_utc
+    - ai_report_audit.agent.provider
+    - ai_report_audit.agent.product
+    - ai_report_audit.agent.model
+    - ai_report_audit.agent.access_mode
+    - ai_report_audit.session.id
+    - ai_report_audit.session.chat_reference
+    - ai_report_audit.project.id
+    - ai_report_audit.project.root
+    - ai_report_audit.git.branch
+    - ai_report_audit.git.baseline_commit
+    - ai_report_audit.authorization.requested_by
+    - ai_report_audit.authorization.scope
+    - ai_report_audit.report.path
+    - ai_report_audit.report.kind
+
+  allowed_access_modes:
+    - local_write
+    - local_read_only
+    - hosted_proposal
+    - external_patch
+    - human_operated_tool
+    - automation
+
+  # These closeouts predate this contract. Every closeout not listed here is
+  # enforced, regardless of its date or filename.
+  grandfathered_closeouts:
+    - docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_BUILD_ARCHITECTURE_2026-07-14.md
+    - docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_DEVELOPMENT_RECONCILIATION_2026-07-15.md
+    - docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md
+    - docs/maintenance/SESSION_CLOSEOUT_CLONE_JOURNEY_CERTIFICATION_2026-07-15.md
+    - docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md
+    - docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_PHASE1_2026-07-15.md
+    - docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_IMPLEMENTATION_2026-07-14.md
+    - docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_RESEARCH_2026-07-14.md
+    - docs/maintenance/SESSION_CLOSEOUT_XBASE_PROOF_MATRIX_2026-07-14.md

@@ -34,6 +34,7 @@ The user should be able to see:
 | Recursive human/AI coproject model (AIF-013) | **design-intended 2026-07-14** | `labtalk/docs/co-development/recursive_coproject_model_v1.md` |
 | xbase/xindex/pydottalk build architecture | **NONE, LEGACY, and LMDB core matrix proven; `USE` optional-provider decision active; index-mutation hardening pending 2026-07-14** | `docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md`; `docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md` |
 | Engine/product-edition separation (AIF-015) | **implemented; core profile/package matrix proven 2026-07-14** | `docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md` |
+| AI report identity and provenance (AIF-020) | **active mandatory for new AI-authored closeouts and external packages; validator-tested** | `labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md`; `labtalk/registries/ai_report_audit.yaml` |
 
 ## Session Log
 
@@ -41,6 +42,7 @@ Newest first. Each row is a durable closeout; the chat is not the record.
 
 | Date | Session | Lane state changed | Closeout |
 | --- | --- | --- | --- |
+| 2026-07-15 | AI report identity and project/chat audit trail | Required AI self-identification, registered project/root, opaque task/chat provenance, git baseline, authorization scope, unique report ID, and validator enforcement for every new closeout. | `docs/maintenance/SESSION_CLOSEOUT_AI_REPORT_AUDIT_TRAIL_2026-07-15.md` |
 | 2026-07-14 | x64base engine/edition separation implementation | Inverted xbase/xindex, proved LEAN + NONE CLI and Python builds, split product commands/sources, and replaced recursive packaging with tracked allow-lists; project licensing: To be determined. | `docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_IMPLEMENTATION_2026-07-14.md` |
 | 2026-07-14 | x64base engine/edition separation research | Separated index capability from product edition; proposed LEAN essentials versus full education; measured source and package risks; recorded the implementation/proof plan; project licensing: To be determined. | `docs/maintenance/SESSION_CLOSEOUT_X64BASE_ENGINE_EDITION_SEPARATION_RESEARCH_2026-07-14.md` |
 | 2026-07-14 | xbase build proof continuation | Added two registered pydottalk CTests; proved read plus disposable physical-order update/append/delete/reopen with no sidecars and unchanged source fixture; preserved the no-index-binary distinction | `docs/maintenance/SESSION_CLOSEOUT_XBASE_PROOF_MATRIX_2026-07-14.md` |

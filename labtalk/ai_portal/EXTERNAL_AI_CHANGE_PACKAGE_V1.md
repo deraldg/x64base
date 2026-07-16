@@ -53,6 +53,10 @@ x64base-ai-change-package/
 
 `MANIFEST.md` must identify:
 
+- the complete `ai_report_audit` envelope from
+  `AI_REPORT_AUDIT_CONTRACT_V1.md`, including AI provider/product/model,
+  access mode, opaque session/chat reference, registered project ID and root,
+  authorization scope, and report path;
 - AI engine and session date;
 - repository URL, branch, and exact baseline commit;
 - objective and owning subsystem;
@@ -63,6 +67,11 @@ x64base-ai-change-package/
 - mutation and compatibility effects;
 - files intentionally excluded;
 - unresolved questions or conflicts.
+
+The external AI must self-identify honestly. If the host does not expose the
+model or session identifier, use `not_exposed`; do not guess. Do not place raw
+chat transcripts, credentials, cookies, access tokens, or private account data
+in the package.
 
 `changes.patch` should be a unified diff relative to the stated baseline.
 Complete replacement files belong under `new-files/` only when a unified patch

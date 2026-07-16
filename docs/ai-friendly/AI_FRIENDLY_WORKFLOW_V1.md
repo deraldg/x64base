@@ -114,6 +114,32 @@ During every AI Friendly pass, look for consolidation:
 - point to existing reports instead of regenerating equivalent reports
 - retire stale drafts when a stronger artifact exists
 
+## AI Report Audit Trail
+
+Every new AI-authored session closeout or external change-package manifest must
+begin with the `ai_report_audit` envelope defined by
+`labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md`.
+
+Any AI mutation to an AI Portal-owned artifact must carry an audited closeout
+in the same changeset. The update is incomplete until that closeout passes the
+validator.
+
+The envelope records the AI provider, product, exposed model identity, access
+mode, originating task/thread reference, registered project, git baseline, and
+the human-authorized scope. The thread reference is provenance; the distilled
+report remains the durable record. Never archive raw chat or secrets merely to
+make the trail more complete.
+
+Before closeout, run:
+
+```powershell
+python .\labtalk\ai_portal\audit_trail.py
+```
+
+Historical closeouts are grandfathered explicitly by path in
+`labtalk/registries/ai_report_audit.yaml`. An unlisted closeout is never treated
+as historical merely because its date resembles an older report.
+
 ## Report-Only Default
 
 AI Friendly curation defaults to report-only.
