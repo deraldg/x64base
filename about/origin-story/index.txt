@@ -1,21 +1,21 @@
 1:"$Sreact.fragment"
-2:I[62319,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
-3:I[39756,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-4:I[37457,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-6:I[97367,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+2:I[62319,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+6:I[97367,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 7:"$Sreact.suspense"
-b:I[68027,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
-:HL["/_next/static/chunks/0bhk57ca65230.css","style"]
+b:I[68027,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/35dgcq-lynyn3.css","style"]
 :HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"P":null,"c":["","about","origin-story",""],"q":"","i":false,"f":[[["",{"children":["about",{"children":[["slug","origin-story","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0bhk57ca65230.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2gfxg9_47p_p0.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=9dc7e45d170c","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=9dc7e45d170c","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=9dc7e45d170c","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements?v=9dc7e45d170c","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=9dc7e45d170c","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=9dc7e45d170c","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=9dc7e45d170c","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=9dc7e45d170c","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=9dc7e45d170c","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=9dc7e45d170c","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],{},null,false,null]},null,false,"$@9"]},null,false,"$@9"]},null,false,null],"$La",false]],"m":"$undefined","G":["$b",["$Lc"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"fefFi0OhJXvOs7-_MFlGB"}
-e:I[97367,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
-10:I[97367,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+0:{"P":null,"c":["","about","origin-story",""],"q":"","i":false,"f":[[["",{"children":["about",{"children":[["slug","origin-story","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/35dgcq-lynyn3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/3oa09i7tv9h6a.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=bd6c74305e85","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=bd6c74305e85","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=bd6c74305e85","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements?v=bd6c74305e85","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=bd6c74305e85","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=bd6c74305e85","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=bd6c74305e85","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=bd6c74305e85","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=bd6c74305e85","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=bd6c74305e85","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],{},null,false,null]},null,false,"$@9"]},null,false,"$@9"]},null,false,null],"$La",false]],"m":"$undefined","G":["$b",["$Lc"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"SP5IbXEj3RaPteW1rSl-g"}
+e:I[97367,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+10:I[97367,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
 d:[]
 9:"$Wd"
 a:["$","$1","h",{"children":[null,["$","$Le",null,{"children":"$Lf"}],["$","div",null,{"hidden":true,"children":["$","$L10",null,{"children":["$","$7",null,{"name":"Next.Metadata","children":"$L11"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
-c:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0bhk57ca65230.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
-12:T9c7,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
+c:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/35dgcq-lynyn3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+12:T1375,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
 <ol>
 <li><strong>Practical engineering</strong> — building stable data tools that keep working year after year.</li>
 <li><strong>Teaching</strong> — treating file formats and relational thinking as learnable, inspectable systems.</li>
@@ -23,7 +23,75 @@ c:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0bhk57ca65230
 </ol>
 <p>From the beginning, the aim was <em>transparent computing</em>: you can open the files, understand the structures,
 and reason about performance and correctness without magic.</p>
-<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine: a transparent cutaway showing DBF table storage, CDX and DDX indexes, commit, rollback, and a transaction log, feeding data out through CLI, TUI, GUI, and API ports — a metaphor for a visible, inspectable runtime" title="x64base Glass Engine figure" width="380"></a></p>
+<p><a href="/images/story/x64base-glass-engine.png"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine: a transparent cutaway showing eight DBF work areas, record pointers, a vector header, CDX and LMDB-backed index lanes, commit, rollback, a transaction log, and CLI, TUI, GUI, and API ports" title="x64base Glass Engine figure"></a></p>
+<p><em>Open the image for the full-resolution labels.</em></p>
+<h2 id="reading-the-numbered-metaphor"><a class="no-underline" href="#reading-the-numbered-metaphor">Reading the numbered metaphor</a></h2>
+<p>This is a working interpretation of an educational illustration, not a capture
+of live runtime state. Numbers inside the transparent <strong>DBF TABLE STORAGE</strong> bank
+use a different namespace from the numbered plaques on the machinery.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Mark</th><th>Proposed reading</th><th>Confidence</th></tr></thead><tbody><tr><td>Lower plaques <code>1</code>–<code>8</code></td><td>Logical work areas A1–A8.</td><td>High</td></tr><tr><td>Upper plaques <code>1, 2, –, 1, –, 1, –, 5</code></td><td>Current <code>RECNO()</code> pointers for A1–A8: areas 1, 2, 4, 6, and 8 are positioned on records 1, 2, 1, 1, and 5. A blank means no current positioned record is shown; the art cannot distinguish closed, empty, BOF, or EOF.</td><td>Medium-high</td></tr><tr><td>Component <code>2</code></td><td>Descriptor and metadata plane: the x64 vector header and the secondary index descriptor lane.</td><td>Medium</td></tr><tr><td>Component <code>4</code></td><td>CDX logical order and indexed lookup path.</td><td>High</td></tr><tr><td>Component <code>5</code></td><td>Result dispatch toward the CLI, TUI, GUI, and API ports.</td><td>Medium</td></tr><tr><td>Component <code>6</code></td><td>Durable file and storage substrate: the engine's base.</td><td>Medium</td></tr><tr><td>Component <code>7</code></td><td>Buffered mutation, validation, and locking: the valve bank before commit.</td><td>Medium</td></tr><tr><td>Component <code>8</code></td><td>Transaction journal and recovery path.</td><td>High</td></tr><tr><td>Component <code>9</code></td><td>Front command router and the distributed execution/control loop.</td><td>High at the router; medium for the repeated <code>9</code> plaques.</td></tr></tbody></table>
+<p>The upper values look like per-area record pointers, not transaction IDs. A
+transaction could involve those positioned tuple buffers, but the image does
+not establish that. The printed <code>DDX INDEX</code> label is also not a current x64base
+implementation term; read it as a stylized secondary index/descriptor lane.
+Current implementation-facing terminology is <strong>CDX logical container with an
+LMDB-backed index environment</strong>. Text labels take precedence over the inferred
+number key.</p>
 <p>The metaphor is close to the transparent educational engine models of the
 1960s and 1970s: the point was not decoration, but visibility. A learner could
 see pistons, rods, gears, and timing relationships that would normally be hidden
@@ -46,8 +114,8 @@ to reject AI assistance; it is to make every AI-assisted change reviewable,
 traceable, and bounded by source truth, usage contracts, proof scripts, and
 human release judgment.</p>
 <p>This website organizes that ecosystem into a stable, readable structure: product pages, documentation, licensing,
-curriculum, and brand foundations.</p>5:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=9dc7e45d170c","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=9dc7e45d170c","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=9dc7e45d170c","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$12"},"children":null}]}]]}]
+curriculum, and brand foundations.</p>5:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=bd6c74305e85","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=bd6c74305e85","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=bd6c74305e85","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$12"},"children":null}]}]]}]
 f:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-13:I[27201,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+13:I[27201,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
 8:null
 11:[["$","title","0",{"children":"Origin Story (1993–2026) — x64base"}],["$","meta","1",{"name":"description","content":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/about/origin-story/"}],["$","meta","3",{"property":"og:title","content":"Origin Story (1993–2026)"}],["$","meta","4",{"property":"og:description","content":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/about/origin-story/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Origin Story (1993–2026)"}],["$","meta","12",{"name":"twitter:description","content":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L13","17",{}]]

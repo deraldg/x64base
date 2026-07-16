@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/2gfxg9_47p_p0.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/3oa09i7tv9h6a.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T9c7,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
+2:T1375,<p>x64base™ is the synthesis of three threads that started in 1993:</p>
 <ol>
 <li><strong>Practical engineering</strong> — building stable data tools that keep working year after year.</li>
 <li><strong>Teaching</strong> — treating file formats and relational thinking as learnable, inspectable systems.</li>
@@ -9,7 +9,75 @@
 </ol>
 <p>From the beginning, the aim was <em>transparent computing</em>: you can open the files, understand the structures,
 and reason about performance and correctness without magic.</p>
-<p><a href="/docs/labtalk/cases-storyboard"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine: a transparent cutaway showing DBF table storage, CDX and DDX indexes, commit, rollback, and a transaction log, feeding data out through CLI, TUI, GUI, and API ports — a metaphor for a visible, inspectable runtime" title="x64base Glass Engine figure" width="380"></a></p>
+<p><a href="/images/story/x64base-glass-engine.png"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine: a transparent cutaway showing eight DBF work areas, record pointers, a vector header, CDX and LMDB-backed index lanes, commit, rollback, a transaction log, and CLI, TUI, GUI, and API ports" title="x64base Glass Engine figure"></a></p>
+<p><em>Open the image for the full-resolution labels.</em></p>
+<h2 id="reading-the-numbered-metaphor"><a class="no-underline" href="#reading-the-numbered-metaphor">Reading the numbered metaphor</a></h2>
+<p>This is a working interpretation of an educational illustration, not a capture
+of live runtime state. Numbers inside the transparent <strong>DBF TABLE STORAGE</strong> bank
+use a different namespace from the numbered plaques on the machinery.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Mark</th><th>Proposed reading</th><th>Confidence</th></tr></thead><tbody><tr><td>Lower plaques <code>1</code>–<code>8</code></td><td>Logical work areas A1–A8.</td><td>High</td></tr><tr><td>Upper plaques <code>1, 2, –, 1, –, 1, –, 5</code></td><td>Current <code>RECNO()</code> pointers for A1–A8: areas 1, 2, 4, 6, and 8 are positioned on records 1, 2, 1, 1, and 5. A blank means no current positioned record is shown; the art cannot distinguish closed, empty, BOF, or EOF.</td><td>Medium-high</td></tr><tr><td>Component <code>2</code></td><td>Descriptor and metadata plane: the x64 vector header and the secondary index descriptor lane.</td><td>Medium</td></tr><tr><td>Component <code>4</code></td><td>CDX logical order and indexed lookup path.</td><td>High</td></tr><tr><td>Component <code>5</code></td><td>Result dispatch toward the CLI, TUI, GUI, and API ports.</td><td>Medium</td></tr><tr><td>Component <code>6</code></td><td>Durable file and storage substrate: the engine's base.</td><td>Medium</td></tr><tr><td>Component <code>7</code></td><td>Buffered mutation, validation, and locking: the valve bank before commit.</td><td>Medium</td></tr><tr><td>Component <code>8</code></td><td>Transaction journal and recovery path.</td><td>High</td></tr><tr><td>Component <code>9</code></td><td>Front command router and the distributed execution/control loop.</td><td>High at the router; medium for the repeated <code>9</code> plaques.</td></tr></tbody></table>
+<p>The upper values look like per-area record pointers, not transaction IDs. A
+transaction could involve those positioned tuple buffers, but the image does
+not establish that. The printed <code>DDX INDEX</code> label is also not a current x64base
+implementation term; read it as a stylized secondary index/descriptor lane.
+Current implementation-facing terminology is <strong>CDX logical container with an
+LMDB-backed index environment</strong>. Text labels take precedence over the inferred
+number key.</p>
 <p>The metaphor is close to the transparent educational engine models of the
 1960s and 1970s: the point was not decoration, but visibility. A learner could
 see pistons, rods, gears, and timing relationships that would normally be hidden
@@ -32,6 +100,6 @@ to reject AI assistance; it is to make every AI-assisted change reviewable,
 traceable, and bounded by source truth, usage contracts, proof scripts, and
 human release judgment.</p>
 <p>This website organizes that ecosystem into a stable, readable structure: product pages, documentation, licensing,
-curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=9dc7e45d170c","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=9dc7e45d170c","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=9dc7e45d170c","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"fefFi0OhJXvOs7-_MFlGB"}
+curriculum, and brand foundations.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=bd6c74305e85","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about?v=bd6c74305e85","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/origin-story",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/origin-story?v=bd6c74305e85","children":"Origin Story (1993–2026)"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Origin Story (1993–2026)"}],["$","p",null,{"className":"mt-2 text-muted","children":"The lineage behind x64base: clarity-first tools, file formats, and teaching."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"SP5IbXEj3RaPteW1rSl-g"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
