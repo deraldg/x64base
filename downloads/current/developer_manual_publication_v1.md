@@ -545,6 +545,15 @@ Safe wording:
 
 This matters for command families, scaffolding, debug commands, and internal owner commands.
 
+### GENERIC remains a developer-utility canary
+
+`GENERIC` is present in the supported DOTREF surface as a developer utility
+placeholder. Keep it visible for dispatch and metadata reconciliation, but do
+not present it as a normal user workflow until runtime behavior and intended
+audience are separately established. Its current value is as a command-surface
+canary: registration, HELP identity, handler ownership, and runtime availability
+can be compared without inventing stronger behavior prose.
+
 ## Canonical commands
 
 A canonical command is the main command identity used for documentation, metadata, and command-reference organization.
@@ -596,6 +605,19 @@ Safe wording:
 - SYSENTVAR should eventually organize aliases, variants, shortcut spellings, compatibility forms, and app-style entry points.
 
 Manual prose should avoid treating every distinct token as a separate command until dedupe and variant review are complete.
+
+### Application-style UI entry points
+
+`ARCTICTALK` and `FOXPRO` are application launch entries rather than ordinary
+data commands. When Turbo Vision support is present, `ARCTICTALK` opens the
+ArcticTalk shell and `FOXPRO` opens the FoxPro-style workbench. `FOXTALK` is the
+legacy alias for `ARCTICTALK`.
+
+These names may be registered or documented even when a particular build does
+not contain the corresponding Turbo Vision surface. Describe availability from
+the selected build and runtime evidence; do not infer universal availability
+from registration alone. Neither entry currently exposes a separate usage
+branch, so the bare command form is the documented launch surface.
 
 ## Parser dispatch and handlers
 
@@ -698,7 +720,8 @@ Manual assembly may use HELP/META/CMDHELPCHK-first workflow, but truth authority
 
 # Documentation, Modeling, and Project Notes
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -710,25 +733,28 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [COMMANDSHELP](../../command_reference_v1/commands/commandshelp.md)
-- [DECISION](../../command_reference_v1/commands/decision.md)
-- [DRAWIO](../../command_reference_v1/commands/drawio.md)
-- [EXAMPLE](../../command_reference_v1/commands/example.md)
-- [GLOSSARY](../../command_reference_v1/commands/glossary.md)
-- [GPS](../../command_reference_v1/commands/gps.md)
-- [IMAGE](../../command_reference_v1/commands/image.md)
-- [INTRO](../../command_reference_v1/commands/intro.md)
-- [MODEL](../../command_reference_v1/commands/model.md)
-- [PROJECTS](../../command_reference_v1/commands/projects.md)
-- [RULE](../../command_reference_v1/commands/rule.md)
-- [SECURITY](../../command_reference_v1/commands/security.md)
-- [TEXT](../../command_reference_v1/commands/text.md)
-- [WSREPORT](../../command_reference_v1/commands/wsreport.md)
+- [COMMANDSHELP](command_reference_v1/commands/commandshelp.md)
+- [DECISION](command_reference_v1/commands/decision.md)
+- [DRAWIO](command_reference_v1/commands/drawio.md)
+- [EXAMPLE](command_reference_v1/commands/example.md)
+- [GLOSSARY](command_reference_v1/commands/glossary.md)
+- [GPS](command_reference_v1/commands/gps.md)
+- [IMAGE](command_reference_v1/commands/image.md)
+- [INTRO](command_reference_v1/commands/intro.md)
+- [MODEL](command_reference_v1/commands/model.md)
+- [PROJECTS](command_reference_v1/commands/projects.md)
+- [RULE](command_reference_v1/commands/rule.md)
+- [SECURITY](command_reference_v1/commands/security.md)
+- [TEXT](command_reference_v1/commands/text.md)
+- [WSREPORT](command_reference_v1/commands/wsreport.md)
+<!-- END SECTION: sections\documentation_modeling_and_project_notes.md -->
+
 <!-- BEGIN SECTION: sections\educational_and_demo_commands.md -->
 
 # Educational and Demo Commands
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -740,15 +766,17 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [AREA51](../../command_reference_v1/commands/area51.md)
-- [BIBLETALK](../../command_reference_v1/commands/bibletalk.md)
-- [CANARY](../../command_reference_v1/commands/canary.md)
-- [CHRISTMAS](../../command_reference_v1/commands/christmas.md)
-- [CODASYL](../../command_reference_v1/commands/codasyl.md)
-- [EDUCATIONAL_USE](../../command_reference_v1/commands/educational_use.md)
-- [MCC](../../command_reference_v1/commands/mcc.md)
-- [STUDENTECHO](../../command_reference_v1/commands/studentecho.md)
-- [STUDENTHELLO](../../command_reference_v1/commands/studenthello.md)
+- [AREA51](command_reference_v1/commands/area51.md)
+- [BIBLETALK](command_reference_v1/commands/bibletalk.md)
+- [CANARY](command_reference_v1/commands/canary.md)
+- [CHRISTMAS](command_reference_v1/commands/christmas.md)
+- [CODASYL](command_reference_v1/commands/codasyl.md)
+- [EDUCATIONAL_USE](command_reference_v1/commands/educational_use.md)
+- [MCC](command_reference_v1/commands/mcc.md)
+- [STUDENTECHO](command_reference_v1/commands/studentecho.md)
+- [STUDENTHELLO](command_reference_v1/commands/studenthello.md)
+<!-- END SECTION: sections\educational_and_demo_commands.md -->
+
 <!-- BEGIN SECTION: sections\expressions_querying_and_aggregates.md -->
 
 # Expressions, Querying, and Aggregates
@@ -1060,7 +1088,8 @@ SYSFUNC is important even when sparsely seeded because it is the future semantic
 
 # Functions and Expression Helpers
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -1072,56 +1101,59 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [ALLTRIM](../../command_reference_v1/commands/alltrim.md)
-- [ASC](../../command_reference_v1/commands/asc.md)
-- [ASCII](../../command_reference_v1/commands/ascii.md)
-- [AT](../../command_reference_v1/commands/at.md)
-- [ATC](../../command_reference_v1/commands/atc.md)
-- [CHR](../../command_reference_v1/commands/chr.md)
-- [CONCAT](../../command_reference_v1/commands/concat.md)
-- [CTOD](../../command_reference_v1/commands/ctod.md)
-- [DATE](../../command_reference_v1/commands/date.md)
-- [DTOC](../../command_reference_v1/commands/dtoc.md)
-- [EVAL](../../command_reference_v1/commands/eval.md)
-- [EVALUATE](../../command_reference_v1/commands/evaluate.md)
-- [EXPFUNCS](../../command_reference_v1/commands/expfuncs.md)
-- [EXPRESSION](../../command_reference_v1/commands/expression.md)
-- [LEFT](../../command_reference_v1/commands/left.md)
-- [LEN](../../command_reference_v1/commands/len.md)
-- [LOWER](../../command_reference_v1/commands/lower.md)
-- [LTRIM](../../command_reference_v1/commands/ltrim.md)
-- [NAVIGATION](../../command_reference_v1/commands/navigation.md)
-- [NORMALIZE](../../command_reference_v1/commands/normalize.md)
-- [PADC](../../command_reference_v1/commands/padc.md)
-- [PADL](../../command_reference_v1/commands/padl.md)
-- [PADR](../../command_reference_v1/commands/padr.md)
-- [PREDHELP](../../command_reference_v1/commands/predhelp.md)
-- [PREDICATE](../../command_reference_v1/commands/predicate.md)
-- [PREDICATES](../../command_reference_v1/commands/predicates.md)
-- [PROJECTION](../../command_reference_v1/commands/projection.md)
-- [PROPER](../../command_reference_v1/commands/proper.md)
-- [REPLICATE](../../command_reference_v1/commands/replicate.md)
-- [RIGHT](../../command_reference_v1/commands/right.md)
-- [RTRIM](../../command_reference_v1/commands/rtrim.md)
-- [SPACE](../../command_reference_v1/commands/space.md)
-- [STATE](../../command_reference_v1/commands/state.md)
-- [STR](../../command_reference_v1/commands/str.md)
-- [STRUCT](../../command_reference_v1/commands/struct.md)
-- [STU_REPEAT](../../command_reference_v1/commands/stu_repeat.md)
-- [STU_UPPER](../../command_reference_v1/commands/stu_upper.md)
-- [STUFF](../../command_reference_v1/commands/stuff.md)
-- [SUBSTR](../../command_reference_v1/commands/substr.md)
-- [TIME](../../command_reference_v1/commands/time.md)
-- [TRIM](../../command_reference_v1/commands/trim.md)
-- [UPDATE](../../command_reference_v1/commands/update.md)
-- [UPPER](../../command_reference_v1/commands/upper.md)
-- [VAL](../../command_reference_v1/commands/val.md)
-- [VALIDATE](../../command_reference_v1/commands/validate.md)
+- [ALLTRIM](command_reference_v1/commands/alltrim.md)
+- [ASC](command_reference_v1/commands/asc.md)
+- [ASCII](command_reference_v1/commands/ascii.md)
+- [AT](command_reference_v1/commands/at.md)
+- [ATC](command_reference_v1/commands/atc.md)
+- [CHR](command_reference_v1/commands/chr.md)
+- [CONCAT](command_reference_v1/commands/concat.md)
+- [CTOD](command_reference_v1/commands/ctod.md)
+- [DATE](command_reference_v1/commands/date.md)
+- [DTOC](command_reference_v1/commands/dtoc.md)
+- [EVAL](command_reference_v1/commands/eval.md)
+- [EVALUATE](command_reference_v1/commands/evaluate.md)
+- [EXPFUNCS](command_reference_v1/commands/expfuncs.md)
+- [EXPRESSION](command_reference_v1/commands/expression.md)
+- [LEFT](command_reference_v1/commands/left.md)
+- [LEN](command_reference_v1/commands/len.md)
+- [LOWER](command_reference_v1/commands/lower.md)
+- [LTRIM](command_reference_v1/commands/ltrim.md)
+- [NAVIGATION](command_reference_v1/commands/navigation.md)
+- [NORMALIZE](command_reference_v1/commands/normalize.md)
+- [PADC](command_reference_v1/commands/padc.md)
+- [PADL](command_reference_v1/commands/padl.md)
+- [PADR](command_reference_v1/commands/padr.md)
+- [PREDHELP](command_reference_v1/commands/predhelp.md)
+- [PREDICATE](command_reference_v1/commands/predicate.md)
+- [PREDICATES](command_reference_v1/commands/predicates.md)
+- [PROJECTION](command_reference_v1/commands/projection.md)
+- [PROPER](command_reference_v1/commands/proper.md)
+- [REPLICATE](command_reference_v1/commands/replicate.md)
+- [RIGHT](command_reference_v1/commands/right.md)
+- [RTRIM](command_reference_v1/commands/rtrim.md)
+- [SPACE](command_reference_v1/commands/space.md)
+- [STATE](command_reference_v1/commands/state.md)
+- [STR](command_reference_v1/commands/str.md)
+- [STRUCT](command_reference_v1/commands/struct.md)
+- [STU_REPEAT](command_reference_v1/commands/stu_repeat.md)
+- [STU_UPPER](command_reference_v1/commands/stu_upper.md)
+- [STUFF](command_reference_v1/commands/stuff.md)
+- [SUBSTR](command_reference_v1/commands/substr.md)
+- [TIME](command_reference_v1/commands/time.md)
+- [TRIM](command_reference_v1/commands/trim.md)
+- [UPDATE](command_reference_v1/commands/update.md)
+- [UPPER](command_reference_v1/commands/upper.md)
+- [VAL](command_reference_v1/commands/val.md)
+- [VALIDATE](command_reference_v1/commands/validate.md)
+<!-- END SECTION: sections\functions_and_expression_helpers.md -->
+
 <!-- BEGIN SECTION: sections\getting_started_and_session_basics.md -->
 
 # Getting Started and Session Basics
 
-Status: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Evidence class:
 - Reviewed prose candidate assembled from MDO-107 draft prose and evidence review.
@@ -1201,7 +1233,8 @@ Examples should be added only after command syntax and runtime transcripts are c
 
 # HELP, Metadata, and SelfDoc
 
-Status: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Evidence class:
 - Reviewed prose candidate assembled from MDO-112 draft prose and MDO-113 evidence review.
@@ -1670,7 +1703,8 @@ Report-only work is the default.
 
 # Import, Export, and Storage Bridges
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -1682,26 +1716,29 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [AUTODBF](../../command_reference_v1/commands/autodbf.md)
-- [BUILDLMDB](../../command_reference_v1/commands/buildlmdb.md)
-- [EXPORT](../../command_reference_v1/commands/export.md)
-- [EXPORTSQL](../../command_reference_v1/commands/exportsql.md)
-- [IMPORT](../../command_reference_v1/commands/import.md)
-- [IMPORTSQL](../../command_reference_v1/commands/importsql.md)
-- [LMDB](../../command_reference_v1/commands/lmdb.md)
-- [LMDB_UTIL](../../command_reference_v1/commands/lmdb_util.md)
-- [LMDBDUMP](../../command_reference_v1/commands/lmdbdump.md)
-- [SQL](../../command_reference_v1/commands/sql.md)
-- [SQLERASE](../../command_reference_v1/commands/sqlerase.md)
-- [SQLHELP](../../command_reference_v1/commands/sqlhelp.md)
-- [SQLITE](../../command_reference_v1/commands/sqlite.md)
-- [SQLSEL](../../command_reference_v1/commands/sqlsel.md)
-- [SQLVER](../../command_reference_v1/commands/sqlver.md)
+- [AUTODBF](command_reference_v1/commands/autodbf.md)
+- [BUILDLMDB](command_reference_v1/commands/buildlmdb.md)
+- [EXPORT](command_reference_v1/commands/export.md)
+- [EXPORTSQL](command_reference_v1/commands/exportsql.md)
+- [IMPORT](command_reference_v1/commands/import.md)
+- [IMPORTSQL](command_reference_v1/commands/importsql.md)
+- [LMDB](command_reference_v1/commands/lmdb.md)
+- [LMDB_UTIL](command_reference_v1/commands/lmdb_util.md)
+- [LMDBDUMP](command_reference_v1/commands/lmdbdump.md)
+- [SQL](command_reference_v1/commands/sql.md)
+- [SQLERASE](command_reference_v1/commands/sqlerase.md)
+- [SQLHELP](command_reference_v1/commands/sqlhelp.md)
+- [SQLITE](command_reference_v1/commands/sqlite.md)
+- [SQLSEL](command_reference_v1/commands/sqlsel.md)
+- [SQLVER](command_reference_v1/commands/sqlver.md)
+<!-- END SECTION: sections\import_export_and_storage_bridges.md -->
+
 <!-- BEGIN SECTION: sections\indexing_order_and_relations.md -->
 
 # Indexing, Order, and Relations
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -1713,15 +1750,17 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [ASCEND](../../command_reference_v1/commands/ascend.md)
-- [CDX](../../command_reference_v1/commands/cdx.md)
-- [CNX](../../command_reference_v1/commands/cnx.md)
-- [DESCEND](../../command_reference_v1/commands/descend.md)
-- [IDX](../../command_reference_v1/commands/idx.md)
-- [INDEX](../../command_reference_v1/commands/index.md)
-- [ORDER](../../command_reference_v1/commands/order.md)
-- [REBUILD](../../command_reference_v1/commands/rebuild.md)
-- [REINDEX](../../command_reference_v1/commands/reindex.md)
+- [ASCEND](command_reference_v1/commands/ascend.md)
+- [CDX](command_reference_v1/commands/cdx.md)
+- [CNX](command_reference_v1/commands/cnx.md)
+- [DESCEND](command_reference_v1/commands/descend.md)
+- [IDX](command_reference_v1/commands/idx.md)
+- [INDEX](command_reference_v1/commands/index.md)
+- [ORDER](command_reference_v1/commands/order.md)
+- [REBUILD](command_reference_v1/commands/rebuild.md)
+- [REINDEX](command_reference_v1/commands/reindex.md)
+<!-- END SECTION: sections\indexing_order_and_relations.md -->
+
 <!-- BEGIN SECTION: sections\indexing_tags_relations_and_views.md -->
 
 # Indexing, Tags, Relations, and Views
@@ -1845,6 +1884,18 @@ Important terms:
 
 The section should avoid claiming that every navigation or search command always uses an index. That behavior must be proven per command and context.
 
+## Open index architecture note
+
+The indexing lane is intentionally open enough to teach and inspect.
+
+That means the manual should preserve the distinction between:
+
+- canonical runtime indexing surfaces such as CNX, CDX, active order, and rebuild paths
+- physical backend boundaries such as LMDB for x64 storage
+- educational or lab-facing index experiments such as INX, SCX, or SIX
+
+The important manual rule is not to flatten those families into one generic word. They overlap conceptually, but they do not all serve the same role.
+
 ## Logical order and active order
 
 The active order is a current traversal context. It may affect display, movement, and search behavior depending on the command path.
@@ -1858,6 +1909,17 @@ A safe explanation is:
 Known canary:
 - Reported active order must agree with actual traversal order before an order path is marked proven.
 - A command saying an order is active is not enough. LIST, SEEK, rebuild, and runtime smoke evidence must agree.
+
+## Ownership reminder
+
+Index systems own:
+
+- tag metadata
+- active-order semantics
+- rebuild and verification semantics
+- attach/open behavior
+
+Projection layers such as LIST, BROWSE, ERSATZ, GUI, and TUI may reveal ordered traversal, but they do not own index truth. They are evidence surfaces, not index authorities.
 
 ## Tags and tag availability
 
@@ -2015,7 +2077,8 @@ This section must keep the following canaries visible:
 
 # Legacy and Compatibility Surfaces
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -2027,18 +2090,20 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [COBOL](../../command_reference_v1/commands/cobol.md)
-- [DOTHELP](../../command_reference_v1/commands/dothelp.md)
-- [DOTSCRIPT](../../command_reference_v1/commands/dotscript.md)
-- [ERP](../../command_reference_v1/commands/erp.md)
-- [FOXHELP](../../command_reference_v1/commands/foxhelp.md)
-- [FOXPRO](../../command_reference_v1/commands/foxpro.md)
-- [FOXSTANDARD](../../command_reference_v1/commands/foxstandard.md)
-- [FOXTALK](../../command_reference_v1/commands/foxtalk.md)
-- [RETRO](../../command_reference_v1/commands/retro.md)
-- [SCX](../../command_reference_v1/commands/scx.md)
-- [SIX](../../command_reference_v1/commands/six.md)
-- [TVISION](../../command_reference_v1/commands/tvision.md)
+- [COBOL](command_reference_v1/commands/cobol.md)
+- [DOTHELP](command_reference_v1/commands/dothelp.md)
+- [DOTSCRIPT](command_reference_v1/commands/dotscript.md)
+- [ERP](command_reference_v1/commands/erp.md)
+- [FOXHELP](command_reference_v1/commands/foxhelp.md)
+- [FOXPRO](command_reference_v1/commands/foxpro.md)
+- [FOXSTANDARD](command_reference_v1/commands/foxstandard.md)
+- [FOXTALK](command_reference_v1/commands/foxtalk.md)
+- [RETRO](command_reference_v1/commands/retro.md)
+- [SCX](command_reference_v1/commands/scx.md)
+- [SIX](command_reference_v1/commands/six.md)
+- [TVISION](command_reference_v1/commands/tvision.md)
+<!-- END SECTION: sections\legacy_and_compatibility_surfaces.md -->
+
 <!-- BEGIN SECTION: sections\messages_errors_and_diagnostics.md -->
 
 # Messages, Errors, and Diagnostics
@@ -2536,6 +2601,20 @@ The main navigation vocabulary in this draft includes:
 
 This section should avoid overclaiming edge behavior until evidence review attaches runtime proof. Examples needing proof include beginning-of-file behavior, end-of-file behavior, deleted-record visibility, filtered traversal, and interaction with active order.
 
+## Workbench consumer rule
+
+The same ownership rule now extends beyond classic console browsing.
+
+CLI listings, TUI surfaces, ERSATZ browsers, wx workbench views, and Python preview lanes should all be treated as consumers of runtime truth. They may present record position, logical order, search results, or relation context in different ways, but they should not invent an independent cursor model or redefine what the engine believes is current.
+
+That matters for manual prose because the visible browser is often the easiest thing to describe. The easier description is not the safer one. The safer rule is:
+
+- the engine owns cursor and order truth
+- search and relation systems contribute traversal truth
+- projection surfaces display the resulting state
+
+When a front end drifts from runtime state, the runtime wins and the projection layer must be repaired.
+
 ## Record-position commands: GO, GOTO, TOP, BOTTOM, and SKIP
 
 GO and GOTO belong to the record-position family. They should be explained as commands that change the current record context. TOP and BOTTOM describe movement to the first or last record in the current traversal context. SKIP describes relative movement.
@@ -2616,6 +2695,16 @@ Examples:
 - A memo field may display differently depending on memo backend attachment, but MemoManager owns memo payload lifecycle.
 
 This section should preserve that boundary so user-facing prose does not accidentally make projection surfaces the authority for runtime behavior.
+
+That same rule now applies to newer workbench consumers as well:
+
+- CLI displays
+- TUI/browser surfaces
+- ERSATZ result browsers
+- wx workbench panes
+- Python preview lanes
+
+They all consume runtime truth. None of them should redefine it.
 
 ## Index boundary note
 
@@ -3052,29 +3141,137 @@ Safe wording:
 
 # Relations and Tuple Views
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: DRAFT_PROSE_REWRITE / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
-Skeleton section generated from the revised manual TOC draft.
+Explain how relation definitions, tuple-oriented projection, and relation-aware browser surfaces fit together without collapsing them into one ownership model.
 
 Promotion boundary:
-- This section is a structural draft.
-- Linked command pages are evidence-backed drafts, not final prose.
+- This section is refreshed manual-draft prose.
+- Linked command pages remain evidence-backed drafts, not final authority by themselves.
+- Runtime behavior still governs exact edge semantics.
 - Review before promotion into the finished Developer Manual.
 
 ## Commands in this section
 
-- [CMDREL](../../command_reference_v1/commands/cmdrel.md)
-- [REL](../../command_reference_v1/commands/rel.md)
-- [REL ENUM](../../command_reference_v1/commands/rel_enum.md) - aliases: REL_ENUM
-- [REL_REFRESH](../../command_reference_v1/commands/rel_refresh.md)
-- [RELATION](../../command_reference_v1/commands/relation.md)
-- [RELATIONS](../../command_reference_v1/commands/relations.md)
-- [TUPEXPORT](../../command_reference_v1/commands/tupexport.md)
-- [TUPLE](../../command_reference_v1/commands/tuple.md)
-- [TUPLEDELTA](../../command_reference_v1/commands/tupledelta.md)
-- [TUPTALK](../../command_reference_v1/commands/tuptalk.md)
-- [TUPVALIDATE](../../command_reference_v1/commands/tupvalidate.md)
+- [CMDREL](command_reference_v1/commands/cmdrel.md)
+- [REL](command_reference_v1/commands/rel.md)
+- [REL ENUM](command_reference_v1/commands/rel_enum.md) - aliases: REL_ENUM
+- [REL_REFRESH](command_reference_v1/commands/rel_refresh.md)
+- [RELATION](command_reference_v1/commands/relation.md)
+- [RELATIONS](command_reference_v1/commands/relations.md)
+- [TUPEXPORT](command_reference_v1/commands/tupexport.md)
+- [TUPLE](command_reference_v1/commands/tuple.md)
+- [TUPLEDELTA](command_reference_v1/commands/tupledelta.md)
+- [TUPTALK](command_reference_v1/commands/tuptalk.md)
+- [TUPVALIDATE](command_reference_v1/commands/tupvalidate.md)
+
+## Overview
+
+Relations and tuple views belong together because they answer one practical question: once more than one table matters, how does DotTalk++ express connected data without pretending that the browser, tuple row, or display surface owns the underlying relation truth?
+
+This section should stay conservative. Relation definitions, tuple projections, and relation-aware browsers clearly interact, but they are not interchangeable layers.
+
+## Relation ownership
+
+The relation subsystem owns relation definitions and the intent of parent/child traversal between open areas.
+
+That means a relation command may establish or refresh connected traversal state, but the visible tuple or browser output is still downstream from that relation state. A relation result may prove that a path is usable. It does not, by itself, become the authority for how relations are defined internally.
+
+Safe ownership rule:
+
+- relation commands own relation definition and relation-state control
+- area/table systems own open-table context
+- tuple systems own projected row composition across related contexts
+- browser surfaces render projected results for inspection
+
+## Tuple projection
+
+Tuple-oriented commands belong here because they project relation-aware state into a visible row or record bundle.
+
+The manual should describe tuples as projection structures: they gather values from current and related contexts into a browsable or exportable view. That is useful for teaching, reporting, and inspection, but it is still projection, not storage ownership and not relation-definition ownership.
+
+This distinction prevents the manual from accidentally saying that a tuple command "creates the relation model" when it is really consuming relation state that was already established elsewhere.
+
+## Relation-aware browsing
+
+ERSATZ, relation result browsers, and tuple-aware views are evidence surfaces for connected data.
+
+They matter because they are often the clearest visible proof that a relation path works. They also tempt documentation drift. Once a browser looks convincing, it becomes easy to describe the browser as if it owns the relation logic.
+
+The safer wording is:
+
+- relation-aware browsers show connected data
+- tuple surfaces show projected connected rows
+- relation systems determine how those connections are traversed
+- workspace/session systems may restore relation context, but restoration is still separate from projection
+
+## Workbench rule
+
+This section also inherits the broader workbench rule now used across the manual.
+
+CLI tuple displays, ERSATZ result browsers, TUI displays, wx workbench panes, and Python preview consumers should all mirror runtime relation truth rather than invent their own graph or cursor semantics.
+
+If a browser and the runtime disagree about the current relation path, the runtime is the authority and the projection layer must be repaired.
+
+## Runtime-proof boundary
+
+This is a proof-sensitive section.
+
+Useful runtime evidence already exists for:
+
+- MCC/x32 relation paths
+- ERSATZ relation browsing
+- tuple-oriented connected-row inspection
+
+But the manual should still preserve path sensitivity. A proven x32 relation/browser path does not automatically prove every x64 workspace restore path or every browser mode. The section should say what has been observed without overstating what is universal.
+
+## View and export boundary
+
+Commands such as TUPEXPORT, TUPLE, TUPTALK, or related surfaces may sound like they define a "view system." The safer interpretation is that they sit on the projection side of the relation family.
+
+That means:
+
+- export is downstream of projection
+- projection is downstream of relation state
+- relation state is downstream of open areas/workspaces
+
+Keeping those layers separate makes later metadata alignment much easier.
+
+## Future metadata alignment
+
+This section is a natural downstream consumer of the documentation metadata system.
+
+Expected feeders:
+
+- SYSCMD for canonical command identity and handler mapping
+- SYSSUBCMD for relation-family variants and scoped subcommands
+- SYSARGS for relation names, tuple fields, export arguments, and projection options
+- SYSMSG for relation warnings, missing-area diagnostics, and projection/export diagnostics
+- SYSHELP for curated relation/tuple/browser concept help
+
+## Review notes before promotion
+
+- Keep relation definition separate from tuple projection.
+- Keep tuple projection separate from browser rendering.
+- Keep workspace/session restore behavior separate from relation ownership.
+- Preserve path-sensitive runtime proof language.
+- Do not let browser output become the authority for relation semantics.
+
+## Boundary
+
+- refreshed manual-draft prose only
+- review still required before promotion
+- no generated command page deletion
+- no HELP mutation
+- no META mutation
+- no CMDHELPCHK mutation
+- no catalog apply
+- no source edits outside this manual section
+- no production SelfDoc metadata promotion
+<!-- END SECTION: sections\relations_and_tuple_views.md -->
+
 <!-- BEGIN SECTION: sections\runtime_evidence_source_verification_and_canary_closure.md -->
 
 # Runtime Evidence, Source Verification, and Canary Closure
@@ -3381,6 +3578,39 @@ Safe wording:
 - Regression evidence is strong for previously known behavior.
 - Release evidence should identify build configuration and major checks.
 
+## REGRESSION and TEST as proof launchers
+
+`REGRESSION` and `TEST` make repeatable proof entry points discoverable, but
+neither command makes a run self-proving. Retain the exact command, selected
+script or suite, build identity, transcript, and result counts when using either
+launcher as evidence.
+
+### REGRESSION
+
+`REGRESSION [USAGE|LIST|SHOW <name>|RUN <name>|<name>|ALL]` selects from a
+curated set of stable regression and shakedown scripts. `LIST` and `SHOW` expose
+the curated entries; `RUN <name>` and the compact `<name>` form launch one
+entry; `ALL` launches the defined ordered set. The command delegates execution
+to `DOTSCRIPT`, so it is a catalogued launcher rather than a separate test
+engine. Developer reproduction canaries that are not in the curated set remain
+outside `ALL`.
+
+### TEST
+
+`TEST <scriptfile> [<logfile>] [VERBOSE]` runs a specified test script through
+the shell test harness. The harness resolves the script path, handles supported
+inline comments and continued logical commands, executes those commands, and
+reports processed and error counts. A supplied logfile may be created or
+truncated. The script controls the resulting side effects, so `TEST` must not be
+classified as read-only merely because it is used for verification.
+
+### Evidence boundary
+
+Launcher availability proves only that the entry surface exists. A proof claim
+still requires the retained run inputs and outcome. Cross-reference the
+Scripting and Control Flow section for script semantics and Runtime Operation,
+Invocation, and Automation for entry-path behavior.
+
 ## HELP, CMDHELPCHK, and metadata in evidence practice
 
 HELP, CMDHELPCHK, and metadata are powerful review guides.
@@ -3509,7 +3739,8 @@ The anchor is not final user-facing prose by itself. It preserves the boundary a
 
 # Scripting and Control Flow
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -3521,31 +3752,34 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [DO](../../command_reference_v1/commands/do.md)
-- [ELSE](../../command_reference_v1/commands/else.md)
-- [ENDIF](../../command_reference_v1/commands/endif.md)
-- [ENDLOOP](../../command_reference_v1/commands/endloop.md)
-- [ENDSCAN](../../command_reference_v1/commands/endscan.md)
-- [ENDUNTIL](../../command_reference_v1/commands/enduntil.md)
-- [ENDWHILE](../../command_reference_v1/commands/endwhile.md)
-- [IF](../../command_reference_v1/commands/if.md)
-- [LOOP](../../command_reference_v1/commands/loop.md)
-- [LOOP_BUFFER](../../command_reference_v1/commands/loop_buffer.md)
-- [LOOPS](../../command_reference_v1/commands/loops.md)
-- [RUN](../../command_reference_v1/commands/run.md)
-- [SCAN](../../command_reference_v1/commands/scan.md)
-- [SCAN_BUFFER](../../command_reference_v1/commands/scan_buffer.md)
-- [SCRIPT](../../command_reference_v1/commands/script.md)
-- [SHUTDOWN](../../command_reference_v1/commands/shutdown.md)
-- [UNTIL](../../command_reference_v1/commands/until.md)
-- [UNTIL_BUFFER](../../command_reference_v1/commands/until_buffer.md)
-- [WHILE](../../command_reference_v1/commands/while.md)
-- [WHILE_BUFFER](../../command_reference_v1/commands/while_buffer.md)
+- [DO](command_reference_v1/commands/do.md)
+- [ELSE](command_reference_v1/commands/else.md)
+- [ENDIF](command_reference_v1/commands/endif.md)
+- [ENDLOOP](command_reference_v1/commands/endloop.md)
+- [ENDSCAN](command_reference_v1/commands/endscan.md)
+- [ENDUNTIL](command_reference_v1/commands/enduntil.md)
+- [ENDWHILE](command_reference_v1/commands/endwhile.md)
+- [IF](command_reference_v1/commands/if.md)
+- [LOOP](command_reference_v1/commands/loop.md)
+- [LOOP_BUFFER](command_reference_v1/commands/loop_buffer.md)
+- [LOOPS](command_reference_v1/commands/loops.md)
+- [RUN](command_reference_v1/commands/run.md)
+- [SCAN](command_reference_v1/commands/scan.md)
+- [SCAN_BUFFER](command_reference_v1/commands/scan_buffer.md)
+- [SCRIPT](command_reference_v1/commands/script.md)
+- [SHUTDOWN](command_reference_v1/commands/shutdown.md)
+- [UNTIL](command_reference_v1/commands/until.md)
+- [UNTIL_BUFFER](command_reference_v1/commands/until_buffer.md)
+- [WHILE](command_reference_v1/commands/while.md)
+- [WHILE_BUFFER](command_reference_v1/commands/while_buffer.md)
+<!-- END SECTION: sections\scripting_and_control_flow.md -->
+
 <!-- BEGIN SECTION: sections\system_shell_and_files.md -->
 
 # System, Shell, and Files
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -3557,23 +3791,26 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [CLOSE](../../command_reference_v1/commands/close.md)
-- [DIR](../../command_reference_v1/commands/dir.md)
-- [DUMP](../../command_reference_v1/commands/dump.md)
-- [ERASE](../../command_reference_v1/commands/erase.md)
-- [INIT](../../command_reference_v1/commands/init.md)
-- [PSHELL](../../command_reference_v1/commands/pshell.md)
-- [SECHO](../../command_reference_v1/commands/secho.md)
-- [SFTP](../../command_reference_v1/commands/sftp.md)
-- [SHELLO](../../command_reference_v1/commands/shello.md)
-- [SHOWINI](../../command_reference_v1/commands/showini.md)
-- [WEB](../../command_reference_v1/commands/web.md)
-- [ZIP](../../command_reference_v1/commands/zip.md)
+- [CLOSE](command_reference_v1/commands/close.md)
+- [DIR](command_reference_v1/commands/dir.md)
+- [DUMP](command_reference_v1/commands/dump.md)
+- [ERASE](command_reference_v1/commands/erase.md)
+- [INIT](command_reference_v1/commands/init.md)
+- [PSHELL](command_reference_v1/commands/pshell.md)
+- [SECHO](command_reference_v1/commands/secho.md)
+- [SFTP](command_reference_v1/commands/sftp.md)
+- [SHELLO](command_reference_v1/commands/shello.md)
+- [SHOWINI](command_reference_v1/commands/showini.md)
+- [WEB](command_reference_v1/commands/web.md)
+- [ZIP](command_reference_v1/commands/zip.md)
+<!-- END SECTION: sections\system_shell_and_files.md -->
+
 <!-- BEGIN SECTION: sections\tables_records_and_data_editing.md -->
 
 # Tables, Records, and Data Editing
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -3585,17 +3822,19 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [APPEND](../../command_reference_v1/commands/append.md)
-- [COPY](../../command_reference_v1/commands/copy.md)
-- [CREATE](../../command_reference_v1/commands/create.md)
-- [DELETE](../../command_reference_v1/commands/delete.md)
-- [EDIT](../../command_reference_v1/commands/edit.md)
-- [PACK](../../command_reference_v1/commands/pack.md)
-- [RECALL](../../command_reference_v1/commands/recall.md)
-- [REPLACE](../../command_reference_v1/commands/replace.md)
-- [TURBOPACK](../../command_reference_v1/commands/turbopack.md)
-- [UNDELETE](../../command_reference_v1/commands/undelete.md)
-- [ZAP](../../command_reference_v1/commands/zap.md)
+- [APPEND](command_reference_v1/commands/append.md)
+- [COPY](command_reference_v1/commands/copy.md)
+- [CREATE](command_reference_v1/commands/create.md)
+- [DELETE](command_reference_v1/commands/delete.md)
+- [EDIT](command_reference_v1/commands/edit.md)
+- [PACK](command_reference_v1/commands/pack.md)
+- [RECALL](command_reference_v1/commands/recall.md)
+- [REPLACE](command_reference_v1/commands/replace.md)
+- [TURBOPACK](command_reference_v1/commands/turbopack.md)
+- [UNDELETE](command_reference_v1/commands/undelete.md)
+- [ZAP](command_reference_v1/commands/zap.md)
+<!-- END SECTION: sections\tables_records_and_data_editing.md -->
+
 <!-- BEGIN SECTION: sections\tables_records_and_data_model.md -->
 
 # Tables, Records, and Data Model
@@ -3713,7 +3952,8 @@ Compatibility evidence can support historical or compatibility notes, but it sho
 
 # Transactions, Locking, and Buffering
 
-Status: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: SECTION_SKELETON_DRAFT_REPAIRED / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Purpose:
 Skeleton section generated from the revised manual TOC draft.
@@ -3725,17 +3965,20 @@ Promotion boundary:
 
 ## Commands in this section
 
-- [BUFFERING](../../command_reference_v1/commands/buffering.md)
-- [COMMIT](../../command_reference_v1/commands/commit.md)
-- [LOCK](../../command_reference_v1/commands/lock.md)
-- [ROLLBACK](../../command_reference_v1/commands/rollback.md)
-- [TABLE_BUFFER](../../command_reference_v1/commands/table_buffer.md)
-- [UNLOCK](../../command_reference_v1/commands/unlock.md)
+- [BUFFERING](command_reference_v1/commands/buffering.md)
+- [COMMIT](command_reference_v1/commands/commit.md)
+- [LOCK](command_reference_v1/commands/lock.md)
+- [ROLLBACK](command_reference_v1/commands/rollback.md)
+- [TABLE_BUFFER](command_reference_v1/commands/table_buffer.md)
+- [UNLOCK](command_reference_v1/commands/unlock.md)
+<!-- END SECTION: sections\transactions_locking_and_buffering.md -->
+
 <!-- BEGIN SECTION: sections\workspaces_areas_and_session_state.md -->
 
 # Workspaces, Areas, and Session State
 
-Status: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED
+<!-- HISTORICAL STATUS: PROMOTED_TO_MANUAL_DRAFT / REVIEW_REQUIRED -->
+Status: REVIEWED_FOR_PUBLICATION
 
 Evidence class:
 - Reviewed prose candidate assembled from MDO-100 draft prose and MDO-101 evidence review.
@@ -3826,3 +4069,50 @@ Examples should be added only after command syntax and runtime transcripts are c
 <!-- END SECTION: sections\workspaces_areas_and_session_state.md -->
 
 ---
+
+---
+
+# Partial HELP Reference
+
+## Reading this appendix
+
+This appendix preserves command identities whose collected HELP evidence is
+partial. An entry here is not a support promise. `registered` means a name is
+visible in a command surface; `legacy syntax` preserves a compatibility form;
+`unsupported` means the current evidence does not authorize behavior prose or
+runtime availability claims.
+
+## CANARY
+
+Status: registered; unsupported pending curated DOTREF review.
+
+`CANARY` is a registered DotTalk++ command, but its curated support status and
+help summary are pending. Keep the identity visible for audit and reconciliation
+without documenting an inferred behavior. Move it to a normal command section
+only after the support contract and runtime evidence agree.
+
+## FOX DO
+
+Status: legacy compatibility syntax; not currently implemented or supported.
+
+Legacy form: `DO <program> [WITH <args>]`.
+
+Retain this form only to help readers interpret older FoxPro-style material.
+Use `DOTSCRIPT` for current script execution. The redirect does not claim that
+`DOTSCRIPT` reproduces every historical `DO` semantic.
+
+## FOX RUN
+
+Status: legacy compatibility syntax; not currently implemented or supported.
+
+Legacy forms: `RUN /N <command>` and `RUN <file>`.
+
+Retain these forms only as compatibility reference. Do not infer current
+runtime support, background-process semantics, or equivalence to another shell
+launcher until separately established by contract and runtime proof.
+
+## Promotion boundary
+
+Partial entries remain segregated from supported command prose. Promotion out
+of this appendix requires an explicit support decision, source/HELP identity
+agreement, and appropriate runtime evidence.

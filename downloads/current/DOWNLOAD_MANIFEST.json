@@ -1,7 +1,26 @@
 {
-  "generated_on": "2026-07-08",
+  "schema": "x64base.reviewed-downloads.v1",
+  "generated_on": "2026-07-18",
   "purpose": "Curated current important-document bundle staged for x64base.com downloads.",
   "authority_note": "These files are reviewed derivatives or direct source-side artifacts staged for download. Technical truth still originates in the implementation checkout, not in the website copy.",
+  "accepted_documentation_snapshot": {
+    "status": "accepted-current",
+    "proof_label": "manual-reviewed",
+    "source_commit": "be9350531251bb682f0476d652d99ca137861577",
+    "manual_git_blob_oid": "db47c815723c6de8a1293431f779d5e3caf2e1d5",
+    "manual_download_sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B",
+    "manual_accepted_worktree_sha256": "EA2E12A9D3E1AD3799BFA40DBE27F1E2CB1107E34CA05684599E429D7F9A5A8F",
+    "manual_lines": 4118,
+    "manual_headings": 237,
+    "sections": 24,
+    "appendices": 4,
+    "command_reference_pages": 183,
+    "reader_linked_command_pages": 164,
+    "supplemental_command_pages": 19,
+    "command_lineage_rows": 3974,
+    "manual_source_url": "https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+    "command_reference_source_url": "https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/README.md"
+  },
   "items": [
     {
       "file": "DotTalkPP_x64base_Manual_Preview_V1.docx",
@@ -10,8 +29,16 @@
     },
     {
       "file": "developer_manual_publication_v1.md",
-      "label": "Current primary reader manual artifact",
-      "source": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md"
+      "label": "Accepted current DotTalk++ / x64base developer manual",
+      "status": "accepted-current",
+      "proof_label": "manual-reviewed",
+      "source": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+      "source_commit": "be9350531251bb682f0476d652d99ca137861577",
+      "source_git_blob_oid": "db47c815723c6de8a1293431f779d5e3caf2e1d5",
+      "sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B",
+      "line_count": 4118,
+      "heading_count": 237,
+      "source_url": "https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md"
     },
     {
       "file": "manual_family_runtime_surface_crosswalk_v1.md",
