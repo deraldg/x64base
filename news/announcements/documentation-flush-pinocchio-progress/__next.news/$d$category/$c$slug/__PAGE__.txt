@@ -1,0 +1,32 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/2lt4xurzayak4.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T6bf,<p>The full-stack documentation vertical has completed all nine controlled gates,
+from comments, contracts, HELP, and manualgen through public-source staging,
+website publication, and cache-bypassed live verification.</p>
+<p>The accepted checkpoint includes:</p>
+<ul>
+<li>a 4,118-line, 237-heading developer manual;</li>
+<li>183 command-reference pages: 164 reader-linked and 19 supplemental;</li>
+<li>3,974 command-lineage rows;</li>
+<li>an 11-path reviewed website projection; and</li>
+<li>exact manual and publication metadata for repeatable verification.</li>
+</ul>
+<p>The follow-up projection is intentionally separate. Pinocchio now has an
+eight-row historical before/after benchmark ledger and a machine identity rule,
+preserved with its plan, runners, validator, and closeouts in
+<a href="https://github.com/deraldg/x64base/tree/853937f1f612c1a41a8fbda2c8d99e55fe44b9a3">public source commit <code>853937f1</code></a>.
+The original runs did not record the machine, and the post-correction raw timing
+transcript was not located, so the website preserves those limits instead of
+turning the numbers into a release guarantee.</p>
+<p>Documentation closeout records are now public-source preserved. Comments
+collection audit records remain in their development lane pending separate
+review. <code>METACOLLECT-238</code> stays a separate 238-finding mission rather than being
+silently folded into the completed run.</p>
+<ul>
+<li><a href="/docs/dev/documentation-progress">Read Documentation Progress</a>.</li>
+<li><a href="/docs/engine/pinocchio-benchmarks">Review Pinocchio Engine Benchmarks</a>.</li>
+<li><a href="/downloads/current/developer_manual_publication_v1.md">Download the accepted developer manual</a>.</li>
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=780ffb89ad3b","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news?v=780ffb89ad3b","children":"News"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements?v=780ffb89ad3b","children":"announcements"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements/documentation-flush-pinocchio-progress",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/documentation-flush-pinocchio-progress?v=780ffb89ad3b","children":"Documentation flush completes; Pinocchio baseline enters the next projection"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Documentation flush completes; Pinocchio baseline enters the next projection"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-3 text-sm text-muted","children":[["$","span",null,{"className":"font-mono","children":"2026-07-18"}],["$","span",null,{"children":["Category: ","announcements"]}]]}],["$","p",null,{"className":"mt-3 text-muted","children":"The nine-gate manual and website checkpoint is complete, while benchmark and metadata follow-up work remains accurately labeled."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"iPJUGQgdbT3FH7C6y1gNc"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

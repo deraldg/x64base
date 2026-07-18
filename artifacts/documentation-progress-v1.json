@@ -1,0 +1,51 @@
+{
+  "schema": "x64base.documentation.progress.v1",
+  "as_of_date": "2026-07-18",
+  "publication_state": "public-source-promoted-progress-projection",
+  "published_checkpoint": {
+    "website_source_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+    "pages_commit": "0ef77ea953313fde639d2ba71c7de99f4a79b84a",
+    "pages_build_id": 1102357325,
+    "documentation_gates_passed": 9,
+    "documentation_gates_total": 9,
+    "progress_milestones": 45,
+    "evidence_files": 519
+  },
+  "accepted_manual": {
+    "source_commit": "be9350531251bb682f0476d652d99ca137861577",
+    "proof_label": "manual-reviewed",
+    "sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B",
+    "lines": 4118,
+    "headings": 237,
+    "sections": 24,
+    "appendices": 4,
+    "command_reference_pages": 183,
+    "reader_linked_pages": 164,
+    "supplemental_pages": 19,
+    "command_lineage_rows": 3974
+  },
+  "source_promotion": {
+    "commit": "853937f1f612c1a41a8fbda2c8d99e55fe44b9a3",
+    "evidence_paths": 33,
+    "pinocchio_validator": "PASS",
+    "focused_tests": 15,
+    "scope_note": "Documentation progress, Pinocchio evidence, and reproducibility tooling only; messaging and METACOLLECT-238 remain separate."
+  },
+  "pinocchio": {
+    "state": "validated-public-source-evidence-runtime-release-unproven",
+    "historical_rows": 8,
+    "historical_machine_type": "UNRECORDED",
+    "current_profile_machine_type": "Alienware m16 R2",
+    "current_profile_historical_binding": "UNVERIFIED",
+    "after_transcript_state": "RAW_AFTER_TRANSCRIPT_NOT_LOCATED",
+    "phase_2_fault_injection": "deferred"
+  },
+  "separate_missions": [
+    {
+      "id": "METACOLLECT-238",
+      "finding_count": 238,
+      "state": "separate-backlog-not-part-of-completed-vertical"
+    }
+  ],
+  "authority_note": "Website metadata reports reviewed progress but does not promote local implementation or benchmark evidence into public runtime truth."
+}

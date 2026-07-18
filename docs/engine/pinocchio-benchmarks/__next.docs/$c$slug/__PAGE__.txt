@@ -1,0 +1,97 @@
+1:"$Sreact.fragment"
+2:I[87771,["/_next/static/chunks/2lt4xurzayak4.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
+8:I[97367,["/_next/static/chunks/2lt4xurzayak4.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+9:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex gap-8","children":[["$","$L2",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L3"]}],["$L4"],"$L5"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"iPJUGQgdbT3FH7C6y1gNc"}
+6:Tffa,<p>Pinocchio is the disposable engine stress-test lane used to answer a practical
+question: can the educational database behave like a real engine at
+million-row scale? Its generated data, tables, indexes, and LMDB stores remain
+isolated from protected project data.</p>
+<h2 id="current-proof-state"><a class="no-underline" href="#current-proof-state">Current proof state</a></h2>
+<p>The retained Phase 1 workload contains 1,000,000 student rows and 5,501,358
+enrollment rows. The original read battery found that ordered <code>TOP</code> navigation
+was scanning and sorting the table even when a CDX/LMDB order was active. A
+development correction routed ordered navigation through the LMDB cursor.</p>
+<p>The following values are historical results, not a fresh website benchmark:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Dataset / operation</th><th align="right">Before</th><th align="right">After</th><th align="right">Improvement</th></tr></thead><tbody><tr><td>ENROLL 5,501,358 — <code>TOP SID</code></td><td align="right">66.09 s</td><td align="right">0.0013 s</td><td align="right">50,838×</td></tr><tr><td>ENROLL 5,501,358 — <code>BOTTOM SID</code></td><td align="right">66.51 s</td><td align="right">0.0010 s</td><td align="right">66,510×</td></tr><tr><td>ENROLL 5,501,358 — first ordered <code>SKIP</code></td><td align="right">65.90 s</td><td align="right">0.0015 s</td><td align="right">43,933×</td></tr><tr><td>ENROLL 5,501,358 — <code>SKIP 1000000</code></td><td align="right">87.10 s</td><td align="right">0.021 s</td><td align="right">4,148×</td></tr><tr><td>STUDENTS 1,000,000 — <code>TOP SID</code></td><td align="right">19.478 s</td><td align="right">0.001–0.002 s</td><td align="right">9,739–19,478×</td></tr><tr><td>STUDENTS 1,000,000 — <code>TOP LNAME</code></td><td align="right">23.231 s</td><td align="right">0.001–0.002 s</td><td align="right">11,616–23,231×</td></tr></tbody></table>
+<p>Correctness canaries remained green in the retained navigation closeout. The
+raw transcript for the post-correction timings was not located during the
+documentation scan, so those values remain <code>runtime-proven-by-closeout</code> rather
+than a stronger raw-transcript claim.</p>
+<h2 id="machine-identity"><a class="no-underline" href="#machine-identity">Machine identity</a></h2>
+<p>The historical runs did not record manufacturer, model, CPU, memory, or OS.
+Their machine type is therefore <code>UNRECORDED</code>. A current workstation profile
+identifies an Alienware m16 R2, but it is a future-run input only and must not
+be assigned retroactively to the historical measurements.</p>
+<p>Future runs capture a machine profile beside the raw build and measurement
+transcripts. Comparable rows require the machine label, engine state, dataset
+size, operation, timer source, and evidence paths.</p>
+<h2 id="publication-boundary"><a class="no-underline" href="#publication-boundary">Publication boundary</a></h2>
+<p>This public summary is a reviewed projection of the development benchmark
+record. The plan, eight-row ledger, machine profile, validator, runners, and
+closeouts are preserved in
+<a href="https://github.com/deraldg/x64base/tree/853937f1f612c1a41a8fbda2c8d99e55fe44b9a3">public source commit <code>853937f1</code></a>.
+That source promotion does not prove that the navigation correction is part of
+the current public runtime or a tagged release.</p>
+<h2 id="next-benchmark-gate"><a class="no-underline" href="#next-benchmark-gate">Next benchmark gate</a></h2>
+<ol>
+<li>Run a fresh large-data battery with raw before/after transcripts and an
+automatically captured machine profile.</li>
+<li>Bind the tested engine commit and release state to the fresh evidence.</li>
+<li>Append the new results; never overwrite the historical baseline.</li>
+<li>Continue to Phase 2 fault injection for concurrency, crash/recovery, and
+durability claims that remain unverified.</li>
+</ol>
+<p>See <a href="/docs/dev/documentation-progress">Documentation Progress</a> for the wider
+source-to-website publication state.</p>3:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=780ffb89ad3b","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs?v=780ffb89ad3b","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/engine/pinocchio-benchmarks",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/engine/pinocchio-benchmarks?v=780ffb89ad3b","children":"Pinocchio Engine Benchmarks"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Pinocchio Engine Benchmarks"}],["$","p",null,{"className":"mt-2 text-muted","children":"Historical ordered-navigation benchmarks, machine identity rules, evidence limits, and the next reproducible Pinocchio run."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$6"},"children":null}]}],"$L7"]}]
+4:["$","script","script-0",{"src":"/_next/static/chunks/3zguxvz6lw9iq.js","async":true}]
+5:["$","$L8",null,{"children":["$","$9",null,{"name":"Next.MetadataOutlet","children":"$@a"}]}]
+7:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/cdx-lmdb-indexing?v=780ffb89ad3b","children":["← ","CDX and LMDB Indexing"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/feature-crosswalk?v=780ffb89ad3b","children":["Engine Feature Crosswalk"," →"]}]}]]}]
+a:null
