@@ -4,7 +4,8 @@
 #     D:\code\ccode  (this tree = source of truth, full history, git)
 #         |  files matched below, minus .gitignore deny-list
 #         v
-#     C:\x64base     (DISPOSABLE staging -- regenerated, not precious)
+#     C:\x64base     (publication staging -- rebuildable only from verified
+#                      baseline, dirty/ignored preservation, and overlay layers)
 #         |  git commit + push
 #         v
 #     github.com/deraldg/x64base   (public snapshot)

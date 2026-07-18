@@ -2,15 +2,15 @@
 
 Run: `DOCFLUSH-20260716-001`  
 Recorded: 2026-07-18 UTC  
-Current position: gates 1-4 passed; gate 5 public baseline and dirty staging
-layers escrowed, exact selective overlay rebound  
+Current position: gates 1-5 passed; Gate 5 published to `origin/main` at
+`be9350531251bb682f0476d652d99ca137861577`  
 Final surface: `https://x64base.com/` through the maintained
 `D:\dev\x64base-site` repository and GitHub Pages
 
 ## Estimate
 
 The vertical contains nine material gates from the current candidate to
-verified website publication. Gates 1 through 4 are complete; five gates remain.
+verified website publication. Gates 1 through 5 are complete; four gates remain.
 A gate may take more than one execution step, but it must leave one durable
 disposition before the next gate begins.
 
@@ -20,7 +20,7 @@ disposition before the next gate begins.
 | 2 | Canonical acceptance preflight | Candidate and exact mutation plan only | PASS — 21 PASS / 1 intentional REVIEW / 0 FAIL |
 | 3 | Controlled manual acceptance and rebuild | Accepted manual sections, appendix, reader, and manifests; separately authorized | PASS — 8/8 APPLIED, 0 FINDINGS |
 | 4 | Manual publication-readiness proof | Report-only validation of links, TOC, headers, provenance, accessibility, and artifact completeness | PASS — 26 PASS / 0 REVIEW / 0 FAIL after 183/183 authorized apply |
-| 5 | Clean x64base source-staging promotion | Reviewed files only into `C:\x64base`, with staged validation and supporting source/docs commit | ACTIVE — 1,951-file public baseline and 20-file dirty layer ESCROWED in D and C recovery roots; rebound 316-file overlay PASS; reset/apply authorization required |
+| 5 | Clean x64base source-staging promotion | Reviewed files only into `C:\x64base`, with staged validation and supporting source/docs commit | PASS — 316 reviewed paths committed and pushed as `be935053`; 19 preserved non-overlay paths remain local and unstaged |
 | 6 | Website feed/export packet | Reviewed manual summaries, proof labels, source anchors, and route targets | PENDING |
 | 7 | Website integration and local build | `D:\dev\x64base-site` source plus generated public artifact | PENDING |
 | 8 | Website publication | Website commit/push and GitHub Pages deployment | PENDING |
@@ -93,6 +93,15 @@ disposition before the next gate begins.
   `109B1D23...754A1`, exact 35-file package mirror at `C:\code\ccode`;
 - `C:\x64base` preflight: `main` at `fa7c04dc`, 20 dirty paths, seven
   divergent from authoritative development; no staging write performed;
+- recovery-bound Gate 5 execution: `STAGEEXEC-20260718T145818Z`; committed
+  baseline, 20 ordinary dirty files, one ignored DBF, 36 public-only files, and
+  316-file overlay independently verified;
+- public-projection regression amendment: development Manualgen 54/54 and
+  full-stack 19/19; staging Manualgen 53 pass plus one named evidence skip and
+  full-stack 17 pass plus two named evidence skips;
+- Git publication: exactly 316 ledger paths, 33,015 insertions / one deletion,
+  commit `be9350531251bb682f0476d652d99ca137861577`, pushed and read back from
+  `refs/heads/main`; 19 non-overlay staging paths remain unstaged;
 - approved prose: `MANRUN-20260718T020630Z-9367A5BA`;
 - two additive section copies, one candidate appendix, one contextual reader;
 - three diffs, 161 aggregate additions across their separate review surfaces,
@@ -109,8 +118,8 @@ disposition before the next gate begins.
 
 ## Next action
 
-Authorize or hold the recovery-bound fresh reset of `C:\x64base`, exact
-20-file dirty-layer restore, and 316-file selective overlay using the current
-escrow/plan/ledger hashes in the recovery closeout and C mirror pointer.
-All 36 public-only baseline paths must remain exact. This authorization must
-not imply Git staging, commit, push, or website mutation.
+Begin Gate 6: build a report-only website feed/export packet from the public
+commit. The packet must identify the manual summaries, proof labels, source
+anchors, and proposed x64base.com routes without editing
+`D:\dev\x64base-site`. Website integration, build, push, and deployment remain
+separate Gates 7 and 8.

@@ -802,3 +802,28 @@ directory. Markdown and CSV identifiers must agree.
 - Next gate: create and push the documentation-flush commit, verify the remote
   commit and tree, then record the publication closeout without staging any of
   the 19 preserved non-overlay paths.
+
+### DFPROG-040 — Gate 5 documentation Git publication
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS PUBLISHED / WEBSITE HELD.
+- Publication: Committed exactly the 316 ledger-bound paths as
+  `be9350531251bb682f0476d652d99ca137861577` with parent `fa7c04dc`, then
+  pushed `main` and independently read back the same hash from
+  `refs/heads/main` at `https://github.com/deraldg/x64base.git`.
+- Commit shape: 316 files, 33,015 insertions, one deletion. Index path mismatch,
+  staged-blob drift, paths outside the overlay, and staged/unstaged mixed paths
+  are zero.
+- Final precommit proof: staged Manualgen 53 pass plus one named evidence skip;
+  staged full-stack 17 pass plus two named evidence skips; repaired public
+  README target resolves; 40 intentional two-space Markdown hard breaks and
+  12 inherited blank-EOF conventions retain their recorded waiver.
+- Preservation: The 19 non-overlay staging paths remain present and unstaged;
+  the Git index is empty after commit. The offline escrow and `C:\code\ccode`
+  recovery mirror remain the restoration source for baseline-only, dirty, and
+  ignored layers.
+- Boundary: `D:\dev\x64base-site`, website content, website build output,
+  GitHub Pages, candidate metacollect evidence, and raw benchmark transcripts
+  were not changed.
+- Next gate: Gate 6 report-only website feed/export packet from the public
+  commit, followed by separately authorized website integration and build.
