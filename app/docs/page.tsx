@@ -84,6 +84,18 @@ const sectionSummary = [
     icon: GitBranch
   },
   {
+    title: "Documentation progress",
+    description: "Follow the completed nine-gate publication checkpoint and the accurately labeled follow-up delta.",
+    href: "/docs/dev/documentation-progress",
+    icon: FileText
+  },
+  {
+    title: "Pinocchio benchmarks",
+    description: "Review the million-row navigation baseline, machine identity limits, and the next reproducible run.",
+    href: "/docs/engine/pinocchio-benchmarks",
+    icon: BarChart3
+  },
+  {
     title: "Site improvement plan",
     description: "Track documentation deficiencies, under-development lanes, and academic review needs.",
     href: "/docs/dev/site-improvement-plan",
@@ -145,6 +157,12 @@ const commandSummary = [
     description: "The harvested command surface that should be regenerated when runtime commands change.",
     href: "/docs/dottalk/command-catalog",
     icon: TerminalSquare
+  },
+  {
+    title: "Command reference",
+    description: "The accepted 183-page snapshot: 164 reader-linked pages and 19 supplemental pages.",
+    href: "/docs/dottalk/command-reference",
+    icon: BookOpen
   }
 ];
 
@@ -230,7 +248,7 @@ export default function DocsLandingPage() {
             DotTalk++ already has data-programming lanes; the new UI DSL lane captures what is not implemented yet.
           </p>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {commandSummary.map((l) => {
             const Icon = l.icon;
             return (

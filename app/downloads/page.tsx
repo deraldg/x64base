@@ -41,6 +41,18 @@ const startingPoints = [
     icon: BookOpen
   },
   {
+    title: "Documentation Progress",
+    description: "The nine-gate publication checkpoint, current follow-up delta, and machine-readable status.",
+    href: "/docs/dev/documentation-progress",
+    icon: FileText
+  },
+  {
+    title: "Pinocchio Benchmarks",
+    description: "Historical million-row navigation results, evidence limits, and machine identity rules.",
+    href: "/docs/engine/pinocchio-benchmarks",
+    icon: Archive
+  },
+  {
     title: "Runtime Evidence",
     description: "Screenshots and proof artifacts curated as evidence, not release polish claims.",
     href: "/docs/labtalk/runtime-evidence",
@@ -106,6 +118,11 @@ const stagedDownloads = [
     title: "Download Manifest",
     description: "Machine-readable manifest of the currently staged important-document bundle.",
     href: "/downloads/current/DOWNLOAD_MANIFEST.json"
+  },
+  {
+    title: "Documentation Progress Metadata",
+    description: "Machine-readable publication checkpoint, manual counts, benchmark state, and separate missions.",
+    href: "/artifacts/documentation-progress-v1.json"
   }
 ];
 

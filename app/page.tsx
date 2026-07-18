@@ -18,7 +18,8 @@ const proofPoints = [
   { label: "Project mode", value: "Co-development", href: "/docs/dev/recursive-co-development" },
   { label: "Runtime", value: "DotTalk++" },
   { label: "SDLC", value: "Proof-gated", href: "/docs/dottalk/sdlc" },
-  { label: "Campus", value: "Configurable + proof-aware", href: "/docs/labtalk/sdlc" }
+  { label: "Campus", value: "Configurable + proof-aware", href: "/docs/labtalk/sdlc" },
+  { label: "Docs flush", value: "9/9 gates", href: "/docs/dev/documentation-progress" }
 ];
 
 const ecosystem = [
@@ -64,7 +65,9 @@ const quickLinks = [
   { title: "Engine architecture", href: "/docs/engine/architecture" },
   { title: "Open Engine APIs", href: "/docs/engine/api-reference" },
   { title: "Indexing rules", href: "/docs/engine/indexing-rules" },
+  { title: "Pinocchio benchmarks", href: "/docs/engine/pinocchio-benchmarks" },
   { title: "DotScript language guide", href: "/docs/dottalk/dotscript-language-guide" },
+  { title: "Documentation progress", href: "/docs/dev/documentation-progress" },
   { title: "Application UI DSL lane", href: "/docs/dev/application-ui-dsl-lane" },
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
@@ -137,6 +140,12 @@ const startPoints = [
     text: "SelfDoc, MDO, generated manuals, diagrams, matrices, and reviewed documentation layers.",
     href: "/docs/dev/important-documents",
     icon: ScrollText
+  },
+  {
+    title: "Documentation progress",
+    text: "Nine-gate publication status, accepted manual metadata, Pinocchio follow-up, and separate backlog missions.",
+    href: "/docs/dev/documentation-progress",
+    icon: BarChart3
   }
 ];
 
@@ -158,8 +167,8 @@ export default function HomePage() {
           <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
             <p className="mt-2">
-              Runtime claims move through source, contracts, tests, maintainer review, and publication
-              gates. Experimental and planned lanes remain labeled until their evidence is complete.
+              The 2026-07-18 documentation vertical passed all nine publication gates. New benchmark,
+              comments-audit, and metadata work remains labeled until its source evidence is promoted.
             </p>
           </div>
           <Link
@@ -193,7 +202,7 @@ export default function HomePage() {
             </a>
           </div>
 
-          <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-5">
             {proofPoints.map((item) => {
               const content = (
                 <>
@@ -307,7 +316,7 @@ export default function HomePage() {
               without turning the homepage into a release page.
             </p>
           </div>
-          <div className="grid gap-3 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {startPoints.map((item) => {
               const Icon = item.icon;
               return (

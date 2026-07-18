@@ -43,6 +43,8 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | LMS communications lane | `/docs/labtalk/lms-integration-lane` | LabTalk LMS registry, provider-neutral message contract, local queue/CLI, portal execution lane | `labtalk/lms/README.md`, `labtalk/registries/lms.yaml`, `src/labtalk/lms/pipe.py`, `src/labtalk/lms/cli.py`, message schema, status transcript | Reserved/local-only integration slice. Local status and queue behavior are documented; Moodle remains a future candidate with live delivery disabled and no credentials or student data stored. |
 | Runtime evidence gallery | `/docs/labtalk/runtime-evidence` | Evidence curation lane, screenshot/media lane | `public/images/evidence/*.jpg`, screenshot captions, runtime transcript notes | Curated website proof surface. Screenshots are evidence artifacts and should be replaced when current UI changes. |
 | Important documents shelf | `/docs/dev/important-documents` | MDO lane, AI-friendly summaries, manual publication lane | SelfDoc/MDO summaries, diagrams, manualgen reports, reviewed document inventory | Current public shelf. The accepted Markdown manual and 183-page command-reference snapshot are linked with pinned provenance. |
+| Documentation progress | `/docs/dev/documentation-progress`, `/artifacts/documentation-progress-v1.json` | Full-stack documentation lane, publication closeout, follow-up lane registry | gate ledger, progress milestones, accepted manual metadata, live-verification record, separate-mission state | New reviewed progress projection. Completed public checkpoints and development-only follow-up evidence are deliberately separated. |
+| Pinocchio benchmarks | `/docs/engine/pinocchio-benchmarks` | Pinocchio stress-test lane, navigation performance closeout, historical benchmark ledger | retained Phase 1 closeout, navigation closeout, eight-row ledger, machine-profile contract | Historical development evidence is preserved in public source commit `853937f1`. Machine identity was not recorded for the old runs, the post-fix raw transcript was not located, and runtime-release status remains unproven. |
 | DotTalk++ artifact/manual room | `/downloads`, `/docs/dottalk/command-reference` | Manualgen lane, command/reference export lane, generated SelfDoc/MDO reports, proof-packet lane, accessibility text lane, download governance lane | artifact manifest, route manifest, reviewed manual sections, command/function exports, generated reports, proof packets, accessibility status fields | The reviewed Markdown manual and reference landing page are public. Versioned release artifacts still belong on GitHub Releases; x64base.com remains the documentation site. |
 | SelfDoc publication path | `/docs/dev/selfdoc-feed-pipeline`, `/docs/dev/selfdoc-website-publication` | Source-to-website feed lane, manualgen lane, contract scan lane, simplex/duplex publication gates | `tools/manualgen`, `tools/selfdoc`, comments/contracts scanners, generated reports, promotion rules, website-owned artifact exceptions | Reviewed process docs. Automation is partial; the rules are intentionally stricter than the current tooling. |
 | Historical source lineage | `/docs/dev/historical-source-lineage` | Preservation lane, provenance lane, historical source inventory | `public/artifacts/source-lineage/source-lineage-seed.csv`, local historical folders, checksums, source review notes | Active preservation page with proof labels. Historical code is evidence, not automatic current product behavior. |
@@ -59,6 +61,8 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | Engine feature crosswalk | feature families, evidence status, source/HELP anchors | engine feature crosswalk, current lanes, product capability summaries | Runtime/source/help status labels retained. |
 | Manualgen inventory/validate/dry-run | manual sections, missing anchors, boundary warnings | important documents, generated manuals, downloadable manual artifacts | Validation result and Python/tooling version recorded. |
 | Runtime transcript and screenshot curation | command output, GUI/TUI proof, website proof screenshots | runtime evidence gallery, Laboratory Campus proof pages, workbench pages | Caption includes product name, date, proof target, and known staleness. |
+| Documentation progress registry | gate status, public commits, manual counts, benchmark proof state, separate missions | documentation progress, current lanes, downloads, project truth | Completed publication facts remain distinct from public-source evidence, local evidence, and runtime-release proof. |
+| Pinocchio benchmark ledger | dataset size, operation, before/after timing, speedup, machine binding, transcript state | Pinocchio benchmarks, engine progress summaries | Historical limitations remain visible; a fresh run appends evidence instead of replacing the baseline. |
 | Diagram promotion | Mermaid, Draw.io, SDLC visuals, workflow diagrams | SelfDoc lane diagrams, important documents, publication pipeline pages | Diagram source and generated image kept together when possible. |
 | Artifact/manual-room manifest | manual bundles, reference exports, generated report packets, proof packets, accessibility text versions, archive snapshots | DotTalk++ artifact/manual room, x64base.com downloads summaries, important documents shelf | Local preview route and artifact manifests reviewed; localhost links replaced before public publication. |
 | Historical source inventory | path, size, timestamp, checksum, source family, truth level | historical source lineage, source museum artifacts | Checksums and truth-level labels preserved. |
@@ -75,8 +79,14 @@ accepted from public source commit
   pages, with 3,974 lineage rows.
 - Proof labels: `manual-reviewed` for the accepted reader/reference and
   `generated-reviewed` for this website projection.
-- Remaining gates: website commit/publication, followed by cache-bypassed live
-  route verification and documentation closeout.
+- Website publication: source commit `43f120a4`, GitHub Pages commit
+  `0ef77ea9`, followed by cache-bypassed live route verification.
+- Closeout: all nine gates passed; the accepted 11-path website projection and
+  exact manual digest were verified live.
+- Follow-up delta: Pinocchio benchmark metadata and documentation closeout
+  artifacts are preserved in public source commit `853937f1`. Comments-audit
+  records remain in the development lane pending separate review.
+  `METACOLLECT-238` remains a separate mission.
 
 The feed is still only partly automated. Acceptance and website promotion keep
 their explicit human review and source-provenance gates.

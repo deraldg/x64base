@@ -64,6 +64,8 @@ truth system.
 
 - [Current Project Truth](/docs/dev/project-truth) records conservative wording rules and the observed implementation state.
 - [Current Work Lanes](/docs/dev/current-lanes) lists active, canary, planned, and integration lanes without crowding the front page.
+- [Documentation Progress](/docs/dev/documentation-progress) records the nine-gate publication checkpoint, accepted manual metadata, current follow-up delta, and separate missions.
+- [Pinocchio Engine Benchmarks](/docs/engine/pinocchio-benchmarks) preserves the historical before/after table, machine identity limitation, and next reproducible benchmark gate.
 - [Website Documentation Matrix](/docs/dev/website-documentation-matrix) maps website sections to source lanes, data-mining feeds, proof artifacts, and publication status.
 - [SelfDoc Feed Pipeline](/docs/dev/selfdoc-feed-pipeline) documents the repeatable report-only path from source to manuals and website pages.
 - [HELP, Message, and SelfDoc DFD](/docs/dev/help-message-selfdoc-dfd) maps the complete context, runtime, validation, proof, curation, manual, and publication flow across four source-derived diagram levels.
@@ -123,6 +125,12 @@ source behavior
 This keeps the public manual honest. If a feature is runtime-evidenced, the
 manual can say so. If it is source-evidenced, canary, planned, or
 review-needed, the manual should carry that status instead of smoothing it over.
+
+The current follow-up delta is intentionally visible but not over-promoted:
+Pinocchio benchmark metadata, comments-audit closeout records, and the full
+documentation-run evidence still need a reviewed public-source promotion
+before they can become durable public provenance. `METACOLLECT-238` remains a
+separate 238-finding mission rather than an implied part of the completed run.
 
 ## Manual / Website Boundary
 

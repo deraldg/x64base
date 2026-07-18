@@ -1,0 +1,64 @@
+---
+title: "Pinocchio Engine Benchmarks"
+description: "Historical ordered-navigation benchmarks, machine identity rules, evidence limits, and the next reproducible Pinocchio run."
+---
+
+Pinocchio is the disposable engine stress-test lane used to answer a practical
+question: can the educational database behave like a real engine at
+million-row scale? Its generated data, tables, indexes, and LMDB stores remain
+isolated from protected project data.
+
+## Current proof state
+
+The retained Phase 1 workload contains 1,000,000 student rows and 5,501,358
+enrollment rows. The original read battery found that ordered `TOP` navigation
+was scanning and sorting the table even when a CDX/LMDB order was active. A
+development correction routed ordered navigation through the LMDB cursor.
+
+The following values are historical results, not a fresh website benchmark:
+
+| Dataset / operation | Before | After | Improvement |
+| --- | ---: | ---: | ---: |
+| ENROLL 5,501,358 — `TOP SID` | 66.09 s | 0.0013 s | 50,838× |
+| ENROLL 5,501,358 — `BOTTOM SID` | 66.51 s | 0.0010 s | 66,510× |
+| ENROLL 5,501,358 — first ordered `SKIP` | 65.90 s | 0.0015 s | 43,933× |
+| ENROLL 5,501,358 — `SKIP 1000000` | 87.10 s | 0.021 s | 4,148× |
+| STUDENTS 1,000,000 — `TOP SID` | 19.478 s | 0.001–0.002 s | 9,739–19,478× |
+| STUDENTS 1,000,000 — `TOP LNAME` | 23.231 s | 0.001–0.002 s | 11,616–23,231× |
+
+Correctness canaries remained green in the retained navigation closeout. The
+raw transcript for the post-correction timings was not located during the
+documentation scan, so those values remain `runtime-proven-by-closeout` rather
+than a stronger raw-transcript claim.
+
+## Machine identity
+
+The historical runs did not record manufacturer, model, CPU, memory, or OS.
+Their machine type is therefore `UNRECORDED`. A current workstation profile
+identifies an Alienware m16 R2, but it is a future-run input only and must not
+be assigned retroactively to the historical measurements.
+
+Future runs capture a machine profile beside the raw build and measurement
+transcripts. Comparable rows require the machine label, engine state, dataset
+size, operation, timer source, and evidence paths.
+
+## Publication boundary
+
+This public summary is a reviewed projection of the development benchmark
+record. The plan, eight-row ledger, machine profile, validator, runners, and
+closeouts are preserved in
+[public source commit `853937f1`](https://github.com/deraldg/x64base/tree/853937f1f612c1a41a8fbda2c8d99e55fe44b9a3).
+That source promotion does not prove that the navigation correction is part of
+the current public runtime or a tagged release.
+
+## Next benchmark gate
+
+1. Run a fresh large-data battery with raw before/after transcripts and an
+   automatically captured machine profile.
+2. Bind the tested engine commit and release state to the fresh evidence.
+3. Append the new results; never overwrite the historical baseline.
+4. Continue to Phase 2 fault injection for concurrency, crash/recovery, and
+   durability claims that remain unverified.
+
+See [Documentation Progress](/docs/dev/documentation-progress) for the wider
+source-to-website publication state.

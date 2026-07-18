@@ -1,0 +1,65 @@
+---
+title: "Documentation Progress"
+description: "Current source-to-website documentation flush, accepted manual snapshot, active follow-up lanes, and publication boundaries."
+---
+
+This page is the public progress surface for the full-stack documentation
+pipeline. It reports completed checkpoints and separately labels work that is
+still local, under review, or waiting for public-source promotion.
+
+## Published checkpoint — 2026-07-18
+
+The documentation-to-x64base.com vertical completed all nine controlled gates:
+
+```text
+source comments and metadata
+-> contracts and HELP/CMDHELP evidence
+-> manualgen acceptance
+-> staging and public-source promotion
+-> reviewed website projection
+-> GitHub Pages publication
+-> cache-bypassed live verification
+```
+
+The completed run records 45 chronological milestones and 519 evidence files.
+The accepted public projection is bound to website source commit `43f120a4`
+and GitHub Pages commit `0ef77ea9`.
+
+| Product | Published state |
+| --- | --- |
+| Developer manual | `manual-reviewed`; 4,118 lines, 237 headings, 24 sections, four appendices |
+| Command reference | 183 standalone pages: 164 reader-linked and 19 supplemental; 3,974 lineage rows |
+| Website projection | 11 reviewed route/artifact dispositions; all verified HTTP 200 at closeout |
+| Manual digest | SHA-256 `09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B` |
+
+- [Download the accepted manual](/downloads/current/developer_manual_publication_v1.md).
+- [Open the command-reference checkpoint](/docs/dottalk/command-reference).
+- [Inspect the machine-readable progress artifact](/artifacts/documentation-progress-v1.json).
+
+## Promoted follow-up delta
+
+The reviewed progress and Pinocchio evidence packet is now preserved in
+[public source commit `853937f1`](https://github.com/deraldg/x64base/tree/853937f1f612c1a41a8fbda2c8d99e55fe44b9a3).
+This website projection reports that promotion without converting development
+benchmark evidence into a runtime-release claim:
+
+| Lane | Current state | Publication rule |
+| --- | --- | --- |
+| Pinocchio historical benchmarks | Eight-row baseline, plan, runner, validator, and machine identity rule are public-source promoted; historical machine remains `UNRECORDED`. | A public evidence commit is not proof that the navigation correction is in a tagged runtime release. |
+| Comments collection audit trail | Current-source reharvest and governance evidence remain in the development lane. | Keep snapshots immutable and review mutations before a separate promotion. |
+| Documentation closeout records | Gate 6–9 results, progress ledger, publication closeouts, and reproducibility tools are preserved in public source. | Append later closeouts; do not rewrite the sealed evidence packet. |
+| Messaging normalization | Large source change set passed regression without obvious canaries. | Reharvest documentation/metadata and preserve proof labels per command. |
+| METACOLLECT-238 | Separate mission created from 238 metadata-collection findings. | Do not fold the backlog silently into the completed vertical. |
+
+## Accuracy rule
+
+The website reports progress; it does not promote implementation truth by
+itself. A local or experimental lane stays labeled until its source, contracts,
+tests, review state, and public commit are available. New public pages should
+be inspected alongside neighboring project-truth, current-lanes, downloads,
+manual, and metadata pages so a correct new statement does not leave stale
+contradictions nearby.
+
+See [Pinocchio Engine Benchmarks](/docs/engine/pinocchio-benchmarks),
+[Current Work Lanes](/docs/dev/current-lanes), and
+[Website Documentation Matrix](/docs/dev/website-documentation-matrix).

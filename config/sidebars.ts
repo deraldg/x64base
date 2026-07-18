@@ -27,6 +27,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
       { label: "Indexing Rules", href: "/docs/engine/indexing-rules" },
       { label: "CDX and LMDB Indexing", href: "/docs/engine/cdx-lmdb-indexing" },
+      { label: "Pinocchio Benchmarks", href: "/docs/engine/pinocchio-benchmarks" },
       { label: "Engine Feature Crosswalk", href: "/docs/engine/feature-crosswalk" },
       { label: "Error Codes", href: "/docs/engine/error-codes" },
       { label: "API Reference", href: "/docs/engine/api-reference" }
@@ -43,6 +44,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Syntax", href: "/docs/dottalk/syntax" },
       { label: "REPL", href: "/docs/dottalk/repl" },
       { label: "Command Catalog", href: "/docs/dottalk/command-catalog" },
+      { label: "Command Reference", href: "/docs/dottalk/command-reference" },
       { label: "Function Catalog", href: "/docs/dottalk/function-catalog" },
       { label: "Examples", href: "/docs/dottalk/examples" },
       { label: "Curriculum", href: "/docs/dottalk/curriculum" }
@@ -84,6 +86,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Current Project Truth", href: "/docs/dev/project-truth" },
       { label: "Recursive Co-development", href: "/docs/dev/recursive-co-development" },
       { label: "Current Work Lanes", href: "/docs/dev/current-lanes" },
+      { label: "Documentation Progress", href: "/docs/dev/documentation-progress" },
       { label: "Site Improvement Plan", href: "/docs/dev/site-improvement-plan" },
       { label: "Important Documents", href: "/docs/dev/important-documents" },
       { label: "Website Documentation Matrix", href: "/docs/dev/website-documentation-matrix" },

@@ -77,12 +77,14 @@ should converge before public promotion.
 | Lane | Inputs | Outputs | Promotion Gate |
 | --- | --- | --- | --- |
 | Source/runtime lane | C++ source, headers, build files, scripts, runtime transcripts, canaries | implementation facts, proof notes, smoke outcomes | Must be source- or runtime-evidenced. |
+| Comments snapshot lane | Source comments, usage contracts, file identity, prior immutable snapshots | reharvest ledger, mutation comparison, unauthorized-drift findings | Snapshot generation is report-only; mutation or promotion requires review. |
 | HELP lane | HELP, CMDHELP, CMDHELPCHK, command metadata, help tables | command descriptions, argument notes, missing-topic reports | Must preserve command identity and status. |
 | Contract lane | `@dottalk.usage`, `@dottalk.contract`, comments, mutation labels | usage contracts, risk flags, public command safety notes | Mutating commands must say what they mutate. |
 | SelfDoc lane | scanners, inventories, crosswalk builders, report-only probes | CSV/MD reports, feature crosswalks, candidate findings | Uncertain findings stay labeled. |
 | MDO lane | organized report shelves, section maps, diagram ledgers | manual sections, publication decisions, attachment maps | MDO curates; it does not erase source uncertainty. |
 | Manualgen lane | inventories, validate runs, dry-run builds, accepted sections | reviewed manuals and downloadable/manual-ready artifacts | Validate before publication; note environment limits. |
 | Website lane | reviewed manual sections, evidence summaries, public media | x64base.com pages and diagrams | Publication derivative only. |
+| Progress registry lane | accepted gate records, publication commits, benchmark state, separate mission backlog | human-readable progress page and machine-readable website metadata | Completed and pending states must never be collapsed into one claim. |
 
 ## Current Report-Only Feed
 
@@ -120,6 +122,7 @@ Public pages should preserve status instead of smoothing it over.
 | source-evidenced | Found in source, headers, command registration, parser code, or build files. |
 | help-catalog-evidenced | Present in HELP/CMDHELP/help-data/catalog surfaces. |
 | manual-reviewed | Accepted into a reviewed manual section or manualgen lane. |
+| generated-reviewed | Generated report or projection reviewed before publication. |
 | planned | A real lane or design goal, but not implemented. |
 | canary | Exists as a probe, experiment, or limited proof path. |
 | review-needed | Scanner output or memory note found something that still needs human or runtime confirmation. |
