@@ -1,0 +1,121 @@
+* ============================================================
+*  PINOCCHIO NAV FILTER + BOUNDARY REGRESSION
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: Exercise the parts of the nav fix the endpoint/skip proof did not:
+*             - filtered TOP/BOTTOM/SKIP (the streaming logical_nav path)
+*             - empty-result filter (graceful, no crash)
+*             - unfiltered SKIP across an order boundary (the fast cursor path,
+*               all-or-nothing, no cache build)
+*
+*  NOTES ON EXPECTED COST
+*  ----------------------
+*  Filtered TOP/BOTTOM/SKIP stream the index cursor and test each candidate with
+*  the same visibility gate LIST/COUNT use, stopping at the first visible row.
+*  That is O(distance to the nearest visible row), NOT O(1): a filter that
+*  matches nothing costs a full scan by design. This is inherent to filtering
+*  without a filtered index -- it is not a regression, and it is the same gate
+*  the rest of the engine uses. Unfiltered SKIP (Section F) uses the O(log n)
+*  cursor step and stays in the millisecond range.
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\pinocchio\pinocchio_nav_filter_boundary.dts OUT tmp\pinocchio\filter_boundary.log
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* ============================================================
+* SECTION E -- filtered navigation (LogicalView / streaming path)
+* ============================================================
+ECHO === E0. open STUDENTS, order by SID ===
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+ECHO === E1. dense char filter LNAME = "Anderson" ===
+SET FILTER TO LNAME = "Anderson"
+COUNT
+ECHO --- E1a. filtered TOP: first visible Anderson in SID order (DISPLAY confirms LNAME) ---
+TOP
+DISPLAY
+ECHO --- E1b. SKIP forward stays within the filter (each landing is an Anderson) ---
+SKIP
+DISPLAY
+SKIP
+DISPLAY
+ECHO --- E1c. filtered BOTTOM: last visible Anderson in SID order ---
+BOTTOM
+DISPLAY
+ECHO --- E1d. SKIP +1 past the last visible row -> at end (no move) ---
+SKIP
+ECHO --- E1e. filtered TOP then SKIP -1 -> at top (no move) ---
+TOP
+SKIP -1
+SET FILTER TO
+
+ECHO === E2. descending + filter: endpoints swap ===
+SET FILTER TO LNAME = "Anderson"
+DESCEND
+ECHO --- E2a. descending filtered TOP == ascending filtered BOTTOM ---
+TOP
+DISPLAY
+ECHO --- E2b. descending filtered BOTTOM == ascending filtered TOP ---
+BOTTOM
+DISPLAY
+ASCEND
+SET FILTER TO
+
+ECHO === E3. empty-result filter -> graceful, no crash (full-scan cost is expected) ===
+SET FILTER TO SID = 99999999
+COUNT
+ECHO --- E3a. filtered TOP with no visible row -> nav reports end, no move ---
+TOP
+ECHO --- E3b. filtered BOTTOM with no visible row -> nav reports end, no move ---
+BOTTOM
+SET FILTER TO
+
+* ============================================================
+* SECTION F -- unfiltered SKIP across boundaries (fast cursor path)
+* ============================================================
+ECHO === F0. open ENROLL (5.5M), order by SID ===
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+ECHO === F1. BOTTOM then SKIP +1 -> at end (no move, no cache build) ===
+BOTTOM
+SKIP
+ECHO === F2. TOP then SKIP -1 -> at top (no move) ===
+TOP
+SKIP -1
+ECHO === F3. large in-range SKIP out and back (should round-trip to the same recno) ===
+TOP
+SKIP 1000000
+SKIP -1000000
+ECHO === F4. partial-to-boundary: near an end, an overshoot SKIP stops at the end ===
+BOTTOM
+SKIP -5
+SKIP 100
+SKIP -1000000000
+
+ECHO ============================================================
+ECHO FILTER + BOUNDARY REGRESSION COMPLETE. Confirm:
+ECHO   E1: COUNT = number of Andersons; every DISPLAY after TOP/SKIP/BOTTOM
+ECHO       shows LNAME = Anderson; SKIP past each end reports "at end"/"at top".
+ECHO   E2: descending TOP == ascending BOTTOM recno, and vice versa.
+ECHO   E3: COUNT = 0; TOP/BOTTOM report no movement, no crash.
+ECHO   F1/F2: SKIP past BOTTOM/TOP reports end/top in milliseconds (cursor path,
+ECHO          NOT a multi-second cache build).
+ECHO   F3: SKIP 1000000 (recno 1000001) then SKIP -1000000 returns to recno 1,
+ECHO       both in well under a second (one seek + N cursor advances, no re-seek).
+ECHO   F4: SKIP 100 from recno 5501353 stops at 5501358 (partial-to-end); the
+ECHO       huge negative SKIP walks back to recno 1 quickly.
+ECHO ============================================================

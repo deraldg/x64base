@@ -1,0 +1,37 @@
+SET TIMER ON
+SET ALTERNATE TO tmp\pinocchio\measure_timed
+SET ALTERNATE ON
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+ECHO === 1. full scan throughput: COUNT ===
+USE STUDENTS
+SET INDEX TO STUDENTS
+COUNT
+ECHO === 2. canary + ordered top by SID (must read 50000000 Taylor Quinn) ===
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 5
+ECHO === 3. ordered seek-to-top by LNAME (Anderson first) ===
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 20
+ECHO === 4. predicate scan over 1M rows: LIST FOR MAJOR = CSCI ===
+LIST FOR MAJOR = CSCI
+ECHO === 5. point lookup lands: SEEK a known SID ===
+SET ORDER TO TAG SID
+SEEK 50000500
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ECHO === 6. child ordered walk: ENROLL by SID (5-8M rows) ===
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+COUNT
+SET ORDER TO TAG SID
+TOP
+SMARTLIST SID,CLS_ID NEXT 10
+ECHO === 7. child point lookup: SEEK a SID on ENROLL ===
+SEEK 50000500
+SMARTLIST SID,CLS_ID NEXT 8
+ECHO === MEASURE COMPLETE -- each line above should carry its own ELAPSED ===
+SET ALTERNATE OFF

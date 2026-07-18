@@ -829,3 +829,171 @@ directory. Markdown and CSV identifiers must agree.
   were not changed.
 - Next gate: Gate 6 report-only website feed/export packet from the public
   commit, followed by separately authorized website integration and build.
+
+### DFPROG-041 — Gate 6 website feed/export packet
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS REPORT-ONLY / WEBSITE INTEGRATION HELD.
+- Progress: Added Python 3.12 report-only builder, independent validator, and
+  seven focused tests; bound public manual commit `be935053` to clean website
+  baseline `a69e0ec0` on `codex/lean-sites-publish`; emitted a human packet,
+  route CSV, machine payload, validation record, and hash manifest.
+- Source product: 4,118 lines, 237 headings, 24 sections, four appendices, 183
+  accepted command pages (164 reader-linked plus 19 supplemental), and 3,974
+  lineage rows. Public manual Git blob `db47c815...`; blob SHA-256
+  `09B593E9...B13B`.
+- Website finding: current download is 3,828 lines / 212 headings, SHA-256
+  `777E9DC3...A8CC`, and is not exact to the public manual. The July 8 download
+  manifest and two obsolete Python 3.11 validation statements also require
+  reviewed Gate 7 updates.
+- Route disposition: 11 unique targets — two create, eight update, one exact
+  manual replacement — with `manual-reviewed`, `generated-reviewed`, or
+  `help-catalog-evidenced` proof labels. Gate 7 authority is zero on every row.
+- Validation: packet/ledger/payload/validation hashes exact; all public source
+  blob IDs resolve; every existing website target matches its recorded hash;
+  proposed create targets are absent; local-path findings 0; independent
+  validator findings 0; full-stack tests 26/26.
+- Boundary: `D:\dev\x64base-site` remained clean at `a69e0ec0`; website file
+  writes, build, commit, push, deployment, and live verification are all zero.
+  Metacollect-238 remains a separate mission.
+- Evidence: `gate6_website_feed/WEBSITEFEED-20260718T155242Z/`; packet
+  `ED99C7E2...F1F6B`; payload `B62DA3DA...2D48`; ledger
+  `2CFA349E...265C`; validation `081E8886...E0B7`.
+- Next gate: review the 11 route dispositions and authorize or hold an exact
+  Gate 7 website integration plan bound to the source/site baselines.
+
+### DFPROG-042 — Gate 7 exact website integration plan
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS PLAN / WEBSITE MUTATION AND BUILD HELD.
+- Progress: Created `GATE7PLAN-20260718T160428Z` with one machine-readable
+  operation for every Gate 6 route: two creates, eight updates, and one exact
+  manual replacement. Each row fixes the target path/route, before hash or
+  ABSENT state, proof label, public source path, and content contract.
+- Replacement contract: the website Markdown download must become the exact
+  `be935053` Git blob at SHA-256 `09B593E9...B13B`, with 4,118 lines and 237
+  headings; no website-side regeneration or newline conversion is allowed.
+- Preservation: unrelated download items, source-authority wording, existing
+  catalog evidence, package/lockfile, hosting configuration, and visual design
+  remain unchanged. The 183 generated command pages are not bulk-copied into
+  website source.
+- Validation: added four validator tests; full-stack suite 30/30; live plan
+  preflight PASS with zero findings; nine existing targets exact; two create
+  targets absent; website branch/head/status exact at
+  `codex/lean-sites-publish` / `a69e0ec0` / clean.
+- Boundary: website file writes, build, commit, push, deployment, and live HTTP
+  verification remain zero. `C:\x64base`, the development manuals, and the
+  metacollect-238 mission remain untouched.
+- Evidence: plan
+  `gate7_website_integration/GATE7PLAN-20260718T160428Z/WEBSITE_INTEGRATION_EXACT_PLAN_V1.md`
+  SHA-256 `92CD4DF3...A564C`; machine specification
+  `website_integration_plan_v1.json` SHA-256 `829445E1...BBEAA`.
+- Next gate: authorize or hold this exact 11-path Gate 7 transaction. An apply
+  authorization covers website edits and local build only; Gate 8 retains
+  commit, push, and deployment authority.
+
+### DFPROG-043 — Gate 7 website integration apply and local build
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS APPLIED/BUILT / GATE 8 HELD.
+- Apply: Executed `GATE7PLAN-20260718T160428Z` as exactly 11 website paths:
+  two creates, eight updates, and one manual replacement. Working-tree scope is
+  exact with zero paths outside the plan; HEAD remains `a69e0ec0` on
+  `codex/lean-sites-publish`.
+- Manual bytes: Initial archive extraction exposed Windows newline conversion
+  and produced the accepted-worktree hash `EA2E12A9...A5A8F`. The applied file
+  was then written from raw `git cat-file` blob bytes and independently proven
+  exact at `09B593E9...B13B`, 161,868 bytes, 4,118 lines, and 237 headings. The
+  built download retains the same hash.
+- Content: Published accepted/current provenance on Downloads, Important
+  Documents, the website matrix, SelfDoc feed, engine crosswalk, command
+  catalog, and developer handbook; created the command-reference landing page
+  and conservative publication announcement; preserved website/source
+  authority boundaries and removed the obsolete Python 3.11 result.
+- Build: `npm run build` PASS; public-content guard and TypeScript PASS; 117
+  static pages generated; new command-reference and announcement HTML exist;
+  Sites-compatible `dist` output generated.
+- Validation: post-apply validator PASS / zero findings; full-stack tests
+  32/32; `git diff --check` PASS; exact changed paths 11; total diff including
+  new files 691 insertions / 210 deletions.
+- Preservation: `package.json`, `package-lock.json`, and `.openai/hosting.json`
+  hashes unchanged. No dependency, hosting configuration, source/manual,
+  metacollect, website Git index, commit, push, deployment, or live HTTP
+  mutation occurred.
+- Evidence: `gate7_website_integration/GATE7APPLY-20260718T162939Z/`;
+  execution record `97559F09...00725`; 11-row ledger `177F2E18...D0A83`.
+- Next gate: review the website diff, then separately authorize or hold Gate 8
+  commit/push and GitHub Pages publication.
+
+### DFPROG-044 — Gate 8 website source and GitHub Pages publication
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS PUBLISHED.
+- Preflight: local and remote source branch exact at `a69e0ec0`; Pages worktree
+  and remote exact at `3fd83291`; Pages status `built`; HTTPS enforced; expected
+  new routes still returned 404 before publication.
+- Source publication: staged exactly 11 paths, staged manual blob
+  `db47c815...`; committed `43f120a42d0ccd08d877c6468a705e3ba6d01619`
+  with 691 insertions / 210 deletions; pushed and read back from
+  `origin/codex/lean-sites-publish`; source worktree clean.
+- Pages publication: maintained publisher rebuilt 117 static pages and pushed
+  `0ef77ea953313fde639d2ba71c7de99f4a79b84a` to `gh-pages`.
+  Release metadata binds that Pages artifact to source `43f120a4` and
+  `publish_mode=github-pages`.
+- Pages proof: build ID `1102357325`, commit `0ef77ea9`, status `built`, no
+  error, HTTPS enforced. Pages worktree and remote readback exact/clean.
+- Boundary: no private Sites mirror attempt, package/hosting/runtime/metacollect
+  mutation, or path outside the approved ledger.
+- Evidence: `gate8_website_publication/GATE8PUBLISH-20260718T170022Z/`;
+  result SHA-256 `89175D3E...D8290`.
+
+### DFPROG-045 — Gate 9 live verification and vertical closeout
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS LIVE / GATES 1-9 COMPLETE.
+- Cache-bypassed routes: Downloads 200 / 69,697 bytes; Command Reference 200 /
+  44,656 bytes; publication announcement 200 / 24,145 bytes. Every route
+  contains its expected status, provenance, and count tokens; local-drive-path
+  findings zero.
+- Live machine products: download manifest HTTP 200, generated 2026-07-18,
+  source manual commit/hash exact; release metadata HTTP 200, source commit
+  `43f120a4`, publish mode GitHub Pages.
+- Live manual: HTTP 200 and byte-exact to public Git blob SHA-256
+  `09B593E9...B13B`, 4,118 lines, 237 headings.
+- Before/after: Command Reference 404 -> 200; announcement 404 -> 200.
+- Evidence: `gate9_live_verification/GATE9LIVE-20260718T170310Z/`;
+  verification SHA-256 `88AE0F3F...7D623`.
+- Disposition: `DOCFLUSH-20260716-001` passed its nine-gate ascent. The
+  metacollect-238 mission remains a separate, untouched follow-on task.
+
+### DFPROG-046 — Post-closeout website progress and Pinocchio preview
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS LOCAL PREVIEW / PUBLICATION HELD.
+- Accuracy audit: Reconciled Homepage, Downloads, Documentation landing,
+  Current Work Lanes, Current Project Truth, Important Documents, SelfDoc Feed
+  Pipeline, Website Documentation Matrix, sidebar navigation, and news. Fixed
+  the stale matrix claim that website publication/live verification remained
+  pending after Gate 9.
+- Products: Added Documentation Progress, Pinocchio Engine Benchmarks, a
+  progress announcement, and `documentation-progress-v1.json`. The public
+  projection separates the completed nine-gate checkpoint from source evidence
+  still pending public promotion and retains `METACOLLECT-238` as a separate
+  mission.
+- Pinocchio boundary: Published the retained before/after summary with
+  `UNRECORDED` historical machine identity, future-only Alienware m16 R2
+  profile, missing raw-after-transcript caveat, dev-not-release status, and
+  deferred Phase 2 fault injection.
+- Validation: `npm run build` PASS; public-content and TypeScript PASS; 120
+  static pages; four new preview products HTTP 200; 11 changed pages scanned
+  with zero broken local links; browser DOM checks and console checks clean;
+  accepted manual hash remains exact at `09B593E9...B13B`.
+- Scope: 13 website paths in the local working tree. No website Git add,
+  commit, push, deployment, live HTTP mutation, source/manual mutation, or
+  metacollect mutation.
+- Evidence:
+  `website_progress_delta/WEBSITEDELTA-20260718T180318Z/website_progress_preview_v1.json`;
+  `docs/maintenance/SESSION_CLOSEOUT_WEBSITE_DOCUMENTATION_PROGRESS_PREVIEW_2026-07-18.md`.
+- Next gate: maintainer review of the local preview, then seal the Pinocchio and
+  documentation closeout evidence into public source before rebinding and
+  publishing this website delta.

@@ -1,0 +1,154 @@
+* ============================================================
+*  PINOCCHIO NAV DEFECT PROOF -- CDX/LMDB endpoint + skip timing
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. Read-only (no mutation).
+*  Purpose: Prove the TOP/BOTTOM/GO/GOTO/SKIP navigation fix on the big
+*           64-bit (DBF_64) CDX/LMDB tables.
+*
+*  WHAT WAS WRONG (before the fix)
+*  -------------------------------
+*  TOP/BOTTOM and ordered SKIP on a CDX order fell through the CNX code
+*  path: they scanned every DBF record, built 6.5M keys, sorted them, and
+*  built two large caches just to return ONE record. On ENROLL (5.5M rows)
+*  that is why TOP was "super slow" -- minutes, and hundreds of MB of RAM.
+*
+*  WHAT THE FIX DOES
+*  -----------------
+*  CDX is now separated from CNX and routed through the IndexManager backend
+*  cursor -- the same path GO TOP/GOTO already used -- which resolves the LMDB
+*  env via SET PATH LMDB (env lives at LMDB/<...>/<table>.cdx.d, NOT next to
+*  the .cdx container). TOP/BOTTOM stream that cursor and stop at the first
+*  record: one index op, independent of table size. Ordered SKIP builds its
+*  position cache from the ascending index cursor instead of scanning + sorting
+*  the DBF. Filtered TOP/BOTTOM/SKIP and GO/GOTO endpoints stream the cursor
+*  and stop at the first visible row.
+*
+*  ORDERED SKIP
+*  ------------
+*  Ordered SKIP now does a single recno-precise cursor step: seek the current
+*  (key,recno) in the LMDB index and MDB_NEXT/MDB_PREV. No position map, no DBF
+*  scan -- O(log n) even on the FIRST skip. The old position-map cache remains
+*  only as a fallback if the current record is not present in the index.
+*
+*  THE METRIC
+*  ----------
+*  SET TIMER ON makes the shell print elapsed per command. That is the proof:
+*  every TOP / BOTTOM / GO TOP / GO BOTTOM / GOTO FIRST / GOTO LAST below
+*  should now report in milliseconds regardless of the 5.5M row count.
+*  Re-run against the OLD binary to capture the "before" numbers.
+*
+*  CORRECTNESS
+*  -----------
+*  TALK ON echoes the landing record number, and SMARTLIST reads a few rows
+*  in logical order after each endpoint so the fast answer is also the RIGHT
+*  answer (ordered TOP by SID must land on 50000000 Taylor Quinn).
+*
+*  RUN
+*  ---
+*  DOTSCRIPT TRACE scripts\pinocchio\pinocchio_nav_defect_proof.dts OUT tmp\pinocchio\nav_proof.log
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* ============================================================
+* SECTION A -- ENROLL (5.5M rows): the reported slow case
+* ============================================================
+ECHO === A0. open ENROLL + attach CDX, order by SID ===
+SELECT 0
+USE ENROLL
+SET INDEX TO ENROLL
+COUNT
+SET ORDER TO TAG SID
+
+ECHO === A1. TOP  (was minutes; expect milliseconds; canary SID 50000000) ===
+TOP
+SMARTLIST SID,CLS_ID NEXT 5
+
+ECHO === A2. BOTTOM (reverse cursor, one step; expect milliseconds) ===
+BOTTOM
+SMARTLIST SID,CLS_ID NEXT 5
+
+ECHO === A3. GO TOP / GO BOTTOM (endpoint via streaming cursor) ===
+GO TOP
+GO BOTTOM
+
+ECHO === A4. GOTO FIRST / GOTO LAST (same endpoint primitives) ===
+GOTO FIRST
+GOTO LAST
+
+ECHO === A5. repeated TOP x20 -- proves it is O(1), not a warmed cache ===
+LOOP 20
+  TOP
+ENDLOOP
+
+* ============================================================
+* SECTION B -- ordered SKIP on ENROLL (LMDB-sourced, not DB scan)
+* ============================================================
+ECHO === B1. TOP then forward walk with SKIP ===
+TOP
+SKIP
+SKIP
+SKIP 10
+SKIP 100
+
+ECHO === B2. backward walk with SKIP ===
+SKIP -1
+SKIP -10
+
+ECHO === B3. SKIP 0 re-reads current (no movement) ===
+SKIP 0
+
+* ============================================================
+* SECTION C -- STUDENTS (1M rows): char-key endpoints (LNAME C20)
+* ============================================================
+ECHO === C0. open STUDENTS, order by SID (numeric key) ===
+SELECT 1
+USE STUDENTS
+SET INDEX TO STUDENTS
+COUNT
+SET ORDER TO TAG SID
+ECHO --- C1. TOP / BOTTOM by SID ---
+TOP
+BOTTOM
+
+ECHO === C2. order by LNAME (char key) -- Anderson class should be first ===
+SET ORDER TO TAG LNAME
+TOP
+SMARTLIST SID,LNAME,FNAME NEXT 10
+BOTTOM
+SMARTLIST SID,LNAME,FNAME NEXT 5
+
+* ============================================================
+* SECTION D -- descending endpoints (fix is ascending-aware)
+* ------------------------------------------------------------
+* DESCEND flips the active order direction. After it, TOP must return the
+* record that was previously BOTTOM. If your build spells this differently,
+* the runner reports "Unknown command" and continues -- adjust as needed.
+* ============================================================
+ECHO === D1. DESCEND then TOP/BOTTOM must swap ends ===
+SELECT 0
+SET ORDER TO TAG SID
+DESCEND
+TOP
+SMARTLIST SID,CLS_ID NEXT 3
+BOTTOM
+SMARTLIST SID,CLS_ID NEXT 3
+ASCEND
+
+ECHO ============================================================
+ECHO NAV PROOF COMPLETE. A zero exit code is NOT proof -- confirm:
+ECHO   - every TOP/BOTTOM/GO/GOTO reports milliseconds (SET TIMER ON),
+ECHO     NOT seconds/minutes, on the 5.5M ENROLL table
+ECHO   - ordered TOP by SID lands on 50000000 Taylor Quinn (A1)
+ECHO   - BOTTOM lands on the largest SID; endpoints agree across
+ECHO     TOP / GO TOP / GOTO FIRST (and BOTTOM / GO BOTTOM / GOTO LAST)
+ECHO   - SMARTLIST rows are in logical tag order at each endpoint
+ECHO   - after DESCEND, TOP and BOTTOM swap (D1)
+ECHO   - no "Unknown command", missing tag, or truncated-key errors
+ECHO Compare these elapsed numbers against the pre-fix binary for the delta.
+ECHO ============================================================

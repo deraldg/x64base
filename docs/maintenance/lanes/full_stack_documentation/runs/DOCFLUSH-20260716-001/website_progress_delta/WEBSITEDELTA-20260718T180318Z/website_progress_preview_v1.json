@@ -1,0 +1,36 @@
+{
+  "schema": "dottalk.website.progress_preview.v1",
+  "recorded_utc": "2026-07-18T18:03:18Z",
+  "status": "PASS_LOCAL_PREVIEW",
+  "website_root": "D:/dev/x64base-site",
+  "website_branch": "codex/lean-sites-publish",
+  "website_baseline_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+  "publication_state": "not_committed_not_pushed_not_deployed",
+  "changed_paths": 13,
+  "new_public_pages": [
+    "/docs/dev/documentation-progress/",
+    "/docs/engine/pinocchio-benchmarks/",
+    "/news/announcements/documentation-flush-pinocchio-progress/"
+  ],
+  "new_machine_artifact": "/artifacts/documentation-progress-v1.json",
+  "accuracy_repairs": [
+    "Replaced the stale website-matrix claim that publication and live verification were still pending.",
+    "Added the accepted command-reference route to primary documentation navigation.",
+    "Separated the completed nine-gate checkpoint from development evidence pending public-source promotion.",
+    "Published Pinocchio historical limitations beside the before/after figures.",
+    "Kept METACOLLECT-238 as a separate 238-finding mission."
+  ],
+  "validation": {
+    "public_content_guard": "PASS",
+    "typescript": "PASS",
+    "static_pages": 120,
+    "new_routes_http_200_local": 4,
+    "checked_changed_pages": 11,
+    "broken_local_links": 0,
+    "browser_console_errors": 0,
+    "manual_sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B",
+    "manual_exact_unchanged": true
+  },
+  "preview_url": "http://127.0.0.1:3000/docs/dev/documentation-progress/",
+  "next_gate": "maintainer local review, then source-evidence promotion before any website commit or live publication"
+}

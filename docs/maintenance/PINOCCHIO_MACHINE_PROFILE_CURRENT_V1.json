@@ -1,0 +1,16 @@
+{
+  "schema": "dottalk.pinocchio.machine_profile.v1",
+  "captured_at_utc": "2026-07-18T02:24:01Z",
+  "capture_method": "Windows CIM current-workstation observation",
+  "machine_type": "Alienware m16 R2",
+  "manufacturer": "Alienware",
+  "model": "Alienware m16 R2",
+  "cpu": "Intel(R) Core(TM) Ultra 9 185H",
+  "logical_processors": 22,
+  "memory_gib": 63.5,
+  "os": "Microsoft Windows 11 Pro",
+  "os_version": "10.0.26200",
+  "historical_run_binding": "UNVERIFIED",
+  "allowed_use": "Future Pinocchio baseline input unless a run captures a different profile",
+  "note": "Do not retroactively assign this profile to the July 15 or July 18 historical measurements."
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "dottalk.website.live_verification.v1",
+  "status": "PASS",
+  "recorded_utc": "2026-07-18T17:04:05Z",
+  "source_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+  "pages_commit": "0ef77ea953313fde639d2ba71c7de99f4a79b84a",
+  "pages_build_id": 1102357325,
+  "pages_build_status": "built",
+  "cache_buster": "gate9-20260718170310",
+  "routes": [
+    {
+      "url": "https://x64base.com/downloads/?v=gate9-20260718170310",
+      "status": 200,
+      "bytes": 69697,
+      "required_tokens": ["Accepted documentation snapshot", "be935053", "Command-reference snapshot"],
+      "local_drive_path_findings": 0
+    },
+    {
+      "url": "https://x64base.com/docs/dottalk/command-reference/?v=gate9-20260718170310",
+      "status": 200,
+      "bytes": 44656,
+      "required_tokens": ["DotTalk++ Command Reference", "Standalone command pages", "183", "manual-reviewed", "be935053"],
+      "local_drive_path_findings": 0
+    },
+    {
+      "url": "https://x64base.com/news/announcements/developer-manual-gate5-published/?v=gate9-20260718170310",
+      "status": 200,
+      "bytes": 24145,
+      "required_tokens": ["Reviewed developer manual", "4,118", "3,974", "be935053"],
+      "local_drive_path_findings": 0
+    }
+  ],
+  "download_manifest": {
+    "url": "https://x64base.com/downloads/current/DOWNLOAD_MANIFEST.json?v=gate9-20260718170310",
+    "status": 200,
+    "generated_on": "2026-07-18",
+    "source_commit": "be9350531251bb682f0476d652d99ca137861577",
+    "manual_sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B"
+  },
+  "release_metadata": {
+    "url": "https://x64base.com/artifacts/site-release.json?v=gate9-20260718170310",
+    "status": 200,
+    "source_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+    "publish_mode": "github-pages"
+  },
+  "manual_download": {
+    "url": "https://x64base.com/downloads/current/developer_manual_publication_v1.md?v=gate9-20260718170310",
+    "status": 200,
+    "sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B",
+    "lines": 4118,
+    "headings": 237,
+    "exact_to_public_git_blob": true
+  },
+  "before_after": {
+    "command_reference_before": 404,
+    "command_reference_after": 200,
+    "announcement_before": 404,
+    "announcement_after": 200
+  },
+  "boundaries": {
+    "private_sites_mirror_verified": false,
+    "canonical_public_lane": "GitHub Pages",
+    "local_preview_stopped": true
+  }
+}

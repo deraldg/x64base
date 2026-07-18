@@ -1,0 +1,50 @@
+{
+  "schema": "dottalk.website.publication_result.v1",
+  "status": "PASS",
+  "plan": "GATE8PLAN-20260718T165747Z",
+  "recorded_utc": "2026-07-18T17:04:05Z",
+  "source": {
+    "repository": "https://github.com/deraldg/x64base.git",
+    "branch": "codex/lean-sites-publish",
+    "parent_commit": "a69e0ec069a1a8034053a753055aa1691c320dfb",
+    "commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+    "commit_message": "Publish reviewed developer manual documentation",
+    "changed_paths": 11,
+    "insertions": 691,
+    "deletions": 210,
+    "remote_readback_exact": true,
+    "working_tree_clean": true,
+    "manual_git_blob_oid": "db47c815723c6de8a1293431f779d5e3caf2e1d5"
+  },
+  "build": {
+    "command": "npm run publish:github-pages",
+    "public_content_guard": "PASS",
+    "typescript": "PASS",
+    "static_pages": 117,
+    "result": "PASS"
+  },
+  "pages": {
+    "branch": "gh-pages",
+    "parent_commit": "3fd83291d2a16180e29e16d531858c43bf292bb6",
+    "commit": "0ef77ea953313fde639d2ba71c7de99f4a79b84a",
+    "commit_message": "Publish x64base site 2026-07-18T17-00-22-194Z",
+    "remote_readback_exact": true,
+    "worktree_clean": true,
+    "release_metadata_published_utc": "2026-07-18T17:00:14.193Z",
+    "release_metadata_source_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
+    "build_id": 1102357325,
+    "build_status": "built",
+    "build_created_utc": "2026-07-18T17:00:31Z",
+    "build_updated_utc": "2026-07-18T17:00:55Z",
+    "https_enforced": true,
+    "url": "https://x64base.com/"
+  },
+  "boundaries": {
+    "paths_outside_gate7_ledger": 0,
+    "dependency_changes": 0,
+    "hosting_configuration_changes": 0,
+    "runtime_source_changes": 0,
+    "metacollect_mission_mutated": 0,
+    "private_sites_mirror_attempted": 0
+  }
+}
