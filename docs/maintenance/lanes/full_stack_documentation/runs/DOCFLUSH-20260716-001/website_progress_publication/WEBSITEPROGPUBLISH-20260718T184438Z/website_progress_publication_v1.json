@@ -1,0 +1,43 @@
+{
+  "schema": "x64base.documentation.website-progress-publication.v1",
+  "recorded_at_utc": "2026-07-18T18:44:38Z",
+  "run_id": "DOCFLUSH-20260716-001",
+  "status": "PASS_LIVE",
+  "source_promotion": {
+    "commit": "853937f1f612c1a41a8fbda2c8d99e55fe44b9a3",
+    "paths": 33,
+    "hash_findings": 0,
+    "pinocchio_validator": "PASS",
+    "focused_tests": 15
+  },
+  "website": {
+    "source_branch": "codex/lean-sites-publish",
+    "source_commit": "780ffb89ad3bc09f4629b60645374c834c17588b",
+    "changed_paths": 13,
+    "static_pages": 120,
+    "public_content_guard": "PASS",
+    "typescript": "PASS"
+  },
+  "github_pages": {
+    "commit": "0011f641b074a93b7b5a187a71957af7f6543e13",
+    "build_id": 1102481785,
+    "build_status": "built",
+    "https_enforced": true,
+    "canonical_url": "https://x64base.com/"
+  },
+  "live_verification": {
+    "human_routes_checked": 6,
+    "machine_artifacts_checked": 2,
+    "http_findings": 0,
+    "token_findings": 0,
+    "local_path_findings": 0,
+    "manual_bytes": 161868,
+    "manual_sha256": "09B593E9070E7FE70B61BF8745CA0E620E1ADF62BCD5A286F58704B774C8B13B"
+  },
+  "boundaries": {
+    "messaging_mutated": false,
+    "metacollect_238_mutated": false,
+    "comments_audit_promoted": false,
+    "private_sites_deploy_attempted": false
+  }
+}

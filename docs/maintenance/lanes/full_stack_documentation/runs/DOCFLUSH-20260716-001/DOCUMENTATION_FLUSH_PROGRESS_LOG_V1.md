@@ -997,3 +997,41 @@ directory. Markdown and CSV identifiers must agree.
 - Next gate: maintainer review of the local preview, then seal the Pinocchio and
   documentation closeout evidence into public source before rebinding and
   publishing this website delta.
+
+### DFPROG-047 — Public-source evidence promotion
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS PUBLISHED.
+- Scope: promoted exactly 33 documentation-progress, Pinocchio, Gate 6–9,
+  runner, validator, and focused-test paths to canonical public source.
+- Validation: 33/33 staging hashes exact; Pinocchio validator PASS for eight
+  rows; Python 3.12 focused tests 15/15; exact Git index scope with zero
+  unrelated paths.
+- Publication: canonical `main` commit
+  `853937f1f612c1a41a8fbda2c8d99e55fe44b9a3`, pushed and read back.
+- Boundary: unrelated preserved staging files remained unstaged; messaging,
+  comments snapshots, raw ignored benchmark data, and `METACOLLECT-238` were
+  not promoted.
+- Evidence: `source_promotion/SOURCEPROMOTE-20260718T181000Z/`, ledger SHA-256
+  `D4C02518...AE0F8`.
+
+### DFPROG-048 — Website progress publication and live closeout
+
+- Recorded: 2026-07-18 UTC.
+- Status: PASS LIVE.
+- Website source: rebound the reviewed 13-path projection to public source
+  `853937f1`, rebuilt 120 static pages, and committed/pushed exact source commit
+  `780ffb89ad3bc09f4629b60645374c834c17588b`.
+- Pages: published `0011f641b074a93b7b5a187a71957af7f6543e13`;
+  build `1102481785` is `built`, error-free, and HTTPS enforced.
+- Live proof: `www` redirect plus six human routes and two machine artifacts
+  verified; all HTTP 200, required tokens present, zero local-path findings.
+  Site release source is exact and the accepted manual remains 161,868 bytes
+  with SHA-256 `09B593E9...B13B`.
+- Boundary: no messaging, comments-audit, metacollect, manual, or private Sites
+  mutation.
+- Evidence:
+  `website_progress_publication/WEBSITEPROGPUBLISH-20260718T184438Z/website_progress_publication_v1.json`;
+  `docs/maintenance/SESSION_CLOSEOUT_DOCUMENTATION_PROGRESS_PUBLICATION_2026-07-18.md`.
+- Disposition: the documentation flush and reviewed public progress projection
+  are complete; `METACOLLECT-238` remains a separate mission.

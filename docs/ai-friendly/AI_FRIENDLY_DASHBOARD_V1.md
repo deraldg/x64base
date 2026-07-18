@@ -135,6 +135,7 @@ Use this table when reading any AI Friendly item:
 
 | Date | Work | Mutation | Evidence read | Result |
 | --- | --- | --- | --- | --- |
+| 2026-07-18 | Publish documentation progress and Pinocchio evidence | Promoted an exact 33-path evidence packet to canonical source, rebound and committed the exact 13-path website projection, published GitHub Pages, and recorded the live closeout. Messaging, comments-audit snapshots, the accepted manual, private Sites, and `METACOLLECT-238` were untouched. | Source-promotion ledger and hashes; Pinocchio validator and 15 focused Python 3.12 tests; 120-page site build; Pages build status; cache-bypassed human routes, JSON artifacts, release metadata, and manual bytes. | Public source `853937f1`; website source `780ffb89`; Pages `0011f641`, build `1102481785` built. All live checks pass with zero local-path findings; manual hash remains exact. |
 | 2026-07-18 | Correct staging recovery and create C-drive mirror | Added Python 3.12 escrow tooling/tests, amended promotion/rebuild contracts, generated bundle/tar/ledgers, removed overlay-control self-reference, hardened fresh rebuild fail-closed behavior, and created `C:\code\ccode` recovery mirror. `C:\x64base`, Git, and website unchanged. | All 1,951 HEAD files; 36 public-only paths; 20-file dirty preservation; local `origin/main`; build-critical C/D comparison; Gate 5 plan and deny-list. | Final escrow `03265F97` binds 92,540,334 baseline bytes, complete history, 20 dirty files, and 316-file plan `12EEFD28`/`B43391F4`. C mirror bundle verifies; fresh execution fails closed without escrow. |
 | 2026-07-18 | Preserve dirty source staging and plan clean selective overlay | Added Python 3.12 preservation/planning tools and six tests; copied all 20 dirty C files into a verified D backup; retained binary patches; compared full manifest report; generated exact Gate 5-only file ledger. No C/Git/website write. | Recorded 20-path hashes/status, `fa7c04dc` HEAD, reviewed 20-entry delta `D8FBEF82`, current manifest, clean HEAD Git tree, deny-list, ordinary report-only overlay. | Preservation passes 20/20 and 131,935 bytes. Full overlay is 559 files/45.95 MB; selective plan `STAGEPLAN-20260718T140134Z` is 316 files/1.38 MB, 315 create/1 replace, 183 pages, zero unrelated intersections/leaks/findings. |
 | 2026-07-18 | Apply Gate 5 development documentation package | Exact authorization, Python 3.12 fail-closed apply, six-file backup, 25 finalized outputs, after-hash-guarded rollback, live audits, read-only staging refresh, progress and closeout; no reader, HELP/META, product source, appendix, staging, Git, or website mutation. | Plan `F08CF081`, manifest `0E4D0859`, ledger `93B00396`, every before/staged/after hash, publication/pointer contracts, current staging branch/status/hashes. | Apply `MANRUN-20260718T134313Z-03C8C09F` passes 25/25. Live reference is 183 pages/links; readiness 26/0/0; pointer 21/1/0; 53+19 tests. Staging preservation and clean overlay planning are next. |
@@ -211,6 +212,7 @@ Use this table when reading any AI Friendly item:
 
 ## Next Practical Step
 
-The documentation-to-x64base.com ascent is complete. Keep
-`METACOLLECT-238-20260717-001` independent and open it only as a separate
-authorized mission; no website publication gate remains open.
+The documentation-to-x64base.com ascent and its reviewed progress projection
+are complete. Keep `METACOLLECT-238-20260717-001` independent and open it only
+as a separate authorized mission. Comments-audit promotion is also a separate
+reviewed transaction; no website publication gate remains open.

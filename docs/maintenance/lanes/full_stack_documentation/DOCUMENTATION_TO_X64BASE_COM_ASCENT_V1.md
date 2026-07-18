@@ -151,3 +151,17 @@ disposition before the next gate begins.
 Close `DOCFLUSH-20260716-001` as a passing nine-gate vertical. Continue the
 separate `METACOLLECT-238-20260717-001` mission only as its own authorized
 documentation/metadata task; it was not mutated by this ascent.
+
+## Post-closeout progress projection
+
+Maintainer review accepted the local progress preview. The exact 33-path
+progress/Pinocchio evidence packet was promoted to canonical source commit
+`853937f1f612c1a41a8fbda2c8d99e55fe44b9a3`. The rebound 13-path website
+projection passed a 120-page build, was committed as
+`780ffb89ad3bc09f4629b60645374c834c17588b`, and was published to GitHub Pages
+commit `0011f641b074a93b7b5a187a71957af7f6543e13`. Pages build `1102481785`
+reported `built`; cache-bypassed live verification passed with zero findings
+and the accepted manual digest unchanged.
+
+This follow-up did not merge messaging, comments-audit snapshots, or
+`METACOLLECT-238` into the completed vertical.
