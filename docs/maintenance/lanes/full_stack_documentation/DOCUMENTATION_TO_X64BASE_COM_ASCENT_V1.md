@@ -20,7 +20,7 @@ disposition before the next gate begins.
 | 2 | Canonical acceptance preflight | Candidate and exact mutation plan only | PASS — 21 PASS / 1 intentional REVIEW / 0 FAIL |
 | 3 | Controlled manual acceptance and rebuild | Accepted manual sections, appendix, reader, and manifests; separately authorized | PASS — 8/8 APPLIED, 0 FINDINGS |
 | 4 | Manual publication-readiness proof | Report-only validation of links, TOC, headers, provenance, accessibility, and artifact completeness | PASS — 26 PASS / 0 REVIEW / 0 FAIL after 183/183 authorized apply |
-| 5 | Clean x64base source-staging promotion | Reviewed files only into `C:\x64base`, with staged validation and supporting source/docs commit | PASS — 316 reviewed paths committed and pushed as `be935053`; 19 preserved non-overlay paths remain local and unstaged |
+| 5 | Clean x64base source-staging promotion | Reviewed files only into `C:\x64base`, with staged validation and supporting source/docs commit | PASS — 316 reviewed paths committed and pushed as `be935053`; closeout at `1b0625d0`; 18 preserved non-overlay paths remain local and unstaged |
 | 6 | Website feed/export packet | Reviewed manual summaries, proof labels, source anchors, and route targets | PENDING |
 | 7 | Website integration and local build | `D:\dev\x64base-site` source plus generated public artifact | PENDING |
 | 8 | Website publication | Website commit/push and GitHub Pages deployment | PENDING |
@@ -101,7 +101,8 @@ disposition before the next gate begins.
   full-stack 17 pass plus two named evidence skips;
 - Git publication: exactly 316 ledger paths, 33,015 insertions / one deletion,
   commit `be9350531251bb682f0476d652d99ca137861577`, pushed and read back from
-  `refs/heads/main`; 19 non-overlay staging paths remain unstaged;
+  `refs/heads/main`; closeout commit `1b0625d0` losslessly reconciled the
+  previously preserved AI dashboard, leaving 18 non-overlay paths unstaged;
 - approved prose: `MANRUN-20260718T020630Z-9367A5BA`;
 - two additive section copies, one candidate appendix, one contextual reader;
 - three diffs, 161 aggregate additions across their separate review surfaces,

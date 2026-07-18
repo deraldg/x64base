@@ -44,9 +44,11 @@ pushed to `origin/main`:
 - remote ref: `refs/heads/main` read back at the same commit;
 - commit shape: 316 files, 33,015 insertions, one deletion.
 
-No path outside the reviewed overlay ledger entered the commit. Nineteen
-preserved staging paths remain present and unstaged; the post-commit index is
-empty.
+No path outside the reviewed overlay ledger entered the primary commit. It
+left 19 preserved staging paths present and unstaged. Closeout commit
+`1b0625d0cdfbeaa5f5195d4968b1bc22ccabeadc` then losslessly reconciled the AI
+dashboard's lowercase public links and C-only future assimilation smoke,
+leaving 18 other preserved paths unstaged; the post-commit index is empty.
 
 ## Recovery and staging proof
 
@@ -92,7 +94,7 @@ This gate did not change:
 - website build output or GitHub Pages;
 - HELP, META, COMMENTS, DBF/CDX/LMDB runtime state;
 - candidate metacollect evidence or raw benchmark transcripts;
-- the 19 preserved non-overlay staging paths.
+- the 18 remaining preserved non-overlay staging paths.
 
 ## Next gate
 

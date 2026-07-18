@@ -818,10 +818,12 @@ directory. Markdown and CSV identifiers must agree.
   staged full-stack 17 pass plus two named evidence skips; repaired public
   README target resolves; 40 intentional two-space Markdown hard breaks and
   12 inherited blank-EOF conventions retain their recorded waiver.
-- Preservation: The 19 non-overlay staging paths remain present and unstaged;
-  the Git index is empty after commit. The offline escrow and `C:\code\ccode`
-  recovery mirror remain the restoration source for baseline-only, dirty, and
-  ignored layers.
+- Preservation: The primary commit left 19 non-overlay staging paths present
+  and unstaged. Closeout commit `1b0625d0` losslessly reconciled the AI
+  dashboard's public link casing and C-only future assimilation smoke, leaving
+  18 other paths unstaged. The offline escrow and `C:\code\ccode` recovery
+  mirror remain the restoration source for baseline-only, dirty, and ignored
+  layers.
 - Boundary: `D:\dev\x64base-site`, website content, website build output,
   GitHub Pages, candidate metacollect evidence, and raw benchmark transcripts
   were not changed.
