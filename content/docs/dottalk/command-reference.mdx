@@ -1,0 +1,41 @@
+---
+title: "DotTalk++ Command Reference"
+description: "Accepted 183-page DotTalk++ command-reference snapshot with review status, provenance, and regeneration boundaries."
+---
+
+This page is the stable website entrypoint for the accepted DotTalk++ command
+reference. It identifies the reviewed snapshot without duplicating all 183
+generated command pages into the website repository.
+
+## Accepted snapshot
+
+| Measure | Accepted value |
+| --- | ---: |
+| Standalone command pages | 183 |
+| Reader-linked pages | 164 |
+| Supplemental pages | 19 |
+| Command lineage rows | 3,974 |
+| Proof label | `manual-reviewed` |
+| Public source commit | `be935053` |
+
+The 164 reader-linked pages follow the commands resolved from the accepted
+developer manual. The 19 supplemental pages close reviewed source/HELP gaps
+without pretending that every page came from the reader body.
+
+## Read and inspect
+
+- [Download the accepted developer manual](/downloads/current/developer_manual_publication_v1.md).
+- [Browse the source-derived command catalog](/docs/dottalk/command-catalog).
+- [Inspect the accepted reference index](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/README.md).
+- [Inspect the accepted reference manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json).
+
+## Authority and regeneration
+
+This landing page is a reviewed derivative. Public source, runtime behavior,
+HELP/CMDHELP, usage contracts, and the accepted manualgen artifacts remain the
+technical evidence.
+
+When command registration, HELP, contracts, or manual sections change, the
+reference must be reharvested, validated, reviewed, and accepted before this
+snapshot is advanced. Website prose alone cannot promote a command or change
+its support status.

@@ -16,6 +16,7 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | source-evidenced | Source, headers, registries, or contracts show the behavior. | Can be documented as implemented/source-defined, but should avoid runtime claims until tested. |
 | help-catalog-evidenced | HELP, CMDHELP, command catalog, or metadata lists the surface. | Can seed catalog pages, then requires source/runtime review. |
 | generated-reviewed | A report, matrix, manual section, or diagram was generated and reviewed before publication. | Can be promoted to website/manual copy with provenance. |
+| manual-reviewed | A manual or reference artifact passed its documented review and acceptance gate. | Can be published with its pinned source snapshot, counts, and regeneration boundary. |
 | planned-or-in-progress | The lane is real planning or active development, but not complete. | Keep under development docs and avoid product-complete wording. |
 | review-needed | A scanner, memory note, or draft found something not yet verified. | Do not promote as a stable website claim. |
 
@@ -41,8 +42,8 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | Laboratory Campus | `/docs/labtalk/*` | Education lane, runtime evidence lane, campus planning lane | education commands, screenshots, SDLC diagrams, portal screenshots, lab/curriculum pages | Alpha/collaboration area. Pages must preserve the difference between existing features, planned labs, and collaboration proposals. |
 | LMS communications lane | `/docs/labtalk/lms-integration-lane` | LabTalk LMS registry, provider-neutral message contract, local queue/CLI, portal execution lane | `labtalk/lms/README.md`, `labtalk/registries/lms.yaml`, `src/labtalk/lms/pipe.py`, `src/labtalk/lms/cli.py`, message schema, status transcript | Reserved/local-only integration slice. Local status and queue behavior are documented; Moodle remains a future candidate with live delivery disabled and no credentials or student data stored. |
 | Runtime evidence gallery | `/docs/labtalk/runtime-evidence` | Evidence curation lane, screenshot/media lane | `public/images/evidence/*.jpg`, screenshot captions, runtime transcript notes | Curated website proof surface. Screenshots are evidence artifacts and should be replaced when current UI changes. |
-| Important documents shelf | `/docs/dev/important-documents` | MDO lane, AI-friendly summaries, manual publication lane | SelfDoc/MDO summaries, diagrams, manualgen reports, reviewed document inventory | Current public shelf for the most important document layers. Manuals are planned for publication only after reviewed generation. |
-| DotTalk++ artifact/manual room | Publication candidate, currently withheld from public navigation until HTTPS validates | Manualgen lane, command/reference export lane, generated SelfDoc/MDO reports, proof-packet lane, accessibility text lane, download governance lane | artifact manifest, route manifest, reviewed manual sections, command/function exports, generated reports, proof packets, accessibility status fields | Not a current public authority. Versioned artifacts belong on GitHub Releases; x64base.com remains the documentation site. |
+| Important documents shelf | `/docs/dev/important-documents` | MDO lane, AI-friendly summaries, manual publication lane | SelfDoc/MDO summaries, diagrams, manualgen reports, reviewed document inventory | Current public shelf. The accepted Markdown manual and 183-page command-reference snapshot are linked with pinned provenance. |
+| DotTalk++ artifact/manual room | `/downloads`, `/docs/dottalk/command-reference` | Manualgen lane, command/reference export lane, generated SelfDoc/MDO reports, proof-packet lane, accessibility text lane, download governance lane | artifact manifest, route manifest, reviewed manual sections, command/function exports, generated reports, proof packets, accessibility status fields | The reviewed Markdown manual and reference landing page are public. Versioned release artifacts still belong on GitHub Releases; x64base.com remains the documentation site. |
 | SelfDoc publication path | `/docs/dev/selfdoc-feed-pipeline`, `/docs/dev/selfdoc-website-publication` | Source-to-website feed lane, manualgen lane, contract scan lane, simplex/duplex publication gates | `tools/manualgen`, `tools/selfdoc`, comments/contracts scanners, generated reports, promotion rules, website-owned artifact exceptions | Reviewed process docs. Automation is partial; the rules are intentionally stricter than the current tooling. |
 | Historical source lineage | `/docs/dev/historical-source-lineage` | Preservation lane, provenance lane, historical source inventory | `public/artifacts/source-lineage/source-lineage-seed.csv`, local historical folders, checksums, source review notes | Active preservation page with proof labels. Historical code is evidence, not automatic current product behavior. |
 | Application UI DSL lane | `/docs/dev/application-ui-dsl-lane` | Planned UI language lane, xBase ecosystem comparison, atomic SAY/GET research | comparison notes, historical xBase UI concepts, current DotTalk++ GUI/TUI boundary | Planned lane only. Do not imply `CREATE MENU`, `CREATE WINDOW`, or dialog DSL syntax is implemented. |
@@ -63,6 +64,23 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | Historical source inventory | path, size, timestamp, checksum, source family, truth level | historical source lineage, source museum artifacts | Checksums and truth-level labels preserved. |
 | Ecosystem research matrix | outside product capability comparisons, current x64base status | ecosystem context, feature comparison, x64 capacity lesson | External claims separated from x64base source/runtime proof. |
 
+## 2026-07-18 Publication Checkpoint
+
+The current manualgen publication was validated with Python `3.12.9` and
+accepted from public source commit
+[`be935053`](https://github.com/deraldg/x64base/tree/be9350531251bb682f0476d652d99ca137861577).
+
+- Developer manual: 4,118 lines, 237 headings, 24 sections, four appendices.
+- Command reference: 183 pages, including 164 reader-linked and 19 supplemental
+  pages, with 3,974 lineage rows.
+- Proof labels: `manual-reviewed` for the accepted reader/reference and
+  `generated-reviewed` for this website projection.
+- Remaining gates: website commit/publication, followed by cache-bypassed live
+  route verification and documentation closeout.
+
+The feed is still only partly automated. Acceptance and website promotion keep
+their explicit human review and source-provenance gates.
+
 ## Proofed Site Checklist
 
 A website page is proofed when the page can answer four questions:
@@ -74,6 +92,6 @@ A website page is proofed when the page can answer four questions:
 
 The site currently meets this standard best for engine feature crosswalks,
 data mutators, x64 capacity math, runtime evidence, historical source lineage,
-and the SelfDoc publication pages. The weaker areas are still the fully
-automated regeneration loop and final manual publication, which are documented
-as planned/developing rather than complete.
+and the SelfDoc publication pages. The accepted manual/reference checkpoint is
+now public in site source; the weaker area remains the fully automated
+regeneration loop, which is documented as partial rather than complete.

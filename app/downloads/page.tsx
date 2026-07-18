@@ -35,6 +35,12 @@ const startingPoints = [
     icon: ScrollText
   },
   {
+    title: "Command Reference",
+    description: "The accepted 183-page command-reference snapshot and its public-source provenance.",
+    href: "/docs/dottalk/command-reference",
+    icon: BookOpen
+  },
+  {
     title: "Runtime Evidence",
     description: "Screenshots and proof artifacts curated as evidence, not release polish claims.",
     href: "/docs/labtalk/runtime-evidence",
@@ -67,8 +73,8 @@ const stagedDownloads = [
     href: "/downloads/current/DotTalkPP_x64base_Manual_Preview_V1.docx"
   },
   {
-    title: "Primary Reader Manual (Markdown)",
-    description: "Current primary reader manual artifact from the manualgen publication lane.",
+    title: "Accepted Developer Manual (Markdown)",
+    description: "Current manual-reviewed artifact: 4,118 lines, 237 headings, 24 sections, and four appendices.",
     href: "/downloads/current/developer_manual_publication_v1.md"
   },
   {
@@ -175,6 +181,28 @@ export default function DownloadsPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-card/40 p-5">
+        <h2 className="text-lg font-semibold tracking-tight">Accepted documentation snapshot</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          The current Markdown manual and 183-page command reference were reviewed and promoted from
+          public source commit <code>be935053</code>. The manual carries the
+          <code> manual-reviewed</code> proof label and contains 4,118 lines and 237 headings.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <a
+            href="https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-brand hover:underline"
+          >
+            Manual acceptance manifest
+          </a>
+          <Link href="/docs/dottalk/command-reference" className="font-medium text-brand hover:underline">
+            Command-reference snapshot
+          </Link>
         </div>
       </section>
 

@@ -57,7 +57,7 @@ truth system.
 | SelfDoc reports | Report-only extracts for features, contracts, comments, evidence, diagrams, and crosswalks. | Selected reports are promoted after review. |
 | MDO organization | Master Documentation Organizer structure for lanes, manuals, evidence, sections, and promotion decisions. | Public pages should cite the organized lane, not raw scanner guesses. |
 | AI-friendly artifacts | Compact summaries, manifests, crosswalks, inventories, and review notes designed for model-assisted maintenance. | Should be exposed when reviewed and clearly marked as derivative. |
-| Manualgen outputs | Generated manual inventories, validation reports, dry-runs, and accepted manual sections. | Manuals are planned for publication as reviewed outputs. |
+| Manualgen outputs | Generated manual inventories, validation reports, dry-runs, and accepted manual sections. | The current Markdown developer manual and 183-page command reference are reviewed public outputs; future regenerations repeat the same gate. |
 | Website derivatives | Public pages under `x64base.com` that present reviewed, status-labeled slices of the above. | This site is the current publication surface. |
 
 ## Current Public Anchors
@@ -73,6 +73,8 @@ truth system.
 - [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence) curates screenshots as evidence artifacts, not marketing screenshots.
 - [Engine Feature Crosswalk](/docs/engine/feature-crosswalk) summarizes engine features from a generated SelfDoc report.
 - [Command Catalog](/docs/dottalk/command-catalog) and [Function Catalog](/docs/dottalk/function-catalog) are public catalog derivatives that should eventually be regenerated from HELP/metadata/contract evidence.
+- [Accepted Developer Manual](/downloads/current/developer_manual_publication_v1.md) is the current manual-reviewed Markdown artifact.
+- [DotTalk++ Command Reference](/docs/dottalk/command-reference) identifies the accepted 183-page snapshot and its pinned public-source provenance.
 
 ## DotTalk++ Artifact Room
 
@@ -92,10 +94,20 @@ certificate is unhealthy.
 The artifact manifest must carry proof status, review status, and accessibility
 status so public links do not outrun the evidence behind them.
 
-## Manual Publication Plan
+## Current Manual Publication
 
-Manuals should appear here only after they are generated, validated, and
-reviewed. The intended path is:
+The reviewed 2026-07-18 snapshot is now public as a Markdown download. It
+contains 4,118 lines, 237 headings, 24 sections, and four appendices. Its
+command-reference companion contains 183 standalone pages: 164 linked from the
+reader and 19 supplemental pages, with 3,974 recorded lineage rows.
+
+- Proof label: `manual-reviewed`.
+- Public source snapshot: [`be935053`](https://github.com/deraldg/x64base/tree/be9350531251bb682f0476d652d99ca137861577).
+- Acceptance evidence: [primary reader manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json).
+
+Publication is a checkpoint, not the end of the feed. Later manual updates
+should appear here only after they are generated, validated, and reviewed. The
+repeatable path remains:
 
 ```text
 source behavior

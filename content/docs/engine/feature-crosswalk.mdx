@@ -75,12 +75,16 @@ Status language:
 
 ## Manualgen result
 
-The same pass ran the guarded manualgen commands. Current state:
+The guarded manualgen lane has now completed its reviewed publication cycle:
 
-- Inventory: `25` sections, `18` media files, `12` appendices, `4` manifests.
-- Dry-run manual artifact generated under `docs/manuals/developer/manualgen/generated/manualgen_build_dry_runs/`.
-- Validation status: `FAIL` because manualgen requires Python `>= 3.12` and this run used Python `3.11.0`.
-- Boundary failures: `0`.
-- Parity review: not publication-equivalent; all `25` sections need review before replacing any publication.
+- Runtime: Python `3.12.9`.
+- Accepted reader: 4,118 lines, 237 headings, 24 sections, and four appendices.
+- Accepted command reference: 183 pages, including 164 reader-linked and 19
+  supplemental pages, with 3,974 lineage rows.
+- Publication-readiness findings: `0`.
+- Public source snapshot: [`be935053`](https://github.com/deraldg/x64base/tree/be9350531251bb682f0476d652d99ca137861577).
 
-This is still useful: it proves the manual generation path is alive, but it must be run with Python 3.12 and reviewed before a publication replacement.
+The [reader acceptance manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json)
+and [command-reference manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json)
+carry the detailed proof. This website summary remains derivative and does not
+change the feature-evidence labels above.

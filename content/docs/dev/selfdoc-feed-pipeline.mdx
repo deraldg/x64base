@@ -220,9 +220,21 @@ The current attachment ledger is:
 That ledger crosswalks canonical manual SVGs, LabTalk diagram sources, and
 promoted site image assets so the publication surface stays traceable.
 
-## Current Limitation
+## Accepted 2026-07-18 Checkpoint
 
-Manualgen currently validates the manual structure but requires Python `>= 3.12`.
-The latest run used Python `3.11.0`, so validation failed on that environment
-check only. Boundary failures were `0`, and the dry-run manual artifact was
-still generated for review.
+The governed manualgen run now uses Python `3.12.9`; the earlier environment
+limitation no longer describes the current publication. The accepted product
+contains:
+
+- 4,118 manual lines and 237 headings;
+- 24 balanced sections and four appendices;
+- 183 command-reference pages: 164 reader-linked and 19 supplemental;
+- 3,974 command lineage rows;
+- zero publication-readiness findings.
+
+The [accepted reader manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json)
+and [accepted command-reference manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json)
+pin these facts to public source commit `be935053`. The website remains a
+reviewed derivative: a future HELP, contract, metadata, or manual change must
+repeat the upstream validation and acceptance gates before replacing this
+snapshot.
