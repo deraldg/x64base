@@ -1,0 +1,49 @@
+{
+  "acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/manualgen_phase/post_help_refresh_20260717/publication_readiness_v1/GATE4_CANONICAL_APPLY_AUTHORIZATION_2026-07-18.json",
+  "acceptance_plan_run": "MANRUN-20260718T045052Z-0D8F14D6",
+  "acceptance_source_run": "MANRUN-20260718T031554Z-F1F59445",
+  "acceptance_source_runs": [
+    "MANRUN-20260718T042750Z-E194D003",
+    "MANRUN-20260718T043103Z-631C41CA"
+  ],
+  "accepted_utc": "2026-07-18T05:06:03Z",
+  "artifact_heading_count": 237,
+  "artifact_lines": 4118,
+  "artifact_sha256": "EA2E12A9D3E1AD3799BFA40DBE27F1E2CB1107E34CA05684599E429D7F9A5A8F",
+  "authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/manualgen_phase/post_help_refresh_20260717/publication_readiness_v1/GATE4_CANONICAL_APPLY_AUTHORIZATION_2026-07-18.json",
+  "classification": "primary_reader_manual_artifact",
+  "command_reference_pages": 183,
+  "first_heading": "DotTalk++ / x64base Developer Manual",
+  "gate5_acceptance_authorization_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/gate5_source_staging/GATE5_DEVELOPMENT_APPLY_AUTHORIZATION_2026-07-18.json",
+  "gate5_accepted_utc": "2026-07-18T13:43:13Z",
+  "gate5_apply_run": "MANRUN-20260718T134313Z-03C8C09F",
+  "gate5_decision_record": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/gate5_source_staging/GATE5_SOURCE_PACKAGE_DISPOSITION_APPROVAL_2026-07-18.json",
+  "gate5_plan_created_utc": "2026-07-18T13:29:24Z",
+  "gate5_plan_run": "MANRUN-20260718T132924Z-F08CF081",
+  "mdo": "DOCFLUSH-20260716-001",
+  "overlay_reference_artifacts": [
+    "docs/manuals/developer/manualgen/published/developer_manual_publication_v1_python_rebuild_candidate_v1/reference_current_media_section_publication_combined.md"
+  ],
+  "pointer": "docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt",
+  "policy": {
+    "active_publication_mutation": 0,
+    "build_execution": 0,
+    "help_cmdhelpchk_dotref_mutation": 0,
+    "man_catalog_mutation": 0,
+    "man_catalog_path_finalization": "deferred",
+    "manifest_promotion": 0,
+    "manstar_expansion": 0,
+    "runtime_execution": 0,
+    "source_mutation": 0
+  },
+  "primary_reader_artifact": "docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
+  "reader_linked_command_reference_pages": 164,
+  "section_marker_balance": {
+    "begin": 24,
+    "end": 24
+  },
+  "section_statuses_reviewed": 14,
+  "status": "PRIMARY_READER_AND_183_PAGE_COMMAND_REFERENCE_ACCEPTED_POINTER_UNCHANGED",
+  "supplemental_command_reference_run": "MANRUN-20260718T131449Z-A1CA452C",
+  "supplemental_standalone_command_reference_pages": 19
+}
