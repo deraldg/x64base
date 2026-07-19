@@ -3,9 +3,11 @@ title: "ACID and the Glass-Box Engine"
 description: "A scoped, evidence-first analysis of transactional guarantees in DotTalk++ and x64base."
 ---
 
-> **Current status: architectural analysis, not an ACID compliance claim.**
-> The beta-0 evidence rating remains **Unverified** until repeatable failure,
-> concurrency, reopen, and recovery tests establish each guarantee.
+> **Current status: architectural analysis, not a full-ACID compliance claim.**
+> Buffered-lane Atomicity and Durability are rated **Partial** after the
+> 2026-07-19 table-buffer WAL (assessment beta-1); all other properties and lanes
+> remain **Unverified** pending concurrency, reopen, and multi-store recovery
+> tests.
 
 <a href="/images/story/x64base-glass-engine.png"><img src="/images/story/x64base-glass-engine.png" alt="The x64base Glass Engine cutaway: eight DBF work areas, record pointers, a vector header, CDX and LMDB-backed index lanes, commit, rollback, transaction log, command router, and CLI, TUI, GUI, and API ports" title="x64base Glass Engine"></a>
 
@@ -78,10 +80,10 @@ multi-session tests.
 
 | Property | Current rating | What exists | What must still be proved |
 | --- | --- | --- | --- |
-| Atomicity | Unverified | Pre-commit table-buffer rollback and per-record commit locking. | Interruption and recovery across DBF, memo, and index writes. |
+| Atomicity | Partial (buffered lane) | Pre-commit table-buffer rollback, per-record commit locking, and a durable redo log with an atomic commit marker + crash recovery for the buffered lane (proven 2026-07-19). | The same across non-buffered/direct paths and a multi-store DBF + memo + index transaction. |
 | Consistency | Unverified | Visible dirty/stale state and validation mechanisms. | Invariants after direct mutation, successful commit, failed commit, and recovery. |
 | Isolation | Unverified | Buffered state and commit locking mechanisms. | Dirty-read, repeatable-read, lost-update, conflict, and visibility behavior. |
-| Durability | Unverified | LMDB-local commits and memo flush operations. | Acknowledgement, reopen, forced termination, and power-loss behavior for every store. |
+| Durability | Partial (buffered lane) | LMDB-local commits, memo flush, and a crash-recoverable `fsync`'d `.tbj` redo log for buffered table transactions (proven 2026-07-19). | A portable DBF `fsync`, post-commit index reconciliation, and acknowledgement/reopen/power-loss behavior for every non-buffered store. |
 
 ## Scope before score
 
@@ -98,11 +100,31 @@ alone.
 A strong local guarantee cannot be generalized to a multi-store operation it
 does not cover.
 
+## Update — 2026-07-19: buffered-lane durability (table-buffer WAL)
+
+The table-buffer `COMMIT` / `ROLLBACK` path gained a durable **write-ahead redo
+log**. Buffered writes append to an `fsync`'d `.tbj` sidecar; `COMMIT` writes an
+atomic marker and syncs it **before** applying to the DBF; recovery-on-open
+replays a committed log or discards an uncommitted one. Three hash-verified
+proofs cover the durable writer, recovery replay, and buffered `DELETE`.
+
+This is the first **proof-backed** mechanism for the buffered lane's Atomicity
+and Durability, where the commit/rollback journal was previously a stub. It is
+deliberately scoped: it does **not** address concurrency or isolation, and two
+gaps remain — a portable DBF `fsync` after replay, and CDX/LMDB index
+reconciliation after a buffered commit (an indexed table still needs a
+`REINDEX`). This evidence is now recorded as a re-rating in
+`acid_assessment_beta-1.md`, moving the buffered-lane Atomicity and Durability to
+**Partial** in the table above — a scoped gain, not full ACID.
+
 ## Source-defined limits
 
 - `COMMIT` documents `partial_commit_possible: yes`.
 - `COMMIT` does not rebuild CDX or LMDB indexes.
-- persistent commit-journal and rollback-journal hooks are currently stubs.
+- the buffered-lane commit/rollback journal is **no longer a stub** — a durable
+  `fsync`'d `.tbj` redo log with crash recovery landed 2026-07-19 (see the update
+  note above); a coordinated cross-store (DBF + memo + index) recovery journal
+  is still open.
 - LMDB-local transactions do not prove a coordinated DBF + memo + index
   transaction.
 
@@ -121,7 +143,7 @@ it converts an abstract acronym into a concrete requirement.
 The canonical source analysis and lab contract live in the engine repository:
 
 - `labtalk/docs/acid/acid_glass_box_analysis_v1.md`
-- `labtalk/docs/acid/acid_assessment_beta-0.md`
+- `labtalk/docs/acid/acid_assessment_beta-1.md` (current; beta-0 retained as historical)
 - `labtalk/labs/acid/LAB_ACID_EDUCATIONAL_CONTRACT_v0.md`
 
 This public page is a reviewed derivative of those source documents.

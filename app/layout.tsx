@@ -54,6 +54,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen">
+        <div className="border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted">
+          This site is <span className="text-fg">AI-generated</span> from the x64base project
+          {" · "}
+          <span className="font-mono text-brand">ALPHA</span>
+          {" · "}
+          Updated 2026-07-19
+        </div>
         <Navbar />
         <main className="mx-auto w-full max-w-6xl px-4 py-10">{children}</main>
         <Footer />

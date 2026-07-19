@@ -1,25 +1,41 @@
 ---
 title: "Indexing Rules"
-description: "Deterministic indexing behavior for stable rebuilds and maintenance."
+description: "How DotTalk++ builds, orders, and maintains indexes deterministically."
 ---
 
-## Goals
+The authoritative index architecture — the CDX logical container and the
+LMDB-backed order environment — is documented in
+[CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing). This page summarizes the
+rules that keep ordering deterministic and rebuilds stable.
 
-- deterministic ordering
-- stable rebuild results
-- explicit collation / comparison rules
+## Key expression and tags
 
-## Rules (placeholder)
+- An index **tag** is built from a key expression over one or more fields
+  (`INDEX ON <expr> TAG <name>`).
+- A CDX container holds one or more named tags; `SET ORDER TO <tag>` selects the
+  active logical order for navigation and `SEEK`.
+- The logical order is served from the LMDB index environment, not by scanning
+  and sorting the DBF.
 
-1. define key expression
-2. normalize values
-3. compare using canonical comparator
-4. handle duplicates explicitly
+## Deterministic ordering
+
+- Keys are normalized before comparison so the same input always sorts the same
+  way (consistent collation and comparison rules).
+- Duplicate keys are ordered stably; `SEEK` lands on the first matching record
+  in the active direction (`ASCEND` / `DESCEND`).
+- `SEEK` on the active tag uses an LMDB keyed range-seek (O(log n)), and the
+  landed record is re-verified against the DBF before it is accepted.
 
 ## Maintenance
 
-- rebuild
-- verify
-- compact
+- `REINDEX` is the canonical rebuild dispatcher (INX, CNX, CDX/LMDB, and student
+  index families), choosing a default family by table flavor.
+- `BUILDLMDB` builds or rebuilds the LMDB backing store for a CDX container.
+- After a buffered `COMMIT` or crash recovery, an indexed table needs a
+  `REINDEX` — `COMMIT` does not do incremental CDX/LMDB maintenance.
 
-See: [DotTalk++ Data Mutators](/docs/dottalk/data-mutators) and [Arctic TUI](/docs/talk-family/arctic)
+## See also
+
+- [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing)
+- [DotTalk++ Data Mutators](/docs/dottalk/data-mutators)
+- [ArcticTalk (TUI)](/docs/talk-family/arctictalk)

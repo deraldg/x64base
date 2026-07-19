@@ -31,6 +31,33 @@ raw transcript for the post-correction timings was not located during the
 documentation scan, so those values remain `runtime-proven-by-closeout` rather
 than a stronger raw-transcript claim.
 
+## Phase 1.3 — scale-verb hardening (2026-07-19)
+
+Beyond ordered navigation, the read and write command verbs affected by indexing
+and scale were profiled and hardened at the same 1M / 5.5M workload. Each result
+is bound to a hash-verified teed transcript; all are development-only, not
+promoted.
+
+| Verb | Before | After | Fix |
+| --- | ---: | ---: | --- |
+| `SEEK` near-last key | 16.57 s | ~0.002 s | Keyed LMDB range-seek (`MDB_SET_RANGE`, O(log n)) with DBF re-verify, replacing a linear index walk. |
+| `DELETE` / `RECALL` under active order | per-row index commits (9,999-row delete ≈ 25 s; 500k ≈ 21 min) | one commit per 10,000-row chunk | Bulk write-transaction batching for index maintenance. |
+| `AGGS ALL` (COUNT/SUM/AVG/MIN/MAX) | four independent scans ≈ 68 s | one scan ≈ 17 s (~4×) | Single-pass multi-aggregate. |
+
+A companion fix normalized unquoted string literals in `SET FILTER` and aggregate
+`FOR` predicates — the source of the earlier `COUNT SET FILTER` returning 0 while
+`COUNT FOR` returned the correct count.
+
+## Durability — table-buffer write-ahead log (Phase 2 slice)
+
+The deferred Phase 2 durability question has its first answer. Table-buffer
+`COMMIT` / `ROLLBACK` are now **crash-recoverable** through a durable, `fsync`'d
+`.tbj` redo log with recovery-on-open, proven across three hash-verified phases
+(durable writer, recovery replay, and buffered `DELETE` through the log). This is
+scoped to the buffered table lane and does **not** claim full ACID — see
+[ACID and the Glass-Box Engine](/docs/engine/acid-and-glass-box). Concurrency
+fault injection remains the open Phase 2 work.
+
 ## Machine identity
 
 The historical runs did not record manufacturer, model, CPU, memory, or OS.
@@ -57,8 +84,9 @@ the current public runtime or a tagged release.
    automatically captured machine profile.
 2. Bind the tested engine commit and release state to the fresh evidence.
 3. Append the new results; never overwrite the historical baseline.
-4. Continue to Phase 2 fault injection for concurrency, crash/recovery, and
-   durability claims that remain unverified.
+4. Continue Phase 2 fault injection. The crash/recovery + durability slice for
+   the buffered lane is delivered (the table-buffer WAL above); concurrency and
+   multi-store recovery remain unverified.
 
 See [Documentation Progress](/docs/dev/documentation-progress) for the wider
 source-to-website publication state.

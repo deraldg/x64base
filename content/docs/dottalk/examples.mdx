@@ -1,20 +1,62 @@
 ---
 title: "DotTalk++ Examples"
-description: "Small scripts that demonstrate patterns and teaching steps."
+description: "Small DotScript examples that demonstrate real DotTalk++ command patterns."
 ---
 
-## Example: Export a subset (placeholder)
+These use the real DotTalk++ command surface (see the
+[Command Catalog](/docs/dottalk/command-catalog)). They assume the sample
+`STUDENTS` table with fields such as `FNAME`, `LNAME`, `MAJOR`, and `GPA`.
+
+## Open, inspect, and list
 
 ```text
-open "people.dbf64"
-select where CITY == "Oakland"
-export csv "oakland.csv"
+USE STUDENTS
+STRUCT
+COUNT
+LIST NEXT 5 FNAME, LNAME, MAJOR, GPA
 ```
 
-## Example: Index rebuild (placeholder)
+## Filter and aggregate a subset
 
 ```text
-open "people.dbf64"
-reindex on LASTNAME
-verify index
+USE STUDENTS
+SET FILTER TO MAJOR = "CSCI"
+COUNT
+AGGS ALL GPA
+SET FILTER TO
 ```
+
+`AGGS ALL` returns `COUNT / SUM / AVG / MIN / MAX` in a single scan. `SET FILTER
+TO` with no argument clears the filter.
+
+## Order, then seek
+
+```text
+USE STUDENTS
+CDX CREATE
+INDEX ON LNAME TAG LNAME
+BUILDLMDB
+SET ORDER TO LNAME
+SEEK "Quinn"
+DISPLAY
+```
+
+`SEEK` on the active CDX tag uses the LMDB keyed range-seek (O(log n)); ordered
+navigation (`TOP`, `BOTTOM`, `SKIP`) reads the index cursor directly.
+
+## Copy a filtered projection to a new table
+
+```text
+USE STUDENTS
+SET FILTER TO GPA >= 3.5
+COPY TO HONORS FIELDS FNAME, LNAME, MAJOR, GPA
+SET FILTER TO
+USE HONORS
+COUNT
+```
+
+## Run it as a script
+
+Save any of the above as a `.dts` file and run it through the DotScript runner —
+the repeatable form of the command language. See the
+[DotScript Language Guide](/docs/dottalk/dotscript-language-guide).

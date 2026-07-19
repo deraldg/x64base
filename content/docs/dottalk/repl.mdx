@@ -1,18 +1,44 @@
 ---
 title: "DotTalk++ REPL"
-description: "Interactive workflow for learning and rapid exploration."
+description: "The interactive DotTalk++ command shell for learning and rapid exploration."
 ---
 
-A REPL makes learning tangible:
+DotTalk++ is an interactive command shell over the x64base runtime. You type a
+command, it runs immediately against the current work area, and the result — data
+or a `cmd:` status line — comes straight back. The same commands run
+non-interactively through the [DotScript](/docs/dottalk/dotscript-language-guide)
+runner.
 
-- try expressions
-- inspect values
-- iterate on examples
+A REPL makes the engine tangible: open a table, inspect its structure, move the
+record pointer, filter, and aggregate — watching each step.
 
-## Typical session (placeholder)
+## A typical session
 
 ```text
-> open "demo.dbf64"
-> count()
-> select where AGE > 30
+DotTalk++> USE STUDENTS
+DotTalk++> COUNT
+1000000
+DotTalk++> STRUCT
+DotTalk++> GO TOP
+DotTalk++> DISPLAY FNAME, LNAME, MAJOR, GPA
+DotTalk++> SET FILTER TO MAJOR = "CSCI"
+DotTalk++> COUNT
+90700
+DotTalk++> AGGS ALL GPA
+COUNT=90700 SUM=... AVG=... MIN=2 MAX=4
+DotTalk++> SET FILTER TO
+DotTalk++> QUIT
 ```
+
+## Useful exploration commands
+
+- `USE`, `CLOSE`, `SELECT` — open, close, and switch work areas.
+- `STRUCT`, `STATUS`, `COUNT` — inspect structure, area state, and row counts.
+- `GO TOP` / `GO BOTTOM` / `SKIP`, `SEEK`, `LOCATE` — move the record pointer.
+- `DISPLAY`, `LIST`, `SMARTLIST` — show records.
+- `SET FILTER TO`, `SUM` / `AVG` / `AGGS ALL` — scope and aggregate.
+- `HELP`, `CMDHELP`, `PREDHELP` — command, and predicate help.
+
+Runtime and error state are inspectable too: see
+[Error Codes](/docs/engine/error-codes) and
+[Messaging & Localization](/docs/engine/messaging-and-localization).

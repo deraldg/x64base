@@ -1,7 +1,15 @@
 ---
 title: "DBF_64 Specification"
-description: "Canonical layout of DBF_64 tables: headers, field descriptors, records."
+description: "The 64-bit-capacity DBF table layout: version, header, field descriptors, and records."
 ---
+
+DBF_64 is x64base's 64-bit-capacity evolution of the xBase DBF table. It keeps
+the familiar self-describing header + fixed-length records, but lifts record
+counts and file offsets past the classic 32-bit ceiling while staying
+backward-compatible with tools that read the legacy header. This page is a
+source-derived summary of the engine's own reader/writer and validator
+(`src/xbase/dbf_file.cpp`, `include/xbase/dbf_create.hpp`,
+`src/cli/dbf64_header_validate.cpp`).
 
 ## Current explanatory diagrams
 
@@ -15,33 +23,59 @@ Current sources:
 - `docs/manuals/assets/diagrams/trinity_headers_v1.svg`
 - `docs/manuals/assets/diagrams/x64_self_describing_dbf_v1.svg`
 
-> Replace placeholders with your authoritative spec once finalized.
+## Version byte
 
-## Table header (conceptual)
+The header's version byte identifies the flavor. The engine recognizes the
+classic families (`0x03`, `0x83`, `0xF5`) and Visual FoxPro (`0x30`, `0x31`,
+`0x32`), and adds its own **`DBF_VERSION_64`** marker for 64-bit tables. When the
+version byte is `DBF_VERSION_64`, the authoritative record count is the 64-bit
+field (below) rather than the legacy 32-bit one.
 
-- magic/version
-- record count
-- header length
-- record length
-- flags / reserved
+## Table header
+
+The base header follows the VFP-style layout (version byte, last-update date,
+record count, header length, and record length), so legacy readers still see a
+valid DBF. DBF_64 then carries a **large-header extension** whose `record_count`
+is a 64-bit value.
+
+- The classic **32-bit record count at offset 4** is preserved and patched for
+  compatibility (clamped when the true count exceeds a 32-bit maximum).
+- The **64-bit record count** in the extension is the authoritative row count for
+  a `DBF_VERSION_64` table.
+- Header length and record length locate the first data byte and the fixed record
+  stride.
 
 ## Field descriptors
 
-Each field descriptor defines:
+Each field descriptor defines a name, a type, a length, and decimal places (for
+numeric types). The engine's validator accepts these field types:
 
-- name
-- type
-- length
-- decimals (if numeric)
-- offsets / flags
+| Code | Type | Code | Type |
+| --- | --- | --- | --- |
+| `C` | Character | `I` | Integer |
+| `N` | Numeric | `Y` | Currency |
+| `F` | Float | `T` | DateTime |
+| `D` | Date | `V` | Varchar / extended character |
+| `L` | Logical | `Q` | Varbinary / extension |
+| `M` | Memo (reference) | `W` | Blob / extension |
+| `G` | General | `B` | Double (binary double) |
+
+Memo (`M`) fields store a reference, not the payload — see
+[FPT64 Memo Format](/docs/engine/fpt64-memo-format).
 
 ## Records
 
-- fixed-length records
-- deleted flag
-- field-aligned payload
+- **Fixed-length** records; the stride is the header's record length.
+- A leading **deleted flag** byte (space = live, `*` = deleted) precedes the
+  field-aligned payload.
+- Record positions are computed as `data_start + recno * record_length` using
+  **64-bit arithmetic** with overflow checks, so a table can address far more
+  than `2^32` records (subject to the wider capacity discussion in
+  [64-Bit Capacity Math](/docs/engine/x64-capacity-math)).
+- A trailing **`0x1A`** byte marks end-of-file.
 
 ## See also
 
 - [FPT64 Memo Format](/docs/engine/fpt64-memo-format)
-- [Indexing Rules](/docs/engine/indexing-rules)
+- [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing)
+- [64-Bit Capacity Math](/docs/engine/x64-capacity-math)

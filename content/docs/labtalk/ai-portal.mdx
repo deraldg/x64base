@@ -56,6 +56,16 @@ The present foundation includes:
 - a local registry browser and launcher;
 - read-only `MAINT AI` orientation commands;
 - runtime transcripts and truth-audit reports;
+- a machine-readable AI report-audit envelope on every new closeout (provider,
+  product, model or `not_exposed`, access mode, git baseline, and authorization
+  scope);
+- a closeout-updates-startup gate: a session that changes lane state also updates
+  the AI-facing startup documents and drops a dated closeout;
+- a document-as-you-work discipline: material steps are recorded as they land,
+  and evidence not captured in the moment is treated as not proven;
+- committed drift checks that gate source-derived website pages — the command and
+  function catalogs, error codes, and locale surfaces — against engine source
+  before a publish;
 - the APH-0 through APH-6 hardening plan.
 
 These pieces are useful and increasingly connected, but they do not yet

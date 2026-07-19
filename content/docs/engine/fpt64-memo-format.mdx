@@ -1,24 +1,63 @@
 ---
 title: "FPT64 Memo Format"
-description: "Memo storage: blocks, pointers, allocation, and integrity checks."
+description: "How x64base stores memo payloads: the LMDB-backed memo64 store and legacy FPT sidecars."
 ---
 
-> Replace placeholders with your authoritative memo spec.
+Memo (`M`) fields in a DBF hold variable-length text or binary payloads. The DBF
+record stores only a small **reference**; the payload lives outside the
+fixed-length record. This page is a source-derived summary of the engine's memo
+layer (`include/memo/memo64.hpp` and the memo backend).
 
-## Concepts
+## Two memo backends
 
-- fixed-size blocks
-- memo pointer stored in DBF_64 record
-- block chain / allocation map (implementation-dependent)
+- **x64 tables (`DBF_VERSION_64`) use `memo64` — an LMDB-backed store.** This is
+  the current x64base memo format; it is not a classic `.fpt` file.
+- **Legacy DBF/VFP tables use the classic FPT/DBT sidecar** — fixed-size memo
+  blocks in a companion file, with a block pointer stored in the record. x64base
+  reads these for compatibility; new x64 tables use `memo64`.
+
+## The memo reference (in the DBF record)
+
+An `M` field in an x64 table stores a **`MemoRef64`**: an 8-byte unsigned
+`memo_id`. A `memo_id` of `0` means an empty memo. The payload is fetched from the
+memo64 store by that id.
+
+## The memo64 store (LMDB)
+
+`memo64` (version 1) keeps two named databases in an LMDB environment beside the
+table:
+
+- a **values** database keyed by `memo_id`, holding a value header followed by the
+  payload bytes;
+- a **meta** database holding control values such as `next_memo_id` (the id
+  allocator).
+
+Each stored value begins with a **16-byte value header**:
+
+| Field | Width | Meaning |
+| --- | --- | --- |
+| flags | 4 bytes | text / binary / compressed classification |
+| reserved | 4 bytes | reserved for future use |
+| length | 8 bytes | payload byte count |
+
+Payload flags distinguish **text**, **binary**, and **compressed** memos, so the
+store can hold both character memos and arbitrary blobs.
 
 ## Integrity
 
-- validate pointer range
-- validate block boundaries
-- detect orphaned blocks
+- A reference is valid when it is `0` (empty) or resolves to a value in the store.
+- The value header's `length` bounds the payload read.
+- Memo/reference integrity failures raise the canonical `fpt64` facility error
+  (`e_fpt_block_invalid`, `fpt64/0x0001`) — see [Error Codes](/docs/engine/error-codes).
 
 ## Practical tooling
 
-- use TupTalk to inspect record memo pointers
-- use SmartList/export tooling for field audit extracts
-- use TableTalk when memo edits interact with buffered table state
+- Use **TupTalk** to inspect record memo references.
+- Use **SmartList** / export tooling for field-audit extracts.
+- Use **TableTalk** when memo edits interact with buffered table state and
+  `COMMIT`.
+
+## See also
+
+- [DBF_64 Specification](/docs/engine/dbf-64-specification)
+- [CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing)
