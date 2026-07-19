@@ -1,0 +1,74 @@
+* ============================================================
+*  PINOCCHIO SEEK FIX PROOF (Phase 1.3c)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: Prove the keyed range-seek fix in cmd_seek.cpp: an ascending SEEK on
+*           the active CDX tag now uses LMDB MDB_SET_RANGE (O(log n)) instead of a
+*           linear index walk. A near-LAST key was ~57 s on ENROLL (5.5M) and
+*           ~16.6 s on STUDENTS (1M) before the fix; it should now be ~ms.
+*
+*  CORRECTNESS (must be identical to the pre-fix linear walk):
+*    ENROLL  SEEK 50999999 -> Found at 5501354
+*    STUDENTS SEEK 50999999 -> Found at 1000000
+*    descending SEEK 50000000 -> Found at 8   (fallback path, unchanged)
+*    SEEK 59999999 (no such SID) -> not found
+*    SEEK ANDERSON on LNAME tag -> first Anderson
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_seek_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+ECHO ############################################################
+ECHO # ENROLL (5,501,358) -- ascending SEEK on tag SID
+ECHO ############################################################
+SELECT 1
+USE ENROLL
+SET INDEX TO ENROLL
+SET ORDER TO TAG SID
+
+ECHO === S1. SEEK first key 50000000 (baseline; was already fast) ===
+SEEK 50000000
+ECHO === S2. SEEK near-LAST key 50999999 (was ~57 s; expect ~ms, Found at 5501354) ===
+SEEK 50999999
+ECHO === S3. SEEK middle key 50500000 (Found at the first recno with that SID) ===
+SEEK 50500000
+ECHO === S4. SEEK 59999999 (no such SID; expect not found, fast) ===
+SEEK 59999999
+ECHO === S5. descending SEEK 50000000 (now KEYED too; expect FAST, Found at 1) ===
+ECHO       (was ~67 s AND Found at 8; keyed seek lands on the smallest-recno
+ECHO        duplicate -> 1, consistent with ascending. Unique keys unaffected.)
+DESCEND
+SEEK 50000000
+ASCEND
+
+ECHO ############################################################
+ECHO # STUDENTS (1,000,000) -- ascending SEEK on SID and LNAME
+ECHO ############################################################
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+ECHO === S6. SEEK near-LAST 50999999 (was ~16.6 s; expect ~ms, Found at 1000000) ===
+SEEK 50999999
+SMARTLIST SID,LNAME,FNAME NEXT 1
+ECHO === S7. SEEK char tag: LNAME = ANDERSON (keyed seek on a character key) ===
+SET ORDER TO TAG LNAME
+SEEK ANDERSON
+SMARTLIST SID,LNAME,FNAME NEXT 1
+
+ECHO ============================================================
+ECHO SEEK FIX PROOF COMPLETE. Confirm:
+ECHO   S2 / S6 ELAPSED collapsed from tens of seconds to milliseconds.
+ECHO   Correctness: ENROLL 50999999 -> 5501354 ; STUDENTS 50999999 -> 1000000 ;
+ECHO     59999999 -> not found ; ANDERSON -> first Anderson (655360).
+ECHO   CHANGED (intended): descending 50000000 -> 1 (was 8) -- smallest-recno
+ECHO     duplicate, now consistent with ascending; and FAST (was ~67 s).
+ECHO ============================================================

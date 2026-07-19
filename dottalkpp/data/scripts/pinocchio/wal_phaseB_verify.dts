@@ -1,0 +1,29 @@
+* ============================================================
+*  TABLE-BUFFER WAL — PHASE B RECOVERY VERIFY (reopen after "crash")
+*
+*  Purpose: USE WALREC after the runner turned the .tbj into a committed log.
+*           Recovery-on-open must replay the redo record, so recno 1 NAME becomes
+*           "Recovered", and the .tbj must be removed. Then clean up.
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+
+ECHO --- USE triggers recovery of the committed .tbj (expect a recovered notice) ---
+USE WALREC
+GO 1
+ECHO --- recno 1 NAME should now be Recovered (replayed from the committed .tbj) ---
+DISPLAY
+
+ECHO --- cleanup ---
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE WALREC CONFIRM
+
+ECHO ============================================================
+ECHO WAL PHASE B VERIFY COMPLETE. Confirm:
+ECHO   USE printed "recovered a committed table-buffer journal (.tbj)".
+ECHO   recno 1 NAME = Recovered (redo replayed on open).
+ECHO ============================================================

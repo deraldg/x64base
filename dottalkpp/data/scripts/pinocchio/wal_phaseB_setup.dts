@@ -1,0 +1,40 @@
+* ============================================================
+*  TABLE-BUFFER WAL — PHASE B RECOVERY SETUP (leaves an uncommitted .tbj)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. MUTATING (throwaway table).
+*  Purpose: Build WALREC with recno 1 NAME="Original", enable persistent
+*           buffering, buffer a REPLACE to "Recovered", and END WITHOUT COMMIT.
+*           That leaves a .tbj redo log with a U record and NO commit marker
+*           (an uncommitted transaction) and the DBF still holding "Original".
+*           The runner then appends a "C" marker (simulating a crash after the
+*           commit was durably logged but before the DBF was updated) and reopens.
+*
+*  RUN (host, via the Phase B runner):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_wal_phaseB_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+
+* fresh throwaway table
+CLOSE
+ERASE TABLE WALREC CONFIRM
+CREATE X64 WALREC (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Original"
+COUNT
+GO 1
+ECHO --- baseline on disk: recno 1 NAME = Original ---
+DISPLAY
+
+ECHO --- enable persistent buffer; buffered REPLACE writes an UNCOMMITTED .tbj ---
+TABLE BUFFER ON PERSISTENT
+GO 1
+REPLACE NAME WITH "Recovered"
+DISPLAY
+
+ECHO --- session ends WITHOUT COMMIT: the .tbj holds a U record, no C marker,
+ECHO     and the DBF still says Original. The runner will append a C marker. ---

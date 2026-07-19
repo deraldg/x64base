@@ -1,0 +1,132 @@
+* ============================================================
+*  PINOCCHIO SCALE -- DESTRUCTIVE VERB BATTERY (Phase 1.3b, v2 diagnostic)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. MUTATING (scratch clone only).
+*  Safety:  Operates ONLY on a disposable clone (SCR_DESTR), built by COPY TO
+*           from STUDENTS and ERASEd at the end. The pinocchio fixtures
+*           (STUDENTS, ENROLL) are only READ (COPY source) and never mutated, so
+*           their CDX/LMDB cannot desync and NO lane rebuild is required.
+*
+*  WHY v2 (finding from the v1 run, 2026-07-18):
+*    v1 deleted a ~500,000-row range under the active CDX order and did NOT
+*    finish in ~24 minutes (with TALK OFF, so it was real per-row work, not
+*    console spam). Cause: DELETE refreshes the cursor position in the active
+*    order per row, and that reposition uses the SAME linear index walk that
+*    makes SEEK O(scan-distance) -- so DELETE-under-active-order is ~O(n^2).
+*    v2 therefore uses SMALL (~10k) delete sets that complete, and A/B-tests
+*    DELETE with the CDX order ACTIVE vs the order cleared (SET ORDER TO
+*    PHYSICAL, which also closes the index) to quantify the CDX-involvement cost.
+*
+*    Clean timings we already have from v1: COPY TO (1M) = 84.1 s;
+*    BUILDLMDB (1M, 1 tag) = 18.0 s.
+*
+*  RUNTIME: a few minutes (small delete sets; COPY/BUILDLMDB/PACK are the only
+*    full-1M passes). Each command's ELAPSED (SET TIMER ON) is the datum.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_destructive_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+* TALK OFF: bulk verbs would otherwise echo a per-row "Recno:" line (~thousands),
+* flooding the console and making the elapsed console-I/O-bound. COUNT/SMARTLIST
+* still print, which is all the canaries need.
+SET TALK OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* ------------------------------------------------------------
+* Startup cleanup: drop any SCR_DESTR left by an aborted run so CDX CREATE is
+* fresh. Harmless "not found" if absent (runner reports and continues). If a
+* stale SCR_DESTR.cdx / .cdx.d survives, BUILDLMDB CLEAN below rebuilds anyway.
+* ------------------------------------------------------------
+CLOSE
+ERASE TABLE SCR_DESTR CONFIRM
+
+* ============================================================
+* D0. Clone STUDENTS (1M) into the disposable scratch table (expect ~84 s)
+* ============================================================
+ECHO === D0. COPY TO clone (full 1M-row copy) ===
+SELECT 0
+USE STUDENTS
+COPY TO SCR_DESTR AS X64 OVERWRITE
+USE SCR_DESTR
+ECHO --- D0a. clone COUNT must be 1000000, canary recno 1 = 50000000 Taylor Quinn ---
+COUNT
+GO TOP
+SMARTLIST SID,LNAME,FNAME NEXT 1
+
+ECHO === D1. build the scratch index: CDX + BUILDLMDB (expect ~18 s) ===
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB HUGE CLEAN YES
+CDX TAGS
+
+* ============================================================
+* D2. DELETE diagnostic -- same ~10k range (SID > 50990000), two conditions
+* ============================================================
+ECHO === D2a. DELETE FOR under ACTIVE CDX order (per-row reposition = O(n) walk) ===
+SET ORDER TO TAG SID
+DELETE FOR SID > 50990000
+COUNT DELETED
+ECHO --- clear order (PHYSICAL) before RECALL so RECALL is not also O(n^2) ---
+SET ORDER TO PHYSICAL
+RECALL ALL
+COUNT DELETED
+
+ECHO === D2b. DELETE FOR with order CLEARED (SET ORDER TO PHYSICAL, index closed) ===
+SET ORDER TO PHYSICAL
+DELETE FOR SID > 50990000
+COUNT DELETED
+RECALL ALL
+COUNT DELETED
+ECHO --- compare D2a vs D2b ELAPSED: the gap is the CDX-order reposition cost ---
+
+* ============================================================
+* D3. REINDEX CDX -> full index rebuild, data intact (expect ~18 s)
+* ============================================================
+ECHO === D3. REINDEX CDX CLEAN (rebuild the index over 1M rows) ===
+REINDEX CDX CLEAN
+CDX TAGS
+
+* ============================================================
+* D4. PACK -> mark ~10k (order cleared = fast), then rewrite the DBF
+* ============================================================
+ECHO === D4. PACK (DBF rewrite dropping deleted rows), full 1M pass ===
+SET ORDER TO PHYSICAL
+DELETE FOR SID > 50990000
+COUNT DELETED
+PACK
+ECHO --- D4a. reopen after PACK; COUNT should be ~990001 (deleted rows gone) ---
+USE SCR_DESTR
+COUNT
+
+* ============================================================
+* D5. ZAP -> truncate to zero records (header rewrite, expected O(1))
+* ============================================================
+ECHO === D5. ZAP (truncate all rows), expected O(1) ===
+ZAP
+COUNT
+
+* ============================================================
+* D6. Cleanup: close and ERASE the scratch table (fixtures untouched)
+* ============================================================
+ECHO === D6. cleanup: ERASE SCR_DESTR ===
+CLOSE
+ERASE TABLE SCR_DESTR CONFIRM
+
+ECHO ============================================================
+ECHO DESTRUCTIVE DIAGNOSTIC COMPLETE. Confirm and record:
+ECHO   D0 : clone COUNT = 1000000, canary recno 1 = 50000000 Taylor Quinn.
+ECHO   D2a: DELETE FOR (~9999 rows) under ACTIVE order -- record ELAPSED.
+ECHO   D2b: DELETE FOR (~9999 rows) order CLEARED -- record ELAPSED.
+ECHO        D2a >> D2b confirms DELETE's per-row reposition is the O(n) walk.
+ECHO   COUNT DELETED after each DELETE ~= 9999; after each RECALL ALL = 0.
+ECHO   D3 : REINDEX CDX CLEAN ELAPSED (full rebuild).
+ECHO   D4 : PACK ELAPSED (full DBF rewrite); reopened COUNT ~= 990001.
+ECHO   D5 : ZAP ELAPSED (expected O(1)); COUNT = 0.
+ECHO   NOTE: if ERASE leaves SCR_DESTR.cdx / SCR_DESTR.cdx.d behind, remove those
+ECHO   sidecars from INDEXES/pinocchio and LMDB/pinocchio manually.
+ECHO ============================================================

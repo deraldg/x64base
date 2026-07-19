@@ -1,0 +1,60 @@
+* ============================================================
+*  PINOCCHIO SET FILTER STRING-LITERAL FIX PROOF (Phase 1.3c)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. READ-ONLY (no mutation).
+*  Purpose: Prove SET FILTER now normalizes unquoted RHS barewords to string
+*           literals like COUNT FOR does, so an unquoted string filter matches.
+*
+*  THE BUG (before): SET FILTER TO MAJOR = CSCI -> COUNT = 0, while
+*                    COUNT FOR MAJOR = CSCI -> 90700. CSCI was read as an
+*                    undefined identifier, not the string "CSCI".
+*  EXPECTED (after): both are 90700.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_setfilter_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+SELECT 0
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+
+ECHO === F1. baseline: COUNT FOR MAJOR = CSCI (reference; expect 90700) ===
+COUNT FOR MAJOR = CSCI
+
+ECHO === F2. THE FIX: SET FILTER TO MAJOR = CSCI then COUNT (was 0; expect 90700) ===
+SET FILTER TO MAJOR = CSCI
+COUNT
+SET FILTER TO
+
+ECHO === F3. regression: quoted string filter still works (expect 90700) ===
+SET FILTER TO MAJOR = "CSCI"
+COUNT
+SET FILTER TO
+
+ECHO === F4. regression: numeric filter still works (expect 1; SID is unique) ===
+SET FILTER TO SID = 50500000
+COUNT
+SET FILTER TO
+
+ECHO === F5. regression: char filter still works (LNAME = Anderson; expect 72420) ===
+SET FILTER TO LNAME = Anderson
+COUNT
+SET FILTER TO
+ECHO --- F5b. and the already-quoted form matches the same (expect 72420) ---
+SET FILTER TO LNAME = "Anderson"
+COUNT
+SET FILTER TO
+
+ECHO ============================================================
+ECHO SET FILTER FIX PROOF COMPLETE. Confirm:
+ECHO   F1 == F2 == F3 == 90700 (unquoted SET FILTER now equals COUNT FOR).
+ECHO   F4 = 1 (numeric unchanged); F5 = F5b = 72420 (char, quoted or not).
+ECHO ============================================================

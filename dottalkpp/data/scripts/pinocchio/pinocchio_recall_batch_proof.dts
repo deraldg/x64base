@@ -1,0 +1,83 @@
+* ============================================================
+*  PINOCCHIO RECALL BATCHING PROOF (Phase 1.3d)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. MUTATING (scratch clone only).
+*  Safety:  Operates ONLY on a disposable clone (SCR_RECALL), ERASEd at the end.
+*           The pinocchio fixtures are only READ (COPY source). No lane rebuild.
+*
+*  PURPOSE: Directly exercise RECALL's batched index re-insert (upsert) under an
+*           ACTIVE CDX order -- the path the destructive script did NOT cover
+*           (it cleared the order before RECALL). A/B: RECALL with the index
+*           attached (batched reinsert) vs order cleared (no reinsert baseline).
+*
+*  EXPECT (after the 1.3d batching fix):
+*    - RA RECALL ALL under active order completes in ~scan time (tens of s), NOT
+*      the O(n^2) minutes the per-row-commit path would have cost.
+*    - RA ELAPSED ~= RB ELAPSED (batched reinsert is negligible vs scan + DBF).
+*    - Integrity: after RA, a keyed SEEK on a recalled SID is ~ms (its index key
+*      was reinserted); COUNT DELETED = 0.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_pinocchio_recall_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+* cleanup any leftover scratch
+CLOSE
+ERASE TABLE SCR_RECALL CONFIRM
+
+ECHO === R0. clone STUDENTS (1M), build index, attach active order ===
+SELECT 0
+USE STUDENTS
+COPY TO SCR_RECALL AS X64 OVERWRITE
+USE SCR_RECALL
+COUNT
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB HUGE CLEAN YES
+SET INDEX TO SCR_RECALL
+SET ORDER TO TAG SID
+
+* ------------------------------------------------------------
+* RA. RECALL ALL under ACTIVE order -> exercises batched upsert reinsert
+* ------------------------------------------------------------
+ECHO === RA. delete ~9999, then RECALL ALL under ACTIVE order (batched reinsert) ===
+SET ORDER TO TAG SID
+DELETE FOR SID > 50990000
+COUNT DELETED
+ECHO --- RA: RECALL ALL (time this; index attached, so reinsert is batched) ---
+RECALL ALL
+COUNT DELETED
+ECHO --- RA integrity: recalled key 50999999 must be back in the index (fast keyed SEEK) ---
+SEEK 50999999
+SMARTLIST SID,LNAME,FNAME NEXT 1
+
+* ------------------------------------------------------------
+* RB. RECALL ALL under CLEARED order (index closed) -> baseline (no reinsert)
+* ------------------------------------------------------------
+ECHO === RB. delete ~9999, then RECALL ALL under CLEARED order (no reinsert) ===
+SET ORDER TO TAG SID
+DELETE FOR SID > 50990000
+COUNT DELETED
+SET ORDER TO PHYSICAL
+ECHO --- RB: RECALL ALL (time this; index closed, no reinsert = baseline) ---
+RECALL ALL
+COUNT DELETED
+
+ECHO === R9. cleanup: ERASE SCR_RECALL ===
+CLOSE
+ERASE TABLE SCR_RECALL CONFIRM
+
+ECHO ============================================================
+ECHO RECALL BATCHING PROOF COMPLETE. Confirm:
+ECHO   RA RECALL ALL completed in ~scan time (NOT O(n^2) minutes).
+ECHO   RA ELAPSED ~= RB ELAPSED (batched reinsert negligible -> surcharge gone).
+ECHO   RA integrity: SEEK 50999999 is ~ms and Found (index key reinserted).
+ECHO   COUNT DELETED after each RECALL = 0.
+ECHO ============================================================

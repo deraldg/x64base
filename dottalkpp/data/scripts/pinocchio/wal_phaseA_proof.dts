@@ -1,0 +1,81 @@
+* ============================================================
+*  TABLE-BUFFER WAL — PHASE A PROOF (durable redo log on COMMIT/ROLLBACK)
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION.
+*  Safety:  MUTATING, but only on a throwaway table (WALDEMO) ERASEd at the end.
+*  Purpose: Prove that with TABLE BUFFER ON PERSISTENT (RAM+JOURNAL), buffered
+*           REPLACEs are written to a durable .tbj redo log, COMMIT applies them
+*           (marker fsync BEFORE apply, log removed after), and ROLLBACK discards.
+*           The observable checks here are the COMMIT-applies / ROLLBACK-discards
+*           behavior; the .tbj file itself is created next to the run dir and
+*           removed on commit/rollback (inspect it by adding a QUIT before COMMIT).
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_wal_phaseA_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+ECHO === P0. build throwaway x64 table WALDEMO with two rows ===
+CREATE X64 WALDEMO (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Alpha"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "Beta"
+COUNT
+
+ECHO === P1. enable persistent (RAM+JOURNAL) table buffering ===
+TABLE BUFFER ON PERSISTENT
+TABLE BUFFER STATUS
+
+ECHO === P2. buffered + logged REPLACE on recno 1 (NAME -> Alpha2), not yet applied ===
+GO 1
+REPLACE NAME WITH "Alpha2"
+
+ECHO === P3. COMMIT: WAL marker fsynced before apply, then log removed ===
+COMMIT
+GO 1
+ECHO --- recno 1 NAME should now be Alpha2 (committed) ---
+DISPLAY
+
+ECHO === P4. buffered REPLACE on recno 2 (NAME -> RolledBk) then ROLLBACK ===
+GO 2
+REPLACE NAME WITH "RolledBk"
+ROLLBACK
+GO 2
+ECHO --- recno 2 NAME should still be Beta (rolled back) ---
+DISPLAY
+
+ECHO === P5. HISTORY MODE: multiple retained edits per field are kept + logged ===
+TABLE BUFFER HISTORY ON
+TABLE BUFFER STATUS
+GO 1
+REPLACE NAME WITH "Edit1"
+REPLACE NAME WITH "Edit2"
+REPLACE NAME WITH "Edit3"
+ECHO --- DUMP: recno 1 should show THREE retained NAME edits (priorities 1,2,3), NOT folded ---
+ECHO --- the .tbj log likewise has 3 U records: "U 1 1 H NAME:..", "U 1 2 H ..", "U 1 3 H .." ---
+TABLE BUFFER DUMP
+ECHO --- COMMIT applies the highest-priority value (Edit3); the log retained all three ---
+COMMIT
+GO 1
+DISPLAY
+TABLE BUFFER HISTORY OFF
+
+ECHO === P6. cleanup: disable buffer, close, erase ===
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE WALDEMO CONFIRM
+
+ECHO ============================================================
+ECHO WAL PHASE A PROOF COMPLETE. Confirm:
+ECHO   P3: recno 1 NAME = Alpha2 (COMMIT applied the buffered+logged change).
+ECHO   P4: recno 2 NAME = Beta   (ROLLBACK discarded the buffered change).
+ECHO   P5: DUMP showed 3 retained NAME edits for recno 1 (history mode preserved);
+ECHO       after COMMIT recno 1 NAME = Edit3 (highest priority). Log kept all 3.
+ECHO   No crash under the new durable-log path; RAM+JOURNAL mode active in STATUS.
+ECHO   (A .tbj redo log is written under the run dir and removed on commit/rollback.)
+ECHO ============================================================

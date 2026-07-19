@@ -1,0 +1,65 @@
+* ============================================================
+*  TABLE-BUFFER WAL — PHASE C: DELETE routed through the buffer/log
+*
+*  Status:  CANDIDATE / REVIEW_BEFORE_EXECUTION. MUTATING (throwaway table).
+*  Purpose: With TABLE BUFFER on, DELETE stages a CHANGE_DELETE + journals a D
+*           redo record and defers the DBF mutation to COMMIT (or discards on
+*           ROLLBACK) -- so deletes are transactional like REPLACE. The default
+*           (buffer-off) DELETE keeps its write-through + batched-index path.
+*           WALDEL has no CDX index, so this isolates the transactional behavior
+*           from the separate buffered-commit-vs-CDX-index reconciliation caveat.
+*
+*  RUN (host):
+*    powershell -ExecutionPolicy Bypass -File .\dottalkpp\data\scripts\pinocchio\run_wal_phaseC_proof_teed.ps1
+* ============================================================
+SET ECHO OFF
+SET TIMER ON
+SET TALK ON
+
+SET PATH DBF DBF/pinocchio
+
+CLOSE
+ERASE TABLE WALDEL CONFIRM
+CREATE X64 WALDEL (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Alpha"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "Beta"
+APPEND
+REPLACE ID WITH "3"
+REPLACE NAME WITH "Gamma"
+COUNT
+
+TABLE BUFFER ON PERSISTENT
+
+ECHO === C1. buffered DELETE recno 2 -- deferred until COMMIT ===
+GO 2
+DELETE
+ECHO --- before COMMIT: COUNT DELETED should be 0 (staged only, DBF untouched) ---
+COUNT DELETED
+COMMIT
+ECHO --- after COMMIT: COUNT DELETED should be 1 (recno 2 delete applied) ---
+COUNT DELETED
+
+ECHO === C2. buffered DELETE recno 3 then ROLLBACK -- discarded ===
+GO 3
+DELETE
+ROLLBACK
+ECHO --- after ROLLBACK: COUNT DELETED should still be 1 (recno 3 delete discarded) ---
+COUNT DELETED
+GO 3
+ECHO --- recno 3 should NOT be deleted ---
+DISPLAY
+
+ECHO === C3. cleanup ===
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE WALDEL CONFIRM
+
+ECHO ============================================================
+ECHO WAL PHASE C PROOF COMPLETE. Confirm:
+ECHO   C1: COUNT DELETED = 0 before COMMIT, = 1 after (buffered delete applied on commit).
+ECHO   C2: COUNT DELETED = 1 after ROLLBACK (recno 3 buffered delete discarded); recno 3 live.
+ECHO ============================================================
