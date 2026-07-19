@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "assessment": "beta-1",
+  "verified_on": "2026-07-19",
+  "supersedes": "beta-0",
+  "overall_rating": "Partial",
+  "overall_scope": "buffered-lane Atomicity and Durability only; all other lanes and properties remain Unverified",
+  "allowed_ratings": [
+    "Compliant",
+    "Partial",
+    "Not compliant",
+    "Unverified",
+    "Not applicable"
+  ],
+  "results": [
+    {
+      "lane": "buffered x64 mutation",
+      "property": "Atomicity",
+      "rating": "Partial",
+      "mechanism": "table-buffer write-ahead redo log (.tbj) with an fsync'd atomic commit marker and idempotent recovery-on-open",
+      "expected": "committed buffered transaction survives a crash; uncommitted leaves the DBF untouched",
+      "actual": "COMMIT applied, ROLLBACK discarded, history retained (Phase A); crash-then-reopen replayed committed redo (Phase B)",
+      "proof_artifacts": [
+        "labtalk/proofs/runs/wal_phaseA_proof_teed_20260719T080435Z.log#938D4EC361EB34D8D7A3130E62ABDC06F8868DF3C75698C002F6FBE1A6292F60",
+        "labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log#16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A"
+      ]
+    },
+    {
+      "lane": "buffered x64 mutation",
+      "property": "Durability",
+      "rating": "Partial",
+      "mechanism": "durable fsync'd .tbj redo log; commit marker synced before DBF apply; log removed only after apply",
+      "expected": "committed buffered transaction is recoverable after a crash on reopen",
+      "actual": "reopen replayed the committed redo (NAME=Recovered); buffered DELETE deferred/applied/discarded (Phase C)",
+      "proof_artifacts": [
+        "labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log#16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A",
+        "labtalk/proofs/runs/wal_phaseC_proof_teed_20260719T082345Z.log#FBA1FC92FA1CC531B8B54094D8BC644B1FA51DD13B35053D02775511A257EE54"
+      ]
+    }
+  ],
+  "still_unverified": [
+    "buffered lane Consistency (CDX/LMDB reconciliation after commit)",
+    "buffered lane Isolation (concurrency)",
+    "direct MULTIREP, LMDB-local, DBF+LMDB, memo+DBF, and legacy lanes",
+    "portable DBF fsync after replay/commit"
+  ],
+  "note": "Re-rating of the buffered x64 lane after the 2026-07-19 table-buffer WAL. Scoped gain, not a full-ACID claim; see acid_assessment_beta-1.md for the rating-gate evidence."
+}

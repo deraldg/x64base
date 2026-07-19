@@ -1,9 +1,96 @@
 # Current Target
 
 Status: active.
-Updated: 2026-07-14.
-Supersedes: the 2026-06-29 cleanup/relocation target (closed as stale; see
-History below).
+Updated: 2026-07-19.
+Supersedes: the completed staging-restoration/publication target recorded below.
+
+## Development Focus Update — 2026-07-19
+
+The maintainer-gated promotion objective below (reconcile public corrections into
+development, then push reviewed staging) is unchanged and still open — no branch,
+commit, or push has been made, and `C:\x64base`/GitHub are untouched.
+
+Active development since 2026-07-16 has been in the Pinocchio scale/durability
+lane (AIF-017 / AIF-023), all in `D:\code\ccode` on the existing branch and all
+dev-only (not promoted):
+
+- **Scale-verb hardening (Phase 1.3).** The scale sweep's remaining O(n) verbs
+  are fixed and hash-bound proven: `SEEK` keyed range-seek (57s → ms), `DELETE`/
+  `RECALL` bulk write-transaction batching under an active order (65.4s → 37.8s),
+  `AGGS ALL` single-pass multi-aggregate (~4×), plus the earlier nav `TOP`/`SKIP`
+  LMDB-cursor fix. Companion `SET FILTER`/aggregate `FOR` string-literal fix.
+- **Table-buffer durability WAL (AIF-023).** `COMMIT`/`ROLLBACK` are now
+  crash-recoverable via a durable `.tbj` redo log (three teed-transcript phases:
+  durable writer, recovery-on-open, buffered `DELETE`). Enabled only under
+  `TABLE BUFFER PERSISTENT`; default RamOnly behavior unchanged; the
+  multiple-retained-edits-per-field capability is preserved (added
+  `TABLE BUFFER HISTORY ON|OFF`). Scoped durability gain, not a full-ACID claim;
+  DBF-`fsync` and CDX/LMDB reconciliation remain open hardening.
+
+Closeouts and Session Log rows are recorded in
+`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`; the durability lane is intake row
+AIF-023. None of this changes the authority chain or the promotion gate below;
+it is queued behind the same maintainer-reviewed staging commit/push.
+
+## Current Objective — Reconcile Public Corrections Into Development
+
+Public AI Portal consistency work was completed through:
+
+- `100169433b583e5f51eafdeea130607d71942376` — public-state reconciliation;
+- `a0cf52654c4f8e834e969e3c2524fd397d627a95` — canonical AI startup path;
+- `fa7c04dcea07a2f0b5a027fba7bc953651cd83df` — public consistency closeout.
+
+Those corrections were made against the public GitHub snapshot. This local
+session is reconciling them into the authoritative development tree without
+overwriting newer development facts, then projecting the reviewed result back
+through disposable staging.
+
+```text
+D:\code\ccode -> C:\x64base -> github.com/deraldg/x64base
+```
+
+The reconciliation must:
+
+1. preserve the newer Pinocchio and Messaging rows already using AIF-017 and
+   AIF-018;
+2. move the public manual-drift record to the next free identifier, AIF-019;
+3. preserve the published cold-clone evidence and canonical startup path;
+4. rebuild `C:\x64base` from public `main` plus the corrected manifest overlay;
+5. stop for reviewed staging commit/push after proving the diff is clean.
+
+Current stage: steps 1 through 4 are complete. The corrected portal set is
+projected into `C:\x64base`, its AIF identifiers and authority markers pass, the
+prohibited-artifact scan is empty, and development/staging hashes match. The
+remaining gate is the maintainer-reviewed staging commit/push; the candidate
+also includes the manifest-approved Pinocchio plan, scripts, proof closeout, and
+contract-intake additions.
+
+Primary handoffs:
+
+```text
+docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_PUBLIC_CONSISTENCY_2026-07-15.md
+docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_DEVELOPMENT_RECONCILIATION_2026-07-15.md
+```
+
+Do not reverse the authority chain by treating the GitHub versions as newer
+truth merely because they were published later.
+
+## Previous Objective Resolution — 2026-07-15
+
+The staging-restoration and first-publication objective recorded below is
+complete. The public state at completion was
+`b9d480215c036178ba99b5109a8a2489ee89b215`; later documentation-only
+reconciliation advanced `main` through the commits listed above.
+
+The cold-clone fixes were published in:
+
+- `46e021594bee25fd40fe9b79e318c691e1a714a0` — self-contained clone journey,
+  location-honest launch/databuild scripts, and proof records;
+- `b9d480215c036178ba99b5109a8a2489ee89b215` — valid DotScript `&&` comment
+  syntax in the printed `DO X64` example.
+
+The remaining sections are preserved as the state and reasoning that existed
+when this previous target was active on 2026-07-14.
 
 ## Authority Restatement
 

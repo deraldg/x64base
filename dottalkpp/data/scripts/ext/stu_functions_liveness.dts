@@ -1,0 +1,36 @@
+* ============================================================
+*  Student self-registering FUNCTION liveness proof
+*
+*  Purpose: confirm at RUNTIME that the self-registering student
+*  expression functions in src/ext/fn/fn_student_text_autoreg.cpp
+*  are actually registered (static-init AutoRegister fired) and
+*  callable through the expression engine.
+*
+*  Source-level evidence already established: the TU is pulled into
+*  the dottalkpp executable by the src/CMakeLists.txt GLOB_RECURSE
+*  (src/ext is NOT in _EXCLUDE_DIRS), so the static initializer runs.
+*  This script is the runtime confirmation.
+*
+*  Expected output:
+*    STU_UPPER("abc")     -> ABC
+*    STU_REPEAT("ab", 3)  -> ababab
+*  If instead you see "Unknown function" or an empty/echoed name,
+*  the self-registration did NOT fire (report it).
+*
+*  RUN (host, after building):
+*    ./datarun --script dottalkpp/data/scripts/ext/stu_functions_liveness.dts
+* ============================================================
+SET TALK ON
+
+* --- STU_UPPER: 1-arg uppercase ---
+? STU_UPPER("abc")
+
+* --- STU_REPEAT: 2-arg repeat ---
+? STU_REPEAT("ab", 3)
+
+* --- negative/edge behavior (documents the contract) ---
+? STU_REPEAT("x", 0)
+
+ECHO ============================================================
+ECHO STU FUNCTION LIVENESS: expect ABC, then ababab, then empty line.
+ECHO ============================================================

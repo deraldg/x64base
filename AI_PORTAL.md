@@ -4,8 +4,8 @@ Status: **Alpha/Experimental**
 Audience: AI development partners and maintainers
 Published location: repository root as `AI_PORTAL.md`
 
-This is the fast-start entrance for ChatGPT, Codex, Gemini, Grok, Copilot, and
-other AI systems asked to review or change x64base.
+This is the public AI Portal summary for ChatGPT, Codex, Gemini, Grok, Copilot,
+and other AI systems asked to review or change x64base.
 
 It is not a student portal for accessing an AI service. It prepares an AI to
 work as a development partner using repo-local authority, contracts, runtime
@@ -13,14 +13,19 @@ evidence, safety gates, and task recipes.
 
 ## Mandatory Start
 
-Read these in order before proposing changes:
+`AI_README.md` is the one canonical front door. Follow its ordered table first:
+newest session closeout, current target, authority seed, local-access checklist
+when applicable, SDLC fast start, source-mutation gate, and DotScript readiness
+when `.dts` work is involved.
 
-1. [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
-2. [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
-3. [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
-4. [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
-5. [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
-6. [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
+After that canonical start, use these task-specific sources only when relevant:
+
+- [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
+- [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
+- [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
+- [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
+- [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
+- [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
 
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
@@ -143,6 +148,36 @@ Report each state separately:
 - website commit and pushed branch.
 
 Never claim a later state merely because an earlier one succeeded.
+
+### Document As You Work (AIF-024)
+
+Closeout is a **rollup, not a reconstruction**. Document each material step as it
+happens, while the facts are still in hand — do not defer all recording to the
+end and re-derive it from memory or the chat.
+
+A step is material (and gets recorded when it lands, not later) when it:
+
+- changes source, data, or an AI-facing doc;
+- produces a build or proof result, a hash, or a measured number;
+- makes a decision that constrains later work, or discovers a finding.
+
+Record it in the appropriate durable place as you go: the running Session
+Closeout / progress log, an intake or contract row, a proof transcript with its
+hash. The chat is never the record. If a step's evidence (a hash, a timing, a
+before/after count) is not captured at the moment it is produced, it is treated
+as **not proven** — a later recollection does not substitute.
+
+Rationale, recorded so it is not relitigated: reconstructing a session's trail at
+the end loses the evidence that was cheapest to capture in the moment (exact
+hashes, timings, the reason a path was rejected) and invites overclaiming. The
+2026-07-16 corrective audit (AIF-021) is the worked example — a session that
+deferred its records understated its own diff, skipped the Session Log row, and
+called surfaces ready before proof. Documenting continuously makes AIF-006
+closeout a summary of an already-written trail instead of a scramble.
+
+This does not add a new artifact. It uses the same durable places AIF-006 and the
+session-closeout convention already name; it only fixes **when** they are written
+— continuously, not at the end.
 
 ### Closeout Updates Startup (AIF-006)
 

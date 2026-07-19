@@ -34,4 +34,7 @@ Proposed runtime surfaces are `HELP ACID`, `ACID STATUS`, `ACID EXPLAIN
 design contract until implemented and proven in the engine repository.
 
 See `acid_glass_box_analysis_v1.md` for the architectural analysis and
-`acid_assessment_beta-0.md` for the release-scoped evidence rating.
+`acid_assessment_beta-1.md` for the current release-scoped evidence rating
+(buffered-lane Atomicity and Durability re-rated to **Partial** after the
+2026-07-19 table-buffer WAL). `acid_assessment_beta-0.md` is retained as the
+historical baseline.
