@@ -7,7 +7,7 @@ This page is generated from `src/cli/expr/function_catalog.cpp`, which is the cu
 
 The student extension function examples live separately in `src/ext/fn/fn_student_text_autoreg.cpp`; they demonstrate how learners can add self-registering functions without changing the core catalog.
 
-Source extraction snapshot: `63` documented expression functions.
+Source extraction snapshot: `63` core documented expression functions, plus `2` self-registering student function examples (listed below).
 
 ## Source-Derived Functions
 
@@ -76,3 +76,18 @@ Source extraction snapshot: `63` documented expression functions.
 | `FLOOR` |  | Numeric | 1 | Return the largest integer less than or equal to the numeric value. |
 | `BETWEEN` |  | Numeric | 3 | Return whether a numeric value lies within an inclusive lower and upper bound. |
 | `RAND` |  | Numeric | 0 | Return a pseudo-random numeric value. |
+
+## Self-registering functions (open architecture)
+
+These are not part of the core `function_catalog.cpp` set above — they are the
+shipped **student/extension examples** in
+`src/ext/fn/fn_student_text_autoreg.cpp`, registered at runtime through the same
+self-registration hook (`register_extension_command`) used by the student
+commands `STUDENTECHO` / `STUDENTHELLO` on the
+[command catalog](/docs/dottalk/command-catalog). Copy the file to add your own
+self-registering functions without editing the core catalog.
+
+| Function | Aliases | Category | Args | Summary |
+| --- | --- | --- | --- | --- |
+| `STU_UPPER` |  | String | 1 | Student extension sample: convert a string to uppercase. |
+| `STU_REPEAT` |  | Construction | 2 | Student extension sample: repeat a string a given number of times. |

@@ -1,22 +1,96 @@
 ---
 title: "Error Codes"
-description: "Explicit error codes and categories (placeholder)."
+description: "Canonical xBase_64 error identity: HRESULT-style severity, facility, and code."
 ---
 
-> Add your canonical error table here.
+This page is a website derivative of the engine's canonical error catalog. The
+codes, facilities, severities, and messages are harvested from
+`include/xbase_error_codes.hpp` (mirrored in `src/cli/xbase_error_codes.cpp`).
 
-## Categories
+Publication rule: runtime/source truth wins over this page. Regenerate or review
+it whenever the error catalog, `ERROR_STATUS` mapping, or the `cmdout` emission
+contract changes.
 
-- file I/O
-- format validation
-- indexing
-- memo allocation
-- scripting/runtime
+Harvest anchor: `DIAG-ERRCODE-010`.
 
-## Example
+## Code identity (HRESULT-style)
 
-| Code | Category | Meaning |
+Every xBase_64 error code is a packed 32-bit value with a stable ABI:
+
+```
+ 31      sign bit (always 1 for xBase_64 codes)
+ 30..29  severity   (2 bits)
+ 28..16  facility   (13 bits)
+ 15..0   code number (16 bits)
+```
+
+A code is written compactly as **`facility/0xNNNN`** — for example, the I/O
+write failure is `io/0x0001`. Helper accessors (`get_severity`,
+`get_facility`, `get_number`, `ok`, `failed`) decode the packed value; `ok()`
+is severity `success`.
+
+## Severities
+
+| Severity | Value | Meaning |
 | --- | --- | --- |
-| E001 | I/O | File not found |
-| E010 | Format | Invalid header |
-| E200 | Index | Corrupt index node |
+| `success` | 0 | Operation succeeded (`ok()`). |
+| `warning` | 1 | Completed with a caveat; not a failure. |
+| `error` | 2 | Operation failed. |
+
+## Facilities (subsystems)
+
+| Facility | Value | Scope |
+| --- | --- | --- |
+| `general` | 0x0001 | Cross-cutting engine errors. |
+| `dbf64` | 0x0002 | DBF_64 table format. |
+| `fpt64` | 0x0003 | FPT64 memo format. |
+| `security` | 0x0004 | Security policy / elevated-write guards. |
+| `cli` | 0x0005 | Command-line parsing and command preconditions. |
+| `io` | 0x0006 | File input/output. |
+| `runtime` | 0x0007 | Runtime/execution (reserved). |
+
+## Canonical code catalog
+
+Source-derived from the `ERROR_STATUS` symbol mapping and the `message()`
+table. `ok()` is the success sentinel; `w_*` are warnings.
+
+| Identity | Symbol | Severity | Message |
+| --- | --- | --- | --- |
+| `general/0x0000` | `ok` | success | OK |
+| `general/0x0001` | `e_unknown` (`E_UNKNOWN`) | error | Unknown error |
+| `general/0x0002` | `e_invalid_argument` | error | Invalid argument |
+| `general/0x0003` | `e_not_implemented` | error | Not implemented |
+| `dbf64/0x0001` | `e_dbf_header_invalid` | error | DBF_64 header invalid |
+| `dbf64/0x0002` | `e_dbf_record_out_of_range` | error | DBF_64 record out of range |
+| `fpt64/0x0001` | `e_fpt_block_invalid` | error | FPT64 block invalid |
+| `security/0x0001` | `e_security_policy_violation` | error | Security policy violation |
+| `security/0x0002` | `e_security_elevated_write_forbidden` | error | Security: elevated write forbidden |
+| `cli/0x0001` | `e_cli_parse_error` | error | CLI parse error |
+| `cli/0x0002` | `e_no_table_open` | error | No table open. |
+| `cli/0x0003` | `e_invalid_record_number` | error | Invalid record number. |
+| `cli/0x0004` | `e_invalid_current_record` | error | Invalid current record. |
+| `cli/0x0005` | `e_missing_argument` | error | Missing required argument. |
+| `cli/0x0006` | `e_unrecognized_command_form` | error | Unrecognized command form. |
+| `cli/0x0007` | `e_area_qualifier_not_supported` | error | Area qualifier not supported yet. |
+| `cli/0x0008` | `e_order_unavailable` | error | Ordered backend unavailable. |
+| `cli/0x0009` | `w_for_clause_ignored` | warning | FOR clause ignored. |
+| `cli/0x000A` | `w_order_fallback_physical` | warning | Falling back to physical order. |
+| `io/0x0001` | `e_io_write_failed` | error | I/O write failed. |
+
+## How errors surface
+
+Commands raise a canonical code and a localized message through the `cmdout`
+channel (`src/cli/command_output.hpp`): `emit_error(cmd, code, ...)` /
+`emit_warning(...)` print the localized text and record the code via
+`set_last_error`, so the same failure is inspectable through the `ERROR_STATUS`
+command and (as it is wired) haltable under `SET ERRORSTOP`. Message text is
+localized — see [Messaging & Localization](/docs/engine/messaging-and-localization).
+
+## Status
+
+This catalog is **source-defined** and runtime-proven for the codes it lists
+(the `EXPORTFUNCTIONS` I/O path was the first end-to-end proof of
+`e_io_write_failed` through `ERROR_STATUS`). It is not a claim that every command
+already routes its diagnostics through canonical codes: adoption across the full
+command surface, and `SET ERRORSTOP` halting for every converted command, is an
+active engineering lane, not a finished state.

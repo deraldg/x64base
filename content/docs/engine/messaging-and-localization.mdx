@@ -1,0 +1,82 @@
+---
+title: "Messaging & Localization"
+description: "How DotTalk++ produces localized, severity-aware command output across locales and regions."
+---
+
+This page is a website derivative of the engine's messaging and localization
+system. It is harvested from `src/cli/command_output.*`,
+`src/help/message_catalog.*`, `src/help/helpdata_messages.*`, and
+`src/help/locale_spine_catalog.*`.
+
+Publication rule: runtime/source truth wins over this page. Regenerate or review
+it whenever the message catalog, locale spine, or the `cmdout` contract changes.
+
+Harvest anchor: `DIAG-MSGLOC-011`.
+
+## The output channel
+
+Command diagnostics flow through one channel, `cli::cmdout`
+(`src/cli/command_output.hpp`), rather than raw `std::cout`. The channel offers:
+
+- `print_prefixed_message(cmd, id, args)` — a localized, `cmd:`-prefixed line;
+- `emit_error(cmd, code, ...)` / `emit_warning(...)` — the same, plus a canonical
+  [error code](/docs/engine/error-codes) recorded via `set_last_error`.
+
+Routing a command's diagnostics through this channel pays four dividends at once:
+regional **language** (from the catalog), **severity** (`xbase::error` code),
+**`SET ERRORSTOP`** awareness (via `set_last_error`), and consistent `cmd:`
+formatting. Tabular payload — `LIST`, `DUMP`, `SMARTLIST` output — deliberately
+stays on the data channel and is **not** localized.
+
+## The message catalog
+
+Localized text is keyed by a stable `MessageId` (roughly 900+ message ids in
+`src/help/helpdata_messages.hpp`) and rendered per locale by
+`format_message_catalog(locale, ...)`. Messages live in a runtime table,
+`SYSTEM_MESSAGES.dbf`, and are maintained through the `MSGMGR` command, which
+seeds and checks message rows in reviewed priority tiers:
+
+- **Priority A** — `SET MESSAGE` / `MSGMGR` rows;
+- **Priority B** — the demonstrated command-surface rows;
+- **Priority C** — `USE` / `DISPLAY` / navigation runtime lines.
+
+`MSGMGR STATUS` and `MSGMGR CHECK` are read-only report surfaces; the
+`SEED ... CHECK` / `SEED ... APPLY` forms maintain the rows.
+
+## Locales and regions
+
+The active locale set is data-driven through a DBF/CDX/LMDB **locale spine**
+(`SYSTEM_LOCALES.dbf` plus `SYSTEM_LOCALE_FALLBACK.dbf`, with matching CDX and
+LMDB index containers), inspected by `locale_spine_catalog`.
+
+| Locale | Region | Role |
+| --- | --- | --- |
+| `en-US` | United States English | Base / fallback locale |
+| `de` | German | Localized surface |
+| `es` | Spanish | Localized surface |
+| `fr` | French | Localized surface |
+| `it` | Italian | Localized surface |
+
+Resolution uses a simple **fallback chain**: the requested locale first, then
+`en-US`. So a message missing in `fr` renders its `en-US` text rather than a raw
+key, and the base locale always resolves.
+
+## Proof
+
+The `REGRESSION LANGUAGE` battery is the runtime proof for this surface:
+"Messaging-normalization locale proof: **es/fr/de/it USAGE render** across the
+localized command surface." It exercises the localized command help across the
+four non-base locales and confirms each renders through the catalog.
+
+## Status
+
+The channel, catalog, and locale spine are **source-defined and runtime-read-back**
+for the surfaces above. Two honest caveats:
+
+- **Adoption is in progress.** Not every command yet routes its diagnostics
+  through `cmdout` / canonical codes; converting the remaining command surface —
+  and making each converted command `SET ERRORSTOP`-aware — is an active lane.
+- **Compiled vs active provider.** The compiled catalog and the active
+  `SYSTEM_MESSAGES.dbf` provider are maintained separately and are not assumed to
+  be byte-synchronized; message counts cited from source describe the compiled
+  catalog, and a live count comes from the active DBF via `MSGMGR STATUS`.

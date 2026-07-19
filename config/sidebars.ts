@@ -30,6 +30,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Pinocchio Benchmarks", href: "/docs/engine/pinocchio-benchmarks" },
       { label: "Engine Feature Crosswalk", href: "/docs/engine/feature-crosswalk" },
       { label: "Error Codes", href: "/docs/engine/error-codes" },
+      { label: "Messaging & Localization", href: "/docs/engine/messaging-and-localization" },
       { label: "API Reference", href: "/docs/engine/api-reference" }
     ]
   },

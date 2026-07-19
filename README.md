@@ -46,6 +46,42 @@ Copy `out/` contents into your Apache `DocumentRoot` (or a vhost directory). Opt
 
 See `apache/DEPLOYMENT.md` for full details and reverse-proxy alternative.
 
+## Pre-publish drift checks (source-derived pages)
+
+Several pages are **derived from the engine source** and drift whenever the
+engine changes but the page is not regenerated (missing commands, stale error
+codes, etc.). Run these before every publish; each exits non-zero on drift, so
+they gate the publish. They live in the source repo and read it directly.
+
+```bash
+# source repo (engine truth) and the Python 3.12 interpreter
+CC="D:\code\ccode"
+SYNC="$CC\tools\fullstack_docs\command_catalog_sync.py"
+SYSCMD="$CC\docs\maintenance\lanes\full_stack_documentation\runs\DOCFLUSH-20260716-001\metacollect_phase\candidate_v8_contracts_resolved\promotion_package_v1\SYSCMD_V8_LIVE_READBACK.csv"
+SYSFUNC="$CC\docs\maintenance\lanes\full_stack_documentation\runs\DOCFLUSH-20260716-001\metacollect_phase\candidate_v2_post_comments_help\SYSFUNC_IMPORT_candidate_v2.csv"
+
+# 1. Command catalog vs registry (+ SYSCMD DBF cross-check)
+python "$SYNC" check     --source-root "$CC" --catalog content\docs\dottalk\command-catalog.mdx --syscmd "$SYSCMD"
+
+# 2. Function catalog vs function_catalog.cpp + self-registered fns (+ SYSFUNC)
+python "$SYNC" fn-check  --source-root "$CC" --catalog content\docs\dottalk\function-catalog.mdx --sysfunc "$SYSFUNC"
+
+# 3. Error-codes page vs xbase_error_codes.hpp (identity, severity, message)
+python "$SYNC" err-check --source-root "$CC" --page content\docs\engine\error-codes.mdx
+
+# 4. Messaging/localization locale table vs the REGRESSION LANGUAGE source set
+python "$SYNC" loc-check --source-root "$CC" --page content\docs\engine\messaging-and-localization.mdx
+```
+
+All four must print `check=PASS`. `--syscmd` / `--sysfunc` are optional (they add
+a second DBF cross-check); drop them to validate against source alone. When a
+check FAILs, regenerate the page: `command_catalog_sync.py emit --source-root
+"$CC" --out <file>` re-derives the command catalog, and the report lists exactly
+what is missing/stale for the others.
+
+The tool is BOM-, CRLF-, and inline-comment-robust when parsing `@dottalk.usage`
+blocks; keep it that way if you extend it.
+
 ## Publish cycle: D:\dev\x64base-site -> build/public artifact -> GitHub Pages -> x64base.com
 
 The live public site is served by GitHub Pages from:

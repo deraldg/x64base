@@ -1,0 +1,35 @@
+# Line-ending policy.
+#
+# The documentation content and site config are the drift-prone areas: they are
+# source-derived / harvested and edited by tooling, so CRLF/LF churn there
+# inflates diffs. These paths are pinned to LF (a whole-tree normalization of
+# content/, config/, and scripts/ was applied when this file was added).
+#
+# Hand-maintained app code (app/, components/, lib/) is intentionally NOT forced
+# here: HEAD currently stores those with CRLF, so a global rule would trigger a
+# surprise whole-tree renormalization. Normalize those separately if desired.
+
+content/** text=auto eol=lf
+config/**  text=auto eol=lf
+scripts/** text=auto eol=lf
+*.mdx      text eol=lf
+*.md       text eol=lf
+
+# Binary assets (never normalize)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.svg   text eol=lf
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.pdf   binary
+*.docx  binary
+*.mdb   binary
+*.dbf   binary
+*.cdx   binary
