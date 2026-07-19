@@ -1,3 +1,30 @@
+---
+ai_report_audit:
+  schema: ai-report-audit-v1
+  report_id: <AIPR-YYYYMMDD-NNN>
+  recorded_at_utc: <YYYY-MM-DDTHH:MM:SSZ>
+  agent:
+    provider: <provider-or-not_exposed>
+    product: <AI-product-or-tool>
+    model: <model-or-not_exposed>
+    access_mode: <local_write | local_read_only | hosted_proposal | external_patch | human_operated_tool | automation>
+  session:
+    id: <opaque-session-id-or-not_exposed>
+    chat_reference: <safe-product-task-reference-or-not_exposed>
+  project:
+    id: <project-id-from-labtalk/registries/projects.yaml>
+    root: <registered-project-root>
+  git:
+    branch: <branch-or-not_applicable>
+    baseline_commit: <full-commit-sha-or-not_applicable>
+  authorization:
+    requested_by: <maintainer | human-operator | automation-owner>
+    scope: <concise-authorized-scope>
+  report:
+    path: <repo-relative-path-to-this-closeout>
+    kind: session_closeout
+---
+
 # Session Closeout — <topic>
 
 Date: <YYYY-MM-DD>.
@@ -9,6 +36,10 @@ Proof state: <none | report | transcript | build | git-verified>.
 Copy this file to `SESSION_CLOSEOUT_<topic>_<YYYY-MM-DD>.md` and fill it in.
 Delete this instruction line and any sections that do not apply. Keep it honest:
 report only states actually reached.
+
+The `ai_report_audit` envelope is mandatory for every new AI-authored closeout.
+Use `not_exposed` or `not_applicable` instead of inventing identity, chat, model,
+or git values. See `labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md`.
 
 ## One-line summary
 

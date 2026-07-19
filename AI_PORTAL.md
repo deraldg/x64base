@@ -149,6 +149,36 @@ Report each state separately:
 
 Never claim a later state merely because an earlier one succeeded.
 
+### Document As You Work (AIF-024)
+
+Closeout is a **rollup, not a reconstruction**. Document each material step as it
+happens, while the facts are still in hand — do not defer all recording to the
+end and re-derive it from memory or the chat.
+
+A step is material (and gets recorded when it lands, not later) when it:
+
+- changes source, data, or an AI-facing doc;
+- produces a build or proof result, a hash, or a measured number;
+- makes a decision that constrains later work, or discovers a finding.
+
+Record it in the appropriate durable place as you go: the running Session
+Closeout / progress log, an intake or contract row, a proof transcript with its
+hash. The chat is never the record. If a step's evidence (a hash, a timing, a
+before/after count) is not captured at the moment it is produced, it is treated
+as **not proven** — a later recollection does not substitute.
+
+Rationale, recorded so it is not relitigated: reconstructing a session's trail at
+the end loses the evidence that was cheapest to capture in the moment (exact
+hashes, timings, the reason a path was rejected) and invites overclaiming. The
+2026-07-16 corrective audit (AIF-021) is the worked example — a session that
+deferred its records understated its own diff, skipped the Session Log row, and
+called surfaces ready before proof. Documenting continuously makes AIF-006
+closeout a summary of an already-written trail instead of a scramble.
+
+This does not add a new artifact. It uses the same durable places AIF-006 and the
+session-closeout convention already name; it only fixes **when** they are written
+— continuously, not at the end.
+
 ### Closeout Updates Startup (AIF-006)
 
 If a session changed **lane state** — a new or superseded contract, a promoted

@@ -344,6 +344,59 @@ outside command identity. The CMDHELPCHK v2 canonical implementation is now
 preserved byte-for-byte in `tools/help/attic`, and its former path is a
 compatibility launcher.
 
+## Gate 6 Website Feed
+
+`tools/fullstack_docs/build_website_feed_packet.py` and
+`validate_website_feed_packet.py` provide the Python 3.12 report-only handoff
+from the public manual commit to the maintained website repository. The builder
+binds Git blobs, accepted manual counts, current website file hashes, proof
+labels, public source URLs, and proposed route actions without writing the site.
+The independent validator rechecks packet hashes, source blobs, route identity,
+target existence, website baseline state, and zero mutation authority.
+
+The passing `WEBSITEFEED-20260718T155242Z` packet proposes 11 Gate 7 targets:
+two creates, eight updates, and one exact manual-download replacement. It finds
+the existing website manual stale at 3,828 lines / 212 headings against the
+public 4,118-line / 237-heading artifact, and flags two obsolete Python 3.11
+validation statements for reviewed correction. Website files, build, commit,
+push, deployment, and the metacollect-238 mission remain unchanged.
+
+## Gate 7 Website Integration
+
+Gate 7 is split into an exact plan and a bounded local apply:
+
+- plan: `GATE7PLAN-20260718T160428Z`;
+- apply/build: `GATE7APPLY-20260718T162939Z`;
+- website baseline: `a69e0ec0` on `codex/lean-sites-publish`;
+- transaction: two creates, eight updates, one exact manual replacement;
+- build: 117 static pages, public-content guard and TypeScript PASS;
+- validation: 32/32 full-stack tests, post-apply validator PASS with zero
+  findings, and `git diff --check` PASS.
+
+The website manual and generated download are byte-exact to public source Git
+blob SHA-256 `09B593E9...B13B`. Package, lockfile, and hosting configuration
+remain unchanged. Gate 7 deliberately leaves the 11-path website diff
+uncommitted; commit, push, GitHub Pages publication, and live verification are
+Gates 8 and 9.
+
+## Gates 8-9 Public Publication
+
+The approved Gate 7 transaction was committed as website source `43f120a4` and
+published as `gh-pages` commit `0ef77ea9`. GitHub Pages build `1102357325`
+reports `built` with HTTPS enforced.
+
+Gate 9 read the public products with a unique cache-busting query:
+
+- `/downloads/`: HTTP 200;
+- `/docs/dottalk/command-reference/`: HTTP 200, previously 404;
+- publication announcement: HTTP 200, previously 404;
+- download manifest and release metadata: HTTP 200 and source-bound;
+- Markdown manual: exact SHA-256 `09B593E9...B13B`, 4,118 lines, 237 headings.
+
+This completes all nine gates in `DOCFLUSH-20260716-001`. The private Sites
+mirror was not used because GitHub Pages is the canonical public lane. The
+metacollect-238 findings remain a separate mission.
+
 ## Public Projection Test Boundary
 
 The public staging projection includes the reusable validators and their

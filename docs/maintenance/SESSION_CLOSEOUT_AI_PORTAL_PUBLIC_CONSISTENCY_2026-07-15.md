@@ -1,6 +1,6 @@
 # Session Closeout — AI Portal Public Consistency (2026-07-15)
 
-Status: **public reconciliation complete; authoritative-development reconciliation pending.**
+Status: **public reconciliation complete; authoritative-development reconciliation completed in a later local session.**
 
 ## Purpose
 
@@ -40,8 +40,7 @@ changed.
   remaining an active assignment.
 - The cold-clone closeout preserves its original session-close state and now has
   an append-only publication update.
-- `AIF-014` remains the xbase/xindex proof item; manual drift is uniquely
-  identified as `AIF-017`.
+- `AIF-014` remains the xbase/xindex proof item.
 - `AIF-015` distinguishes authoritative-development proof from public-source
   availability.
 - `AIF-016` records publication as complete.
@@ -61,26 +60,35 @@ changed.
 - Public readback confirmed the resolved target, unique AIF identifiers,
   publication update, and canonical startup wording on `main`.
 
-## Authority boundary and next gate
+## Authority boundary and original next gate
 
-These corrections currently exist in the public snapshot. Under the development
-flow contract, public-only work is not integrated project work until reconciled
-into the authoritative development tree:
+These corrections initially existed only in the public snapshot. Under the
+development flow contract, public-only work is not integrated project work until
+reconciled into the authoritative development tree:
 
 ```text
 D:\code\ccode
 ```
 
-Next gate:
+The original next gate was to inspect the affected Markdown files in
+development, preserve newer local facts, verify the result, and promote again
+only if a reviewed development-to-public delta remained.
 
-1. Inspect the current versions of the eight affected Markdown files in
-   `D:\code\ccode`.
-2. Reconcile the public corrections selectively; do not overwrite newer local
-   development facts.
-3. Record the local development branch and working-tree state.
-4. Verify the reconciled documents against current development source and
-   runtime evidence.
-5. Promote the reviewed result through `C:\x64base` only if development differs
-   from public `main` after reconciliation.
+## Development reconciliation update — 2026-07-15
 
-This session did not access or mutate `D:\code\ccode` or `C:\x64base`.
+The later local-access reconciliation found that development had advanced while
+the public audit was being performed:
+
+- AIF-017 already named the Pinocchio stress-test lane.
+- AIF-018 already named the Messaging Normalization lane.
+- The earlier development queue still had two AIF-014 rows.
+
+Therefore the public files could not be copied back wholesale. Development kept
+AIF-014 for xbase/xindex proof, preserved AIF-017 and AIF-018, and assigned the
+manual-drift candidate the next free identifier, **AIF-019**. The canonical
+startup, publication-complete cold-clone evidence, and public-audit history were
+then reconciled selectively.
+
+The resulting development state was projected through `C:\x64base` by the
+normal manifest rebuild. See
+`SESSION_CLOSEOUT_AI_PORTAL_DEVELOPMENT_RECONCILIATION_2026-07-15.md`.
