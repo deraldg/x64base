@@ -86,13 +86,13 @@ void cmd_PRIOR(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    const int32_t rn = cli::logical_nav::prev_recno(A, A.recno());
-    if (rn <= 0) {
+    const std::uint64_t rn = cli::logical_nav::prev_recno(A, A.recno64());
+    if (rn == 0) {
         cli::cmdout::print_prefixed_message("PRIOR", dottalk::helpdata::MessageId::NavAtTopText);
         return;
     }
 
-    if (!A.gotoRec(rn) || !A.readCurrent()) {
+    if (!A.gotoRec64(rn) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message("PRIOR", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }
@@ -100,6 +100,6 @@ void cmd_PRIOR(xbase::DbArea& A, std::istringstream& in)
     if (cli::Settings::instance().talk_on.load()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::NavRecnoLine,
-            {{"recno", std::to_string(A.recno())}});
+            {{"recno", std::to_string(A.recno64())}});
     }
 }

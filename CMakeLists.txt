@@ -76,8 +76,8 @@ option(DOTTALK_WITH_TV        "Enable Turbo Vision features" OFF)
 option(DOTTALK_WITH_GUI       "Build GUI-neutral application services" OFF)
 option(DOTTALK_WITH_WX        "Build wxWidgets windowed GUI frontend" OFF)
 option(DOTTALK_TV_TESTS       "Build Turbo Vision probe tests" ON)
-option(DOTTALK_WITH_INDEX     "Enable LMDB-backed xindex support" OFF)
-option(DOTTALK_WITH_EDUCATION "Enable education support" ON)
+option(DOTTALK_WITH_INDEX     "Compatibility switch: enable LMDB-backed xindex support" OFF)
+option(DOTTALK_WITH_EDUCATION "Compatibility switch: include the full education surface" ON)
 option(BUILD_PYDOTTALK        "Build Python bindings" OFF)
 option(DOTTALK_WITH_RELATIONS "Enable relationship support" ON)
 option(DOTTALK_BUILD_METACOLLECT "Build the developer metadata collector" OFF)
@@ -105,6 +105,81 @@ endif()
 
 # Transitional / developer-only command surfaces.
 option(DOTTALK_WITH_DEV "Include developer tools and transitional aliases" ${_dottalk_with_dev_default})
+
+# Authoritative engine/product selections.  The older boolean options remain
+# as compatibility outputs so existing source guards and build scripts keep
+# working while the product matrix becomes explicit.
+set(DOTTALK_INDEX_MODE "" CACHE STRING "Index engine: NONE, LEGACY, or LMDB")
+set_property(CACHE DOTTALK_INDEX_MODE PROPERTY STRINGS NONE LEGACY LMDB)
+
+if (DOTTALK_INDEX_MODE STREQUAL "")
+    if (DOTTALK_WITH_INDEX)
+        set(DOTTALK_INDEX_MODE "LMDB" CACHE STRING "Index engine" FORCE)
+    else()
+        # Historical WITH_INDEX=OFF disabled LMDB only; legacy xindex remained.
+        set(DOTTALK_INDEX_MODE "LEGACY" CACHE STRING "Index engine" FORCE)
+    endif()
+endif()
+string(TOUPPER "${DOTTALK_INDEX_MODE}" DOTTALK_INDEX_MODE)
+if (NOT DOTTALK_INDEX_MODE MATCHES "^(NONE|LEGACY|LMDB)$")
+    message(FATAL_ERROR "DOTTALK_INDEX_MODE must be NONE, LEGACY, or LMDB")
+endif()
+
+if (DOTTALK_INDEX_MODE STREQUAL "NONE")
+    set(DOTTALK_HAS_XINDEX OFF)
+    set(DOTTALK_WITH_INDEX OFF CACHE BOOL "LMDB-backed xindex enabled" FORCE)
+elseif (DOTTALK_INDEX_MODE STREQUAL "LEGACY")
+    set(DOTTALK_HAS_XINDEX ON)
+    set(DOTTALK_WITH_INDEX OFF CACHE BOOL "LMDB-backed xindex enabled" FORCE)
+else()
+    set(DOTTALK_HAS_XINDEX ON)
+    set(DOTTALK_WITH_INDEX ON CACHE BOOL "LMDB-backed xindex enabled" FORCE)
+endif()
+
+set(DOTTALK_PRODUCT "DEVELOPMENT" CACHE STRING
+    "Product composition: LEAN, PROFESSIONAL, EDUCATIONAL, or DEVELOPMENT")
+set_property(CACHE DOTTALK_PRODUCT PROPERTY STRINGS LEAN PROFESSIONAL EDUCATIONAL DEVELOPMENT)
+string(TOUPPER "${DOTTALK_PRODUCT}" DOTTALK_PRODUCT)
+if (NOT DOTTALK_PRODUCT MATCHES "^(LEAN|PROFESSIONAL|EDUCATIONAL|DEVELOPMENT)$")
+    message(FATAL_ERROR
+        "DOTTALK_PRODUCT must be LEAN, PROFESSIONAL, EDUCATIONAL, or DEVELOPMENT")
+endif()
+
+set(DOTTALK_COMPONENT_EDU_ESSENTIALS ON)
+set(DOTTALK_COMPONENT_LABTALK OFF)
+set(DOTTALK_COMPONENT_MAINTENANCE OFF)
+set(DOTTALK_COMPONENT_EXTERNAL OFF)
+set(DOTTALK_COMPONENT_DEV OFF)
+
+if (DOTTALK_PRODUCT STREQUAL "EDUCATIONAL")
+    set(DOTTALK_COMPONENT_LABTALK ON)
+elseif (DOTTALK_PRODUCT STREQUAL "DEVELOPMENT")
+    set(DOTTALK_COMPONENT_LABTALK ON)
+    set(DOTTALK_COMPONENT_MAINTENANCE ON)
+    set(DOTTALK_COMPONENT_EXTERNAL ON)
+    set(DOTTALK_COMPONENT_DEV ON)
+endif()
+
+set(DOTTALK_WITH_EDUCATION ${DOTTALK_COMPONENT_LABTALK}
+    CACHE BOOL "Include full education surface" FORCE)
+set(DOTTALK_WITH_DEV ${DOTTALK_COMPONENT_DEV}
+    CACHE BOOL "Include developer tools and transitional aliases" FORCE)
+
+foreach(_dottalk_bool IN ITEMS
+    DOTTALK_HAS_XINDEX
+    DOTTALK_WITH_INDEX
+    DOTTALK_COMPONENT_EDU_ESSENTIALS
+    DOTTALK_COMPONENT_LABTALK
+    DOTTALK_COMPONENT_MAINTENANCE
+    DOTTALK_COMPONENT_EXTERNAL
+    DOTTALK_COMPONENT_DEV)
+    if (${_dottalk_bool})
+        add_compile_definitions(${_dottalk_bool}=1)
+    else()
+        add_compile_definitions(${_dottalk_bool}=0)
+    endif()
+endforeach()
+unset(_dottalk_bool)
 
 # Optional extra diagnostics.
 option(DOTTALK_EXTRA_DIAGNOSTICS "Enable extra internal diagnostics/logging" ${_dottalk_extra_diagnostics_default})
@@ -301,13 +376,13 @@ function(dottalk_apply_common_settings target_name)
         target_compile_definitions(${target_name} PRIVATE DOTTALK_XEXPR_AVAILABLE=0)
     endif()
 
-    if (DOTTALK_WITH_INDEX)
-        target_compile_definitions(${target_name} PRIVATE DOTTALK_WITH_INDEX=1)
+    if (DOTTALK_HAS_XINDEX)
+        target_compile_definitions(${target_name} PRIVATE DOTTALK_HAS_XINDEX=1)
         if (TARGET xindex)
             target_link_libraries(${target_name} PRIVATE xindex)
         endif()
     else()
-        target_compile_definitions(${target_name} PRIVATE DOTTALK_WITH_INDEX=0)
+        target_compile_definitions(${target_name} PRIVATE DOTTALK_HAS_XINDEX=0)
     endif()
 
     if (_tvision_found)
@@ -346,10 +421,10 @@ if (TARGET dottalkpp)
         message(STATUS "Turbo Vision explicitly disabled for 'dottalkpp'.")
     endif()
 
-    if (DOTTALK_WITH_INDEX)
-        message(STATUS "Indexing ENABLED for 'dottalkpp'.")
+    if (DOTTALK_HAS_XINDEX)
+        message(STATUS "Index engine ${DOTTALK_INDEX_MODE} ENABLED for 'dottalkpp'.")
     else()
-        message(STATUS "Indexing DISABLED for 'dottalkpp'.")
+        message(STATUS "Index engine NONE for 'dottalkpp'.")
     endif()
 
     if (DOTTALK_WITH_DEV)
@@ -374,10 +449,10 @@ if (BUILD_PYDOTTALK)
     if (TARGET pydottalk)
         dottalk_apply_common_settings(pydottalk)
 
-        if (DOTTALK_WITH_INDEX)
-            message(STATUS "Indexing ENABLED for 'pydottalk'.")
+        if (DOTTALK_HAS_XINDEX)
+            message(STATUS "Index engine ${DOTTALK_INDEX_MODE} ENABLED for 'pydottalk'.")
         else()
-            message(STATUS "Indexing DISABLED for 'pydottalk'.")
+            message(STATUS "Index engine NONE for 'pydottalk'.")
         endif()
 
         if (DOTTALK_WITH_RELATIONS)
@@ -399,6 +474,99 @@ if (BUILD_TESTING)
 endif()
 
 # ============================================================
+# Product Package Allow-list
+# ============================================================
+
+# Product packaging is a third filter, separate from .gitignore (never
+# version) and PROMOTE.manifest (publish now). It selects only git-tracked
+# runtime inputs for this named product and never recursively copies the
+# working tree.
+string(TOLOWER "${DOTTALK_PRODUCT}" _dottalk_product_lower)
+set(DOTTALK_PACKAGE_MANIFEST
+    "${CMAKE_SOURCE_DIR}/config/package/${_dottalk_product_lower}.manifest")
+if (NOT EXISTS "${DOTTALK_PACKAGE_MANIFEST}")
+    message(FATAL_ERROR "Missing product package manifest: ${DOTTALK_PACKAGE_MANIFEST}")
+endif()
+
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(_dottalk_package_dir "${CMAKE_BINARY_DIR}/package")
+set(DOTTALK_PRODUCT_INVENTORY
+    "${_dottalk_package_dir}/${_dottalk_product_lower}-product-inventory.json")
+set(_dottalk_package_file_list
+    "${_dottalk_package_dir}/${_dottalk_product_lower}-package-files.txt")
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
+            --root "${CMAKE_SOURCE_DIR}"
+            --manifest "${DOTTALK_PACKAGE_MANIFEST}"
+            --product "${DOTTALK_PRODUCT}"
+            --output "${DOTTALK_PRODUCT_INVENTORY}"
+            --cmake-list-output "${_dottalk_package_file_list}"
+    RESULT_VARIABLE _dottalk_inventory_result
+    OUTPUT_VARIABLE _dottalk_inventory_output
+    ERROR_VARIABLE _dottalk_inventory_error
+)
+if (NOT _dottalk_inventory_result EQUAL 0)
+    message(FATAL_ERROR
+        "Product manifest validation failed: ${_dottalk_inventory_error}")
+endif()
+string(STRIP "${_dottalk_inventory_output}" _dottalk_inventory_output)
+message(STATUS "Product package: ${_dottalk_inventory_output}")
+
+file(STRINGS "${_dottalk_package_file_list}" DOTTALK_PACKAGE_FILES)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${DOTTALK_PACKAGE_MANIFEST}"
+    "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
+    ${DOTTALK_PACKAGE_FILES}
+)
+
+foreach(_dottalk_package_rel IN LISTS DOTTALK_PACKAGE_FILES)
+    if (_dottalk_package_rel MATCHES "^dottalkpp/bin/(.+)$")
+        get_filename_component(_dottalk_package_subdir
+            "${CMAKE_MATCH_1}" DIRECTORY)
+        set(_dottalk_package_dest "bin")
+        if (NOT _dottalk_package_subdir STREQUAL "")
+            string(APPEND _dottalk_package_dest "/${_dottalk_package_subdir}")
+        endif()
+    elseif (_dottalk_package_rel MATCHES "^dottalkpp/data/(.+)$")
+        get_filename_component(_dottalk_package_subdir
+            "${CMAKE_MATCH_1}" DIRECTORY)
+        set(_dottalk_package_dest "data")
+        if (NOT _dottalk_package_subdir STREQUAL "")
+            string(APPEND _dottalk_package_dest "/${_dottalk_package_subdir}")
+        endif()
+    else()
+        message(FATAL_ERROR
+            "Package entry has no approved install mapping: ${_dottalk_package_rel}")
+    endif()
+    install(FILES "${CMAKE_SOURCE_DIR}/${_dottalk_package_rel}"
+            DESTINATION "${_dottalk_package_dest}")
+endforeach()
+
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ".")
+install(FILES "${DOTTALK_PACKAGE_MANIFEST}"
+        DESTINATION "." RENAME "product.manifest")
+install(FILES "${DOTTALK_PRODUCT_INVENTORY}"
+        DESTINATION "." RENAME "product-inventory.json")
+
+if (BUILD_TESTING)
+    foreach(_dottalk_package_product IN ITEMS
+        lean professional educational development)
+        add_test(
+            NAME "package_manifest_${_dottalk_package_product}"
+            COMMAND "${Python3_EXECUTABLE}"
+                    "${CMAKE_SOURCE_DIR}/tools/packaging/build_product_inventory.py"
+                    --root "${CMAKE_SOURCE_DIR}"
+                    --manifest
+                    "${CMAKE_SOURCE_DIR}/config/package/${_dottalk_package_product}.manifest"
+                    --product "${_dottalk_package_product}"
+                    --output
+                    "${_dottalk_package_dir}/${_dottalk_package_product}-test-inventory.json"
+        )
+    endforeach()
+endif()
+
+# ============================================================
 # Summary
 # ============================================================
 
@@ -415,6 +583,9 @@ message(STATUS "  DOTTALK_MAX_AREA      : ${DOTTALK_MAX_AREA}")
 message(STATUS "  DOTTALK_WITH_DEV      : ${DOTTALK_WITH_DEV}")
 message(STATUS "  DOTTALK_EXTRA_DIAGN.  : ${DOTTALK_EXTRA_DIAGNOSTICS}")
 message(STATUS "  DOTTALK_WITH_INDEX    : ${DOTTALK_WITH_INDEX}")
+message(STATUS "  DOTTALK_INDEX_MODE    : ${DOTTALK_INDEX_MODE}")
+message(STATUS "  DOTTALK_HAS_XINDEX    : ${DOTTALK_HAS_XINDEX}")
+message(STATUS "  DOTTALK_PRODUCT       : ${DOTTALK_PRODUCT}")
 message(STATUS "  DOTTALK_WITH_RELATIONS: ${DOTTALK_WITH_RELATIONS}")
 message(STATUS "  DOTTALK_WITH_EDUCATION: ${DOTTALK_WITH_EDUCATION}")
 message(STATUS "  xexpr found           : ${_xexpr_found}")
@@ -471,10 +642,16 @@ endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
 
 if(TARGET dottalkpp)
-    install(TARGETS dottalkpp RUNTIME DESTINATION bin)
-    install(DIRECTORY "${CMAKE_SOURCE_DIR}/dottalkpp/data/"
-            DESTINATION data
-            PATTERN "logs" EXCLUDE
-            PATTERN "tmp" EXCLUDE
-            PATTERN "*.mdb" EXCLUDE)
+    if (WIN32)
+        install(TARGETS dottalkpp RUNTIME DESTINATION bin)
+        # CMake sees LMDB as a runtime target. FindSQLite3 exposes SQLite's
+        # import library only, while vcpkg app-local deployment copies the DLL
+        # beside the executable, so include that file explicitly.
+        install(FILES $<TARGET_RUNTIME_DLLS:dottalkpp>
+                DESTINATION bin OPTIONAL)
+        install(FILES "$<TARGET_FILE_DIR:dottalkpp>/sqlite3.dll"
+                DESTINATION bin OPTIONAL)
+    else()
+        install(TARGETS dottalkpp RUNTIME DESTINATION bin)
+    endif()
 endif()

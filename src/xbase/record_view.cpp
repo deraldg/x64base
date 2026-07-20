@@ -1,6 +1,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "xbase_64.hpp"
+#include "xbase/field_codec.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -9,11 +10,6 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
-
-#if DOTTALK_WITH_INDEX
-  #include "xindex/index_manager.hpp"
-  #include "xindex/key_codec.hpp"
-#endif
 
 namespace xbase {
 
@@ -104,12 +100,7 @@ bool DbArea::writeCurrent()
 
     bool ok = static_cast<bool>(_fp);
 
-#if DOTTALK_WITH_INDEX
-    if (ok && _idx && _idx->has_active()) {
-        _idx->on_replace(_crn);
-        _fd_snapshot = _fd;
-    }
-#endif
+    if (ok) _fd_snapshot = _fd;
 
     return ok;
 }
@@ -150,17 +141,17 @@ bool DbArea::loadFieldsFromBuffer()
                 _fd[i + 1] = std::to_string(object_id);
 
         } else {
-            // Legacy memo fields are plain fixed-width text, same as other char-ish storage.
-            std::string v(_recbuf.data() + off, _recbuf.data() + off + f.length);
-            _fd[i + 1] = rtrim(std::move(v));
+            // Field-type codec: text (default) for C/N/F/D/L/M, binary for I (and
+            // later B/Y/T / custom types). The text codec reproduces the legacy
+            // fixed-width rtrim behavior exactly.
+            _fd[i + 1] = fieldcodec::codec_for(f.type)
+                             .decode(_recbuf.data() + off, f.length, f);
         }
 
         off += f.length;
     }
 
-#if DOTTALK_WITH_INDEX
     _fd_snapshot = _fd;
-#endif
 
     return true;
 }
@@ -193,12 +184,12 @@ void DbArea::storeFieldsToBuffer()
             write_u64_le(_recbuf.data() + off, object_id);
 
         } else {
-            if (!src.empty()) {
-                if (src.size() <= f.length)
-                    std::memcpy(_recbuf.data() + off, src.data(), src.size());
-                else
-                    std::memcpy(_recbuf.data() + off, src.data(), f.length);
-            }
+            // Field-type codec encodes into the field's byte region (pre-filled with
+            // spaces above). The write path validated the value already, so an encode
+            // failure here just leaves the padded region rather than corrupting it.
+            std::string cerr;
+            (void)fieldcodec::codec_for(f.type)
+                      .encode(src, f, _recbuf.data() + off, &cerr);
         }
 
         off += f.length;
@@ -249,7 +240,6 @@ int DbArea::firstCharField() const
 
 std::vector<uint8_t> DbArea::encodeKeyFrom(const std::vector<std::string>& vals) const
 {
-#if DOTTALK_WITH_INDEX
     const int idx = firstCharField();
     if (idx <= 0) return {};
 
@@ -263,11 +253,14 @@ std::vector<uint8_t> DbArea::encodeKeyFrom(const std::vector<std::string>& vals)
     const std::size_t width = static_cast<std::size_t>(f.length);
     const bool upper = true;
 
-    return xindex::codec::encodeChar(vals[value_slot], width, upper);
-#else
-    (void)vals;
-    return {};
-#endif
+    std::string key = vals[value_slot];
+    if (upper) {
+        std::transform(key.begin(), key.end(), key.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    }
+    if (key.size() < width) key.append(width - key.size(), ' ');
+    else if (key.size() > width) key.resize(width);
+    return std::vector<uint8_t>(key.begin(), key.end());
 }
 
 } // namespace xbase

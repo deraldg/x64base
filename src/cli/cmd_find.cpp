@@ -65,6 +65,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "xbase_field_getters.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
@@ -73,7 +74,9 @@
 #include "predicate_eval.hpp"
 #include "textio.hpp"
 
+#if DOTTALK_HAS_XINDEX
 void cmd_SEEK(xbase::DbArea& A, std::istringstream& args);
+#endif
 
 namespace {
 
@@ -256,6 +259,11 @@ static bool run_find_cdx_active_order(xbase::DbArea& A,
                                       const std::string& needle,
                                       int& found_recno)
 {
+#if !DOTTALK_HAS_XINDEX
+    (void)A; (void)field; (void)needle;
+    found_recno = 0;
+    return false;
+#else
     found_recno = 0;
 
     if (!A.isOpen()) return false;
@@ -271,7 +279,7 @@ static bool run_find_cdx_active_order(xbase::DbArea& A,
     const std::string path = orderstate::orderName(A);
     if (path.empty()) return false;
 
-    auto& im = A.indexManager();
+    auto& im = xindex::ensure_manager(A);
     std::string err;
 
     if (!im.hasBackend() || !im.isCdx() || im.containerPath() != path) {
@@ -313,6 +321,7 @@ static bool run_find_cdx_active_order(xbase::DbArea& A,
     }
 
     return true;
+#endif
 }
 
 // Returns true when ordered route was used, whether or not a match was found.
@@ -438,6 +447,7 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
     //
     // This keeps exact / SET NEAR behavior centralized in cmd_SEEK and
     // avoids duplicating ordered-key logic here.
+#if DOTTALK_HAS_XINDEX
     if (orderstate::hasOrder(A)) {
         const std::string activeTagU = upper_copy(orderstate::activeTag(A));
         const std::string fieldU = upper_copy(fa.field);
@@ -448,6 +458,7 @@ void cmd_FIND(xbase::DbArea& A, std::istringstream& args) {
             return;
         }
     }
+#endif
 
     CursorRestore restore(A);
 

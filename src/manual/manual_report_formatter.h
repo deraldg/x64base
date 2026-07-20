@@ -1,8 +1,11 @@
 #pragma once
-// @dottalk.usage v1
-// command: MANUAL report formatter support
-// status: MDO-282 native MANUAL source skeleton implementation
+// @dottalk.contract v1
+// component: manual_report_formatter
+// role: declare read-only MANUAL catalog status, table, and resolution report formatting
+// owner: DOT|MANUAL
+// status: source-defined from MDO-282 native MANUAL implementation
 // safety: read-only formatting only
+// @dottalk.contract.end
 
 #include "manual_catalog_reader.h"
 #include "manual_catalog_resolver.h"

@@ -50,7 +50,6 @@
 //   LOCATE
 //
 #include "xbase.hpp"
-#include "xindex/index_manager.hpp"
 #include "textio.hpp"
 #include "filters/filter_registry.hpp"
 #include "cli/expr/api.hpp"

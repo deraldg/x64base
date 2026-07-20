@@ -21,13 +21,15 @@ if (MSVC)
   # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
-# 0) Add internal libraries first (so targets exist before linking)
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xindex/CMakeLists.txt")
-  add_subdirectory(xindex)
-endif()
-
+# 0) Add internal libraries first (so targets exist before linking).
+# xbase is the physical table engine and never consumes xindex.  Indexed
+# compositions add xindex above it; table-only compositions omit it entirely.
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xbase/CMakeLists.txt")
   add_subdirectory(xbase)
+endif()
+
+if (DOTTALK_HAS_XINDEX AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xindex/CMakeLists.txt")
+  add_subdirectory(xindex)
 endif()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/memo/CMakeLists.txt")
@@ -104,6 +106,130 @@ foreach(_src IN LISTS DOTTALKPP_SOURCES)
   endif()
 endforeach()
 set(DOTTALKPP_SOURCES "${DOTTALKPP_SOURCES_FILTERED}")
+
+# Product component filtering -------------------------------------------------
+# Source presence, command registration, and packaged data all follow the same
+# top-level product selection.  Keep these lists explicit so a lean build is
+# auditable from CMake rather than inferred from a large recursive glob.
+
+# This legacy duplicate implements DbArea methods inside the CLI.  The physical
+# implementation is owned exclusively by xbase.lib.
+list(REMOVE_ITEM DOTTALKPP_SOURCES
+  "${CMAKE_SOURCE_DIR}/src/cli/record_view.cpp"
+  "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
+)
+
+if (NOT DOTTALK_HAS_XINDEX)
+  list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/cnx/")
+  list(REMOVE_ITEM DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_ascend.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_buildlmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_cdx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_cnx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_descend.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_index.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_indexseek.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_list_lmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb_dump.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb_util.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_rebuild.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_reindex.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_scx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_seek.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setcdx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setcnx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setindex.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setlmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setorder.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/index_legacy.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/index_legacy_loader.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/index_resolver.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/index_summary.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/index_utils.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/inx_meta.cpp"
+  )
+  list(APPEND DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
+  )
+endif()
+
+if (NOT DOTTALK_WITH_INDEX)
+  list(REMOVE_ITEM DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_buildlmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_cdx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_list_lmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb_dump.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_lmdb_util.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setcdx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_setlmdb.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/lmdb_shared_shim.cpp"
+  )
+endif()
+
+set(DOTTALKPP_EDU_ESSENTIAL_SOURCES
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_ascii_table.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_boolean.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_evaluate.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_formula.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_normalize.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_edit.cpp"
+  "${CMAKE_SOURCE_DIR}/src/edu/edu_text.cpp"
+)
+
+if (NOT DOTTALK_COMPONENT_LABTALK)
+  foreach(_src IN LISTS DOTTALKPP_SOURCES)
+    string(REPLACE "\\" "/" _src_norm "${_src}")
+    if (_src_norm MATCHES "/src/edu/")
+      list(FIND DOTTALKPP_EDU_ESSENTIAL_SOURCES "${_src}" _essential_index)
+      if (_essential_index EQUAL -1)
+        list(REMOVE_ITEM DOTTALKPP_SOURCES "${_src}")
+      endif()
+    endif()
+  endforeach()
+
+  list(REMOVE_ITEM DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/app_army.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/app_erp.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/app_paxon.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/case_catalog.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_codaysl.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_drawio.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_erp.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_idx.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_mcc.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_retro.cpp"
+  )
+endif()
+
+if (NOT DOTTALK_COMPONENT_EXTERNAL)
+  list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/ext/")
+  list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/ms365/")
+  list(REMOVE_ITEM DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_bang.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_image_display.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_sftp.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_web.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_zip.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/sys_ftp.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/sys_ssh.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/zip_backend_posix.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/zip_backend_win.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/zip_service.cpp"
+  )
+endif()
+
+if (NOT DOTTALK_COMPONENT_MAINTENANCE)
+  list(REMOVE_ITEM DOTTALKPP_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_bbox.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_ddict.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_maint.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_manstar.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_manual.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_msgmgr.cpp"
+  )
+endif()
 
 # 2.5) Remove duplicates/legacy demos & probes that we control explicitly
 foreach(_maybe IN ITEMS

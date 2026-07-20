@@ -2,19 +2,31 @@
 // MDO-279R repair: provide the global cmd_MANSTAR symbol expected by shell_commands.cpp.
 //
 // @dottalk.usage v1
+// owner: DOT|MANSTAR
 // command: MANSTAR
-// forms:
-//   MANSTAR USAGE
-//   MANSTAR HELP
-//   MANSTAR STATUS
-//   MANSTAR TABLES
-//   MANSTAR COUNTS
-//   MANSTAR SECTIONS
-//   MANSTAR MEDIA
-//   MANSTAR REVIEW
-//   MANSTAR ANCHORS
-// safety: READ_ONLY / REPORT_ONLY / NO_REGISTRATION_BY_PACKAGE
-// evidence: MDO-268F, MDO-270F, MDO-274E, MDO-277E, and manual build linker failure review.
+// category: manual
+// status: experimental
+// noargs: usage
+// effect: report
+// mutates: none
+// risk: READ_ONLY
+// usage-access: MANSTAR USAGE
+// summary: Inspect the compiled MAN* catalog baseline and report manualgen visibility without mutating catalogs.
+// usage: MANSTAR
+// usage: MANSTAR USAGE
+// usage: MANSTAR HELP
+// usage: MANSTAR STATUS
+// usage: MANSTAR TABLES
+// usage: MANSTAR COUNTS
+// usage: MANSTAR SECTIONS
+// usage: MANSTAR MEDIA
+// usage: MANSTAR REVIEW
+// usage: MANSTAR ANCHORS
+// note: MANSTAR is READ_ONLY and REPORT_ONLY.
+// note: Registration is owned by the normal command registry; this source package does not self-register.
+// note: Evidence includes MDO-268F, MDO-270F, MDO-274E, MDO-277E, and manual build linker review.
+// related: MANUAL
+// @dottalk.end
 
 #include <algorithm>
 #include <array>

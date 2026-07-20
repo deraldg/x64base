@@ -56,7 +56,7 @@ const Owner& current_owner() {
 
 struct LockBook {
     bool table{false};
-    std::unordered_set<uint32_t> recs;
+    std::unordered_set<std::uint64_t> recs;
 };
 
 static std::unordered_map<const DbArea*, LockBook>& book() {
@@ -76,7 +76,7 @@ static std::string table_lock_path(const DbArea& a) {
     return p.string();
 }
 
-static std::string record_lock_path(const DbArea& a, uint32_t recno) {
+static std::string record_lock_path(const DbArea& a, std::uint64_t recno) {
     fs::path p = resolved_db_path(a);
     p += ".lock.";
     p += std::to_string(recno);
@@ -286,7 +286,7 @@ bool is_table_locked(const DbArea& a) {
 
 // ---------------- Public API: Record -----------------------------------------
 
-bool try_lock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err) {
+bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;
@@ -320,7 +320,7 @@ bool try_lock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* er
     return true;
 }
 
-bool unlock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err) {
+bool unlock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;
@@ -332,7 +332,7 @@ bool unlock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err)
     return ok;
 }
 
-bool is_record_locked(const DbArea& a, uint32_t recno, std::string* owner_out) {
+bool is_record_locked(const DbArea& a, std::uint64_t recno, std::string* owner_out) {
     if (recno == 0) {
         if (owner_out) owner_out->clear();
         return false;
@@ -353,16 +353,16 @@ bool is_record_locked(const DbArea& a, uint32_t recno, std::string* owner_out) {
 
 // Back-compat shims
 
-bool try_lock_record(DbArea& a, uint32_t recno, std::string* err) {
+bool try_lock_record(DbArea& a, std::uint64_t recno, std::string* err) {
     return try_lock_record(a, recno, current_owner(), err);
 }
 
-void unlock_record(DbArea& a, uint32_t recno) {
+void unlock_record(DbArea& a, std::uint64_t recno) {
     std::string ignored;
     (void)unlock_record(a, recno, current_owner(), &ignored);
 }
 
-bool is_record_locked(const DbArea& a, uint32_t recno) {
+bool is_record_locked(const DbArea& a, std::uint64_t recno) {
     return fs::exists(record_lock_path(a, recno));
 }
 
@@ -375,7 +375,7 @@ bool force_unlock_table(DbArea& a, std::string* err) {
     return ok;
 }
 
-bool force_unlock_record(DbArea& a, uint32_t recno, std::string* err) {
+bool force_unlock_record(DbArea& a, std::uint64_t recno, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;

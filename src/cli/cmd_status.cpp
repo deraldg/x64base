@@ -45,6 +45,7 @@
 #include "xbase.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "workareas.hpp"
 #include "workspace/workarea_utils.hpp"
 #include "index_summary.hpp"
@@ -72,7 +73,6 @@ bool is_open(const xbase::DbArea* a) {
         return false;
     }
 }
-
 void print_area_header(std::size_t slot, const xbase::DbArea& A, bool isCurrent) {
     std::string base;
     try {
@@ -147,7 +147,8 @@ void print_index_body(xbase::DbArea& A, bool verbose) {
     cli::cmdout::print_message(
         dottalk::helpdata::MessageId::StatusRecordsLine,
         {{"value", std::to_string(A.recCount())}});
-    const auto* im = A.indexManagerPtr();
+#if DOTTALK_HAS_XINDEX
+    const auto* im = xindex::manager_if_attached(A);
     if (!im || !im->hasBackend() || !im->isCdx()) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusLmdbClosedLine);
     } else {
@@ -163,6 +164,9 @@ void print_index_body(xbase::DbArea& A, bool verbose) {
                 {"tag_clause", tag.empty() ? "" : ("  tag=" + tag)}
             });
     }
+#else
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::StatusLmdbClosedLine);
+#endif
 }
 
 void print_struct(const xbase::DbArea& A) {

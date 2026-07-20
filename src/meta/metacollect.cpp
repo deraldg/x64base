@@ -300,6 +300,7 @@ std::vector<SysFuncSeedRow> build_sysfunc_seed_rows() {
 struct UsageContract {
     std::string owner;
     std::string command;
+    std::vector<std::string> aliases;
     std::string category;
     std::string status;
     std::string noargs;
@@ -324,6 +325,27 @@ struct SysArgAggregate {
 
 std::string trim_copy(std::string value) {
     return dottalk::datadict::trim_copy(std::move(value));
+}
+
+std::vector<std::string> split_contract_list(std::string value) {
+    std::vector<std::string> out;
+    std::string current;
+    for (char ch : value) {
+        if (ch == ',' || ch == ';' || ch == '|') {
+            current = trim_copy(std::move(current));
+            if (!current.empty()) {
+                out.push_back(std::move(current));
+            }
+            current.clear();
+        } else {
+            current.push_back(ch);
+        }
+    }
+    current = trim_copy(std::move(current));
+    if (!current.empty()) {
+        out.push_back(std::move(current));
+    }
+    return out;
 }
 
 bool starts_with_ci(std::string_view text, std::string_view prefix) {
@@ -513,32 +535,46 @@ std::vector<UsageToken> tokenize_usage_syntax(std::string_view text) {
     return out;
 }
 
-bool parse_usage_contract(const fs::path& path, UsageContract& out) {
+std::vector<UsageContract> parse_usage_contracts(const fs::path& path) {
     const auto text = read_text_file(path);
     if (text.find("@dottalk.usage v1") == std::string::npos) {
-        return false;
+        return {};
     }
 
+    std::vector<UsageContract> contracts;
     std::istringstream in(text);
     std::string line;
     bool in_contract = false;
     std::string current_key;
+    UsageContract current;
+
+    auto finish_contract = [&]() {
+        if (!in_contract) {
+            return;
+        }
+        if (!current.command.empty() && !current.usage_lines.empty()) {
+            contracts.push_back(std::move(current));
+        }
+        current = UsageContract{};
+        current_key.clear();
+        in_contract = false;
+    };
 
     while (std::getline(in, line)) {
         auto trimmed = trim_copy(line);
         if (!starts_with_ci(trimmed, "//")) {
-            if (in_contract) {
-                break;
-            }
+            finish_contract();
             continue;
         }
 
         trimmed = trim_copy(trimmed.substr(2));
+        if (starts_with_ci(trimmed, "@dottalk.usage v1")) {
+            finish_contract();
+            in_contract = true;
+            current.source_file = path;
+            continue;
+        }
         if (!in_contract) {
-            if (starts_with_ci(trimmed, "@dottalk.usage v1")) {
-                in_contract = true;
-                out.source_file = path;
-            }
             continue;
         }
 
@@ -552,29 +588,32 @@ bool parse_usage_contract(const fs::path& path, UsageContract& out) {
             auto value = trim_copy(trimmed.substr(colon + 1));
 
             if (current_key == "owner") {
-                out.owner = value;
+                current.owner = value;
             } else if (current_key == "command") {
-                out.command = upper_ascii(value);
+                current.command = upper_ascii(value);
+            } else if (current_key == "aliases") {
+                current.aliases = split_contract_list(value);
             } else if (current_key == "category") {
-                out.category = value;
+                current.category = value;
             } else if (current_key == "status") {
-                out.status = lower_ascii(value);
+                current.status = lower_ascii(value);
             } else if (current_key == "noargs") {
-                out.noargs = value;
+                current.noargs = value;
             } else if (current_key == "usage-access") {
-                out.usage_access = value;
+                current.usage_access = value;
             } else if (current_key == "usage" && !value.empty()) {
-                out.usage_lines.push_back(value);
+                current.usage_lines.push_back(value);
             }
             continue;
         }
 
         if (current_key == "usage") {
-            out.usage_lines.push_back(trimmed);
+            current.usage_lines.push_back(trimmed);
         }
     }
 
-    return !out.command.empty() && !out.usage_lines.empty();
+    finish_contract();
+    return contracts;
 }
 
 std::vector<UsageContract> collect_usage_contracts(const CollectOptions& options,
@@ -599,8 +638,7 @@ std::vector<UsageContract> collect_usage_contracts(const CollectOptions& options
         if (path.extension() != ".cpp" || path.filename().string().rfind("cmd_", 0) != 0) {
             continue;
         }
-        UsageContract contract;
-        if (parse_usage_contract(path, contract)) {
+        for (auto& contract : parse_usage_contracts(path)) {
             if (contract.status == "supported") {
                 if (!options.include_dev_command_contracts &&
                     dev_only_commands.find(contract.command) != dev_only_commands.end()) {
@@ -616,6 +654,356 @@ std::vector<UsageContract> collect_usage_contracts(const CollectOptions& options
                   return a.command < b.command;
               });
     return contracts;
+}
+
+struct RegistryCommand {
+    std::string token;
+    std::string handler;
+    std::string source_file;
+    std::size_t source_line = 0;
+};
+
+std::string normalize_command_name(std::string value) {
+    return upper_ascii(squeeze_ws(std::move(value)));
+}
+
+std::string compact_command_name(std::string value) {
+    value = normalize_command_name(std::move(value));
+    value.erase(std::remove_if(value.begin(), value.end(), [](char ch) {
+        return ch == ' ' || ch == '_' || ch == '-';
+    }), value.end());
+    return value;
+}
+
+std::string mask_cpp_comments(const std::string& text) {
+    enum class State { Normal, LineComment, BlockComment, String, Character };
+    State state = State::Normal;
+    std::string out = text;
+    bool escaped = false;
+
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        const char ch = text[i];
+        const char next = i + 1 < text.size() ? text[i + 1] : '\0';
+
+        switch (state) {
+        case State::Normal:
+            if (ch == '/' && next == '/') {
+                out[i] = out[i + 1] = ' ';
+                ++i;
+                state = State::LineComment;
+            } else if (ch == '/' && next == '*') {
+                out[i] = out[i + 1] = ' ';
+                ++i;
+                state = State::BlockComment;
+            } else if (ch == '"') {
+                state = State::String;
+                escaped = false;
+            } else if (ch == '\'') {
+                state = State::Character;
+                escaped = false;
+            }
+            break;
+        case State::LineComment:
+            if (ch == '\n') {
+                state = State::Normal;
+            } else {
+                out[i] = ' ';
+            }
+            break;
+        case State::BlockComment:
+            if (ch == '*' && next == '/') {
+                out[i] = out[i + 1] = ' ';
+                ++i;
+                state = State::Normal;
+            } else if (ch != '\n' && ch != '\r') {
+                out[i] = ' ';
+            }
+            break;
+        case State::String:
+            if (!escaped && ch == '"') {
+                state = State::Normal;
+            }
+            escaped = !escaped && ch == '\\';
+            if (ch != '\\') {
+                escaped = false;
+            }
+            break;
+        case State::Character:
+            if (!escaped && ch == '\'') {
+                state = State::Normal;
+            }
+            escaped = !escaped && ch == '\\';
+            if (ch != '\\') {
+                escaped = false;
+            }
+            break;
+        }
+    }
+    return out;
+}
+
+std::size_t matching_paren(const std::string& text, std::size_t open) {
+    int depth = 0;
+    bool in_string = false;
+    bool in_character = false;
+    bool escaped = false;
+    for (std::size_t i = open; i < text.size(); ++i) {
+        const char ch = text[i];
+        if (in_string || in_character) {
+            const char quote = in_string ? '"' : '\'';
+            if (!escaped && ch == quote) {
+                in_string = false;
+                in_character = false;
+            }
+            escaped = !escaped && ch == '\\';
+            if (ch != '\\') {
+                escaped = false;
+            }
+            continue;
+        }
+        if (ch == '"') {
+            in_string = true;
+            escaped = false;
+        } else if (ch == '\'') {
+            in_character = true;
+            escaped = false;
+        } else if (ch == '(') {
+            ++depth;
+        } else if (ch == ')' && --depth == 0) {
+            return i;
+        }
+    }
+    return std::string::npos;
+}
+
+std::vector<RegistryCommand> collect_static_registry_commands(const fs::path& workspace_root) {
+    std::vector<fs::path> files;
+    std::error_code ec;
+    const auto source_root = workspace_root / "src";
+    if (!fs::exists(source_root, ec)) {
+        return {};
+    }
+    for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
+         it != end && !ec;
+         it.increment(ec)) {
+        if (it->is_regular_file() && it->path().extension() == ".cpp" && !is_ignored_path(it->path())) {
+            files.push_back(it->path());
+        }
+    }
+    std::sort(files.begin(), files.end());
+
+    const std::regex registration(
+        R"METAREGEX((?:registry\s*\(\s*\)\s*\.\s*add|register_(?:extension_)?command)\s*\(\s*"([^"]+)")METAREGEX");
+    const std::regex called_handler_symbol(R"(\b((?:cmd|edu)_[A-Za-z0-9_]+)\s*\()");
+    const std::regex direct_handler_symbol(
+        R"(,\s*&?\s*((?:cmd|edu)_[A-Za-z0-9_]+)\s*(?:,|\)))");
+    std::vector<RegistryCommand> commands;
+
+    for (const auto& file : files) {
+        const auto original = read_text_file(file);
+        const auto text = mask_cpp_comments(original);
+        for (std::sregex_iterator it(text.begin(), text.end(), registration), end; it != end; ++it) {
+            const auto match_pos = static_cast<std::size_t>((*it).position());
+            const auto token_pos = static_cast<std::size_t>((*it).position(1));
+            const auto open = text.rfind('(', token_pos);
+            if (open == std::string::npos) {
+                continue;
+            }
+            const auto close = matching_paren(text, open);
+            if (close == std::string::npos) {
+                continue;
+            }
+
+            RegistryCommand command;
+            command.token = normalize_command_name((*it)[1].str());
+            command.source_file = path_for_fact(workspace_root, file);
+            command.source_line = 1U + static_cast<std::size_t>(
+                std::count(text.begin(), text.begin() + static_cast<std::ptrdiff_t>(match_pos), '\n'));
+
+            const auto statement = text.substr(match_pos, close - match_pos + 1U);
+            std::smatch handler_match;
+            if (std::regex_search(statement, handler_match, called_handler_symbol)) {
+                command.handler = handler_match[1].str();
+            } else if (std::regex_search(statement, handler_match, direct_handler_symbol)) {
+                command.handler = handler_match[1].str();
+            } else {
+                command.handler = "inline_registry_lambda";
+            }
+            if (!command.token.empty()) {
+                commands.push_back(std::move(command));
+            }
+        }
+    }
+
+    std::sort(commands.begin(), commands.end(), [](const RegistryCommand& a, const RegistryCommand& b) {
+        const bool a_central = a.source_file == "src/cli/shell_commands.cpp";
+        const bool b_central = b.source_file == "src/cli/shell_commands.cpp";
+        if (a.token != b.token) return a.token < b.token;
+        if (a_central != b_central) return a_central;
+        if (a.source_file != b.source_file) return a.source_file < b.source_file;
+        return a.source_line < b.source_line;
+    });
+    commands.erase(std::unique(commands.begin(), commands.end(),
+                               [](const RegistryCommand& a, const RegistryCommand& b) {
+                                   return a.token == b.token;
+                               }), commands.end());
+    return commands;
+}
+
+std::vector<UsageContract> collect_command_usage_contracts(const fs::path& workspace_root) {
+    std::vector<UsageContract> contracts;
+    std::vector<fs::path> files;
+    std::error_code ec;
+    const auto source_root = workspace_root / "src";
+    if (!fs::exists(source_root, ec)) {
+        return contracts;
+    }
+    for (fs::recursive_directory_iterator it(source_root, fs::directory_options::skip_permission_denied, ec), end;
+         it != end && !ec;
+         it.increment(ec)) {
+        if (it->is_regular_file() && it->path().extension() == ".cpp" && !is_ignored_path(it->path())) {
+            files.push_back(it->path());
+        }
+    }
+    std::sort(files.begin(), files.end());
+    for (const auto& file : files) {
+        for (auto& contract : parse_usage_contracts(file)) {
+            contract.command = normalize_command_name(contract.command);
+            for (auto& alias : contract.aliases) {
+                alias = normalize_command_name(std::move(alias));
+            }
+            contracts.push_back(std::move(contract));
+        }
+    }
+    std::sort(contracts.begin(), contracts.end(), [](const UsageContract& a, const UsageContract& b) {
+        if (a.command != b.command) return a.command < b.command;
+        return a.source_file.string() < b.source_file.string();
+    });
+    return contracts;
+}
+
+bool is_developer_command(const std::string& token, const UsageContract* contract) {
+    static const std::unordered_set<std::string> explicit_dev = {
+        "AREA51", "BETA", "CANARY"
+    };
+    if (explicit_dev.find(token) != explicit_dev.end()) {
+        return true;
+    }
+    if (!contract) {
+        return false;
+    }
+    return contract->status == "developer" || contract->status == "dev-canary";
+}
+
+std::vector<SysCmdSeedRow> build_syscmd_seed_rows(const CollectOptions& options,
+                                                  const fs::path& workspace_root) {
+    const auto registrations = collect_static_registry_commands(workspace_root);
+    const auto contracts = collect_command_usage_contracts(workspace_root);
+
+    std::unordered_map<std::string, const UsageContract*> contract_by_name;
+    std::unordered_map<std::string, std::string> name_by_compact;
+    std::unordered_set<std::string> ambiguous_compact;
+    std::unordered_map<std::string, std::string> canonical_by_alias;
+    std::unordered_set<std::string> ambiguous_alias;
+
+    for (const auto& contract : contracts) {
+        contract_by_name.emplace(contract.command, &contract);
+        const auto compact = compact_command_name(contract.command);
+        const auto compact_it = name_by_compact.find(compact);
+        if (compact_it == name_by_compact.end()) {
+            name_by_compact.emplace(compact, contract.command);
+        } else if (compact_it->second != contract.command) {
+            ambiguous_compact.insert(compact);
+        }
+        for (const auto& alias : contract.aliases) {
+            const auto alias_it = canonical_by_alias.find(alias);
+            if (alias_it == canonical_by_alias.end()) {
+                canonical_by_alias.emplace(alias, contract.command);
+            } else if (alias_it->second != contract.command) {
+                ambiguous_alias.insert(alias);
+            }
+        }
+    }
+
+    static const std::unordered_set<std::string> syntax_commands = {
+        "CASE", "CONTINUE", "ELSE", "ENDIF", "ENDLOOP", "ENDSCAN",
+        "ENDUNTIL", "ENDWHILE", "IF", "LOOP", "SCAN", "UNTIL", "WHILE"
+    };
+
+    struct RankedRow {
+        SysCmdSeedRow row;
+        int score = 0;
+        std::string source_file;
+    };
+    std::map<std::string, RankedRow> by_canonical;
+
+    for (const auto& registration : registrations) {
+        std::string canonical = registration.token;
+        auto contract_it = contract_by_name.find(canonical);
+
+        const auto alias_it = canonical_by_alias.find(registration.token);
+        if (contract_it == contract_by_name.end() &&
+            alias_it != canonical_by_alias.end() &&
+            ambiguous_alias.find(registration.token) == ambiguous_alias.end()) {
+            canonical = alias_it->second;
+            contract_it = contract_by_name.find(canonical);
+        } else if (contract_it == contract_by_name.end()) {
+            const auto compact = compact_command_name(registration.token);
+            const auto compact_it = name_by_compact.find(compact);
+            if (compact_it != name_by_compact.end() &&
+                ambiguous_compact.find(compact) == ambiguous_compact.end()) {
+                canonical = compact_it->second;
+                contract_it = contract_by_name.find(canonical);
+            }
+        }
+
+        const UsageContract* contract = contract_it == contract_by_name.end()
+            ? nullptr
+            : contract_it->second;
+        const bool developer = is_developer_command(registration.token, contract) ||
+                               is_developer_command(canonical, contract);
+        if (developer && !options.include_dev_command_contracts) {
+            continue;
+        }
+
+        const auto symbol = sanitize_symbol(canonical);
+        if (symbol.empty()) {
+            continue;
+        }
+
+        SysCmdSeedRow row;
+        row.cmd_id = "CMD_" + symbol;
+        row.can_name = canonical;
+        row.type = syntax_commands.find(canonical) == syntax_commands.end()
+            ? "command"
+            : "syntax-command";
+        row.vis = developer ? "developer" : "public";
+        row.handler = registration.handler;
+        row.active = true;
+
+        int score = registration.token == canonical ? 0 : 20;
+        if (registration.token != canonical &&
+            compact_command_name(registration.token) == compact_command_name(canonical)) {
+            score = 10;
+        }
+        if (registration.source_file != "src/cli/shell_commands.cpp") {
+            ++score;
+        }
+
+        auto existing = by_canonical.find(canonical);
+        if (existing == by_canonical.end() || score < existing->second.score ||
+            (score == existing->second.score && registration.source_file < existing->second.source_file)) {
+            by_canonical[canonical] = {std::move(row), score, registration.source_file};
+        }
+    }
+
+    std::vector<SysCmdSeedRow> rows;
+    rows.reserve(by_canonical.size());
+    for (auto& [canonical, ranked] : by_canonical) {
+        (void)canonical;
+        rows.push_back(std::move(ranked.row));
+    }
+    return rows;
 }
 
 std::vector<SysArgSeedRow> build_sysargs_seed_rows(const CollectOptions& options,
@@ -1213,6 +1601,13 @@ std::vector<SysFuncSeedRow> collect_sysfunc_seed_rows() {
     return build_sysfunc_seed_rows();
 }
 
+std::vector<SysCmdSeedRow> collect_syscmd_seed_rows(const CollectOptions& options) {
+    const fs::path workspace_root = options.workspace_root.empty()
+        ? fs::current_path()
+        : fs::path(options.workspace_root);
+    return build_syscmd_seed_rows(options, workspace_root);
+}
+
 std::vector<SysArgSeedRow> collect_sysargs_seed_rows(const CollectOptions& options) {
     const fs::path workspace_root = options.workspace_root.empty()
         ? fs::current_path()
@@ -1270,6 +1665,19 @@ void write_compare_issues_csv(std::ostream& out, const std::vector<CompareIssue>
         csv_cell(out, issue.source_file); out << ',';
         csv_cell(out, issue.metadata_table); out << ',';
         csv_cell(out, issue.message); out << '\n';
+    }
+}
+
+void write_syscmd_seed_csv(std::ostream& out, const std::vector<SysCmdSeedRow>& rows) {
+    out << "CMD_ID,CAN_NAME,TYPE,VIS,HANDLER,ACTIVE\n";
+
+    for (const auto& row : rows) {
+        csv_cell(out, row.cmd_id); out << ',';
+        csv_cell(out, row.can_name); out << ',';
+        csv_cell(out, row.type); out << ',';
+        csv_cell(out, row.vis); out << ',';
+        csv_cell(out, row.handler); out << ',';
+        out << csv_bool(row.active) << '\n';
     }
 }
 

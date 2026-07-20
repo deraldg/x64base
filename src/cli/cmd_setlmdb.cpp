@@ -67,6 +67,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 #include "textio.hpp"
 #include "cli/command_output.hpp"
@@ -163,7 +164,7 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
             {{"container", orderstate::orderName(db)},
              {"tag", orderstate::activeTag(db)},
              {"direction", orderstate::isAscending(db) ? "ASC" : "DESC"}});
-        if (const auto* im = db.indexManagerPtr(); im && im->hasBackend()) {
+        if (const auto* im = xindex::manager_if_attached(db); im && im->hasBackend()) {
             cli::cmdout::print_message(
                 MessageId::SetLmdbBackendLineText,
                 {{"backend", im->isCdx() ? "CDX/LMDB" : "OTHER"}});
@@ -179,7 +180,7 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
     // Clear form
     if (tok == "0") {
         orderstate::clearOrder(db);
-        db.indexManager().close();
+        xindex::ensure_manager(db).close();
         cli::cmdout::print_prefixed_message("SET LMDB", MessageId::SetOrderClearedPhysicalText);
         return;
     }
@@ -210,14 +211,14 @@ void cmd_SETLMDB(xbase::DbArea& db, std::istringstream& iss) {
     // Open per-area backend now (no global LMDB state).
     {
         std::string err;
-        if (!db.indexManager().openCdx(container, tag, &err)) {
+        if (!xindex::ensure_manager(db).openCdx(container, tag, &err)) {
             cli::cmdout::print_prefixed_message(
                 "SET LMDB",
                 MessageId::SetLmdbOpenCdxFailedText,
                 {{"detail", err.empty() ? "openCdx failed" : err}});
             // keep state consistent
             orderstate::clearOrder(db);
-            db.indexManager().close();
+            xindex::ensure_manager(db).close();
             return;
         }
     }

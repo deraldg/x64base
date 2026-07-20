@@ -9,13 +9,14 @@
 
 // @dottalk.usage v1
 // owner: EDU|EVALUATE
-// command: EVALUATE / EVAL
+// command: EVALUATE
+// aliases: EVAL
 // category: education-expression
 // status: supported
 // noargs: usage
 // effect: evaluate-expression
 // mutates: none
-// usage-access: EVALUATE USAGE
+// usage-access: EVALUATE USAGE; EVAL USAGE
 // summary:
 //   Evaluate a boolean predicate expression through xexpr and print .T. or .F.
 //

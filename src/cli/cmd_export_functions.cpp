@@ -18,12 +18,13 @@
 // @dottalk.usage v1
 // owner: DOT|EXPORTFUNCTIONS
 // command: EXPORTFUNCTIONS
+// aliases: EXPFUNCS
 // category: help
 // status: supported
 // noargs: create
 // effect: export
 // mutates: filesystem
-// usage-access: EXPORTFUNCTIONS USAGE
+// usage-access: EXPORTFUNCTIONS USAGE; EXPFUNCS USAGE
 // summary:
 //   Export the expression/function catalog to Markdown documentation.
 //
@@ -33,6 +34,7 @@
 //   EXPORTFUNCTIONS MD
 //   EXPORTFUNCTIONS MD <path>
 //   EXPORTFUNCTIONS <path>
+//   EXPFUNCS USAGE
 //
 // notes:
 //   EXPORTFUNCTIONS with no arguments writes ./data/docs/functions.md.
@@ -41,6 +43,7 @@
 //   EXPORTFUNCTIONS <path> treats the argument as the Markdown output path.
 //   EXPORTFUNCTIONS USAGE prints usage and does not write files.
 //   The expression function catalog remains the source of truth.
+//   EXPFUNCS is the registered compatibility alias of EXPORTFUNCTIONS.
 //
 // risk:
 //   writes_files: yes except usage
@@ -61,11 +64,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "cli/command_output.hpp"
+#include "xbase_error_context.hpp"
 
 #if __has_include("dli/registry.hpp")
   #include "dli/registry.hpp"
@@ -262,15 +267,7 @@ bool export_functions_markdown(const fs::path& out_path,
 
 void show_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  EXPORTFUNCTIONS\n"
-        << "  EXPORTFUNCTIONS USAGE\n"
-        << "  EXPORTFUNCTIONS MD\n"
-        << "  EXPORTFUNCTIONS MD <path>\n"
-        << "  EXPORTFUNCTIONS <path>\n\n"
-        << "Default output:\n"
-        << "  ./data/docs/functions.md\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ExportFunctionsUsageText);
 }
 
 } // namespace
@@ -310,17 +307,20 @@ void cmd_EXPORTFUNCTIONS(xbase::DbArea& /*area*/, std::istringstream& iss)
     }
 
     if (format != "MD") {
-        std::cout << "Unsupported format: " << format << "\n";
+        cli::cmdout::emit_error(dottalk::helpdata::MessageId::ExportFunctionsUnsupportedFormatText,
+                                xbase::error::e_invalid_argument(), {{"format", format}});
         return;
     }
 
     std::string error;
     if (!export_functions_markdown(out_path, error)) {
-        std::cout << "EXPORTFUNCTIONS failed: " << error << "\n";
+        cli::cmdout::emit_error(dottalk::helpdata::MessageId::ExportFunctionsFailedText,
+                                xbase::error::e_io_write_failed(), {{"detail", error}});
         return;
     }
 
-    std::cout << "Function reference exported to: " << out_path.string() << "\n";
+    xbase::error::clear_last_error();
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ExportFunctionsExportedText, {{"path", out_path.string()}});
 }
 
 #if DT_HAVE_DLI_REGISTRY

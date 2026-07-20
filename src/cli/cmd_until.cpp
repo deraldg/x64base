@@ -179,6 +179,24 @@ void cmd_UNTIL(xbase::DbArea&, std::istringstream& S)
 }
 
 // Lines are routed here by the shell while capture is active
+// @dottalk.usage v1
+// owner: INTERNAL|UNTIL_BUFFER
+// command: UNTIL_BUFFER
+// category: control-buffer-internal
+// status: developer
+// noargs: internal-capture
+// effect: capture
+// mutates: until-capture-state
+// usage-access: none
+// summary:
+//   Internal shell target that captures one UNTIL body line.
+// usage:
+//   UNTIL_BUFFER <captured-line>
+// notes:
+//   The shell routes lines here while UNTIL capture is active. It is not a public direct command.
+// related:
+//   UNTIL, ENDUNTIL
+//
 void cmd_UNTIL_BUFFER(xbase::DbArea&, std::istringstream& S)
 {
     auto& st = untilstate::st();

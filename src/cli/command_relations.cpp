@@ -1,3 +1,21 @@
+// @dottalk.usage v1
+// owner: DOT|CMDREL
+// command: CMDREL
+// category: help-diagnostic
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: CMDREL
+// summary:
+//   Print the recipe for relating HELP COMMANDS to CMD_ARGS.
+// usage:
+//   CMDREL
+// notes:
+//   CMDREL prints commands but does not execute them or alter relation state.
+// related:
+//   CMDHELP, CMDARGCHK, REL
+//
 #include <sstream>
 #include <iostream>
 #include <string>

@@ -50,6 +50,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "workareas.hpp"
 #include "workspace/workarea_utils.hpp"
 #include "index_summary.hpp"
@@ -178,6 +179,7 @@ static void print_workspace_block(std::ostream& os) {
 // --------------------------------------------------
 
 static void print_lmdb_block(std::ostream& os) {
+#if DOTTALK_HAS_XINDEX
     const auto areas = workareas::all();
     const auto* cur  = workareas::current();
 
@@ -187,7 +189,7 @@ static void print_lmdb_block(std::ostream& os) {
         xbase::DbArea* A = wa->get();
         if (!A) continue;
 
-        const auto* im = A->indexManagerPtr();
+        const auto* im = xindex::manager_if_attached(*A);
         if (!im || !im->hasBackend() || !im->isCdx()) continue;
 
         os << "Area " << wa->slot();
@@ -198,6 +200,9 @@ static void print_lmdb_block(std::ostream& os) {
         print_kv(os, "TAG",  nz(im->activeTag()));
         os << "\n";
     }
+#else
+    os << "Index engine: not compiled (table-only build)\n";
+#endif
 }
 
 // --------------------------------------------------
@@ -205,7 +210,7 @@ static void print_lmdb_block(std::ostream& os) {
 // --------------------------------------------------
 
 static std::size_t unique_recnos_in_tb(const dottalk::table::TableBuffer& tb) {
-    std::set<int> recnos;
+    std::set<std::uint64_t> recnos;
     for (const auto& pair : tb.changes) {
         recnos.insert(pair.first);
     }

@@ -268,7 +268,7 @@ std::unique_ptr<Cursor> IndexManager::scan(const Key& low, const Key& high) cons
 }
 
 bool IndexManager::lmdbSeekUserKey(const std::string& user_key,
-                                   std::uint32_t& out_recno,
+                                   std::uint64_t& out_recno,
                                    std::string& out_err) const {
     out_recno = 0;
     out_err.clear();
@@ -606,6 +606,28 @@ bool IndexManager::apply_insert_snapshot(const DeleteSnapshot& snap,
     }
 
     return any;
+}
+
+// ---- Bulk write batching passthrough (CDX only) --------------------------
+bool IndexManager::beginBulkWrite(std::string* err) {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        return cdx->beginBulk(err);
+    }
+    if (err) *err = "bulk write not supported by active backend";
+    return false;
+}
+
+bool IndexManager::commitBulkWrite(std::string* err) {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        return cdx->commitBulk(err);
+    }
+    return true; // nothing to commit for non-CDX backends
+}
+
+void IndexManager::abortBulkWrite() noexcept {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        cdx->abortBulk();
+    }
 }
 
 bool IndexManager::replace_active_field_value(int field1,

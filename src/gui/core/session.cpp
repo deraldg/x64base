@@ -11,6 +11,7 @@
 #include "cli/shell_shortcuts.hpp"
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -751,7 +752,7 @@ bool activate_gui_order(xbase::DbArea& area,
     const std::string container_text = container.string();
     const std::string tag_upper = upper_ascii(trim_ascii(tag));
 
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
     orderstate::setOrder(area, container_text);
     orderstate::setActiveTag(area, tag_upper);
@@ -759,15 +760,15 @@ bool activate_gui_order(xbase::DbArea& area,
 
     bool opened = false;
     if (ends_with_ci(container_text, ".cdx")) {
-        opened = area.indexManager().openCdx(container_text, tag_upper, &err);
+        opened = xindex::ensure_manager(area).openCdx(container_text, tag_upper, &err);
     } else if (ends_with_ci(container_text, ".cnx")) {
-        opened = area.indexManager().openCnx(container_text, tag_upper, &err);
+        opened = xindex::ensure_manager(area).openCnx(container_text, tag_upper, &err);
     } else {
         err = "GUI ordered browse supports CDX/CNX activation in this bridge pass.";
     }
 
     if (!opened) {
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         orderstate::clearOrder(area);
         return false;
     }
@@ -782,7 +783,7 @@ bool activate_gui_order(xbase::DbArea& area,
 bool attach_gui_order_container(xbase::DbArea& area, const std::filesystem::path& container, std::string& err) {
     err.clear();
     const std::string container_text = container.string();
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
     orderstate::setOrder(area, container_text);
     orderstate::setActiveTag(area, "");
@@ -790,15 +791,15 @@ bool attach_gui_order_container(xbase::DbArea& area, const std::filesystem::path
 
     bool opened = false;
     if (ends_with_ci(container_text, ".cdx")) {
-        opened = area.indexManager().openCdx(container_text, {}, &err);
+        opened = xindex::ensure_manager(area).openCdx(container_text, {}, &err);
     } else if (ends_with_ci(container_text, ".cnx")) {
-        opened = area.indexManager().openCnx(container_text, {}, &err);
+        opened = xindex::ensure_manager(area).openCnx(container_text, {}, &err);
     } else {
         err = "GUI workspace index mirror supports CDX/CNX containers.";
     }
 
     if (!opened) {
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         orderstate::clearOrder(area);
         return false;
     }
@@ -926,7 +927,7 @@ bool mirror_set_order_to_gui(xbase::DbArea& area,
     }
 
     if (is_physical_order_token(words[i])) {
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         orderstate::clearOrder(area);
         messages.push_back(info("gui.order.cleared", "GUI order returned to physical record order."));
         return true;
@@ -1020,7 +1021,7 @@ std::string order_backend(const xbase::DbArea& area) {
     if (!orderstate::hasOrder(area)) {
         return "physical";
     }
-    if (const auto* index = area.indexManagerPtr(); index && index->hasBackend()) {
+    if (const auto* index = xindex::manager_if_attached(area); index && index->hasBackend()) {
         if (index->isCdx()) {
             return "CDX/LMDB";
         }
@@ -2198,7 +2199,7 @@ WorkspaceModel Session::workspace_model() const {
         if (index.active) {
             index.container = orderstate::orderName(area->area);
             index.tag = orderstate::activeTag(area->area);
-            if (const auto* manager = area->area.indexManagerPtr()) {
+            if (const auto* manager = xindex::manager_if_attached(area->area)) {
                 index.tags = manager->listTags();
             }
         }

@@ -141,21 +141,21 @@ constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
 // -----------------------------------------------------------------------------
 // X64 NAMING / VECTOR CONTRACT
 // -----------------------------------------------------------------------------
-constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128;
-constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128;
-constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 128;
-constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 128;
+constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128;   // maintained default
+constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128;   // maintained default
+constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
+constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
 constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
 
 // -----------------------------------------------------------------------------
 // Policy helpers
 // -----------------------------------------------------------------------------
 inline bool x64_table_name_fits(std::size_t bytes) noexcept {
-    return bytes <= X64_TABLE_NAME_LENGTH;
+    return bytes <= X64_TABLE_NAME_LENGTH_MAX;   // allow up to the ceiling
 }
 
 inline bool x64_field_name_fits(std::size_t bytes) noexcept {
-    return bytes <= X64_FIELD_NAME_LENGTH;
+    return bytes <= X64_FIELD_NAME_LENGTH_MAX;   // allow up to the ceiling
 }
 
 inline std::string x64_fallback_field_token(const std::string& name)

@@ -119,14 +119,17 @@ static void trim_trailing_cr(std::string& s)
 
 } // namespace
 
-bool read_script_command(std::istream& in, std::string& out)
+bool read_script_command(std::istream& in, std::string& out, int& physical_lines)
 {
     out.clear();
+    int lines = 0;
 
     std::string line;
     if (!std::getline(in, line)) {
+        physical_lines = 0;
         return false;
     }
+    ++lines;
 
     trim_trailing_cr(line);
     line = strip_hash_comment(line);
@@ -148,6 +151,7 @@ bool read_script_command(std::istream& in, std::string& out)
         if (!std::getline(in, more)) {
             break;
         }
+        ++lines;
 
         trim_trailing_cr(more);
         more = strip_hash_comment(more);
@@ -159,5 +163,13 @@ bool read_script_command(std::istream& in, std::string& out)
     }
 
     out = accum;
+    physical_lines = lines;
     return true;
+}
+
+// 2-arg convenience overload (original signature/symbol, unchanged) -> delegates.
+bool read_script_command(std::istream& in, std::string& out)
+{
+    int ignored = 0;
+    return read_script_command(in, out, ignored);
 }

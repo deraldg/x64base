@@ -45,7 +45,6 @@
 //   PACK
 //
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -58,6 +57,7 @@
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xbase/field_name_policy.hpp"
+#include "cli/command_output.hpp"
 #include "textio.hpp"
 
 using namespace xbase;
@@ -78,35 +78,7 @@ static inline std::string lower_copy(std::string s) {
 }
 
 static void usage_copy() {
-    std::cout
-        << "Usage:\n"
-        << "  COPY USAGE\n"
-        << "  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]\n"
-        << "  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]\n"
-        << "  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]\n"
-        << "  COPY FILE <SRC> TO <DST> [OVERWRITE]\n"
-        << "\n"
-        << "Examples:\n"
-        << "  COPY TO students_copy\n"
-        << "  COPY TO students_x64 AS X64 VECTOR OVERWRITE\n"
-        << "  COPY TO students_vfp AS VFP\n"
-        << "  COPY TO students_backup WITH SIDECARS OVERWRITE\n"
-        << "  COPY FILE source.txt TO tmp\\source_copy.txt OVERWRITE\n"
-        << "\n"
-        << "Notes:\n"
-        << "  - COPY USAGE prints usage and does not require an open table.\n"
-        << "  - COPY TO <name>                 : binary copy of the current DBF\n"
-        << "  - COPY TO <name> AS <flavor>     : logical table copy/conversion\n"
-        << "  - COPY TO <name> AS X64 VECTOR   : one-step copy from any open table to x64 vector form\n"
-        << "  - VECTOR is target-driven and is valid only with AS X64\n"
-        << "  - AS X64 controls output format only; the destination path is honored\n"
-        << "  - AS VFP/FOX/MSDOS writes free-table 10-byte descriptor field names\n"
-        << "  - COPY AS free-table fails if 10-byte descriptor names would collide\n"
-        << "  - WITH SIDECARS applies to binary COPY TO only\n"
-        << "  - OVERWRITE is required when the destination already exists\n"
-        << "  - x64 output still writes .dbf for now (no .dbfx yet)\n"
-        << "\n"
-        << "SIDECARS (if present next to the DBF): .inx .cnx .dtx .dti.json\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyUsageText);
 }
 
 static bool copy_file_binary(const std::filesystem::path& src,
@@ -219,16 +191,19 @@ static void copy_sidecars(const std::filesystem::path& src_dbf,
             ++copied;
         } else {
             ++failed;
-            std::cout << "COPY SIDECAR failed: " << err << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopySidecarFailedText, {{"detail", err}});
         }
     }
 
     if (found == 0) {
-        std::cout << "COPY SIDECARS: none found.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CopySidecarsNoneText);
     } else {
-        std::cout << "COPY SIDECARS: found " << found << ", copied " << copied;
-        if (failed) std::cout << ", failed " << failed;
-        std::cout << ".\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CopySidecarsFoundText,
+            {{"found", std::to_string(found)},
+             {"copied", std::to_string(copied)},
+             {"failed", failed ? (", failed " + std::to_string(failed)) : std::string()}});
     }
 }
 
@@ -547,7 +522,8 @@ static bool logical_copy_to_as(const DbArea& src,
     }
 
     for (const auto& w : name_warnings) {
-        std::cout << w << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CopyWarningDetailText, {{"detail", w}});
     }
 
     std::error_code ec;
@@ -676,9 +652,11 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         std::string err;
         if (copy_file_binary(src, dst, overwrite, &err)) {
-            std::cout << "Copied file to " << dst.string() << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopiedFileText, {{"dst", dst.string()}});
         } else {
-            std::cout << "COPY FILE failed: " << err << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopyFileFailedText, {{"detail", err}});
         }
         return;
     }
@@ -686,7 +664,7 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
     // COPY TO <dbf> [AS <flavor>]
     if (token_is(tok[0], "TO")) {
         if (!a.isOpen()) {
-            std::cout << "COPY TO: no file open.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyToNoFileOpenText);
             return;
         }
         if (tok.size() < 2) {
@@ -707,9 +685,9 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         if (as_pos != tok.size()) {
             if (as_pos != 2) {
-                std::cout << "COPY TO AS failed: unexpected token between destination and AS: '"
-                          << tok[2] << "'\n";
-                std::cout << "Use: COPY TO <destination> AS <flavor> [VECTOR] [OVERWRITE]\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CopyAsUnexpectedTokenText, {{"token", tok[2]}});
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsUseHintText);
                 return;
             }
             if (as_pos + 1 >= tok.size()) {
@@ -719,37 +697,41 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
             Flavor flavor = Flavor::MSDOS;
             if (!parse_flavor_token(tok[as_pos + 1], flavor)) {
-                std::cout << "COPY TO AS failed: unknown flavor '" << tok[as_pos + 1] << "'\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CopyAsUnknownFlavorText, {{"flavor", tok[as_pos + 1]}});
                 return;
             }
 
             CopyVectorOptions vector_opts;
             std::string option_err;
             if (!parse_copy_vector_options(tok, as_pos + 2, flavor, vector_opts, option_err)) {
-                std::cout << option_err << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CopyDetailText, {{"detail", option_err}});
                 return;
             }
 
             const std::filesystem::path dstp = resolve_dst_for_logical_copy_to(a, tok[1]);
 
             if (with_sidecars) {
-                std::cout << "COPY TO AS: WITH SIDECARS ignored for logical conversion.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsSidecarsIgnoredText);
             }
 
             if (vector_opts.vector_requested) {
-                std::cout << "COPY TO AS X64 VECTOR: using current x64 vector metadata policy.\n";
+                cli::cmdout::print_message(dottalk::helpdata::MessageId::CopyAsVectorPolicyText);
             }
 
             std::string err;
             if (!logical_copy_to_as(a, dstp, flavor, overwrite, vector_opts, err)) {
-                std::cout << "COPY TO AS failed: " << err << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::CopyAsFailedText, {{"detail", err}});
                 return;
             }
 
-            std::cout << "Copied table to " << dstp.string()
-                      << " [" << flavor_name_local(flavor) << "]";
-            if (vector_opts.vector_requested) std::cout << " VECTOR";
-            std::cout << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopiedTableText,
+                {{"dst", dstp.string()},
+                 {"flavor", flavor_name_local(flavor)},
+                 {"vector", vector_opts.vector_requested ? " VECTOR" : ""}});
             return;
         }
 
@@ -758,11 +740,13 @@ void cmd_COPY(DbArea& a, std::istringstream& iss) {
 
         std::string err;
         if (!copy_file_binary(srcp, dstp, overwrite, &err)) {
-            std::cout << "COPY TO failed: " << err << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CopyToFailedText, {{"detail", err}});
             return;
         }
 
-        std::cout << "Copied DBF to " << dstp.string() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CopiedDbfText, {{"dst", dstp.string()}});
 
         if (with_sidecars) {
             copy_sidecars(srcp, dstp, overwrite);

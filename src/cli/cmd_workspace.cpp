@@ -121,7 +121,10 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
+#if DOTTALK_HAS_XINDEX
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
+#endif
 #include "cli/dirty_prompt.hpp"
 #include "cli/order_state.hpp"
 #include "cli/path_resolver.hpp"
@@ -454,7 +457,9 @@ static inline std::string getActiveTagSafe(Area& a) {
         try { return orderstate::activeTag(a); } catch (...) {}
     }
     try {
-        if (auto* im = a.indexManagerPtr()) return im->activeTag();
+#if DOTTALK_HAS_XINDEX
+        if (auto* im = xindex::manager_if_attached(a)) return im->activeTag();
+#endif
     } catch (...) {}
     return {};
 }
@@ -795,6 +800,12 @@ static std::optional<fs::path> find_index_for_open_area(const xbase::DbArea& A,
 static bool attach_workspace_index(xbase::DbArea& A,
                                    const fs::path& indexPath,
                                    std::string& err) {
+#if !DOTTALK_HAS_XINDEX
+    (void)A;
+    (void)indexPath;
+    err = "index engine not compiled in this table-only build";
+    return false;
+#else
     err.clear();
 
     fs::path ip = indexPath;
@@ -810,7 +821,7 @@ static bool attach_workspace_index(xbase::DbArea& A,
     const std::string path = s8(ip);
     const std::string ext = to_lower(ip.extension().string());
 
-    try { A.indexManager().close(); } catch (...) {}
+    try { xindex::ensure_manager(A).close(); } catch (...) {}
     try { orderstate::clearOrder(A); } catch (...) {}
 
     try {
@@ -827,29 +838,30 @@ static bool attach_workspace_index(xbase::DbArea& A,
 
     bool opened = false;
     if (ext == ".cdx") {
-        opened = A.indexManager().openCdx(path, {}, &backend_err);
+        opened = xindex::ensure_manager(A).openCdx(path, {}, &backend_err);
     } else if (ext == ".cnx") {
-        opened = A.indexManager().openCnx(path, {}, &backend_err);
+        opened = xindex::ensure_manager(A).openCnx(path, {}, &backend_err);
     } else if (ext == ".inx") {
-        opened = A.indexManager().load_json(path);
+        opened = xindex::ensure_manager(A).load_json(path);
         if (!opened) backend_err = "load_json failed for INX sidecar";
     } else {
         backend_err = "unsupported index extension: " + ext;
     }
 
     if (!opened) {
-        try { A.indexManager().close(); } catch (...) {}
+        try { xindex::ensure_manager(A).close(); } catch (...) {}
         try { orderstate::clearOrder(A); } catch (...) {}
         err = backend_err.empty() ? "index backend open failed" : backend_err;
         return false;
     }
 
     try {
-        const std::string active = A.indexManager().activeTag();
+        const std::string active = xindex::ensure_manager(A).activeTag();
         if (!active.empty()) orderstate::setActiveTag(A, active);
     } catch (...) {}
 
     return true;
+#endif
 }
 
 // --------- OPEN helpers -----------------------------------------------------
@@ -1165,10 +1177,12 @@ static bool close_area_if_open(int area0) {
         try { orderstate::clearOrder(A); } catch (...) {}
 
         try {
-            const auto* im = A.indexManagerPtr();
+#if DOTTALK_HAS_XINDEX
+            const auto* im = xindex::manager_if_attached(A);
             if (im && im->hasBackend()) {
-                A.indexManager().close();
+                xindex::ensure_manager(A).close();
             }
+#endif
         } catch (...) {}
 
         // Close DTX memo sidecar backend owned by memo_auto.cpp before

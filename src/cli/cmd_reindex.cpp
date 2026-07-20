@@ -91,6 +91,7 @@
 //
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "cli/table_state.hpp"
@@ -114,7 +115,9 @@ extern "C" xbase::XBaseEngine* shell_engine(void);
 // forward declare (defined elsewhere)
 void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in);
 void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in);
+#if DOTTALK_WITH_INDEX
 void cmd_BUILDLMDB(xbase::DbArea& A, std::istringstream& in);
+#endif
 
 // ----------------------------- helpers ---------------------------------------
 
@@ -171,7 +174,7 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
     std::ostringstream oss;
     oss << verb << ": TABLE has uncommitted changes. Commit now and continue?";
     if (!prompt_yes_no(oss.str(), true)) {
-        std::cout << verb << ": canceled (dirty table).\n";
+        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexCanceledDirtyText);
         return false;
     }
 
@@ -179,7 +182,7 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
     cmd_COMMIT(A, empty);
 
     if (dottalk::table::is_dirty(area0)) {
-        std::cout << verb << ": still dirty after COMMIT; canceling.\n";
+        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::ReindexStillDirtyText);
         return false;
     }
 
@@ -241,22 +244,7 @@ static ReindexFamily default_family_for_area(const DbArea& A)
 
 static void print_reindex_help()
 {
-    std::cout
-        << "Usage:\n"
-        << "  REINDEX USAGE\n"
-        << "  REINDEX\n"
-        << "  REINDEX INX [<tagfile>]\n"
-        << "  REINDEX CNX [<name-or-path.cnx>]\n"
-        << "  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]\n"
-        << "  REINDEX SIX [<tagfile>]\n"
-        << "  REINDEX SCX [<tagfile>]\n"
-        << "  REINDEX ALL\n"
-        << "  REINDEX CUSTOM\n"
-        << "  REINDEX <tagfile>\n"
-        << "Notes:\n"
-        << "  - Default: v64-like table -> CDX; v32-like table -> INX.\n"
-        << "  - CNX delegates to REBUILD; CDX delegates to BUILDLMDB.\n"
-        << "  - REINDEX <tagfile> is treated as REINDEX INX <tagfile>.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexUsageText);
 }
 
 // little-endian I/O
@@ -329,7 +317,7 @@ static bool read_inx_expr_token(const fs::path& tagFile, std::string& exprTokOut
 
 // Build (rewrite) the index file for the given expression token.
 static bool build_inx(DbArea& A, const std::string& exprTok, const fs::path& outPath) {
-    if (!A.isOpen()) { std::cout << "REINDEX: no table open.\n"; return false; }
+    if (!A.isOpen()) { cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexNoTableOpenText); return false; }
 
     const auto& Fs = A.fields();
     const int fcount = static_cast<int>(Fs.size());
@@ -344,7 +332,7 @@ static bool build_inx(DbArea& A, const std::string& exprTok, const fs::path& out
             if (canon(Fs[static_cast<size_t>(i)].name) == want) { fldIdx = i + 1; break; }
         }
         if (fldIdx < 1) {
-            std::cout << "REINDEX: unknown field token '" << exprTok << "'.\n";
+            cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexUnknownFieldText, {{"token", exprTok}});
             return false;
         }
     }
@@ -384,7 +372,7 @@ static bool build_inx(DbArea& A, const std::string& exprTok, const fs::path& out
 
     std::ofstream outFile(out, std::ios::binary | std::ios::trunc);
     if (!outFile) {
-        std::cout << "REINDEX: cannot write file: " << out.string() << "\n";
+        cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexCannotWriteText, {{"path", out.string()}});
         return false;
     }
 
@@ -413,8 +401,8 @@ static bool build_inx(DbArea& A, const std::string& exprTok, const fs::path& out
 
     outFile.flush();
 
-    std::cout << "REINDEX: wrote " << out.filename().string()
-              << "  (2INX v2, expr: " << exprTok << ", ASC)\n";
+    cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexWroteText,
+        {{"file", out.filename().string()}, {"expr", exprTok}});
     return true;
 }
 
@@ -435,7 +423,7 @@ static bool run_reindex_inx(DbArea& A, const std::string& argRest)
     if (!ensure_clean_or_commit(A, area0, "REINDEX")) return false;
 
     if (!A.isOpen()) {
-        std::cout << "No table open.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexNoTableOpenPlainText);
         return false;
     }
 
@@ -446,8 +434,7 @@ static bool run_reindex_inx(DbArea& A, const std::string& argRest)
     } else {
         tagPath = probe_default_inx_for_current(A);
         if (tagPath.empty()) {
-            std::cout << "REINDEX: cannot infer tag path (unknown table name).\n"
-                         "Specify a tag file: REINDEX INX <tagfile.inx>\n";
+            cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexCannotInferTagText);
             return false;
         }
     }
@@ -455,35 +442,34 @@ static bool run_reindex_inx(DbArea& A, const std::string& argRest)
     if (!tagPath.has_extension()) tagPath.replace_extension(".inx");
 
     if (!fs::exists(tagPath)) {
-        std::cout << "REINDEX: tag file not found: " << tagPath.string() << "\n";
-        std::cout << "Hint: create it with: INDEX ON <field|#n> TAG "
-                  << tagPath.filename().string() << "\n";
+        cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexTagNotFoundText, {{"path", tagPath.string()}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexTagNotFoundHintText, {{"filename", tagPath.filename().string()}});
         return false;
     }
 
     std::string exprTok;
     uint16_t ver = 0;
     if (!read_inx_expr_token(tagPath, exprTok, ver)) {
-        std::cout << "REINDEX: cannot read tag expression from: " << tagPath.string() << "\n";
+        cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexCannotReadExprText, {{"path", tagPath.string()}});
         return false;
     }
 
-    std::cout << "REINDEX INX\n";
-    std::cout << "  Index file   : " << tagPath.string() << "\n";
-    std::cout << "  Tag expr     : " << exprTok << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexInxBannerText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexInxIndexFileText, {{"path", tagPath.string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexInxTagExprText, {{"expr", exprTok}});
 
     if (!build_inx(A, exprTok, tagPath)) {
-        std::cout << "REINDEX: failed.\n";
+        cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexFailedText);
         return false;
     }
 
     if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
         dottalk::table::set_stale(area0, false);
         dottalk::table::clear_stale_fields(area0);
-        std::cout << "REINDEX: TABLE STALE cleared (fresh).\n";
+        cli::cmdout::print_prefixed_message("REINDEX", dottalk::helpdata::MessageId::ReindexStaleClearedText);
     }
 
-    std::cout << "Note: INX file was regenerated from its stored tag expression.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexRegeneratedNoteText);
     return true;
 }
 
@@ -496,39 +482,48 @@ static bool run_reindex_cnx(DbArea& A, const std::string& argRest)
 
 static bool run_reindex_cdx(DbArea& A, const std::string& argRest)
 {
+#if DOTTALK_WITH_INDEX
     std::istringstream in(argRest);
     cmd_BUILDLMDB(A, in);
     return true;
+#else
+    (void)A;
+    (void)argRest;
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexCdxRequiresLmdbText);
+    return false;
+#endif
 }
 
 static void run_reindex_six(DbArea& A, const std::string& argRest)
 {
-    std::cout << "REINDEX SIX (student single-tag)\n";
-    std::cout << "  Table : " << (A.isOpen() ? A.name() : "(no table open)") << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexSixBannerText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexTableLineText,
+        {{"table", A.isOpen() ? A.name() : std::string("(no table open)")}});
     if (!argRest.empty()) {
-        std::cout << "  Arg   : " << argRest << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexArgLineText, {{"arg", argRest}});
     }
-    std::cout << "  Status: stub (no backend)\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexStubStatusText);
 }
 
 static void run_reindex_scx(DbArea& A, const std::string& argRest)
 {
-    std::cout << "REINDEX SCX (student compound)\n";
-    std::cout << "  Table : " << (A.isOpen() ? A.name() : "(no table open)") << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexScxBannerText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexTableLineText,
+        {{"table", A.isOpen() ? A.name() : std::string("(no table open)")}});
     if (!argRest.empty()) {
-        std::cout << "  Arg   : " << argRest << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexArgLineText, {{"arg", argRest}});
     }
-    std::cout << "  Status: stub (no backend)\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexStubStatusText);
 }
 
 static bool dispatch_all(DbArea& A, const std::string& rest)
 {
     if (default_family_for_area(A) == ReindexFamily::CDX) {
-        std::cout << "REINDEX ALL -> CDX (v64-like table)\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexAllCdxText);
         return run_reindex_cdx(A, rest);
     }
 
-    std::cout << "REINDEX ALL -> INX + CNX (v32-like table)\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexAllInxCnxText);
 
     bool ok_inx = run_reindex_inx(A, std::string());
     bool ok_cnx = run_reindex_cnx(A, rest);
@@ -538,7 +533,7 @@ static bool dispatch_all(DbArea& A, const std::string& rest)
 
 static void dispatch_custom(DbArea& A, const std::string& rest)
 {
-    std::cout << "REINDEX CUSTOM -> SIX + SCX\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexCustomText);
     run_reindex_six(A, rest);
     run_reindex_scx(A, rest);
 }
@@ -555,10 +550,10 @@ void cmd_REINDEX(DbArea& A, std::istringstream& args) {
     if (argRest.empty()) {
         const ReindexFamily def = default_family_for_area(A);
         if (def == ReindexFamily::CDX) {
-            std::cout << "REINDEX default -> CDX (v64-like table, via BUILDLMDB)\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexDefaultCdxText);
             run_reindex_cdx(A, std::string());
         } else {
-            std::cout << "REINDEX default -> INX (v32-like table)\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexDefaultInxText);
             run_reindex_inx(A, std::string());
         }
         return;
@@ -585,13 +580,13 @@ void cmd_REINDEX(DbArea& A, std::istringstream& args) {
     }
 
     if (firstUp == "CNX") {
-        std::cout << "REINDEX CNX\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexCnxBannerText);
         run_reindex_cnx(A, restAfterFirst);
         return;
     }
 
     if (firstUp == "CDX") {
-        std::cout << "REINDEX CDX -> BUILDLMDB\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexCdxBuildlmdbText);
         run_reindex_cdx(A, restAfterFirst);
         return;
     }

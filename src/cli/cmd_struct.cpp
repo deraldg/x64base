@@ -121,11 +121,17 @@ static bool ends_with_ext_ci(const std::string& path, const char* ext3) {
 
 static bool read_cnx_tags(const std::string& cnxpath,
                           std::vector<cnxfile::TagInfo>& out) {
+#if !DOTTALK_HAS_XINDEX
+    (void)cnxpath;
+    out.clear();
+    return false;
+#else
     cnxfile::CNXHandle* h = nullptr;
     if (!cnxfile::open(cnxpath, h)) return false;
     bool ok = cnxfile::read_tagdir(h, out);
     cnxfile::close(h);
     return ok;
+#endif
 }
 
 static std::string to_lower(std::string s) {
@@ -351,6 +357,4 @@ void cmd_STRUCT(DbArea& A, std::istringstream& args) {
 
     print_struct_for_area(A, -1, wantIndex, verbose);
 }
-
-
 

@@ -62,6 +62,7 @@
 
 #include "cnx/cnx.hpp"
 #include "cnx/cnx_backend.hpp"
+#include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
 #include "cli/table_state.hpp"
@@ -157,7 +158,7 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
     std::ostringstream oss;
     oss << verb << ": TABLE has uncommitted changes. Commit now and continue?";
     if (!prompt_yes_no(oss.str(), true)) {
-        std::cout << verb << ": canceled (dirty table).\n";
+        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::RebuildCanceledDirtyText);
         return false;
     }
 
@@ -165,7 +166,7 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
     cmd_COMMIT(A, empty);
 
     if (dottalk::table::is_dirty(area0)) {
-        std::cout << verb << ": still dirty after COMMIT; canceling.\n";
+        cli::cmdout::print_prefixed_message(verb, dottalk::helpdata::MessageId::RebuildStillDirtyText);
         return false;
     }
 
@@ -174,15 +175,7 @@ static bool ensure_clean_or_commit(xbase::DbArea& A, int area0, const char* verb
 
 static void print_help()
 {
-    std::cout
-        << "Usage:\n"
-        << "  REBUILD USAGE\n"
-        << "  REBUILD\n"
-        << "  REBUILD <name-or-path.cnx>\n"
-        << "Notes:\n"
-        << "  - Rebuilds the CNX container once.\n"
-        << "  - No args uses current CNX or defaults to <table>.cnx.\n"
-        << "  - Dirty TABLE buffers are committed only after confirmation.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RebuildUsageText);
 }
 
 } // namespace
@@ -203,7 +196,7 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
     if (!ensure_clean_or_commit(A, area0, "REBUILD")) return;
 
     if (!A.isOpen()) {
-        std::cout << "REBUILD: no table open.\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildNoTableOpenText);
         return;
     }
 
@@ -212,23 +205,24 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
     else              cnx_path = default_cnx_for_open_table(A);
 
     if (!fs::exists(cnx_path)) {
-        std::cout << "REBUILD: CNX not found: " << cnx_path.string() << "\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildCnxNotFoundText,
+            {{"path", cnx_path.string()}});
         return;
     }
 
-    std::cout << "REINDEX CNX -> REBUILD\n";
-    std::cout << "CNX container: " << cnx_path.string() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RebuildReindexBannerText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RebuildCnxContainerText, {{"path", cnx_path.string()}});
 
     // Read tagdir once for reporting only.
     cnxfile::CNXHandle* h = nullptr;
     if (!cnxfile::open(cnx_path.string(), h) || !h) {
-        std::cout << "REBUILD: unable to open CNX\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildUnableOpenCnxText);
         return;
     }
 
     std::vector<cnxfile::TagInfo> tags;
     if (!cnxfile::read_tagdir(h, tags)) {
-        std::cout << "REBUILD: failed to read tag directory\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildFailedReadTagdirText);
         cnxfile::close(h);
         return;
     }
@@ -239,7 +233,7 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
         xindex::CnxBackend b(A, cnx_path.string(), orderstate::activeTag(A));
 
         if (!b.open(cnx_path.string())) {
-            std::cout << "REBUILD: backend open failed\n";
+            cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildBackendOpenFailedText);
             return;
         }
 
@@ -249,22 +243,24 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
         // Report once per tag, but rebuild only happened once.
         for (const auto& t : tags) {
             const std::string tag = normalize_field_name(t.name);
-            std::cout << "  [" << t.tag_id << "] " << tag << " : OK\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::RebuildTagOkText,
+                {{"id", std::to_string(t.tag_id)}, {"tag", tag}});
         }
 
         if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
             dottalk::table::set_stale(area0, false);
             dottalk::table::clear_stale_fields(area0);
-            std::cout << "REBUILD: TABLE STALE cleared (fresh)\n";
+            cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildStaleClearedText);
         }
 
-        std::cout << "REBUILD: done  OK=" << tags.size()
-                  << "  SKIP=0  FAIL=0\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildDoneText,
+            {{"ok", std::to_string(tags.size())}});
     }
     catch (const std::exception& e) {
-        std::cout << "REBUILD: FAIL (" << e.what() << ")\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildFailDetailText,
+            {{"detail", e.what()}});
     }
     catch (...) {
-        std::cout << "REBUILD: FAIL\n";
+        cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildFailText);
     }
 }

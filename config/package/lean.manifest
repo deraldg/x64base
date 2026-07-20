@@ -1,0 +1,5 @@
+# LEAN: executable is installed by CMake; only these tracked runtime settings
+# accompany it. Compiled HELP fallback remains available without full catalogs.
+dottalkpp/bin/dottalkpp.ini
+dottalkpp/bin/init.ini
+dottalkpp/bin/shutdown.ini

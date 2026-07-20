@@ -195,6 +195,12 @@ constexpr code w_order_fallback_physical() noexcept
     return make_code(severity::warning, facility::cli, 0x000A);
 }
 
+// IO
+constexpr code e_io_write_failed() noexcept
+{
+    return make_code(severity::error, facility::io, 0x0001);
+}
+
 // ------------------------------------------------------------
 // 6. String helpers
 // ------------------------------------------------------------
@@ -285,6 +291,9 @@ inline std::string to_string(code c)
         case w_order_fallback_physical().value:
             return "Falling back to physical order.";
 
+        case e_io_write_failed().value:
+            return "I/O write failed.";
+
         default:
             return "Unrecognized xBase_64 error code";
     }
@@ -322,6 +331,7 @@ inline const char* symbol(code c) noexcept
         case e_order_unavailable().value:                 return "E_ORDER_UNAVAILABLE";
         case w_for_clause_ignored().value:                return "W_FOR_CLAUSE_IGNORED";
         case w_order_fallback_physical().value:           return "W_ORDER_FALLBACK_PHYSICAL";
+        case e_io_write_failed().value:                   return "E_IO_WRITE_FAILED";
         default:                                          return "E_UNRECOGNIZED";
     }
 }

@@ -11,13 +11,14 @@
 
 // @dottalk.usage v1
 // owner: EDU|FORMULA
-// command: FORMULA / ?
+// command: FORMULA
+// aliases: ?
 // category: education-expression
 // status: supported
 // noargs: usage
 // effect: evaluate-expression
 // mutates: none
-// usage-access: FORMULA USAGE
+// usage-access: FORMULA USAGE; ? USAGE
 // summary:
 //   Evaluate a scalar expression through xexpr and print the formatted value.
 //

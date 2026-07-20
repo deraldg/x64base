@@ -1,0 +1,6 @@
+# DEVELOPMENT: all tracked runtime data. git ls-files is the authority, so
+# untracked/ignored executables, scratch, and generated LMDB cannot enter.
+dottalkpp/bin/dottalkpp.ini
+dottalkpp/bin/init.ini
+dottalkpp/bin/shutdown.ini
+dottalkpp/data/**

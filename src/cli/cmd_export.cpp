@@ -51,13 +51,13 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "textio.hpp"
 #include "filters/filter_registry.hpp"
 #include "cli/workarea_cursor_restore.hpp"
@@ -116,19 +116,7 @@ static bool is_export_usage_request(std::string raw)
 
 static void print_export_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  EXPORT USAGE\n"
-        << "  EXPORT [TO] <file> [CSV|PIPE]\n"
-        << "  EXPORT <open-area-token> TO <file> [CSV|PIPE]\n"
-        << "Notes:\n"
-        << "  - EXPORT writes the current table as CSV by default.\n"
-        << "  - EXPORT <open-area-token> TO <file> writes an already-open named work area.\n"
-        << "  - Named EXPORT does not auto-open tables from disk.\n"
-        << "  - PIPE uses | as the delimiter.\n"
-        << "  - A missing extension is added automatically (.csv for CSV, .txt for PIPE).\n"
-        << "  - EXPORT honors the active SET FILTER for the exported area.\n"
-        << "  - EXPORT requires an open table except for EXPORT USAGE.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ExportUsageText);
 }
 
 static bool ieq_to(const std::string& s) {
@@ -348,16 +336,17 @@ static NamedAreaResolveResult resolve_open_area_token(const std::string& token)
 static void print_ambiguous_export_token(const std::string& token,
                                          const NamedAreaResolveResult& r)
 {
-    std::cout << "EXPORT: ambiguous area token '" << token << "'";
+    std::string matches;
     if (!r.matches.empty()) {
-        std::cout << ": ";
+        matches = ": ";
         for (std::size_t i = 0; i < r.matches.size(); ++i) {
-            if (i) std::cout << ", ";
-            std::cout << "area " << r.matches[i].slot
-                      << " " << r.matches[i].label;
+            if (i) matches += ", ";
+            matches += "area " + std::to_string(r.matches[i].slot) + " " + r.matches[i].label;
         }
     }
-    std::cout << "\n";
+    cli::cmdout::print_prefixed_message(
+        "EXPORT", dottalk::helpdata::MessageId::ExportAmbiguousTokenText,
+        {{"token", token}, {"matches", matches}});
 }
 
 static bool export_area_to_file(xbase::DbArea& area,
@@ -374,7 +363,8 @@ static bool export_area_to_file(xbase::DbArea& area,
 
     std::ofstream out(dest, std::ios::binary);
     if (!out) {
-        std::cout << "Unable to open " << dest << " for write\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ExportUnableToOpenText, {{"dest", dest}});
         return false;
     }
 
@@ -409,18 +399,22 @@ static bool export_area_to_file(xbase::DbArea& area,
     }
 
     if (!out) {
-        std::cout << "ERROR: write failed while exporting " << dest << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ERROR", dottalk::helpdata::MessageId::ExportWriteFailedText, {{"dest", dest}});
     }
 
     if (restore_guard) {
         std::string restore_error;
         if (!restore_guard->restore(restore_error)) {
-            std::cout << "WARNING: export completed but cursor restore reported: "
-                      << restore_error << "\n";
+            cli::cmdout::print_prefixed_message(
+                "WARNING", dottalk::helpdata::MessageId::ExportCursorRestoreWarningText,
+                {{"detail", restore_error}});
         }
     }
 
-    std::cout << "Exported " << exported << " records to " << dest << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ExportedCountText,
+        {{"count", std::to_string(exported)}, {"dest", dest}});
     return true;
 }
 
@@ -468,7 +462,7 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
             return;
         }
         if (!a.isOpen()) {
-            std::cout << "No file open\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ExportNoFileOpenText);
             return;
         }
         dest = toks[1];
@@ -489,11 +483,15 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
         NamedAreaResolveResult resolved = resolve_open_area_token(token);
         if (!resolved.ok) {
             if (resolved.ambiguous) print_ambiguous_export_token(token, resolved);
-            else std::cout << "EXPORT: " << resolved.error << "\n";
+            else cli::cmdout::print_prefixed_message(
+                "EXPORT", dottalk::helpdata::MessageId::ExportErrorDetailText,
+                {{"detail", resolved.error}});
             return;
         }
         if (resolved.matches.empty() || !resolved.matches[0].area) {
-            std::cout << "EXPORT: no open area matches '" << token << "'\n";
+            cli::cmdout::print_prefixed_message(
+                "EXPORT", dottalk::helpdata::MessageId::ExportNoOpenAreaMatchText,
+                {{"token", token}});
             return;
         }
 
@@ -504,7 +502,7 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
     if (toks.size() == 1) {
         // EXPORT <file>
         if (!a.isOpen()) {
-            std::cout << "No file open\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ExportNoFileOpenText);
             return;
         }
         dest = toks[0];

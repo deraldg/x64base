@@ -70,11 +70,22 @@ public:
     IIndexBackend* backend() noexcept { return backend_.get(); }
     const IIndexBackend* backend() const noexcept { return backend_.get(); }
 
+    // RECNO64 capability report. Largest record number the active backend can hold
+    // without truncation (full 64-bit when no backend is attached). Callers indexing
+    // a record beyond a legacy 32-bit backend's capacity should gate on
+    // recordNumberFitsBackend() and reject with a clear error rather than truncate.
+    std::uint64_t backendMaxRecordNumber() const noexcept {
+        return backend_ ? backend_->maxRecordNumber() : UINT64_MAX;
+    }
+    bool recordNumberFitsBackend(RecNo rec) const noexcept {
+        return rec <= backendMaxRecordNumber();
+    }
+
     std::unique_ptr<Cursor> seek(const Key& key) const;
     std::unique_ptr<Cursor> scan(const Key& low, const Key& high) const;
 
     bool lmdbSeekUserKey(const std::string& user_key,
-                         std::uint32_t& out_recno,
+                         std::uint64_t& out_recno,
                          std::string& out_err) const;
 
     // ---- Canonical active-tag key helpers ---------------------------------
@@ -91,6 +102,15 @@ public:
                                 const DeleteSnapshot& after,
                                 RecNo rec);
     bool apply_insert_snapshot(const DeleteSnapshot& snap, RecNo rec);
+
+    // ---- Bulk write batching (CDX only) -----------------------------------
+    // Batches per-row erase/upsert index writes into one LMDB transaction for a
+    // bulk DELETE/RECALL. No-op / false for non-CDX backends (they keep their
+    // per-row behavior). Caller: beginBulkWrite() -> loop -> commitBulkWrite();
+    // abortBulkWrite() on error, then treat the index as needing a rebuild.
+    bool beginBulkWrite(std::string* err = nullptr);
+    bool commitBulkWrite(std::string* err = nullptr);
+    void abortBulkWrite() noexcept;
 
     // ---- OO mutation wrappers ---------------------------------------------
     bool replace_active_field_value(int field1,

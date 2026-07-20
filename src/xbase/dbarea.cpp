@@ -14,7 +14,7 @@
 // ==============================
 
 #include "xbase.hpp"
-#include "xindex/index_manager.hpp"  // satisfies forward-declared unique_ptr
+#include "xbase/index_hooks.hpp"
 #include "memo/memo_manager.hpp"
 
 #include "xbase_locks.hpp"
@@ -49,10 +49,9 @@ DbArea::~DbArea() { try { close(); } catch(...) {} }
 void DbArea::close() {
     _fp.clear();
 
-    // Index manager must detach first while DbArea state is still valid.
-    if (_idx) {
-        _idx->close();
-    }
+    // An indexed composition may have attached external state.  Detach it
+    // while the DbArea is still valid; a table-only build installs no hook.
+    index_hooks::detach(*this);
 
     if (_memo_mgr) {
         _memo_mgr->close();
@@ -87,7 +86,6 @@ void DbArea::close() {
     _kind = AreaKind::Unknown;
 
     // Drop per-area managers
-    _idx.reset();
     _memo_mgr.reset();
     _memo_ctx.clear();
 
@@ -201,18 +199,6 @@ void DbArea::_clear_paths_and_names_() noexcept {
     _memo_kind = MemoKind::NONE;
 }
 
-// ---------- index manager access --------------------------------------------
-xindex::IndexManager& DbArea::indexManager() {
-    if (!_idx) {
-        _idx = std::make_unique<xindex::IndexManager>(*this);
-    }
-    return *_idx;
-}
-
-const xindex::IndexManager* DbArea::indexManagerPtr() const noexcept {
-    return _idx.get();
-}
-
 // ---------- memo manager access ---------------------------------------------
 dottalk::memo::MemoManager& DbArea::memoManager() {
     if (!_memo_mgr) {
@@ -242,7 +228,7 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         return false;
     }
 
-    const std::uint32_t rn = static_cast<std::uint32_t>(recno());
+    const std::uint64_t rn = recno64();
     if (rn == 0) {
         if (err) *err = "no current record";
         return false;
@@ -259,16 +245,10 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
     }
 
     bool ok = false;
-    xindex::IndexManager::DeleteSnapshot before_snap;
-    bool snapshot_before_ok = false;
+    index_hooks::Snapshot before_snap;
 
     try {
-        try {
-            before_snap = indexManager().capture_delete_snapshot_for_current_record();
-            snapshot_before_ok = true;
-        } catch (...) {
-            snapshot_before_ok = false;
-        }
+        before_snap = index_hooks::capture(*this);
 
         ok = set(field1, stored_value) && writeCurrent();
     }
@@ -283,45 +263,18 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         return false;
     }
 
-    bool idx_ok = true;
-
     try {
-        auto& im = indexManager();
-
-        xindex::IndexManager::DeleteSnapshot after_snap;
-        bool snapshot_after_ok = false;
-
-        try {
-            after_snap = im.capture_delete_snapshot_for_current_record();
-            snapshot_after_ok = true;
-        } catch (...) {
-            snapshot_after_ok = false;
-        }
-
-        if (snapshot_before_ok && snapshot_after_ok) {
-            if (!before_snap.empty() || !after_snap.empty()) {
-                idx_ok = im.apply_replace_snapshot(
-                    before_snap,
-                    after_snap,
-                    static_cast<xindex::RecNo>(rn)
-                );
-            }
-        } else {
-            idx_ok = false;
-        }
+        const auto after_snap = index_hooks::capture(*this);
+        (void)index_hooks::apply_replace(*this, before_snap, after_snap, rn);
     }
     catch (const std::exception& ex) {
-        idx_ok = false;
         if (err && err->empty()) *err = std::string("index update failed (") + ex.what() + ")";
     }
     catch (...) {
-        idx_ok = false;
         if (err && err->empty()) *err = "index update failed";
     }
 
     // Stale-index reporting belongs above DbArea, not here.
-    (void)idx_ok;
-
     return true;
 }
 

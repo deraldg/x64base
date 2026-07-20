@@ -253,7 +253,10 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
     const std::string raw_args = iss.str();
 
     std::string a1 = read_word(iss);
-    if (is_setpath_usage_request(raw_args) || is_setpath_usage_request(a1)) {
+    // Test the complete argument string, not the first token alone. HELP is
+    // both a usage alias and a writable path-slot name: `SETPATH HELP` asks
+    // for usage, while `SETPATH HELP <path>` must assign the HELP slot.
+    if (is_setpath_usage_request(raw_args)) {
         print_setpath_usage();
         return;
     }

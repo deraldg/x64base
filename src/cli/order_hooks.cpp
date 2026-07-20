@@ -7,13 +7,16 @@
 #include <string>
 #include <vector>
 
+#if DOTTALK_HAS_XINDEX
 #include "cnx/cnx.hpp"
 #include "cdx/cdx.hpp"
+#endif
 
 namespace fs = std::filesystem;
 
 namespace orderhooks {
 
+#if DOTTALK_HAS_XINDEX
 static constexpr uint32_t TAGF_UNIQUE = 0x0001; // CNX/CDX tag flags bit for UNIQUE (keep in sync with cnx)
 
 static std::string up_copy(std::string s)
@@ -135,6 +138,7 @@ static bool cdx_tag_exists(const std::string& cdx_path, const std::string& tag_u
     }
     return false;
 }
+#endif
 
 
 void reconcile_after_mutation(xbase::DbArea& area) noexcept
@@ -142,6 +146,11 @@ void reconcile_after_mutation(xbase::DbArea& area) noexcept
     try {
         // Any mutation can invalidate cached endpoints / lists.
         order_nav_invalidate(area);
+
+#if !DOTTALK_HAS_XINDEX
+        orderstate::clearOrder(area);
+        return;
+#else
 
         const std::string name = orderstate::orderName(area);
         if (name.empty()) {
@@ -195,7 +204,7 @@ void reconcile_after_mutation(xbase::DbArea& area) noexcept
             // CDX unusable => clear order (SETORDER will report failure).
             orderstate::clearOrder(area);
         }
-
+#endif
 
     }
     catch (...) {
@@ -211,12 +220,16 @@ void auto_top(xbase::DbArea& area) noexcept
         }
 
         int32_t rn = 0;
+#if DOTTALK_HAS_XINDEX
         if (order_first_recno(area, rn) && rn >= 1 && rn <= area.recCount()) {
             if (area.gotoRec(rn)) {
                 (void)area.readCurrent();
             }
             return;
         }
+#else
+        (void)rn;
+#endif
 
         if (area.top()) {
             (void)area.readCurrent();

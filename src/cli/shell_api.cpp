@@ -161,13 +161,13 @@ namespace {
         using EV = dottalk::expr::EvalValue;
         switch (ev.kind) {
             case EV::K_String:
-                if (print_result) std::cout << ev.text << "\n";
+                if (print_result) cli::cmdout::print_line(ev.text);
                 return true;
             case EV::K_Number:
-                if (print_result) std::cout << format_eval_number(ev.number) << "\n";
+                if (print_result) cli::cmdout::print_line(format_eval_number(ev.number));
                 return true;
             case EV::K_Bool:
-                if (print_result) std::cout << (ev.tf ? ".T." : ".F.") << "\n";
+                if (print_result) cli::cmdout::print_line(ev.tf ? ".T." : ".F.");
                 return true;
             default:
                 return false;

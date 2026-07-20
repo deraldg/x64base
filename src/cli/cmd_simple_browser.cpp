@@ -93,8 +93,10 @@
 #include "cli/order_state.hpp"
 #include "cli/order_nav.hpp"
 #include "cli/order_iterator.hpp"
+#if DOTTALK_HAS_XINDEX
 #include "xindex/order_display.hpp"   // namespace orderdisplay { std::string summarize(const xbase::DbArea&) }
 #include "index_summary.hpp"
+#endif
 #include "value_normalize.hpp"        // normalize_for_compare (pre-save validation)
 
 using std::string;
@@ -103,7 +105,9 @@ using std::vector;
 using namespace util; // normalize_for_compare
 
 // Reuse existing commands
+#if DOTTALK_HAS_XINDEX
 void cmd_SEEK(xbase::DbArea& area, std::istringstream& in);
+#endif
 void cmd_RECALL(xbase::DbArea& area, std::istringstream& in);
 
 namespace {
@@ -333,7 +337,14 @@ static bool more_prompt(bool quiet) {
 }
 
 // Use the proven utility banner that already shows INX/CNX details (including tag)
-static std::string order_banner(xbase::DbArea& a) { return orderdisplay::summarize(a); }
+static std::string order_banner(xbase::DbArea& a) {
+#if DOTTALK_HAS_XINDEX
+    return orderdisplay::summarize(a);
+#else
+    (void)a;
+    return "physical order";
+#endif
+}
 
 // Active order snapshot (recno list + direction)
 struct Ordered {
@@ -537,9 +548,13 @@ void cmd_SIMPLE_BROWSER(xbase::DbArea& area, std::istringstream& in)
 
     // START KEY uses existing SEEK (respects current order)
     if (!opts.start_key.empty()) {
+#if DOTTALK_HAS_XINDEX
         std::istringstream seek_args(opts.start_key);
         cmd_SEEK(area, seek_args);
         area.readCurrent();
+#else
+        std::cout << "START KEY is unavailable in this table-only build.\n";
+#endif
     }
 
     auto print_tuple = [&](xbase::DbArea& db) {

@@ -115,8 +115,10 @@
 #include "help/helpdata_messages.hpp"
 
 // ---- Forward declarations ---------------------------------------------------
+#if DOTTALK_HAS_XINDEX
 void cmd_SETINDEX      (xbase::DbArea&, std::istringstream&);
 void cmd_SETORDER      (xbase::DbArea&, std::istringstream&);
+#endif
 void cmd_SETFILTER     (xbase::DbArea&, std::istringstream&);
 void cmd_SET_UNIQUE    (xbase::DbArea&, std::istringstream&);
 void cmd_SET_RELATION  (xbase::DbArea&, std::istringstream&);
@@ -127,8 +129,10 @@ void cmd_SETPATH       (xbase::DbArea&, std::istringstream&);
 void cmd_SETTIMER      (xbase::DbArea&, std::istringstream&);
 void cmd_PRN           (xbase::DbArea&, std::istringstream&);
 
-#if DOTTALK_WITH_DEV
+#if DOTTALK_HAS_XINDEX
 void cmd_SETCNX        (xbase::DbArea&, std::istringstream&);
+#endif
+#if DOTTALK_WITH_INDEX
 void cmd_SETCDX        (xbase::DbArea&, std::istringstream&);
 void cmd_SETLMDB       (xbase::DbArea&, std::istringstream&);
 #endif
@@ -244,7 +248,6 @@ static void print_message_catalog_status() {
             {"issue_count", std::to_string(issues.size())}
         });
 
-    auto& out = cli::OutputRouter::instance().out();
     for (const auto& issue : issues) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetMessageCatalogValidationIssueRowText,
@@ -1342,6 +1345,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET INDEX
     // ─────────────────────────────────────────────────────────────
+#if DOTTALK_HAS_XINDEX
     if (opt == "INDEX") {
         std::istringstream r(rest(args));
         cmd_SETINDEX(A, r);
@@ -1356,6 +1360,7 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         cmd_SETORDER(A, r);
         return;
     }
+#endif
 
 #if DOTTALK_WITH_DEV
     // ─────────────────────────────────────────────────────────────
@@ -1385,18 +1390,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         return;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // SET CNX
-    // ─────────────────────────────────────────────────────────────
+#endif
+
+#if DOTTALK_HAS_XINDEX
+    // SET CNX is available in both legacy and LMDB index profiles.
     if (opt == "CNX") {
         std::istringstream r(rest(args));
         cmd_SETCNX(A, r);
         return;
     }
+#endif
 
-    // ─────────────────────────────────────────────────────────────
-    // SET CDX
-    // ─────────────────────────────────────────────────────────────
+#if DOTTALK_WITH_INDEX
+    // SET CDX / LMDB are LMDB-index profile commands.
     if (opt == "CDX") {
         std::istringstream r(rest(args));
         cmd_SETCDX(A, r);

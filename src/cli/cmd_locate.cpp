@@ -59,6 +59,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "textio.hpp"
 #include "predicate_eval.hpp"
 #include "xbase_field_getters.hpp"
@@ -278,6 +279,11 @@ static bool try_locate_cdx_simple(xbase::DbArea& A,
                                   const std::string& where_text,
                                   int& found_recno)
 {
+#if !DOTTALK_HAS_XINDEX
+    (void)A; (void)where_text;
+    found_recno = 0;
+    return false;
+#else
     found_recno = 0;
 
     if (!orderstate::hasOrder(A) || !orderstate::isCdx(A)) return false;
@@ -290,7 +296,7 @@ static bool try_locate_cdx_simple(xbase::DbArea& A,
     const std::string tagU = upper_copy(orderstate::activeTag(A));
     if (tagU != upper_copy(sc.field)) return false;
 
-    auto& im = A.indexManager();
+    auto& im = xindex::ensure_manager(A);
     auto cur = im.scan(xindex::Key{}, xindex::Key{});
     if (!cur) return false;
 
@@ -319,6 +325,7 @@ static bool try_locate_cdx_simple(xbase::DbArea& A,
     }
 
     return true;
+#endif
 }
 
 // -----------------------------------------------------------------------------

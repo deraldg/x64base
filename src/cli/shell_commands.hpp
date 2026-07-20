@@ -68,6 +68,7 @@ void cmd_RULE(DbArea&, std::istringstream&);
 
 //   METADATA FUNCTIONS
 void cmd_EXPORTFUNCTIONS(DbArea&, std::istringstream&);
+void cmd_SCX(DbArea&, std::istringstream&);
 
 
 //   DATA DICTIONAIRY
@@ -142,23 +143,26 @@ void cmd_AVG(DbArea&, std::istringstream&);
 void cmd_MIN(DbArea&, std::istringstream&);
 void cmd_MAX(DbArea&, std::istringstream&);
 
-#if DOTTALK_WITH_INDEX
+#if DOTTALK_HAS_XINDEX
 void cmd_INDEX(DbArea&, std::istringstream&);
 void cmd_REINDEX(DbArea&, std::istringstream&);
 void cmd_REBUILD(DbArea&, std::istringstream&);
-void cmd_BUILDLMDB(DbArea&, std::istringstream&);			// SETCMD
 void cmd_SETINDEX(DbArea&, std::istringstream&);
 void cmd_ASCEND(DbArea&, std::istringstream&);
 void cmd_DESCEND(DbArea&, std::istringstream&);
 void cmd_CNX(DbArea&, std::istringstream&);
-void cmd_CDX(DbArea&, std::istringstream&);
 void cmd_SIX(DbArea&, std::istringstream&);
 void cmd_SNX(DbArea&, std::istringstream&);
 void cmd_SETCNX(DbArea&, std::istringstream&);				// SETCMD
-void cmd_SETCDX(DbArea&, std::istringstream&);				// SETCMD
 void cmd_INDEXSEEK(DbArea&, std::istringstream&);
-void cmd_SETLMDB(DbArea&, std::istringstream&);				// SETCMD
 void cmd_SETORDER(DbArea&, std::istringstream&);			// SETCMD
+#endif
+
+#if DOTTALK_WITH_INDEX
+void cmd_BUILDLMDB(DbArea&, std::istringstream&);			// SETCMD
+void cmd_CDX(DbArea&, std::istringstream&);
+void cmd_SETCDX(DbArea&, std::istringstream&);				// SETCMD
+void cmd_SETLMDB(DbArea&, std::istringstream&);				// SETCMD
 void cmd_LMDB(DbArea&, std::istringstream&);				// EDUCATION & UTILITY
 void cmd_LMDB_UTIL(DbArea&, std::istringstream&);
 void cmd_LMDB_DUMP(DbArea&, std::istringstream&);

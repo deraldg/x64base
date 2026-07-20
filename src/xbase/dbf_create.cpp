@@ -406,6 +406,14 @@ static bool write_x64_dbf(const std::string& path,
         fieldLengths.push_back(f.len);
     }
 
+    if (recLenWide > xbase::X64_MAX_RECORD_SIZE) {
+        err = "X64 record length " + std::to_string(recLenWide) +
+              " exceeds maximum " + std::to_string(xbase::X64_MAX_RECORD_SIZE) +
+              " bytes (" + std::to_string(xbase::X64_MAX_RECORD_SIZE / (1024 * 1024)) +
+              " MiB); use memo (M) fields for large data";
+        return false;
+    }
+
     const std::string tableName = std::filesystem::path(path).stem().string();
     const std::vector<char> metaBlock =
         xbase::x64_build_name_metadata(tableName, fieldNames, fieldLengths);

@@ -87,12 +87,8 @@ else()
   )
 endif()
 
-if(TARGET xindex)
+if(DOTTALK_HAS_XINDEX AND TARGET xindex)
   target_link_libraries(pydottalk PRIVATE xindex)
-else()
-  message(WARNING
-    "Target 'xindex' not found; pydottalk may fail if index symbols are referenced."
-  )
 endif()
 
 target_compile_features(pydottalk PRIVATE cxx_std_20)
@@ -119,3 +115,29 @@ install(TARGETS pydottalk
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+if(BUILD_TESTING)
+  add_test(
+    NAME pydottalk_dbf_readonly_smoke
+    COMMAND ${CMAKE_COMMAND} -E env
+      "PYDOTTALK_BIN=$<TARGET_FILE_DIR:pydottalk>"
+      "${Python3_EXECUTABLE}"
+      "${CMAKE_SOURCE_DIR}/bindings/pydottalk_smoke_readonly.py"
+  )
+
+  add_test(
+    NAME pydottalk_xbase_physical_crud_smoke
+    COMMAND ${CMAKE_COMMAND} -E env
+      "PYDOTTALK_BIN=$<TARGET_FILE_DIR:pydottalk>"
+      "${Python3_EXECUTABLE}"
+      "${CMAKE_SOURCE_DIR}/bindings/pydottalk_xbase_contract_smoke.py"
+  )
+
+  set_tests_properties(
+    pydottalk_dbf_readonly_smoke
+    pydottalk_xbase_physical_crud_smoke
+    PROPERTIES
+      LABELS "pydottalk;xbase;smoke"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  )
+endif()

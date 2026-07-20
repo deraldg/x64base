@@ -32,6 +32,9 @@ public:
     void upsert(const Key& key, RecNo rec) override;
     void erase (const Key& key, RecNo rec) override;
 
+    // Classic CNX stores record numbers in 4 bytes — 32-bit ceiling (RECNO64).
+    std::uint64_t maxRecordNumber() const override { return UINT32_MAX; }
+
     std::unique_ptr<Cursor> seek(const Key& key) const override;
     std::unique_ptr<Cursor> scan(const Key& low, const Key& high) const override;
 

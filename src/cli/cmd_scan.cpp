@@ -493,6 +493,24 @@ void cmd_SCAN(DbArea& A, std::istringstream& S)
               << (hadFor ? " (FOR present)." : ".") << "\n";
 }
 
+// @dottalk.usage v1
+// owner: INTERNAL|SCAN_BUFFER
+// command: SCAN_BUFFER
+// category: control-buffer-internal
+// status: developer
+// noargs: internal-capture
+// effect: capture
+// mutates: scan-capture-state
+// usage-access: none
+// summary:
+//   Internal shell target that captures one SCAN body line.
+// usage:
+//   SCAN_BUFFER <captured-line>
+// notes:
+//   The shell routes lines here while SCAN capture is active. It is not a public direct command.
+// related:
+//   SCAN, ENDSCAN
+//
 void cmd_SCAN_BUFFER(DbArea& /*A*/, std::istringstream& S)
 {
     auto& st = scanblock::state();

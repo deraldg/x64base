@@ -74,7 +74,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -82,6 +81,7 @@
 #include "textio.hpp"
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
+#include "cli/command_output.hpp"
 #include "cli/command_registry.hpp"
 #include "cli/table_state.hpp"
 #include "cli/scan_selector.hpp"
@@ -89,6 +89,7 @@
 #include "cli/nav_move.hpp"
 #include "cli/order_state.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 // Provided by the interactive shell.
 extern "C" xbase::XBaseEngine* shell_engine(void);
@@ -120,18 +121,7 @@ struct CursorRestore {
 
 static void print_delete_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  DELETE USAGE\n"
-        << "  DELETE                         (delete current record)\n"
-        << "  DELETE ALL\n"
-        << "  DELETE REST\n"
-        << "  DELETE NEXT <n>\n"
-        << "  DELETE FOR <field> <op> <value>\n"
-        << "Notes:\n"
-        << "  - DELETE requires an open table except for DELETE USAGE.\n"
-        << "  - DELETE honors active SET FILTER in ALL/REST/NEXT/FOR scans.\n"
-        << "  - Direct-write mode updates active index backends best-effort.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::DeleteUsageText);
 }
 
 static bool is_delete_usage_request(const std::string& raw)
@@ -189,8 +179,10 @@ static void warn_index_may_require_rebuild(const xbase::DbArea& area,
 {
     try {
         if (orderstate::hasOrder(area)) {
-            std::cout << "DELETE: warning - active index/order may now be stale after "
-                      << stage << ". Rebuild/rebind indexes if needed.\n";
+            cli::cmdout::print_prefixed_message(
+                "DELETE",
+                dottalk::helpdata::MessageId::DeleteIndexStaleWarningText,
+                {{"stage", stage}});
         }
     } catch (...) {
     }
@@ -208,16 +200,18 @@ static void refresh_after_delete_best_effort(xbase::DbArea& area)
 
 static bool delete_current_with_lock(xbase::DbArea& area)
 {
-    const auto rn = static_cast<uint32_t>(area.recno());
+    const std::uint64_t rn = area.recno64();
     if (rn == 0) return false;
 
     std::string err;
     if (!xbase::locks::try_lock_record(area, rn, &err)) return false;
 
     bool ok = false;
-    bool snapshot_ok = false;
+    bool snapshot_ok = true;
     bool index_apply_ok = true;
+#if DOTTALK_HAS_XINDEX
     xindex::IndexManager::DeleteSnapshot delete_snap;
+#endif
 
     try {
         if (!area.readCurrent()) {
@@ -225,9 +219,10 @@ static bool delete_current_with_lock(xbase::DbArea& area)
         } else if (area.isDeleted()) {
             ok = true;
         } else {
+#if DOTTALK_HAS_XINDEX
             // Capture all relevant index keys BEFORE delete, while the row is live.
             try {
-                auto& im = area.indexManager();
+                auto& im = xindex::ensure_manager(area);
                 delete_snap = im.capture_delete_snapshot_for_current_record();
                 snapshot_ok = true;
             } catch (...) {
@@ -238,7 +233,7 @@ static bool delete_current_with_lock(xbase::DbArea& area)
 
             if (ok && snapshot_ok && !delete_snap.empty()) {
                 try {
-                    area.indexManager().apply_delete_snapshot(
+                    xindex::ensure_manager(area).apply_delete_snapshot(
                         delete_snap,
                         static_cast<xindex::RecNo>(rn));
                     index_apply_ok = true;
@@ -246,6 +241,7 @@ static bool delete_current_with_lock(xbase::DbArea& area)
                     index_apply_ok = false;
                 }
             }
+#endif
         }
     } catch (...) {
         ok = false;
@@ -259,26 +255,119 @@ static bool delete_current_with_lock(xbase::DbArea& area)
         refresh_after_delete_best_effort(area);
 
         // Data delete succeeded, but index lifecycle may not have completed cleanly.
+#if DOTTALK_HAS_XINDEX
         if (!snapshot_ok) {
             warn_index_may_require_rebuild(area, "snapshot");
         } else if (!index_apply_ok) {
             warn_index_may_require_rebuild(area, "index update");
         }
+#endif
     }
 
     return ok;
+}
+
+// Buffered delete: stage a CHANGE_DELETE in the table buffer and journal a D redo
+// record, deferring the actual DBF/index mutation to COMMIT (or discard on
+// ROLLBACK / crash recovery). Used only when TABLE BUFFER is enabled; the
+// write-through path (with the Phase 1.3d batched index) remains the default.
+static bool buffer_delete_recno(int area0, std::uint64_t recno) {
+    if (recno == 0) return false;
+    auto& tb = dottalk::table::get_tb(area0);
+    const int prio = tb.add_change(recno, dottalk::table::CHANGE_DELETE);
+    if (dottalk::table::is_persistent_enabled(area0)) {
+        dottalk::table::ChangeEntry je;
+        je.recno = recno;
+        je.dirty_flags = dottalk::table::CHANGE_DELETE;
+        je.priority = prio;
+        (void)dottalk::table::journal_note_change(area0, je);
+    }
+    if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
+    return true;
+}
+
+// Single-record DELETE: buffer it when TABLE BUFFER is on, else write through.
+static bool delete_current_buffered_or_through(xbase::DbArea& area) {
+    const int area0 = resolve_current_index(area);
+    if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
+        return buffer_delete_recno(area0, area.recno64());
+    }
+    return delete_current_with_lock(area);
 }
 
 static int32_t delete_targets_by_recno(xbase::DbArea& area,
                                        const std::vector<uint64_t>& targets)
 {
     int32_t cnt = 0;
+
+    // Buffered mode: stage each delete + journal it; defer to COMMIT/ROLLBACK.
+    {
+        const int area0 = resolve_current_index(area);
+        if (area0 >= 0 && dottalk::table::is_enabled(area0)) {
+            for (uint64_t rn : targets) {
+                if (!area.gotoRec64(rn)) continue;
+                if (buffer_delete_recno(area0, rn)) ++cnt;
+            }
+            return cnt;
+        }
+    }
+
+#if DOTTALK_HAS_XINDEX
+    // Batch the per-row index-key erasures into one LMDB transaction (chunked)
+    // instead of one commit+fsync per deleted row -- the dominant cost of a bulk
+    // DELETE under an active CDX order. DBF marks stay per-row under lock; only
+    // the index writes batch. On any error we abort the batch and warn the index
+    // needs a rebuild (the DBF deletes still stand). Chunk keeps the txn well
+    // under LMDB's dirty-page limit so very large deletes don't overflow it.
+    constexpr std::size_t kBulkChunk = 10000;
+    xindex::IndexManager* im = nullptr;
+    bool bulk = false;
+    try {
+        im = &xindex::ensure_manager(area);
+        std::string berr;
+        bulk = im->beginBulkWrite(&berr);
+    } catch (...) { im = nullptr; bulk = false; }
+    std::size_t since_commit = 0;
+
+    try {
+        for (uint64_t rn : targets) {
+            if (!area.gotoRec64(rn)) continue;
+            if (!area.readCurrent()) continue;
+            if (delete_current_with_lock(area)) {
+                ++cnt;
+                if (bulk && ++since_commit >= kBulkChunk) {
+                    std::string ce;
+                    if (!im->commitBulkWrite(&ce) || !im->beginBulkWrite(&ce)) {
+                        bulk = false; // degrade to per-row writes (still correct)
+                        warn_index_may_require_rebuild(area, "bulk chunk commit");
+                    }
+                    since_commit = 0;
+                }
+            }
+        }
+    } catch (...) {
+        if (bulk && im) {
+            im->abortBulkWrite();
+            warn_index_may_require_rebuild(area, "bulk delete aborted");
+        }
+        throw;
+    }
+
+    if (bulk && im) {
+        std::string ce;
+        if (!im->commitBulkWrite(&ce)) {
+            warn_index_may_require_rebuild(area, "bulk index commit");
+        }
+    }
+    return cnt;
+#else
     for (uint64_t rn : targets) {
         if (!area.gotoRec((int32_t)rn)) continue;
         if (!area.readCurrent()) continue;
         if (delete_current_with_lock(area)) ++cnt;
     }
     return cnt;
+#endif
 }
 
 } // namespace
@@ -292,7 +381,7 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
     }
 
     if (!area.isOpen()) {
-        std::cout << "No table is open. Use USE <file> first.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::DeleteNoTableOpenText);
         return;
     }
 
@@ -303,10 +392,13 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
     std::streampos savepos = iss.tellg();
     if (!(iss >> tok)) {
         if (!area.readCurrent()) {
-            std::cout << "0 deleted\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::DeleteCountText, {{"count", "0"}});
             return;
         }
-        std::cout << (delete_current_with_lock(area) ? 1 : 0) << " deleted\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DeleteCountText,
+            {{"count", std::to_string(delete_current_buffered_or_through(area) ? 1 : 0)}});
         return;
     }
     iss.clear();
@@ -324,7 +416,9 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
         const int32_t cnt = delete_targets_by_recno(area, sel.recnos);
-        std::cout << cnt << " deleted\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DeleteCountText,
+            {{"count", std::to_string(cnt)}});
         return;
     }
 
@@ -339,7 +433,9 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
         const int32_t cnt = delete_targets_by_recno(area, sel.recnos);
-        std::cout << cnt << " deleted\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DeleteCountText,
+            {{"count", std::to_string(cnt)}});
         return;
     }
 
@@ -349,7 +445,9 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
         const int32_t cnt = delete_targets_by_recno(area, sel.recnos);
-        std::cout << cnt << " deleted\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DeleteCountText,
+            {{"count", std::to_string(cnt)}});
         return;
     }
 
@@ -366,7 +464,9 @@ void cmd_DELETE(xbase::DbArea& area, std::istringstream& iss)
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
         const int32_t cnt = delete_targets_by_recno(area, sel.recnos);
-        std::cout << cnt << " deleted\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::DeleteCountText,
+            {{"count", std::to_string(cnt)}});
         return;
     }
 

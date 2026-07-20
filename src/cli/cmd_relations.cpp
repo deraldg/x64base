@@ -2,12 +2,13 @@
 // @dottalk.usage v1
 // owner: DOT|RELATIONS
 // command: RELATIONS
+// aliases: REL_LIST
 // category: relation
 // status: supported
 // noargs: report
 // effect: mixed
 // mutates: relation-graph
-// usage-access: RELATIONS USAGE
+// usage-access: RELATIONS USAGE; REL_LIST USAGE
 // summary:
 //   Inspect and manage active relation definitions, relation files, and relation
 //   enumeration helpers.
@@ -638,6 +639,25 @@ void cmd_RELATIONS_LIST(xbase::DbArea& /*A*/, std::istringstream& iss) {
     }
 }
 
+// @dottalk.usage v1
+// owner: DOT|REL_REFRESH
+// command: REL_REFRESH
+// category: relation
+// status: supported
+// noargs: refresh
+// effect: refresh
+// mutates: relation-state
+// usage-access: none
+// summary:
+//   Refresh active relations for the current parent area.
+// usage:
+//   REL_REFRESH
+// notes:
+//   This command currently has no usage-only branch; invoking it performs the refresh.
+//   Use REL USAGE or RELATIONS USAGE for non-mutating documentation access.
+// related:
+//   REL, RELATIONS, SET RELATION
+//
 void cmd_RELATIONS_REFRESH(xbase::DbArea& /*A*/, std::istringstream& /*iss*/) {
     relations_api::refresh_for_current_parent();
     cli::cmdout::print_message(dottalk::helpdata::MessageId::SetRelationOkText);

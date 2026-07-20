@@ -98,6 +98,7 @@
 #include "xbase_64.hpp"
 #include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "cdx/cdx.hpp"
 #include "textio.hpp"
 #include "cli/order_state.hpp"
@@ -230,7 +231,7 @@ static void print_attach_and_seed_orderstate(xbase::DbArea& A, const fs::path& p
 // order active and make later SET ORDER / TOP / LIST tests lie.
 static void clear_index_state(xbase::DbArea& A) {
     try {
-        A.indexManager().close();
+        xindex::ensure_manager(A).close();
     } catch (...) {
         // Best-effort cleanup only.  SET INDEX diagnostics should still report
         // the original user-facing failure, not a secondary close failure.
@@ -392,7 +393,7 @@ static bool parse_setindex_args(std::istringstream& args,
 static void position_to_first_after_order_change(xbase::DbArea& area)
 {
     try {
-        auto& im = area.indexManager();
+        auto& im = xindex::ensure_manager(area);
 
         if (!im.hasBackend()) {
             cli::nav::go_endpoint(area, cli::nav::Endpoint::Top, "SET INDEX");
@@ -511,14 +512,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
         return false;
     }
 
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
 
     orderstate::setOrder(area, container);
     orderstate::setActiveTag(area, tag);
     orderstate::setAscending(area, ascending);
 
-    if (!area.indexManager().openCdx(container, tag, &err)) {
+    if (!xindex::ensure_manager(area).openCdx(container, tag, &err)) {
         if (err.empty()) {
             err = msg(MessageId::SetIndexOpenCdxBackendOpenFailedText,
                       {{"container", container_path.string()},
@@ -530,7 +531,7 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
                        {"env", env_path.string()}});
         }
         orderstate::clearOrder(area);
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         return false;
     }
 
@@ -552,17 +553,17 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
         return false;
     }
 
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
 
     orderstate::setOrder(area, container);
     orderstate::setActiveTag(area, tag);
     orderstate::setAscending(area, ascending);
 
-    if (!area.indexManager().openCnx(container, tag, &err)) {
+    if (!xindex::ensure_manager(area).openCnx(container, tag, &err)) {
         if (err.empty()) err = msg(MessageId::SetIndexOpenCnxBackendOpenFailedText);
         orderstate::clearOrder(area);
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         return false;
     }
 

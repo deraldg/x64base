@@ -34,6 +34,7 @@
 #include "cli/table_state.hpp"
 #include "cli/unique_registry.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
@@ -235,6 +236,7 @@ namespace
                     return false;
             }
 
+#if DOTTALK_HAS_XINDEX
             if (update_index_inline) {
                 if (!A.gotoRec(static_cast<std::int32_t>(rn)))
                     return false;
@@ -244,7 +246,7 @@ namespace
                 append_trace_field_values(A, rn);
 
                 try {
-                    auto& im = A.indexManager();
+                    auto& im = xindex::ensure_manager(A);
 
                     if (append_trace_enabled()) {
                         std::cout << "[APPEND TRACE] index backend="
@@ -285,6 +287,10 @@ namespace
                     // index maintenance does not complete.
                 }
             }
+#else
+            (void)update_index_inline;
+            (void)rn;
+#endif
 
             return true;
         }

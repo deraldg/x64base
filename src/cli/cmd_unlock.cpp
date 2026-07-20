@@ -90,7 +90,7 @@ void cmd_UNLOCK(xbase::DbArea& a, std::istringstream& iss) {
     std::string rest = up(read_rest(iss));
     if (rest.empty()) {
         // UNLOCK current record
-        const auto rn = static_cast<uint32_t>(a.recno());
+        const std::uint64_t rn = a.recno64();
         if (rn == 0) {
             cli::cmdout::print_message(dottalk::helpdata::MessageId::UnlockNoCurrentRecordText);
             return;
@@ -110,7 +110,7 @@ void cmd_UNLOCK(xbase::DbArea& a, std::istringstream& iss) {
 
     // UNLOCK <n>
     try {
-        uint32_t n = static_cast<uint32_t>(std::stoul(rest));
+        std::uint64_t n = std::stoull(rest);
         xbase::locks::unlock_record(a, n);
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::UnlockRecordUnlockedText,

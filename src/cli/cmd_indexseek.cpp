@@ -68,6 +68,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
 #include "textio.hpp"
@@ -81,6 +82,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include "cli/command_output.hpp"
 
 namespace fs = std::filesystem;
 
@@ -165,20 +168,7 @@ static bool indexseek_usage_request(const std::string& raw)
 
 static void print_indexseek_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  INDEXSEEK USAGE\n"
-        << "  INDEXSEEK <value>\n"
-        << "  INDEXSEEK <value> SOFT\n"
-        << "  INDEXSEEK <value> TAG <tag-or-path>\n"
-        << "  INDEXSEEK <value> SOFT TAG <tag-or-path>\n"
-        << "Examples:\n"
-        << "  INDEXSEEK \"TAYLOR\"\n"
-        << "  INDEXSEEK \"TAYLOR\" SOFT\n"
-        << "  INDEXSEEK \"TAYLOR\" TAG students.cdx\n"
-        << "Notes:\n"
-        << "  - INDEXSEEK prints INDEXSEEK(): <recno> and restores the cursor best-effort.\n"
-        << "  - INDEXSEEK USAGE works without an open table.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexseekUsageText);
 }
 
 static bool ieq_char(char a, char b) {
@@ -488,7 +478,7 @@ static bool indexseek_via_cdx(xbase::DbArea& A,
 
     const std::string needleU = norm_seek_text(strip_outer_quotes(value));
 
-    auto& im = A.indexManager();
+    auto& im = xindex::ensure_manager(A);
     std::string err;
 
     if (!im.hasBackend() || !im.isCdx() || im.containerPath() != target.containerPath) {

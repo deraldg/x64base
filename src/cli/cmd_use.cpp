@@ -67,16 +67,19 @@
 #include "xbase_64.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "cli/command_output.hpp"
+#include "cli/table_state.hpp"   // crash recovery of the table-buffer .tbj journal
 #include "cli/order_state.hpp"
 #include "cli/order_hooks.hpp"      // to run reconcile_after_mutation()
 #include "cli/cmd_setpath.hpp"
 #include "cli/path_resolver.hpp"
 #include "help/helpdata_messages.hpp"
 #include "memo/memo_auto.hpp"
+#if DOTTALK_HAS_XINDEX
 #include "xindex/index_manager.hpp"
-
+#include "xindex/attach.hpp"
 #include "cdx/cdx.hpp"
 #include "cnx/cnx.hpp"              // reporting helper (CNX is deprecated but still supported)
+#endif
 
 using namespace xbase;
 namespace fs = std::filesystem;
@@ -312,6 +315,7 @@ static void populate_dbarea_metadata(DbArea& a, const fs::path& dbf_path) {
 
 // ----------------------- CNX uniqueness (reporting only) --------------------
 
+#if DOTTALK_HAS_XINDEX
 static constexpr uint32_t TAGF_UNIQUE = 0x0001; // adjust if your CNX uses a different bit
 
 static bool cnx_tag_is_unique(const std::string& cnx_path, const std::string& tag_upper)
@@ -355,6 +359,7 @@ static bool cdx_tag_is_unique(const std::string& cdx_path, const std::string& ta
     }
     return false;
 }
+#endif
 
 static bool is_v32_area(const DbArea& a)
 {
@@ -371,6 +376,7 @@ static bool is_classic_tag_area(const DbArea& a)
     return is_v32_area(a) || (a.kind() == AreaKind::V64 && a.versionByte() != xbase::DBF_VERSION_64);
 }
 
+#if DOTTALK_HAS_XINDEX
 static bool file_exists_best_effort(const fs::path& p)
 {
     std::error_code ec;
@@ -415,7 +421,7 @@ static bool activate_tag_container_for_use(DbArea& a,
     active_tag_out.clear();
 
     try {
-        a.indexManager().close();
+        xindex::ensure_manager(a).close();
     } catch (...) {
     }
 
@@ -435,14 +441,14 @@ static bool activate_tag_container_for_use(DbArea& a,
     bool ok = false;
 
     if (ext == ".CDX") {
-        ok = a.indexManager().openCdx(container_path.string(), active_tag_out, &err);
+        ok = xindex::ensure_manager(a).openCdx(container_path.string(), active_tag_out, &err);
     } else if (ext == ".CNX") {
-        ok = a.indexManager().openCnx(container_path.string(), active_tag_out, &err);
+        ok = xindex::ensure_manager(a).openCnx(container_path.string(), active_tag_out, &err);
     }
 
     if (!ok) {
         try {
-            a.indexManager().close();
+            xindex::ensure_manager(a).close();
         } catch (...) {
         }
         orderstate::clearOrder(a);
@@ -452,6 +458,7 @@ static bool activate_tag_container_for_use(DbArea& a,
 
     return true;
 }
+#endif
 
 // ----------------------- flavor / valid-index helpers -----------------------
 
@@ -460,6 +467,10 @@ static bool activate_tag_container_for_use(DbArea& a,
 // change this function only.
 static const char* valid_index_types_for(const DbArea& a)
 {
+#if !DOTTALK_HAS_XINDEX
+    (void)a;
+    return "none (table-only build)";
+#else
     if (is_x64_cdx_area(a)) return "CDX";
     if (is_classic_tag_area(a)) return "CNX, INX";
     switch (a.kind()) {
@@ -467,6 +478,7 @@ static const char* valid_index_types_for(const DbArea& a)
     case AreaKind::Unknown:
     default:             return "(unknown)";
     }
+#endif
 }
 
 static std::string open_display_name(const DbArea& a, const fs::path& dbf_path)
@@ -551,6 +563,13 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         return;
     }
 
+    // Crash recovery: if an interrupted COMMIT left a committed <dbf>.tbj redo
+    // log, replay it into the DBF now; an uncommitted one is discarded. No-op if
+    // no log is present (the common case).
+    if (dottalk::table::recover_table_buffer_journal(a)) {
+        cli::cmdout::print_line("USE: recovered a committed table-buffer journal (.tbj).");
+    }
+
     // Memo auto-attach (best-effort, never fatal)
     {
         bool hasMemoFields = false;
@@ -591,6 +610,7 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
         return;
     }
 
+#if DOTTALK_HAS_XINDEX
     // Auto-attach order (best-effort, never fatal).
     // Policy:
     //   - x64/v128: prefer CDX from INDEXES, then DBF directory fallback
@@ -645,4 +665,5 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
             break;
         }
     }
+#endif
 }

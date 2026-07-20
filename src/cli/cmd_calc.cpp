@@ -66,7 +66,6 @@
 #include <cctype>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -211,7 +210,7 @@ void cmd_CALC(xbase::DbArea& area, std::istringstream& args) {
     }
 
     if (expr.empty()) {
-        std::cout << ".F.\n";
+        cli::cmdout::print_line(".F.");
         return;
     }
 
@@ -231,30 +230,30 @@ void cmd_CALC(xbase::DbArea& area, std::istringstream& args) {
 
     switch (ev.kind()) {
         case xexpr::ValueKind::Bool:
-            std::cout << (ev.as_bool() ? ".T." : ".F.") << "\n";
+            cli::cmdout::print_line(ev.as_bool() ? ".T." : ".F.");
             return;
 
         case xexpr::ValueKind::Number:
-            std::cout << format_number(ev.as_number()) << "\n";
+            cli::cmdout::print_line(format_number(ev.as_number()));
             return;
 
         case xexpr::ValueKind::String:
-            std::cout << ev.as_string() << "\n";
+            cli::cmdout::print_line(ev.as_string());
             return;
 
         case xexpr::ValueKind::Date:
-            std::cout << ev.as_date8() << "\n";
+            cli::cmdout::print_line(std::to_string(ev.as_date8()));
             return;
 
         case xexpr::ValueKind::Error:
             // Preserve CALC's prior quiet-failure behavior for now.
             // xexpr carries the diagnostic for later command-level reporting.
-            std::cout << ".F.\n";
+            cli::cmdout::print_line(".F.");
             return;
 
         case xexpr::ValueKind::None:
         default:
-            std::cout << ".F.\n";
+            cli::cmdout::print_line(".F.");
             return;
     }
 }

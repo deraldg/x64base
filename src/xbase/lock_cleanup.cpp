@@ -64,6 +64,9 @@ namespace dottalk::locks {
 
 void cleanup_stale_locks(const fs::path& root)
 {
+    if (root.empty() || !fs::exists(root) || !fs::is_directory(root))
+        return;
+
     int removed = 0;
 
     for (auto& e : fs::recursive_directory_iterator(root))
@@ -97,6 +100,9 @@ void cleanup_stale_locks(const fs::path& root)
 
 void cleanup_owned_locks(const fs::path& root)
 {
+    if (root.empty() || !fs::exists(root) || !fs::is_directory(root))
+        return;
+
     int removed = 0;
     int mypid = current_pid();
 

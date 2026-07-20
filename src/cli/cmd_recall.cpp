@@ -17,12 +17,13 @@
 // @dottalk.usage v1
 // owner: DOT|RECALL
 // command: RECALL
+// aliases: UNDELETE
 // category: table-mutation
 // status: supported
 // noargs: recall-current
 // effect: undelete-records
 // mutates: table-data delete-flags index-entries
-// usage-access: RECALL USAGE
+// usage-access: RECALL USAGE; UNDELETE USAGE
 // summary:
 //   Clear deleted flags on the current record or selected deleted records.
 //
@@ -33,6 +34,7 @@
 //   RECALL REST
 //   RECALL NEXT <n>
 //   RECALL FOR <expr>
+//   UNDELETE
 //
 // examples:
 //   RECALL
@@ -46,6 +48,7 @@
 //   RECALL with no arguments recalls the current record.
 //   RECALL target selection is deleted-only.
 //   RECALL rebuilds index entries for recalled records best-effort.
+//   UNDELETE is the registered compatibility alias of RECALL.
 //
 // risk:
 //   requires_open_table: yes except usage
@@ -60,7 +63,6 @@
 //
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -68,11 +70,13 @@
 #include "textio.hpp"
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
+#include "cli/command_output.hpp"
 #include "cli/command_registry.hpp"
 #include "cli/table_state.hpp"
 #include "cli/scan_selector.hpp"
 #include "cli/expr/normalize_where.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 // Provided by the interactive shell.
 extern "C" xbase::XBaseEngine* shell_engine(void);
@@ -137,7 +141,7 @@ static bool parse_for_clause(std::istringstream& iss,
     return !fld.empty() && !op.empty();
 }
 
-static bool dbf_clear_delete_flag_on_disk(const std::string& abs_dbf_path, uint32_t recno_1based)
+static bool dbf_clear_delete_flag_on_disk(const std::string& abs_dbf_path, std::uint64_t recno_1based)
 {
     if (abs_dbf_path.empty() || recno_1based == 0) return false;
 
@@ -166,10 +170,11 @@ static bool dbf_clear_delete_flag_on_disk(const std::string& abs_dbf_path, uint3
     return static_cast<bool>(fp);
 }
 
-static bool reindex_recalled_record_best_effort(xbase::DbArea& area, uint32_t rn)
+static bool reindex_recalled_record_best_effort(xbase::DbArea& area, std::uint64_t rn)
 {
+#if DOTTALK_HAS_XINDEX
     try {
-        auto& im = area.indexManager();
+        auto& im = xindex::ensure_manager(area);
         if (!im.hasBackend()) return true; // no active index to maintain
 
         // Use the same multi-tag snapshot/apply path as APPEND. Despite the
@@ -188,23 +193,32 @@ static bool reindex_recalled_record_best_effort(xbase::DbArea& area, uint32_t rn
     } catch (...) {
         return false;
     }
+#else
+    (void)area;
+    (void)rn;
+    return true;
+#endif
 }
 
 static void warn_recall_index_may_require_rebuild(const xbase::DbArea& area)
 {
+#if DOTTALK_HAS_XINDEX
     try {
-        const auto* im = area.indexManagerPtr();
+        const auto* im = xindex::manager_if_attached(area);
         if (im && im->hasBackend()) {
-            std::cout << "RECALL: warning - active index/order may now be stale after index update. "
-                         "Rebuild/rebind indexes if needed.\n";
+            cli::cmdout::print_prefixed_message(
+                "RECALL", dottalk::helpdata::MessageId::RecallIndexStaleWarningText);
         }
     } catch (...) {
     }
+#else
+    (void)area;
+#endif
 }
 
 static bool recall_current_with_lock(xbase::DbArea& area)
 {
-    const auto rn = static_cast<uint32_t>(area.recno());
+    const std::uint64_t rn = area.recno64();
     if (rn == 0) return false;
 
     std::string err;
@@ -248,36 +262,68 @@ static int32_t recall_targets(xbase::DbArea& area,
                               const std::vector<uint64_t>& recnos)
 {
     int32_t cnt = 0;
+
+#if DOTTALK_HAS_XINDEX
+    // Batch the per-row index re-inserts into one LMDB transaction (chunked)
+    // instead of one commit+fsync per recalled row. DBF flag clears stay per-row;
+    // only the index writes batch. On error, abort and warn the index needs a
+    // rebuild (the DBF recalls still stand).
+    constexpr std::size_t kBulkChunk = 10000;
+    xindex::IndexManager* im = nullptr;
+    bool bulk = false;
+    try {
+        im = &xindex::ensure_manager(area);
+        std::string berr;
+        bulk = im->beginBulkWrite(&berr);
+    } catch (...) { im = nullptr; bulk = false; }
+    std::size_t since_commit = 0;
+
+    try {
+        for (uint64_t rn : recnos) {
+            if (!area.gotoRec((int32_t)rn)) continue;
+            if (!area.readCurrent()) continue;
+            if (recall_current_with_lock(area)) {
+                ++cnt;
+                if (bulk && ++since_commit >= kBulkChunk) {
+                    std::string ce;
+                    if (!im->commitBulkWrite(&ce) || !im->beginBulkWrite(&ce)) {
+                        bulk = false; // degrade to per-row writes (still correct)
+                        warn_recall_index_may_require_rebuild(area);
+                    }
+                    since_commit = 0;
+                }
+            }
+        }
+    } catch (...) {
+        if (bulk && im) {
+            im->abortBulkWrite();
+            warn_recall_index_may_require_rebuild(area);
+        }
+        throw;
+    }
+
+    if (bulk && im) {
+        std::string ce;
+        if (!im->commitBulkWrite(&ce)) {
+            warn_recall_index_may_require_rebuild(area);
+        }
+    }
+    return cnt;
+#else
     for (uint64_t rn : recnos) {
         if (!area.gotoRec((int32_t)rn)) continue;
         if (!area.readCurrent()) continue;
         if (recall_current_with_lock(area)) ++cnt;
     }
     return cnt;
+#endif
 }
 
 } // namespace
 
 static void print_recall_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  RECALL USAGE\n"
-        << "  RECALL\n"
-        << "  RECALL ALL\n"
-        << "  RECALL REST\n"
-        << "  RECALL NEXT <n>\n"
-        << "  RECALL FOR <expr>\n"
-        << "Examples:\n"
-        << "  RECALL\n"
-        << "  RECALL ALL\n"
-        << "  RECALL REST\n"
-        << "  RECALL NEXT 10\n"
-        << "  RECALL FOR LNAME = \"SMITH\"\n"
-        << "Notes:\n"
-        << "  - RECALL USAGE does not require an open table.\n"
-        << "  - RECALL with no arguments recalls the current record.\n"
-        << "  - RECALL target selection is deleted-only.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RecallUsageText);
 }
 void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
 {
@@ -305,7 +351,7 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
     }
 
     if (!area.isOpen()) {
-        std::cout << "No table is open. Use USE <file> first.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::RecallNoTableOpenText);
         return;
     }
 
@@ -316,10 +362,13 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
     std::streampos save = iss.tellg();
     if (!(iss >> tok)) {
         if (!area.readCurrent()) {
-            std::cout << "0 recalled\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::RecallCountText, {{"count", "0"}});
             return;
         }
-        std::cout << (recall_current_with_lock(area) ? 1 : 0) << " recalled\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecallCountText,
+            {{"count", std::to_string(recall_current_with_lock(area) ? 1 : 0)}});
         return;
     }
     iss.clear();
@@ -338,7 +387,9 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
         spec.expr = normalize_unquoted_rhs_literals(area, expr);
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
-        std::cout << recall_targets(area, sel.recnos) << " recalled\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecallCountText,
+            {{"count", std::to_string(recall_targets(area, sel.recnos))}});
         return;
     }
 
@@ -354,7 +405,9 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
         spec.ordered_snapshot = false;
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
-        std::cout << recall_targets(area, sel.recnos) << " recalled\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecallCountText,
+            {{"count", std::to_string(recall_targets(area, sel.recnos))}});
         return;
     }
 
@@ -365,14 +418,16 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
         spec.ordered_snapshot = false;
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
-        std::cout << recall_targets(area, sel.recnos) << " recalled\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecallCountText,
+            {{"count", std::to_string(recall_targets(area, sel.recnos))}});
         return;
     }
 
     if (UM == "NEXT") {
         int n = 0;
         if (!(iss >> n) || n <= 0) {
-            std::cout << "Usage: RECALL NEXT <n>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::RecallNextUsageText);
             return;
         }
 
@@ -383,7 +438,9 @@ void cmd_RECALL(xbase::DbArea& area, std::istringstream& iss)
         spec.ordered_snapshot = false;
 
         const auto sel = cli::scan::collect_selected_recnos(area, spec);
-        std::cout << recall_targets(area, sel.recnos) << " recalled\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::RecallCountText,
+            {{"count", std::to_string(recall_targets(area, sel.recnos))}});
         return;
     }
 

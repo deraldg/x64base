@@ -76,17 +76,23 @@ inline int32_t pick_recno(xbase::DbArea& A,
 
     switch (mode) {
     case Mode::LogicalView:
+        // NOTE(RECNO64 M3): logical_nav is 64-bit; pick_recno's int32_t return
+        // (and the RawOrder path's order_nav int32_t API) still narrow. Explicit
+        // casts keep this honest and warning-free until the order_nav / pick_recno
+        // widening slice (M4) lands.
         switch (step) {
         case Step::First:
-            return cli::logical_nav::first_recno(A);
+            return static_cast<int32_t>(cli::logical_nav::first_recno(A));
         case Step::Last:
-            return cli::logical_nav::last_recno(A);
+            return static_cast<int32_t>(cli::logical_nav::last_recno(A));
         case Step::Next:
-            return cli::logical_nav::next_recno(
-                A, from_recno > 0 ? from_recno : A.recno());
+            return static_cast<int32_t>(cli::logical_nav::next_recno(
+                A, from_recno > 0 ? static_cast<std::uint64_t>(from_recno)
+                                  : A.recno64()));
         case Step::Prior:
-            return cli::logical_nav::prev_recno(
-                A, from_recno > 0 ? from_recno : A.recno());
+            return static_cast<int32_t>(cli::logical_nav::prev_recno(
+                A, from_recno > 0 ? static_cast<std::uint64_t>(from_recno)
+                                  : A.recno64()));
         }
         break;
 

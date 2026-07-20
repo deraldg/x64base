@@ -3,6 +3,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "cli/order_state.hpp"
 #include "cnx/cnx.hpp" // CNX tagdir reading (your existing CNX helper)
 
@@ -227,7 +228,7 @@ IndexSummary dottalk::summarize_index(xbase::DbArea& A) {
                 }
             }
         } else if (S.container_type == "CDX") {
-            const auto* im = A.indexManagerPtr();
+            const auto* im = xindex::manager_if_attached(A);
             if (im && im->hasBackend() && im->isCdx()) {
                 const std::string active = !im->activeTag().empty() ? im->activeTag() : S.active_tag;
 

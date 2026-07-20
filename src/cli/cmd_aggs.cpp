@@ -79,6 +79,7 @@
 #include "cli/expr/ast.hpp"         // Expr, LitNumber, Arith, RecordView
 #include "cli/expr/glue_xbase.hpp"  // glue::make_record_view(...)
 #include "filters/filter_registry.hpp"
+#include "cli/expr/normalize_where.hpp"  // parity with COUNT FOR / SET FILTER
 
 // Must match the linkage used by shell.cpp (see cmd_count.cpp)
 extern "C" void shell_rel_refresh_push() noexcept;
@@ -410,6 +411,18 @@ static bool parse_agg_spec(const std::string& raw_tail, AggSpec& out, std::strin
     return true;
 }
 
+// Normalize the aggregate FOR/WHERE predicate's unquoted RHS barewords to string
+// literals, exactly as COUNT FOR / LIST FOR / SET FILTER do -- so
+// `SUM GPA FOR MAJOR = CSCI` matches `COUNT FOR MAJOR = CSCI` (CSCI is the string
+// "CSCI", not an undefined identifier that matches nothing). Function predicates
+// (parens) are left untouched, and numeric/quoted RHS pass through unchanged.
+static void normalize_agg_predicate(xbase::DbArea& area, AggSpec& spec) {
+    if (!spec.has_pred || spec.pred_expr.empty()) return;
+    if (spec.pred_expr.find('(') != std::string::npos &&
+        spec.pred_expr.find(')') != std::string::npos) return;
+    spec.pred_expr = normalize_unquoted_rhs_literals(area, spec.pred_expr);
+}
+
 static bool passes_deleted_mode(xbase::DbArea& area, DelMode m) {
     if (m == DelMode::ALLRECS) return true;
 
@@ -609,6 +622,8 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
         return;
     }
 
+    normalize_agg_predicate(area, spec);
+
     std::string ferr;
     std::shared_ptr<Expr> pred_ast = build_predicate_ast(spec, ferr);
     if (spec.has_pred && !pred_ast) {
@@ -699,20 +714,190 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
     }
 }
 
+// Single-pass multi-aggregate: COUNT, SUM, AVG, MIN, MAX over the visible set in
+// ONE scan (vs four separate full scans). Reuses the same spec parse, value plan,
+// predicate, deleted-mode, and visibility gate as run_agg so results are identical.
+static void run_agg_all(xbase::DbArea& area, std::istringstream& args) {
+    std::string tail;
+    std::getline(args, tail);
+
+    if (is_usage_word(tail)) {
+        print_aggs_usage();
+        return;
+    }
+
+    AggSpec spec;
+    std::string perr;
+    if (!parse_agg_spec(tail, spec, perr)) {
+        cli::cmdout::print_line(
+            "AGGS " + cli::cmdout::message_text(dottalk::helpdata::MessageId::AggUsageHeading));
+        cli::cmdout::print_line(
+            " AGGS ALL <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]");
+        return;
+    }
+
+    if (!area.isOpen()) {
+        cli::cmdout::print_line("COUNT=0 SUM=0 AVG=NULL MIN=NULL MAX=NULL");
+        return;
+    }
+
+    ValuePlan vp = build_value_plan(area, spec.value_expr);
+    if (vp.mode == ValuePlan::INVALID) {
+        cli::cmdout::print_line(
+            "AGGS " + cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AggErrorDetail, {{"detail", vp.err}}));
+        return;
+    }
+
+    normalize_agg_predicate(area, spec);
+
+    std::string ferr;
+    std::shared_ptr<Expr> pred_ast = build_predicate_ast(spec, ferr);
+    if (spec.has_pred && !pred_ast) {
+        cli::cmdout::print_line(
+            "AGGS " + cli::cmdout::message_text(
+                dottalk::helpdata::MessageId::AggErrorDetail, {{"detail", ferr}}));
+        return;
+    }
+
+    const int total = (int)area.recCount();
+    if (total <= 0) {
+        cli::cmdout::print_line("COUNT=0 SUM=0 AVG=NULL MIN=NULL MAX=NULL");
+        return;
+    }
+
+    const int saved = area.recno();
+    RecordView rv = dottalk::expr::glue::make_record_view(area);
+
+    shell_rel_refresh_push();
+
+    double sum = 0.0;
+    uint64_t n = 0;
+    bool have_best = false;
+    double vmin = 0.0, vmax = 0.0;
+
+    for (int r = 1; r <= total; ++r) {
+        if (!area.gotoRec(r)) continue;
+        if (!area.readCurrent()) continue;
+        if (!passes_deleted_mode(area, spec.del_mode)) continue;
+        if (!filter::visible(&area, pred_ast)) continue;
+
+        double v = 0.0;
+        if (!eval_value_plan(vp, area, rv, v)) continue;
+
+        sum += v;
+        ++n;
+        if (!have_best) { vmin = vmax = v; have_best = true; }
+        else { if (v < vmin) vmin = v; if (v > vmax) vmax = v; }
+    }
+
+    shell_rel_refresh_pop();
+
+    if (saved >= 1 && saved <= total) {
+        (void)area.gotoRec(saved);
+        (void)area.readCurrent();
+    }
+
+    std::string out = "COUNT=" + std::to_string(n)
+        + " SUM=" + format_number_classic(sum)
+        + " AVG=" + (n == 0 ? std::string("NULL") : format_number_classic(sum / (double)n))
+        + " MIN=" + (have_best ? format_number_classic(vmin) : std::string("NULL"))
+        + " MAX=" + (have_best ? format_number_classic(vmax) : std::string("NULL"));
+    cli::cmdout::print_line(out);
+}
+
 } // namespace
 
+// @dottalk.usage v1
+// owner: DOT|SUM
+// command: SUM
+// category: aggregate
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: cursor-temporarily
+// usage-access: SUM USAGE
+// summary:
+//   Sum a numeric expression over the visible record set.
+// usage:
+//   SUM USAGE
+//   SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+// notes:
+//   Cursor position is restored best-effort; table data is not mutated.
+// related:
+//   AGGS, AVG, MIN, MAX
+//
 void cmd_SUM(xbase::DbArea& area, std::istringstream& args) {
     run_agg(AggOp::SUM, "SUM", area, args);
 }
 
+// @dottalk.usage v1
+// owner: DOT|AVG
+// command: AVG
+// aliases: AVERAGE
+// category: aggregate
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: cursor-temporarily
+// usage-access: AVG USAGE; AVERAGE USAGE
+// summary:
+//   Average a numeric expression over the visible record set.
+// usage:
+//   AVG USAGE
+//   AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+//   AVERAGE <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+// notes:
+//   AVERAGE is the registered long-form alias of AVG. Cursor position is restored best-effort.
+// related:
+//   AGGS, SUM, MIN, MAX
+//
 void cmd_AVG(xbase::DbArea& area, std::istringstream& args) {
     run_agg(AggOp::AVG, "AVG", area, args);
 }
 
+// @dottalk.usage v1
+// owner: DOT|MIN
+// command: MIN
+// category: aggregate
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: cursor-temporarily
+// usage-access: MIN USAGE
+// summary:
+//   Report the minimum numeric value over the visible record set.
+// usage:
+//   MIN USAGE
+//   MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+// notes:
+//   Cursor position is restored best-effort; table data is not mutated.
+// related:
+//   AGGS, SUM, AVG, MAX
+//
 void cmd_MIN(xbase::DbArea& area, std::istringstream& args) {
     run_agg(AggOp::MIN, "MIN", area, args);
 }
 
+// @dottalk.usage v1
+// owner: DOT|MAX
+// command: MAX
+// category: aggregate
+// status: supported
+// noargs: usage
+// effect: report
+// mutates: cursor-temporarily
+// usage-access: MAX USAGE
+// summary:
+//   Report the maximum numeric value over the visible record set.
+// usage:
+//   MAX USAGE
+//   MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+// notes:
+//   Cursor position is restored best-effort; table data is not mutated.
+// related:
+//   AGGS, SUM, AVG, MIN
+//
 void cmd_MAX(xbase::DbArea& area, std::istringstream& args) {
     run_agg(AggOp::MAX, "MAX", area, args);
 }
@@ -724,6 +909,12 @@ void cmd_AGGS(xbase::DbArea& area, std::istringstream& args) {
 
     if (op.empty() || op == "USAGE" || op == "HELP" || op == "?") {
         print_aggs_usage();
+        return;
+    }
+
+    // Single-pass multi-aggregate: COUNT/SUM/AVG/MIN/MAX in one scan.
+    if (op == "ALL" || op == "STATS") {
+        run_agg_all(area, args);
         return;
     }
 

@@ -82,6 +82,7 @@
 #include "cdx/cdx.hpp"
 #include "xindex/cdx_backend.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -730,7 +731,7 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
             cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbReleasingActiveIndex);
         }
 
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         orderstate::clearOrder(area);
     }
 

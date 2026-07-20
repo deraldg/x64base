@@ -6,8 +6,7 @@
 // first_consumer: DOTSCRIPT OUT/OUTPUT transcript capture
 // future_consumer: TEST logfile/full-output capture after DOTSCRIPT proof
 // safety: service only; no DBF/CDX/LMDB/HELP/CMDHELPCHK/MANSTAR mutation
-// @dottalk.usage v1
-// service: shell_transcript::ScopedShellTranscript
+// interface: shell_transcript::ScopedShellTranscript
 // syntax: ScopedShellTranscript(path, append, tee_console, capture_cerr, error_out)
 // behavior: tees std::cout, and optionally std::cerr, to transcript file while preserving console output
 // contract: always restore stream buffers through RAII destruction

@@ -12,7 +12,7 @@
 // Safe to use from cmd_browse/cmd_status/cmd_order/etc.
 //
 // Copyright: DotTalk++
-// License  : Project-internal (same as core)
+// License  : To be determined.
 
 #include <cstdint>
 #include <string>

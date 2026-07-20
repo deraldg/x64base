@@ -10,6 +10,7 @@
 #include "textio.hpp"
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -194,13 +195,19 @@ static bool try_import_specs_if_ready(const std::vector<relations_api::RelationS
 
 static void save_default() {
     const std::string path = default_rel_path();
+    auto specs = relations_api::export_relations();
+
+    // Do not create runtime state merely because an otherwise idle shell exits.
+    // If a file already exists, still rewrite it so clearing all relations is
+    // persisted correctly.
+    if (specs.empty() && !std::filesystem::exists(path)) return;
+
     // ensure dir exists (simple approach)
 #ifdef _WIN32
     _wmkdir(L".relations");
 #else
     ::system("mkdir -p .relations");
 #endif
-    auto specs = relations_api::export_relations();
     std::ofstream f(path, std::ios::binary);
     if (!f) return;
     auto jesc = [](const std::string& s){

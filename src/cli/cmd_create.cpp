@@ -57,7 +57,9 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xbase/field_codec.hpp"
 #include "xbase/field_name_policy.hpp"
+#include "cli/command_output.hpp"
 #include "datatype_index.hpp"
 #include "memo/memo_auto.hpp"
 
@@ -75,7 +77,6 @@
 #include <cctype>
 #include <cstdint>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -255,12 +256,32 @@ static bool parse_one(const std::string& part,
 
     const dt::ValidationResult vr = dt::validate_type_for_format(T, fmt);
     if (!vr.ok) {
-        err = "CREATE: field type '" + std::string(1, T) +
-              "' is not supported for this format.";
-        return false;
+        // Not a static-catalog type.  Accept iff a runtime-registered custom
+        // field type exists for this code AND it is eligible for this CREATE
+        // flavor (FIELDTYPE M4b: the registry IS the validated chain — no
+        // per-type switch edit needed here or in the catalog / supports_type_now).
+        if (!xbase::fieldcodec::field_type_registered(T)) {
+            err = "CREATE: field type '" + std::string(1, T) +
+                  "' is not supported for this format.";
+            return false;
+        }
+        unsigned short want = 0;
+        switch (flavor) {
+            case Flavor::MSDOS: want = xbase::fieldcodec::FT_FMT_MSDOS; break;
+            case Flavor::FOX26: want = xbase::fieldcodec::FT_FMT_FOX26; break;
+            case Flavor::VFP:   want = xbase::fieldcodec::FT_FMT_VFP;   break;
+            case Flavor::X64:   want = xbase::fieldcodec::FT_FMT_X64;   break;
+            default:            want = 0;                                break;
+        }
+        if ((xbase::fieldcodec::field_type_formats(T) & want) == 0) {
+            err = "CREATE: field type '" + std::string(1, T) +
+                  "' is not supported for this format.";
+            return false;
+        }
+        // registered + eligible: accept (the static supports_type_now gate below
+        // is only for catalog types).
     }
-
-    if (!xbase::dbf_create::supports_type_now(T, flavor)) {
+    else if (!xbase::dbf_create::supports_type_now(T, flavor)) {
         err = "CREATE: field type '" + std::string(1, T) +
               "' is not implemented for this CREATE flavor.";
         return false;
@@ -356,6 +377,13 @@ static bool parse_one(const std::string& part,
             fs.len = 8;
             fs.dec = 0;
         }
+        else if (xbase::fieldcodec::field_type_registered(T)) {
+            // Registered custom field type (FIELDTYPE M4b): width comes from the
+            // registry, not a hand-maintained switch.  0 => the type takes a
+            // CREATE length param (none of the current custom types do).
+            fs.len = static_cast<std::uint16_t>(xbase::fieldcodec::field_type_fixed_width(T));
+            fs.dec = 0;
+        }
         else {
             err = "CREATE: unsupported field type parser path for '" + std::string(1, T) + "'";
             return false;
@@ -384,38 +412,32 @@ static void apply_x64_descriptor_name_policy(std::vector<FieldSpec>& fields)
 
         const bool metadata_fits = xbase::x64_field_name_fits(plans[i].logical_name.size());
 
-        if (!metadata_fits) {
-            std::cout
-                << "CREATE X64 WARNING: field name '" << plans[i].logical_name
-                << "' exceeds current x64 logical field-name length "
-                << xbase::X64_FIELD_NAME_LENGTH
-                << "; it will not be stored as an authoritative x64 metadata name; "
-                << "descriptor fallback token is '" << plans[i].descriptor_name << "'";
+        std::string suffix;
+        if (plans[i].mangled) {
+            suffix += "; token was mangled to avoid a fallback collision";
+        }
+        if (plans[i].sanitized) {
+            suffix += "; token was normalized for DBF descriptor safety";
+        }
 
-            if (plans[i].mangled) {
-                std::cout << "; token was mangled to avoid a fallback collision";
-            }
-            if (plans[i].sanitized) {
-                std::cout << "; token was normalized for DBF descriptor safety";
-            }
-            std::cout << ".\n";
+        if (!metadata_fits) {
+            cli::cmdout::print_prefixed_message(
+                "CREATE X64 WARNING",
+                dottalk::helpdata::MessageId::CreateX64NameTooLongWarningText,
+                {{"name", plans[i].logical_name},
+                 {"limit", std::to_string(xbase::X64_FIELD_NAME_LENGTH_MAX)},
+                 {"token", plans[i].descriptor_name},
+                 {"suffix", suffix}});
             continue;
         }
 
         if (plans[i].truncated || plans[i].mangled || plans[i].sanitized) {
-            std::cout
-                << "CREATE X64 WARNING: field name '" << plans[i].logical_name
-                << "' uses DBF/VFP descriptor fallback token '"
-                << plans[i].descriptor_name
-                << "'; authoritative x64 metadata name will be preserved";
-
-            if (plans[i].mangled) {
-                std::cout << "; token was mangled to avoid a fallback collision";
-            }
-            if (plans[i].sanitized) {
-                std::cout << "; token was normalized for DBF descriptor safety";
-            }
-            std::cout << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "CREATE X64 WARNING",
+                dottalk::helpdata::MessageId::CreateX64FallbackTokenWarningText,
+                {{"name", plans[i].logical_name},
+                 {"token", plans[i].descriptor_name},
+                 {"suffix", suffix}});
         }
     }
 }
@@ -438,28 +460,7 @@ static bool is_create_usage_request(const std::string& raw)
 
 static void print_create_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  CREATE USAGE\n"
-        << "  CREATE <name> (<field> <type>[, ...])\n"
-        << "  CREATE MSDOS <name> (<field> <type>[, ...])\n"
-        << "  CREATE DBASE <name> (<field> <type>[, ...])\n"
-        << "  CREATE FOX26 <name> (<field> <type>[, ...])\n"
-        << "  CREATE FOXPRO <name> (<field> <type>[, ...])\n"
-        << "  CREATE VFP <name> (<field> <type>[, ...])\n"
-        << "  CREATE X64 <name> (<field> <type>[, ...])\n"
-        << "Types:\n"
-        << "  XBASE currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M\n"
-        << "  VFP/X64 currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T\n"
-        << "Examples:\n"
-        << "  CREATE students (sid N(6), lname C(20), fname C(15))\n"
-        << "  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)\n"
-        << "Notes:\n"
-        << "  - CREATE writes a DBF file under the configured DBF path slot for relative names.\n"
-        << "  - CREATE clears active order state and closes the current area before writing.\n"
-        << "  - CREATE opens the created table after a successful write.\n"
-        << "  - M fields trigger automatic memo attach after opening.\n"
-        << "  - X64 CREATE may use descriptor fallback tokens for DBF/VFP descriptor safety.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CreateUsageText);
 }
 
 
@@ -575,7 +576,8 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
     if (!parse_field_list(args, fields, table, flavor, err))
     {
         if (!err.empty()) {
-            std::cout << err << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CreateDetailText, {{"detail", err}});
         }
         print_create_usage();
         return;
@@ -583,6 +585,18 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
 
     if (flavor == Flavor::X64) {
         apply_x64_descriptor_name_policy(fields);
+    }
+
+    {
+        std::uint64_t rec_width = 1; // delete flag
+        for (const auto& f : fields) rec_width += f.len;
+        if (rec_width > xbase::X64_RECORD_SIZE_ADVISORY) {
+            cli::cmdout::print_note(
+                "CREATE",
+                "fixed record width " + std::to_string(rec_width) + " bytes exceeds " +
+                std::to_string(xbase::X64_RECORD_SIZE_ADVISORY) +
+                " bytes; consider memo (M) fields for large or variable data");
+        }
     }
 
     if (area.isOpen())
@@ -597,7 +611,8 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
 
     if (!xbase::dbf_create::create_dbf(path, fields, flavor, err))
     {
-        std::cout << "CREATE failed: " << err << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CreateFailedText, {{"detail", err}});
         return;
     }
 
@@ -607,13 +622,15 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
     }
     catch (const std::exception& ex)
     {
-        std::cout << "CREATE failed: file written but could not reopen table: "
-                  << ex.what() << "\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CreateReopenFailedDetailText,
+            {{"detail", ex.what()}});
         return;
     }
     catch (...)
     {
-        std::cout << "CREATE failed: file written but could not reopen table.\n";
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::CreateReopenFailedText);
         return;
     }
 
@@ -625,13 +642,18 @@ void cmd_CREATE(xbase::DbArea& area, std::istringstream& args)
         const std::string openedPath = area.filename().empty() ? path : area.filename();
         std::string memo_err;
         if (!cli_memo::memo_auto_on_use(area, openedPath, true, memo_err)) {
-            std::cout << "Memo attach failed: " << memo_err << "\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::CreateMemoAttachFailedText,
+                {{"detail", memo_err}});
         }
     }
 
-    std::cout << "Created " << path
-              << " [" << xbase::dbf_create::flavor_name(flavor) << "]"
-              << (hasMemo ? " (+ memo)" : "") << "\n";
-    std::cout << "Opened " << area.filename()
-              << " with " << area.recCount() << " records.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CreatedText,
+        {{"path", path},
+         {"flavor", xbase::dbf_create::flavor_name(flavor)},
+         {"memo", hasMemo ? " (+ memo)" : ""}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::CreateOpenedText,
+        {{"file", area.filename()}, {"count", std::to_string(area.recCount())}});
 }

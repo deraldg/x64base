@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 9> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -104,6 +104,12 @@ constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
         true
     },
     {
+        "LANGUAGE",
+        "canaries\\language_shakedown_canary.dts",
+        "Messaging-normalization locale proof: es/fr/de/it USAGE render across the localized command surface",
+        true
+    },
+    {
         "HARVEST",
         "main\\harvest_top_shakedown.dts",
         "Top-layer harvest proof across regression launcher, security roles, holiday demos, and curated runtime shakedowns",
@@ -119,6 +125,12 @@ constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
         "RELJOIN",
         "main\\rel_join_enum_regression.dts",
         "Relation join/enum projection regression",
+        false
+    },
+    {
+        "LIMITS",
+        "limits\\limits_all_shakedown.dts",
+        "Engine limit guardrails: MAX_AREA=512, x64 name ceilings 256, record-size advisory, CLOSE ALL over every open area",
         false
     }
 }};
@@ -189,7 +201,8 @@ void print_regression_usage()
         << "  - Scripts are expected to bootstrap their own environment.\n"
         << "  - LIST shows curated stable entrypoints rather than every historical script.\n"
         << "  - ALL runs the curated default suite in declared order.\n"
-        << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n";
+        << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
+        << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
 }
 
 void print_regression_list()

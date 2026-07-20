@@ -72,6 +72,7 @@
 
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
@@ -220,7 +221,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
     }
 
     if (sub == "INFO") {
-        const auto* im = db.indexManagerPtr();
+        const auto* im = xindex::manager_if_attached(db);
         if (!im || !im->hasBackend() || !im->isCdx()) {
             cli::cmdout::print_prefixed_message("LMDB INFO", dottalk::helpdata::MessageId::LmdbInfoNoneText);
             return;
@@ -251,7 +252,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             return;
         }
 
-        if (!db.indexManager().openCdx(cdx_path, {}, &err)) {
+        if (!xindex::ensure_manager(db).openCdx(cdx_path, {}, &err)) {
             cli::cmdout::print_prefixed_message(
                 "LMDB", dottalk::helpdata::MessageId::LmdbOpenFailedText,
                 {{"detail", (err.empty() ? "openCdx failed" : err)}});
@@ -277,7 +278,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         }
 
         std::string err;
-        if (!db.indexManager().setTag(tag, &err)) {
+        if (!xindex::ensure_manager(db).setTag(tag, &err)) {
             cli::cmdout::print_prefixed_message(
                 "LMDB", dottalk::helpdata::MessageId::LmdbUseFailedText,
                 {{"detail", (err.empty() ? "setTag failed" : err)}});
@@ -301,9 +302,9 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             return;
         }
 
-        std::uint32_t recno = 0;
+        std::uint64_t recno = 0;
         std::string err;
-        if (!db.indexManager().lmdbSeekUserKey(key, recno, err)) {
+        if (!xindex::ensure_manager(db).lmdbSeekUserKey(key, recno, err)) {
             cli::cmdout::print_prefixed_message(
                 "LMDB", dottalk::helpdata::MessageId::LmdbSeekFailedText,
                 {{"detail", (err.empty() ? "not found" : err)}});
@@ -323,7 +324,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             if (maxn > 100000) maxn = 100000;
         }
 
-        const auto* im = db.indexManagerPtr();
+        const auto* im = xindex::manager_if_attached(db);
         if (!im || !im->hasBackend() || !im->isCdx()) {
             cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbDumpNoneText);
             return;
@@ -333,7 +334,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             return;
         }
 
-        auto cur = db.indexManager().scan(xindex::Key{}, xindex::Key{});
+        auto cur = xindex::ensure_manager(db).scan(xindex::Key{}, xindex::Key{});
         if (!cur) {
             cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbDumpCursorOpenFailedText);
             return;
@@ -368,7 +369,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             return;
         }
 
-        const auto* im = db.indexManagerPtr();
+        const auto* im = xindex::manager_if_attached(db);
         if (!im || !im->hasBackend() || !im->isCdx()) {
             cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbScanNoneText);
             return;
@@ -381,7 +382,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
         xindex::Key lo(low.begin(), low.end());
         xindex::Key hi(high.begin(), high.end());
 
-        auto cur = db.indexManager().scan(lo, hi);
+        auto cur = xindex::ensure_manager(db).scan(lo, hi);
         if (!cur) {
             cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbScanCursorOpenFailedText);
             return;
@@ -406,7 +407,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
     }
 
     if (sub == "CLOSE") {
-        db.indexManager().close();
+        xindex::ensure_manager(db).close();
         try { orderstate::clearOrder(db); } catch (...) {}
         cli::cmdout::print_prefixed_message("LMDB", dottalk::helpdata::MessageId::LmdbCloseText);
         return;

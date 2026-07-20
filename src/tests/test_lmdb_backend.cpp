@@ -92,31 +92,9 @@ static void dump_pairs(const char* label,
 int main()
 {
     try {
-        // Put smoke DB under: <repo>/dottalkpp/data/tmp/lmdb_smoke_backend
-        // If you prefer build-local, change this path.
-        fs::path base = fs::current_path();
-
-        // Try to find ".../dottalkpp/data" by walking upward a bit.
-        // This keeps it convenient when you run from build output directories.
-        fs::path data_root;
-        {
-            fs::path p = base;
-            for (int i = 0; i < 10; ++i) {
-                fs::path cand = p / "dottalkpp" / "data";
-                if (fs::exists(cand) && fs::is_directory(cand)) {
-                    data_root = fs::absolute(cand);
-                    break;
-                }
-                if (!p.has_parent_path()) break;
-                p = p.parent_path();
-            }
-            if (data_root.empty()) {
-                // Fallback: use current dir tmp
-                data_root = fs::absolute(base / "tmp");
-            }
-        }
-
-        fs::path env_dir = data_root / "tmp" / "lmdb_smoke_backend";
+        // Keep generated LMDB state in the build/test working directory. The
+        // authority source tree must remain read-only during a smoke test.
+        fs::path env_dir = fs::absolute(fs::current_path() / "lmdb_smoke_backend");
         std::cout << "LMDB smoke env dir: " << env_dir.string() << "\n";
 
         // Clean start
@@ -208,6 +186,7 @@ int main()
         }
 
         if (g_fail == 0) {
+            fs::remove_all(env_dir);
             std::cout << "PASS: LMDB backend smoke test\n";
             return 0;
         }

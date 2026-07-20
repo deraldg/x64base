@@ -1,7 +1,10 @@
-// @dottalk.usage v1
-// command: MANUAL resolver support
-// status: MDO-282 native MANUAL source skeleton implementation
+// @dottalk.contract v1
+// component: manual_catalog_resolver
+// role: resolve compact and long-form MAN* catalog identities for the MANUAL command
+// owner: DOT|MANUAL
+// status: source-defined from MDO-282 native MANUAL implementation
 // safety: read-only resolver; no DBF writes; no HELP/META/CMDHELPCHK mutation
+// @dottalk.contract.end
 
 #include "manual_catalog_resolver.h"
 

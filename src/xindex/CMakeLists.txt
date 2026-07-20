@@ -13,10 +13,8 @@ file(GLOB_RECURSE XINDEX_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 
-# The base IndexManager and file-backed legacy backends are required by
-# DbArea even in the portable core profile. Only the direct LMDB backend source
-# is removed when LMDB support is disabled; CdxBackend supplies its compiled
-# no-LMDB implementation through its existing feature guard.
+# LEGACY retains the manager and file-backed index providers while omitting the
+# direct LMDB backend. NONE never enters this directory or creates xindex.
 if (NOT DOTTALK_WITH_INDEX)
   list(FILTER XINDEX_SOURCES EXCLUDE REGEX ".*/lmdb_backend\\.cpp$")
 endif()
@@ -36,8 +34,12 @@ target_include_directories(xindex
 )
 
 target_compile_definitions(xindex
-  PUBLIC DOTTALK_WITH_INDEX=$<BOOL:${DOTTALK_WITH_INDEX}>
+  PUBLIC
+    DOTTALK_HAS_XINDEX=1
+    DOTTALK_WITH_INDEX=$<BOOL:${DOTTALK_WITH_INDEX}>
 )
+
+target_link_libraries(xindex PUBLIC xbase)
 
 if (MSVC)
   target_compile_options(xindex PRIVATE /W4 /permissive- /MP)

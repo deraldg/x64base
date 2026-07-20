@@ -19,17 +19,19 @@
 
 #include "memo/memo_context.hpp"
 
-// Forward-declare to avoid heavy include & circular deps in the header.
-// Define DbArea's destructor AND move ops in a .cpp that includes heavy manager headers.
-namespace xindex { class IndexManager; }
 namespace dottalk::memo { class MemoManager; }
 
 namespace xbase {
 
 // ---- Constants -------------------------------------------------------------
-constexpr int         MAX_FIELDS         = 128;
+constexpr int         MAX_FIELDS         = 256;   // (was 128; doubled — table-buffer kMaxFields already 256)
 constexpr int         MAX_INDEX          = 5;
-constexpr int         MAX_AREA           = 256;
+constexpr int         MAX_AREA           = 512;   // work areas (was 256; doubled)
+// Record-size guardrails (fixed record = sum of field widths). The hard ceiling
+// catches corrupt/absurd 64-bit record lengths before a giant allocation; the
+// soft advisory nudges wide rows toward memo (M) fields for storage/scan gains.
+constexpr std::uint64_t X64_MAX_RECORD_SIZE      = 16ull * 1024 * 1024; // 16 MiB hard ceiling
+constexpr std::uint64_t X64_RECORD_SIZE_ADVISORY = 64ull * 1024;        // 64 KiB soft advisory
 constexpr char        IS_DELETED         = '*';
 constexpr char        NOT_DELETED        = ' ';
 constexpr uint8_t     HEADER_TERM_BYTE   = 0x0D;
@@ -149,7 +151,8 @@ public:
     bool supports(AreaCapability cap) const noexcept;
 
     // ---- Navigation -------------------------------------------------------
-    bool gotoRec(int32_t recno);
+    bool gotoRec(int32_t recno);          // 32-bit compatibility adapter -> gotoRec64
+    bool gotoRec64(std::uint64_t recno);  // authoritative 64-bit record positioning (RECNO64)
     bool top();
     bool bottom();
     bool skip(int delta);
@@ -169,9 +172,13 @@ public:
     bool replaceFieldStored(int field1, const std::string& stored_value, std::string* err = nullptr);
 
     // ---- Record size ------------------------------------------------------
+    // RECNO64: legacy 32-bit accessor. When the x64 value exceeds INT_MAX it returns
+    // -1 (an impossible length) rather than clamping to INT_MAX, so a 32-bit consumer
+    // sees "out of 32-bit range" instead of a plausible-but-wrong value. Use
+    // recLength64() for the authoritative value.
     int  recLength() const noexcept {
         return (_record_length64 > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
-            ? std::numeric_limits<int>::max()
+            ? -1
             : static_cast<int>(_record_length64);
     }
     int  recordLength() const noexcept;
@@ -184,10 +191,6 @@ public:
     const std::string& dbfDir() const noexcept { return _dbf_dir; }
     const std::string& dbfBasename() const noexcept { return _dbf_basename; }
     const std::string& logicalName() const noexcept { return _logical_name; }
-
-    // ---- Index manager (per-area) -----------------------------------------
-    xindex::IndexManager& indexManager();
-    const xindex::IndexManager* indexManagerPtr() const noexcept;
 
     // ---- Memo sidecar facts (co-located with DBF) -------------------------
     const std::string& memoPath() const noexcept { return _memo_abs_path; }
@@ -213,14 +216,19 @@ public:
     bool        set(int idx, const std::string& val);
 
     // ---- Info -------------------------------------------------------------
+    // RECNO64: legacy 32-bit accessors. On an x64 table whose value exceeds INT32_MAX
+    // these return -1 (an impossible recno / count) rather than silently clamping to
+    // INT_MAX. A 32-bit consumer then sees "out of range" and skips/errors, instead of
+    // acting on the wrong record (the old saturating behavior returned INT_MAX, which
+    // reads as a valid record). Use recno64()/recCount64() for the authoritative value.
     int32_t recno() const noexcept {
         return (_crn64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
-            ? std::numeric_limits<int32_t>::max()
+            ? -1
             : static_cast<int32_t>(_crn64);
     }
     int32_t recCount() const noexcept {
         return (_rec_count64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
-            ? std::numeric_limits<int32_t>::max()
+            ? -1
             : static_cast<int32_t>(_rec_count64);
     }
 
@@ -354,7 +362,7 @@ private:
 
     // Current record values (1-based indexing: slot 0 unused)
     std::vector<std::string> _fd;
-    // Snapshot used by indexing to compute old/new keys on update
+    // Snapshot retained for physical before/after record state.
     std::vector<std::string> _fd_snapshot;
 
     // ===== Cursor state ====================================================
@@ -369,7 +377,6 @@ private:
     AreaKind _kind{AreaKind::Unknown};
 
     // ===== Per-area managers ==============================================
-    std::unique_ptr<xindex::IndexManager> _idx;
     dottalk::memo::MemoContext _memo_ctx;
     std::unique_ptr<dottalk::memo::MemoManager> _memo_mgr;
 

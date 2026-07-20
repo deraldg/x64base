@@ -2,6 +2,36 @@
 // REL command dispatcher. Keeps REL subcommand parsing in one place and forwards
 // to the underlying RELATIONS / SET RELATIONS / JOIN / ENUM handlers.
 
+// @dottalk.usage v1
+// owner: DOT|REL
+// command: REL
+// category: relations
+// status: supported
+// noargs: usage
+// effect: dispatch
+// mutates: depends-on-subcommand
+// usage-access: REL; REL USAGE
+// summary:
+//   Dispatch relation list, refresh, join, enumeration, persistence, add, and clear operations.
+// usage:
+//   REL
+//   REL USAGE
+//   REL LIST [ALL]
+//   REL REFRESH
+//   REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+//   REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+//   REL SAVE [path] | REL SAVE AS <dataset>
+//   REL LOAD [path] | REL LOAD AS <dataset>
+//   REL ADD <parent> <child> ON <field>[,<field>...]
+//   REL ADD <parent> <child> ON <parent_field> TO <child_field>
+//   REL CLEAR <parent>|ALL
+// notes:
+//   REL forwards each subcommand to the owning relation handler.
+//   REL ADD and REL CLEAR mutate relation definitions; REL REFRESH refreshes relation state.
+// related:
+//   SET RELATION, SET RELATIONS, RELATIONS, TUPLE, WORKSPACE
+//
+
 #include "cmd_rel.hpp"
 
 #include "cmd_relations.hpp"   // cmd_RELATIONS_LIST/REFRESH/SAVE/LOAD, cmd_REL_JOIN, cmd_REL_ENUM
@@ -14,37 +44,6 @@
 #include <string>
 
 namespace {
-
-
-static constexpr const char* DT_USAGE_REL = R"DTUSAGE(
-@dottalk.usage v1
-owner: DOT|REL
-command: REL
-category: relations
-status: supported
-summary: Relations engine command dispatcher.
-usage:
-  REL syntax
-  REL LIST [ALL]
-  REL REFRESH
-  REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
-  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
-  REL SAVE [path] | REL SAVE AS <dataset>
-  REL LOAD [path] | REL LOAD AS <dataset>
-  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation
-  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation
-  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR
-notes:
-  REL keeps relation subcommand parsing in one place and forwards to the relation handlers.
-  REL ADD with ON <field> creates a same-field relation.
-  REL ADD with ON <parent_field> TO <child_field> creates an asymmetric relation.
-  REL CLEAR is an alias of SET RELATIONS CLEAR.
-related:
-  SET RELATION
-  SET RELATIONS
-  TUPLE
-  WORKSPACE
-)DTUSAGE";
 
 static void rel_usage() {
     std::cout

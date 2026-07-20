@@ -26,7 +26,7 @@
 #include <windows.h>
 #endif
 
-#include "xindex/index_manager.hpp"  // completes the always-present manager type
+#include "xbase/index_hooks.hpp"
 
 namespace xbase {
 
@@ -50,6 +50,9 @@ static inline std::size_t checked_record_buffer_size_(const DbArea& area)
     if (len64 == 0 ||
         len64 > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
         throw std::runtime_error("DbArea: record length exceeds addressable buffer size");
+    }
+    if (len64 > X64_MAX_RECORD_SIZE) {
+        throw std::runtime_error("DbArea: record length exceeds maximum record size");
     }
     return static_cast<std::size_t>(len64);
 }
@@ -164,12 +167,8 @@ void DbArea::open(const std::string& filename)
     _fd.assign(_fields.size() + 1, std::string{});
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
 
-#if DOTTALK_WITH_INDEX
-    // Fresh open => fresh per-area index manager. No carryover allowed.
-    _idx = std::make_unique<xindex::IndexManager>(*this);
-#else
-    _idx.reset();
-#endif
+    // Fresh open must not inherit any externally attached index state.
+    index_hooks::detach(*this);
 
     // Start at record 1 if non-empty; otherwise remain at BOF.
     if (_rec_count64 > 0) {
@@ -234,18 +233,30 @@ void DbArea::readFields()
     // state, store them on DbArea here rather than re-parsing elsewhere.
 }
 
-bool DbArea::gotoRec(int32_t recno) {
+// Authoritative 64-bit record positioning (RECNO64). Offset math is already
+// 64-bit (checked_record_pos_); this removes the int32 gate on the entry point.
+bool DbArea::gotoRec64(std::uint64_t recno) {
     if (recno < 1) return false;
-    if (static_cast<std::uint64_t>(recno) > _rec_count64) return false;
+    if (recno > _rec_count64) return false;
 
-    _crn = recno;
-    _crn64 = static_cast<std::uint64_t>(recno);
+    _crn64 = recno;
+    // Keep the legacy 32-bit mirror honest: exact when it fits, clamped (never
+    // silently wrong past the boundary — x64 callers read _crn64/recno64()).
+    _crn = (recno > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()))
+        ? std::numeric_limits<int32_t>::max()
+        : static_cast<int32_t>(recno);
 
-    const std::streampos pos =
-        checked_record_pos_(*this, static_cast<std::uint64_t>(recno));
+    const std::streampos pos = checked_record_pos_(*this, recno);
 
     _fp.seekg(pos, std::ios::beg);
     return readCurrent();
+}
+
+// 32-bit compatibility adapter. Correct for classic/VFP (format-bounded to a
+// 32-bit count); for x64 tables prefer gotoRec64.
+bool DbArea::gotoRec(int32_t recno) {
+    if (recno < 1) return false;
+    return gotoRec64(static_cast<std::uint64_t>(recno));
 }
 
 bool DbArea::top() {
@@ -255,9 +266,7 @@ bool DbArea::top() {
 
 bool DbArea::bottom() {
     if (_rec_count64 == 0) return false;
-    const auto max32 = static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max());
-    if (_rec_count64 > max32) return false; // current API is still int32-based
-    return gotoRec(static_cast<int32_t>(_rec_count64));
+    return gotoRec64(_rec_count64);
 }
 
 bool DbArea::skip(int delta) {
@@ -266,11 +275,8 @@ bool DbArea::skip(int delta) {
     const std::int64_t want64 = static_cast<std::int64_t>(_crn64) + static_cast<std::int64_t>(delta);
     if (want64 < 1) return false;
     if (static_cast<std::uint64_t>(want64) > _rec_count64) return false;
-    if (static_cast<std::uint64_t>(want64) > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-        return false;
-    }
 
-    return gotoRec(static_cast<int32_t>(want64));
+    return gotoRec64(static_cast<std::uint64_t>(want64));
 }
 
 bool DbArea::appendBlank() {
@@ -347,11 +353,7 @@ bool DbArea::appendBlank() {
     _fd_snapshot.assign(_fields.size() + 1, std::string{});
     _del = NOT_DELETED;
 
-    if (_rec_count64 > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max())) {
-        return false; // current gotoRec API is int32-based
-    }
-
-    const bool ok = gotoRec(static_cast<int32_t>(_rec_count64));
+    const bool ok = gotoRec64(_rec_count64);
 
     // NOTE:
     // DbArea should not perform command-policy index mutation on its own.

@@ -3,10 +3,11 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <exception>
+
+#include "cli/command_output.hpp"
 
 #if defined(_WIN32)
 #  include <windows.h>
@@ -68,7 +69,9 @@ static void strip_utf8_bom(std::string& s) {
 void run_script_file(xbase::DbArea& current, const fs::path& file_path) {
     std::ifstream in(file_path, std::ios::binary);
     if (!in) {
-        std::cout << "SCRIPT: unable to open " << file_path.string() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "SCRIPT", dottalk::helpdata::MessageId::ScriptUnableToOpenText,
+            {{"file", file_path.string()}});
         return;
     }
 
@@ -89,11 +92,17 @@ void run_script_file(xbase::DbArea& current, const fs::path& file_path) {
         try {
             (void)shell_execute_line(current, line);
         } catch (const std::exception& ex) {
-            std::cout << "SCRIPT: " << file_path.filename().string()
-                      << ":" << line_no << ": " << ex.what() << "\n";
+            cli::cmdout::print_prefixed_message(
+                "SCRIPT", dottalk::helpdata::MessageId::ScriptLineErrorText,
+                {{"file", file_path.filename().string()},
+                 {"line", std::to_string(line_no)},
+                 {"detail", ex.what()}});
         } catch (...) {
-            std::cout << "SCRIPT: " << file_path.filename().string()
-                      << ":" << line_no << ": unknown error\n";
+            cli::cmdout::print_prefixed_message(
+                "SCRIPT", dottalk::helpdata::MessageId::ScriptLineErrorText,
+                {{"file", file_path.filename().string()},
+                 {"line", std::to_string(line_no)},
+                 {"detail", "unknown error"}});
         }
     }
 }

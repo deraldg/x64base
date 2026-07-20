@@ -1,5 +1,7 @@
 #include "xbase/fields.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xindex/attach.hpp"
+#include "xindex/index_manager.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -599,12 +601,17 @@ IndexImpact assessAppendIndexImpact(const xbase::DbArea& db,
 {
     (void)fd;
 
-    const auto* idx = db.indexManagerPtr();
+#if DOTTALK_HAS_XINDEX
+    const auto* idx = xindex::manager_if_attached(db);
     if (!idx) {
         return IndexImpact::None;
     }
 
     return IndexImpact::RebuildRecommended;
+#else
+    (void)db;
+    return IndexImpact::None;
+#endif
 }
 
 Result append(xbase::DbArea& db,

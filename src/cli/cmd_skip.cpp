@@ -109,6 +109,25 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
+    // Fast path: an unfiltered ordered SKIP performs the whole delta on a single
+    // index cursor (one seek + N advances) instead of N re-seeking unit steps.
+    // order_skip() moves up to |n| positions (partial-to-boundary) and leaves the
+    // work area positioned and read. The per-record visibility loop below runs
+    // only when a SET FILTER is active (which needs per-candidate visibility).
+    if (!filter::has_active_filter(&A) && orderstate::hasOrder(A)) {
+        if (order_skip(A, n)) {
+            if (talk) {
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::NavRecnoLine,
+                    {{"recno", std::to_string(A.recno())}});
+            }
+            return;
+        }
+        // Could not move -> already at the order boundary.
+        cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavAtEndText);
+        return;
+    }
+
     int steps = (n >= 0 ? n : -n);
     const auto step_kind = (n >= 0)
         ? cli::navsel::Step::Next

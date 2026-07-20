@@ -2,6 +2,62 @@
 // RECORDVIEW (readonly) ? RECORD (edit/modify) ? BROWSETV (TV grid)
 // Now with visible selection highlight for the active field/row.
 
+// @dottalk.usage v1
+// owner: UI|RECORDVIEW
+// command: RECORDVIEW
+// category: turbo-vision-ui
+// status: supported-conditional
+// noargs: current-record-view
+// effect: report-or-interactive
+// mutates: cursor
+// usage-access: HELP RECORDVIEW
+// summary:
+//   Display the current or selected record vertically, using a TV window when available.
+// usage:
+//   RECORDVIEW [<recno>]
+// notes:
+//   The command may move to the requested record but does not edit table data.
+// related:
+//   RECORD, BROWSETV
+//
+// @dottalk.usage v1
+// owner: UI|RECORD
+// command: RECORD
+// category: turbo-vision-ui
+// status: supported-conditional
+// noargs: interactive-edit
+// effect: mixed
+// mutates: table-data-when-arguments-supplied
+// usage-access: HELP RECORD
+// summary:
+//   Open the current-record editor or delegate supplied field updates to REPLACE.
+// usage:
+//   RECORD
+//   RECORD <field> WITH <value>
+// notes:
+//   Arguments delegate to REPLACE and may mutate table data; no arguments require the UI editor.
+// related:
+//   RECORDVIEW, REPLACE
+//
+// @dottalk.usage v1
+// owner: UI|BROWSETV
+// command: BROWSETV
+// category: turbo-vision-developer-ui
+// status: developer
+// noargs: interactive-launch
+// effect: interactive
+// mutates: cursor
+// usage-access: HELP BROWSETV
+// summary:
+//   Open the Turbo Vision grid browser for the current table.
+// usage:
+//   BROWSETV [ALL]
+// notes:
+//   This conditional developer surface may move the active record and has no command-local usage branch.
+// related:
+//   RECORDVIEW, BROWSE
+//
+
 #include "xbase.hpp"
 #include "textio.hpp"
 
@@ -518,6 +574,5 @@ void cmd_BROWSETV(DbArea& a, std::istringstream& iss){
 #endif
     cli_browse_hint();
 }
-
 
 

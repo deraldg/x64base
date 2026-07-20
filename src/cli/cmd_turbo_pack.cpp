@@ -59,7 +59,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -68,6 +67,7 @@
 
 #include "xbase.hpp"
 #include "xbase_64.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
@@ -230,18 +230,7 @@ namespace {
 
 static void print_turbopack_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  TURBOPACK USAGE\n"
-        << "  TURBOPACK\n"
-        << "Examples:\n"
-        << "  TURBOPACK\n"
-        << "Notes:\n"
-        << "  - TURBOPACK USAGE does not require an open table and does not rewrite files.\n"
-        << "  - TURBOPACK is a fast path for plain non-memo, non-x64 DBF tables only.\n"
-        << "  - Memo tables and x64 tables are refused; use PACK instead.\n"
-        << "  - TURBOPACK closes the table on success; reopen with USE <table>.\n"
-        << "  - Index containers must be rebuilt/rebound after TURBOPACK.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackUsageText);
 }
 
 static bool turbopack_usage_token_contract(std::string tok)
@@ -277,23 +266,23 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     using namespace std;
 
     if (!A.isOpen()) {
-        cout << "TURBOPACK: No table open.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackNoTableOpenText);
         return;
     }
 
     if (A.memoKind() != xbase::DbArea::MemoKind::NONE) {
-        cout << "TURBOPACK: Memo tables not supported. Use PACK instead.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackMemoNotSupportedText);
         return;
     }
 
     if (A.versionByte() == xbase::DBF_VERSION_64) {
-        cout << "TURBOPACK: X64 tables not supported. Use PACK instead.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackX64NotSupportedText);
         return;
     }
 
     auto srcOpt = derive_current_dbf_path(A);
     if (!srcOpt) {
-        cout << "TURBOPACK: Cannot determine DBF file path.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotDeterminePathText);
         return;
     }
 
@@ -301,12 +290,12 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     string srcStr = s8(srcP);
 
     if (!ends_with_ci(srcStr, ".dbf")) {
-        cout << "TURBOPACK: Not a .dbf file: " << srcStr << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackNotDbfText, {{"file", srcStr}});
         return;
     }
 
     if (!fs::exists(srcP) || !fs::is_regular_file(srcP)) {
-        cout << "TURBOPACK: File not found: " << srcStr << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackFileNotFoundText, {{"file", srcStr}});
         return;
     }
 
@@ -316,18 +305,18 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     try { orderstate::clearOrder(A); } catch (...) {}
     try { A.close(); } catch (...) {}
 
-    cout << "TURBOPACK processing: " << srcStr << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackProcessingText, {{"file", srcStr}});
 
     ifstream in(srcStr, ios::binary);
     if (!in) {
-        cout << "TURBOPACK: Cannot open source file.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotOpenSourceText);
         return;
     }
 
     u8 hdr32[32]{};
     in.read(reinterpret_cast<char*>(hdr32), 32);
     if (!in) {
-        cout << "TURBOPACK: Cannot read header.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotReadHeaderText);
         in.close();
         return;
     }
@@ -337,7 +326,7 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     u32 origCount = le32(&hdr32[4]);
 
     if (headerLen < 33 || recLen < 1 || headerLen > 4096) {
-        cout << "TURBOPACK: Invalid header lengths.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackInvalidHeaderLenText);
         in.close();
         return;
     }
@@ -347,7 +336,7 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     string safeErr;
     if (!compute_safe_record_count(srcP, headerLen, recLen, origCount,
                                    actualCount, safeCount, safeErr)) {
-        cout << "TURBOPACK: " << safeErr << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackDetailText, {{"detail", safeErr}});
         in.close();
         return;
     }
@@ -356,19 +345,18 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     in.seekg(0, ios::beg);
     in.read(&header[0], headerLen);
     if (!in || static_cast<unsigned char>(header.back()) != 0x0D) {
-        cout << "TURBOPACK: Invalid or incomplete header (missing 0x0D terminator).\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackInvalidHeaderTermText);
         in.close();
         return;
     }
 
     if (origCount != actualCount) {
-        cout << "TURBOPACK: Warning — header count (" << origCount
-             << ") does not match physical count (" << actualCount
-             << "); using safe count " << safeCount << ".\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackHeaderCountMismatchText,
+            {{"orig", std::to_string(origCount)}, {"actual", std::to_string(actualCount)}, {"safe", std::to_string(safeCount)}});
     }
 
     if (safeCount == 0 && origCount > 0) {
-        cout << "TURBOPACK: Warning — no valid physical records detected; table may be corrupt.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackNoValidRecordsText);
     }
 
     in.seekg(static_cast<std::streamoff>(headerLen), ios::beg);
@@ -376,7 +364,7 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     fs::path tmpP = temp_target_for(srcP);
     ofstream out(s8(tmpP), ios::binary | ios::trunc);
     if (!out) {
-        cout << "TURBOPACK: Cannot create temp file " << s8(tmpP) << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotCreateTempText, {{"file", s8(tmpP)}});
         in.close();
         return;
     }
@@ -384,7 +372,7 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     update_header_timestamp_and_count(header, 0);
     out.write(header.data(), headerLen);
     if (!out) {
-        cout << "TURBOPACK: Failed writing header to temp.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackFailedWriteHeaderText);
         out.close();
         in.close();
         fs::remove(tmpP);
@@ -397,8 +385,8 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     for (u32 i = 0; i < safeCount; ++i) {
         in.read(rec.data(), recLen);
         if (!in) {
-            cout << "TURBOPACK: Read error at source record " << (i + 1)
-                 << " after " << kept << " kept records.\n";
+            cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackReadErrorText,
+                {{"rec", std::to_string(i + 1)}, {"kept", std::to_string(kept)}});
             out.close();
             in.close();
             fs::remove(tmpP);
@@ -409,7 +397,8 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
             rec[0] = xbase::NOT_DELETED;
             out.write(rec.data(), recLen);
             if (!out) {
-                cout << "TURBOPACK: Write error after " << kept << " kept records.\n";
+                cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackWriteErrorText,
+                    {{"kept", std::to_string(kept)}});
                 out.close();
                 in.close();
                 fs::remove(tmpP);
@@ -425,7 +414,7 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
     out.seekp(0, ios::beg);
     out.write(header.data(), headerLen);
     if (!out) {
-        cout << "TURBOPACK: Failed to update header with final count.\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackFailedUpdateHeaderText);
         out.close();
         fs::remove(tmpP);
         return;
@@ -448,31 +437,35 @@ void cmd_TURBOPACK(xbase::DbArea& A, std::istringstream& S)
 
     fs::rename(srcP, bakP, ec);
     if (ec) {
-        cout << "TURBOPACK: Cannot create backup: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotCreateBackupText, {{"detail", ec.message()}});
         fs::remove(tmpP);
         return;
     }
 
     fs::rename(tmpP, srcP, ec);
     if (ec) {
-        cout << "TURBOPACK: Cannot replace original file: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message("TURBOPACK", dottalk::helpdata::MessageId::TurbopackCannotReplaceText, {{"detail", ec.message()}});
         error_code ec2;
         fs::rename(bakP, srcP, ec2);
         if (ec2) {
-            cout << "  Rollback also failed. Original may be lost.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackRollbackFailedText);
         }
         return;
     }
 
     fs::remove(bakP, ec);
 
-    cout << "TURBOPACK complete. Kept " << kept << " of " << origCount << " records.\n";
-    cout << srcP.filename().string() << " ready for use.\n";
-    cout << "Sidecar(s): none.\n";
-    cout << "Table is closed. Reopen with: USE " << srcP.stem().string() << "\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackCompleteText,
+        {{"kept", std::to_string(kept)}, {"orig", std::to_string(origCount)}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackReadyForUseText,
+        {{"file", srcP.filename().string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackSidecarsNoneText);
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackReopenText,
+        {{"stem", srcP.stem().string()}});
     if (!origOrder.empty()) {
-        cout << "Reindex recommended. Previous order '" << origOrder << "' detached.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackReindexOrderText,
+            {{"order", origOrder}});
     } else {
-        cout << "Reindex recommended.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::TurbopackReindexText);
     }
 }

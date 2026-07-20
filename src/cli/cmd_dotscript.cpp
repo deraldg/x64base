@@ -71,6 +71,7 @@
 #include "shell_api.hpp"
 #include "xbase.hpp"
 #include "shell_transcript.hpp"
+#include "script_reader.hpp"   // read_script_command: shared ';'-continuation reader
 
 using xbase::DbArea;
 
@@ -382,6 +383,10 @@ static void maybe_print_trace_banner() {
 // contract_update: MDO-377G v1.1
 // purpose: DOTSCRIPT executes .dts command scripts and may tee full runtime output to a transcript.
 // @dottalk.usage v1
+// owner: DOT|DOTSCRIPT
+// command: DOTSCRIPT
+// category: transcript
+// status: supplemental
 // usage: DOTSCRIPT <file>
 // usage: DOTSCRIPT @<file>
 // usage: DOTSCRIPT <file> OUT <transcript-file>
@@ -535,21 +540,27 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
     }
 
     std::string line;
-    size_t lineno = 0;
+    size_t lineno = 0;      // physical lines consumed so far
+    int consumed = 0;
 
-    while (std::getline(in, line)) {
-        ++lineno;
+    // Read logical commands: read_script_command joins ';'-continued lines the
+    // same way the interactive shell does, so multi-line CREATE (and any other
+    // continued command) behaves identically under DOTSCRIPT. cmd_start is the
+    // first physical line of the command, for accurate trace/error reporting.
+    while (read_script_command(in, line, consumed)) {
+        const size_t cmd_start = lineno + 1;
+        lineno += static_cast<size_t>(consumed > 0 ? consumed : 1);
 
         const std::string trimmed = trim_copy(line);
         if (looks_like_comment_or_blank(trimmed)) continue;
 
         if (trace_for_this_run) {
-            std::cout << resolved->string() << ":" << lineno << "> " << trimmed << "\n";
+            std::cout << resolved->string() << ":" << cmd_start << "> " << trimmed << "\n";
         }
 
         DbArea& cur = current_shell_area_or(area);
         if (!shell_execute_line(cur, trimmed)) {
-            std::cout << "DOTSCRIPT: " << resolved->string() << ":" << lineno
+            std::cout << "DOTSCRIPT: " << resolved->string() << ":" << cmd_start
                       << ": Unknown command: " << trimmed << "\n";
         }
     }

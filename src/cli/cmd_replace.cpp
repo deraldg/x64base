@@ -78,9 +78,9 @@
 #include <cerrno>
 #include <cstdio>
 #include <ctime>
-#include <iostream>
 #include <stdexcept>
 #include <limits>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -88,6 +88,7 @@
 #include <cstdint>
 
 #include "xbase.hpp"
+#include "xbase/field_codec.hpp"
 #include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
 #include "xbase_field_getters.hpp"
@@ -362,6 +363,12 @@ static std::string today_yyyymmdd() {
 
 static bool normalize_date_value(const std::string& raw, std::string& out) {
     std::string s = trim_copy(raw);
+
+    // A blank / all-space value clears the date field (stored as spaces).  A DBF
+    // date field legitimately holds an empty date; rejecting blank (AIF-028) made
+    // it impossible to clear a date once set.
+    if (s.empty()) { out.clear(); return true; }
+
     const std::string u = up_copy(s);
 
     if (u == "TODAY") {
@@ -386,6 +393,33 @@ static bool normalize_date_value(const std::string& raw, std::string& out) {
     }
 
     return false;
+}
+
+// x64 T (datetime) accepts a blank (clear) or a compact all-digit stamp:
+// "YYYYMMDD" (midnight) or "YYYYMMDDHHMMSS".  Keep this in step with the T codec
+// (src/xbase/field_codec.cpp dt_encode), which does the byte encoding.
+static bool normalize_datetime_value(const std::string& raw, std::string& out) {
+    std::string s;
+    for (char c : trim_copy(raw)) {
+        if (c != ' ') s.push_back(c);
+    }
+    if (s.empty()) { out.clear(); return true; }          // blank clears
+    if (s.size() != 8 && s.size() != 14) return false;
+    for (char c : s) {
+        if (c < '0' || c > '9') return false;
+    }
+    const int mo = std::stoi(s.substr(4, 2));
+    const int dy = std::stoi(s.substr(6, 2));
+    int hh = 0, mi = 0, ss = 0;
+    if (s.size() == 14) {
+        hh = std::stoi(s.substr(8, 2));
+        mi = std::stoi(s.substr(10, 2));
+        ss = std::stoi(s.substr(12, 2));
+    }
+    if (mo < 1 || mo > 12 || dy < 1 || dy > 31 ||
+        hh > 23 || mi > 59 || ss > 59) return false;
+    out = s;
+    return true;
 }
 
 static bool normalize_logical_value(const std::string& raw, std::string& out) {
@@ -454,9 +488,14 @@ static bool normalize_numeric_value(const std::string& raw,
     return true;
 }
 
+// Validates AND canonicalizes the value to be stored: on success `stored_value`
+// is rewritten to the field's canonical form (D -> YYYYMMDD or blank, L -> T/F,
+// N/F -> validated numeric, T -> compact datetime).  The canonical form is what
+// gets written to the DBF, so e.g. `REPLACE DOB WITH 02/14/1956` stores
+// `19560214`, not the raw slashed text truncated to the field width.
 static bool validate_field_value_for_store(const xbase::DbArea& A,
                                            int field1,
-                                           const std::string& stored_value,
+                                           std::string& stored_value,
                                            std::string& err_out)
 {
     err_out.clear();
@@ -469,6 +508,7 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
                 err_out = "invalid date for field";
                 return false;
             }
+            stored_value = norm;
             return true;
 
         case 'L':
@@ -476,6 +516,7 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
                 err_out = "invalid logical for field";
                 return false;
             }
+            stored_value = norm;
             return true;
 
         case 'N':
@@ -486,6 +527,7 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
                 err_out = "invalid numeric for field";
                 return false;
             }
+            stored_value = norm;
             return true;
 
         case 'F':
@@ -496,6 +538,7 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
                 err_out = "invalid float for field";
                 return false;
             }
+            stored_value = norm;
             return true;
 
         case 'I': {
@@ -525,7 +568,37 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
             return true;
         }
 
+        case 'T':
+            if (!normalize_datetime_value(stored_value, norm)) {
+                err_out = "invalid datetime for field";
+                return false;
+            }
+            stored_value = norm;
+            return true;
+
         default:
+            // Registered custom field types (FIELDTYPE M4b) validate + canonicalize
+            // *through their own Codec* — the type's Codec is the single source of
+            // truth, so no per-type case is needed here.  encode into a scratch
+            // region, then decode it back to the canonical text that gets stored.
+            if (xbase::fieldcodec::field_type_registered(t)) {
+                const int flen = field_length(A, field1);
+                if (flen <= 0) { err_out = "invalid custom field width"; return false; }
+                xbase::FieldDef fd{};
+                fd.type = t;
+                fd.length = static_cast<std::uint32_t>(flen);
+                std::vector<char> scratch(static_cast<std::size_t>(flen), '\0');
+                std::string cerr;
+                const auto& codec = xbase::fieldcodec::codec_for(t);
+                if (!codec.encode(stored_value, fd, scratch.data(), &cerr)) {
+                    err_out = cerr.empty()
+                        ? (std::string("invalid value for field type '") + t + "'")
+                        : cerr;
+                    return false;
+                }
+                stored_value = codec.decode(scratch.data(),
+                                            static_cast<std::size_t>(flen), fd);
+            }
             return true;
     }
 }
@@ -682,10 +755,10 @@ static int resolve_current_index(xbase::DbArea& A) {
 
 struct RecordLockGuard {
     xbase::DbArea& A;
-    uint32_t rn = 0;
+    std::uint64_t rn = 0;
     bool locked = false;
 
-    RecordLockGuard(xbase::DbArea& area, uint32_t recno, bool acquire) : A(area), rn(recno) {
+    RecordLockGuard(xbase::DbArea& area, std::uint64_t recno, bool acquire) : A(area), rn(recno) {
         if (!acquire) return;
         std::string err;
         locked = xbase::locks::try_lock_record(A, rn, &err);
@@ -752,7 +825,7 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     const int field1 = fldIndex0 + 1;
-    const uint32_t rn = static_cast<uint32_t>(A.recno());
+    const std::uint64_t rn = A.recno64();
     if (rn == 0) {
         cli::cmdout::print_prefixed_message(
             "REPLACE", dottalk::helpdata::MessageId::ReplaceNoCurrentRecordText);
@@ -780,9 +853,33 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
                     break;
 
                 case dottalk::expr::EvalValue::K_Number: {
-                    std::ostringstream os;
-                    os << ev.number;
-                    user_value = os.str();
+                    // Canonical engine form, locale-independent.  The process/global
+                    // locale can group thousands (e.g. "50,000,000"), which then fails
+                    // I-field int32 parsing and D-field YYYYMMDD parsing.  std::to_string
+                    // is fixed to the "C" locale for integral values; the classic locale
+                    // is imbued explicitly for the fractional path.
+                    const double n = ev.number;
+                    if (n >= -9.2e18 && n <= 9.2e18 &&
+                        static_cast<double>(static_cast<long long>(n)) == n) {
+                        user_value = std::to_string(static_cast<long long>(n));
+                    } else {
+                        // Fractional: shortest round-trip fixed notation (exact, no
+                        // scientific, locale-independent).  The default ostream
+                        // precision (6 sig figs) silently truncated B/Y values with
+                        // more precision (3.140625 -> "3.14062", 1234.5678 ->
+                        // "1234.57"), corrupting the stored double / currency.
+                        char buf[512];
+                        auto res = std::to_chars(buf, buf + sizeof(buf), n,
+                                                 std::chars_format::fixed);
+                        if (res.ec == std::errc()) {
+                            user_value.assign(buf, res.ptr);
+                        } else {
+                            std::ostringstream os;
+                            os.imbue(std::locale::classic());
+                            os << std::setprecision(17) << n;
+                            user_value = os.str();
+                        }
+                    }
                     break;
                 }
 
@@ -846,7 +943,21 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
             field_mask[word] |= (std::uint64_t{1} << bit);
         }
 
-        tb.add_change((int)rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, stored_value);
+        const int je_priority = tb.add_change(
+            rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, stored_value);
+
+        // Write-ahead redo log (only under TABLE BUFFER PERSISTENT / RamJournal).
+        // Journal the exact buffered edit -- recno, the priority add_change
+        // assigned, and the field value -- so the log preserves every retained
+        // edit per field (history mode) rather than a last-write-wins snapshot.
+        if (dottalk::table::is_persistent_enabled(area0)) {
+            dottalk::table::ChangeEntry je;
+            je.recno = rn;
+            je.dirty_flags = dottalk::table::CHANGE_UPDATE;
+            je.priority = je_priority;
+            je.new_values[field1] = stored_value;
+            (void)dottalk::table::journal_note_change(area0, je);
+        }
 
         if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
         dottalk::table::mark_stale_field(area0, field1);

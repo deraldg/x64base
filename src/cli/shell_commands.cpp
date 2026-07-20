@@ -236,8 +236,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // fixed, so SETORDER also refreshes explicitly.
     // Cursor movers (seek/find/order): rely on cursor hook
     registry().add("FIND",         [](DbArea& A, std::istringstream& S){ cmd_FIND(A,S);     });
+#if DOTTALK_HAS_XINDEX
     registry().add("SEEK",         [](DbArea& A, std::istringstream& S){ cmd_SEEK(A,S);     });
-#if DOTTALK_WITH_INDEX
     registry().add("SETORDER",     [](DbArea& A, std::istringstream& S){ cmd_SETORDER(A,S); relations_api::refresh_if_enabled(); });
 #endif
 
@@ -254,26 +254,30 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // ---------------------------------------------------------------------
     // INX/CNX/CDX/LMDB commands compile only when indexing support is enabled.
     // Position changes inside these commands should use engine movement APIs.
-#if DOTTALK_WITH_INDEX
+#if DOTTALK_HAS_XINDEX
     // Index ops may reposition internally; rely on cursor hook
     registry().add("CNX",       [](DbArea& A, std::istringstream& S){ cmd_CNX(A,S);       });
-    registry().add("CDX",       [](DbArea& A, std::istringstream& S){ cmd_CDX(A,S);       });
     registry().add("SETCNX",    [](DbArea& A, std::istringstream& S){ cmd_SETCNX(A,S);    });
-    registry().add("SETCDX",    [](DbArea& A, std::istringstream& S){ cmd_SETCDX(A,S);    });
     registry().add("INDEX",     [](DbArea& A, std::istringstream& S){ cmd_INDEX(A,S);     });
     registry().add("REINDEX",   [](DbArea& A, std::istringstream& S){ cmd_REINDEX(A,S);   });
     registry().add("REBUILD",   [](DbArea& A, std::istringstream& S){ cmd_REBUILD(A,S);   });
-    registry().add("BUILDLMDB", [](DbArea& A, std::istringstream& S){ cmd_BUILDLMDB(A,S); });
-    registry().add("LMDBDUMP",  [](DbArea& A, std::istringstream& S){ cmd_LMDB_DUMP(A,S); });
-    registry().add("SETLMDB",   [](DbArea& A, std::istringstream& S){ cmd_SETLMDB(A,S);   });
     registry().add("SETINDEX",  [](DbArea& A, std::istringstream& S){ cmd_SETINDEX(A,S);  });
     registry().add("ASCEND",    [](DbArea& A, std::istringstream& S){ cmd_ASCEND(A,S);    });
     registry().add("DESCEND",   [](DbArea& A, std::istringstream& S){ cmd_DESCEND(A,S);   });
     registry().add("INDEXSEEK", [](DbArea& A, std::istringstream& S){ cmd_INDEXSEEK(A,S); });
+#if DOTTALK_COMPONENT_LABTALK
+    registry().add("SIX",       [](DbArea& A, std::istringstream& S){ cmd_SIX(A,S);       });
+#endif
+#endif
+
+#if DOTTALK_WITH_INDEX
+    registry().add("CDX",       [](DbArea& A, std::istringstream& S){ cmd_CDX(A,S);       });
+    registry().add("SETCDX",    [](DbArea& A, std::istringstream& S){ cmd_SETCDX(A,S);    });
+    registry().add("BUILDLMDB", [](DbArea& A, std::istringstream& S){ cmd_BUILDLMDB(A,S); });
+    registry().add("LMDBDUMP",  [](DbArea& A, std::istringstream& S){ cmd_LMDB_DUMP(A,S); });
+    registry().add("SETLMDB",   [](DbArea& A, std::istringstream& S){ cmd_SETLMDB(A,S);   });
     registry().add("LMDB",      [](DbArea& A, std::istringstream& S){ cmd_LMDB(A,S);      });
     registry().add("LMDB_UTIL", [](DbArea& A, std::istringstream& S){ cmd_LMDB_UTIL(A,S); });
-    registry().add("SIX",       [](DbArea& A, std::istringstream& S){ cmd_SIX(A,S);       });
-//  registry().add("SNX",       [](DbArea& A, std::istringstream& S){ cmd_SNX(A,S);       });
 #endif
 
     // ---------------------------------------------------------------------
@@ -381,15 +385,18 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("DIR",       [](DbArea& A, std::istringstream& S){ cmd_DIR(A,S);       });
     registry().add("BELL",      [](DbArea& A, std::istringstream& S){ cmd_BELL(A,S);      });
     registry().add("COLOR",     [](DbArea& A, std::istringstream& S){ cmd_COLOR(A,S);     });
+#if DOTTALK_COMPONENT_LABTALK
     registry().add("CHRISTMAS", [](DbArea& A, std::istringstream& S){ edu_CHRISTMAS(A,S); });
     registry().add("HANUKKAH",  [](DbArea& A, std::istringstream& S){ edu_HANUKKAH(A,S);  });
+#endif
 
-
+#if DOTTALK_COMPONENT_EXTERNAL
     registry().add("!",         [](DbArea& A, std::istringstream& S) { cmd_BANG(A,S); });
     registry().add("BANG",      [](DbArea& A, std::istringstream& S) { cmd_BANG(A,S); });
     registry().add("WEB",       [](DbArea& A, std::istringstream& S) { cmd_WEB(A,S);  });
     registry().add("IMAGE",     [](DbArea& A, std::istringstream& S) { cmd_IMAGE_DISPLAY(A,S); });
     registry().add("SFTP",      [](DbArea& A, std::istringstream& S) { cmd_SFTP(A,S); });
+#endif
 
     // Calculator, expression, and education-expression commands. CALC should
     // remain usable without an open DBF. edu_* commands are shell commands, not
@@ -402,7 +409,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("FORMULA",   [](DbArea& A, std::istringstream& S){ edu_FORMULA(A,S);    });
     registry().add("EVALUATE",  [](DbArea& A, std::istringstream& S){ edu_EVALUATE(A,S);   });
     registry().add("NORMALIZE", [](DbArea& A, std::istringstream& S){ edu_NORMALIZE(A,S);  });
+#if DOTTALK_COMPONENT_LABTALK
     registry().add("IDX",       [](DbArea& A, std::istringstream& S){ edu_IDX(A,S);        });
+#endif
 
 
     // SQL and SmartList command surface. SMARTLIST is the preferred
@@ -424,8 +433,10 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 
     registry().add("SQLITE",    [](DbArea& A, std::istringstream& S){ cmd_SQLITE(A,S);     });
     registry().add("SQLVER",    [](DbArea& A, std::istringstream& S){ cmd_SQLVER(A,S);     });
+#if DOTTALK_COMPONENT_LABTALK
     registry().add("BIBLETALK", [](DbArea& A, std::istringstream& S){ edu_BIBLETALK(A,S);  });
     registry().add("ERP",       [](DbArea& A, std::istringstream& S){ edu_ERP(A,S);        });
+#endif
 
 
     // ---------------------------------------------------------------------
@@ -464,7 +475,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("FOXSTANDARD",  [](DbArea& A, std::istringstream& S){ cmd_FOXSTANDARD(A,S); });
     registry().add("BETA",         [](DbArea& A, std::istringstream& S){ cmd_BETA(A,S);        });
     registry().add("PSHELL",       [](DbArea& A, std::istringstream& S){ cmd_PSHELL(A,S);      });
+#if DOTTALK_COMPONENT_LABTALK
     registry().add("MCC",          [](DbArea& A, std::istringstream& S){ cmd_MCC(A,S);         });
+#endif
 
     // ---------------------------------------------------------------------
     // Metadata, command-help, diagnostics, and scripting utilities
@@ -472,6 +485,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // These commands feed help/reflection and command-audit tooling.
     // METADATA
     registry().add("EXPFUNCs",     [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
+    registry().add("EXPORTFUNCTIONS", [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
+    registry().add("SCX",          [](DbArea& A, std::istringstream& S){ cmd_SCX(A,S);          });
 
     registry().add("SECURITY",     [](DbArea& A, std::istringstream& S){ cmd_SECURITY(A,S);    });
 
@@ -496,7 +511,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 
     registry().add("DOTSCRIPT",    [](DbArea& A, std::istringstream& S){ cmd_DOTSCRIPT(A,S);   });
     registry().add("VAR",          [](DbArea& A, std::istringstream& S){ cmd_VAR(A,S);         });
+#if DOTTALK_COMPONENT_EXTERNAL
     registry().add("ZIP",          [](DbArea& A, std::istringstream& S){ cmd_ZIP(A,S);         });
+#endif
 
     // Session lifecycle and environment-reporting commands. INIT/SHUTDOWN are
     // command-accessible lifecycle routines for scripts.
@@ -522,13 +539,15 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Built-in educational commands live here. Student-created commands should
     // live in extension/custom and may self-register there.
 //  EDUCATION
+#if DOTTALK_COMPONENT_LABTALK
     registry().add("COBOL",        [](DbArea& A, std::istringstream& S){ cmd_COBOL(A,S);       });
     registry().add("CODASYL",      [](DbArea& A, std::istringstream& S){ cmd_CODASYL(A,S);     });
     registry().add("DRAWIO",       [](DbArea& A, std::istringstream& S){ cmd_DRAWIO(A,S);      });
     registry().add("RETRO",        [](DbArea& A, std::istringstream& S){ cmd_RETRO(A,S);       });
+    registry().add("CASE",         [](DbArea& A, std::istringstream& S){ edu_CASESTUDY(A,S);   });
+#endif
     registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
     registry().add("ASCII",        [](DbArea& A, std::istringstream& S){ edu_ASCII_TABLE(A,S); });
-    registry().add("CASE",         [](DbArea& A, std::istringstream& S){ edu_CASESTUDY(A,S);   });
 
     // ---------------------------------------------------------------------
     // External import/export and text/print helpers
@@ -542,12 +561,14 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("IMPORTSQL",    [](DbArea& A, std::istringstream& S){ cmd_IMPORTSQL(A,S);   });
     registry().add("EXPORTSQL",    [](DbArea& A, std::istringstream& S){ cmd_EXPORTSQL(A,S);   });
 
+#if DOTTALK_COMPONENT_MAINTENANCE
     registry().add("DDICT",        [](DbArea& A, std::istringstream& S){ cmd_DDICT(A,S);       });
     registry().add("MSGMGR",       [](DbArea& A, std::istringstream& S){ cmd_MSGMGR(A,S);      });
     registry().add("MANUAL",       [](DbArea& A, std::istringstream& S){ cmd_MANUAL(A,S);      });
     registry().add("BBOX",         [](DbArea& A, std::istringstream& S){ cmd_BBOX(A,S);        });
     registry().add("MAINT",        [](DbArea& A, std::istringstream& S){ cmd_MAINT(A,S);       });
     registry().add("MANSTAR",      [](DbArea& A, std::istringstream& S){ cmd_MANSTAR(A,S);     });
+#endif
 
 
     registry().add("QUIT",         [](DbArea& A, std::istringstream& S){ cmd_QUIT(A,S);        });

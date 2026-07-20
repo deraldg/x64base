@@ -36,6 +36,10 @@ endif()
 target_sources(dottalk_gui_core PRIVATE
   "${CMAKE_SOURCE_DIR}/src/common/path_state.cpp"
   "${CMAKE_SOURCE_DIR}/src/common/path_resolver.cpp"
+  "${CMAKE_SOURCE_DIR}/src/datadict/ddict_catalog_paths.cpp"
+  "${CMAKE_SOURCE_DIR}/src/datadict/ddict_dbf_reader.cpp"
+  "${CMAKE_SOURCE_DIR}/src/datadict/ddict_object_resolver.cpp"
+  "${CMAKE_SOURCE_DIR}/src/datadict/ddict_read_helpers.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/order_iterator.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/order_state.cpp"
 )

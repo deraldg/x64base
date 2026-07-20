@@ -77,6 +77,7 @@
 #include "textio.hpp"
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "cli/order_state.hpp"
 #include "filters/filter_registry.hpp"
 
@@ -260,7 +261,7 @@ void cmd_LIST_LMDB(xbase::DbArea& a, std::istringstream& iss)
         orderstate::setActiveTag(a, tag);
     }
 
-    auto& im = a.indexManager();
+    auto& im = xindex::ensure_manager(a);
 
     // Ensure correct backend is open for this area/container.
     if (!im.hasBackend() || !im.isCdx() || im.containerPath() != container) {

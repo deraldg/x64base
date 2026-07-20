@@ -94,6 +94,7 @@
 #include "xbase_64.hpp"
 #include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"
 #include "cdx/cdx.hpp"
 #include "textio.hpp"
 #include "cli/order_state.hpp"
@@ -277,13 +278,13 @@ extern "C" xbase::XBaseEngine* shell_engine();
 
 static void clear_order_and_close_indexes(xbase::DbArea& area) {
     orderstate::clearOrder(area);
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
 }
 
 static void position_to_first_after_order_change(xbase::DbArea& area)
 {
     try {
-        auto& im = area.indexManager();
+        auto& im = xindex::ensure_manager(area);
 
         if (!im.hasBackend()) {
             cli::nav::go_endpoint(area, cli::nav::Endpoint::Top, "SET ORDER");
@@ -468,14 +469,14 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
     }
 
     // Critical fix: always release any current backend/handles first.
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
 
     orderstate::setOrder(area, container);
     orderstate::setActiveTag(area, tag);
     orderstate::setAscending(area, ascending);
 
-    if (!area.indexManager().openCdx(container, tag, &err)) {
+    if (!xindex::ensure_manager(area).openCdx(container, tag, &err)) {
         if (err.empty()) {
             err = msg(MessageId::SetOrderOpenCdxBackendOpenFailedText,
                       {{"container", container_path.string()},
@@ -487,7 +488,7 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
                        {"env", env_path.string()}});
         }
         orderstate::clearOrder(area);
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         return false;
     }
 
@@ -510,17 +511,17 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
     }
 
     // Critical fix: always release any current backend/handles first.
-    area.indexManager().close();
+    xindex::ensure_manager(area).close();
     orderstate::clearOrder(area);
 
     orderstate::setOrder(area, container);
     orderstate::setActiveTag(area, tag);
     orderstate::setAscending(area, ascending);
 
-    if (!area.indexManager().openCnx(container, tag, &err)) {
+    if (!xindex::ensure_manager(area).openCnx(container, tag, &err)) {
         if (err.empty()) err = msg(MessageId::SetOrderOpenCnxBackendOpenFailedText);
         orderstate::clearOrder(area);
-        area.indexManager().close();
+        xindex::ensure_manager(area).close();
         return false;
     }
 
