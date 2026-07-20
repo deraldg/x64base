@@ -69,10 +69,22 @@ Memo (`M`) fields store a reference, not the payload — see
 - A leading **deleted flag** byte (space = live, `*` = deleted) precedes the
   field-aligned payload.
 - Record positions are computed as `data_start + recno * record_length` using
-  **64-bit arithmetic** with overflow checks, so a table can address far more
-  than `2^32` records (subject to the wider capacity discussion in
+  **64-bit arithmetic** with overflow checks, so the positioning math itself is
+  not the 32-bit ceiling (subject to the path-by-path status in
   [64-Bit Capacity Math](/docs/engine/x64-capacity-math)).
 - A trailing **`0x1A`** byte marks end-of-file.
+
+## Runtime widening status (development, 2026-07)
+
+The on-disk layout above is 64-bit. The runtime that operates on it is being
+widened to match, one path at a time. As of this writing — development-only and
+not promoted — 64-bit record positioning (`gotoRec64`), the navigation commands,
+the record-lock API, and the active CDX/LMDB index record numbers are widened and
+regression-checked (CURSOR, INDEX_X64); the classic `recno()`/`recLength()`
+accessors still saturate at `INT_MAX`. No table has yet been addressed past `2^31`
+in the proof lanes, so capacity beyond that point is stated as **design capacity,
+not a measured result**. The path-by-path status lives in
+[64-Bit Capacity Math](/docs/engine/x64-capacity-math).
 
 ## See also
 
