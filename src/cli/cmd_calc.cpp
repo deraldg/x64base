@@ -66,6 +66,7 @@
 #include <cctype>
 #include <cmath>
 #include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -183,11 +184,13 @@ static std::string format_number(double v) {
     const double iv = std::floor(v);
     if (std::fabs(v - iv) < 1e-9) {
         std::ostringstream o;
+        o.imbue(std::locale::classic());   // AIF-031: no thousands grouping
         o << static_cast<long long>(iv);
         return o.str();
     }
 
     std::ostringstream o;
+    o.imbue(std::locale::classic());       // AIF-031: no thousands grouping
     o << std::fixed << std::setprecision(10) << v;
     std::string s = o.str();
 

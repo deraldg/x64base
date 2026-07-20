@@ -56,6 +56,7 @@
 #include <cctype>
 #include <cstdint>
 #include <iomanip>
+#include <locale>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -550,6 +551,7 @@ static std::string format_date8_from_number(double dv) {
 
 static std::string to_string_trim(double dv, int fdec) {
     std::ostringstream os;
+    os.imbue(std::locale::classic());   // AIF-031: no thousands grouping in stored values
     os << std::fixed << std::setprecision(std::max(0, fdec)) << dv;
     std::string s = trim(os.str());
     while (!s.empty() && s.find('.') != std::string::npos && s.back() == '0') s.pop_back();

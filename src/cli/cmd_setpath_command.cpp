@@ -104,6 +104,18 @@ static fs::path norm_abs(const fs::path& p)
 static fs::path find_data_root_guess()
 {
     fs::path p = fs::current_path();
+
+    // If cwd IS the data directory (e.g. a test harness sets cwd=.../dottalkpp/data),
+    // use it directly. Otherwise the loop below forms `cwd / "data"`, which resolves
+    // to a doubled `.../data/data` if any stray `data` child happens to exist.
+    // Marker: a real data dir contains a `dbf` subdirectory.
+    {
+        std::error_code ec;
+        if (p.filename() == "data" && fs::is_directory(p / "dbf", ec) && !ec) {
+            return norm_abs(p);
+        }
+    }
+
     for (int i = 0; i < 14; ++i) {
         fs::path cand = p / "data";
         std::error_code ec;

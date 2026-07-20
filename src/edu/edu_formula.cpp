@@ -49,6 +49,7 @@
 #include <cctype>
 #include <cmath>
 #include <iomanip>
+#include <locale>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -132,11 +133,13 @@ static std::string format_number(double v) {
 
     if (std::fabs(v - iv) < 1e-9) {
         std::ostringstream o;
+        o.imbue(std::locale::classic());   // AIF-031: no thousands grouping
         o << static_cast<long long>(iv);
         return o.str();
     }
 
     std::ostringstream o;
+    o.imbue(std::locale::classic());       // AIF-031: no thousands grouping
     o << std::fixed << std::setprecision(10) << v;
     std::string s = o.str();
 
@@ -166,7 +169,9 @@ static void print_value(const xexpr::Value& value) {
             return;
 
         case xexpr::ValueKind::Date:
-            std::cout << value.as_date8() << "\n";
+            // AIF-031: date8 is an 8-digit int; std::to_string avoids the global
+            // locale's thousands grouping on std::cout ("19,560,214").
+            std::cout << std::to_string(value.as_date8()) << "\n";
             return;
 
         case xexpr::ValueKind::Error:

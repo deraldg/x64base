@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <locale>
 #include <cmath>
 
 #include "xbase.hpp"
@@ -98,10 +99,12 @@ namespace {
         const double iv = std::floor(v);
         if (std::fabs(v - iv) < 1e-9) {
             std::ostringstream o;
+            o.imbue(std::locale::classic());   // AIF-031: no thousands grouping
             o << static_cast<long long>(iv);
             return o.str();
         }
         std::ostringstream o;
+        o.imbue(std::locale::classic());       // AIF-031: no thousands grouping
         o << std::fixed << std::setprecision(10) << v;
         std::string s = o.str();
         while (!s.empty() && s.find('.') != std::string::npos && s.back() == '0') s.pop_back();

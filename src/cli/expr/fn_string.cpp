@@ -12,6 +12,7 @@
 #include <cctype>
 #include <cmath>
 #include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -312,6 +313,7 @@ static std::string dt_str(const std::vector<std::string>& args) {
     if (decimals < 0) decimals = 0;
 
     std::ostringstream oss;
+    oss.imbue(std::locale::classic());   // AIF-031: no thousands grouping in STR() output
     oss << std::fixed << std::setprecision(decimals) << value;
     const std::string rendered = oss.str();
 
