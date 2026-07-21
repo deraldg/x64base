@@ -469,6 +469,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // references, beta notes, and PowerShell notes.
     registry().add("HELP",         [](DbArea& A, std::istringstream& S){ cmd_HELP(A,S);        });
     registry().add("TEST",         [](DbArea& A, std::istringstream& S){ cmd_TEST(A,S);        });
+    registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
+    registry().add("DEFCMD",       [](DbArea& A, std::istringstream& S){ cmd_DEFCMD(A,S);      });
+    registry().add("UNDEFCMD",     [](DbArea& A, std::istringstream& S){ cmd_UNDEFCMD(A,S);    });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });
@@ -485,12 +488,15 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // These commands feed help/reflection and command-audit tooling.
     // METADATA
     registry().add("EXPFUNCs",     [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
+    registry().add("EXPORTFUNCTIONS", [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
+    registry().add("SCX",          [](DbArea& A, std::istringstream& S){ cmd_SCX(A,S);          });
 
     registry().add("SECURITY",     [](DbArea& A, std::istringstream& S){ cmd_SECURITY(A,S);    });
 
     registry().add("ERROR_CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });
     registry().add("ERROR_STATUS", [](DbArea& A, std::istringstream& S){ cmd_ERROR_STATUS(A,S); });
     registry().add("ERROR_TEST",   [](DbArea& A, std::istringstream& S){ cmd_ERROR_TEST(A,S);   });
+    registry().add("STOP_ON_ERROR",[](DbArea& A, std::istringstream& S){ cmd_STOP_ON_ERROR(A,S);});
 
     // Friendly multi-word aliases for the same diagnostic commands.
     registry().add("ERROR CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });

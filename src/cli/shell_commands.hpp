@@ -68,6 +68,7 @@ void cmd_RULE(DbArea&, std::istringstream&);
 
 //   METADATA FUNCTIONS
 void cmd_EXPORTFUNCTIONS(DbArea&, std::istringstream&);
+void cmd_SCX(DbArea&, std::istringstream&);
 
 
 //   DATA DICTIONAIRY
@@ -227,6 +228,7 @@ void cmd_SECURITY(DbArea&, std::istringstream&);
 void cmd_ERROR_CLEAR(DbArea&, std::istringstream&);
 void cmd_ERROR_STATUS(DbArea&, std::istringstream&);
 void cmd_ERROR_TEST(DbArea&, std::istringstream&);
+void cmd_STOP_ON_ERROR(DbArea&, std::istringstream&);
 void cmd_BELL(DbArea&, std::istringstream&);
 void cmd_CLEAR(DbArea&, std::istringstream&);
 void cmd_PRN(DbArea&, std::istringstream&);
@@ -235,6 +237,9 @@ void cmd_ZIP(DbArea&, std::istringstream&);
 void cmd_DIR(DbArea&, std::istringstream&);
 void cmd_BANG(DbArea&, std::istringstream&);
 void cmd_TEST(DbArea&, std::istringstream&);
+void cmd_EXAMPLE(DbArea&, std::istringstream&);
+void cmd_DEFCMD(DbArea&, std::istringstream&);
+void cmd_UNDEFCMD(DbArea&, std::istringstream&);
 
 // MSSQL, PostgreSQL et al
 void cmd_IMPORTSQL(DbArea&, std::istringstream&);

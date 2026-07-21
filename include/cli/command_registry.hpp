@@ -98,6 +98,13 @@ public:
     bool is_protected(const std::string& name) const;
     std::optional<CommandRegistration> registration_info(const std::string& name) const;
 
+    /**
+     * Remove a non-protected command from the live registry (used by the
+     * runtime UNDEFCMD scratch-command facility). Refuses to remove protected
+     * / core names. Returns true if a command was erased.
+     */
+    bool remove(const std::string& name);
+
 private:
     bool add_with_origin(const std::string& name,
                          Handler h,
