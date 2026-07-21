@@ -42,6 +42,28 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/CMakeLists.txt")
   add_subdirectory(xexpr)
 endif()
 
+# ---- DotTalk Value (DTV) domain foundation -----------------------------------
+# Canonical domain value + qualified-reference parser + DataAddress (tuple/PDLC,
+# AIF-038 shared Phase-0). Compile-only foundation; no DbArea/tuple/expression/array
+# integration yet. Built as an isolated static lib (like xexpr) so both dottalkpp and
+# the foundation smoke test can link it, and excluded from the dottalkpp glob above.
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/value/value.cpp")
+  add_library(dottalk_value STATIC
+    value/value.cpp
+    reference/qualified_reference.cpp
+    reference/data_address.cpp
+  )
+  target_include_directories(dottalk_value PUBLIC "${CMAKE_SOURCE_DIR}/include")
+  if (TARGET memo)
+    target_link_libraries(dottalk_value PUBLIC memo)   # real dottalk::memo::MemoRef
+  endif()
+  if (MSVC)
+    target_compile_options(dottalk_value PRIVATE /W4 /permissive-)
+  else()
+    target_compile_options(dottalk_value PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+endif()
+
 # Legacy/experimental expr/browse subdirectories, if they exist.
 # These paths are relative to src/. Keep them guarded; do not assume they exist.
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/expr/CMakeLists.txt")
@@ -69,6 +91,8 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex"
   "${CMAKE_CURRENT_SOURCE_DIR}/xexpr"
+  "${CMAKE_CURRENT_SOURCE_DIR}/value"      # dottalk_value (DTV) built as a separate lib
+  "${CMAKE_CURRENT_SOURCE_DIR}/reference"  # dottalk_value (DTV) built as a separate lib
   "${CMAKE_CURRENT_SOURCE_DIR}/memo"
   "${CMAKE_CURRENT_SOURCE_DIR}/meta"
   "${CMAKE_CURRENT_SOURCE_DIR}/tools"
@@ -435,6 +459,10 @@ endif()
 
 if (TARGET memo)
   target_link_libraries(dottalkpp PRIVATE memo)
+endif()
+
+if (TARGET dottalk_value)
+  target_link_libraries(dottalkpp PRIVATE dottalk_value)
 endif()
 
 # 7) Build summary

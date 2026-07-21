@@ -30,6 +30,7 @@
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_numeric.hpp"
 #include "cli/expr/value_eval.hpp"
+#include "xexpr/var_store.hpp"   // DotScript $name memory variables (AIF-038)
 #include "memo/memo_auto.hpp"
 #include "memo/memostore.hpp"
 #include "xbase.hpp"
@@ -241,6 +242,7 @@ static std::string get_logical_field_text(xbase::DbArea& area, int field1) {
 struct Tok {
     enum Kind {
         Ident, Number, String, LParen, RParen, Comma,
+        LBrace, RBrace, LBrack, RBrack,   // { } [ ]  (arrays, AIF-038)
         Plus, Minus, Star, Slash,
         Eq, Ne, Lt, Le, Gt, Ge,
         And, Or, Not,
@@ -268,6 +270,10 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
         if (std::isspace(static_cast<unsigned char>(c))) { skip_ws(); continue; }
         if (c == '(') { out.push_back({Tok::LParen, "("}); ++i; continue; }
         if (c == ')') { out.push_back({Tok::RParen, ")"}); ++i; continue; }
+        if (c == '{') { out.push_back({Tok::LBrace, "{"}); ++i; continue; }
+        if (c == '}') { out.push_back({Tok::RBrace, "}"}); ++i; continue; }
+        if (c == '[') { out.push_back({Tok::LBrack, "["}); ++i; continue; }
+        if (c == ']') { out.push_back({Tok::RBrack, "]"}); ++i; continue; }
         if (c == ',') { out.push_back({Tok::Comma, ","}); ++i; continue; }
         if (c == '+') { out.push_back({Tok::Plus, "+"}); ++i; continue; }
         if (c == '-') { out.push_back({Tok::Minus, "-"}); ++i; continue; }
@@ -328,15 +334,37 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
 }
 
 struct ScalarValue {
-    enum Kind { K_Null, K_Number, K_String, K_Bool } kind = K_Null;
+    enum Kind { K_Null, K_Number, K_String, K_Bool, K_Array } kind = K_Null;
     double number = 0.0;
     std::string text;
     bool tf = false;
+    dottalk::array::ArrayRef arr;   // valid when kind == K_Array (AIF-038)
 };
 
 static ScalarValue make_number(double v) { ScalarValue r; r.kind = ScalarValue::K_Number; r.number = v; return r; }
 static ScalarValue make_string(std::string s) { ScalarValue r; r.kind = ScalarValue::K_String; r.text = std::move(s); return r; }
 static ScalarValue make_bool(bool v) { ScalarValue r; r.kind = ScalarValue::K_Bool; r.tf = v; return r; }
+static ScalarValue make_array(dottalk::array::ArrayRef a) { ScalarValue r; r.kind = ScalarValue::K_Array; r.arr = std::move(a); return r; }
+
+// Bridge the scalar-eval value and the array-lane leaf value. Scalars round-trip
+// through chars/double per the family's char-compat contract; an ArrayRef is carried
+// by shared reference (identity preserved), never serialized to a private binary form.
+static dottalk::array::Value sv_to_avalue(const ScalarValue& v) {
+    switch (v.kind) {
+        case ScalarValue::K_Bool:   return dottalk::array::Value{v.tf};
+        case ScalarValue::K_Number: return dottalk::array::Value{v.number};
+        case ScalarValue::K_String: return dottalk::array::Value{v.text};
+        case ScalarValue::K_Array:  return dottalk::array::Value{v.arr};
+        default:                    return dottalk::array::Value{dottalk::array::NilValue{}};
+    }
+}
+static ScalarValue avalue_to_sv(const dottalk::array::Value& a) {
+    if (std::holds_alternative<bool>(a))                     return make_bool(std::get<bool>(a));
+    if (std::holds_alternative<double>(a))                   return make_number(std::get<double>(a));
+    if (std::holds_alternative<std::string>(a))              return make_string(std::get<std::string>(a));
+    if (std::holds_alternative<dottalk::array::ArrayRef>(a)) return make_array(std::get<dottalk::array::ArrayRef>(a));
+    return ScalarValue{};   // NilValue -> K_Null
+}
 
 static bool looks_like_date8(const std::string& s) {
     return s.size() == 8 && digits_only(s) == s;
@@ -401,6 +429,10 @@ static std::string scalar_to_string(const ScalarValue& v) {
             return s.empty() ? "0" : s;
         }
         case ScalarValue::K_Bool: return v.tf ? ".T." : ".F.";
+        case ScalarValue::K_Array:
+            // Compact identity form; ARRAY LIST (M3) renders full contents. Arrays are
+            // not a scalar function-argument type — this is display/placeholder only.
+            return "{array:" + std::to_string(dottalk::array::length(v.arr)) + "}";
         default: return {};
     }
 }
@@ -621,7 +653,28 @@ private:
             out=make_number(-d);
             return true;
         }
-        return parse_primary(out);
+        return parse_postfix(out);
+    }
+
+    // Postfix one-based subscripting: `<array>[ index ]`, chainable (`$m[1][2]`).
+    // Applies to any primary that evaluates to an array — most importantly `$A[n]`
+    // and `{…}[n]`. Out-of-range / non-integer / non-array subscripts fail the parse
+    // (surfaced as an evaluation error); AIF-036 message-catalog routing is M1b-3.
+    bool parse_postfix(ScalarValue& out) {
+        if (!parse_primary(out)) return false;
+        while (accept(Tok::LBrack)) {
+            ScalarValue idx;
+            if (!parse_expr(idx)) return false;
+            if (!expect(Tok::RBrack)) return false;
+            if (out.kind != ScalarValue::K_Array || !out.arr) return false;
+            double d = 0.0;
+            if (!as_number(idx, d)) return false;
+            dottalk::array::Value elem;
+            dottalk::array::ArrayError e;
+            if (!dottalk::array::get(out.arr, static_cast<std::int64_t>(d), elem, e)) return false;
+            out = avalue_to_sv(elem);
+        }
+        return true;
     }
 
     bool parse_primary(ScalarValue& out) {
@@ -644,6 +697,27 @@ private:
         if (accept(Tok::LParen)) {
             if(!parse_expr(out)) return false;
             if(!expect(Tok::RParen)) return false;
+            return true;
+        }
+
+        // Array literal: {} , {a, b, c}, nested {1, {2, 3}}. Each element is a full
+        // expression; elements are added through the central array API (AIF-037), so
+        // one-based indexing and shared-reference semantics come for free.
+        if (accept(Tok::LBrace)) {
+            auto arr = dottalk::array::create_empty();
+            if (!accept(Tok::RBrace)) {
+                while (true) {
+                    ScalarValue el;
+                    if (!parse_expr(el)) return false;
+                    dottalk::array::Value appended;
+                    dottalk::array::ArrayError e;
+                    if (!dottalk::array::add(arr, sv_to_avalue(el), appended, e)) return false;
+                    if (accept(Tok::Comma)) continue;
+                    if (!expect(Tok::RBrace)) return false;
+                    break;
+                }
+            }
+            out = make_array(arr);
             return true;
         }
 
@@ -702,6 +776,37 @@ private:
                 }
             }
 
+            // DotScript memory variables ($name). The `$` sigil is unambiguous — a
+            // field name never begins with `$` — so this resolution is additive and
+            // cannot shadow a field. Variables are stored under the sigil-stripped,
+            // case-insensitive name (see cmd_VAR). Scalars cross as chars/double per
+            // the family's char-compat contract; an array binds by shared reference so
+            // `$a[n]` subscripting (parse_postfix) works, and whole-array use renders as
+            // the {array:N} identity placeholder.
+            if (!ident.empty() && ident[0] == '$') {
+                dottalk::dotscript::Value mv;
+                if (dottalk::dotscript::session_vars().get(ident.substr(1), mv)) {
+                    if (std::holds_alternative<bool>(mv)) {
+                        out = make_bool(std::get<bool>(mv)); return true;
+                    }
+                    if (std::holds_alternative<double>(mv)) {
+                        out = make_number(std::get<double>(mv)); return true;
+                    }
+                    if (std::holds_alternative<std::string>(mv)) {
+                        out = make_string(std::get<std::string>(mv)); return true;
+                    }
+                    if (std::holds_alternative<dottalk::array::ArrayRef>(mv)) {
+                        // Real array value: subscripting ($a[n]) and identity are
+                        // preserved. Whole-array display renders as {array:N}.
+                        out = make_array(std::get<dottalk::array::ArrayRef>(mv));
+                        return true;
+                    }
+                    // NIL (or unset) -> empty scalar.
+                    out = ScalarValue{};
+                    return true;
+                }
+            }
+
             const std::string U = up(ident);
             if (U=="TRUE"||U=="T") { out=make_bool(true); return true; }
             if (U=="FALSE"||U=="F") { out=make_bool(false); return true; }
@@ -733,6 +838,13 @@ static dottalk::expr::EvalValue scalar_to_eval(const ScalarValue& v) {
                 ev.kind = dottalk::expr::EvalValue::K_String;
                 ev.text = v.text;
             }
+            break;
+        case ScalarValue::K_Array:
+            // No array kind in EvalValue; surface the identity placeholder so `? $a`
+            // displays instead of tripping the eval-failure path. Element access
+            // ($a[n]) yields a scalar and never reaches this branch.
+            ev.kind = dottalk::expr::EvalValue::K_String;
+            ev.text = "{array:" + std::to_string(dottalk::array::length(v.arr)) + "}";
             break;
         default:
             ev.kind = dottalk::expr::EvalValue::K_None;
@@ -801,6 +913,36 @@ EvalValue eval_rhs(xbase::DbArea* areaOrNull,
         *errOut = function_syntax ? "function evaluation failed" : "scalar evaluation failed";
     }
     return {};
+}
+
+bool eval_rhs_avalue(xbase::DbArea* areaOrNull,
+                     const std::string& exprText,
+                     dottalk::array::Value& out,
+                     std::string* errOut)
+{
+    if (errOut) errOut->clear();
+    const std::string expr = trim(exprText);
+    if (expr.empty()) {
+        if (errOut) *errOut = "empty expression";
+        return false;
+    }
+    if (is_single_quoted_literal(expr)) {
+        out = dottalk::array::Value{strip_outer_quotes(expr)};
+        return true;
+    }
+    // Field-aware only when the area is actually open (mirrors eval_rhs).
+    xbase::DbArea* area = (areaOrNull && areaOrNull->isOpen()) ? areaOrNull : nullptr;
+
+    // Parse once with the array-preserving ScalarValue path so an ArrayRef survives.
+    auto toks = lex_value_expr(expr);
+    ValueParser p(area, toks);
+    ScalarValue v;
+    if (p.parse_expr(v) && p.at_end()) {
+        out = sv_to_avalue(v);
+        return true;
+    }
+    if (errOut) *errOut = "scalar evaluation failed";
+    return false;
 }
 
 } // namespace dottalk::expr

@@ -39,8 +39,12 @@
 
 #include "xbase.hpp"
 #include "dotscript_var_name.hpp"
+#include "cli/expr/rhs_eval.hpp"     // eval_rhs -> dottalk::expr::EvalValue
+#include "cli/expr/value_eval.hpp"   // EvalValue definition
+#include "xexpr/var_store.hpp"       // dottalk::dotscript::session_vars() (AIF-038)
 #include <algorithm>
 #include <cctype>
+#include <utility>
 
 using dottalk::dotscript::VarNameCheck;
 using dottalk::dotscript::validate_var_name;
@@ -106,6 +110,23 @@ void cmd_VAR(xbase::DbArea& current, std::istringstream& iss) {
         return;
     }
 
-    // TODO: replace with your real variable storage/evaluation path.
-    std::cout << "VAR accepted: name='" << var_name << "' expr='" << expr << "'\n";
+    // Evaluate the right-hand side through the array-preserving expression path (so
+    // field references, functions, arithmetic AND array literals/subscripts all work)
+    // and store the result directly. Using eval_rhs_avalue rather than eval_rhs is
+    // essential: eval_rhs returns an EvalValue, which has no array kind and would
+    // flatten `{1,2,3}` to the string "{array:3}" — the variable must keep its real
+    // ArrayRef so `$x[n]` subscripting works. Names are stored under the sigil-stripped
+    // bare form, so `VAR x = ...` and a later `$x` reference agree.
+    std::string err;
+    dottalk::array::Value value;   // defaults to NIL
+    if (!dottalk::expr::eval_rhs_avalue(&current, expr, value, &err)) {
+        std::cout << "VAR error: " << (err.empty() ? "evaluation failed" : err) << "\n";
+        return;
+    }
+
+    std::string store_name = var_name;
+    if (!store_name.empty() && store_name[0] == '$') store_name.erase(0, 1);
+
+    dottalk::dotscript::session_vars().assign(store_name, std::move(value));
+    std::cout << "VAR stored: " << store_name << "\n";
 }

@@ -1,3 +1,16 @@
+# ---- PDLC / DTV foundation smoke test --------------------------------------
+# Canonical DotTalk Value + qualified reference + DataAddress (tuple/PDLC Phase-0).
+# Links the isolated dottalk_value lib; proves signed/unsigned exact integers
+# (incl. RECNO64 UINT64_MAX), ExactDecimal, reference parse/reject, and address text.
+if(TARGET dottalk_value)
+  add_executable(dottalkpp_pdlc_foundation_smoke
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_pdlc_foundation_smoke.cpp
+  )
+  target_link_libraries(dottalkpp_pdlc_foundation_smoke PRIVATE dottalk_value)
+  target_include_directories(dottalkpp_pdlc_foundation_smoke PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  add_test(NAME dottalkpp_pdlc_foundation_smoke COMMAND dottalkpp_pdlc_foundation_smoke)
+endif()
+
 # ---- LMDB backend smoke test -----------------------------------------------
 
 if(DOTTALK_WITH_INDEX AND TARGET xindex)
