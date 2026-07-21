@@ -2,6 +2,7 @@
 #include "textio.hpp"
 #include "record_view.hpp"
 #include "xbase.hpp"
+#include "cli/expr/dotscript_predicate_bridge.hpp"   // AIF-041 scan-path convergence
 
 #include <algorithm>
 #include <cctype>
@@ -197,6 +198,16 @@ bool predx::eval_expr(xbase::DbArea& A, std::string expr) {
         while (!expr.empty() && (expr.front()==' ' || expr.front()=='\t'))
             expr.erase(expr.begin());
         expr = trim(std::move(expr));
+    }
+
+    // DotScript memvar / array predicate ($name / $a[n] / {...}): resolve via the one
+    // shared house evaluator (session_vars-backed, field-aware) against the current record
+    // — the same bridge IF/WHILE use. predx cannot represent these (and uses `$` as the
+    // substring-containment operator), so they route here; field-only / containment
+    // predicates never match the bridge and stay on predx's triplet path. (AIF-041.)
+    {
+        bool dsv = false;
+        if (dottalk::dotscript::try_eval_dotscript_predicate(A, expr, dsv)) return dsv;
     }
 
     bool cb=false;

@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 15> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 17> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -142,8 +142,8 @@ constexpr std::array<RegressionSpec, 15> kRegressionSpecs{{
     {
         "DOTSCRIPT_PARITY",
         "dotscript\\predicate_memvar_parity_regression.dts",
-        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE — RED until the expression-path convergence lands, then GREEN (AIF-041)",
-        false
+        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE — now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
+        true
     },
     {
         "LEXING",
@@ -168,11 +168,23 @@ constexpr std::array<RegressionSpec, 15> kRegressionSpecs{{
         "pinocchio\\wal_commit_rollback_regression.dts",
         "WAL durability: COMMIT applies a buffered+logged REPLACE, ROLLBACK discards one; self-bootstrapping (creates+erases a throwaway WALREGR table, never touches the students fixture), self-asserting W0/W1/W2 markers. Mutates the filesystem so it stays out of the default suite (explicit run) (AIF-017/023)",
         false
-    }
+    },
     // NOTE: this WAL_COMMIT_ROLLBACK entry replaces the legacy commit_rollback_test.dts,
     // which assumed an already-open `students` table, did not self-bootstrap (regression
     // doctrine violation), and silently no-op'd when run standalone. The self-contained
     // basis is pinocchio\wal_phaseA_proof.dts (throwaway table, ERASEd at end).
+    {
+        "INDEX_TXN",
+        "migrated\\index_txn_lmdb_maintenance.dts",
+        "SET INDEXTXN transactional in-COMMIT index maintenance: buffered REPLACE/DELETE + COMMIT maintains the live CDX/LMDB index with NO BUILDLMDB. SEEK-asserted flip (OFF => new key misses; ON => hits at the sentinel + ordered BOTTOM lands on it + DELETE erases). Self-bootstrapping (disposable students_txn_smoke copy, never touches students), restores SET INDEXTXN OFF at cleanup. Out of the default suite (flips a global; explicit run) (AIF-027/023; feeds AIF-041 M1)",
+        false
+    },
+    {
+        "SCAN_PARITY",
+        "dotscript\\scan_memvar_parity_regression.dts",
+        "Scan-path parity: $name resolves in a FOR/scan predicate (eval_bool: LOCATE/COUNT/SCAN/LIST FOR + SET FILTER) via the shared bridge. GREEN since the AIF-041 scan convergence landed (2026-07-21). Self-bootstrapping throwaway SCANREGR in SANDBOX; stays out of the default suite because it mutates the filesystem (explicit run) (AIF-041)",
+        false
+    }
 }};
 
 std::string trim_copy(std::string s)

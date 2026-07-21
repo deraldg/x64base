@@ -53,6 +53,99 @@ proof that the engine is stable; a green build is not a green engine.
   is RED until the convergence lands, then GREEN), then converge and prove no WHERE
   regression.
 
+  **Convergence implemented + PROVEN (2026-07-21, dev).** Grounded by a
+  full recon of both eval paths: the two are separate engines (display = the `rhs_eval`
+  ValueParser over `session_vars()`; predicate = the compiled WHERE engine), and the `$`
+  sigil is *stripped* in `sql_to_dottalk_where` before the WHERE compiler ever sees it, so
+  the WHERE grammar has no `$`/`[`/`{` at all. Rather than teach three tokenizers to carry
+  the sigil and then duplicate the resolver (which would fork it), the fix centralizes on
+  the one existing house resolver: at the single predicate entry point
+  `shell_eval_bool_expr` (`src/cli/shell_bool_eval_adapter.cpp`), a predicate that
+  references DotScript state (`$name`, `$a[n]`, `{...}` — detected by `$`+ident or `{`) is
+  delegated to `dottalk::expr::eval_rhs_avalue` (the same array-aware, `session_vars()`-backed
+  evaluator the display path uses), ahead of both the injected AST evaluator and the WHERE
+  engine. Field-only predicates never enter the branch (behavior unchanged); a memvar
+  predicate the house evaluator can't handle falls through to the old path rather than
+  erroring — **no regression surface**. Scope: covers `IF`/`WHILE`/`UNTIL` (which route
+  through `shell_eval_bool_expr`); `SCAN FOR`/`LIST FOR` compile-once-run-per-record paths
+  are a documented follow-up. **Proven on the 2026-07-21 MSVC build:** `DOTSCRIPT_PARITY`
+  flipped **red→green** (both `PARITY_predicate_memvar` and `PARITY_predicate_array_subscript`
+  now `PASS`); `DOTSCRIPT_EXPR` stayed green; `NONDESTRUCTIVE` (field predicates: `LIST FOR`,
+  `SEEK`, aggregate `FOR`/`WHERE`) and the full `CURSOR` family regression (physical +
+  CNX/FNAME ordered traversal, SEEK, boundaries) stayed green — no WHERE/field-predicate
+  regression, and the change compiled clean first try. Follow-ups: (1) `SCAN FOR`/`LIST FOR`
+  compile-once-per-record predicates; (2) `DOTSCRIPT_PARITY` is now GREEN and side-effect-free,
+  so it can be promoted into the default suite (and its summary updated from "RED until…").
+
+  **Finding (2026-07-21, from reconning the scan path) — `$` is overloaded, and the
+  predicate surface is forked into THREE evaluators.** (a) In the scan/filter grammar
+  (`predx::eval_expr`, `FOR LAST_NAME $ "MIT"`), **`$` is the xBase substring-containment
+  operator**, not a memvar sigil. The convergence detector was therefore hardened: `$` is
+  treated as a memvar sigil only when it *starts an operand* (at the start, or the previous
+  non-space char is not an operand terminator), so `a$b` containment stays on the WHERE
+  path. (b) The predicate surface actually has **three** evaluators — the house `rhs_eval`
+  ValueParser (display + now `IF`/`WHILE`), `where_eval` (`compile_where_expr_cached` /
+  `run_program`, used by `WHERE`/`SQL`/browser), and `predx::eval_expr`
+  (`predicate_eval.hpp`, used by `LIST`/`COUNT`/`SCAN FOR` + `SET FILTER`). This fork is
+  itself an **AIF-037 / M3 refactor-analysis input** (representative-by-design: one
+  predicate evaluator, not three). **Scan-path convergence plan (deferred to a netted
+  milestone, not a blind patch):** extract the memvar/array delegation into one shared
+  bridge helper (`looks_like_dotscript_expr` + `avalue_truthy` + `eval_rhs_avalue` call),
+  reuse it in `shell_eval_bool_expr` (Rule of Three), and inject it at `predx::eval_expr`'s
+  per-record seam — authored **against a new `SCAN FOR`/`LIST FOR` memvar parity test that
+  is RED first**, exactly as `DOTSCRIPT_PARITY` was for `IF`. The `$`-overload means the
+  detector, not just the injection, is the load-bearing part on the scan side.
+
+  **Scan convergence — shared bridge built, predx wired, empirical build pending
+  (2026-07-21, dev).** The memvar/array delegation is now one shared header
+  `include/cli/expr/dotscript_predicate_bridge.hpp` (`looks_like_dotscript_predicate` — the
+  hardened operand-leading `$` detector — + `avalue_truthy` + `try_eval_dotscript_predicate`).
+  `shell_bool_eval_adapter.cpp` (IF/WHILE) was refactored onto it (Rule of Three; the local
+  copies removed), and `predx::eval_expr` (`predicate_eval.cpp`) was wired onto it at its
+  per-record seam. Authored + registered the RED `SCAN_PARITY` net (`LOCATE`/`COUNT FOR`
+  with a `$threshold`). **Honest open item:** the recon showed the predicate surface is
+  forked across **five** evaluators — the house `rhs_eval` ValueParser, `where_eval`,
+  `predx::eval_expr`, `predicates::eval_expr` (→ `dottalk::expr::eval_bool`), and the unwired
+  `dt/predicate/predicate_engine`. Source alone doesn't reveal which one `LOCATE`/`COUNT`
+  actually reach, so **`REGRESSION RUN SCAN_PARITY` after the build is the determinant**: if
+  it flips green, `predx` was the path; if it stays red, the scan commands use
+  `predicates::eval_expr`/`eval_bool` and that seam gets the same bridge next (cheap — one
+  call). The bridge patch is harmless either way (field-only/containment predicates never
+  match it). This five-way fork is the sharpest **AIF-037 / M3** input yet: *one* predicate
+  evaluator, not five. Regression guard: rebuild must keep `DOTSCRIPT_PARITY` +
+  `DOTSCRIPT_EXPR` green (the IF/WHILE refactor onto the bridge must not change behavior).
+
+  **Refined (2026-07-21, maintainer correction + deeper recon).** (1) `BOOLEAN` →
+  `edu_BOOLEAN` uses the `dt/predicate/predicate_engine` **student/teaching** evaluator
+  (self-labeled "not wired to the expression engine yet") — NOT a production predicate
+  path, so it drops out of the unify count. The real **production** predicate evaluators
+  are four: house `rhs_eval` ValueParser, `where_eval`, `predx::eval_expr`, and
+  `dottalk::expr::eval_bool`. (2) The **main** scan/filter seam is
+  `dottalk::expr::eval_bool` (`value_eval.cpp`), used by `cmd_scan`, `scan_selector`
+  (→ `COUNT`/`LIST FOR`), `cmd_sort`, and `predicates::eval_expr` — **not** `predx`, which
+  is a narrow side path. `eval_bool`'s `compile_where → make_record_view` route strips `$`
+  and never consults `session_vars()`, so it was wired onto the shared bridge too. The
+  scan convergence now delegates at both `eval_bool` (main) and `predx::eval_expr` (side).
+  Header placement verified: `include/cli/expr/dotscript_predicate_bridge.hpp` sits with
+  `rhs_eval.hpp`/`api.hpp`/`value_eval.hpp` under the `include/` root that
+  `target_include_directories(dottalkpp PUBLIC .../include)` puts on the path. With
+  `eval_bool` wired, `REGRESSION RUN SCAN_PARITY` after the build should flip red→green.
+
+  **PROVEN (2026-07-21 build).** `SCAN_PARITY` flipped red→green: `LOCATE FOR VAL > $threshold`
+  located VAL=20 (`SCAN_locate_predicate_memvar:PASS`) and `COUNT FOR VAL > $threshold`
+  returned 2. `DOTSCRIPT_PARITY` + `DOTSCRIPT_EXPR` stayed green (the IF/WHILE refactor onto
+  the shared bridge is behavior-preserving), and `NONDESTRUCTIVE` stayed green (field /
+  containment predicates unchanged), on a clean compile. **`$name`/`$a[n]` now resolve
+  everywhere a predicate is evaluated — display (`?`/`CALC`), control flow
+  (`IF`/`WHILE`/`UNTIL`), and scan/filter (`LOCATE`/`COUNT`/`SCAN`/`LIST FOR` + `SET
+  FILTER`) — through the ONE shared bridge (`dotscript_predicate_bridge.hpp`), reused by
+  `shell_eval_bool_expr`, `predx::eval_expr`, and `dottalk::expr::eval_bool`.** The
+  DotScript memvar/array expression-path convergence (AIF-041) is complete: the marquee
+  language capability *and* an AIF-037 consolidation (one bridge, not four forked copies)
+  in one change. Remaining tidy-ups (non-blocking): promote `DOTSCRIPT_PARITY`/`SCAN_PARITY`
+  to the default suite now that both are green; the deeper four-evaluator unification stays
+  an M3 refactor target.
+
   **Registered this pass (2026-07-21).** `REGRESSION` now carries the cycle's
   DotScript-level proofs; the C++ proofs stay in `ctest` (their correct runner —
   `dottalkpp_pdlc_foundation_smoke`, `dottalkpp_recno64_boundary_test`,

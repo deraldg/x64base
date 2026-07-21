@@ -1,9 +1,11 @@
 #include "shell_bool_eval_adapter.hpp"
 
 #include <cctype>
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include <string>
+#include <variant>
 
 #include "xbase.hpp"
 #include "cli/where_eval_shared.hpp"
@@ -12,6 +14,11 @@
 #include "cli/expr/line_parse_utils.hpp"
 #include "cli/expr/normalize_where.hpp"
 #include "expr/sql_normalize.hpp"
+
+// Centralize DotScript memory-variable / array predicates on the house expression
+// evaluator via the one shared bridge (AIF-041 / AIF-037 Rule of Three) — the same bridge
+// the scan/filter path (predx::eval_expr) uses.
+#include "cli/expr/dotscript_predicate_bridge.hpp"
 
 // These are provided by the shell control-flow module.
 extern "C" void while_set_condition_eval(bool(*)(xbase::DbArea&, const std::string&));
@@ -134,6 +141,17 @@ bool shell_eval_bool_expr(xbase::DbArea& area,
     }
 
     *result = false;
+
+    // --- Expression-path convergence (AIF-041): DotScript memvar / array predicates ---
+    // `$name`, `$a[n]`, and `{...}` are resolved by the one shared house evaluator (the
+    // same bridge the display path and the scan/filter path use), ahead of both the
+    // injected AST evaluator and the WHERE engine. Field-only / `$`-containment predicates
+    // never match the bridge, so their behavior is unchanged; a DotScript predicate the
+    // house evaluator cannot handle falls through to the normal path — no regression.
+    if (dottalk::dotscript::try_eval_dotscript_predicate(area, expr, *result)) {
+        if (err) err->clear();
+        return true;
+    }
 
     if (g_injected_eval) {
         return g_injected_eval(area, expr, result, err);

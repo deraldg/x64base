@@ -21,6 +21,7 @@
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_numeric.hpp"
 #include "cli/expr/glue_xbase.hpp"
+#include "cli/expr/dotscript_predicate_bridge.hpp"   // AIF-041 scan/filter $name convergence
 
 // value_eval.cpp is in src/cli/expr/, predicate_chain.hpp is in src/cli/
 #include "../predicate_chain.hpp"
@@ -724,6 +725,14 @@ bool eval_bool(xbase::DbArea& A, const std::string& exprText, bool& out, std::st
     const std::string foldedDates   = fold_constant_date_algebra_in_text(A, expandedCalls);
     const std::string src = trim(foldedDates);
     if (src.empty()) { out = true; return true; }
+
+    // DotScript memvar / array predicate ($name / $a[n] / {...}): resolve via the one
+    // shared house evaluator (the same bridge IF/WHILE and predx use), against the current
+    // record. eval_bool is the MAIN scan/filter path (SCAN, scan_selector -> COUNT/LIST FOR,
+    // SORT); its compile_where -> make_record_view route strips `$` and never consults
+    // session_vars(), so DotScript predicates are routed here. Field-only and `$`-containment
+    // predicates never match the bridge, so their behavior is unchanged. (AIF-041.)
+    if (dottalk::dotscript::try_eval_dotscript_predicate(A, src, out)) return true;
 
     // 1) boolean chain fast path (simple predicates only)
     if (predicate_chain_fast_allowed(src)) {

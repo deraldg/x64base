@@ -1,0 +1,70 @@
+* scan_memvar_parity_regression.dts
+* Scan-path parity target — RED until the predx convergence lands, then GREEN.
+*
+* Proves a `$name` memory variable resolves in a FOR / scan predicate (the
+* predx::eval_expr surface used by LOCATE / COUNT / SCAN / LIST FOR and SET FILTER),
+* not only in the display path (?/CALC) and the IF/WHILE predicate path (AIF-041, done).
+* The compiled scan/filter evaluator (predx) is the remaining path that does not yet
+* resolve `$name` — and note `$` is ALSO the xBase substring-containment operator there,
+* so the convergence hinges on the operand-leading `$name` detector, not just injection.
+*
+* Environment bootstrap (regression doctrine: every test sets its own environment; ambient
+* default is STOP_ON_ERROR OFF): sets STOP_ON_ERROR OFF + ECHO OFF, and points the path
+* slots at the SANDBOX area so the throwaway SCANREGR table never lands in live data.
+*
+* Pass criterion:
+*   BEFORE convergence: SCAN_locate_predicate_memvar:FAIL-EXPECTED-UNTIL-CONVERGENCE
+*   AFTER  convergence: SCAN_locate_predicate_memvar:PASS
+*                       (LOCATE FOR VAL > $threshold lands on the first VAL > 15 = VAL 20)
+*
+* This test is intentionally NOT in the default suite until the convergence lands (it is
+* RED, and it mutates the filesystem via CREATE/ERASE).
+*
+* Run:  REGRESSION RUN SCAN_PARITY
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/scan_memvar_parity_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "SCAN-MEMVAR-PARITY-BEGIN"
+
+* --- self-bootstrap a throwaway table: VAL = 10, 20, 30 (direct writes) ---
+ERASE TABLE SCANREGR CONFIRM
+CREATE X64 SCANREGR (ID N(4), VAL N(4))
+APPEND
+REPLACE ID WITH "1"
+REPLACE VAL WITH "10"
+APPEND
+REPLACE ID WITH "2"
+REPLACE VAL WITH "20"
+APPEND
+REPLACE ID WITH "3"
+REPLACE VAL WITH "30"
+
+* --- sanity: the memvar resolves in the DISPLAY path today (must be .T.) ---
+VAR threshold = 15
+? "SCAN_display_memvar_should_be_T:" + (($threshold + 5) = 20)
+
+* --- target: LOCATE FOR is a FOR/scan predicate (predx); $threshold must resolve. ---
+* GO TOP first so a RED no-op leaves the cursor on recno 1 (VAL=10) -> FAIL-EXPECTED.
+GO TOP
+LOCATE FOR VAL > $threshold
+IF (VAL = 20)
+  FORMULA "SCAN_locate_predicate_memvar:PASS"
+ELSE
+  FORMULA "SCAN_locate_predicate_memvar:FAIL-EXPECTED-UNTIL-CONVERGENCE"
+ENDIF
+
+* --- secondary (visible, not asserted): COUNT the same predicate; expect 2 after convergence ---
+? "SCAN_count_expect_2_after_convergence:"
+COUNT FOR VAL > $threshold
+
+* --- cleanup ---
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE SCANREGR CONFIRM
+
+FORMULA "SCAN-MEMVAR-PARITY-END"
