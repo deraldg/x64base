@@ -1,0 +1,40 @@
+{
+  "schema": "x64base.developer-manual-latest.v1",
+  "status": "assembled-candidate",
+  "proof_label": "generated-reviewed",
+  "note": "Latest manifest-driven ASSEMBLED build of the developer manual, regenerated from source by tools/manualgen/assemble_manual.py. This is a candidate build; the gated 'accepted' manual (developer_manual_publication_v1.md) remains the reviewed baseline.",
+  "generated_on": "2026-07-20",
+  "generated_utc": "2026-07-20T19:21:42Z",
+  "source_commit": "8ee746dee",
+  "counts": {
+    "parts": 22,
+    "greenfield_generated": 8,
+    "command_pages_bound": 183,
+    "functions_harvested": 63,
+    "diagrams_bound": 12,
+    "headings": 1580
+  },
+  "total_lines": 13782,
+  "drift_gate": "tools/manualgen/check_manual_drift.py",
+  "assembler": "manual-assembler/0.1.0 (MANUAL-ASSEMBLY M3)",
+  "artifacts": [
+    {
+      "file": "developer-manual-latest.md",
+      "route": "/downloads/current/developer-manual-latest.md",
+      "bytes": 414719,
+      "sha256": "165E15DBA838D2656ADD3E057B2E3AB845A32AFE559405CE0253FAAB5AC5492E"
+    },
+    {
+      "file": "developer-manual-latest.pdf",
+      "route": "/downloads/current/developer-manual-latest.pdf",
+      "bytes": 600366,
+      "sha256": "E6E155CE650F85186396DFB649B79FD70FECF1A145237838305EF5DE7B7346DF"
+    },
+    {
+      "file": "developer-manual-latest.html",
+      "route": "/downloads/current/developer-manual-latest.html",
+      "bytes": 541831,
+      "sha256": "21AD5E1F7DA647F78513751FD92D54BF5B7CF4E1F3B9989EBBEE937B4A2D5714"
+    }
+  ]
+}

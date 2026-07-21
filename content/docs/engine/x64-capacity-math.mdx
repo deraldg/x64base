@@ -71,50 +71,72 @@ For a DBF-style runtime to be truly 64-bit, the following layers need to agree:
 If any one of those layers still clamps a value to 16 or 32 bits, the system may
 have an x64 file header but not an x64 operating envelope.
 
-### Record-number widening status (development, 2026-07)
+### Record-number widening status (public build, 2026-07)
 
-The record-number widening lane (internal name RECNO64) is progressively removing
-the 32-bit choke points listed above. The table records the current
-development-only state; none of it is promoted, and prior states are preserved in
-this site's version history.
+The record-number widening lane (internal name RECNO64) removed the 32-bit choke
+points listed above. The table records the current state in the public build;
+prior states are preserved in this site's version history.
 
-| Choke-point layer | Current development state |
+| Choke-point layer | Current state |
 | --- | --- |
 | Table header | 64-bit record count, length, and data-start via the `*64` accessors. |
 | Record navigation | 64-bit positioning (`gotoRec64`); `GO`/`GOTO`/`SKIP`/`RECNO`/`TOP`/`BOTTOM`/`FIRST`/`LAST`/`NEXT`/`PRIOR` regression-checked (CURSOR, INDEX_X64). |
 | Record locking | 64-bit — lock API and lock-file record keys widened from 32-bit. |
 | Memo references | 64-bit DTX object ids, offsets, and append offsets. |
 | Index payloads | Active CDX/LMDB path is 64-bit (index hooks + keyed-seek decoders); classic CNX and legacy `.inx` kept 32-bit by design with a capability report. |
-| Expression / runtime APIs | Mixed: the classic `recno()`/`recLength()`/`cpr()` accessors still saturate at `INT_MAX` — the last layer that decides the ceiling. |
+| Expression / runtime APIs | 64-bit through the `*64` accessors; the classic `recno()`/`recLength()`/`cpr()` accessors now return `-1` past their 32-bit range (2026-07) instead of clamping to `INT_MAX`, so a legacy consumer sees "out of range" rather than a wrong record. |
 | Diagnostics and manuals | This page and the DBF-64 specification separate design target from runtime-proven limit. |
 
-The decisive measurement — resolving a distinct record beyond `2^31` — has not yet
-been performed, because no table of that size exists in the current proof lanes.
-Until that boundary test exists, the honest claim is *the record-number path is
-being widened through the stack*, not that unlimited scale is proven.
+The decisive measurement — resolving a *distinct* record beyond `2^31` — has been
+performed two ways: a synthetic boundary unit test
+(`dottalkpp_recno64_boundary_test`, where `recno64`/`recCount64`/`recLength64`
+resolve distinct values at `INT32_MAX`, `+1`, `+2`, `UINT32_MAX`, `UINT32_MAX+1`
+while the legacy accessors return `-1`), and a **real sparse-file end-to-end test**
+(`dottalkpp_recno64_sparse_e2e_test`) that sets an x64 table's `record_count` to
+`2^31+2`, writes real records at recno 1 / 2^31+1 / 2^31+2 into a sparse file — the
+~18 GiB gap is a filesystem hole, a few KB physical — reopens through the engine,
+and reads the two records past `2^31` **distinctly off disk** (in ~0.5 s). What has
+*not* been done is materializing a *fully populated* multi-billion-row table, which
+is a data-volume / performance question (see the Pinocchio benchmarks), not an
+addressing-correctness one. The record-number path itself is proven past `2^31`.
 
 ## x64base current truth
 
 x64base already has real x64 structure in the local source tree, but the honest
 documentation must separate **format direction** from **current runtime limit**.
 
+### Where these limits live (and why they are adjustable)
+
+`MAX_AREA`, `MAX_FIELDS`, the record-size guardrails, and the name-length ceilings
+are **engineering choices, not format-forced values** — the DBF_64 format could
+represent larger, and these numbers are deliberately round. They are currently
+centralized as compile-time constants in `include/xbase.hpp` (with the
+table-buffer bitset width in `include/cli/table_state.hpp`), so raising one is a
+single-point edit plus a rebuild. A natural future direction is a proper
+**configuration layer** — runtime-tunable profile parameters in the style of
+enterprise systems, or an `xbase.meta` descriptor — so a deployment could set its
+own ceilings for `MAX_RECORDS`, `MAX_RECORD_SIZE`, `MAX_FIELDS`, and `MAX_AREAS`
+without a recompile. The values below are the current constants in the **public
+build** (2026-07); earlier builds carried the prior values.
+
 | Capacity item | Current x64base evidence | Documentation status |
 | --- | --- | --- |
-| Work areas / open table slots | `include/xbase.hpp` defines `MAX_AREA = 256`. | Runtime-evidenced current limit. |
-| Field count | `include/xbase.hpp` defines `MAX_FIELDS = 128`; current table-buffer bitsets and compatibility paths should be treated as 128-field current truth. | Runtime-evidenced current limit. |
+| Work areas / open table slots | `include/xbase.hpp` defines `MAX_AREA = 512` (raised from 256 in 2026-07). | Public build; raised from 256 (2026-07). |
+| Field count | `include/xbase.hpp` defines `MAX_FIELDS = 256` (raised from 128 in 2026-07; the table-buffer `kMaxFields` bitsets were already 256, so this only relaxes two guard checks). | Public build; raised from 128 (2026-07). |
 | Classic/VFP record count | Classic header uses signed 32-bit mirror; VFP header has a `uint32_t num_recs`, but some current paths mirror through signed 32-bit APIs. | Classic-compatible, with current runtime chokepoints. |
-| x64 record count | `include/xbase_64.hpp` stores `LargeHeaderExtension::record_count` as `uint64_t`; `DbArea` keeps `_rec_count64` and exposes `recCount64()`. Development update (2026-07, not yet promoted): navigation and command paths — `GOTO`/`GO`/`SKIP`/`RECNO`/`TOP`/`BOTTOM`/`FIRST`/`LAST`/`NEXT`/`PRIOR` — position through 64-bit `gotoRec64`/`recno64`. | 64-bit header state exists; navigation/command paths are widened and pass the CURSOR (x32/CNX) and INDEX_X64 (v64/CDX/LMDB) regression suites. The classic `recno()`/`recLength()` accessors still saturate at `INT_MAX`, so addressing past `2^31` is not yet proven. |
+| x64 record count | `include/xbase_64.hpp` stores `LargeHeaderExtension::record_count` as `uint64_t`; `DbArea` keeps `_rec_count64` and exposes `recCount64()`. In the public build (2026-07): navigation and command paths — `GOTO`/`GO`/`SKIP`/`RECNO`/`TOP`/`BOTTOM`/`FIRST`/`LAST`/`NEXT`/`PRIOR` — position through 64-bit `gotoRec64`/`recno64`. | 64-bit header state exists; navigation/command paths are widened and pass the CURSOR (x32/CNX) and INDEX_X64 (v64/CDX/LMDB) regression suites. The classic `recno()`/`recLength()`/`recCount()`/`cpr()` accessors now return `-1` past their 32-bit range (2026-07; no longer clamp to `INT_MAX`), and both a synthetic unit test and a **sparse-file end-to-end test** read distinct records at recno `2^31+1`/`+2` off disk. A fully populated multi-billion-row table is a volume question, not proven here. |
 | Header/data-start size | x64 extension stores `data_start_64` as `uint64_t`, validator/open now accept a saturated 16-bit compatibility mirror through `x64_compatible_u16_matches()`, and runtime read/write paths consume `dataStart64()` directly. | Wide geometry is active; compatibility mirror still exists but no longer defines live x64 geometry. |
 | Record size | x64 extension stores `record_size_64` as `uint64_t`, validator/open now accept a saturated 16-bit compatibility mirror through `x64_compatible_u16_matches()`, and runtime read/write paths consume `recLength64()` directly. | Wide geometry is active; compatibility mirror still exists but no longer defines live x64 geometry. |
-| Table names | x64 naming policy supports 128-byte table names. | Source-evidenced x64 metadata policy. |
-| Field names | x64 naming policy supports 128-byte field names with 10-byte descriptor fallback tokens. | Source-evidenced x64 metadata policy; fallback remains classic-compatible. |
+| Table names | x64 naming policy allows up to 256-byte table names (ceiling raised from 128 in 2026-07; default stays 128). | Public build ceiling 256; default stays 128. |
+| Field names | x64 naming policy allows up to 256-byte field names (ceiling raised from 128 in 2026-07; default stays 128) with 10-byte descriptor fallback tokens. | Public build ceiling 256; default stays 128; fallback remains classic-compatible. |
 | Field length metadata | `X64FieldMetaEntry::field_length` is `uint32_t`; `FieldDef.length` is also `uint32_t`; current `CREATE X64` allows x64 character fields above 255 bytes, but one `C` field is still capped at `4096` in the parser. | Wider field-length metadata exists; current parser/construction limits are narrower than the x64 design lane. |
 | x64 memo references | x64 memo fields use an 8-byte object-id slot; DTX memo object ids, offsets, payload bytes, and append offsets are `uint64_t`. | Source-evidenced DTX/x64 memo architecture. |
-| Index record numbers | `include/xindex/key_common.hpp` defines `RecNo = std::uint64_t`; the active LMDB/CDX backend stores the record number as 8 bytes little-endian. Development update (2026-07): the index-hook `apply_replace` chain and the CDX keyed-seek decoders (`decode_recno_from_kv_`, `seekRecnoUserKey`) were widened to 64-bit; classic CNX and legacy `.inx` remain 32-bit by design and report their ceiling through `IIndexBackend::maxRecordNumber()`. | Active path (CDX/LMDB) carries 64-bit record numbers; legacy 32-bit formats are retained by design with an explicit capability report rather than silent truncation. |
+| Index record numbers | `include/xindex/key_common.hpp` defines `RecNo = std::uint64_t`; the active LMDB/CDX backend stores the record number as 8 bytes little-endian. In the public build (2026-07): the index-hook `apply_replace` chain and the CDX keyed-seek decoders (`decode_recno_from_kv_`, `seekRecnoUserKey`) were widened to 64-bit; classic CNX and legacy `.inx` remain 32-bit by design and report their ceiling through `IIndexBackend::maxRecordNumber()`. | Active path (CDX/LMDB) carries 64-bit record numbers; legacy 32-bit formats are retained by design with an explicit capability report rather than silent truncation. |
 
-This is the exact reason the project should say **x64base is developing an
-x64 DBF-style architecture**, not that every command already has unlimited
-scale.
+This is the exact reason the project says **x64base implements an x64 DBF-style
+architecture with 64-bit record addressing proven end to end**, while staying
+candid that a fully populated multi-billion-row table is a volume question — not
+something these boundary proofs establish.
 
 ## Current boundary proof
 
@@ -140,16 +162,16 @@ source-evidenced limits, not sales claims.
 | Capacity / specification | x64base / DotTalk++ Workbench | Visual FoxPro 9 | dBASE / BDE dBASE | Harbour / xHarbour DBF-family | Alaska Xbase++ DBFDBE | Python DBF libraries |
 | --- | --- | --- | --- | --- | --- | --- |
 | Primary intent | Educational-first open architecture and x64 DBF-style research system | Mature desktop database/runtime | Commercial DBF database/tooling lineage | Open Clipper/xBase compiler/runtime ecosystem | Commercial modernization/runtime platform | Utility libraries for reading/writing DBF files |
-| Open table/work areas | 256 current runtime areas (`MAX_AREA`) | 65,535 tables open at one time, memory/file-handle limited | 256-512 open dBASE tables per system depending BDE generation | Implementation/runtime dependent | Runtime/DBE dependent | Not a work-area engine |
-| Records per table | x64 header stores a 64-bit record count; navigation and command paths were widened to 64-bit (development, 2026-07) and pass the CURSOR and INDEX_X64 regression suites. The classic `recno()` accessor still saturates at `2^31 - 1`, so a table beyond that is not yet proven. | 1 billion | 1 billion | Often described by DBF structure as up to `2^32 - 1` records, implementation dependent | `(lock offset - header - 1) / record size` | Follows target DBF dialect and library implementation |
+| Open table/work areas | 512 work areas (`MAX_AREA`, raised from 256 in 2026-07; public build 512) | 65,535 tables open at one time, memory/file-handle limited | 256-512 open dBASE tables per system depending BDE generation | Implementation/runtime dependent | Runtime/DBE dependent | Not a work-area engine |
+| Records per table | x64 header stores a 64-bit record count; navigation and command paths were widened to 64-bit (2026-07) and pass the CURSOR and INDEX_X64 regression suites. The classic `recno()` accessor now returns `-1` past `2^31 - 1` (no longer clamps); proven by a unit test **and a sparse-file end-to-end test** that reads distinct records at recno `2^31+1`/`+2` off disk. A fully populated multi-billion-row table is a volume question, not proven here. | 1 billion | 1 billion | Often described by DBF structure as up to `2^32 - 1` records, implementation dependent | `(lock offset - header - 1) / record size` | Follows target DBF dialect and library implementation |
 | DBF/table file size | Wide-offset design target exists, and open/read/write now honor wide x64 geometry; broader whole-file-scale proof is still pending across the full stack | 2 GB table file | 2 GB table file | Format/backend discussions cite much larger theoretical DBF ceilings, but product/backend dependent | Default lock-offset model around 1 GB unless configured | Usually inherits classic/VFP file limits and Python/runtime memory constraints |
-| Record size | x64 extension stores a 64-bit row size, the compatibility mirror may saturate at `65,535`, and the current canary proves live rows at `36,865` and `69,633` bytes. Current `CREATE X64` still caps one `C` field at `4096`. | 65,500 characters per record | 4,000 bytes dBASE 4; 32,767 bytes dBASE for Windows | Often tied to 16-bit record-size structure, around 65,535 bytes | Fixed-length DBF rows; character fields up to 64 KB | Dialect dependent |
-| Fields per table | 128 current runtime truth (`MAX_FIELDS`) | 255, or 254 when nullable-field overhead applies | 255 dBASE 4; 1024 dBASE for Windows | Backend/dialect dependent | Listed as not limited by DBFDBE table, but practical DBF/runtime limits apply | Dialect/library dependent |
+| Record size | x64 extension stores a 64-bit row size; a 16 MiB hard ceiling and 64 KiB soft advisory were added in 2026-07. The compatibility mirror may saturate at `65,535`, and the current canary proves live rows at `36,865` and `69,633` bytes. `CREATE X64` still caps one `C` field at `4096`. | 65,500 characters per record | 4,000 bytes dBASE 4; 32,767 bytes dBASE for Windows | Often tied to 16-bit record-size structure, around 65,535 bytes | Fixed-length DBF rows; character fields up to 64 KB | Dialect dependent |
+| Fields per table | 256 (`MAX_FIELDS`, raised from 128 in 2026-07; public build 256) | 255, or 254 when nullable-field overhead applies | 255 dBASE 4; 1024 dBASE for Windows | Backend/dialect dependent | Listed as not limited by DBFDBE table, but practical DBF/runtime limits apply | Dialect/library dependent |
 | Character field width | Wider x64 metadata exists and current CREATE allows x64 character fields beyond 255 bytes, but practical width is still bounded by the same row-size mirrors | 254 | 254 | Dialect/backend dependent; some readers note extended 16-bit character widths | Character values max 64 KB | Library/dialect dependent; `dbfread` documents up to 65,535 for reused length bytes |
-| Free-table field names | 10-byte fallback descriptor token; x64 metadata supports 128-byte names | 10 chars free table; 128 chars in database-contained table | dBASE/BDE table and field name size listed as 31 characters in general limits | Classic DBF-compatible fallback usually short names | DBF/Clipper-compatible rules | Dialect/library dependent |
+| Free-table field names | 10-byte fallback descriptor token; x64 metadata supports up to 256-byte names (public build 256; default 128) | 10 chars free table; 128 chars in database-contained table | dBASE/BDE table and field name size listed as 31 characters in general limits | Classic DBF-compatible fallback usually short names | DBF/Clipper-compatible rules | Dialect/library dependent |
 | Memo file / object scale | DTX uses 64-bit object ids, offsets, payload sizes, and append offsets; proof lane active | 2 GB FPT file | Memo/Blob limits product dependent; BDE Paradox lists 256 MB BLOB, dBASE memo limits vary by format | Backend dependent; public discussions cite large DBT/FPT/SMT ceilings | Memo text length and memo file size limited by system resources in DBFDBE docs | Dialect/library dependent |
-| Index key / index file scale | CDX/LMDB active with 64-bit record numbers (index hooks and keyed-seek decoders widened, development 2026-07); classic CNX and legacy `.inx` kept 32-bit by design with a capability report | Compact index key 240 bytes; non-compact 100 bytes | 47 MDX tags; 220-character key expression | Backend dependent: NTX/CDX/other RDDs | Requires ORDER component such as NTXDBE/CDXDBE | Usually no native persistent index engine |
-| Locking model | Record locks exist; the record-lock API and lock-file record keys were widened from 32-bit to 64-bit (development, 2026-07) | Product/runtime managed | 100 record locks per dBASE table in listed BDE limits | Runtime/RDD dependent | DBF file size tied to record-lock offset model | Not a multi-user DBF engine |
+| Index key / index file scale | CDX/LMDB active with 64-bit record numbers (index hooks and keyed-seek decoders widened, 2026-07); classic CNX and legacy `.inx` kept 32-bit by design with a capability report | Compact index key 240 bytes; non-compact 100 bytes | 47 MDX tags; 220-character key expression | Backend dependent: NTX/CDX/other RDDs | Requires ORDER component such as NTXDBE/CDXDBE | Usually no native persistent index engine |
+| Locking model | Record locks exist; the record-lock API and lock-file record keys were widened from 32-bit to 64-bit (2026-07) | Product/runtime managed | 100 record locks per dBASE table in listed BDE limits | Runtime/RDD dependent | DBF file size tied to record-lock offset model | Not a multi-user DBF engine |
 | Internationalization | Message catalog and locale lanes in progress | Code pages/collation settings | BDE/codepage dependent | Ecosystem/runtime dependent | OEM/ANSI conversion through `SET CHARSET` | Python ecosystem dependent |
 | SQL / relational support | SQL bridge, relation graph, workspaces, and DDL lanes active with caveats | SQL SELECT/update support in VFP runtime | SQL through BDE/tooling | Libraries and drivers | Database engines and migration tooling | Python DB/CSV/DBF tooling rather than native xBase work areas |
 

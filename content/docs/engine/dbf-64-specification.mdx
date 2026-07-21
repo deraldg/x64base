@@ -48,20 +48,38 @@ is a 64-bit value.
 ## Field descriptors
 
 Each field descriptor defines a name, a type, a length, and decimal places (for
-numeric types). The engine's validator accepts these field types:
+numeric types). Which type codes `CREATE` accepts depends on the **DBF flavor**.
+The classic types are shared by every flavor; the binary Visual FoxPro types
+(`I`/`B`/`Y`/`T`) are stored as **real binary** — not the fixed-width ASCII
+placeholders older builds used — and are accepted by the VFP and x64 flavors.
 
-| Code | Type | Code | Type |
-| --- | --- | --- | --- |
-| `C` | Character | `I` | Integer |
-| `N` | Numeric | `Y` | Currency |
-| `F` | Float | `T` | DateTime |
-| `D` | Date | `V` | Varchar / extended character |
-| `L` | Logical | `Q` | Varbinary / extension |
-| `M` | Memo (reference) | `W` | Blob / extension |
-| `G` | General | `B` | Double (binary double) |
+| Type | Code | On-disk storage | dBASE / MSDOS | FoxPro 2.6 | VFP | x64 |
+| --- | --- | --- | :---: | :---: | :---: | :---: |
+| Character | `C` | fixed-width text | ✓ | ✓ | ✓ | ✓ |
+| Numeric | `N` | ASCII numeric | ✓ | ✓ | ✓ | ✓ |
+| Float | `F` | ASCII numeric | ✓ | ✓ | ✓ | ✓ |
+| Date | `D` | `YYYYMMDD` text | ✓ | ✓ | ✓ | ✓ |
+| Logical | `L` | `T` / `F` / `?` | ✓ | ✓ | ✓ | ✓ |
+| Memo | `M` | sidecar reference | ✓ | ✓ | ✓ | ✓ |
+| Integer | `I` | 4-byte little-endian int32 | — | — | ✓ | ✓ |
+| Double | `B` | 8-byte IEEE-754 | — | — | ✓ | ✓ |
+| Currency | `Y` | 8-byte int64, scaled 10⁴ | — | — | ✓ | ✓ |
+| DateTime | `T` | 4-byte Julian day + 4-byte ms | — | — | ✓ | ✓ |
+| Custom | *(registered)* | codec-defined | — | — | ✓ | ✓ |
+
+The four binary types round-trip as their true VFP encodings — verified against an
+independent, spec-based VFP reader and writer in both directions — rather than the
+ASCII placeholders earlier builds stored. **Custom field types** register a type
+code once (codec + on-disk width + flavor eligibility + display name) and then flow
+through `CREATE`, validation, and storage with no further engine change; the
+built-in binary types use that same registry.
 
 Memo (`M`) fields store a reference, not the payload — see
 [FPT64 Memo Format](/docs/engine/fpt64-memo-format).
+
+The catalog also reserves `V` (Varchar), `Q` (Varbinary), `W` (Blob), `G`
+(General), and the SQL-native extensions (`BigInt`, `Timestamp`, `Uuid`, …) as
+**planned** types; these are not yet accepted by `CREATE`.
 
 ## Records
 
@@ -74,16 +92,19 @@ Memo (`M`) fields store a reference, not the payload — see
   [64-Bit Capacity Math](/docs/engine/x64-capacity-math)).
 - A trailing **`0x1A`** byte marks end-of-file.
 
-## Runtime widening status (development, 2026-07)
+## Runtime widening status (public build, 2026-07)
 
-The on-disk layout above is 64-bit. The runtime that operates on it is being
-widened to match, one path at a time. As of this writing — development-only and
-not promoted — 64-bit record positioning (`gotoRec64`), the navigation commands,
-the record-lock API, and the active CDX/LMDB index record numbers are widened and
-regression-checked (CURSOR, INDEX_X64); the classic `recno()`/`recLength()`
-accessors still saturate at `INT_MAX`. No table has yet been addressed past `2^31`
-in the proof lanes, so capacity beyond that point is stated as **design capacity,
-not a measured result**. The path-by-path status lives in
+The on-disk layout above is 64-bit, and the runtime that operates on it has been
+widened to match. In the current public build, 64-bit record positioning
+(`gotoRec64`), the navigation commands, the record-lock API, and the active
+CDX/LMDB index record numbers are widened and regression-checked (CURSOR,
+INDEX_X64); the classic `recno()`/`recLength()`/`recCount()`/`cpr()` accessors
+now return `-1` past their 32-bit range instead of clamping to `INT_MAX`. A synthetic boundary
+unit test **and a real sparse-file end-to-end test** resolve distinct record numbers
+past `2^31` — the engine reads records at recno `2^31+1`/`+2` off a sparse x64 table
+whose `record_count` is `2^31+2` — so **64-bit record addressing is proven past
+`2^31`**. Materializing a *fully populated* multi-billion-row table is a separate
+data-volume question. The path-by-path status lives in
 [64-Bit Capacity Math](/docs/engine/x64-capacity-math).
 
 ## See also

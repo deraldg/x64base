@@ -223,6 +223,31 @@ export default function DownloadsPage() {
         </div>
       </section>
 
+      <section className="rounded-lg border border-brand/40 bg-card/40 p-5">
+        <h2 className="text-lg font-semibold tracking-tight">Latest assembled manual (always current)</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          These are permanent links. Every rebuild of the manifest-driven assembler overwrites the
+          same files, so they always resolve to the newest build. This is an
+          <code> assembled-candidate</code> regenerated from source by the assembler and guarded by a
+          drift gate; the accepted snapshot above remains the reviewed baseline. See the build
+          manifest for the exact source commit, part counts, and checksums.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-4 text-sm">
+          <a href="/downloads/current/developer-manual-latest.html" className="font-medium text-brand hover:underline">
+            Read online (HTML)
+          </a>
+          <a href="/downloads/current/developer-manual-latest.pdf" className="font-medium text-brand hover:underline">
+            PDF
+          </a>
+          <a href="/downloads/current/developer-manual-latest.md" className="font-medium text-brand hover:underline">
+            Markdown
+          </a>
+          <a href="/downloads/current/DEVELOPER_MANUAL_LATEST.json" className="font-medium text-brand hover:underline">
+            Build manifest
+          </a>
+        </div>
+      </section>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {startingPoints.map((item) => {
           const Icon = item.icon;

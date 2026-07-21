@@ -59,14 +59,20 @@ This boundary allows wxWidgets, Python/Tk, Turbo Vision/TUI, and future frontend
 
 ## Custom field type API
 
-In addition to student code hooks, x64base should support custom field type hooks.
+In addition to student code hooks, x64base supports custom field types through a
+**register-once codec registry**. A type registers its type code together with a
+codec (the bytes ↔ text encode/decode pair), a fixed on-disk width, the DBF
+flavors it is eligible for, and a display name — after which the type flows through
+`CREATE`, validation, and storage with no further engine change. The built-in
+binary types (`I`/`B`/`Y`/`T`) are defined through this same registry, and a worked
+custom type ships as a demonstration.
 
-Custom field types should be able to provide:
+A registered field type provides:
 
-- storage and conversion rules.
-- validation rules.
-- display and editor hints.
-- import/export behavior.
+- a codec: encode a value to its fixed-width on-disk bytes and decode it back.
+- a fixed on-disk width (or a width taken from the `CREATE` length parameter).
+- flavor eligibility (which DBF flavors may use the type) and a display name.
+- validation, performed through the codec so the type is its own source of truth.
 - documentation metadata for SelfDoc and the Master Documentation Organizer.
 
 ## Memo API

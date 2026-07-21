@@ -1,0 +1,116 @@
+---
+title: "AI Agent Sync — Live Current State"
+description: "A doc-only, frequently-updated current-state digest for external AI development partners (e.g. ChatGPT) who cannot read the local drive."
+---
+
+## Purpose
+
+This page is the **doc-only live portal**: a compact, dated snapshot of the current
+governance surface for AI development partners who work through the browser and cannot
+read the maintainer's local drive. The authoritative source of truth is the maintainer's
+private development tree (not published); the GitHub `AI_PORTAL.md` only moves on full
+engine snapshots. **This page updates on the website's own cadence, so it is the
+freshest public state an outside agent can reach.**
+
+If you are an external agent (ChatGPT or similar): read this page first, treat it as
+authoritative over any older GitHub portal state, and do your work as standalone,
+compile-only packets that hand back to the maintainer's in-repo agent for integration.
+
+> **Freshness:** 2026-07-20c. When in doubt, the maintainer's reconciliation against the
+> private development tree wins. Do not treat this page as autonomous authority or as
+> permission to bypass a proof gate.
+>
+> *Changed since 2026-07-20b:* the DTV foundation is now **integrated into the
+> authoritative tree and MSVC-green** — shared canonical-Value Phase-0 is complete (8/8).
+
+## Working agreement
+
+- **No GitHub pushes, no staging-repo writes, no commits** by outside agents — dev-only
+  on the current branch. Authoritative integration into the maintainer's development
+  tree is the in-repo agent's step.
+- **Ship standalone, compile-only packets** with a passing test, an explicit
+  provisional-decisions list, and a hard stop before engine integration.
+- **Prove before you claim.** Status is PLANNED → PARTIAL → SUPPORTED only on runtime
+  proof. Runtime proves, source defines, HELP explains.
+
+## Doctrine to honor
+
+- **Character cross-compatibility.** Programs interoperate as characters. The wire is
+  chars; in-memory `double` / `int64` / `ExactDecimal` are projections. No private binary
+  interchange; exact numerics carry a `canonical_text()`.
+- **Errors derive from messaging (AIF-036).** Parse/value errors become message-catalog
+  `MessageId` + severity so `stop_on_error` governs them — not free-form strings at
+  contract time.
+- **Representative by design + Rule of Three (AIF-037).** One central API per concern,
+  one checked helper; a third copy becomes a function. Reuse the field-codec registry
+  (AIF-030); do not fork parallel tables.
+- **HELP/SelfDoc metadata (AIF-025)** on every public command/function.
+- **Evidence-gated lanes:** lanes → milestones → proof gates → closeouts; prove one
+  vertical before freezing a contract.
+
+## Canonical Value — SIGNED OFF (2026-07-20)
+
+The canonical-value decision that gates the tuple contract is **accepted**:
+
+- **Canonical domain value = DotTalk Value (DTV), `dottalk::value::Value`** — exact,
+  six-state, char-canonical, and the single superset.
+- **Two-tier model:** DTV is the domain / storage / tuple / interchange truth; the
+  engine's `double`-based value (`xexpr::Value` / `EvalValue`) is DTV's *evaluation
+  projection* — fast and deliberately lossy, not a rival. No fourth value type.
+- **Accepted amendments:** (A) DTV carries both `Integer` (int64) and `UnsignedInteger`
+  (uint64) — RECNO64 is unsigned, so values up to `18446744073709551615` never pass
+  through `double`; (B) the canonical wire is tagged + versioned (`DTV1|state|kind|
+  payload`, fully reversible); (C) comparison is semantic (kind/state-aware), not lexical
+  on the wire form; (D) the `type_code → ValueKind` map lives in the field/type registry,
+  not inside `Value`; (E) array Nil → DTV `Null` (DBF blanks stay `Blank`); (F) adapters
+  return a `ProjectionResult` with an explicit `ProjectionLoss` — no invisible exact→double.
+- **Rules:** convert only at named seams, through characters where fidelity matters;
+  never reconstruct domain truth from an evaluation value.
+- **Phase-0 COMPLETE (8/8):** the DTV foundation is integrated into the authoritative
+  tree as an isolated `dottalk_value` lib (real `MemoRef`) and the **MSVC build is
+  green**. The tuple lane may now open; the TupleCell contract is frozen only after the
+  wire + comparison + adapter proofs below.
+
+## Tuple / PDLC track — current state
+
+- **PDLC first-build packet:** reviewed — builds clean, smoke passes 1/1, RECNO64
+  boundary `9007199254740993` preserved. Verdict: **accept with conditions.** One bug: a
+  key containing a double-quote serializes to a non-round-trippable canonical (escape
+  `"` / `\`).
+- **Reconciliations:** (1) canonical Value = DTV — **done, signed off** (incl. unsigned
+  RECNO64); (2) exact⇄double seam through chars; (3) `ArrayReference{object_id,
+  generation}` ⇄ live `shared_ptr` array reference via a registry, stale handle →
+  Unavailable state; (4) bind `physical_recno` to the one engine RECNO64 alias
+  (`RecNo = uint64_t`), not a parallel `uint64`.
+- **Build next (standalone):** the `QualifiedReference → DataAddress` resolver (the
+  missing middle); a canonical Value comparison service; total `canonical_text()`/`parse`
+  for all kinds and states; `type_code → ValueKind` (EffectiveFieldType) via the codec
+  registry; error → message-catalog; regression tests.
+- **Status:** the DTV foundation (the tuple prerequisite) is integrated + MSVC-green;
+  the canonical-Value sign-off is done. The tuple lane may now be opened; next is the
+  standalone wire + comparison + adapter construction step before any TupleCell freeze.
+
+## Adjacent state (maintainer side)
+
+- **DotScript arrays are live:** `{…}` literals, `$name` memory variables, one-based
+  `$a[n]` subscripts (nested / chained), stored by real reference. Runtime array =
+  `shared_ptr<ArrayValue>`, `object_id` from an atomic counter, **no generation field
+  yet** (the DTV bridge adds one).
+- **RECNO64** widened through nav / lock / index; the tuple boundary binds to that alias.
+- **Comment / sigil vocabulary:** `*` and `REM` full-line; `&&` and `#` inline; single
+  `&` is the macro-substitution operator (separate lane); `$name` is a memory variable;
+  a bare name is a field.
+
+## Open questions (maintainer's to settle)
+
+- Canonical-Value sign-off (DTV superset + two-tier).
+- Whether workspace is addressable in reference surface syntax (`MCC.…`) or identity only.
+- Final namespace / location of the canonical value module.
+
+---
+
+*Update convention:* this page is refreshed at each maintainer-session closeout. The
+next revision will carry a new freshness date and a short "changed since" note. The
+stable companion overview is the [AI Portal](/docs/labtalk/ai-portal); the on-GitHub
+[`AI_PORTAL.md`](https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md) is the
+snapshot-cadence entry point.

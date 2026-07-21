@@ -1,0 +1,41 @@
+---
+title: "Developer Manual (Assembled)"
+description: "Read the latest assembled DotTalk++ / x64base developer manual online, or download it as PDF or Markdown. Always-current permalinks, regenerated from source by the manifest-driven assembler and guarded by a drift gate."
+---
+
+This is the reader entry for the **assembled developer manual** — the whole thing,
+built from source by the [manifest-driven assembler](/docs/dev/manual-assembly)
+and kept current by a drift gate. The links below are **permalinks**: every
+rebuild overwrites the same files, so they always resolve to the newest build.
+
+## Read or download
+
+- [**Read online (HTML)**](/downloads/current/developer-manual-latest.html) — the full manual in your browser.
+- [**PDF**](/downloads/current/developer-manual-latest.pdf) — print-ready.
+- [**Markdown**](/downloads/current/developer-manual-latest.md) — the source form.
+- [**Build manifest**](/downloads/current/DEVELOPER_MANUAL_LATEST.json) — exact source commit, part counts, and checksums for this build.
+
+## What's inside
+
+The manual is assembled from a declared bill of materials — a spine of harvested
+reference, an authored narrative branch, generated front/back matter, and bound
+diagrams:
+
+| Section | Contents |
+| --- | --- |
+| Front matter | Title, provenance & attestation, table of contents |
+| Spine | Command reference (183 pages), function reference (63 functions), SET family, error/message catalog |
+| Chapters | Tables & the data model, command surface & dispatch, expressions & aggregates, indexing & relations, messages & diagnostics, HELP/metadata alignment, runtime evidence |
+| Diagrams | 12 promoted diagrams bound from the attachment matrix |
+| Back matter | Glossary, index, and a colophon that records how the manual assembled itself |
+
+## Status and honesty
+
+The assembled manual is an **assembled-candidate** — regenerated from source on
+each build and guarded by the drift gate, but distinct from the gated, reviewed
+[accepted developer manual](/downloads) (the `manual-reviewed` baseline promoted
+from public source). Where the two differ, the accepted snapshot is the reviewed
+authority; the assembled build is the always-current working copy.
+
+For how the manual is built and kept honest, see
+[How the Manual Assembles Itself](/docs/dev/manual-assembly).

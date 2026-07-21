@@ -1,0 +1,97 @@
+---
+title: "How the Manual Assembles Itself"
+description: "The manifest-driven assembler that builds the DotTalk++ / x64base developer manual from a declared bill of materials — spine, authored branch, generated front/back matter, diagrams — and the drift gate that keeps every generated part honest."
+---
+
+x64base makes a self-documentation claim: it should use its own metadata and
+documentation infrastructure to describe, and increasingly prove, itself. This
+page shows that claim working — how the developer manual is *assembled from the
+system*, not typed by hand. It is a **reviewed derivative** of the assembly
+manifest in the implementation tree, per the
+[simplex direction gates](/docs/dev/selfdoc-website-publication).
+
+The finished manual is on the shelf next to this explanation:
+[**read it online**](/downloads/current/developer-manual-latest.html) →.
+
+## From forcing pieces together to assembling a declared whole
+
+The first manual was made the way early software always is: build each piece,
+then force the pieces into one artifact by hand — on the order of twenty
+individually-invoked, human-gated steps, with no single assembler, and with no
+table of contents, index, or glossary at all. It produced a good manual, but the
+whole lived in an operator's memory, and staleness was found by hand.
+
+The shift was not a bigger script. It was a change of stance: **stop assembling
+the manual by hand and start declaring what the manual is**, then let a machine
+assemble it and a gate keep it honest.
+
+## The bill of materials
+
+Every part of the manual is declared, in reading order, in a single manifest
+(`manual_assembly_manifest.yaml`). Each part records its class, its
+source-of-record, a stable anchor, the region mode that bounds what the assembler
+may touch, and the generator that produces it. The `class` and `direction`
+vocabularies are shared **verbatim** with the
+[website content manifest](/docs/dev/website-documentation-matrix), so the manual
+and this site sit on one simplex/duplex spine.
+
+The manual is three things, not one uniform blob:
+
+| Layer | What it is | How it is produced |
+| --- | --- | --- |
+| **Spine** | Command reference, function reference, SET family, error/message catalog | Harvested from source, HELP, and metadata — mechanical |
+| **Authored branch** | The narrative chapters (data model, indexing, expressions, dispatch, evidence) | Hand-authored / reviewed; teaches beyond what can be harvested |
+| **Front & back matter** | Title, provenance, table of contents, glossary, index, colophon | Generated from the assembled whole — none of this existed before |
+
+## The assembler
+
+One runner reads the manifest and emits the manual in a single pass — a loop over
+parts, dispatching on each part's region mode:
+
+- **whole-file** — the assembler owns the region and regenerates it every build
+  (hand-edits forbidden): the title, TOC, function reference, error catalog, index.
+- **candidate** — it regenerates a *review candidate*; the published text changes
+  only on human acceptance. This is how the authored/derived chapters stay gated.
+- **authored** — it never rewrites the content; it only brackets it for tooling.
+- **append** — it appends provenance/evidence snapshots and never overwrites them.
+- **bind** — it binds a whole set into the reader: the 183 command pages, the
+  diagram set.
+
+The result of the first build: **22 parts, ~13,800 lines**, with 63 functions
+harvested from source, 183 command pages bound, 12 diagrams bound from the
+[diagram attachment matrix](/docs/dev/important-documents#diagram-attachment-governance),
+and a generated table of contents, glossary, and index.
+
+## The drift gate
+
+A companion check re-assembles the manual from current source and compares it,
+region by region, to the committed build. The severity follows the part's class:
+
+- a **generated** or **bound** region that no longer matches source → **the build
+  fails** (the same discipline the command-catalog and diagram checks already
+  apply);
+- a **derived**, **authored**, or **reported** region that changed → a
+  regenerate-or-review flag, non-blocking.
+
+So the manual cannot silently rot: if the engine changes and the manual is not
+rebuilt, the gate says so.
+
+## The part that closes the loop
+
+The manual's final page is a **colophon** the assembler writes itself — the
+assembler version, the source commit, the tool versions, and the attested
+machine. The manual records exactly how it assembled itself. That is the
+self-documentation claim made literal: not asserted, but demonstrated on the last
+page of the thing it describes.
+
+## Read the result
+
+- [Read the manual online (HTML)](/downloads/current/developer-manual-latest.html)
+- [Download the PDF](/downloads/current/developer-manual-latest.pdf)
+- [Download the Markdown](/downloads/current/developer-manual-latest.md)
+- [Build manifest (commit, counts, checksums)](/downloads/current/DEVELOPER_MANUAL_LATEST.json)
+
+These are permanent links. Every rebuild overwrites the same files, so they
+always resolve to the newest build. The assembled manual is an
+**assembled-candidate** regenerated from source; the
+[accepted developer manual](/downloads) remains the reviewed baseline.

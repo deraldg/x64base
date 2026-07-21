@@ -88,7 +88,7 @@ See [DBF Flavors and Index Defaults](/docs/engine/dbf-flavors-and-indexes).
 
 The memo subsystem is object-oriented: memo stores, memo managers, memo objects, and memo references need their own documentation lane.
 
-In addition to student code hooks, x64base should expose custom field type hooks. Custom field types let education labs, domain experiments, and downstream products add semantics such as validators, display formatting, import/export rules, and editor behavior without patching the core DBF runtime.
+In addition to student code hooks, x64base exposes custom field types through a register-once codec registry: a type registers its type code, codec, on-disk width, and flavor eligibility once, then flows through `CREATE`, validation, and storage with no core patch. The built-in binary types (`I`/`B`/`Y`/`T`) use the same registry. Custom field types let education labs, domain experiments, and downstream products add semantics such as validators, display formatting, import/export rules, and editor behavior without patching the core DBF runtime.
 
 ## Open API boundaries
 

@@ -1,0 +1,78 @@
+---
+title: "Roadmap"
+description: "A reader-facing roadmap for x64base and DotTalk++: proven runtime surfaces, active beta/canary work, planned lanes, academic-review requests, and the publication gates that govern all of it."
+---
+
+This roadmap is a **reviewed derivative** of the implementation tree — it is
+harvested from the engine's development lanes, intake queue, and session
+closeouts, per the [simplex direction gates](/docs/dev/selfdoc-website-publication).
+It is not a marketing promise. x64base is a live research and hobby project; some
+rows are proven runtime surfaces, others are lanes that intentionally remain
+alpha, planned, or review-needed. Each row carries a
+[proof label](/docs/dev/website-documentation-matrix#proof-rules).
+
+## Current — proven runtime surfaces
+
+Landed in the public build and backed by source + runtime/unit-test evidence.
+
+| Surface | Proof label | Evidence |
+| --- | --- | --- |
+| 64-bit record addressing (RECNO64) | runtime-evidenced | Positioning, navigation, locks, and CDX/LMDB record numbers widened to 64-bit; a sparse-file end-to-end test reads distinct records past `2^31` off disk. See [64-Bit Capacity Math](/docs/engine/x64-capacity-math). |
+| Real binary field types `I`/`B`/`Y`/`T` | runtime-evidenced | int32-LE, IEEE-754, int64÷10⁴ currency, JDN+ms datetime — no longer ASCII placeholders; round-trip verified against an independent VFP reader/writer. See [DBF_64 Specification](/docs/engine/dbf-64-specification). |
+| Custom field types (register-once codec registry) | runtime-evidenced | A type registers code + codec + width + flavor eligibility once and flows through `CREATE`/validation/storage; the built-in binary types use the same registry. See [API Reference](/docs/engine/api-reference). |
+| Raised engine limits | source-evidenced | `MAX_AREA` 512, `MAX_FIELDS` 256, x64 name ceilings 256, 16 MiB record hard ceiling + 64 KiB advisory. |
+| Ordered navigation & SEEK at scale | runtime-evidenced | CDX/LMDB streaming `TOP`/`SKIP`, keyed range-`SEEK`, single-pass `AGGS ALL`, batched `DELETE`/`RECALL`. See [Pinocchio Benchmarks](/docs/engine/pinocchio-benchmarks). |
+| Command & function surface | manual-reviewed | 224 registered command keys, 65 documented functions, a 183-page command reference. See [Command Catalog](/docs/dottalk/command-catalog). |
+| Messaging & localization spine | generated-reviewed | `cmdout` channel with `en-US` + `de`/`es`/`fr`/`it`, a canonical HRESULT error catalog. See [Messaging & Localization](/docs/engine/messaging-and-localization). |
+| Locale-safe numeric / date formatting | source-evidenced | Value/storage/`STR()` formatters guard against thousands-grouping and precision loss (AIF-031). |
+
+## Active beta / canary
+
+Implemented and proven in a scoped way; not yet a finished, product-complete claim.
+
+| Surface | Proof label | Notes |
+| --- | --- | --- |
+| Table-buffer durability WAL | runtime-evidenced (scoped) | Crash-recoverable `COMMIT`/`ROLLBACK` via a durable `.tbj` redo log under `TABLE BUFFER PERSISTENT`. A scoped durability gain, **not** a full-ACID claim; DBF-`fsync` and CDX reconciliation remain open. See [ACID and the Glass-Box Engine](/docs/engine/acid-and-glass-box). |
+| Engine / product-edition separation | source-evidenced | `DOTTALK_PRODUCT` LEAN / PROFESSIONAL / EDUCATIONAL / DEVELOPMENT and index-mode axes; product-package manifests validated in the build. |
+| ERRORSTOP messaging wiring | source-evidenced | First error-sink slice proven; full `SET ERRORSTOP` adoption across the command registry is in progress. |
+| LMS communications lane | review-needed | Reserved, local-only queue/CLI with a provider-neutral message contract; live delivery disabled, no credentials or student data stored. Moodle is a future candidate. |
+
+## Planned lanes
+
+Real planning or active development; kept under development docs and not implied to be finished.
+
+| Lane | Proof label | Intake |
+| --- | --- | --- |
+| Engine-limits configuration layer / `xbase.meta` | planned-or-in-progress | Runtime-tunable `MAX_RECORDS`/`MAX_RECORD_SIZE`/`MAX_FIELDS`/`MAX_AREAS` without a recompile (AIF-029). |
+| Custom-type follow-ons | planned-or-in-progress | `CALCWRITE` for registered custom types; a pronoun function layer (grammatical accessors, stack push/pop) above the codec. |
+| Fullstack-generated data-driven diagrams | planned-or-in-progress | Generate diagram numbers from the fullstack push so they can't drift from the page (AIF-032). |
+| VFP binary-compatibility public claim | review-needed | Interop is proven both directions against a spec reader/writer; a public "VFP binary-compatible" claim waits on the capacity/spec reconciliation. |
+| Pinocchio Phase 2 — concurrency fault injection | planned-or-in-progress | The crash/recovery slice is delivered via the WAL; concurrency fault injection remains. |
+| Application UI DSL lane | planned | `CREATE MENU` / `CREATE WINDOW` / dialog DSL are **research only** — not implemented. See [Application UI DSL Lane](/docs/dev/application-ui-dsl-lane). |
+
+## Academic-review requests
+
+Areas explicitly seeking academic collaboration and review, not finished claims.
+
+| Area | Proof label | Where |
+| --- | --- | --- |
+| Laboratory Campus education surfaces | review-needed | Education features, lessons, and case storyboards under [Laboratory Campus](/docs/labtalk/education-features). |
+| Academic positioning + prior-work / citation layer | review-needed | Positioning and a planned Prior Work + citation block. |
+| Developer-profile publication boundary | review-needed | Historical profile provenance and publication review (AIF-012). |
+
+## Manual / publication gates
+
+Every row above moves through governed gates before it becomes a stable claim.
+
+| Gate | Rule |
+| --- | --- |
+| [Simplex / duplex direction gates](/docs/dev/selfdoc-website-publication#simplex-and-duplex-gates) | Website and manual data are derived from the implementation tree; only reviewed manual/artifact material flows back (duplex), and website prose never becomes source-of-truth. |
+| Source-mutation contract gate | Source is not changed until the owning contracts are read; drift is reconciled through the contract lifecycle. |
+| MDO / manualgen review + AI report audit | Generated documentation is reviewed and provenance-stamped; AI-authored closeouts carry a machine-readable audit envelope. |
+| Release boundary | x64base.com is the documentation site; versioned release artifacts belong on GitHub Releases. |
+
+---
+
+*This page is generated-reviewed from the engine's lanes and intake queue. When a
+lane's status changes at the source, this roadmap should be refreshed from that
+evidence rather than edited as standalone prose.*

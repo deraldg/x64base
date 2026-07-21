@@ -1,0 +1,67 @@
+---
+title: "Regression & Proof Testing"
+description: "How x64base runs curated regression suites and binds results to hash-verified proof transcripts."
+---
+
+x64base verifies behavior three ways: a **curated regression launcher** inside
+the shell, a **hash-bound proof-transcript** discipline for durable evidence, and
+build-integrated **CTests**. The disposable [Pinocchio](/docs/engine/pinocchio-benchmarks)
+lane adds scale and fault-injection runs on top.
+
+## The `REGRESSION` launcher
+
+`REGRESSION` is a curated launcher, not a separate test executor — it runs
+reviewed DotScript smoke/regression files through the normal
+[DotScript](/docs/dottalk/dotscript-language-guide) runner. Subcommands:
+
+- `REGRESSION LIST` — show the curated stable entrypoints (not every historical
+  script on disk).
+- `REGRESSION SHOW NONDESTRUCTIVE` — show what a named suite will run.
+- `REGRESSION RUN INDEX_X64` — run one curated suite by name.
+- `REGRESSION ALL` — run the curated default suite in declared order.
+
+Each suite bootstraps its own environment. Because scripts may mutate data and
+session state, `REGRESSION` is a read-and-execute surface with no built-in
+transaction or rollback — suites are expected to be self-contained.
+
+## Curated suites
+
+| Suite | Focus |
+| --- | --- |
+| `NONDESTRUCTIVE` | Read-only smoke across core commands. |
+| `INDEX_X32` | 32-bit INX / CNX index behavior. |
+| `INDEX_X64` | 64-bit CDX / LMDB index behavior. |
+| `X64_METRICS` | x64 matrix metrics and boundary canary. |
+| `LANGUAGE` | Localization shakedown — `es`/`fr`/`de`/`it` USAGE rendering across the localized command surface. |
+| `HARVEST` | Documentation/metadata harvest shakedown. |
+| `CURSOR` | Cursor / ordered-navigation regression. |
+| `RELJOIN` | Relational join enumeration regression. |
+
+Dev-only warning and reproduction canaries stay outside this curated surface
+unless they are intentionally promoted into it.
+
+## Proof transcripts
+
+Correctness-critical changes are bound to a **hash-verified teed transcript**: the
+run's full output is captured to a log and its SHA-256 recorded, so a result is a
+durable artifact rather than a recollection. Recent examples include the
+table-buffer WAL durability phases and the Pinocchio scale-verb fixes; the
+repository retains dozens of these run logs under `labtalk/proofs/runs/`.
+
+This is the same discipline the documentation pipeline uses: a claim is
+`runtime-proven` only when a captured, hash-bound transcript backs it.
+
+## Build-integrated tests
+
+The CMake build registers **CTests** (via `include(CTest)` / `add_test`) that run
+as part of the build — for example the xBase physical-order proof matrix and the
+pydottalk contract smoke — so structural regressions surface at build time, not
+only through the shell launcher.
+
+## Scale and fault injection — Pinocchio
+
+The [Pinocchio](/docs/engine/pinocchio-benchmarks) lane is the disposable
+stress-test surface: million-row datasets, ordered-navigation and scale-verb
+benchmarks, and the Phase 2 fault-injection work (the buffered-lane durability
+WAL is the first delivered slice). Its data, tables, and indexes stay isolated
+from protected project data.

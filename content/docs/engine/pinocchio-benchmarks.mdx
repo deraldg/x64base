@@ -31,6 +31,28 @@ raw transcript for the post-correction timings was not located during the
 documentation scan, so those values remain `runtime-proven-by-closeout` rather
 than a stronger raw-transcript claim.
 
+## Addendum — record addressing at the billion-plus boundary (2026-07-19)
+
+The results above measure *throughput* at million-row scale. A separate question
+is *addressing*: can the engine locate and read a record whose number is past the
+old 32-bit ceiling (`2^31 - 1`, about 2.1 billion)? As of 2026-07-19 the answer is
+yes — proven end to end **without** materializing a multi-billion-row table:
+
+- A synthetic boundary unit test (`dottalkpp_recno64_boundary_test`) resolves
+  distinct record numbers at `INT32_MAX`, `+1`, `+2`, `UINT32_MAX`, and
+  `UINT32_MAX + 1`, while the legacy 32-bit accessors return `-1` at overflow.
+- A **real sparse-file end-to-end test** (`dottalkpp_recno64_sparse_e2e_test`)
+  sets an x64 table's `record_count` to `2^31 + 2`, writes real records at recno
+  `1`, `2^31 + 1`, and `2^31 + 2` into a **sparse** file — the ~18 GiB gap is a
+  filesystem hole, a few KB physical — reopens through the engine, and reads the
+  two records past `2^31` **distinctly off disk** in about 0.5 s.
+
+So record *addressing* is proven past `2^31` (past ~2.1 billion). What is **not**
+proven here is a *fully populated* multi-billion-row table: that is a data-volume
+and throughput question — the million-row results above are the current throughput
+evidence — not an addressing-correctness one. The path-by-path status lives in
+[64-Bit Capacity Math](/docs/engine/x64-capacity-math).
+
 ## Phase 1.3 — scale-verb hardening (2026-07-19)
 
 Beyond ordered navigation, the read and write command verbs affected by indexing
@@ -40,9 +62,9 @@ promoted.
 
 | Verb | Before | After | Fix |
 | --- | ---: | ---: | --- |
-| `SEEK` near-last key | 16.57 s | ~0.002 s | Keyed LMDB range-seek (`MDB_SET_RANGE`, O(log n)) with DBF re-verify, replacing a linear index walk. |
-| `DELETE` / `RECALL` under active order | per-row index commits (9,999-row delete ≈ 25 s; 500k ≈ 21 min) | one commit per 10,000-row chunk | Bulk write-transaction batching for index maintenance. |
-| `AGGS ALL` (COUNT/SUM/AVG/MIN/MAX) | four independent scans ≈ 68 s | one scan ≈ 17 s (~4×) | Single-pass multi-aggregate. |
+| `SEEK` near-last key (5.5M ENROLL) | 56.99 s | 0.0033 s | Keyed LMDB range-seek (`MDB_SET_RANGE`, O(log n)) with DBF re-verify, replacing a linear index walk (1M STUDENTS near-last: 16.57 s → 0.0020 s). |
+| `DELETE FOR` under active order (~9,999 rows) | 65.4 s | 37.8 s | Bulk write-transaction batching: the ~25 s per-row index-commit surcharge collapses to one commit per 10,000-row chunk; the remaining ~40 s is the inherent predicate scan. |
+| `AGGS ALL` (COUNT/SUM/AVG/MIN/MAX, 1M) | 75.4 s (four scans) | 19.5 s (one scan, ~4×) | Single-pass multi-aggregate. |
 
 A companion fix normalized unquoted string literals in `SET FILTER` and aggregate
 `FOR` predicates — the source of the earlier `COUNT SET FILTER` returning 0 while
@@ -60,14 +82,28 @@ fault injection remains the open Phase 2 work.
 
 ## Machine identity
 
-The historical runs did not record manufacturer, model, CPU, memory, or OS.
-Their machine type is therefore `UNRECORDED`. A current workstation profile
-identifies an Alienware m16 R2, but it is a future-run input only and must not
-be assigned retroactively to the historical measurements.
+The individual run transcripts did not self-record the machine, so the raw
+measurements carry no embedded hardware label. The maintainer has since
+**attested** that **all** runs were done on one machine — every run through
+2026-07-19, including the Phase 1 stress test (2026-07-15), the ordered-navigation
+before/after runs (2026-07-18), the scale-verb and table-buffer durability runs
+(2026-07-19), and the RECNO64 boundary and sparse-file addressing tests
+(2026-07-19). That profile is preserved with the benchmark evidence
+(`PINOCCHIO_MACHINE_PROFILE_CURRENT_V1.json`) and bound as `MAINTAINER_ATTESTED`:
 
-Future runs capture a machine profile beside the raw build and measurement
-transcripts. Comparable rows require the machine label, engine state, dataset
-size, operation, timer source, and evidence paths.
+- **Alienware m16 R2** (notebook), BIOS 1.21.0.
+- **Intel Core Ultra 9 185H** (Meteor Lake) — 16 cores / 22 threads (6 P + 8 E +
+  2 LP), 5.1 GHz P-core turbo, 24 MB L3, 45 W.
+- **64 GB DDR5-5600** SO-DIMM (2 × 32 GB), 4 × 32-bit channels, JEDEC CL46, no XMP/EXPO.
+- **NVIDIA RTX 4070 Laptop (8 GB)** + Intel Arc integrated graphics; Intel AI Boost NPU.
+- Project tree and DBF/CDX/LMDB fixtures on a **Samsung 970 EVO 1 TB NVMe (`D:`)**.
+- **Windows 11 Professional** (x64), Build 26200.8875.
+
+Honesty note: this is a deliberate maintainer attestation made after the runs,
+recorded as `MAINTAINER_ATTESTED` rather than silently auto-attached to each row.
+Future runs should still capture their own per-run machine profile beside the raw
+build and measurement transcripts; comparable rows require the machine label,
+engine state, dataset size, operation, timer source, and evidence paths.
 
 ## Publication boundary
 
