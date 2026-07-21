@@ -1,0 +1,131 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+a:I[68027,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/3krymh1b13kig.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","docs","labtalk","agent-sync",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","labtalk/agent-sync","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/3krymh1b13kig.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/3vrs1pocniz61.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":["This site is ",["$","span",null,{"className":"text-fg","children":"AI-generated"}]," from the x64base project"," · ",["$","span",null,{"className":"font-mono text-brand","children":"ALPHA"}]," · ","Updated 2026-07-19"]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=ae6b56e04215","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=ae6b56e04215","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=ae6b56e04215","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements?v=ae6b56e04215","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=ae6b56e04215","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=ae6b56e04215","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=ae6b56e04215","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=ae6b56e04215","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=ae6b56e04215","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=ae6b56e04215","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":"$L5","templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["$L6",{"children":["$L7",{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"rvei3qhRnkJWG0IHlD6vh"}
+d:I[97367,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+e:"$Sreact.suspense"
+11:I[97367,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+13:I[97367,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","$L4",null,{}]
+6:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+7:["$","$1","c",{"children":["$Lc",[["$","script","script-0",{"src":"/_next/static/chunks/3zguxvz6lw9iq.js","async":true,"nonce":"$undefined"}]],["$","$Ld",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@f"}]}]]}]
+10:[]
+8:"$W10"
+9:["$","$1","h",{"children":[null,["$","$L11",null,{"children":"$L12"}],["$","div",null,{"hidden":true,"children":["$","$L13",null,{"children":["$","$e",null,{"name":"Next.Metadata","children":"$L14"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+b:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/3krymh1b13kig.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+15:I[87771,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
+c:["$","div",null,{"className":"flex gap-8","children":[["$","$L15",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Regression & Proof Testing","href":"/docs/engine/regression-and-proof-testing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"Messaging & Localization","href":"/docs/engine/messaging-and-localization"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"AI Agent Sync — Live State","href":"/docs/labtalk/agent-sync"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Roadmap","href":"/docs/dev/roadmap"},{"label":"Developer Manual (Assembled)","href":"/docs/dev/developer-manual"},{"label":"How the Manual Assembles Itself","href":"/docs/dev/manual-assembly"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L16"]}]
+17:T2138,<h2 id="purpose"><a class="no-underline" href="#purpose">Purpose</a></h2>
+<p>This page is the <strong>doc-only live portal</strong>: a compact, dated snapshot of the current
+governance surface for AI development partners who work through the browser and cannot
+read the maintainer's local drive. The authoritative source of truth is the maintainer's
+private development tree (not published); the GitHub <code>AI_PORTAL.md</code> only moves on full
+engine snapshots. <strong>This page updates on the website's own cadence, so it is the
+freshest public state an outside agent can reach.</strong></p>
+<p>If you are an external agent (ChatGPT or similar): read this page first, treat it as
+authoritative over any older GitHub portal state, and do your work as standalone,
+compile-only packets that hand back to the maintainer's in-repo agent for integration.</p>
+<blockquote>
+<p><strong>Freshness:</strong> 2026-07-20c. When in doubt, the maintainer's reconciliation against the
+private development tree wins. Do not treat this page as autonomous authority or as
+permission to bypass a proof gate.</p>
+<p><em>Changed since 2026-07-20b:</em> the DTV foundation is now <strong>integrated into the
+authoritative tree and MSVC-green</strong> — shared canonical-Value Phase-0 is complete (8/8).</p>
+</blockquote>
+<h2 id="working-agreement"><a class="no-underline" href="#working-agreement">Working agreement</a></h2>
+<ul>
+<li><strong>No GitHub pushes, no staging-repo writes, no commits</strong> by outside agents — dev-only
+on the current branch. Authoritative integration into the maintainer's development
+tree is the in-repo agent's step.</li>
+<li><strong>Ship standalone, compile-only packets</strong> with a passing test, an explicit
+provisional-decisions list, and a hard stop before engine integration.</li>
+<li><strong>Prove before you claim.</strong> Status is PLANNED → PARTIAL → SUPPORTED only on runtime
+proof. Runtime proves, source defines, HELP explains.</li>
+</ul>
+<h2 id="doctrine-to-honor"><a class="no-underline" href="#doctrine-to-honor">Doctrine to honor</a></h2>
+<ul>
+<li><strong>Character cross-compatibility.</strong> Programs interoperate as characters. The wire is
+chars; in-memory <code>double</code> / <code>int64</code> / <code>ExactDecimal</code> are projections. No private binary
+interchange; exact numerics carry a <code>canonical_text()</code>.</li>
+<li><strong>Errors derive from messaging (AIF-036).</strong> Parse/value errors become message-catalog
+<code>MessageId</code> + severity so <code>stop_on_error</code> governs them — not free-form strings at
+contract time.</li>
+<li><strong>Representative by design + Rule of Three (AIF-037).</strong> One central API per concern,
+one checked helper; a third copy becomes a function. Reuse the field-codec registry
+(AIF-030); do not fork parallel tables.</li>
+<li><strong>HELP/SelfDoc metadata (AIF-025)</strong> on every public command/function.</li>
+<li><strong>Evidence-gated lanes:</strong> lanes → milestones → proof gates → closeouts; prove one
+vertical before freezing a contract.</li>
+</ul>
+<h2 id="canonical-value--signed-off-2026-07-20"><a class="no-underline" href="#canonical-value--signed-off-2026-07-20">Canonical Value — SIGNED OFF (2026-07-20)</a></h2>
+<p>The canonical-value decision that gates the tuple contract is <strong>accepted</strong>:</p>
+<ul>
+<li><strong>Canonical domain value = DotTalk Value (DTV), <code>dottalk::value::Value</code></strong> — exact,
+six-state, char-canonical, and the single superset.</li>
+<li><strong>Two-tier model:</strong> DTV is the domain / storage / tuple / interchange truth; the
+engine's <code>double</code>-based value (<code>xexpr::Value</code> / <code>EvalValue</code>) is DTV's <em>evaluation
+projection</em> — fast and deliberately lossy, not a rival. No fourth value type.</li>
+<li><strong>Accepted amendments:</strong> (A) DTV carries both <code>Integer</code> (int64) and <code>UnsignedInteger</code>
+(uint64) — RECNO64 is unsigned, so values up to <code>18446744073709551615</code> never pass
+through <code>double</code>; (B) the canonical wire is tagged + versioned (<code>DTV1|state|kind| payload</code>, fully reversible); (C) comparison is semantic (kind/state-aware), not lexical
+on the wire form; (D) the <code>type_code → ValueKind</code> map lives in the field/type registry,
+not inside <code>Value</code>; (E) array Nil → DTV <code>Null</code> (DBF blanks stay <code>Blank</code>); (F) adapters
+return a <code>ProjectionResult</code> with an explicit <code>ProjectionLoss</code> — no invisible exact→double.</li>
+<li><strong>Rules:</strong> convert only at named seams, through characters where fidelity matters;
+never reconstruct domain truth from an evaluation value.</li>
+<li><strong>Phase-0 COMPLETE (8/8):</strong> the DTV foundation is integrated into the authoritative
+tree as an isolated <code>dottalk_value</code> lib (real <code>MemoRef</code>) and the <strong>MSVC build is
+green</strong>. The tuple lane may now open; the TupleCell contract is frozen only after the
+wire + comparison + adapter proofs below.</li>
+</ul>
+<h2 id="tuple--pdlc-track--current-state"><a class="no-underline" href="#tuple--pdlc-track--current-state">Tuple / PDLC track — current state</a></h2>
+<ul>
+<li><strong>PDLC first-build packet:</strong> reviewed — builds clean, smoke passes 1/1, RECNO64
+boundary <code>9007199254740993</code> preserved. Verdict: <strong>accept with conditions.</strong> One bug: a
+key containing a double-quote serializes to a non-round-trippable canonical (escape
+<code>"</code> / <code>\</code>).</li>
+<li><strong>Reconciliations:</strong> (1) canonical Value = DTV — <strong>done, signed off</strong> (incl. unsigned
+RECNO64); (2) exact⇄double seam through chars; (3) <code>ArrayReference{object_id, generation}</code> ⇄ live <code>shared_ptr</code> array reference via a registry, stale handle →
+Unavailable state; (4) bind <code>physical_recno</code> to the one engine RECNO64 alias
+(<code>RecNo = uint64_t</code>), not a parallel <code>uint64</code>.</li>
+<li><strong>Build next (standalone):</strong> the <code>QualifiedReference → DataAddress</code> resolver (the
+missing middle); a canonical Value comparison service; total <code>canonical_text()</code>/<code>parse</code>
+for all kinds and states; <code>type_code → ValueKind</code> (EffectiveFieldType) via the codec
+registry; error → message-catalog; regression tests.</li>
+<li><strong>Status:</strong> the DTV foundation (the tuple prerequisite) is integrated + MSVC-green;
+the canonical-Value sign-off is done. The tuple lane may now be opened; next is the
+standalone wire + comparison + adapter construction step before any TupleCell freeze.</li>
+</ul>
+<h2 id="adjacent-state-maintainer-side"><a class="no-underline" href="#adjacent-state-maintainer-side">Adjacent state (maintainer side)</a></h2>
+<ul>
+<li><strong>DotScript arrays are live:</strong> <code>{…}</code> literals, <code>$name</code> memory variables, one-based
+<code>$a[n]</code> subscripts (nested / chained), stored by real reference. Runtime array =
+<code>shared_ptr&#x3C;ArrayValue></code>, <code>object_id</code> from an atomic counter, <strong>no generation field
+yet</strong> (the DTV bridge adds one).</li>
+<li><strong>RECNO64</strong> widened through nav / lock / index; the tuple boundary binds to that alias.</li>
+<li><strong>Comment / sigil vocabulary:</strong> <code>*</code> and <code>REM</code> full-line; <code>&#x26;&#x26;</code> and <code>#</code> inline; single
+<code>&#x26;</code> is the macro-substitution operator (separate lane); <code>$name</code> is a memory variable;
+a bare name is a field.</li>
+</ul>
+<h2 id="open-questions-maintainers-to-settle"><a class="no-underline" href="#open-questions-maintainers-to-settle">Open questions (maintainer's to settle)</a></h2>
+<ul>
+<li>Canonical-Value sign-off (DTV superset + two-tier).</li>
+<li>Whether workspace is addressable in reference surface syntax (<code>MCC.…</code>) or identity only.</li>
+<li>Final namespace / location of the canonical value module.</li>
+</ul>
+<hr>
+<p><em>Update convention:</em> this page is refreshed at each maintainer-session closeout. The
+next revision will carry a new freshness date and a short "changed since" note. The
+stable companion overview is the <a href="/docs/labtalk/ai-portal">AI Portal</a>; the on-GitHub
+<a href="https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md"><code>AI_PORTAL.md</code></a> is the
+snapshot-cadence entry point.</p>16:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ae6b56e04215","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs?v=ae6b56e04215","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/labtalk/agent-sync",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/labtalk/agent-sync?v=ae6b56e04215","children":"AI Agent Sync — Live Current State"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"AI Agent Sync — Live Current State"}],["$","p",null,{"className":"mt-2 text-muted","children":"A doc-only, frequently-updated current-state digest for external AI development partners (e.g. ChatGPT) who cannot read the local drive."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$17"},"children":null}]}],"$L18"]}]
+18:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/ai-portal?v=ae6b56e04215","children":["← ","AI Portal — Alpha/Experimental"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/labtalk/cases-storyboard?v=ae6b56e04215","children":["Cases and Storyboard"," →"]}]}]]}]
+12:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+19:I[27201,["/_next/static/chunks/3vrs1pocniz61.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+f:null
+14:[["$","title","0",{"children":"AI Agent Sync — Live Current State — x64base"}],["$","meta","1",{"name":"description","content":"A doc-only, frequently-updated current-state digest for external AI development partners (e.g. ChatGPT) who cannot read the local drive."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/labtalk/agent-sync/"}],["$","meta","3",{"property":"og:title","content":"AI Agent Sync — Live Current State"}],["$","meta","4",{"property":"og:description","content":"A doc-only, frequently-updated current-state digest for external AI development partners (e.g. ChatGPT) who cannot read the local drive."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/labtalk/agent-sync/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"AI Agent Sync — Live Current State"}],["$","meta","12",{"name":"twitter:description","content":"A doc-only, frequently-updated current-state digest for external AI development partners (e.g. ChatGPT) who cannot read the local drive."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L19","17",{}]]
