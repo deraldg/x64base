@@ -84,6 +84,70 @@ Consequences:
 Any document that describes `C:\x64base` as a backup is stale. Report it as
 drift rather than acting on it.
 
+## Representative by Design — the Teaching-Grade Standard (AIF-037)
+
+DotTalk++ / x64base is a teaching system. The engine source, the LabTalk lessons,
+and the sample databases are all read by learners as worked examples. Whatever they
+model, students learn. So the code, the lab exercises, and the sample data must be
+**representative** — idiomatic, best-practice, and free of the anti-patterns a
+reviewer would flag — because here **source teaches**, and source must be worth
+teaching from.
+
+This extends the authority chain: *runtime proves, source defines, HELP explains —
+and source teaches.*
+
+Concretely:
+
+- Prefer established best practices wherever they apply: single-source-of-truth
+  (DRY), clear separation of concerns, named contracts over ad-hoc code, and
+  behavior backed by tests.
+- **Duplication a review would flag is a teaching defect, not merely a maintenance
+  cost.** Consolidate to one canonical implementation rather than copying (e.g. one
+  shared comment/line lexer, not five drifting copies).
+- **The Rule of Three (maintainer's rule of thumb):** the first time you write
+  something it's code; the second time you tolerate the copy; **the third time you
+  write the same thing, turn it into a function or procedure.** A third copy is the
+  signal to consolidate, not a decision to defer. (The comment/line lexer was at
+  five — long past the line.)
+- Sample databases and lab schemas must be well-formed and the example queries
+  idiomatic — representative of how a practitioner would actually build it, not a
+  toy that models bad habits.
+- When a shortcut is genuinely unavoidable, mark it explicitly (a status label, a
+  TODO with a lane reference) so it is never mistaken for the recommended pattern.
+
+This is a standard, not a stylistic preference: a change that ships a
+non-representative pattern into teachable surface (engine source, lessons, sample
+DB) is incomplete until the pattern is made representative — or explicitly labeled
+non-exemplary with a tracked follow-up. First application: consolidating the
+duplicated comment/line-lexing helpers (five drifting copies) into one shared
+module.
+
+## Projects, Lanes, and Promotion (AIF-040)
+
+Work is organized in three tiers, and items move between them:
+
+- **Project** — a first-class program with its own identity and lifecycle,
+  registered in `labtalk/registries/projects.yaml`, owning a set of lanes
+  (e.g. `project.x64base.runtime`, `project.labtalk.campus`). Project ids validate
+  in the AI report-audit envelope.
+- **Lane** — a work track within a project (or a standalone intake lane, `AIF-NNN`),
+  carrying a lane doc, milestones, and proof gates.
+- **Milestone** — a proven step within a lane.
+
+**A lane may be promoted to a project** when it outgrows a single track — when it
+spawns sub-lanes, gains an independent lifecycle, or becomes a program others build
+under. Promotion is: create a `projects.yaml` entry (`id: project.<domain>.<name>`
+with its own `lanes:` list), keep the originating `AIF-NNN` intake row as the
+promotion record, and let child lanes reference the parent project. Demotion is
+equally valid: a speculative project that stays small folds back to a lane. The
+precedent is already in the tree — **LMS** is a lane in `project.labtalk.campus`
+*and* its own `project.labtalk.lms`.
+
+Every `AIF-NNN` intake lane SHOULD name its parent project (or `standalone`) so the
+lane and project registries stay reconciled. This keeps the two views — the intake
+queue (work in flight) and `projects.yaml` (programs and their lanes) — from
+drifting apart.
+
 ## Source Mutation Rule
 
 Before changing source code, report:
@@ -123,6 +187,36 @@ the underlying DotTalk++, maintenance, or LabTalk SDLC gate.
 
 Do not include binaries, build directories, generated runtime data, unrelated
 formatting, cleanup, or branch operations.
+
+## Staying Current — the Live Agent Sync Page (doc-only portal)
+
+Outside AI systems read GitHub, and this `AI_PORTAL.md` moves only on full engine
+snapshots — so between snapshots an outside AI's picture of lane state, Phase-0
+decisions, and doctrine can go stale. Hosted partners (e.g. ChatGPT) also cannot read
+the maintainer's local `D:\code\ccode` tree at all. The **doc-only live portal** closes
+that gap:
+
+- A public, frequently updated page — **AI Agent Sync — Live Current State**, at
+  `/docs/labtalk/agent-sync` on the x64base website — carries the current governance
+  surface (working agreement, doctrine, the canonical-Value decision, active-track
+  state, open questions), dated, and refreshed at each maintainer-session closeout.
+- It publishes on the **website's** cadence, independent of engine snapshots, so it is
+  the freshest public state an outside agent can reach without local-drive access.
+- Source: `D:\dev\x64base-site/content/docs/labtalk/agent-sync.mdx`. It is
+  documentation only — no engine source, no build dependency — so it can be republished
+  as often as state changes.
+- Precedence: the live Agent Sync page is fresher than this GitHub portal between
+  snapshots; the maintainer's `D:\code\ccode` reconciliation remains authoritative over
+  both. The page is not autonomous authority and does not bypass a proof gate.
+- **Pseudo-Chat (the return lane):** the Agent Sync page is two-way, not just broadcast.
+  Its **Pseudo-Chat** section carries a partner-reply protocol and a dated reply log, and
+  its Open questions are a tracked Q/Status table. It is deliberately **not real-time** —
+  it moves at closeout cadence, hence "pseudo." An outside partner's answers are
+  transcribed into the Pseudo-Chat log at closeout and flip the matching Open question's
+  Status, so the dialogue is visible on one page instead of scattered across chat
+  transcripts. It is the return path that makes the doc-only portal a loop, not a megaphone.
+  Full spec: `docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md` (what/why/not, roles, the
+  `RE:` reply protocol, the turn cycle, a worked example, and the closeout integration).
 
 ## Local Integration Rule
 
@@ -192,6 +286,15 @@ document that describes that state:
 | Branch, remote, or authority pointers | `AI_README.md` |
 | Lane status or work log | `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` |
 | A candidate's review status | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` |
+| The outside-AI live current state (lane / decision / doctrine an external partner relies on) | `D:\dev\x64base-site/content/docs/labtalk/agent-sync.mdx` — refresh its content + freshness date, transcribe any external-partner replies into the **Pseudo-Chat log** (and update the matching Open-question Status), then republish the site |
+
+The Agent Sync row above is what keeps the doc-only live portal honest: if a closeout
+changed something an outside AI (e.g. ChatGPT) depends on — a lane's proven state, a
+Phase-0 decision, a doctrine rule — the live page is refreshed and re-dated in the same
+closeout, not left to drift to the next engine snapshot. The same step closes the loop in
+the other direction: any external-partner reply gathered since the last closeout is
+transcribed into the page's **Pseudo-Chat** return lane, so the dialogue lives on the
+portal rather than only in a chat transcript.
 
 This is not a separate remembered chore. It is part of closeout. A session is
 not complete until this step is done, or explicitly declined with a stated
