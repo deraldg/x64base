@@ -32,6 +32,9 @@ inline const std::vector<Item>& catalog() {
 
         {"STATUS",    "STATUS", "Display area status.", true},
 
+        {"STOP_ON_ERROR", "STOP_ON_ERROR [OFF|WARNING|ERROR]",
+                 "Set or report the severity threshold at which a running DotScript aborts (stop_on_error[severity]); SET ERRORSTOP TO is the compatibility form, DOTTALK_ERRORSTOP the startup default.", true},
+
         {"STRUCT",    "STRUCT", "Display table structure.", true},
 
         {"FIELDS",    "FIELDS", "Show structure (field list).", true},
@@ -472,6 +475,9 @@ Notes:
 
         {"CMDHELPCHK",   "CMDHELPCHK", "Validate HELP catalogs vs the command registry.", true},
 
+        {"EXITS", "EXITS [LIST|SHOW <id>|VALIDATE|WHERE]",
+         "Inspect and validate the reviewed extension-exit manifest without executing extension code.", true},
+
 
         {"DDICT", "DDICT [STATUS|HELP|TABLES|OBJECTS|FIELDS <table>|TAGS <table>|REL <object>|EVIDENCE <object>]",
         R"(Inspect the active Data Dictionary catalog from inside DotTalk++.
@@ -559,12 +565,22 @@ Usage:
     MAINT DOCS
     MAINT GUI
     MAINT AI
+    MAINT AI USAGE
+    MAINT AI STATUS
     MAINT AI DASHBOARD
     MAINT AI ASSIMILATE
     MAINT AI BOOK
     MAINT AI INTAKE
+    MAINT AI GATES
     MAINT AI VISIBILITY
     MAINT CONTRACTS
+    MAINT CONTRACTS USAGE
+    MAINT CONTRACTS STATUS
+    MAINT CONTRACTS SCAN
+    MAINT CONTRACTS REGISTRY
+    MAINT CONTRACTS INTAKE
+    MAINT CONTRACTS DRIFT
+    MAINT CONTRACTS GATES
 
 Notes:
     MAINT is read-only first wave.
@@ -719,7 +735,6 @@ Notes:
         {"UNDELETE", "UNDELETE", "Compatibility alias for RECALL to unmark the current deleted record.", true},
         {"RECNO", "RECNO", "Report the current record number for the active work area.", true},
         {"REPLACE", "REPLACE <field> WITH <value>", "Replace one field in the current record using table-buffer and memo-aware semantics.", true},
-        {"REPLACE_MULTI", "REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...", "Perform multiple field replacements in one pass with direct-write/index maintenance semantics.", true},
         {"SEEK", "SEEK <value> [IN <field>] | SEEK <field> = <value>", "Seek through the active order or by scanning a requested field.", true},
         {"SELECT", "SELECT <area-or-alias>", "Select the active DotTalk++ work area by number or logical name.", true},
         {"SET", "SET [<option> [<value>]]", "Show or change DotTalk++ runtime settings.", true},
@@ -965,8 +980,8 @@ Notes:
         {"TUPEXPORT", "TUPEXPORT [USAGE|<args...>]",
                  "Export tuple/projection output through the tuple export helper surface.", true},
 
-        {"VAR", "VAR [USAGE|LIST|SET <name> <value>|CLEAR <name>]",
-                 "Inspect or manage DotTalk++ session variables and macro-style script values.", true},
+        {"VAR", "VAR USAGE | VAR <name> = <expr>",
+                 "Evaluate an expression and store it as a scoped DotScript memory variable, referenced later as $name (e.g. VAR n = 40 + 2 then ? $n). Distinct from SET VAR (&macro) variables.", true},
 
         // Phase 5 DOTREF curation batch 12: example, standard-reference, hierarchy, and student/demo surfaces.
         {"EXAMPLE", "EXAMPLE [USAGE|<name>|LIST]",

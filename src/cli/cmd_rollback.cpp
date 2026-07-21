@@ -6,7 +6,7 @@
 // status: supported
 // noargs: rollback-current-area
 // effect: discard-buffered-changes
-// mutates: buffer-state dirty-stale-flags
+// mutates: buffer-state dirty-stale-flags journal
 // usage-access: ROLLBACK USAGE
 // summary:
 //   Discard buffered/uncommitted table changes for the current area or all areas.
@@ -24,6 +24,7 @@
 //   ROLLBACK USAGE returns before modifying buffer state.
 //   ROLLBACK without arguments clears buffered state for the current area.
 //   ROLLBACK ALL clears buffered state across all areas.
+//   ROLLBACK best-effort notes a ROLLBACK marker in the durable journal for the area.
 //
 // risk:
 //   discards_uncommitted_changes: yes except usage
@@ -36,12 +37,12 @@
 //
 
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 #include "xbase.hpp"
 #include "cli/table_state.hpp"
+#include "cli/command_output.hpp"
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -95,17 +96,7 @@ static void rollback_area(int area0, size_t& total_changes, int& areas_touched) 
 
 static void print_rollback_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  ROLLBACK USAGE\n"
-        << "  ROLLBACK\n"
-        << "  ROLLBACK ALL\n"
-        << "Examples:\n"
-        << "  ROLLBACK\n"
-        << "  ROLLBACK ALL\n"
-        << "Notes:\n"
-        << "  - ROLLBACK USAGE does not modify buffer state.\n"
-        << "  - ROLLBACK discards buffered/uncommitted table changes.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::RollbackUsageText);
 }
 void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
     // ROLLBACK_USAGE_CONTRACT_BRANCH
@@ -137,7 +128,8 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
         if (up == "ALL") {
             auto* eng = shell_engine();
             if (!eng) {
-                std::cout << "ROLLBACK: engine unavailable.\n";
+                cli::cmdout::print_prefixed_message(
+                    "ROLLBACK", dottalk::helpdata::MessageId::RollbackEngineUnavailableText);
                 return;
             }
 
@@ -148,8 +140,11 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
                 rollback_area(i, total_changes, areas_touched);
             }
 
-            std::cout << "ROLLBACK ALL: discarded " << total_changes
-                      << " change(s) across " << areas_touched << " area(s).\n";
+            cli::cmdout::print_prefixed_message(
+                "ROLLBACK ALL",
+                dottalk::helpdata::MessageId::RollbackAllDiscardedText,
+                {{"changes", std::to_string(total_changes)},
+                 {"areas", std::to_string(areas_touched)}});
             return;
         }
 
@@ -159,7 +154,8 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
 
     const int area0 = resolve_current_index(A);
     if (area0 < 0) {
-        std::cout << "ROLLBACK: cannot determine current area.\n";
+        cli::cmdout::print_prefixed_message(
+            "ROLLBACK", dottalk::helpdata::MessageId::RollbackCannotDetermineCurrentAreaText);
         return;
     }
 
@@ -169,5 +165,8 @@ void cmd_ROLLBACK(xbase::DbArea& A, std::istringstream& in) {
     rollback_area(area0, total_changes, areas_touched);
 
     // For single-area rollback, keep the classic wording.
-    std::cout << "ROLLBACK: discarded " << total_changes << " change(s).\n";
+    cli::cmdout::print_prefixed_message(
+        "ROLLBACK",
+        dottalk::helpdata::MessageId::RollbackDiscardedText,
+        {{"changes", std::to_string(total_changes)}});
 }

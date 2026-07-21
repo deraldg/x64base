@@ -4,11 +4,12 @@
 // category: scripting
 // status: supported
 // noargs: usage
-// effect: parse
-// mutates: none-currently
+// effect: evaluate-and-store
+// mutates: session-variables
 // usage-access: VAR USAGE
 // summary:
-//   Validate and accept DotScript variable assignment syntax.
+//   Evaluate an expression and store it as a scoped DotScript memory variable,
+//   referenced later as $name.
 //
 // usage:
 //   VAR USAGE
@@ -18,12 +19,18 @@
 //   VAR threshold = 3.0
 //   VAR label = UPPER(LNAME)
 //   VAR today = DATE()
+//   VAR nums = {10, 20, 30}
+//   ? $threshold * 2          && reference a stored variable as $name
 //
 // notes:
 //   VAR with no arguments prints usage.
-//   VAR USAGE prints usage and does not validate/accept an assignment.
-//   Current implementation validates the variable name and expression presence,
-//   then reports the accepted assignment.
+//   VAR USAGE prints usage and does not evaluate or store.
+//   VAR evaluates the right-hand side through the array-preserving expression
+//   path and stores the result in the scoped session memory-variable store,
+//   keyed by the sigil-stripped, case-insensitive name; the value may be a
+//   scalar or an array. The stored variable is read back in later expressions
+//   as $name. Distinct from SET VAR (&macro) variables, which do textual
+//   substitution rather than value storage.
 //
 // risk:
 //   mutates_table_data: no
@@ -31,6 +38,7 @@
 // related:
 //   DOTSCRIPT
 //   CALC
+//   SET VAR
 //
 
 #include <iostream>
@@ -39,8 +47,12 @@
 
 #include "xbase.hpp"
 #include "dotscript_var_name.hpp"
+#include "cli/expr/rhs_eval.hpp"     // eval_rhs -> dottalk::expr::EvalValue
+#include "cli/expr/value_eval.hpp"   // EvalValue definition
+#include "xexpr/var_store.hpp"       // dottalk::dotscript::session_vars() (AIF-038)
 #include <algorithm>
 #include <cctype>
+#include <utility>
 
 using dottalk::dotscript::VarNameCheck;
 using dottalk::dotscript::validate_var_name;
@@ -106,6 +118,23 @@ void cmd_VAR(xbase::DbArea& current, std::istringstream& iss) {
         return;
     }
 
-    // TODO: replace with your real variable storage/evaluation path.
-    std::cout << "VAR accepted: name='" << var_name << "' expr='" << expr << "'\n";
+    // Evaluate the right-hand side through the array-preserving expression path (so
+    // field references, functions, arithmetic AND array literals/subscripts all work)
+    // and store the result directly. Using eval_rhs_avalue rather than eval_rhs is
+    // essential: eval_rhs returns an EvalValue, which has no array kind and would
+    // flatten `{1,2,3}` to the string "{array:3}" — the variable must keep its real
+    // ArrayRef so `$x[n]` subscripting works. Names are stored under the sigil-stripped
+    // bare form, so `VAR x = ...` and a later `$x` reference agree.
+    std::string err;
+    dottalk::array::Value value;   // defaults to NIL
+    if (!dottalk::expr::eval_rhs_avalue(&current, expr, value, &err)) {
+        std::cout << "VAR error: " << (err.empty() ? "evaluation failed" : err) << "\n";
+        return;
+    }
+
+    std::string store_name = var_name;
+    if (!store_name.empty() && store_name[0] == '$') store_name.erase(0, 1);
+
+    dottalk::dotscript::session_vars().assign(store_name, std::move(value));
+    std::cout << "VAR stored: " << store_name << "\n";
 }

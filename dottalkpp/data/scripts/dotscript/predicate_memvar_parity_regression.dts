@@ -1,0 +1,49 @@
+* predicate_memvar_parity_regression.dts
+* PARITY TARGET — currently EXPECTED RED until the expression-path convergence lands.
+*
+* Proves $name / $a[n] resolve in the PREDICATE path (IF/WHILE/UNTIL/WHERE), not only
+* in the display path (?/CALC/FORMULA). Today IF routes through the compiled WHERE
+* engine (shell_eval_bool_expr -> where_boolean_eval), which does not resolve $name, so
+* the PASS marker below does NOT appear yet. After the expression-path convergence
+* (AIF-041: centralize predicate + expression eval on the house expr system), it does.
+*
+* Pass criterion:
+*   BEFORE convergence: PASS markers ABSENT (known red) — the FAIL-EXPECTED marker
+*                       prints, or the IF reports an evaluation error.
+*   AFTER  convergence: "PARITY_predicate_memvar:PASS" and
+*                       "PARITY_predicate_array_subscript:PASS" both print.
+*
+* This test is intentionally NOT in the default suite until the convergence lands.
+*
+* Run:  REGRESSION RUN DOTSCRIPT_PARITY
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/predicate_memvar_parity_regression.dts
+*
+* Self-bootstrap the environment (regression doctrine: every test sets its own
+* environment; the ambient default is STOP_ON_ERROR OFF). Set it explicitly so a
+* mis-resolved predicate surfaces as the FAIL-EXPECTED marker, never as an abort,
+* even when run right after ERRORSTOP. ECHO OFF keeps the judged region clean.
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "PREDICATE-MEMVAR-PARITY-BEGIN"
+
+* Sanity: the SAME comparison resolves in the DISPLAY path today (must be .T.).
+VAR pv = 20
+? "PARITY_display_memvar_should_be_T:" + ($pv = 20)
+
+* Target: the memvar must resolve in the PREDICATE path (IF). RED until convergence.
+IF ($pv = 20)
+  FORMULA "PARITY_predicate_memvar:PASS"
+ELSE
+  FORMULA "PARITY_predicate_memvar:FAIL-EXPECTED-UNTIL-CONVERGENCE"
+ENDIF
+
+* Target: array subscript in the predicate path. RED until convergence.
+VAR pa = {10, 20, 30}
+IF ($pa[2] = 20)
+  FORMULA "PARITY_predicate_array_subscript:PASS"
+ELSE
+  FORMULA "PARITY_predicate_array_subscript:FAIL-EXPECTED-UNTIL-CONVERGENCE"
+ENDIF
+
+FORMULA "PREDICATE-MEMVAR-PARITY-END"

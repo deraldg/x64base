@@ -25,7 +25,7 @@
 // status: supported
 // noargs: mutate
 // effect: commit
-// mutates: table-data table-buffer memo stale-state index
+// mutates: table-data table-buffer memo stale-state index journal
 // usage-access: COMMIT USAGE
 // summary:
 //   Apply buffered TABLE changes to the current area or all open buffered areas,
@@ -50,13 +50,17 @@
 //   COMMIT does not rebuild CDX or LMDB containers.
 //   Legacy INX/IDX and CNX rebuild behavior remains only for legacy index families.
 //   COMMIT is a data mutation command when buffers contain changes.
-//   COMMIT is a best-effort buffer apply operation, not an atomic transaction.
+//   COMMIT is write-ahead journaled: it durably records a redo log plus a COMMIT
+//   marker before applying buffered changes to the DBF, and aborts the commit if
+//   that durable sync fails. Committed journals are replayed on crash recovery at
+//   open. Atomicity and durability are partial (ACID beta-1), not a full transaction.
 //
 // risk:
 //   writes_dbf_records: yes when buffered changes exist
 //   writes_memo: when buffered memo changes exist
 //   record_locking: yes at commit time
 //   clears_table_buffer_changes: on successful commit
+//   writes_write_ahead_journal: yes (durable redo log + COMMIT marker before apply)
 //   partial_commit_possible: yes
 //   cdx_lmdb_rebuild: no
 //
@@ -69,7 +73,6 @@
 //   REBUILD
 //
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -81,6 +84,7 @@
 #include "xbase.hpp"
 #include "xbase_locks.hpp"
 
+#include "cli/command_output.hpp"
 #include "cli/settings.hpp"
 #include "cli/table_state.hpp"
 #include "cli/order_state.hpp"
@@ -117,21 +121,7 @@ struct CommitResult {
 
 static void print_commit_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  COMMIT USAGE\n"
-        << "  COMMIT\n"
-        << "  COMMIT ALL\n"
-        << "  COMMIT MANUAL\n"
-        << "  COMMIT INTERACTIVE\n"
-        << "  COMMIT AUTO\n"
-        << "  COMMIT ALL MANUAL\n"
-        << "  COMMIT ALL INTERACTIVE\n"
-        << "  COMMIT ALL AUTO\n"
-        << "Notes:\n"
-        << "  - COMMIT applies buffered TABLE changes with locking at commit time.\n"
-        << "  - COMMIT ALL applies all open buffered areas.\n"
-        << "  - CDX/LMDB rebuilds are intentionally not performed by COMMIT.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::CommitUsageText);
 }
 
 static int resolve_area0(xbase::DbArea& A) {
@@ -175,14 +165,14 @@ struct CursorRestore {
 };
 
 struct Agg {
-    int recno = 0;
+    std::uint64_t recno = 0;
     std::uint64_t flags = 0;
     // last-write-wins per field1
     std::unordered_map<int, std::string> field_values;
 };
 
 // Aggregate all ChangeEntry rows for the same recno into one view.
-static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, int recno) {
+static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, std::uint64_t recno) {
     Agg a;
     a.recno = recno;
 
@@ -216,16 +206,18 @@ static Agg aggregate_for_recno(const dottalk::table::TableBuffer& tb, int recno)
 }
 
 static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk) {
-    const int rn = agg.recno;
-    if (rn < 1 || rn > A.recCount()) return false;
+    const std::uint64_t rn = agg.recno;
+    if (rn == 0 || rn > A.recCount64()) return false;
 
-    if (!A.gotoRec(rn)) return false;
+    if (!A.gotoRec64(rn)) return false;
     if (!A.readCurrent()) return false;
 
     // Lock at commit time (per-record). If you later add table locks, this is where it goes.
     std::string lock_err;
-    if (!xbase::locks::try_lock_record(A, static_cast<std::uint32_t>(rn), &lock_err)) {
-        if (talk) std::cout << "COMMIT: rec " << rn << " locked (" << lock_err << ")\n";
+    if (!xbase::locks::try_lock_record(A, rn, &lock_err)) {
+        if (talk) cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitRecLockedText,
+            {{"rn", std::to_string(rn)}, {"detail", lock_err}});
         return false;
     }
 
@@ -247,7 +239,7 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk) {
         ok = A.deleteCurrent();
     }
 
-    xbase::locks::unlock_record(A, static_cast<std::uint32_t>(rn));
+    xbase::locks::unlock_record(A, rn);
     return ok;
 }
 
@@ -269,36 +261,41 @@ static bool auto_reindex_if_needed(xbase::DbArea& A,
     // - INX/IDX remains reindex-based.
     // - No active order means no index rebuild.
     if (!orderstate::hasOrder(A)) {
-        if (talk) std::cout << "COMMIT: no active order; index rebuild skipped.\n";
+        if (talk) cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitNoActiveOrderText);
         return true;
     }
 
     if (orderstate::isCdx(A)) {
         if (talk) {
-            std::cout << "COMMIT: CDX/LMDB rebuild skipped";
             const std::string tag = orderstate::activeTag(A);
-            if (!tag.empty()) std::cout << " (tag " << tag << ")";
-            std::cout << "; runtime mutation hooks own index updates.\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitCdxSkippedText,
+                {{"tag", tag.empty() ? std::string() : (" (tag " + tag + ")")}});
         }
         return true;
     }
 
     if (orderstate::isCnx(A)) {
-        if (talk) std::cout << "COMMIT: rebuilding CNX...\n";
+        if (talk) cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitRebuildingCnxText);
         std::istringstream args("");
         cmd_REBUILD(A, args);
         if (dottalk::table::is_stale(area0)) {
-            std::cout << "COMMIT: CNX rebuild did not clear stale state.\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitCnxNotClearedText);
             return false;
         }
         return true;
     }
 
-    if (talk) std::cout << "COMMIT: reindexing INX/IDX...\n";
+    if (talk) cli::cmdout::print_prefixed_message(
+        "COMMIT", dottalk::helpdata::MessageId::CommitReindexingText);
     std::istringstream args("");
     cmd_REINDEX(A, args);
     if (dottalk::table::is_stale(area0)) {
-        std::cout << "COMMIT: INX/IDX reindex did not clear stale state.\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitReindexNotClearedText);
         return false;
     }
     return true;
@@ -313,7 +310,8 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     auto& tb = dottalk::table::get_tb(area0);
 
     if (tb.empty()) {
-        if (talk) std::cout << "COMMIT: no changes in buffer.\n";
+        if (talk) cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitNoChangesText);
         return {};
     }
 
@@ -324,12 +322,22 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     // not currently materialize CHANGE_INSERT in apply_one_recno().
     const auto pending_before = tb.changes;
 
+    // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the
+    // buffered changes to the DBF. If the durable sync fails, abort the commit and
+    // keep the buffer intact (RamOnly mode returns true and is unaffected).
+    if (!dottalk::table::journal_begin_commit(area0)) {
+        dottalk::table::set_dirty(area0, true);
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitJournalFinalizeFailedText);
+        return {CommitStatus::FinalizeFailure, 0, 1};
+    }
+
     // Iterate unique recnos in the multimap.
     int applied_ok = 0;
     int applied_fail = 0;
 
     for (auto it = tb.changes.begin(); it != tb.changes.end(); ) {
-        const int recno = it->first;
+        const std::uint64_t recno = it->first;
         const auto range = tb.changes.equal_range(recno);
 
         const Agg agg = aggregate_for_recno(tb, recno);
@@ -349,11 +357,13 @@ static CommitResult commit_one_area(xbase::DbArea& A,
         // Keep dirty/stale; buffer still contains remaining failed recnos.
         dottalk::table::set_dirty(area0, true);
         if (talk) {
-            std::cout << "COMMIT: partial. OK=" << applied_ok
-                      << " FAIL=" << applied_fail << " (remaining buffered)\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitPartialRemainingText,
+                {{"ok", std::to_string(applied_ok)}, {"fail", std::to_string(applied_fail)}});
         } else {
-            std::cout << "COMMIT: partial. OK=" << applied_ok
-                      << " FAIL=" << applied_fail << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitPartialText,
+                {{"ok", std::to_string(applied_ok)}, {"fail", std::to_string(applied_fail)}});
         }
         return {CommitStatus::PartialRecordFailure, applied_ok, applied_fail};
     }
@@ -363,9 +373,9 @@ static CommitResult commit_one_area(xbase::DbArea& A,
         if (!mm->flush(&memo_err)) {
             tb.changes = pending_before;
             dottalk::table::set_dirty(area0, true);
-            std::cout << "COMMIT: failed during memo flush"
-                      << (memo_err.empty() ? std::string{} : std::string(" (" + memo_err + ")"))
-                      << "; buffer retained for retry. DBF writes may already have occurred.\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitMemoFlushFailedText,
+                {{"detail", memo_err.empty() ? std::string{} : std::string(" (" + memo_err + ")")}});
             return {CommitStatus::FinalizeFailure, applied_ok, 1};
         }
     }
@@ -377,8 +387,8 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     if (!auto_reindex_if_needed(A, area0, talk, interactive_rebuild)) {
         tb.changes = pending_before;
         dottalk::table::set_dirty(area0, true);
-        std::cout << "COMMIT: failed during index finalization; buffer retained for retry. "
-                     "DBF and memo writes may already have occurred.\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
         return {CommitStatus::FinalizeFailure, applied_ok, 1};
     }
 
@@ -387,7 +397,8 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     if (!dottalk::table::journal_note_commit(area0)) {
         tb.changes = pending_before;
         dottalk::table::set_dirty(area0, true);
-        std::cout << "COMMIT: failed during journal finalization; buffer retained for retry.\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitJournalFinalizeFailedText);
         return {CommitStatus::FinalizeFailure, applied_ok, 1};
     }
 
@@ -396,7 +407,9 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     dottalk::table::set_stale(area0, false);
     dottalk::table::clear_stale_fields(area0);
 
-    if (talk) std::cout << "COMMIT: complete. (" << applied_ok << " recs)\n";
+    if (talk) cli::cmdout::print_prefixed_message(
+        "COMMIT", dottalk::helpdata::MessageId::CommitCompleteText,
+        {{"ok", std::to_string(applied_ok)}});
     return {CommitStatus::Complete, applied_ok, 0};
 }
 
@@ -405,7 +418,8 @@ static CommitResult commit_one_area(xbase::DbArea& A,
 void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     auto* eng = shell_engine();
     if (!eng) {
-        std::cout << "COMMIT: engine not available.\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT", dottalk::helpdata::MessageId::CommitEngineUnavailableText);
         return;
     }
 
@@ -436,7 +450,8 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     if (!all) {
         const int area0 = resolve_area0(A);
         if (area0 < 0) {
-            std::cout << "COMMIT: cannot determine current area.\n";
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitCannotDetermineAreaText);
             return;
         }
         (void)commit_one_area(A, area0, talk, interactive_rebuild);
@@ -463,9 +478,11 @@ void cmd_COMMIT(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (attempted == 0) {
-        std::cout << "COMMIT ALL: no buffered changes.\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT ALL", dottalk::helpdata::MessageId::CommitAllNoBufferedText);
     } else {
-        std::cout << "COMMIT ALL: complete=" << committed
-                  << " failed=" << failed << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "COMMIT ALL", dottalk::helpdata::MessageId::CommitAllCompleteText,
+            {{"committed", std::to_string(committed)}, {"failed", std::to_string(failed)}});
     }
 }

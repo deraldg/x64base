@@ -1,6 +1,6 @@
 // @dottalk.usage v1
 // owner: DOT|VAR_INTEGRATION_EXAMPLE
-// command: VAR
+// command: VAR_INTEGRATION_EXAMPLE
 // category: example-helper
 // status: documentation-example
 // noargs: n/a

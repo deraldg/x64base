@@ -1,0 +1,73 @@
+* wal_commit_rollback_regression.dts
+* Self-bootstrapping WAL / COMMIT / ROLLBACK durability regression (AIF-041 M1).
+*
+* Derived from pinocchio/wal_phaseA_proof.dts, but SELF-ASSERTING (machine-checkable
+* ".T." markers via the expression path) instead of ECHO/DISPLAY. It creates its OWN
+* throwaway x64 table (WALREGR), proves a buffered+logged REPLACE is APPLIED by COMMIT
+* and DISCARDED by ROLLBACK, then erases the table. Fixture-free: it never touches the
+* shared students table -- the exact bug that made the legacy commit_rollback_test.dts a
+* silent no-op (it assumed students was already open).
+*
+* Environment bootstrap (regression doctrine: every test sets its own environment; the
+* ambient default is STOP_ON_ERROR OFF): sets STOP_ON_ERROR OFF + ECHO OFF at its top,
+* and points the DBF/INDEXES/LMDB path slots at the SANDBOX area so the throwaway table
+* is created there (isolated from live data), not in data\dbf\x64.
+* The leading ERASE makes the run idempotent if a prior run left WALREGR behind (ERASE
+* of an absent table is a non-fatal "Table not found" while STOP_ON_ERROR is OFF).
+*
+* Pass criterion: W0, W1, W2 all print ":.T." between the BEGIN and END markers.
+*   W0 -> the throwaway fixture built (recno 2 NAME = Beta) via a direct write
+*   W1 -> COMMIT applied the buffered+logged REPLACE (recno 1 NAME = Alpha2)
+*   W2 -> ROLLBACK discarded the buffered REPLACE (recno 2 NAME still = Beta)
+*
+* Run:  REGRESSION RUN WAL_COMMIT_ROLLBACK
+*   or: DOTSCRIPT dottalkpp/data/scripts/pinocchio/wal_commit_rollback_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* Isolate to the SANDBOX area so the throwaway WALREGR is created under
+* data\dbf\SANDBOX, never in the live data\dbf\x64 tree (mirrors sandbox.dts and the
+* INDEX_X64 smoke convention). Like the other suite scripts, this test sets its own
+* path slots and does not restore them (each test establishes the area it needs).
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "WAL-COMMIT-ROLLBACK-REGRESSION-BEGIN"
+
+* --- P0: build a throwaway x64 table with two rows (self-bootstrap; direct writes) ---
+ERASE TABLE WALREGR CONFIRM
+CREATE X64 WALREGR (ID N(4), NAME C(20))
+APPEND
+REPLACE ID WITH "1"
+REPLACE NAME WITH "Alpha"
+APPEND
+REPLACE ID WITH "2"
+REPLACE NAME WITH "Beta"
+GO 2
+? "W0_fixture_row2_beta:" + (ALLTRIM(NAME) = "Beta")
+
+* --- P1: enable persistent (RAM+JOURNAL) table buffering ---
+TABLE BUFFER ON PERSISTENT
+
+* --- P2/P3: buffered+logged REPLACE on recno 1; COMMIT must APPLY it ---
+GO 1
+REPLACE NAME WITH "Alpha2"
+COMMIT
+GO 1
+? "W1_commit_applied:" + (ALLTRIM(NAME) = "Alpha2")
+
+* --- P4: buffered REPLACE on recno 2; ROLLBACK must DISCARD it ---
+GO 2
+REPLACE NAME WITH "RolledBk"
+ROLLBACK
+GO 2
+? "W2_rollback_discarded:" + (ALLTRIM(NAME) = "Beta")
+
+* --- cleanup: disable buffer, close, erase the throwaway table ---
+TABLE BUFFER OFF
+CLOSE
+ERASE TABLE WALREGR CONFIRM
+
+FORMULA "WAL-COMMIT-ROLLBACK-REGRESSION-END"

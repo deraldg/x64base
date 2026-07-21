@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 15> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -104,6 +104,12 @@ constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
         true
     },
     {
+        "LANGUAGE",
+        "canaries\\language_shakedown_canary.dts",
+        "Messaging-normalization locale proof: es/fr/de/it USAGE render across the localized command surface",
+        true
+    },
+    {
         "HARVEST",
         "main\\harvest_top_shakedown.dts",
         "Top-layer harvest proof across regression launcher, security roles, holiday demos, and curated runtime shakedowns",
@@ -120,7 +126,53 @@ constexpr std::array<RegressionSpec, 7> kRegressionSpecs{{
         "main\\rel_join_enum_regression.dts",
         "Relation join/enum projection regression",
         false
+    },
+    {
+        "LIMITS",
+        "limits\\limits_all_shakedown.dts",
+        "Engine limit guardrails: MAX_AREA=512, x64 name ceilings 256, record-size advisory, CLOSE ALL over every open area",
+        false
+    },
+    {
+        "DOTSCRIPT_EXPR",
+        "dotscript\\dotscript_expr_regression.dts",
+        "DotScript memvars (VAR/$name) + arrays ({}/$a[n], nested/chained) via the house expression path, with an IF literal baseline (AIF-041 M1)",
+        true
+    },
+    {
+        "DOTSCRIPT_PARITY",
+        "dotscript\\predicate_memvar_parity_regression.dts",
+        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE — RED until the expression-path convergence lands, then GREEN (AIF-041)",
+        false
+    },
+    {
+        "LEXING",
+        "lexing\\comment_handling_regression.dts",
+        "Canonical comment vocabulary on the script path after the AIF-037 lexer consolidation (full-line * REM # //, inline && #, single & macro survives); read-only, fixture-free",
+        true
+    },
+    {
+        "CALC",
+        "calc\\calc_output_regression.dts",
+        "CALC output-routing regression: every ValueKind path (Bool/Number/String/Date/empty/Error) via cli::cmdout::print_line (AIF-031); read-only, but leaves ECHO ON so it stays out of the default suite (explicit run)",
+        false
+    },
+    {
+        "ERRORSTOP",
+        "errorstop\\stop_on_error_regression.dts",
+        "stop_on_error threshold: OFF continues past a recorded error, ERROR aborts at the failing line; self-contained, but Phase-2 aborts leaving STOP_ON_ERROR ON so it stays out of the default suite (explicit run) (AIF-036)",
+        false
+    },
+    {
+        "WAL_COMMIT_ROLLBACK",
+        "pinocchio\\wal_commit_rollback_regression.dts",
+        "WAL durability: COMMIT applies a buffered+logged REPLACE, ROLLBACK discards one; self-bootstrapping (creates+erases a throwaway WALREGR table, never touches the students fixture), self-asserting W0/W1/W2 markers. Mutates the filesystem so it stays out of the default suite (explicit run) (AIF-017/023)",
+        false
     }
+    // NOTE: this WAL_COMMIT_ROLLBACK entry replaces the legacy commit_rollback_test.dts,
+    // which assumed an already-open `students` table, did not self-bootstrap (regression
+    // doctrine violation), and silently no-op'd when run standalone. The self-contained
+    // basis is pinocchio\wal_phaseA_proof.dts (throwaway table, ERASEd at end).
 }};
 
 std::string trim_copy(std::string s)
@@ -189,7 +241,8 @@ void print_regression_usage()
         << "  - Scripts are expected to bootstrap their own environment.\n"
         << "  - LIST shows curated stable entrypoints rather than every historical script.\n"
         << "  - ALL runs the curated default suite in declared order.\n"
-        << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n";
+        << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
+        << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
 }
 
 void print_regression_list()

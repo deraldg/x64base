@@ -8,7 +8,7 @@
 // status: supported
 // noargs: usage
 // effect: mixed
-// mutates: settings output-routing table-buffer order-state filter-state relation-state path-state
+// mutates: settings output-routing table-buffer order-state filter-state relation-state path-state errorstop-policy
 // usage-access: SET USAGE
 // summary:
 //   General SET dispatcher for session settings, output routing, table buffering,
@@ -66,6 +66,8 @@
 //   SET CNX <args>
 //   SET CDX <args>
 //   SET LMDB <args>
+//   SET ERRORSTOP
+//   SET ERRORSTOP TO OFF | WARNING | ERROR
 //
 // notes:
 //   SET with no arguments shows usage.
@@ -75,6 +77,9 @@
 //   TABLE BUFFER toggles table buffering state for the current area or all open areas.
 //   SET CASE and SET NEAR mutate expression/search behavior settings.
 //   SET may mutate table-buffer, order, path, relation, filter, and output state depending on the option.
+//   SET ERRORSTOP [TO] <severity> is the compatibility form of STOP_ON_ERROR; it sets the
+//   DotScript stop-on-error threshold (OFF|WARNING|ERROR), mutating errorstop policy only,
+//   and with no severity reports the current threshold.
 //
 // risk:
 //   mutates_session_settings: yes
@@ -84,6 +89,7 @@
 //   mutates_index_order_state: INDEX ORDER CNX CDX LMDB
 //   mutates_filter_state: FILTER
 //   mutates_relation_state: RELATION RELATIONS
+//   mutates_errorstop_policy: ERRORSTOP
 //   mutates_table_data: no direct table-data mutation
 //
 // related:
@@ -94,6 +100,7 @@
 //   SET_RELATION
 //   SETCASE
 //   SETNEAR
+//   STOP_ON_ERROR
 //
 
 #include "xbase.hpp"
@@ -109,6 +116,7 @@
 #include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
+#include "xbase_error_context.hpp"   // SET ERRORSTOP -> stop_on_error[severity]
 #include "cli/table_state.hpp"
 
 #include "help/message_catalog.hpp"
@@ -248,7 +256,6 @@ static void print_message_catalog_status() {
             {"issue_count", std::to_string(issues.size())}
         });
 
-    auto& out = cli::OutputRouter::instance().out();
     for (const auto& issue : issues) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetMessageCatalogValidationIssueRowText,
@@ -1180,6 +1187,62 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetDeletedStatusText,
             {{"state", on ? "HIDE (ON)" : "SHOW (OFF)"}});
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SET ERRORSTOP [TO] OFF|WARNING|ERROR
+    // Compatibility form of the native STOP_ON_ERROR command. Sets the severity
+    // at which a running DotScript aborts. Errors derive from messaging: the
+    // threshold is compared against the severity carried by the recorded
+    // canonical error code.
+    // ─────────────────────────────────────────────────────────────
+    if (opt == "ERRORSTOP") {
+        std::string tail = ltrim_copy(rest(args));
+        {
+            // Accept an optional leading TO (SET ERRORSTOP TO ERROR).
+            std::istringstream ts(tail);
+            std::string first;
+            ts >> first;
+            if (up_copy(first) == "TO") {
+                tail = ltrim_copy(rest(ts));
+            }
+        }
+
+        // Drop an inline "&&" comment and keep the first token as the severity.
+        {
+            const std::string::size_type amp = tail.find("&&");
+            if (amp != std::string::npos) tail.erase(amp);
+        }
+        std::string sev;
+        {
+            std::istringstream sev_toks(tail);
+            sev_toks >> sev;
+        }
+
+        if (sev.empty()) {
+            cli::cmdout::print_info(
+                "SET ERRORSTOP",
+                std::string("threshold is ") +
+                    xbase::error::errorstop_level_name(xbase::error::get_errorstop()));
+            return;
+        }
+
+        bool ok = false;
+        const xbase::error::errorstop_level lvl =
+            xbase::error::parse_errorstop_level(sev, &ok);
+        if (!ok) {
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            cli::cmdout::print_info(
+                "SET ERRORSTOP",
+                std::string("invalid severity '") + sev + "'; use OFF, WARNING, or ERROR.");
+            return;
+        }
+
+        xbase::error::set_errorstop(lvl);
+        cli::cmdout::print_info(
+            "SET ERRORSTOP",
+            std::string("threshold set to ") + xbase::error::errorstop_level_name(lvl));
         return;
     }
 
