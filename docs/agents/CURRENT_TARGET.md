@@ -6,8 +6,9 @@ Supersedes: the completed staging-restoration/publication target recorded below.
 
 ## Development Focus Update — 2026-07-20 (DotScript arrays live + DTV Phase-0)
 
-The maintainer-gated promotion objective below is still unchanged and open — no branch,
-commit, or push; `C:\x64base`/GitHub untouched. Latest active work (dev-only):
+Latest active work — the arrays + DTV milestone was **promoted + pushed** to `C:\x64base`
+→ `github.com/deraldg/x64base` `main` `7f7b7c75` (28 files). The broader maintainer-gated
+promotion objective below remains open (other in-flight lanes still dev-only):
 
 - **DotScript arrays are live** (AIF-038): `{…}` literals, scoped `$name` memory
   variables (`dottalk::dotscript::VarStore`), one-based `$a[n]` subscripts (nested/

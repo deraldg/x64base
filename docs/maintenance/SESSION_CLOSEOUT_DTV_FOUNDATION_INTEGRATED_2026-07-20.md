@@ -79,8 +79,15 @@ Session Log row + `CURRENT_TARGET` + the live Agent Sync page (agent-sync.mdx) r
 
 ## Published
 
-**Not promoted.** Dev-only on the existing branch in `D:\code\ccode`; no `C:\x64base`
-staging, no GitHub push. Website `agent-sync.mdx` updated in `D:\dev` (ready to publish).
+**Promoted + pushed 2026-07-20.** The proven arrays + DTV set (19 source files) plus the
+AI-facing/lane/decision docs were promoted to `C:\x64base` and pushed to
+`github.com/deraldg/x64base` `main` at commit `7f7b7c75` (28 files; all new sources
+tracked, none gitignored). Staging is fully proven under MSVC Release: `dottalkpp.exe`
+builds green and links `dottalk_value`, the `dottalk_value.lib` builds, and
+`dottalkpp_pdlc_foundation_smoke` **ctest 1/1 passed**. The earlier
+errorstop/lexer lane + other in-flight work were intentionally left unpromoted; nothing in
+this set depends on them. Website `agent-sync.mdx` updated in `D:\dev` (separate publish
+path, staged).
 
 ## Still open — next session
 
