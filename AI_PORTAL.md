@@ -30,6 +30,35 @@ After that canonical start, use these task-specific sources only when relevant:
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
 
+## AI-Friendly Dev-Tools — Ask for Limited Permission First
+
+x64base ships tools designed for AI development partners to extend and exercise the
+engine directly:
+
+- **Runtime DEF family** — `DEFCMD` / `UNDEFCMD` (commands) and `DEFFN` / `UNDEFFN`
+  (expression functions): mint **session-only** commands/functions at runtime, no rebuild.
+  Bodies are currently inert (echo / return text); custom functions resolve in
+  `?` / `CALC` / `WHERE` and compose with builtins. See `RUNTIME_DEF_FAMILY_LANE_V1.md`.
+- **`EXAMPLE`** — minimal token-routing / command-wiring testbed built-in.
+- The **write → compile → run → read-output loop** for agents that build and run `dottalkpp`.
+
+**Permission protocol (binding).** Any agent — AI or human — must obtain *limited*,
+scoped permission before using these dev-tools. This requirement is **global**; the
+project owner (Derald Grimwood) is the sole exemption. Ask for the specific tool and the
+specific task — do not assume blanket access.
+
+The technical gate (`include/cli/ai_devtools_policy.hpp`) is shipped **dormant**: it
+permits by default, so nothing is blocked today. The requirement is enforced by git
+review and the promotion gate until the owner activates enforcement
+(`DOTTALK_DEVTOOLS_REQUIRE_PERMISSION=1`, with a scoped `DOTTALK_DEVTOOLS_GRANT=1`).
+
+Loop-closing agents (e.g. Codex) are **not gated** — the compile/run loop stays smooth —
+but are bounded by git visibility, an isolated dev tree, the host-shell block
+(`DOTTALK_ALLOW_HOST_COMMANDS` off by default), and the human-reviewed promotion gate.
+
+Full threat model and controls:
+[`docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md`](docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md).
+
 ## Authority
 
 ```text

@@ -1,0 +1,57 @@
+* def_family_regression.dts
+* Runtime DEF-family testbed — DEFCMD / DEFFN / EXAMPLE (RUNTIME_DEF_FAMILY lane).
+*
+* Proves runtime definition, invocation, argument passthrough, expression resolution,
+* composition with a builtin, listing, and removal — all session-only, with no rebuild.
+* Kept as the PERMANENT worked example of the AI-friendly dev-tools.
+*
+* Environment bootstrap (regression doctrine: every test sets its own environment):
+* sets ECHO OFF + STOP_ON_ERROR OFF so the intentional post-removal "unknown" lines do
+* not abort the run. This test opens/mutates NO table and NO file — only the session
+* command/function registries, which it cleans up (UNDEFCMD/UNDEFFN). Safe for the
+* default suite once proven green.
+*
+* Expected (grep the transcript between BEGIN/END):
+*   EXAMPLE_TEST_expect_OK:              -> OK
+*   DEFCMD_invoke_expect_DEFCMD_BODY_OK: -> DEFCMD_BODY_OK
+*   DEFCMD_args_...:                     -> DEFCMD_BODY_OK a b
+*   DEFCMD_removed_...:                  -> Unknown command: PINGCMD
+*   DEFFN_resolve_expect_hello:          -> hello
+*   DEFFN_compose_expect_HELLO:          -> HELLO
+*   DEFFN_removed_expect_error:          -> (function evaluation failed)
+*
+* Run:  REGRESSION RUN DEF_FAMILY
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/def_family_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "DEF-FAMILY-REGRESSION-BEGIN"
+
+* --- EXAMPLE reference built-in (token routing / smallest command) ---
+FORMULA "EXAMPLE_TEST_expect_OK:"
+EXAMPLE TEST
+
+* --- DEFCMD: define -> invoke -> arg passthrough -> list -> remove -> gone ---
+DEFCMD PINGCMD = DEFCMD_BODY_OK
+FORMULA "DEFCMD_invoke_expect_DEFCMD_BODY_OK:"
+PINGCMD
+FORMULA "DEFCMD_args_expect_DEFCMD_BODY_OK_a_b:"
+PINGCMD a b
+DEFCMD LIST
+UNDEFCMD PINGCMD
+FORMULA "DEFCMD_removed_expect_Unknown_PINGCMD:"
+PINGCMD
+
+* --- DEFFN: define -> resolve in expression -> compose with builtin -> list -> remove ---
+DEFFN GREETFN = hello
+FORMULA "DEFFN_resolve_expect_hello:"
+? GREETFN()
+FORMULA "DEFFN_compose_expect_HELLO:"
+? UPPER(GREETFN())
+DEFFN LIST
+UNDEFFN GREETFN
+FORMULA "DEFFN_removed_expect_error:"
+? GREETFN()
+
+FORMULA "DEF-FAMILY-REGRESSION-END"

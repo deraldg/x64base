@@ -44,6 +44,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/command_registry.hpp"
+#include "cli/ai_devtools_policy.hpp"   // dormant AI dev-tools permission gate
 
 #include <iostream>
 #include <map>
@@ -91,6 +92,14 @@ void print_scratch_list()
 
 void cmd_DEFCMD(xbase::DbArea&, std::istringstream& iss)
 {
+    {
+        std::string why;
+        if (!dottalk::devtools::devtools_permitted(&why)) {
+            std::cout << "DEFCMD: " << why << "\n";
+            return;
+        }
+    }
+
     std::string rest;
     std::getline(iss, rest);
     rest = textio::trim(rest);

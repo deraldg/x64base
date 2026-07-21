@@ -40,6 +40,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "cli/expr/fn_custom.hpp"
+#include "cli/ai_devtools_policy.hpp"   // dormant AI dev-tools permission gate
 
 #include <iostream>
 #include <sstream>
@@ -81,6 +82,14 @@ void print_deffn_list()
 
 void cmd_DEFFN(xbase::DbArea&, std::istringstream& iss)
 {
+    {
+        std::string why;
+        if (!dottalk::devtools::devtools_permitted(&why)) {
+            std::cout << "DEFFN: " << why << "\n";
+            return;
+        }
+    }
+
     std::string rest;
     std::getline(iss, rest);
     rest = textio::trim(rest);

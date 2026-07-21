@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 17> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 18> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -176,13 +176,19 @@ constexpr std::array<RegressionSpec, 17> kRegressionSpecs{{
     {
         "INDEX_TXN",
         "migrated\\index_txn_lmdb_maintenance.dts",
-        "SET INDEXTXN transactional in-COMMIT index maintenance: buffered REPLACE/DELETE + COMMIT maintains the live CDX/LMDB index with NO BUILDLMDB. SEEK-asserted flip (OFF => new key misses; ON => hits at the sentinel + ordered BOTTOM lands on it + DELETE erases). Self-bootstrapping (disposable students_txn_smoke copy, never touches students), restores SET INDEXTXN OFF at cleanup. Out of the default suite (flips a global; explicit run) (AIF-027/023; feeds AIF-041 M1)",
+        "SET INDEXTXN transactional in-COMMIT index maintenance: buffered REPLACE/DELETE + COMMIT maintains the live CDX/LMDB index with NO BUILDLMDB. Self-asserting and fixture-free (builds + erases its own throwaway x64 IDXTXN table; never touches students). Scored on ORDERED position = index-truth (T1 commit-maintains, T2 dup-survivor): OFF => .F. (RED), ON => .T. (GREEN). Mode is env-driven (DOTTALK_INDEX_TXN) or runtime SET INDEXTXN; the script does not force the flag. Out of the default suite (mutates the filesystem; explicit run) (AIF-027/023; feeds AIF-041 M1)",
         false
     },
     {
         "SCAN_PARITY",
         "dotscript\\scan_memvar_parity_regression.dts",
         "Scan-path parity: $name resolves in a FOR/scan predicate (eval_bool: LOCATE/COUNT/SCAN/LIST FOR + SET FILTER) via the shared bridge. GREEN since the AIF-041 scan convergence landed (2026-07-21). Self-bootstrapping throwaway SCANREGR in SANDBOX; stays out of the default suite because it mutates the filesystem (explicit run) (AIF-041)",
+        false
+    },
+    {
+        "DEF_FAMILY",
+        "dotscript\\def_family_regression.dts",
+        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. Explicit-run until proven green in-suite, then promote to default.",
         false
     }
 }};
