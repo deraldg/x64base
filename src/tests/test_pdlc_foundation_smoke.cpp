@@ -96,7 +96,7 @@ int main() {
         "STUDENTS",
         "STUDENTS",
         "students",
-        "D:/code/ccode/dottalkpp/data/dbf/x64/students.dbf",
+        "data/x64/students.dbf",
         StorageFlavor::V64
     };
     const FieldIdentity field{"LNAME", "LNAME", 3, 'C'};
