@@ -472,6 +472,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
     registry().add("DEFCMD",       [](DbArea& A, std::istringstream& S){ cmd_DEFCMD(A,S);      });
     registry().add("UNDEFCMD",     [](DbArea& A, std::istringstream& S){ cmd_UNDEFCMD(A,S);    });
+    registry().add("DEFFN",        [](DbArea& A, std::istringstream& S){ cmd_DEFFN(A,S);       });
+    registry().add("UNDEFFN",      [](DbArea& A, std::istringstream& S){ cmd_UNDEFFN(A,S);     });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });

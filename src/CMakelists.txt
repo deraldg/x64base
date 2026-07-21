@@ -233,6 +233,9 @@ if (NOT DOTTALK_COMPONENT_EXTERNAL)
   list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/ms365/")
   list(REMOVE_ITEM DOTTALKPP_SOURCES
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_bang.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_defcmd.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_deffn.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_example.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_image_display.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_sftp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_web.cpp"

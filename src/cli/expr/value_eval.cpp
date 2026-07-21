@@ -20,6 +20,7 @@
 #include "cli/expr/fn_date.hpp"
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_numeric.hpp"
+#include "cli/expr/fn_custom.hpp"                     // RUNTIME_DEF_FAMILY runtime custom fns
 #include "cli/expr/glue_xbase.hpp"
 #include "cli/expr/dotscript_predicate_bridge.hpp"   // AIF-041 scan/filter $name convergence
 
@@ -252,6 +253,14 @@ private:
                     }
                 }
 
+                // custom fns (runtime-registered — RUNTIME_DEF_FAMILY lane)
+                if (const auto* c = dottalk::expr::find_custom_fn(fn)) {
+                    const int argc = static_cast<int>(args.size());
+                    if (argc < c->minArgs || argc > c->maxArgs) return false;
+                    out = c->eval(args);
+                    return true;
+                }
+
                 return false;
             }
 
@@ -298,6 +307,8 @@ static bool is_known_value_fn_upper(const std::string& nameUpper) {
     for (int i = 0; i < static_cast<int>(dottalk::expr::numeric_fn_specs_count()); ++i) {
         if (nameUpper == n[i].name) return true;
     }
+
+    if (dottalk::expr::find_custom_fn(nameUpper)) return true;
 
     return false;
 }
