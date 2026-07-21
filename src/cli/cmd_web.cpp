@@ -12,27 +12,35 @@
 //
 // usage:
 //   WEB USAGE
-//   WEB OPEN <url>
-//   WEB LAUNCH <url>
-//   WEB GET <url>
-//   WEB HEAD <url>
-//   WEB FETCH <url> TO <file>
+//   WEB DEFAULT
+//   WEB RETRO
+//   WEB OPEN <url|DEFAULT|RETRO>
+//   WEB LAUNCH <url|DEFAULT|RETRO>
+//   WEB GET <url|DEFAULT|RETRO>
+//   WEB HEAD <url|DEFAULT|RETRO>
+//   WEB FETCH <url|DEFAULT|RETRO> TO <file>
 //
 // examples:
+//   WEB DEFAULT
+//   WEB RETRO
 //   WEB OPEN https://example.com
+//   WEB OPEN DEFAULT
 //   WEB HEAD https://example.com
 //   WEB GET https://example.com
 //   WEB FETCH https://example.com/data.csv TO tmp\data.csv
 //
 // notes:
 //   WEB USAGE prints usage and does not launch a browser, make a network request, or write files.
+//   WEB DEFAULT opens x64base.com.
+//   WEB RETRO opens the Flying Toasters page.
+//   DEFAULT and RETRO are accepted anywhere a URL operand is accepted.
 //   WEB OPEN/LAUNCH use the OS default URL handler.
 //   WEB GET/HEAD use HTTP request support where implemented.
 //   WEB FETCH writes the response body to the requested file.
 //
 // risk:
 //   network_access: WEB GET/HEAD/FETCH
-//   launches_external_app: WEB OPEN/LAUNCH
+//   launches_external_app: WEB DEFAULT/RETRO/OPEN/LAUNCH
 //   writes_filesystem: WEB FETCH
 //   mutates_table_data: no
 //
@@ -67,18 +75,33 @@ namespace fs = std::filesystem;
 
 namespace {
 
+struct NamedWebTarget final {
+    const char* name;
+    const char* url;
+};
+
+constexpr NamedWebTarget kNamedWebTargets[] = {
+    {"DEFAULT", "https://x64base.com/"},
+    {"RETRO", "https://www.bryanbraun.com/after-dark-css/all/flying-toasters.html"},
+};
+
 static void web_usage()
 {
     std::cout
         << "Usage:\n"
         << "  WEB USAGE\n"
-        << "  WEB OPEN <url>\n"
-        << "  WEB LAUNCH <url>\n"
-        << "  WEB GET <url>\n"
-        << "  WEB HEAD <url>\n"
-        << "  WEB FETCH <url> TO <file>\n"
+        << "  WEB DEFAULT\n"
+        << "  WEB RETRO\n"
+        << "  WEB OPEN <url|DEFAULT|RETRO>\n"
+        << "  WEB LAUNCH <url|DEFAULT|RETRO>\n"
+        << "  WEB GET <url|DEFAULT|RETRO>\n"
+        << "  WEB HEAD <url|DEFAULT|RETRO>\n"
+        << "  WEB FETCH <url|DEFAULT|RETRO> TO <file>\n"
         << "Examples:\n"
+        << "  WEB DEFAULT\n"
+        << "  WEB RETRO\n"
         << "  WEB OPEN https://example.com\n"
+        << "  WEB OPEN DEFAULT\n"
         << "  WEB HEAD https://example.com\n"
         << "  WEB GET https://example.com\n"
         << "  WEB FETCH https://example.com/data.csv TO tmp\\data.csv\n"
@@ -93,6 +116,19 @@ static std::string uppercase_copy(std::string s)
         c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     }
     return s;
+}
+
+static std::string resolve_web_target(const std::string& operand)
+{
+    const std::string name = uppercase_copy(operand);
+
+    for (const NamedWebTarget& target : kNamedWebTargets) {
+        if (name == target.name) {
+            return target.url;
+        }
+    }
+
+    return operand;
 }
 
 #ifdef _WIN32
@@ -488,6 +524,19 @@ void cmd_WEB(DbArea&, std::istringstream& S)
         return;
     }
 
+    if (sub == "DEFAULT" || sub == "RETRO") {
+        const std::string url = resolve_web_target(sub);
+        std::string err;
+
+        if (!launch_url_default_handler(url, err)) {
+            std::cout << "WEB " << sub << ": " << err << "\n";
+            return;
+        }
+
+        std::cout << "WEB " << sub << ": launched " << url << "\n";
+        return;
+    }
+
     if (sub == "OPEN" || sub == "LAUNCH") {
         std::string url;
 
@@ -495,6 +544,8 @@ void cmd_WEB(DbArea&, std::istringstream& S)
             web_usage();
             return;
         }
+
+        url = resolve_web_target(url);
 
         std::string err;
 
@@ -514,6 +565,8 @@ void cmd_WEB(DbArea&, std::istringstream& S)
             web_usage();
             return;
         }
+
+        url = resolve_web_target(url);
 
 #ifdef _WIN32
         std::vector<char> bytes;
@@ -543,6 +596,8 @@ void cmd_WEB(DbArea&, std::istringstream& S)
             web_usage();
             return;
         }
+
+        url = resolve_web_target(url);
 
         std::string toKw;
 

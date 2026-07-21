@@ -13,19 +13,23 @@
 //
 // usage:
 //   IMAGE USAGE
+//   IMAGE DEFAULT
 //   IMAGE <file>
+//   IMAGE INFO DEFAULT
 //   IMAGE INFO <file>
 //
 // notes:
 //   IMAGE with no arguments prints usage.
 //   IMAGE USAGE prints usage and does not open a viewer.
+//   IMAGE DEFAULT opens "arctic fox.png" beside the running executable.
+//   IMAGE INFO DEFAULT reports metadata for the default image.
 //   IMAGE INFO <file> prints file extension, size, and recognized-image status.
 //   IMAGE <file> opens the OS viewer on Windows.
 //   Non-Windows viewer launch is currently not implemented.
 //   IMAGE does not mutate table data.
 //
 // risk:
-//   launches_external_viewer: IMAGE <file> on Windows
+//   launches_external_viewer: IMAGE DEFAULT or IMAGE <file> on Windows
 //   reads_filesystem_metadata: yes
 //   mutates_table_data: no
 //
@@ -55,6 +59,8 @@ namespace fs = std::filesystem;
 using xbase::DbArea;
 
 namespace {
+
+constexpr const char* kDefaultImageName = "arctic fox.png";
 
 static std::string upcopy(std::string s)
 {
@@ -105,6 +111,40 @@ static bool file_exists_regular(const fs::path& p)
     return fs::exists(p, ec) && fs::is_regular_file(p, ec);
 }
 
+static fs::path executable_directory()
+{
+#ifdef _WIN32
+    // Use the running executable, not the process working directory.
+    // A large dynamic buffer avoids the legacy MAX_PATH limit.
+    std::wstring buffer(32768, L'\0');
+    const DWORD length = ::GetModuleFileNameW(
+        nullptr,
+        buffer.data(),
+        static_cast<DWORD>(buffer.size()));
+
+    if (length > 0 && length < buffer.size()) {
+        buffer.resize(length);
+        return fs::path(buffer).parent_path();
+    }
+#endif
+
+    std::error_code ec;
+    const fs::path current = fs::current_path(ec);
+    return ec ? fs::path(".") : current;
+}
+
+static fs::path default_image_path()
+{
+    return executable_directory() / kDefaultImageName;
+}
+
+static fs::path resolve_image_operand(const std::string& operand)
+{
+    return upcopy(operand) == "DEFAULT"
+        ? default_image_path()
+        : fs::path(operand);
+}
+
 static bool supported_image_ext(const std::string& extUpper)
 {
     return extUpper == ".BMP"  ||
@@ -123,8 +163,12 @@ static void usage()
     std::cout
         << "Usage:\n"
         << "  IMAGE USAGE\n"
+        << "  IMAGE DEFAULT\n"
         << "  IMAGE <file>\n"
-        << "  IMAGE INFO <file>\n";
+        << "  IMAGE INFO DEFAULT\n"
+        << "  IMAGE INFO <file>\n"
+        << "Default image:\n"
+        << "  " << kDefaultImageName << " (beside the executable)\n";
 }
 
 static void print_info(const fs::path& p)
@@ -149,10 +193,10 @@ static void print_info(const fs::path& p)
 #ifdef _WIN32
 static std::intptr_t open_external_viewer_rc(const fs::path& p)
 {
-    HINSTANCE rc = ShellExecuteA(
+    HINSTANCE rc = ::ShellExecuteW(
         nullptr,
-        "open",
-        p.string().c_str(),
+        L"open",
+        p.c_str(),
         nullptr,
         nullptr,
         SW_SHOWNORMAL);
@@ -185,7 +229,7 @@ void cmd_IMAGE_DISPLAY(DbArea&, std::istringstream& iss)
             return;
         }
 
-        fs::path p(raw);
+        const fs::path p = resolve_image_operand(raw);
         if (!file_exists_regular(p)) {
             std::cout << "IMAGE INFO: file not found: " << p.string() << "\n";
             return;
@@ -195,9 +239,8 @@ void cmd_IMAGE_DISPLAY(DbArea&, std::istringstream& iss)
         return;
     }
 
-    // default form: IMAGE <file>
-    const std::string raw = tok;
-    fs::path p(raw);
+    // IMAGE DEFAULT or existing IMAGE <file> form.
+    const fs::path p = resolve_image_operand(tok);
 
     if (!file_exists_regular(p)) {
         std::cout << "IMAGE: file not found: " << p.string() << "\n";
