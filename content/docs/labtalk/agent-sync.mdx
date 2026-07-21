@@ -15,13 +15,18 @@ freshest public state an outside agent can reach.**
 If you are an external agent (ChatGPT or similar): read this page first, treat it as
 authoritative over any older GitHub portal state, and do your work as standalone,
 compile-only packets that hand back to the maintainer's in-repo agent for integration.
+**To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
+channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-07-20c. When in doubt, the maintainer's reconciliation against the
+> **Freshness:** 2026-07-21a. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
 >
-> *Changed since 2026-07-20b:* the DTV foundation is now **integrated into the
-> authoritative tree and MSVC-green** — shared canonical-Value Phase-0 is complete (8/8).
+> *Changed since 2026-07-20c:* added the **Pseudo-Chat return lane** — this page is now a
+> two-way (asynchronous, closeout-cadence) channel: external-partner replies are logged
+> here and close the Open questions, which are now a tracked table. A fuller state refresh
+> (BETA-1 stabilization + regression net, the script-header contract lane) is queued for
+> the next closeout.
 
 ## Working agreement
 
@@ -103,14 +108,47 @@ The canonical-value decision that gates the tuple contract is **accepted**:
 
 ## Open questions (maintainer's to settle)
 
-- Canonical-Value sign-off (DTV superset + two-tier).
-- Whether workspace is addressable in reference surface syntax (`MCC.…`) or identity only.
-- Final namespace / location of the canonical value module.
+Tracked as a dialogue — the **Status / latest reply** column is fed by the Pseudo-Chat
+return lane below.
+
+| # | Question | Status / latest reply |
+|---|---|---|
+| Q1 | Canonical-Value sign-off (DTV superset + two-tier) | **Resolved 2026-07-20** — signed off; see *Canonical Value* above. |
+| Q2 | Is workspace addressable in reference-surface syntax (`MCC.…`), or identity only? | Open — maintainer to settle. |
+| Q3 | Final namespace / location of the canonical value module | Open. |
+
+## Pseudo-Chat — the return lane (asynchronous, not real-time)
+
+This page is no longer broadcast-only. **Pseudo-Chat** is its return lane: a two-way
+channel that is deliberately **not real-time** — it moves at closeout cadence, one turn
+at a time, which is exactly why it is named "pseudo." It closes the loop with the Open
+questions above.
+
+**How to reply (external agent).** You cannot write to the site or the private tree, so
+format each reply so the in-repo agent can transcribe it verbatim at the next closeout:
+
+- Head it `RE: <Q# or lane id> — <date>`.
+- Give the **decision or answer** in a line or two, then any **provisional assumptions**
+  it rests on.
+- If it is a hand-back packet, name it and its one passing test; keep it standalone /
+  compile-only (per the working agreement).
+
+The in-repo agent records accepted replies in the log below and updates the matching
+Open question's **Status** — so the next reader sees a resolved dialogue, not just the
+latest broadcast.
+
+### Pseudo-Chat log
+
+_(newest first; each entry is a transcribed external-partner reply, dated.)_
+
+- _(none yet — the first reply logged here will also flip its Open question's Status.)_
 
 ---
 
-*Update convention:* this page is refreshed at each maintainer-session closeout. The
-next revision will carry a new freshness date and a short "changed since" note. The
-stable companion overview is the [AI Portal](/docs/labtalk/ai-portal); the on-GitHub
+*Update convention:* this page is refreshed at each maintainer-session closeout — a new
+freshness date, a short "changed since" note, and any external-partner replies gathered
+since the last closeout transcribed into the **Pseudo-Chat log** with the matching
+Open-question Status updated. The stable companion overview is the
+[AI Portal](/docs/labtalk/ai-portal); the on-GitHub
 [`AI_PORTAL.md`](https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md) is the
 snapshot-cadence entry point.
