@@ -1,3 +1,23 @@
+// @dottalk.usage v1
+// owner: DOT|PREDHELP
+// command: PREDHELP
+// aliases: PREDICATES
+// category: help
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: PREDHELP; PREDICATES
+// summary:
+//   Report predicate syntax, operators, functions, and filtering examples.
+// usage:
+//   PREDHELP
+//   PREDICATES
+// notes:
+//   PREDICATES is the registered descriptive alias of PREDHELP.
+// related:
+//   COUNT, LOCATE, SET CASE
+//
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -48,7 +68,6 @@ static bool s_reg = [](){
     dli::registry().add("PREDICATES",   &cmd_PREDICATES);
     return true;
 }();
-
 
 
 

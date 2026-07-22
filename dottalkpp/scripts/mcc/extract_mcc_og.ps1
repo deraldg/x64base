@@ -15,7 +15,8 @@
     cannot be regenerated.
 
 .PARAMETER Root
-    Development root. Defaults to D:\code\ccode.
+    Repo root. Defaults to the root inferred from this script's own location,
+    so it runs against whatever clone it lives in.
 
 .PARAMETER Force
     Replace an existing og/ directory.
@@ -26,11 +27,17 @@
 
 [CmdletBinding()]
 param(
-    [string] $Root = "D:\code\ccode",
+    [string] $Root,
     [switch] $Force
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $Root) {
+    # Derive the repo root from this script's own location -- never hardcode a
+    # dev path. <repo>\dottalkpp\scripts\mcc\extract_mcc_og.ps1
+    $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+}
 
 $resolved = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\')
 $zip      = Join-Path $resolved "dottalkpp\data\dbf\MyCommunityCollege.zip"

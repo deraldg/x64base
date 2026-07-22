@@ -77,6 +77,15 @@ struct SysFuncSeedRow {
     std::string notes;
 };
 
+struct SysCmdSeedRow {
+    std::string cmd_id;
+    std::string can_name;
+    std::string type;
+    std::string vis;
+    std::string handler;
+    bool active = true;
+};
+
 struct SysArgSeedRow {
     std::string arg_id;
     std::string owner_knd;
@@ -97,11 +106,13 @@ struct SysArgSeedRow {
 
 CollectResult collect_catalog_facts(const CollectOptions& options);
 std::vector<CompareIssue> compare_catalog_facts(const std::vector<MetaFact>& facts);
+std::vector<SysCmdSeedRow> collect_syscmd_seed_rows(const CollectOptions& options);
 std::vector<SysFuncSeedRow> collect_sysfunc_seed_rows();
 std::vector<SysArgSeedRow> collect_sysargs_seed_rows(const CollectOptions& options);
 
 void write_metafacts_csv(std::ostream& out, const std::vector<MetaFact>& facts);
 void write_compare_issues_csv(std::ostream& out, const std::vector<CompareIssue>& issues);
+void write_syscmd_seed_csv(std::ostream& out, const std::vector<SysCmdSeedRow>& rows);
 void write_sysfunc_seed_csv(std::ostream& out, const std::vector<SysFuncSeedRow>& rows);
 void write_sysargs_seed_csv(std::ostream& out, const std::vector<SysArgSeedRow>& rows);
 

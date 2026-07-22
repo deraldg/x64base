@@ -1,4 +1,5 @@
 #include "cli/script_reader.hpp"
+#include "cli/dotscript_lexing.hpp"
 
 #include <cctype>
 #include <string>
@@ -41,40 +42,7 @@ static bool leading_command_is_sqlite(const std::string& s)
 
 static std::string strip_hash_comment(const std::string& s)
 {
-    bool in_single = false;
-    bool in_double = false;
-    bool esc = false;
-
-    for (std::size_t i = 0; i < s.size(); ++i) {
-        const char c = s[i];
-
-        if (esc) {
-            esc = false;
-            continue;
-        }
-        if (c == '\\') {
-            esc = true;
-            continue;
-        }
-        if (!in_double && c == '\'') {
-            in_single = !in_single;
-            continue;
-        }
-        if (!in_single && c == '"') {
-            in_double = !in_double;
-            continue;
-        }
-
-        if (!in_single && !in_double && c == '#') {
-            std::size_t j = i;
-            while (j > 0 && (s[j - 1] == ' ' || s[j - 1] == '\t')) {
-                --j;
-            }
-            return s.substr(0, j);
-        }
-    }
-
-    return s;
+    return dottalk::lexing::strip_inline_comment(s);
 }
 
 static bool last_semicolon_is_outside_quotes(const std::string& s)
@@ -119,14 +87,17 @@ static void trim_trailing_cr(std::string& s)
 
 } // namespace
 
-bool read_script_command(std::istream& in, std::string& out)
+bool read_script_command(std::istream& in, std::string& out, int& physical_lines)
 {
     out.clear();
+    int lines = 0;
 
     std::string line;
     if (!std::getline(in, line)) {
+        physical_lines = 0;
         return false;
     }
+    ++lines;
 
     trim_trailing_cr(line);
     line = strip_hash_comment(line);
@@ -148,6 +119,7 @@ bool read_script_command(std::istream& in, std::string& out)
         if (!std::getline(in, more)) {
             break;
         }
+        ++lines;
 
         trim_trailing_cr(more);
         more = strip_hash_comment(more);
@@ -159,5 +131,13 @@ bool read_script_command(std::istream& in, std::string& out)
     }
 
     out = accum;
+    physical_lines = lines;
     return true;
+}
+
+// 2-arg convenience overload (original signature/symbol, unchanged) -> delegates.
+bool read_script_command(std::istream& in, std::string& out)
+{
+    int ignored = 0;
+    return read_script_command(in, out, ignored);
 }

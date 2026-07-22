@@ -104,8 +104,8 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
 
     if (u == "TO" || u == "RECORD") {
         std::string nTok;
-        int n = 0;
-        if (!(in >> nTok) || !cli::nav::try_parse_int_token(nTok, n) || n <= 0) {
+        std::uint64_t n = 0;
+        if (!(in >> nTok) || !cli::nav::try_parse_u64_token(nTok, n) || n == 0) {
             cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
             cli::cmdout::show_command_syntax("GO");
             return;
@@ -119,14 +119,18 @@ void cmd_GO(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    int n = 0;
-    if (cli::nav::try_parse_int_token(tok, n)) {
-        if (!tok.empty() && (tok[0] == '+' || tok[0] == '-')) {
-            cli::nav::skip_relative(A, n, "GO");
-        } else {
-            cli::nav::go_absolute(A, n, "GO");
+    if (!tok.empty() && (tok[0] == '+' || tok[0] == '-')) {
+        int rel = 0;
+        if (cli::nav::try_parse_int_token(tok, rel)) {
+            cli::nav::skip_relative(A, rel, "GO");
+            return;
         }
-        return;
+    } else {
+        std::uint64_t n = 0;
+        if (cli::nav::try_parse_u64_token(tok, n)) {
+            cli::nav::go_absolute(A, n, "GO");
+            return;
+        }
     }
 
     cli::cmdout::print_prefixed_message("GO", dottalk::helpdata::MessageId::GoUnrecognizedCommandFormText);

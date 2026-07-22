@@ -4,6 +4,8 @@
 #include "cli/command_catalog.hpp"
 #include "cli/settings.hpp"
 
+#include "xbase_error_context.hpp"
+
 #include <ostream>
 #include <vector>
 
@@ -90,6 +92,24 @@ void print_warning(const char* cmd, xbase::error::code ec)
     } else {
         out() << "warning: " << xbase::error::to_string(ec) << '\n';
     }
+}
+
+void emit_error(
+    dottalk::helpdata::MessageId id,
+    xbase::error::code ec,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    print_message(id, vars);            // localized display (unchanged path)
+    xbase::error::set_last_error(ec);   // recorded state for ERROR_STATUS / ERRORSTOP
+}
+
+void emit_warning(
+    dottalk::helpdata::MessageId id,
+    xbase::error::code ec,
+    const std::unordered_map<std::string, std::string>& vars)
+{
+    print_message(id, vars);
+    xbase::error::set_last_error(ec);
 }
 
 void print_note(const char* cmd, const std::string& text)

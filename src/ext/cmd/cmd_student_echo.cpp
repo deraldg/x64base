@@ -1,6 +1,7 @@
 // @dottalk.usage v1
 // owner: EXT|STUDENTECHO
-// command: STUDENTECHO / SECHO
+// command: STUDENTECHO
+// aliases: SECHO
 // category: extension-example
 // status: sample-extension
 // noargs: usage

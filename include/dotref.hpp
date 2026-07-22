@@ -94,14 +94,17 @@ inline const std::vector<Item>& catalog() {
 
         {"LMDB",      "LMDB [USAGE|INFO|OPEN|USE|SEEK|DUMP|SCAN|CLOSE] ...", "Inspect or manage per-area LMDB-backed index/storage wiring where supported.", true},
 
-        {"VDISK",     "VDISK MOUNT|UNMOUNT|STATUS",
+        {"VDISK",     "VDISK MOUNT|UNMOUNT|STATUS|CONFIG",
                  "Activate the in-process RAM virtual disk for in-memory tables (AIF-043). "
                  "MOUNT points the DBF/INDEXES/LMDB path slots under the relocatable RAM slot "
                  "(default data\\ram) and mounts it as an xbase::ramfs virtual root, so CREATE "
                  "X64, USE, and native CDX-V64 live entirely in RAM with no files on disk. "
                  "UNMOUNT drops all RAM files and unmounts (ephemeral teardown). STATUS reports "
-                 "the RAM root, mount state, byte usage, and resident file list. Relocate the RAM "
-                 "root with SET PATH RAM <path> before MOUNT. Typically activated via DO mem.", true},
+                 "the RAM root, mount state, byte usage, and resident file list. CONFIG shows the "
+                 "optional bin/vdisk.ini admin config (enabled/root/mode/size/warn_pct/on_full), the "
+                 "Layer-1 sizing recommendation, and the Layer-2 soft budget. Relocate the RAM root "
+                 "with SET PATH RAM <path> (or the vdisk.ini root key) before MOUNT. Typically "
+                 "activated via DO mem.", true},
 
         {"CNX",       "CNX <name>",
                  "Index container command (CNX multi-tag support).", true},

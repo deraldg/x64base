@@ -40,12 +40,12 @@
 
 #include <cctype>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <vector>
 #include <cstdint>
 #include <string_view>
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/memo_field_store.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"
@@ -103,14 +103,7 @@ static std::vector<std::string> split_import_csv_record(std::string line, bool s
 
 static void print_import_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  IMPORT USAGE\n"
-        << "  IMPORT <csvfile>\n"
-        << "Notes:\n"
-        << "  - IMPORT requires an open table except for IMPORT USAGE.\n"
-        << "  - CSV headers are matched to field names case-insensitively.\n"
-        << "  - IMPORT appends records to the current table.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ImportUsageText);
 }
 } // namespace
 
@@ -121,16 +114,26 @@ void cmd_IMPORT(DbArea& a, std::istringstream& iss) {
         return;
     }
 
-    if (!a.isOpen()) { std::cout << "No file open\n"; return; }
+    if (!a.isOpen()) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ImportNoFileOpenText);
+        return;
+    }
     std::string csvfile; iss >> csvfile;
     if (csvfile.empty()) { print_import_usage(); return; }
     if (!textio::ends_with_ci(csvfile, ".csv")) csvfile += ".csv";
 
     std::ifstream in(csvfile, std::ios::binary);
-    if (!in) { std::cout << "Cannot open " << csvfile << " for read.\n"; return; }
+    if (!in) {
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::ImportCannotOpenText, {{"file", csvfile}});
+        return;
+    }
 
     std::string record;
-    if (!csv::read_record(in, record)) { std::cout << "Empty CSV.\n"; return; }
+    if (!csv::read_record(in, record)) {
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::ImportEmptyCsvText);
+        return;
+    }
     auto headers = split_import_csv_record(record, true);
 
     std::vector<int> col2fld; col2fld.reserve(headers.size());
@@ -141,23 +144,35 @@ void cmd_IMPORT(DbArea& a, std::istringstream& iss) {
     while (csv::read_record(in, record)) {
         auto cols = split_import_csv_record(record, false);
         if (cols.empty()) continue;
-        if (!a.appendBlank()) { std::cout << "Append failed.\n"; break; }
+        if (!a.appendBlank()) {
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ImportAppendFailedText);
+            break;
+        }
         for (size_t c = 0; c < cols.size() && c < col2fld.size(); ++c) {
             int fi = col2fld[c];
             if (fi > 0) {
                 std::string import_err;
                 if (!dottalk::cli::memo_field_store::store_user_value(a, fi, cols[c], import_err)) {
-                    std::cout << "IMPORT: " << import_err
-                              << " at rec " << a.recno()
-                              << ", column " << (c + 1) << ".\n";
+                    cli::cmdout::print_prefixed_message(
+                        "IMPORT", dottalk::helpdata::MessageId::ImportStoreErrorText,
+                        {{"detail", import_err},
+                         {"recno", std::to_string(a.recno())},
+                         {"column", std::to_string(c + 1)}});
                     break;
                 }
             }
         }
-        if (!a.writeCurrent()) { std::cout << "Write failed at rec " << a.recno() << "\n"; break; }
+        if (!a.writeCurrent()) {
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::ImportWriteFailedText,
+                {{"recno", std::to_string(a.recno())}});
+            break;
+        }
         ++imported;
     }
-    std::cout << "Imported " << imported << " records from " << csvfile << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ImportedCountText,
+        {{"count", std::to_string(imported)}, {"file", csvfile}});
 }
 
 

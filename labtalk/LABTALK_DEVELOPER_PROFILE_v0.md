@@ -104,6 +104,20 @@ Do not publish the raw resume text from the attachment by default.
 Public pages may use the short-form or portfolio-form copy above after review.
 Private or job-search materials may use the full resume separately.
 
+### Current repository exposure
+
+This derived profile is **not private or dev-only in Git history**. It entered
+the public `deraldg/x64base` repository in commit `e7ddbc1b8` and is reachable
+from the public `homegrown-cnx-20251112-branch` (verified 2026-07-14). It is not
+currently part of public `main`.
+
+The raw resume attachment and contact details are not stored in this file. Do
+not promote this profile to `main`, a website, or another publication surface
+until its facts and wording are reviewed. If this profile must be removed from
+the already-public branch history, that is a separate repository-history and
+privacy operation; deleting it from a later commit would not erase the earlier
+public commit.
+
 ## LabTalk Integration Points
 
 Recommended uses:
@@ -112,5 +126,5 @@ Recommended uses:
 - Reference it from the x64base/LabTalk presentation plan as background context.
 - Use the crosswalk when building historical cases around Army payroll, Alcoa,
   Paxon, SAP/ERP, xBase, and teaching.
-- Keep resume-derived material in the SDLC `dev` or `historical_review_needed`
-  state until facts, dates, and publication wording are reviewed.
+- Keep resume-derived material in `historical_review_needed` state until facts,
+  dates, publication wording, and existing public-branch exposure are reviewed.

@@ -4,6 +4,25 @@
 // - CoutRedirectBuf declared before use; Uses_TMenu added.
 // - Width math mostly in 'int' (two benign C4244s may remain).
 
+// @dottalk.usage v1
+// owner: UI|FOXPRO
+// command: FOXPRO
+// category: turbo-vision-ui
+// status: supported-conditional
+// noargs: interactive-launch
+// effect: interactive
+// mutates: ui-cursor-and-delegated-command-state
+// usage-access: HELP FOXPRO
+// summary:
+//   Launch the FoxPro-style Turbo Vision workbench when TV support is available.
+// usage:
+//   FOXPRO
+// notes:
+//   Direct invocation launches the UI; there is no command-local usage branch.
+// related:
+//   ARCTICTALK, TVISION, BROWSETV, RECORDVIEW
+//
+
 #include <iostream>
 #include <sstream>
 #include <streambuf>

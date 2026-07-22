@@ -6,8 +6,7 @@
 // behavior: TranscriptTeeBuf duplicates stream writes; ScopedShellTranscript owns start/stop lifecycle
 // safety: restores std::cout/std::cerr buffers on scope exit; nested calls reuse active transcript instead of replacing it
 // mutation_boundary: no DBF/CDX/LMDB/HELP/CMDHELPCHK/MANSTAR mutation; source service only
-// @dottalk.usage v1
-// service: shell_transcript::ScopedShellTranscript
+// interface: shell_transcript::ScopedShellTranscript
 // syntax: ScopedShellTranscript(path, append, tee_console, capture_cerr, error_out)
 // output: transcript file receives full command output emitted through std::cout
 // console: tee_console=true preserves interactive console visibility

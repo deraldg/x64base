@@ -62,11 +62,11 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "cli/command_output.hpp"
 #include "cli/command_registry.hpp"
 #include "cli/path_resolver.hpp"
 #include "textio.hpp"
@@ -213,20 +213,7 @@ static std::vector<fs::path> build_sidecar_list(const fs::path& dbf_path) {
 }
 
 static void print_usage() {
-    std::cout
-        << "Usage:\n"
-        << "  ERASE USAGE\n"
-        << "  ERASE <table> [CONFIRM]\n"
-        << "  ERASE TABLE <table> [CONFIRM]\n"
-        << "Examples:\n"
-        << "  ERASE TABLE clients\n"
-        << "  ERASE TABLE clients CONFIRM\n"
-        << "  ERASE students.dbf CONFIRM\n"
-        << "Notes:\n"
-        << "  - ERASE USAGE does not inspect or delete files.\n"
-        << "  - Physically deletes <table>.dbf and known same-stem sidecars.\n"
-        << "  - Without CONFIRM, performs a dry-run and prints what would be deleted.\n"
-        << "  - CONFIRM performs deletion.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::EraseUsageText);
 }
 
 void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
@@ -264,7 +251,9 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
 
     fs::path dbf_path;
     if (!try_resolve_existing(wanted, dbf_path)) {
-        std::cout << "ERASE: Table not found: " << s8(wanted) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ERASE", dottalk::helpdata::MessageId::EraseTableNotFoundText,
+            {{"table", s8(wanted)}});
         return;
     }
 
@@ -280,24 +269,30 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
     }
 
     if (existing.empty()) {
-        std::cout << "ERASE: Nothing to delete for: " << s8(dbf_path) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ERASE", dottalk::helpdata::MessageId::EraseNothingToDeleteText,
+            {{"path", s8(dbf_path)}});
         return;
     }
 
     // Dry-run unless confirmed
     if (!confirm) {
-        std::cout << "ERASE (dry-run): would delete " << existing.size()
-                  << " file(s) for table: " << s8(dbf_path.stem()) << "\n";
-        for (const auto& f : existing) std::cout << "  " << s8(f.filename()) << "\n";
-        std::cout << "Re-run with CONFIRM to perform deletion.\n";
+        cli::cmdout::print_prefixed_message(
+            "ERASE (dry-run)", dottalk::helpdata::MessageId::EraseDryRunHeaderText,
+            {{"count", std::to_string(existing.size())},
+             {"table", s8(dbf_path.stem())}});
+        for (const auto& f : existing) cli::cmdout::print_line("  " + s8(f.filename()));
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::EraseReRunConfirmText);
         return;
     }
 
     int deleted = 0;
     int failed  = 0;
 
-    std::cout << "ERASE: deleting " << existing.size()
-              << " file(s) for table: " << s8(dbf_path.stem()) << "\n";
+    cli::cmdout::print_prefixed_message(
+        "ERASE", dottalk::helpdata::MessageId::EraseDeletingHeaderText,
+        {{"count", std::to_string(existing.size())},
+         {"table", s8(dbf_path.stem())}});
 
     for (const auto& f : existing) {
         ec.clear();
@@ -311,18 +306,26 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
         }
         if (ec) {
             ++failed;
-            std::cout << "  FAILED: " << s8(f.filename()) << "  (" << ec.message() << ")\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::EraseFailedLineText,
+                {{"file", s8(f.filename())}, {"error", ec.message()}});
         } else {
             ++deleted;
             if (removed > 1) {
-                std::cout << "  Deleted: " << s8(f.filename()) << "  (" << removed << " entries)\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::EraseDeletedEntriesLineText,
+                    {{"file", s8(f.filename())}, {"entries", std::to_string(removed)}});
             } else {
-                std::cout << "  Deleted: " << s8(f.filename()) << "\n";
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::EraseDeletedLineText,
+                    {{"file", s8(f.filename())}});
             }
         }
     }
 
-    std::cout << "ERASE complete. Deleted: " << deleted << ", Failed: " << failed << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::EraseCompleteText,
+        {{"deleted", std::to_string(deleted)}, {"failed", std::to_string(failed)}});
 }
 
 static bool s_registered = []() {

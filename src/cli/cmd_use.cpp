@@ -67,6 +67,7 @@
 #include "xbase_64.hpp"
 #include "xbase/area_kind_util.hpp"
 #include "cli/command_output.hpp"
+#include "cli/table_state.hpp"   // crash recovery of the table-buffer .tbj journal
 #include "cli/order_state.hpp"
 #include "cli/order_hooks.hpp"      // to run reconcile_after_mutation()
 #include "cli/cmd_setpath.hpp"
@@ -560,6 +561,13 @@ void cmd_USE(DbArea& a, std::istringstream& iss)
     } catch (...) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::UseOpenFailedText);
         return;
+    }
+
+    // Crash recovery: if an interrupted COMMIT left a committed <dbf>.tbj redo
+    // log, replay it into the DBF now; an uncommitted one is discarded. No-op if
+    // no log is present (the common case).
+    if (dottalk::table::recover_table_buffer_journal(a)) {
+        cli::cmdout::print_line("USE: recovered a committed table-buffer journal (.tbj).");
     }
 
     // Memo auto-attach (best-effort, never fatal)

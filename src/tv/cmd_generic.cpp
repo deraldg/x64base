@@ -1,6 +1,25 @@
 #if defined(DOTTALK_WITH_TV) || defined(DOTTALK_TV_AVAILABLE)
 // src/cli/cmd_generic.cpp ? Launches FoxPro-style Turbo Vision UI for DotTalk.
 
+// @dottalk.usage v1
+// owner: UI|GENERIC
+// command: GENERIC
+// category: turbo-vision-developer-ui
+// status: developer
+// noargs: interactive-launch
+// effect: interactive
+// mutates: ui-and-delegated-command-state
+// usage-access: HELP GENERIC
+// summary:
+//   Launch the generic Turbo Vision developer workbench.
+// usage:
+//   GENERIC
+// notes:
+//   This conditional developer surface launches immediately and has no command-local usage branch.
+// related:
+//   FOXPRO, TVISION
+//
+
 #include <iostream>
 #include <sstream>
 #include "xbase.hpp"

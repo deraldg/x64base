@@ -442,15 +442,17 @@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
         return false;
     }
 
-    const int32_t total = area.recCount();
+    // RECNO64: iterate the full 64-bit record count and position via gotoRec64,
+    // so the LMDB index is not capped at 2^31 rows during the build.
+    const std::uint64_t total = area.recCount64();
     std::string k;
     k.reserve((size_t)keylen);
     std::string keybuf;
     keybuf.resize((size_t)keylen + 8);
     unsigned char recbuf[8]{};
 
-    for (int32_t rn = 1; rn <= total; ++rn) {
-        if (!area.gotoRec(rn) || !area.readCurrent()) continue;
+    for (std::uint64_t rn = 1; rn <= total; ++rn) {
+        if (!area.gotoRec64(rn) || !area.readCurrent()) continue;
         if (area.isDeleted()) continue;
 
         k = area.get(fld);

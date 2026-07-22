@@ -1,12 +1,13 @@
 // @dottalk.usage v1
 // owner: DOT|CMDHELP
 // command: CMDHELP
+// aliases: COMMANDSHELP
 // category: help
 // status: supported
 // noargs: report
 // effect: build-report
 // mutates: helpdata
-// usage-access: CMDHELP USAGE
+// usage-access: CMDHELP USAGE; COMMANDSHELP USAGE
 // summary:
 //   Build or report the current HELP DATA catalogs and their legacy compatibility views.
 //
@@ -19,6 +20,7 @@
 //   CMDHELP LEGACY
 //   CMDHELP <topic> PREVIEW LOCALE <locale>
 //   CMDHELP <topic> LOCALE <locale>
+//   COMMANDSHELP USAGE
 //
 // notes:
 //   CMDHELP BUILD writes the current HELP DATA DBFs.
@@ -30,6 +32,7 @@
 //   Preview falls back to canonical/source HELP text when locale rows are missing or blocked.
 //   The legacy writer/reader remains in this file only as an explicit compatibility path.
 //   It is no longer the default build/report surface.
+//   COMMANDSHELP is the registered compatibility alias of CMDHELP.
 //
 // risk:
 //   reads_help_metadata: yes
@@ -715,7 +718,11 @@ std::vector<CommandInfo> collect_commands() {
     // - CMDHELP merges registry + FOX + DOT + ED catalogs; it does not treat
     //   legacy wording as authoritative over a live implementation contract.
     std::unordered_set<std::string> implemented;
-    for (const auto& kv : dli::map()) implemented.insert(up(kv.first));
+    for (const auto& kv : dli::map()) {
+        const std::string runtime_name = up(kv.first);
+        const std::string canonical = canonical_set_family_query(runtime_name);
+        implemented.insert(canonical.empty() ? runtime_name : canonical);
+    }
 
     std::vector<CommandInfo> out;
     out.reserve(foxref::catalog().size() + dotref::catalog().size() + edref::catalog().size() + implemented.size());
@@ -729,14 +736,17 @@ std::vector<CommandInfo> collect_commands() {
                                 const std::string& usage,
                                 const std::string& verbose)
     {
-        const std::string key = catalog_name + "|" + name;
+        const std::string set_canonical =
+            catalog_name == "DOT" ? canonical_set_family_query(name) : std::string{};
+        const std::string identity_name = set_canonical.empty() ? name : set_canonical;
+        const std::string key = catalog_name + "|" + identity_name;
         if (!seen_keys.insert(key).second) return;
 
         CommandInfo ci;
         ci.id = next_id++;
         ci.catalog = catalog_name;
-        ci.name = name;
-        ci.implemented = implemented.count(name) > 0;
+        ci.name = identity_name;
+        ci.implemented = implemented.count(identity_name) > 0;
         ci.supported = supported;
         ci.usage = usage;
         ci.verbose = verbose;
@@ -802,7 +812,12 @@ std::vector<ArgInfo> collect_args(const std::vector<CommandInfo>& cmds,
     for (const auto& it : foxref::catalog()) fox_by_name.emplace(up(it.name), &it);
 
     std::unordered_map<std::string, const dotref::Item*> dot_by_name;
-    for (const auto& it : dotref::catalog()) dot_by_name.emplace(up(it.name), &it);
+    for (const auto& it : dotref::catalog()) {
+        const std::string name = up(it.name);
+        dot_by_name.emplace(name, &it);
+        const std::string canonical = canonical_set_family_query(name);
+        if (!canonical.empty()) dot_by_name.emplace(canonical, &it);
+    }
 
     std::unordered_map<std::string, const edref::Item*> ed_by_name;
     for (const auto& it : edref::catalog()) ed_by_name.emplace(up(it.topic), &it);
@@ -844,6 +859,9 @@ std::vector<ArgInfo> collect_args(const std::vector<CommandInfo>& cmds,
     auto mined = scan_sources_for_switches(source_roots);
     for (const auto& c : cmds) {
         auto mit = mined.find(c.name);
+        if (mit == mined.end() && c.catalog == "DOT" && c.name.rfind("SET ", 0) == 0) {
+            mit = mined.find(compact_set_query_token(c.name));
+        }
         if (mit == mined.end()) continue;
         auto& dst = per_cmd[c.catalog + "|" + c.name];
         dst.insert(mit->second.begin(), mit->second.end());

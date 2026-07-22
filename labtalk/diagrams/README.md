@@ -10,6 +10,9 @@ Local diagram shelf for LabTalk and DotTalk++ documentation artifacts.
 DotTalk++ runtime SDLC diagrams are maintained under:
 
 - `D:/code/ccode/docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md`
+- `DOTTALKPP_SHELL_DISPATCH_AND_LOOP_CAPTURE_V1.md` - source-evidenced
+  interactive dispatch, canonical execution, active buffering, and captured
+  loop replay
 
 ## SelfDoc and Contract Lane Flow
 

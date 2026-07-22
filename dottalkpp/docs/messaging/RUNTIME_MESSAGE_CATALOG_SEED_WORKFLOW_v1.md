@@ -66,6 +66,18 @@ Reviewed import scripts:
 - `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.verify.dts`
 - `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.RUN_REVIEWED.dts`
 
+Canonical stable wrappers:
+
+- `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_RESET_v1.dts`
+- `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_IMPORT_v1.dts`
+- `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_VERIFY_v1.dts`
+- `D:\code\ccode\dottalkpp\data\scripts\messaging\RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.dts`
+
+Legacy compatibility wrappers:
+
+- `D:\code\ccode\dottalkpp\data\scripts\messaging_priority_a_seed_apply_v1.dts`
+- `D:\code\ccode\dottalkpp\data\scripts\messaging_priority_a_seed_verify_v1.dts`
+
 Usage doctrine:
 
 - This is a reviewed snapshot reload path.
@@ -86,15 +98,27 @@ Reset doctrine:
 
 1. Generate the CSV snapshots.
 2. Reset the active messaging workspace with:
-   - `DO scripts\messaging\RUNTIME_MESSAGE_CATALOG_RESET_v1.RUN_REVIEWED`
+   - `DO messaging\RUNTIME_MESSAGE_CATALOG_RESET_v1.dts`
 3. Import `SYSTEM_MESSAGES`.
 4. Import `SYSTEM_MESSAGE_TEXT`.
 5. Rebuild LMDB from the reviewed `SYSTEM_MESSAGES.cdx` and
    `SYSTEM_MESSAGE_TEXT.cdx` containers.
 6. Verify the locale-aware runtime load with:
+   - `DO messaging\RUNTIME_MESSAGE_CATALOG_VERIFY_v1.dts`
    - `SET MESSAGE CATALOG CHECK`
    - `SET MESSAGE EMIT ...`
    - `SET LANGUAGE TO <locale>`
+
+One-shot reviewed driver:
+
+- `DO messaging\RUNTIME_MESSAGE_CATALOG_RESET_RELOAD_v1.dts`
+
+Legacy wrapper rule:
+
+- Older `messaging_priority_a_seed_*` entry points no longer append a partial
+  handcrafted subset.
+- They are compatibility names only and now route into the reviewed full-catalog
+  reset/reload or verification path.
 
 ## Authority split
 

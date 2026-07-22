@@ -39,6 +39,7 @@ DartConfiguration.tcl
 
 # Local environments
 .venv/
+.venv312/
 .vscode/
 
 # Local runtime state

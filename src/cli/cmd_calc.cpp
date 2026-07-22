@@ -66,7 +66,7 @@
 #include <cctype>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -184,11 +184,13 @@ static std::string format_number(double v) {
     const double iv = std::floor(v);
     if (std::fabs(v - iv) < 1e-9) {
         std::ostringstream o;
+        o.imbue(std::locale::classic());   // AIF-031: no thousands grouping
         o << static_cast<long long>(iv);
         return o.str();
     }
 
     std::ostringstream o;
+    o.imbue(std::locale::classic());       // AIF-031: no thousands grouping
     o << std::fixed << std::setprecision(10) << v;
     std::string s = o.str();
 
@@ -211,7 +213,7 @@ void cmd_CALC(xbase::DbArea& area, std::istringstream& args) {
     }
 
     if (expr.empty()) {
-        std::cout << ".F.\n";
+        cli::cmdout::print_line(".F.");
         return;
     }
 
@@ -231,30 +233,30 @@ void cmd_CALC(xbase::DbArea& area, std::istringstream& args) {
 
     switch (ev.kind()) {
         case xexpr::ValueKind::Bool:
-            std::cout << (ev.as_bool() ? ".T." : ".F.") << "\n";
+            cli::cmdout::print_line(ev.as_bool() ? ".T." : ".F.");
             return;
 
         case xexpr::ValueKind::Number:
-            std::cout << format_number(ev.as_number()) << "\n";
+            cli::cmdout::print_line(format_number(ev.as_number()));
             return;
 
         case xexpr::ValueKind::String:
-            std::cout << ev.as_string() << "\n";
+            cli::cmdout::print_line(ev.as_string());
             return;
 
         case xexpr::ValueKind::Date:
-            std::cout << ev.as_date8() << "\n";
+            cli::cmdout::print_line(std::to_string(ev.as_date8()));
             return;
 
         case xexpr::ValueKind::Error:
             // Preserve CALC's prior quiet-failure behavior for now.
             // xexpr carries the diagnostic for later command-level reporting.
-            std::cout << ".F.\n";
+            cli::cmdout::print_line(".F.");
             return;
 
         case xexpr::ValueKind::None:
         default:
-            std::cout << ".F.\n";
+            cli::cmdout::print_line(".F.");
             return;
     }
 }

@@ -23,7 +23,7 @@ struct Hooks {
     bool (*apply_replace)(DbArea&,
                           const Snapshot&,
                           const Snapshot&,
-                          std::uint32_t) = nullptr;
+                          std::uint64_t) = nullptr;
     void (*detach)(DbArea&) noexcept = nullptr;
 };
 
@@ -32,7 +32,7 @@ Snapshot capture(DbArea& area);
 bool apply_replace(DbArea& area,
                    const Snapshot& before,
                    const Snapshot& after,
-                   std::uint32_t recno);
+                   std::uint64_t recno);
 void detach(DbArea& area) noexcept;
 
 } // namespace index_hooks

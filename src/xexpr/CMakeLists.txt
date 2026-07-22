@@ -11,6 +11,8 @@ add_library(xexpr STATIC
   expr_value.cpp
   expr_eval.cpp
   function_registry.cpp
+  array_value.cpp
+  var_store.cpp
 )
 
 target_include_directories(xexpr

@@ -44,18 +44,12 @@
 #include <string>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "xindex/local_index_stub.hpp"
 
 static void print_scx_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  SCX USAGE\n"
-        << "  SCX CREATE <file>\n"
-        << "  SCX ADDTAG <file> <name> FIELD <n> [DESC]\n"
-        << "  SCX BUILD <file>\n"
-        << "  SCX TAGS <file>\n"
-        << "  SCX INFO <file>\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxUsageText);
 }
 
 void cmd_SCX(xbase::DbArea& area, std::istringstream& in)
@@ -77,14 +71,14 @@ void cmd_SCX(xbase::DbArea& area, std::istringstream& in)
     if (U == "CREATE") {
         std::string file;
         if (!(in >> file)) {
-            std::cout << "Usage: SCX CREATE <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxCreateUsageText);
             return;
         }
         if (!xindex::write_scx_create(file, &err)) {
-            std::cout << "SCX CREATE: " << err << "\n";
+            cli::cmdout::print_prefixed_message("SCX CREATE", dottalk::helpdata::MessageId::ScxDetailText, {{"detail", err}});
             return;
         }
-        std::cout << "SCX CREATE: wrote " << file << "\n";
+        cli::cmdout::print_prefixed_message("SCX CREATE", dottalk::helpdata::MessageId::ScxCreateWroteText, {{"file", file}});
         return;
     }
 
@@ -93,40 +87,40 @@ void cmd_SCX(xbase::DbArea& area, std::istringstream& in)
         unsigned field = 0;
         bool desc = false;
         if (!(in >> file >> name >> tok) || xindex::upper_ascii_copy(tok) != "FIELD" || !(in >> field)) {
-            std::cout << "Usage: SCX ADDTAG <file> <name> FIELD <n> [DESC]\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxAddtagUsageText);
             return;
         }
         if ((in >> tok)) desc = (xindex::upper_ascii_copy(tok) == "DESC");
         if (!xindex::scx_add_tag(file, xindex::upper_ascii_copy(name), field, desc, &err)) {
-            std::cout << "SCX ADDTAG: " << err << "\n";
+            cli::cmdout::print_prefixed_message("SCX ADDTAG", dottalk::helpdata::MessageId::ScxDetailText, {{"detail", err}});
             return;
         }
-        std::cout << "SCX ADDTAG: added '" << xindex::upper_ascii_copy(name) << "'\n";
+        cli::cmdout::print_prefixed_message("SCX ADDTAG", dottalk::helpdata::MessageId::ScxAddtagAddedText, {{"name", xindex::upper_ascii_copy(name)}});
         return;
     }
 
     if (U == "BUILD") {
         std::string file;
         if (!(in >> file)) {
-            std::cout << "Usage: SCX BUILD <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxBuildUsageText);
             return;
         }
         if (!xindex::scx_build_from_area(file, area, &err)) {
-            std::cout << "SCX BUILD: " << err << "\n";
+            cli::cmdout::print_prefixed_message("SCX BUILD", dottalk::helpdata::MessageId::ScxDetailText, {{"detail", err}});
             return;
         }
-        std::cout << "SCX BUILD: done " << file << "\n";
+        cli::cmdout::print_prefixed_message("SCX BUILD", dottalk::helpdata::MessageId::ScxBuildDoneText, {{"file", file}});
         return;
     }
 
     if (U == "TAGS") {
         std::string file;
         if (!(in >> file)) {
-            std::cout << "Usage: SCX TAGS <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxTagsUsageText);
             return;
         }
         if (!xindex::scx_tags(file, std::cout, &err)) {
-            std::cout << "SCX TAGS: " << err << "\n";
+            cli::cmdout::print_prefixed_message("SCX TAGS", dottalk::helpdata::MessageId::ScxDetailText, {{"detail", err}});
         }
         return;
     }
@@ -134,14 +128,14 @@ void cmd_SCX(xbase::DbArea& area, std::istringstream& in)
     if (U == "INFO") {
         std::string file;
         if (!(in >> file)) {
-            std::cout << "Usage: SCX INFO <file>\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ScxInfoUsageText);
             return;
         }
         if (!xindex::scx_info(file, std::cout, &err)) {
-            std::cout << "SCX INFO: " << err << "\n";
+            cli::cmdout::print_prefixed_message("SCX INFO", dottalk::helpdata::MessageId::ScxDetailText, {{"detail", err}});
         }
         return;
     }
 
-    std::cout << "SCX: unknown subcommand: " << sub << "\n";
+    cli::cmdout::print_prefixed_message("SCX", dottalk::helpdata::MessageId::ScxUnknownSubText, {{"sub", sub}});
 }

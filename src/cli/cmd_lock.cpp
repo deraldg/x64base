@@ -94,7 +94,7 @@ static void show_status(xbase::DbArea& a) {
             {"owner_clause", tlocked ? lock_owner_clause(tab) : std::string()}
         });
 
-    const auto rn = static_cast<uint32_t>(a.recno());
+    const std::uint64_t rn = a.recno64();
     if (rn > 0) {
         std::string row;
         bool rlocked = xbase::locks::is_record_locked(a, rn, &row);
@@ -108,7 +108,7 @@ static void show_status(xbase::DbArea& a) {
     }
 }
 
-static void show_who(xbase::DbArea& a, uint32_t n) {
+static void show_who(xbase::DbArea& a, std::uint64_t n) {
     std::string owner;
     if (!xbase::locks::is_record_locked(a, n, &owner)) {
         cli::cmdout::print_message(
@@ -143,7 +143,7 @@ void cmd_LOCK(xbase::DbArea& a, std::istringstream& iss) {
     const auto& me = xbase::locks::current_owner();
 
     if (rest.empty()) {
-        const auto rn = static_cast<uint32_t>(a.recno());
+        const std::uint64_t rn = a.recno64();
         if (rn == 0) {
             cli::cmdout::print_message(dottalk::helpdata::MessageId::LockNoCurrentRecordText);
             return;
@@ -178,14 +178,14 @@ void cmd_LOCK(xbase::DbArea& a, std::istringstream& iss) {
         std::string who; tmp >> who; // WHO
         std::string nstr; std::getline(tmp >> std::ws, nstr);
         if (nstr.empty()) { print_usage(); return; }
-        try { show_who(a, static_cast<uint32_t>(std::stoul(nstr))); }
+        try { show_who(a, std::stoull(nstr)); }
         catch (...) { print_usage(); }
         return;
     }
 
     // LOCK <n>
     try {
-        uint32_t n = static_cast<uint32_t>(std::stoul(rest));
+        std::uint64_t n = std::stoull(rest);
         std::string err;
         if (xbase::locks::try_lock_record(a, n, me, &err)) {
             cli::cmdout::print_message(

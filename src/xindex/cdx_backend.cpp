@@ -26,10 +26,19 @@ void CdxBackend::erase(const Key&, RecNo) {}
 std::unique_ptr<Cursor> CdxBackend::seek(const Key&) const { return {}; }
 std::unique_ptr<Cursor> CdxBackend::scan(const Key&, const Key&) const { return {}; }
 void CdxBackend::setTag(const std::string&) {}
-bool CdxBackend::seekRecnoUserKey(const std::string&, std::uint32_t&, std::string& out_err) const {
+bool CdxBackend::seekRecnoUserKey(const std::string&, std::uint64_t&, std::string& out_err) const {
     out_err = "LMDB not available in this build";
     return false;
 }
+bool CdxBackend::stepOrdered(const Key&, RecNo, bool, int, RecNo& outRec, bool& out_located) const {
+    outRec = 0;
+    out_located = false;
+    return false;
+}
+bool CdxBackend::beginBulk(std::string* err) { if (err) *err = "LMDB not available in this build"; return false; }
+bool CdxBackend::commitBulk(std::string*) { return true; }
+void CdxBackend::abortBulk() noexcept {}
+bool CdxBackend::inBulk() const noexcept { return false; }
 
 #else
 
@@ -184,6 +193,7 @@ bool CdxBackend::open_env_dir_(const std::string& env_dir, std::string* err) {
 
 void CdxBackend::close_env_() noexcept {
     if (!env_) return;
+    if (bulk_txn_) { mdb_txn_abort(bulk_txn_); bulk_txn_ = nullptr; }
     reset_ro_txn_();
     dbis_.clear();
     dbi_ = 0;
@@ -248,15 +258,15 @@ std::string CdxBackend::base_key_from_kv_(const MDB_val& k) const {
                        static_cast<const char*>(k.mv_data) + (k.mv_size - 8));
 }
 
-bool CdxBackend::decode_recno_from_kv_(const MDB_val& k, const MDB_val& v, std::uint32_t& out_recno) const {
+bool CdxBackend::decode_recno_from_kv_(const MDB_val& k, const MDB_val& v, std::uint64_t& out_recno) const {
     std::uint64_t rec64 = 0;
     if (decode_u64_le_local(v.mv_data, v.mv_size, rec64)) {
-        out_recno = static_cast<std::uint32_t>(rec64);
+        out_recno = rec64;
         return true;
     }
     if (composite_mode_ && k.mv_size >= 8 &&
         decode_u64_le_local(static_cast<const unsigned char*>(k.mv_data) + (k.mv_size - 8), 8, rec64)) {
-        out_recno = static_cast<std::uint32_t>(rec64);
+        out_recno = rec64;
         return true;
     }
     return false;
@@ -315,9 +325,10 @@ void CdxBackend::rebuild() {
         const bool is_char = (fdef.type == 'C' || fdef.type == 'c');
         const int keylen = static_cast<int>(fdef.length);
 
-        const int32_t total = area_.recCount();
-        for (int32_t rn = 1; rn <= total; ++rn) {
-            if (!area_.gotoRec(rn) || !area_.readCurrent()) continue;
+        // RECNO64: full 64-bit sweep + gotoRec64 so rebuild is not capped at 2^31.
+        const std::uint64_t total = area_.recCount64();
+        for (std::uint64_t rn = 1; rn <= total; ++rn) {
+            if (!area_.gotoRec64(rn) || !area_.readCurrent()) continue;
             if (area_.isDeleted()) continue;
 
             std::string s = area_.get(fld);
@@ -358,6 +369,23 @@ void CdxBackend::rebuild() {
 void CdxBackend::upsert(const Key& key, RecNo rec) {
     if (!env_ || tag_upper_.empty()) return;
 
+    // Bulk mode: append this insert to the caller's open transaction and return.
+    if (bulk_txn_) {
+        MDB_dbi active_dbi = 0;
+        unsigned int flags = 0;
+        std::string berr;
+        if (!open_dbi_for_tag_(bulk_txn_, tag_upper_, active_dbi, flags, berr)) {
+            throw std::runtime_error("upsert(bulk): open active dbi failed: " + berr);
+        }
+        const bool composite = (flags & MDB_DUPSORT) == 0;
+        const auto storage_key = make_storage_key(composite, key, rec);
+        const auto storage_val = make_storage_val(rec);
+        MDB_val k{ storage_key.size(), const_cast<std::uint8_t*>(storage_key.data()) };
+        MDB_val v{ storage_val.size(), const_cast<std::uint8_t*>(storage_val.data()) };
+        throw_on_mdb_err_(mdb_put(bulk_txn_, active_dbi, &k, &v, 0), "mdb_put(upsert bulk)");
+        return;
+    }
+
     reset_ro_txn_();
     MDB_txn* txn = begin_rw_txn_();
     try {
@@ -393,6 +421,28 @@ void CdxBackend::upsert(const Key& key, RecNo rec) {
 
 void CdxBackend::erase(const Key& key, RecNo rec) {
     if (!env_ || tag_upper_.empty()) return;
+
+    // Bulk mode: append this delete to the caller's open transaction and return.
+    // The caller commits once via commitBulk(). Multi-tag safe: open the current
+    // tag's DBI inside the shared txn.
+    if (bulk_txn_) {
+        MDB_dbi active_dbi = 0;
+        unsigned int flags = 0;
+        std::string berr;
+        if (!open_dbi_for_tag_(bulk_txn_, tag_upper_, active_dbi, flags, berr)) {
+            throw std::runtime_error("erase(bulk): open active dbi failed: " + berr);
+        }
+        const bool composite = (flags & MDB_DUPSORT) == 0;
+        const auto storage_key = make_storage_key(composite, key, rec);
+        const auto storage_val = make_storage_val(rec);
+        MDB_val k{ storage_key.size(), const_cast<std::uint8_t*>(storage_key.data()) };
+        MDB_val v{ storage_val.size(), const_cast<std::uint8_t*>(storage_val.data()) };
+        const int rc = mdb_del(bulk_txn_, active_dbi, &k, &v);
+        if (rc != MDB_SUCCESS && rc != MDB_NOTFOUND) {
+            throw_on_mdb_err_(rc, "mdb_del(erase bulk)");
+        }
+        return;
+    }
 
     reset_ro_txn_();
     MDB_txn* txn = begin_rw_txn_();
@@ -433,6 +483,32 @@ void CdxBackend::setTag(const std::string& tag_upper) {
 
     const auto up = upper_copy_(tag_upper);
     if (up.empty()) return;
+
+    // Bulk mode: resolve (or create) the tag DBI INSIDE the shared bulk write
+    // transaction. The normal path below opens its own RO txn (and a RW txn with
+    // MDB_CREATE for a new tag); doing that while a bulk write txn is already held
+    // on this thread would be a second transaction on the same env -> LMDB
+    // conflict/deadlock. Opening the DBI in bulk_txn_ avoids it and keeps the
+    // whole bulk DELETE/RECALL in one transaction. Preserves the existing
+    // create-on-demand behavior, just inside the batch.
+    if (bulk_txn_) {
+        MDB_dbi dbi = 0;
+        unsigned int flags = 0;
+        std::string err;
+        if (!open_dbi_for_tag_(bulk_txn_, up, dbi, flags, err)) {
+            const int rc = mdb_dbi_open(bulk_txn_, up.c_str(), MDB_CREATE, &dbi);
+            if (rc != MDB_SUCCESS) {
+                throw_on_mdb_err_(rc, "mdb_dbi_open(MDB_CREATE bulk)");
+            }
+            (void)mdb_dbi_flags(bulk_txn_, dbi, &flags);
+        }
+        dbis_[up] = dbi;
+        tag_upper_ = up;
+        dbi_ = dbi;
+        dbi_flags_ = flags;
+        composite_mode_ = (dbi_flags_ & MDB_DUPSORT) == 0;
+        return;
+    }
 
     MDB_txn* ro = nullptr;
     try {
@@ -543,7 +619,35 @@ std::unique_ptr<Cursor> CdxBackend::scan(const Key& low, const Key& high) const 
     }
 }
 
-bool CdxBackend::seekRecnoUserKey(const std::string& user_key, std::uint32_t& out_recno, std::string& out_err) const {
+bool CdxBackend::beginBulk(std::string* err) {
+    if (!env_) { if (err) *err = "no CDX env"; return false; }
+    if (bulk_txn_) return true;           // already open; idempotent
+    reset_ro_txn_();
+    MDB_txn* t = nullptr;
+    const int rc = mdb_txn_begin(env_, nullptr, 0, &t);
+    if (rc != MDB_SUCCESS) { if (err) *err = mdb_strerror(rc); return false; }
+    bulk_txn_ = t;
+    return true;
+}
+
+bool CdxBackend::commitBulk(std::string* err) {
+    if (!bulk_txn_) return true;          // nothing open
+    MDB_txn* t = bulk_txn_;
+    bulk_txn_ = nullptr;                  // clear first: commit consumes the txn
+    const int rc = mdb_txn_commit(t);     // on failure LMDB has already aborted it
+    reset_ro_txn_();
+    if (rc != MDB_SUCCESS) { if (err) *err = mdb_strerror(rc); return false; }
+    return true;
+}
+
+void CdxBackend::abortBulk() noexcept {
+    if (bulk_txn_) { mdb_txn_abort(bulk_txn_); bulk_txn_ = nullptr; }
+    reset_ro_txn_();
+}
+
+bool CdxBackend::inBulk() const noexcept { return bulk_txn_ != nullptr; }
+
+bool CdxBackend::seekRecnoUserKey(const std::string& user_key, std::uint64_t& out_recno, std::string& out_err) const {
     out_recno = 0;
     out_err.clear();
 
@@ -615,7 +719,7 @@ bool CdxBackend::seekRecnoUserKey(const std::string& user_key, std::uint32_t& ou
             }
         }
 
-        std::uint32_t rec = 0;
+        std::uint64_t rec = 0;
         if (!decode_recno_from_kv_(k, v, rec)) {
             mdb_cursor_close(cur);
             mdb_txn_abort(txn);
@@ -632,6 +736,103 @@ bool CdxBackend::seekRecnoUserKey(const std::string& user_key, std::uint32_t& ou
         if (cur) mdb_cursor_close(cur);
         if (txn) mdb_txn_abort(txn);
         out_err = e.what();
+        return false;
+    }
+}
+
+bool CdxBackend::stepOrdered(const Key& baseKey, RecNo fromRec, bool forward, int steps,
+                             RecNo& outRec, bool& out_located) const {
+    outRec = 0;
+    out_located = false;
+    if (!env_ || tag_upper_.empty()) return false;
+    if (steps < 1) return false;
+
+    MDB_txn* txn = nullptr;
+    MDB_cursor* cur = nullptr;
+    try {
+        txn = ensure_ro_txn_();
+
+        MDB_dbi dbi = 0;
+        unsigned int flags = 0;
+        std::string err;
+        if (!open_dbi_for_tag_(txn, tag_upper_, dbi, flags, err)) {
+            mdb_txn_abort(txn);
+            return false;
+        }
+
+        const bool composite = (flags & MDB_DUPSORT) == 0;
+
+        throw_on_mdb_err_(mdb_cursor_open(txn, dbi, &cur), "mdb_cursor_open(step)");
+
+        unsigned char rec8[8]{};
+        encode_u64_le_(static_cast<std::uint64_t>(fromRec), rec8);
+
+        MDB_val k{};
+        MDB_val v{};
+        int rc;
+
+        // Position exactly on the current index entry (baseKey, fromRec).
+        std::vector<std::uint8_t> sk;
+        if (composite) {
+            // Storage key = baseKey || recno8 ; value = recno8.
+            sk.assign(baseKey.begin(), baseKey.end());
+            sk.insert(sk.end(), rec8, rec8 + 8);
+            k.mv_size = sk.size();
+            k.mv_data = sk.data();
+            rc = mdb_cursor_get(cur, &k, &v, MDB_SET);
+        } else {
+            // DUPSORT: key = baseKey ; duplicate data value = recno8.
+            sk.assign(baseKey.begin(), baseKey.end());
+            k.mv_size = sk.size();
+            k.mv_data = sk.data();
+            v.mv_size = 8;
+            v.mv_data = rec8;
+            rc = mdb_cursor_get(cur, &k, &v, MDB_GET_BOTH);
+        }
+
+        if (rc == MDB_NOTFOUND) {
+            // The current record's key no longer matches the index (edited/stale)
+            // or the entry is absent. Let the caller fall back.
+            mdb_cursor_close(cur);
+            mdb_txn_abort(txn);
+            return false;
+        }
+        throw_on_mdb_err_(rc, "mdb_cursor_get(step position)");
+        out_located = true; // current entry found
+
+        // Step up to `steps` positions in full cursor order (spans duplicates and
+        // key boundaries) on this ONE cursor. Partial-to-boundary: if the order
+        // ends before `steps` are taken, keep the farthest record reached (xBase
+        // SKIP-to-EOF semantics). This is what makes a large SKIP one seek + N
+        // fast cursor advances rather than N re-seeks.
+        std::uint64_t landed = 0;
+        bool moved = false;
+        for (int i = 0; i < steps; ++i) {
+            rc = mdb_cursor_get(cur, &k, &v, forward ? MDB_NEXT : MDB_PREV);
+            if (rc == MDB_NOTFOUND) break; // order boundary; keep farthest reached
+            throw_on_mdb_err_(rc, "mdb_cursor_get(step move)");
+
+            std::uint64_t r = 0;
+            if (!decode_u64_le_local(v.mv_data, v.mv_size, r)) {
+                // Fall back to composite key tail if the value was not the recno.
+                if (!(composite && k.mv_size >= 8 &&
+                      decode_u64_le_local(static_cast<const unsigned char*>(k.mv_data) + (k.mv_size - 8), 8, r))) {
+                    break; // undecodable entry; stop, keep farthest good
+                }
+            }
+            landed = r;
+            moved = true;
+        }
+
+        mdb_cursor_close(cur);
+        mdb_txn_abort(txn);
+
+        if (!moved) return false; // located, but at the order boundary (no move)
+        outRec = static_cast<RecNo>(landed);
+        return outRec != 0;
+    } catch (...) {
+        if (cur) mdb_cursor_close(cur);
+        if (txn) mdb_txn_abort(txn);
         return false;
     }
 }
@@ -660,15 +861,18 @@ CdxBackend::LmdbCursor::~LmdbCursor() {
     if (txn_) mdb_txn_abort(txn_);
 }
 
-static inline bool decode_recno_from_cursor_key(bool composite, const MDB_val& k, const MDB_val& v, std::uint32_t& out) {
+static inline bool decode_recno_from_cursor_key(bool composite, const MDB_val& k, const MDB_val& v, std::uint64_t& out) {
+    // RECNO64 / O11: the recno is stored full-width (8-byte LE, see make_storage_*).
+    // Decode it as uint64 and carry it out unnarrowed -- truncating to uint32 here
+    // silently mis-landed ordered traversal (TOP/BOTTOM/SKIP/materialize) past 2^32.
     std::uint64_t rec64 = 0;
     if (decode_u64_le_local(v.mv_data, v.mv_size, rec64)) {
-        out = static_cast<std::uint32_t>(rec64);
+        out = rec64;
         return true;
     }
     if (composite && k.mv_size >= 8 &&
         decode_u64_le_local(static_cast<const unsigned char*>(k.mv_data) + (k.mv_size - 8), 8, rec64)) {
-        out = static_cast<std::uint32_t>(rec64);
+        out = rec64;
         return true;
     }
     return false;
@@ -701,7 +905,7 @@ bool CdxBackend::LmdbCursor::first(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -719,7 +923,7 @@ bool CdxBackend::LmdbCursor::next(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -753,7 +957,7 @@ bool CdxBackend::LmdbCursor::last(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -771,7 +975,7 @@ bool CdxBackend::LmdbCursor::prev(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);

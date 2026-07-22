@@ -1,7 +1,47 @@
 # TICKET — B: Tuple-Native In-Memory Store (typed vector as the table)
 
-**Type:** backlog / optimization-phase candidate · **Status:** deferred (review later) ·
-**Filed:** 2026-07-21 · **Author:** Claude (steward) · **Authority:** Derald.
+**Type:** backlog / optimization-phase candidate · **Status:** ❌ KILLED at Phase-0 gate
+(2026-07-22) — see "Phase-0 result" below · **Filed:** 2026-07-21 · **Author:** Claude (steward)
+· **Authority:** Derald.
+
+> ## Phase-0 result — KILL (2026-07-22)
+>
+> Ran the go/no-go decode-cost benchmark (`data/scripts/pinocchio/ticketb_phase0_decode_cost.dts`,
+> then a wall-clock `Measure-Command` harness because the engine's in-script `SECONDS()`/`SET
+> TIMER` reports 0) over the 1,000,000-row pinocchio STUDENTS table:
+>
+> | measure | time | per-row |
+> |---|---|---|
+> | startup | 0.35 s | — |
+> | DEC1/scan (COUNT FOR GPA>=0, 1 field) | 39.07 s | ~39 µs/row |
+> | DEC3/scan (3 field predicates) | 92.52 s | ~93 µs/row |
+> | per added predicate term | 26.7 s/1M | ~26.7 µs/row |
+>
+> **Interpretation.** A single-field predicate scan of 1M rows taking ~39 s is ~1000–10000×
+> slower than it should be. The `DEC3−DEC1` delta measures the cost of extra *predicate terms*
+> (field-resolve + extract + decode + compare + AND-node through a tree-walking interpreter), not
+> pure field decode; byte→value decode is a small sliver inside it. The naive `decode_fraction =
+> 1.368` therefore does NOT mean decode dominates — it means the **evaluator / field-access path
+> dominates.**
+>
+> **Why B loses.** (1) Option B still routes every field reference through the same tree-walking
+> evaluator; it would run this 39 µs/row loop over typed cells unchanged. (2) If the per-term cost
+> is field *extraction* (per-field allocation/boxing), that is fixable **inside Option A** —
+> offset-cached, allocation-free, decode-in-place field access — far cheaper and lower-risk than
+> rebuilding the store as a typed vector in the maintainer-owned tuple core. Either way, swapping
+> the store representation is the wrong lever. Per this ticket's own kill criterion, B is
+> "complexity without payoff" because A can capture the win more cheaply.
+>
+> **Redirect (the real optimization target).** The leverage is the **expression/scan evaluator +
+> field-access path**: compile predicates once, resolve field names to offsets once, decode in
+> place without allocation/boxing. Orders of magnitude, in Option A, no tuple-core changes.
+> Recommend a separate lane for that; do not reopen B unless a *columnar/vectorized execution*
+> project (its own scope, not "typed vector as the store") is explicitly chartered.
+>
+> The Phase-0 gate did its job: zero tuple-core code spent; the store was proven not to be the
+> problem.
+
+**Original ticket (retained for context):**
 **Parent lane:** AIF-043 In-Memory Tables (charter row A2 "pure arena adapter").
 **Blocked-by / sequencing:** ships *after* M1 (Option A, `ramfs` byte store) is stable —
 this is an optimization, not a prerequisite. **Not scheduled; review in the optimization phase.**

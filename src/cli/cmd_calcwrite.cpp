@@ -56,7 +56,7 @@
 #include <cctype>
 #include <cstdint>
 #include <iomanip>
-#include <iostream>
+#include <locale>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -551,6 +551,7 @@ static std::string format_date8_from_number(double dv) {
 
 static std::string to_string_trim(double dv, int fdec) {
     std::ostringstream os;
+    os.imbue(std::locale::classic());   // AIF-031: no thousands grouping in stored values
     os << std::fixed << std::setprecision(std::max(0, fdec)) << dv;
     std::string s = trim(os.str());
     while (!s.empty() && s.find('.') != std::string::npos && s.back() == '0') s.pop_back();
@@ -693,10 +694,10 @@ static bool normalize_calcwrite_value_for_field(char ftype,
 
 struct RecordLockGuard {
     xbase::DbArea& A;
-    uint32_t rn = 0;
+    std::uint64_t rn = 0;
     bool locked = false;
 
-    RecordLockGuard(xbase::DbArea& area, uint32_t recno, bool acquire) : A(area), rn(recno) {
+    RecordLockGuard(xbase::DbArea& area, std::uint64_t recno, bool acquire) : A(area), rn(recno) {
         if (!acquire) return;
         std::string err;
         locked = xbase::locks::try_lock_record(A, rn, &err);
@@ -749,7 +750,7 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
         return;
     }
 
-    const uint32_t rn = area.recno();
+    const std::uint64_t rn = area.recno64();
     if (rn == 0) {
         cli::cmdout::print_prefixed_message(
             "CALCWRITE", dottalk::helpdata::MessageId::CalcWriteNoCurrentRecordText);
@@ -870,7 +871,19 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
         const int bit  = fldIndex0 % 64;
         if (word >= 0 && word < dottalk::table::kWords) field_mask[word] |= (std::uint64_t{1} << bit);
 
-        tb.add_change((int)rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, to_store);
+        const int je_priority = tb.add_change(
+            rn, dottalk::table::CHANGE_UPDATE, field_mask, field1, to_store);
+
+        // Write-ahead redo log (no-op unless TABLE BUFFER PERSISTENT/JOURNAL),
+        // so CALCWRITE's buffered edits are captured in the WAL like REPLACE.
+        if (dottalk::table::is_persistent_enabled(area0)) {
+            dottalk::table::ChangeEntry je;
+            je.recno = rn;
+            je.dirty_flags = dottalk::table::CHANGE_UPDATE;
+            je.priority = je_priority;
+            je.new_values[field1] = to_store;
+            (void)dottalk::table::journal_note_change(area0, je);
+        }
 
         if (!dottalk::table::is_dirty(area0)) dottalk::table::set_dirty(area0, true);
 

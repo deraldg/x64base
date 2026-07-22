@@ -93,6 +93,12 @@ sections:
     label: AI Friendly
     description: AI Friendly lane, assimilation portal, user visibility, and runtime readback.
     items:
+      - id: doc.ai_portal_root_entry
+        label: Root AI Portal Fast-Start Entry
+        kind: markdown
+        path: ../AI_PORTAL.md
+        status: active_seed_entry
+        proof_state: source_defined
       - id: doc.ai_root_readme
         label: Root AI README
         kind: markdown
@@ -168,7 +174,7 @@ sections:
 
   - id: portal.ai_portal_work
     label: AI Portal Work — Alpha/Experimental
-    description: Alpha/Experimental hardening lane for typed synapses, task context packets, guarded execution, x64base curation, and DotTalk++ teaching integration. It is not production autonomous memory or an independent authority source.
+    description: Machine-facing fast-start and task-context work for AI development partners entering x64base. It is not a student AI-access portal, production autonomous memory, or an independent authority source.
     registry: registries/ai_portal.yaml
 
   - id: portal.apps

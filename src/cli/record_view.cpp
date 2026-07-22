@@ -1,6 +1,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "xbase_64.hpp"
+#include "xbase/field_codec.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -149,9 +150,11 @@ bool DbArea::loadFieldsFromBuffer()
                 _fd[i + 1] = std::to_string(object_id);
 
         } else {
-            // Legacy memo fields are plain fixed-width text, same as other char-ish storage.
-            std::string v(_recbuf.data() + off, _recbuf.data() + off + f.length);
-            _fd[i + 1] = rtrim(std::move(v));
+            // Field-type codec: text (default) for C/N/F/D/L/M, binary for I (and
+            // later B/Y/T / custom types). The text codec reproduces the legacy
+            // fixed-width rtrim behavior exactly.
+            _fd[i + 1] = fieldcodec::codec_for(f.type)
+                             .decode(_recbuf.data() + off, f.length, f);
         }
 
         off += f.length;
@@ -192,12 +195,12 @@ void DbArea::storeFieldsToBuffer()
             write_u64_le(_recbuf.data() + off, object_id);
 
         } else {
-            if (!src.empty()) {
-                if (src.size() <= f.length)
-                    std::memcpy(_recbuf.data() + off, src.data(), src.size());
-                else
-                    std::memcpy(_recbuf.data() + off, src.data(), f.length);
-            }
+            // Field-type codec encodes into the field's byte region (pre-filled with
+            // spaces above). The write path validated the value already, so an encode
+            // failure here just leaves the padded region rather than corrupting it.
+            std::string cerr;
+            (void)fieldcodec::codec_for(f.type)
+                      .encode(src, f, _recbuf.data() + off, &cerr);
         }
 
         off += f.length;

@@ -96,6 +96,46 @@ x64base state and storage behavior
 The loop is controlled by provenance and review gates. Website prose cannot
 silently become engine truth, and generated material cannot promote itself.
 
+## AI collaborators are part of the coproject
+
+The human maintainer, Claude, Codex, and other AI systems are participants in
+the same co-development loop. They are not independent authorities, and access
+to tools does not grant permission to act. Collaboration stays coherent by
+putting one bounded task through one evidence lens at a time.
+
+The AI-facing information layer therefore has an engineering purpose beyond
+human education. Repo-local authority seeds, contracts, risk classifications,
+proof requirements, task context, and session closeouts are controls for
+predictable collaborator failure modes: trusting stale descriptions, cleaning
+valid work, inventing syntax, broadening scope, or treating a plausible result
+as proof. These controls reduce risk; they do not make an AI self-authorizing or
+infallible. Maintainer review remains part of the system.
+
+This adds another recursive path:
+
+```text
+maintainer intent + bounded task
+    -> AI reads authority, contracts, current state, and relevant evidence
+    -> proposed or authorized work produces inspectable changes and proof
+    -> closeout records what actually happened and what remains open
+    -> the next human or AI resumes from the governed record
+    -> observed collaborator failures improve the portal's controls
+```
+
+## Convergent refinement
+
+The project develops like a reusable sculpture: add structure where evidence
+shows a missing capability, remove structure where it duplicates or distorts,
+and continue until implementation, explanation, and teaching surfaces describe
+the same supported shape. Git and reproducible generation make this both
+additive and subtractive rather than an irreversible carving process.
+
+The simplifying axiom is not that the documentation tree must be small. It is
+that descriptions can drift from the systems they describe. The many artifacts
+are justified only when they apply that one axiom at a distinct boundary. When
+two artifacts enforce the same boundary without adding evidence, ownership, or
+recovery value, consolidation is the correct refinement.
+
 ## What documentation changes in development
 
 The documentation system exerts concrete pressure on implementation:

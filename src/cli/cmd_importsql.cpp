@@ -1,15 +1,15 @@
 // @dottalk.usage v1
 // owner: DOT|IMPORTSQL
-// command: IMPORTSQL / EXPORTSQL
-// category: import-export
+// command: IMPORTSQL
+// category: import
 // status: supported-stub-mixed
 // noargs: usage
 // effect: import-export-preview-create
 // mutates: filesystem-or-table depending-on-subcommand
-// usage-access: IMPORTSQL USAGE; EXPORTSQL USAGE
+// usage-access: IMPORTSQL USAGE
 // summary:
 //   Preview, validate, infer schema, create/import table data from delimited
-//   files, and expose EXPORTSQL preview/file hooks.
+//   files.
 //
 // usage:
 //   IMPORTSQL USAGE
@@ -19,27 +19,21 @@
 //   IMPORTSQL CREATE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL FILE <file> TO <table> [DELIM PIPE|TAB|COMMA]
 //   IMPORTSQL MAP <subcommand> <mapfile>
-//   EXPORTSQL USAGE
-//   EXPORTSQL PREVIEW <table>
-//   EXPORTSQL FILE <table> TO <file>
 //
 // examples:
 //   IMPORTSQL PREVIEW data\students.psv
 //   IMPORTSQL VALIDATE data\students.csv DELIM COMMA
 //   IMPORTSQL CREATE data\students.psv TO students
 //   IMPORTSQL FILE data\students.psv TO students
-//   EXPORTSQL PREVIEW students
-//   EXPORTSQL FILE students TO tmp\students.sql
 //
 // notes:
-//   IMPORTSQL/EXPORTSQL USAGE returns before file/table work.
+//   IMPORTSQL USAGE returns before file/table work.
 //   IMPORTSQL PREVIEW/VALIDATE/SCHEMA read input files.
 //   IMPORTSQL CREATE/FILE may create tables and import records.
-//   EXPORTSQL hooks are currently preview/file command surfaces.
 //
 // risk:
 //   reads_filesystem: IMPORTSQL PREVIEW/VALIDATE/SCHEMA/CREATE/FILE
-//   writes_filesystem: IMPORTSQL CREATE, EXPORTSQL FILE
+//   writes_filesystem: IMPORTSQL CREATE
 //   mutates_table_data: IMPORTSQL FILE/CREATE where implemented
 //
 // related:
@@ -1000,6 +994,40 @@ void cmd_IMPORTSQL(xbase::DbArea& area, std::istringstream& iss)
     }
 }
 
+// @dottalk.usage v1
+// owner: DOT|EXPORTSQL
+// command: EXPORTSQL
+// category: export
+// status: supported-stub-mixed
+// noargs: usage
+// effect: export-preview-file
+// mutates: filesystem depending-on-subcommand
+// usage-access: EXPORTSQL USAGE
+// summary:
+//   Preview SQL export output and expose the file-export command surface.
+//
+// usage:
+//   EXPORTSQL USAGE
+//   EXPORTSQL PREVIEW <table>
+//   EXPORTSQL FILE <table> TO <file>
+//
+// examples:
+//   EXPORTSQL PREVIEW students
+//   EXPORTSQL FILE students TO tmp\students.sql
+//
+// notes:
+//   EXPORTSQL USAGE returns before file or table work.
+//   EXPORTSQL hooks are currently preview/file command surfaces.
+//
+// risk:
+//   writes_filesystem: EXPORTSQL FILE
+//   mutates_table_data: no
+//
+// related:
+//   IMPORTSQL
+//   COPY
+//   SQL
+//
 void cmd_EXPORTSQL(xbase::DbArea& area, std::istringstream& iss)
 {
     // EXPORTSQL_USAGE_CONTRACT_BRANCH

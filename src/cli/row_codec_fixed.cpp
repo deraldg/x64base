@@ -4,6 +4,7 @@
 
 #include <iomanip>
 #include <ios>
+#include <locale>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -69,13 +70,16 @@ static std::string cell_to_string(const Cell& cell)
         }
         if (std::holds_alternative<double>(cell.value)) {
             std::ostringstream oss;
-            oss << std::get<double>(cell.value);
+            oss.imbue(std::locale::classic());   // AIF-031: no grouping; and avoid
+            oss << std::setprecision(15)          // default 6-sig-fig -> "5e+07"
+                << std::get<double>(cell.value);
             return oss.str();
         }
         if (std::holds_alternative<DateYMD>(cell.value)) {
             const DateYMD d = std::get<DateYMD>(cell.value);
             if (d.is_valid()) {
                 std::ostringstream oss;
+                oss.imbue(std::locale::classic());   // AIF-031: year int must not group ("1,956")
                 oss << std::setw(4) << std::setfill('0') << d.year
                     << std::setw(2) << std::setfill('0') << d.month
                     << std::setw(2) << std::setfill('0') << d.day;
@@ -115,6 +119,7 @@ static std::string format_fixed_value(const Cell& cell, const FixedFieldSpec& sp
             const DateYMD date = std::get<DateYMD>(cell.value);
             if (date.is_valid()) {
                 std::ostringstream oss;
+                oss.imbue(std::locale::classic());   // AIF-031: year int must not group ("1,956")
                 oss << std::setw(4) << std::setfill('0') << date.year
                     << std::setw(2) << std::setfill('0') << date.month
                     << std::setw(2) << std::setfill('0') << date.day;
@@ -150,6 +155,7 @@ static std::string format_fixed_value(const Cell& cell, const FixedFieldSpec& sp
         }
 
         std::ostringstream oss;
+        oss.imbue(std::locale::classic());   // AIF-031: no thousands grouping in stored numerics
         oss << std::fixed << std::setprecision(spec.decimals) << value;
         const std::string s = oss.str();
 

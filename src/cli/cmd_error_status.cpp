@@ -150,8 +150,17 @@ inline std::string error_to_string(code c)
             return "CLI parse error";
 
         // -------------------------
+        // IO
+        // -------------------------
+        case e_io_write_failed().value:
+            return "I/O write failed.";
+
+        // -------------------------
         // FALLBACK
         // -------------------------
+        // NOTE: this local map is a partial copy of xbase::error::to_string() and
+        // is missing several CLI codes; collapse it into the header mapper in a
+        // dedicated follow-up patch (out of scope for the EXPORTFUNCTIONS slice).
         default:
         {
             std::string msg = "Unknown or unmapped xBase_64 error code (";

@@ -1,32 +1,31 @@
 // src/cli/cmd_smart_browser.cpp
 // @dottalk.usage v1
-// owner: DOT|SMART_BROWSER
-// command: SMART_BROWSER
+// owner: DOT|SMARTBROWSE
+// command: SMARTBROWSE
+// aliases: SM, SMART
 // category: browser
 // status: supported
 // noargs: interactive
 // effect: browse
 // mutates: cursor
-// usage-access: SMART_BROWSER USAGE
+// usage-access: SMARTBROWSE USAGE
 // summary:
 //   Interactive tuple-stream smart browser with paging, relation child browsing,
 //   schema/json display toggles, filtering, navigation, and breadcrumbs.
 //
 // usage:
-//   SMART_BROWSER
-//   SMART_BROWSER USAGE
-//   SMART_BROWSER <spec>
-//   SMART_BROWSER <spec> FOR <expr>
-//   SMART_BROWSER <spec> PAGESIZE <n>
-//   SMART_BROWSER <spec> SHOW SCHEMA
-//   SMART_BROWSER <spec> SHOW JSON
-//   SMART_BROWSER <spec> STATUS VERBOSE
-//   SMARTBROWSER
-//   SMARTBROWSER USAGE
+//   SMARTBROWSE
+//   SMARTBROWSE USAGE
+//   SMARTBROWSE <spec>
+//   SMARTBROWSE <spec> FOR <expr>
+//   SMARTBROWSE <spec> PAGESIZE <n>
+//   SMARTBROWSE <spec> SHOW SCHEMA
+//   SMARTBROWSE <spec> SHOW JSON
+//   SMARTBROWSE <spec> STATUS VERBOSE
 //
 // notes:
-//   SMART_BROWSER with no arguments opens the interactive browser using default spec.
-//   SMARTBROWSER is an alias entrypoint.
+//   SMARTBROWSE with no arguments opens the interactive browser using default spec.
+//   SM and SMART are shell shortcuts that resolve to SMARTBROWSE.
 //   The browser is read-only for table data but traverses tuple streams and may move cursors.
 //   Work-area cursors are restored best-effort when the browser exits.
 //   Interactive pager commands include TOP, BOTTOM, SKIP, GOTO, FOR, CLEAR FOR, ORDER, SPEC, SHOW, OPEN CHILD, BACK, STATUS, HELP, and QUIT.
@@ -120,23 +119,20 @@ static void print_smart_browser_usage()
 {
     std::cout
         << "Usage:\n"
-        << "  SMART_BROWSER\n"
-        << "  SMART_BROWSER USAGE\n"
-        << "  SMART_BROWSER <spec>\n"
-        << "  SMART_BROWSER <spec> FOR <expr>\n"
-        << "  SMART_BROWSER <spec> PAGESIZE <n>\n"
-        << "  SMART_BROWSER <spec> SHOW SCHEMA\n"
-        << "  SMART_BROWSER <spec> SHOW JSON\n"
-        << "  SMART_BROWSER <spec> STATUS VERBOSE\n"
-        << "  SMARTBROWSER\n"
-        << "  SMARTBROWSER USAGE\n";
+        << "  SMARTBROWSE\n"
+        << "  SMARTBROWSE USAGE\n"
+        << "  SMARTBROWSE <spec>\n"
+        << "  SMARTBROWSE <spec> FOR <expr>\n"
+        << "  SMARTBROWSE <spec> PAGESIZE <n>\n"
+        << "  SMARTBROWSE <spec> SHOW SCHEMA\n"
+        << "  SMARTBROWSE <spec> SHOW JSON\n"
+        << "  SMARTBROWSE <spec> STATUS VERBOSE\n";
 }
 
 static bool is_smart_browser_usage_request(std::string raw)
 {
     raw = up(trim(raw));
-    if (raw.rfind("SMART_BROWSER ", 0) == 0) raw = up(trim(raw.substr(14)));
-    if (raw.rfind("SMARTBROWSER ", 0) == 0) raw = up(trim(raw.substr(13)));
+    if (raw.rfind("SMARTBROWSE ", 0) == 0) raw = up(trim(raw.substr(12)));
     return raw == "USAGE" || raw == "HELP" || raw == "?";
 }
 

@@ -109,13 +109,32 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
+    // Fast path: an unfiltered ordered SKIP performs the whole delta on a single
+    // index cursor (one seek + N advances) instead of N re-seeking unit steps.
+    // order_skip() moves up to |n| positions (partial-to-boundary) and leaves the
+    // work area positioned and read. The per-record visibility loop below runs
+    // only when a SET FILTER is active (which needs per-candidate visibility).
+    if (!filter::has_active_filter(&A) && orderstate::hasOrder(A)) {
+        if (order_skip(A, n)) {
+            if (talk) {
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::NavRecnoLine,
+                    {{"recno", std::to_string(A.recno())}});
+            }
+            return;
+        }
+        // Could not move -> already at the order boundary.
+        cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavAtEndText);
+        return;
+    }
+
     int steps = (n >= 0 ? n : -n);
     const auto step_kind = (n >= 0)
         ? cli::navsel::Step::Next
         : cli::navsel::Step::Prior;
 
-    int32_t current = A.recno();
-    int32_t rn = 0;
+    std::int64_t current = static_cast<std::int64_t>(A.recno64());
+    std::int64_t rn = 0;
     bool moved = false;
 
     while (steps-- > 0) {
@@ -137,7 +156,7 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
         moved = true;
     }
 
-    if (!moved || !A.gotoRec(current) || !A.readCurrent()) {
+    if (!moved || !A.gotoRec64(static_cast<std::uint64_t>(current)) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }

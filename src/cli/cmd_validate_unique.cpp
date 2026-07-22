@@ -134,11 +134,11 @@ static bool field_is_numericish(xbase::DbArea& A, int idx) {
 
 static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignoreDeleted) {
     long long mx = std::numeric_limits<long long>::min();
-    const int total = A.recCount();
-    const int save = A.recno();
+    const std::int64_t total = static_cast<std::int64_t>(A.recCount64());
+    const std::int64_t save = static_cast<std::int64_t>(A.recno64());
 
-    for (int r = 1; r <= total; ++r) {
-        if (!A.gotoRec(r)) continue;
+    for (std::int64_t r = 1; r <= total; ++r) {
+        if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
         if (ignoreDeleted) {
             try { if (A.isDeleted()) continue; } catch (...) {}
         }
@@ -159,7 +159,7 @@ static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignor
     }
 
     if (save > 0) {
-        A.gotoRec(save);
+        A.gotoRec64(static_cast<std::uint64_t>(save));
     }
 
     if (mx == std::numeric_limits<long long>::min())
@@ -255,22 +255,22 @@ const std::string fieldU = upcopy(fieldName);
         return;
     }
 
-    const int startRec = A.recno();
-    const int total = A.recCount();
+    const std::int64_t startRec = static_cast<std::int64_t>(A.recno64());
+    const std::int64_t total = static_cast<std::int64_t>(A.recCount64());
     if (total <= 0) {
         std::cout << "VALIDATE: Table is empty.\n";
         return;
     }
 
-    std::unordered_map<std::string, int> firstSeen;
-    struct Dup { int recno; std::string value; int first; bool blank; };
+    std::unordered_map<std::string, std::int64_t> firstSeen;
+    struct Dup { std::int64_t recno; std::string value; std::int64_t first; bool blank; };
     std::vector<Dup> dups;
     dups.reserve(16);
 
     int blankCount = 0;
 
-    for (int r = 1; r <= total; ++r) {
-        if (!A.gotoRec(r)) continue;
+    for (std::int64_t r = 1; r <= total; ++r) {
+        if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
 
         if (ignoreDeleted) {
             try { if (A.isDeleted()) continue; } catch (...) {}
@@ -305,7 +305,7 @@ const std::string fieldU = upcopy(fieldName);
         long long nextValue = compute_max_numeric_value(A, idx, ignoreDeleted) + 1;
 
         for (const auto& d : dups) {
-            if (!A.gotoRec(d.recno)) continue;
+            if (!A.gotoRec64(static_cast<std::uint64_t>(d.recno))) continue;
 
             if (ignoreDeleted) {
                 try { if (A.isDeleted()) continue; } catch (...) {}
@@ -327,8 +327,8 @@ const std::string fieldU = upcopy(fieldName);
         dups.clear();
         blankCount = 0;
 
-        for (int r = 1; r <= total; ++r) {
-            if (!A.gotoRec(r)) continue;
+        for (std::int64_t r = 1; r <= total; ++r) {
+            if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
 
             if (ignoreDeleted) {
                 try { if (A.isDeleted()) continue; } catch (...) {}
@@ -359,7 +359,7 @@ const std::string fieldU = upcopy(fieldName);
     }
 
     if (startRec > 0) {
-        A.gotoRec(startRec);
+        A.gotoRec64(static_cast<std::uint64_t>(startRec));
         try { A.readCurrent(); } catch (...) {}
     }
 

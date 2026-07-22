@@ -302,7 +302,7 @@ void cmd_LMDB(xbase::DbArea& db, std::istringstream& iss) {
             return;
         }
 
-        std::uint32_t recno = 0;
+        std::uint64_t recno = 0;
         std::string err;
         if (!xindex::ensure_manager(db).lmdbSeekUserKey(key, recno, err)) {
             cli::cmdout::print_prefixed_message(

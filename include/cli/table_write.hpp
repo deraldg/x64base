@@ -61,17 +61,19 @@ bool write_field(xbase::DbArea& area, int field1, const std::string& new_value,
         int bit  = idx0 % 64;
         field_mask[word] |= (std::uint64_t{1} << bit);
 
-        tb.add_change(static_cast<int>(rn), dottalk::table::CHANGE_UPDATE,
-                      field_mask, field1, new_value);
+        const int assigned_priority = tb.add_change(
+            static_cast<int>(rn), dottalk::table::CHANGE_UPDATE,
+            field_mask, field1, new_value);
 
-        // Persistent TABLE BUFFER stub hook. Today this is a no-op unless
-        // TABLE BUFFER PERSISTENT/JOURNAL is enabled; future code should append
-        // an UPDATE record to the per-area journal here.
+        // Write-ahead redo log (no-op unless TABLE BUFFER PERSISTENT/JOURNAL).
+        // Use the priority add_change actually assigned -- not tb.next_priority,
+        // which is the post-increment counter -- so the log records each retained
+        // edit with its true priority.
         {
             dottalk::table::ChangeEntry journal_entry;
             journal_entry.recno = static_cast<int>(rn);
             journal_entry.dirty_flags = dottalk::table::CHANGE_UPDATE;
-            journal_entry.priority = tb.next_priority;
+            journal_entry.priority = assigned_priority;
             for (int i = 0; i < dottalk::table::kWords; ++i) {
                 journal_entry.field_bits[i] = field_mask[i];
             }

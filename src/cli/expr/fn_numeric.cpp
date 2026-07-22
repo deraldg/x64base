@@ -36,6 +36,7 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <locale>
 #include <random>
 #include <sstream>
 #include <string>
@@ -85,6 +86,7 @@ static std::string format_number(double v) {
     if (std::isnan(v) || std::isinf(v)) return "0";
 
     std::ostringstream oss;
+    oss.imbue(std::locale::classic());   // AIF-031: no thousands grouping in values
     oss << std::setprecision(15) << v;
     std::string s = oss.str();
 

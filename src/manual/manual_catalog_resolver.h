@@ -1,9 +1,12 @@
 #pragma once
-// @dottalk.usage v1
-// command: MANUAL resolver support
-// status: MDO-282 native MANUAL source skeleton implementation
+// @dottalk.contract v1
+// component: manual_catalog_resolver
+// role: declare compact and long-form MAN* catalog identity resolution for the MANUAL command
+// owner: DOT|MANUAL
+// status: source-defined from MDO-282 native MANUAL implementation
 // safety: read-only resolver; no DBF writes; no HELP/META/CMDHELPCHK mutation
 // purpose: Resolve compact MAN* names and future long-name aliases through one bridge layer.
+// @dottalk.contract.end
 
 #include <string>
 #include <vector>

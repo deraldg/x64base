@@ -42,6 +42,15 @@ struct IIndexBackend {
 
     virtual std::unique_ptr<Cursor> seek(const Key& key) const = 0;
     virtual std::unique_ptr<Cursor> scan(const Key& low, const Key& high) const = 0;
+
+    // RECNO64 capability report: the largest record number this backend can store
+    // and return without truncation. 64-bit backends (CDX/LMDB, B+tree) support the
+    // full range (default). Classic 32-bit on-disk formats (CNX, legacy .inx)
+    // override this so an x64 table bound to an insufficient backend can be
+    // rejected with a clear error instead of silently truncating record numbers
+    // beyond UINT32_MAX. Reporting only — not intense classic-32 support.
+    virtual std::uint64_t maxRecordNumber() const { return UINT64_MAX; }
+    bool supportsWideRecords() const { return maxRecordNumber() > UINT32_MAX; }
 };
 
 } // namespace xindex

@@ -325,6 +325,24 @@ void cmd_LOOP(xbase::DbArea&, std::istringstream& S)
     }
 }
 
+// @dottalk.usage v1
+// owner: INTERNAL|LOOP_BUFFER
+// command: LOOP_BUFFER
+// category: control-buffer-internal
+// status: developer
+// noargs: internal-capture
+// effect: capture
+// mutates: loop-capture-state
+// usage-access: none
+// summary:
+//   Internal shell target that captures one LOOP body line.
+// usage:
+//   LOOP_BUFFER <captured-line>
+// notes:
+//   The shell routes lines here while LOOP capture is active. It is not a public direct command.
+// related:
+//   LOOP, ENDLOOP
+//
 void cmd_LOOP_BUFFER(xbase::DbArea&, std::istringstream& S)
 {
     auto& st = loopblock::state();

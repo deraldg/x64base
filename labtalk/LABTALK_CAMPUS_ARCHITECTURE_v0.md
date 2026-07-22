@@ -35,6 +35,14 @@ concept -> app -> dataset -> command -> proof -> case -> lesson
 This is the central campus pattern. A lesson should not be disconnected prose.
 It should be backed by live or reviewed evidence.
 
+The campus should first reveal the complete PDLC/SDLC/PLDC so students can see
+the hidden dependencies, then teach proportional application: classify the
+change, name the actual build target and product/index profile, and run the
+smallest sufficient proof and documentation set. The target may be the compiled
+x64base engine rather than full DotTalk++, and DotTalk++ may be a lean
+composition. Extra gates used to teach the whole chain must be labeled as
+instructional depth, not presented as the cost of every minor production change.
+
 ## Influences
 
 LabTalk should borrow selectively from several proven education models:

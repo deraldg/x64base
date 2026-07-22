@@ -1,6 +1,7 @@
 // @dottalk.usage v1
 // owner: EXT|STUDENTHELLO
-// command: STUDENTHELLO / SHELLO
+// command: STUDENTHELLO
+// aliases: SHELLO
 // category: extension-example
 // status: sample-extension
 // noargs: greeting-plus-usage

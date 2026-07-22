@@ -6,7 +6,7 @@
 //   numeric values. Presentation formatting must not enter stored values.
 //
 // CLI usage:
-//   REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...
+//   MULTIREP <field> WITH <value>[, <field> WITH <value>]...
 //
 // Also provides a programmatic overload:
 //   bool cmd_REPLACE_MULTI(xbase::DbArea& A,
@@ -25,37 +25,38 @@
 //   - Simple first-pass policy: field-name == tag-name via IndexManager.
 
 // @dottalk.usage v1
-// owner: DOT|REPLACE_MULTI
-// command: REPLACE_MULTI
+// owner: DOT|MULTIREP
+// command: MULTIREP
+// aliases:
 // category: data
 // status: supported
 // noargs: usage
 // effect: mutate
 // mutates: table-data memo index stale-state
-// usage-access: REPLACE_MULTI USAGE
+// usage-access: MULTIREP USAGE
 // summary:
 //   Replace multiple fields in the current record with one record lock and
 //   one physical write, preserving RHS evaluation, validation, memo handling,
 //   and direct index maintenance.
 //
 // usage:
-//   REPLACE_MULTI USAGE
-//   REPLACE_MULTI <field> WITH <value>[, <field> WITH <value>]...
+//   MULTIREP <field> WITH <value>[, <field> WITH <value>]...
 //
 // examples:
-//   REPLACE_MULTI LNAME WITH "Smith", FNAME WITH "John"
-//   REPLACE_MULTI DOB WITH 20000101, ACTIVE WITH .T.
+//   MULTIREP LNAME WITH "Smith", FNAME WITH "John"
+//   MULTIREP DOB WITH 20000101, ACTIVE WITH .T.
 //
 // notes:
-//   REPLACE_MULTI requires an open table and a current record.
-//   REPLACE_MULTI validates all assignments before applying the physical write.
+//   MULTIREP requires an open table and a current record.
+//   MULTIREP validates all assignments before applying the physical write.
 //   RHS values are evaluated/dequoted before validation and storage.
 //   Memo fields are written through the memo backend before storing the memo token.
-//   REPLACE_MULTI writes directly to the DBF and does not mark the table buffer DIRTY.
-//   REPLACE_MULTI captures before/after index snapshots and applies direct index maintenance.
+//   MULTIREP writes directly to the DBF and does not mark the table buffer DIRTY.
+//   MULTIREP captures before/after index snapshots and applies direct index maintenance.
 //   If index maintenance fails, changed fields are marked STALE.
 //   Buffering/COMMIT/ROLLBACK integration remains deferred for this direct-write command.
-//   REPLACE_MULTI is a table-data mutation command; do not classify it as read-only.
+//   MULTIREP is a table-data mutation command; do not classify it as read-only.
+//   cmd_REPLACE_MULTI is the internal handler name; REPLACE_MULTI is not a registered command.
 //
 // risk:
 //   writes_dbf_record: yes
@@ -86,7 +87,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <ctime>
-#include <iostream>
 #include <limits>
 #include <iomanip>
 #include <locale>
@@ -609,15 +609,13 @@ static bool is_replace_multi_usage_request(const std::string& raw)
 {
     std::string t = up_copy(trim_copy(raw));
 
-    if (t == "REPLACE_MULTI" || t == "MULTIREP") {
+    if (t == "MULTIREP") {
         return true;
     }
 
     // Dispatch normally passes only the tail ("USAGE"), but accept full raw
-    // input too ("REPLACE_MULTI USAGE" or "MULTIREP USAGE").
-    if (t.rfind("REPLACE_MULTI ", 0) == 0) {
-        t = trim_copy(t.substr(14));
-    } else if (t.rfind("MULTIREP ", 0) == 0) {
+    // input too ("MULTIREP USAGE").
+    if (t.rfind("MULTIREP ", 0) == 0) {
         t = trim_copy(t.substr(9));
     }
 
@@ -643,7 +641,7 @@ bool cmd_REPLACE_MULTI(xbase::DbArea& A,
         return false;
     }
 
-    const auto rn = static_cast<uint32_t>(A.recno());
+    const std::uint64_t rn = A.recno64();
     if (rn == 0) {
         if (error) {
             *error = cli::cmdout::message_text(
@@ -940,14 +938,14 @@ void cmd_REPLACE_MULTI(xbase::DbArea& A, std::istringstream& iss)
 
     if (!cmd_REPLACE_MULTI(A, updates, &err)) {
         cli::cmdout::print_prefixed_message(
-            "REPLACE_MULTI",
+            "MULTIREP",
             dottalk::helpdata::MessageId::ReplaceMultiDetailText,
             {{"detail", err}});
         return;
     }
 
     cli::cmdout::print_prefixed_message(
-        "REPLACE_MULTI",
+        "MULTIREP",
         dottalk::helpdata::MessageId::ReplaceMultiUpdatedFieldsText,
         {{"count", std::to_string(updates.size())}});
 }

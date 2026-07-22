@@ -180,6 +180,24 @@ void cmd_WHILE(xbase::DbArea&, std::istringstream& S)
 }
 
 // Lines are routed here by the shell while capture is active
+// @dottalk.usage v1
+// owner: INTERNAL|WHILE_BUFFER
+// command: WHILE_BUFFER
+// category: control-buffer-internal
+// status: developer
+// noargs: internal-capture
+// effect: capture
+// mutates: while-capture-state
+// usage-access: none
+// summary:
+//   Internal shell target that captures one WHILE body line.
+// usage:
+//   WHILE_BUFFER <captured-line>
+// notes:
+//   The shell routes lines here while WHILE capture is active. It is not a public direct command.
+// related:
+//   WHILE, ENDWHILE
+//
 void cmd_WHILE_BUFFER(xbase::DbArea&, std::istringstream& S)
 {
     auto& st = whilestate::st();

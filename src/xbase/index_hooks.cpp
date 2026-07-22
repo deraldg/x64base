@@ -25,7 +25,7 @@ Snapshot capture(DbArea& area)
 bool apply_replace(DbArea& area,
                    const Snapshot& before,
                    const Snapshot& after,
-                   std::uint32_t recno)
+                   std::uint64_t recno)
 {
     const auto hook = active_hooks().apply_replace;
     return hook ? hook(area, before, after, recno) : true;

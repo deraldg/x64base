@@ -1,7 +1,10 @@
-// @dottalk.usage v1
-// command: MANUAL catalog reader support
-// status: MDO-282 native MANUAL source skeleton implementation
+// @dottalk.contract v1
+// component: manual_catalog_reader
+// role: read accepted MAN* catalog headers and inventory rows for the MANUAL command
+// owner: DOT|MANUAL
+// status: source-defined from MDO-282 native MANUAL implementation
 // safety: read-only file/header inspection; no DBF writes
+// @dottalk.contract.end
 
 #include "manual_catalog_reader.h"
 #include "manual_catalog_resolver.h"

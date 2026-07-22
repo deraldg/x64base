@@ -2,6 +2,29 @@
 // DotTalk++ TABLEMETA command
 // Read-only unified metadata report for one DBF table.
 
+// @dottalk.usage v1
+// owner: DOT|TABLEMETA
+// command: TABLEMETA
+// category: table-metadata
+// status: supported
+// noargs: current-table-report
+// effect: report
+// mutates: none
+// usage-access: TABLEMETA USAGE
+// summary:
+//   Report DBF structure and adjacent INI, memo, and index artifact facts.
+// usage:
+//   TABLEMETA USAGE
+//   TABLEMETA
+//   TABLEMETA <table>
+//   TABLEMETA PATH <dbf-path>
+//   TABLEMETA RAW [<table>|PATH <dbf-path>]
+// notes:
+//   TABLEMETA reads metadata and may open a temporary read-only table area; it does not mutate table data.
+// related:
+//   DDICT, STRUCT, FIELDS
+//
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -242,6 +265,15 @@ void cmd_TABLEMETA(xbase::DbArea& area, std::istringstream& iss)
 {
     string arg;
     iss >> arg;
+
+    if (iequals(arg, "USAGE") || iequals(arg, "HELP") || arg == "?") {
+        cout << "Usage:\n"
+             << "  TABLEMETA\n"
+             << "  TABLEMETA <table>\n"
+             << "  TABLEMETA PATH <dbf-path>\n"
+             << "  TABLEMETA RAW [<table>|PATH <dbf-path>]\n";
+        return;
+    }
 
     bool raw = false;
     fs::path dbf_path;

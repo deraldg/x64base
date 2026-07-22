@@ -86,12 +86,12 @@ void cmd_TOP(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    const int32_t rn = cli::navsel::pick_recno(
+    const std::int64_t rn = cli::navsel::pick_recno(
         A,
         cli::navsel::Mode::AutoByFilter,
         cli::navsel::Step::First);
 
-    if (rn <= 0 || !A.gotoRec(rn) || !A.readCurrent()) {
+    if (rn <= 0 || !A.gotoRec64(static_cast<std::uint64_t>(rn)) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message("TOP", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }

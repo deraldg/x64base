@@ -219,10 +219,10 @@ void auto_top(xbase::DbArea& area) noexcept
             return;
         }
 
-        int32_t rn = 0;
+        std::int64_t rn = 0;
 #if DOTTALK_HAS_XINDEX
-        if (order_first_recno(area, rn) && rn >= 1 && rn <= area.recCount()) {
-            if (area.gotoRec(rn)) {
+        if (order_first_recno(area, rn) && rn >= 1 && rn <= static_cast<std::int64_t>(area.recCount64())) {
+            if (area.gotoRec64(static_cast<std::uint64_t>(rn))) {
                 (void)area.readCurrent();
             }
             return;

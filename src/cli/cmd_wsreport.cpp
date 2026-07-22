@@ -210,7 +210,7 @@ static void print_lmdb_block(std::ostream& os) {
 // --------------------------------------------------
 
 static std::size_t unique_recnos_in_tb(const dottalk::table::TableBuffer& tb) {
-    std::set<int> recnos;
+    std::set<std::uint64_t> recnos;
     for (const auto& pair : tb.changes) {
         recnos.insert(pair.first);
     }

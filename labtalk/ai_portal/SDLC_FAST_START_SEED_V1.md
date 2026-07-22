@@ -14,7 +14,8 @@ needed for the task:
 1. `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`
 2. `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`
 3. `D:\code\ccode\docs\planning\SDLC_PLDC_PLANNING_ADOPTION_v0.md`
-4. the owning maintenance, product, proof, or publication lane documents
+4. `D:\code\ccode\labtalk\ai_portal\SCOPE_CALIBRATION_SEED_V1.md`
+5. the owning maintenance, product, proof, or publication lane documents
 
 ## Select the Owning Lifecycle
 
@@ -39,6 +40,12 @@ title:
 area:
 owning_lifecycle:
 sdlc_lane: intake | design | implementation | proof | review | promotion | maintenance | publication
+operating_mode: laboratory | production | maintenance | incident
+change_class: C0 | C1 | C2 | C3 | C4
+build_target: xbase_engine | dottalkpp_runtime | binding | frontend | documentation_only
+product_profile: LEAN | PROFESSIONAL | EDUCATIONAL | DEVELOPMENT | not_applicable
+index_profile: NONE | LEGACY | LMDB | inherited | not_applicable
+scope_reason:
 truth_state:
 proof_state:
 risk_class:
@@ -55,6 +62,9 @@ Unknown fields must be marked unknown, not guessed.
 
 Before implementation, identify requirements, boundaries, mutation and
 compatibility risk, expected behavior, HELP/metadata impact, and proof path.
+Treat the compiled x64base engine, the DotTalk++ runtime, product composition,
+and index profile as separate scope axes. Do not assume full DotTalk++ or the
+`DEVELOPMENT` profile when the actual target is xbase-only or lean.
 
 Before promotion, require the smallest behavioral proof appropriate to the
 change: build, targeted test, DotScript transcript, command output, fixture

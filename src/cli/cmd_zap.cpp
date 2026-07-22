@@ -52,7 +52,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -60,6 +59,7 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 
 #if __has_include("cli/cmd_setpath.hpp")
@@ -175,19 +175,23 @@ static bool replace_file_with_backup(const fs::path& orig, const fs::path& tmp, 
 
     fs::rename(orig, bak, ec);
     if (ec) {
-        std::cout << "ZAP: Failed to rename original to backup: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapFailedRenameBackupText,
+            {{"detail", ec.message()}});
         return false;
     }
 
     fs::rename(tmp, orig, ec);
     if (ec) {
-        std::cout << "ZAP: Failed to replace original: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapFailedReplaceText,
+            {{"detail", ec.message()}});
         std::error_code ec2;
         fs::rename(bak, orig, ec2);
         if (ec2) {
-            std::cout << "  Rollback also failed — manual recovery needed!\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapRollbackFailedText);
         } else {
-            std::cout << "  Original restored.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapOriginalRestoredText);
         }
         return false;
     }
@@ -208,37 +212,34 @@ static void try_mark_index_dirty(const std::string& orderContainer) {
         if (cnxfile::open(ip.string(), h) && h) {
             cnxfile::set_dirty(h, true);
             cnxfile::close(h);
-            std::cout << "ZAP: CNX marked dirty (reindex recommended): " << s8(ip.filename()) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "ZAP", dottalk::helpdata::MessageId::ZapCnxMarkedDirtyText,
+                {{"file", s8(ip.filename())}});
             return;
         }
-        std::cout << "ZAP: note: CNX found but could not mark dirty\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapCnxCouldNotMarkText);
         return;
     }
 #endif
 
     if (ext == ".INX" || ext == ".CDX") {
-        std::cout << "ZAP: note: index container should be rebuilt: " << s8(ip.filename()) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapIndexRebuildText,
+            {{"file", s8(ip.filename())}});
         return;
     }
 
-    std::cout << "ZAP: note: order container should be rebuilt: " << s8(ip.filename()) << "\n";
+    cli::cmdout::print_prefixed_message(
+        "ZAP", dottalk::helpdata::MessageId::ZapOrderRebuildText,
+        {{"file", s8(ip.filename())}});
 }
 
 } // namespace
 
 static void print_zap_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  ZAP USAGE\n"
-        << "  ZAP\n"
-        << "Examples:\n"
-        << "  ZAP\n"
-        << "Notes:\n"
-        << "  - ZAP USAGE does not require an open table.\n"
-        << "  - ZAP removes all records from the current non-memo DBF while preserving structure.\n"
-        << "  - ZAP closes the table on success; reopen with USE <table>.\n"
-        << "  - Index containers must be rebuilt/rebound after ZAP.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapUsageText);
 }
 void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
     // ZAP_USAGE_CONTRACT_BRANCH
@@ -265,12 +266,12 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!A.isOpen() || A.filename().empty()) {
-        std::cout << "ZAP: No table open\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapNoTableOpenText);
         return;
     }
 
     if (A.memoKind() != xbase::DbArea::MemoKind::NONE) {
-        std::cout << "ZAP: Cannot zap memo table (memo block handling not implemented).\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapCannotZapMemoText);
         return;
     }
 
@@ -288,31 +289,35 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!fs::exists(origPath)) {
-        std::cout << "ZAP: File not found: " << s8(origPath) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapFileNotFoundText, {{"path", s8(origPath)}});
         return;
     }
 
-    std::cout << "Zapping: " << s8(origPath) << "\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ZapZappingText, {{"path", s8(origPath)}});
 
     const fs::path tmpPath = make_temp_path(origPath);
     const fs::path bakPath = make_bak_path(origPath);
 
     std::ifstream src(origPath, std::ios::binary);
     if (!src) {
-        std::cout << "ZAP: Cannot open file for reading\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapCannotOpenReadText);
         return;
     }
 
     std::uint8_t hdr32[32]{};
     src.read(reinterpret_cast<char*>(hdr32), 32);
     if (!src) {
-        std::cout << "ZAP: Failed to read header\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapFailedReadHeaderText);
         return;
     }
 
     const std::uint16_t headerLen = read_le16(hdr32 + 8);
     if (headerLen < 33 || headerLen > 4096) {
-        std::cout << "ZAP: Invalid header length (" << headerLen << ")\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapInvalidHeaderLenText,
+            {{"len", std::to_string(headerLen)}});
         return;
     }
 
@@ -320,12 +325,12 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
     src.seekg(0, std::ios::beg);
     src.read(reinterpret_cast<char*>(headerBlock.data()), headerLen);
     if (!src) {
-        std::cout << "ZAP: Failed to read full header block\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapFailedReadHeaderBlockText);
         return;
     }
 
     if (headerBlock.back() != 0x0D) {
-        std::cout << "Warning: header does not end with 0x0D terminator\n";
+        cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::ZapHeaderNoTerminatorText);
     }
 
     src.close();
@@ -335,13 +340,14 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
 
     std::ofstream out(tmpPath, std::ios::binary | std::ios::trunc);
     if (!out) {
-        std::cout << "ZAP: Cannot create temporary file: " << s8(tmpPath) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "ZAP", dottalk::helpdata::MessageId::ZapCannotCreateTempText, {{"path", s8(tmpPath)}});
         return;
     }
 
     out.write(reinterpret_cast<const char*>(headerBlock.data()), headerLen);
     if (!out) {
-        std::cout << "ZAP: Failed writing header to temp file\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapFailedWriteHeaderText);
         out.close();
         fs::remove(tmpPath);
         return;
@@ -350,7 +356,7 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
     const char eof_marker = static_cast<char>(0x1A);
     out.write(&eof_marker, 1);
     if (!out) {
-        std::cout << "ZAP: Failed writing EOF marker\n";
+        cli::cmdout::print_prefixed_message("ZAP", dottalk::helpdata::MessageId::ZapFailedWriteEofText);
         out.close();
         fs::remove(tmpPath);
         return;
@@ -369,10 +375,13 @@ void cmd_ZAP(xbase::DbArea& A, std::istringstream& in) {
 
     try_mark_index_dirty(orderContainer);
 
-    std::cout << "ZAP complete. All records removed.\n";
-    std::cout << origPath.filename().string() << " ready for use.\n";
-    std::cout << "Sidecar(s): none.\n";
-    std::cout << "Table is closed. Reopen with: USE "
-              << origPath.stem().string() << "\n";
-    std::cout << "Rebuild/rebind indexes as needed.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapCompleteText);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ZapReadyForUseText,
+        {{"file", origPath.filename().string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapSidecarsNoneText);
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::ZapReopenText,
+        {{"stem", origPath.stem().string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::ZapRebuildIndexesText);
 }

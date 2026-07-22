@@ -61,7 +61,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -69,6 +68,7 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "textio.hpp"
+#include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
 #include "memo/memostore.hpp"
 #include <cctype>
@@ -249,23 +249,27 @@ static void try_mark_index_dirty(const std::string& orderContainer)
         if (cnxfile::open(ip.string(), h) && h) {
             cnxfile::set_dirty(h, true);
             cnxfile::close(h);
-            std::cout << "PACK: CNX marked dirty (reindex recommended): "
-                      << s8(ip.filename()) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackCnxMarkedDirtyText,
+                {{"file", s8(ip.filename())}});
             return;
         }
-        std::cout << "PACK: note: CNX found but could not mark dirty\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackCnxCouldNotMarkText);
         return;
     }
 #endif
 
     if (ext == ".INX" || ext == ".CDX") {
-        std::cout << "PACK: note: index container should be rebuilt: "
-                  << s8(ip.filename()) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackIndexRebuildText,
+            {{"file", s8(ip.filename())}});
         return;
     }
 
-    std::cout << "PACK: note: order container should be rebuilt: "
-              << s8(ip.filename()) << "\n";
+    cli::cmdout::print_prefixed_message(
+        "PACK", dottalk::helpdata::MessageId::PackOrderRebuildText,
+        {{"file", s8(ip.filename())}});
 }
 
 static bool replace_file_with_backup(const fs::path& orig, const fs::path& tmp, const fs::path& bak)
@@ -278,21 +282,26 @@ static bool replace_file_with_backup(const fs::path& orig, const fs::path& tmp, 
 
     fs::rename(orig, bak, ec);
     if (ec) {
-        std::cout << "PACK: Failed to rename original to backup: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFailedRenameBackupText,
+            {{"detail", ec.message()}});
         return false;
     }
 
     fs::rename(tmp, orig, ec);
     if (ec) {
-        std::cout << "PACK: Failed to replace original with packed file: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFailedReplaceText,
+            {{"detail", ec.message()}});
 
         std::error_code ec2;
         fs::rename(bak, orig, ec2);
         if (ec2) {
-            std::cout << "  Rollback also failed: " << ec2.message()
-                      << " — manual recovery may be needed!\n";
+            cli::cmdout::print_message(
+                dottalk::helpdata::MessageId::PackRollbackFailedText,
+                {{"detail", ec2.message()}});
         } else {
-            std::cout << "  Original file restored.\n";
+            cli::cmdout::print_message(dottalk::helpdata::MessageId::PackOriginalRestoredText);
         }
         return false;
     }
@@ -315,7 +324,9 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
 
     fs::rename(origDbf, bakDbf, ec);
     if (ec) {
-        std::cout << "PACK: Failed to rename original DBF to backup: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFailedRenameDbfBackupText,
+            {{"detail", ec.message()}});
         return false;
     }
 
@@ -323,7 +334,9 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
     if (fs::exists(origDtx)) {
         fs::rename(origDtx, bakDtx, ec);
         if (ec) {
-            std::cout << "PACK: Failed to rename original DTX to backup: " << ec.message() << "\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackFailedRenameDtxBackupText,
+                {{"detail", ec.message()}});
             std::error_code ec2;
             fs::rename(bakDbf, origDbf, ec2);
             return false;
@@ -333,7 +346,9 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
     ec.clear();
     fs::rename(tmpDbf, origDbf, ec);
     if (ec) {
-        std::cout << "PACK: Failed to replace DBF with packed DBF: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFailedReplaceDbfText,
+            {{"detail", ec.message()}});
 
         std::error_code ec2;
         if (fs::exists(bakDtx)) fs::rename(bakDtx, origDtx, ec2);
@@ -345,7 +360,9 @@ static bool replace_two_files_with_backup(const fs::path& origDbf,
     ec.clear();
     fs::rename(tmpDtx, origDtx, ec);
     if (ec) {
-        std::cout << "PACK: Failed to replace DTX with packed DTX: " << ec.message() << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFailedReplaceDtxText,
+            {{"detail", ec.message()}});
 
         std::error_code ec2;
         fs::remove(origDbf, ec2);
@@ -497,13 +514,15 @@ static bool pack_x64_memo_table(const fs::path& origPath,
     src.close();
 
     if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
-        std::cout << "Warning: header does not end with 0x0D terminator byte\n";
+        cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
     }
 
     if (origRecCount != actualRecCount) {
-        std::cout << "PACK: Warning — header record count (" << origRecCount
-                  << ") does not match physical record count (" << actualRecCount
-                  << "); using safe count " << safeRecCount << ".\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackHeaderCountMismatchText,
+            {{"orig", std::to_string(origRecCount)},
+             {"actual", std::to_string(actualRecCount)},
+             {"safe", std::to_string(safeRecCount)}});
     }
 
     dottalk::memo::MemoStore oldStore;
@@ -598,8 +617,9 @@ static bool pack_x64_memo_table(const fs::path& origPath,
             std::string text;
             std::string memo_err;
             if (!oldStore.get_text_id(old_id, text, &memo_err)) {
-                std::cout << "PACK: warning — memo object " << old_id
-                          << " not found, clearing reference\n";
+                cli::cmdout::print_prefixed_message(
+                    "PACK", dottalk::helpdata::MessageId::PackMemoNotFoundText,
+                    {{"id", std::to_string(old_id)}});
                 write_u64_le(recbuf.data() + mf.row_offset, 0);
                 continue;
             }
@@ -701,19 +721,7 @@ static bool pack_x64_memo_table(const fs::path& origPath,
 
 static void print_pack_usage_contract()
 {
-    std::cout
-        << "Usage:\n"
-        << "  PACK USAGE\n"
-        << "  PACK\n"
-        << "Examples:\n"
-        << "  PACK\n"
-        << "Notes:\n"
-        << "  - PACK USAGE does not require an open table and does not rewrite files.\n"
-        << "  - PACK physically removes deleted records from the current DBF.\n"
-        << "  - PACK closes the table on success; reopen with USE <table>.\n"
-        << "  - PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.\n"
-        << "  - Legacy memo tables are refused.\n"
-        << "  - Index containers must be rebuilt/rebound after PACK.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::PackUsageText);
 }
 
 static bool pack_usage_token_contract(std::string tok)
@@ -747,7 +755,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!A.isOpen() || A.filename().empty()) {
-        std::cout << "PACK: No table open\n";
+        cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackNoTableOpenText);
         return;
     }
 
@@ -756,7 +764,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         has_x64_memo_fields(A);
 
     if (A.memoKind() != xbase::DbArea::MemoKind::NONE && !x64_memo_pack) {
-        std::cout << "PACK: Memo tables not supported yet (legacy memo block remapping missing).\n";
+        cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackMemoNotSupportedText);
         return;
     }
 
@@ -775,7 +783,8 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     }
 
     if (!fs::exists(origPath)) {
-        std::cout << "PACK: File not found on disk: " << s8(origPath) << "\n";
+        cli::cmdout::print_prefixed_message(
+            "PACK", dottalk::helpdata::MessageId::PackFileNotFoundText, {{"path", s8(origPath)}});
         return;
     }
 
@@ -788,21 +797,23 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
     if (x64_memo_pack) {
         std::string err;
         if (!pack_x64_memo_table(origPath, tmpPath, bakPath, kept, deleted, err, memoFields)) {
-            std::cout << "PACK: " << err << "\n";
-            std::cout << "PACK: operation aborted. Table remains closed.\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackDetailText, {{"detail", err}});
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackAbortedText);
             return;
         }
     } else {
         std::ifstream src(origPath, std::ios::binary);
         if (!src) {
-            std::cout << "PACK: Cannot open original file for reading\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackCannotOpenReadText);
             return;
         }
 
         std::uint8_t hdr32[32]{};
         src.read(reinterpret_cast<char*>(hdr32), 32);
         if (!src) {
-            std::cout << "PACK: Failed to read first 32 bytes of header\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedRead32Text);
             return;
         }
 
@@ -811,8 +822,9 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         const std::uint16_t recordLen    = read_le16(hdr32 + 10);
 
         if (headerLen < 33 || recordLen < 1 || headerLen > 4096) {
-            std::cout << "PACK: Invalid DBF header (headerLen=" << headerLen
-                      << ", recordLen=" << recordLen << ")\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackInvalidHeaderText,
+                {{"hl", std::to_string(headerLen)}, {"rl", std::to_string(recordLen)}});
             return;
         }
 
@@ -821,7 +833,8 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         std::string safeCountErr;
         if (!compute_safe_record_count(origPath, headerLen, recordLen, origRecCount,
                                        actualRecCount, safeRecCount, safeCountErr)) {
-            std::cout << "PACK: " << safeCountErr << "\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackDetailText, {{"detail", safeCountErr}});
             return;
         }
 
@@ -829,25 +842,28 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         src.seekg(0, std::ios::beg);
         src.read(reinterpret_cast<char*>(headerBlock.data()), headerLen);
         if (!src) {
-            std::cout << "PACK: Failed to read full header block\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedReadHeaderBlockText);
             return;
         }
 
         if (headerBlock.size() > 0 && headerBlock.back() != xbase::HEADER_TERM_BYTE) {
-            std::cout << "Warning: header does not end with 0x0D terminator byte\n";
+            cli::cmdout::print_prefixed_message("Warning", dottalk::helpdata::MessageId::PackHeaderNoTerminatorText);
         }
 
         if (origRecCount != actualRecCount) {
-            std::cout << "PACK: Warning — header record count (" << origRecCount
-                      << ") does not match physical record count (" << actualRecCount
-                      << "); using safe count " << safeRecCount << ".\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackHeaderCountMismatchText,
+                {{"orig", std::to_string(origRecCount)},
+                 {"actual", std::to_string(actualRecCount)},
+                 {"safe", std::to_string(safeRecCount)}});
         }
 
         src.close();
 
         std::ofstream out(tmpPath, std::ios::binary | std::ios::trunc);
         if (!out) {
-            std::cout << "PACK: Cannot create temporary file: " << s8(tmpPath) << "\n";
+            cli::cmdout::print_prefixed_message(
+                "PACK", dottalk::helpdata::MessageId::PackCannotCreateTempText, {{"path", s8(tmpPath)}});
             return;
         }
 
@@ -858,7 +874,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
 
         out.write(reinterpret_cast<const char*>(headerBlock.data()), headerLen);
         if (!out) {
-            std::cout << "PACK: Failed to write initial header\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedWriteInitialHeaderText);
             out.close();
             fs::remove(tmpPath);
             return;
@@ -866,7 +882,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
 
         src.open(origPath, std::ios::binary);
         if (!src) {
-            std::cout << "PACK: Cannot reopen original file for record copy\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackCannotReopenText);
             out.close();
             fs::remove(tmpPath);
             return;
@@ -877,7 +893,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         for (std::uint32_t i = 0; i < safeRecCount; ++i) {
             src.read(reinterpret_cast<char*>(recbuf.data()), recordLen);
             if (!src) {
-                std::cout << "PACK: Failed while reading source records\n";
+                cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedReadRecordsText);
                 src.close();
                 out.close();
                 fs::remove(tmpPath);
@@ -891,7 +907,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
 
             out.write(reinterpret_cast<const char*>(recbuf.data()), recordLen);
             if (!out) {
-                std::cout << "PACK: Failed while writing packed records\n";
+                cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedWriteRecordsText);
                 src.close();
                 out.close();
                 fs::remove(tmpPath);
@@ -904,7 +920,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         const char eof_marker = static_cast<char>(0x1A);
         out.write(&eof_marker, 1);
         if (!out) {
-            std::cout << "PACK: Failed writing EOF marker\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedWriteEofText);
             src.close();
             out.close();
             fs::remove(tmpPath);
@@ -917,7 +933,7 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
         out.seekp(0, std::ios::beg);
         out.write(reinterpret_cast<const char*>(headerBlock.data()), headerLen);
         if (!out) {
-            std::cout << "PACK: Failed rewriting final header\n";
+            cli::cmdout::print_prefixed_message("PACK", dottalk::helpdata::MessageId::PackFailedRewriteHeaderText);
             src.close();
             out.close();
             fs::remove(tmpPath);
@@ -935,15 +951,19 @@ void cmd_PACK(xbase::DbArea& A, std::istringstream& in)
 
     try_mark_index_dirty(orderContainer);
 
-    std::cout << "PACK complete. Kept " << kept
-              << " record(s), removed " << deleted << " deleted record(s).\n";
-    std::cout << origPath.filename().string() << " ready for use.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::PackCompleteText,
+        {{"kept", std::to_string(kept)}, {"deleted", std::to_string(deleted)}});
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::PackReadyForUseText,
+        {{"file", origPath.filename().string()}});
     if (x64_memo_pack) {
-        std::cout << "Sidecar(s): DBF and DTX rebuilt and synchronized.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::PackSidecarsRebuiltText);
     } else {
-        std::cout << "Sidecar(s): none.\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::PackSidecarsNoneText);
     }
-    std::cout << "Table is closed. Reopen with: USE "
-              << origPath.stem().string() << "\n";
-    std::cout << "Rebuild/rebind indexes as needed.\n";
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::PackReopenText,
+        {{"stem", origPath.stem().string()}});
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::PackRebuildIndexesText);
 }

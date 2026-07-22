@@ -61,6 +61,26 @@ PLDC should not replace SDLC. PLDC answers: "What package are we delivering,
 to whom, and how will they use it?" SDLC answers: "What system behavior exists,
 how is it controlled, and what proof keeps it trustworthy?"
 
+## Scope and build-profile calibration
+
+The framework exposes the whole lifecycle for teaching, but material work must
+select the smallest sufficient gates for its real consequences. Record the
+operating mode, change class, actual build target, product profile, index
+profile, affected authorities, and any deferred gate with residual risk.
+
+The engine and runtime are separable deliverables. The compiled x64base `xbase`
+static library can be the target without making the full `dottalkpp` CLI the
+product. When DotTalk++ is built, `DOTTALK_PRODUCT=LEAN|PROFESSIONAL|EDUCATIONAL|DEVELOPMENT`
+selects component composition, while `DOTTALK_INDEX_MODE=NONE|LEGACY|LMDB`
+selects the independent index capability. `LEAN` is neither engine-only nor
+no-index.
+
+An engine-only change starts with xbase contracts, build, data-format proof, and
+direct consumers. It expands into DotTalk++, HELP, LabTalk, manual, or website
+gates only when a shared contract, downstream dependency, delivery boundary, or
+explicit teaching objective requires that expansion. The canonical matrix is
+`docs/maintenance/SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`.
+
 ## Lifecycle Stack
 
 The Laboratory Campus is a stack of related but separate lifecycles.

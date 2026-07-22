@@ -1,4 +1,25 @@
 // src/cli/cmd_table_buffer.cpp
+// @dottalk.usage v1
+// owner: DOT|TABLE_BUFFER
+// command: TABLE_BUFFER
+// category: table-buffer
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: session-buffer-state
+// usage-access: TABLE_BUFFER USAGE
+// summary:
+//   Inspect or change per-area table-buffer state.
+// usage:
+//   TABLE_BUFFER
+//   TABLE_BUFFER USAGE
+//   TABLE_BUFFER STATUS [ALL]
+//   TABLE_BUFFER BUFFER ON|OFF|DIRTY|CLEAN|STALE|FRESH|STATUS|DUMP|TESTADD|RESET
+// notes:
+//   No arguments reports current buffer state. State-changing subcommands mutate session buffer metadata.
+// related:
+//   COMMIT, ROLLBACK, TABLE
+//
 #include "cli/table_buffer.hpp"
 
 #include <algorithm>
@@ -99,7 +120,7 @@ static std::vector<int> parse_area_targets(const std::string& rest) {
 }
 
 static size_t unique_recnos_in_tb(const TableBuffer& tb) {
-    std::set<int> recnos;
+    std::set<std::uint64_t> recnos;
     for (const auto& pair : tb.changes) {
         recnos.insert(pair.first);
     }
@@ -271,6 +292,12 @@ static int apply_one(int area0, const std::string& verb, bool value) {
             set_stale(area0, value);
             changed = 1;
         }
+    } else if (verb == "history") {
+        const bool old = is_history_enabled(area0);
+        if (old != value) {
+            set_history_enabled(area0, value);
+            changed = 1;
+        }
     }
 
     return changed;
@@ -288,6 +315,14 @@ static void apply_to_targets(const std::vector<int>& targets,
         {{"count", std::to_string(changed)}});
 }
 
+// The redo log is a sidecar of the DBF (`<dbf>.tbj`), so recovery-on-open can
+// find it from the table's filename. Look it up from the engine's area slot.
+static std::string area_dbf_filename(int area0) {
+    auto* eng = shell_engine();
+    if (!eng || !in_range(area0)) return {};
+    try { return eng->area(area0).filename(); } catch (...) { return {}; }
+}
+
 static void apply_persistence_to_targets(const std::vector<int>& targets,
                                          BufferPersistenceMode mode) {
     int changed = 0;
@@ -298,7 +333,7 @@ static void apply_persistence_to_targets(const std::vector<int>& targets,
             ++changed;
         }
         if (mode == BufferPersistenceMode::RamJournal) {
-            (void)journal_note_buffer_on(a);
+            (void)journal_note_buffer_on(a, area_dbf_filename(a));
         }
     }
 
@@ -582,6 +617,34 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
         return;
     }
 
+    if (sub == "history") {
+        // TABLE BUFFER HISTORY ON|OFF [<areas>] -- toggle multiple-retained-
+        // edits-per-field (history) mode vs single last-write-wins.
+        std::string mode_tok;
+        if (toks.size() >= 2) mode_tok = to_lower(toks[1]);
+        bool value = true;
+        std::size_t target_start = 1;
+        if (mode_tok == "off" || mode_tok == "no" || mode_tok == "false" ||
+            mode_tok == "disable" || mode_tok == "disabled") {
+            value = false; target_start = 2;
+        } else if (mode_tok == "on" || mode_tok == "yes" || mode_tok == "true" ||
+                   mode_tok == "enable" || mode_tok == "enabled") {
+            value = true; target_start = 2;
+        }
+
+        std::string target_text;
+        for (std::size_t i = target_start; i < toks.size(); ++i) {
+            if (!target_text.empty()) target_text += " ";
+            target_text += toks[i];
+        }
+        auto htargets = parse_area_targets(target_text);
+        if (htargets.empty() && to_lower(target_text) != "all") {
+            htargets = default_current_target(current_area);
+        }
+        apply_to_targets(htargets, "history", value);
+        return;
+    }
+
     auto targets = parse_area_targets(arg);
     if (targets.empty() && to_lower(arg) != "all") {
         targets = default_current_target(current_area);
@@ -624,7 +687,7 @@ static void table_buffer_dispatch(const std::string& rest, xbase::DbArea& curren
 
         for (int a : targets) {
             if (is_persistent_enabled(a)) {
-                (void)journal_note_buffer_on(a);
+                (void)journal_note_buffer_on(a, area_dbf_filename(a));
             }
         }
         return;
@@ -692,6 +755,11 @@ void cmd_TABLE_BUFFER(xbase::DbArea& current, std::istringstream& in) {
     }
     sub = to_lower(sub);
 
+    if (sub == "usage" || sub == "help" || sub == "?") {
+        show_usage();
+        return;
+    }
+
     if (sub == "all") {
         table_show(true);
         return;
@@ -739,6 +807,36 @@ void cmd_TABLE_BUFFER(xbase::DbArea& current, std::istringstream& in) {
     }
     if (sub == "freshall" || sub == "clearstaleall" || sub == "unstaleall") {
         apply_to_open_areas("stale", false);
+        return;
+    }
+
+    if (sub == "history") {
+        // TABLE BUFFER HISTORY ON|OFF [<areas>]  -- toggle multiple-retained-
+        // edits-per-field (history) mode vs single last-write-wins.
+        std::string tail = trim_copy(rest);
+        std::string first_tok;
+        const auto sp2 = tail.find_first_of(" \t");
+        if (sp2 == std::string::npos) { first_tok = tail; tail.clear(); }
+        else { first_tok = tail.substr(0, sp2); tail = trim_copy(tail.substr(sp2)); }
+
+        const std::string lw = to_lower(first_tok);
+        bool value = true;
+        if (lw == "off" || lw == "no" || lw == "false" || lw == "disable" || lw == "disabled") {
+            value = false;
+        } else if (lw == "on" || lw == "yes" || lw == "true" || lw == "enable" || lw == "enabled") {
+            value = true;
+        } else {
+            // No explicit ON/OFF token: treat the whole tail as the area spec and
+            // default to enabling history mode.
+            tail = trim_copy(rest);
+            value = true;
+        }
+
+        auto htargets = parse_area_targets(tail);
+        if (htargets.empty() && to_lower(tail) != "all") {
+            htargets = default_current_target(current);
+        }
+        apply_to_targets(htargets, "history", value);
         return;
     }
 

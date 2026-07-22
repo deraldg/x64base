@@ -58,15 +58,17 @@ inline int32_t pick_recno(xbase::DbArea& A,
 
     case Mode::RawOrder:
         {
-            int32_t rn = 0;
+            // RECNO64 M4: carry the order-recno 64-bit internally to bind the widened
+            // order_first/last_recno; the int32_t return/param stays the M5 boundary.
+            std::int64_t rn = 0;
 
             switch (step) {
             case Step::First:
-                if (order_first_recno(A, rn)) return rn;
+                if (order_first_recno(A, rn)) return static_cast<int32_t>(rn);
                 return (A.recCount() > 0 ? 1 : 0);
 
             case Step::Last:
-                if (order_last_recno(A, rn)) return rn;
+                if (order_last_recno(A, rn)) return static_cast<int32_t>(rn);
                 return (A.recCount() > 0 ? A.recCount() : 0);
 
             case Step::Next:
@@ -80,13 +82,13 @@ inline int32_t pick_recno(xbase::DbArea& A,
                 }
 
                 const bool ok = order_skip(A, +1) || A.skip(+1);
-                rn = ok ? A.recno() : 0;
+                rn = ok ? static_cast<std::int64_t>(A.recno64()) : 0;
 
                 if (save > 0) {
                     (void)A.gotoRec(save);
                     (void)A.readCurrent();
                 }
-                return rn;
+                return static_cast<int32_t>(rn);
             }
 
             case Step::Prior:
@@ -100,13 +102,13 @@ inline int32_t pick_recno(xbase::DbArea& A,
                 }
 
                 const bool ok = order_skip(A, -1) || A.skip(-1);
-                rn = ok ? A.recno() : 0;
+                rn = ok ? static_cast<std::int64_t>(A.recno64()) : 0;
 
                 if (save > 0) {
                     (void)A.gotoRec(save);
                     (void)A.readCurrent();
                 }
-                return rn;
+                return static_cast<int32_t>(rn);
             }
             }
 

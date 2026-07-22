@@ -107,8 +107,8 @@ void cmd_GOTO(xbase::DbArea& A, std::istringstream& iss)
         return;
     }
 
-    int n = 0;
-    if (!cli::nav::try_parse_int_token(tok, n) || n <= 0) {
+    std::uint64_t n = 0;
+    if (!cli::nav::try_parse_u64_token(tok, n) || n == 0) {
         print_goto_usage();
         return;
     }

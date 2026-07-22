@@ -143,4 +143,3 @@ Promote this lesson from draft to proof-linked after:
 - a metadata example shows how a semantic role can be attached without changing
   classic storage;
 - a teacher-facing worksheet is written with expected answers.
-

@@ -26,6 +26,28 @@ PLDC is useful, but it should not replace SDLC. A product or lab package can be
 well-designed and still depend on unproven runtime behavior. The SDLC gate must
 win when those disagree.
 
+## Scope and product-composition rule
+
+This charter does not make the largest DotTalk++ assembly the default scope for
+every change. Before selecting proof gates, identify the actual deliverable:
+
+- the compiled x64base `xbase` engine library;
+- the `dottalkpp` CLI/runtime;
+- a binding or front end;
+- or documentation only.
+
+For runtime products, record `DOTTALK_PRODUCT` (`LEAN`, `PROFESSIONAL`,
+`EDUCATIONAL`, or `DEVELOPMENT`) separately from `DOTTALK_INDEX_MODE` (`NONE`,
+`LEGACY`, or `LMDB`). These are independent axes. `LEAN` does not mean
+engine-only and does not mean no-index.
+
+Begin with the gates owned by the selected artifact and expand only through
+demonstrated dependencies, changed contracts, release exposure, or an explicit
+educational objective. Thus an xbase-only change does not automatically invoke
+CLI HELP, LabTalk, manual, and website gates; it does invoke them when its shared
+behavior changes those consumers. The complete classification and decision
+matrix is `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`.
+
 ## Ownership Boundary
 
 | Area | Owner |
@@ -159,4 +181,3 @@ Use PLDC when the question is:
 - A successful command listing is not behavioral proof.
 - Publication is not authority.
 - PLDC cannot promote a behavior past its SDLC evidence.
-

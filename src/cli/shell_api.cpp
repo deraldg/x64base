@@ -5,6 +5,7 @@
 //           text in command units; this layer is shared shell glue.
 
 #include "shell_api.hpp"
+#include "cli/dotscript_lexing.hpp"
 
 #include <sstream>
 #include <string>
@@ -12,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <locale>
 #include <cmath>
 
 #include "xbase.hpp"
@@ -49,11 +51,7 @@ namespace {
     }
 
     static bool begins_with_comment(const std::string& raw) {
-        const std::string s = trim(raw);
-        if (s.empty()) return false;
-        if (s[0] == '#') return true;
-        if (s.size() >= 2 && s[0] == '/' && s[1] == '/') return true;
-        return false;
+        return dottalk::lexing::is_comment_line(raw);
     }
 
     static std::string expand_shortcut_lead(const std::string& s) {
@@ -98,10 +96,12 @@ namespace {
         const double iv = std::floor(v);
         if (std::fabs(v - iv) < 1e-9) {
             std::ostringstream o;
+            o.imbue(std::locale::classic());   // AIF-031: no thousands grouping
             o << static_cast<long long>(iv);
             return o.str();
         }
         std::ostringstream o;
+        o.imbue(std::locale::classic());       // AIF-031: no thousands grouping
         o << std::fixed << std::setprecision(10) << v;
         std::string s = o.str();
         while (!s.empty() && s.find('.') != std::string::npos && s.back() == '0') s.pop_back();
@@ -161,13 +161,13 @@ namespace {
         using EV = dottalk::expr::EvalValue;
         switch (ev.kind) {
             case EV::K_String:
-                if (print_result) std::cout << ev.text << "\n";
+                if (print_result) cli::cmdout::print_line(ev.text);
                 return true;
             case EV::K_Number:
-                if (print_result) std::cout << format_eval_number(ev.number) << "\n";
+                if (print_result) cli::cmdout::print_line(format_eval_number(ev.number));
                 return true;
             case EV::K_Bool:
-                if (print_result) std::cout << (ev.tf ? ".T." : ".F.") << "\n";
+                if (print_result) cli::cmdout::print_line(ev.tf ? ".T." : ".F.");
                 return true;
             default:
                 return false;

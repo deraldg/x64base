@@ -22,3 +22,8 @@
 *.pdb       binary
 *.dbf       binary
 *.inx       binary
+
+# Retained raw runner transcripts (e.g. teed console captures, possibly UTF-16
+# with ANSI codes). Treat as binary so no CRLF/encoding normalization can drift
+# the SHA-256 that proof ledgers bind (e.g. PINOCCHIO_HISTORICAL_ENGINE_BENCHMARKS).
+labtalk/proofs/runs/*.log   binary

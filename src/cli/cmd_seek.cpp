@@ -70,6 +70,7 @@
 #include "xbase.hpp"
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
+#include "xindex/cdx_backend.hpp"   // keyed range-seek fast path (seekRecnoUserKey)
 #include "textio.hpp"
 #include "cli/command_output.hpp"
 #include "cli/order_state.hpp"
@@ -246,13 +247,63 @@ static bool seek_via_cdx_active_order(xbase::DbArea& a,
         return false;
     }
 
+    const bool asc = orderstate::isAscending(a);
+
+    // Fast path: keyed range-seek via LMDB MDB_SET_RANGE (O(log n)) instead of a
+    // linear index walk (which was O(scan-distance) -- a near-last key on a 5.5M
+    // row table walked ~the whole index). Direction-independent: it is a keyed
+    // exact lookup. The landed record is re-verified against the DBF field, so a
+    // prefix-only / deleted / unverified landing falls through to the exact+near
+    // linear walk below.
+    //
+    // Duplicate-key note: this returns the smallest-recno match (LMDB key order).
+    // The old ASCENDING walk also returned the smallest-recno match, so ascending
+    // is unchanged. The old DESCENDING walk returned the LARGEST-recno match; a
+    // duplicated-key descending SEEK now lands on the smallest recno instead. The
+    // specific duplicate is not part of SEEK's contract ("land on an exact
+    // match"); this makes the two directions consistent. Unique keys are
+    // unaffected.
+    {
+        if (auto* cdx = dynamic_cast<xindex::CdxBackend*>(im.backend())) {
+            std::uint64_t hit = 0;              // RECNO64: keyed-seek result is 64-bit
+            std::string serr;
+            if (cdx->seekRecnoUserKey(needleU, hit, serr)) {
+                // NOTE(RECNO64 M4-5): SEEK positioning (gotoRec/recCount below) is
+                // still int32 nav-consumer; explicit narrow until that slice lands.
+                const int32_t rn = static_cast<int32_t>(hit);
+                if (rn > 0 && rn <= a.recCount()) {
+                    xbase::cursor_hook::Guard suppress_cursor;
+                    try {
+                        if (a.gotoRec(rn) && a.readCurrent() && !a.isDeleted() &&
+                            compare_field_value(a, fld, needleU) == 0) {
+                            found_recno = rn;
+                            return true; // exact match located by keyed seek
+                        }
+                    } catch (...) {
+                        // fall through to the linear walk
+                    }
+                }
+                // prefix/deleted/unverified landing -> fall through to linear walk
+            } else if (!allow_near && serr == "not found") {
+                // The backend confirmed no index key carries this value (its
+                // explicit "not found" -- MDB_NOTFOUND or exact-key mismatch,
+                // NOT a config/encoding error). With SET NEAR OFF there is no
+                // exact match and no near record to locate, so skip the O(n)
+                // walk. (The "not found" literal is CdxBackend::seekRecnoUserKey's
+                // own; any other error string falls through to the walk.)
+                return true;
+            }
+            // unverified hit, or miss with NEAR on -> fall through to the exact+
+            // near linear walk (preserves all near / error behavior).
+        }
+    }
+
     auto cur = im.scan(xindex::Key{}, xindex::Key{});
     if (!cur) return false;
 
     xindex::Key k;
     xindex::RecNo r;
 
-    const bool asc = orderstate::isAscending(a);
     bool ok = asc ? cur->first(k, r) : cur->last(k, r);
 
     {

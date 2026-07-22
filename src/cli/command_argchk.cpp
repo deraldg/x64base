@@ -1,4 +1,22 @@
 // src/cli/cmdargchk.cpp
+// @dottalk.usage v1
+// owner: DOT|CMDARGCHK
+// command: CMDARGCHK
+// category: help-diagnostic
+// status: supported-stub
+// noargs: report
+// effect: report
+// mutates: none
+// usage-access: CMDARGCHK
+// summary:
+//   Print guidance for validating command argument metadata and CMDKEY relations.
+// usage:
+//   CMDARGCHK
+// notes:
+//   This is a lightweight report-only sanity guide; it does not execute the displayed recipe.
+// related:
+//   CMDHELP, CMDREL, REL
+//
 #include <iostream>
 #include <sstream>
 #include <string>

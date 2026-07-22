@@ -1,6 +1,7 @@
 #include "xbase.hpp"
 #include "textio.hpp"
 #include "xbase_64.hpp"
+#include "xbase/field_codec.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -68,9 +69,9 @@ bool DbArea::readCurrent()
     const std::streampos pos =
         checked_record_pos_(*this, static_cast<std::uint64_t>(_crn));
 
-    _fp.seekg(pos, std::ios::beg);
-    _fp.read(_recbuf.data(), _recbuf.size());
-    if (!_fp) return false;
+    io().seekg(pos, std::ios::beg);
+    io().read(_recbuf.data(), _recbuf.size());
+    if (!io()) return false;
 
     _del = _recbuf[0];
     return loadFieldsFromBuffer();
@@ -93,11 +94,11 @@ bool DbArea::writeCurrent()
     const std::streampos pos =
         checked_record_pos_(*this, static_cast<std::uint64_t>(_crn));
 
-    _fp.seekp(pos, std::ios::beg);
-    _fp.write(_recbuf.data(), _recbuf.size());
-    _fp.flush();
+    io().seekp(pos, std::ios::beg);
+    io().write(_recbuf.data(), _recbuf.size());
+    io().flush();
 
-    bool ok = static_cast<bool>(_fp);
+    bool ok = static_cast<bool>(io());
 
     if (ok) _fd_snapshot = _fd;
 
@@ -140,9 +141,11 @@ bool DbArea::loadFieldsFromBuffer()
                 _fd[i + 1] = std::to_string(object_id);
 
         } else {
-            // Legacy memo fields are plain fixed-width text, same as other char-ish storage.
-            std::string v(_recbuf.data() + off, _recbuf.data() + off + f.length);
-            _fd[i + 1] = rtrim(std::move(v));
+            // Field-type codec: text (default) for C/N/F/D/L/M, binary for I (and
+            // later B/Y/T / custom types). The text codec reproduces the legacy
+            // fixed-width rtrim behavior exactly.
+            _fd[i + 1] = fieldcodec::codec_for(f.type)
+                             .decode(_recbuf.data() + off, f.length, f);
         }
 
         off += f.length;
@@ -181,12 +184,12 @@ void DbArea::storeFieldsToBuffer()
             write_u64_le(_recbuf.data() + off, object_id);
 
         } else {
-            if (!src.empty()) {
-                if (src.size() <= f.length)
-                    std::memcpy(_recbuf.data() + off, src.data(), src.size());
-                else
-                    std::memcpy(_recbuf.data() + off, src.data(), f.length);
-            }
+            // Field-type codec encodes into the field's byte region (pre-filled with
+            // spaces above). The write path validated the value already, so an encode
+            // failure here just leaves the padded region rather than corrupting it.
+            std::string cerr;
+            (void)fieldcodec::codec_for(f.type)
+                      .encode(src, f, _recbuf.data() + off, &cerr);
         }
 
         off += f.length;

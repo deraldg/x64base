@@ -36,46 +36,47 @@
 
 // @dottalk.usage v1
 // owner: EDU|BIBLETALK
-// command: EDU_BIBLETALK / BIBLETALK
+// command: BIBLETALK
 // category: education-database-demo
 // status: supported
 // noargs: status-and-brief-usage
 // effect: sqlite-demo-query
 // mutates: sqlite-connection-state
-// usage-access: EDU_BIBLETALK USAGE; BIBLETALK USAGE
+// usage-access: BIBLETALK USAGE
 // summary:
 //   Educational BibleTalk/KJV SQLite database wrapper for status, schema,
 //   table inspection, verse lookup, search, and random scripture output.
 //
 // usage:
-//   EDU_BIBLETALK USAGE
-//   EDU_BIBLETALK HELP
-//   EDU_BIBLETALK STATUS
-//   EDU_BIBLETALK BIBLE
-//   EDU_BIBLETALK BIBLECHECK
-//   EDU_BIBLETALK BOOKS
-//   EDU_BIBLETALK VERSE <ref>
-//   EDU_BIBLETALK QUOTE
-//   EDU_BIBLETALK SEARCH <phrase>
-//   EDU_BIBLETALK LIST <table> [limit]
-//   EDU_BIBLETALK COLUMNS <table>
-//   EDU_BIBLETALK TABLES
-//   EDU_BIBLETALK SCHEMA [table]
-//   EDU_BIBLETALK EXEC <sql...>
-//   EDU_BIBLETALK SELECT <sql...>
-//   EDU_BIBLETALK CLOSE
+//   BIBLETALK USAGE
+//   BIBLETALK HELP
+//   BIBLETALK STATUS
+//   BIBLETALK BIBLE
+//   BIBLETALK BIBLECHECK
+//   BIBLETALK BOOKS
+//   BIBLETALK VERSE <ref>
+//   BIBLETALK QUOTE
+//   BIBLETALK SEARCH <phrase>
+//   BIBLETALK LIST <table> [limit]
+//   BIBLETALK COLUMNS <table>
+//   BIBLETALK TABLES
+//   BIBLETALK SCHEMA [table]
+//   BIBLETALK EXEC <sql...>
+//   BIBLETALK SELECT <sql...>
+//   BIBLETALK CLOSE
 //
 // examples:
-//   EDU_BIBLETALK USAGE
-//   EDU_BIBLETALK BIBLE
-//   EDU_BIBLETALK VERSE John 3:16
-//   EDU_BIBLETALK SEARCH faith
+//   BIBLETALK USAGE
+//   BIBLETALK BIBLE
+//   BIBLETALK VERSE John 3:16
+//   BIBLETALK SEARCH faith
 //   BIBLETALK QUOTE
 //
 // notes:
 //   USAGE/HELP/? returns before SQLite database work.
 //   No-arg behavior remains status plus brief usage.
-//   BIBLETALK is a compatibility alias for EDU_BIBLETALK.
+//   BIBLETALK is the registered public command; cmd_EDU_BIBLETALK is an
+//   internal implementation symbol, not a top-level command spelling.
 //
 // risk:
 //   opens_sqlite_database: BIBLE/OPEN/DB/BIBLECHECK and implicit query open paths
@@ -154,15 +155,15 @@ static std::string sql_like_literal_contains(const std::string& s) {
 
 static void print_usage_brief() {
     std::cout
-        << "EDU_BIBLETALK: USAGE, HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, BIBLE, BIBLECHECK,\n"
+        << "BIBLETALK: USAGE, HELP, STATUS, CWD, VERSION, OPEN <file|:memory:>, BIBLE, BIBLECHECK,\n"
         << "               BOOKS, VERSE <ref>, QUOTE, SEARCH <phrase>, LIST <table> [limit],\n"
         << "               COLUMNS <table>, CLOSE, TABLES, SCHEMA [table], EXEC <sql>, SELECT <sql>\n";
 }
 
 static void print_usage_long() {
     std::cout <<
-        "EDU_BIBLETALK\n"
-        "  EDU_BIBLETALK <subcommand> ...\n"
+        "BIBLETALK\n"
+        "  BIBLETALK <subcommand> ...\n"
         "  Educational BibleTalk database command.\n\n"
 
         "Current carrier:\n"
@@ -170,71 +171,71 @@ static void print_usage_long() {
         "  Future direction is native x64base/LMDB BibleTalk transfer and comparison.\n\n"
 
         "Core commands:\n"
-        "  EDU_BIBLETALK USAGE\n"
-        "  EDU_BIBLETALK HELP\n"
-        "  EDU_BIBLETALK ?\n"
-        "  EDU_BIBLETALK STATUS\n"
-        "  EDU_BIBLETALK CWD\n"
-        "  EDU_BIBLETALK PWD\n"
-        "  EDU_BIBLETALK VERSION\n"
-        "  EDU_BIBLETALK OPEN <file>|:memory:\n"
-        "  EDU_BIBLETALK DB <file>|:memory:\n"
-        "  EDU_BIBLETALK CLOSE\n\n"
+        "  BIBLETALK USAGE\n"
+        "  BIBLETALK HELP\n"
+        "  BIBLETALK ?\n"
+        "  BIBLETALK STATUS\n"
+        "  BIBLETALK CWD\n"
+        "  BIBLETALK PWD\n"
+        "  BIBLETALK VERSION\n"
+        "  BIBLETALK OPEN <file>|:memory:\n"
+        "  BIBLETALK DB <file>|:memory:\n"
+        "  BIBLETALK CLOSE\n\n"
 
         "SQL inspection commands:\n"
-        "  EDU_BIBLETALK TABLES\n"
-        "  EDU_BIBLETALK SCHEMA [table-or-view]\n"
-        "  EDU_BIBLETALK COLUMNS <table>\n"
-        "  EDU_BIBLETALK EXEC <sql...>\n"
-        "  EDU_BIBLETALK SELECT <sql...>\n"
-        "  EDU_BIBLETALK LIST <table> [limit]\n\n"
+        "  BIBLETALK TABLES\n"
+        "  BIBLETALK SCHEMA [table-or-view]\n"
+        "  BIBLETALK COLUMNS <table>\n"
+        "  BIBLETALK EXEC <sql...>\n"
+        "  BIBLETALK SELECT <sql...>\n"
+        "  BIBLETALK LIST <table> [limit]\n\n"
 
         "Bible seed commands:\n"
-        "  EDU_BIBLETALK BIBLE\n"
+        "  BIBLETALK BIBLE\n"
         "      Open the canonical KJV BibleTalk SQLite seed.\n\n"
-        "  EDU_BIBLETALK BIBLECHECK\n"
-        "  EDU_BIBLETALK BIBLECHK\n"
+        "  BIBLETALK BIBLECHECK\n"
+        "  BIBLETALK BIBLECHK\n"
         "      Validate BibleTalk counts and basic queryability.\n\n"
-        "  EDU_BIBLETALK BOOKS\n"
+        "  BIBLETALK BOOKS\n"
         "      List the 66 Bible books with testament, code, chapter count, and verse count.\n\n"
-        "  EDU_BIBLETALK VERSE <ref>\n"
+        "  BIBLETALK VERSE <ref>\n"
         "      Show a verse by reference.\n"
-        "      Example: EDU_BIBLETALK VERSE John 3:16\n\n"
-        "  EDU_BIBLETALK QUOTE\n"
+        "      Example: BIBLETALK VERSE John 3:16\n\n"
+        "  BIBLETALK QUOTE\n"
         "      Print a random scripture. Safe for init.ini startup use.\n"
         "      Example: BIBLETALK QUOTE\n\n"
-        "  EDU_BIBLETALK SEARCH <phrase>\n"
+        "  BIBLETALK SEARCH <phrase>\n"
         "      Search Bible verse text. Tries FTS5 first, then falls back to LIKE.\n\n"
 
         "Canonical Bible seed paths:\n"
         "  If launched from dottalkpp\\data:\n"
-        "    EDU_BIBLETALK OPEN biblebase\\biblebase.sqlite\n"
+        "    BIBLETALK OPEN biblebase\\biblebase.sqlite\n"
         "  If launched from the repo root:\n"
-        "    EDU_BIBLETALK OPEN data\\biblebase\\biblebase.sqlite\n"
+        "    BIBLETALK OPEN data\\biblebase\\biblebase.sqlite\n"
         "  Convenience form:\n"
-        "    EDU_BIBLETALK BIBLE\n"
-        "    EDU_BIBLETALK BIBLECHECK\n\n"
+        "    BIBLETALK BIBLE\n"
+        "    BIBLETALK BIBLECHECK\n\n"
 
         "Examples:\n"
-        "  EDU_BIBLETALK CWD\n"
-        "  EDU_BIBLETALK BIBLE\n"
-        "  EDU_BIBLETALK BIBLECHECK\n"
-        "  EDU_BIBLETALK TABLES\n"
-        "  EDU_BIBLETALK SCHEMA verses\n"
-        "  EDU_BIBLETALK COLUMNS verses\n"
-        "  EDU_BIBLETALK LIST verses 10\n"
-        "  EDU_BIBLETALK BOOKS\n"
-        "  EDU_BIBLETALK VERSE John 3:16\n"
-        "  EDU_BIBLETALK QUOTE\n"
-        "  EDU_BIBLETALK SEARCH kingdom of heaven\n"
-        "  EDU_BIBLETALK SELECT select count(*) as verse_count from verses\n"
-        "  EDU_BIBLETALK SELECT select ref, text from verses where ref='John 3:16'\n\n"
+        "  BIBLETALK CWD\n"
+        "  BIBLETALK BIBLE\n"
+        "  BIBLETALK BIBLECHECK\n"
+        "  BIBLETALK TABLES\n"
+        "  BIBLETALK SCHEMA verses\n"
+        "  BIBLETALK COLUMNS verses\n"
+        "  BIBLETALK LIST verses 10\n"
+        "  BIBLETALK BOOKS\n"
+        "  BIBLETALK VERSE John 3:16\n"
+        "  BIBLETALK QUOTE\n"
+        "  BIBLETALK SEARCH kingdom of heaven\n"
+        "  BIBLETALK SELECT select count(*) as verse_count from verses\n"
+        "  BIBLETALK SELECT select ref, text from verses where ref='John 3:16'\n\n"
 
         "Important boundary:\n"
-        "  EDU_BIBLETALK opens and queries an external SQLite database.\n"
+        "  BIBLETALK opens and queries an external SQLite database.\n"
         "  Native LIST is still a DbArea/x64base command.\n"
         "  Opening BibleTalk-SQLite does not open a native x64base work area.\n"
-        "  Use EDU_BIBLETALK LIST <table> for SQLite rows.\n"
+        "  Use BIBLETALK LIST <table> for SQLite rows.\n"
         "  Use native LIST only after USE/import/open of an x64base table.\n";
 }
 

@@ -241,6 +241,38 @@ Acceptance:
 - HELP tables reopen
 - current help surface reflects expected commands/topics
 
+## Harvest and shakedown sequence
+
+Use when:
+
+- a recent command lane has been promoted from source/runtime into reference/help
+- regression launcher entries changed
+- role/assignment or education/demo surfaces were added
+- you want one reviewed top-layer proof pass after a harvest batch
+
+Interactive sequence:
+
+```text
+DO x64
+REGRESSION LIST
+REGRESSION SHOW HARVEST
+REGRESSION RUN HARVEST
+```
+
+Current `HARVEST` expectations:
+
+- scripts bootstrap their own environment
+- role/login surfaces prove through `SECURITY`
+- holiday/demo surfaces prove through `CHRISTMAS` / `HANUKKAH`
+- curated runtime smoke proves through `NONDESTRUCTIVE`
+- widened x64 metrics prove through `X64_METRICS`
+
+Acceptance:
+
+- launcher surfaces resolve cleanly
+- curated shakedown scripts run without path drift
+- harvested command/help lanes are represented in the top-level proof path
+
 ## CMDHELPCHK position
 
 `CMDHELPCHK` is a validator lane, not a build lane.

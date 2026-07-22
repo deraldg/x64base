@@ -1190,6 +1190,37 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         return;
     }
 
+    // SET INDEXTXN ON|OFF  (transactional in-COMMIT index maintenance)
+    // Default OFF: COMMIT keeps the legacy batch behavior (BUILDLMDB / REBUILD /
+    // REINDEX). ON enables incremental maintenance inside COMMIT for the active
+    // transactional (CDX/LMDB) backend. print_line keeps it message-catalog-free.
+    if (opt == "INDEXTXN") {
+        std::string tok;
+        if (!(args >> tok)) {
+            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
+                (S.index_txn_on.load() ? "ON" : "OFF"));
+            return;
+        }
+        const std::string up = up_copy(tok);
+        if (up == "STATUS" || up == "CHECK") {
+            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
+                (S.index_txn_on.load() ? "ON" : "OFF"));
+            return;
+        }
+        if (up == "USAGE" || up == "HELP" || up == "?") {
+            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF   (default OFF = legacy batch rebuild)");
+            return;
+        }
+        bool on = S.index_txn_on.load();
+        if (!parse_on_off(tok, on)) {
+            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF");
+            return;
+        }
+        S.index_txn_on.store(on);
+        cli::cmdout::print_line(std::string("SET INDEXTXN: ") + (on ? "ON" : "OFF"));
+        return;
+    }
+
     // ─────────────────────────────────────────────────────────────
     // SET ERRORSTOP [TO] OFF|WARNING|ERROR
     // Compatibility form of the native STOP_ON_ERROR command. Sets the severity

@@ -37,6 +37,12 @@ No contract may claim a stronger evidence class than the available proof.
 | Contract Manager Mode | Contract governance/runtime surface | Source-defined first wave | contracts, maintenance | `docs/contracts/CONTRACT_MANAGER_MODE_V1.md` |
 | Website SelfDoc Publication Contract | Publication/full-stack/education | Design-intended | contracts, selfdoc, manualgen, website | `docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md` |
 | Contract Scan Baseline | Contract governance/report | Report-proven | contracts | `docs/contracts/reports/CONTRACT_SCAN_BASELINE_V1.md` |
+| Metadata System Registry Contract | Metadata/governance/safety | Source-defined + report-proven | selfdoc, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/METADATA_SYSTEM_REGISTRY_CONTRACT_V1.md` |
+| Reference Identity Authority Contract | Metadata/HELP/runtime identity | Source-defined + report-proven | runtime help, metadata, selfdoc, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/REFERENCE_IDENTITY_AUTHORITY_CONTRACT_V1.md` |
+| Metacollect SYSCMD Candidate Contract | Metadata/runtime command projection | Source-defined | metadata, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/METACOLLECT_SYSCMD_CANDIDATE_CONTRACT_V1.md` |
+| CMDHELPCHK v2 Canonical Path Contract | HELP validation/tool lineage | Source-defined + report-proven | help, selfdoc, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/CMDHELPCHK_V2_CANONICAL_PATH_CONTRACT_V1.md` |
+| Source Contract Vocabulary Contract | Source contract/classifier lineage | Source-defined + report-proven | selfdoc, comments, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/SOURCE_CONTRACT_VOCABULARY_CONTRACT_V1.md` |
+| Messaging Exporter Lineage Contract | Messaging/tool lineage | Source-defined + report-proven | messaging, selfdoc, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/MESSAGING_EXPORTER_LINEAGE_CONTRACT_V1.md` |
 | Language and Region Seams | Data/publication | Design-intended + source evidence | locale, metadata, messaging | `docs/LANGUAGE_AND_REGION_SEAMS_v1.md` |
 | Usage Contract Harvesting | Usage | Source-defined | metadata/help | `src/meta/metacollect.cpp` |
 | Source Contract Annotation | Source/provenance | Source-defined | include/source headers | `@dottalk.contract` annotations |

@@ -32,23 +32,28 @@ task request
 -> SelfDoc / MDO / Laboratory Campus feedback
 ```
 
-## First Reads
+## Reference Shelf — Depth on Demand
+
+`AI_README.md` defines the one canonical startup order. Do not treat the list
+below as another mandatory first-read sequence. Pull these sources only when the
+current task needs their additional depth.
 
 1. `DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`
 2. `SDLC_FAST_START_SEED_V1.md`
-3. `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`
-4. `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`
-5. `SEED_CONNECTION_PROTOTYPE_NOTE_V1.md`
-6. `../diagrams/DOTTALKPP_SHELL_DISPATCH_AND_LOOP_CAPTURE_V1.md`
-7. `EXTERNAL_AI_CHANGE_PACKAGE_V1.md`
-8. `AI_PORTAL_HARDENING_LANE_V1.md`
-9. `../portal/README.md`
-10. `../LABTALK_PORTAL_CONCEPT_v0.md`
-11. `../../AI_README.md`
-12. `../../docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
-13. `../../docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
-14. `../docs/co-development/recursive_coproject_model_v1.md`
-15. `../registries/ai_portal.yaml`
+3. `SCOPE_CALIBRATION_SEED_V1.md`
+4. `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`
+5. `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`
+6. `SEED_CONNECTION_PROTOTYPE_NOTE_V1.md`
+7. `../diagrams/DOTTALKPP_SHELL_DISPATCH_AND_LOOP_CAPTURE_V1.md`
+8. `EXTERNAL_AI_CHANGE_PACKAGE_V1.md`
+9. `AI_PORTAL_HARDENING_LANE_V1.md`
+10. `../portal/README.md`
+11. `../LABTALK_PORTAL_CONCEPT_v0.md`
+12. `../../AI_README.md`
+13. `../../docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
+14. `../../docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
+15. `../docs/co-development/recursive_coproject_model_v1.md`
+16. `../registries/ai_portal.yaml`
 
 ## Delivery Posture
 
@@ -111,6 +116,12 @@ The full cold-start and closeout rules are registered in
 Every task must also enter through `SDLC_FAST_START_SEED_V1.md`, declare its
 owning lifecycle and current SDLC lane, and preserve truth, proof, risk, gate,
 and closeout state through implementation and publication.
+
+Material work also applies `SCOPE_CALIBRATION_SEED_V1.md`. Declare whether the
+task targets the x64base `xbase` engine library, the `dottalkpp` runtime, a
+binding/front end, or documentation only; then record the selected product and
+index profiles. `LEAN` is a product composition, not a synonym for engine-only
+or no-index. Gate depth follows the selected artifact and affected consumers.
 
 An AI is not DotScript-ready merely because it knows xBase or has read a
 language summary. Before AI-authored `.dts` execution, the portal requires the

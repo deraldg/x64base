@@ -77,7 +77,27 @@ public:
 #endif
     const std::string& envDir() const noexcept { return env_dir_; }
 
-    bool seekRecnoUserKey(const std::string& user_key, std::uint32_t& out_recno, std::string& out_err) const;
+    bool seekRecnoUserKey(const std::string& user_key, std::uint64_t& out_recno, std::string& out_err) const;
+
+    // Ordered relative step. Locate the exact index entry (baseKey, fromRec) and
+    // move `steps` positions (>=1) forward/backward in full index (cursor) order
+    // on a single cursor, returning the landing record number. All-or-nothing.
+    // `out_located` is set true once the current entry was found, so the caller
+    // can distinguish an order boundary (located, no move) from a lookup miss
+    // (not located -> caller may fall back). O(log n + steps).
+    bool stepOrdered(const Key& baseKey, RecNo fromRec, bool forward, int steps,
+                     RecNo& outRec, bool& out_located) const;
+
+    // Bulk write mode. While a bulk transaction is open, erase()/upsert() append
+    // to it and do NOT commit per call; the caller commits once via commitBulk().
+    // Turns a bulk DELETE/RECALL from N per-row LMDB commits (one fsync each)
+    // into O(1) commits. Multi-tag safe (each op opens its tag DBI in the shared
+    // txn). beginBulk is idempotent; on any error the caller should abortBulk()
+    // and treat the index as needing a rebuild.
+    bool beginBulk(std::string* err);
+    bool commitBulk(std::string* err);
+    void abortBulk() noexcept;
+    bool inBulk() const noexcept;
 
 private:
     xbase::DbArea& area_;
@@ -95,6 +115,9 @@ private:
 
     // One shared read-only transaction per backend (prevents MDB_BAD_RSLOT from nested ro txns).
     mutable MDB_txn* ro_txn_{nullptr};
+
+    // Non-null while a bulk write op batches erase/upsert into one transaction.
+    MDB_txn* bulk_txn_{nullptr};
 
     // dbi cache by tag name (upper)
     std::unordered_map<std::string, MDB_dbi> dbis_{};
@@ -131,7 +154,7 @@ private:
                            std::string& err) const;
 
     std::string base_key_from_kv_(const MDB_val& k) const;
-    bool decode_recno_from_kv_(const MDB_val& k, const MDB_val& v, std::uint32_t& out_recno) const;
+    bool decode_recno_from_kv_(const MDB_val& k, const MDB_val& v, std::uint64_t& out_recno) const;
 
     class LmdbCursor final : public Cursor {
     public:

@@ -54,6 +54,24 @@ inline bool try_parse_int_token(const std::string& s, int& out)
     }
 }
 
+// 64-bit record-number token parser (RECNO64). A record number is unsigned;
+// rejects overflow rather than wrapping. Use for absolute GO/GOTO/RECNO targets.
+inline bool try_parse_u64_token(const std::string& s, std::uint64_t& out)
+{
+    if (s.empty()) return false;
+    std::size_t i = (s[0] == '+') ? 1 : 0;
+    if (i == s.size()) return false;
+    for (std::size_t j = i; j < s.size(); ++j) {
+        if (!std::isdigit(static_cast<unsigned char>(s[j]))) return false;
+    }
+    try {
+        out = std::stoull(s.substr(i));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 inline bool refresh_current(xbase::DbArea& A, const char* who)
 {
     if (!A.isOpen()) {
@@ -71,11 +89,42 @@ inline bool refresh_current(xbase::DbArea& A, const char* who)
     if (cli::Settings::instance().talk_on.load()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::NavRecnoLine,
-            {{"recno", std::to_string(A.recno())}});
+            {{"recno", std::to_string(A.recno64())}});
     }
     return true;
 }
 
+// Authoritative 64-bit absolute positioning (RECNO64).
+inline bool go_absolute(xbase::DbArea& A, std::uint64_t n, const char* who)
+{
+    if (!A.isOpen()) {
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavNoFileOpenText);
+        return false;
+    }
+    if (n == 0) {
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
+        return false;
+    }
+    if (!A.gotoRec64(n) || !A.readCurrent()) {
+        cli::cmdout::print_prefixed_message(
+            who,
+            dottalk::helpdata::MessageId::NavFailedText);
+        return false;
+    }
+    if (cli::Settings::instance().talk_on.load()) {
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::NavRecnoLine,
+            {{"recno", std::to_string(A.recno64())}});
+    }
+    return true;
+}
+
+// 32-bit compatibility overload -> 64-bit path (preserves the negative-target
+// diagnostic that uint64 can't express).
 inline bool go_absolute(xbase::DbArea& A, int n, const char* who)
 {
     if (!A.isOpen()) {
@@ -90,18 +139,7 @@ inline bool go_absolute(xbase::DbArea& A, int n, const char* who)
             dottalk::helpdata::MessageId::GoExpectedPositiveRecordNumberText);
         return false;
     }
-    if (!A.gotoRec(n) || !A.readCurrent()) {
-        cli::cmdout::print_prefixed_message(
-            who,
-            dottalk::helpdata::MessageId::NavFailedText);
-        return false;
-    }
-    if (cli::Settings::instance().talk_on.load()) {
-        cli::cmdout::print_message(
-            dottalk::helpdata::MessageId::NavRecnoLine,
-            {{"recno", std::to_string(A.recno())}});
-    }
-    return true;
+    return go_absolute(A, static_cast<std::uint64_t>(n), who);
 }
 
 inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
@@ -113,7 +151,7 @@ inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
         return false;
     }
 
-    int32_t rn = 0;
+    std::uint64_t rn = 0;
 
     switch (ep) {
     case Endpoint::Top:
@@ -127,14 +165,14 @@ inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
         break;
     }
 
-    if (rn <= 0) {
+    if (rn == 0) {
         cli::cmdout::print_prefixed_message(
             who,
             dottalk::helpdata::MessageId::NavFailedText);
         return false;
     }
 
-    if (!A.gotoRec(rn) || !A.readCurrent()) {
+    if (!A.gotoRec64(rn) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message(
             who,
             dottalk::helpdata::MessageId::NavFailedText);
@@ -144,7 +182,7 @@ inline bool go_endpoint(xbase::DbArea& A, Endpoint ep, const char* who)
     if (cli::Settings::instance().talk_on.load()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::NavRecnoLine,
-            {{"recno", std::to_string(A.recno())}});
+            {{"recno", std::to_string(A.recno64())}});
     }
     return true;
 }
@@ -173,13 +211,13 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
         if (talk) {
             cli::cmdout::print_message(
                 dottalk::helpdata::MessageId::NavRecnoLine,
-                {{"recno", std::to_string(A.recno())}});
+                {{"recno", std::to_string(A.recno64())}});
         }
         return true;
     }
 
-    int32_t current = A.recno();
-    int32_t next = 0;
+    std::uint64_t current = A.recno64();
+    std::uint64_t next = 0;
     bool moved = false;
 
     while (steps-- > 0) {
@@ -187,7 +225,7 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
             ? cli::logical_nav::next_recno(A, current)
             : cli::logical_nav::prev_recno(A, current);
 
-        if (next <= 0) {
+        if (next == 0) {
             if (!moved) {
                 cli::cmdout::print_prefixed_message(
                     who,
@@ -208,7 +246,7 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
         return false;
     }
 
-    if (!A.gotoRec(current) || !A.readCurrent()) {
+    if (!A.gotoRec64(current) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message(
             who,
             dottalk::helpdata::MessageId::NavReadCurrentFailedText);
@@ -218,7 +256,7 @@ inline bool skip_relative(xbase::DbArea& A, int n, const char* who)
     if (talk) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::NavRecnoLine,
-            {{"recno", std::to_string(A.recno())}});
+            {{"recno", std::to_string(A.recno64())}});
     }
     return true;
 }

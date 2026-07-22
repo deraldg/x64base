@@ -39,6 +39,7 @@
 #include "xbase.hpp"
 #include "cli/command_output.hpp"
 #include "filters/filter_registry.hpp"
+#include "cli/expr/normalize_where.hpp"   // parity with COUNT FOR / LIST FOR
 #include "help/helpdata_messages.hpp"
 
 #include <cctype>
@@ -80,6 +81,15 @@ static std::string upper_copy_local(std::string s)
 {
     uppercase_inplace(s);
     return s;
+}
+
+// Conservative guard, identical to cmd_count.cpp / cmd_scan.cpp / cmd_locate.cpp:
+// any parenthesized predicate (a function call such as SOUNDEX(LNAME)="X") is
+// passed through unchanged, so the RHS-literal normalizer cannot damage it.
+static bool expression_has_function_call(const std::string& expr)
+{
+    return expr.find('(') != std::string::npos &&
+           expr.find(')') != std::string::npos;
 }
 
 static void print_setfilter_usage()
@@ -150,6 +160,15 @@ void cmd_SETFILTER(xbase::DbArea& area, std::istringstream& args) {
             "SET FILTER",
             dottalk::helpdata::MessageId::SetFilterClearedText);
         return;
+    }
+
+    // Normalize unquoted RHS barewords to string literals exactly as COUNT FOR /
+    // LIST FOR do, so `SET FILTER TO MAJOR = CSCI` matches `COUNT FOR MAJOR =
+    // CSCI` (CSCI is the string "CSCI", not an undefined identifier that resolves
+    // empty and matches nothing). Numeric and already-quoted RHS pass through
+    // unchanged; function predicates are skipped by the guard above.
+    if (!expression_has_function_call(expr)) {
+        expr = normalize_unquoted_rhs_literals(area, expr);
     }
 
     std::string err;

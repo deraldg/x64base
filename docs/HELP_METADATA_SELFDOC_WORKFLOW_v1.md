@@ -253,6 +253,13 @@ Gate:
 - topic tables can be loaded
 - help rebuild and review steps complete
 
+Harvest proof expectation:
+
+- recently promoted command surfaces should be represented in a reviewed
+  shakedown path, typically through the curated `REGRESSION` launcher and a
+  top-layer harvest script that proves runtime, help-adjacent, and script-entry
+  cohesion together
+
 ### Stage C: Collect and normalize in metadata
 
 Inputs:

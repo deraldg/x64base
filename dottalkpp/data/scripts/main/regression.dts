@@ -1,3 +1,5 @@
+DO ..\x32
+
 * === DotTalk++ regression smoke ===
 * Run with:  DOTSCRIPT regression ECHO
 * or from anywhere if scripts/ is on the auto search path
@@ -26,10 +28,10 @@ LOCATE FOR (LAST_NAME $ "MIT") OR (LAST_NAME = "SMITH")
 DISPLAY                 && should show located record if found
 
 * --- Case sensitivity toggle checks --------------------
-* Expect string ops to change behavior when sensitivity flips
-SET CASE SENSITIVE OFF
+* Expect string ops to change behavior when case mode flips
+SET CASE OFF
 COUNT FOR LOWER(LAST_NAME) = "smith"
-SET CASE SENSITIVE ON
+SET CASE ON
 COUNT FOR LOWER(LAST_NAME) = "smith"
 
 * --- NOT / nested parens sanity ------------------------

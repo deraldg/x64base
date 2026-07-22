@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
         bool compare = false;
         bool workspace_root_set = false;
         std::string compare_out_path;
+        std::string syscmd_import_out_path;
         std::string sysfunc_import_out_path;
         std::string sysargs_import_out_path;
 
@@ -42,6 +43,8 @@ int main(int argc, char** argv) {
                 options.metadata_dbf_root = argv[++i] ? argv[i] : "";
             } else if (arg == "--compare-out" && i + 1 < argc) {
                 compare_out_path = argv[++i] ? argv[i] : "";
+            } else if (arg == "--syscmd-import-out" && i + 1 < argc) {
+                syscmd_import_out_path = argv[++i] ? argv[i] : "";
             } else if (arg == "--sysfunc-import-out" && i + 1 < argc) {
                 sysfunc_import_out_path = argv[++i] ? argv[i] : "";
             } else if (arg == "--sysargs-import-out" && i + 1 < argc) {
@@ -79,6 +82,19 @@ int main(int argc, char** argv) {
                 } else {
                     dt::meta::write_compare_issues_csv(out, issues);
                 }
+            }
+        }
+
+        if (!syscmd_import_out_path.empty()) {
+            std::ofstream out(syscmd_import_out_path, std::ios::binary);
+            if (!out) {
+                std::cerr << "METACOLLECT warning: cannot write SYSCMD import csv: "
+                          << syscmd_import_out_path << '\n';
+            } else {
+                const auto rows = dt::meta::collect_syscmd_seed_rows(options);
+                dt::meta::write_syscmd_seed_csv(out, rows);
+                std::cerr << "METACOLLECT syscmd export: " << rows.size()
+                          << " row(s)\n";
             }
         }
 

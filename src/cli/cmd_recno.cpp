@@ -65,14 +65,14 @@ static void print_recno_usage() {
     cli::cmdout::print_message(dottalk::helpdata::MessageId::RecnoUsageText);
 }
 
-static bool parse_int32(const std::string& s, int32_t& out) {
+static bool parse_u64(const std::string& s, std::uint64_t& out) {
     if (s.empty()) return false;
-    char* end = nullptr;
-    long v = std::strtol(s.c_str(), &end, 10);
-    if (*end != '\0') return false;
-    if (v < std::numeric_limits<int32_t>::min() || v > std::numeric_limits<int32_t>::max()) return false;
-    out = static_cast<int32_t>(v);
-    return true;
+    std::size_t i = (s[0] == '+') ? 1 : 0;   // record number is unsigned
+    if (i == s.size()) return false;
+    for (std::size_t j = i; j < s.size(); ++j) {
+        if (!std::isdigit(static_cast<unsigned char>(s[j]))) return false;
+    }
+    try { out = std::stoull(s.substr(i)); return true; } catch (...) { return false; }
 }
 
 void cmd_RECNO(xbase::DbArea& a, std::istringstream& iss) {
@@ -96,28 +96,28 @@ void cmd_RECNO(xbase::DbArea& a, std::istringstream& iss) {
 
     if (tok.empty()) {
         // no args: print current recno
-        cli::cmdout::print_line(std::to_string(a.recno()));
+        cli::cmdout::print_line(std::to_string(a.recno64()));
         return;
     }
 
-    int32_t n = 0;
-    if (!parse_int32(tok, n)) { print_recno_usage(); return; }
+    std::uint64_t n = 0;
+    if (!parse_u64(tok, n) || n == 0) { print_recno_usage(); return; }
 
-    if (n < 1 || n > a.recCount()) {
+    if (n > a.recCount64()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::RecnoOutOfRangeText,
-            {{"max", std::to_string(a.recCount())}});
+            {{"max", std::to_string(a.recCount64())}});
         return;
     }
 
-    if (!a.gotoRec(n) || !a.readCurrent()) {
+    if (!a.gotoRec64(n) || !a.readCurrent()) {
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::RecnoUnableNavigateText,
             {{"recno", std::to_string(n)}});
         return;
     }
 
-    cli::cmdout::print_line(std::to_string(a.recno()));
+    cli::cmdout::print_line(std::to_string(a.recno64()));
 }
 
 

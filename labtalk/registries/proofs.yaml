@@ -108,3 +108,66 @@ proofs:
       - D:/code/ccode/labtalk/registries/ai_portal.yaml
       - D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
     notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.
+  - id: proof.ai_portal.dotscript_startup_readiness.v1
+    label: DotTalk++ / DotScript startup readiness probe v1
+    state: runtime_observed
+    readiness_result: ORIENTED
+    source: D:/code/ccode/labtalk/proofs/runs/20260712_195729_probe_ai_portal_dotscript_startup_readiness_v1.txt
+    item_id: probe.ai_portal.dotscript_startup_readiness.v1
+    return_code: 0
+    related:
+      - D:/code/ccode/labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+      - D:/code/ccode/labtalk/ai_portal/probes/dotscript_startup_readiness_v1.dts
+      - D:/code/ccode/src/cli/cmd_dotscript.cpp
+    observations:
+      - both readiness markers were present
+      - DOTSCRIPT usage was visible
+      - CMDHELP and DOTHELP resolved DOTSCRIPT
+      - no Unknown command appeared
+      - runtime process return code and portal acceptance return code were both zero
+      - portal output acceptance was accepted
+      - runtime initialization reported a separate missing optional BibleTalk SQLite seed
+    notes: Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that the portal's transcript acceptance gate accepts the green path. ORIENTED permits drafting and review only; it does not authorize a mutating DotScript or maintained-data target.
+  - id: proof.ai_portal.source_mutation_contract_gate.v1
+    label: Source mutation contract preflight registered
+    state: source_defined
+    source: D:/code/ccode/labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    item_id: seed.ai_portal.source_mutation_contract_preflight.v1
+    related:
+      - D:/code/ccode/docs/contracts/README.md
+      - D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+      - D:/code/ccode/docs/contracts/CONTRACT_LIFECYCLE_V1.md
+      - D:/code/ccode/labtalk/registries/ai_portal.yaml
+    notes: Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract, and source-annotation review before a patch is applied. This record does not grant mutation authority.
+  - id: proof.ai_portal.seed_connection_prototype_direction.v1
+    label: AI fast-start seed connection prototype direction registered
+    state: design_intended
+    source: D:/code/ccode/labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md
+    item_id: concept.ai_portal.seed_connection_prototype.v1
+    related:
+      - D:/code/ccode/labtalk/ai_portal/README.md
+      - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+      - D:/code/ccode/labtalk/registries/ai_portal.yaml
+    notes: Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.
+  - id: proof.ai_portal.root_entry_and_external_package.v1
+    label: Root AI Portal entry and external change-package contract defined
+    state: source_defined
+    source: D:/code/ccode/AI_PORTAL.md
+    item_id: doc.ai_portal_root_entry
+    related:
+      - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+      - D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+      - D:/code/ccode/labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+      - D:/code/ccode/labtalk/registries/ai_portal.yaml
+    notes: Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted and verified in the public repository.
+  - id: proof.ai_portal.sdlc_fast_start.v1
+    label: AI Portal SDLC fast-start seed registered
+    state: source_defined
+    source: D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+    item_id: seed.ai_portal.sdlc_fast_start.v1
+    related:
+      - D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+      - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+      - D:/code/ccode/labtalk/registries/ai_portal.yaml
+    notes: Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.

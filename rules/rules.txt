@@ -49,9 +49,3 @@ The information opens up from collecting mininig, and catagorizing source code t
 Labtalk is at ccode\labtalk
 
 Do not clobber README.* files. See rules\README_CLOBBER_PROTECTION_RULE.md.
-
-
-
-
-
-

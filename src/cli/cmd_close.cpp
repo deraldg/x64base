@@ -19,7 +19,7 @@
 //
 // notes:
 //   CLOSE with no arguments closes the current work area.
-//   CLOSE ALL currently clears all relations before closing the current area.
+//   CLOSE ALL clears all relations and closes every open work area.
 //   CLOSE prompts or cancels through dirty table-buffer protection when needed.
 //   CLOSE runs memo sidecar lifecycle hooks before clearing area identity.
 //   CLOSE clears active order/index state.
@@ -177,6 +177,28 @@ static void print_close_usage()
     cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseUsageText);
 }
 
+// Close a single work area: memo lifecycle hooks, order/index detach, the
+// actual close, and slot-state reset. Relation clearing is handled by the
+// caller because single-area CLOSE and CLOSE ALL differ there.
+static void close_one_area(xbase::DbArea& area)
+{
+    // Memo sidecar lifecycle hook. The live DTX backend is owned by
+    // memo_auto.cpp, not MemoManager. Close it before DbArea::close() clears
+    // area identity so ERASE can delete the .dtx sidecar immediately after.
+    try { cli_memo::memo_auto_on_close(area); } catch (...) {}
+
+    if (auto* mm = area.memoManagerPtr()) {
+        mm->close();
+    }
+
+    try { orderstate::clearOrder(area); } catch (...) {}
+    try { area.close(); } catch (...) {}
+    try { area.setFilename(""); } catch (...) {}
+
+    // RULE: closing a DBF resets TABLE state for that slot (OFF + clean + fresh)
+    clear_table_slot_state(area);
+}
+
 void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
 {
     const std::string raw_args = iss.str();
@@ -185,46 +207,61 @@ void cmd_CLOSE(xbase::DbArea& a, std::istringstream& iss)
         return;
     }
 
-    // Table buffering prompt gate
+    // Parse the optional argument first so CLOSE ALL can fan out over every
+    // OPEN work area, not just the current one.
+    std::string arg;
+    iss >> arg;
+    std::string argU = arg;
+    for (char& ch : argU) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    const bool close_all = (argU == "ALL");
+
+    if (close_all) {
+#if HAVE_RELATIONS
+        relations_api::clear_all_relations();
+#endif
+        xbase::XBaseEngine* eng = nullptr;
+        try { eng = shell_engine(); } catch (...) { eng = nullptr; }
+
+        if (eng) {
+            for (int i = 0; i < xbase::MAX_AREA; ++i) {
+                xbase::DbArea* areap = nullptr;
+                try { areap = &eng->area(i); } catch (...) { areap = nullptr; }
+                if (!areap) continue;
+
+                // "Open truth" in this codebase is a non-empty filename() (the
+                // same test WORKSPACE uses to enumerate open areas), so match it.
+                bool is_open = false;
+                try { is_open = !areap->filename().empty(); } catch (...) { is_open = false; }
+                if (!is_open) continue;
+
+                // Honor the dirty table-buffer gate per area; skip (leave open)
+                // any area whose prompt the user cancels.
+                if (!dottalk::dirty::maybe_prompt_area(*areap, "CLOSE")) continue;
+
+                close_one_area(*areap);
+            }
+        } else {
+            // No engine handle: fall back to closing just the current area.
+            if (dottalk::dirty::maybe_prompt_area(a, "CLOSE")) {
+                close_one_area(a);
+            }
+        }
+
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseCompletedText);
+        return;
+    }
+
+    // Single-area CLOSE.
     if (!dottalk::dirty::maybe_prompt_area(a, "CLOSE")) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseCanceledText);
         return;
     }
 
-    // CLOSE currently doesn't really take args in your CLI usage, but we parse one
-    // token anyway so "CLOSE ALL" can be added later without changing signature.
-    std::string arg;
-    iss >> arg;
-
 #if HAVE_RELATIONS
-    if (!arg.empty() && up_copy(arg) == "ALL") {
-        relations_api::clear_all_relations();
-    } else {
-        clear_relations_involving_table(a);
-    }
+    clear_relations_involving_table(a);
 #endif
 
-    // Memo sidecar lifecycle hook.
-    // The live DTX backend is owned by memo_auto.cpp, not MemoManager.
-    // Close that backend before DbArea::close() clears area identity so ERASE
-    // can delete the .dtx sidecar immediately after CLOSE.
-    try { cli_memo::memo_auto_on_close(a); } catch (...) {}
-
-    if (auto* mm = a.memoManagerPtr()) {
-        mm->close();
-    }
-
-    // Detach any order/index state (best effort)
-    try { orderstate::clearOrder(a); } catch (...) {}
-
-    // Close the work area
-    try { a.close(); } catch (...) {}
-
-    // Keep "filename() is open truth" consistent across commands.
-    try { a.setFilename(""); } catch (...) {}
-
-    // RULE: closing a DBF resets TABLE state for that slot (OFF + clean + fresh)
-    clear_table_slot_state(a);
+    close_one_area(a);
 
     cli::cmdout::print_message(dottalk::helpdata::MessageId::CloseCompletedText);
 }

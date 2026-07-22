@@ -58,7 +58,6 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -69,6 +68,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/command_output.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "cli/expr/glue_xbase.hpp"
 #include "cli/expr/ast.hpp"
@@ -574,20 +574,7 @@ static bool is_sort_usage_request(const std::string& raw)
 }
 
 static void usage_sort() {
-    std::cout
-        << "Usage:\n"
-        << "  SORT USAGE\n"
-        << "  SORT TO <outdbf> ON <expr>\n"
-        << "  SORT TO <outdbf> ON <expr> ASC\n"
-        << "  SORT TO <outdbf> ON <expr> DESC\n"
-        << "  SORT TO <outdbf> ON <expr>, <expr>\n"
-        << "  SORT ALL TO <outdbf> ON <expr>\n"
-        << "  SORT DELETED TO <outdbf> ON <expr>\n"
-        << "  SORT OVERWRITE TO <outdbf> ON <expr>\n"
-        << "  SORT TO <outdbf> ON <expr> FOR <expr>\n"
-        << "  SORT TO <outdbf> ON <expr> WHILE <expr>\n"
-        << "  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>\n"
-        << "  SORT TO <outdbf> ON <expr> UNIQUE\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::SortUsageText);
 }
 
 } // namespace
@@ -603,7 +590,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!A.isOpen()) {
-        std::cout << "SORT: no table is open.\n";
+        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoTableOpenText);
         return;
     }
 
@@ -655,13 +642,13 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
 
     out_name = trim(out_name);
     if (out_name.empty()) {
-        std::cout << "SORT: missing output file after TO.\n";
+        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOutputText);
         return;
     }
 
     ClauseSpans clauses = split_on_and_clauses(on_and_tail);
     if (trim(clauses.on_list).empty()) {
-        std::cout << "SORT: missing ON key list.\n";
+        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortMissingOnKeysText);
         return;
     }
 
@@ -671,7 +658,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     std::vector<int> proj_in_idx0;
     if (!clauses.fields_list.empty()) {
         try { proj_in_idx0 = parse_fields_list(F, clauses.fields_list); }
-        catch (const std::exception& e) { std::cout << e.what() << "\n"; return; }
+        catch (const std::exception& e) { cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}}); return; }
     }
 
     // Parse key specs
@@ -711,7 +698,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (keys.empty()) {
-        std::cout << "SORT: no usable keys found in ON list.\n";
+        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortNoUsableKeysText);
         return;
     }
 
@@ -781,13 +768,13 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     std::filesystem::path out_path = xbase::dbNameWithExt(out_name);
     if (std::filesystem::exists(out_path)) {
         if (!overwrite) {
-            std::cout << "SORT: output exists (use OVERWRITE): " << out_path.string() << "\n";
+            cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortOutputExistsText, {{"path", out_path.string()}});
             return;
         }
         std::error_code ec;
         std::filesystem::remove(out_path, ec);
         if (ec) {
-            std::cout << "SORT: cannot overwrite existing file: " << out_path.string() << "\n";
+            cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortCannotOverwriteText, {{"path", out_path.string()}});
             return;
         }
     }
@@ -795,7 +782,7 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
     try {
         create_empty_dbf_like(out_path, out_fields);
     } catch (const std::exception& e) {
-        std::cout << e.what() << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
         return;
     }
 
@@ -821,14 +808,14 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
         // WHILE: stop scanning at first false
         if (have_while) {
             const bool wb = eval_filter(clauses.while_expr, prog_while, ok);
-            if (!ok) { std::cout << "SORT: WHILE evaluation failed.\n"; return; }
+            if (!ok) { cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortWhileEvalFailedText); return; }
             if (!wb) break;
         }
 
         // FOR: include only when true
         if (have_for) {
             const bool fb = eval_filter(clauses.for_expr, prog_for, ok);
-            if (!ok) { std::cout << "SORT: FOR evaluation failed.\n"; return; }
+            if (!ok) { cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortForEvalFailedText); return; }
             if (!fb) continue;
         }
 
@@ -895,15 +882,17 @@ void cmd_SORT(xbase::DbArea& A, std::istringstream& in) {
             ++written;
         }
 
-        std::cout << "SORT: scanned " << scanned
-                  << ", selected " << kept
-                  << ", wrote " << written;
-
-        if (unique) std::cout << " (UNIQUE skipped " << skipped_dupes << ")";
-
-        std::cout << " -> " << out_path.string() << "\n";
+        const std::string uniq = unique
+            ? (" (UNIQUE skipped " + std::to_string(skipped_dupes) + ")")
+            : std::string();
+        cli::cmdout::print_prefixed_message("SORT", dottalk::helpdata::MessageId::SortSummaryText,
+            {{"scanned", std::to_string(scanned)},
+             {"kept", std::to_string(kept)},
+             {"written", std::to_string(written)},
+             {"unique", uniq},
+             {"path", out_path.string()}});
     } catch (const std::exception& e) {
-        std::cout << e.what() << "\n";
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::SortErrorDetailText, {{"detail", e.what()}});
         return;
     }
 }

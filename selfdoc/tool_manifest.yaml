@@ -15,6 +15,41 @@ schema_version: 0.1
 kind: selfdoc_tool_manifest
 status: active
 
+system_registry:
+  path: selfdoc/metadata_system_registry_v1.json
+  contract: docs/maintenance/lanes/full_stack_documentation/METADATA_SYSTEM_REGISTRY_CONTRACT_V1.md
+  validator: tools/selfdoc/validate_metadata_system_registry.py
+  role: cross-domain inventory of collectors, validators, readers, projections, and protected mutators
+  descriptive_only: true
+  execution_authority: false
+  promotion_authority: false
+
+reference_identity_authority:
+  path: selfdoc/reference_identity_authority_v1.json
+  contract: docs/maintenance/lanes/full_stack_documentation/REFERENCE_IDENTITY_AUTHORITY_CONTRACT_V1.md
+  validator: tools/selfdoc/validate_reference_identity_authority.py
+  role: field-level command, function, argument, subcommand, and entry-variant authority map
+  descriptive_only: true
+  execution_authority: false
+  promotion_authority: false
+
+source_contract_vocabulary:
+  path: selfdoc/source_contract_vocabulary_v1.json
+  contract: docs/maintenance/lanes/full_stack_documentation/SOURCE_CONTRACT_VOCABULARY_CONTRACT_V1.md
+  validator: tools/selfdoc/validate_source_contract_vocabulary.py
+  role: exact preservation of v1.1 source-contract fields and aliases after probe retirement
+  descriptive_only: true
+  execution_authority: false
+  promotion_authority: false
+
+documentation_tool_lineages:
+  source_contract_probe: selfdoc/source_contract_probe_lineage_v1.json
+  messaging_exporter: selfdoc/messaging_exporter_lineage_v1.json
+  validator: tools/selfdoc/validate_documentation_lineages.py
+  descriptive_only: true
+  execution_authority: false
+  promotion_authority: false
+
 tools:
   - name: metacollect
     tool_id: metacollect_v0
@@ -30,9 +65,11 @@ tools:
     outputs:
       - metacollect_facts.csv
       - metacollect_compare.csv
+      - SYSCMD_IMPORT_candidate.csv
       - dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv
       - dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv
     companion_artifacts:
+      - docs/maintenance/lanes/full_stack_documentation/METACOLLECT_SYSCMD_CANDIDATE_CONTRACT_V1.md
       - dottalkpp/data/scripts/metadata/SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt
       - dottalkpp/data/scripts/metadata/SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt
     invocation_examples:
@@ -44,6 +81,10 @@ tools:
         shell: powershell
         cwd: D:\code\ccode
         command: .\build\Release\metacollect.exe D:\code\ccode --compare --compare-out metacollect_compare.csv > $null
+      - name: syscmd_candidate_export
+        shell: powershell
+        cwd: D:\code\ccode
+        command: .\build\Release\metacollect.exe D:\code\ccode --syscmd-import-out SYSCMD_IMPORT_candidate.csv > $null
       - name: sysfunc_candidate_export
         shell: powershell
         cwd: D:\code\ccode

@@ -4,7 +4,8 @@
 #     D:\code\ccode  (this tree = source of truth, full history, git)
 #         |  files matched below, minus .gitignore deny-list
 #         v
-#     C:\x64base     (DISPOSABLE staging -- regenerated, not precious)
+#     C:\x64base     (publication staging -- rebuildable only from verified
+#                      baseline, dirty/ignored preservation, and overlay layers)
 #         |  git commit + push
 #         v
 #     github.com/deraldg/x64base   (public snapshot)
@@ -24,7 +25,10 @@
 #   full baseline), then overlays every file matched below from development,
 #   applying the .gitignore deny-list as a hard guard. Result: staging == the
 #   published baseline plus development's current version of the promoted set.
-#   Because staging is rebuilt this way, an AI wiping C:\x64base costs nothing.
+#   A destructive rebuild is allowed only after the committed public baseline
+#   and dirty staging layer are preserved in a verified offline escrow. The
+#   rebuild restores those layers before applying this allow-list; GitHub is
+#   not the sole recovery source.
 #
 # FORMAT
 #   - '#' begins a comment; blank lines ignored.
@@ -46,6 +50,13 @@
 .gitignore
 AI_PORTAL.md
 AI_README.md
+BUILDING.md
+
+# --- build editions: proof + rationale (authority for BUILDING.md) ---------
+docs/maintenance/XBASE_XINDEX_BUILD_PROOF_MATRIX_V1.md
+docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md
+docs/maintenance/X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md
+docs/maintenance/EDITION_PUBLICATION_PLAN_A_V1.md
 
 # --- AI-facing docs --------------------------------------------------------
 docs/agents/CURRENT_TARGET.md
@@ -65,6 +76,13 @@ dottalkpp/bin/*.ini
 # --- databuild lane --------------------------------------------------------
 dottalkpp/scripts/mcc/*.ps1
 dottalkpp/data/scripts/mcc/*
+
+# --- Pinocchio stress-test lane (scripts + plan only) ----------------------
+# The generated CSV and the built dbf/indexes/lmdb under .../pinocchio are
+# DERIVED and disposable -- not listed here, and gitignored in development.
+dottalkpp/scripts/pinocchio/*
+dottalkpp/data/scripts/pinocchio/*
+docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
 
 # --- MCC sample data: the canonical origin + three built flavors -----------
 dottalkpp/data/dbf/MyCommunityCollege.zip
@@ -100,3 +118,26 @@ dottalkpp/docs/My_Comminty_College_Data_Schema_README.txt
 tools/hygiene/*.ps1
 tools/staging/*.ps1
 PROMOTE.manifest
+
+# --- reviewed Developer Manual publication lane --------------------------
+# Generated candidates, backups, environments, and runtime data remain excluded.
+docs/manuals/developer/manualgen/accepted_artifacts/ACTIVE_PRIMARY_READER_ARTIFACT.txt
+docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json
+docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json
+docs/manuals/developer/manualgen/accepted_manifests/ACTIVE_MANUALGEN_MANIFEST.txt
+docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json
+docs/manuals/developer/manualgen/accepted_manifests/DOCFLUSH-20260716-001_APPENDIX_ACCEPTANCE_RECORD.md
+docs/manuals/developer/manualgen/published/developer_manual_publication_v1/*.md
+docs/manuals/developer/manualgen/published/developer_manual_publication_v1/appendices/*.md
+docs/manuals/developer/manualgen/published/developer_manual_publication_v1/sections/sections/*.md
+docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/*.md
+docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/commands/*.md
+tools/manualgen/*.py
+tools/manualgen/*.md
+tools/manualgen/manualgen_lib/*.py
+tools/manualgen/tests/*.py
+tools/fullstack_docs/*.py
+tools/fullstack_docs/tests/*.py
+docs/maintenance/lanes/full_stack_documentation/*.md
+docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/DOCUMENTATION_FLUSH_PROGRESS_LOG_V1.md
+docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/documentation_flush_progress_ledger_v1.csv

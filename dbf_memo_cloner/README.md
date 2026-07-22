@@ -44,3 +44,21 @@ It uses the Python [`dbf`](https://pypi.org/project/dbf/) library **on your mach
 - If you see `ModuleNotFoundError: No module named 'dbf'`, install the package as shown above.
 - If a file is read‑only or locked, close other apps and try again.
 - Works with dBase III/IV/FoxPro dialects supported by the `dbf` library.
+
+## Local Assessment
+
+Assessment date: 2026-07-06.
+
+Classification: independent utility, DBF/xBase adjacent.
+
+This folder is not a DotTalk++/LabTalk project. It is a small standalone Python
+utility for taking existing `.DBF` files and producing cloned versions with a
+memo field plus generated sample data. It is related by data format and could
+feed DotTalk++ test data, but it does not appear to depend on the DotTalk++
+runtime.
+
+Intended role:
+
+Use this as a fixture-generation or test-data preparation tool for DBF/memo
+experiments. Keep it separate from runtime code unless its behavior is promoted
+into a maintained test-data pipeline.

@@ -37,7 +37,7 @@ xbase::index_hooks::Snapshot capture_hook(xbase::DbArea& area)
 bool apply_replace_hook(xbase::DbArea& area,
                         const xbase::index_hooks::Snapshot& before,
                         const xbase::index_hooks::Snapshot& after,
-                        std::uint32_t recno)
+                        std::uint64_t recno)
 {
     auto* manager = manager_if_attached(area);
     if (!manager || (!before && !after)) return true;

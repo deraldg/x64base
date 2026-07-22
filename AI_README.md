@@ -25,8 +25,9 @@ Start here, in this order, and stop when you have enough for the task:
 | 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
 | 3 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
 | 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
-| 5 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
-| 6 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
+| 5 | For material work: `labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md` | Mode, change class, actual build target, product/index profile, and smallest sufficient gates. |
+| 6 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
+| 7 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
 
 Everything else — the assimilation book, the bootstrap card, the older portal
 docs — is context you pull *when the task needs it*, not a mandatory prefix.
@@ -55,7 +56,8 @@ repo-local source.
 
 ## AI Portal
 
-The AI assimilation portal is the durable front door:
+The canonical startup order is the table at the top of this file. The older AI
+assimilation portal remains a depth-on-demand context source:
 
 ```text
 docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
@@ -81,12 +83,16 @@ Local workspace:
 D:\code\ccode
 ```
 
-Current observed Git remote and branch at the time this file was updated:
+Public repository identity:
 
 ```text
 origin: https://github.com/deraldg/x64base.git
-branch: homegrown-cnx-20251112-branch
+public branch: main
 ```
+
+The development branch is current workspace state and must be discovered
+locally. Do not preserve a transient development branch name here as a current
+instruction.
 
 Always re-check before making Git decisions:
 

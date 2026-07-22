@@ -1,3 +1,23 @@
+// @dottalk.usage v1
+// owner: UI|ARCTICTALK
+// command: ARCTICTALK
+// aliases: FOXTALK
+// category: turbo-vision-ui
+// status: supported-conditional
+// noargs: interactive-launch
+// effect: interactive
+// mutates: ui-and-cursor-state
+// usage-access: HELP ARCTICTALK; HELP FOXTALK
+// summary:
+//   Launch the ArcticTalk Turbo Vision shell when TV support is available.
+// usage:
+//   ARCTICTALK
+//   FOXTALK
+// notes:
+//   FOXTALK is the legacy alias. Direct invocation launches the UI; there is no command-local usage branch.
+// related:
+//   TVISION, FOXPRO
+//
 #include <iostream>
 #include <sstream>
 

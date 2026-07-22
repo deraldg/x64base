@@ -550,6 +550,10 @@ constexpr inline std::array<TypeInfo, 27> kTypeIndex{{
         "XML",
         "SQL/modern XML payload; x64-native extension."
     }
+    // NOTE: custom/registered field types (e.g. 'X' pronoun) are intentionally
+    // NOT listed here.  They live in the runtime field-type registry
+    // (xbase::fieldcodec::register_field_type) and the CREATE chain consults that
+    // registry for any code this static catalog does not own.  See FIELDTYPE M4b.
 }};
 
 // -----------------------------------------------------------------------------

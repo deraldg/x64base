@@ -29,20 +29,22 @@ void unlock_table   (DbArea& a);                 // best-effort: ignores failure
 bool is_table_locked(const DbArea& a);           // no owner info
 
 // -------- Record locks -------------------------------------------------------
+// Record numbers are 64-bit (RECNO64 lane). Widening conversions from the
+// classic 32-bit callers are implicit and lossless.
 // New owner-aware API:
-bool try_lock_record(DbArea& a, uint32_t recno, const Owner& owner, std::string* err = nullptr);
-bool unlock_record  (DbArea& a, uint32_t recno, const Owner& owner, std::string* err = nullptr);
-bool is_record_locked(const DbArea& a, uint32_t recno, std::string* owner_out); // owner string if locked
+bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& owner, std::string* err = nullptr);
+bool unlock_record  (DbArea& a, std::uint64_t recno, const Owner& owner, std::string* err = nullptr);
+bool is_record_locked(const DbArea& a, std::uint64_t recno, std::string* owner_out); // owner string if locked
 
 // Back-compat shims:
-bool try_lock_record(DbArea& a, uint32_t recno, std::string* err = nullptr);
-void unlock_record  (DbArea& a, uint32_t recno); // best-effort
-bool is_record_locked(const DbArea& a, uint32_t recno);
+bool try_lock_record(DbArea& a, std::uint64_t recno, std::string* err = nullptr);
+void unlock_record  (DbArea& a, std::uint64_t recno); // best-effort
+bool is_record_locked(const DbArea& a, std::uint64_t recno);
 
 // -------- Admin / recovery (optional) ---------------------------------------
 // Force unlock ignores ownership (use sparingly / logged by caller).
 bool force_unlock_table (DbArea& a, std::string* err = nullptr);
-bool force_unlock_record(DbArea& a, uint32_t recno, std::string* err = nullptr);
+bool force_unlock_record(DbArea& a, std::uint64_t recno, std::string* err = nullptr);
 
 // Cleanup any locks created by this process for this area (best-effort)
 void release_held(DbArea& a);

@@ -83,19 +83,21 @@
 #include <sstream>
 #include <string>
 
+#include "cli/command_output.hpp"
+
 namespace fs = std::filesystem;
 
 namespace {
 
 struct CursorRestore {
     xbase::DbArea* a{nullptr};
-    int32_t saved{0};
+    std::uint64_t saved{0};   // RECNO64
     bool active{false};
 
     explicit CursorRestore(xbase::DbArea& area) : a(&area) {
         try {
-            saved = area.recno();
-            active = (saved >= 1 && saved <= area.recCount());
+            saved = area.recno64();
+            active = (saved >= 1 && saved <= area.recCount64());
         } catch (...) {
             active = false;
         }
@@ -104,7 +106,7 @@ struct CursorRestore {
     ~CursorRestore() {
         if (!active || !a) return;
         try {
-            if (a->gotoRec(saved)) {
+            if (a->gotoRec64(saved)) {
                 (void)a->readCurrent();
             }
         } catch (...) {
@@ -166,20 +168,7 @@ static bool indexseek_usage_request(const std::string& raw)
 
 static void print_indexseek_usage()
 {
-    std::cout
-        << "Usage:\n"
-        << "  INDEXSEEK USAGE\n"
-        << "  INDEXSEEK <value>\n"
-        << "  INDEXSEEK <value> SOFT\n"
-        << "  INDEXSEEK <value> TAG <tag-or-path>\n"
-        << "  INDEXSEEK <value> SOFT TAG <tag-or-path>\n"
-        << "Examples:\n"
-        << "  INDEXSEEK \"TAYLOR\"\n"
-        << "  INDEXSEEK \"TAYLOR\" SOFT\n"
-        << "  INDEXSEEK \"TAYLOR\" TAG students.cdx\n"
-        << "Notes:\n"
-        << "  - INDEXSEEK prints INDEXSEEK(): <recno> and restores the cursor best-effort.\n"
-        << "  - INDEXSEEK USAGE works without an open table.\n";
+    cli::cmdout::print_message(dottalk::helpdata::MessageId::IndexseekUsageText);
 }
 
 static bool ieq_char(char a, char b) {
@@ -384,7 +373,7 @@ static bool inx1_lower_bound_recno_stream(const fs::path& p,
 static bool indexseek_via_inx(const fs::path& tagPath,
                               const std::string& value,
                               bool soft,
-                              uint32_t& out_recno) {
+                              std::uint64_t& out_recno) {
     out_recno = 0;
 
     InxMeta m{};
@@ -477,7 +466,7 @@ static bool indexseek_via_cdx(xbase::DbArea& A,
                               const std::string& value,
                               bool soft,
                               const fs::path& tagArg,
-                              uint32_t& out_recno) {
+                              std::uint64_t& out_recno) {
     out_recno = 0;
 
     CdxResolve target = resolve_cdx_target(A, tagArg);
@@ -516,23 +505,23 @@ static bool indexseek_via_cdx(xbase::DbArea& A,
     bool ok = asc ? cur->first(k, r) : cur->last(k, r);
 
     while (ok) {
-        const int32_t rn = static_cast<int32_t>(r);
-        if (rn > 0 && rn <= A.recCount()) {
+        const std::int64_t rn = static_cast<std::int64_t>(r);
+        if (rn > 0 && rn <= static_cast<std::int64_t>(A.recCount64())) {
             try {
-                if (A.gotoRec(rn) && A.readCurrent()) {
+                if (A.gotoRec64(static_cast<std::uint64_t>(rn)) && A.readCurrent()) {
                     if (!A.isDeleted()) {
                         // Confirm the candidate recno against the live DBF field.
                         // This keeps INDEXSEEK from trusting a stale or mismatched
                         // index entry without verification.
                         if (field_value_matches(A, fld, needleU)) {
-                            out_recno = static_cast<uint32_t>(rn);
+                            out_recno = static_cast<std::uint64_t>(rn);
                             return true;
                         }
 
                         if (soft) {
                             const std::string curU = norm_seek_text(A.get(fld));
                             if (curU >= needleU) {
-                                out_recno = static_cast<uint32_t>(rn);
+                                out_recno = static_cast<std::uint64_t>(rn);
                                 return true;
                             }
                         }
@@ -588,7 +577,7 @@ void cmd_INDEXSEEK(xbase::DbArea& A, std::istringstream& args) {
             (!parsed.tagArg.empty() && tagLooksCdx);
 
         if (preferCdx) {
-            uint32_t recno = 0;
+            std::uint64_t recno = 0;
             if (indexseek_via_cdx(A, parsed.value, parsed.soft, parsed.tagArg, recno)) {
                 std::cout << "INDEXSEEK(): " << recno << "\n";
                 return;
@@ -609,7 +598,7 @@ void cmd_INDEXSEEK(xbase::DbArea& A, std::istringstream& args) {
         }
         if (!tagPath.has_extension()) tagPath.replace_extension(".inx");
 
-        uint32_t recno = 0;
+        std::uint64_t recno = 0;
         if (indexseek_via_inx(tagPath, parsed.value, parsed.soft, recno)) {
             std::cout << "INDEXSEEK(): " << recno << "\n";
             return;
