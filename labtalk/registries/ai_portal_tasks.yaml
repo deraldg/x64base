@@ -87,3 +87,107 @@ tasks:
       - current local source may have advanced beyond the inspected public snapshot
       - palette ownership is split across current TV support and deprecated palette-demo sources
       - incorrect conditional wiring could produce either an unresolved cmd_PALETTE or a duplicate definition
+
+  - id: task.dotref.x64base_schema_hybrid.v1
+    title: Convert DOTREF authoring to x64base metadata while preserving a generated compiled fallback
+    project_id: project.dotref_metadata_authority
+    area: help/metadata/dotref/selfdoc
+    owning_lifecycle: DotTalk++ SDLC plus metadata and HELP maintenance lanes
+    sdlc_lane: design
+    truth_state: public_snapshot_inspected_local_authority_not_yet_reconciled
+    proof_state: architecture_analysis_only_no_local_compile_or_runtime_proof
+    risk_class: medium
+    source_path: D:/code/ccode/include/dotref.hpp
+    website_path: unknown
+    next_gate: GROK returns the contracted external-AI design package for Derald to reconcile against current D:/code/ccode
+    owner: GROK
+    assignee_type: external_ai
+    maintainer: Derald
+    status: assigned
+
+    created: 2026-07-22
+    authority_root: D:/code/ccode
+    staging_root: C:/x64base
+    public_repository: github.com/deraldg/x64base
+    public_branch: main
+    public_baseline: 4384820d2b82289fa76e789336218e0c1df1b290
+    project_packet: labtalk/ai_portal/tasks/GROK_DOTREF_X64BASE_SCHEMA_PROJECT_V1.md
+    external_ai_contract: labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+
+    objective: >-
+      Design a stable hybrid migration in which source implementation and usage
+      contracts remain implementation truth, reviewed x64base SYS* metadata becomes
+      the canonical authoring and management lane for DOTREF facts, and a deterministic
+      generated compiled catalog remains available for bootstrap, recovery, testing,
+      and simple distribution.
+
+    pinned_architecture:
+      - source implementation and usage contracts remain behavioral authority
+      - SYSCMD, SYSSUBCMD, SYSENTVAR, SYSARGS, and SYSHELP are the preferred canonical metadata homes
+      - DOTREF remains compiled and searchable as a generated fallback artifact
+      - HELP, SelfDoc, manualgen, and publication remain downstream consumers
+      - DOTHELP must not silently become responsible for directly opening metadata DBFs
+
+    required_deliverables:
+      - MANIFEST.md with the complete AI report audit envelope and exact baseline
+      - DESIGN.md comparing header-only, schema-only, and hybrid stability
+      - SCHEMA_CROSSWALK.md mapping every DOTREF fact into the SYS* family
+      - GENERATOR_CONTRACT.md defining deterministic metadata-to-C++ generation
+      - MIGRATION_PLAN.md with reversible milestones and local reconciliation gates
+      - TEST_PLAN.md separating actual external checks from required local proof
+      - NOTES.md listing unresolved questions, conflicts, and public/local authority gaps
+      - optional unified changes.patch as a proposal only
+
+    required_analysis:
+      - inventory dotref.hpp structure and all significant consumers
+      - decide whether existing SYS* schemas are sufficient or need narrow extensions
+      - model aliases, multiword commands, ordering, multiline prose, examples, notes, and support state
+      - define whether supported is stored or derived from implementation, active, registration, reachability, visibility, and proof facts
+      - define bootstrap and damaged-data-root fallback behavior
+      - define deterministic generation and output-hash rules
+      - define exact DOTHELP lookup, search, ordering, multiline, and unsupported-state equivalence checks
+      - define drift gates across source, metadata, generated DOTREF, HELP, SelfDoc, and manualgen
+      - identify the smallest reversible first implementation milestone
+
+    preferred_crosswalk:
+      command_identity: SYSCMD
+      subcommand_or_multiword_identity: SYSSUBCMD
+      aliases_shortcuts_reexpressions: SYSENTVAR
+      structured_arguments: SYSARGS
+      syntax_summary_examples_notes: SYSHELP
+      compiled_lookup_and_search: generated_DOTREF_artifact
+      support_state: derived_and_validated
+
+    allowed_scope:
+      - DOTREF data and API modeling
+      - narrowly required SYS* schema extensions
+      - deterministic generator design or proposed source
+      - generated-header layout
+      - DOTHELP catalog abstraction and fallback selection
+      - validators, drift checks, migration scripts, import candidates, and targeted tests
+
+    excluded_scope:
+      - unrelated HELP or metadata cleanup
+      - replacing source implementation authority with documentation data
+      - removing compiled bootstrap and recovery fallback capability
+      - direct mutation of D:/code/ccode or maintained runtime DBFs
+      - binaries, DBFs, indexes, LMDB environments, build products, secrets, or local state
+      - branch creation or switching
+      - commit, push, staging promotion, or publication
+      - unsupported claims of compilation, integration, or runtime proof
+
+    acceptance_criteria:
+      - every current DOTREF entry has a no-loss metadata mapping
+      - stable canonical identities and deterministic display order are defined
+      - the design reuses the existing metadata family rather than creating an avoidable parallel DOTREF database
+      - structural metadata is separated from localizable or rendered prose
+      - compiled fallback behavior remains available before metadata workspaces are open
+      - deterministic generated output and drift validation are specified
+      - exact behavior-equivalence tests are provided
+      - the first milestone is reversible and does not require immediate runtime DBF dependency
+      - GROK states exactly what it read and tested and what remains unproven
+
+    authority_boundary: >-
+      Assignment to GROK authorizes analysis and an external proposal package only.
+      Derald retains design acceptance, local reconciliation, implementation,
+      proof, promotion, and publication authority.
