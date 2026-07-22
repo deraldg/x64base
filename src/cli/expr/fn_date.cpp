@@ -8,6 +8,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <cstdio>
+#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -70,15 +73,30 @@ static std::string dt_time(const std::vector<std::string>& /*argv*/) {
 }
 
 static std::string dt_seconds(const std::vector<std::string>& /*argv*/) {
-    const std::string t = dottalk::date::now_local().time6;
-    if (t.size() != 6) return "0";
+    // FoxPro SECONDS(): seconds elapsed since midnight, with sub-second
+    // (millisecond) resolution. The prior implementation derived from the
+    // HHMMSS time6 string, so it was integer-only — useless for benchmarking
+    // and self-timing (deltas rounded to whole seconds). Use a real clock.
+    using namespace std::chrono;
+    const auto now = system_clock::now();
+    const std::time_t tt = system_clock::to_time_t(now);
+    std::tm lt{};
+#if defined(_WIN32)
+    localtime_s(&lt, &tt);
+#else
+    localtime_r(&tt, &lt);
+#endif
+    const auto since_epoch = now.time_since_epoch();
+    const auto whole_secs  = duration_cast<seconds>(since_epoch);
+    const long millis =
+        static_cast<long>(duration_cast<milliseconds>(since_epoch - whole_secs).count());
 
-    const int hh = std::stoi(t.substr(0, 2));
-    const int mm = std::stoi(t.substr(2, 2));
-    const int ss = std::stoi(t.substr(4, 2));
+    const double total = lt.tm_hour * 3600.0 + lt.tm_min * 60.0 + lt.tm_sec
+                         + static_cast<double>(millis) / 1000.0;
 
-    const int total = hh * 3600 + mm * 60 + ss;
-    return std::to_string(total);
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%.3f", total);
+    return std::string(buf);
 }
 
 static std::string dt_now(const std::vector<std::string>& /*argv*/) {

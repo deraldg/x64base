@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <locale>
 #include <cmath>
+#include <chrono>
 
 #include "xbase.hpp"
 #include "cli/command_registry.hpp"
@@ -28,6 +29,7 @@
 #include "cli/command_output.hpp"
 #include "cli/expr/value_eval.hpp"
 #include "cli/rel_refresh_suppress.hpp"
+#include "cli/settings.hpp"
 
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
   #include "cli/path_resolver.hpp"
@@ -335,17 +337,55 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
 
     const std::string U = textio::up(cmdToken);
 
-    RelRefreshGuard guard(shell_is_rel_refresh_suppression_command(U));
-    if (!registry().run(area, U, tok)) {
-        if (try_shell_expression_fallback(area, macroLine, true))
-            return true;
-        cli::cmdout::print_message(
-            dottalk::helpdata::MessageId::UnknownCommand,
-            {{"command", cmdToken}});
-        return false;
+    // SET TIMER instrumentation. This is the single canonical executor every
+    // front-end routes through (interactive REPL, DO/DOTSCRIPT, init/shutdown
+    // scripts, loop bodies), so placing the timer here — rather than only in
+    // the interactive wrapper — makes `SET TIMER ON` report per-command
+    // elapsed inside scripts too (benchmarks can self-time). Guarded by the
+    // opt-in flag, so it is inert unless the user turns the timer on.
+    auto& S = cli::Settings::instance();
+    const bool timer_on = S.timer_on.load();
+    using timer_clock = std::chrono::steady_clock;
+    static const auto shell_timer_base = timer_clock::now();
+
+    timer_clock::time_point t0{};
+    if (timer_on) {
+        t0 = timer_clock::now();
+        const double t0_sec =
+            std::chrono::duration<double>(t0 - shell_timer_base).count();
+        std::cout << std::fixed << std::setprecision(9)
+                  << "TIMER START: " << t0_sec << " s\n";
     }
 
-    return true;
+    bool ok;
+    {
+        RelRefreshGuard guard(shell_is_rel_refresh_suppression_command(U));
+        if (!registry().run(area, U, tok)) {
+            if (try_shell_expression_fallback(area, macroLine, true)) {
+                ok = true;
+            } else {
+                cli::cmdout::print_message(
+                    dottalk::helpdata::MessageId::UnknownCommand,
+                    {{"command", cmdToken}});
+                ok = false;
+            }
+        } else {
+            ok = true;
+        }
+    }
+
+    if (timer_on) {
+        const auto t1 = timer_clock::now();
+        const double t1_sec =
+            std::chrono::duration<double>(t1 - shell_timer_base).count();
+        const double elapsed_sec =
+            std::chrono::duration<double>(t1 - t0).count();
+        std::cout << std::fixed << std::setprecision(9)
+                  << "TIMER END  : " << t1_sec << " s\n"
+                  << "ELAPSED    : " << elapsed_sec << " s\n";
+    }
+
+    return ok;
 }
 
 // Public API wrapper expected by dispatch_shim and tests.

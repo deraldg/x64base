@@ -471,53 +471,24 @@ static void execute_shell_only_block_lines(xbase::DbArea& area,
 static void shell_execute_instrumented(xbase::DbArea& cur,
                                        const std::string& expandedLine)
 {
-    using timer_clock = std::chrono::steady_clock;
-    static const auto shell_timer_base = timer_clock::now();
-
+    // SET TIMER instrumentation now lives in the canonical shell_execute_line
+    // (src/cli/shell_api.cpp) so it fires uniformly for interactive commands
+    // AND script/DO lines. This wrapper keeps only the polling concern; timing
+    // it here too would double-print for every interactive command.
     auto& S = cli::Settings::instance();
-    const bool timer_on   = S.timer_on.load();
     const bool polling_on = S.polling_on.load();
 
-    if (timer_on) {
-        const auto t0 = timer_clock::now();
-        const double t0_sec =
-            std::chrono::duration<double>(t0 - shell_timer_base).count();
-
-        if (polling_on) {
-            pre_poll();
-        }
-
-        std::cout << std::fixed << std::setprecision(9)
-                  << "TIMER START: " << t0_sec << " s\n";
-
-        (void)shell_execute_line(cur, expandedLine);
-
-        if (polling_on) {
-            post_poll();
-        }
-
-        const auto t1 = timer_clock::now();
-        const double t1_sec =
-            std::chrono::duration<double>(t1 - shell_timer_base).count();
-        const double elapsed_sec =
-            std::chrono::duration<double>(t1 - t0).count();
-
-        std::cout << std::fixed << std::setprecision(9)
-                  << "TIMER END  : " << t1_sec << " s\n"
-                  << "ELAPSED    : " << elapsed_sec << " s\n";
-    } else {
-        if (polling_on) {
-            pre_poll();
-        }
-
-        (void)shell_execute_line(cur, expandedLine);
-
-        if (polling_on) {
-            post_poll();
-        }
-
-        std::cout.flush();
+    if (polling_on) {
+        pre_poll();
     }
+
+    (void)shell_execute_line(cur, expandedLine);
+
+    if (polling_on) {
+        post_poll();
+    }
+
+    std::cout.flush();
 }
 
 // -----------------------------------------------------------------------------
