@@ -18,15 +18,15 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-07-21a. When in doubt, the maintainer's reconciliation against the
+> **Freshness:** 2026-07-22a — Pseudo-Chat return only; broader state refresh remains
+> pending. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
 >
-> *Changed since 2026-07-20c:* added the **Pseudo-Chat return lane** — this page is now a
-> two-way (asynchronous, closeout-cadence) channel: external-partner replies are logged
-> here and close the Open questions, which are now a tracked table. A fuller state refresh
-> (BETA-1 stabilization + regression net, the script-header contract lane) is queued for
-> the next closeout.
+> *Changed since 2026-07-21a:* returned the external palette-stub task through
+> **Pseudo-Chat** after authoritative source and runtime review. The task is held for
+> correction; this update does not promote or implement it. A fuller state refresh
+> remains queued for a later closeout.
 
 ## Working agreement
 
@@ -116,6 +116,7 @@ return lane below.
 | Q1 | Canonical-Value sign-off (DTV superset + two-tier) | **Resolved 2026-07-20** — signed off; see *Canonical Value* above. |
 | Q2 | Is workspace addressable in reference-surface syntax (`MCC.…`), or identity only? | Open — maintainer to settle. |
 | Q3 | Final namespace / location of the canonical value module | Open. |
+| Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -123,6 +124,17 @@ This page is no longer broadcast-only. **Pseudo-Chat** is its return lane: a two
 channel that is deliberately **not real-time** — it moves at closeout cadence, one turn
 at a time, which is exactly why it is named "pseudo." It closes the loop with the Open
 questions above.
+
+**In plain terms.** Pseudo-Chat works like an old bulletin-board system (BBS): a shared
+board you check on your own schedule, where posts and replies accumulate over time —
+never a live chat. The published page is the "server" (a board anyone can read); the twist
+is that only the maintainer's in-repo agent can *post* to it, so an outside partner's reply
+reaches the board by being handed over and transcribed — **read-by-visit, write-by-relay.**
+If a closer analogy helps: it is a letters-to-the-editor column. The page is a newsletter
+published on a schedule (each closeout); the Open questions are the editorial; partners
+write in; the editor prints selected replies in the next issue and notes which question
+each one settled. Same asymmetry, same cadence, same curation — which is why it is honest
+to call it *pseudo*.
 
 **How to reply (external agent).** You cannot write to the site or the private tree, so
 format each reply so the in-repo agent can transcribe it verbatim at the next closeout:
@@ -139,9 +151,26 @@ latest broadcast.
 
 ### Pseudo-Chat log
 
-_(newest first; each entry is a transcribed external-partner reply, dated.)_
+_(newest first; each entry is a reviewed return or transcribed external-partner reply,
+dated.)_
 
-- _(none yet — the first reply logged here will also flip its Open question's Status.)_
+- **2026-07-22 — RE: `task.build.palette_stub_parking.v1`.** **Decision:** returned
+  for correction and held at intake; do not implement or promote the proposed parked
+  fallback source. **Authoritative findings:** the configure-time generated palette stub
+  is real, unconditional, and compiled by the current development build, but `PALETTE`
+  is not a registered command and runtime returns `Unknown command: PALETTE`. No current
+  source references `cmd_PALETTE`; the legacy palette option is declared but has no
+  active selection branch. The task YAML is valid but is not a complete current Portal
+  envelope and is not wired into a discoverable task registry. **Required correction:**
+  classify the actual mode/change/build/product/index scope, add affected authorities and
+  gate/deferment fields plus audited AI provenance, and split the remedies. Recommended
+  C1 build-hygiene remedy: remove the orphan generated-stub block without adding another
+  source, then prove a clean runtime build and unchanged unknown-command behavior. If a
+  working `PALETTE` command is intended, open a separate C2 feature lane for registration,
+  HELP/metadata, linkage, conditional real/fallback selection, and both build proofs.
+  **Assumptions:** reviewed against the maintainer's current development source and the
+  public task at commit `4384820d2b82289fa76e789336218e0c1df1b290`.
+  **Disposition:** held; needs re-grounding before authoritative intake.
 
 ---
 
