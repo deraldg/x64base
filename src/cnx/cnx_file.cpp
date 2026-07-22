@@ -2,8 +2,14 @@
 // Minimal CNX container implementation matching include/cnx/cnx.hpp (cnxfile::* API).
 // Supports: open/create, read/flush header, read/write tagdir, add/drop tag.
 // Adds: append_bytes / read_at / write_at for RUN blocks (future b-tree pages).
+//
+// In-memory containers (AIF-043 V4d): a path under a mounted ramfs root is served
+// from RAM via io() (either the disk std::fstream or a ramfs std::iostream) — the
+// same one-handle seam as the cdxfile twin and DbArea. When no ramfs root is
+// mounted (default), is_virtual() is false and the RAM branch is dead.
 
 #include "cnx/cnx.hpp"
+#include "xbase/ramfs.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -19,10 +25,19 @@ namespace cnxfile {
 
 // IMPORTANT: This must be cnxfile::CNXHandle (NOT an anonymous-namespace type)
 struct CNXHandle {
-    std::fstream io;
+    std::fstream f;
+    std::unique_ptr<std::iostream> mem;
+    bool         in_memory = false;
     std::string  path;
     CNXHeader    hdr{};
     bool         hdr_dirty = false;
+
+    std::iostream& io() noexcept {
+        return in_memory ? *mem : static_cast<std::iostream&>(f);
+    }
+    bool is_open() const noexcept {
+        return in_memory ? (mem != nullptr) : f.is_open();
+    }
 };
 
 namespace {
@@ -55,17 +70,17 @@ static std::uint64_t now_unix()
 
 static void store_header(CNXHandle* h)
 {
-    h->io.seekp(0, std::ios::beg);
-    write_exact(h->io, &h->hdr, (std::streamsize)sizeof(CNXHeader));
-    h->io.flush();
+    h->io().seekp(0, std::ios::beg);
+    write_exact(h->io(), &h->hdr, (std::streamsize)sizeof(CNXHeader));
+    h->io().flush();
     h->hdr_dirty = false;
 }
 
 static bool load_header(CNXHandle* h)
 {
-    h->io.seekg(0, std::ios::beg);
+    h->io().seekg(0, std::ios::beg);
     CNXHeader tmp{};
-    try { read_exact(h->io, &tmp, (std::streamsize)sizeof(CNXHeader)); }
+    try { read_exact(h->io(), &tmp, (std::streamsize)sizeof(CNXHeader)); }
     catch (...) { return false; }
 
     if (tmp.magic != CNX_MAGIC || tmp.version != CNX_VERSION || tmp.page_size == 0)
@@ -88,8 +103,8 @@ static void init_fresh_file(CNXHandle* h)
     h->hdr.tagdir_offset = align_up(hdr_end, h->hdr.page_size);
 
     // Ensure file is at least tagdir_offset bytes.
-    h->io.seekp((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
-    h->io.flush();
+    h->io().seekp((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
+    h->io().flush();
 
     store_header(h);
 }
@@ -108,11 +123,11 @@ static bool read_tagdir_inner(CNXHandle* h, std::vector<TagInfo>& out)
 
     if (h->hdr.tag_count == 0) return true;
 
-    h->io.seekg((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
+    h->io().seekg((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
 
     for (std::uint32_t i = 0; i < h->hdr.tag_count; ++i) {
         TagDirEntry e{};
-        try { read_exact(h->io, &e, (std::streamsize)sizeof(e)); }
+        try { read_exact(h->io(), &e, (std::streamsize)sizeof(e)); }
         catch (...) { return false; }
 
         std::string name;
@@ -144,7 +159,7 @@ static bool write_tagdir_inner(CNXHandle* h, const std::vector<TagInfo>& tags)
 {
     if (!h) return false;
 
-    h->io.seekp((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
+    h->io().seekp((std::streamoff)h->hdr.tagdir_offset, std::ios::beg);
 
     for (std::uint32_t i = 0; i < (std::uint32_t)tags.size(); ++i) {
         TagDirEntry e{};
@@ -160,7 +175,7 @@ static bool write_tagdir_inner(CNXHandle* h, const std::vector<TagInfo>& tags)
         e.stats_rec     = tags[i].stats_rec;
         e.updated_ts    = tags[i].updated_ts;
 
-        try { write_exact(h->io, &e, (std::streamsize)sizeof(e)); }
+        try { write_exact(h->io(), &e, (std::streamsize)sizeof(e)); }
         catch (...) { return false; }
     }
 
@@ -188,16 +203,31 @@ bool open(const std::string& path, CNXHandle*& out)
     auto h = std::make_unique<CNXHandle>();
     h->path = path;
 
-    h->io.open(path, std::ios::in | std::ios::out | std::ios::binary);
-    if (!h->io.is_open()) {
-        // create
-        h->io.clear();
-        h->io.open(path, std::ios::out | std::ios::binary | std::ios::trunc);
-        if (!h->io.is_open()) return false;
-        h->io.close();
+    if (xbase::ramfs::is_virtual(path)) {
+        // RAM container: create-or-open the ramfs byte store. "existed" decides
+        // fresh-init vs load, mirroring the disk create-vs-open branch below.
+        const bool existed = xbase::ramfs::exists(path);
+        h->in_memory = true;
+        h->mem = xbase::ramfs::open(path, /*create=*/true);
+        if (!h->mem) return false;
 
-        h->io.open(path, std::ios::in | std::ios::out | std::ios::binary);
-        if (!h->io.is_open()) return false;
+        if (!existed) init_fresh_file(h.get());
+        else if (!load_header(h.get())) return false;
+
+        out = h.release();
+        return true;
+    }
+
+    h->f.open(path, std::ios::in | std::ios::out | std::ios::binary);
+    if (!h->f.is_open()) {
+        // create
+        h->f.clear();
+        h->f.open(path, std::ios::out | std::ios::binary | std::ios::trunc);
+        if (!h->f.is_open()) return false;
+        h->f.close();
+
+        h->f.open(path, std::ios::in | std::ios::out | std::ios::binary);
+        if (!h->f.is_open()) return false;
 
         init_fresh_file(h.get());
     } else {
@@ -212,8 +242,12 @@ void close(CNXHandle*& h)
 {
     if (!h) return;
     try { if (h->hdr_dirty) store_header(h); } catch (...) {}
-    try { h->io.flush(); } catch (...) {}
-    try { h->io.close(); } catch (...) {}
+    try { h->io().flush(); } catch (...) {}
+    if (h->in_memory) {
+        h->mem.reset();
+    } else {
+        try { h->f.close(); } catch (...) {}
+    }
     delete h;
     h = nullptr;
 }
@@ -335,13 +369,13 @@ bool append_bytes(CNXHandle* h, const void* data, std::size_t len, std::uint64_t
 {
     if (!h) return false;
     try {
-        h->io.seekp(0, std::ios::end);
-        const std::streampos pos = h->io.tellp();
+        h->io().seekp(0, std::ios::end);
+        const std::streampos pos = h->io().tellp();
         if (pos < 0) return false;
         out_off = static_cast<std::uint64_t>(pos);
 
-        write_exact(h->io, data, static_cast<std::streamsize>(len));
-        h->io.flush();
+        write_exact(h->io(), data, static_cast<std::streamsize>(len));
+        h->io().flush();
         return true;
     }
     catch (...) { return false; }
@@ -351,8 +385,8 @@ bool read_at(CNXHandle* h, std::uint64_t off, void* buf, std::size_t len)
 {
     if (!h) return false;
     try {
-        h->io.seekg(static_cast<std::streamoff>(off), std::ios::beg);
-        read_exact(h->io, buf, static_cast<std::streamsize>(len));
+        h->io().seekg(static_cast<std::streamoff>(off), std::ios::beg);
+        read_exact(h->io(), buf, static_cast<std::streamsize>(len));
         return true;
     }
     catch (...) { return false; }
@@ -362,9 +396,9 @@ bool write_at(CNXHandle* h, std::uint64_t off, const void* buf, std::size_t len)
 {
     if (!h) return false;
     try {
-        h->io.seekp(static_cast<std::streamoff>(off), std::ios::beg);
-        write_exact(h->io, buf, static_cast<std::streamsize>(len));
-        h->io.flush();
+        h->io().seekp(static_cast<std::streamoff>(off), std::ios::beg);
+        write_exact(h->io(), buf, static_cast<std::streamsize>(len));
+        h->io().flush();
         return true;
     }
     catch (...) { return false; }

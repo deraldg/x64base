@@ -61,6 +61,7 @@ void init_defaults(const fs::path& data_root)
     set_slot(Slot::XDBF,       root / "xdbf");
     set_slot(Slot::INDEXES,    root / "indexes");
     set_slot(Slot::LMDB,       root / "lmdb");
+    set_slot(Slot::RAM,        root / "ram");
     set_slot(Slot::WORKSPACES, root / "workspaces");
     set_slot(Slot::SCHEMAS,    root / "schemas");
     set_slot(Slot::PROJECTS,   root / "projects");
@@ -85,6 +86,7 @@ std::string dump()
     os << "  XDBF            = " << get_slot(Slot::XDBF).string() << "\n";
     os << "  INDEXES         = " << get_slot(Slot::INDEXES).string() << "\n";
     os << "  LMDB            = " << get_slot(Slot::LMDB).string() << "\n";
+    os << "  RAM             = " << get_slot(Slot::RAM).string() << "\n";
     os << "  WORKSPACES      = " << get_slot(Slot::WORKSPACES).string() << "\n";
     os << "  SCHEMAS         = " << get_slot(Slot::SCHEMAS).string() << "\n";
     os << "  PROJECTS        = " << get_slot(Slot::PROJECTS).string() << "\n";

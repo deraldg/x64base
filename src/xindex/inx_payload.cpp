@@ -65,9 +65,9 @@ const InxEntry& InxPayload::entryAt(std::size_t i) const
     return entries_.at(i);
 }
 
-std::int32_t InxPayload::positionOfRecno(std::uint32_t recno) const noexcept
+std::int32_t InxPayload::positionOfRecno(std::uint64_t recno) const noexcept
 {
-    if (recno < pos_by_recno_.size()) return pos_by_recno_[recno];
+    if (recno < pos_by_recno_.size()) return pos_by_recno_[static_cast<std::size_t>(recno)];
     return -1;
 }
 
@@ -304,9 +304,9 @@ InxPayload InxPayload::fromEntries2Inx(const std::string& expr_token,
 
     p.pos_by_recno_.assign(rec_count_snapshot + 1u, -1);
     for (std::size_t i = 0; i < p.entries_.size(); ++i) {
-        const std::uint32_t rn = p.entries_[i].recno;
+        const std::uint64_t rn = p.entries_[i].recno;
         if (rn < p.pos_by_recno_.size()) {
-            p.pos_by_recno_[rn] = static_cast<std::int32_t>(i);
+            p.pos_by_recno_[static_cast<std::size_t>(rn)] = static_cast<std::int32_t>(i);
         }
     }
 

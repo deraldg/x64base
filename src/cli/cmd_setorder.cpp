@@ -91,6 +91,7 @@
 #include <algorithm>
 
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
 #include "xbase_64.hpp"
 #include "cli/command_output.hpp"
 #include "xindex/index_manager.hpp"
@@ -105,6 +106,16 @@ namespace fs = std::filesystem;
 
 namespace {
 using MessageId = dottalk::helpdata::MessageId;
+
+// An index container under a mounted ramfs root lives only in RAM (AIF-043),
+// so a plain disk fs::exists would wrongly report it missing and block SET ORDER.
+// Consult the ramfs registry first for virtual paths, then fall back to disk.
+static bool container_exists(const std::string& path)
+{
+    if (xbase::ramfs::is_virtual(path)) return xbase::ramfs::exists(path);
+    std::error_code ec;
+    return fs::exists(path, ec);
+}
 
 static std::string msg(MessageId id,
                        const std::unordered_map<std::string, std::string>& vars = {})
@@ -456,13 +467,19 @@ static bool activate_cdx_on_area(xbase::DbArea& area,
     const fs::path container_path(container);
     const fs::path env_path = dottalk::paths::resolve_lmdb_env_for_cdx(container_path);
 
-    if (!fs::exists(container_path)) {
+    // A .cdx under a mounted ramfs root is a native CDX-V64 served from RAM
+    // (AIF-043): it has no on-disk container and no LMDB env sidecar. Consult
+    // the RAM registry for existence and skip the LMDB env gate entirely; the
+    // native backend (openCdx virtual branch) owns the RAM path.
+    const bool virtual_cdx = xbase::ramfs::is_virtual(container);
+
+    if (!container_exists(container)) {
         err = msg(MessageId::SetOrderOpenCdxContainerNotFoundText,
                   {{"container", container_path.string()}});
         return false;
     }
 
-    if (!fs::exists(env_path) || !fs::is_directory(env_path)) {
+    if (!virtual_cdx && (!fs::exists(env_path) || !fs::is_directory(env_path))) {
         err = msg(MessageId::SetOrderOpenCdxEnvMissingText,
                   {{"env", env_path.string()}});
         return false;
@@ -504,7 +521,7 @@ static bool activate_cnx_on_area(xbase::DbArea& area,
 {
     err.clear();
 
-    if (!fs::exists(container)) {
+    if (!container_exists(container)) {
         err = msg(MessageId::SetOrderOpenCnxContainerNotFoundText,
                   {{"container", container}});
         return false;
@@ -719,7 +736,7 @@ void cmd_SETORDER(xbase::DbArea& currentArea, std::istringstream& args)
         return;
     }
 
-    if (!fs::exists(container)) {
+    if (!container_exists(container)) {
         cli::cmdout::print_prefixed_message(
             "SET ORDER",
             MessageId::SetOrderFileNotFoundText,

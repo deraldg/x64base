@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 18> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -189,6 +189,12 @@ constexpr std::array<RegressionSpec, 18> kRegressionSpecs{{
         "DEF_FAMILY",
         "dotscript\\def_family_regression.dts",
         "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. Explicit-run until proven green in-suite, then promote to default.",
+        false
+    },
+    {
+        "MEM",
+        "mem_proof.dts",
+        "AIF-043 in-memory indexed table end-to-end proof: DO mem mounts the in-process RAM VFS (xbase::ramfs), then an x64 table AND its native CDX-V64 index are built, indexed, and traversed entirely in RAM (RUN8, no LMDB, zero files on disk). Self-contained (leads with DO mem, clean-slate remount) and self-asserting: ordered read-back must yield ADAMS/MILLER/ZEBRA (MEM_T1/T2/T3 = .T.); teardown unmounts and restores the x64 disk env. Mutates the RAM VFS only (no disk table), but kept out of the default suite (explicit run) until soaked. (AIF-043)",
         false
     }
 }};

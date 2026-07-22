@@ -32,6 +32,7 @@ void edu_CHRISTMAS(DbArea&, std::istringstream&);
 void edu_HANUKKAH(DbArea&, std::istringstream&);
 
 // TABLES
+void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_USE(DbArea&, std::istringstream&);
 void cmd_SELECT(DbArea&, std::istringstream&);
 void cmd_CLOSE(DbArea&, std::istringstream&);

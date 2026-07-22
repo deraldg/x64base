@@ -11,6 +11,7 @@
 #include <vector>
 #include <array>
 #include <fstream>
+#include <sstream>
 #include <memory>
 #include <stdexcept>
 #include <optional>
@@ -24,9 +25,14 @@ namespace dottalk::memo { class MemoManager; }
 namespace xbase {
 
 // ---- Constants -------------------------------------------------------------
-constexpr int         MAX_FIELDS         = 128;
+constexpr int         MAX_FIELDS         = 256;   // (was 128; doubled — table-buffer kMaxFields already 256)
 constexpr int         MAX_INDEX          = 5;
-constexpr int         MAX_AREA           = 256;
+constexpr int         MAX_AREA           = 512;   // work areas (was 256; doubled)
+// Record-size guardrails (fixed record = sum of field widths). The hard ceiling
+// catches corrupt/absurd 64-bit record lengths before a giant allocation; the
+// soft advisory nudges wide rows toward memo (M) fields for storage/scan gains.
+constexpr std::uint64_t X64_MAX_RECORD_SIZE      = 16ull * 1024 * 1024; // 16 MiB hard ceiling
+constexpr std::uint64_t X64_RECORD_SIZE_ADVISORY = 64ull * 1024;        // 64 KiB soft advisory
 constexpr char        IS_DELETED         = '*';
 constexpr char        NOT_DELETED        = ' ';
 constexpr uint8_t     HEADER_TERM_BYTE   = 0x0D;
@@ -137,7 +143,16 @@ public:
     void close();
 
     // ---- State ------------------------------------------------------------
-    bool isOpen() const noexcept { return _fp.is_open(); }
+    bool isOpen() const noexcept { return _in_memory ? (_ram != nullptr) : _fp.is_open(); }
+
+    // In-memory tables (AIF-043): record I/O routes through io(). While _in_memory is
+    // false (every disk table) io() == _fp, so behavior is unchanged. DbArea::open
+    // flips _in_memory and binds _ram to a ramfs byte store when the path resolves
+    // under a mounted virtual root (V2).
+    std::iostream& io() noexcept {
+        return _in_memory ? *_ram
+                          : static_cast<std::iostream&>(_fp);
+    }
     bool isDeleted() const;
 
     // ---- Runtime kind / capability ---------------------------------------
@@ -146,7 +161,8 @@ public:
     bool supports(AreaCapability cap) const noexcept;
 
     // ---- Navigation -------------------------------------------------------
-    bool gotoRec(int32_t recno);
+    bool gotoRec(int32_t recno);          // 32-bit compatibility adapter -> gotoRec64
+    bool gotoRec64(std::uint64_t recno);  // authoritative 64-bit record positioning (RECNO64)
     bool top();
     bool bottom();
     bool skip(int delta);
@@ -166,9 +182,13 @@ public:
     bool replaceFieldStored(int field1, const std::string& stored_value, std::string* err = nullptr);
 
     // ---- Record size ------------------------------------------------------
+    // RECNO64: legacy 32-bit accessor. When the x64 value exceeds INT_MAX it returns
+    // -1 (an impossible length) rather than clamping to INT_MAX, so a 32-bit consumer
+    // sees "out of 32-bit range" instead of a plausible-but-wrong value. Use
+    // recLength64() for the authoritative value.
     int  recLength() const noexcept {
         return (_record_length64 > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
-            ? std::numeric_limits<int>::max()
+            ? -1
             : static_cast<int>(_record_length64);
     }
     int  recordLength() const noexcept;
@@ -206,14 +226,19 @@ public:
     bool        set(int idx, const std::string& val);
 
     // ---- Info -------------------------------------------------------------
+    // RECNO64: legacy 32-bit accessors. On an x64 table whose value exceeds INT32_MAX
+    // these return -1 (an impossible recno / count) rather than silently clamping to
+    // INT_MAX. A 32-bit consumer then sees "out of range" and skips/errors, instead of
+    // acting on the wrong record (the old saturating behavior returned INT_MAX, which
+    // reads as a valid record). Use recno64()/recCount64() for the authoritative value.
     int32_t recno() const noexcept {
         return (_crn64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
-            ? std::numeric_limits<int32_t>::max()
+            ? -1
             : static_cast<int32_t>(_crn64);
     }
     int32_t recCount() const noexcept {
         return (_rec_count64 > static_cast<uint64_t>(std::numeric_limits<int32_t>::max()))
-            ? std::numeric_limits<int32_t>::max()
+            ? -1
             : static_cast<int32_t>(_rec_count64);
     }
 
@@ -338,6 +363,8 @@ public:
 private:
     // ===== Storage =========================================================
     std::fstream _fp;
+    std::unique_ptr<std::iostream> _ram;  // AIF-043 in-memory tables: ramfs byte store (V2)
+    bool _in_memory{false};               // when true, io() serves record bytes from *_ram
     HeaderRec    _hdr{};
 
     // ===== Schema & buffers ===============================================

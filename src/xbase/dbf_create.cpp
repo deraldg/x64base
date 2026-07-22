@@ -3,6 +3,7 @@
 #include "xbase.hpp"
 #include "xbase_vfp.hpp"
 #include "xbase_64.hpp"
+#include "xbase/ramfs.hpp"
 #include "foxpro_header.hpp"
 
 #include <algorithm>
@@ -379,9 +380,21 @@ static bool write_vfp_dbf(const std::string& path,
     return true;
 }
 
-static bool write_x64_dbf(const std::string& path,
-                          const std::vector<FieldSpec>& fields,
-                          std::string& err)
+} // namespace (anonymous) — internal file/VFP/classic writers + helpers
+
+// Byte-store-agnostic X64 (v64) DBF serializer.  Writes a complete, freshly
+// created (0-record) X64 DBF image — VfpHeader + LargeHeaderExtension +
+// VfpField[] + 0x0D + x64 name-metadata block + 0x1A EOF — into ANY ostream.
+//
+// The path-based create_dbf writer wraps this (into an ofstream); the in-memory
+// table path (CREATE MEMORY) wraps it into DbArea's RAM byte store, so the
+// header/field byte layout has exactly ONE source of truth.  `tableName` seeds
+// the x64 name-metadata block (long-name preservation) and must be supplied by
+// the caller (from the path stem, or the CREATE MEMORY table name).
+bool serialize_x64_dbf(std::ostream& out,
+                       const std::string& tableName,
+                       const std::vector<FieldSpec>& fields,
+                       std::string& err)
 {
     bool hasMemo = false;
     std::vector<std::string> fieldNames;
@@ -406,7 +419,14 @@ static bool write_x64_dbf(const std::string& path,
         fieldLengths.push_back(f.len);
     }
 
-    const std::string tableName = std::filesystem::path(path).stem().string();
+    if (recLenWide > xbase::X64_MAX_RECORD_SIZE) {
+        err = "X64 record length " + std::to_string(recLenWide) +
+              " exceeds maximum " + std::to_string(xbase::X64_MAX_RECORD_SIZE) +
+              " bytes (" + std::to_string(xbase::X64_MAX_RECORD_SIZE / (1024 * 1024)) +
+              " MiB); use memo (M) fields for large data";
+        return false;
+    }
+
     const std::vector<char> metaBlock =
         xbase::x64_build_name_metadata(tableName, fieldNames, fieldLengths);
 
@@ -416,15 +436,6 @@ static bool write_x64_dbf(const std::string& path,
         fields.size() * sizeof(xbase::VfpField) +
         1 +
         metaBlock.size();
-
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-
-    std::ofstream out(path, std::ios::binary | std::ios::trunc);
-    if (!out) {
-        err = "could not create X64 DBF file";
-        return false;
-    }
 
     std::time_t t = std::time(nullptr);
     std::tm lt{};
@@ -520,7 +531,6 @@ static bool write_x64_dbf(const std::string& path,
     out.write(&eof, 1);
 
     out.flush();
-    out.close();
     if (!out) {
         err = "could not finalize X64 DBF";
         return false;
@@ -529,7 +539,58 @@ static bool write_x64_dbf(const std::string& path,
     return true;
 }
 
-} // namespace
+// Path wrapper: owns the filesystem concerns (directory creation, ofstream
+// lifetime) and delegates the byte layout to serialize_x64_dbf.
+//
+// In-memory tables (AIF-043 V3): a path under a mounted ramfs root is created
+// straight into RAM — no OS directory, no file. The identical serializer feeds
+// the ramfs stream, so the RAM image is byte-identical to a disk .dbf, and the
+// subsequent DbArea::open (V2) reads it back from ramfs. When no root is mounted
+// (the default) is_virtual() is false and this branch is dead.
+static bool write_x64_dbf(const std::string& path,
+                          const std::vector<FieldSpec>& fields,
+                          std::string& err)
+{
+    const std::string tableName = std::filesystem::path(path).stem().string();
+
+    if (xbase::ramfs::is_virtual(path)) {
+        auto rs = xbase::ramfs::open(path, /*create=*/true);
+        if (!rs) {
+            err = "could not create X64 RAM file";
+            return false;
+        }
+        if (!serialize_x64_dbf(*rs, tableName, fields, err)) {
+            return false;
+        }
+        rs->flush();
+        if (!*rs) {
+            err = "could not finalize X64 RAM file";
+            return false;
+        }
+        return true;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        err = "could not create X64 DBF file";
+        return false;
+    }
+
+    if (!serialize_x64_dbf(out, tableName, fields, err)) {
+        return false;
+    }
+
+    out.close();
+    if (!out) {
+        err = "could not finalize X64 DBF";
+        return false;
+    }
+
+    return true;
+}
 
 std::string flavor_name(Flavor flavor)
 {
@@ -598,6 +659,14 @@ bool create_dbf(const std::string& path,
     }
 
     if (!validate_lengths_for_flavor(fields, flavor, err)) {
+        return false;
+    }
+
+    // In-memory tables (AIF-043 M1) are X64/v64 only — the RAM byte store and
+    // ramfs open path are wired for the v64 layout. Reject other flavors on a
+    // virtual path with a clear message instead of a confusing ofstream failure.
+    if (xbase::ramfs::is_virtual(path) && flavor != Flavor::X64) {
+        err = "in-memory (mem) tables require X64 in M1";
         return false;
     }
 

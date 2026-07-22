@@ -64,6 +64,7 @@
 //
 
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
 #include "cdx/cdx.hpp"
 #include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
@@ -99,6 +100,12 @@ static inline std::string up_copy(std::string s)
 
 static inline bool file_exists(const fs::path& p)
 {
+    // A CDX container under a mounted ramfs root lives only in RAM (AIF-043),
+    // so a plain disk fs::exists would wrongly report it missing. Consult the
+    // ramfs registry first for virtual paths, then fall back to disk.
+    if (xbase::ramfs::is_virtual(p.string())) {
+        return xbase::ramfs::exists(p.string());
+    }
     std::error_code ec;
     return fs::exists(p, ec);
 }

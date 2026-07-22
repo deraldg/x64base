@@ -1,0 +1,5 @@
+* mem flavor (AIF-043): activate the in-process RAM virtual disk.
+* VDISK MOUNT points DBF + INDEXES under the relocatable RAM slot
+* (default <DATA>/ram; relocate first with: SET PATH RAM <path>) and
+* mounts it, so CREATE / USE / CDX live entirely in RAM. DO x64 leaves it.
+VDISK MOUNT

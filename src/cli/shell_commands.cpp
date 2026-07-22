@@ -310,6 +310,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Tuple/relationship exploration commands
     // ---------------------------------------------------------------------
     // Aliases are kept together so help/reflection can see shared ownership.
+    registry().add("VDISK",        [](DbArea& A, std::istringstream& S){ cmd_VDISK(A,S);       });
     registry().add("TUPLEDELTA",   [](DbArea& A, std::istringstream& S){ cmd_TUPLEDELTA(A,S);  });
     registry().add("TUPTALK",      [](DbArea& A, std::istringstream& S){ cmd_TUPTALK(A,S);     });
     registry().add("TUPLE",        [](DbArea& A, std::istringstream& S){ cmd_TUPLE(A,S);       });

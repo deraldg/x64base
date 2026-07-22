@@ -1,5 +1,6 @@
 #include "xbase_locks.hpp"
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -56,7 +57,7 @@ const Owner& current_owner() {
 
 struct LockBook {
     bool table{false};
-    std::unordered_set<uint32_t> recs;
+    std::unordered_set<std::uint64_t> recs;
 };
 
 static std::unordered_map<const DbArea*, LockBook>& book() {
@@ -76,7 +77,7 @@ static std::string table_lock_path(const DbArea& a) {
     return p.string();
 }
 
-static std::string record_lock_path(const DbArea& a, uint32_t recno) {
+static std::string record_lock_path(const DbArea& a, std::uint64_t recno) {
     fs::path p = resolved_db_path(a);
     p += ".lock.";
     p += std::to_string(recno);
@@ -156,6 +157,9 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
 }
 
 static bool force_remove(const std::string& path, std::string* err) {
+    // In-memory tables (AIF-043 V3): a RAM table is process-local/single-area —
+    // there is no OS lock file to touch, so locking is a no-op success.
+    if (xbase::ramfs::is_virtual(path)) return true;
     std::error_code ec;
     fs::remove(path, ec);
     if (ec && fs::exists(path)) {
@@ -187,6 +191,7 @@ static bool is_pid_alive(unsigned long pid) {
 }
 
 static bool remove_if_owned(const std::string& path, const Owner& me, std::string* err) {
+    if (xbase::ramfs::is_virtual(path)) return true;  // RAM table: no OS lock file
     if (!fs::exists(path)) return true;
 
     LockMeta meta;
@@ -210,6 +215,7 @@ static bool remove_if_owned(const std::string& path, const Owner& me, std::strin
 }
 
 static bool create_or_validate_owned(const std::string& path, const Owner& me, std::string* err) {
+    if (xbase::ramfs::is_virtual(path)) return true;  // RAM table: lock is a no-op success
     if (!fs::exists(path)) {
         return write_lock_file(path, me, err);
     }
@@ -286,7 +292,7 @@ bool is_table_locked(const DbArea& a) {
 
 // ---------------- Public API: Record -----------------------------------------
 
-bool try_lock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err) {
+bool try_lock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;
@@ -320,7 +326,7 @@ bool try_lock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* er
     return true;
 }
 
-bool unlock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err) {
+bool unlock_record(DbArea& a, std::uint64_t recno, const Owner& me, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;
@@ -332,7 +338,7 @@ bool unlock_record(DbArea& a, uint32_t recno, const Owner& me, std::string* err)
     return ok;
 }
 
-bool is_record_locked(const DbArea& a, uint32_t recno, std::string* owner_out) {
+bool is_record_locked(const DbArea& a, std::uint64_t recno, std::string* owner_out) {
     if (recno == 0) {
         if (owner_out) owner_out->clear();
         return false;
@@ -353,16 +359,16 @@ bool is_record_locked(const DbArea& a, uint32_t recno, std::string* owner_out) {
 
 // Back-compat shims
 
-bool try_lock_record(DbArea& a, uint32_t recno, std::string* err) {
+bool try_lock_record(DbArea& a, std::uint64_t recno, std::string* err) {
     return try_lock_record(a, recno, current_owner(), err);
 }
 
-void unlock_record(DbArea& a, uint32_t recno) {
+void unlock_record(DbArea& a, std::uint64_t recno) {
     std::string ignored;
     (void)unlock_record(a, recno, current_owner(), &ignored);
 }
 
-bool is_record_locked(const DbArea& a, uint32_t recno) {
+bool is_record_locked(const DbArea& a, std::uint64_t recno) {
     return fs::exists(record_lock_path(a, recno));
 }
 
@@ -375,7 +381,7 @@ bool force_unlock_table(DbArea& a, std::string* err) {
     return ok;
 }
 
-bool force_unlock_record(DbArea& a, uint32_t recno, std::string* err) {
+bool force_unlock_record(DbArea& a, std::uint64_t recno, std::string* err) {
     if (recno == 0) {
         if (err) *err = "bad recno";
         return false;

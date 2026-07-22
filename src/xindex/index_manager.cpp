@@ -10,10 +10,12 @@
 #include <string>
 
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
 #include "cdx/cdx_meta.hpp"
 #include "cli/path_resolver.hpp"
 #include "xindex/index_manager.hpp"
 #include "cnx/cnx_backend.hpp"
+#include "xindex/cdx_native_backend.hpp"
 
 namespace fs = std::filesystem;
 
@@ -93,6 +95,25 @@ bool IndexManager::openCdx(const std::string& cdx_container_path,
     if (cdx_container_path.empty()) {
         if (err) *err = "openCdx: empty path";
         return false;
+    }
+
+    // In-memory tables (AIF-043 V4e): a .cdx under a mounted ramfs root uses the
+    // native CDX-V64 backend (uint64, LMDB-free) served from RAM. Skip the
+    // cdx_meta sidecar (not ramfs-routed) and the LMDB env gate entirely; the
+    // native backend opens the .cdx container directly. Disk .cdx still routes to
+    // the LMDB CdxBackend below.
+    if (xbase::ramfs::is_virtual(cdx_container_path)) {
+        auto b = std::make_unique<CdxNativeBackend>(area_, cdx_container_path, tag_upper);
+        if (!b->open(cdx_container_path)) {
+            if (err) *err = "openCdx(native): backend open failed: " + cdx_container_path;
+            return false;
+        }
+        backend_ = std::move(b);
+        container_path_ = cdx_container_path;
+        if (!tag_upper.empty()) {
+            if (!setTag(tag_upper, err)) return false;
+        }
+        return true;
     }
 
     const auto identity = cdxmeta::build_identity(area_);
@@ -268,7 +289,7 @@ std::unique_ptr<Cursor> IndexManager::scan(const Key& low, const Key& high) cons
 }
 
 bool IndexManager::lmdbSeekUserKey(const std::string& user_key,
-                                   std::uint32_t& out_recno,
+                                   std::uint64_t& out_recno,
                                    std::string& out_err) const {
     out_recno = 0;
     out_err.clear();
@@ -606,6 +627,28 @@ bool IndexManager::apply_insert_snapshot(const DeleteSnapshot& snap,
     }
 
     return any;
+}
+
+// ---- Bulk write batching passthrough (CDX only) --------------------------
+bool IndexManager::beginBulkWrite(std::string* err) {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        return cdx->beginBulk(err);
+    }
+    if (err) *err = "bulk write not supported by active backend";
+    return false;
+}
+
+bool IndexManager::commitBulkWrite(std::string* err) {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        return cdx->commitBulk(err);
+    }
+    return true; // nothing to commit for non-CDX backends
+}
+
+void IndexManager::abortBulkWrite() noexcept {
+    if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
+        cdx->abortBulk();
+    }
 }
 
 bool IndexManager::replace_active_field_value(int field1,

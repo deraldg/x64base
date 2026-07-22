@@ -104,6 +104,18 @@ static fs::path norm_abs(const fs::path& p)
 static fs::path find_data_root_guess()
 {
     fs::path p = fs::current_path();
+
+    // If cwd IS the data directory (e.g. a test harness sets cwd=.../dottalkpp/data),
+    // use it directly. Otherwise the loop below forms `cwd / "data"`, which resolves
+    // to a doubled `.../data/data` if any stray `data` child happens to exist.
+    // Marker: a real data dir contains a `dbf` subdirectory.
+    {
+        std::error_code ec;
+        if (p.filename() == "data" && fs::is_directory(p / "dbf", ec) && !ec) {
+            return norm_abs(p);
+        }
+    }
+
     for (int i = 0; i < 14; ++i) {
         fs::path cand = p / "data";
         std::error_code ec;
@@ -253,7 +265,10 @@ void cmd_SETPATH(xbase::DbArea&, std::istringstream& iss)
     const std::string raw_args = iss.str();
 
     std::string a1 = read_word(iss);
-    if (is_setpath_usage_request(raw_args) || is_setpath_usage_request(a1)) {
+    // Test the complete argument string, not the first token alone. HELP is
+    // both a usage alias and a writable path-slot name: `SETPATH HELP` asks
+    // for usage, while `SETPATH HELP <path>` must assign the HELP slot.
+    if (is_setpath_usage_request(raw_args)) {
         print_setpath_usage();
         return;
     }

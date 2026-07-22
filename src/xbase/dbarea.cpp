@@ -64,6 +64,12 @@ void DbArea::close() {
     }
     _fp.clear();
 
+    // In-memory tables (AIF-043 V2): detach this area's ramfs byte store. The RAM
+    // file itself persists in the ramfs registry (like a .dbf on disk survives a
+    // close) until erased or the virtual disk is unmounted/cleared.
+    _ram.reset();
+    _in_memory = false;
+
     // Clear canonical runtime descriptors
     _clear_paths_and_names_();
 
@@ -228,7 +234,7 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         return false;
     }
 
-    const std::uint32_t rn = static_cast<std::uint32_t>(recno());
+    const std::uint64_t rn = recno64();
     if (rn == 0) {
         if (err) *err = "no current record";
         return false;

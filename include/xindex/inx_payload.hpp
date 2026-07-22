@@ -11,7 +11,10 @@ namespace xindex {
 
 struct InxEntry {
     std::string key;
-    std::uint32_t recno{0};
+    // RECNO64 "build for big": recno is uint64 in memory. Legacy 1INX/2INX and
+    // CNX RUN1 payloads store 4-byte recnos and read as the fallback (widened on
+    // load); the wide CDX RUN format stores 8-byte recnos.
+    std::uint64_t recno{0};
 };
 
 class InxPayload final {
@@ -40,7 +43,7 @@ public:
     const InxEntry& entryAt(std::size_t i) const;
 
     bool hasPosByRecno() const noexcept { return !pos_by_recno_.empty(); }
-    std::int32_t positionOfRecno(std::uint32_t recno) const noexcept;
+    std::int32_t positionOfRecno(std::uint64_t recno) const noexcept;
 
     // payload-level lookup helpers
     std::optional<std::size_t> topPos() const noexcept;

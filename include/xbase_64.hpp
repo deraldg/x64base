@@ -141,21 +141,21 @@ constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
 // -----------------------------------------------------------------------------
 // X64 NAMING / VECTOR CONTRACT
 // -----------------------------------------------------------------------------
-constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128;
-constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128;
-constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 128;
-constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 128;
+constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128;   // maintained default
+constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128;   // maintained default
+constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
+constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
 constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
 
 // -----------------------------------------------------------------------------
 // Policy helpers
 // -----------------------------------------------------------------------------
 inline bool x64_table_name_fits(std::size_t bytes) noexcept {
-    return bytes <= X64_TABLE_NAME_LENGTH;
+    return bytes <= X64_TABLE_NAME_LENGTH_MAX;   // allow up to the ceiling
 }
 
 inline bool x64_field_name_fits(std::size_t bytes) noexcept {
-    return bytes <= X64_FIELD_NAME_LENGTH;
+    return bytes <= X64_FIELD_NAME_LENGTH_MAX;   // allow up to the ceiling
 }
 
 inline std::string x64_fallback_field_token(const std::string& name)
@@ -467,7 +467,7 @@ inline bool validate_large_header_extension(const VfpHeader& vh,
     return true;
 }
 
-inline LargeHeaderExtension read_extension_at_start(std::fstream& fp)
+inline LargeHeaderExtension read_extension_at_start(std::istream& fp)
 {
     fp.clear();
     fp.seekg(static_cast<std::streamoff>(sizeof(VfpHeader)), std::ios::beg);
@@ -479,7 +479,7 @@ inline LargeHeaderExtension read_extension_at_start(std::fstream& fp)
     return ext;
 }
 
-inline void readHeader(DbArea& area, std::fstream& fp) {
+inline void readHeader(DbArea& area, std::istream& fp) {
     const uint8_t ver = vfp_loader::peekVersion(fp);
     if (ver != DBF_VERSION_64) {
         throw std::runtime_error("Not an xbase_64 file (expected 0x64)");
@@ -520,7 +520,7 @@ inline void readHeader(DbArea& area, std::fstream& fp) {
 }
 
 inline void readFields(DbArea& area,
-                       std::fstream& fp,
+                       std::istream& fp,
                        std::vector<VfpFieldExtras>& extras)
 {
     const LargeHeaderExtension ext = read_extension_at_start(fp);
