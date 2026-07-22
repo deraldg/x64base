@@ -45,7 +45,9 @@
 #include "cli/command_output.hpp"
 #include "help/helpdata_messages.hpp"
 #include "cli/external_process_policy.hpp"
+#include "identity/identity_admin.hpp"
 
+#include <iostream>
 #include <string>
 #include <cstdlib>
 #include <cctype>
@@ -87,6 +89,20 @@ void cmd_BANG(xbase::DbArea&, std::istringstream& iss) {
     if (is_bang_usage_request(rest)) {
         print_bang_usage();
         return;
+    }
+
+    // Identity enforcement (AIF-045 2c-5b): the acting member must be authorized for
+    // host.shell. The owner is exempt; a non-owner agent needs a live grant. This is
+    // additive to the DOTTALK_ALLOW_HOST_COMMANDS gate below, so owner behavior is
+    // unchanged (still off-by-default). For host.* the identity check also folds in
+    // the host-command policy, so a granted agent still needs host commands enabled.
+    {
+        const dottalk::identity::Decision d = dottalk::identity::agent_permitted("host.shell");
+        if (!d.allowed()) {
+            std::cout << "BANG: refused for " << dottalk::identity::acting_member_key()
+                      << " -- " << d.reason << "\n";
+            return;
+        }
     }
 
     if (!cli::security::authorize_external_process("BANG", false))
