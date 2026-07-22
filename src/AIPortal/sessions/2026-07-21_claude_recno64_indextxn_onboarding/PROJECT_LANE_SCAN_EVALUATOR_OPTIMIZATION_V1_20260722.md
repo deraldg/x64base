@@ -115,6 +115,30 @@ while wall-clock showed 39–92 s). Root causes: `SECONDS()` was integer-only (H
 `SET TIMER` lived only in the interactive wrapper, bypassing the script executor. Both fixed —
 see M0 above for the exact surfaces. Benchmarks and self-timing scripts now work.
 
+## Promotion status — source → mirror
+
+**Source of truth:** `D:\code\ccode` (committed `eba9a7012`, plus `cmd_regression.cpp`'s
+`PHASE0_DECODE_COST` which landed in an earlier same-day commit; working tree clean for all six
+M0 files). Website benchmark page published in `x64base-site` (`24480861`).
+
+**Mirror `C:\x64base` (2026-07-22): M0 promoted, surgically.** Promotion was **not** a wholesale
+file copy — the mirror is behind ccode on two unrelated lanes whose dependencies it lacks, so a
+blanket copy would have broken its build (the same failure mode as the earlier `shell_commands.cpp`
+over-copy). What landed on the mirror:
+
+- `src/cli/expr/fn_date.cpp` — byte-identical (clean M0-only delta).
+- `dottalkpp/data/scripts/pinocchio/ticketb_phase0_decode_cost.dts` — byte-identical (new file).
+- `src/cli/shell.cpp` — **surgical**: only the `shell_execute_instrumented` timer strip.
+- `src/cli/shell_api.cpp` — **surgical**: only the `shell_execute_line` timer + `<chrono>`/
+  `cli/settings.hpp` includes.
+- `src/cli/cmd_regression.cpp` — **surgical**: only the `PHASE0_DECODE_COST` entry (array 19→20).
+
+**Deliberately NOT promoted to the mirror (separate, dependency-complete promotions still owed):**
+AIF-037 `dotscript_lexing` consolidation (mirror lacks `src/cli/dotscript_lexing.{hpp,cpp}`);
+AIF-044 `build::ui::prompt_char_default` (mirror still `char prompt_char = '.'`); and the
+`BUILD_VECTORS` + `IDENTITY_PERSIST` regression entries. The mirror's M0 changes are uncommitted
+pending the maintainer's x64base build + commit.
+
 ## Cross-references
 
 - Origin / kill: `TICKET_B_TUPLE_NATIVE_INMEMORY_STORE_V1` (Phase-0 result).
