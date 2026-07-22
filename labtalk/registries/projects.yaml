@@ -162,3 +162,22 @@ projects:
       - docs/maintenance/lanes/metadata/METADATA_FAMILY_SYSTEM_GUIDE_v1.md
       - labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
     notes: GROK is assigned to analyze and propose the hybrid migration in which reviewed x64base metadata becomes the canonical authoring lane while a deterministic generated compiled DOTREF catalog remains the bootstrap and recovery fallback. External analysis does not authorize mutation of D:/code/ccode, staging, branches, commits, pushes, publication, or maintained runtime data.
+
+  - id: project.x64base.headless_test_server
+    name: x64base Headless Linux Test Server
+    kind: deployment_validation_project
+    status: planned_design
+    root: D:/code/ccode
+    owner_repo: deraldg/x64base
+    parent_project: project.x64base.runtime
+    maintainer: Derald
+    target_host: dedicated_headless_linux_pc
+    public_baseline: 9dc781eb39048dd4082029b76091d1b779df5685
+    lanes: [linux_build, deployment_package, service_hosting, api, session_isolation, security, concurrency, recovery, remote_access, hosting_decision]
+    docs:
+      - labtalk/ai_portal/tasks/X64BASE_HEADLESS_LINUX_TEST_SERVER_PROJECT_V1.md
+      - AI_README.md
+      - AI_PORTAL.md
+      - labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+      - labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    notes: Establishes a native Linux reference deployment on a dedicated headless PC. The project begins with reproducible build, local read-only service, session isolation, storage concurrency, and recovery proof before any public mutation surface or production-hosting claim.
