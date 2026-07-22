@@ -39,6 +39,17 @@ AdminResult approve_grant(AuthorizationId id, std::uint64_t hours);
 AdminResult deny_grant(AuthorizationId id);
 AdminResult revoke_grant(AuthorizationId id);   // Revoked + drops the minted override
 
+// Direct owner actions (no request/approve ceremony; deterministic, scriptable):
+// grant mints the scoped ALLOW override + a time-boxed Granted authorization; ungrant
+// revokes the member's granted authorizations for the permission and drops the override.
+AdminResult grant_permission_to(const std::string& member_key, const std::string& perm_key,
+                                std::uint64_t hours);
+AdminResult ungrant_permission_from(const std::string& member_key, const std::string& perm_key);
+
+// Remove a member and its role bindings / overrides / grants (persisted). Refuses to
+// delete an owner-class member.
+AdminResult remove_member(const std::string& member_key);
+
 // --- Enforcement bridge (2c-4) -------------------------------------------------
 // The acting member is who the engine treats as the current actor for permission
 // checks. Defaults to $DOTTALK_ACTING_MEMBER or the owner (member.derald).

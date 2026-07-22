@@ -138,6 +138,83 @@ AdminResult revoke_grant(AuthorizationId id) {
     return AdminResult::good("revoked grant #" + std::to_string(id.value()));
 }
 
+AdminResult grant_permission_to(const std::string& member_key, const std::string& perm_key,
+                                std::uint64_t hours) {
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+    const Permission* p = find_permission_by_key(s, perm_key);
+    if (!p) return AdminResult::fail("unknown permission '" + perm_key + "'");
+
+    const std::uint64_t now = identity_now();
+    if (!has_allow_override(s, m->id, p->id))
+        s.overrides.push_back(MemberPermissionOverride{
+            m->id, p->id, OverrideEffect::Allow, std::nullopt, std::nullopt});
+
+    AuthorizationGrant g;
+    g.id = next_authorization_id();
+    g.requested_by = m->id;
+    g.granted_to   = m->id;
+    g.action_scope = perm_key;
+    g.risk = p->risk;
+    g.status = GrantStatus::Granted;
+    g.granted_at = now;
+    g.expires_at = hours ? now + hours * 3600ULL : 0;
+    g.reason = "direct owner grant";
+    s.grants.push_back(g);
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("granted but not persisted: " + err);
+    std::string until = g.expires_at ? (" (+" + std::to_string(hours) + "h)") : " (no expiry)";
+    return AdminResult::good("granted " + perm_key + " to " + member_key + until);
+}
+
+AdminResult ungrant_permission_from(const std::string& member_key, const std::string& perm_key) {
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+    const Permission* p = find_permission_by_key(s, perm_key);
+    if (!p) return AdminResult::fail("unknown permission '" + perm_key + "'");
+
+    const TeamMemberId who = m->id;
+    const PermissionId pid = p->id;
+    s.overrides.erase(std::remove_if(s.overrides.begin(), s.overrides.end(),
+        [&](const MemberPermissionOverride& ov) {
+            return ov.member == who && ov.permission == pid && ov.effect == OverrideEffect::Allow;
+        }), s.overrides.end());
+    for (auto& g : s.grants)
+        if (g.granted_to == who && g.action_scope == perm_key && g.status == GrantStatus::Granted)
+            g.status = GrantStatus::Revoked;
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("ungranted but not persisted: " + err);
+    return AdminResult::good("ungranted " + perm_key + " from " + member_key);
+}
+
+AdminResult remove_member(const std::string& member_key) {
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    if (is_owner_member(member_key)) return AdminResult::fail("refusing to remove owner-class member '" + member_key + "'");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+    const TeamMemberId who = m->id;
+
+    s.member_roles.erase(std::remove_if(s.member_roles.begin(), s.member_roles.end(),
+        [&](const MemberRole& mr) { return mr.member == who; }), s.member_roles.end());
+    s.overrides.erase(std::remove_if(s.overrides.begin(), s.overrides.end(),
+        [&](const MemberPermissionOverride& ov) { return ov.member == who; }), s.overrides.end());
+    s.grants.erase(std::remove_if(s.grants.begin(), s.grants.end(),
+        [&](const AuthorizationGrant& g) { return g.granted_to == who || g.requested_by == who; }), s.grants.end());
+    s.members.erase(std::remove_if(s.members.begin(), s.members.end(),
+        [&](const TeamMember& x) { return x.id == who; }), s.members.end());
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("removed but not persisted: " + err);
+    return AdminResult::good("removed member '" + member_key + "'");
+}
+
 // --- Enforcement bridge (2c-4) -------------------------------------------------
 
 namespace {

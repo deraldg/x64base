@@ -1,0 +1,41 @@
+* identity_accept_regression.dts
+* AI-agent local-security accept cycle (AIF-045 2c) — repeatable, self-cleaning.
+*
+* Admits a throwaway AI agent, proves the resolver denies a requires-approval action,
+* the owner grants it (scoped + time-boxed) so the resolver flips to ALLOW, ungrants so
+* it flips back to DENY, then deletes the agent. Deterministic (no grant-id lookups) and
+* re-runnable: it deletes any leftover agent up front and cleans up at the end.
+*
+* Expected (grep between BEGIN/END):
+*   USER CAN git.commit FOR member.ai.regbot : DENY     (pre-grant)
+*   USER CAN git.commit FOR member.ai.regbot : ALLOW    (granted)
+*   USER CAN git.commit FOR member.ai.regbot : DENY     (ungranted)
+*   USER DELETE: removed member 'member.ai.regbot'
+*
+* Mutates only the identity catalog under data/metadata/identity (adds then removes a
+* throwaway member); leaves the seeded members/roles/permissions intact.
+*
+* Run:  REGRESSION RUN IDENTITY_ACCEPT
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/identity_accept_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "IDENTITY-ACCEPT-REGRESSION-BEGIN"
+USER AS
+USER DELETE member.ai.regbot
+FORMULA "admit a throwaway AI agent:"
+USER ADD member.ai.regbot AI role.ai_partner
+FORMULA "expect DENY (AI partner is not eligible for git.commit):"
+USER CAN git.commit FOR member.ai.regbot
+FORMULA "owner grants the scoped, time-boxed permission:"
+USER GRANT git.commit TO member.ai.regbot
+FORMULA "expect ALLOW (override eligibility + live grant):"
+USER CAN git.commit FOR member.ai.regbot
+FORMULA "owner withdraws it:"
+USER UNGRANT git.commit FROM member.ai.regbot
+FORMULA "expect DENY (capability withdrawn):"
+USER CAN git.commit FOR member.ai.regbot
+FORMULA "clean up the throwaway agent:"
+USER DELETE member.ai.regbot
+FORMULA "IDENTITY-ACCEPT-REGRESSION-END"

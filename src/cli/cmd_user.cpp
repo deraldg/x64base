@@ -81,6 +81,8 @@ void user_usage() {
               << "  USER REQUEST <permission.key> FOR <member.key> [reason]   ask for limited permission\n"
               << "  USER REQUESTS | GRANTS                         list pending / all authorizations\n"
               << "  USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>   owner grant decisions\n"
+              << "  USER GRANT <perm> TO <member> [HOURS n] | UNGRANT <perm> FROM <member>   direct owner grant\n"
+              << "  USER DELETE <member.key>   remove a member (+ its roles/overrides/grants)\n"
               << "  USER AS [member.key]   act as a member (empty = owner); USER WHOAMI shows it\n"
               << "  USER ENFORCE <permission.key>   enforcement decision for the acting member\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
@@ -212,6 +214,30 @@ void user_grant_op(std::istringstream& iss, bool deny) {
     AuthorizationId id{std::strtoull(idtok.c_str(), nullptr, 10)};
     AdminResult res = deny ? deny_grant(id) : revoke_grant(id);
     std::cout << "USER " << (deny ? "DENY" : "REVOKE") << ": " << res.message << "\n";
+}
+
+void user_grant_direct(std::istringstream& iss) {
+    std::string perm, kw, member, hkw;
+    iss >> perm;
+    if (iss >> kw && upcase(kw) == "TO") iss >> member;
+    std::uint64_t hours = kDefaultGrantHours;
+    if (iss >> hkw && upcase(hkw) == "HOURS") { std::string h; if (iss >> h) hours = std::strtoull(h.c_str(), nullptr, 10); }
+    if (perm.empty() || member.empty()) { std::cout << "USER GRANT <permission.key> TO <member.key> [HOURS n]\n"; return; }
+    std::cout << "USER GRANT: " << grant_permission_to(member, perm, hours).message << "\n";
+}
+
+void user_ungrant(std::istringstream& iss) {
+    std::string perm, kw, member;
+    iss >> perm;
+    if (iss >> kw && upcase(kw) == "FROM") iss >> member;
+    if (perm.empty() || member.empty()) { std::cout << "USER UNGRANT <permission.key> FROM <member.key>\n"; return; }
+    std::cout << "USER UNGRANT: " << ungrant_permission_from(member, perm).message << "\n";
+}
+
+void user_delete(std::istringstream& iss) {
+    std::string key;
+    if (!(iss >> key)) { std::cout << "USER DELETE <member.key>\n"; return; }
+    std::cout << "USER DELETE: " << remove_member(key).message << "\n";
 }
 
 // --- 2c-4 enforcement surface ---
@@ -391,6 +417,9 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
     if (u == "APPROVE")  { user_approve(iss); return; }
     if (u == "DENY")     { user_grant_op(iss, true);  return; }
     if (u == "REVOKE")   { user_grant_op(iss, false); return; }
+    if (u == "GRANT")    { user_grant_direct(iss); return; }
+    if (u == "UNGRANT")  { user_ungrant(iss); return; }
+    if (u == "DELETE")   { user_delete(iss); return; }
     if (u == "SAVE")   { std::string dir; iss >> dir; user_save(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "LOAD")   { std::string dir; iss >> dir; user_load(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "VERIFY") { std::string dir; iss >> dir; user_verify(dir.empty() ? default_identity_dir() : dir); return; }
