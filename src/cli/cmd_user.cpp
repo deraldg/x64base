@@ -20,6 +20,10 @@
 //   USER WHOAMI
 //   USER CAN <permission.key> [FOR <member.key>]
 //   USER STORE           report boot origin (SEED/DBF/DEGRADED), writability, active counts
+//   USER ADD <key> [HUMAN|AI|SERVICE] [role.key]           admit a member (persisted)
+//   USER REQUEST <permission.key> FOR <member.key> [reason]  agent asks for limited permission
+//   USER REQUESTS | GRANTS                                 list pending / all authorizations
+//   USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>  owner grant decisions (2c)
 //   USER SAVE [dir]      write the identity catalog to DBF (default data/metadata/identity)
 //   USER LOAD [dir]      read the identity catalog back from DBF (report only)
 //   USER VERIFY [dir]    APH-5 round-trip: save -> reload -> compare counts/keys/decisions
@@ -46,6 +50,7 @@
 #include "xbase.hpp"
 #include "identity/identity_bootstrap.hpp"
 #include "identity/identity_dbf_store.hpp"
+#include "identity/identity_admin.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -72,6 +77,10 @@ void user_usage() {
               << "  USER LIST | ROLES | PERMS | WHOAMI\n"
               << "  USER CAN <permission.key> [FOR <member.key>]\n"
               << "  USER STORE          show boot origin (SEED/DBF/DEGRADED), writability, counts\n"
+              << "  USER ADD <key> [HUMAN|AI|SERVICE] [role.key]   admit a member (persisted)\n"
+              << "  USER REQUEST <permission.key> FOR <member.key> [reason]   ask for limited permission\n"
+              << "  USER REQUESTS | GRANTS                         list pending / all authorizations\n"
+              << "  USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>   owner grant decisions\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
               << "  USER LOAD [dir]     read the identity catalog back from DBF (report only)\n"
               << "  USER VERIFY [dir]   APH-5 round-trip proof: save -> reload -> compare\n"
@@ -122,6 +131,85 @@ void user_store() {
               << "  writable : " << (identity_store_read_only() ? "no (degraded read-only)" : "yes") << "\n"
               << "  home     : " << default_identity_dir() << "\n";
     print_counts("active", identity_store());
+}
+
+// --- 2c: runtime administration (admit agents, grant lifecycle) ---------------
+
+const char* grant_status_name(GrantStatus g) {
+    switch (g) {
+        case GrantStatus::Requested: return "requested";
+        case GrantStatus::Granted:   return "granted";
+        case GrantStatus::Denied:    return "denied";
+        case GrantStatus::Expired:   return "expired";
+        case GrantStatus::Revoked:   return "revoked";
+    }
+    return "?";
+}
+
+void user_add(std::istringstream& iss) {
+    std::string key, tok;
+    if (!(iss >> key)) { std::cout << "USER ADD <member.key> [HUMAN|AI|SERVICE] [role.key]\n"; return; }
+    MemberKind kind = MemberKind::Human;
+    std::string role_key;
+    while (iss >> tok) {
+        const std::string u = upcase(tok);
+        if      (u == "HUMAN")    kind = MemberKind::Human;
+        else if (u == "AI")       kind = MemberKind::AI;
+        else if (u == "SERVICE")  kind = MemberKind::Service;
+        else if (u == "EXTERNAL") kind = MemberKind::External;
+        else role_key = tok;
+    }
+    if (role_key.empty()) role_key = (kind == MemberKind::AI) ? "role.ai_partner" : "role.student";
+    const Role* r = find_role_by_key(identity_store(), role_key);
+    if (!r) { std::cout << "USER ADD: unknown role '" << role_key << "'\n"; return; }
+    std::cout << "USER ADD: " << admit_member(key, kind, r->id).message << "\n";
+}
+
+void user_request(std::istringstream& iss) {
+    std::string perm, kw, member;
+    iss >> perm;
+    if (iss >> kw) { if (upcase(kw) == "FOR") iss >> member; }
+    std::string reason, w;
+    while (iss >> w) { if (!reason.empty()) reason += " "; reason += w; }
+    if (perm.empty() || member.empty()) {
+        std::cout << "USER REQUEST <permission.key> FOR <member.key> [reason]\n"; return;
+    }
+    AuthorizationId id;
+    std::cout << "USER REQUEST: " << request_permission(member, perm, reason, id).message << "\n";
+}
+
+void user_grants(const InMemoryIdentityStore& s, bool pending_only) {
+    std::cout << (pending_only ? "Pending requests:\n" : "Grants:\n");
+    int n = 0;
+    for (const auto& g : s.grants) {
+        if (pending_only && g.status != GrantStatus::Requested) continue;
+        const TeamMember* m = nullptr;
+        for (const auto& x : s.members) if (x.id == g.granted_to) { m = &x; break; }
+        std::cout << "  #" << g.id.value() << "  " << (m ? m->key : "?")
+                  << "  " << g.action_scope << "  [" << grant_status_name(g.status) << "]";
+        if (g.expires_at) std::cout << "  expires@" << g.expires_at;
+        if (!g.reason.empty()) std::cout << "  \"" << g.reason << "\"";
+        std::cout << "\n";
+        ++n;
+    }
+    if (n == 0) std::cout << "  (none)\n";
+}
+
+void user_approve(std::istringstream& iss) {
+    std::string idtok, kw;
+    if (!(iss >> idtok)) { std::cout << "USER APPROVE <grant.id> [HOURS n]\n"; return; }
+    std::uint64_t hours = kDefaultGrantHours;
+    if (iss >> kw && upcase(kw) == "HOURS") { std::string h; if (iss >> h) hours = std::strtoull(h.c_str(), nullptr, 10); }
+    AuthorizationId id{std::strtoull(idtok.c_str(), nullptr, 10)};
+    std::cout << "USER APPROVE: " << approve_grant(id, hours).message << "\n";
+}
+
+void user_grant_op(std::istringstream& iss, bool deny) {
+    std::string idtok;
+    if (!(iss >> idtok)) { std::cout << "USER " << (deny ? "DENY" : "REVOKE") << " <grant.id>\n"; return; }
+    AuthorizationId id{std::strtoull(idtok.c_str(), nullptr, 10)};
+    AdminResult res = deny ? deny_grant(id) : revoke_grant(id);
+    std::cout << "USER " << (deny ? "DENY" : "REVOKE") << ": " << res.message << "\n";
 }
 
 // APH-5 round-trip: save the seed, reload it, and confirm the reloaded store is
@@ -264,7 +352,14 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
         user_can(s, perm_key, member_key);
         return;
     }
-    if (u == "STORE")  { user_store(); return; }
+    if (u == "STORE")    { user_store(); return; }
+    if (u == "ADD")      { user_add(iss); return; }
+    if (u == "REQUEST")  { user_request(iss); return; }
+    if (u == "REQUESTS") { user_grants(s, true);  return; }
+    if (u == "GRANTS")   { user_grants(s, false); return; }
+    if (u == "APPROVE")  { user_approve(iss); return; }
+    if (u == "DENY")     { user_grant_op(iss, true);  return; }
+    if (u == "REVOKE")   { user_grant_op(iss, false); return; }
     if (u == "SAVE")   { std::string dir; iss >> dir; user_save(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "LOAD")   { std::string dir; iss >> dir; user_load(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "VERIFY") { std::string dir; iss >> dir; user_verify(dir.empty() ? default_identity_dir() : dir); return; }

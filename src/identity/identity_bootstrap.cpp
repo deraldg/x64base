@@ -6,6 +6,8 @@
 #include "identity/identity_bootstrap.hpp"
 #include "identity/identity_dbf_store.hpp"
 
+#include <algorithm>
+#include <ctime>
 #include <filesystem>
 #include <string>
 
@@ -139,8 +141,8 @@ struct BootedStore {
     StoreOrigin           origin = StoreOrigin::Seed;
     bool                  read_only = false;
 };
-const BootedStore& booted() {
-    static const BootedStore b = [] {
+BootedStore& booted() {
+    static BootedStore b = [] {
         BootedStore x;
         x.store = boot_identity_store(default_identity_dir(), x.origin, x.read_only);
         return x;
@@ -150,8 +152,10 @@ const BootedStore& booted() {
 } // namespace
 
 const InMemoryIdentityStore& identity_store() { return booted().store; }
+InMemoryIdentityStore&       mutable_identity_store() { return booted().store; }
 StoreOrigin identity_store_origin()            { return booted().origin; }
 bool        identity_store_read_only()          { return booted().read_only; }
+bool        identity_store_writable()           { return !booted().read_only; }
 
 const char* store_origin_name(StoreOrigin o) {
     switch (o) {
@@ -160,6 +164,31 @@ const char* store_origin_name(StoreOrigin o) {
         case StoreOrigin::DegradedSeed: return "DEGRADED (read-only seed)";
     }
     return "UNKNOWN";
+}
+
+bool persist_identity_store(std::string& err) {
+    if (booted().read_only) { err = "identity store is read-only (degraded startup)"; return false; }
+    return save_identity_tables(booted().store, default_identity_dir(), err);
+}
+
+TeamMemberId next_member_id() {
+    std::uint64_t mx = 0;
+    for (const auto& m : booted().store.members) mx = std::max(mx, m.id.value());
+    return TeamMemberId{mx + 1};
+}
+
+AuthorizationId next_authorization_id() {
+    std::uint64_t mx = 0;
+    for (const auto& g : booted().store.grants) mx = std::max(mx, g.id.value());
+    return AuthorizationId{mx + 1};
+}
+
+std::uint64_t identity_now() {
+    return static_cast<std::uint64_t>(std::time(nullptr));
+}
+
+void identity_refresh_clock() {
+    booted().store.now = identity_now();
 }
 
 } // namespace dottalk::identity

@@ -34,6 +34,23 @@ StoreOrigin identity_store_origin();
 bool        identity_store_read_only();
 const char* store_origin_name(StoreOrigin o);
 
+// --- Runtime mutation surface (2c) ---------------------------------------------
+// The mutable process store. Mutations must be followed by persist_identity_store().
+// Refused paths should first check identity_store_writable() (false when degraded).
+InMemoryIdentityStore& mutable_identity_store();
+bool identity_store_writable();
+
+// Persist the active store to its DBF home. Returns false + err when read-only or on I/O error.
+bool persist_identity_store(std::string& err);
+
+// ID allocation (max existing id + 1), for new members / grants.
+TeamMemberId    next_member_id();
+AuthorizationId next_authorization_id();
+
+// Wall clock (epoch seconds) for grant expiry; refresh sets store.now for the resolver.
+std::uint64_t identity_now();
+void          identity_refresh_clock();
+
 // Portable-key lookups (return nullptr if absent).
 inline const TeamMember* find_member_by_key(const InMemoryIdentityStore& s, const std::string& key) {
     for (const auto& m : s.members) if (m.key == key) return &m;
@@ -49,6 +66,10 @@ inline const User* find_user_by_id(const InMemoryIdentityStore& s, UserId id) {
 }
 inline const Role* find_role_by_id(const InMemoryIdentityStore& s, RoleId id) {
     for (const auto& r : s.roles) if (r.id == id) return &r;
+    return nullptr;
+}
+inline const Role* find_role_by_key(const InMemoryIdentityStore& s, const std::string& key) {
+    for (const auto& r : s.roles) if (r.key == key) return &r;
     return nullptr;
 }
 
