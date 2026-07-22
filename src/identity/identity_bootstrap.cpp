@@ -75,6 +75,9 @@ InMemoryIdentityStore build_seed() {
     const UserId U_PUBLIC  = U(2, "user.public",  "public",  "Public",          "public",  AuthKind::HumanAsserted);
     const UserId U_DEFAULT = U(3, "user.default", "default", "Default",          "default", AuthKind::LocalTrusted);
     const UserId U_USER    = U(4, "user.user",    "user",    "User",            "user",    AuthKind::LocalTrusted);
+    // Service accounts for the seed AI members (token credential home; no password).
+    const UserId U_AI_CLAUDE = U(5, "user.ai.claude.cowork", "claude", "Claude (Cowork)", "", AuthKind::Token);
+    const UserId U_AI_CODEX  = U(6, "user.ai.codex.local",   "codex",  "Codex (local)",   "", AuthKind::Token);
 
     // --- Members (Contract §3.2) — humans bind a USERS row; AI members do not ---
     auto M = [&](std::uint64_t id, const char* key, MemberKind kind, UserId uid, RoleId def_role) {
@@ -84,10 +87,10 @@ InMemoryIdentityStore build_seed() {
         s.member_roles.push_back({TeamMemberId{id}, def_role, std::nullopt, std::nullopt});
         return TeamMemberId{id};
     };
-    const TeamMemberId M_DERALD = M(1, "member.derald",           MemberKind::Human, U_DERALD, MAINTAINER);
-    (void)                        M(2, "member.ai.claude.cowork", MemberKind::AI,    UserId{}, AI_PARTNER);
-    (void)                        M(3, "member.ai.codex.local",   MemberKind::AI,    UserId{}, AI_PARTNER);
-    (void)                        M(4, "member.public",           MemberKind::Human, U_PUBLIC, STUDENT);
+    const TeamMemberId M_DERALD = M(1, "member.derald",           MemberKind::Human, U_DERALD,   MAINTAINER);
+    (void)                        M(2, "member.ai.claude.cowork", MemberKind::AI,    U_AI_CLAUDE, AI_PARTNER);
+    (void)                        M(3, "member.ai.codex.local",   MemberKind::AI,    U_AI_CODEX,  AI_PARTNER);
+    (void)                        M(4, "member.public",           MemberKind::Human, U_PUBLIC,   STUDENT);
     (void)U_DEFAULT; (void)U_USER;
 
     // --- Owner standing authorization: derald (MAINTAINER) is the ask-for-permission exemption. ---
@@ -181,6 +184,12 @@ AuthorizationId next_authorization_id() {
     std::uint64_t mx = 0;
     for (const auto& g : booted().store.grants) mx = std::max(mx, g.id.value());
     return AuthorizationId{mx + 1};
+}
+
+UserId next_user_id() {
+    std::uint64_t mx = 0;
+    for (const auto& u : booted().store.users) mx = std::max(mx, u.id.value());
+    return UserId{mx + 1};
 }
 
 std::uint64_t identity_now() {

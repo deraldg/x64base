@@ -16,6 +16,11 @@ namespace dottalk::identity {
 
 namespace {
 
+// Forward declarations; definitions live in the session-auth section below.
+std::string service_user_key(const std::string& member_key);
+std::string make_credential(const std::string& secret);
+std::string gen_token();
+
 AuthorizationGrant* find_grant(InMemoryIdentityStore& s, AuthorizationId id) {
     for (auto& g : s.grants) if (g.id == id) return &g;
     return nullptr;
@@ -54,6 +59,21 @@ AdminResult admit_member(const std::string& key, MemberKind kind, RoleId default
     m.kind = kind;
     m.default_role = default_role;
     m.stamp.valid_from = identity_now();
+
+    // AI / service members get a token-based service-User (their credential home).
+    if (kind == MemberKind::AI || kind == MemberKind::Service) {
+        User su;
+        su.id = next_user_id();
+        su.key = service_user_key(key);
+        su.login_name = key;
+        su.display_name = key;
+        su.auth_kind = AuthKind::Token;
+        su.status = EntityStatus::Active;
+        su.stamp.valid_from = identity_now();
+        s.users.push_back(su);
+        m.user_id = su.id;
+    }
+
     s.members.push_back(m);
     s.member_roles.push_back(MemberRole{m.id, default_role, std::nullopt, std::nullopt});
 
@@ -213,6 +233,41 @@ AdminResult ungrant_permission_from(const std::string& member_key, const std::st
     return AdminResult::good("ungranted " + perm_key + " from " + member_key);
 }
 
+AdminResult issue_token(const std::string& member_key, std::string& out_token) {
+    out_token.clear();
+    if (auto r = require_owner(); !r.ok) return r;
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+
+    // Ensure a credential-home User exists (older AI members admitted before service users).
+    UserId uid;
+    if (m->user_id) {
+        uid = *m->user_id;
+    } else {
+        User su;
+        su.id = next_user_id();
+        su.key = service_user_key(member_key);
+        su.login_name = member_key;
+        su.display_name = member_key;
+        su.auth_kind = AuthKind::Token;
+        su.status = EntityStatus::Active;
+        su.stamp.valid_from = identity_now();
+        uid = su.id;
+        s.users.push_back(su);
+        for (auto& mm : s.members) if (mm.id == m->id) mm.user_id = uid;
+    }
+
+    const std::string token = gen_token();
+    for (auto& uu : s.users) if (uu.id == uid) uu.credential_ref = make_credential(token);
+
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("issued but not persisted: " + err);
+    out_token = token;
+    return AdminResult::good("issued token for '" + member_key + "' (store it now; it is shown only once)");
+}
+
 AdminResult remove_member(const std::string& member_key) {
     if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
@@ -269,6 +324,20 @@ bool verify_credential(const std::string& stored, const std::string& secret) {
     return fnv_hex(stored.substr(0, pos), secret) == stored.substr(pos + 1);
 }
 
+// A random 64-bit opaque token, hex-encoded (for owner-issued agent credentials).
+std::string gen_token() {
+    static std::mt19937_64 rng{std::random_device{}() ^ static_cast<std::uint64_t>(std::time(nullptr)) ^ 0x9e3779b97f4a7c15ULL};
+    char buf[17];
+    std::snprintf(buf, sizeof buf, "%016llx", static_cast<unsigned long long>(rng()));
+    return std::string(buf);
+}
+
+// Derive a service-user key from a member key: member.ai.foo -> user.ai.foo.
+std::string service_user_key(const std::string& member_key) {
+    if (member_key.rfind("member.", 0) == 0) return "user." + member_key.substr(7);
+    return "user." + member_key;
+}
+
 // The User account (credential home) behind a member, or nullptr for AI/service members.
 const User* user_of_member(const InMemoryIdentityStore& s, const std::string& member_key) {
     const TeamMember* m = find_member_by_key(s, member_key);
@@ -298,8 +367,13 @@ AdminResult login(const std::string& member_key, const std::string& secret) {
     if (!u) return AdminResult::fail("no user account for '" + member_key + "'");
 
     if (u->credential_ref.empty()) {
+        // Bootstrap (credential-less) login is owner-only (first-run local trust). A
+        // non-owner — including an AI service account — needs an owner-issued credential.
+        if (!is_owner_member(member_key))
+            return AdminResult::fail("'" + member_key + "' has no credential set — the owner must set one "
+                                     "(USER PASSWD for humans, USER TOKEN for agents)");
         g_principal = g_acting = member_key; g_authenticated = true;
-        return AdminResult::good("logged in as " + member_key + " (no password set — run USER PASSWD to secure)");
+        return AdminResult::good("logged in as " + member_key + " (bootstrap: no password set — run USER PASSWD to secure)");
     }
     if (!verify_credential(u->credential_ref, secret))
         return AdminResult::fail("authentication failed for '" + member_key + "'");

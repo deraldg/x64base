@@ -50,6 +50,12 @@ AdminResult ungrant_permission_from(const std::string& member_key, const std::st
 // delete an owner-class member.
 AdminResult remove_member(const std::string& member_key);
 
+// Owner mints/rotates an opaque login token for an AI/service member (its service-User
+// credential home is created if absent). The plaintext token is returned in out_token and
+// shown only once; a re-issue invalidates the old one. This is how agents authenticate —
+// no memorized password, and "lost token" = owner reissues.
+AdminResult issue_token(const std::string& member_key, std::string& out_token);
+
 // --- Session authentication (2d) -----------------------------------------------
 // A session has a PRINCIPAL (the authenticated identity, set by login) and an ACTING
 // member (the effective identity used for every permission check). Boot default is the

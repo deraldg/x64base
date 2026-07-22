@@ -43,9 +43,10 @@ bool identity_store_writable();
 // Persist the active store to its DBF home. Returns false + err when read-only or on I/O error.
 bool persist_identity_store(std::string& err);
 
-// ID allocation (max existing id + 1), for new members / grants.
+// ID allocation (max existing id + 1), for new members / grants / users.
 TeamMemberId    next_member_id();
 AuthorizationId next_authorization_id();
+UserId          next_user_id();
 
 // Wall clock (epoch seconds) for grant expiry; refresh sets store.now for the resolver.
 std::uint64_t identity_now();

@@ -84,6 +84,7 @@ void user_usage() {
               << "  USER GRANT <perm> TO <member> [HOURS n] | UNGRANT <perm> FROM <member>   direct owner grant\n"
               << "  USER DELETE <member.key>   remove a member (+ its roles/overrides/grants)\n"
               << "  USER LOGIN <member.key> [secret] | LOGOUT | PASSWD <member.key> <secret>\n"
+              << "  USER TOKEN <member.key>   owner mints/rotates an AI/service login token\n"
               << "  USER AS [member.key]   owner sudo to a member (empty = back to principal)\n"
               << "  USER ENFORCE <permission.key>   enforcement decision for the acting member\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
@@ -278,6 +279,16 @@ void user_passwd(std::istringstream& iss) {
     std::cout << "USER PASSWD: " << set_password(member, secret).message << "\n";
 }
 
+void user_token(std::istringstream& iss) {
+    std::string member;
+    iss >> member;
+    if (member.empty()) { std::cout << "USER TOKEN <member.key>\n"; return; }
+    std::string tok;
+    AdminResult res = issue_token(member, tok);
+    std::cout << "USER TOKEN: " << res.message << "\n";
+    if (res.ok) std::cout << "  token: " << tok << "   (login: USER LOGIN " << member << " " << tok << ")\n";
+}
+
 void user_as(std::istringstream& iss) {
     std::string key;
     iss >> key;                       // empty => back to the authenticated principal
@@ -424,6 +435,7 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
     if (u == "LOGIN")   { user_login(iss); return; }
     if (u == "LOGOUT")  { std::cout << "USER LOGOUT: " << logout().message << "\n"; return; }
     if (u == "PASSWD")  { user_passwd(iss); return; }
+    if (u == "TOKEN")   { user_token(iss); return; }
     if (u == "AS")      { user_as(iss); return; }
     if (u == "ENFORCE") { user_enforce(iss); return; }
     if (u == "CAN") {
