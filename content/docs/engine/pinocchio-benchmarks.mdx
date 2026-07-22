@@ -80,6 +80,47 @@ scoped to the buffered table lane and does **not** claim full ACID — see
 [ACID and the Glass-Box Engine](/docs/engine/acid-and-glass-box). Concurrency
 fault injection remains the open Phase 2 work.
 
+## Scan-evaluator baseline (2026-07-22)
+
+A go/no-go decode-cost benchmark was run to decide whether promoting the table
+store to a typed-vector representation ("Option B") would pay off. It answered
+no — and in doing so located the real bottleneck. This is the first Pinocchio
+run to **self-time**: the engine's `SET TIMER` was fixed to fire inside scripts
+(previously only interactive commands were timed), and `SECONDS()` was given
+sub-second resolution, so each measured command reports its own elapsed and the
+two clocks cross-check to ~0.01 s. Read-only, no mutation; same attested machine
+as below (2026-07-22 build).
+
+| Operation (1,000,000-row STUDENTS) | Elapsed | Per row | Isolates |
+| --- | ---: | ---: | --- |
+| `SUM GPA` | 19.48 s | ~19.5 µs | iterate + 1-field decode + accumulate (no predicate) |
+| `COUNT FOR GPA >= 0` (1 term) | 38.51 s | ~38.5 µs | + predicate machinery, one term |
+| `COUNT FOR GPA >= 0 .AND. SID >= 0 .AND. MAJOR <= "ZZZZ"` (3 terms) | 70.54 s | ~70.5 µs | + two more terms |
+
+The pure aggregate (`SUM`, no predicate) at 19.48 s matches the single-scan cost
+recorded independently above — `TOP SID` before-fix (19.478 s) and `AGGS ALL` at
+19.5 s per scan — so one physical pass over 1M rows is ~19.5 s on this machine.
+The predicate cost stacks on top of that pass: adding one predicate term costs
+`DEC1 − SUM ≈ 19 s / 1M` (~19 µs/row) and each further term adds
+`(DEC3 − DEC1) / 2 ≈ 16 s / 1M` (~16 µs/row). That per-term cost is the
+tree-walking expression evaluator resolving each field by name, allocating a
+string, and parsing a number **per row per term** — work that is constant across
+the scan and should be done once.
+
+The conclusion: swapping the store representation would run this same evaluator
+loop over typed cells and not fix it, so Option B was killed at this gate (zero
+tuple-core code spent). The leverage is in the expression/scan evaluator itself —
+bind field offsets once, compile the predicate once, decode in place without
+allocation. These numbers are the regression floor that optimization work is
+measured against; a single-term scan dropping from ~38 s toward under a second
+would be the target.
+
+This run is development-only, not a promoted-runtime or tagged-release claim.
+The benchmark is preserved as the curated regression `PHASE0_DECODE_COST`
+(`ticketb_phase0_decode_cost.dts`), deliberately **exempt from the default suite**
+— it is a ~2-minute reproducible baseline, not a pass/fail gate — and is run
+explicitly.
+
 ## Machine identity
 
 The individual run transcripts did not self-record the machine, so the raw
@@ -101,9 +142,13 @@ before/after runs (2026-07-18), the scale-verb and table-buffer durability runs
 
 Honesty note: this is a deliberate maintainer attestation made after the runs,
 recorded as `MAINTAINER_ATTESTED` rather than silently auto-attached to each row.
-Future runs should still capture their own per-run machine profile beside the raw
-build and measurement transcripts; comparable rows require the machine label,
-engine state, dataset size, operation, timer source, and evidence paths.
+The scan-evaluator baseline (2026-07-22) ran on this same machine; it is the
+first run to self-record its **timer source** (in-engine `SET TIMER`, steady
+clock, cross-checked by `SECONDS()`), but its **hardware label** still rests on
+this same attestation rather than an auto-captured per-run profile. Future runs
+should still capture their own per-run machine profile beside the raw build and
+measurement transcripts; comparable rows require the machine label, engine state,
+dataset size, operation, timer source, and evidence paths.
 
 ## Publication boundary
 
