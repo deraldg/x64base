@@ -93,6 +93,18 @@ Strong and doctrine-aligned. Notable strengths:
 
 ## 4. Milestones (phased)
 
+**Status (2026-07-22):** M0 → M1 (as M1a entities + M1b resolver) → M2a repository →
+**2b-i** live `USER` command → **2b-ii** DBF-backed persistence + APH-5 DBF round-trip →
+**2b-iii** boot adoption + degraded read-only startup — **all committed + published**
+(`homegrown-cnx-20251112-branch` `b44a32fe2`) and proven in-engine. The store now
+self-hosts in nine `SYS*` tables under `data/metadata/identity/` and boots from them
+(`USER STORE` reports `SEED (persisted)` on first run, `DBF (authoritative)` thereafter,
+`DEGRADED (read-only seed)` if the tables are corrupt). Remaining: **M3** cmd_security
+enforcement bridge, **M4** registry import (`ORG_UNIT`/`WORK_NODE`/`TEAM_ASSIGNMENT`), a
+runtime **mutation surface** (`USER ADD` / `ROLE ASSIGN` / `GRANT` writing through to DBF),
+**M5** YAML portable-export leg (the DBF round-trip + degraded startup are proven; the
+`x64base → YAML → x64base` portable bootstrap remains), and **M6** teaching loop.
+
 - **M0 — Contract v1 (design, not code).** *Team Member / Role / Permission / Assignment /
   Authorization Contract v1*: entity fields, strong ID types, the permission-vs-authorization
   distinction, the effective-permission resolution algorithm with worked examples, and the auth
