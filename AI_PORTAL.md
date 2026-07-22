@@ -18,10 +18,17 @@ newest session closeout, current target, authority seed, local-access checklist
 when applicable, SDLC fast start, source-mutation gate, and DotScript readiness
 when `.dts` work is involved.
 
+Before selecting gates, apply the scope-calibration seed. Name the operating
+mode, change class, actual build target, product profile, and index profile.
+`xbase` engine-only, full `dottalkpp`, and the `LEAN` / `PROFESSIONAL` /
+`EDUCATIONAL` / `DEVELOPMENT` compositions are legitimate different boundaries;
+do not silently plan against the largest assembly.
+
 After that canonical start, use these task-specific sources only when relevant:
 
 - [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
 - [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
+- [`labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md`](labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md)
 - [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
 - [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
 - [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
@@ -58,6 +65,14 @@ but are bounded by git visibility, an isolated dev tree, the host-shell block
 
 Full threat model and controls:
 [`docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md`](docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md).
+
+The durable identity / RBAC / authorization **backing** for this permission protocol is being
+built as **`project.x64base.identity`** (AIF-045): `USERS → TEAM_MEMBER → TEAM_ASSIGNMENT →
+{ROLE, PERMISSION, AUTHORIZATION_GRANT}`, with the operational security policy kept independent
+as the final constraint (*permission = eligibility; authorization = this action*). Contract v1 +
+a proven permission resolver exist; see
+[`docs/maintenance/IDENTITY_RBAC_MANAGEMENT_LANE_V1.md`](docs/maintenance/IDENTITY_RBAC_MANAGEMENT_LANE_V1.md)
+and [`docs/maintenance/IDENTITY_RBAC_CONTRACT_V1.md`](docs/maintenance/IDENTITY_RBAC_CONTRACT_V1.md).
 
 ## Authority
 
@@ -484,3 +499,53 @@ A local-access AI must:
 Direct file access removes the packaging step. It does not remove the gate.
 An AI that can edit the repository without being asked is the failure mode this
 portal exists to prevent.
+
+## Pre-Push Gate
+
+The exclusion rule in the **Outside-AI Delivery Rule** above — *"Do not include
+binaries, build directories, generated runtime data, unrelated formatting,
+cleanup, or branch operations"* — is not only for hosted partners packaging a
+patch. It governs **every** commit and push out of `D:\code\ccode`, by human or
+AI. This section promotes it into an explicit checklist and names the mechanical
+guard that enforces it, so it is a gate you run, not a paragraph you hope was
+read.
+
+**Why this exists.** The `D:\code\ccode` working tree is deliberately dirty and
+mixed — many lanes are in flight at once, test runs regenerate DBF/CDX/LMDB
+fixtures, and old build artifacts linger tracked. Surveying `git status` and
+reaching for "everything" is the near-miss this gate prevents. A push is a
+*scoped, themed slice*, never a sweep of the whole tree.
+
+**Before staging a commit or push, confirm the change set is:**
+
+1. **Source / docs / config / manifests only** — the substance of the named
+   task. No `.exe/.dll/.lib/.pdb/.obj`, no `build*/` or `*/CMakeFiles/` trees,
+   no `.sln/.vcxproj`, no `cmake_install.cmake` / `*.tlog` / `*.recipe`.
+2. **Free of incidental data-fixture churn** — regenerated `dottalkpp/data/**`
+   DBF/DBT/FPT/CNX/CDX/INX, LMDB, or generated HELP/metadata/manual catalogs are
+   *report-only unless the current task names that mutation* (see the
+   Local-Access AI Rule). A deliberate fixture promotion is fine; a test-run
+   byproduct is not.
+3. **Sliced by lane, not blobbed** — commit one coherent theme at a time
+   (e.g. the identity lane, then the source-contract embedding), not an
+   accumulation of unrelated work in one commit.
+4. **Free of cleanup/formatting riders and branch operations** — vendored-tree
+   deletions, line-ending renormalization, and branch moves are their own
+   deliberate passes, never smuggled into a feature commit.
+
+**The mechanical guard.** `tools/staging/prepush_gate.py` enforces this list
+against the staged index (or a commit range). It hard-blocks build trees and
+binaries (exit 2), warns-and-requires-acknowledgement on data/fixture churn and
+oversized change sets (exit 3, cleared with `--allow-data` / `--allow-mass`), and
+passes on a clean source/docs/config slice. It reads the same exclusion list
+stated here, so this section and the script stay a single source of truth.
+
+```text
+python tools/staging/prepush_gate.py                 # check the staged slice
+python tools/staging/prepush_gate.py --range HEAD..@{u}   # check a push range
+python tools/staging/prepush_gate.py --install-hook   # enforce on every commit
+```
+
+Reading this portal — this section in particular — is a **mandatory pre-push
+read**. The gate is the belt; consulting the portal first is the suspenders.
+Neither replaces the maintainer's authorization.
