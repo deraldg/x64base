@@ -6,7 +6,10 @@
 #include "identity/identity_bootstrap.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <random>
 #include <string>
 
 namespace dottalk::identity {
@@ -29,9 +32,18 @@ bool has_allow_override(const InMemoryIdentityStore& s, TeamMemberId m, Permissi
     return false;
 }
 
+// Owner-only admin gate (2d): mutating identity administration requires an authenticated
+// owner principal. Returns an ok result when permitted.
+AdminResult require_owner() {
+    if (!(session_authenticated() && is_owner_member(principal_key())))
+        return AdminResult::fail("requires an authenticated owner (USER LOGIN first)");
+    return AdminResult::good("");
+}
+
 } // namespace
 
 AdminResult admit_member(const std::string& key, MemberKind kind, RoleId default_role) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
     if (find_member_by_key(s, key)) return AdminResult::fail("member '" + key + "' already exists");
@@ -53,6 +65,9 @@ AdminResult admit_member(const std::string& key, MemberKind kind, RoleId default
 AdminResult request_permission(const std::string& member_key, const std::string& perm_key,
                                const std::string& reason, AuthorizationId& out_id) {
     out_id = AuthorizationId{};
+    // A request may be filed by the authenticated owner (on behalf) or the member itself.
+    if (!(session_authenticated() && (is_owner_member(principal_key()) || principal_key() == member_key)))
+        return AdminResult::fail("USER REQUEST requires authentication as the owner or the member");
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
 
@@ -79,6 +94,7 @@ AdminResult request_permission(const std::string& member_key, const std::string&
 }
 
 AdminResult approve_grant(AuthorizationId id, std::uint64_t hours) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
 
@@ -106,6 +122,7 @@ AdminResult approve_grant(AuthorizationId id, std::uint64_t hours) {
 }
 
 AdminResult deny_grant(AuthorizationId id) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
     AuthorizationGrant* g = find_grant(s, id);
@@ -117,6 +134,7 @@ AdminResult deny_grant(AuthorizationId id) {
 }
 
 AdminResult revoke_grant(AuthorizationId id) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
     AuthorizationGrant* g = find_grant(s, id);
@@ -140,6 +158,7 @@ AdminResult revoke_grant(AuthorizationId id) {
 
 AdminResult grant_permission_to(const std::string& member_key, const std::string& perm_key,
                                 std::uint64_t hours) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
     const TeamMember* m = find_member_by_key(s, member_key);
@@ -171,6 +190,7 @@ AdminResult grant_permission_to(const std::string& member_key, const std::string
 }
 
 AdminResult ungrant_permission_from(const std::string& member_key, const std::string& perm_key) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     InMemoryIdentityStore& s = mutable_identity_store();
     const TeamMember* m = find_member_by_key(s, member_key);
@@ -194,6 +214,7 @@ AdminResult ungrant_permission_from(const std::string& member_key, const std::st
 }
 
 AdminResult remove_member(const std::string& member_key) {
+    if (auto r = require_owner(); !r.ok) return r;
     if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
     if (is_owner_member(member_key)) return AdminResult::fail("refusing to remove owner-class member '" + member_key + "'");
     InMemoryIdentityStore& s = mutable_identity_store();
@@ -215,22 +236,110 @@ AdminResult remove_member(const std::string& member_key) {
     return AdminResult::good("removed member '" + member_key + "'");
 }
 
-// --- Enforcement bridge (2c-4) -------------------------------------------------
+// --- Session authentication (2d) -----------------------------------------------
 
 namespace {
-std::string g_acting_member;   // empty => resolve default lazily
-} // namespace
 
-const std::string& acting_member_key() {
-    if (g_acting_member.empty()) {
-        const char* e = std::getenv("DOTTALK_ACTING_MEMBER");
-        g_acting_member = (e && *e) ? std::string(e) : std::string("member.derald");
-    }
-    return g_acting_member;
+constexpr const char* kAnon = "member.public";   // low-privilege boot identity
+
+std::string g_principal    = kAnon;
+std::string g_acting       = kAnon;
+bool        g_authenticated = false;
+
+// Non-cryptographic salted local hash (FNV-1a-64). Honest obfuscation-grade only.
+std::string fnv_hex(const std::string& salt, const std::string& secret) {
+    std::uint64_t h = 1469598103934665603ULL;
+    for (unsigned char c : salt)   { h ^= c; h *= 1099511628211ULL; }
+    for (unsigned char c : secret) { h ^= c; h *= 1099511628211ULL; }
+    char buf[17];
+    std::snprintf(buf, sizeof buf, "%016llx", static_cast<unsigned long long>(h));
+    return std::string(buf);
 }
 
-void set_acting_member(const std::string& key) {
-    g_acting_member = key.empty() ? std::string("member.derald") : key;
+std::string make_credential(const std::string& secret) {
+    static std::mt19937_64 rng{std::random_device{}() ^ static_cast<std::uint64_t>(std::time(nullptr))};
+    char salt[9];
+    std::snprintf(salt, sizeof salt, "%08x", static_cast<unsigned>(rng() & 0xffffffffu));
+    return std::string(salt) + "$" + fnv_hex(salt, secret);
+}
+
+bool verify_credential(const std::string& stored, const std::string& secret) {
+    const auto pos = stored.find('$');
+    if (pos == std::string::npos) return false;
+    return fnv_hex(stored.substr(0, pos), secret) == stored.substr(pos + 1);
+}
+
+// The User account (credential home) behind a member, or nullptr for AI/service members.
+const User* user_of_member(const InMemoryIdentityStore& s, const std::string& member_key) {
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m || !m->user_id) return nullptr;
+    return find_user_by_id(s, *m->user_id);
+}
+
+bool any_credential_set(const InMemoryIdentityStore& s) {
+    for (const auto& u : s.users) if (!u.credential_ref.empty()) return true;
+    return false;
+}
+
+} // namespace
+
+const std::string& principal_key()   { return g_principal; }
+bool session_authenticated()         { return g_authenticated; }
+
+const std::string& acting_member_key() { return g_acting; }
+void set_acting_member(const std::string& key) { g_acting = key.empty() ? std::string(kAnon) : key; }
+
+AdminResult login(const std::string& member_key, const std::string& secret) {
+    const InMemoryIdentityStore& s = identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m) return AdminResult::fail("unknown member '" + member_key + "'");
+    if (!m->user_id) return AdminResult::fail("'" + member_key + "' has no login account (AI/service) — owner may USER AS it");
+    const User* u = find_user_by_id(s, *m->user_id);
+    if (!u) return AdminResult::fail("no user account for '" + member_key + "'");
+
+    if (u->credential_ref.empty()) {
+        g_principal = g_acting = member_key; g_authenticated = true;
+        return AdminResult::good("logged in as " + member_key + " (no password set — run USER PASSWD to secure)");
+    }
+    if (!verify_credential(u->credential_ref, secret))
+        return AdminResult::fail("authentication failed for '" + member_key + "'");
+    g_principal = g_acting = member_key; g_authenticated = true;
+    return AdminResult::good("logged in as " + member_key);
+}
+
+AdminResult logout() {
+    g_principal = g_acting = kAnon; g_authenticated = false;
+    return AdminResult::good("logged out (now " + std::string(kAnon) + ")");
+}
+
+AdminResult set_password(const std::string& member_key, const std::string& secret) {
+    if (!identity_store_writable()) return AdminResult::fail("store is read-only (degraded startup)");
+    InMemoryIdentityStore& s = mutable_identity_store();
+    const User* u = user_of_member(s, member_key);
+    if (!u) return AdminResult::fail("'" + member_key + "' has no user account to hold a credential");
+
+    // Authorization: authenticated owner, authenticated self, or fresh-system bootstrap
+    // (no credential anywhere yet + setting an owner-class account from the console).
+    const bool by_owner = g_authenticated && is_owner_member(g_principal);
+    const bool by_self  = g_authenticated && g_principal == member_key;
+    const bool bootstrap = !any_credential_set(s) && is_owner_member(member_key);
+    if (!(by_owner || by_self || bootstrap))
+        return AdminResult::fail("not authorized to set the credential for '" + member_key + "'");
+
+    for (auto& uu : s.users) if (uu.id == u->id) { uu.credential_ref = make_credential(secret); break; }
+    std::string err;
+    if (!persist_identity_store(err)) return AdminResult::fail("set but not persisted: " + err);
+    return AdminResult::good("password set for '" + member_key + "'");
+}
+
+AdminResult act_as(const std::string& member_key) {
+    if (member_key.empty() || member_key == g_principal) { g_acting = g_principal; return AdminResult::good("acting as " + g_acting); }
+    if (!(g_authenticated && is_owner_member(g_principal)))
+        return AdminResult::fail("USER AS requires an authenticated owner (login first)");
+    if (!find_member_by_key(identity_store(), member_key))
+        return AdminResult::fail("unknown member '" + member_key + "'");
+    g_acting = member_key;
+    return AdminResult::good("acting as " + member_key + " (owner sudo; principal " + g_principal + ")");
 }
 
 bool is_owner_member(const std::string& member_key) {

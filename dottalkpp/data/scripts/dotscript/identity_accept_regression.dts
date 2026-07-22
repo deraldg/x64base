@@ -15,6 +15,10 @@
 * Mutates only the identity catalog under data/metadata/identity (adds then removes a
 * throwaway member); leaves the seeded members/roles/permissions intact.
 *
+* Auth (2d): admin ops require an authenticated owner. This logs in as the owner via the
+* first-run bootstrap (works on a dev system with no owner password set). If a password IS
+* set, log in as the owner before running (USER LOGIN member.derald <secret>).
+*
 * Run:  REGRESSION RUN IDENTITY_ACCEPT
 *   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/identity_accept_regression.dts
 
@@ -22,7 +26,7 @@ SET ECHO OFF
 STOP_ON_ERROR OFF
 
 FORMULA "IDENTITY-ACCEPT-REGRESSION-BEGIN"
-USER AS
+USER LOGIN member.derald
 USER DELETE member.ai.regbot
 FORMULA "admit a throwaway AI agent:"
 USER ADD member.ai.regbot AI role.ai_partner
@@ -38,4 +42,5 @@ FORMULA "expect DENY (capability withdrawn):"
 USER CAN git.commit FOR member.ai.regbot
 FORMULA "clean up the throwaway agent:"
 USER DELETE member.ai.regbot
+USER LOGOUT
 FORMULA "IDENTITY-ACCEPT-REGRESSION-END"

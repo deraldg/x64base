@@ -83,7 +83,8 @@ void user_usage() {
               << "  USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>   owner grant decisions\n"
               << "  USER GRANT <perm> TO <member> [HOURS n] | UNGRANT <perm> FROM <member>   direct owner grant\n"
               << "  USER DELETE <member.key>   remove a member (+ its roles/overrides/grants)\n"
-              << "  USER AS [member.key]   act as a member (empty = owner); USER WHOAMI shows it\n"
+              << "  USER LOGIN <member.key> [secret] | LOGOUT | PASSWD <member.key> <secret>\n"
+              << "  USER AS [member.key]   owner sudo to a member (empty = back to principal)\n"
               << "  USER ENFORCE <permission.key>   enforcement decision for the acting member\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
               << "  USER LOAD [dir]     read the identity catalog back from DBF (report only)\n"
@@ -249,17 +250,38 @@ void user_whoami(const InMemoryIdentityStore& s) {
     std::cout << "WHOAMI: acting as " << who;
     if (m) std::cout << "  [" << kind_name(m->kind) << "]  role=" << (r ? r->name : "(none)");
     else   std::cout << "  (unknown member)";
-    std::cout << (is_owner_member(who) ? "  OWNER (ask-for-permission exempt)"
-                                       : "  (must ask for limited permission)") << "\n";
+    std::cout << (is_owner_member(who) ? "  OWNER" : "  (must ask for limited permission)") << "\n";
+    std::cout << "  principal : " << principal_key()
+              << (session_authenticated() ? "  (authenticated)" : "  (unauthenticated)");
+    if (acting_member_key() != principal_key()) std::cout << "  [sudo]";
+    std::cout << "\n";
+}
+
+void user_login(std::istringstream& iss) {
+    std::string member, secret;
+    iss >> member;
+    std::getline(iss, secret);
+    // trim leading spaces from the remainder (the secret may contain spaces after the first)
+    std::size_t b = secret.find_first_not_of(" \t");
+    secret = (b == std::string::npos) ? std::string() : secret.substr(b);
+    if (member.empty()) { std::cout << "USER LOGIN <member.key> [secret]\n"; return; }
+    std::cout << "USER LOGIN: " << login(member, secret).message << "\n";
+}
+
+void user_passwd(std::istringstream& iss) {
+    std::string member, secret;
+    iss >> member;
+    std::getline(iss, secret);
+    std::size_t b = secret.find_first_not_of(" \t");
+    secret = (b == std::string::npos) ? std::string() : secret.substr(b);
+    if (member.empty() || secret.empty()) { std::cout << "USER PASSWD <member.key> <secret>\n"; return; }
+    std::cout << "USER PASSWD: " << set_password(member, secret).message << "\n";
 }
 
 void user_as(std::istringstream& iss) {
     std::string key;
-    iss >> key;                       // empty resets to owner
-    set_acting_member(key);
-    const std::string who = acting_member_key();
-    std::cout << "USER AS: acting member = " << who
-              << (is_owner_member(who) ? " (owner)" : "") << "\n";
+    iss >> key;                       // empty => back to the authenticated principal
+    std::cout << "USER AS: " << act_as(key).message << "\n";
 }
 
 void user_enforce(std::istringstream& iss) {
@@ -399,6 +421,9 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
     if (u == "ROLES")  { list_roles(s);   return; }
     if (u == "PERMS")  { list_perms(s);   return; }
     if (u == "WHOAMI") { user_whoami(s); return; }
+    if (u == "LOGIN")   { user_login(iss); return; }
+    if (u == "LOGOUT")  { std::cout << "USER LOGOUT: " << logout().message << "\n"; return; }
+    if (u == "PASSWD")  { user_passwd(iss); return; }
     if (u == "AS")      { user_as(iss); return; }
     if (u == "ENFORCE") { user_enforce(iss); return; }
     if (u == "CAN") {

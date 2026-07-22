@@ -50,11 +50,34 @@ AdminResult ungrant_permission_from(const std::string& member_key, const std::st
 // delete an owner-class member.
 AdminResult remove_member(const std::string& member_key);
 
+// --- Session authentication (2d) -----------------------------------------------
+// A session has a PRINCIPAL (the authenticated identity, set by login) and an ACTING
+// member (the effective identity used for every permission check). Boot default is the
+// low-privilege member.public, UNAUTHENTICATED — owner powers require USER LOGIN. The
+// owner may sudo to another identity via act_as (USER AS); the acting member can only
+// become owner-class by authenticating, which closes the escalation hole.
+const std::string& principal_key();       // authenticated identity (member.public until login)
+bool               session_authenticated();
+
+// Verify <secret> against the member's stored salted credential (SYSUSER.CRED). A member
+// whose account has no credential set yet logs in on first use (bootstrap) — set one with
+// set_password. AI/service members (no user account) cannot password-login; use owner sudo.
+AdminResult login(const std::string& member_key, const std::string& secret);
+AdminResult logout();
+
+// Store a salted local-hash credential for a member (persisted). Allowed for the
+// authenticated owner, the member itself, or — on a fresh system — for the owner from the
+// console. NOTE: the hash is local obfuscation-grade (non-cryptographic), not for hostile
+// networks; upgradeable to real crypto later.
+AdminResult set_password(const std::string& member_key, const std::string& secret);
+
+// Owner sudo: act as another member for testing. Requires an authenticated owner principal.
+AdminResult act_as(const std::string& member_key);
+
 // --- Enforcement bridge (2c-4) -------------------------------------------------
-// The acting member is who the engine treats as the current actor for permission
-// checks. Defaults to $DOTTALK_ACTING_MEMBER or the owner (member.derald).
+// The acting member is who the engine treats as the current actor for permission checks.
 const std::string& acting_member_key();
-void               set_acting_member(const std::string& key);
+void               set_acting_member(const std::string& key);   // internal/test setter (ungated)
 
 // Owner-class = a member whose default role is MAINTAINER (the ask-for-permission
 // exemption). The console operator defaults to the owner, so existing behavior is
