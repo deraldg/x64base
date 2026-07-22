@@ -144,3 +144,21 @@ projects:
     root: D:/code/ccode/sqlite-gui
     lanes: [sqlite, gui, prototype]
     notes: Local SQLite GUI experiment lane.
+
+  - id: project.dotref_metadata_authority
+    name: DOTREF x64base Metadata Authority and Generated Fallback
+    kind: metadata_migration_project
+    status: assigned_external_design
+    root: D:/code/ccode
+    owner_repo: deraldg/x64base
+    parent_project: project.x64base.runtime
+    assignee: GROK
+    maintainer: Derald
+    public_baseline: 4384820d2b82289fa76e789336218e0c1df1b290
+    lanes: [dotref, metadata, help, selfdoc, generated_reference, bootstrap_fallback, drift_validation]
+    docs:
+      - labtalk/ai_portal/tasks/GROK_DOTREF_X64BASE_SCHEMA_PROJECT_V1.md
+      - dottalkpp/docs/authority/help_message_reference_authority_model_v1.md
+      - docs/maintenance/lanes/metadata/METADATA_FAMILY_SYSTEM_GUIDE_v1.md
+      - labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+    notes: GROK is assigned to analyze and propose the hybrid migration in which reviewed x64base metadata becomes the canonical authoring lane while a deterministic generated compiled DOTREF catalog remains the bootstrap and recovery fallback. External analysis does not authorize mutation of D:/code/ccode, staging, branches, commits, pushes, publication, or maintained runtime data.
