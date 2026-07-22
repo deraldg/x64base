@@ -19,6 +19,7 @@
 //   USER PERMS
 //   USER WHOAMI
 //   USER CAN <permission.key> [FOR <member.key>]
+//   USER STORE           report boot origin (SEED/DBF/DEGRADED), writability, active counts
 //   USER SAVE [dir]      write the identity catalog to DBF (default data/metadata/identity)
 //   USER LOAD [dir]      read the identity catalog back from DBF (report only)
 //   USER VERIFY [dir]    APH-5 round-trip: save -> reload -> compare counts/keys/decisions
@@ -70,6 +71,7 @@ void user_usage() {
     std::cout << "Usage:\n"
               << "  USER LIST | ROLES | PERMS | WHOAMI\n"
               << "  USER CAN <permission.key> [FOR <member.key>]\n"
+              << "  USER STORE          show boot origin (SEED/DBF/DEGRADED), writability, counts\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
               << "  USER LOAD [dir]     read the identity catalog back from DBF (report only)\n"
               << "  USER VERIFY [dir]   APH-5 round-trip proof: save -> reload -> compare\n"
@@ -112,6 +114,14 @@ void user_load(const std::string& dir) {
     } else {
         std::cout << "USER LOAD: FAILED: " << err << "\n";
     }
+}
+
+void user_store() {
+    std::cout << "Identity store\n"
+              << "  origin   : " << store_origin_name(identity_store_origin()) << "\n"
+              << "  writable : " << (identity_store_read_only() ? "no (degraded read-only)" : "yes") << "\n"
+              << "  home     : " << default_identity_dir() << "\n";
+    print_counts("active", identity_store());
 }
 
 // APH-5 round-trip: save the seed, reload it, and confirm the reloaded store is
@@ -254,6 +264,7 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
         user_can(s, perm_key, member_key);
         return;
     }
+    if (u == "STORE")  { user_store(); return; }
     if (u == "SAVE")   { std::string dir; iss >> dir; user_save(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "LOAD")   { std::string dir; iss >> dir; user_load(dir.empty() ? default_identity_dir() : dir); return; }
     if (u == "VERIFY") { std::string dir; iss >> dir; user_verify(dir.empty() ? default_identity_dir() : dir); return; }

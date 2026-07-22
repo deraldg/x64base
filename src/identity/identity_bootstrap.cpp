@@ -4,6 +4,10 @@
 // known profile homes. DBF-backed durability + live profile scan are 2b-ii / fast-follow.
 
 #include "identity/identity_bootstrap.hpp"
+#include "identity/identity_dbf_store.hpp"
+
+#include <filesystem>
+#include <string>
 
 namespace dottalk::identity {
 
@@ -99,9 +103,63 @@ InMemoryIdentityStore build_seed() {
 
 } // namespace
 
-const InMemoryIdentityStore& identity_store() {
-    static const InMemoryIdentityStore s = build_seed();
-    return s;
+// Load-or-seed boot (2b-iii). Explicit dir so all three paths are testable.
+InMemoryIdentityStore boot_identity_store(const std::string& dir,
+                                          StoreOrigin& origin, bool& read_only) {
+    namespace fs = std::filesystem;
+    read_only = false;
+
+    // "Present" = the anchor table exists; a partial/corrupt set still counts as present
+    // so we never overwrite a catalog we failed to read.
+    const bool present = fs::exists(fs::path(dir) / "SYSUSER.dbf");
+
+    if (present) {
+        InMemoryIdentityStore loaded;
+        std::string err;
+        if (load_identity_tables(dir, loaded, err)) {
+            origin = StoreOrigin::Dbf;              // authoritative, writable
+            return loaded;
+        }
+        origin = StoreOrigin::DegradedSeed;         // unreadable -> read-only seed, DBF untouched
+        read_only = true;
+        return build_seed();
+    }
+
+    // Absent -> seed and persist so the next boot is DBF-authoritative.
+    InMemoryIdentityStore seed = build_seed();
+    std::string werr;
+    save_identity_tables(seed, dir, werr);          // best-effort; a write failure still boots seeded
+    origin = StoreOrigin::Seed;
+    return seed;
+}
+
+namespace {
+struct BootedStore {
+    InMemoryIdentityStore store;
+    StoreOrigin           origin = StoreOrigin::Seed;
+    bool                  read_only = false;
+};
+const BootedStore& booted() {
+    static const BootedStore b = [] {
+        BootedStore x;
+        x.store = boot_identity_store(default_identity_dir(), x.origin, x.read_only);
+        return x;
+    }();
+    return b;
+}
+} // namespace
+
+const InMemoryIdentityStore& identity_store() { return booted().store; }
+StoreOrigin identity_store_origin()            { return booted().origin; }
+bool        identity_store_read_only()          { return booted().read_only; }
+
+const char* store_origin_name(StoreOrigin o) {
+    switch (o) {
+        case StoreOrigin::Seed:         return "SEED (persisted)";
+        case StoreOrigin::Dbf:          return "DBF (authoritative)";
+        case StoreOrigin::DegradedSeed: return "DEGRADED (read-only seed)";
+    }
+    return "UNKNOWN";
 }
 
 } // namespace dottalk::identity
