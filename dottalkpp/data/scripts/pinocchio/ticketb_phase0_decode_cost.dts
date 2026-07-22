@@ -1,0 +1,68 @@
+* ============================================================================
+* TICKET B — PHASE 0 decode-cost benchmark (AIF-043 gate)  v5 — self-timing
+* ----------------------------------------------------------------------------
+* Now self-times via SET TIMER (fixed 2026-07-22 to fire in script/DO mode) and
+* cross-checks with SECONDS() (fixed to sub-second/ms resolution). Each measured
+* command prints its own "ELAPSED : <sec> s" line; the SECONDS() brackets are a
+* redundant cross-check. Read-only, no mutation, no tuple-core touch.
+*
+* Compare:
+*   SUM  GPA                          -> decode 1 numeric + aggregate
+*   DEC1 COUNT FOR GPA>=0             -> decode 1 numeric + compare
+*   DEC3 COUNT FOR GPA>=0 .AND. SID>=0 .AND. MAJOR<="ZZZZ" -> decode 3 fields
+*
+* decode adds (DEC3 - DEC1) for 2 extra field decodes. If DEC3 ~= DEC1 (adding
+* field decode barely moves the time), the scan is NOT decode-bound => Option B
+* KILL. If DEC3 >> DEC1, decode is a real slice => candidate GO.
+* (Phase-0 already ran: DEC1 ~39s, DEC3 ~92s over 1M rows => evaluator-bound,
+*  Option B KILLED. This script now self-times for the scan-evaluator lane.)
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/pinocchio
+SET PATH INDEXES INDEXES/pinocchio
+SET PATH LMDB LMDB/pinocchio
+
+USE STUDENTS
+SET ORDER TO 0
+COUNT
+
+ECHO === WARM (prime cache; ignore) ===
+COUNT FOR GPA >= 0
+
+* Timer is toggled ON only around each measured command so the ELAPSED block is
+* clean. The SECONDS() brackets (printed with the timer OFF) are the redundant
+* cross-check; subtract the pair for the same elapsed the ELAPSED line reports.
+
+ECHO === SUM GPA (1-field decode + accumulate, no predicate) ===
+? SECONDS()
+SET TIMER ON
+SUM GPA
+SET TIMER OFF
+? SECONDS()
+
+ECHO === DEC1 COUNT FOR GPA >= 0  (+ 1 predicate term) ===
+? SECONDS()
+SET TIMER ON
+COUNT FOR GPA >= 0
+SET TIMER OFF
+? SECONDS()
+
+ECHO === DEC3 COUNT FOR GPA >= 0 .AND. SID >= 0 .AND. MAJOR <= "ZZZZ"  (3 terms) ===
+? SECONDS()
+SET TIMER ON
+COUNT FOR GPA >= 0 .AND. SID >= 0 .AND. MAJOR <= "ZZZZ"
+SET TIMER OFF
+? SECONDS()
+
+ECHO ============================================================================
+ECHO Read the "ELAPSED : <sec> s" line printed after each measured command.
+ECHO Self-timed baseline floor (2026-07-22, steady_clock, cross-checked by SECONDS):
+ECHO   Host: Alienware m16 R2, Core Ultra 9 185H, 64 GB, D:=Samsung 970 EVO NVMe.
+ECHO   (canonical: PINOCCHIO_STRESS_TEST_PLAN_V1.md / PINOCCHIO_MACHINE_PROFILE_CURRENT_V1.json)
+ECHO   SUM GPA  ~19.5 s | DEC1 ~38.5 s | DEC3 ~70.5 s  over 1,000,000 rows.
+ECHO   predicate machinery over bare aggregate = DEC1 - SUM ~19 s/1M (~19 us/row).
+ECHO   marginal per predicate term = (DEC3 - DEC1)/2 ~16 s/1M (~16 us/row).
+ECHO decode-bound if DEC3 - DEC1 is a large share of DEC1; else Option B = KILL.
+ECHO ============================================================================
