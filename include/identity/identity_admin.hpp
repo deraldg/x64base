@@ -11,6 +11,7 @@
 // default 24h. So an approved agent's authorize() flips to ALLOW and expires back to DENY.
 
 #include "identity/identity_entities.hpp"
+#include "identity/identity_repository.hpp"   // Decision, authorize, RuntimeContext, Scope
 
 #include <cstdint>
 #include <string>
@@ -37,5 +38,22 @@ AdminResult request_permission(const std::string& member_key, const std::string&
 AdminResult approve_grant(AuthorizationId id, std::uint64_t hours);
 AdminResult deny_grant(AuthorizationId id);
 AdminResult revoke_grant(AuthorizationId id);   // Revoked + drops the minted override
+
+// --- Enforcement bridge (2c-4) -------------------------------------------------
+// The acting member is who the engine treats as the current actor for permission
+// checks. Defaults to $DOTTALK_ACTING_MEMBER or the owner (member.derald).
+const std::string& acting_member_key();
+void               set_acting_member(const std::string& key);
+
+// Owner-class = a member whose default role is MAINTAINER (the ask-for-permission
+// exemption). The console operator defaults to the owner, so existing behavior is
+// unchanged until an action runs AS a non-owner agent.
+bool is_owner_member(const std::string& member_key);
+
+// The enforcement decision an engine action should consult before acting: resolves
+// `perm_key` for the acting member with the live clock and host-shell policy, with
+// the owner exempt. This is the single entry that turns 'the resolver says DENY'
+// into 'the action is refused'.
+Decision agent_permitted(const std::string& perm_key);
 
 } // namespace dottalk::identity

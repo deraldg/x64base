@@ -54,10 +54,29 @@ scoped permission before using these dev-tools. This requirement is **global**; 
 project owner (Derald Grimwood) is the sole exemption. Ask for the specific tool and the
 specific task — do not assume blanket access.
 
-The technical gate (`include/cli/ai_devtools_policy.hpp`) is shipped **dormant**: it
-permits by default, so nothing is blocked today. The requirement is enforced by git
-review and the promotion gate until the owner activates enforcement
-(`DOTTALK_DEVTOOLS_REQUIRE_PERMISSION=1`, with a scoped `DOTTALK_DEVTOOLS_GRANT=1`).
+**The protocol is now runtime-enforced by DotTalk++'s own security (AIF-045 2c).** The
+identity/RBAC catalog self-hosts in x64base (`data/metadata/identity/`) and the engine
+accepts agents locally through these commands:
+
+```text
+USER ADD member.ai.<name> AI role.ai_partner        # admit the agent (persisted)
+USER REQUEST <permission.key> FOR member.ai.<name> <reason>   # the agent asks for limited permission
+USER REQUESTS                                        # owner reviews pending asks
+USER APPROVE <id> [HOURS n]                          # owner grants: scoped ALLOW + time-boxed (default 24h)
+USER CAN <permission.key> FOR member.ai.<name>       # verify the resolver's verdict
+USER REVOKE <id>                                     # withdraw the capability
+USER AS member.ai.<name> / USER ENFORCE <perm.key>   # test the enforcement decision as that agent
+```
+
+Owner approval mints a scoped `ALLOW` override (eligibility) plus a time-boxed
+authorization grant (this-action approval); the resolver flips `authorize()` to `ALLOW`
+and back to `DENY` on expiry or revoke. The dev-tools gate
+(`include/cli/ai_devtools_policy.hpp` / `src/cli/ai_devtools_policy.cpp`) now **consults
+this resolver** for the acting member: the owner is exempt, a granted agent is permitted,
+and — with `DOTTALK_DEVTOOLS_REQUIRE_PERMISSION=1` — an ungranted agent is declined and
+pointed at `USER REQUEST`. The gate stays **dormant by default** (permits unless
+enforcement is requested), so today's loop is unchanged; the env grant
+`DOTTALK_DEVTOOLS_GRANT=1` is still honored as a no-rebuild override.
 
 Loop-closing agents (e.g. Codex) are **not gated** — the compile/run loop stays smooth —
 but are bounded by git visibility, an isolated dev tree, the host-shell block
@@ -66,11 +85,11 @@ but are bounded by git visibility, an isolated dev tree, the host-shell block
 Full threat model and controls:
 [`docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md`](docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md).
 
-The durable identity / RBAC / authorization **backing** for this permission protocol is being
-built as **`project.x64base.identity`** (AIF-045): `USERS → TEAM_MEMBER → TEAM_ASSIGNMENT →
-{ROLE, PERMISSION, AUTHORIZATION_GRANT}`, with the operational security policy kept independent
-as the final constraint (*permission = eligibility; authorization = this action*). Contract v1 +
-a proven permission resolver exist; see
+The durable identity / RBAC / authorization **backing** is **`project.x64base.identity`**
+(AIF-045): `USERS → TEAM_MEMBER → TEAM_ASSIGNMENT → {ROLE, PERMISSION, AUTHORIZATION_GRANT}`,
+operational security policy kept independent as the final constraint (*permission =
+eligibility; authorization = this action*). The catalog persists in x64base and boots from
+it (APH-5), the resolver is proven, and the admit/request/approve/enforce surface is live; see
 [`docs/maintenance/IDENTITY_RBAC_MANAGEMENT_LANE_V1.md`](docs/maintenance/IDENTITY_RBAC_MANAGEMENT_LANE_V1.md)
 and [`docs/maintenance/IDENTITY_RBAC_CONTRACT_V1.md`](docs/maintenance/IDENTITY_RBAC_CONTRACT_V1.md).
 

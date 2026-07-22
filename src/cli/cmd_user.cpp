@@ -81,6 +81,8 @@ void user_usage() {
               << "  USER REQUEST <permission.key> FOR <member.key> [reason]   ask for limited permission\n"
               << "  USER REQUESTS | GRANTS                         list pending / all authorizations\n"
               << "  USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>   owner grant decisions\n"
+              << "  USER AS [member.key]   act as a member (empty = owner); USER WHOAMI shows it\n"
+              << "  USER ENFORCE <permission.key>   enforcement decision for the acting member\n"
               << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
               << "  USER LOAD [dir]     read the identity catalog back from DBF (report only)\n"
               << "  USER VERIFY [dir]   APH-5 round-trip proof: save -> reload -> compare\n"
@@ -212,6 +214,37 @@ void user_grant_op(std::istringstream& iss, bool deny) {
     std::cout << "USER " << (deny ? "DENY" : "REVOKE") << ": " << res.message << "\n";
 }
 
+// --- 2c-4 enforcement surface ---
+
+void user_whoami(const InMemoryIdentityStore& s) {
+    const std::string who = acting_member_key();
+    const TeamMember* m = find_member_by_key(s, who);
+    const Role* r = (m && m->default_role) ? find_role_by_id(s, *m->default_role) : nullptr;
+    std::cout << "WHOAMI: acting as " << who;
+    if (m) std::cout << "  [" << kind_name(m->kind) << "]  role=" << (r ? r->name : "(none)");
+    else   std::cout << "  (unknown member)";
+    std::cout << (is_owner_member(who) ? "  OWNER (ask-for-permission exempt)"
+                                       : "  (must ask for limited permission)") << "\n";
+}
+
+void user_as(std::istringstream& iss) {
+    std::string key;
+    iss >> key;                       // empty resets to owner
+    set_acting_member(key);
+    const std::string who = acting_member_key();
+    std::cout << "USER AS: acting member = " << who
+              << (is_owner_member(who) ? " (owner)" : "") << "\n";
+}
+
+void user_enforce(std::istringstream& iss) {
+    std::string perm;
+    iss >> perm;
+    if (perm.empty()) { std::cout << "USER ENFORCE <permission.key>\n"; return; }
+    Decision d = agent_permitted(perm);
+    std::cout << "ENFORCE " << perm << " as " << acting_member_key() << " : "
+              << (d.allowed() ? "ALLOW" : "DENY") << "  (" << d.reason << ")\n";
+}
+
 // APH-5 round-trip: save the seed, reload it, and confirm the reloaded store is
 // structurally identical (row counts) and resolves every member x permission to
 // the same decision. Uses a sibling _verify dir so a real saved catalog is safe.
@@ -339,11 +372,9 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
     if (u == "LIST")   { list_members(s); return; }
     if (u == "ROLES")  { list_roles(s);   return; }
     if (u == "PERMS")  { list_perms(s);   return; }
-    if (u == "WHOAMI") {
-        // 2b-i: the console operator is the owner (LOCAL_TRUSTED) until real auth lands.
-        std::cout << "WHOAMI: member.derald  [HUMAN]  role=MAINTAINER  (LOCAL_TRUSTED; authenticated=false)\n";
-        return;
-    }
+    if (u == "WHOAMI") { user_whoami(s); return; }
+    if (u == "AS")      { user_as(iss); return; }
+    if (u == "ENFORCE") { user_enforce(iss); return; }
     if (u == "CAN") {
         std::string perm_key, kw, member_key;
         iss >> perm_key;

@@ -6,6 +6,8 @@
 #include "identity/identity_bootstrap.hpp"
 
 #include <algorithm>
+#include <cstdlib>
+#include <string>
 
 namespace dottalk::identity {
 
@@ -134,6 +136,57 @@ AdminResult revoke_grant(AuthorizationId id) {
     std::string err;
     if (!persist_identity_store(err)) return AdminResult::fail("revoked but not persisted: " + err);
     return AdminResult::good("revoked grant #" + std::to_string(id.value()));
+}
+
+// --- Enforcement bridge (2c-4) -------------------------------------------------
+
+namespace {
+std::string g_acting_member;   // empty => resolve default lazily
+} // namespace
+
+const std::string& acting_member_key() {
+    if (g_acting_member.empty()) {
+        const char* e = std::getenv("DOTTALK_ACTING_MEMBER");
+        g_acting_member = (e && *e) ? std::string(e) : std::string("member.derald");
+    }
+    return g_acting_member;
+}
+
+void set_acting_member(const std::string& key) {
+    g_acting_member = key.empty() ? std::string("member.derald") : key;
+}
+
+bool is_owner_member(const std::string& member_key) {
+    const InMemoryIdentityStore& s = identity_store();
+    const TeamMember* m = find_member_by_key(s, member_key);
+    if (!m || !m->default_role) return false;
+    const Role* r = find_role_by_id(s, *m->default_role);
+    return r && r->key == "role.maintainer";
+}
+
+Decision agent_permitted(const std::string& perm_key) {
+    identity_refresh_clock();
+    const InMemoryIdentityStore& s = identity_store();
+    const std::string who = acting_member_key();
+
+    // Owner-class is the ask-for-permission exemption (doctrine: "owner exempt").
+    if (is_owner_member(who))
+        return Decision{Outcome::Allow, DenyStage::None, "owner exemption (" + who + ")"};
+
+    const Permission* p = find_permission_by_key(s, perm_key);
+    if (!p) return Decision{Outcome::Deny, DenyStage::Eligibility, "unknown permission '" + perm_key + "'"};
+    const TeamMember* m = find_member_by_key(s, who);
+    if (!m) return Decision{Outcome::Deny, DenyStage::Eligibility, "unknown acting member '" + who + "'"};
+
+    RuntimeContext rt;
+    rt.session_capable = true;
+    if (p->resource_class == "host") {
+        const char* v = std::getenv("DOTTALK_ALLOW_HOST_COMMANDS");
+        rt.security_policy_allows = v && *v && std::string(v) != "0";
+    } else {
+        rt.security_policy_allows = true;
+    }
+    return authorize(s, m->id, *p, Scope{}, rt);
 }
 
 } // namespace dottalk::identity

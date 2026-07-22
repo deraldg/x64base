@@ -29,21 +29,14 @@ inline bool env_flag_set(const char* name) {
     return v && *v && std::string(v) != "0";
 }
 
-// True if the AI-friendly runtime dev-tools may be used. Dormant default: true.
-inline bool devtools_permitted(std::string* why = nullptr) {
-    // Dormant: enforcement not requested -> permitted (shipped default).
-    if (!env_flag_set("DOTTALK_DEVTOOLS_REQUIRE_PERMISSION")) {
-        return true;
-    }
-    // Enforcement active: a limited, scoped grant must be present.
-    if (env_flag_set("DOTTALK_DEVTOOLS_GRANT")) {
-        return true;
-    }
-    if (why) {
-        *why = "AI-friendly dev-tools require limited permission. Ask the owner for a "
-               "scoped grant (see AI_DEV_TOOLS_SECURITY_DOCTRINE_V1).";
-    }
-    return false;
-}
+// True if the AI-friendly runtime dev-tools may be used by the current acting member.
+//
+// As of 2c-4 this consults the real identity resolver (src/cli/ai_devtools_policy.cpp):
+//   - the owner (acting member is owner-class) is always permitted;
+//   - a non-owner with a live authorization for the dev-tools capability is permitted;
+//   - otherwise it stays DORMANT (permits) unless DOTTALK_DEVTOOLS_REQUIRE_PERMISSION is
+//     set, in which case it declines and points the caller at USER REQUEST / APPROVE.
+// The env grant DOTTALK_DEVTOOLS_GRANT is still honored as a no-rebuild override.
+bool devtools_permitted(std::string* why = nullptr);
 
 } // namespace dottalk::devtools
