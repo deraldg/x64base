@@ -191,3 +191,84 @@ tasks:
       Assignment to GROK authorizes analysis and an external proposal package only.
       Derald retains design acceptance, local reconciliation, implementation,
       proof, promotion, and publication authority.
+
+  - id: task.ai_portal.gemini_chat_response.v1
+    title: Respond to ChatGPT through the AI Portal chat
+    project_id: project.ai_friendly
+    area: labtalk/ai_portal/chat/cross-agent-communication
+    owning_lifecycle: LabTalk SDLC / AI Portal hardening lane
+    sdlc_lane: proof
+    truth_state: requested_chat_route_defined_live_cross_provider_delivery_unproven
+    proof_state: awaiting_round_trip_response
+    risk_class: low
+    source_path: D:/code/ccode/labtalk/ai_portal
+    website_path: unknown
+    next_gate: Gemini posts the response or returns a delivery_blocked envelope; Derald then asks ChatGPT to read and acknowledge it
+    owner: Gemini
+    assignee_type: external_ai
+    recipient: assistant.openai.chatgpt.beta_work
+    maintainer: Derald
+    status: assigned
+
+    created: 2026-07-22
+    authority_root: D:/code/ccode
+    staging_root: C:/x64base
+    public_repository: github.com/deraldg/x64base
+    public_branch: main
+    code_context_baseline: 45de569abab982dea744850b673aa26351611d2d
+    task_packet: labtalk/ai_portal/tasks/GEMINI_AI_PORTAL_CHAT_RESPONSE_TASK_V1.md
+    chat_thread: labtalk/ai_portal/chat/threads/CHAT_GEMINI_TO_CHATGPT_20260722_V1.md
+    thread_id: chat.ai_portal.gemini_to_chatgpt.20260722.v1
+
+    objective: >-
+      Prove a bounded AI Portal-mediated response from Gemini to the current
+      ChatGPT operator assisting Derald in BETA_Work, while honestly distinguishing
+      successful portal delivery from a provider-local answer or blocked route.
+
+    required_response:
+      sender: assistant.google.gemini
+      recipient: assistant.openai.chatgpt.beta_work
+      cc: human.derald
+      message_kind: task_response
+      response_statuses: [responded, delivery_blocked]
+      envelope_contract: labtalk/ai_portal/chat/threads/CHAT_GEMINI_TO_CHATGPT_20260722_V1.md
+
+    required_analysis:
+      - list the exact AI Portal and authority files actually read
+      - state whether Gemini can post directly to the named portal thread
+      - state whether the response was actually entered into that thread
+      - identify the smallest missing capability when delivery is blocked
+      - recommend one bounded improvement to cross-agent response reliability
+
+    delivery_rule:
+      - do not treat an answer visible only inside the Gemini host conversation as completion
+      - post to the named AI Portal thread when a portal chat write action is available
+      - otherwise return status delivery_blocked with the complete response envelope to Derald
+      - do not claim ChatGPT received the response without portal or relay evidence
+
+    allowed_scope:
+      - read public AI Portal and task artifacts
+      - post one structured response to the named AI Portal chat thread
+      - report delivery capability and limitations
+      - recommend one bounded communication-route improvement
+
+    excluded_scope:
+      - source-code or maintained-data mutation
+      - DBF, index, LMDB, HELP, metadata, or runtime fixture changes
+      - branch creation or switching
+      - commit, push, staging promotion, or publication
+      - raw-chat archival, secrets, credentials, or private data
+      - claims of autonomous or background inter-provider communication
+
+    acceptance_criteria:
+      - a correctly addressed response envelope is posted to the named thread or returned as delivery_blocked
+      - Gemini identifies provider, product, actual model or not_exposed, and access mode
+      - exact files read and proof boundaries are listed
+      - successful delivery is distinguished from provider-local response generation
+      - Derald can direct ChatGPT to read the thread or relayed envelope
+
+    authority_boundary: >-
+      Gemini is authorized only to read the public portal context and submit the
+      bounded response. Derald retains authority over relay, acceptance, local
+      source changes, proof, promotion, and publication. ChatGPT does not poll
+      asynchronously and must be asked to read the response after it arrives.
