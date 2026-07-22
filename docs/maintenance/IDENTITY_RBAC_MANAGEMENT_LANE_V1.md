@@ -103,9 +103,13 @@ AS/WHOAMI/ENFORCE`; repeatable `IDENTITY_ACCEPT` regression) — **all committed
 in nine `SYS*` tables under `data/metadata/identity/`, boots from them, and accepts AI
 agents through the owner-approved, scoped, 24h-expiring grant flow.
 
-Remaining: **SFTP host-command gate** (mirror the `!` wiring on `cmd_sftp`), **real session
-authentication** (`USER AS` is currently unauthenticated — the acting member should bind to
-a proven login), **M4** registry import (`ORG_UNIT`/`WORK_NODE`/`TEAM_ASSIGNMENT` from the
+**2d session authentication (committed `bfa6bb0fd`, in-engine proven):** the console boots
+low-privilege (`member.public`); owner powers require `USER LOGIN`. Session = principal
+(authenticated) + acting (owner sudo); escalation to owner requires authentication. Humans use
+`USER PASSWD` (salted local hash; owner is the reset authority); AI/service members use
+owner-issued **tokens** (`USER TOKEN`, rotate to reissue). Admin mutations are owner-gated.
+
+Remaining: **SFTP host-command gate** (mirror the `!` wiring on `cmd_sftp`), **M4** registry import (`ORG_UNIT`/`WORK_NODE`/`TEAM_ASSIGNMENT` from the
 `labtalk` registries), the **M5** YAML portable-export leg (DBF round-trip + degraded startup
 are proven; `x64base → YAML → x64base` portable bootstrap remains), and **M6** teaching loop.
 
