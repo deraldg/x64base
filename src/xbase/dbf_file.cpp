@@ -8,6 +8,7 @@
 #include "xbase.hpp"
 #include "xbase_vfp.hpp"
 #include "xbase_64.hpp"
+#include "xbase/ramfs.hpp"
 // NOTE: removed "utils.hpp" include to avoid current header parser issue
 
 #include <algorithm>
@@ -102,49 +103,72 @@ void DbArea::open(const std::string& filename)
     const fs::path norm = p.lexically_normal();
     const std::string abs = norm.string();
 
-    if (!fs::exists(norm)) {
-        throw std::runtime_error("DbArea: file does not exist: " + abs);
-    }
-    if (!fs::is_regular_file(norm)) {
-        throw std::runtime_error("DbArea: not a regular file: " + abs);
-    }
-
-    const auto sz = fs::file_size(norm);
-    if (sz < static_cast<std::uintmax_t>(sizeof(HeaderRec))) {
-        throw std::runtime_error("DbArea: invalid DBF header (file too small): " + abs);
-    }
-
-    // Canonical contract (xbase.hpp): compute + store absolute DBF path + derived names.
-    _compute_paths_and_names_(abs);
-
-    // Open using the canonical absolute path (single source of truth).
-    // IMPORTANT: Do not auto-create files here. USE/OPEN must never create files.
-    _fp.clear();
-    errno = 0;
-    _fp.open(_dbf_abs_path, std::ios::in | std::ios::out | std::ios::binary);
-    if (!_fp.is_open()) {
-        std::string detail = "DbArea: cannot open file (access denied/locked?): " + _dbf_abs_path;
-        if (errno != 0) {
-            detail += " errno=" + std::to_string(errno);
+    // In-memory tables (AIF-043 V2): a path under a mounted ramfs root is served
+    // from RAM. USE/OPEN binds the byte store to the RAM file; no OS file, no lock
+    // handle. When no ramfs root is mounted (the default), is_virtual() is always
+    // false and this branch is dead — behavior is byte-identical to before.
+    if (xbase::ramfs::is_virtual(abs)) {
+        if (!xbase::ramfs::exists(abs)) {
+            throw std::runtime_error("DbArea: file does not exist: " + abs);
         }
+        if (xbase::ramfs::size(abs) < static_cast<std::uint64_t>(sizeof(HeaderRec))) {
+            throw std::runtime_error("DbArea: invalid DBF header (file too small): " + abs);
+        }
+
+        _compute_paths_and_names_(abs);
+
+        _ram = xbase::ramfs::open(abs, /*create=*/false);
+        if (!_ram) {
+            throw std::runtime_error("DbArea: cannot open RAM file: " + abs);
+        }
+        _in_memory = true;
+    }
+    else {
+        if (!fs::exists(norm)) {
+            throw std::runtime_error("DbArea: file does not exist: " + abs);
+        }
+        if (!fs::is_regular_file(norm)) {
+            throw std::runtime_error("DbArea: not a regular file: " + abs);
+        }
+
+        const auto sz = fs::file_size(norm);
+        if (sz < static_cast<std::uintmax_t>(sizeof(HeaderRec))) {
+            throw std::runtime_error("DbArea: invalid DBF header (file too small): " + abs);
+        }
+
+        // Canonical contract (xbase.hpp): compute + store absolute DBF path + derived names.
+        _compute_paths_and_names_(abs);
+
+        // Open using the canonical absolute path (single source of truth).
+        // IMPORTANT: Do not auto-create files here. USE/OPEN must never create files.
+        _in_memory = false;
+        _fp.clear();
+        errno = 0;
+        _fp.open(_dbf_abs_path, std::ios::in | std::ios::out | std::ios::binary);
+        if (!_fp.is_open()) {
+            std::string detail = "DbArea: cannot open file (access denied/locked?): " + _dbf_abs_path;
+            if (errno != 0) {
+                detail += " errno=" + std::to_string(errno);
+            }
 #ifdef _WIN32
-        const fs::path winp(_dbf_abs_path);
-        HANDLE h = ::CreateFileW(
-            winp.c_str(),
-            GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            nullptr);
-        if (h == INVALID_HANDLE_VALUE) {
-            detail += " gle=" + std::to_string(::GetLastError());
-        } else {
-            detail += " createfile=ok";
-            ::CloseHandle(h);
-        }
+            const fs::path winp(_dbf_abs_path);
+            HANDLE h = ::CreateFileW(
+                winp.c_str(),
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+            if (h == INVALID_HANDLE_VALUE) {
+                detail += " gle=" + std::to_string(::GetLastError());
+            } else {
+                detail += " createfile=ok";
+                ::CloseHandle(h);
+            }
 #endif
-        throw std::runtime_error(detail);
+            throw std::runtime_error(detail);
+        }
     }
 
     readHeader();
@@ -186,38 +210,38 @@ void DbArea::open(const std::string& filename)
 
 void DbArea::readHeader()
 {
-    if (!_fp.is_open()) {
+    if (!isOpen()) {
         throw std::runtime_error("DbArea: file not open in readHeader");
     }
 
-    _fp.clear();
-    _fp.seekg(0, std::ios::beg);
+    io().clear();
+    io().seekg(0, std::ios::beg);
 
-    const std::uint8_t ver = vfp_loader::peekVersion(_fp);
+    const std::uint8_t ver = vfp_loader::peekVersion(io());
 
     if (ver == DBF_VERSION_64) {
-        x64_loader::readHeader(*this, _fp);
+        x64_loader::readHeader(*this, io());
         return;
     }
 
     // Use the VFP/legacy loader for classic, Fox26, and VFP DBFs.
-    vfp_loader::readHeader(*this, _fp);
+    vfp_loader::readHeader(*this, io());
 }
 
 void DbArea::readFields()
 {
-    if (!_fp.is_open()) {
+    if (!isOpen()) {
         throw std::runtime_error("DbArea: file not open in readFields");
     }
 
-    _fp.clear();
-    _fp.seekg(0, std::ios::beg);
+    io().clear();
+    io().seekg(0, std::ios::beg);
 
-    const std::uint8_t ver = vfp_loader::peekVersion(_fp);
+    const std::uint8_t ver = vfp_loader::peekVersion(io());
     std::vector<VfpFieldExtras> extras;
 
     if (ver == DBF_VERSION_64) {
-        x64_loader::readFields(*this, _fp, extras);
+        x64_loader::readFields(*this, io(), extras);
         return;
     }
 
@@ -225,8 +249,8 @@ void DbArea::readFields()
     // caller positions the stream just after the 32-byte header.
     // This applies to classic (0x03/0x83/0xF5) and VFP (0x30/0x31/0x32),
     // since both use 32-byte headers in the current implementation.
-    _fp.seekg(sizeof(HeaderRec), std::ios::beg);
-    vfp_loader::readFields(*this, _fp, extras);
+    io().seekg(sizeof(HeaderRec), std::ios::beg);
+    vfp_loader::readFields(*this, io(), extras);
 
     // extras currently remain loader-local by design.
     // If/when VFP nullable/binary/autoinc metadata becomes first-class runtime
@@ -248,7 +272,7 @@ bool DbArea::gotoRec64(std::uint64_t recno) {
 
     const std::streampos pos = checked_record_pos_(*this, recno);
 
-    _fp.seekg(pos, std::ios::beg);
+    io().seekg(pos, std::ios::beg);
     return readCurrent();
 }
 
@@ -282,36 +306,36 @@ bool DbArea::skip(int delta) {
 bool DbArea::appendBlank() {
     // Empty freshly-opened tables can leave the stream in fail/eof state because
     // open() positions to BOF when num_of_recs == 0.
-    _fp.clear();
+    io().clear();
 
     std::vector<char> blank(checked_record_buffer_size_(*this), ' ');
     blank[0] = NOT_DELETED;
 
     // For an empty DBF created with a trailing 0x1A EOF marker, append should
     // overwrite that marker with the new record and then write a new EOF marker.
-    _fp.seekg(0, std::ios::end);
-    const std::streamoff fileSize = _fp.tellg();
+    io().seekg(0, std::ios::end);
+    const std::streamoff fileSize = io().tellg();
 
     std::streamoff recPos = fileSize;
 
     if (fileSize > 0) {
         char last = 0;
-        _fp.seekg(fileSize - 1, std::ios::beg);
-        _fp.read(&last, 1);
-        _fp.clear();
+        io().seekg(fileSize - 1, std::ios::beg);
+        io().read(&last, 1);
+        io().clear();
 
         if (static_cast<unsigned char>(last) == 0x1A) {
             recPos = fileSize - 1;
         }
     }
 
-    _fp.seekp(recPos, std::ios::beg);
-    _fp.write(blank.data(), static_cast<std::streamsize>(blank.size()));
+    io().seekp(recPos, std::ios::beg);
+    io().write(blank.data(), static_cast<std::streamsize>(blank.size()));
 
     const char eof = static_cast<char>(0x1A);
-    _fp.write(&eof, 1);
+    io().write(&eof, 1);
 
-    if (!_fp) return false;
+    if (!io()) return false;
 
     // Runtime truth first.
     ++_rec_count64;
@@ -326,25 +350,25 @@ bool DbArea::appendBlank() {
     // Do not rewrite the entire 32-byte header through HeaderRec for VFP/x64.
     // That would clobber dialect-specific tail bytes.
     // Patch the common 32-bit record count at offset 4.
-    _fp.clear();
-    _fp.seekp(4, std::ios::beg);
-    _fp.write(reinterpret_cast<const char*>(&_hdr.num_of_recs), sizeof(_hdr.num_of_recs));
+    io().clear();
+    io().seekp(4, std::ios::beg);
+    io().write(reinterpret_cast<const char*>(&_hdr.num_of_recs), sizeof(_hdr.num_of_recs));
 
     // x64 dialect also keeps the authoritative record count in the extension block
     // immediately after the 32-byte VFP-style header.
     if (_dbf_version_byte == DBF_VERSION_64) {
         const std::uint64_t rc64 = _rec_count64;
-        _fp.seekp(static_cast<std::streamoff>(sizeof(VfpHeader)) +
+        io().seekp(static_cast<std::streamoff>(sizeof(VfpHeader)) +
                       static_cast<std::streamoff>(offsetof(LargeHeaderExtension, record_count)),
                   std::ios::beg);
-        _fp.write(reinterpret_cast<const char*>(&rc64), sizeof(rc64));
+        io().write(reinterpret_cast<const char*>(&rc64), sizeof(rc64));
     }
 
-    _fp.flush();
+    io().flush();
 
-    if (!_fp) return false;
+    if (!io()) return false;
 
-    _fp.clear();
+    io().clear();
 
     // Defensive reset: do not let the previous current record leak into the
     // newly appended blank row if the decode path is imperfect.

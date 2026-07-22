@@ -1,5 +1,6 @@
 #include "xbase_locks.hpp"
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -156,6 +157,9 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
 }
 
 static bool force_remove(const std::string& path, std::string* err) {
+    // In-memory tables (AIF-043 V3): a RAM table is process-local/single-area —
+    // there is no OS lock file to touch, so locking is a no-op success.
+    if (xbase::ramfs::is_virtual(path)) return true;
     std::error_code ec;
     fs::remove(path, ec);
     if (ec && fs::exists(path)) {
@@ -187,6 +191,7 @@ static bool is_pid_alive(unsigned long pid) {
 }
 
 static bool remove_if_owned(const std::string& path, const Owner& me, std::string* err) {
+    if (xbase::ramfs::is_virtual(path)) return true;  // RAM table: no OS lock file
     if (!fs::exists(path)) return true;
 
     LockMeta meta;
@@ -210,6 +215,7 @@ static bool remove_if_owned(const std::string& path, const Owner& me, std::strin
 }
 
 static bool create_or_validate_owned(const std::string& path, const Owner& me, std::string* err) {
+    if (xbase::ramfs::is_virtual(path)) return true;  // RAM table: lock is a no-op success
     if (!fs::exists(path)) {
         return write_lock_file(path, me, err);
     }

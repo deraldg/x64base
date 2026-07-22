@@ -373,6 +373,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("WORKSPACE", [](DbArea& A, std::istringstream& S){ cmd_WORKSPACE(A,S); });
     registry().add("PROJECTS",  [](DbArea& A, std::istringstream& S){ cmd_PROJECTS(A,S);  });
     registry().add("WSREPORT",  [](DbArea& A, std::istringstream& S){ cmd_WSREPORT(A,S);  });
+    registry().add("VDISK",     [](DbArea& A, std::istringstream& S){ cmd_VDISK(A,S);      });
 
     // ZAP is destructive and can invalidate cursor/relation assumptions.
     // Refresh explicitly after it runs.

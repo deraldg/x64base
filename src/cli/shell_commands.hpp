@@ -59,6 +59,7 @@ void cmd_STRUCT(DbArea&, std::istringstream&);
 void cmd_SCHEMAS(DbArea&, std::istringstream&);
 void cmd_WORKSPACE(DbArea&, std::istringstream&);
 void cmd_WSREPORT(DbArea&, std::istringstream&);
+void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_CATALOGCANARY(xbase::DbArea& area, std::istringstream&);
 
 //   METADATA RECORDS

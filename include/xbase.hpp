@@ -11,6 +11,7 @@
 #include <vector>
 #include <array>
 #include <fstream>
+#include <sstream>
 #include <memory>
 #include <stdexcept>
 #include <optional>
@@ -142,7 +143,16 @@ public:
     void close();
 
     // ---- State ------------------------------------------------------------
-    bool isOpen() const noexcept { return _fp.is_open(); }
+    bool isOpen() const noexcept { return _in_memory ? (_ram != nullptr) : _fp.is_open(); }
+
+    // In-memory tables (AIF-043): record I/O routes through io(). While _in_memory is
+    // false (every disk table) io() == _fp, so behavior is unchanged. DbArea::open
+    // flips _in_memory and binds _ram to a ramfs byte store when the path resolves
+    // under a mounted virtual root (V2).
+    std::iostream& io() noexcept {
+        return _in_memory ? *_ram
+                          : static_cast<std::iostream&>(_fp);
+    }
     bool isDeleted() const;
 
     // ---- Runtime kind / capability ---------------------------------------
@@ -353,6 +363,8 @@ public:
 private:
     // ===== Storage =========================================================
     std::fstream _fp;
+    std::unique_ptr<std::iostream> _ram;  // AIF-043 in-memory tables: ramfs byte store (V2)
+    bool _in_memory{false};               // when true, io() serves record bytes from *_ram
     HeaderRec    _hdr{};
 
     // ===== Schema & buffers ===============================================

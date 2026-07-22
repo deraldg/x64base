@@ -26,6 +26,7 @@ enum class Slot {
     INDEXES_X32,
     INDEXES_X64,
     LMDB,
+    RAM,            // AIF-043 in-memory tables: relocatable virtual-disk root
     WORKSPACES,
     SCHEMAS,
     PROJECTS,
@@ -85,6 +86,7 @@ struct State {
     fs::path indexes_x64_root;
 
     fs::path lmdb_root;
+    fs::path ram_root;
     fs::path workspaces_root;
     fs::path schemas_root;
     fs::path projects_root;

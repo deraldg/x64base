@@ -103,6 +103,7 @@ void build_all_paths(State& s)
     s.indexes_x64_root = s.indexes_root / "x64";
 
     s.lmdb_root = s.data_root / "lmdb";
+    s.ram_root = s.data_root / "ram";
     s.workspaces_root = s.data_root / "workspaces";
     s.schemas_root = s.data_root / "schemas";
     s.projects_root = s.data_root / "projects";
@@ -174,6 +175,7 @@ fs::path get_slot(Slot slot)
     case Slot::INDEXES_X32: return s.indexes_x32_root;
     case Slot::INDEXES_X64: return s.indexes_x64_root;
     case Slot::LMDB: return s.lmdb_root;
+    case Slot::RAM: return s.ram_root;
     case Slot::WORKSPACES: return s.workspaces_root;
     case Slot::SCHEMAS: return s.schemas_root;
     case Slot::PROJECTS: return s.projects_root;
@@ -237,6 +239,7 @@ void set_slot(Slot slot, const fs::path& value)
     case Slot::INDEXES_X32: s.indexes_x32_root = abs; break;
     case Slot::INDEXES_X64: s.indexes_x64_root = abs; break;
     case Slot::LMDB: s.lmdb_root = abs; break;
+    case Slot::RAM: s.ram_root = abs; break;
     case Slot::WORKSPACES: s.workspaces_root = abs; break;
     case Slot::SCHEMAS: s.schemas_root = abs; break;
     case Slot::PROJECTS: s.projects_root = abs; break;
@@ -318,6 +321,7 @@ std::optional<Slot> slot_from_string(const std::string& name)
     if (key == "INDEXES_X32" || key == "INDEXX32") return Slot::INDEXES_X32;
     if (key == "INDEXES_X64" || key == "INDEXX64") return Slot::INDEXES_X64;
     if (key == "LMDB") return Slot::LMDB;
+    if (key == "RAM" || key == "MEM") return Slot::RAM;
     if (key == "WORKSPACES") return Slot::WORKSPACES;
     if (key == "SCHEMAS") return Slot::SCHEMAS;
     if (key == "PROJECTS") return Slot::PROJECTS;
@@ -386,6 +390,7 @@ std::string slot_name(Slot slot)
     case Slot::INDEXES_X32: return "INDEXES_X32";
     case Slot::INDEXES_X64: return "INDEXES_X64";
     case Slot::LMDB: return "LMDB";
+    case Slot::RAM: return "RAM";
     case Slot::WORKSPACES: return "WORKSPACES";
     case Slot::SCHEMAS: return "SCHEMAS";
     case Slot::PROJECTS: return "PROJECTS";
@@ -538,6 +543,7 @@ std::string describe()
         << "INDEX_X32  = " << s.indexes_x32_root.string() << "\n"
         << "INDEX_X64  = " << s.indexes_x64_root.string() << "\n"
         << "LMDB       = " << s.lmdb_root.string() << "\n"
+        << "RAM        = " << s.ram_root.string() << "\n"
         << "WORKSPACES = " << s.workspaces_root.string() << "\n"
         << "SCHEMAS    = " << s.schemas_root.string() << "\n"
         << "PROJECTS   = " << s.projects_root.string() << "\n"

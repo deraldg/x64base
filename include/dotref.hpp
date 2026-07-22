@@ -32,15 +32,22 @@ inline const std::vector<Item>& catalog() {
 
         {"STATUS",    "STATUS", "Display area status.", true},
 
+        {"STOP_ON_ERROR", "STOP_ON_ERROR [OFF|WARNING|ERROR]",
+                 "Set or report the severity threshold at which a running DotScript aborts (stop_on_error[severity]); SET ERRORSTOP TO is the compatibility form, DOTTALK_ERRORSTOP the startup default.", true},
+
         {"STRUCT",    "STRUCT", "Display table structure.", true},
 
         {"FIELDS",    "FIELDS", "Show structure (field list).", true},
 
         {"SET ORDER", "SET ORDER TO <tag>",
-                 "Set controlling index tag (compatibility form; see SETORDER).", true},
+                 "Set controlling index tag (compatibility form; see SETORDER). "
+                 "ramfs/VDISK-aware: attaches a RAM-resident CDX-V64 under a mounted VDISK (AIF-043).", true},
 
         {"SETORDER",  "SETORDER <tag>|PHYSICAL",
-                 "Set controlling order/tag for the current area (or PHYSICAL for natural order).", true},
+                 "Set controlling order/tag for the current area (or PHYSICAL for natural order). "
+                 "ramfs/VDISK-aware: attaches a RAM-resident CDX-V64 under a mounted VDISK "
+                 "(the LMDB env gate is skipped for virtual containers); ordered traversal reads "
+                 "back in native-index order from RAM (AIF-043).", true},
 
         {"SET INDEX", "SET INDEX TO <base>", "Attach/activate a single-tag INX index (base name).", true},
 
@@ -72,11 +79,24 @@ inline const std::vector<Item>& catalog() {
         {"BUILDLMDB", "BUILDLMDB [HELP|?] [MAPSIZE <n[K|M|G]>|SIZE <n[K|M|G]>|TINY|SMALL|MEDIUM|LARGE|XL|HUGE] [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]",
                  "Build or rebuild the LMDB backing store for the current CDX container; may mutate LMDB/index files but not table records.", true},
 
-        {"CDX",       "CDX [INFO|TAGS|CREATE|ADDTAG|DROPTAG] [<path.cdx>]", "Inspect or manage CDX container metadata and tag directories.", true},
+        {"CDX",       "CDX [INFO|TAGS|CREATE|ADDTAG|DROPTAG] [<path.cdx>]",
+                 "Inspect or manage CDX container metadata and tag directories. "
+                 "ramfs/VDISK-aware: under a mounted VDISK the container resolves from RAM "
+                 "(a native CDX-V64), so CREATE/ADDTAG/DROPTAG operate on the in-RAM container "
+                 "with no file on disk (AIF-043).", true},
 
         {"INDEX",     "INDEX [ON <field> TAG <name> | STATUS | LIST]", "General index-management command surface for the current table.", true},
 
         {"LMDB",      "LMDB [USAGE|INFO|OPEN|USE|SEEK|DUMP|SCAN|CLOSE] ...", "Inspect or manage per-area LMDB-backed index/storage wiring where supported.", true},
+
+        {"VDISK",     "VDISK MOUNT|UNMOUNT|STATUS",
+                 "Activate the in-process RAM virtual disk for in-memory tables (AIF-043). "
+                 "MOUNT points the DBF/INDEXES/LMDB path slots under the relocatable RAM slot "
+                 "(default data\\ram) and mounts it as an xbase::ramfs virtual root, so CREATE "
+                 "X64, USE, and native CDX-V64 live entirely in RAM with no files on disk. "
+                 "UNMOUNT drops all RAM files and unmounts (ephemeral teardown). STATUS reports "
+                 "the RAM root, mount state, byte usage, and resident file list. Relocate the RAM "
+                 "root with SET PATH RAM <path> before MOUNT. Typically activated via DO mem.", true},
 
         {"CNX",       "CNX <name>",
                  "Index container command (CNX multi-tag support).", true},
@@ -977,8 +997,8 @@ Notes:
         {"TUPEXPORT", "TUPEXPORT [USAGE|<args...>]",
                  "Export tuple/projection output through the tuple export helper surface.", true},
 
-        {"VAR", "VAR [USAGE|LIST|SET <name> <value>|CLEAR <name>]",
-                 "Inspect or manage DotTalk++ session variables and macro-style script values.", true},
+        {"VAR", "VAR USAGE | VAR <name> = <expr>",
+                 "Evaluate an expression and store it as a scoped DotScript memory variable, referenced later as $name (e.g. VAR n = 40 + 2 then ? $n). Distinct from SET VAR (&macro) variables.", true},
 
         // Phase 5 DOTREF curation batch 12: example, standard-reference, hierarchy, and student/demo surfaces.
         {"EXAMPLE", "EXAMPLE [USAGE|<name>|LIST]",

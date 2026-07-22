@@ -127,7 +127,7 @@ static_assert(sizeof(VfpField) == 32, "VfpField must be 32 bytes");
 namespace vfp_loader {
 
 // Peek version without consuming stream position.
-inline uint8_t peekVersion(std::fstream& fp) {
+inline uint8_t peekVersion(std::istream& fp) {
     const std::streampos pos = fp.tellg();
     uint8_t ver = 0;
     fp.read(reinterpret_cast<char*>(&ver), 1);
@@ -138,7 +138,7 @@ inline uint8_t peekVersion(std::fstream& fp) {
 }
 
 // Read header and map to DbArea's encapsulated state.
-inline void readHeader(DbArea& area, std::fstream& fp) {
+inline void readHeader(DbArea& area, std::istream& fp) {
     const uint8_t ver = peekVersion(fp);
     area.setVersionByte(ver);
     area.setKind(detect_area_kind_from_version(ver));
@@ -172,7 +172,7 @@ inline void readHeader(DbArea& area, std::fstream& fp) {
 
 // Read field descriptors until the 0x0D terminator.
 inline void readFields(DbArea& area,
-                       std::fstream& fp,
+                       std::istream& fp,
                        std::vector<VfpFieldExtras>& extras)
 {
     extras.clear();

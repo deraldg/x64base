@@ -91,6 +91,8 @@
 //
 
 #include "xbase.hpp"
+#include "xbase/ramfs.hpp"
+#include "xindex/cdx_native_backend.hpp"
 #include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
@@ -482,6 +484,42 @@ static bool run_reindex_cnx(DbArea& A, const std::string& argRest)
 
 static bool run_reindex_cdx(DbArea& A, const std::string& argRest)
 {
+    // Native CDX-V64 (AIF-043 V4e): if the table's .cdx container resolves under a
+    // mounted ramfs root, rebuild via the LMDB-free native backend (uint64 RUN8),
+    // never BUILDLMDB (LMDB can't live in ramfs). Disk .cdx still uses LMDB below.
+    {
+        std::string stem;
+        if (A.isOpen()) {
+            stem = A.dbfBasename();
+            if (stem.empty()) stem = A.logicalName();
+        }
+        if (!stem.empty()) {
+            fs::path cdx = dottalk::paths::resolve_index(stem);
+            if (!cdx.has_extension()) cdx.replace_extension(".cdx");
+
+            if (xbase::ramfs::is_virtual(cdx.string())) {
+                try {
+                    xindex::CdxNativeBackend b(A, cdx.string(), std::string());
+                    if (!b.open(cdx.string())) {
+                        cli::cmdout::print_note("REINDEX",
+                            "native CDX open failed: " + cdx.string());
+                        return false;
+                    }
+                    b.rebuild();
+                    b.close();
+                    cli::cmdout::print_note("REINDEX",
+                        "native CDX-V64 rebuilt in RAM: " + cdx.string());
+                    return true;
+                }
+                catch (const std::exception& e) {
+                    cli::cmdout::print_note("REINDEX",
+                        std::string("native CDX rebuild failed: ") + e.what());
+                    return false;
+                }
+            }
+        }
+    }
+
 #if DOTTALK_WITH_INDEX
     std::istringstream in(argRest);
     cmd_BUILDLMDB(A, in);

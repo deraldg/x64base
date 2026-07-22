@@ -1,11 +1,13 @@
 // cli/cdx/cdx_file.cpp
 #include "cdx/cdx.hpp"
+#include "xbase/ramfs.hpp"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -14,9 +16,23 @@ namespace fs = std::filesystem;
 
 namespace cdxfile {
 
+// In-memory containers (AIF-043 V4d): a path under a mounted ramfs root is served
+// from RAM. The handle carries either the disk std::fstream or a ramfs
+// std::iostream; io() is the single byte-store seam every primitive reads/writes
+// through (identical to DbArea's io()). When no ramfs root is mounted (default),
+// is_virtual() is false and the RAM branch is dead — byte-identical to before.
 struct CDXHandle {
     std::string path;
     std::fstream f;
+    std::unique_ptr<std::iostream> mem;
+    bool in_memory{false};
+
+    std::iostream& io() noexcept {
+        return in_memory ? *mem : static_cast<std::iostream&>(f);
+    }
+    bool is_open() const noexcept {
+        return in_memory ? (mem != nullptr) : f.is_open();
+    }
 };
 
 static bool ensure_parent_dir(const std::string& path)
@@ -29,7 +45,7 @@ static bool ensure_parent_dir(const std::string& path)
     return fs::create_directories(parent, ec);
 }
 
-static std::uint64_t file_size64(std::fstream& f)
+static std::uint64_t file_size64(std::iostream& f)
 {
     auto cur = f.tellg();
     f.seekg(0, std::ios::end);
@@ -42,30 +58,35 @@ bool open(const std::string& path, CDXHandle*& out)
 {
     out = nullptr;
 
-    if (!ensure_parent_dir(path)) {
-        return false;
-    }
-
     auto h = new CDXHandle();
     h->path = path;
 
-    // Try open existing read/write binary
-    h->f.open(path, std::ios::in | std::ios::out | std::ios::binary);
+    if (xbase::ramfs::is_virtual(path)) {
+        // RAM container: create-or-open the ramfs byte store.
+        h->in_memory = true;
+        h->mem = xbase::ramfs::open(path, /*create=*/true);
+        if (!h->mem) { delete h; return false; }
+    } else {
+        if (!ensure_parent_dir(path)) { delete h; return false; }
 
-    if (!h->f.is_open()) {
-        // Create new
-        h->f.clear();
-        h->f.open(path, std::ios::out | std::ios::binary);
-        if (!h->f.is_open()) { delete h; return false; }
-        h->f.close();
-
-        // Reopen read/write
+        // Try open existing read/write binary
         h->f.open(path, std::ios::in | std::ios::out | std::ios::binary);
-        if (!h->f.is_open()) { delete h; return false; }
+
+        if (!h->f.is_open()) {
+            // Create new
+            h->f.clear();
+            h->f.open(path, std::ios::out | std::ios::binary);
+            if (!h->f.is_open()) { delete h; return false; }
+            h->f.close();
+
+            // Reopen read/write
+            h->f.open(path, std::ios::in | std::ios::out | std::ios::binary);
+            if (!h->f.is_open()) { delete h; return false; }
+        }
     }
 
     // If file is empty, initialize minimal header + blank TableBind page + empty tagdir.
-    std::uint64_t sz = file_size64(h->f);
+    std::uint64_t sz = file_size64(h->io());
     if (sz == 0) {
         CDXHeader hdr{};
         hdr.magic = CDX_MAGIC;
@@ -78,15 +99,15 @@ bool open(const std::string& path, CDXHandle*& out)
         hdr.tag_count = 0;
 
         // Write header
-        h->f.seekp(0, std::ios::beg);
-        h->f.write(reinterpret_cast<const char*>(&hdr), sizeof(hdr));
+        h->io().seekp(0, std::ios::beg);
+        h->io().write(reinterpret_cast<const char*>(&hdr), sizeof(hdr));
 
         // Write TableBind (page 1)
         TableBind bind{};
-        h->f.write(reinterpret_cast<const char*>(&bind), sizeof(bind));
+        h->io().write(reinterpret_cast<const char*>(&bind), sizeof(bind));
 
         // Write empty tagdir (nothing)
-        h->f.flush();
+        h->io().flush();
     }
 
     out = h;
@@ -96,18 +117,22 @@ bool open(const std::string& path, CDXHandle*& out)
 void close(CDXHandle*& h)
 {
     if (!h) return;
-    if (h->f.is_open()) h->f.close();
+    if (h->in_memory) {
+        h->mem.reset();
+    } else if (h->f.is_open()) {
+        h->f.close();
+    }
     delete h;
     h = nullptr;
 }
 
 bool read_header(CDXHandle* h, CDXHeader& hdr)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekg(0, std::ios::beg);
-    h->f.read(reinterpret_cast<char*>(&hdr), sizeof(hdr));
-    if (!h->f.good()) return false;
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekg(0, std::ios::beg);
+    h->io().read(reinterpret_cast<char*>(&hdr), sizeof(hdr));
+    if (!h->io().good()) return false;
 
     if (hdr.magic != CDX_MAGIC) return false;
     if (hdr.version != CDX_VERSION) return false;
@@ -130,12 +155,12 @@ bool set_dirty(CDXHandle* h, bool dirty)
 
 bool flush_header(CDXHandle* h, const CDXHeader& hdr)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekp(0, std::ios::beg);
-    h->f.write(reinterpret_cast<const char*>(&hdr), sizeof(hdr));
-    h->f.flush();
-    return h->f.good();
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekp(0, std::ios::beg);
+    h->io().write(reinterpret_cast<const char*>(&hdr), sizeof(hdr));
+    h->io().flush();
+    return h->io().good();
 }
 
 std::optional<uint32_t> page_size(CDXHandle* h)
@@ -147,21 +172,21 @@ std::optional<uint32_t> page_size(CDXHandle* h)
 
 bool read_table_bind(CDXHandle* h, TableBind& out)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekg(sizeof(CDXHeader), std::ios::beg);
-    h->f.read(reinterpret_cast<char*>(&out), sizeof(out));
-    return h->f.good();
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekg(sizeof(CDXHeader), std::ios::beg);
+    h->io().read(reinterpret_cast<char*>(&out), sizeof(out));
+    return h->io().good();
 }
 
 bool write_table_bind(CDXHandle* h, const TableBind& in)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekp(sizeof(CDXHeader), std::ios::beg);
-    h->f.write(reinterpret_cast<const char*>(&in), sizeof(in));
-    h->f.flush();
-    return h->f.good();
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekp(sizeof(CDXHeader), std::ios::beg);
+    h->io().write(reinterpret_cast<const char*>(&in), sizeof(in));
+    h->io().flush();
+    return h->io().good();
 }
 
 static TagInfo to_taginfo(const TagDirEntry& e)
@@ -202,7 +227,7 @@ static TagDirEntry to_entry(const TagInfo& t)
 bool read_tagdir(CDXHandle* h, std::vector<TagInfo>& out)
 {
     out.clear();
-    if (!h || !h->f.is_open()) return false;
+    if (!h || !h->is_open()) return false;
 
     CDXHeader hdr{};
     if (!read_header(h, hdr)) return false;
@@ -210,13 +235,13 @@ bool read_tagdir(CDXHandle* h, std::vector<TagInfo>& out)
     if (hdr.tagdir_offset == 0) return true;
     if (hdr.tag_count == 0) return true;
 
-    h->f.clear();
-    h->f.seekg(static_cast<std::streamoff>(hdr.tagdir_offset), std::ios::beg);
+    h->io().clear();
+    h->io().seekg(static_cast<std::streamoff>(hdr.tagdir_offset), std::ios::beg);
 
     for (std::uint32_t i = 0; i < hdr.tag_count; ++i) {
         TagDirEntry e{};
-        h->f.read(reinterpret_cast<char*>(&e), sizeof(e));
-        if (!h->f.good()) return false;
+        h->io().read(reinterpret_cast<char*>(&e), sizeof(e));
+        if (!h->io().good()) return false;
         out.emplace_back(to_taginfo(e));
     }
     return true;
@@ -224,28 +249,28 @@ bool read_tagdir(CDXHandle* h, std::vector<TagInfo>& out)
 
 bool write_tagdir(CDXHandle* h, const std::vector<TagInfo>& tags)
 {
-    if (!h || !h->f.is_open()) return false;
+    if (!h || !h->is_open()) return false;
 
     CDXHeader hdr{};
     if (!read_header(h, hdr)) return false;
 
     // Append tagdir at end of file (simple/robust approach)
-    h->f.clear();
-    h->f.seekp(0, std::ios::end);
-    std::uint64_t off = static_cast<std::uint64_t>(h->f.tellp());
+    h->io().clear();
+    h->io().seekp(0, std::ios::end);
+    std::uint64_t off = static_cast<std::uint64_t>(h->io().tellp());
 
     for (const auto& t : tags) {
         TagDirEntry e = to_entry(t);
-        h->f.write(reinterpret_cast<const char*>(&e), sizeof(e));
-        if (!h->f.good()) return false;
+        h->io().write(reinterpret_cast<const char*>(&e), sizeof(e));
+        if (!h->io().good()) return false;
     }
 
     hdr.tagdir_offset = off;
     hdr.tag_count = static_cast<std::uint32_t>(tags.size());
     if (!flush_header(h, hdr)) return false;
 
-    h->f.flush();
-    return h->f.good();
+    h->io().flush();
+    return h->io().good();
 }
 
 bool add_tag(CDXHandle* h, const std::string& tag_name_upper)
@@ -336,33 +361,33 @@ BindCheck validate_table_bind(const TableBind& bind,
 bool append_bytes(CDXHandle* h, const void* data, std::size_t len, std::uint64_t& out_off)
 {
     out_off = 0;
-    if (!h || !h->f.is_open()) return false;
+    if (!h || !h->is_open()) return false;
 
-    h->f.clear();
-    h->f.seekp(0, std::ios::end);
-    out_off = static_cast<std::uint64_t>(h->f.tellp());
-    h->f.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(len));
-    h->f.flush();
-    return h->f.good();
+    h->io().clear();
+    h->io().seekp(0, std::ios::end);
+    out_off = static_cast<std::uint64_t>(h->io().tellp());
+    h->io().write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(len));
+    h->io().flush();
+    return h->io().good();
 }
 
 bool read_at(CDXHandle* h, std::uint64_t off, void* buf, std::size_t len)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekg(static_cast<std::streamoff>(off), std::ios::beg);
-    h->f.read(reinterpret_cast<char*>(buf), static_cast<std::streamsize>(len));
-    return h->f.good();
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekg(static_cast<std::streamoff>(off), std::ios::beg);
+    h->io().read(reinterpret_cast<char*>(buf), static_cast<std::streamsize>(len));
+    return h->io().good();
 }
 
 bool write_at(CDXHandle* h, std::uint64_t off, const void* buf, std::size_t len)
 {
-    if (!h || !h->f.is_open()) return false;
-    h->f.clear();
-    h->f.seekp(static_cast<std::streamoff>(off), std::ios::beg);
-    h->f.write(reinterpret_cast<const char*>(buf), static_cast<std::streamsize>(len));
-    h->f.flush();
-    return h->f.good();
+    if (!h || !h->is_open()) return false;
+    h->io().clear();
+    h->io().seekp(static_cast<std::streamoff>(off), std::ios::beg);
+    h->io().write(reinterpret_cast<const char*>(buf), static_cast<std::streamsize>(len));
+    h->io().flush();
+    return h->io().good();
 }
 
 } // namespace cdxfile

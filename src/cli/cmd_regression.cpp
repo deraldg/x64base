@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 9> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -131,6 +131,70 @@ constexpr std::array<RegressionSpec, 9> kRegressionSpecs{{
         "LIMITS",
         "limits\\limits_all_shakedown.dts",
         "Engine limit guardrails: MAX_AREA=512, x64 name ceilings 256, record-size advisory, CLOSE ALL over every open area",
+        false
+    },
+    {
+        "DOTSCRIPT_EXPR",
+        "dotscript\\dotscript_expr_regression.dts",
+        "DotScript memvars (VAR/$name) + arrays ({}/$a[n], nested/chained) via the house expression path, with an IF literal baseline (AIF-041 M1)",
+        true
+    },
+    {
+        "DOTSCRIPT_PARITY",
+        "dotscript\\predicate_memvar_parity_regression.dts",
+        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE — now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
+        true
+    },
+    {
+        "LEXING",
+        "lexing\\comment_handling_regression.dts",
+        "Canonical comment vocabulary on the script path after the AIF-037 lexer consolidation (full-line * REM # //, inline && #, single & macro survives); read-only, fixture-free",
+        true
+    },
+    {
+        "CALC",
+        "calc\\calc_output_regression.dts",
+        "CALC output-routing regression: every ValueKind path (Bool/Number/String/Date/empty/Error) via cli::cmdout::print_line (AIF-031); read-only, but leaves ECHO ON so it stays out of the default suite (explicit run)",
+        false
+    },
+    {
+        "ERRORSTOP",
+        "errorstop\\stop_on_error_regression.dts",
+        "stop_on_error threshold: OFF continues past a recorded error, ERROR aborts at the failing line; self-contained, but Phase-2 aborts leaving STOP_ON_ERROR ON so it stays out of the default suite (explicit run) (AIF-036)",
+        false
+    },
+    {
+        "WAL_COMMIT_ROLLBACK",
+        "pinocchio\\wal_commit_rollback_regression.dts",
+        "WAL durability: COMMIT applies a buffered+logged REPLACE, ROLLBACK discards one; self-bootstrapping (creates+erases a throwaway WALREGR table, never touches the students fixture), self-asserting W0/W1/W2 markers. Mutates the filesystem so it stays out of the default suite (explicit run) (AIF-017/023)",
+        false
+    },
+    // NOTE: this WAL_COMMIT_ROLLBACK entry replaces the legacy commit_rollback_test.dts,
+    // which assumed an already-open `students` table, did not self-bootstrap (regression
+    // doctrine violation), and silently no-op'd when run standalone. The self-contained
+    // basis is pinocchio\wal_phaseA_proof.dts (throwaway table, ERASEd at end).
+    {
+        "INDEX_TXN",
+        "migrated\\index_txn_lmdb_maintenance.dts",
+        "SET INDEXTXN transactional in-COMMIT index maintenance: buffered REPLACE/DELETE + COMMIT maintains the live CDX/LMDB index with NO BUILDLMDB. Self-asserting and fixture-free (builds + erases its own throwaway x64 IDXTXN table; never touches students). Scored on ORDERED position = index-truth (T1 commit-maintains, T2 dup-survivor): OFF => .F. (RED), ON => .T. (GREEN). Mode is env-driven (DOTTALK_INDEX_TXN) or runtime SET INDEXTXN; the script does not force the flag. Out of the default suite (mutates the filesystem; explicit run) (AIF-027/023; feeds AIF-041 M1)",
+        false
+    },
+    {
+        "SCAN_PARITY",
+        "dotscript\\scan_memvar_parity_regression.dts",
+        "Scan-path parity: $name resolves in a FOR/scan predicate (eval_bool: LOCATE/COUNT/SCAN/LIST FOR + SET FILTER) via the shared bridge. GREEN since the AIF-041 scan convergence landed (2026-07-21). Self-bootstrapping throwaway SCANREGR in SANDBOX; stays out of the default suite because it mutates the filesystem (explicit run) (AIF-041)",
+        false
+    },
+    {
+        "DEF_FAMILY",
+        "dotscript\\def_family_regression.dts",
+        "Runtime DEF-family testbed: DEFCMD/DEFFN/EXAMPLE define-invoke-arg-compose-list-remove, session-only, no rebuild (RUNTIME_DEF_FAMILY lane). Self-bootstrapping; opens/mutates no table or file (only the session command/function registries, which it cleans up). Permanent worked example of the AI-friendly dev-tools. Explicit-run until proven green in-suite, then promote to default.",
+        false
+    },
+    {
+        "MEM",
+        "mem_proof.dts",
+        "AIF-043 in-memory indexed table end-to-end proof: DO mem mounts the in-process RAM VFS (xbase::ramfs), then an x64 table AND its native CDX-V64 index are built, indexed, and traversed entirely in RAM (RUN8, no LMDB, zero files on disk). Self-contained (leads with DO mem, clean-slate remount) and self-asserting: ordered read-back must yield ADAMS/MILLER/ZEBRA (MEM_T1/T2/T3 = .T.); teardown unmounts and restores the x64 disk env. Mutates the RAM VFS only (no disk table), but kept out of the default suite (explicit run) until soaked. (AIF-043)",
         false
     }
 }};

@@ -64,6 +64,12 @@ void DbArea::close() {
     }
     _fp.clear();
 
+    // In-memory tables (AIF-043 V2): detach this area's ramfs byte store. The RAM
+    // file itself persists in the ramfs registry (like a .dbf on disk survives a
+    // close) until erased or the virtual disk is unmounted/cleared.
+    _ram.reset();
+    _in_memory = false;
+
     // Clear canonical runtime descriptors
     _clear_paths_and_names_();
 

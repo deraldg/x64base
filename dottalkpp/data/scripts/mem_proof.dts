@@ -1,0 +1,57 @@
+* ============================================================================
+* mem_proof.dts - AIF-043 in-memory indexed table, end-to-end self-assert.
+*
+* Proves: an x64 table AND its native CDX-V64 index live entirely in RAM
+* (ramfs), built with no LMDB and no files on disk, and ordered traversal
+* reads back in native-index order.
+* Self-contained: leads with DO mem (mount) + clean-slate remount; teardown unmounts
+* and restores the x64 disk env. Run standalone: DO mem_proof  |  regression: REGRESSION RUN MEM
+* Markers: MEM_T1/T2/T3 must all print .T.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* self-contained activation: DO mem mounts the RAM VFS + sets DBF/INDEXES/LMDB slots
+DO mem
+* deterministic clean slate: drop any RAM files a prior/aborted run left, then re-activate
+VDISK UNMOUNT
+DO mem
+
+FORMULA "MEM-TABLE-PROOF-BEGIN"
+
+* --- build a throwaway x64 table in RAM ---
+CREATE X64 MEMT (ID N(6), LNAME C(20))
+* residency checkpoint: MEMT.dbf should appear as a RAM file (nonzero bytes)
+VDISK STATUS
+APPEND
+REPLACE ID WITH 1
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE ID WITH 2
+REPLACE LNAME WITH "ADAMS"
+APPEND
+REPLACE ID WITH 3
+REPLACE LNAME WITH "MILLER"
+
+* --- native CDX-V64 index, built in RAM (RUN8, no LMDB) ---
+CDX CREATE
+CDX ADDTAG LNAME
+REINDEX CDX
+SET ORDER TAG LNAME
+
+* --- ordered traversal proves the in-RAM index (sort: ADAMS,MILLER,ZEBRA) ---
+TOP
+? "MEM_T1_top_ADAMS:" + (ALLTRIM(LNAME) = "ADAMS")
+SKIP
+? "MEM_T2_next_MILLER:" + (ALLTRIM(LNAME) = "MILLER")
+BOTTOM
+? "MEM_T3_bottom_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- residency: table + index are RAM files, nothing on disk ---
+VDISK STATUS
+
+FORMULA "MEM-TABLE-PROOF-END"
+
+* --- teardown: drop RAM, restore the disk environment ---
+VDISK UNMOUNT
+DO x64
