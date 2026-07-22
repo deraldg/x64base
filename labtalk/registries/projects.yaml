@@ -10,9 +10,23 @@ projects:
     lanes: [engine, cli, dotscript, help, selfdoc, contracts, gui, maintenance]
     docs:
       - README.md
+      - AI_PORTAL.md
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
-    notes: Canonical source and runtime truth for DotTalk++ / x64base.
+    publication_staging: C:/x64base
+    publication_target: github.com/deraldg/x64base
+    notes: Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to C:/x64base for publication.
+
+  - id: project.x64base.public_staging
+    name: x64base Curated Public Staging
+    kind: publication_staging_project
+    status: active_curated_staging
+    root: C:/x64base
+    owner_repo: deraldg/x64base
+    upstream_authority: project.x64base.runtime
+    publication_target: github.com/deraldg/x64base
+    lanes: [curation, clean_staging, public_snapshot, commit, push]
+    notes: Receives only reviewed, relevant, clean work from D:/code/ccode. Commits and GitHub pushes originate here. This tree and GitHub main are public projections, not competing development authority.
 
   - id: project.labtalk.campus
     name: LabTalk Campus
@@ -25,9 +39,12 @@ projects:
       - README.md
       - portal/README.md
       - ai_portal/README.md
+      - ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+      - ai_portal/SDLC_FAST_START_SEED_V1.md
+      - ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
       - ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
       - LABTALK_CAMPUS_ARCHITECTURE_v0.md
-    notes: Consumer and teaching layer over DotTalk++ runtime truth, including a reserved provider-neutral LMS communications lane.
+    notes: Consumer and teaching layer over DotTalk++ runtime truth, including a reserved provider-neutral LMS communications lane. Its AI Portal sublane is machine-facing fast-start context for AI development partners, not a student AI-access portal.
 
   - id: project.labtalk.lms
     name: LabTalk LMS Communications Lane
@@ -77,6 +94,7 @@ projects:
     root: D:/code/ccode
     lanes: [assimilation, dashboard, intake, workflow, second_opinion, ai_portal_hardening]
     docs:
+      - AI_PORTAL.md
       - AI_README.md
       - docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
       - docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
@@ -126,3 +144,87 @@ projects:
     root: D:/code/ccode/sqlite-gui
     lanes: [sqlite, gui, prototype]
     notes: Local SQLite GUI experiment lane.
+
+  # --- Promoted from lanes (AIF-040 Projects/Lanes/Promotion) ---
+
+  - id: project.x64base.dotscript
+    name: DotScript Language
+    kind: language_project
+    status: active_beta
+    root: D:/code/ccode
+    owner_repo: deraldg/x64base
+    upstream_authority: project.x64base.runtime
+    lanes: [expression_runtime, arrays, tuples, codeblocks, maps, errorstop, lexing]
+    docs:
+      - docs/maintenance/DOTSCRIPT_ARRAYS_SPEC_V1.md
+      - docs/maintenance/DOTSCRIPT_ARRAYS_LANE_V1.md
+      - docs/maintenance/DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md
+    notes: The DotScript command/expression language surface, promoted from the project.x64base.runtime 'dotscript' lane per AIF-040. Owns the arrays lane (AIF-038, PLANNED) and the incoming tuple field-type extension lane; stop_on_error (AIF-036) and the comment lexer (AIF-037) are proven surfaces here. Runtime truth still originates in project.x64base.runtime.
+
+  - id: project.labtalk.pdlc
+    name: PDLC - Programming Development Life Cycle (Student/Working Model)
+    kind: methodology_project
+    status: active_seed
+    root: D:/code/ccode
+    owner_repo: deraldg/labtalk
+    upstream_authority: project.x64base.runtime
+    lanes: [framing, six_step_reference, worked_exemplar, publication]
+    docs:
+      - docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md
+      - docs/maintenance/SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md
+      - labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md
+    notes: >-
+      The documented program-scale life cycle (analyze -> design -> code ->
+      test/debug -> document -> maintain), taught so the student model and the
+      working model coincide (AIF-037 source teaches). Scope calibration is part
+      of the lesson: students see the complete cycle, then select only the gates
+      justified by mode, change class, actual build target, product profile, and
+      affected consumers. Promoted from a lane per AIF-040; sibling of
+      project.labtalk.sdlc. Worked-exemplar candidate is the tuple field-type
+      extension.
+
+  - id: project.labtalk.sdlc
+    name: SDLC - Software Development Life Cycle Working Model
+    kind: methodology_project
+    status: active_seed
+    root: D:/code/ccode
+    owner_repo: deraldg/labtalk
+    upstream_authority: project.x64base.runtime
+    lanes: [charter, lane_governance, proof_gates, closeout, publication]
+    docs:
+      - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - docs/maintenance/SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md
+      - labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md
+      - AI_PORTAL.md
+    notes: >-
+      The teachable model of the runtime's actual evidence-gated,
+      Agile-descended SDLC (lanes -> milestones -> proof gates -> closeouts).
+      Gate depth is scope-calibrated; x64base engine-only, dottalkpp runtime,
+      product profile, and index profile are separate planning axes. Formalized
+      as a project per AIF-040; sibling of project.labtalk.pdlc; charter-backed.
+      Documents the working model already operating in project.x64base.runtime.
+
+  # --- Identity / RBAC / Authorization management (AIF-045) ---
+
+  - id: project.x64base.identity
+    name: Identity, RBAC & Authorization Management
+    kind: governance_project
+    status: design_intake
+    root: D:/code/ccode
+    owner_repo: deraldg/x64base
+    upstream_authority: project.x64base.runtime
+    lanes: [entity_contract, rbac_core, management_schema, authorization_audit, cmd_security_bridge, registry_import, roundtrip_proof, teaching_loop]
+    docs:
+      - docs/maintenance/IDENTITY_RBAC_MANAGEMENT_LANE_V1.md
+      - "docs/## AI Portal re-examination.txt"
+      - src/cli/cmd_security.cpp
+      - labtalk/registries/ai_portal.yaml
+    notes: >-
+      Durable identity/RBAC/authorization layer the AI Portal needs (AIF-045): USERS
+      (identity) -> TEAM_MEMBER (participation) -> TEAM_ASSIGNMENT -> {ROLE, PERMISSION,
+      ORG_UNIT, WORK_NODE, AUTHORIZATION_GRANT}, with the operational security policy kept
+      independent as the final runtime constraint. Design-stage; external-AI plan evaluated
+      and endorsed with caveats (USERS is greenfield not existing; authentication undesigned;
+      PROJECT not lane, must not front-run BETA-1; phase the schema; self-hosting bootstrap is
+      the sharp risk). First artifact is the Team Member/Role/Permission/Assignment/
+      Authorization Contract v1 (M0), design not code. Feeds AI Portal gates APH-1/3/5.
