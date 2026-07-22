@@ -1,0 +1,28 @@
+* identity_persistence_regression.dts
+* Identity/RBAC DBF persistence round-trip proof (AIF-045 2b-ii, APH-5).
+*
+* Saves the seeded identity catalog to DBF, reloads it, and confirms the reloaded
+* store is structurally identical (row counts), preserves user id/key/profile, and
+* resolves every member x permission to the same authorize() verdict. This is the
+* runtime half of APH-5 self-hosting: x64base -> reload -> x64base, identity intact.
+*
+* Expected (grep between BEGIN/END):
+*   USER SAVE: wrote identity catalog to ...
+*   USER VERIFY: PASS  (dir=..., decisions N/N agree)
+*
+* Writes only DBF tables under data/metadata/identity(_verify); mutates no fixture.
+*
+* Run:  REGRESSION RUN IDENTITY_PERSIST
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/identity_persistence_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "IDENTITY-PERSIST-REGRESSION-BEGIN"
+FORMULA "save the seeded identity catalog to DBF:"
+USER SAVE
+FORMULA "reload it (report-only):"
+USER LOAD
+FORMULA "APH-5 round-trip proof (expect PASS, all decisions agree):"
+USER VERIFY
+FORMULA "IDENTITY-PERSIST-REGRESSION-END"

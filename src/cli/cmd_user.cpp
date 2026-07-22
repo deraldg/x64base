@@ -8,8 +8,9 @@
 // mutates: none
 // usage-access: USER USAGE
 // summary:
-//   Inspect the identity / RBAC model (AIF-045): members, roles, the permission catalog, and
-//   a live effective-permission check that runs the real resolver. Read-only in 2b-i.
+//   Inspect the identity / RBAC model (AIF-045): members, roles, the permission catalog, a live
+//   effective-permission check that runs the real resolver, and DBF persistence with an APH-5
+//   round-trip proof. Read-only against the live store; SAVE/VERIFY write DBF tables only.
 //
 // usage:
 //   USER USAGE
@@ -18,6 +19,9 @@
 //   USER PERMS
 //   USER WHOAMI
 //   USER CAN <permission.key> [FOR <member.key>]
+//   USER SAVE [dir]      write the identity catalog to DBF (default data/metadata/identity)
+//   USER LOAD [dir]      read the identity catalog back from DBF (report only)
+//   USER VERIFY [dir]    APH-5 round-trip: save -> reload -> compare counts/keys/decisions
 //
 // examples:
 //   USER CAN git.push FOR member.derald
@@ -40,11 +44,13 @@
 
 #include "xbase.hpp"
 #include "identity/identity_bootstrap.hpp"
+#include "identity/identity_dbf_store.hpp"
 
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -64,9 +70,114 @@ void user_usage() {
     std::cout << "Usage:\n"
               << "  USER LIST | ROLES | PERMS | WHOAMI\n"
               << "  USER CAN <permission.key> [FOR <member.key>]\n"
+              << "  USER SAVE [dir]     write the identity catalog to DBF (default data/metadata/identity)\n"
+              << "  USER LOAD [dir]     read the identity catalog back from DBF (report only)\n"
+              << "  USER VERIFY [dir]   APH-5 round-trip proof: save -> reload -> compare\n"
               << "Examples:\n"
               << "  USER CAN git.push FOR member.derald\n"
               << "  USER CAN source.mutate FOR member.ai.claude.cowork\n";
+}
+
+// --- 2b-ii: DBF persistence surface (round-trip proof; boot path unchanged) ---
+
+void print_counts(const char* label, const InMemoryIdentityStore& s) {
+    std::cout << "  " << label
+              << ": users="        << s.users.size()
+              << " members="       << s.members.size()
+              << " roles="         << s.roles.size()
+              << " perms="         << s.permissions.size()
+              << " role_perms="    << s.role_permissions.size()
+              << " member_roles="  << s.member_roles.size()
+              << " overrides="     << s.overrides.size()
+              << " assignments="   << s.assignments.size()
+              << " grants="        << s.grants.size() << "\n";
+}
+
+void user_save(const std::string& dir) {
+    std::string err;
+    if (save_identity_tables(identity_store(), dir, err)) {
+        std::cout << "USER SAVE: wrote identity catalog to " << dir << "\n";
+        print_counts("seeded", identity_store());
+    } else {
+        std::cout << "USER SAVE: FAILED: " << err << "\n";
+    }
+}
+
+void user_load(const std::string& dir) {
+    InMemoryIdentityStore loaded;
+    std::string err;
+    if (load_identity_tables(dir, loaded, err)) {
+        std::cout << "USER LOAD: read identity catalog from " << dir << "\n";
+        print_counts("loaded", loaded);
+    } else {
+        std::cout << "USER LOAD: FAILED: " << err << "\n";
+    }
+}
+
+// APH-5 round-trip: save the seed, reload it, and confirm the reloaded store is
+// structurally identical (row counts) and resolves every member x permission to
+// the same decision. Uses a sibling _verify dir so a real saved catalog is safe.
+void user_verify(const std::string& base_dir) {
+    const std::string dir = base_dir + "_verify";
+    const InMemoryIdentityStore& seed = identity_store();
+
+    std::string err;
+    if (!save_identity_tables(seed, dir, err)) {
+        std::cout << "USER VERIFY: save FAILED: " << err << "\n";
+        return;
+    }
+    InMemoryIdentityStore back;
+    if (!load_identity_tables(dir, back, err)) {
+        std::cout << "USER VERIFY: reload FAILED: " << err << "\n";
+        return;
+    }
+
+    bool ok = true;
+
+    // (1) structural: every vector count matches.
+    auto eq = [&](const char* what, std::size_t a, std::size_t b) {
+        if (a != b) { ok = false; std::cout << "  MISMATCH " << what << ": " << a << " != " << b << "\n"; }
+    };
+    eq("users", seed.users.size(), back.users.size());
+    eq("members", seed.members.size(), back.members.size());
+    eq("roles", seed.roles.size(), back.roles.size());
+    eq("permissions", seed.permissions.size(), back.permissions.size());
+    eq("role_permissions", seed.role_permissions.size(), back.role_permissions.size());
+    eq("member_roles", seed.member_roles.size(), back.member_roles.size());
+    eq("overrides", seed.overrides.size(), back.overrides.size());
+    eq("assignments", seed.assignments.size(), back.assignments.size());
+    eq("grants", seed.grants.size(), back.grants.size());
+
+    // (2) key/id fidelity: each seed user/member id+key survives.
+    for (const auto& u : seed.users) {
+        const User* b = nullptr;
+        for (const auto& x : back.users) if (x.id == u.id) { b = &x; break; }
+        if (!b || b->key != u.key || b->profile_home_key != u.profile_home_key) {
+            ok = false; std::cout << "  MISMATCH user " << u.key << " id/key/profile not preserved\n";
+        }
+    }
+
+    // (3) decision fidelity: same authorize() verdict on both stores, for every
+    // member x a representative permission set (covers eligible/ineligible/grant).
+    RuntimeContext rt; rt.session_capable = true; rt.security_policy_allows = true;
+    const char* probe_perms[] = {"git.push", "git.commit", "source.mutate", "database.read", "host.shell"};
+    int decisions = 0, agree = 0;
+    for (const auto& m : seed.members) {
+        for (const char* pk : probe_perms) {
+            const Permission* ps = find_permission_by_key(seed, pk);
+            const Permission* pb = find_permission_by_key(back, pk);
+            if (!ps || !pb) continue;
+            Decision ds = authorize(seed, m.id, *ps, Scope{}, rt);
+            Decision db = authorize(back, m.id, *pb, Scope{}, rt);
+            ++decisions;
+            if (ds.allowed() == db.allowed()) ++agree;
+            else { ok = false; std::cout << "  MISMATCH decision " << m.key << " / " << pk
+                                         << ": seed=" << ds.allowed() << " back=" << db.allowed() << "\n"; }
+        }
+    }
+
+    std::cout << "USER VERIFY: " << (ok ? "PASS" : "FAIL")
+              << "  (dir=" << dir << ", decisions " << agree << "/" << decisions << " agree)\n";
 }
 
 void list_members(const InMemoryIdentityStore& s) {
@@ -143,5 +254,8 @@ void cmd_USER(xbase::DbArea&, std::istringstream& iss)
         user_can(s, perm_key, member_key);
         return;
     }
+    if (u == "SAVE")   { std::string dir; iss >> dir; user_save(dir.empty() ? default_identity_dir() : dir); return; }
+    if (u == "LOAD")   { std::string dir; iss >> dir; user_load(dir.empty() ? default_identity_dir() : dir); return; }
+    if (u == "VERIFY") { std::string dir; iss >> dir; user_verify(dir.empty() ? default_identity_dir() : dir); return; }
     user_usage();
 }

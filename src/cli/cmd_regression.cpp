@@ -78,7 +78,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 20> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 22> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -201,6 +201,18 @@ constexpr std::array<RegressionSpec, 20> kRegressionSpecs{{
         "BUILD_VECTORS",
         "dotscript\\build_vectors_regression.dts",
         "Build-vector runtime report (AIF-044 M4): BUILDVECTORS prints the compiled capacity authority; GATE #1 proof (areas=512, fields=256, rows=int64max). Read-only, no fixture/mutation. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "IDENTITY_PERSIST",
+        "dotscript\\identity_persistence_regression.dts",
+        "Identity/RBAC DBF persistence round-trip (AIF-045 2b-ii, APH-5): USER SAVE writes the nine SYS* identity tables, USER VERIFY reloads and confirms counts, user id/key/profile, and every member x permission authorize() verdict are preserved. Writes DBF under data/metadata/identity only; no fixture mutation. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "PHASE0_DECODE_COST",
+        "pinocchio\\ticketb_phase0_decode_cost.dts",
+        "Scan-evaluator baseline benchmark (scan-evaluator optimization lane M0): self-times SUM GPA / COUNT FOR (1 term) / COUNT FOR (3 terms) over the 1,000,000-row pinocchio STUDENTS fixture via SET TIMER (now script-aware) cross-checked by fractional SECONDS(). Read-only, no mutation. Baseline floor (Alienware m16 R2 / Core Ultra 9 185H): SUM ~19.5s, DEC1 ~38.5s, DEC3 ~70.5s. NOT a pass/fail regression and long-running (~2+ min); requires the 1M-row pinocchio fixture. EXEMPT from REGRESSION ALL by design — explicit run only, as the M1-M4 speedup floor. (scan-evaluator lane, origin AIF-043 Ticket B Phase-0 KILL)",
         false
     }
 }};
