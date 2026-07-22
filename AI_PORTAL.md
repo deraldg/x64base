@@ -30,6 +30,35 @@ After that canonical start, use these task-specific sources only when relevant:
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
 
+## AI-Friendly Dev-Tools — Ask for Limited Permission First
+
+x64base ships tools designed for AI development partners to extend and exercise the
+engine directly:
+
+- **Runtime DEF family** — `DEFCMD` / `UNDEFCMD` (commands) and `DEFFN` / `UNDEFFN`
+  (expression functions): mint **session-only** commands/functions at runtime, no rebuild.
+  Bodies are currently inert (echo / return text); custom functions resolve in
+  `?` / `CALC` / `WHERE` and compose with builtins. See `RUNTIME_DEF_FAMILY_LANE_V1.md`.
+- **`EXAMPLE`** — minimal token-routing / command-wiring testbed built-in.
+- The **write → compile → run → read-output loop** for agents that build and run `dottalkpp`.
+
+**Permission protocol (binding).** Any agent — AI or human — must obtain *limited*,
+scoped permission before using these dev-tools. This requirement is **global**; the
+project owner (Derald Grimwood) is the sole exemption. Ask for the specific tool and the
+specific task — do not assume blanket access.
+
+The technical gate (`include/cli/ai_devtools_policy.hpp`) is shipped **dormant**: it
+permits by default, so nothing is blocked today. The requirement is enforced by git
+review and the promotion gate until the owner activates enforcement
+(`DOTTALK_DEVTOOLS_REQUIRE_PERMISSION=1`, with a scoped `DOTTALK_DEVTOOLS_GRANT=1`).
+
+Loop-closing agents (e.g. Codex) are **not gated** — the compile/run loop stays smooth —
+but are bounded by git visibility, an isolated dev tree, the host-shell block
+(`DOTTALK_ALLOW_HOST_COMMANDS` off by default), and the human-reviewed promotion gate.
+
+Full threat model and controls:
+[`docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md`](docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md).
+
 ## Authority
 
 ```text
@@ -50,6 +79,25 @@ github.com/deraldg/x64base
 GitHub is the public baseline, not authority over unpublished development work.
 An outside AI must identify the exact public commit on which its proposal is
 based.
+
+### External toolchain paths (agents stumble here)
+
+The build is **not** self-contained: it resolves its dependency toolchain from an
+environment variable, so the path is deliberately never hardcoded in the repo —
+which is exactly why agents that assume a default location fail to configure.
+
+- **vcpkg** — the build reads `$env:VCPKG_ROOT` (see `CMakePresets.json` and
+  `build.ps1`; some presets use `$env:VCPKG_INSTALLATION_ROOT`). On this
+  maintainer's machine the vcpkg tree lives under the **OneDrive root** —
+  `%OneDrive%\vcpkg` — **not** the `C:\Users\deral\vcpkg` default that agents
+  habitually assume, and not inside either source tree. Resolve it from
+  `$env:VCPKG_ROOT` (or `vcpkg` on `PATH`); never hardcode a guessed path. The
+  CMake toolchain file is `%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake`.
+- Rule: when a path lives outside `D:\code\ccode` and `C:\x64base` (toolchains,
+  OneDrive backup drops under `%OneDrive%\dev\dottalkpp_drops`, the website tree),
+  it is resolved from an environment variable or a documented constant — never
+  assumed. If an agent is "stumbling over" a path, the fix is to read the env var,
+  not to invent a default.
 
 ### What `C:\x64base` Is — and Is Not
 
@@ -121,6 +169,55 @@ DB) is incomplete until the pattern is made representative — or explicitly lab
 non-exemplary with a tracked follow-up. First application: consolidating the
 duplicated comment/line-lexing helpers (five drifting copies) into one shared
 module.
+
+### Observed failure modes (proven case studies)
+
+The two rules above — *one canonical implementation* (DRY) and *one authoritative
+tree, promoted outward* — are the same principle at two scales: a file and a
+repository. Each has now failed in practice during AIF-043, and the failures are
+recorded here as scar tissue so the doctrine carries its own evidence rather than
+standing on assertion alone.
+
+**1. Duplicate-implementation shadow (file scale — the single-canonical rule).**
+AIF-043 (in-memory tables) burned days on a symptom that read as impossible:
+`CREATE X64` wrote the table to disk while `USE`/open read it back from RAM — same
+engine, same path string, same in-process registry, opposite results. The root
+cause was a *second* `create_dbf`: a stale `src/core/dbf_create.cpp` duplicating
+`src/xbase/dbf_create.cpp`. Both defined the same symbol. The CLI glob compiled the
+`src/core` copy into the executable, and at link **an executable's own object
+silently wins over a static-library member**, so the exe ran the stale,
+non-ramfs-aware `create_dbf` while `open` — which existed only once, in
+`xbase.lib` — used the correct RAM path. No clean rebuild could surface it because
+both copies compiled cleanly; the tell was a diagnostic string present in
+`xbase.lib`'s object yet absent from the linked `.exe`. This is precisely the
+"duplication a review would flag" this doctrine warns against, and it cost real
+time *because the duplicate was silent*. Fix: delete the dup (one canonical
+`create_dbf`), plus a configure-time **duplicate-basename shadow guard** that fails
+the build loudly if any CLI source ever again shares a filename with a
+library-owned object. Evidence: `AIF_043_M1_PROOF_GREEN_CLOSEOUT_V1`.
+
+> Lesson made concrete: a silent duplicate is worse than a loud one. When a
+> duplicate cannot be deleted immediately, add a guard that turns its recurrence
+> into a build failure, not a future debugging session.
+
+**2. Dual-authoring the staging tree (repo scale — the promote-outward rule).**
+While promoting AIF-043 to `C:\x64base`, the same documentation fix was nearly
+authored *independently in both trees*, and staging files were briefly hand-edited
+directly. That is the repository-scale form of the identical defect: two copies of
+the truth, free to drift. The instant staging is edited as if it were a source,
+neither tree is authoritative and the promotion gate becomes a fork. Correct flow,
+per this portal: author once in `D:\code\ccode`, promote the identical artifact
+outward, verify it in staged form, commit, push — and prove `source == mirror` with
+a byte-level diff, never re-type it downstream. Evidence: this session's `dotref.hpp`
+audit fix was authored in ccode, copied verbatim to staging, and confirmed identical.
+
+> Lesson made concrete: the test that a mirror is still a mirror is a byte-diff
+> against its source, run at promotion time. If the two differ by anything typed by
+> hand downstream, a fork has already begun.
+
+Both reduce to one sentence: **there must be exactly one authoritative copy of any
+given thing — one implementation, one tree — and every other copy must be derived
+from it and provably identical, or the system has no source of truth.**
 
 ## Projects, Lanes, and Promotion (AIF-040)
 
@@ -208,6 +305,15 @@ that gap:
 - Precedence: the live Agent Sync page is fresher than this GitHub portal between
   snapshots; the maintainer's `D:\code\ccode` reconciliation remains authoritative over
   both. The page is not autonomous authority and does not bypass a proof gate.
+- **Pseudo-Chat (the return lane):** the Agent Sync page is two-way, not just broadcast.
+  Its **Pseudo-Chat** section carries a partner-reply protocol and a dated reply log, and
+  its Open questions are a tracked Q/Status table. It is deliberately **not real-time** —
+  it moves at closeout cadence, hence "pseudo." An outside partner's answers are
+  transcribed into the Pseudo-Chat log at closeout and flip the matching Open question's
+  Status, so the dialogue is visible on one page instead of scattered across chat
+  transcripts. It is the return path that makes the doc-only portal a loop, not a megaphone.
+  Full spec: `docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md` (what/why/not, roles, the
+  `RE:` reply protocol, the turn cycle, a worked example, and the closeout integration).
 
 ## Local Integration Rule
 
@@ -277,12 +383,15 @@ document that describes that state:
 | Branch, remote, or authority pointers | `AI_README.md` |
 | Lane status or work log | `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` |
 | A candidate's review status | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` |
-| The outside-AI live current state (lane / decision / doctrine an external partner relies on) | `D:\dev\x64base-site/content/docs/labtalk/agent-sync.mdx` — refresh its content + freshness date, then republish the site |
+| The outside-AI live current state (lane / decision / doctrine an external partner relies on) | `D:\dev\x64base-site/content/docs/labtalk/agent-sync.mdx` — refresh its content + freshness date, transcribe any external-partner replies into the **Pseudo-Chat log** (and update the matching Open-question Status), then republish the site |
 
 The Agent Sync row above is what keeps the doc-only live portal honest: if a closeout
 changed something an outside AI (e.g. ChatGPT) depends on — a lane's proven state, a
 Phase-0 decision, a doctrine rule — the live page is refreshed and re-dated in the same
-closeout, not left to drift to the next engine snapshot.
+closeout, not left to drift to the next engine snapshot. The same step closes the loop in
+the other direction: any external-partner reply gathered since the last closeout is
+transcribed into the page's **Pseudo-Chat** return lane, so the dialogue lives on the
+portal rather than only in a chat transcript.
 
 This is not a separate remembered chore. It is part of closeout. A session is
 not complete until this step is done, or explicitly declined with a stated
