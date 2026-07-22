@@ -156,8 +156,9 @@ bool dbf64_validate_header(const xbase::DbArea& h)
         return fail_header();
     }
 
-    if (h.recCount64() >
-        static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
+    // Engine row-count ceiling is a build vector (AIF-044); default == int64_t::max(),
+    // so this preserves the prior signed-64 acceptance limit exactly.
+    if (h.recCount64() > dottalk::build::max_rows) {
         return fail_header();
     }
 

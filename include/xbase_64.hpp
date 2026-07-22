@@ -14,6 +14,7 @@
 #pragma once
 
 #include "xbase_vfp.hpp"
+#include "dottalk/build_vectors.hpp"   // AIF-044 x64 name-policy vectors
 
 #include <cstdint>
 #include <cstring>
@@ -141,10 +142,12 @@ constexpr uint32_t DBF64_KNOWN_TABLE_FLAGS =
 // -----------------------------------------------------------------------------
 // X64 NAMING / VECTOR CONTRACT
 // -----------------------------------------------------------------------------
-constexpr uint16_t X64_TABLE_NAME_LENGTH      = 128;   // maintained default
-constexpr uint16_t X64_FIELD_NAME_LENGTH      = 128;   // maintained default
-constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
-constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = 256;   // ceiling (was 128; doubled)
+// x64 name policy now derives from the build-vector authority (AIF-044); values preserved.
+constexpr uint16_t X64_TABLE_NAME_LENGTH      = dottalk::build::x64::table_name_default; // was 128
+constexpr uint16_t X64_FIELD_NAME_LENGTH      = dottalk::build::x64::field_name_default; // was 128
+constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = dottalk::build::x64::table_name_max;     // was 256
+constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = dottalk::build::x64::field_name_max;     // was 256
+// Format-fixed (DBF/VFP descriptor compatibility) — NOT a build vector; stays source-owned.
 constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
 
 // -----------------------------------------------------------------------------
