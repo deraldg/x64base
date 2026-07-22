@@ -1,0 +1,89 @@
+# AI Portal task registry
+#
+# These records are intake and coordination artifacts. They do not override the
+# authoritative development tree at D:/code/ccode and do not authorize source,
+# staging, branch, commit, push, or publication mutations beyond the explicit
+# task-record update represented by this file.
+
+tasks:
+  - id: task.build.palette_stub_parking.v1
+    title: Park the generated cmd_palette_stub.cpp fallback
+    area: build/cmake/palette
+    owning_lifecycle: DotTalk++ SDLC
+    sdlc_lane: intake
+    truth_state: local_build_output_observed_and_public_snapshot_inspected
+    proof_state: prechange_configure_and_release_build_observed
+    risk_class: low
+    source_path: D:/code/ccode/src/CMakeLists.txt
+    website_path: unknown
+    next_gate: Derald reviews the authoritative D:/code/ccode palette wiring and approves the smallest behavior-preserving CMake/source change
+    owner: Derald
+    status: open
+
+    created: 2026-07-22
+    authority_root: D:/code/ccode
+    staging_root: C:/x64base
+    public_repository: github.com/deraldg/x64base
+    public_baseline_observed: 6b1bf2af4e55498361070ab9a2b89dd9a158ed76
+    local_build_metadata_observed: v0.6 2026-07-22 e9c9ed89 dirty=1
+
+    summary: >-
+      The build repeatedly displays cmd_palette_stub.cpp because src/CMakeLists.txt
+      creates build/src/generated/cmd_palette_stub.cpp during every configure and
+      unconditionally adds that generated source to dottalkpp. This occurs even
+      when DOTTALK_WITH_TV is ON.
+
+    observed_build_configuration:
+      DOTTALK_WITH_TV: ON
+      DOTTALK_WITH_GUI: OFF
+      DOTTALK_WITH_WX: OFF
+      DOTTALK_BUILD_OLD_PALETTE: OFF
+      DOTTALK_BUILD_PALETTE_EXE: OFF
+
+    observed_cmake_behavior:
+      - creates ${CMAKE_CURRENT_BINARY_DIR}/generated
+      - writes generated/cmd_palette_stub.cpp with file(WRITE)
+      - defines extern-C cmd_PALETTE as an unavailable-command fallback
+      - adds the generated file to dottalkpp with target_sources
+      - performs this wiring independently of DOTTALK_WITH_TV
+
+    existing_related_sources:
+      - src/palette/cmd_palette_shim.cpp forwards cmd_PALETTE to cmd_FOX_PALETTE
+      - src/palette/cmd_fox_palette_entry.cpp provides cmd_FOX_PALETTE
+      - src/palette is excluded from the recursive dottalkpp source glob
+      - legacy palette sources are removed from the main CLI source list and handled explicitly
+
+    proposed_change:
+      - create src/palette/parked/cmd_palette_unavailable.cpp as the ordinary fallback source
+      - preserve the current extern-C cmd_PALETTE signature and unavailable-build message
+      - replace configure-time file(MAKE_DIRECTORY), file(WRITE), and generated target_sources wiring with an explicit target_sources entry for the parked fallback
+      - later select exactly one implementation: real palette shim when the legacy palette feature is enabled, otherwise the parked unavailable fallback
+
+    required_constraints:
+      - do not remove the cmd_PALETTE symbol while shell or catalog code may reference it
+      - do not assume DOTTALK_WITH_TV alone enables the deprecated palette application
+      - do not compile both cmd_palette_shim.cpp and cmd_palette_unavailable.cpp into the same target
+      - preserve non-palette build behavior
+      - inspect current authoritative local source before applying because GitHub is only the public snapshot
+
+    suggested_fallback_path: src/palette/parked/cmd_palette_unavailable.cpp
+
+    acceptance_criteria:
+      - configure no longer writes cmd_palette_stub.cpp into the build tree
+      - build output no longer lists cmd_palette_stub.cpp
+      - dottalkpp links successfully with DOTTALK_WITH_TV=ON and legacy palette disabled
+      - PALETTE still reports that it is unavailable in a fallback build
+      - a real-palette build selects the forwarding shim instead of the fallback and has no duplicate cmd_PALETTE symbol
+      - clean Release build remains green
+
+    proof_plan:
+      - reconfigure the existing DEV build with the current options
+      - build dottalkpp Release
+      - confirm the compile list contains cmd_palette_unavailable.cpp and not cmd_palette_stub.cpp
+      - run the PALETTE command in the fallback configuration and capture its message
+      - when practical, configure the legacy palette option and prove the real implementation links without the fallback
+
+    residual_risks:
+      - current local source may have advanced beyond the inspected public snapshot
+      - palette ownership is split across current TV support and deprecated palette-demo sources
+      - incorrect conditional wiring could produce either an unresolved cmd_PALETTE or a duplicate definition
