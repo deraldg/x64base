@@ -80,6 +80,25 @@ GitHub is the public baseline, not authority over unpublished development work.
 An outside AI must identify the exact public commit on which its proposal is
 based.
 
+### External toolchain paths (agents stumble here)
+
+The build is **not** self-contained: it resolves its dependency toolchain from an
+environment variable, so the path is deliberately never hardcoded in the repo —
+which is exactly why agents that assume a default location fail to configure.
+
+- **vcpkg** — the build reads `$env:VCPKG_ROOT` (see `CMakePresets.json` and
+  `build.ps1`; some presets use `$env:VCPKG_INSTALLATION_ROOT`). On this
+  maintainer's machine the vcpkg tree lives under the **OneDrive root** —
+  `%OneDrive%\vcpkg` — **not** the `C:\Users\deral\vcpkg` default that agents
+  habitually assume, and not inside either source tree. Resolve it from
+  `$env:VCPKG_ROOT` (or `vcpkg` on `PATH`); never hardcode a guessed path. The
+  CMake toolchain file is `%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake`.
+- Rule: when a path lives outside `D:\code\ccode` and `C:\x64base` (toolchains,
+  OneDrive backup drops under `%OneDrive%\dev\dottalkpp_drops`, the website tree),
+  it is resolved from an environment variable or a documented constant — never
+  assumed. If an agent is "stumbling over" a path, the fix is to read the env var,
+  not to invent a default.
+
 ### What `C:\x64base` Is — and Is Not
 
 Maintainer-declared, 2026-07-14. This statement supersedes any other
@@ -150,6 +169,55 @@ DB) is incomplete until the pattern is made representative — or explicitly lab
 non-exemplary with a tracked follow-up. First application: consolidating the
 duplicated comment/line-lexing helpers (five drifting copies) into one shared
 module.
+
+### Observed failure modes (proven case studies)
+
+The two rules above — *one canonical implementation* (DRY) and *one authoritative
+tree, promoted outward* — are the same principle at two scales: a file and a
+repository. Each has now failed in practice during AIF-043, and the failures are
+recorded here as scar tissue so the doctrine carries its own evidence rather than
+standing on assertion alone.
+
+**1. Duplicate-implementation shadow (file scale — the single-canonical rule).**
+AIF-043 (in-memory tables) burned days on a symptom that read as impossible:
+`CREATE X64` wrote the table to disk while `USE`/open read it back from RAM — same
+engine, same path string, same in-process registry, opposite results. The root
+cause was a *second* `create_dbf`: a stale `src/core/dbf_create.cpp` duplicating
+`src/xbase/dbf_create.cpp`. Both defined the same symbol. The CLI glob compiled the
+`src/core` copy into the executable, and at link **an executable's own object
+silently wins over a static-library member**, so the exe ran the stale,
+non-ramfs-aware `create_dbf` while `open` — which existed only once, in
+`xbase.lib` — used the correct RAM path. No clean rebuild could surface it because
+both copies compiled cleanly; the tell was a diagnostic string present in
+`xbase.lib`'s object yet absent from the linked `.exe`. This is precisely the
+"duplication a review would flag" this doctrine warns against, and it cost real
+time *because the duplicate was silent*. Fix: delete the dup (one canonical
+`create_dbf`), plus a configure-time **duplicate-basename shadow guard** that fails
+the build loudly if any CLI source ever again shares a filename with a
+library-owned object. Evidence: `AIF_043_M1_PROOF_GREEN_CLOSEOUT_V1`.
+
+> Lesson made concrete: a silent duplicate is worse than a loud one. When a
+> duplicate cannot be deleted immediately, add a guard that turns its recurrence
+> into a build failure, not a future debugging session.
+
+**2. Dual-authoring the staging tree (repo scale — the promote-outward rule).**
+While promoting AIF-043 to `C:\x64base`, the same documentation fix was nearly
+authored *independently in both trees*, and staging files were briefly hand-edited
+directly. That is the repository-scale form of the identical defect: two copies of
+the truth, free to drift. The instant staging is edited as if it were a source,
+neither tree is authoritative and the promotion gate becomes a fork. Correct flow,
+per this portal: author once in `D:\code\ccode`, promote the identical artifact
+outward, verify it in staged form, commit, push — and prove `source == mirror` with
+a byte-level diff, never re-type it downstream. Evidence: this session's `dotref.hpp`
+audit fix was authored in ccode, copied verbatim to staging, and confirmed identical.
+
+> Lesson made concrete: the test that a mirror is still a mirror is a byte-diff
+> against its source, run at promotion time. If the two differ by anything typed by
+> hand downstream, a fork has already begun.
+
+Both reduce to one sentence: **there must be exactly one authoritative copy of any
+given thing — one implementation, one tree — and every other copy must be derived
+from it and provably identical, or the system has no source of truth.**
 
 ## Projects, Lanes, and Promotion (AIF-040)
 

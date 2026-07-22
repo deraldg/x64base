@@ -69,12 +69,17 @@ inline const std::vector<Item>& catalog() {
 
         {"SET CASE",  "SET CASE ON|OFF", "Control case-sensitivity using the spaced compatibility form.", true},
 
-        {"SET PATH",  "SET PATH <slot> <path>", "Set a runtime root/path slot using the spaced command form.", true},
+        {"SET PATH",  "SET PATH <slot> <path>",
+                 "Set a runtime root/path slot using the spaced command form. Slots include "
+                 "DBF, INDEXES, LMDB, and RAM (the relocatable in-process RAM-disk root used by "
+                 "VDISK / DO mem for in-memory tables, default data/ram) (AIF-043).", true},
 
         {"SET RELATION", "SET RELATION TO <child> ON <field>[,<field>...]", "Define or route FoxPro-style relation wiring into the DotTalk++ relation backend.", true},
 
         {"REINDEX",   "REINDEX [ALL]",
-                 "Rebuild index files for the current table (or all open tables).", true},
+                 "Rebuild index files for the current table (or all open tables). "
+                 "ramfs/VDISK-aware: under a mounted VDISK, REINDEX CDX rebuilds the native "
+                 "CDX-V64 (RUN8) container in RAM with no LMDB and no file on disk (AIF-043).", true},
 
         {"BUILDLMDB", "BUILDLMDB [HELP|?] [MAPSIZE <n[K|M|G]>|SIZE <n[K|M|G]>|TINY|SMALL|MEDIUM|LARGE|XL|HUGE] [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]",
                  "Build or rebuild the LMDB backing store for the current CDX container; may mutate LMDB/index files but not table records.", true},
