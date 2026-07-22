@@ -1,0 +1,23 @@
+* build_vectors_regression.dts
+* Build-vector runtime report proof (AIF-044 M4/M5).
+*
+* Runs the BUILDVECTORS command and shows the compiled capacity authority. This is the
+* runtime half of GATE #1: the engine must report areas=512 (not the old inert 256) and
+* the preserved fields=256 / rows=9223372036854775807. Read-only; opens/mutates nothing.
+*
+* Expected (grep between BEGIN/END):
+*   Maximum work areas      512
+*   Maximum fields          256
+*   Maximum rows            9223372036854775807
+*   Fingerprint             <8 hex chars>
+*
+* Run:  REGRESSION RUN BUILD_VECTORS
+*   or: DOTSCRIPT dottalkpp/data/scripts/dotscript/build_vectors_regression.dts
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "BUILD-VECTORS-REGRESSION-BEGIN"
+FORMULA "expect areas=512 fields=256 rows=9223372036854775807 (GATE #1):"
+BUILDVECTORS
+FORMULA "BUILD-VECTORS-REGRESSION-END"

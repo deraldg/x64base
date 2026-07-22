@@ -8,6 +8,7 @@
 // ==============================
 #include <iostream>
 #include <fstream>
+#include "cli/dotscript_lexing.hpp"  // canonical comment/line lexing (AIF-037)
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -105,7 +106,7 @@ extern "C" bool until_is_active();
 #include <unistd.h>
 #endif
 
-char prompt_char = '.';
+char prompt_char = dottalk::build::ui::prompt_char_default;  // AIF-044 default; runtime-mutable
 
 // -----------------------------------------------------------------------------
 // Shell block-capture state
@@ -230,20 +231,7 @@ bool last_semicolon_is_outside_quotes(const std::string& s)
 }
 
 std::string strip_hash_comment(const std::string& s) {
-    bool in_single = false, in_double = false, esc = false;
-    for (size_t i = 0; i < s.size(); ++i) {
-        char c = s[i];
-        if (esc) { esc = false; continue; }
-        if (c == '\\') { esc = true; continue; }
-        if (!in_double && c == '\'') { in_single = !in_single; continue; }
-        if (!in_single && c == '\"') { in_double = !in_double; continue; }
-        if (!in_single && !in_double && c == '#') {
-            size_t j = (i == 0) ? 0 : i;
-            while (j > 0 && (s[j-1] == ' ' || s[j-1] == '\t')) --j;
-            return s.substr(0, j);
-        }
-    }
-    return s;
+    return dottalk::lexing::strip_inline_comment(s);
 }
 
 bool read_command_multiline(std::istream& in, std::string& out) {
@@ -270,12 +258,7 @@ bool read_command_multiline(std::istream& in, std::string& out) {
 }
 
 bool begins_with_comment(const std::string& s) {
-    size_t i = 0;
-    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
-    if (i >= s.size()) return false;
-    if (s[i] == '#') return true;
-    if (s[i] == '*') return true;
-    return (s[i] == '/' && i + 1 < s.size() && s[i + 1] == '/');
+    return dottalk::lexing::is_comment_line(s);
 }
 
 std::string expand_shortcut_lead(const std::string& s) {

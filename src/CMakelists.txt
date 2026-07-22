@@ -142,6 +142,15 @@ set(DOTTALKPP_SOURCES "${DOTTALKPP_SOURCES_FILTERED}")
 list(REMOVE_ITEM DOTTALKPP_SOURCES
   "${CMAKE_SOURCE_DIR}/src/cli/record_view.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
+  # Stale duplicate of xbase::dbf_create::create_dbf. When globbed into the CLI
+  # it links into the exe and shadows xbase.lib's ramfs-aware create_dbf (the
+  # exe's own object wins over the library member), so CREATE writes to disk
+  # while USE/open read RAM — the AIF-043 in-memory split. The live, ramfs-aware
+  # implementation is owned exclusively by src/xbase/dbf_create.cpp. The dup is
+  # now parked to src/core/dbf_create.cpp.bak (out of the glob); this REMOVE_ITEM
+  # + the duplicate-basename shadow guard below remain as belt-and-suspenders if
+  # it is ever un-parked.
+  "${CMAKE_SOURCE_DIR}/src/core/dbf_create.cpp"
 )
 
 if (NOT DOTTALK_HAS_XINDEX)
@@ -233,8 +242,10 @@ if (NOT DOTTALK_COMPONENT_EXTERNAL)
   list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/ms365/")
   list(REMOVE_ITEM DOTTALKPP_SOURCES
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_bang.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_buildvectors.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_defcmd.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_deffn.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_user.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_example.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_image_display.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_sftp.cpp"
@@ -347,8 +358,49 @@ else()
   endif()
 endif()
 
+# --- Duplicate-basename shadow guard (AIF-043 build hardening) --------------
+# A CLI source that shares a filename with a library-owned source compiles into
+# the exe; at link the exe's own object silently wins over the static-library
+# member of the same name. That is exactly how src/core/dbf_create.cpp shadowed
+# xbase.lib's ramfs-aware create_dbf and made in-memory CREATE write to disk
+# while USE read RAM — a bug that no clean rebuild could surface. Fail loudly at
+# configure time instead of shipping a silently-shadowed link.
+file(GLOB_RECURSE _dottalk_lib_srcs CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/xbase/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/xindex/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/xexpr/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/value/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/memo/*.cpp"
+)
+set(_dottalk_lib_stems "")
+foreach(_s IN LISTS _dottalk_lib_srcs)
+  get_filename_component(_n "${_s}" NAME)
+  list(APPEND _dottalk_lib_stems "${_n}")
+endforeach()
+set(_dottalk_shadows "")
+foreach(_s IN LISTS DOTTALKPP_SOURCES)
+  get_filename_component(_n "${_s}" NAME)
+  if(_n IN_LIST _dottalk_lib_stems)
+    list(APPEND _dottalk_shadows "${_s}")
+  endif()
+endforeach()
+if(_dottalk_shadows)
+  message(FATAL_ERROR
+    "dottalkpp: CLI source(s) share a filename with a library-owned object and "
+    "would silently win the link (exe object shadows the static-lib member). "
+    "Exclude via list(REMOVE_ITEM DOTTALKPP_SOURCES ...) or rename:\n  "
+    "${_dottalk_shadows}")
+endif()
+
 # 3) Define the main CLI executable
 add_executable(dottalkpp ${DOTTALKPP_SOURCES})
+
+# Build hardening (AIF-043): disable incremental linking so a recompiled object
+# is always re-embedded into the exe. Incremental links left a stale object in
+# the exe during this lane, which made a fixed source appear unfixed.
+if(MSVC)
+  target_link_options(dottalkpp PRIVATE "/INCREMENTAL:NO")
+endif()
 
 # The runtime message catalog maintains LMDB mirrors even when the optional
 # interactive index command surface is disabled.

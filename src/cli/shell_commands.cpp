@@ -475,6 +475,10 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("UNDEFCMD",     [](DbArea& A, std::istringstream& S){ cmd_UNDEFCMD(A,S);    });
     registry().add("DEFFN",        [](DbArea& A, std::istringstream& S){ cmd_DEFFN(A,S);       });
     registry().add("UNDEFFN",      [](DbArea& A, std::istringstream& S){ cmd_UNDEFFN(A,S);     });
+    registry().add("BUILDVECTORS", [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("BUILD VECTORS",[](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("BUILD INFO",   [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("USER",         [](DbArea& A, std::istringstream& S){ cmd_USER(A,S);         });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });

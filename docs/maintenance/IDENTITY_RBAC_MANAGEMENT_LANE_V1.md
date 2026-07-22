@@ -1,6 +1,10 @@
 # Identity / RBAC / Authorization Management — Project Lane V1
 
-**Status:** design / intake — not started.
+**Status:** **ACTIVE — full-blast (owner decision 2026-07-21).** M0 contract drafted +
+accepted; M1 started. Owner directive: this is a necessary project and integrating it later is
+harder as it touches ownership of everything, so it runs now in parallel — additive new module
+(`identity/`), low collision with BETA-1 regression, but must not destabilize the stabilization
+sweep. Original "must not front-run BETA-1" caveat is superseded by owner priority.
 **Project:** `project.x64base.identity` (AIF-045). Parent authority: `project.x64base.runtime`.
 **Design authority:** the external-AI proposal, preserved at
 `docs/## AI Portal re-examination.txt`, evaluated and endorsed with caveats (this doc).
@@ -42,6 +46,8 @@ delete/reset/branch) holds.
 | Portal projects/gates are YAML, not managed hierarchy | **Yes** | `labtalk/registries/ai_portal.yaml` holds `aph0..6`; `projects.yaml` holds projects+inline lanes |
 | Operational security policy is separate from RBAC | **Yes** | `xbase_security_policy` / host-shell block (`DOTTALK_ALLOW_HOST_COMMANDS`) is capability policy, independent of any role |
 | **`USERS` is the existing identity authority** | **No** | **`USERS` is not implemented** — no table/struct in the tree, only a concept in docs. Step M0 must *define* `USERS`, not "retain" it. |
+| A `cmd_user` / `USER` command exists | **No** | No `cmd_user.cpp` and no `USER` command registered — only `cmd_security` (`SECURITY`). A `cmd_user` surface for the `USERS` entity is **new scope** here (M3), paralleling `SECURITY`. |
+| "user" already means something in-tree | **Yes — a real hierarchy** | `dottalkpp/user/<profile>/` is an existing per-user **home**: `logs/ prefs/ scripts/ security/ storage/ tmp/ workspaces/` (workspaces hold `.dtschema`/`.erz`). Profiles present: `default`, `public`, `user`, and the named **`derald`**. Note the **per-user `security/` dir already exists**. This is per-user *data/profile* isolation, not identity — but a `USERS` row must **own** a profile home, so `USERS`-as-identity is the missing managed layer over an existing on-disk hierarchy. |
 
 ---
 
@@ -97,8 +103,15 @@ Strong and doctrine-aligned. Notable strengths:
   `MEMBER_ROLE`, `MEMBER_PERMISSION_OVERRIDE` (ALLOW/DENY, deny-precedence). Define `USERS`.
 - **M2 — x64base management schema.** `ORG_UNIT`, `WORK_NODE`, `TEAM_ASSIGNMENT`,
   `AUTHORIZATION_GRANT`, `MANAGEMENT_EVENT` (audit journal).
-- **M3 — Bridge `cmd_security`.** Keep the command surface (`LOGIN`/`WHOAMI`/`ASSIGNMENTS`/
-  `LOGOUT`); replace hard-coded roles/workers/assignments with entity lookups.
+- **M3 — Command surfaces: bridge `cmd_security` + add `cmd_user`.** Keep `SECURITY`
+  (`LOGIN`/`WHOAMI`/`ASSIGNMENTS`/`LOGOUT`), replacing hard-coded roles/workers/assignments with
+  entity lookups; add a new `cmd_user` (`USER …`) surface for `USERS` entity management
+  (create/list/show/status), paralleling `SECURITY`. **A `USERS` row owns a profile home** at
+  `dottalkpp/user/<key>/` (`logs/ prefs/ scripts/ security/ storage/ tmp/ workspaces/`), so
+  `USER` management **provisions/retires the whole directory tree**, not just a DB row. The
+  per-user `security/` dir is the on-disk anchor for a user's local security state (central RBAC
+  tables live in x64base; the per-user dir holds local state). Existing profiles `default` /
+  `public` / `user` / `derald` seed the initial `USERS` rows.
 - **M4 — Import portal registries.** Ingest `projects.yaml` + `ai_portal.yaml` (`aph0..6`
   gates) into `WORK_NODE`; preserve portable string keys, add internal 64-bit IDs.
 - **M5 — Round-trip proof.** x64base → YAML/JSON → x64base with stable IDs, parent links,

@@ -1,0 +1,17 @@
+{
+  "schema": "dottalk.build_vectors.v1",
+  "generated_by": "config/build_vectors.hpp.in / build_vectors.json.in (AIF-044)",
+  "note": "Generated — do not edit. Mirror of the compiled build-vector authority.",
+  "max_areas": @DOTTALK_MAX_AREAS@,
+  "max_fields": @DOTTALK_MAX_FIELDS@,
+  "max_rows": @DOTTALK_MAX_ROWS@,
+  "legacy_max_index_slots": @DOTTALK_LEGACY_MAX_INDEX_SLOTS@,
+  "x64_max_record_bytes": @DOTTALK_X64_MAX_RECORD_BYTES@,
+  "x64_record_advisory_bytes": @DOTTALK_X64_RECORD_ADVISORY_BYTES@,
+  "x64_table_name_default": @DOTTALK_X64_TABLE_NAME_DEFAULT@,
+  "x64_table_name_max": @DOTTALK_X64_TABLE_NAME_MAX@,
+  "x64_field_name_default": @DOTTALK_X64_FIELD_NAME_DEFAULT@,
+  "x64_field_name_max": @DOTTALK_X64_FIELD_NAME_MAX@,
+  "table_buffer_max_changes": @DOTTALK_TABLE_BUFFER_MAX_CHANGES@,
+  "prompt_char": "@DOTTALK_PROMPT_CHAR@"
+}

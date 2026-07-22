@@ -243,6 +243,8 @@ void cmd_DEFCMD(DbArea&, std::istringstream&);
 void cmd_UNDEFCMD(DbArea&, std::istringstream&);
 void cmd_DEFFN(DbArea&, std::istringstream&);
 void cmd_UNDEFFN(DbArea&, std::istringstream&);
+void cmd_BUILDVECTORS(DbArea&, std::istringstream&);
+void cmd_USER(DbArea&, std::istringstream&);
 
 // MSSQL, PostgreSQL et al
 void cmd_IMPORTSQL(DbArea&, std::istringstream&);

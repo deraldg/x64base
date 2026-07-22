@@ -263,6 +263,23 @@ endif()
 
 include(CTest)
 
+# ============================================================
+# Build Vectors — generated capacity authority (AIF-044)
+# ============================================================
+# CMake owns selectable build inputs; configure_file emits the one compiled authority
+# (generated/dottalk/build_vectors.hpp). include_directories() here (before any target)
+# makes it findable by every subdirectory target that includes xbase.hpp.
+include("${CMAKE_SOURCE_DIR}/config/build_vectors.cmake")
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/build_vectors.hpp.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.hpp"
+    @ONLY)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/build_vectors.json.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.json"
+    @ONLY)
+include_directories("${CMAKE_BINARY_DIR}/generated")
+
 add_subdirectory(src)
 
 # Add Python binding helper after code targets exist.
@@ -579,7 +596,7 @@ endif()
 message(STATUS "==== DotTalk++ / Build summary ====")
 message(STATUS "  CMAKE_BUILD_TYPE      : ${CMAKE_BUILD_TYPE}")
 message(STATUS "  DOTTALK_PROFILE       : ${DOTTALK_PROFILE}")
-message(STATUS "  DOTTALK_MAX_AREA      : ${DOTTALK_MAX_AREA}")
+message(STATUS "  DOTTALK_MAX_AREA      : ${DOTTALK_MAX_AREA} (legacy/inert; engine uses build-vector areas=${DOTTALK_MAX_AREAS})")
 message(STATUS "  DOTTALK_WITH_DEV      : ${DOTTALK_WITH_DEV}")
 message(STATUS "  DOTTALK_EXTRA_DIAGN.  : ${DOTTALK_EXTRA_DIAGNOSTICS}")
 message(STATUS "  DOTTALK_WITH_INDEX    : ${DOTTALK_WITH_INDEX}")

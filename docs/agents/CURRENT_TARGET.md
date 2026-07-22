@@ -1,8 +1,108 @@
 # Current Target
 
 Status: active.
-Updated: 2026-07-19.
+Updated: 2026-07-22.
 Supersedes: the completed staging-restoration/publication target recorded below.
+
+## Development Focus Update — 2026-07-21/22 (runtime DEF family, build vectors, identity/RBAC)
+
+Cowork development (dev-only unless noted):
+
+- **Runtime DEF family shipped** (x8x16x32x64 lane): `EXAMPLE` built-in + `DEFCMD`/`UNDEFCMD`
+  and `DEFFN`/`UNDEFFN` on a new live `fn_custom` expression-function registry — mint
+  session-only commands/functions at runtime, no rebuild; build-proven; `DEF_FAMILY` regression;
+  DEFTYPE parked. Fox `IMAGE DEFAULT`/`WEB DEFAULT/RETRO` also shipped. Committed + pushed to origin.
+- **AI dev-tools security doctrine + dormant permission gate** (`ai_devtools_policy.hpp`, permits by
+  default; owner-activatable) + the binding "ask for limited permission" protocol published to `AI_PORTAL.md`.
+- **BUILD_VECTORS (AIF-044)** engine M1-M5: a generated `build_vectors.{hpp,json}` capacity authority;
+  `MAX_FIELDS`/`MAX_AREA`/`MAX_ROWS`/x64 names + record ceilings now derive from one place (GATE #1
+  areas=512; the inert `DOTTALK_MAX_AREA` drift closed); runtime `BUILDVECTORS` + `prompt_char`. Green;
+  committed + pushed.
+- **`project.x64base.identity` (AIF-045) opened full-blast** — the identity/RBAC/authorization layer the
+  AI Portal needs. External plan evaluated + endorsed; M0 Contract v1 + M1a domain entities + M1b
+  permission resolver, both g++-proven standalone. M2 (x64base schema) in progress. Not yet in the MSVC build.
+
+See the dashboard Session Log + lane docs (`RUNTIME_DEF_FAMILY_LANE_V1.md`,
+`AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md`, `BUILD_VECTORS_LANE_V1.md`, `IDENTITY_RBAC_MANAGEMENT_LANE_V1.md`,
+`IDENTITY_RBAC_CONTRACT_V1.md`).
+
+## Development Focus Update — 2026-07-20 (DotScript arrays live + DTV Phase-0)
+
+Latest active work — the arrays + DTV milestone was **promoted + pushed** to `C:\x64base`
+→ `github.com/deraldg/x64base` `main` `7f7b7c75` (28 files). The broader maintainer-gated
+promotion objective below remains open (other in-flight lanes still dev-only):
+
+- **DotScript arrays are live** (AIF-038): `{…}` literals, scoped `$name` memory
+  variables (`dottalk::dotscript::VarStore`), one-based `$a[n]` subscripts (nested/
+  chained), stored by real reference; MSVC-green + REPL-proven.
+- **Canonical DotTalk Value (DTV) Phase-0 COMPLETE (8/8):** `dottalk::value::Value` is
+  the maintainer-signed canonical two-tier value; ChatGPT's amended (unsigned-RECNO64)
+  foundation is integrated as an isolated `dottalk_value` lib (real `MemoRef`), MSVC-green.
+  Next is the standalone wire + comparison + adapter construction, then the tuple lane.
+- **Doc-only live portal:** website Agent Sync page (`/docs/labtalk/agent-sync`) keeps
+  outside AIs current between snapshots; refreshed each closeout (AIF-006).
+
+See `docs/maintenance/SESSION_CLOSEOUT_DTV_FOUNDATION_INTEGRATED_2026-07-20.md`.
+
+## Development Focus Update — 2026-07-20
+
+The maintainer-gated promotion objective below is still unchanged and open — no
+branch, commit, or push; `C:\x64base`/GitHub untouched.
+
+Active work 2026-07-20 systematized the **documentation architecture** on the
+simplex/duplex spine, all dev-only (engine tree) with website changes staged in
+`D:\dev\x64base-site` behind the same push gate:
+
+- **Website content classification manifest (AIF-033, WEBSITE-ASSEMBLY M1).** All
+  108 website pages classified on a direction × class grid into
+  `tools/fullstack_docs/website_content_manifest.yaml` (generated 6 / derived 23 /
+  maintained 54 / reported 6 / static 19). It shares its `class`+`direction`
+  vocabulary with the manual manifest, so the manual and website sit on one spine.
+- **Doc/SDLC model pin (AIF-034).** Pinned (not built): the model refined to a graph
+  with three source-of-record origins — implementation, the AI-Portal (source +
+  governor), and the manual’s authored branch — plus reviewed duplex manual↔website.
+  Trigger: a doc/SDLC model change drives a flowchart/diagram-update pass.
+- **Manual assemblage (AIF-035, MANUAL-ASSEMBLY M1-M5).** A 22-part bill of materials
+  drives a manifest-driven assembler (`tools/manualgen/assemble_manual.py`) that
+  builds the developer manual (spine + authored branch + generated front/back
+  matter) — 8 generators real (63 functions harvested, 183 command pages + 12
+  diagrams bound, generated TOC/glossary/index + a **colophon that records how the
+  manual assembled itself**), 22/22 parts, 13,782 lines. A per-class drift gate
+  (`tools/manualgen/check_manual_drift.py`) FAILs the build on generated-region
+  drift (proven PASS→corrupt-FAIL→PASS). MD+PDF+HTML exports are staged to the site
+  under always-latest permalinks (`/downloads/current/developer-manual-latest.*`)
+  with two educational pages. The assembler writes to `generated/`; acceptance stays
+  gated (the accepted manual remains the reviewed baseline). M6 (retire the ~20-step
+  hand-stitch) is the open next step. Development lesson:
+  `docs/maintenance/MANUAL_ASSEMBLY_HISTORIFY_OLD_TO_NEW_V1.md`.
+
+Closeout `docs/maintenance/SESSION_CLOSEOUT_MANUAL_ASSEMBLY_2026-07-20.md`
+(AIPR-20260720-001); Session Log + lane state in
+`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`; intake rows AIF-033/034/035. None of
+this changes the authority chain or the promotion gate below.
+
+Later the same day, two more dev-only lanes landed **build-green** (MSVC Release):
+**AIF-036 `stop_on_error[severity]`** — a `STOP_ON_ERROR` command + `SET ERRORSTOP`
+alias + `DOTTALK_ERRORSTOP` env that abort a running script on a new error at/above
+an OFF/WARNING/ERROR threshold, keyed on the messaging-recorded error severity; and
+**AIF-037 "Representative by Design"** — a teaching-grade codex principle (source
+teaches, so source must be representative) + the Rule of Three, whose first
+application consolidated six drifting comment/line-lexing helpers into one
+unit-proven `src/cli/dotscript_lexing` module and added the canonical comment set
+(`*`/`&&`/`REM` + tolerated `#`/`//`). Closeout
+`docs/maintenance/SESSION_CLOSEOUT_DOTSCRIPT_ERRORSTOP_LEXING_2026-07-20.md`
+(AIPR-20260720-002). Also reviewed an external DotScript-array spec (advisory). None
+of this changes the authority chain or the promotion gate below.
+
+Two **PLANNED design lanes** were then opened (docs-only, no source written):
+**AIF-038 DotScript arrays** — design authority + machine catalog stored
+(`DOTSCRIPT_ARRAYS_SPEC_V1.md`, `DotScript_Arrays_Catalog_v1.json`,
+`DOTSCRIPT_ARRAYS_LANE_V1.md`); arrays remain **absent in the engine** and the lane
+requires a Phase-0 runtime reconciliation before any Phase-1 code. **AIF-039 PDLC
+(Programming Development Life Cycle) student/working model** — the terminology/framing
+note (`PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`), tying the incoming Tuple-System
+field-type extension in as its worked exemplar. Both are PLANNED, dev-only, not
+promoted; neither changes the authority chain or the promotion gate.
 
 ## Development Focus Update — 2026-07-19
 
@@ -26,6 +126,28 @@ dev-only (not promoted):
   multiple-retained-edits-per-field capability is preserved (added
   `TABLE BUFFER HISTORY ON|OFF`). Scoped durability gain, not a full-ACID claim;
   DBF-`fsync` and CDX/LMDB reconciliation remain open hardening.
+- **Field-type codec architecture (AIF-030, 2026-07-19).** The field layer is now
+  a codec registry, not fixed-width text: `I`/`B`/`Y`/`T` store real VFP binary,
+  and a worked custom type (`X`=pronoun) plugs in through a single
+  `register_field_type` call with zero switch edits (M4b — the registry feeds the
+  CREATE/validation chain; five hardcoded gates were deleted). VFP interop is
+  proven both directions by an independent spec-based reader/writer. M1–M5 proven
+  (`dottalkpp_field_codec_test` green + live shakedowns + third-party VFP
+  read/write). Retired AIF-017 (`I` truncation) + AIF-028 (date coercion); found +
+  fixed AIF-031 (numeric formatting locale-grouping + precision loss). Dev-only,
+  uncommitted. Closeout `SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md`
+  (AIPR-20260719-007).
+- **RECNO64 end-to-end 64-bit record addressing (AIF-027, 2026-07-19).** The
+  remaining 32-bit record-number runtime paths are widened to 64-bit —
+  positioning (`gotoRec64`), GO/GOTO/RECNO, ordered nav (`logical_nav` +
+  `go_endpoint`/`skip_relative`), the table-buffer change key + COMMIT
+  aggregation, record locks, the index-hook `apply_replace` chain, and the CDX
+  keyed-seek decoders (M1-M3 + M4-1/2/3) — build-green + warning-clean +
+  regression-clean (CURSOR x32/CNX, INDEX_X64 v64/CDX, `table_buffer.dts` x64). A
+  keep-32-bit legacy-backend capability report (M4-4) is build-pending. The
+  `recno()`/`recLength()` de-saturation + INT32/UINT32 boundary proofs (M4-5) — the
+  only decisive proof of addressing past 2.1 B — are a separate focused project.
+  Closeout `SESSION_CLOSEOUT_RECNO64_M1_M4_2026-07-19.md` (AIPR-20260719-006).
 
 Closeouts and Session Log rows are recorded in
 `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`; the durability lane is intake row
