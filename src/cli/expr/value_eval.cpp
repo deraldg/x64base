@@ -771,4 +771,75 @@ bool eval_bool(xbase::DbArea& A, const std::string& exprText, bool& out, std::st
     return false;
 }
 
+// --- Compile-once predicate (scan-evaluator optimization lane, M1) -----------
+// See value_eval.hpp for the contract. The eval-time semantics mirror the
+// non-fallback tail of eval_bool exactly: compile_where_program -> a reusable
+// live RecordView -> eval_compiled_program -> bool/numeric-truthy. The only
+// difference is WHEN the compile happens (once, not per row).
+struct CompiledPredicate {
+    bool fallback = true;              // true => defer to per-row eval_bool(original)
+    bool raw = false;                  // true => rv is the selective-decode view
+    std::string original;              // predicate text as handed in (fallback path)
+    std::unique_ptr<Expr> prog;        // compiled program (when !fallback)
+    std::optional<RecordView> rv;      // cached live view over the bound area
+};
+
+bool compiled_predicate_uses_raw(const CompiledPredicate& cp) {
+    return cp.raw && !cp.fallback;
+}
+
+std::shared_ptr<CompiledPredicate>
+compile_bool_predicate(xbase::DbArea& A, const std::string& exprText, bool allow_raw) {
+    auto cp = std::make_shared<CompiledPredicate>();
+    cp->original = exprText;
+
+    // Reproduce eval_bool's text preprocessing ONCE. Only hoist when it is a
+    // no-op (which guarantees record-independence — nothing was expanded or
+    // folded away that could depend on the current record) and the predicate is
+    // not a DotScript/bridge predicate ($name / {..}). Anything else keeps the
+    // per-row eval_bool path so behavior is byte-for-byte identical.
+    const std::string expandedCalls = expand_value_builtins_in_text(A, exprText);
+    const std::string foldedDates   = fold_constant_date_algebra_in_text(A, expandedCalls);
+    const std::string src           = trim(foldedDates);
+
+    const bool preprocessing_noop = (src == trim(exprText));
+    const bool looks_bridge =
+        (src.find('$') != std::string::npos) || (src.find('{') != std::string::npos);
+
+    if (src.empty() || !preprocessing_noop || looks_bridge) {
+        return cp;  // fallback = true
+    }
+
+    std::unique_ptr<Expr> prog;
+    std::string err;
+    if (compile_where_program(src, prog, &err)) {
+        cp->prog     = std::move(prog);
+        cp->fallback = false;
+        // Selective-decode view when permitted (no active filter, etc.); it
+        // requires the caller to advance rows with readCurrentRaw(). Otherwise
+        // the normal full-decode view (readCurrent()) is used.
+        if (allow_raw) {
+            cp->rv  = dottalk::expr::glue::make_record_view_raw(A);
+            cp->raw = true;
+        } else {
+            cp->rv  = dottalk::expr::glue::make_record_view(A);
+            cp->raw = false;
+        }
+    }
+    return cp;  // if compile failed, fallback stays true
+}
+
+bool eval_bool_compiled(CompiledPredicate& cp, xbase::DbArea& A, bool& out, std::string* errOut) {
+    if (cp.fallback || !cp.prog || !cp.rv) {
+        return eval_bool(A, cp.original, out, errOut);
+    }
+
+    const EvalValue ev = eval_compiled_program(cp.prog.get(), *cp.rv);
+    if (ev.kind == EvalValue::K_Bool)   { out = ev.tf; return true; }
+    if (ev.kind == EvalValue::K_Number) { out = (ev.number != 0.0); return true; }
+
+    if (errOut) *errOut = "FOR/WHILE must evaluate to logical/boolean (or numeric truthy)";
+    return false;
+}
+
 } // namespace dottalk::expr

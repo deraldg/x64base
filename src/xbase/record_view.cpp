@@ -4,6 +4,8 @@
 #include "xbase/field_codec.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -75,6 +77,93 @@ bool DbArea::readCurrent()
 
     _del = _recbuf[0];
     return loadFieldsFromBuffer();
+}
+
+bool DbArea::readCurrentRaw()
+{
+    if (_crn == 0) return false;
+
+    const std::streampos pos =
+        checked_record_pos_(*this, static_cast<std::uint64_t>(_crn));
+
+    io().seekg(pos, std::ios::beg);
+    io().read(_recbuf.data(), _recbuf.size());
+    if (!io()) return false;
+
+    _del = _recbuf[0];
+    // Intentionally NO loadFieldsFromBuffer(): fields are decoded on demand via
+    // decodeFieldFromBuffer()/fieldNumFromBuffer(). _fd is left stale.
+    return true;
+}
+
+std::size_t DbArea::fieldByteOffset_(int idx1) const
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size()))
+        return static_cast<std::size_t>(-1);
+
+    std::size_t off = 1; // record byte 0 is the deleted flag
+    for (int i = 0; i < idx1 - 1; ++i)
+        off += _fields[static_cast<std::size_t>(i)].length;
+    return off;
+}
+
+std::string DbArea::decodeFieldFromBuffer(int idx1) const
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return {};
+
+    const std::size_t off = fieldByteOffset_(idx1);
+    if (off == static_cast<std::size_t>(-1)) return {};
+
+    const auto& f = _fields[static_cast<std::size_t>(idx1 - 1)];
+    if (off + f.length > _recbuf.size()) return {};
+
+    const bool is_x64 = (versionByte() == DBF_VERSION_64);
+
+    if (is_x64_memo_field_fast(is_x64, f)) {
+        const std::uint64_t object_id = read_u64_le(_recbuf.data() + off);
+        if (object_id == 0) return {};
+        return std::to_string(object_id);
+    }
+
+    return fieldcodec::codec_for(f.type)
+               .decode(_recbuf.data() + off, f.length, f);
+}
+
+bool DbArea::fieldNumFromBuffer(int idx1, double& out) const
+{
+    if (idx1 < 1 || idx1 > static_cast<int>(_fields.size())) return false;
+
+    const auto& f = _fields[static_cast<std::size_t>(idx1 - 1)];
+    const char ftype = static_cast<char>(std::toupper(static_cast<unsigned char>(f.type)));
+    if (ftype != 'N' && ftype != 'F') return false;  // ASCII-numeric only
+
+    const std::size_t off = fieldByteOffset_(idx1);
+    if (off == static_cast<std::size_t>(-1)) return false;
+    if (off + f.length > _recbuf.size()) return false;
+
+    // N/F fields are right-justified, space-padded ASCII decimal. Copy the (short,
+    // fixed-width) span to a stack buffer, NUL-terminate, and strtod — no heap.
+    const char* p = _recbuf.data() + off;
+    const std::size_t len = f.length;
+
+    char buf[64];
+    if (len >= sizeof(buf)) return false;  // implausibly wide numeric; fall back
+
+    std::size_t n = 0;
+    for (std::size_t i = 0; i < len; ++i) {
+        const char c = p[i];
+        if (c == '\0') break;
+        buf[n++] = c;
+    }
+    buf[n] = '\0';
+
+    char* end = nullptr;
+    const double v = std::strtod(buf, &end);
+    if (end == buf) return false;               // nothing parsed (e.g., all spaces)
+    while (*end == ' ' || *end == '\t') ++end;  // trailing pad is fine
+    if (*end != '\0') return false;             // junk after the number
+    out = v;
+    return true;
 }
 
 bool DbArea::isDeleted() const

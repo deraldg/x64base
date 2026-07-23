@@ -176,6 +176,29 @@ public:
     bool appendBlank();
     bool deleteCurrent();
 
+    // ---- Selective decode (scan-evaluator lane M2) ------------------------
+    // readCurrentRaw() loads the current record's raw bytes into the record
+    // buffer and updates the deleted flag, but does NOT decode every field into
+    // per-field strings the way readCurrent() does. This skips the eager
+    // all-fields std::string decode that dominates scan cost when a predicate
+    // only touches a few fields. Additive: readCurrent() is unchanged. Callers
+    // using this MUST read field values only via decodeFieldFromBuffer() (or the
+    // numeric fast path) — get()/_fd are NOT refreshed until the next full
+    // readCurrent().
+    bool readCurrentRaw();
+
+    // Decode a single field (1-based) directly from the current record buffer,
+    // using the exact same codec + x64-memo object-id handling as the full
+    // loadFieldsFromBuffer(). Correct for every field type; decodes only the one
+    // field asked for. Returns empty on any error/out-of-range.
+    std::string decodeFieldFromBuffer(int idx1) const;
+
+    // Numeric fast path: decode an N/F (ASCII-numeric) field from the current
+    // record buffer straight to double with no std::string allocation. Returns
+    // false for non-N/F types or an unparseable value (caller should fall back
+    // to decodeFieldFromBuffer()).
+    bool fieldNumFromBuffer(int idx1, double& out) const;
+
     // Core engine-owned replace entry point.
     // Contract:
     // - field1 is 1-based and already resolved by caller
@@ -423,6 +446,10 @@ private:
     bool        loadFieldsFromBuffer();
     void        storeFieldsToBuffer();
     static std::string rtrim(std::string s);
+
+    // Byte offset of field idx1 (1-based) within _recbuf (record starts at 1,
+    // after the deleted flag). Returns SIZE_MAX if idx1 is out of range.
+    std::size_t fieldByteOffset_(int idx1) const;
 
     // Index helpers
     int         findFieldCI(const std::string& name) const;

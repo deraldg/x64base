@@ -87,10 +87,77 @@ This is Option A, additive to the engine's evaluator; the store stays byte-image
 - **M1 — bind fields once.** Resolve field name→index/offset at scan setup; kill per-row
   `resolve_field_index`. Expected: large drop in per-term cost.
 - **M2 — allocation-free in-place decode.** Fixed-width bytes → scalar without `std::string`.
-- **M3 — compile the predicate once.** Expression tree → closure/bytecode over bound fields;
-  evaluate per row with no re-parse.
+- **M3 — compile the predicate once.** ✅ **LANDED 2026-07-22 (build-verified; done ahead of M1/M2
+  because profiling showed per-row recompile was the dominant cost).** The scan path
+  (`cli::scan::collect_selected_recnos`) re-ran the *entire* `eval_bool` pipeline per row —
+  `expand_value_builtins`, `fold_constant_date_algebra`, DotScript-bridge probe, and either a
+  fast-path re-parse or a full `compile_where_program` AST build — on a constant predicate string.
+  New `compile_bool_predicate` / `eval_bool_compiled` API (`value_eval.{hpp,cpp}`) compiles once
+  (AST + one reusable live `RecordView`) and evaluates per row; `collect_selected_recnos` compiles
+  before the loop. Parity-safe by construction: hoists only when preprocessing is a proven no-op
+  and the predicate is not a `$`/`{` bridge form — everything else falls back to per-row `eval_bool`
+  (identical behavior). `match_current` retained unchanged for LOCATE/CONTINUE.
+
+  *Measured (1M pinocchio STUDENTS, same host; parity: COUNT anchors stayed `1000000`):*
+
+  | op | floor | after M3 | speedup |
+  |---|---:|---:|---:|
+  | `SUM GPA` (no predicate path) | 19.5 s | 18.7 s | ~flat (expected) |
+  | `COUNT FOR GPA>=0` (1 term) | 38.5 s | 28.3 s | 1.36× |
+  | `COUNT FOR … 3 terms` | 70.5 s | 35.7 s | 1.98× |
+  | marginal per added term | 16.0 s/1M | 3.7 s/1M | **4.3×** |
+
+  Compile-once nearly eliminated the per-added-term cost (16→3.7 µs/row). The residual ~9.6 s/1M on
+  the *first* term is now the field-access layer inside the compiled eval (per-row name resolve +
+  `std::string` extract + `stod`) — exactly what M1 + M2 remove next.
+- **M1 — bind fields once.** ✅ **LANDED 2026-07-22 (build-verified).** Added a per-view field-name→
+  index cache in `make_record_view` (`glue_xbase.cpp`, `field_index_ci_cached`), shared via
+  `shared_ptr` so the compile-once scan reuses it across every row — after row 1 all field
+  resolutions are cache hits (no more per-access uppercased linear scan of the field descriptors).
+  Parity-safe: pure memoization of a deterministic lookup over a fixed layout; counts stayed
+  `1000000`.
+
+  *Measured — and a methodology note.* Raw `ELAPSED` is **not** comparable across runs: run-to-run
+  machine variance (thermal/background) moved the predicate-free `SUM GPA` baseline 18.7 s → 22.8 s
+  (+22%) between the M3 and M1 runs. Compare the **predicate cost normalized to the in-run scan
+  baseline** (`DECx − SUM`), which cancels that variance:
+
+  | metric | M3 run | M1 run | change |
+  |---|---:|---:|---|
+  | predicate cost, 1 term (`DEC1 − SUM`) | 9.64 s | 8.81 s | −9% |
+  | marginal per term (`(DEC3 − DEC1)/2`) | 3.68 s | 3.40 s | −8% |
+
+  Small but real, as predicted — the name scan was a minor slice. Henceforth read the benchmark as
+  `DECx − SUM`, not raw `ELAPSED`.
+- **M2 — selective + allocation-free decode.** ✅ **LANDED 2026-07-22 (build-verified; parity green
+  across `REGRESSION ALL` + `SCAN_PARITY`).** Profiling revealed the dominant residual was not the
+  predicate at all — `readCurrent()` eagerly decodes *every* field of the record into `std::string`
+  (`loadFieldsFromBuffer`) on every row, whether the predicate reads it or not. New additive core
+  path: `DbArea::readCurrentRaw()` (loads the record buffer, skips the eager field decode),
+  `decodeFieldFromBuffer()` (one field, all types, memo-aware — same codec as the full path), and
+  `fieldNumFromBuffer()` (N/F → `double` via `strtod`, no heap). A selective-decode record view
+  (`make_record_view_raw`) decodes only the fields the predicate touches; `collect_selected_recnos`
+  uses it (via `compile_bool_predicate(..., allow_raw)`) when a compiled predicate is present and no
+  persistent `SET FILTER` is active (the filter needs the full record). Gated + fallback-safe;
+  `match_current` unchanged for LOCATE/CONTINUE.
+
+  *Measured (1M pinocchio STUDENTS, 9 fields; parity: counts stayed `1000000`).* Because `SUM`/`DEC1`
+  now use different decode strategies, read the predicate scans normalized to the run's full-decode
+  `SUM` baseline:
+
+  | metric | floor | M1 | M2 | vs floor |
+  |---|---:|---:|---:|---:|
+  | `DEC1 / SUM` (1-term scan) | 1.97× | 1.39× | **0.93×** | **2.1×** |
+  | `DEC3 / SUM` (3-term scan) | 3.62× | — | **1.30×** | **2.8×** |
+
+  **DEC1 is now faster than SUM** — a one-field predicate scan beats a full-field aggregate scan,
+  because it decodes only GPA (1 of 9 fields) instead of all nine. The marginal per-term cost is
+  ~unchanged (M2's win is skipping *unused* fields, not cheaper accessed ones). Remaining floor is
+  the per-row record I/O (`gotoRec` + `readCurrentRaw` seek+read ≈ 18 µs/row) — a bulk/sequential
+  scan opportunity in the record-iteration subsystem, outside this evaluator lane.
 - **M4 — apply across consumers.** `cmd_count` (COUNT FOR), `cmd_aggs` (SUM/AVG/MIN/MAX),
-  `cmd_locate`, `cmd_list` (LIST FOR), `SET FILTER`, `cmd_scan`.
+  `cmd_locate`, `cmd_list` (LIST FOR), `SET FILTER`, `cmd_scan`. *Partly free already:* the shared
+  `collect_selected_recnos` choke point means COUNT/LIST FOR/SET FILTER/SCAN-selection inherit M3.
 
 ## Falsifiable success criteria
 
