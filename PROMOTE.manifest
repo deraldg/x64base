@@ -28,25 +28,28 @@
 #
 # ---------------------------------------------------------------------------
 # TWO PUBLISH LANES  (x64base is a MODEL / REFERENCE repo)
+#   "Publish lane" is the audience axis for what leaves development. It is
+#   distinct from MDO content lanes (messaging, metadata, full_stack_documentation,
+#   ...); every promoted path belongs to exactly one publish lane below.
 # ---------------------------------------------------------------------------
-#   LANE A -- PRODUCT
+#   PUBLISH LANE -- PRODUCT
 #     What an investigator installs, runs, and trusts: engine source + headers,
 #     runtime scaffold, help, sample data + the schemas needed to READ it,
 #     databuild + smoke scripts, and RENDERED manuals. Test: "needed to USE the
-#     release" -> Lane A.
+#     release" -> PRODUCT.
 #
-#   LANE B -- MODEL / DEV
+#   PUBLISH LANE -- MODEL / DEV
 #     Published only because this is a model/reference repo: documentation
 #     ENGINES (generators), AI-/agent-facing docs, contracts, portal seeds,
 #     build rationale, and repo tooling. Test: "describes or produces the
-#     release, rather than being used to run it" -> Lane B.
+#     release, rather than being used to run it" -> MODEL/DEV.
 #
-#   PRINCIPLE: publish the OUTPUT, keep the GENERATOR in Lane B.
+#   PRINCIPLE: publish the OUTPUT, keep the GENERATOR in MODEL/DEV.
 #   SCHEMAS ARE SPLIT: data/workspace schemas travel with the sample data
-#     (Lane A); engine-internal schemas (manualgen *.json, src/schemas/*.json)
-#     describe the tooling (Lane B).
+#     (PRODUCT); engine-internal schemas (manualgen *.json, src/schemas/*.json)
+#     describe the tooling (MODEL/DEV).
 #
-#   OPTIONAL FOLDERING: the rebuild script may route every Lane B match under
+#   OPTIONAL FOLDERING: the rebuild script may route every MODEL/DEV match under
 #     an "internal/" prefix in the PUBLISHED tree (dev source paths unchanged),
 #     gated behind one flag in rebuild-staging.ps1. Off by default here.
 #
@@ -80,7 +83,7 @@
 
 
 # ###########################################################################
-# LANE A -- PRODUCT  (what an investigator installs, runs, and trusts)
+# PUBLISH LANE -- PRODUCT  (what an investigator installs, runs, and trusts)
 # ###########################################################################
 
 # --- entry + hygiene -------------------------------------------------------
@@ -88,6 +91,24 @@
 BUILDING.md
 # NOTE: main currently carries BUILDING.md at docs/getting-started/BUILDING.md.
 # Reconcile to ONE canonical location before the next promotion.
+
+# --- root project + build entry files --------------------------------------
+.gitattributes
+CMakeLists.txt
+CMakePresets.json
+LICENSE
+MANIFEST.txt
+README.md
+vcpkg.json
+vcpkg-wsl.json
+run-pydottalk.ps1
+src/**/CMakeLists.txt
+
+# --- top-level reader-facing manuals ---------------------------------------
+#     (manual-AUTHORING aids -- prose guide, blueprint, maturity model,
+#      anchor map -- live in the MODEL/DEV publish lane.)
+DOTTALKPP_READER_MANUAL*.md
+DOTTALKPP_COMMAND_REFERENCE*.md
 
 # --- C++ engine source + headers (core of the model/reference repo) --------
 # CAUTION: broad -- confirm ALL of src/ and include/ is intended to be public.
@@ -112,6 +133,9 @@ dottalkpp/data/scripts/*.dts
 dottalkpp/data/scripts/*.DTS
 dottalkpp/data/comments/*.dbf
 dottalkpp/data/comments/*.dtx
+dottalkpp/data/*.dts
+dottalkpp/data/scripts/*.txt
+dottalkpp/data/dbf/x64/**/community_college_x64_schema.txt
 
 # --- MCC sample data: the canonical origin + three built flavors -----------
 #     (data/workspace SCHEMAS ship here -- needed to READ the fixtures.)
@@ -152,7 +176,7 @@ docs/manuals/developer/manualgen/published/developer_manual_publication_v1/comma
 
 
 # ###########################################################################
-# LANE B -- MODEL / DEV  (helps contributors + AI agents, not investigators)
+# PUBLISH LANE -- MODEL / DEV  (helps contributors + AI agents, not investigators)
 # ###########################################################################
 
 # --- repo entry docs for the model-repo audience ---------------------------
@@ -205,6 +229,10 @@ docs/manuals/command_reference/*.csv
 docs/manuals/developer/dev/*.md
 docs/manuals/dist/*.docx
 
+# --- top-level manual-AUTHORING aids (how the manual is written, not the manual)
+DOTTALKPP_MANUAL_*.md
+DOTTALKPP_PROFESSIONAL_*.md
+
 # --- AI portal seeds -------------------------------------------------------
 labtalk/ai_portal/*.md
 labtalk/ai_portal/publication/*.mdx
@@ -225,11 +253,14 @@ labtalk/reports/portal/*.json
 dottalkpp/scripts/pinocchio/*
 dottalkpp/data/scripts/pinocchio/*
 docs/maintenance/PINOCCHIO_STRESS_TEST_PLAN_V1.md
+docs/maintenance/PINOCCHIO_*.csv
+docs/maintenance/PINOCCHIO_*.json
+dottalkpp/docs/authority/*.md
 
 # --- documentation ENGINES (generators + their internal state) -------------
 #     Kept because contributors regenerate docs here. If x64base ever narrows
 #     to a pure product download, this block drops first -- output already
-#     ships in Lane A. (__pycache__ is gitignored, never published.)
+#     ships in PRODUCT. (__pycache__ is gitignored, never published.)
 tools/manualgen/*.py
 tools/manualgen/*.md
 tools/manualgen/manualgen_lib/*.py

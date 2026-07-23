@@ -35,19 +35,21 @@ surface; `main` is the only public surface.
 
 `main` is a **model / reference repo** — it serves both investigators (who
 download and run) and contributors / AI agents (who read and extend). Every
-promoted file belongs to exactly one lane:
+promoted file belongs to exactly one **publish lane**. ("Publish lane" is the
+audience axis for what leaves development; it is distinct from MDO content lanes
+such as `messaging` or `metadata`.)
 
-- **Lane A — Product.** Needed to *use* the release: engine source and headers,
-  runtime scaffold, help, sample data + the schemas needed to read it, databuild
-  and smoke scripts, and rendered manuals.
-- **Lane B — Model/Dev.** Published because this is a model repo: documentation
-  *engines* (generators), AI-/agent-facing docs, contracts, portal seeds, build
-  rationale, and repo tooling. The principle: **publish the rendered output; keep
-  the generator in Lane B.**
+- **PRODUCT publish lane.** Needed to *use* the release: engine source and
+  headers, runtime scaffold, help, sample data + the schemas needed to read it,
+  databuild and smoke scripts, and rendered manuals.
+- **MODEL/DEV publish lane.** Published because this is a model repo:
+  documentation *engines* (generators), AI-/agent-facing docs, contracts, portal
+  seeds, build rationale, and repo tooling. The principle: **publish the rendered
+  output; keep the generator in the MODEL/DEV lane.**
 
 Schemas are split, not one bucket: data/workspace schemas travel with the sample
-data (Lane A); engine-internal schemas (manualgen JSON, `src/schemas/*.json`)
-describe the tooling (Lane B).
+data (PRODUCT); engine-internal schemas (manualgen JSON, `src/schemas/*.json`)
+describe the tooling (MODEL/DEV).
 
 ## 4. The allow-list (`PROMOTE.manifest`)
 
@@ -59,7 +61,7 @@ Rules:
 
 1. **Allow-list only.** A file publishes only if a manifest glob matches it.
    Broad blanket copies are prohibited.
-2. **Lane-tagged.** Every entry lives under its Lane A or Lane B section.
+2. **Lane-tagged.** Every entry lives under its PRODUCT or MODEL/DEV publish-lane section.
 3. **`.gitignore` is a hard guard.** The rebuild re-applies the deny-list after
    matching, so an over-broad glob still cannot leak LMDB, `*.cdx.d`, `*.exe`,
    `og/`, `__pycache__`, or scratch.
