@@ -527,7 +527,12 @@ static ValuePlan build_value_plan(xbase::DbArea& area, const std::string& value_
     return vp;
 }
 
-static bool eval_value_plan(ValuePlan& vp, xbase::DbArea& area, const RecordView& rv, double& out) {
+// raw: when true the caller advanced the row with readCurrentRaw() (selective
+// decode, scan-evaluator lane M4), so the compiled-numeric path uses the raw
+// record view (rv is make_record_view_raw) and the direct-field path decodes
+// straight from the record buffer instead of the eager _fd cache.
+static bool eval_value_plan(ValuePlan& vp, xbase::DbArea& area, const RecordView& rv, double& out,
+                            bool raw = false) {
     if (vp.mode == ValuePlan::COMPILED_NUMERIC) {
         if (auto ln = dynamic_cast<const LitNumber*>(vp.prog)) {
             out = ln->v;
@@ -548,8 +553,16 @@ static bool eval_value_plan(ValuePlan& vp, xbase::DbArea& area, const RecordView
 
     if (vp.mode == ValuePlan::DIRECT_FIELD) {
         try {
-            std::string raw = area.get(vp.field_idx); // 1-based
-            return try_parse_double(std::move(raw), out);
+            if (raw) {
+                double d = 0.0;
+                if (area.fieldNumFromBuffer(vp.field_idx, d)) {   // N/F fast path, no alloc
+                    out = d;
+                    return std::isfinite(out);
+                }
+                return try_parse_double(area.decodeFieldFromBuffer(vp.field_idx), out);
+            }
+            std::string s = area.get(vp.field_idx); // 1-based
+            return try_parse_double(std::move(s), out);
         } catch (...) {
             return false;
         }
@@ -646,7 +659,14 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
     }
 
     const int saved = area.recno();
-    RecordView rv = dottalk::expr::glue::make_record_view(area);
+
+    // M4 selective decode: when there is no FOR/WHERE predicate and no persistent
+    // SET FILTER, only the value expression's field(s) need decoding — advance
+    // rows with readCurrentRaw() over the raw record view. Any predicate/filter
+    // needs the fully decoded record (filter::visible), so fall back there.
+    const bool use_raw = !spec.has_pred && !filter::has_active_filter(&area);
+    RecordView rv = use_raw ? dottalk::expr::glue::make_record_view_raw(area)
+                            : dottalk::expr::glue::make_record_view(area);
 
     shell_rel_refresh_push();
 
@@ -658,7 +678,11 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
 
     for (int r = 1; r <= total; ++r) {
         if (!area.gotoRec(r)) continue;
-        if (!area.readCurrent()) continue;
+        if (use_raw) {
+            if (!area.readCurrentRaw()) continue;
+        } else {
+            if (!area.readCurrent()) continue;
+        }
 
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
 
@@ -666,7 +690,7 @@ static void run_agg(AggOp op, const char* opname, xbase::DbArea& area, std::istr
         if (!filter::visible(&area, pred_ast)) continue;
 
         double v = 0.0;
-        if (!eval_value_plan(vp, area, rv, v)) continue;
+        if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;
 
         if (op == AggOp::SUM || op == AggOp::AVG) {
             sum += v;
@@ -767,7 +791,11 @@ static void run_agg_all(xbase::DbArea& area, std::istringstream& args) {
     }
 
     const int saved = area.recno();
-    RecordView rv = dottalk::expr::glue::make_record_view(area);
+
+    // M4 selective decode (same gating as the single-aggregate path).
+    const bool use_raw = !spec.has_pred && !filter::has_active_filter(&area);
+    RecordView rv = use_raw ? dottalk::expr::glue::make_record_view_raw(area)
+                            : dottalk::expr::glue::make_record_view(area);
 
     shell_rel_refresh_push();
 
@@ -778,12 +806,16 @@ static void run_agg_all(xbase::DbArea& area, std::istringstream& args) {
 
     for (int r = 1; r <= total; ++r) {
         if (!area.gotoRec(r)) continue;
-        if (!area.readCurrent()) continue;
+        if (use_raw) {
+            if (!area.readCurrentRaw()) continue;
+        } else {
+            if (!area.readCurrent()) continue;
+        }
         if (!passes_deleted_mode(area, spec.del_mode)) continue;
         if (!filter::visible(&area, pred_ast)) continue;
 
         double v = 0.0;
-        if (!eval_value_plan(vp, area, rv, v)) continue;
+        if (!eval_value_plan(vp, area, rv, v, use_raw)) continue;
 
         sum += v;
         ++n;

@@ -155,9 +155,36 @@ This is Option A, additive to the engine's evaluator; the store stays byte-image
   ~unchanged (M2's win is skipping *unused* fields, not cheaper accessed ones). Remaining floor is
   the per-row record I/O (`gotoRec` + `readCurrentRaw` seek+read ≈ 18 µs/row) — a bulk/sequential
   scan opportunity in the record-iteration subsystem, outside this evaluator lane.
-- **M4 — apply across consumers.** `cmd_count` (COUNT FOR), `cmd_aggs` (SUM/AVG/MIN/MAX),
-  `cmd_locate`, `cmd_list` (LIST FOR), `SET FILTER`, `cmd_scan`. *Partly free already:* the shared
-  `collect_selected_recnos` choke point means COUNT/LIST FOR/SET FILTER/SCAN-selection inherit M3.
+- **M4 — apply across consumers.** ✅ **LANDED 2026-07-22 (build-verified; `REGRESSION ALL` green;
+  `SUM GPA` value `2.99933e+06` preserved).** COUNT / LIST FOR / SET FILTER / SCAN-selection were
+  already free via the shared `collect_selected_recnos` choke point (M1–M3). This milestone extended
+  selective decode to `cmd_aggs` (both the single `SUM`/`AVG`/`MIN`/`MAX` loop and multi `AGGS ALL`):
+  `eval_value_plan` gained a raw mode (direct-field via `fieldNumFromBuffer`/`decodeFieldFromBuffer`,
+  compiled-numeric via the raw record view), gated to no-FOR/WHERE-and-no-active-filter (a predicate
+  or filter still needs the full record for `filter::visible`).
+
+  *Measured — via the variance-immune within-run `SUM / DEC1` ratio (both scan 1M rows; the only
+  difference is how many fields each decodes):*
+
+  | run | `SUM / DEC1` | interpretation |
+  |---|---:|---|
+  | M2 (SUM full-decodes 9 fields) | 24.61 / 22.82 = 1.078 | SUM pays ~8% extra for 8 unused fields |
+  | M4 (SUM selective-decodes GPA) | 21.26 / 21.28 = 0.999 | SUM == a 1-field scan; tax removed |
+
+  The ~8% is small only because STUDENTS is narrow (9 fields); it scales with field count.
+
+## Lane status — COMPLETE (evaluator), 2026-07-22
+
+M1–M4 are landed and build-verified; parity green across `REGRESSION ALL` + `SCAN_PARITY`; all
+benchmark counts/values unchanged. Net vs the M0 floor (normalized to the run's scan baseline):
+**DEC1 predicate scan ~2×, DEC3 ~2.6–2.8×**, and **aggregates no longer full-decode**. The lane's
+falsifiable ≥40× / sub-1s target was **not** reached — and the profiling explains why: after M1–M4
+the per-row cost is no longer in the evaluator or field decode at all. Both a bare aggregate and a
+1-field predicate scan now sit at ~21 µs/row, essentially all of which is **per-row record I/O**
+(`gotoRec` + `readCurrentRaw` = one seek + one read per record). That is a different subsystem
+(record iteration), and the orders-of-magnitude now live there → **spin-off: a bulk/sequential
+record-scan lane** (read records in blocks / stream the file once, instead of seek-per-row). The
+evaluator is no longer the bottleneck.
 
 ## Falsifiable success criteria
 
