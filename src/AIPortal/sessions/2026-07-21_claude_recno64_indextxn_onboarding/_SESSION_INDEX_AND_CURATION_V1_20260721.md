@@ -76,6 +76,28 @@ only; edits applied to dev working tree, not committed/promoted.*
 | V2 edit set: `xbase.hpp` (`_ram`/`io()`), `dbf_file.cpp` (open+readHeader/Fields via io()), `dbarea.cpp` (close), `xbase_vfp.hpp`/`xbase_64.hpp` (loaders→`std::istream&`) | **V2** DbArea↔ramfs wiring | dev-written; **awaiting build** (transparent until V5 mounts a root) |
 | Observation: `bptree_backend.cpp` `saveToFile` recno via `write_u32` | RECNO64 truncation carrier | note — folds to AIF-027 (not this lane) |
 
+### Lane E — Scan-Evaluator + Bulk Record-I/O optimization · spun off from Lane D (Ticket B Phase-0)
+*Origin: the go/no-go **Phase-0 gate of `TICKET_B_TUPLE_NATIVE_INMEMORY_STORE_V1`** (Lane D) —
+which **KILLED** Option B and, in doing so, located the real bottleneck (the per-row expression
+evaluator, not the store). That redirect became the scan-evaluator lane. **Unlike the earlier
+report-only Lanes A–D, this lane's code is COMMITTED to dev** (`D:\code\ccode`): M0 = `eba9a7012`,
+M1–M3 = `0f06d1060`, M4 committed by maintainer 2026-07-22. Bench-gated, parity-verified
+(`REGRESSION ALL` + `SCAN_PARITY` green each milestone). Mirror `C:\x64base` has M0 only; M1–M4
+mirror promotion still owed.*
+
+| File | Kind | Status |
+|---|---|---|
+| `PROJECT_LANE_SCAN_EVALUATOR_OPTIMIZATION_V1_20260722` | lane charter + M0–M4 results log | **COMMITTED (lane complete)** |
+| `data/scripts/pinocchio/ticketb_phase0_decode_cost.dts` | self-timing baseline benchmark (regression `PHASE0_DECODE_COST`, exempt from `REGRESSION ALL`) | committed |
+| M0: `fn_date.cpp` (fractional `SECONDS()`), `shell_api.cpp`/`shell.cpp` (`SET TIMER` in canonical executor), `cmd_regression.cpp` (`PHASE0_DECODE_COST`) | in-script timing fix + baseline | committed `eba9a7012` (+ site benchmark page) |
+| M1–M3: `value_eval.{hpp,cpp}` (compile-once predicate), `scan_selector.cpp` (compile once + raw path), `glue_xbase.{hpp,cpp}` (field-index cache + `make_record_view_raw`), `xbase.hpp` + `record_view.cpp` (`readCurrentRaw`/`decodeFieldFromBuffer`/`fieldNumFromBuffer`) | compile-once + field-bind + selective decode | committed `0f06d1060` |
+| M4: `cmd_aggs.cpp` (selective decode for SUM/AVG/MIN/MAX + AGGS ALL) | aggregates stop full-decoding | committed 2026-07-22 |
+| `PROJECT_LANE_BULK_RECORD_IO_SCAN_V1_20260722` | **STAGED** lane charter (spin-off; Phase-0 go/no-go owed) | candidate — not started |
+
+*Result: predicate scans ~2×–2.8× vs the M0 floor; aggregates no longer full-decode. The evaluator
+is no longer the bottleneck — the residual ~21 µs/row is per-row record I/O, which is the entire
+subject of the STAGED Bulk Record-I/O lane above.*
+
 ### Cross-cutting registers
 | File | Kind | Status |
 |---|---|---|
