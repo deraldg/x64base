@@ -10,16 +10,25 @@
 #     github.com/deraldg/x64base  (main = public snapshot; canonical for
 #                                   downloads and pull requests)
 #
-# PURPOSE OF main: a PRODUCT DOWNLOAD for investigators -- the engine plus the
-# HELP documentation, reader/user manuals, getting-started, sample data, and
-# the scripts needed to build/run it. It is NOT a model/reference repo:
-# metalevel "how we build it" material (doc engines, AI-/agent-facing docs,
-# contracts, session/rationale docs, portal seeds, authoring aids) stays in
-# development and is DELIBERATELY NOT PUBLISHED. See the NOT-PUBLISHED list
-# at the bottom.
+# WHAT THIS MANIFEST GOVERNS: the curated DATA + DOCUMENTATION projection that
+# publishes to main -- fixtures, the databuild lane, HELP, end-user docs,
+# runtime scaffold, launchers. ALLOW-LIST: of the clean dev files, only these
+# publish through the rebuild overlay.
 #
-# This file is an ALLOW-LIST: of the clean files in development, only these
-# publish. Everything else -- including most of docs/ -- stays private.
+# WHAT IT DOES NOT GOVERN (per labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md):
+# engine SOURCE and BUILD CONFIG -- src/, include/, bindings/, CMakeLists.txt,
+# CMakePresets.json, vcpkg*.json, cmake/ -- are NOT carried here. They reach
+# main coherently through git (a branch off main, cold-clone build to certify,
+# then merge), never through a working-tree overlay. Overlaying dev's messy
+# working-tree source would push half-finished engine code to main; the git
+# path keeps it build-coherent. Source and this projection can fall out of
+# step -- ground published docs against main, proven by a cold clone.
+#
+# SCOPE NOTE: this projection is scoped lean for a product-facing main --
+# metalevel docs, portal seeds, and doc-engine tools that the promotion model
+# would ALLOW here are deliberately trimmed (see NOT PUBLISHED). That is a
+# maintainer scope choice on the projection, not a change to the source/git
+# boundary above.
 #
 # FORMAT
 #   - '#' begins a comment; blank lines ignored.
@@ -57,16 +66,8 @@ dottalkpp/bin/*.ico
 # NOTE: main currently carries BUILDING.md at docs/getting-started/BUILDING.md.
 # Reconcile to ONE canonical location before the next promotion.
 
-# --- build system ----------------------------------------------------------
-CMakeLists.txt
-CMakePresets.json
-src/**/CMakeLists.txt
-cmake/**
-vcpkg.json
-vcpkg-wsl.json
-build.ps1
-wsl_build_dottalkpp.sh
-wslrun.sh
+# (engine source + build config REMOVED -- git-managed, see header + the
+#  "NOT IN THIS MANIFEST BUT ON main" section below.)
 
 # --- product edition manifests (development edition stays in dev) -----------
 config/package/lean.manifest
@@ -86,13 +87,7 @@ launch-common.ps1
 tk.run.ps1
 tk.run.sh
 
-# --- C++ engine source + headers -------------------------------------------
-src/**/*.cpp
-src/**/*.hpp
-src/**/*.h
-include/**/*.hpp
-include/**/*.h
-include/**/*.cpp
+# (C++ engine source + headers REMOVED -- git-managed, not overlaid.)
 
 # --- runtime scaffold (structure + ini; the exe is NOT published) ----------
 dottalkpp/bin/*.ini
@@ -169,12 +164,16 @@ DOTTALKPP_COMMAND_REFERENCE*.md
 
 
 # ###########################################################################
-# PUBLISH LANE -- PYDOTTALK  (the Python server binding)
+# NOT IN THIS MANIFEST BUT LEGITIMATELY ON main -- reaches main via git
 # ###########################################################################
-# pydottalk is the Python server built from dottalkpp. Publish its full binding
-# surface -- the C++ binding source, the Python API, build + starter, and the
-# probe/smoke scripts. (__pycache__/*.pyc stay out via the .gitignore guard.)
-bindings/**
+# Engine source + build config are git-managed (branch off main -> cold-clone
+# build to certify -> merge), NOT overlaid from dev's working tree. They are
+# correctly present on main and MUST NOT be purged by a projection audit:
+#     src/**   include/**   bindings/**   (bindings = pydottalk C++ server source)
+#     CMakeLists.txt   CMakePresets.json   src/**/CMakeLists.txt   cmake/**
+#     vcpkg.json   vcpkg-wsl.json
+# The pydottalk Python server ships as part of the git-managed source tree, not
+# as a manifest projection lane.
 
 
 # ###########################################################################
