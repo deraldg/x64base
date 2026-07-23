@@ -87,19 +87,23 @@ $diffOn=@(); $diffOff=@(); $gone=@(); $junk=@(); $nonpub=@(); $ok=0
 $nonpubRegex = '(^|/)(messaging|metadata|sandbox)/'
 $junkRegex   = '(^|/)__pycache__/|\.pyc$'
 
-$stageFiles = Get-ChildItem -LiteralPath $Stage -File -Recurse |
-  Where-Object { $_.FullName -notmatch $excludeRegex }
-
-foreach ($f in $stageFiles) {
-  $rel = $f.FullName.Substring($Stage.Length).TrimStart('\','/').Replace('\','/')
+# Enumerate the PUBLISHED set = git-tracked files in staging, NOT the working
+# tree. This is what a `git clone` gets; on-disk-only artifacts (gitignored
+# local LMDB rebuilds, __pycache__, scratch) are correctly ignored here.
+$rels = & git -C $Stage ls-files
+foreach ($rel in $rels) {
+  $rel = $rel.Trim()
+  if (-not $rel) { continue }
 
   if ($rel -match $junkRegex)   { $junk   += $rel }
   if ($rel -match $nonpubRegex) { $nonpub += $rel }
 
+  $stagePath = Join-Path $Stage ($rel -replace '/','\')
+  if (-not (Test-Path -LiteralPath $stagePath)) { continue }  # tracked, deleted on disk
   $devPath = Join-Path $Dev ($rel -replace '/','\')
   if (-not (Test-Path -LiteralPath $devPath)) { $gone += $rel; continue }
 
-  $hs = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash
+  $hs = (Get-FileHash -LiteralPath $stagePath -Algorithm SHA256).Hash
   $hd = (Get-FileHash -LiteralPath $devPath   -Algorithm SHA256).Hash
   if ($hs -eq $hd) { $ok++; continue }
 
