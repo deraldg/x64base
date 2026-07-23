@@ -78,6 +78,7 @@
 
 #include "xbase.hpp"
 #include "cli/external_process_policy.hpp"
+#include "identity/identity_admin.hpp"
 
 using xbase::DbArea;
 namespace fs = std::filesystem;
@@ -494,6 +495,19 @@ void cmd_SFTP(DbArea&, std::istringstream& S)
     if (sub == "USAGE" || sub == "HELP" || sub == "?") {
         sftp_usage();
         return;
+    }
+
+    // Identity enforcement (AIF-045 2d-3): SFTP reaches a remote host, so the acting
+    // member must be authorized for host.shell (the external-host-access capability).
+    // Owner exempt; a non-owner agent needs a live grant. Additive to the host/network
+    // env gate below, so owner behavior is unchanged.
+    {
+        const dottalk::identity::Decision d = dottalk::identity::agent_permitted("host.shell");
+        if (!d.allowed()) {
+            std::cout << "SFTP: refused for " << dottalk::identity::acting_member_key()
+                      << " -- " << d.reason << "\n";
+            return;
+        }
     }
 
     if (!cli::security::authorize_external_process("SFTP", true)) {
