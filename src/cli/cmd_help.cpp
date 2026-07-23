@@ -61,6 +61,13 @@
 //   FOXHELP
 //   PREDHELP
 //
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-HELP
+// home: src/cli
+// canonical-path: src/cli/cmd_help.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "cmd_help.hpp"
 #include "help_router.hpp"
@@ -68,6 +75,7 @@
 #include "foxref.hpp"
 #include "dotref.hpp"
 #include "edref.hpp"
+#include "cli/text_match.hpp"
 #include "cli/command_catalog.hpp"
 #include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
@@ -544,6 +552,39 @@ inline bool show_reflected_function_topic(const std::string& term_up)
 
 } // anonymous namespace
 
+// --- AIF-047: unified not-found + did-you-mean --------------------------------
+
+inline std::vector<std::string> gather_help_candidates()
+{
+    std::vector<std::string> names;
+    for (const auto& it : dotref::catalog()) if (it.name)  names.emplace_back(it.name);
+    for (const auto& it : foxref::catalog()) if (it.name)  names.emplace_back(it.name);
+    for (const auto& it : edref::catalog())  if (it.topic) names.emplace_back(it.topic);
+    for (const auto* fd : dottalk::expr::all_function_docs()) if (fd) names.push_back(fd->name);
+    // HELP's own router keywords (not commands, so absent from the reference catalogs) —
+    // so e.g. HELP GAINT can suggest GIANT.
+    for (const char* kw : {"GIANT", "BETA", "FUNCTIONS", "FUNCTION", "PREDICATES",
+                           "PS", "SQL", "USAGE", "TOPICS", "SOURCE", "KIND"})
+        names.emplace_back(kw);
+    return names;
+}
+
+// HELP owns its miss: the general not-found message + soundex/edit-distance suggestions
+// drawn from the reference/function catalogs (reuses the SOUNDEX helper). Replaces the old
+// silent delegation to FOXHELP's fox-scoped fallback.
+inline void help_not_found(const std::string& term)
+{
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::HelpNoTopicFound, {{"command", term}});
+
+    const auto sugg = dottalk::text::rank_suggestions(term, gather_help_candidates(), 5);
+    if (!sugg.empty()) {
+        out() << "  Did you mean: ";
+        for (std::size_t i = 0; i < sugg.size(); ++i) out() << (i ? ", " : "") << sugg[i];
+        out() << "?\n";
+    }
+}
+
 void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
 {
     using namespace dottalk::help;
@@ -715,19 +756,17 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
         if (term_effective == term_original_up) {
             if (show_dot_topic(opts.term)) return;
             if (show_ed_topic(opts.term)) return;
-            // MSG-022S1_3 BEGIN HELP_HINT_COMMAND active provider route before fox local fallback
-            if (show_active_help_hint_command(opts.term)) return;
-            // MSG-022S1_3 END HELP_HINT_COMMAND active provider route before fox local fallback
-
             if (show_fox_topic_local(opts.term)) return;
 
-            show_fox(area, opts.term);
+            // AIF-047: HELP owns the miss with a unified not-found + did-you-mean.
+            // (The old HELP_HINT_COMMAND route printed a self-referential "Type HELP <x>
+            //  for more information" for every unknown term — the reported "circle" — and
+            //  short-circuited this; removed from the unknown-term fallback.)
+            help_not_found(opts.term);
             return;
         }
 
-        cli::cmdout::print_message(
-            dottalk::helpdata::MessageId::HelpNoTopicFound,
-            {{"command", opts.term}});
+        help_not_found(opts.term);
         return;
     }
 

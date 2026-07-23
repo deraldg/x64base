@@ -149,5 +149,32 @@ substring, (c) bounded Levenshtein (≤ 2, or ≤ 3 for len ≥ 8), returning th
 - **M4 — REGRESSION** (`HELP GAINT` emits not-found + ≥1 near suggestion) + `@dottalk.usage`
   notes.
 
-**M0 status: complete.** Owner: Claude/Cowork. Next actionable: M1 (unified not-found terminal),
-pending resolution of the FOXHELP found/not-found signal.
+**M0 status: complete.** Owner: Claude/Cowork.
+
+### Correction from the M1 build (empirical)
+
+The live run corrected the M0 root cause: the actual intercept for an unknown term was **not**
+the FOX fallback but `show_active_help_hint_command` (cmd_help.cpp ~360), called earlier in the
+same legacy branch. When the active DBF message catalog is loaded it formats `HELP_HINT_COMMAND`
+= "Type HELP {command} for more information.", substitutes the user's term, prints it, and
+returns `true` — **unconditionally, for any term** — short-circuiting before both the FOX
+fallback and the not-found message. So `HELP GAINT` printed "Type HELP GAINT for more
+information" — the literal self-referential **"circle"** the owner reported. The fix removes that
+hint from the unknown-term fallback so control reaches the unified `help_not_found`.
+
+## M1 + M2 — COMPLETE (in-engine proven, 2026-07-22)
+
+- **`include/cli/text_match.hpp`** (new, header-only, unit-proven `TEXTMATCH:PASS`): the canonical
+  Soundex (now the single copy), case-insensitive Levenshtein, and `rank_suggestions` (tiers:
+  prefix, substring, same-Soundex, small edit distance).
+- **`src/cli/expr/fn_string.cpp`**: `SOUNDEX()` (`dt_soundex`) refactored to call
+  `dottalk::text::soundex` — one implementation, no fork; `? SOUNDEX("GIANT")` still `G530`.
+- **`src/cli/cmd_help.cpp`**: removed the circular `HELP_HINT_COMMAND` fallback; unified
+  `help_not_found(term)` prints `HelpNoTopicFound` + `Did you mean: …?` drawn from
+  `dotref/foxref/edref` + function catalog + HELP router keywords.
+- **In-engine:** `HELP GAINT` → "No help found for: GAINT / Did you mean: GIANT, MAINT, INT?";
+  `HELP REPLCE` → REPLACE; `HELP SELCT` → SELECT. The Soundex phonetic tier puts GIANT first.
+
+**Remaining:** M3 (`HELP GIANT <topic>` consistency — still a pass-through to CMDHELP, and
+`GIANT <unknown>` doesn't yet share `help_not_found`); M4 (REGRESSION `HELP GAINT` → suggests
+GIANT + `@dottalk.usage` notes).

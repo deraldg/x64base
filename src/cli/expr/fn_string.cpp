@@ -7,6 +7,7 @@
 // - TRANSFORM() is currently a pass-through placeholder.
 
 #include "cli/expr/fn_string.hpp"
+#include "cli/text_match.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -141,67 +142,9 @@ static std::string dt_empty(const std::vector<std::string>& args) {
 
 static std::string dt_soundex(const std::vector<std::string>& args) {
     if (args.empty()) return {};
-
-    std::string letters;
-    for (char ch : args[0]) {
-        unsigned char uch = static_cast<unsigned char>(ch);
-        if (std::isalpha(uch)) {
-            letters.push_back(static_cast<char>(std::toupper(uch)));
-        }
-    }
-
-    if (letters.empty()) return {};
-
-    auto code_for = [](char c) -> char {
-        switch (c) {
-            case 'B': case 'F': case 'P': case 'V': return '1';
-            case 'C': case 'G': case 'J': case 'K': case 'Q':
-            case 'S': case 'X': case 'Z': return '2';
-            case 'D': case 'T': return '3';
-            case 'L': return '4';
-            case 'M': case 'N': return '5';
-            case 'R': return '6';
-            default: return '0';
-        }
-    };
-
-    std::string out;
-    out.reserve(4);
-    out.push_back(letters[0]);
-
-    // Standard Soundex rule:
-    // - Keep first letter.
-    // - Vowels/Y reset duplicate-code suppression.
-    // - H/W do not reset duplicate-code suppression.
-    // This preserves classic examples such as ASHCRAFT -> A261,
-    // TYMCZAK -> T522, and PFISTER -> P236.
-    char prev = code_for(letters[0]);
-
-    for (std::size_t i = 1; i < letters.size() && out.size() < 4; ++i) {
-        char c = letters[i];
-        char code = code_for(c);
-
-        if (c == 'H' || c == 'W') {
-            continue;
-        }
-
-        if (code == '0') {
-            prev = '0';
-            continue;
-        }
-
-        if (code != prev) {
-            out.push_back(code);
-        }
-
-        prev = code;
-    }
-
-    while (out.size() < 4) {
-        out.push_back('0');
-    }
-
-    return out.substr(0, 4);
+    // Canonical Soundex lives in cli/text_match.hpp (shared with HELP did-you-mean).
+    // Preserves classic examples (ASHCRAFT -> A261, TYMCZAK -> T522, PFISTER -> P236).
+    return dottalk::text::soundex(args[0]);
 }
 
 // --------------------------------------------------
