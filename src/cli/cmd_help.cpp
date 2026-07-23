@@ -561,12 +561,25 @@ inline std::vector<std::string> gather_help_candidates()
     for (const auto& it : foxref::catalog()) if (it.name)  names.emplace_back(it.name);
     for (const auto& it : edref::catalog())  if (it.topic) names.emplace_back(it.topic);
     for (const auto* fd : dottalk::expr::all_function_docs()) if (fd) names.push_back(fd->name);
+    // Reflected (authoritative) command names — covers dev/newer commands not in the catalogs.
+    { const refsys::ReferenceCollection rc = refsys::build_reference_collection();
+      for (const auto& c : rc.commands) names.push_back(c.canonical_name); }
     // HELP's own router keywords (not commands, so absent from the reference catalogs) —
     // so e.g. HELP GAINT can suggest GIANT.
     for (const char* kw : {"GIANT", "BETA", "FUNCTIONS", "FUNCTION", "PREDICATES",
                            "PS", "SQL", "USAGE", "TOPICS", "SOURCE", "KIND"})
         names.emplace_back(kw);
     return names;
+}
+
+// Exact (case-insensitive) membership of a topic head across the candidate set.
+inline bool is_known_help_topic(const std::string& term)
+{
+    const std::string t = uptrim(term);
+    if (t.empty()) return false;
+    for (const auto& n : gather_help_candidates())
+        if (uptrim(n) == t) return true;
+    return false;
 }
 
 // HELP owns its miss: the general not-found message + soundex/edit-distance suggestions
@@ -620,6 +633,13 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
             return;
         }
 
+        // AIF-047 M3: an unknown GIANT topic shares the unified not-found + did-you-mean,
+        // instead of CMDHELP's quiet miss. Gate on the topic head (so "SET ORDER" etc. pass).
+        {
+            const std::size_t sp = giant_up.find(' ');
+            const std::string head = (sp == std::string::npos) ? giant_up : giant_up.substr(0, sp);
+            if (!is_known_help_topic(head)) { help_not_found(giant_rest); return; }
+        }
         std::istringstream giant(giant_rest);
         cmd_CMDHELP(area, giant);
         return;

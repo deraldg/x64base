@@ -175,6 +175,16 @@ hint from the unknown-term fallback so control reaches the unified `help_not_fou
 - **In-engine:** `HELP GAINT` → "No help found for: GAINT / Did you mean: GIANT, MAINT, INT?";
   `HELP REPLCE` → REPLACE; `HELP SELCT` → SELECT. The Soundex phonetic tier puts GIANT first.
 
-**Remaining:** M3 (`HELP GIANT <topic>` consistency — still a pass-through to CMDHELP, and
-`GIANT <unknown>` doesn't yet share `help_not_found`); M4 (REGRESSION `HELP GAINT` → suggests
-GIANT + `@dottalk.usage` notes).
+## M3 + M4 — COMPLETE (in-engine proven, 2026-07-22)
+
+- **M3 `HELP GIANT <topic>` consistency:** the candidate set now also includes the authoritative
+  reflected command names (`refsys::build_reference_collection().commands`), and a new
+  `is_known_help_topic(head)` gates the GIANT topic branch — an unknown GIANT topic shares the
+  unified `help_not_found` (not-found + suggestions) instead of CMDHELP's quiet miss, while a
+  known topic (e.g. `HELP GIANT USE`) still renders the full assembled DOT|USE + FOX|USE view.
+- **M4 REGRESSION:** `HELP_DIDYOUMEAN` (registered, array 23→24) — `HELP GAINT`→GIANT,
+  `HELP SELCT`→SELECT, `HELP GIANT GAINT` shares the not-found terminal, `SOUNDEX("GIANT")`→G530.
+  In-engine: **green**.
+
+**AIF-047 status: M0–M4 COMPLETE.** Owner: Claude/Cowork. Dev-only; committed, not yet promoted
+to `C:\x64base`.
