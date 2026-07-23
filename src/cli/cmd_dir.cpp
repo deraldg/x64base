@@ -18,11 +18,15 @@
 //   DIR <path>
 //   DIR <slot>
 //   DIR <slot>:<path>
+//   DIR <pattern>
+//   DIR <dir>/<pattern>
 //
 // notes:
 //   DIR with no arguments lists the configured DBF path.
 //   DIR <path> lists a directory or prints a single file entry.
 //   Slot-style paths resolve through the common path resolver.
+//   A trailing wildcard component (containing * or ?) filters the listing by
+//   filename, case-insensitively: DIR *.dbf, DIR DBF/STUD*.*, DIR INDEXES/*.cnx.
 //   DIR is read-only and does not mutate table data or filesystem contents.
 //
 // risk:
@@ -61,7 +65,9 @@ static void print_dir_usage()
         << "  DIR USAGE\n"
         << "  DIR <path>\n"
         << "  DIR <slot>\n"
-        << "  DIR <slot>:<path>\n";
+        << "  DIR <slot>:<path>\n"
+        << "  DIR <pattern>          e.g. DIR *.dbf   (wildcards * and ?)\n"
+        << "  DIR <dir>/<pattern>    e.g. DIR DBF/STUD*.*\n";
 }
 
 static bool has_ext_ci(const fs::path& p, const char* ext) {
@@ -231,6 +237,31 @@ static bool print_regular_file(const fs::path& target) {
     return true;
 }
 
+// Case-insensitive filename glob supporting '*' (any run) and '?' (one char).
+static bool wildcard_match(const std::string& patRaw, const std::string& nameRaw) {
+    const std::string pat  = textio::up(patRaw);
+    const std::string name = textio::up(nameRaw);
+    std::size_t p = 0, n = 0, star = std::string::npos, mark = 0;
+    while (n < name.size()) {
+        if (p < pat.size() && (pat[p] == '?' || pat[p] == name[n])) { ++p; ++n; }
+        else if (p < pat.size() && pat[p] == '*') { star = p++; mark = n; }
+        else if (star != std::string::npos) { p = star + 1; n = ++mark; }
+        else return false;
+    }
+    while (p < pat.size() && pat[p] == '*') ++p;
+    return p == pat.size();
+}
+
+// If the trailing path component carries a wildcard, split into (dir, pattern).
+static bool split_wildcard(const std::string& arg, std::string& dir, std::string& pattern) {
+    const std::size_t sep = arg.find_last_of("/\\");
+    const std::string last = (sep == std::string::npos) ? arg : arg.substr(sep + 1);
+    if (last.find_first_of("*?") == std::string::npos) return false;
+    pattern = last;
+    dir = (sep == std::string::npos) ? std::string() : arg.substr(0, sep);
+    return true;
+}
+
 void cmd_DIR(xbase::DbArea&, std::istringstream& iss) {
     std::string arg;
     std::getline(iss, arg);
@@ -242,7 +273,11 @@ void cmd_DIR(xbase::DbArea&, std::istringstream& iss) {
         return;
     }
 
-    fs::path target = resolve_dir_target(arg);
+    // Wildcard listing: DIR *.dbf, DIR DBF/STUD*.dbf, DIR <path>/*.cnx, etc.
+    std::string dir_part, pattern;
+    const bool has_pattern = split_wildcard(arg, dir_part, pattern);
+
+    fs::path target = resolve_dir_target(has_pattern ? dir_part : arg);
 
     std::error_code ec;
 
@@ -274,7 +309,9 @@ void cmd_DIR(xbase::DbArea&, std::istringstream& iss) {
         shown = target;
     }
 
-    std::cout << "\n Directory of " << shown.string() << "\n\n";
+    std::cout << "\n Directory of " << shown.string();
+    if (has_pattern) std::cout << "   (filter: " << pattern << ")";
+    std::cout << "\n\n";
 
     std::size_t dirs = 0;
     std::size_t files = 0;
@@ -300,6 +337,12 @@ void cmd_DIR(xbase::DbArea&, std::istringstream& iss) {
 
         const auto& entry = *it;
         const auto& p = entry.path();
+
+        // Wildcard filter: only entries whose filename matches the pattern.
+        if (has_pattern && !wildcard_match(pattern, p.filename().string())) {
+            ec.clear();
+            continue;
+        }
 
         auto ftime = entry.last_write_time(ec);
         if (ec) {
