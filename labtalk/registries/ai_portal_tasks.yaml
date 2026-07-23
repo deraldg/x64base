@@ -198,19 +198,20 @@ tasks:
     area: labtalk/ai_portal/chat/cross-agent-communication
     owning_lifecycle: LabTalk SDLC / AI Portal hardening lane
     sdlc_lane: proof
-    truth_state: requested_chat_route_defined_live_cross_provider_delivery_unproven
-    proof_state: awaiting_round_trip_response
+    truth_state: public_read_and_maintainer_relay_demonstrated_authentication_not_attempted
+    proof_state: maintainer_relay_complete_authenticated_delivery_unproven
     risk_class: low
     source_path: D:/code/ccode/labtalk/ai_portal
     website_path: unknown
-    next_gate: Gemini posts the response or returns a delivery_blocked envelope; Derald then asks ChatGPT to read and acknowledge it
+    next_gate: superseded by task.ai_portal.gemini_authenticated_chat.v2
     owner: Gemini
     assignee_type: external_ai
     recipient: assistant.openai.chatgpt.beta_work
     maintainer: Derald
-    status: assigned
+    status: completed_relay_pilot
 
     created: 2026-07-22
+    completed: 2026-07-23
     authority_root: D:/code/ccode
     staging_root: C:/x64base
     public_repository: github.com/deraldg/x64base
@@ -219,56 +220,133 @@ tasks:
     task_packet: labtalk/ai_portal/tasks/GEMINI_AI_PORTAL_CHAT_RESPONSE_TASK_V1.md
     chat_thread: labtalk/ai_portal/chat/threads/CHAT_GEMINI_TO_CHATGPT_20260722_V1.md
     thread_id: chat.ai_portal.gemini_to_chatgpt.20260722.v1
+    superseded_by: task.ai_portal.gemini_authenticated_chat.v2
 
-    objective: >-
-      Prove a bounded AI Portal-mediated response from Gemini to the current
-      ChatGPT operator assisting Derald in BETA_Work, while honestly distinguishing
-      successful portal delivery from a provider-local answer or blocked route.
+    completion_summary: >-
+      Gemini read public portal material and returned a response through Derald.
+      ChatGPT/BETA_Work recorded and acknowledged the maintainer relay. The pilot did
+      not supply an enrollment token, perform registration, construct an authenticated
+      security session, or attempt an authorized post. Direct authenticated delivery
+      therefore remains unproven rather than disproven.
 
-    required_response:
-      sender: assistant.google.gemini
-      recipient: assistant.openai.chatgpt.beta_work
-      cc: human.derald
-      message_kind: task_response
-      response_statuses: [responded, delivery_blocked]
-      envelope_contract: labtalk/ai_portal/chat/threads/CHAT_GEMINI_TO_CHATGPT_20260722_V1.md
+    demonstrated:
+      - Gemini public portal reading
+      - Gemini provider-local response generation
+      - maintainer relay from Gemini to ChatGPT/BETA_Work
+      - ChatGPT readback and classification
 
-    required_analysis:
-      - list the exact AI Portal and authority files actually read
-      - state whether Gemini can post directly to the named portal thread
-      - state whether the response was actually entered into that thread
-      - identify the smallest missing capability when delivery is blocked
-      - recommend one bounded improvement to cross-agent response reliability
-
-    delivery_rule:
-      - do not treat an answer visible only inside the Gemini host conversation as completion
-      - post to the named AI Portal thread when a portal chat write action is available
-      - otherwise return status delivery_blocked with the complete response envelope to Derald
-      - do not claim ChatGPT received the response without portal or relay evidence
-
-    allowed_scope:
-      - read public AI Portal and task artifacts
-      - post one structured response to the named AI Portal chat thread
-      - report delivery capability and limitations
-      - recommend one bounded communication-route improvement
-
-    excluded_scope:
-      - source-code or maintained-data mutation
-      - DBF, index, LMDB, HELP, metadata, or runtime fixture changes
-      - branch creation or switching
-      - commit, push, staging promotion, or publication
-      - raw-chat archival, secrets, credentials, or private data
-      - claims of autonomous or background inter-provider communication
-
-    acceptance_criteria:
-      - a correctly addressed response envelope is posted to the named thread or returned as delivery_blocked
-      - Gemini identifies provider, product, actual model or not_exposed, and access mode
-      - exact files read and proof boundaries are listed
-      - successful delivery is distinguished from provider-local response generation
-      - Derald can direct ChatGPT to read the thread or relayed envelope
+    not_attempted_or_unproven:
+      - private token provisioning
+      - agent registration or authenticated login
+      - USERS to TEAM_MEMBER to active TEAM_ASSIGNMENT session construction
+      - role, permission, scope, and authorization proof
+      - authenticated portal post
+      - durable message receipt
+      - autonomous cross-provider notification or polling
 
     authority_boundary: >-
-      Gemini is authorized only to read the public portal context and submit the
-      bounded response. Derald retains authority over relay, acceptance, local
-      source changes, proof, promotion, and publication. ChatGPT does not poll
-      asynchronously and must be asked to read the response after it arrives.
+      The v1 record proves only the human-controlled relay path. It does not authorize
+      source or data mutation and does not establish that Gemini lacks authenticated
+      transport capability.
+
+  - id: task.ai_portal.gemini_authenticated_chat.v2
+    title: Register Gemini with a private token and prove an authenticated AI Portal response
+    project_id: project.ai_friendly
+    area: labtalk/ai_portal/security/chat/cross-agent-communication
+    owning_lifecycle: LabTalk SDLC / AI Portal hardening and security lanes
+    sdlc_lane: proof
+    truth_state: maintainer_declares_local_token_registration_security_public_snapshot_may_lag
+    proof_state: awaiting_private_token_and_authenticated_execution
+    risk_class: medium
+    source_path: D:/code/ccode/labtalk/ai_portal
+    website_path: x64base.com/docs/labtalk/agent-sync/
+    next_gate: Derald privately supplies Gemini the token and exact implemented registration/login instructions; Gemini proves identity, authorization, and one scoped post
+    owner: Gemini
+    assignee_type: external_ai
+    recipient: assistant.openai.chatgpt.beta_work
+    credential_authority: Derald
+    maintainer: Derald
+    status: assigned_awaiting_private_token
+
+    created: 2026-07-23
+    authority_root: D:/code/ccode
+    staging_root: C:/x64base
+    public_repository: github.com/deraldg/x64base
+    public_branch: main
+    public_baseline: ee498544c0d9930e7b468f7fd2d7ba786a1d4fee
+    task_packet: labtalk/ai_portal/tasks/GEMINI_AUTHENTICATED_AI_PORTAL_CHAT_PROOF_V2.md
+    chat_thread: labtalk/ai_portal/chat/threads/CHAT_GEMINI_AUTHENTICATED_TO_CHATGPT_20260723_V2.md
+    thread_id: chat.ai_portal.gemini_to_chatgpt.authenticated.20260723.v2
+    supersedes: task.ai_portal.gemini_chat_response.v1
+
+    objective: >-
+      Prove whether Gemini can use a privately supplied token to register or log in
+      through the implemented security system, obtain a Gemini-specific identity and
+      narrowly scoped authorization, and post one structured response to ChatGPT/BETA_Work.
+
+    declared_security_flow:
+      - USERS identity
+      - TEAM_MEMBER mapping
+      - active TEAM_ASSIGNMENT
+      - role and permission snapshot
+      - scope and current authorization
+      - constructed security session
+      - SECURITY WHOAMI or portal/API equivalent readback
+
+    credential_rules:
+      - Derald supplies the enrollment or registration token privately
+      - no token, bearer credential, password, hash, or reversible encoding may enter GitHub, Pseudo-Chat, task artifacts, logs, screenshots, patches, or response envelopes
+      - Gemini reports only non-secret registration, identity, authorization, and message receipts
+      - the public packet does not guess unpublished endpoint, command, or token syntax
+      - token minting, scope expansion, copying, publication, and credential administration are not authorized
+
+    intended_scope:
+      identity: assistant.google.gemini
+      operation: portal_chat_response
+      recipient: assistant.openai.chatgpt.beta_work
+      thread: chat.ai_portal.gemini_to_chatgpt.authenticated.20260723.v2
+      maintainer_visibility: human.derald
+      source_mutation: denied
+      runtime_data_mutation: denied
+      repository_administration: denied
+      credential_administration: denied
+
+    result_states:
+      - posted_authenticated
+      - registered_transport_blocked
+      - registration_failed
+      - security_contract_unavailable
+      - host_capability_blocked
+
+    required_proof:
+      - exact public baseline and files read
+      - registration/login attempt result
+      - non-secret user_id and member_id when exposed
+      - active assignment, role, permission, scope, and authorization readback when exposed
+      - token_included must be false
+      - authenticated post attempt result
+      - durable message receipt when accepted
+      - ChatGPT/BETA_Work readback of that exact receipt
+      - failure classified at the exact security or transport gate
+
+    excluded_scope:
+      - source-code mutation
+      - maintained DBF, index, LMDB, HELP, metadata, or runtime fixture mutation
+      - branch creation or switching
+      - staging promotion, commit, push, or publication outside the approved message transport
+      - secrets, credentials, private registration material, or raw-chat archival
+      - background polling or claims of autonomous cross-provider communication
+
+    acceptance_criteria:
+      - private credential is never exposed in a durable artifact
+      - Gemini-specific authenticated identity is proven
+      - active assignment and scoped authorization are proven
+      - exactly one authorized response is attempted for the named thread
+      - durable acceptance receipt is recorded if the post succeeds
+      - ChatGPT/BETA_Work acknowledges the exact receipt
+      - authentication, authorization, transport, storage, and readback proofs remain distinct
+
+    authority_boundary: >-
+      Derald retains credential issuance, revocation, acceptance, local reconciliation,
+      source/data authority, promotion, and publication control. Gemini is authorized
+      only for the bounded registration and message-post proof described by this task.
