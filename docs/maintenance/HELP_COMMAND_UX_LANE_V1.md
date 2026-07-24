@@ -186,5 +186,23 @@ hint from the unknown-term fallback so control reaches the unified `help_not_fou
   `HELP SELCT`→SELECT, `HELP GIANT GAINT` shares the not-found terminal, `SOUNDEX("GIANT")`→G530.
   In-engine: **green**.
 
-**AIF-047 status: M0–M4 COMPLETE.** Owner: Claude/Cowork. Dev-only; committed, not yet promoted
-to `C:\x64base`.
+## M5 — HELP GIANT ALL (exhaustive recollection) — COMPLETE (syntax-proven, 2026-07-23)
+
+Follow-up report: bare `HELP GIANT` was only ~2 screens — the corpus stats plus a 24-row,
+100-char-truncated preview from `print_current_help_report` — not the exhaustive dump the name
+implies. Rather than inflate the index, we added a second, explicit front door.
+
+- **New renderer** `print_current_help_full(dir)` in `src/cli/cmdhelp.cpp`: loads HELP DATA,
+  groups every row by `TOPICKEY`, and prints each topic in full — no 24-row cap, no 100-char
+  truncation. Same corpus the manual/website are assembled from (492 topics / 12,784 rows).
+- **Dispatch** `CMDHELP REPORT ALL` (alias `FULL`) alongside `REPORT TOPICS/KIND/SOURCE`.
+- **Router** `HELP GIANT ALL` / `HELP /GIANT ALL` intercept added before the topic gate (so
+  `ALL`/`FULL` route to the report, not into did-you-mean). Usage/notes updated in both the
+  `HELP GIANT` help and `CMDHELP` usage.
+- **Contract:** bare `HELP GIANT` stays the fast **index**; `HELP GIANT ALL` is the exhaustive
+  recollection. Long output — relies on `SET PAGING ON`.
+- **Proof:** `cmdhelp.cpp` + `cmd_help.cpp` pass `g++ -std=c++20 -fsyntax-only` against real
+  engine headers. Awaiting MSVC build + `HELP GIANT ALL` demo.
+
+**AIF-047 status: M0–M5 COMPLETE (M5 syntax-proven, MSVC demo pending).** Owner: Claude/Cowork.
+Dev-only; committed, not yet promoted to `C:\x64base`.

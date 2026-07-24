@@ -87,12 +87,14 @@ Public repository identity:
 
 ```text
 origin: https://github.com/deraldg/x64base.git
-public branch: main
+public (stable) branch: main
+development integration branch: development
 ```
 
-The development branch is current workspace state and must be discovered
-locally. Do not preserve a transient development branch name here as a current
-instruction.
+The `development` branch on origin is the named integration branch (renamed on
+GitHub from the earlier dated `homegrown-cnx-20251112-branch`). It carries
+current workspace state and moves quickly. Always confirm the checked-out branch
+locally before making Git decisions — do not assume a branch name from this file.
 
 Always re-check before making Git decisions:
 

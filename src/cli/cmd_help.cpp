@@ -48,6 +48,9 @@
 //   HELP GIANT TOPICS/KIND/SOURCE expose organized report slices.
 //   HELP GIANT <topic> renders the assembled topic through current HELP DATA.
 //   HELP GIANT respects normal shell paging via SET PAGING ON|OFF.
+//   Unknown topics use one unified not-found response and may offer ranked
+//   did-you-mean suggestions from the reflected command/help catalogs.
+//   Suggestions are advisory only; HELP does not execute the suggested command.
 //   HELP is read-only for table data and path state.
 //
 // risk:
@@ -295,13 +298,15 @@ inline void print_help_giant_usage()
         << "HELP GIANT\n"
         << "  Full HELP DATA console report.\n\n"
         << "Usage:\n"
-        << "  HELP GIANT\n"
+        << "  HELP GIANT              (index: stats + preview of the corpus)\n"
+        << "  HELP GIANT ALL          (exhaustive: every topic, full text)\n"
         << "  HELP GIANT USAGE\n"
         << "  HELP GIANT TOPICS\n"
         << "  HELP GIANT KIND\n"
         << "  HELP GIANT SOURCE\n"
         << "  HELP GIANT <topic>\n"
         << "  HELP /GIANT\n"
+        << "  HELP /GIANT ALL\n"
         << "  HELP /GIANT USAGE\n"
         << "  HELP /GIANT TOPICS\n"
         << "  HELP /GIANT KIND\n"
@@ -309,6 +314,10 @@ inline void print_help_giant_usage()
         << "  HELP /GIANT <topic>\n\n"
         << "Notes:\n"
         << "  HELP GIANT is the readable front door over CMDHELP report surfaces.\n"
+        << "  HELP GIANT (bare) is the fast index: corpus stats + a short preview.\n"
+        << "  HELP GIANT ALL is the exhaustive recollection: every topic with full,\n"
+        << "    untruncated text grouped by topic (the same corpus the manual is built\n"
+        << "    from). Long output -- use SET PAGING ON. Bare HELP GIANT stays the index.\n"
         << "  HELP /GIANT is an alias for the same surface.\n"
         << "  HELP GIANT TOPICS lists current topic keys.\n"
         << "  HELP GIANT KIND groups help rows by KIND and shows topic membership.\n"
@@ -627,7 +636,8 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
             return;
         }
 
-        if (giant_up == "TOPICS" || giant_up == "KIND" || giant_up == "SOURCE") {
+        if (giant_up == "TOPICS" || giant_up == "KIND" || giant_up == "SOURCE"
+            || giant_up == "ALL" || giant_up == "FULL") {
             std::istringstream giant(std::string("REPORT ") + giant_up);
             cmd_CMDHELP(area, giant);
             return;

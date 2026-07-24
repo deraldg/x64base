@@ -14,9 +14,9 @@
 // usage:
 //   CMDHELP
 //   CMDHELP USAGE
-//   CMDHELP BUILD
-//   CMDHELP BUILD V2
-//   CMDHELP BUILD LEGACY
+//   CMDHELP BUILD [<out-dir> [<source-root> ...]]
+//   CMDHELP BUILD V2 [<out-dir> [<source-root> ...]]
+//   CMDHELP BUILD LEGACY [<out-dir> [<source-root> ...]]
 //   CMDHELP LEGACY
 //   CMDHELP <topic> PREVIEW LOCALE <locale>
 //   CMDHELP <topic> LOCALE <locale>
@@ -26,6 +26,8 @@
 //   CMDHELP BUILD writes the current HELP DATA DBFs.
 //   CMDHELP BUILD V2 is a silent compatibility alias for CMDHELP BUILD.
 //   CMDHELP BUILD LEGACY drives the old commands.dbf/cmd_args.dbf builder path.
+//   One or more explicit source roots may follow the output directory; when omitted,
+//   the source-root list defaults to ./src.
 //   CMDHELP with no arguments reports current HELP DATA from help_line.dbf.
 //   CMDHELP LEGACY reports the old commands.dbf/cmd_args.dbf surface.
 //   Locale preview is explicit-only and does not change normal CMDHELP behavior.
@@ -1318,6 +1320,53 @@ static void print_current_help_report(const std::string& dir) {
     }
 }
 
+// HELP GIANT ALL / CMDHELP REPORT ALL — the exhaustive "recollection": every HELP DATA
+// topic rendered in full (no 24-row preview cap, no 100-char truncation), grouped by topic.
+// Same corpus the manual/website are assembled from. Respects SET PAGING.
+static void print_current_help_full(const std::string& dir) {
+    DbfTable tbl;
+    if (!load_help_line_table(dir, tbl)) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP", dottalk::helpdata::MessageId::CmdHelpCurrentReadFailed, {{"dir", dir}});
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentExpectedFile);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpBuildTip);
+        return;
+    }
+
+    const int ix_topic_key = dbf_field_index(tbl, "TOPICKEY");
+    const int ix_kind      = dbf_field_index(tbl, "KIND");
+    const int ix_text      = dbf_field_index(tbl, "TEXT");
+    if (ix_topic_key < 0 || ix_kind < 0 || ix_text < 0) {
+        cli::cmdout::print_prefixed_message(
+            "CMDHELP", dottalk::helpdata::MessageId::CmdHelpCurrentMissingColumns);
+        cli::cmdout::print_message(dottalk::helpdata::MessageId::CmdHelpCurrentNeedColumns);
+        return;
+    }
+
+    std::set<std::string> topic_order;
+    std::unordered_map<std::string, std::vector<std::size_t>> by_topic;
+    for (std::size_t i = 0; i < tbl.rows.size(); ++i) {
+        const std::string topic = dbf_cell(tbl.rows[i], ix_topic_key);
+        if (topic.empty()) continue;
+        topic_order.insert(topic);
+        by_topic[topic].push_back(i);
+    }
+
+    out() << "HELP GIANT ALL - full HELP DATA corpus ("
+          << topic_order.size() << " topics, " << tbl.rows.size() << " rows)\n"
+          << "  " << dir << "\n";
+
+    for (const auto& topic : topic_order) {
+        out() << "\n================================================================\n"
+              << topic << "\n"
+              << "================================================================\n";
+        for (std::size_t i : by_topic[topic]) {
+            const auto& r = tbl.rows[i];
+            out() << "  [" << dbf_cell(r, ix_kind) << "]  " << dbf_cell(r, ix_text) << "\n";
+        }
+    }
+}
+
 
 // === current topic rendering =================================================
 
@@ -2194,6 +2243,8 @@ static void cmdhelp_usage() {
     out() << "  CMDHELP REPORT TOPICS\n";
     out() << "  CMDHELP REPORT KIND\n";
     out() << "  CMDHELP REPORT SOURCE\n";
+    out() << "  CMDHELP REPORT ALL\n";
+    out() << "  CMDHELP BUILD [LEGACY|V2] <out-dir> <source-root> [<source-root> ...]\n";
     out() << "  CMDHELP TOPICS\n";
     out() << "  CMDHELP KIND\n";
     out() << "  CMDHELP SOURCE\n";
@@ -2210,6 +2261,7 @@ static void cmdhelp_usage() {
     out() << "  REPORT TOPICS lists current HELP DATA topic keys.\n";
     out() << "  REPORT KIND groups current HELP DATA by KIND and shows topic membership.\n";
     out() << "  REPORT SOURCE groups current HELP DATA by SOURCE and shows topic membership.\n";
+    out() << "  REPORT ALL renders every topic in full (no preview cap) -- SET PAGING ON.\n";
     out() << "  Locale preview is explicit-only; plain CMDHELP remains canonical/source HELP.\n";
 }
 
@@ -2344,6 +2396,11 @@ void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
                 print_current_help_grouped(resolve_help_dir_arg(dir_arg).string(), CurrentHelpGroupMode::Source);
                 return;
             }
+            if (mode == "ALL" || mode == "FULL") {
+                const std::string dir_arg = (words.size() >= 3) ? words[2] : ".";
+                print_current_help_full(resolve_help_dir_arg(dir_arg).string());
+                return;
+            }
         }
         const std::string dir_arg = (words.size() >= 2) ? words[1] : ".";
         print_current_help_report(resolve_help_dir_arg(dir_arg).string());
@@ -2384,11 +2441,15 @@ void cmd_COMMANDSHELP(DbArea& /*area*/, std::istringstream& in) {
         }
 
         const std::string outdir_arg = (pos < words.size()) ? words[pos++] : ".";
-        const std::string srcroot = (pos < words.size()) ? words[pos++] : std::string();
+        std::vector<std::string> roots;
+        while (pos < words.size()) {
+            roots.push_back(words[pos++]);
+        }
 
         const std::string outdir = resolve_help_dir_arg(outdir_arg).string();
-        const std::vector<std::string> roots =
-            srcroot.empty() ? std::vector<std::string>{"./src"} : std::vector<std::string>{srcroot};
+        if (roots.empty()) {
+            roots.push_back("./src");
+        }
 
         if (legacy) {
             build_legacy_helpdata(outdir, roots);

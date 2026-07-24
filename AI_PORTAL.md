@@ -112,7 +112,10 @@ github.com/deraldg/x64base
 
 GitHub is the public baseline, not authority over unpublished development work.
 An outside AI must identify the exact public commit on which its proposal is
-based.
+based. On origin, `main` is the stable public branch and `development` is the
+named integration branch (renamed on GitHub from the earlier dated
+`homegrown-cnx-20251112-branch`); confirm the checked-out branch locally before
+any Git decision. See `AI_README.md` for the authoritative remote/branch pointers.
 
 ### External toolchain paths (agents stumble here)
 
@@ -253,6 +256,39 @@ Both reduce to one sentence: **there must be exactly one authoritative copy of a
 given thing — one implementation, one tree — and every other copy must be derived
 from it and provably identical, or the system has no source of truth.**
 
+## Prove the Bottleneck First — the Phase-0 Go/No-Go (AIF-043 → AIF-046)
+
+Before building an optimization — or any speculative implementation whose payoff is
+*assumed* rather than *measured* — gate it behind a **Phase-0 go/no-go** that measures
+where the cost actually is. Spend measurement before implementation.
+
+A Phase-0 that **KILLs** the planned approach is a **success, not a failure.** It costs
+a benchmark, not a build, and it usually finds the real lever. AIF-043's Ticket B (a
+typed-vector in-memory store) was killed at Phase-0: the benchmark proved the *store* was
+not the bottleneck — the per-row expression *evaluator* was, ~1000× slower than a
+fixed-width scan should be. Zero tuple-core code was spent, and the kill redirected the
+work (AIF-046) to where the orders of magnitude actually lived. The gate did its job
+precisely by saying no.
+
+Rules that make the gate trustworthy:
+
+- **State a falsifiable target up front** (e.g. "≥40× / sub-1s"). If the work doesn't
+  reach it, say so and say *why* — typically the residual moved to a different subsystem —
+  rather than declaring victory at whatever number you landed. AIF-046 reached ~2–2.8×,
+  not 40×; the honest finding (the residual is now per-row record I/O, a separate lane)
+  *is* the result.
+- **Normalize to an in-run baseline.** Machine variance between runs was larger than some
+  milestone gains; comparing raw wall-clock across runs would manufacture false wins and
+  losses. Measure against a baseline captured in the *same* run (e.g. `DECx − SUM`).
+- **Bench-gate every milestone.** Prove the speedup *and* parity (counts/values unchanged,
+  regression suite green) before starting the next. Never stack unproven steps.
+- **A benchmark is a regression, not a one-off.** Register it (exempt from the default
+  suite if long-running) so the floor it established stays defensible.
+
+This is the empirical companion to *Representative by Design*: representative code is the
+standard for **how** you build; prove-the-bottleneck-first is the standard for **whether
+and what** to build.
+
 ## Projects, Lanes, and Promotion (AIF-040)
 
 Work is organized in three tiers, and items move between them:
@@ -278,6 +314,35 @@ Every `AIF-NNN` intake lane SHOULD name its parent project (or `standalone`) so 
 lane and project registries stay reconciled. This keeps the two views — the intake
 queue (work in flight) and `projects.yaml` (programs and their lanes) — from
 drifting apart.
+
+## Ownership and Authorship — the Record Must Tell the Truth (AIF-050)
+
+Git and habit collapse three roles into one name. This project keeps them distinct,
+because conflating them hides who actually did the work:
+
+- **Owner / authority** — the maintainer (Derald Grimwood). Final say, authorization,
+  and the only party who commits and pushes. Every commit is *authored by the owner in
+  git* precisely because he is the one who commits — which is exactly why **git is not the
+  record of who did the work.**
+- **Author / contributor** — the party that actually did the work, human or AI. For AI
+  work this is an identity-catalog **member** (e.g. `member.ai.claude.cowork`), recorded
+  first-class so the owner's name on the commit does not overwrite it. Planning and
+  implementation are recorded separately when they differ — an external AI may plan what a
+  local AI implements (identity/RBAC, AIF-045, is the live example: ChatGPT-planned,
+  Cowork-implemented, Derald-owned).
+- **Assigned member / steward** — the member responsible for a lane's work, named on the
+  lane. A steward drives the lane **under the owner's authorization**; the assignment is
+  not a transfer of ownership.
+
+Rule: **owner ≠ author; committer ≠ contributor.** Record who did the work as first-class
+data; record the owner's name only where it is load-bearing (authorization, ownership,
+commit), never as blanket attribution — stamping it everywhere is a distraction from the
+truth. Write access is a capability, not authority (see the Local-Access AI Rule): an
+assigned AI member stewards a lane, it does not become the owner. The durable mechanism is
+the **AI Run Traceability lane (AIF-050)** — a run registry, an extended report-audit
+envelope (`authored_by` / `planned_by` split, resolvable run + chat handle), and a
+universal `@dottalk.file` source contract carrying a provenance pointer to the maintained
+record. See [`docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md`](docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md).
 
 ## Source Mutation Rule
 
@@ -458,6 +523,14 @@ Worked example: `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md`.
 
 Then add one row to the **Session Log** in
 `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`.
+
+**Stamp the run (AIF-050).** A closeout also records *who did the work, in which run, reachable how*:
+its report-audit envelope carries a `run_id`, the `authored_by` / `planned_by` split (distinct from
+`owner` / `committer`), and a `chat_handle` with its binding — registered in
+`labtalk/registries/ai_runs.yaml`, which also indexes each lane's newest run (`current_by_lane`) so a
+future session can return to the last agent. New closeouts SHOULD use the `ai-report-audit-v2` envelope
+(`docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md`); `tools/fullstack_docs/run_attribution_check.py` is the
+advisory checker.
 
 Why a closeout and not just the pointers: the pointers are a snapshot; the
 closeout is the trail. A new session's fastest true start is "read the newest
