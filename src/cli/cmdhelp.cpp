@@ -1352,19 +1352,59 @@ static void print_current_help_full(const std::string& dir) {
         by_topic[topic].push_back(i);
     }
 
-    out() << "HELP GIANT ALL - full HELP DATA corpus ("
-          << topic_order.size() << " topics, " << tbl.rows.size() << " rows)\n"
-          << "  " << dir << "\n";
+    // Human-facing recollection: the HELP DATA corpus interleaves curated help rows
+    // with provenance rows (source file + pattern=, "Mined ..." boilerplate, and
+    // SOURCE_FACT/ARGUMENT mining artifacts) and repeats each topic's block. For the
+    // readable dump we keep only curated rows and collapse duplicates per topic.
+    // Bare HELP GIANT still reports the full row/topic totals.
+    const std::string bar(64, '=');
+    std::string body;
+    std::size_t shown_topics = 0;
+    std::size_t shown_rows = 0;
 
     for (const auto& topic : topic_order) {
-        out() << "\n================================================================\n"
-              << topic << "\n"
-              << "================================================================\n";
+        std::set<std::string> seen;
+        std::string tbody;
+        std::size_t n = 0;
         for (std::size_t i : by_topic[topic]) {
             const auto& r = tbl.rows[i];
-            out() << "  [" << dbf_cell(r, ix_kind) << "]  " << dbf_cell(r, ix_text) << "\n";
+            std::string kind = dbf_cell(r, ix_kind);
+            std::string text = dbf_cell(r, ix_text);
+            // drop provenance / mining artifacts
+            if (kind == "SOURCE_FACT" || kind == "ARGUMENT") continue;
+            if (text.find("pattern=") != std::string::npos) continue;
+            if (text.rfind("Mined ", 0) == 0) continue;
+            // collapse duplicate curated lines within the topic
+            std::string key = kind;
+            key.push_back('\x1f');
+            key += text;
+            if (!seen.insert(key).second) continue;
+            tbody += "  [";
+            tbody += kind;
+            tbody += "]  ";
+            tbody += text;
+            tbody += "\n";
+            ++n;
         }
+        if (n == 0) continue;  // topic was pure provenance — skip its header
+        ++shown_topics;
+        shown_rows += n;
+        body += "\n";
+        body += bar;
+        body += "\n";
+        body += topic;
+        body += "\n";
+        body += bar;
+        body += "\n";
+        body += tbody;
     }
+
+    out() << "HELP GIANT ALL - HELP corpus recollection ("
+          << shown_topics << " topics, " << shown_rows
+          << " curated lines; provenance filtered from "
+          << tbl.rows.size() << " total rows)\n"
+          << "  " << dir << "\n";
+    out() << body;
 }
 
 

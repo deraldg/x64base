@@ -202,7 +202,20 @@ implies. Rather than inflate the index, we added a second, explicit front door.
 - **Contract:** bare `HELP GIANT` stays the fast **index**; `HELP GIANT ALL` is the exhaustive
   recollection. Long output — relies on `SET PAGING ON`.
 - **Proof:** `cmdhelp.cpp` + `cmd_help.cpp` pass `g++ -std=c++20 -fsyntax-only` against real
-  engine headers. Awaiting MSVC build + `HELP GIANT ALL` demo.
+  engine headers.
+- **M5 refinement (post-demo) — MSVC-confirmed 2026-07-23:** the first MSVC run showed the corpus
+  interleaves curated help rows with **provenance rows** (source path + `pattern=`, `Mined ...`
+  boilerplate, and `SOURCE_FACT`/`ARGUMENT` mining artifacts) plus a repeated block per topic —
+  ~60% noise for a human recollection. `print_current_help_full` now drops provenance rows and
+  collapses duplicate `[KIND] text` lines per topic, skipping topics that are pure provenance; the
+  header reports the filtered topic/line counts against the full row total. Bare `HELP GIANT` still
+  reports the full corpus (492 topics / 12,784 rows). Re-run in the MSVC build confirmed the clean
+  recollection: each topic renders as `STATUS/SUMMARY/SYNTAX/USAGE/EXAMPLE/NOTE/RELATED` with no
+  provenance lines.
+- **Follow-on filed → AIF-051 (HELP DATA hygiene).** The M5 exhaustive view surfaced a family of
+  **phantom/mis-keyed topic keys** in the corpus (`DOT|PRINT` catch-all, `DOT|PRINT *`, `DOT|SHOW
+  SQL`, `DOT|WITH`, …) — a miner TOPICKEY-assignment bug, not a renderer bug. Logged as AIF-051 for
+  the mining/catalog stage; `HELP GIANT ALL` correctly renders whatever the corpus contains.
 
 **AIF-047 status: M0–M5 COMPLETE (M5 syntax-proven, MSVC demo pending).** Owner: Claude/Cowork.
 Dev-only; committed, not yet promoted to `C:\x64base`.

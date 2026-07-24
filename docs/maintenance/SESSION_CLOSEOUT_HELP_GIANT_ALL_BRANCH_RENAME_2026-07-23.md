@@ -100,7 +100,28 @@ and AIF-047 M0–M4 remain earlier local commits awaiting the maintainer's push.
 
 ## Open / owed
 
-- MSVC build + interactive `HELP GIANT ALL` demo (paged) to move M5 from syntax-proven to
-  in-engine proven.
-- Maintainer commit (seven files above) + push of the accumulated `development` commits.
+- ~~MSVC build + interactive `HELP GIANT ALL` demo~~ **DONE** (see Follow-up below).
+- Maintainer commit of the M5 provenance-filter refinement (`src/cli/cmdhelp.cpp` + this lane doc +
+  intake) + push.
 - Promotion to `C:\x64base` remains owed for the whole AIF-047 lane.
+
+## Follow-up — M5 in-engine proven + provenance filter (2026-07-23)
+
+The MSVC build ran `HELP GIANT ALL`. It confirmed the mechanism (exhaustive, all namespaces, full
+text) but the raw view was ~60% noise: the HELP DATA corpus interleaves curated help rows with
+**provenance rows** (source path + `pattern=`, `Mined ...` boilerplate, `SOURCE_FACT`/`ARGUMENT`
+mining artifacts) and repeats each topic's block.
+
+- **Fix (per owner choice "clean recollection"):** `print_current_help_full` now drops provenance
+  rows (`pattern=` text, `Mined ` boilerplate, `SOURCE_FACT`/`ARGUMENT` kinds) and collapses
+  duplicate `[KIND] text` lines per topic, skipping topics left empty; the header reports filtered
+  topic/line counts against the full row total. Bare `HELP GIANT` still reports the full corpus.
+  g++-`-std=c++20 -fsyntax-only` clean; MSVC re-run renders a tidy
+  `STATUS/SUMMARY/SYNTAX/USAGE/EXAMPLE/NOTE/RELATED` block per topic. **M5 is now in-engine proven.**
+- **Follow-on filed → AIF-051 (HELP DATA hygiene):** the exhaustive view exposed phantom/mis-keyed
+  topic keys (`DOT|PRINT` catch-all, `DOT|PRINT *`, `DOT|SHOW SQL`, `DOT|WITH`, …) — a miner
+  TOPICKEY bug at the mining/catalog stage, not a renderer bug. Logged for later; no source change.
+- **Files (this follow-up, uncommitted):** `src/cli/cmdhelp.cpp`,
+  `docs/maintenance/HELP_COMMAND_UX_LANE_V1.md`, `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md`
+  (AIF-051 row), `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`. Pre-Push Gate: PASS (source/docs
+  only). On top of pushed `fa71a3062`; maintainer commits.
