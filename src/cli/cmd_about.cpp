@@ -33,6 +33,13 @@
 //   VERSION
 //   SQLVER
 //
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-ABOUT
+// home: src/cli
+// canonical-path: src/cli/cmd_about.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "cli/cmd_about.hpp"
 #include "cli/command_output.hpp"

@@ -51,6 +51,14 @@
 // related: DDICT
 // related: MANUAL
 // @dottalk.end
+//
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-MAINT
+// home: src/cli
+// canonical-path: src/cli/cmd_maint.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "xbase.hpp"
 #include "cli/command_output.hpp"

@@ -43,6 +43,8 @@
 //   CMDHELP
 //   HELP DATA
 //
+// @dottalk.end
+//
 // Robust validator for commands.dbf/.dbt produced by CMDHELP.
 // Adds HELP DATA v2 artifact validation for help_artifacts.dbf/.dbt.
 // Plus reflection-system audit mode.

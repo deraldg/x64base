@@ -4,13 +4,13 @@
 // category: diagnostics
 // status: experimental
 // noargs: usage
-// effect: report
-// mutates: none
+// effect: mixed
+// mutates: identity-catalog session-auth authorization-store
 // usage-access: USER USAGE
 // summary:
-//   Inspect the identity / RBAC model (AIF-045): members, roles, the permission catalog, a live
-//   effective-permission check that runs the real resolver, and DBF persistence with an APH-5
-//   round-trip proof. Read-only against the live store; SAVE/VERIFY write DBF tables only.
+//   Inspect and administer the identity, authentication, and RBAC model (AIF-045): members,
+//   roles, permissions, authorization requests/grants, login state, owner-gated administration,
+//   DBF persistence, and the APH-5 round-trip proof.
 //
 // usage:
 //   USER USAGE
@@ -24,6 +24,12 @@
 //   USER REQUEST <permission.key> FOR <member.key> [reason]  agent asks for limited permission
 //   USER REQUESTS | GRANTS                                 list pending / all authorizations
 //   USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>  owner grant decisions (2c)
+//   USER GRANT <permission.key> TO <member.key> [HOURS n]
+//   USER UNGRANT <permission.key> FROM <member.key>
+//   USER DELETE <member.key>
+//   USER LOGIN <member.key> [secret] | LOGOUT
+//   USER PASSWD <member.key> <secret> | TOKEN <member.key>
+//   USER AS [member.key] | ENFORCE <permission.key>
 //   USER SAVE [dir]      write the identity catalog to DBF (default data/metadata/identity)
 //   USER LOAD [dir]      read the identity catalog back from DBF (report only)
 //   USER VERIFY [dir]    APH-5 round-trip: save -> reload -> compare counts/keys/decisions
@@ -34,18 +40,24 @@
 //   USER CAN host.shell
 //
 // notes:
-//   Backed by the in-memory identity store seeded from the standard role/permission catalog and
-//   the known profile homes (default/public/user/derald). CAN resolves eligibility ->
-//   deny-precedence -> authorization -> session -> runtime security policy; for host.* it
-//   consults the real host-shell gate (DOTTALK_ALLOW_HOST_COMMANDS). No mutation yet.
+//   Backed by the identity store bootstrapped from DBF or the standard role/permission catalog
+//   and known profile homes (default/public/user/derald). Report modes are read-only. Mutating
+//   modes are authorization/owner gated and persist to identity DBFs when the store is writable;
+//   a degraded store remains read-only. CAN resolves eligibility -> deny-precedence ->
+//   authorization -> session -> runtime security policy; host.* also consults the real
+//   host-shell gate (DOTTALK_ALLOW_HOST_COMMANDS). This surface changes identity metadata, not
+//   user application tables.
 //
 // risk:
 //   mutates_table_data: no
+//   mutates_identity_metadata: owner-gated where applicable
+//   mutates_session_auth: LOGIN, LOGOUT, AS
 //
 // related:
 //   SECURITY
 //   BUILDVECTORS
 //
+// @dottalk.end
 
 #include "xbase.hpp"
 #include "identity/identity_bootstrap.hpp"

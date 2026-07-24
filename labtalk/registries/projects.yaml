@@ -7,12 +7,13 @@ projects:
     status: active_beta
     root: D:/code/ccode
     owner_repo: deraldg/x64base
-    lanes: [engine, cli, dotscript, help, selfdoc, contracts, gui, maintenance]
+    lanes: [engine, cli, dotscript, help, selfdoc, contracts, gui, arctictalk_tui_workbench, maintenance]
     docs:
       - README.md
       - AI_PORTAL.md
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md
     publication_staging: C:/x64base
     publication_target: github.com/deraldg/x64base
     notes: Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to C:/x64base for publication.
@@ -34,7 +35,7 @@ projects:
     status: active_seed
     root: D:/code/ccode/labtalk
     owner_repo: deraldg/labtalk
-    lanes: [portal, ai_portal, labs, cases, assignments, proofs, registries, lms, communications]
+    lanes: [portal, ai_portal, labs, cases, assignments, proofs, registries, lms, communications, historical_database_migration]
     docs:
       - README.md
       - portal/README.md
@@ -183,6 +184,39 @@ projects:
       project.labtalk.sdlc. Worked-exemplar candidate is the tuple field-type
       extension.
 
+  - id: project.labtalk.historical_database_migration
+    name: Historical Database Migration Laboratory
+    kind: pdlc_project
+    status: active_seed
+    root: D:/code/ccode
+    owner_repo: deraldg/labtalk
+    upstream_authority: project.x64base.runtime
+    lanes: [analysis, design, cobol_fixed_records, dbf_xbase, codasyl_relationships, sqlite_bridge, benchmark_x64base_vs_sqlite, json_csv_spreadsheet, cases, proofs, documentation, publication, maintenance]
+    docs:
+      - docs/maintenance/HISTORICAL_DATABASE_MIGRATION_PDLC_PROJECT_V1.md
+      - labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+      - labtalk/registries/projects.yaml
+    source_surfaces:
+      - src/edu/edu_cobol.cpp
+      - src/cli/cmd_codaysl.cpp
+      - src/cli/cmd_sqlite.cpp
+      - src/edu/edu_bibletalk.cpp
+      - src/edu/edu_erp.cpp
+      - include/sqlite/sqlite_adapter.hpp
+      - src/sqlite/sqlite_adapter.cpp
+      - dottalkpp/data/cascade_precision_erp
+    consumers:
+      - project.labtalk.campus
+      - project.x64base.website
+    notes: >-
+      PDLC/PLDC teaching project for carrying a stable business dataset through
+      COBOL fixed-length records, xBase/DBF, CODASYL-style relationships, JSON,
+      CSV, spreadsheets, SQLite/SQL, and x64base comparison. Existing runtime
+      starters and sample packages are assembled first; historical cases remain
+      review-labeled; GnuCOBOL acknowledgement is required before promotion.
+      The benchmark lane compares equivalent x64base and SQLite workloads on the
+      same machine and reports configuration-specific results only.
+
   - id: project.labtalk.sdlc
     name: SDLC - Software Development Life Cycle Working Model
     kind: methodology_project
@@ -209,7 +243,7 @@ projects:
   - id: project.x64base.identity
     name: Identity, RBAC & Authorization Management
     kind: governance_project
-    status: design_intake
+    status: active_development
     root: D:/code/ccode
     owner_repo: deraldg/x64base
     upstream_authority: project.x64base.runtime
@@ -223,8 +257,9 @@ projects:
       Durable identity/RBAC/authorization layer the AI Portal needs (AIF-045): USERS
       (identity) -> TEAM_MEMBER (participation) -> TEAM_ASSIGNMENT -> {ROLE, PERMISSION,
       ORG_UNIT, WORK_NODE, AUTHORIZATION_GRANT}, with the operational security policy kept
-      independent as the final runtime constraint. Design-stage; external-AI plan evaluated
-      and endorsed with caveats (USERS is greenfield not existing; authentication undesigned;
-      PROJECT not lane, must not front-run BETA-1; phase the schema; self-hosting bootstrap is
-      the sharp risk). First artifact is the Team Member/Role/Permission/Assignment/
-      Authorization Contract v1 (M0), design not code. Feeds AI Portal gates APH-1/3/5.
+      independent as the final runtime constraint. The core strong-ID, DBF persistence,
+      authentication, session, deny-precedence, owner-gated administration, and runtime
+      enforcement stack is implemented and runtime-proven through milestone 2d-3. Open work
+      remains at M4 registry import, M5 portable YAML bootstrap, and M6 teaching loop. The
+      legacy SECURITY selector remains diagnostic-only and grants no USER/RBAC authority.
+      Feeds AI Portal gates APH-1/3/5.

@@ -5,7 +5,7 @@
 // status: experimental
 // noargs: usage
 // effect: mutates-function-registry
-// mutates: none
+// mutates: session-function-registry
 // usage-access: DEFFN USAGE
 // summary:
 //   Define an ephemeral, session-only expression function at runtime, without a rebuild
@@ -164,7 +164,7 @@ void cmd_DEFFN(xbase::DbArea&, std::istringstream& iss)
 // status: experimental
 // noargs: usage
 // effect: mutates-function-registry
-// mutates: none
+// mutates: session-function-registry
 // usage-access: UNDEFFN USAGE
 // summary:
 //   Remove a session custom function previously defined with DEFFN.
@@ -179,6 +179,7 @@ void cmd_DEFFN(xbase::DbArea&, std::istringstream& iss)
 //
 // risk:
 //   mutates_table_data: no
+//   mutates_function_registry: session-only, DEFFN-created names
 //
 // related:
 //   DEFFN

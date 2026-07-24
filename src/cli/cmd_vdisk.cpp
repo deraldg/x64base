@@ -1,18 +1,55 @@
 // src/cli/cmd_vdisk.cpp
-// VDISK — the in-process RAM virtual disk for in-memory tables (AIF-043).
+// @dottalk.usage v1
+// owner: DOT|VDISK
+// command: VDISK
+// category: storage
+// status: supported
+// noargs: report
+// effect: mixed
+// mutates: ramfs path-slots ephemeral-memory
+// usage-access: VDISK USAGE
+// summary:
+//   Manage the in-process RAM virtual disk used by in-memory X64 DBF tables,
+//   native CDX-V64 indexes, and related transient storage (AIF-043).
 //
-//   VDISK USAGE          -> print the structured usage/notes contract.
-//   VDISK MOUNT | ON     -> point DBF/INDEXES/LMDB under the RAM slot and mount it
-//                           as a ramfs virtual root. CREATE/USE/CDX then live in RAM.
-//   VDISK UNMOUNT | OFF  -> drop all RAM files + unmount (ephemeral teardown).
-//   VDISK STATUS |       -> report the RAM root, mount state, file count, bytes,
-//                           and (if bin/vdisk.ini present) the Layer-2 budget/warn.
-//   VDISK CONFIG         -> show the parsed bin/vdisk.ini + Layer-1 sizing recommendation.
+// usage:
+//   VDISK USAGE
+//   VDISK MOUNT
+//   VDISK ON
+//   VDISK UNMOUNT
+//   VDISK OFF
+//   VDISK CLEAR
+//   VDISK STATUS
+//   VDISK CONFIG
 //
-// The RAM root is the relocatable Slot::RAM (default <DATA>/ram). Relocate with
-//   SET PATH RAM <path>  (or the [vdisk] root key in bin/vdisk.ini)
-// before VDISK MOUNT. Optional admin config: bin/vdisk.ini (cli/vdisk_config.hpp).
-// Curated command contract: include/dotref.hpp (DOT|VDISK).
+// notes:
+//   MOUNT points DBF, INDEXES, and LMDB path slots under the relocatable RAM
+//   slot, then mounts that root through xbase::ramfs.
+//   CREATE X64, USE, CDX, SET ORDER, and REINDEX can then operate entirely in
+//   process memory with no corresponding table or index file on disk.
+//   UNMOUNT, OFF, and CLEAR drop every resident RAM file; VDISK is ephemeral.
+//   STATUS reports the RAM root, mount state, byte use, and resident file list.
+//   The default RAM root is <DATA>/ram; SET PATH RAM <path> relocates it before
+//   mounting. The optional bin/vdisk.ini admin configuration is a local,
+//   review-required extension until its source/config files are committed.
+//   VDISK changes storage and path state but does not mutate records in an
+//   already-open table merely by reporting status or configuration.
+//
+// risk:
+//   loses_ephemeral_data: UNMOUNT, OFF, CLEAR
+//   mutates_path_state: MOUNT, ON, UNMOUNT, OFF, CLEAR
+//   writes_filesystem: no for RAM-resident table/index operations
+//
+// related:
+//   SET PATH
+//   CDX
+//   SET ORDER
+//   REINDEX
+//
+// @dottalk.end
+//
+// VDISK is the in-process RAM virtual disk for in-memory tables (AIF-043).
+// Curated catalog entry: include/dotref.hpp (DOT|VDISK).
 
 #include "xbase.hpp"
 #include "xbase/ramfs.hpp"

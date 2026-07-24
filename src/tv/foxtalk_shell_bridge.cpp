@@ -113,7 +113,7 @@ void ShellBridge::handleHelp(std::istringstream& tok)
             << "  Windows: Alt-Z/Ctrl-F5 (Command), Alt-O/Ctrl-F6 (Output).\n"
             << "  Shortcuts: '? <cmd>' = HELP <cmd>, F3=RECORDVIEW.\n"
             << "  Window mgmt: WIN SAVE | WIN RESTORE | WIN DEFAULTS.\n"
-            << "  Nested TVision apps such as BROWSETUI/BROWSETV run from the outer CLI.\n";
+            << "  BROWSETV opens an integrated grid; BROWSETUI runs from the outer CLI.\n";
         return;
     }
 

@@ -186,7 +186,12 @@ enum : unsigned short {
     cmFtHelpTuple,
     cmFtHelpBrowser,
     cmFtHelpKeys,
-    cmFtHelpAbout
+    cmFtHelpAbout,
+
+    // Appended so existing professional menu command ids remain stable.
+    cmFtTestRegressionList,
+    cmFtTestRegressionRun,
+    cmFtTestRegressionAll
 };
 
 } // namespace foxtalk

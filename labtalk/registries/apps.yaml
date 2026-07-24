@@ -107,3 +107,23 @@ apps:
       - concept.database.schema
       - concept.storage.file
     notes: Catalogs student datasets and historical/simulated specimens.
+
+  - id: app.labtalk.afb
+    name: Arctic Fox Batch — Local Ollama AI Lab
+    kind: local_ai_lab
+    status: alpha_experimental
+    languages: [bash, powershell, markdown]
+    root: D:/code
+    concepts:
+      - concept.ai_friendly.visibility
+      - concept.evidence.review
+      - concept.contract.usage
+    notes: >
+      Local, private Ollama runtime in WSL2 (Arctic Fox Batch) for on-machine AI
+      work that must not leave the host. Complements the hosted GPTbase lane:
+      hosted = advisory, web-aware, change-package-bound; local = private,
+      offline, high-volume. Egress isolation is runtime-evidenced (2026-07-23)
+      via Hyper-V firewall DefaultOutboundAction=Block with loopback allowed;
+      honest ceiling is "verified revocable egress isolation," not an air-gap.
+      Server: WSL Ollama v0.9.5 bound 127.0.0.1:11434; coder model qwen2.5-coder:7b.
+      Tooling: verify_egress.sh, pull-with-window.sh (host-local, outside the ccode tree).

@@ -1,10 +1,13 @@
 # Identity / RBAC / Authorization Management — Project Lane V1
 
-**Status:** **ACTIVE — full-blast (owner decision 2026-07-21).** M0 contract drafted +
-accepted; M1 started. Owner directive: this is a necessary project and integrating it later is
-harder as it touches ownership of everything, so it runs now in parallel — additive new module
-(`identity/`), low collision with BETA-1 regression, but must not destabilize the stabilization
-sweep. Original "must not front-run BETA-1" caveat is superseded by owner priority.
+**Status:** **ACTIVE — core identity/security stack implemented and enforced
+(2026-07-22).** M0 through 2d-3 are committed and runtime-proven: strong-ID
+domain model, deny-precedence resolver, DBF persistence, boot adoption with
+degraded read-only fallback, USER administration, scoped authorization,
+low-privilege session authentication, human credentials, AI/service tokens,
+and enforcement at the AI-tool, `!` host-shell, and SFTP chokepoints. M4
+registry import, the M5 portable YAML bootstrap leg, and M6 teaching loop
+remain. This is development-stage, not a promoted release claim.
 **Project:** `project.x64base.identity` (AIF-045). Parent authority: `project.x64base.runtime`.
 **Design authority:** the external-AI proposal, preserved at
 `docs/## AI Portal re-examination.txt`, evaluated and endorsed with caveats (this doc).
@@ -38,7 +41,11 @@ delete/reset/branch) holds.
 
 ---
 
-## 1. Ground-truth (verified 2026-07-21)
+## 1. Entry ground-truth (historical snapshot, verified 2026-07-21)
+
+The table below records the state that justified opening the project. It is not
+the current implementation status; the current status and milestone ledger in
+section 4 supersede its "not implemented" findings.
 
 | Plan claim | Verified? | Finding |
 |---|---|---|
@@ -109,9 +116,15 @@ low-privilege (`member.public`); owner powers require `USER LOGIN`. Session = pr
 `USER PASSWD` (salted local hash; owner is the reset authority); AI/service members use
 owner-issued **tokens** (`USER TOKEN`, rotate to reissue). Admin mutations are owner-gated.
 
-Remaining: **SFTP host-command gate** (mirror the `!` wiring on `cmd_sftp`), **M4** registry import (`ORG_UNIT`/`WORK_NODE`/`TEAM_ASSIGNMENT` from the
-`labtalk` registries), the **M5** YAML portable-export leg (DBF round-trip + degraded startup
-are proven; `x64base → YAML → x64base` portable bootstrap remains), and **M6** teaching loop.
+**2d-3 SFTP enforcement (committed `8afac8f63`, runtime-proven):** SFTP host
+execution now requires the same effective `host.shell` authorization posture
+as the `!` surface while retaining the independent host-command and network
+policy gates.
+
+Remaining: **M4** registry import (`ORG_UNIT`/`WORK_NODE`/`TEAM_ASSIGNMENT`
+from the `labtalk` registries), the **M5** YAML portable-export leg (DBF
+round-trip + degraded startup are proven; `x64base → YAML → x64base` portable
+bootstrap remains), and **M6** teaching loop.
 
 - **M0 — Contract v1 (design, not code).** *Team Member / Role / Permission / Assignment /
   Authorization Contract v1*: entity fields, strong ID types, the permission-vs-authorization

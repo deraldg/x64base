@@ -35,6 +35,24 @@ inline const std::vector<Item>& catalog() {
         {"STOP_ON_ERROR", "STOP_ON_ERROR [OFF|WARNING|ERROR]",
                  "Set or report the severity threshold at which a running DotScript aborts (stop_on_error[severity]); SET ERRORSTOP TO is the compatibility form, DOTTALK_ERRORSTOP the startup default.", true},
 
+        {"BUILDVECTORS", "BUILDVECTORS | BUILD VECTORS | BUILD INFO",
+                 "Report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
+        {"DEFCMD", "DEFCMD [USAGE|LIST|<NAME> [=] <body-text>]",
+                 "Define or list an experimental session-only scratch command; cannot shadow protected built-ins and never writes table data or disk state.", true},
+
+        {"UNDEFCMD", "UNDEFCMD <NAME>",
+                 "Remove a session-only scratch command created by DEFCMD; never removes built-ins or unrelated extensions.", true},
+
+        {"DEFFN", "DEFFN [USAGE|LIST|<NAME> [=] <body-text>]",
+                 "Define or list an experimental session-only expression function; cannot shadow compiled built-ins and never writes table data or disk state.", true},
+
+        {"UNDEFFN", "UNDEFFN <NAME>",
+                 "Remove a session-only custom expression function created by DEFFN; never removes compiled built-ins.", true},
+
+        {"USER", "USER [USAGE|LIST|ROLES|PERMS|WHOAMI|CAN|STORE|ADD|REQUEST|REQUESTS|GRANTS|APPROVE|DENY|REVOKE|GRANT|UNGRANT|DELETE|LOGIN|LOGOUT|PASSWD|TOKEN|AS|ENFORCE|SAVE|LOAD|VERIFY] ...",
+                 "Inspect and administer the identity, authentication, and RBAC model; report modes are read-only, while owner-gated administration and persistence modes may update identity metadata and authorization state.", true},
+
         {"STRUCT",    "STRUCT", "Display table structure.", true},
 
         {"FIELDS",    "FIELDS", "Show structure (field list).", true},

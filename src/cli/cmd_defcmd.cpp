@@ -5,7 +5,7 @@
 // status: experimental
 // noargs: usage
 // effect: mutates-command-registry
-// mutates: none
+// mutates: session-command-registry
 // usage-access: DEFCMD USAGE
 // summary:
 //   Define an ephemeral, session-only scratch command at runtime, without a
@@ -188,7 +188,7 @@ void cmd_DEFCMD(xbase::DbArea&, std::istringstream& iss)
 // status: experimental
 // noargs: usage
 // effect: mutates-command-registry
-// mutates: none
+// mutates: session-command-registry
 // usage-access: UNDEFCMD USAGE
 // summary:
 //   Remove a scratch command previously defined with DEFCMD.
@@ -203,6 +203,7 @@ void cmd_DEFCMD(xbase::DbArea&, std::istringstream& iss)
 //
 // risk:
 //   mutates_table_data: no
+//   mutates_command_registry: session-only, DEFCMD-created names
 //
 // related:
 //   DEFCMD

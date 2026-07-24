@@ -50,6 +50,16 @@ evidence_lane:
 @dottalk.end
 */
 
+/*
+@dottalk.location v1
+id: DOTSRC-DOTTALKPP-CLI-CMD-DDICT
+home: src/cli
+canonical-path: src/cli/cmd_ddict.cpp
+project: dottalkpp
+role: command-implementation
+@dottalk.end
+*/
+
 #include "cli/cmd_ddict.hpp"
 #include "cli/command_output.hpp"
 

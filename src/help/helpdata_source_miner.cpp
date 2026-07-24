@@ -26,8 +26,16 @@ namespace {
 // not a compiler frontend; bounded, repeatable output is more valuable than
 // exhaustive noisy harvesting.
 static constexpr std::size_t kEffectiveMaxFileBytes = 512u * 1024u;
-static constexpr std::size_t kMaxTotalArtifacts = 1000u;
-static constexpr std::size_t kMaxArtifactsPerFile = 40u;
+// Structured @dottalk.usage contracts are authoritative inputs, not heuristic
+// noise.  The old 40-row per-file ceiling could cut a long contract in the
+// middle (DIR lost continuation notes; USER lost its VERIFY form).  Keep the
+// scan bounded, but leave enough room for a complete command contract and mine
+// it before lower-authority candidates.
+// The full source tree currently produces well below this ceiling.  This is a
+// runaway-scan guard, not a documentation quota; a lower global cap silently
+// clipped the last structured contracts in traversal order.
+static constexpr std::size_t kMaxTotalArtifacts = 50000u;
+static constexpr std::size_t kMaxArtifactsPerFile = 256u;
 static constexpr int kMaxMatchesPerPatternPerFile = 25;
 static constexpr int kMaxMessageMatchesPerFile = 8;
 static constexpr std::size_t kMaxCommandContextsPerFile = 4u;
@@ -1017,35 +1025,66 @@ static std::vector<UsageContractBlock> extract_usage_contract_blocks(const std::
     std::vector<UsageContractBlock> blocks;
     std::size_t pos = 0;
     while ((pos = text.find("@dottalk.usage v1", pos)) != std::string::npos) {
+        // Normal source contracts are consecutive // comment lines.  Parse
+        // those explicitly so CRLF files do not defeat a "\n\n" delimiter
+        // guess and accidentally absorb following C++ code or adjacent
+        // contracts.
+        std::size_t line_begin = text.rfind('\n', pos);
+        line_begin = (line_begin == std::string::npos) ? 0 : line_begin + 1;
+        const std::size_t marker_line_end = text.find('\n', line_begin);
+        const std::size_t marker_end =
+            marker_line_end == std::string::npos ? text.size() : marker_line_end;
+        const std::string marker_line = trim(text.substr(line_begin, marker_end - line_begin));
+        if (marker_line.rfind("//", 0) == 0) {
+            std::ostringstream body;
+            std::size_t cursor = line_begin;
+            while (cursor < text.size()) {
+                const std::size_t next = text.find('\n', cursor);
+                const std::size_t end = next == std::string::npos ? text.size() : next;
+                std::string line = text.substr(cursor, end - cursor);
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                const std::string clean = trim(line);
+                if (clean.rfind("//", 0) != 0) break;
+                if (cursor != line_begin &&
+                    clean.find("@dottalk.usage v1") != std::string::npos) {
+                    break;
+                }
+                body << line << "\n";
+                if (next == std::string::npos) {
+                    cursor = text.size();
+                    break;
+                }
+                cursor = next + 1;
+            }
+            blocks.push_back(UsageContractBlock { body.str(), line_begin });
+            pos = std::max(cursor, pos + 18);
+            continue;
+        }
+
         std::size_t raw_begin = text.rfind("R\"", pos);
-        if (raw_begin == std::string::npos) {
-            // Fallback: collect a comment/plain-text block until two blank lines.
-            std::size_t line_begin = text.rfind('\n', pos);
-            line_begin = (line_begin == std::string::npos) ? pos : line_begin + 1;
-            std::size_t end = text.find("\n\n", pos);
-            if (end == std::string::npos) end = std::min(text.size(), pos + 4096u);
-            blocks.push_back(UsageContractBlock { text.substr(line_begin, end - line_begin), line_begin });
-            pos = end;
-            continue;
+        if (raw_begin != std::string::npos) {
+            const std::size_t delim_start = raw_begin + 2;
+            const std::size_t open = text.find('(', delim_start);
+            if (open != std::string::npos && open < pos) {
+                const std::string delim = text.substr(delim_start, open - delim_start);
+                const std::string close_token = ")" + delim + "\"";
+                const std::size_t first_close = text.find(close_token, open + 1);
+                if (first_close != std::string::npos && first_close >= pos) {
+                    blocks.push_back(UsageContractBlock {
+                        text.substr(open + 1, first_close - (open + 1)), raw_begin
+                    });
+                    pos = first_close + close_token.size();
+                    continue;
+                }
+            }
         }
 
-        const std::size_t delim_start = raw_begin + 2;
-        const std::size_t open = text.find('(', delim_start);
-        if (open == std::string::npos || open > pos) {
-            pos += 18;
-            continue;
-        }
-
-        const std::string delim = text.substr(delim_start, open - delim_start);
-        const std::string close_token = ")" + delim + "\"";
-        const std::size_t close = text.find(close_token, pos);
-        if (close == std::string::npos || close <= open) {
-            pos += 18;
-            continue;
-        }
-
-        blocks.push_back(UsageContractBlock { text.substr(open + 1, close - (open + 1)), raw_begin });
-        pos = close + close_token.size();
+        // Non-comment/plain-text fallback remains bounded to the containing
+        // physical line; it cannot consume unrelated source.
+        blocks.push_back(UsageContractBlock {
+            text.substr(line_begin, marker_end - line_begin), line_begin
+        });
+        pos = marker_end;
     }
     return blocks;
 }
@@ -1106,6 +1145,10 @@ static ParsedUsageContract parse_usage_contract(const std::string& body)
         if (line.rfind("@dottalk.usage", 0) == 0) {
             continue;
         }
+        if (upper(line) == "@DOTTALK.END" ||
+            upper(line) == "@DOTTALK.CONTRACT.END") {
+            break;
+        }
 
         const std::size_t colon = line.find(':');
         if (colon != std::string::npos) {
@@ -1148,6 +1191,13 @@ static ParsedUsageContract parse_usage_contract(const std::string& body)
             }
             if (key == "SUMMARY") {
                 c.summary = value;
+                current_section.clear();
+                continue;
+            }
+            if (key == "NOARGS" || key == "EFFECT" || key == "MUTATES" ||
+                key == "USAGE_ACCESS" || key == "RISK") {
+                // Contract envelope/risk metadata is audit evidence, not
+                // continuation prose for the previous renderable section.
                 current_section.clear();
                 continue;
             }
@@ -1624,10 +1674,12 @@ static void mine_one_file(const SourceMineOptions& options,
     const bool allow_runtime_messages = permits_runtime_message_mining(file, commands);
 
     if (!catalog_authority) {
+        // Authority order matters: never let heuristic identity/argument/string
+        // candidates consume the per-file budget before the source contract.
+        mine_usage_contracts(options, file, text, commands, artifacts, unique, counts);
         mine_command_identity(options, file, text, commands, artifacts, unique, counts);
         mine_arguments(options, file, text, commands, artifacts, unique, counts);
         mine_syntax_strings(options, file, text, commands, artifacts, unique, counts);
-        mine_usage_contracts(options, file, text, commands, artifacts, unique, counts);
         mine_structured_usage_blocks(options, file, text, commands, artifacts, unique, counts);
     }
 

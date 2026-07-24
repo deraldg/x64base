@@ -26,10 +26,13 @@
 //   SHOW displays the active policy and profile roots.
 //   SELFTEST runs built-in security tests.
 //   RUNTIME describes runtime enforcement rules.
-//   LOGIN establishes a role/session identity for the current shell session.
-//   WHOAMI reports the active shell-session role identity.
+//   LOGIN establishes only the legacy diagnostic role selector used by this
+//   SECURITY command; it is not USER authentication and grants no RBAC access.
+//   WHOAMI reports that legacy diagnostic role selector.
 //   ASSIGNMENTS reports the assignment lane bound to the active role.
-//   LOGOUT clears the active shell-session role identity.
+//   LOGOUT clears the legacy diagnostic role selector.
+//   Use USER LOGIN/LOGOUT/WHOAMI for authenticated identity, effective member,
+//   role/permission evaluation, owner-gated administration, and enforcement.
 //   SECURITY does not mutate table data.
 //
 // risk:
@@ -37,9 +40,11 @@
 //   mutates_table_data: no
 //
 // related:
+//   USER
 //   ERROR_TEST
 //   VALIDATE
 //
+// @dottalk.end
 
 #include <cctype>
 #include <filesystem>
