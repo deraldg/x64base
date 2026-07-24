@@ -1,8 +1,64 @@
 # Current Target
 
 Status: active.
-Updated: 2026-07-22.
+Updated: 2026-07-23.
 Supersedes: the completed staging-restoration/publication target recorded below.
+
+## Development Focus Update — 2026-07-23 (promotion manifest projection realignment)
+
+Promotion-pipeline maintenance (dev-only on `development`; `main` NOT touched by
+this lane):
+
+- **Integration branch renamed** `homegrown-cnx-20251112-branch` → `development`
+  (local + remote; old remote deleted; maintainer-authorized). Reflected in
+  `AI_README.md`.
+- **`PROMOTE.manifest` realigned to `PROMOTION_MODEL_SEED_V1.md`.** An
+  intermediate version wrongly added engine source (`src/**`, `include/**`,
+  `bindings/**`, CMake/vcpkg) to the allow-list; re-onboarding through the AI
+  Portal caught it. The manifest is now projection-only — engine source/build
+  reach `main` via git (branch → cold-clone → merge), not the overlay. Commit
+  `10fa7e4a5`.
+- **New projection gate** `tools/staging/audit-drift.ps1` (judges git-tracked
+  files, skips git-managed source) + `PROMOTION_PROCESS.md` /
+  `PROMOTION_CHECKLIST.md` runbook.
+- **Open:** maintainer scope call — the lean product projection purges 754
+  metalevel files from `main` vs. the model-default wider doc projection;
+  `C:\x64base` ↔ `origin/main` divergence reconciliation; escrow → rebuild →
+  `audit-drift.ps1` PASS → `prepush_gate.py` before any product publish.
+
+See `docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2026-07-23.md`
+(AIPR-20260723-001).
+
+## Development Focus Update — 2026-07-22 (scan-evaluator optimization lane, AIF-046)
+
+Cowork development (committed dev-only; mirror `C:\x64base` has M0 only; not pushed to public by this lane):
+
+- **Scan/expression-evaluator optimization (AIF-046) — M0–M4 complete.** The redirect from the
+  **AIF-043 Ticket B Phase-0 KILL**: Phase-0 proved the in-memory *store* was not the scan
+  bottleneck — the **per-row expression evaluator** was (~1000× slower than a fixed-width scan).
+  Fixed in Option A, no tuple-core changes, across four bench-gated milestones (parity-verified
+  before each): **M0** reliable in-script timing (`SECONDS()` → ms via `std::chrono`; `SET TIMER`
+  moved into the canonical `shell_execute_line` so scripts self-time) + a self-timed baseline
+  benchmark registered `PHASE0_DECODE_COST` (committed `eba9a7012`; benchmark page published to the
+  site). **M3** compile the FOR predicate once (`compile_bool_predicate`/`eval_bool_compiled`,
+  reusable live `RecordView`; parity-safe per-row fallback). **M1** per-view field-name→index cache.
+  **M2** selective/allocation-free decode — the finding that `readCurrent()` eagerly decodes every
+  field to `std::string` each row, fixed with additive `DbArea::readCurrentRaw()`/
+  `decodeFieldFromBuffer()`/`fieldNumFromBuffer()` + a selective-decode record view (M1–M3 committed
+  `0f06d1060`). **M4** the same selective decode for aggregates (`cmd_aggs`).
+- **Result:** predicate scans **~2× (1-term) to ~2.8× (3-term)** vs the M0 floor over 1M pinocchio
+  STUDENTS; aggregates no longer full-decode; all counts/values unchanged (`1000000`,
+  `2.99933e6`); `REGRESSION ALL` + `SCAN_PARITY` green each milestone.
+- **Not the ≥40× target** — after the lane the residual is per-row **record I/O** (`gotoRec` + seek
+  + read ≈ 21 µs/row), a different subsystem now chartered as the **STAGED Bulk Record-I/O lane**
+  (Phase-0 go/no-go owed; may KILL if already at memory bandwidth).
+- **Owed:** promote M1–M4 to the `C:\x64base` mirror (M0 promoted surgically); run the Bulk
+  Record-I/O Phase-0.
+
+See `docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md` and the lane charters
+(`PROJECT_LANE_SCAN_EVALUATOR_OPTIMIZATION_V1_20260722.md`,
+`PROJECT_LANE_BULK_RECORD_IO_SCAN_V1_20260722.md`); dashboard Session Log + Current Lane State
+(AIF-046); intake AIF-046.
 
 ## Development Focus Update — 2026-07-21/22 (runtime DEF family, build vectors, identity/RBAC)
 
