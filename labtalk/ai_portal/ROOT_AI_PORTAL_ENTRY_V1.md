@@ -17,13 +17,18 @@ Read these in order before proposing changes:
 
 1. [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
 2. [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
-3. [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
-4. [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
-5. [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
-6. [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
+3. [`labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md`](labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md) -- the engineering standards + **definition of done** (usage contracts, regression doctrine, close-out checklist, house conventions). Read this BEFORE writing source, not after.
+4. [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
+5. [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved
+6. [`labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md`](labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) when work will return as a patch or package
+7. [`labtalk/ai_portal/README.md`](labtalk/ai_portal/README.md) for the complete Alpha/Experimental lane
 
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
+
+**Definition of done (from seed 3): a lane is not finished until it has a `@dottalk.usage` contract
+(flipped to `supported` when green), a self-asserting sandboxed regression protecting it, a
+`runtime_observed` proof, and a closeout + registry rows.** Do not report a lane complete otherwise.
 
 ## Authority
 

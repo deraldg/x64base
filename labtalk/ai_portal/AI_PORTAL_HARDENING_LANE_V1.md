@@ -293,3 +293,44 @@ The lane is complete when:
 3. Convert a narrow engine-feature path into the first typed graph fixture.
 4. Compile the first read-only context packet.
 5. Compare that packet with the existing static assimilation reading path.
+
+## Principle: bleed AI ignorance of existing capability
+
+The portal's job is not only to onboard an AI *fast*. It is to actively **drain the partner's
+ignorance of what the system already contains** -- so an agent surveys the existing architecture and
+its invariants before proposing, building, or asserting, and never claims a capability is absent when
+it is already built. Under-surveying and false claims of absence are the same failure: acting from
+ignorance of existing capability.
+
+Worked examples (observed 2026-07-25, AI-BBS lane, run AIPR-20260725-001):
+
+- The onboarded AI was **surprised that most of the BBS architecture was already in place** (identity/
+  RBAC, the `AuthorizationGrant` request/approve loop, the AFB/Ollama runtime, the SelfDoc duplex
+  pipeline). It began designing before surveying what already existed.
+- The AI **asserted the shared DBF store had no cross-process write guard** -- when the engine already
+  has cooperative record/file locking (`xbase::locks`, RLOCK/FLOCK, pid-stamped `.lock` sidecars with
+  stale-owner recovery). A false claim of absence about a capability that was built.
+
+Design implication for this lane: the onboarding path must surface an **architecture / capability
+inventory** (subsystems + invariants: identity/RBAC, locking, crypto, index engine, duplex docs) so a
+partner can check "does this already exist?" before building or asserting. The engineering-standards
+seed carries the behavioral rule; a browsable capability map is the next hardening artifact.
+
+**First inventory artifact (2026-07-25):** `docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md` (AIF-058) --
+names the three AI roles (agent-members / Ollama local brain / GPTbase hosted advisor) and their
+boundaries, so a partner never confuses an advisor with an agent or a local model with a member. It is
+the seed of the capability inventory; extend it with subsystem entries (identity, locking, crypto,
+index, duplex docs) as they are surveyed.
+
+## Hardening applied
+
+- **2026-07-25 -- Engineering standards + definition-of-done seed.** Added
+  `AI_ENGINEERING_STANDARDS_SEED_V1.md` and wired it into the mandatory start
+  (`AI_README.md` ordered table step 6, `AI_PORTAL.md`, `ROOT_AI_PORTAL_ENTRY_V1.md`,
+  `SDLC_FAST_START_SEED_V1.md` closeout rule). Closes an observed onboarding gap: an
+  onboarded AI was reverse-engineering the `@dottalk.usage` contract format and the
+  regression doctrine from source, and only closed work with a regression when prompted.
+  The seed front-loads usage contracts, the regression doctrine (self-asserting, sandboxed,
+  registered, socket-smoke for server behavior), the lane close-out checklist
+  (proofs/ai_runs/intake/closeout/lane-doc/runbook), and house conventions, with a one-line
+  done-gate. Worked instance: the AI-BBS lane (AIF-052..055).

@@ -1,0 +1,42 @@
+* bbs_lane_regression.dts
+* AI-BBS command-surface smoke (AIF-052/054/055).
+*
+* Exercises the BBS command path in-engine (no socket). The guest-scoping SECURITY
+* regression is the socket smoke D:\code\bbs_smoke.ps1 -- server-side permission
+* denial needs the listener and cannot be driven from a script.
+*
+* Steps:
+*   USER LOGIN member.derald   owner (credential-less bootstrap on an unsecured store);
+*                              owner exemption lets every BBS op through
+*   BBS BOARDS                 tops up + lists the seeded rooms
+*                              (governance / afb.chat / notice / lounge / guestbook)
+*   BBS READ board.governance  renders the read-only SYSGRANT projection
+*   BBS POST board.afb.chat    round-trip: post a marker, then read it back
+*
+* Read-mostly: the first BBS BOARDS tops up board.lounge / board.guestbook if missing
+* (idempotent, additive); no fixture table is touched. Out of the default suite
+* (mutates the board store on first run; explicit run).
+*
+* Run:  REGRESSION RUN BBS_LANE
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+USER LOGIN member.derald
+
+FORMULA "BBS-LANE-BEGIN"
+
+BBS BOARDS
+
+BBS READ board.governance
+
+BBS POST board.afb.chat SUBJECT regr-marker BODY bbs_lane_regression round-trip marker
+BBS READ board.afb.chat LAST 1
+
+* --- AIF-057 worklog handoff round-trip: post a handoff, read it back ---
+BBS POST board.worklog SUBJECT AIF-057 BODY RUN=regr STATE=smoke DID=worklog round-trip NEXT-AGENT=none
+BBS READ board.worklog LAST 1
+
+FORMULA "BBS-LANE-END"
+
+USER LOGOUT

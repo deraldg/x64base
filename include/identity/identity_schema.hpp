@@ -40,6 +40,7 @@ inline constexpr std::uint32_t KEY  = 64;  // portable string key (user.derald, 
 inline constexpr std::uint32_t NAME = 48;
 inline constexpr std::uint32_t CLS  = 24;  // resource_class / action / kind
 inline constexpr std::uint32_t TEXT = 160; // reason / description
+inline constexpr std::uint32_t CRED = 128; // == crypto_pwhash_STRBYTES (Argon2id PHC string)
 } // namespace w
 
 inline FieldSpec N(const char* n, std::uint32_t len) { return FieldSpec{n, 'N', len, 0, ""}; }
@@ -51,7 +52,7 @@ inline FieldSpec L(const char* n)                    { return FieldSpec{n, 'L', 
 inline Table sysuser() {
     return {"SYSUSER", {
         N("ID", w::ID), C("UKEY", w::KEY), C("LOGIN", 32), C("DISPLAY", w::KEY),
-        N("AUTHKIND", 2), C("CRED", w::KEY), N("STATUS", 2), C("PROFHOME", 32),
+        N("AUTHKIND", 2), C("CRED", w::CRED), N("STATUS", 2), C("PROFHOME", 32),
         N("VFROM", w::ID), N("VTHRU", w::ID), N("ROWVER", w::ID),
     }};
 }

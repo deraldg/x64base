@@ -245,6 +245,8 @@ void cmd_DEFFN(DbArea&, std::istringstream&);
 void cmd_UNDEFFN(DbArea&, std::istringstream&);
 void cmd_BUILDVECTORS(DbArea&, std::istringstream&);
 void cmd_USER(DbArea&, std::istringstream&);
+void cmd_BBS(DbArea&, std::istringstream&);   // AI-BBS board + agent server (M1/M4)
+void cmd_NET(DbArea&, std::istringstream&);   // NET EGRESS permissioned toggle (M2)
 
 // MSSQL, PostgreSQL et al
 void cmd_IMPORTSQL(DbArea&, std::istringstream&);

@@ -21,13 +21,15 @@ Start here, in this order, and stop when you have enough for the task:
 | Step | Read | Why |
 | --- | --- | --- |
 | 0 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
+| 0b | If the BBS daemon is up: AUTH and `BBS READ board.worklog LAST 20` for your lane's live handoff; post one back on finishing (AIF-057, see `AI_BBS_OPERATIONS_RUNBOOK_V1.md` sec 11). | The live, identity-bound pickup/dropoff. Optional and simplex -- the closeout is authority; the board is the fast handoff. Skip if the daemon is down. |
 | 1 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
 | 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
 | 3 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
 | 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
 | 5 | For material work: `labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md` | Mode, change class, actual build target, product/index profile, and smallest sufficient gates. |
-| 6 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
-| 7 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
+| 6 | Before touching source: `labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md` | The engineering standards + **definition of done**: usage contracts (`@dottalk.usage`), regression doctrine (self-asserting/sandboxed/registered + socket smoke), the lane close-out checklist, and house conventions. Read this so you apply the standards, not reverse-engineer them. |
+| 7 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
+| 8 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
 
 Everything else — the assimilation book, the bootstrap card, the older portal
 docs — is context you pull *when the task needs it*, not a mandatory prefix.

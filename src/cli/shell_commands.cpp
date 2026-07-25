@@ -479,6 +479,8 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("BUILD VECTORS",[](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
     registry().add("BUILD INFO",   [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
     registry().add("USER",         [](DbArea& A, std::istringstream& S){ cmd_USER(A,S);         });
+    registry().add("BBS",          [](DbArea& A, std::istringstream& S){ cmd_BBS(A,S);          });
+    registry().add("NET",          [](DbArea& A, std::istringstream& S){ cmd_NET(A,S);          });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });

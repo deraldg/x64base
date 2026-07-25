@@ -28,6 +28,7 @@ After that canonical start, use these task-specific sources only when relevant:
 
 - [`labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`](labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md)
 - [`labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md`](labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md)
+- [`labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md`](labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md) -- engineering standards + **definition of done** (usage contracts, regression doctrine, close-out checklist, house conventions). MANDATORY before writing source.
 - [`labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md`](labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md)
 - [`labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`](labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md)
 - [`labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`](labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md) when DotTalk++ or DotScript is involved

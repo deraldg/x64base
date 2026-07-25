@@ -92,3 +92,9 @@ Report:
 
 An AI package, portal button, registry row, command listing, website page, or
 successful build alone is not behavioral proof.
+
+For the concrete engineering standards and the full definition-of-done checklist
+(usage contracts, regression doctrine, close-out registry rows, house
+conventions), see `AI_ENGINEERING_STANDARDS_SEED_V1.md`. A behavior lane is not
+done until a self-asserting regression protects it and a `runtime_observed`
+proof exists.

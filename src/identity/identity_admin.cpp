@@ -4,6 +4,7 @@
 
 #include "identity/identity_admin.hpp"
 #include "identity/identity_bootstrap.hpp"
+#include "security/token_crypto.hpp"     // M3: Argon2id + CSPRNG (libsodium)
 
 #include <algorithm>
 #include <cstdio>
@@ -311,25 +312,23 @@ std::string fnv_hex(const std::string& salt, const std::string& secret) {
     return std::string(buf);
 }
 
+// Gold standard (M3): Argon2id credential hashing via libsodium (dottalk::security).
 std::string make_credential(const std::string& secret) {
-    static std::mt19937_64 rng{std::random_device{}() ^ static_cast<std::uint64_t>(std::time(nullptr))};
-    char salt[9];
-    std::snprintf(salt, sizeof salt, "%08x", static_cast<unsigned>(rng() & 0xffffffffu));
-    return std::string(salt) + "$" + fnv_hex(salt, secret);
+    return dottalk::security::make_credential(secret);   // "$argon2id$..." PHC string
 }
 
 bool verify_credential(const std::string& stored, const std::string& secret) {
+    if (dottalk::security::is_argon2_credential(stored))     // new Argon2id format
+        return dottalk::security::verify_credential(stored, secret);
+    // legacy FNV fallback (transitional — re-run USER PASSWD / USER TOKEN to upgrade)
     const auto pos = stored.find('$');
     if (pos == std::string::npos) return false;
     return fnv_hex(stored.substr(0, pos), secret) == stored.substr(pos + 1);
 }
 
-// A random 64-bit opaque token, hex-encoded (for owner-issued agent credentials).
+// A 256-bit opaque token (OS CSPRNG, base64url) for owner-issued agent credentials.
 std::string gen_token() {
-    static std::mt19937_64 rng{std::random_device{}() ^ static_cast<std::uint64_t>(std::time(nullptr)) ^ 0x9e3779b97f4a7c15ULL};
-    char buf[17];
-    std::snprintf(buf, sizeof buf, "%016llx", static_cast<unsigned long long>(rng()));
-    return std::string(buf);
+    return dottalk::security::gen_token();
 }
 
 // Derive a service-user key from a member key: member.ai.foo -> user.ai.foo.

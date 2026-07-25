@@ -521,6 +521,9 @@ if (TARGET dottalk_value)
   target_link_libraries(dottalkpp PRIVATE dottalk_value)
 endif()
 
+# AI-BBS lane libs (libsodium/ws2_32) are linked at the top level, where
+# find_package(unofficial-sodium) is in scope (see CMakeLists.txt after add_subdirectory(src)).
+
 # 7) Build summary
 message(STATUS "dottalkpp: DOTTALK_WITH_DEV = ${DOTTALK_WITH_DEV}")
 message(STATUS "dottalkpp: DOTTALK_WITH_TV  = ${DOTTALK_WITH_TV}")

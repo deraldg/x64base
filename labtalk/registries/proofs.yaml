@@ -171,3 +171,61 @@ proofs:
       - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
       - D:/code/ccode/labtalk/registries/ai_portal.yaml
     notes: Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.
+
+  # --- AI-BBS / pseudo-chat agent-server lane (AIF-052..055), runtime-observed 2026-07-25 ---
+  - id: proof.bbs.m1_board
+    label: AI-BBS M1 board tables + BBS command
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+    notes: BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects SYSGRANT.
+  - id: proof.bbs.m2_net_egress
+    label: AI-BBS M2 NET EGRESS permissioned toggle
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+    notes: AI member refused NET EGRESS OPEN ("no in-scope role permission"); owner STATUS = Block. host.network.egress owner-only.
+  - id: proof.bbs.m3_argon2
+    label: AI-BBS M3 Argon2id token crypto (libsodium)
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+    notes: USER TOKEN -> 43-char base64url CSPRNG; correct token logs in, wrong token rejected. Gates M4.
+  - id: proof.bbs.m4_serve
+    label: AI-BBS M4 BBS SERVE loopback listener + Ollama bridge
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+    notes: 127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block; OK posted.
+  - id: proof.bbs.m6_daemon
+    label: AI-BBS M6 standalone dottalk_bbsd daemon
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/AI_BBS_M6_STANDALONE_DAEMON_V1.md
+    notes: Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.
+  - id: proof.bbs.guest
+    label: AI-BBS guest leave-a-message (member.guest + board.guestbook)
+    state: runtime_observed
+    source: D:/code/ccode/docs/ai-friendly/AI_BBS_LOUNGE_ROOM_V1.md
+    notes: As member.guest -> POST board.guestbook OK posted #5; POST board.lounge bbs.post denied; READ bbs.read denied (write-only). Per-board POSTPERM (bbs.guest); BBS writes take table FLOCK.
+
+  # --- AI Portal onboarding hardening (AIF-056) ---
+  - id: proof.ai_portal.engineering_standards_seed
+    label: AI Portal engineering-standards / definition-of-done seed on the mandatory path
+    state: source_defined
+    source: D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+    related:
+      - D:/code/ccode/AI_README.md
+      - D:/code/ccode/AI_PORTAL.md
+      - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+      - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+    notes: Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined by nature; VERIFICATION is behavioral - a cold AI session reads the front door and applies the standards (usage contract + regression + closeout) WITHOUT being prompted. Promote to runtime_observed after that is witnessed.
+
+  # --- AI-BBS worklog/handoff simplex drop-point (AIF-057), small end built ---
+  - id: proof.bbs.worklog
+    label: AI-BBS worklog/handoff board + simplex cascade guard
+    state: runtime_observed
+    source: D:/code/ccode/docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md
+    notes: 2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff line (AI_README step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade guard (SO_RCVTIMEO idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary. Duplex switch remains design-intended (needs M4.1).
+
+  # --- AI roles taxonomy (AIF-058) ---
+  - id: proof.ai.roles_taxonomy
+    label: AI roles taxonomy - agents vs Ollama vs GPTbase
+    state: source_defined
+    source: D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
+    notes: Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not authority, cloud/not-isolated, snapshot goes stale). First artifact of the portal capability inventory. Doc/boundary artifact; source_defined by nature.

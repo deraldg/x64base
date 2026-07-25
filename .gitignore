@@ -217,3 +217,15 @@ zz_*
 # The zip is the origin. og is a working copy of it.
 # ---------------------------------------------------------------------------
 /dottalkpp/data/dbf/og/
+
+# ---------------------------------------------------------------------------
+# Scratch / tool working dirs at repo root (2026-07-25)
+# These are agent/tool scratch, not project content. The data-subdir variants
+# (/dottalkpp/data/tmp, /dottalkpp/data/.relations) were already ignored; the
+# repo-root ones were not, which is why ~1,785 files showed untracked.
+# ---------------------------------------------------------------------------
+/tmp/
+/_tmp/
+/.relations/
+/.codex-tools/
+/.codex-work/

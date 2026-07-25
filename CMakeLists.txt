@@ -338,6 +338,9 @@ endif()
 # JSON is used by the DDL/schema command surface and is a core dependency.
 find_package(nlohmann_json CONFIG REQUIRED)
 
+# libsodium: gold-standard identity crypto (Argon2id + CSPRNG) for the AI-BBS lane (M3).
+find_package(unofficial-sodium CONFIG REQUIRED)
+
 # ============================================================
 # Target Helper
 # ============================================================
@@ -430,6 +433,13 @@ endfunction()
 if (TARGET dottalkpp)
     dottalk_apply_common_settings(dottalkpp)
 
+    # AI-BBS lane: Argon2id/CSPRNG (M3) + Winsock for BBS SERVE (M4). Linked here where
+    # find_package(unofficial-sodium) is in scope.
+    target_link_libraries(dottalkpp PRIVATE unofficial-sodium::sodium)
+    if (WIN32)
+        target_link_libraries(dottalkpp PRIVATE ws2_32)
+    endif()
+
     if (_tvision_found)
         message(STATUS "Turbo Vision ENABLED for 'dottalkpp' via ${_tvision_origin}.")
     elseif (DOTTALK_WITH_TV)
@@ -455,6 +465,40 @@ if (TARGET dottalkpp)
     else()
         message(STATUS "Relations DISABLED for 'dottalkpp'.")
     endif()
+endif()
+
+# ============================================================
+# M6: standalone BBS agent-server daemon (dottalk_bbsd)
+# A long-lived process that runs dottalk::bbs::serve() independent of the interactive CLI,
+# reusing the identity + bbs + security sources (compiled here) and the shared static libs.
+# ============================================================
+option(DOTTALK_BUILD_BBSD "Build the standalone BBS agent-server daemon (dottalk_bbsd)" ON)
+if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
+    file(GLOB _bbsd_identity CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/identity/*.cpp")
+    file(GLOB _bbsd_bbs      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/bbs/*.cpp")
+    file(GLOB _bbsd_sec      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/security/*.cpp")
+    file(GLOB _bbsd_self     CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/selfdoc/*.cpp")
+    # CDX impl: xbase.lib -> xindex.lib references CdxDocument::/cdxfile:: whose bodies live in
+    # src/cdx (un-libraried). Pull them in so the transitive index refs resolve. (Test dive.)
+    file(GLOB _bbsd_cdx      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/cdx/*.cpp")
+    add_executable(dottalk_bbsd
+        "${CMAKE_SOURCE_DIR}/src/tools/bbsd_main.cpp"
+        ${_bbsd_identity} ${_bbsd_bbs} ${_bbsd_sec} ${_bbsd_self} ${_bbsd_cdx}
+        "${CMAKE_SOURCE_DIR}/src/common/path_state.cpp"
+        "${CMAKE_SOURCE_DIR}/src/common/path_resolver.cpp"
+        "${CMAKE_SOURCE_DIR}/src/core/fields_mgr.cpp"   # fields::findFieldCI (free fn)
+    )
+    target_include_directories(dottalk_bbsd PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_compile_features(dottalk_bbsd PRIVATE cxx_std_20)
+    # Only what the identity/board DBF paths need — NOT xindex/xexpr (CDX + expr engines pull
+    # un-libraried src/ symbols; the daemon does no indexed/expression work).
+    target_link_libraries(dottalk_bbsd PRIVATE
+        xbase memo
+        nlohmann_json::nlohmann_json unofficial-sodium::sodium)
+    if (WIN32)
+        target_link_libraries(dottalk_bbsd PRIVATE ws2_32)
+    endif()
+    message(STATUS "dottalk_bbsd (standalone BBS daemon) ENABLED.")
 endif()
 
 foreach(_dottalk_gui_target IN ITEMS dottalk_wx dottalk_wx_next)

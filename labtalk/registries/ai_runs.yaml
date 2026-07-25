@@ -1,0 +1,141 @@
+# AI run traceability registry v1  (AIF-050 M1)
+#
+# One row per working session of a member on the project. This is the "return to
+# the last agent" index: resolve a lane -> its newest run -> the chat handle.
+#
+# owner/authority: member.derald  (not delegated by any assignment below)
+# contract: docs/maintenance/AI_RUN_TRACEABILITY_CONTRACT_V1.md
+# lane: AIF-050 (docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md)
+
+runs_registry:
+  schema: ai-runs-v1
+  status: candidate            # dev-only; not promoted
+  contract: docs/maintenance/AI_RUN_TRACEABILITY_CONTRACT_V1.md
+
+  required_fields:
+    - run_id
+    - member
+    - project
+    - lanes
+    - handle_binding
+    - status
+
+  handle_bindings:
+    - SELF_REPORTED             # agent supplied a resolvable handle
+    - MAINTAINER_ATTESTED       # platform stamped id not_exposed; owner attests
+    - NOT_RESOLVABLE            # no handle; closeout is the only recovery path
+
+# ---------------------------------------------------------------------------
+# Runs (newest first). chat_handle == "" with MAINTAINER_ATTESTED means the
+# owner still needs to record the resumable handle; the run is fully recovered
+# from its closeout regardless (the closeout, not the chat, is the record).
+# ---------------------------------------------------------------------------
+runs:
+  - run_id: AIPR-20260725-001
+    member: member.ai.claude.cowork
+    product: Cowork                         # Anthropic / Cowork; model not_exposed
+    project: project.ai_friendly
+    lanes: [AIF-052, AIF-053, AIF-054, AIF-055, AIF-056, AIF-057, AIF-058, AIF-059]   # BBS server, NET egress+crypto, M6+Lounge, guest, portal-onboarding-hardening, worklog/handoff, AI-roles-taxonomy, gitlock-hot-potato
+    role: implementer
+    authored_by: member.ai.claude.cowork
+    planned_by: null
+    owner: member.derald
+    committer: member.derald
+    git: { branch: development, baseline: dfa8c1366, head: dfa8c1366 }
+    chat_handle: ""
+    handle_binding: MAINTAINER_ATTESTED
+    continues_run: AIPR-20260724-010
+    started: 2026-07-25
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+    status: active
+
+  - run_id: AIPR-20260722-007
+    member: member.ai.claude.cowork
+    product: Cowork                         # Anthropic / Cowork; model not_exposed
+    project: project.x64base.runtime
+    lanes: [AIF-046, AIF-050]               # scan-evaluator, then this traceability lane
+    role: steward
+    authored_by: member.ai.claude.cowork
+    planned_by: null
+    owner: member.derald
+    committer: member.derald
+    git: { branch: homegrown-cnx-20251112-branch, baseline: 3231ae0c9, head: 0f06d1060 }
+    chat_handle: ""                         # not self-resolvable; visible session UUID exists in the
+                                            # Cowork workspace path but its resumability is unverified
+    handle_binding: MAINTAINER_ATTESTED     # <-- live demonstration of the model's central case
+    continues_run: null
+    started: 2026-07-22
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md
+    status: active
+
+  - run_id: AIPR-20260722-005
+    member: member.ai.claude.cowork
+    product: Cowork
+    project: project.x64base.identity
+    lanes: [AIF-045]                        # identity 2d: session auth + AI token auth
+    role: implementer
+    authored_by: member.ai.claude.cowork
+    planned_by: member.ai.chatgpt           # external-AI plan (OpenAI), endorsed with caveats
+    owner: member.derald
+    committer: member.derald
+    git: { branch: homegrown-cnx-20251112-branch, baseline: 969bd1582, head: bfa6bb0fd }
+    chat_handle: ""
+    handle_binding: MAINTAINER_ATTESTED
+    continues_run: AIPR-20260722-004
+    started: 2026-07-22
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md
+    status: closed
+
+  - run_id: AIPR-20260722-004
+    member: member.ai.claude.cowork
+    product: Cowork
+    project: project.x64base.identity
+    lanes: [AIF-045]                        # identity 2c: agent local security
+    role: implementer
+    authored_by: member.ai.claude.cowork
+    planned_by: member.ai.chatgpt
+    owner: member.derald
+    committer: member.derald
+    chat_handle: ""
+    handle_binding: MAINTAINER_ATTESTED
+    continues_run: AIPR-20260722-003
+    started: 2026-07-22
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md
+    status: closed
+
+# ---------------------------------------------------------------------------
+# The "return to the last agent" index (AIF-050 M5). For each lane, the newest
+# run holds the most current knowledge. Resolve: lane -> run_id -> chat_handle
+# (reopen if the binding is resolvable; otherwise the run's closeout is the
+# recovery path). This map is the queryable form of the "Last agent:" line the
+# lane docs and dashboard carry.
+# ---------------------------------------------------------------------------
+current_by_lane:
+  AIF-050: AIPR-20260722-007      # AI run traceability (this lane) — Cowork/Claude, active
+  AIF-046: AIPR-20260722-007      # scan-evaluator — Cowork/Claude, same session
+  AIF-045: AIPR-20260722-005      # identity/RBAC — Cowork-implemented, ChatGPT-planned, closed
+  AIF-052: AIPR-20260725-001      # AI-BBS agent-server -- Cowork/Claude, active
+  AIF-053: AIPR-20260725-001      # NET egress-security + Argon2id crypto
+  AIF-054: AIPR-20260725-001      # M6 standalone daemon + The Lounge
+  AIF-055: AIPR-20260725-001      # guest leave-a-message (Guestbook)
+  AIF-056: AIPR-20260725-001      # AI Portal onboarding hardening (engineering-standards seed)
+  AIF-057: AIPR-20260725-001      # AI-BBS worklog/handoff simplex drop-point (small end built)
+  AIF-058: AIPR-20260725-001      # AI roles taxonomy (agents vs Ollama vs GPTbase)
+  AIF-059: AIPR-20260725-001      # git-lock Hot Potato commit-coordination (design)
+
+current_by_project:
+  project.x64base.runtime: AIPR-20260722-007
+  project.x64base.identity: AIPR-20260722-005
+  project.ai_friendly: AIPR-20260725-001
+
+# Notes:
+#  - member.ai.chatgpt appears only as planned_by on the identity runs: ChatGPT (OpenAI) authored the
+#    RBAC plan; Cowork/Claude implemented it; member.derald owns and committed it. That three-way split
+#    is exactly what git cannot show (git author == member.derald on every commit).
+#  - handle_binding is MAINTAINER_ATTESTED on every seeded run because the platform stamps the session
+#    id not_exposed. Filling chat_handle is an owner action; the runs lose nothing meanwhile.
+#  - To resume the freshest agent for a lane: current_by_lane[LANE] -> runs[run_id].chat_handle.
