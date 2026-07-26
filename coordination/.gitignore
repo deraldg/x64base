@@ -1,0 +1,13 @@
+# Concurrent-session coordination state (AIF-050 coordination component).
+#
+# Transient — NOT committed (per-session presence + advisory locks; they mean nothing
+# across machines/time and would just churn the tree):
+active_sessions/
+locks/
+#
+# Durable — the AIF-number claim ledger IS tracked and committed. Each aif/AIF-NNN.claim
+# is the authoritative record of who allocated that lane number and when. The atomic
+# O_EXCL create coordinates concurrent LOCAL sessions in real time; committing the ledger
+# makes the allocation durable and shareable across sessions.
+!aif/
+!aif/*.claim
