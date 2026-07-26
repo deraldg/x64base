@@ -1,0 +1,71 @@
+* ============================================================================
+* 03_04_sqlite_capability_gap_v2.dts
+*
+* Replaces 03_dbf_to_sqlite_students.dts and 04_sqlite_select_to_dbf_people.dts.
+*
+* THESE TWO TESTS WERE NOT REPAIRED. They asked the engine to do things it does
+* not implement, and rewriting them into something that passes would have hidden
+* a real roadmap gap behind a green result. This script instead proves exactly
+* what the SQLite surface CAN do, and states precisely where it stops.
+*
+* WHY 03 COULD NOT RUN
+*   BEGIN                 -- not a registered command (0 hits, shell_commands.cpp)
+*   SCAN + #SID, #LNAME.. -- no field-substitution implementation exists, so the
+*                            SQL string is never populated from cursor values
+*   The intent -- pump DBF rows into SQLite -- has no expressible form today.
+*
+* WHY 04 COULD NOT RUN
+*   SQLITE QUERY "..." INTO DBF <file>
+*                         -- SQLITE has no QUERY subcommand (0 hits) and no
+*                            INTO-DBF materialisation path. SQLITE SELECT prints
+*                            a capped result set to the console; it cannot write
+*                            a file that AUTODBF could then consume.
+*
+* Both originals also wrote to _drops/, which does not exist.
+* ============================================================================
+
+SET TALK ON
+ECHO CONVGAP BEGIN sqlite-surface
+
+* -- what DOES work: connect, DDL, literal DML, read back -----------------------
+ECHO CONVGAP PROVEN connect-ddl-dml-select
+SQLITE DB tmp/conv_gap_probe.sqlite
+SQLITE STATUS
+SQLITE EXEC DROP TABLE IF EXISTS conversion_gap_probe
+SQLITE EXEC CREATE TABLE conversion_gap_probe (sku TEXT, std_cost REAL, active INTEGER)
+SQLITE EXEC INSERT INTO conversion_gap_probe VALUES ('RAW-SHAFT-4140', 48.0, 1)
+SQLITE EXEC INSERT INTO conversion_gap_probe VALUES ('RAW-HOUS-AL', 62.0, 1)
+SQLITE TABLES
+SQLITE COLUMNS conversion_gap_probe
+SQLITE SELECT SELECT COUNT(*) AS N FROM conversion_gap_probe
+SQLITE SELECT SELECT sku, std_cost, active FROM conversion_gap_probe ORDER BY sku
+SQLITE CLOSE
+
+* -- the two gaps, asserted as gaps --------------------------------------------
+ECHO CONVGAP GAP1 dbf-to-sqlite-row-pump NOT-IMPLEMENTED
+ECHO CONVGAP GAP1 needs field substitution in SCAN/SQLITE EXEC or a bulk command
+ECHO CONVGAP GAP2 sqlite-result-to-file NOT-IMPLEMENTED
+ECHO CONVGAP GAP2 needs SQLITE result set written to CSV or DBF for AUTODBF pickup
+
+ECHO CONVGAP END
+
+* ============================================================================
+* PASS CRITERIA
+*   SQLITE STATUS reports a connection to tmp/conv_gap_probe.sqlite
+*   SQLITE TABLES lists conversion_gap_probe
+*   SQLITE COLUMNS reports 3 columns: sku TEXT, std_cost REAL, active INTEGER
+*   COUNT query returns 2
+*   the ORDER BY select prints both rows, RAW-HOUS-AL first
+*
+* This proves the SQLite surface is live and usable for DDL, literal DML and
+* queries. It does NOT prove any DBF <-> SQLite data movement, because no such
+* path exists.
+*
+* CONSEQUENCE FOR THE PDLC CHAIN
+*   The chartered chain is:
+*     fixed-record COBOL -> DBF -> CSV/JSON -> SQLite -> x64base
+*   The SQLite legs are currently untraversable from inside DotTalk++ in either
+*   direction. CSV -> x64base is proven (10_crosswalk_cascade_items_v1.dts).
+*   DBF -> CSV is repaired and pending a recorded run (01, 05 v2).
+*   Closing GAP1 and GAP2 is what would make the full chain demonstrable.
+* ============================================================================

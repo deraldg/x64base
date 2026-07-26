@@ -1,0 +1,293 @@
+* ============================================================================
+* 10_crosswalk_cascade_items_v1.dts
+* PDLC crosswalk proof -- SQLite -> CSV -> x64base DBF -> CSV, one dataset.
+*
+* Status: CANDIDATE / FIRST RUN NOT YET RECORDED
+* Owner: member.derald   authored_by: member.ai.claude.cowork
+* Lane: PDLC historical migration demonstration
+*
+* WHY THIS EXISTS
+*   The PDLC maturity review names the next decisive empirical milestone as
+*   "one reproducible dataset crosswalk with row counts, field mappings, and
+*   output checks". This script is that crosswalk for the portion the engine
+*   can prove today. It is deliberately ONE table, traced completely, rather
+*   than many tables traced partially.
+*
+* SUBJECT: Cascade Precision Mfg ERP, table Items
+*   Chosen because it exercises what a crosswalk must actually prove:
+*     - 18 rows x 13 columns (small enough to verify by eye)
+*     - INTEGER / TEXT / REAL all present
+*     - List_Price is NULL for several rows  -> NULL vs empty-string fidelity
+*     - Active is an INTEGER boolean         -> logical/numeric mapping
+*     - Item_ID is the primary key           -> identity preservation
+*   Cascade is the right substrate: its manifest claims (34 tables / 9 views /
+*   330 rows) were independently verified against the SQLite file and its
+*   checksums verify, so discrepancies found here belong to the CONVERSION,
+*   not to the source data.
+*
+* EVIDENCE CONTRACT
+*   Every stage echoes a marker line beginning "XWALK" so a transcript can be
+*   parsed deterministically. Capture the run with:
+*     ./datarun.ps1 -CommandLines '...' > transcript.txt
+*   or run this file with --script and redirect output. The transcript IS the
+*   proof; an unrecorded successful run proves nothing (see the COBOL hop).
+*
+* SCOPE AND HONEST LIMITS
+*   PROVES:     SQLite -> CSV -> x64base DBF -> CSV round trip with counts and
+*               field maps captured at each hop.
+*   DOES NOT PROVE: the fixed-record COBOL hop. That requires GnuCOBOL and a
+*               preserved transcript; stage S0 below is a placeholder that
+*               deliberately does nothing so the gap stays visible rather than
+*               being quietly implied as complete.
+*   DOES NOT PROVE: JSON. The JSON surface is design-stage; a JSON hop should
+*               be added only once a canonical JSON emitter exists.
+*
+* PATHS
+*   Run cwd is the runtime data root (dottalkpp\data), per datarun.ps1.
+*   Scratch output goes to _drops/ following 05_roundtrip_dbf_csv_dbf.dts.
+* ============================================================================
+
+SET TALK ON
+ECHO XWALK BEGIN cascade_items_v1
+
+* ---------------------------------------------------------------------------
+* S0  fixed-record COBOL origin -- NOT PROVEN, INTENTIONALLY INERT
+* ---------------------------------------------------------------------------
+* CORRECTED 2026-07-26. This stage originally read "SKIPPED -- no preserved
+* GnuCOBOL transcript" and implied the hop was unbuilt. That was inherited from
+* the PDLC review rather than verified, and it was wrong about the capability.
+* src/edu/edu_cobol.cpp is status: supported and implements EXPORT STUDENTS /
+* BUILD / RUN / TEST driving cobc -x -free. The artifacts exist. What was
+* missing was only a transcript.
+* The hop now has its own runnable proof: 12_cobol_fixed_record_v1.dts.
+ECHO XWALK S0 COBOL DEFERRED see-12_cobol_fixed_record_v1.dts
+
+* ---------------------------------------------------------------------------
+* S1  origin: the SEALED package -- no external database consulted
+* ---------------------------------------------------------------------------
+* Authority is the sealed Cascade package, not a live query. manifest.json
+* carries per-table row counts and checksums.sha256 covers the CSVs, schema and
+* seed data. Both were verified on 2026-07-26: 34 tables / 9 views / 330 rows,
+* all 34 per-table counts matching, checksums OK.
+*
+* An earlier draft opened the SQLite file as a "type oracle". That was wrong on
+* two counts: it made an external, writable database the authority for a proof
+* about x64base, and it was unnecessary -- x64base derives types itself. The
+* SQLite hop is removed. Nothing here reads it.
+ECHO XWALK S1 ORIGIN sealed-package Items rows=18 cols=13
+ECHO XWALK S1 END
+
+* ---------------------------------------------------------------------------
+* S2  interchange: the CSV shipped with the package
+* ---------------------------------------------------------------------------
+* Items.csv is part of the sealed Cascade package and is covered by
+* checksums.sha256, so it is treated as a fixed interchange artifact rather
+* than something this run regenerates.
+ECHO XWALK S2 INTERCHANGE csv cascade_precision_erp/data/Items.csv
+
+* ---------------------------------------------------------------------------
+* S3  target: build the x64base table from the CSV
+* ---------------------------------------------------------------------------
+ECHO XWALK S3 LOAD autodbf CROSSWALK_CASCADE_ERP_ITEMS_V1
+AUTODBF X64 CROSSWALK_CASCADE_ERP_ITEMS_V1 FROM cascade_precision_erp/data/Items.csv HEADER INFER OVERWRITE
+ECHO XWALK S3 END
+
+* ---------------------------------------------------------------------------
+* S4  x64base introspection -- row count and field map on the target side
+* ---------------------------------------------------------------------------
+ECHO XWALK S4 VERIFY x64base CROSSWALK_CASCADE_ERP_ITEMS_V1
+USE CROSSWALK_CASCADE_ERP_ITEMS_V1
+* COUNT prints the row count on its own line; ECHO does NOT expand %LASTCOUNT%
+* (verified first run 2026-07-26 -- the marker printed literally). Read the
+* count from the COUNT output line immediately following this marker.
+ECHO XWALK S4 ROWS follows-on-next-line
+COUNT
+STRUCT
+FIELDS
+ECHO XWALK S4 END
+
+* ---------------------------------------------------------------------------
+* S4b LONG-NAME SURVIVAL -- the schema as documentation
+* ---------------------------------------------------------------------------
+* Classic xBase caps field names at 10 characters, which is why legacy schemas
+* are full of STDCOST and RORDRPT. x64base runs 128/128 by default (256/256
+* max), so the migrated schema can carry its own meaning.
+*
+* Six of the 13 Items fields exceed the classic 10-char limit:
+*   Description(11) Standard_Cost(13) List_Price(10 -- at the boundary)
+*   Reorder_Point(13) Reorder_Qty(11) Cost_Method(11) Item_Type(9, safe)
+* and the table name CROSSWALK_CASCADE_ERP_ITEMS_V1 is 30 characters.
+*
+* If any of these come back truncated, the migration has silently degraded the
+* schema to a 1980s constraint and the field names stop being documentation.
+* That is a migration FAILURE even when every row and value is correct.
+ECHO XWALK S4B LONGNAMES expect-untruncated
+FIELDS
+ECHO XWALK S4B END
+
+* ---------------------------------------------------------------------------
+* S5  data dictionary evidence -- the native field-mapping surface
+* ---------------------------------------------------------------------------
+* DDICT is read-only. If the catalog has no rows for a freshly created table it
+* is expected to report an honest physical-artifact status rather than a bare
+* not-found, per its own contract notes.
+ECHO XWALK S5 DDICT
+DDICT STATUS
+DDICT TABLES
+DDICT FIELDS CROSSWALK_CASCADE_ERP_ITEMS_V1
+ECHO XWALK S5 END
+
+* ---------------------------------------------------------------------------
+* S6  return trip: x64base -> CSV
+* ---------------------------------------------------------------------------
+ECHO XWALK S6 EXPORT
+* Two corrections learned from runs 1 and 2, both recorded at the foot of this file:
+*   run 1: "EXPORT CSV <file> HEADER ON DATES ISO" (copied from 05_roundtrip)
+*          was REJECTED -- EXPORT grammar is EXPORT [TO] <file> [CSV|PIPE].
+*   run 2: correct grammar, but "_drops/..." failed with "Unable to open ...
+*          for write" -- dottalkpp\data\_drops does not exist. Writing to tmp/,
+*          which the engine DECLARES at startup (TMP : dottalkpp\data\tmp).
+EXPORT TO tmp/crosswalk_cascade_erp_items_v1_roundtrip.csv CSV
+ECHO XWALK S6 END
+
+* ---------------------------------------------------------------------------
+* S7  spot checks -- values that must survive the crossing
+* ---------------------------------------------------------------------------
+* Item_ID 1 is RAW-SHAFT-4140 with Standard_Cost 48.0 and a NULL List_Price.
+* If NULL collapsed to 0 rather than empty, this is where it shows.
+ECHO XWALK S7 SPOTCHECK
+USE CROSSWALK_CASCADE_ERP_ITEMS_V1
+LOCATE FOR SKU = "RAW-SHAFT-4140"
+DISPLAY
+ECHO XWALK S7 END
+
+ECHO XWALK END cascade_items_v1
+
+* ============================================================================
+* EXPECTED EVIDENCE -- DERIVED FROM THE ENGINE'S OWN DOCUMENTED LADDER
+*
+*   THESIS: documentation proves the code. The expected structure below is not
+*   borrowed from another database -- it is what x64base's OWN documented type
+*   ladder says it must produce, replayed over Items.csv:
+*
+*     src/import/import_profile.cpp
+*       classify_profile()      EMPTY / INTEGER / DECIMAL / DATE / LOGICAL /
+*                               TEXT / LONGTEXT / MIXED
+*       proposed_target_type()  INTEGER->N  DECIMAL->N  DATE->D  LOGICAL->L
+*                               LONGTEXT->M  TEXT->C  MIXED->C  EMPTY->C
+*
+*   Two behaviours this derivation surfaced, which a casual reading gets wrong:
+*
+*   1. EMPTY CELLS DO NOT AFFECT CLASSIFICATION. update_profile() returns
+*      immediately on an empty value, so it never sets a category flag and never
+*      sets sawAnyNonEmpty. List_Price has 14 empty cells out of 18 and still
+*      classifies DECIMAL -> N. Empties do not force MIXED.
+*
+*   2. "1"/"0" CLASSIFY AS INTEGER, NOT LOGICAL. is_logical_text() accepts
+*      "1" and "0", but update_profile() tests is_integer_text() FIRST and
+*      returns on match, so that branch is unreachable for numeric literals.
+*      Active (1/0) must therefore land as N, not L. Only T/F/Y/N/TRUE/FALSE/
+*      YES/NO reach LOGICAL. If Active ever imports as L, the ordering in
+*      update_profile() changed and this test is the tripwire.
+*
+*   EXPECTED STRUCTURE after S3 (13 fields, in CSV order):
+*     Item_ID        N(2)     INTEGER
+*     SKU            C(14)    TEXT
+*     Description    C(28)    TEXT
+*     UOM            C(2)     TEXT
+*     Item_Type      C(8)     TEXT
+*     Cost_Method    C(8)     TEXT
+*     Standard_Cost  N(5)     DECIMAL
+*     List_Price     N(5)     DECIMAL   <- 14 empty cells, still DECIMAL
+*     Reorder_Point  N(5)     DECIMAL
+*     Reorder_Qty    N(5)     DECIMAL
+*     Lead_Days      N(2)     INTEGER
+*     Category       C(15)    TEXT
+*     Active         N(1)     INTEGER   <- NOT L; see note 2
+*   (Widths are the observed max content length; AUTODBF may pad. Compare the
+*   TYPE LETTER strictly and treat width as advisory on first run.)
+*
+*   S4  ROWS        = 18
+*   S4  field count = 13
+*   S4B every field name returned at FULL length, none truncated to 10 chars;
+*       table name CROSSWALK_CASCADE_ERP_ITEMS_V1 (30 chars) intact
+*   S7  RAW-SHAFT-4140  Standard_Cost 48.0, List_Price EMPTY (not 0)
+*
+* PASS means: 18 rows, 13 fields, every type letter matching the table above,
+* and List_Price still empty where the CSV was empty.
+*
+* A row-count match alone is NOT a pass. Type collapse and empty-to-zero are the
+* failures this exists to catch, and both survive a count check.
+*
+* NOTE ON A CORRECTED DRAFT: an earlier version of this block carried two
+* invented figures (a NULL count and a cost sum) that were never computed.
+* They would have made a correct conversion appear to fail. Expected values in
+* a proof harness must be derived from the code or the sealed data -- never
+* written because they look plausible.
+*
+* ============================================================================
+* FIRST RUN -- 2026-07-26, build Jul 26 2026 12:52:47, v0.6 (dfa8c136 dirty)
+* ============================================================================
+*
+* RESULT: PASS on every data assertion. Two script defects, one repo finding.
+*
+* CONFIRMED BY RUN
+*   AUTODBF OK, X64, "Imported rows: 18"        -> row fidelity
+*   COUNT = 18, field count = 13                -> shape fidelity
+*   All 13 TYPE LETTERS matched the derivation exactly:
+*     N C C C C C N N N N N C N
+*   LIST_PRICE = N despite 14 empty cells       -> prediction 1 CONFIRMED
+*                                                  (empties never set a flag)
+*   ACTIVE     = N, NOT L                       -> prediction 2 CONFIRMED
+*                                                  (is_integer_text tested first)
+*   S7 LIST_PRICE displayed EMPTY, not 0        -> NULL fidelity preserved
+*   S7 STANDARD_COST = 48.0, SKU/CATEGORY intact
+*
+* LONG NAMES (S4B): PASS, and richer than expected. x64base keeps the FULL
+*   logical name AND a legacy 10-char descriptor side by side:
+*     STANDARD_COST  N(6,2)  descriptor=STANDARD_C
+*     REORDER_POINT  N(5,1)  descriptor=REORDER_PO
+*     DESCRIPTION    C(30)   descriptor=DESCRIPTIO
+*   Table name CROSSWALK_CASCADE_ERP_ITEMS_V1 (30 chars) survived intact.
+*   So the schema carries its own documentation while remaining addressable
+*   from a classic 10-char world. Names ARE uppercased and normalized
+*   (Item_ID -> ITEM_ID); case is not preserved.
+*
+* WIDTHS: allocated wider than observed content (SKU C(16) vs max 14,
+*   DESCRIPTION C(30) vs 28, STANDARD_COST N(6,2) vs 5). Padding is expected;
+*   the type letter is the strict assertion, width remains advisory.
+*
+* SCRIPT DEFECTS FOUND AND FIXED
+*   1. ECHO does NOT expand %LASTCOUNT% -- the marker printed literally as
+*      "; XWALK S4 ROWS %LASTCOUNT%". Count is now read from the COUNT line.
+*   2. EXPORT syntax was wrong (see S6). Corrected to EXPORT TO <file> CSV.
+*
+* REPO FINDING 1 -- tests/conversion/05_roundtrip_dbf_csv_dbf.dts IS NOT RUNNABLE
+*   That file is cited as evidence that the DBF->CSV->DBF round trip is
+*   "empirically demonstrated". Checked against the current command grammar,
+*   four of its five lines cannot execute:
+*     EXPORT CSV <f> HEADER ON DATES ISO   -- EXPORT takes [TO] <file> [CSV|PIPE]
+*     IMPORT CSV <f> SCHEMA <j> REJECTS <r> -- IMPORT takes only <csvfile>
+*     USE rt_students                       -- IMPORT appends into the OPEN table;
+*                                              it never creates rt_students
+*     %LASTCOUNT%                           -- does not expand (proven above)
+*
+* REPO FINDING 2 -- THE WHOLE tests/conversion SUITE TARGETS A MISSING DIRECTORY
+*   Run 2 failed with "Unable to open _drops/... for write". dottalkpp\data\_drops
+*   DOES NOT EXIST, and all five conversion tests write there:
+*     01_dbf_to_csv_students.dts        02_csv_to_dbf_students.dts
+*     03_dbf_to_sqlite_students.dts     04_sqlite_select_to_dbf_people.dts
+*     05_roundtrip_dbf_csv_dbf.dts
+*   So the failure is not confined to 05's grammar -- every conversion test would
+*   fail at first write. The engine declares TMP (dottalkpp\data\tmp) at startup;
+*   that is the correct scratch target, and this script now uses it.
+*
+*   Together these mean the PDLC review line "DBF/xBase and CSV conversion:
+*   empirically demonstrated" rests on scripts that cannot currently run. The
+*   capability is real -- this run proves the CSV -> x64base direction end to end
+*   -- but the cited evidence is not executable. Same capability-vs-preserved-proof
+*   gap the review correctly flags for COBOL. Either repair the suite (create
+*   _drops or retarget to tmp/, fix 05's grammar) or downgrade the claim.
+*
+* STILL NOT PROVEN: the fixed-record COBOL hop (S0), and JSON.
+* ============================================================================

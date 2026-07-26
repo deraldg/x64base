@@ -1,0 +1,104 @@
+* ============================================================================
+* 05_roundtrip_dbf_csv_dbf_v2.dts  --  DBF -> CSV -> DBF, runnable
+*
+* Replaces 05_roundtrip_dbf_csv_dbf.dts. FOUR of its five lines could not run:
+*   EXPORT CSV <f> HEADER ON DATES ISO    -> EXPORT [TO] <file> [CSV|PIPE]
+*   IMPORT CSV <f> SCHEMA <j> REJECTS <r> -> IMPORT <csvfile> only
+*   USE rt_students                       -> IMPORT appends into the OPEN table
+*                                            and never creates rt_students
+*   ECHO ... (rows=%LASTCOUNT%)           -> ECHO does NOT expand %LASTCOUNT%;
+*                                            it prints the token literally
+*                                            (proven by run, 2026-07-26)
+* plus _drops/ does not exist.
+*
+* This is the test the PDLC review cites for "DBF/xBase and CSV conversion:
+* empirically demonstrated". Until this version records a run, that line is
+* unsupported. See README_SUITE_REPAIR_V1.md.
+* ============================================================================
+
+SET TALK ON
+ECHO CONV05 BEGIN roundtrip
+
+* -- leg 1: build the origin DBF from sealed source ---------------------------
+ECHO CONV05 ORIGIN
+AUTODBF X64 ROUNDTRIP_ORIGIN_ITEMS_V1 FROM cascade_precision_erp/data/Items.csv HEADER INFER OVERWRITE
+USE ROUNDTRIP_ORIGIN_ITEMS_V1
+COUNT
+STRUCT
+
+* -- leg 2: DBF -> CSV ---------------------------------------------------------
+ECHO CONV05 EXPORT
+EXPORT TO tmp/conv05_roundtrip.csv CSV
+
+* -- leg 3: CSV -> DBF ---------------------------------------------------------
+ECHO CONV05 RETURN
+AUTODBF X64 ROUNDTRIP_RETURN_ITEMS_V1 FROM tmp/conv05_roundtrip.csv HEADER INFER OVERWRITE
+USE ROUNDTRIP_RETURN_ITEMS_V1
+COUNT
+STRUCT
+
+* -- leg 4: value-level equivalence -------------------------------------------
+* Shape equality is necessary, not sufficient. Compare the same record on both
+* sides: the empty LIST_PRICE is the one most likely to be damaged by a round
+* trip, because an empty numeric can plausibly come back as 0.
+ECHO CONV05 COMPARE origin
+USE ROUNDTRIP_ORIGIN_ITEMS_V1
+LOCATE FOR SKU = "RAW-SHAFT-4140"
+DISPLAY
+ECHO CONV05 COMPARE return
+USE ROUNDTRIP_RETURN_ITEMS_V1
+LOCATE FOR SKU = "RAW-SHAFT-4140"
+DISPLAY
+
+ECHO CONV05 END
+
+* ============================================================================
+* PASS CRITERIA
+*   origin COUNT  = 18   and  return COUNT  = 18
+*   origin fields = 13   and  return fields = 13
+*   the two DISPLAY blocks are IDENTICAL field for field, in particular:
+*     STANDARD_COST = 48.0  on both sides
+*     LIST_PRICE    = EMPTY on both sides  (NOT 0 on the return leg)
+*     CATEGORY      = Raw Metal            (embedded space survives CSV)
+*
+* KNOWN-UNKNOWN, record honestly on first run:
+*   Type letters on the return leg are inferred from what EXPORT wrote, not from
+*   the sealed CSV. If EXPORT renders a numeric differently than the original
+*   (trailing .0, padding, scientific form) the return leg may infer a different
+*   width or even a different letter. Any divergence is a REAL EXPORT-FIDELITY
+*   FINDING. Record it; do not tune the expectation to make it green.
+*
+* ============================================================================
+* FIRST RECORDED RUN -- 2026-07-26, build Jul 26 2026 12:52:47, v0.6
+* Invocation: ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path>' > tmp\conv05.txt
+* ============================================================================
+* RESULT: PASS -- LOSSLESS ROUND TRIP.
+*
+*   origin  : 18 rows, 13 fields
+*   EXPORT  : "Exported 18 records to tmp/conv05_roundtrip.csv"
+*   return  : 18 rows, 13 fields
+*
+*   STRUCTURE IDENTICAL ON BOTH LEGS -- not merely the same type letters, but
+*   the same widths and decimal counts, field for field:
+*     N(2,0) C(16) C(30) C(4) C(10) C(10) N(6,2) N(5,1) N(5,1) N(5,1) N(2,0)
+*     C(17) N(1,0)
+*   The KNOWN-UNKNOWN above did NOT materialise: EXPORT rendered every value so
+*   that re-inference reproduced the origin schema exactly. That is a stronger
+*   result than the test required -- export fidelity is round-trip stable.
+*
+*   VALUE COMPARISON: the two DISPLAY blocks are identical field for field.
+*     STANDARD_COST = 48.0        on both legs
+*     LIST_PRICE    = (empty)     on both legs -- did NOT become 0
+*     CATEGORY      = Raw Metal   embedded space survived CSV both ways
+*
+*   Both tables opened as (v64) with a valid CDX.
+*
+*   One cosmetic difference, not a defect: the return leg's AUTODBF plan omits
+*   the source='...' annotations, because the exported CSV headers already match
+*   the normalised x64 names. The 10-char descriptors (DESCRIPTIO, COST_METHO,
+*   STANDARD_C, REORDER_PO, REORDER_QT) are identical on both legs.
+*
+* THIS IS THE EVIDENCE THE PDLC REVIEW WAS MISSING. The line
+* "DBF/xBase and CSV conversion: empirically demonstrated" is now supported by a
+* preserved transcript -- for the DBF <-> CSV portion. SQLite legs remain gaps.
+* ============================================================================
