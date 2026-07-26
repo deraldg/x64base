@@ -22,6 +22,9 @@ fields, demonstrating the cheap backfill without mutating the tree.
 Owner: member.derald  . steward: member.ai.claude.cowork  . lane: AIF-050  . status: candidate
 """
 import argparse
+import csv
+import datetime
+import hashlib
 import os
 import re
 import subprocess
@@ -155,7 +158,9 @@ def upgrade_one(path: Path, rel: str) -> bool:
     Returns True if the file was modified.
     """
     try:
-        text = path.read_text(encoding="utf-8", errors="surrogateescape")
+        # utf-8-sig strips a leading BOM on read so a rewrite never strands it
+        # mid-file (see the AIF-062 backfill BOM regression).
+        text = path.read_text(encoding="utf-8-sig", errors="surrogateescape")
     except Exception as e:
         print(f"  SKIP (read) {rel}: {e}", file=sys.stderr)
         return False
@@ -188,6 +193,225 @@ def upgrade_one(path: Path, rel: str) -> bool:
         return False
 
 
+# --------------------------------------------------------------------------- #
+# M1 harvest (read-only): SYSSRC + SYSCMDDOC emitters
+# Design: dottalkpp/docs/authority/SOURCE_CONTRACT_COLLECTION_DESIGN_v1.md
+#
+# Pure function of the tree. Emits CSV only -- never writes a table, never
+# mutates source. SRC_HASH is taken over the BANNER BLOCK ONLY so ordinary body
+# edits do not register as contract drift; banner edits do.
+# --------------------------------------------------------------------------- #
+
+# Two observed contract dialects. Phase 1B doctrine: record drift, do not collapse.
+#   slash : // @dottalk.usage v1   + `command:` / `usage:`      (226 files)
+#   block : /* @dottalk.usage v1   + `surface:` / `forms:`      (cmd_ddict.cpp)
+USAGE_BLOCK_RE = re.compile(r"// @dottalk\.usage v1\n(?://[^\n]*\n)+")
+USAGE_BLOCK_ALT_RE = re.compile(r"/\*\s*\n?\s*@dottalk\.usage v1\n(.*?)\*/", re.DOTALL)
+
+BANNER_FIELDS = ["subsystem", "layer", "owns", "project", "lane", "owner", "status"]
+
+# Values derive_block() hardcodes. Used to classify authored vs derived (FLD_PROV).
+DERIVED_CONSTANTS = {
+    "project": "project.x64base.runtime",
+    "owner": "member.derald",
+    "status": "supported",
+}
+
+SYSSRC_COLS = [
+    "FILE_ID", "PATH", "STEM", "EXT", "SUBSYSTEM", "LAYER", "PROJECT", "LANE",
+    "OWNER", "STATUS", "IS_CMD", "CMD_COUNT", "BANNER_V", "SRC_HASH",
+    "HARVEST_AT", "FLD_PROV",
+]
+
+SYSCMDDOC_COLS = [
+    "CMD_ID", "CAN_NAME", "FILE_ID", "DIALECT", "CATEGORY", "EFFECT", "NOARGS",
+    "MUTATES", "RELATED", "USAGE_ACC", "SUMMARY", "USAGE_TXT", "EXAMPLES",
+    "RISK", "NOTES", "SRC_HASH", "HARVEST_AT",
+]
+
+
+def file_id(rel: str) -> str:
+    """Stable key: src/cli/cmd_if.cpp -> SRC_CLI_CMD_IF_CPP"""
+    return re.sub(r"[^A-Za-z0-9]+", "_", rel).strip("_").upper()
+
+
+def sha1(text: str) -> str:
+    return hashlib.sha1(text.encode("utf-8", "surrogateescape")).hexdigest()
+
+
+def parse_banner_fields(block: str) -> dict:
+    """Single-line `// field: value` pairs from a @dottalk.file block."""
+    out = {}
+    for f in BANNER_FIELDS:
+        m = re.search(rf"//[ \t]*{re.escape(f)}:[ \t]*(.*)", block)
+        out[f] = m.group(1).strip() if m else ""
+    return out
+
+
+def parse_usage_fields(block: str) -> dict:
+    """
+    Parse a @dottalk.usage block, honoring multi-line continuations:
+
+        // summary:
+        //   Build or report the current HELP DATA catalogs.
+
+    A line whose comment body matches `name:` starts a field; anything else is
+    appended to the field in progress.
+    """
+    fields: dict[str, list[str]] = {}
+    cur = None
+    for raw in block.splitlines():
+        body = raw[2:] if raw.startswith("//") else raw
+        if body.strip() in ("", "@dottalk.usage v1"):
+            continue
+        m = re.match(r"\s*([a-z][a-z0-9-]*):\s*(.*)$", body)
+        if m:
+            cur = m.group(1)
+            val = m.group(2).strip()
+            fields.setdefault(cur, [])
+            if val:
+                fields[cur].append(val)
+        elif cur is not None:
+            fields[cur].append(body.strip())
+    return {k: "\n".join(v).strip() for k, v in fields.items()}
+
+
+def field_provenance(vals: dict, rel: str, text: str) -> str:
+    """
+    Compact per-field provenance: A=authored, D=derived, E=empty.
+
+    A field is DERIVED when its current value is byte-identical to what
+    derive_block() would regenerate for this file -- i.e. the backfill could
+    have produced it and it carries no human judgement. Anything else is
+    AUTHORED. This is what makes a real `status: candidate` distinguishable
+    from the 1034 backfilled `status: supported` defaults.
+    """
+    derived = parse_banner_fields(derive_block(rel, text))
+    marks = []
+    for f in BANNER_FIELDS:
+        v = vals.get(f, "")
+        if not v:
+            marks.append(f"{f}=E")
+        elif v == derived.get(f, ""):
+            marks.append(f"{f}=D")
+        else:
+            marks.append(f"{f}=A")
+    return ";".join(marks)
+
+
+def harvest(root: Path):
+    """Return (syssrc_rows, syscmddoc_rows, anomalies). Read-only."""
+    stamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    src_rows, doc_rows, anomalies = [], [], []
+
+    for rel, p in source_files(root):
+        try:
+            text = p.read_text(encoding="utf-8-sig", errors="surrogateescape")
+        except Exception as e:
+            print(f"  SKIP (read) {rel}: {e}", file=sys.stderr)
+            continue
+
+        bm = BLOCK_RE.search(text)
+        if not bm:
+            continue  # uncovered; the census/--write path owns these
+        banner = bm.group(0)
+        vals = parse_banner_fields(banner)
+
+        usage_blocks = [(b, "slash") for b in USAGE_BLOCK_RE.findall(text)]
+        usage_blocks += [(b, "block") for b in USAGE_BLOCK_ALT_RE.findall(text)]
+
+        # Mention-only: the marker appears (a code string, prose) but no parseable
+        # contract. The census counts these as commands; they are false positives.
+        if not usage_blocks and "@dottalk.usage" in text:
+            anomalies.append((rel, "mention-only (no parseable contract block)"))
+
+        cmd_names = []
+        for ub, dialect in usage_blocks:
+            uf = parse_usage_fields(ub)
+            # dialect fallbacks: block form uses surface:/forms: instead of command:/usage:
+            name = (uf.get("command") or uf.get("surface") or "").strip()
+            if not name:
+                anomalies.append((rel, f"{dialect} block with no command:/surface: field"))
+                continue
+            if dialect == "block":
+                anomalies.append(
+                    (rel, f"non-canonical block dialect (surface/forms) for {name}"))
+            cmd_names.append(name)
+            doc_rows.append({
+                "CMD_ID": "CMD_" + re.sub(r"[^A-Za-z0-9]+", "_", name.upper()).strip("_"),
+                "CAN_NAME": name.upper(),
+                "FILE_ID": file_id(rel),
+                "DIALECT": dialect,
+                "CATEGORY": uf.get("category", ""),
+                "EFFECT": uf.get("effect", ""),
+                "NOARGS": uf.get("noargs", ""),
+                "MUTATES": uf.get("mutates", ""),
+                "RELATED": uf.get("related", ""),
+                "USAGE_ACC": uf.get("usage-access", ""),
+                "SUMMARY": uf.get("summary", ""),
+                "USAGE_TXT": uf.get("usage") or uf.get("forms", ""),
+                "EXAMPLES": uf.get("examples", ""),
+                "RISK": uf.get("risk", ""),
+                "NOTES": uf.get("notes", ""),
+                "SRC_HASH": sha1(ub),
+                "HARVEST_AT": stamp,
+            })
+
+        src_rows.append({
+            "FILE_ID": file_id(rel),
+            "PATH": rel,
+            "STEM": Path(rel).stem,
+            "EXT": Path(rel).suffix,
+            "SUBSYSTEM": vals["subsystem"],
+            "LAYER": vals["layer"],
+            "PROJECT": vals["project"],
+            "LANE": vals["lane"],
+            "OWNER": vals["owner"],
+            "STATUS": vals["status"],
+            "IS_CMD": "T" if usage_blocks else "F",
+            "CMD_COUNT": str(len(cmd_names)),
+            "BANNER_V": "v1",
+            "SRC_HASH": sha1(banner),
+            "HARVEST_AT": stamp,
+            "FLD_PROV": field_provenance(vals, rel, text),
+        })
+
+    return src_rows, doc_rows, anomalies
+
+
+def write_csv(path: str, cols: list, rows: list, bom: bool = False) -> None:
+    """
+    CSV ENCODING POLICY (verified against the engine, 2026-07-26):
+
+      canonical = UTF-8, NO BOM.
+
+    Rationale -- the engine, not the spreadsheet, defines the lane:
+      * every existing canonical import file is BOM-less
+        (SYSCMD/SYSARGS/SYSFUNC/SYSMSG _IMPORT_v1.csv)
+      * the engine WRITES BOM-less CSV (no BOM emitter anywhere in src/)
+      * cmd_import.cpp READS a BOM tolerantly -- strip_import_utf8_bom() clears it
+        from column 0 of the HEADER record only (split_import_csv_record(rec, true)
+        at cmd_import.cpp:146; data rows pass false). Correct, since a BOM can only
+        occur at file start.
+
+    So a BOM would import fine, but it would diverge from every other file in the
+    lane and from the engine's own output. BOM is therefore OPT-IN (--csv-bom) and
+    intended only for Excel review copies, never for the committed artifact:
+    Excel misreads BOM-less UTF-8 as the ANSI codepage.
+
+    Line endings are csv module default (\\r\\n); the engine strips trailing CR
+    (strip_import_trailing_cr), and the existing lane files are already mixed
+    CRLF/LF, so either is safe.
+    """
+    enc = "utf-8-sig" if bom else "utf-8"
+    with open(path, "w", newline="", encoding=enc) as f:
+        w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"harvest: {len(rows)} row(s) -> {path}"
+          f"{'  [UTF-8 BOM: review copy, not canonical]' if bom else ''}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=".", help="repo root (default: cwd)")
@@ -206,8 +430,50 @@ def main() -> int:
     ap.add_argument("--only", metavar="PREFIXES",
                     help="restrict --write/--upgrade to files whose path starts with one "
                          "of these comma-separated prefixes (e.g. src/bbs,include/bbs)")
+    ap.add_argument("--emit-syssrc", metavar="CSV",
+                    help="M1 harvest: write the file-grain SYSSRC candidate CSV "
+                         "(read-only; one row per source file carrying a banner)")
+    ap.add_argument("--emit-syscmddoc", metavar="CSV",
+                    help="M1 harvest: write the command-grain SYSCMDDOC candidate CSV "
+                         "(read-only; one row per @dottalk.usage block)")
+    ap.add_argument("--csv-bom", action="store_true",
+                    help="write CSVs as UTF-8 WITH BOM. Excel-review copies ONLY -- the "
+                         "canonical lane is BOM-less (see write_csv policy note). "
+                         "cmd_import.cpp tolerates a BOM, so these still import.")
     args = ap.parse_args()
     root = Path(args.root).resolve()
+
+    if args.emit_syssrc or args.emit_syscmddoc:
+        src_rows, doc_rows, anomalies = harvest(root)
+        if args.emit_syssrc:
+            write_csv(args.emit_syssrc, SYSSRC_COLS, src_rows, bom=args.csv_bom)
+        if args.emit_syscmddoc:
+            write_csv(args.emit_syscmddoc, SYSCMDDOC_COLS, doc_rows, bom=args.csv_bom)
+        # SYSCMDDOC is the FIRST lane file to use quoted multi-line cells.
+        # csv::read_record() supports them (it keeps reading while a record is
+        # mid-quote), but no existing metadata CSV exercises that path -- so it is
+        # untested HERE. Flag it rather than assume it.
+        multiline = sum(1 for r in doc_rows
+                        for c in ("SUMMARY", "USAGE_TXT", "EXAMPLES", "RISK", "NOTES")
+                        if "\n" in r.get(c, ""))
+        if multiline:
+            print(f"harvest: NOTE {multiline} quoted multi-line cell(s). "
+                  f"csv::read_record supports these, but no existing metadata CSV "
+                  f"uses them -- smoke-test IMPORT on a scratch table before M2.")
+        cmd_files = sum(1 for r in src_rows if r["IS_CMD"] == "T")
+        print(f"harvest: {len(src_rows)} file rows "
+              f"({cmd_files} command-bearing, {len(src_rows) - cmd_files} non-command), "
+              f"{len(doc_rows)} command doc rows")
+        # Provenance summary: how much of the banner estate is real vs backfilled.
+        authored = sum(1 for r in src_rows if "=A" in r["FLD_PROV"])
+        print(f"harvest: {authored} file(s) carry at least one AUTHORED banner field "
+              f"({len(src_rows) - authored} fully derived/empty)")
+        if anomalies:
+            print(f"\nharvest: {len(anomalies)} contract anomaly/anomalies "
+                  f"(reported, not corrected):", file=sys.stderr)
+            for rel, why in anomalies:
+                print(f"  ? {rel}: {why}", file=sys.stderr)
+        return 0
 
     if args.sample:
         p = root / args.sample
@@ -255,7 +521,9 @@ def main() -> int:
                 continue
             p = root / rel
             try:
-                original = p.read_text(encoding="utf-8", errors="surrogateescape")
+                # utf-8-sig strips a leading BOM so prepending the banner cannot
+                # strand it at line ~10 (the AIF-062 backfill BOM regression).
+                original = p.read_text(encoding="utf-8-sig", errors="surrogateescape")
             except Exception as e:
                 print(f"  SKIP (read) {rel}: {e}", file=sys.stderr)
                 continue

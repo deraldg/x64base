@@ -1,0 +1,104 @@
+{
+  "by_check": {
+    "BANNER_CENSUS": 1,
+    "CONTRACT_QA": 13,
+    "CSV_VS_TABLE": 4,
+    "DOTREF_COV": 1,
+    "SRCFILE_DRIFT": 2
+  },
+  "counts": {
+    "FAIL": 0,
+    "WARN": 21
+  },
+  "detail": {
+    "banner_census": {
+      "coverage_pct": 100.0,
+      "files_zero_authored_fields": 1031,
+      "provenance": {
+        "lane": {
+          "A": 0,
+          "D": 23,
+          "E": 1011
+        },
+        "layer": {
+          "A": 3,
+          "D": 1031,
+          "E": 0
+        },
+        "owner": {
+          "A": 0,
+          "D": 1034,
+          "E": 0
+        },
+        "owns": {
+          "A": 0,
+          "D": 2,
+          "E": 1032
+        },
+        "project": {
+          "A": 0,
+          "D": 1034,
+          "E": 0
+        },
+        "status": {
+          "A": 0,
+          "D": 1034,
+          "E": 0
+        },
+        "subsystem": {
+          "A": 0,
+          "D": 1034,
+          "E": 0
+        }
+      },
+      "total_source": 1034,
+      "with_banner": 1034
+    },
+    "contract_qa": {
+      "contract_blocks": 238,
+      "dialects": {
+        "block": 1,
+        "slash": 237
+      },
+      "distinct_commands": 218,
+      "mention_only": 5
+    },
+    "csv_vs_table": {
+      "SYSARGS": {
+        "csv_rows": 215,
+        "table_rows": 0
+      },
+      "SYSCMD": {
+        "csv_rows": 40,
+        "table_rows": 203
+      },
+      "SYSFUNC": {
+        "csv_rows": 64,
+        "table_rows": 0
+      },
+      "SYSMSG": {
+        "csv_rows": 1006,
+        "table_rows": 0
+      }
+    },
+    "dotref_coverage": {
+      "coverage_pct": 78.4,
+      "dotref_entries": 255,
+      "live_syscmd_rows": 203,
+      "metadata_backed": 200,
+      "uncovered": 55
+    },
+    "embedded_bom": {
+      "files": [],
+      "offenders": 0
+    },
+    "srcfile_drift": {
+      "catalog_rows": 1032,
+      "catalog_rows_in_scope": 1031,
+      "phantom": 11,
+      "tracked_source": 1034,
+      "uncollected": 14
+    }
+  },
+  "tracked_source_files": 1034
+}

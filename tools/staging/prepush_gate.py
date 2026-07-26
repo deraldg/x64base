@@ -99,6 +99,16 @@ DATA_DIR_SEGMENTS = (
 # coordinator. A duplicate is a HARD block (it can never be a legitimate commit).
 AIF_COLLISION_GATE = "tools/coordination/aif_collision_gate.py"
 
+# --- Embedded-BOM guard --------------------------------------------------------
+# A UTF-8 BOM (EF BB BF) after byte 0 breaks MSVC (C3872/C2014/C2143). This is the
+# AIF-062 backfill regression: a banner prepended above a BOM stranded it mid-file.
+# HARD-block any staged C/C++ source whose blob carries an embedded BOM.
+UTF8_BOM = b"\xef\xbb\xbf"
+BOM_CHECK_SUFFIXES = (
+    ".h", ".hpp", ".hh", ".hxx", ".ipp", ".inl",
+    ".c", ".cc", ".cpp", ".cxx",
+)
+
 
 def run_git(args: list[str]) -> str:
     try:
@@ -152,6 +162,29 @@ def is_data_fixture(path: str) -> bool:
     if any(seg in p for seg in DATA_DIR_SEGMENTS):
         return True
     return False
+
+
+def _staged_blob(path: str, range_spec: str | None) -> bytes | None:
+    """Return the bytes git will commit for `path` (staged index, or range tip)."""
+    rev = range_spec.split("..")[-1] if range_spec else ""
+    spec = f"{rev}:{path}" if rev else f":{path}"
+    try:
+        out = subprocess.run(["git", "show", spec], capture_output=True)
+    except FileNotFoundError:
+        return None
+    return out.stdout if out.returncode == 0 else None
+
+
+def embedded_bom_offenders(paths: list[str], range_spec: str | None) -> list[str]:
+    """C/C++ source paths whose committed blob carries a BOM after byte 0."""
+    bad = []
+    for p in paths:
+        if not p.lower().endswith(BOM_CHECK_SUFFIXES):
+            continue
+        blob = _staged_blob(p, range_spec)
+        if blob is not None and blob.find(UTF8_BOM) > 0:
+            bad.append(p)
+    return bad
 
 
 def run_aif_collision_gate(strict: bool) -> int:
@@ -260,6 +293,18 @@ def main() -> int:
         if exit_code == 0:
             exit_code = 3
 
+    bom = embedded_bom_offenders(paths, args.range_spec)
+    if bom:
+        print("\n  BLOCKED -- staged source file(s) carry an embedded UTF-8 BOM "
+              "(EF BB BF after byte 0), which breaks MSVC (C3872/C2014):", file=sys.stderr)
+        for p in sorted(bom)[:40]:
+            print(f"    x {p}", file=sys.stderr)
+        if len(bom) > 40:
+            print(f"    ... and {len(bom) - 40} more", file=sys.stderr)
+        print("  Re-save as UTF-8 without BOM (strip the stray bytes) before committing.",
+              file=sys.stderr)
+        exit_code = 2  # hard block
+
     if not args.skip_aif:
         print()  # spacer before the sub-gate's own report
         if run_aif_collision_gate(args.strict_aif) != 0:
@@ -270,7 +315,7 @@ def main() -> int:
 
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
-              "(or acknowledged), no AIF-number collision.")
+              "(or acknowledged), no embedded BOM, no AIF-number collision.")
     else:
         print(f"\nprepush-gate: FAIL (exit {exit_code}).", file=sys.stderr)
     return exit_code
