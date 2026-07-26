@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿#pragma once
+#pragma once
 
 #include <cstdint>
 #include <string>

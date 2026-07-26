@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿#pragma once
+#pragma once
 // src/cli/cmd_scan.hpp
 //
 // SCAN subsystem for DotTalk++

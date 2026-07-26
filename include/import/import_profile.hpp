@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿#pragma once
+#pragma once
 // @dottalk.contract
 // file: include/import/import_profile.hpp
 // subsystem: import

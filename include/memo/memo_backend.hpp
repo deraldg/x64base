@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿// memo_backend.hpp
+// memo_backend.hpp
 // Backend-neutral memo interface for DotTalk++
 //
 // Purpose:

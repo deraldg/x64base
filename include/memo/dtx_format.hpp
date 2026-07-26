@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿// dtx_format.hpp
+// dtx_format.hpp
 // DotTalk++ native memo sidecar on-disk format definition
 
 #pragma once

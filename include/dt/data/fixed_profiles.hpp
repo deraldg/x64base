@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿#pragma once
+#pragma once
 // @dottalk.contract
 // file: include/dt/data/fixed_profiles.hpp
 // subsystem: dt

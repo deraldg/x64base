@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿#pragma once
+#pragma once
 // @dottalk.contract
 // file: include/workspace/workarea_slot.hpp
 // subsystem: workspace

@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-﻿// @dottalk.usage v1
+// @dottalk.usage v1
 // owner: DOT|IF
 // command: IF
 // category: script
