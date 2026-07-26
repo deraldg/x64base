@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/cli/cmd_bbs.cpp
 // subsystem: cli
 // layer: command
 // owns: DOT|BBS
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://src/cli/cmd_bbs.cpp
 
 // @dottalk.usage v1
 // owner: DOT|BBS

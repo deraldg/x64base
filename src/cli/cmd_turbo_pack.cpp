@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_turbo_pack.cpp
 // TURBOPACK — fast, low-level DBF compaction (byte-oriented)
 // Removes physically deleted records (* flag) by rewriting only live ones.

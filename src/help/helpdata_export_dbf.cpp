@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: help
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/help/helpdata_export_dbf.cpp
 // Purpose: Export HELP DATA v2 artifacts as both memo-backed artifacts and

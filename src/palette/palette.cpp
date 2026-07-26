@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: palette
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #if defined(DOTTALK_WITH_TV) || defined(DOTTALK_TV_AVAILABLE)
 //
 // PALETTE.CPP - Example module for palette system.

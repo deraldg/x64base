@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "main_frame.hpp"
 
 #include "datadict/ddict_catalog_paths.hpp"

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: core
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "xbase/fields.hpp"
 #include "xbase/dbf_create.hpp"
 #include "xindex/attach.hpp"

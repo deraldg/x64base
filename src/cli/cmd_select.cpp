@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_select.cpp ? SELECT <area#|name>
 // Supports selecting by numeric slot (0..N-1) or by name/label (case-insensitive).
 // Name matching checks workareas::name(i) and the DBF base name from DbArea::filename().

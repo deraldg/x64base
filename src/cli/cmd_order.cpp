@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cmd_order.cpp ? consolidated ASCEND and DESCEND commands
 // Safe to build even if indexing isn't wired yet.
 

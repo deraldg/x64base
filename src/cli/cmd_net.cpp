@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/cli/cmd_net.cpp
 // subsystem: cli
 // layer: command
 // owns: DOT|NET
 // project: project.x64base.runtime
+// lane: AIF-053
+// owner: member.derald
 // status: supported
-// provenance: prov://src/cli/cmd_net.cpp
 
 // @dottalk.usage v1
 // owner: DOT|NET

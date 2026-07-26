@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_tuptalk.cpp
 //
 // TUPTALK / TT ? tuple-based normalization test harness + live DBF capture.

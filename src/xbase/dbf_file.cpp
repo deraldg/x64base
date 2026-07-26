@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/xbase/dbf_file.cpp
 // Purpose: DBF open/read/write/runtime-flavor plumbing for the core xBase
 //          engine.

@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: include/bbs/bbs_server.hpp
 // subsystem: bbs
 // layer: header
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://include/bbs/bbs_server.hpp
 
 // bbs_server.hpp — localhost, token-authenticated BBS/agent server (M4). Public API.
 //

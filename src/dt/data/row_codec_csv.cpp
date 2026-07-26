@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dt
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/dt/data/row_codec_csv.cpp
 //
 // Minimal RowSet ? CSV writer used by EXPORT.

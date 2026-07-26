@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: manual
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.contract v1
 // component: manual_report_formatter
 // role: format read-only MANUAL catalog status, table, and resolution reports

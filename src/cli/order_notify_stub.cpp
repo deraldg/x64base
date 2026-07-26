@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/order_notify_stub.cpp
 // Link shim for mutation notifier. Now wires to order_nav cache invalidation.
 

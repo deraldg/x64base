@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/vdisk_config.cpp
 // [vdisk] admin config parser + Layer-1 sizing (AIF-043). See cli/vdisk_config.hpp.
 

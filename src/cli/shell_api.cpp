@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/shell_api.cpp
 // Purpose: Shell-facing adapters that bridge command dispatch, expression
 //          evaluation, script resolution, and console I/O helpers.

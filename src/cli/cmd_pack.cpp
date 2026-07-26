@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_pack.cpp
 // PACK — physically removes deleted records by rewriting the DBF to a temp file
 //         containing only non-deleted records, then atomically replaces the original.

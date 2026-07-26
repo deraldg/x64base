@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/csv.cpp
 // Purpose: Low-level CSV record splitting and quoting helpers used by CLI
 //          import/export workflows.

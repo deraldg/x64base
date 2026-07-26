@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dt
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: include/dt/meta/metacollect.hpp
 // Purpose: Read-only metadata/source fact collection and comparison contract.

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 #include "xindex/index_manager.hpp" // brings in forward decl for xbase::DbArea via index_manager.hpp
 

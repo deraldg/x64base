@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/colors.cpp
 // Full 16-color ANSI palette — 100% compatible with FoxPro 2.6 / dBASE IV color syntax
 #include "colors.hpp"

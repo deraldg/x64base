@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/cli/helpdata_cmdhelp_bridge.cpp
 // Purpose: CLI-side bridge from existing CMDHELP/command docs into HELP DATA v2.

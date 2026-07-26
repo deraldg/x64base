@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "gui/core/localization.hpp"
 
 #include "gui/core/generated_gui_messages.hpp"

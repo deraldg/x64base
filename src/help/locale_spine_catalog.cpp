@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: help
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "locale_spine_catalog.hpp"
 
 #include <cstdint>

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // Map these macros to your DbArea API. Leave undefined to use safe no-ops.
 // Examples (uncomment/adjust to your names):

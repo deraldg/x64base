@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_replace.cpp — REPLACE by field INDEX or NAME
 // Usage:
 //   REPLACE <field_index> WITH <value>

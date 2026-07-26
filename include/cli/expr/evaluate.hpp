@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // Central predicate facade for DotTalk++ commands.
 // Compile once per command, then eval per record.

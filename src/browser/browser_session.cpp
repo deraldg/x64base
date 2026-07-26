@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: browser
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/browser/browser_session.cpp
 #include "browser/browser_session.hpp"
 

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: help
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/help/helpdata_model.hpp
 // Purpose: Canonical HELP DATA v2 model.

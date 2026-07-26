@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 //
 // xbase::ramfs — in-process RAM filesystem (AIF-043, in-memory tables, drop V1)

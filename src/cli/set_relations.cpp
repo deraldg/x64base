@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/set_relations.cpp
 // Purpose: Relation graph storage, lookup, and tuple-walk helpers shared by
 //          REL, ERSATZ, and workspace restoration flows.

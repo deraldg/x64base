@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_zap.cpp
 // ZAP — removes ALL records from the current DBF, preserving structure (header + field descriptors).
 //       Rewrites the file with record count = 0, updated timestamp, and EOF marker.

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // include/cli/expr/dotscript_predicate_bridge.hpp
 //
 // One shared bridge that lets a predicate referencing DotScript state — a `$name` memory

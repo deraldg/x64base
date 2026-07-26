@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // dli/set_view.hpp ? stub of SET VIEW command
 // Declares the dli::cmd_SET_VIEW entrypoint used by dli/cmd_set.cpp.

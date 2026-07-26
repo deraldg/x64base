@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: help
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/help/helpdata_export_dbf.hpp
 // Purpose: Minimal DBF/DBT exporter for HELP DATA v2 artifacts.

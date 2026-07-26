@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // path: src/cli/cmd_while.cpp
 // purpose: WHILE / ENDWHILE with private buffering (no loop_state deps)

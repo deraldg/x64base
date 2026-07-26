@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dt
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/dt/predicate/value_convert.cpp
 //
 // Implementations for dt::predicate value/literal helpers.

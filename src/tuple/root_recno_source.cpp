@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tuple
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "tuple/root_recno_source.hpp"
 
 #include <algorithm>

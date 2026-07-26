@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_recordview.cpp
 // RECORDVIEW (readonly) ? RECORD (edit/modify) ? BROWSETV (TV grid)
 // Now with visible selection highlight for the active field/row.

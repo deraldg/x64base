@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // Unique field registry (per work area).
 // Phase 1: session-scoped in-memory flags; no engine changes required.

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: include/xbase.hpp
 // Purpose: Core xBase engine types, constants, and DbArea/XBaseEngine contracts.
 // Boundary: This header defines engine-facing runtime state only. CLI, shell,

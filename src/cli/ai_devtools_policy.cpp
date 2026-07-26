@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/ai_devtools_policy.cpp
 // AI-friendly dev-tools permission gate — now identity-aware (AIF-045 2c-4).
 //

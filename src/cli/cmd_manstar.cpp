@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cmd_manstar.cpp
 // MDO-279R repair: provide the global cmd_MANSTAR symbol expected by shell_commands.cpp.
 //

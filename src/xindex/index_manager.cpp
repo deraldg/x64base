@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xindex/index_manager.cpp
 #include <algorithm>
 #include <cctype>

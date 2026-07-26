@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/security/token_crypto.cpp
 // subsystem: security
 // layer: engine-core
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-053
+// owner: member.derald
 // status: supported
-// provenance: prov://src/security/token_crypto.cpp
 
 // token_crypto.cpp — gold-standard identity crypto via libsodium (Argon2id + CSPRNG).
 //

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // edu_hanukkah.cpp
 // Retro ASCII Hanukkah menorah + dreidel for DotTalk++ terminal.
 // Uses segment-level ANSI coloring so visible width and raw output width stay sane.

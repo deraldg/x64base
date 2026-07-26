@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: include/security/token_crypto.hpp
 // subsystem: security
 // layer: header
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-053
+// owner: member.derald
 // status: supported
-// provenance: prov://include/security/token_crypto.hpp
 
 // token_crypto.hpp — gold-standard identity crypto (M3): Argon2id + CSPRNG via libsodium.
 //

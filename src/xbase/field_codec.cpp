@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // Field-type codec registry (FIELDTYPE lane, M1).
 //
 // M1 ships the fixed-width text codec (byte-for-byte the legacy behavior for

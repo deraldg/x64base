@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/bbs/bbs_store.cpp
 // subsystem: bbs
 // layer: engine-core
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://src/bbs/bbs_store.cpp
 
 // bbs_store.cpp -- DBF-backed store for the AI-BBS board (M1).
 // Mirrors src/identity/identity_dbf_store.cpp idioms (RowW/RowR, create_dbf X64,

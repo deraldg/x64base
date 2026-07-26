@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: meta
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/meta/metacollect.cpp
 // Purpose: Read-only source and metadata fact extraction for metacollect.

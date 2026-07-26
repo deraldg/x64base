@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: identity
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: AIF-045
+// owner: member.derald
+// status: supported
+
 // src/identity/identity_bootstrap.cpp
 // Seeds the process-wide identity store (AIF-045 2b-i). Compiled into dottalkpp via the src glob.
 // Interim in-memory seed: the standard role/permission catalog + members/users reflecting the

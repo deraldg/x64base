@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/tools/bbsd_main.cpp
 // subsystem: tools
 // layer: helper
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-054
+// owner: member.derald
 // status: supported
-// provenance: prov://src/tools/bbsd_main.cpp
 
 // bbsd_main.cpp — standalone DotTalk++ BBS agent-server daemon (M6).
 //

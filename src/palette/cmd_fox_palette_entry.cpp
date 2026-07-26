@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: palette
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ccode/src/cli/cmd_fox_palette_entry.cpp  (FULL REPLACEMENT)
 #include <sstream>
 #include "cmd_fox_palette_command.h"

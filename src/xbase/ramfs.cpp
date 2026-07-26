@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // xbase::ramfs — in-process RAM filesystem (AIF-043 in-memory tables, drop V1)
 //
 // Path-keyed byte files served from process memory. See include/xbase/ramfs.hpp

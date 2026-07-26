@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // @dottalk.contract v1
 // family: selfdoc.api_contract

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/evaluate.cpp
 // Phase 1: AST-backed predicate compilation (replaces the legacy mini-predicate
 // compiler). This aligns EVALUATE/COUNT/LOCATE/etc. with the same expression

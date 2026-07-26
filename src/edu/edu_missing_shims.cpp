@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/edu_missing_shims.cpp
 // Temporary education-command shims for registry symbols that were declared
 // in shell_commands.hpp but are not currently linked into this build.

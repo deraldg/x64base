@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: identity
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: AIF-045
+// owner: member.derald
+// status: supported
+
 #pragma once
 // include/identity/identity_admin.hpp
 // Runtime administration of the identity / RBAC catalog (AIF-045 2c).

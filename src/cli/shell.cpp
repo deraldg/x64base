@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ==============================
 // File: src/cli/shell.cpp
 // Auto-refresh tuned for record cursor cohesion:

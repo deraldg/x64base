@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: test
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // xbase_security_tests.cpp
 // Canonical module version — no main().
 // Provides run_xbase_security_tests() for CLI or external runners.

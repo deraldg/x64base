@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: include/bbs/bbs_store.hpp
 // subsystem: bbs
 // layer: header
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://include/bbs/bbs_store.hpp
 
 // bbs_store.hpp — DBF-backed store for the AI-BBS board (M1). Public API.
 //

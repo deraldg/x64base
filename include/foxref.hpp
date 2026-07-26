@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // foxref.hpp
 #pragma once
 #include <string>

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xexpr
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xexpr/var_store.hpp
 //
 // DotScript scoped memory-variable store (DOTSCRIPT-ARRAYS lane, AIF-038, M1b-2).

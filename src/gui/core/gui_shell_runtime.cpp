@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "gui_shell_runtime.hpp"
 
 #include "common/path_state.hpp"

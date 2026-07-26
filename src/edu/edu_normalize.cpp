@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/edu_normalize.cpp
 //
 // NORMALIZE command ? test harness for value_normalize.hpp + dt::predicate::Value

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // include/xindex/cdx_backend.hpp
 #pragma once
 /**

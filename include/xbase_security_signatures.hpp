@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // xbase_security_signatures.hpp
 // Compatibility facade for the xBase_64 security subsystem.

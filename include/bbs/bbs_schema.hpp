@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: include/bbs/bbs_schema.hpp
 // subsystem: bbs
 // layer: header
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://include/bbs/bbs_schema.hpp
 
 // bbs_schema.hpp — DBF table definitions for the AI-BBS / pseudo-chat board (M1).
 //

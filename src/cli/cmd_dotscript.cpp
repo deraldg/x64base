@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/commands/cmd_dotscript.cpp
 // DOTSCRIPT runner with TRACE banner + scripts/tests resolver + @file support + one-level subscript limit.
 

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: identity
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: AIF-045
+// owner: member.derald
+// status: supported
+
 #pragma once
 // include/identity/permission_resolver.hpp
 // Effective-permission resolver for the identity / RBAC layer (AIF-045, Contract v1 §4).

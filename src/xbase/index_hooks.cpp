@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "xbase/index_hooks.hpp"
 
 namespace xbase::index_hooks {

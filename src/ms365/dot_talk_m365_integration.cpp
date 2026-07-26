@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: ms365
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "xbase.hpp"
 #include "dot_talk_m365_integration.hpp"
 

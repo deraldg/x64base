@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/bbs/bbs_server.cpp
 // subsystem: bbs
 // layer: glue
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-052
+// owner: member.derald
 // status: supported
-// provenance: prov://src/bbs/bbs_server.cpp
 
 // bbs_server.cpp -- localhost token-authenticated BBS/agent server + Ollama bridge (M4).
 //

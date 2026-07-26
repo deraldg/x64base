@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: memo
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 ﻿#pragma once
 // @dottalk.contract
 // file: include/memo/memo_ref.hpp

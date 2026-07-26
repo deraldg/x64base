@@ -1,11 +1,11 @@
 // @dottalk.file v1
-// path: src/selfdoc/event_record.cpp
 // subsystem: selfdoc
 // layer: helper
 // owns: 
 // project: project.x64base.runtime
+// lane: AIF-050
+// owner: member.derald
 // status: supported
-// provenance: prov://src/selfdoc/event_record.cpp
 
 // event_record.cpp — runtime -> documentation intake seam (M5).
 #include "selfdoc/event_record.hpp"

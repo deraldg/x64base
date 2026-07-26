@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================
 // DotTalk++ / xexpr RHS evaluation
 // File: src/cli/expr/rhs_eval.cpp

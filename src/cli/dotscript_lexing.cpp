@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/dotscript_lexing.cpp
 // Canonical implementation of the DotScript comment vocabulary. See the header
 // for the rules; this is the single source of truth (AIF-037, Rule of Three).

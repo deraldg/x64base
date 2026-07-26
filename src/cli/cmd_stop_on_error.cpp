@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_stop_on_error.cpp
 // STOP_ON_ERROR [severity] — set or report the DotScript stop-on-error threshold.
 

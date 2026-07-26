@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_rel.cpp
 // REL command dispatcher. Keeps REL subcommand parsing in one place and forwards
 // to the underlying RELATIONS / SET RELATIONS / JOIN / ENUM handlers.
