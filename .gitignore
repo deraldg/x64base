@@ -229,3 +229,33 @@ zz_*
 /.relations/
 /.codex-tools/
 /.codex-work/
+
+# ---------------------------------------------------------------------------
+# Scratch inside src/ and include/ (2026-07-25)
+#
+# Notes, chat dumps, session archives, and data files living in the SOURCE
+# tree. These got swept into a commit by a directory-level git add (the
+# AIF-050 backfill incident, force-push-repaired same day). Ignore the clear
+# scratch categories so it cannot happen again.
+#
+# NOT ignored (left visible as untracked, promote or delete deliberately):
+#   src/tests/*.cpp, src/reference/, src/schemas/, src/cli/cmd_transaction.cpp
+#   and other plausible future source.
+# ---------------------------------------------------------------------------
+# prose/notes dropped into the source tree (CMakeLists.txt is unaffected:
+# gitignore never hides tracked files, and new cmake files are *.txt-negated)
+/src/**/*.txt
+!/src/**/CMakeLists.txt
+/include/*.txt
+# ad-hoc scripts and patch/sidecar drops in the source tree
+/src/**/*.dts
+/src/**/*.patch
+/src/**/*.before_image_web_defaults
+# archives and binary data inside src/ and include/
+/src/*.zip
+/src/data/
+/include/manuals/
+# session/collection areas parked under src/
+/src/AIPortal/
+/src/psych/
+/src/labtalk/
