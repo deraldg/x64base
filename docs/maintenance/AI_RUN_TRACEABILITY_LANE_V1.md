@@ -161,13 +161,24 @@ becomes objects/records: the unit key is the foreign key, the provenance catalog
   the derived `@dottalk.file` block at the top of each uncovered file (idempotent; skips files that
   already carry one) -- the missing "generator-driven backfill" tool. **Dogfooded:** the AI-BBS lane's
   12 new source files now carry hand-classified blocks (accurate `layer`: `glue` / `engine-core` /
-  `command` / `header`, not the heuristic default). Remaining: the provenance DBF, and the
-  **maintainer-gated full-tree sweep** (`--write` whole tree, then review the heuristic `layer` fields)
-  that takes census 0% -> covered.
-- **M3 — coverage gate (advisory).** ✅ **landed (candidate, 2026-07-22).** `source_census.py`
-  reports `git ls-files ∖ census`; **advisory** by default (exit 0), `--strict` fails (exit 1) — proven
-  to flip cleanly (strict exits 1 at today's 0% coverage). Promotable to a hard drift gate (sibling of
-  the AIF-033/035 gates) once backfill completes, on maintainer decision.
+  `command` / `header`, not the heuristic default).
+  **FULL-TREE SWEEP COMPLETE (2026-07-25):** census **1034/1034 = 100.0%**. Schema revised in the
+  same pass: `path:` and `provenance:` **dropped** (both duplicated what git already tracks, and
+  `path:` goes stale on rename); `lane:` and `owner:` **added** — the AI-connectivity fields, so a
+  source file resolves to its lane doc, its run in `ai_runs.yaml`, and through `current_by_lane` to
+  the last agent who worked it. New `--upgrade` mode rewrites old-schema blocks while **preserving
+  hand-set `layer:` and `owns:`** (the 12 dogfood blocks kept `glue`/`engine-core` and
+  `DOT|BBS`/`DOT|NET`); `SUBSYSTEM_LANE` + `STEM_LANE` maps supply `lane:`.
+  Closeout: `SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md`.
+  Remaining: the provenance DBF; per-subsystem refinement of the derived `layer:` on the 1,022
+  heuristic blocks; and growing `lane:` coverage (each future lane adds its own map entry at
+  closeout rather than requiring a second sweep).
+- **M3 — coverage gate (advisory).** ✅ **landed (candidate, 2026-07-22); now PASSABLE (2026-07-25).**
+  `source_census.py` reports `git ls-files ∖ census`; **advisory** by default (exit 0), `--strict`
+  fails (exit 1) — proven to flip cleanly. With the M2 full-tree sweep complete, coverage is 100.0%
+  and **`--strict` exits 0**: the gate can be promoted from advisory to a hard drift gate (sibling of
+  the AIF-033/035 gates) whenever the maintainer decides. Promotion is the open decision, not the
+  capability.
 - **M4 — audit envelope v2 (`ai-report-audit-v2`).** ✅ **spec landed (candidate, 2026-07-22).**
   `docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md`: adds `agent.member`, an `attribution` block splitting
   `authored_by` / `planned_by` from `owner` / `committer` (recorded once), and

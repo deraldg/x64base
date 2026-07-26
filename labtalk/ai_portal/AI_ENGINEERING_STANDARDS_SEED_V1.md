@@ -120,7 +120,31 @@ in `AI_PORTAL_HARDENING_LANE_V1.md`).
 - Prefer routing into an existing subsystem over adding a parallel one (AI Friendly non-goal: do not
   build a second contract/SelfDoc/lock/identity system).
 
-## 7. One-line gate
+## 7. Git hygiene -- staging, resetting, and trash
+
+`member.derald` is the sole committer; agents deliver reviewed scripts. Those scripts must be safe.
+Grounded in a real incident (2026-07-25, AIF-050 full-tree backfill; see that closeout):
+
+- **Stage tracked modifications with `git add -u <dir>`, never `git add -- <dir>`.** The bare form
+  stages **everything** under the directory, tracked or not. In the real case it swept ~111 untracked
+  scratch files (chat `.txt` dumps, `.zip`, `.dbf` data, `.patch` sidecars, a whole session archive)
+  into a pushed commit. `-u` means "update already-tracked files"; that is almost always the intent.
+- **A scoped-add script must verify its own scope before committing.** Print the staged file count
+  and fail on suspicious extensions *before* `git commit`, not after `git push`. A script that claims
+  to be scoped and does not check is not scoped.
+- **`reset --hard` is not surgical.** It reverts **tracked modifications you meant to keep** (in the
+  real case, the session's own tool changes) and **deletes from disk** files the discarded commit had
+  added. Stash or snapshot first; `git restore --source=<bad-sha> --worktree -- <files>` recovers the
+  latter if you have the sha.
+- **Force-push is acceptable on `development`, never on `main`.** `development` is the dev-sync
+  branch with a single serializing committer, so replacing a bad tip is clean. Confirm no other actor
+  pushed in between (see the Hot Potato lane, AIF-059).
+- **If you create or expose trash in the tree, resolve it -- delete it or `.gitignore` it.** Do not
+  leave loose scratch as a trip hazard for the next directory-level add. When ignoring, add a **dated,
+  commented** section naming the cause, and **do not silently hide plausible real source**: leave
+  those visible as untracked so they get a promote-or-delete decision.
+
+## 8. One-line gate
 
 > Before saying a lane is done: is there a `@dottalk.usage` contract (flipped when green), a
 > self-asserting sandboxed regression that protects it, a `runtime_observed` proof, and a closeout +
