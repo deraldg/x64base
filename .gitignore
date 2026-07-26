@@ -320,3 +320,16 @@ dottalkpp/data/ram/
 mcc/*.DBF
 # stray root-level accidental python saves (e.g. "import sys.py")
 /import*.py
+
+# --- Untracked-triage v2 (2026-07-26): generated CSV + CDX metadata cache ---
+# Generated report/candidate CSVs. 3 deliberately-tracked report CSVs
+# (manualgen/reports/mdo_226_*, labtalk/reports/.../crosswalk_v1) stay tracked.
+**/generated/**/*.csv
+**/reports/**/*.csv
+docs/manuals/developer/manualgen/**/*.csv
+docs/maintenance/lanes/**/runs/**/*.csv
+docs/**/candidates/**/*.csv
+# Regenerable CDX metadata sidecars (0 tracked). The .cdx/.cnx binaries under
+# indexes/ are left VISIBLE on purpose: mixed 36 tracked / 75 untracked -- a
+# per-file call for a later pass.
+dottalkpp/data/indexes/**/*.cdx.meta
