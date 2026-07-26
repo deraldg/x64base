@@ -1,0 +1,9 @@
+field,meaning
+review_id,Stable DD-025 review row identifier for this run.
+change_kind,"ADDED, REMOVED, or CHANGED from DD-023."
+path,Repo-relative file path from DD-023.
+change_class,Broad class used to group review action.
+review_lane,Operational lane responsible for follow-up.
+severity,"HIGH, MEDIUM, or LOW review urgency."
+required_gates,Semicolon-delimited next gates before promotion.
+promotion_disposition,"Whether promotion is blocked, review-required, or triage-only."

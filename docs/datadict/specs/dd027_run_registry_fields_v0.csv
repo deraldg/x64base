@@ -1,0 +1,8 @@
+field,purpose
+baseline_id,Stable baseline identity
+accepted_by_run_id,DD-027 run id that created acceptance packet
+aggregate_fingerprint,Source fingerprint used as next comparison target
+scan_manifest,Accepted DD-022/DD-024 scan manifest
+diff_manifest,Clean DD-023 diff proof
+triage_manifest,Clean DD-026 triage proof
+next_comparison_target,Manifest path that future candidate runs compare against

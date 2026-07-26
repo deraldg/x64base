@@ -1,0 +1,165 @@
+From: member.ai.claude.cowork (Cowork/Anthropic)
+Date: 2026-07-25
+Baseline: 163cbefc24840492ee6828d809ef1a53573ffe6c  (branch: development)
+Lane: AIF-061 M1 -- memo durability ordering
+Status: PROPOSED. NOT COMPILED, NOT RUN. See TEST_PLAN.md.
+
+Design note on the sync mechanism
+---------------------------------
+The WAL (src/cli/table_state.cpp wal_durable_sync) syncs a std::FILE*, using
+_fileno/_get_osfhandle on Windows and ::fileno/::fsync on POSIX. MemoStore holds a
+std::fstream (include/memo/memostore.hpp:129), which does NOT portably expose an fd or
+HANDLE -- extracting one differs between libstdc++, libc++ and MSVC and is not standard.
+
+This patch therefore syncs BY PATH: flush the stream to the OS, then open the file
+separately and force the OS buffers down. MemoStore already stores _path
+(memostore.hpp:130), so no new state is needed. Portable, and it avoids depending on
+any standard-library internal.
+
+--- a/include/memo/memostore.hpp
++++ b/include/memo/memostore.hpp
+@@
+     MemoOpResult flush() override;
++
++    // Durable flush: stream flush (as flush()) PLUS a real OS-level sync, so the
++    // bytes are on stable storage and not merely handed to the OS.
++    //
++    // Required by COMMIT: the DBF write-ahead log fsyncs its COMMIT marker and the
++    // record it applies carries only the memo OBJECT ID. If the memo bytes are not
++    // durable before that marker, crash recovery can replay a record that references
++    // an object which was never persisted -- a dangling reference the WAL cannot
++    // detect, because from its view the transaction committed cleanly.
++    // See docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md (AIF-061).
++    MemoOpResult durable_flush();
+
+--- a/src/memo/memostore.cpp
++++ b/src/memo/memostore.cpp
+@@
+ #include <string>
+ #include <vector>
++#ifdef _WIN32
++  #include <windows.h>
++#else
++  #include <fcntl.h>
++  #include <unistd.h>
++#endif
+@@ MemoOpResult MemoStore::flush()
+     return ok_result();
+ }
++
++// Force the OS to push this file's buffers to stable storage.
++//
++// Synced BY PATH rather than via the stream: std::fstream does not portably expose an
++// fd/HANDLE. Mirrors the intent of wal_durable_sync() in src/cli/table_state.cpp,
++// which can use _fileno because the WAL is a std::FILE*.
++static bool memo_durable_sync_path_(const std::string& path)
++{
++    if (path.empty()) return false;
++#ifdef _WIN32
++    HANDLE h = ::CreateFileA(path.c_str(),
++                             GENERIC_READ | GENERIC_WRITE,
++                             FILE_SHARE_READ | FILE_SHARE_WRITE,
++                             nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
++    if (h == INVALID_HANDLE_VALUE) return false;
++    const BOOL ok = ::FlushFileBuffers(h);
++    ::CloseHandle(h);
++    return ok != 0;
++#else
++    const int fd = ::open(path.c_str(), O_RDWR);
++    if (fd < 0) return false;
++    const int rc = ::fsync(fd);
++    ::close(fd);
++    return rc == 0;
++#endif
++}
++
++MemoOpResult MemoStore::durable_flush()
++{
++    // Not open -> nothing to make durable. Consistent with flush().
++    if (!_fp.is_open()) return ok_result();
++
++    const MemoOpResult r = flush();          // header + stream flush to the OS
++    if (!r.ok) return r;
++
++    if (!memo_durable_sync_path_(_path)) {
++        return err_result("MemoStore: durable sync failed for " + _path);
++    }
++    return ok_result();
++}
+
+--- a/include/memo/memo_manager.hpp
++++ b/include/memo/memo_manager.hpp
+@@
+     bool flush(std::string* err = nullptr);
++
++    // Durable variant of flush(): see MemoStore::durable_flush(). Returns false (and
++    // sets err) if the backend cannot guarantee stable storage. COMMIT must treat a
++    // false return as a reason to ABORT BEFORE writing the WAL commit marker.
++    bool durable_flush(std::string* err = nullptr);
+
+--- a/src/memo/memo_manager.cpp
++++ b/src/memo/memo_manager.cpp
+@@ bool MemoManager::flush(std::string* err)
+     MemoOpResult r = backend_->flush();
+     ...
+ }
++
++bool MemoManager::durable_flush(std::string* err)
++{
++    if (!backend_) return true;                 // no backend attached: nothing to sync
++
++    // Only MemoStore implements a durable sync today. A backend that does not is a
++    // silent durability hole, so fall back to flush() and SAY SO rather than
++    // reporting success we cannot support.
++    if (auto* ms = dynamic_cast<dottalk::memo::MemoStore*>(backend_)) {
++        MemoOpResult r = ms->durable_flush();
++        if (!r.ok) { if (err) *err = r.error; return false; }
++        return true;
++    }
++
++    MemoOpResult r = backend_->flush();
++    if (!r.ok) { if (err) *err = r.error; return false; }
++    if (err) *err = "memo backend has no durable sync; flushed only (not crash-safe)";
++    return true;
++}
+
+--- a/src/cli/cmd_commit.cpp
++++ b/src/cli/cmd_commit.cpp
+@@
+     const auto pending_before = tb.changes;
+
++    // Memo bytes must be on STABLE STORAGE before the WAL declares this transaction
++    // committed. The buffered record carries only the memo object-id; if the WAL
++    // commit marker is durable and the memo bytes are not, crash recovery replays a
++    // record referencing an object that was never persisted -- silent dangling
++    // reference, undetectable by the log. Memo writes are EAGER (REPLACE ->
++    // build_x64_memo_stored_value -> update_text_id), so the content already exists
++    // here; only its durability is in question.
++    //
++    // Aborting here is safe and retryable: nothing has been applied and no commit
++    // marker written. This is strictly better than the previous ordering, where a
++    // memo flush failure was discovered AFTER the transaction was already durable.
++    if (auto* mm_pre = A.memoManagerPtr()) {
++        std::string memo_err;
++        if (!mm_pre->durable_flush(&memo_err)) {
++            dottalk::table::set_dirty(area0, true);
++            cli::cmdout::print_prefixed_message(
++                "COMMIT", dottalk::helpdata::MessageId::CommitMemoFlushFailedText,
++                {{"detail", memo_err.empty() ? std::string{}
++                                             : std::string(" (" + memo_err + ")")}});
++            return {CommitStatus::FinalizeFailure, 0, 1};
++        }
++    }
++
+     // Write-ahead: durably fsync the redo log + COMMIT marker BEFORE applying the
+     // buffered changes to the DBF. If the durable sync fails, abort the commit and
+     // keep the buffer intact (RamOnly mode returns true and is unaffected).
+     if (!dottalk::table::journal_begin_commit(area0)) {
+
+NOTE on the existing post-apply flush
+------------------------------------
+The current `mm->flush(&memo_err)` at cmd_commit.cpp:440 is deliberately LEFT IN PLACE.
+After this patch it is a cheap near-no-op (the store was just synced) but it still
+covers any memo write that occurs during apply_one_recno, and removing it would widen
+the diff into the error-handling path for no correctness gain. Removal can be
+considered separately once the ordering is proven.

@@ -1,0 +1,9 @@
+artifact,purpose,promotion_boundary
+dd026_triage_manifest.json,Run-level triage manifest and status,report-only
+DD026_TRIAGE_REPORT.md,Human-readable triage report for review meetings,report-only
+dd026_lane_triage.csv,Counts by review lane with high severity counts,report-only
+dd026_severity_triage.csv,Counts by HIGH/MEDIUM/LOW severity,report-only
+dd026_gate_triage.csv,Counts by required gate plus recommended action,report-only
+dd026_top_roots.csv,Top path roots producing review rows,report-only
+dd026_recommended_next_actions.csv,Prioritized action list derived from gate counts,report-only
+dd026_sample_review_rows.csv,High-priority sample rows for rapid inspection,report-only

@@ -1,0 +1,7 @@
+gate,required,blocks_acceptance,note
+scan status PASS,PASS,1,The selected DD-022/DD-024 scan must be green.
+scan source files present,>0,1,Plan-only runs cannot be accepted as source baselines.
+aggregate fingerprint present,non-empty,1,Future diffs need a stable fingerprint reference.
+diff status PASS,PASS with added/removed/changed zero,1,Stable A/B proof is expected.
+triage status PASS,PASS with zero review rows,1,Baseline should not carry unresolved review rows.
+boundary ledger green,all observed 0,1,DD-027 is report-only.

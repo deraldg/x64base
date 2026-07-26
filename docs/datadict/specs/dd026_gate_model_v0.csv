@@ -1,0 +1,6 @@
+gate,requirement
+DD025_INPUT_PRESENT,DD-025 manifest and classified review queue exist
+SUMMARY_ROWS_EMITTED,"Lane, severity, gate, root, and action summaries emitted"
+MARKDOWN_REPORT_EMITTED,Human-readable DD026_TRIAGE_REPORT.md emitted
+NO_PROMOTION,Tool remains report-only and promotion-blocked
+NO_RUNTIME_MUTATION,No DotTalk++ launch or DBF/CDX/LMDB write

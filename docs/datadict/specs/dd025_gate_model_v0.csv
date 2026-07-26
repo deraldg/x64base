@@ -1,0 +1,6 @@
+gate,requirement
+DD023_DIFF_REQUIRED,DD-025 input must be a DD-023 diff run directory or manifest.
+REPORT_ONLY,"DD-025 must not mutate source, HELP, META, CMDHELPCHK, DBF, CDX, LMDB, or catalog data."
+HIGH_SEVERITY_BLOCKS_PROMOTION,Any HIGH row blocks promotion until lane-specific review is accepted.
+SPECIALIZED_RESCAN,Changed lanes must be followed by the matching extractor/proof plan before promotion.
+HUMAN_DISPOSITION,Review queue rows require human disposition before final catalog/doc promotion.
