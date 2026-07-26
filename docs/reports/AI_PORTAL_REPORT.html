@@ -43,10 +43,10 @@ kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);bord
 <div class="band int">INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
 <h1>DotTalk++ AI Portal -- Lanes, Runs and Proofs</h1><div class="sub">Who worked what, what is proven, and where to pick the thread back up.</div>
 <div class="grid">
-<div class="kpi"><div class="n">11</div><div class="l">Tracked lanes</div></div>
+<div class="kpi"><div class="n">12</div><div class="l">Tracked lanes</div></div>
 <div class="kpi"><div class="n">4</div><div class="l">Recorded runs</div></div>
 <div class="kpi"><div class="n">11</div><div class="l">Runtime-observed proofs</div></div>
-<div class="kpi"><div class="n">10</div><div class="l">Source-defined proofs</div></div>
+<div class="kpi"><div class="n">11</div><div class="l">Source-defined proofs</div></div>
 </div><div class="note"><b>The portal front door, in order</b>
 <ol style="margin:7px 0 0">
 <li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
@@ -89,6 +89,9 @@ definition of done, house conventions, git hygiene.</li>
 <td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-059</code></td>
 <td class="small">Git-lock &quot;Hot Potato&quot; commit-coordination lane (design note)</td>
 <td><span class="pill warn">design-intended -- not started</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-060</code></td>
+<td class="small">Agency model + reports: name the capacity/accountability frame the system already implements</td>
+<td><span class="pill acc">source-defined</span></td>
 <td class="small"><code>AIPR-20260725-001</code></td></tr></table><div class="note w"><b>How to return to the last agent on a lane</b><br>
 <code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
 Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the session id
@@ -99,7 +102,7 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
 &middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
 </div>
-<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span> <span class="pill acc">AIF-060</span></div>
 <div class="small dim">project <code>project.ai_friendly</code>
 &middot; branch <code>development</code>
 &middot; started 2026-07-25
@@ -215,8 +218,11 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 <td class="small dim">Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not autho...</td></tr><tr><td><code>proof.contract.dottalk_file_fulltree</code><br>
 <span class="small">@dottalk.file universal contract - full-tree backfill at 100% coverage</span></td>
 <td><span class="pill ok">runtime_observed</span></td>
-<td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr></table>
-<div class="foot">Generated 2026-07-26 02:15 UTC from live DotTalk++ state
+<td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr><tr><td><code>proof.agency.model</code><br>
+<span class="small">Agency model -- capacity to act plus accountability for having acted</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE-&gt;SYSROLEPERM-&gt;SYSPERM), authentication (Arg...</td></tr></table>
+<div class="foot">Generated 2026-07-26 02:53 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>

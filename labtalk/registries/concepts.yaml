@@ -82,3 +82,33 @@ concepts:
   - id: concept.database.durability
     label: Durability
     edref: TESTING
+
+  # --- Agency (AIF-060). The frame that makes permissions make sense: capacity to
+  # act PLUS accountability for having acted. See docs/ai-friendly/AGENCY_MODEL_V1.md
+  - id: concept.agency
+    label: Agency
+    edref: MODEL
+  - id: concept.agency.identity
+    label: Identity (who is acting)
+    edref: MODEL
+  - id: concept.agency.authority
+    label: Authority (what they may do)
+    edref: MODEL
+  - id: concept.agency.authentication
+    label: Authentication (proof of identity)
+    edref: TESTING
+  - id: concept.agency.accountability
+    label: Accountability (who answers for it)
+    edref: MODEL
+  - id: concept.agency.capability_vs_agency
+    label: Capability is not Agency
+    edref: MODEL
+  - id: concept.agency.influence_vs_authority
+    label: Influence is not Authority
+    edref: MODEL
+  - id: concept.agency.delegation
+    label: Delegation without Surrender
+    edref: RELATION
+  - id: concept.agency.serialization
+    label: Serializing Shared Agency
+    edref: STATE

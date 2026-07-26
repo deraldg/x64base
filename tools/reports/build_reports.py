@@ -276,6 +276,61 @@ for b in B['SYSBOARD']:
 <td><span class="pill">{e(need or '(none)')}</span></td><td class="small">{lst}</td></tr>"""
 who_tbl=f"""<table><tr><th>Board</th><th>Requires</th><th>Who may post</th></tr>{wrows}</table>"""
 
+# --- agency view: the four legs, per member -----------------------------------
+AGENCY_LEGS = """<div class="note"><b>Agency = capacity to act + accountability for having acted</b>
+<div class="small" style="margin-top:6px">Four legs. Remove one and it is not agency.
+See <code>docs/ai-friendly/AGENCY_MODEL_V1.md</code>.</div>
+<table style="margin-top:9px"><tr><th>Leg</th><th>Question</th><th>Represented by</th></tr>
+<tr><td><b>Identity</b></td><td>Who is acting?</td><td><code>SYSMEMBER</code></td></tr>
+<tr><td><b>Authority</b></td><td>What may they do?</td>
+<td><code>SYSMEMROLE -&gt; SYSROLEPERM -&gt; SYSPERM</code></td></tr>
+<tr><td><b>Authentication</b></td><td>Can they prove it?</td><td>Argon2id token, <code>AUTH</code></td></tr>
+<tr><td><b>Accountability</b></td><td>Who answers for it?</td>
+<td><code>owner</code>/<code>committer</code> in <code>ai_runs.yaml</code></td></tr></table>
+<div class="small dim" style="margin-top:9px"><b>Not agency:</b> the local Ollama model has
+<i>capability</i> but no member row, no token, no permission -- a service, not an actor
+(its absence from this table is correct, not an omission). A hosted advisor has
+<i>influence</i> but no authority.</div></div>"""
+
+def agency_rows():
+    out = ""
+    for m in I['SYSMEMBER']:
+        u = usr.get(m['USERID'], {})
+        perms = sorted({p for r in mrole.get(m['ID'], []) for p in rperm.get(r, []) if p})
+        rl = [role.get(r, {}).get('RKEY', '') for r in mrole.get(m['ID'], [])]
+        owner_class = (m['MKEY'] == 'member.derald')
+        auth = 'token set' if u.get('CRED') else 'no token'
+        acct = 'self (owner)' if owner_class else 'member.derald'
+        if owner_class:       lvl, lcls = 'full', 'acc'
+        elif len(perms) <= 1: lvl, lcls = 'minimal (designed floor)', 'warn'
+        else:                 lvl, lcls = 'bounded', 'ok'
+        out += f"""<tr><td><code>{e(m['MKEY'])}</code><br>
+<span class="dim small">{e(u.get('DISPLAY',''))} &middot; {KIND_M.get(m['KIND'],'')}</span></td>
+<td class="small">{' '.join('<code>'+e(x)+'</code>' for x in rl)}</td>
+<td style="text-align:right">{len(perms)}</td>
+<td><span class="pill {'ok' if u.get('CRED') else ''}">{auth}</span></td>
+<td class="small"><code>{acct}</code></td>
+<td><span class="pill {lcls}">{lvl}</span></td></tr>"""
+    out += """<tr><td><code class="dim">(Ollama, local)</code><br>
+<span class="dim small">no member row -- correct, not an omission</span></td>
+<td class="dim small">--</td><td style="text-align:right" class="dim">--</td>
+<td><span class="pill">cannot authenticate</span></td><td class="dim small">--</td>
+<td><span class="pill bad">none -- capability only</span></td></tr>
+<tr><td><code class="dim">(GPTbase, hosted)</code><br>
+<span class="dim small">advisory front-end</span></td>
+<td class="dim small">--</td><td style="text-align:right" class="dim">--</td>
+<td><span class="pill">cannot authenticate</span></td><td class="dim small">--</td>
+<td><span class="pill bad">none -- influence only</span></td></tr>"""
+    return out
+
+agency_tbl = f"""<table><tr><th>Actor</th><th>Roles</th>
+<th style="text-align:right">Permissions</th><th>Authentication</th>
+<th>Accountable party</th><th>Agency</th></tr>{agency_rows()}</table>
+<div class="small dim" style="margin-top:8px"><b>Reading the owner row:</b> <code>member.derald</code>
+shows no BBS token yet holds full agency -- not a contradiction. The owner acts at the local console as
+the <i>acting member</i>, so the authentication leg is the machine session, not a socket token. Tokens
+exist for actors reaching the server <i>over the wire</i>. The four legs still all hold.</div>"""
+
 sec="""<div class="note w"><b>Security invariants in force</b>
 <ul>
 <li>Server binds <b>127.0.0.1 only</b>. Nothing is reachable from the network.</li>
@@ -304,6 +359,7 @@ r2=page("DotTalk++ BBS -- Access and Identity",
 <div class="kpi"><div class="n">{len([u for u in I['SYSUSER'] if u['CRED']])}</div><div class="l">Tokens issued</div></div>
 </div>"""
         + sec
+        + "<h2>Agency -- who may act, and who answers for it</h2>" + AGENCY_LEGS + agency_tbl
         + "<h2>Members</h2>" + mem_tbl
         + "<h2>Who may post where</h2>" + who_tbl
         + "<h2>Roles and their permissions</h2>" + role_tbl

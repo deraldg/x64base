@@ -20,6 +20,8 @@ do the work.** They have member rows and identities.
 
 ## 2. Local brain -- Ollama (AFB isolated)
 
+*Credit: **Nathaniel A. Strickland** -- the Ollama local model. See `CREDITS.md`.*
+
 **Not a member; no identity row** (that is correct, not an omission). It is the CHAT backend:
 `BBS CHAT` -> `127.0.0.1:11434`, gated by `chat.invoke`, and -- the whole point of the AFB air-gap --
 it answers **while egress is Blocked** (loopback exempt).
@@ -34,6 +36,8 @@ loop that reads boards, prompts the model, posts back) -- which does not exist, 
 the M4.1 concurrency / duplex work. The raw model is a service, not an agent.
 
 ## 3. Hosted advisor -- GPTbase (OpenAI Custom GPT)
+
+*Credit: **Nathaniel A. Strickland** -- GPTbase. See `CREDITS.md`.*
 
 **Not a member; cannot touch the repo.** A hosted GPT loaded with a curated x64base knowledge bundle
 (~20 files). Role: the **"ask the project expert" front-end** -- orientation, explain a subsystem,

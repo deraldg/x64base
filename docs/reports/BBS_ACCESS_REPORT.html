@@ -55,7 +55,71 @@ kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);bord
 <code>host.network.egress</code>. They read, propose, and post; they do not change source or reach the network.</li>
 <li><code>member.derald</code> is the only owner-class identity and the sole committer.</li>
 <li><code>member.guest</code> may post to the guestbook and <b>nothing else</b> -- it cannot even read.</li>
-</ul></div><h2>Members</h2><table><tr><th>Member</th><th>Kind</th><th>Roles</th><th>BBS / chat</th>
+</ul></div><h2>Agency -- who may act, and who answers for it</h2><div class="note"><b>Agency = capacity to act + accountability for having acted</b>
+<div class="small" style="margin-top:6px">Four legs. Remove one and it is not agency.
+See <code>docs/ai-friendly/AGENCY_MODEL_V1.md</code>.</div>
+<table style="margin-top:9px"><tr><th>Leg</th><th>Question</th><th>Represented by</th></tr>
+<tr><td><b>Identity</b></td><td>Who is acting?</td><td><code>SYSMEMBER</code></td></tr>
+<tr><td><b>Authority</b></td><td>What may they do?</td>
+<td><code>SYSMEMROLE -&gt; SYSROLEPERM -&gt; SYSPERM</code></td></tr>
+<tr><td><b>Authentication</b></td><td>Can they prove it?</td><td>Argon2id token, <code>AUTH</code></td></tr>
+<tr><td><b>Accountability</b></td><td>Who answers for it?</td>
+<td><code>owner</code>/<code>committer</code> in <code>ai_runs.yaml</code></td></tr></table>
+<div class="small dim" style="margin-top:9px"><b>Not agency:</b> the local Ollama model has
+<i>capability</i> but no member row, no token, no permission -- a service, not an actor
+(its absence from this table is correct, not an omission). A hosted advisor has
+<i>influence</i> but no authority.</div></div><table><tr><th>Actor</th><th>Roles</th>
+<th style="text-align:right">Permissions</th><th>Authentication</th>
+<th>Accountable party</th><th>Agency</th></tr><tr><td><code>member.derald</code><br>
+<span class="dim small">Derald Grimwood &middot; Human</span></td>
+<td class="small"><code>role.maintainer</code></td>
+<td style="text-align:right">18</td>
+<td><span class="pill ">no token</span></td>
+<td class="small"><code>self (owner)</code></td>
+<td><span class="pill acc">full</span></td></tr><tr><td><code>member.ai.claude.cowork</code><br>
+<span class="dim small">Claude (Cowork) &middot; AI</span></td>
+<td class="small"><code>role.ai_partner</code></td>
+<td style="text-align:right">6</td>
+<td><span class="pill ">no token</span></td>
+<td class="small"><code>member.derald</code></td>
+<td><span class="pill ok">bounded</span></td></tr><tr><td><code>member.ai.codex.local</code><br>
+<span class="dim small">Codex (local) &middot; AI</span></td>
+<td class="small"><code>role.ai_partner</code></td>
+<td style="text-align:right">6</td>
+<td><span class="pill ">no token</span></td>
+<td class="small"><code>member.derald</code></td>
+<td><span class="pill ok">bounded</span></td></tr><tr><td><code>member.public</code><br>
+<span class="dim small">Public &middot; Human</span></td>
+<td class="small"><code>role.student</code></td>
+<td style="text-align:right">2</td>
+<td><span class="pill ">no token</span></td>
+<td class="small"><code>member.derald</code></td>
+<td><span class="pill ok">bounded</span></td></tr><tr><td><code>member.ai.grok.xai</code><br>
+<span class="dim small">Grok (xAI) &middot; AI</span></td>
+<td class="small"><code>role.ai_partner</code></td>
+<td style="text-align:right">6</td>
+<td><span class="pill ok">token set</span></td>
+<td class="small"><code>member.derald</code></td>
+<td><span class="pill ok">bounded</span></td></tr><tr><td><code>member.guest</code><br>
+<span class="dim small">Guest &middot; External</span></td>
+<td class="small"><code>role.guest</code></td>
+<td style="text-align:right">1</td>
+<td><span class="pill ok">token set</span></td>
+<td class="small"><code>member.derald</code></td>
+<td><span class="pill warn">minimal (designed floor)</span></td></tr><tr><td><code class="dim">(Ollama, local)</code><br>
+<span class="dim small">no member row -- correct, not an omission</span></td>
+<td class="dim small">--</td><td style="text-align:right" class="dim">--</td>
+<td><span class="pill">cannot authenticate</span></td><td class="dim small">--</td>
+<td><span class="pill bad">none -- capability only</span></td></tr>
+<tr><td><code class="dim">(GPTbase, hosted)</code><br>
+<span class="dim small">advisory front-end</span></td>
+<td class="dim small">--</td><td style="text-align:right" class="dim">--</td>
+<td><span class="pill">cannot authenticate</span></td><td class="dim small">--</td>
+<td><span class="pill bad">none -- influence only</span></td></tr></table>
+<div class="small dim" style="margin-top:8px"><b>Reading the owner row:</b> <code>member.derald</code>
+shows no BBS token yet holds full agency -- not a contradiction. The owner acts at the local console as
+the <i>acting member</i>, so the authentication leg is the machine session, not a socket token. Tokens
+exist for actors reaching the server <i>over the wire</i>. The four legs still all hold.</div><h2>Members</h2><table><tr><th>Member</th><th>Kind</th><th>Roles</th><th>BBS / chat</th>
 <th>High-risk</th><th>Credential</th><th style="text-align:right">Posts</th></tr><tr>
 <td><code>member.derald</code><br><span class="dim small">Derald Grimwood</span></td>
 <td><span class="pill acc">Human</span></td>
@@ -139,7 +203,7 @@ CHAT &lt;text&gt;                                     &lt;- needs chat.invoke; b
 QUIT</pre>
 <div class="small dim" style="margin-top:8px">Mint a token with <code>USER TOKEN &lt;member&gt;</code> in the shell (owner only).
 Idle connections drop after 120s (<code>DOTTALK_BBS_IDLE_TIMEOUT_SEC</code>) so one stuck client cannot wedge the simplex loop.</div></div>
-<div class="foot">Generated 2026-07-26 02:15 UTC from live DotTalk++ state
+<div class="foot">Generated 2026-07-26 02:53 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>

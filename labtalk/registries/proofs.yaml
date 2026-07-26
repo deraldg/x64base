@@ -249,3 +249,27 @@ proofs:
       directory-level `git add -- src include` swept ~111 untracked scratch files into 6f86c8aed;
       repaired by reset + `git add -u` + force-push (3706da78c, 1035 files clean), the 111 restored to
       disk, and the scratch categories gitignored. main never touched.
+
+  # --- Agency model (AIF-060) ---
+  - id: proof.agency.model
+    label: Agency model -- capacity to act plus accountability for having acted
+    state: source_defined
+    source: D:/code/ccode/docs/ai-friendly/AGENCY_MODEL_V1.md
+    related:
+      - D:/code/ccode/labtalk/lessons/student/agency_who_may_act_v0.md
+      - D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
+      - D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+    notes: >-
+      Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop
+      reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority
+      (SYSMEMROLE->SYSROLEPERM->SYSPERM), authentication (Argon2id token / AUTH), accountability
+      (owner/committer in ai_runs.yaml). Exclusions carry the weight: capability is not agency
+      (Ollama produces work, has no member row -- its absence is correct, not an omission);
+      influence is not authority (ChatGPT planned the RBAC, member.derald committed it -- the
+      attribution block exists because git records one name where the truth had three); access is
+      not agency. Properties: bounded, enumerable, proven-not-claimed, delegated-never-surrendered,
+      serialized when shared, time-bounded, transferable by artifact not memory, asymmetric by
+      design (agents deliver, owner commits). Underlying leg-level behavior IS runtime_observed
+      (proof.bbs.m2_net_egress = boundary refusal; proof.bbs.guest = designed minimal agency); the
+      MODEL itself is source_defined. Declared gaps: no per-session identity, no token expiry, git
+      agency serialized by convention not mechanism (AIF-059), no durable Decision audit trail.

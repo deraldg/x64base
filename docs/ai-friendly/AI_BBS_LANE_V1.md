@@ -1,5 +1,7 @@
 # AI-BBS / Pseudo-Chat Agent Server -- Lane V1
 
+*Origin credit: **Nathaniel L. Grimwood** -- the chat idea this lane grew from. See `CREDITS.md`.*
+
 **Status:** built + runtime-observed in `development`; standalone daemon (M6) live; not promoted to public/mirror.
 **Owning project:** `project.ai_friendly` (+ `project.x64base.identity`).
 **Baseline:** `development` @ `dfa8c136…` (wired directly into ccode at maintainer direction; tree dirty).
