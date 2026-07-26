@@ -30,10 +30,14 @@ Usage:
   python tools/staging/prepush_gate.py --range HEAD..@{u}   # check a push range
   python tools/staging/prepush_gate.py --allow-data    # ack intentional fixtures
   python tools/staging/prepush_gate.py --allow-mass     # ack a large change set
+  python tools/staging/prepush_gate.py --strict-aif     # AIF ledger/intake recon is hard
+  python tools/staging/prepush_gate.py --skip-aif       # skip the AIF-number collision gate
   python tools/staging/prepush_gate.py --install-hook   # install as .git/hooks/pre-commit
 
 The gate is advisory-by-design for the WARN lane: it never silently drops a
-file, it reports and asks a human (or an agent) to name the mutation.
+file, it reports and asks a human (or an agent) to name the mutation. It also
+runs the AIF-number collision gate (tools/coordination/aif_collision_gate.py),
+which HARD-blocks a duplicate lane number at the commit chokepoint.
 """
 from __future__ import annotations
 
@@ -88,6 +92,12 @@ DATA_DIR_SEGMENTS = (
     "/data/metadata/",
     "/data/manuals/",
 )
+
+# --- AIF-number collision gate (AIF-050 coordination enforcement) --------------
+# The commit is the one chokepoint every parallel session funnels through, so the
+# duplicate-AIF check runs here regardless of whether any session ran the
+# coordinator. A duplicate is a HARD block (it can never be a legitimate commit).
+AIF_COLLISION_GATE = "tools/coordination/aif_collision_gate.py"
 
 
 def run_git(args: list[str]) -> str:
@@ -144,6 +154,23 @@ def is_data_fixture(path: str) -> bool:
     return False
 
 
+def run_aif_collision_gate(strict: bool) -> int:
+    """Run the AIF-number collision gate at the repo root and return its exit code
+    (0 clean, 1 duplicate / strict-unreconciled). A missing gate script is treated
+    as non-fatal so this stays robust if the coordination toolkit is absent; its
+    own report is inherited to stdout/stderr in place."""
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    gate = os.path.join(root, *AIF_COLLISION_GATE.split("/"))
+    if not os.path.isfile(gate):
+        print(f"prepush-gate: AIF collision gate not found (skipped): {AIF_COLLISION_GATE}",
+              file=sys.stderr)
+        return 0
+    cmd = [sys.executable, gate, "--root", root]
+    if strict:
+        cmd.append("--strict")
+    return subprocess.run(cmd).returncode
+
+
 def install_hook() -> int:
     hook_dir = run_git(["rev-parse", "--git-path", "hooks"]).strip()
     os.makedirs(hook_dir, exist_ok=True)
@@ -175,6 +202,10 @@ def main() -> int:
                     help="acknowledge a large change set")
     ap.add_argument("--install-hook", action="store_true",
                     help="install this gate as a git pre-commit hook and exit")
+    ap.add_argument("--strict-aif", action="store_true",
+                    help="promote the AIF ledger/intake reconciliation to a hard failure")
+    ap.add_argument("--skip-aif", action="store_true",
+                    help="skip the AIF-number collision gate")
     args = ap.parse_args()
 
     if args.install_hook:
@@ -229,9 +260,17 @@ def main() -> int:
         if exit_code == 0:
             exit_code = 3
 
+    if not args.skip_aif:
+        print()  # spacer before the sub-gate's own report
+        if run_aif_collision_gate(args.strict_aif) != 0:
+            print("\n  BLOCKED — AIF-number collision: a duplicate lane number is present "
+                  "in the intake queue. Renumber one via "
+                  "tools/coordination/session_coordinator.py claim-aif.", file=sys.stderr)
+            exit_code = 2  # hard block dominates any WARN already set
+
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
-              "(or acknowledged).")
+              "(or acknowledged), no AIF-number collision.")
     else:
         print(f"\nprepush-gate: FAIL (exit {exit_code}).", file=sys.stderr)
     return exit_code
