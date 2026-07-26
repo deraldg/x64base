@@ -212,6 +212,43 @@ sections:
     description: Proof states and current proof records.
     registry: registries/proofs.yaml
 
+  - id: portal.reports
+    label: Reports
+    description: >-
+      Human-readable HTML views generated from LIVE state (BBS DBF tables + the
+      ai_runs/proofs registries). Read-only and lock-free; regenerate any time with
+      tools/reports/build_reports.py. Start at the index.
+    items:
+      - id: report.index
+        label: Reports Index (start here)
+        kind: html
+        path: ../docs/reports/index.html
+        status: generated
+        sensitivity: internal
+      - id: report.ai_portal
+        label: AI Portal -- Lanes, Runs and Proofs
+        kind: html
+        path: ../docs/reports/AI_PORTAL_REPORT.html
+        status: generated
+        sensitivity: internal          # publishable after review; see PUBLICATION note
+      - id: report.bbs_boards
+        label: BBS -- Boards and Traffic
+        kind: html
+        path: ../docs/reports/BBS_BOARDS_REPORT.html
+        status: generated
+        sensitivity: internal          # contains post bodies; review before any publish
+      - id: report.bbs_access
+        label: BBS -- Access and Identity
+        kind: html
+        path: ../docs/reports/BBS_ACCESS_REPORT.html
+        status: generated
+        sensitivity: private           # DO NOT PUBLISH -- auth-surface map (member keys,
+                                       # permission matrix, port + protocol). Internal only.
+    generator: ../tools/reports/build_reports.py
+    publication_note: >-
+      Sensitivity is per item, not per section. `private` items must never reach
+      x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md.
+
   - id: portal.diagrams
     label: Diagrams
     description: Local Draw.io and Mermaid diagrams for LabTalk and DotTalk++ lanes.

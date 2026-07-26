@@ -129,13 +129,29 @@ border:1px solid var(--line);background:#1d262f;color:var(--dim)}
 ul{margin:7px 0;padding-left:20px}li{margin:3px 0}
 a{color:var(--acc)}
 .foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+.band{border-radius:7px;padding:9px 14px;margin:0 0 18px;font-size:12.5px;font-weight:600;
+letter-spacing:.3px}
+.band.priv{background:#3a1d1d;border:1px solid #6b2f2f;color:#ffb3b3}
+.band.int{background:#1d2a33;border:1px solid #2e4a5c;color:#9fd0ea}
 kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
 """
 
-def page(title, sub, body):
+BANDS = {
+ 'private': ('band priv',
+   'PRIVATE -- DO NOT PUBLISH. Authentication-surface map (member keys, permission '
+   'matrix, port and protocol). Internal use only. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md'),
+ 'internal': ('band int',
+   'INTERNAL -- review before any publication to x64base.com or public main. '
+   'See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md'),
+}
+
+def page(title, sub, body, sensitivity='internal'):
+    cls, msg = BANDS.get(sensitivity, BANDS['internal'])
+    band = f'<div class="{cls}">{e(msg)}</div>'
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{e(title)}</title>
 <style>{CSS}</style></head><body><div class="wrap">
+{band}
 <h1>{e(title)}</h1><div class="sub">{sub}</div>
 {body}
 <div class="foot">Generated {NOW} from live DotTalk++ state
@@ -291,7 +307,8 @@ r2=page("DotTalk++ BBS -- Access and Identity",
         + "<h2>Members</h2>" + mem_tbl
         + "<h2>Who may post where</h2>" + who_tbl
         + "<h2>Roles and their permissions</h2>" + role_tbl
-        + "<h2>Connecting</h2>" + conn)
+        + "<h2>Connecting</h2>" + conn,
+        sensitivity='private')
 (OUT/'BBS_ACCESS_REPORT.html').write_text(r2,encoding='utf-8')
 print("wrote BBS_ACCESS_REPORT.html")
 
@@ -416,15 +433,18 @@ idx=page("DotTalk++ Reports",
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
 each recorded run with its owner/committer/author split, and the full proof ledger.
-Answers: <i>what has been worked, what is actually proven, and where do I pick it back up?</i></div></div>
+Answers: <i>what has been worked, what is actually proven, and where do I pick it back up?</i></div>
+<div style="margin-top:8px"><span class="pill ok">publication candidate -- after review</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="BBS_BOARDS_REPORT.html">BBS -- Boards and Traffic</a></h3>
 <div class="dim small">All six rooms, their post permissions, and every post ever made, rendered by board
-with handoff posts pretty-printed. Answers: <i>what is on the board right now?</i></div></div>
+with handoff posts pretty-printed. Answers: <i>what is on the board right now?</i></div>
+<div style="margin-top:8px"><span class="pill warn">selective -- exclude board.worklog</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="BBS_ACCESS_REPORT.html">BBS -- Access and Identity</a></h3>
 <div class="dim small">Members, roles, the full permission matrix, who may post to which room,
-and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div></div>
+and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div>
+<div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
 
 <div class="note"><b>Regenerate</b><br>
 <pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>

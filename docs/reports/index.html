@@ -34,8 +34,13 @@ border:1px solid var(--line);background:#1d262f;color:var(--dim)}
 ul{margin:7px 0;padding-left:20px}li{margin:3px 0}
 a{color:var(--acc)}
 .foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+.band{border-radius:7px;padding:9px 14px;margin:0 0 18px;font-size:12.5px;font-weight:600;
+letter-spacing:.3px}
+.band.priv{background:#3a1d1d;border:1px solid #6b2f2f;color:#ffb3b3}
+.band.int{background:#1d2a33;border:1px solid #2e4a5c;color:#9fd0ea}
 kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
 </style></head><body><div class="wrap">
+<div class="band int">INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
 <h1>DotTalk++ Reports</h1><div class="sub">Human-readable views over live project state. Regenerate any time.</div>
 <div class="grid">
 <div class="kpi"><div class="n">6</div><div class="l">BBS boards</div></div>
@@ -47,21 +52,24 @@ kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);bord
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
 each recorded run with its owner/committer/author split, and the full proof ledger.
-Answers: <i>what has been worked, what is actually proven, and where do I pick it back up?</i></div></div>
+Answers: <i>what has been worked, what is actually proven, and where do I pick it back up?</i></div>
+<div style="margin-top:8px"><span class="pill ok">publication candidate -- after review</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="BBS_BOARDS_REPORT.html">BBS -- Boards and Traffic</a></h3>
 <div class="dim small">All six rooms, their post permissions, and every post ever made, rendered by board
-with handoff posts pretty-printed. Answers: <i>what is on the board right now?</i></div></div>
+with handoff posts pretty-printed. Answers: <i>what is on the board right now?</i></div>
+<div style="margin-top:8px"><span class="pill warn">selective -- exclude board.worklog</span></div></div>
 
 <div class="card"><h3 style="margin-top:0"><a href="BBS_ACCESS_REPORT.html">BBS -- Access and Identity</a></h3>
 <div class="dim small">Members, roles, the full permission matrix, who may post to which room,
-and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div></div>
+and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div>
+<div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
 
 <div class="note"><b>Regenerate</b><br>
 <pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>
 <div class="small dim" style="margin-top:7px">Reads the DBF tables and YAML registries directly. Read-only --
 it never writes to the store, so it is safe to run while the daemon is up.</div></div>
-<div class="foot">Generated 2026-07-26 02:02 UTC from live DotTalk++ state
+<div class="foot">Generated 2026-07-26 02:15 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>
