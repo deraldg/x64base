@@ -1,0 +1,52 @@
+PROOF=DOTSCRIPT_COMMENT_PREFIX_PATH_DRIFT_V1
+EXECUTABLE=D:\code\ccode\build\src\Release\dottalkpp.exe
+EXECUTABLE_SHA256=4C289AF9A0779863CAD26EC00FCD5D3F8E8E32269BF40763D8ACC0A1E9D31B84
+=== PATH A: top-level executable --script ===
+[32mINIT: Paths
+  BIN        : D:\code\ccode\build\src\Release
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: no .ini file found in D:\code\ccode\build\src\Release
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. Unknown command: ;
+. ; SEMICOLON_COMMENT_BODY_RAN
+. SHUTDOWN: no shutdown.ini found in D:\code\ccode\build\src\Release
+PATH_A_EXIT_CODE=0
+=== PATH B: DOTSCRIPT command via top-level driver ===
+[32mINIT: Paths
+  BIN        : D:\code\ccode\build\src\Release
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: no .ini file found in D:\code\ccode\build\src\Release
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. ; SEMICOLON_COMMENT_BODY_RAN
+. SHUTDOWN: no shutdown.ini found in D:\code\ccode\build\src\Release
+PATH_B_EXIT_CODE=0

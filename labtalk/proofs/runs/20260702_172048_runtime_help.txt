@@ -1,0 +1,75 @@
+LabTalk proof transcript
+timestamp: 20260702_172048
+item_id: runtime.help
+label: HELP
+kind: dottalk_command
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\tmp\runtime_help.dts
+return_code: 0
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta-0  (Jul 01 2026 11:44:47)
+DotTalk++ build Jul 01 2026 11:44:47
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. DotTalk++ Help System
+
+  HELP GIANT            - full command catalog
+  HELP BETA             - beta checklist
+  HELP PS / PSHELL      - PowerShell helpers
+  HELP SQL              - SQL reference (SQLite + MSSQL)
+  HELP PREDICATES       - COUNT/LOCATE syntax
+  HELP FUNCTION <name>  - expression function help
+  HELP FUNCTIONS        - list documented expression functions
+  HELP /FOX <topic>     - FoxPro compatibility reference
+  HELP /DOT <topic>     - DotTalk-native command reference
+  HELP /ED <topic>      - educational/system concepts
+  HELP <command>        - default topic lookup
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+

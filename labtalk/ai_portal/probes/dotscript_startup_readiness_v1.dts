@@ -1,0 +1,20 @@
+* Status: ACTIVE_READINESS_PROBE
+* Safety: REPORT_ONLY
+* Purpose: Prove that the current runtime exposes the DotTalk++ and DotScript startup learning surfaces.
+* Inputs: current compiled DotTalk++ runtime and its HELP/CMDHELP/DOTREF evidence
+* Outputs: console or LabTalk portal proof transcript
+* Mutation: none intended
+* Fixture: none
+* Gate: review transcript before declaring ORIENTED
+
+ECHO AI_DOTSCRIPT_READINESS_BEGIN
+MAINT AI ASSIMILATE
+DOTSCRIPT USAGE
+CMDHELP DOTSCRIPT
+DOTHELP DOTSCRIPT
+CMDHELP DO
+CMDHELP ECHO
+CMDHELP SMARTLIST
+CMDHELPCHK USAGE
+ECHO AI_DOTSCRIPT_READINESS_END
+QUIT

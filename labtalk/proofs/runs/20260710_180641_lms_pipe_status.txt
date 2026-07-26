@@ -1,0 +1,22 @@
+LabTalk proof transcript
+timestamp: 20260710_180641
+item_id: lms.pipe.status
+label: Check LMS Pipe Status
+kind: python_tool
+command_line: python D:\code\ccode\labtalk\..\src\labtalk\lms\cli.py --queue lms/queue/outbox --provider moodle status
+return_code: 0
+
+STDOUT
+======
+{
+  "provider_candidate": "moodle",
+  "transport": "reserved",
+  "live_delivery": false,
+  "queue_path": "D:\\code\\ccode\\labtalk\\lms\\queue\\outbox",
+  "queued_messages": 0,
+  "schema_version": "labtalk.lms.message.v1"
+}
+
+STDERR
+======
+

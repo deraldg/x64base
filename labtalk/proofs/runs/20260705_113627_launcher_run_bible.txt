@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_113627
+item_id: launcher.run_bible
+label: run-bible.ps1
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\run-bible.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\run-bible.ps1
+
+STDERR
+======
+

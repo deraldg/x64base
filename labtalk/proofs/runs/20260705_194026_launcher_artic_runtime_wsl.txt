@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_194026
+item_id: launcher.artic_runtime_wsl
+label: Artic Runtime Alias (WSL)
+kind: wsl_launcher
+command_line: wsl.exe -e bash -lc cd /mnt/d/code/ccode && /mnt/d/code/ccode/artic.datarun.sh
+return_code: 0
+
+STDOUT
+======
+Launched external WSL process for launcher.artic_runtime_wsl
+
+STDERR
+======
+

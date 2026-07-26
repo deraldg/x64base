@@ -1,0 +1,20 @@
+metric,count,note
+mdo_225_confirmed_green,1,MDO-225 schema plan status and summary were present before MDO-226 execution.
+mdo_226_build_dry_run_created,1,Build/rebuild dry-run command executed.
+selected_assembly_section_files,25,Sections included from the selected assembly workspace.
+media_files,19,Media inventory count observed.
+appendix_files,13,Appendix inventory count observed.
+machine_manifest_files,5,JSON machine manifest count observed.
+harvest_required_files,14,Required HELP/META evidence contracts attached to this dry run.
+harvest_present_files,14,Present HELP/META evidence contracts attached by hash.
+dry_run_combined_markdown_created,1,docs/manuals/developer/manualgen/generated/manualgen_build_dry_runs/MANRUN-20260723T040648Z-B182D27D/developer_manual_build_dry_run.md
+selected_assembly_combined_exists,1,docs/manuals/developer/manualgen/published/developer_manual_publication_v1_media_section_v1/developer_manual_publication_v1_media_section_v1.md
+dry_run_hash_matches_current_combined,0,0 is REVIEW unless exact dry-run assembly is expected to match byte-for-byte.
+validation_fail_rows,0,Validation FAIL rows from current inventory.
+validation_review_rows,0,Validation REVIEW rows from current inventory.
+boundary_fail_rows,0,Boundary FAIL rows.
+manual_publication_rebuilt,0,MDO-226 does not rebuild or replace publication.
+published_workspace_mutated,0,Published workspaces are not modified.
+x64base_tables_created,0,MDO-226 does not create x64base tables.
+cpp_files_created,0,MDO-226 does not create C++ files.
+help_meta_cmdhelpchk_mutations,0,No protected-system mutation performed.

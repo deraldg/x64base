@@ -1,0 +1,13 @@
+* Status: CANDIDATE / REVIEW_BEFORE_EXECUTION
+* Safety: REPORT_ONLY
+* Purpose: Prove the native MAINT AI surface reports the current Alpha AI Portal boundary and entry paths.
+* Inputs: compiled DotTalk++ MAINT command and repo-local AI Portal files
+* Outputs: captured portal transcript
+* Mutation: none
+* Fixture: none required
+* Gate: contract preflight and reviewed source build required before execution
+ECHO AI_PORTAL_MAINT_READBACK_BEGIN
+MAINT AI STATUS
+MAINT AI DASHBOARD
+MAINT AI ASSIMILATE
+ECHO AI_PORTAL_MAINT_READBACK_END

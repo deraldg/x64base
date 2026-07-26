@@ -1,0 +1,1230 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\build\src\Release
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: no .ini file found in D:\code\ccode\build\src\Release
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. REGRESSION: running LANGUAGE
+  Script: canaries\language_shakedown_canary.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\canaries\language_shakedown_canary.dts
+Echo is ON
+=== LANGUAGE SHAKEDOWN CANARY ===
+Message catalog provider status:
+  mode: active_dbf
+  active catalog present: Yes
+  active catalog loaded: Yes
+  message count: 1006
+  text row count: 1270
+  active dbf dir: D:/code/ccode/dottalkpp/data/messaging
+  active indexes dir: D:/code/ccode/dottalkpp/data/indexes/messaging
+  active lmdb dir: D:/code/ccode/dottalkpp/data/lmdb/messaging
+  detail: active Messaging DBF rows loaded; compiled fallback available
+  boundary: read-only status/load; no DBF/CDX/LMDB mutation; no runtime writeback
+Message catalog validation: green
+  messages: 1323
+  text rows: 2599
+  locales: de, en-US, es, fr, it
+  issues: 0
+  boundary: report-only; no DBF, HELP DATA, CMDHELPCHK, source-mining, or catalog mutation.
+SET LANGUAGE active message emission:
+  current locale: en-US
+  provider mode: active_dbf
+  active catalog loaded: Yes
+  symbol: HELP_HINT_COMMAND
+  fallback locale: en-US
+  text: Type HELP {command} for more information.
+  boundary: read-only emission; no DBF/CDX/LMDB mutation; no runtime writeback
+Message locale is en-US
+--- en-US : localized command USAGE sweep ---
+Usage:
+  ROLLBACK USAGE
+  ROLLBACK
+  ROLLBACK ALL
+Examples:
+  ROLLBACK
+  ROLLBACK ALL
+Notes:
+  - ROLLBACK USAGE does not modify buffer state.
+  - ROLLBACK discards buffered/uncommitted table changes.
+Usage:
+  DELETE USAGE
+  DELETE                         (delete current record)
+  DELETE ALL
+  DELETE REST
+  DELETE NEXT <n>
+  DELETE FOR <field> <op> <value>
+Notes:
+  - DELETE requires an open table except for DELETE USAGE.
+  - DELETE honors active SET FILTER in ALL/REST/NEXT/FOR scans.
+  - Direct-write mode updates active index backends best-effort.
+Usage:
+  RECALL USAGE
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT <n>
+  RECALL FOR <expr>
+Examples:
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT 10
+  RECALL FOR LNAME = "SMITH"
+Notes:
+  - RECALL USAGE does not require an open table.
+  - RECALL with no arguments recalls the current record.
+  - RECALL target selection is deleted-only.
+Usage:
+  ERASE USAGE
+  ERASE <table> [CONFIRM]
+  ERASE TABLE <table> [CONFIRM]
+Examples:
+  ERASE TABLE clients
+  ERASE TABLE clients CONFIRM
+  ERASE students.dbf CONFIRM
+Notes:
+  - ERASE USAGE does not inspect or delete files.
+  - Physically deletes <table>.dbf and known same-stem sidecars.
+  - Without CONFIRM, performs a dry-run and prints what would be deleted.
+  - CONFIRM performs deletion.
+Usage:
+  IMPORT USAGE
+  IMPORT <csvfile>
+Notes:
+  - IMPORT requires an open table except for IMPORT USAGE.
+  - CSV headers are matched to field names case-insensitively.
+  - IMPORT appends records to the current table.
+Usage:
+  EXPORT USAGE
+  EXPORT [TO] <file> [CSV|PIPE]
+  EXPORT <open-area-token> TO <file> [CSV|PIPE]
+Notes:
+  - EXPORT writes the current table as CSV by default.
+  - EXPORT <open-area-token> TO <file> writes an already-open named work area.
+  - Named EXPORT does not auto-open tables from disk.
+  - PIPE uses | as the delimiter.
+  - A missing extension is added automatically (.csv for CSV, .txt for PIPE).
+  - EXPORT honors the active SET FILTER for the exported area.
+  - EXPORT requires an open table except for EXPORT USAGE.
+Usage:
+  CREATE USAGE
+  CREATE <name> (<field> <type>[, ...])
+  CREATE MSDOS <name> (<field> <type>[, ...])
+  CREATE DBASE <name> (<field> <type>[, ...])
+  CREATE FOX26 <name> (<field> <type>[, ...])
+  CREATE FOXPRO <name> (<field> <type>[, ...])
+  CREATE VFP <name> (<field> <type>[, ...])
+  CREATE X64 <name> (<field> <type>[, ...])
+Types:
+  XBASE currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M
+  VFP/X64 currently implemented: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T
+Examples:
+  CREATE students (sid N(6), lname C(20), fname C(15))
+  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+Notes:
+  - CREATE writes a DBF file under the configured DBF path slot for relative names.
+  - CREATE clears active order state and closes the current area before writing.
+  - CREATE opens the created table after a successful write.
+  - M fields trigger automatic memo attach after opening.
+  - X64 CREATE may use descriptor fallback tokens for DBF/VFP descriptor safety.
+Usage:
+  ZAP USAGE
+  ZAP
+Examples:
+  ZAP
+Notes:
+  - ZAP USAGE does not require an open table.
+  - ZAP removes all records from the current non-memo DBF while preserving structure.
+  - ZAP closes the table on success; reopen with USE <table>.
+  - Index containers must be rebuilt/rebound after ZAP.
+Usage:
+  PACK USAGE
+  PACK
+Examples:
+  PACK
+Notes:
+  - PACK USAGE does not require an open table and does not rewrite files.
+  - PACK physically removes deleted records from the current DBF.
+  - PACK closes the table on success; reopen with USE <table>.
+  - PACK supports x64 M(8) memo tables by rebuilding DBF and DTX together.
+  - Legacy memo tables are refused.
+  - Index containers must be rebuilt/rebound after PACK.
+Usage:
+  COPY USAGE
+  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+  COPY FILE <SRC> TO <DST> [OVERWRITE]
+
+Examples:
+  COPY TO students_copy
+  COPY TO students_x64 AS X64 VECTOR OVERWRITE
+  COPY TO students_vfp AS VFP
+  COPY TO students_backup WITH SIDECARS OVERWRITE
+  COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+
+Notes:
+  - COPY USAGE prints usage and does not require an open table.
+  - COPY TO <name>                 : binary copy of the current DBF
+  - COPY TO <name> AS <flavor>     : logical table copy/conversion
+  - COPY TO <name> AS X64 VECTOR   : one-step copy from any open table to x64 vector form
+  - VECTOR is target-driven and is valid only with AS X64
+  - AS X64 controls output format only; the destination path is honored
+  - AS VFP/FOX/MSDOS writes free-table 10-byte descriptor field names
+  - COPY AS free-table fails if 10-byte descriptor names would collide
+  - WITH SIDECARS applies to binary COPY TO only
+  - OVERWRITE is required when the destination already exists
+  - x64 output still writes .dbf for now (no .dbfx yet)
+
+SIDECARS (if present next to the DBF): .inx .cnx .dtx .dti.json
+Usage:
+  COMMIT USAGE
+  COMMIT
+  COMMIT ALL
+  COMMIT MANUAL
+  COMMIT INTERACTIVE
+  COMMIT AUTO
+  COMMIT ALL MANUAL
+  COMMIT ALL INTERACTIVE
+  COMMIT ALL AUTO
+Notes:
+  - COMMIT applies buffered TABLE changes with locking at commit time.
+  - COMMIT ALL applies all open buffered areas.
+  - CDX/LMDB rebuilds are intentionally not performed by COMMIT.
+Usage:
+  TURBOPACK USAGE
+  TURBOPACK
+Examples:
+  TURBOPACK
+Notes:
+  - TURBOPACK USAGE does not require an open table and does not rewrite files.
+  - TURBOPACK is a fast path for plain non-memo, non-x64 DBF tables only.
+  - Memo tables and x64 tables are refused; use PACK instead.
+  - TURBOPACK closes the table on success; reopen with USE <table>.
+  - Index containers must be rebuilt/rebound after TURBOPACK.
+Usage:
+  REBUILD USAGE
+  REBUILD
+  REBUILD <name-or-path.cnx>
+Notes:
+  - Rebuilds the CNX container once.
+  - No args uses current CNX or defaults to <table>.cnx.
+  - Dirty TABLE buffers are committed only after confirmation.
+Usage:
+  SORT USAGE
+  SORT TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> ASC
+  SORT TO <outdbf> ON <expr> DESC
+  SORT TO <outdbf> ON <expr>, <expr>
+  SORT ALL TO <outdbf> ON <expr>
+  SORT DELETED TO <outdbf> ON <expr>
+  SORT OVERWRITE TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> FOR <expr>
+  SORT TO <outdbf> ON <expr> WHILE <expr>
+  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+  SORT TO <outdbf> ON <expr> UNIQUE
+Usage:
+  REINDEX USAGE
+  REINDEX
+  REINDEX INX [<tagfile>]
+  REINDEX CNX [<name-or-path.cnx>]
+  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  REINDEX SIX [<tagfile>]
+  REINDEX SCX [<tagfile>]
+  REINDEX ALL
+  REINDEX CUSTOM
+  REINDEX <tagfile>
+Notes:
+  - Default: v64-like table -> CDX; v32-like table -> INX.
+  - CNX delegates to REBUILD; CDX delegates to BUILDLMDB.
+  - REINDEX <tagfile> is treated as REINDEX INX <tagfile>.
+Usage:
+  SCX USAGE
+  SCX CREATE <file>
+  SCX ADDTAG <file> <name> FIELD <n> [DESC]
+  SCX BUILD <file>
+  SCX TAGS <file>
+  SCX INFO <file>
+Usage:
+  EXPORTFUNCTIONS
+  EXPORTFUNCTIONS USAGE
+  EXPORTFUNCTIONS MD
+  EXPORTFUNCTIONS MD <path>
+  EXPORTFUNCTIONS <path>
+
+Default output:
+  ./data/docs/functions.md
+
+Usage:
+  INDEXSEEK USAGE
+  INDEXSEEK <value>
+  INDEXSEEK <value> SOFT
+  INDEXSEEK <value> TAG <tag-or-path>
+  INDEXSEEK <value> SOFT TAG <tag-or-path>
+Examples:
+  INDEXSEEK "TAYLOR"
+  INDEXSEEK "TAYLOR" SOFT
+  INDEXSEEK "TAYLOR" TAG students.cdx
+Notes:
+  - INDEXSEEK prints INDEXSEEK(): <recno> and restores the cursor best-effort.
+  - INDEXSEEK USAGE works without an open table.
+
+Idioma de mensajes: es
+--- es : localized command USAGE sweep ---
+Uso:
+  ROLLBACK USAGE
+  ROLLBACK
+  ROLLBACK ALL
+Ejemplos:
+  ROLLBACK
+  ROLLBACK ALL
+Notas:
+  - ROLLBACK USAGE no modifica el estado del búfer.
+  - ROLLBACK descarta los cambios de tabla almacenados/sin confirmar.
+Uso:
+  DELETE USAGE
+  DELETE                         (elimina el registro actual)
+  DELETE ALL
+  DELETE REST
+  DELETE NEXT <n>
+  DELETE FOR <field> <op> <value>
+Notas:
+  - DELETE requiere una tabla abierta, excepto DELETE USAGE.
+  - DELETE respeta el SET FILTER activo en los recorridos ALL/REST/NEXT/FOR.
+  - El modo de escritura directa actualiza los índices activos según sea posible.
+Uso:
+  RECALL USAGE
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT <n>
+  RECALL FOR <expr>
+Ejemplos:
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT 10
+  RECALL FOR LNAME = "SMITH"
+Notas:
+  - RECALL USAGE no requiere una tabla abierta.
+  - RECALL sin argumentos recupera el registro actual.
+  - La selección de RECALL es solo de registros eliminados.
+Uso:
+  ERASE USAGE
+  ERASE <table> [CONFIRM]
+  ERASE TABLE <table> [CONFIRM]
+Ejemplos:
+  ERASE TABLE clients
+  ERASE TABLE clients CONFIRM
+  ERASE students.dbf CONFIRM
+Notas:
+  - ERASE USAGE no inspecciona ni elimina archivos.
+  - Elimina físicamente <table>.dbf y los archivos complementarios del mismo nombre base.
+  - Sin CONFIRM, realiza una simulación e imprime lo que se eliminaría.
+  - CONFIRM realiza la eliminación.
+Uso:
+  IMPORT USAGE
+  IMPORT <csvfile>
+Notas:
+  - IMPORT requiere una tabla abierta, excepto IMPORT USAGE.
+  - Los encabezados CSV se asignan a los nombres de campo sin distinguir mayúsculas.
+  - IMPORT añade registros a la tabla actual.
+Uso:
+  EXPORT USAGE
+  EXPORT [TO] <file> [CSV|PIPE]
+  EXPORT <open-area-token> TO <file> [CSV|PIPE]
+Notas:
+  - EXPORT escribe la tabla actual como CSV de forma predeterminada.
+  - EXPORT <open-area-token> TO <file> escribe un área de trabajo ya abierta.
+  - EXPORT con nombre no abre tablas desde el disco automáticamente.
+  - PIPE usa | como delimitador.
+  - Se añade automáticamente una extensión que falte (.csv para CSV, .txt para PIPE).
+  - EXPORT respeta el SET FILTER activo del área exportada.
+  - EXPORT requiere una tabla abierta, excepto EXPORT USAGE.
+Uso:
+  CREATE USAGE
+  CREATE <name> (<field> <type>[, ...])
+  CREATE MSDOS <name> (<field> <type>[, ...])
+  CREATE DBASE <name> (<field> <type>[, ...])
+  CREATE FOX26 <name> (<field> <type>[, ...])
+  CREATE FOXPRO <name> (<field> <type>[, ...])
+  CREATE VFP <name> (<field> <type>[, ...])
+  CREATE X64 <name> (<field> <type>[, ...])
+Tipos:
+  XBASE implementados actualmente: C(n), N(n[,d]), F(n[,d]), D, L, M
+  VFP/X64 implementados actualmente: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T
+Ejemplos:
+  CREATE students (sid N(6), lname C(20), fname C(15))
+  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+Notas:
+  - CREATE escribe un archivo DBF en la ranura de ruta DBF configurada para nombres relativos.
+  - CREATE borra el estado de orden activo y cierra el área actual antes de escribir.
+  - CREATE abre la tabla creada tras una escritura correcta.
+  - Los campos M activan la vinculación automática de memo tras la apertura.
+  - CREATE X64 puede usar tokens de reserva de descriptor para la seguridad del descriptor DBF/VFP.
+Uso:
+  ZAP USAGE
+  ZAP
+Ejemplos:
+  ZAP
+Notas:
+  - ZAP USAGE no requiere una tabla abierta.
+  - ZAP elimina todos los registros del DBF no-memo actual conservando la estructura.
+  - ZAP cierra la tabla al finalizar correctamente; reábrala con USE <table>.
+  - Los contenedores de índice deben reconstruirse/revincularse después de ZAP.
+Uso:
+  PACK USAGE
+  PACK
+Ejemplos:
+  PACK
+Notas:
+  - PACK USAGE no requiere una tabla abierta y no reescribe archivos.
+  - PACK elimina físicamente los registros borrados del DBF actual.
+  - PACK cierra la tabla si tiene éxito; reábrala con USE <table>.
+  - PACK admite tablas memo x64 M(8) reconstruyendo DBF y DTX juntos.
+  - Las tablas memo heredadas se rechazan.
+  - Los contenedores de índice deben reconstruirse/revincularse tras PACK.
+Uso:
+  COPY USAGE
+  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+  COPY FILE <SRC> TO <DST> [OVERWRITE]
+
+Ejemplos:
+  COPY TO students_copy
+  COPY TO students_x64 AS X64 VECTOR OVERWRITE
+  COPY TO students_vfp AS VFP
+  COPY TO students_backup WITH SIDECARS OVERWRITE
+  COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+
+Notas:
+  - COPY USAGE imprime el uso y no requiere una tabla abierta.
+  - COPY TO <name>                 : copia binaria del DBF actual
+  - COPY TO <name> AS <flavor>     : copia/conversión lógica de la tabla
+  - COPY TO <name> AS X64 VECTOR   : copia en un paso desde cualquier tabla abierta a forma vectorial x64
+  - VECTOR está determinado por el destino y solo es válido con AS X64
+  - AS X64 controla solo el formato de salida; se respeta la ruta de destino
+  - AS VFP/FOX/MSDOS escribe nombres de campo con descriptor de 10 bytes de tabla libre
+  - COPY AS de tabla libre falla si los nombres de descriptor de 10 bytes colisionaran
+  - WITH SIDECARS se aplica solo a COPY TO binario
+  - OVERWRITE es obligatorio cuando el destino ya existe
+  - la salida x64 aún escribe .dbf por ahora (todavía sin .dbfx)
+
+ARCHIVOS COMPLEMENTARIOS (si están junto al DBF): .inx .cnx .dtx .dti.json
+Uso:
+  COMMIT USAGE
+  COMMIT
+  COMMIT ALL
+  COMMIT MANUAL
+  COMMIT INTERACTIVE
+  COMMIT AUTO
+  COMMIT ALL MANUAL
+  COMMIT ALL INTERACTIVE
+  COMMIT ALL AUTO
+Notas:
+  - COMMIT aplica los cambios TABLE en búfer con bloqueo en el momento de la confirmación.
+  - COMMIT ALL aplica todas las áreas en búfer abiertas.
+  - Las reconstrucciones CDX/LMDB no las realiza COMMIT intencionadamente.
+Uso:
+  TURBOPACK USAGE
+  TURBOPACK
+Ejemplos:
+  TURBOPACK
+Notas:
+  - TURBOPACK USAGE no requiere una tabla abierta y no reescribe archivos.
+  - TURBOPACK es una vía rápida solo para tablas DBF planas sin memo y sin x64.
+  - Las tablas memo y x64 se rechazan; use PACK en su lugar.
+  - TURBOPACK cierra la tabla si tiene éxito; reábrala con USE <table>.
+  - Los contenedores de índice deben reconstruirse/revincularse tras TURBOPACK.
+Uso:
+  REBUILD USAGE
+  REBUILD
+  REBUILD <name-or-path.cnx>
+Notas:
+  - Reconstruye el contenedor CNX una vez.
+  - Sin argumentos usa el CNX actual o toma <table>.cnx por defecto.
+  - Los búferes TABLE sucios se confirman solo tras confirmación.
+Uso:
+  SORT USAGE
+  SORT TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> ASC
+  SORT TO <outdbf> ON <expr> DESC
+  SORT TO <outdbf> ON <expr>, <expr>
+  SORT ALL TO <outdbf> ON <expr>
+  SORT DELETED TO <outdbf> ON <expr>
+  SORT OVERWRITE TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> FOR <expr>
+  SORT TO <outdbf> ON <expr> WHILE <expr>
+  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+  SORT TO <outdbf> ON <expr> UNIQUE
+Uso:
+  REINDEX USAGE
+  REINDEX
+  REINDEX INX [<tagfile>]
+  REINDEX CNX [<name-or-path.cnx>]
+  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  REINDEX SIX [<tagfile>]
+  REINDEX SCX [<tagfile>]
+  REINDEX ALL
+  REINDEX CUSTOM
+  REINDEX <tagfile>
+Notas:
+  - Predeterminado: tabla tipo v64 -> CDX; tabla tipo v32 -> INX.
+  - CNX delega en REBUILD; CDX delega en BUILDLMDB.
+  - REINDEX <tagfile> se trata como REINDEX INX <tagfile>.
+Uso:
+  SCX USAGE
+  SCX CREATE <file>
+  SCX ADDTAG <file> <name> FIELD <n> [DESC]
+  SCX BUILD <file>
+  SCX TAGS <file>
+  SCX INFO <file>
+Uso:
+  EXPORTFUNCTIONS
+  EXPORTFUNCTIONS USAGE
+  EXPORTFUNCTIONS MD
+  EXPORTFUNCTIONS MD <path>
+  EXPORTFUNCTIONS <path>
+
+Salida predeterminada:
+  ./data/docs/functions.md
+
+Uso:
+  INDEXSEEK USAGE
+  INDEXSEEK <value>
+  INDEXSEEK <value> SOFT
+  INDEXSEEK <value> TAG <tag-or-path>
+  INDEXSEEK <value> SOFT TAG <tag-or-path>
+Ejemplos:
+  INDEXSEEK "TAYLOR"
+  INDEXSEEK "TAYLOR" SOFT
+  INDEXSEEK "TAYLOR" TAG students.cdx
+Notas:
+  - INDEXSEEK imprime INDEXSEEK(): <recno> y restaura el cursor en la medida de lo posible.
+  - INDEXSEEK USAGE funciona sin una tabla abierta.
+
+Langue des messages : fr
+--- fr : localized command USAGE sweep ---
+Utilisation :
+  ROLLBACK USAGE
+  ROLLBACK
+  ROLLBACK ALL
+Exemples :
+  ROLLBACK
+  ROLLBACK ALL
+Remarques :
+  - ROLLBACK USAGE ne modifie pas l'état du tampon.
+  - ROLLBACK abandonne les modifications de table en mémoire tampon/non validées.
+Utilisation :
+  DELETE USAGE
+  DELETE                         (supprime l'enregistrement courant)
+  DELETE ALL
+  DELETE REST
+  DELETE NEXT <n>
+  DELETE FOR <field> <op> <value>
+Remarques :
+  - DELETE requiert une table ouverte, sauf DELETE USAGE.
+  - DELETE respecte le SET FILTER actif dans les parcours ALL/REST/NEXT/FOR.
+  - Le mode écriture directe met à jour les index actifs au mieux.
+Utilisation :
+  RECALL USAGE
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT <n>
+  RECALL FOR <expr>
+Exemples :
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT 10
+  RECALL FOR LNAME = "SMITH"
+Remarques :
+  - RECALL USAGE ne requiert pas de table ouverte.
+  - RECALL sans argument restaure l'enregistrement courant.
+  - La sélection de RECALL ne concerne que les enregistrements supprimés.
+Utilisation :
+  ERASE USAGE
+  ERASE <table> [CONFIRM]
+  ERASE TABLE <table> [CONFIRM]
+Exemples :
+  ERASE TABLE clients
+  ERASE TABLE clients CONFIRM
+  ERASE students.dbf CONFIRM
+Remarques :
+  - ERASE USAGE n'inspecte ni ne supprime de fichiers.
+  - Supprime physiquement <table>.dbf et les fichiers annexes de même racine.
+  - Sans CONFIRM, effectue une simulation et affiche ce qui serait supprimé.
+  - CONFIRM effectue la suppression.
+Utilisation :
+  IMPORT USAGE
+  IMPORT <csvfile>
+Remarques :
+  - IMPORT requiert une table ouverte, sauf IMPORT USAGE.
+  - Les en-têtes CSV sont associés aux noms de champs sans tenir compte de la casse.
+  - IMPORT ajoute des enregistrements à la table courante.
+Utilisation :
+  EXPORT USAGE
+  EXPORT [TO] <file> [CSV|PIPE]
+  EXPORT <open-area-token> TO <file> [CSV|PIPE]
+Remarques :
+  - EXPORT écrit la table courante au format CSV par défaut.
+  - EXPORT <open-area-token> TO <file> écrit une zone de travail déjà ouverte.
+  - EXPORT nommé n'ouvre pas de tables depuis le disque.
+  - PIPE utilise | comme délimiteur.
+  - Une extension manquante est ajoutée automatiquement (.csv pour CSV, .txt pour PIPE).
+  - EXPORT respecte le SET FILTER actif de la zone exportée.
+  - EXPORT requiert une table ouverte, sauf EXPORT USAGE.
+Utilisation :
+  CREATE USAGE
+  CREATE <name> (<field> <type>[, ...])
+  CREATE MSDOS <name> (<field> <type>[, ...])
+  CREATE DBASE <name> (<field> <type>[, ...])
+  CREATE FOX26 <name> (<field> <type>[, ...])
+  CREATE FOXPRO <name> (<field> <type>[, ...])
+  CREATE VFP <name> (<field> <type>[, ...])
+  CREATE X64 <name> (<field> <type>[, ...])
+Types :
+  XBASE actuellement implémentés : C(n), N(n[,d]), F(n[,d]), D, L, M
+  VFP/X64 actuellement implémentés : C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T
+Exemples :
+  CREATE students (sid N(6), lname C(20), fname C(15))
+  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+Remarques :
+  - CREATE écrit un fichier DBF dans l'emplacement de chemin DBF configuré pour les noms relatifs.
+  - CREATE efface l'état d'ordre actif et ferme la zone courante avant d'écrire.
+  - CREATE ouvre la table créée après une écriture réussie.
+  - Les champs M déclenchent l'attachement mémo automatique après ouverture.
+  - CREATE X64 peut utiliser des jetons de secours de descripteur pour la sécurité du descripteur DBF/VFP.
+Utilisation :
+  ZAP USAGE
+  ZAP
+Exemples :
+  ZAP
+Remarques :
+  - ZAP USAGE ne requiert pas de table ouverte.
+  - ZAP supprime tous les enregistrements du DBF non-mémo courant en conservant la structure.
+  - ZAP ferme la table en cas de succès ; rouvrez-la avec USE <table>.
+  - Les conteneurs d'index doivent être reconstruits/reliés après ZAP.
+Utilisation :
+  PACK USAGE
+  PACK
+Exemples :
+  PACK
+Remarques :
+  - PACK USAGE ne nécessite pas de table ouverte et ne réécrit aucun fichier.
+  - PACK supprime physiquement les enregistrements supprimés du DBF actuel.
+  - PACK ferme la table en cas de succès ; rouvrez avec USE <table>.
+  - PACK prend en charge les tables mémo x64 M(8) en reconstruisant DBF et DTX ensemble.
+  - Les tables mémo héritées sont refusées.
+  - Les conteneurs d'index doivent être reconstruits/reliés après PACK.
+Utilisation :
+  COPY USAGE
+  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+  COPY FILE <SRC> TO <DST> [OVERWRITE]
+
+Exemples :
+  COPY TO students_copy
+  COPY TO students_x64 AS X64 VECTOR OVERWRITE
+  COPY TO students_vfp AS VFP
+  COPY TO students_backup WITH SIDECARS OVERWRITE
+  COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+
+Remarques :
+  - COPY USAGE affiche l'utilisation et ne nécessite pas de table ouverte.
+  - COPY TO <name>                 : copie binaire du DBF actuel
+  - COPY TO <name> AS <flavor>     : copie/conversion logique de la table
+  - COPY TO <name> AS X64 VECTOR   : copie en une étape de toute table ouverte vers la forme vectorielle x64
+  - VECTOR est déterminé par la cible et n'est valide qu'avec AS X64
+  - AS X64 contrôle uniquement le format de sortie ; le chemin de destination est respecté
+  - AS VFP/FOX/MSDOS écrit des noms de champ à descripteur de 10 octets de table libre
+  - COPY AS table libre échoue si les noms de descripteur de 10 octets entrent en collision
+  - WITH SIDECARS s'applique uniquement à COPY TO binaire
+  - OVERWRITE est requis lorsque la destination existe déjà
+  - la sortie x64 écrit encore .dbf pour l'instant (pas encore de .dbfx)
+
+FICHIERS ANNEXES (s'ils sont présents à côté du DBF) : .inx .cnx .dtx .dti.json
+Utilisation :
+  COMMIT USAGE
+  COMMIT
+  COMMIT ALL
+  COMMIT MANUAL
+  COMMIT INTERACTIVE
+  COMMIT AUTO
+  COMMIT ALL MANUAL
+  COMMIT ALL INTERACTIVE
+  COMMIT ALL AUTO
+Remarques :
+  - COMMIT applique les modifications TABLE en mémoire tampon avec verrouillage au moment de la validation.
+  - COMMIT ALL applique toutes les zones en mémoire tampon ouvertes.
+  - Les reconstructions CDX/LMDB ne sont volontairement pas effectuées par COMMIT.
+Utilisation :
+  TURBOPACK USAGE
+  TURBOPACK
+Exemples :
+  TURBOPACK
+Remarques :
+  - TURBOPACK USAGE ne nécessite pas de table ouverte et ne réécrit aucun fichier.
+  - TURBOPACK est une voie rapide uniquement pour les tables DBF simples sans mémo et non x64.
+  - Les tables mémo et x64 sont refusées ; utilisez PACK à la place.
+  - TURBOPACK ferme la table en cas de succès ; rouvrez avec USE <table>.
+  - Les conteneurs d'index doivent être reconstruits/reliés après TURBOPACK.
+Utilisation :
+  REBUILD USAGE
+  REBUILD
+  REBUILD <name-or-path.cnx>
+Remarques :
+  - Reconstruit le conteneur CNX une fois.
+  - Sans argument, utilise le CNX actuel ou <table>.cnx par défaut.
+  - Les tampons TABLE modifiés ne sont validés qu'après confirmation.
+Utilisation :
+  SORT USAGE
+  SORT TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> ASC
+  SORT TO <outdbf> ON <expr> DESC
+  SORT TO <outdbf> ON <expr>, <expr>
+  SORT ALL TO <outdbf> ON <expr>
+  SORT DELETED TO <outdbf> ON <expr>
+  SORT OVERWRITE TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> FOR <expr>
+  SORT TO <outdbf> ON <expr> WHILE <expr>
+  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+  SORT TO <outdbf> ON <expr> UNIQUE
+Utilisation :
+  REINDEX USAGE
+  REINDEX
+  REINDEX INX [<tagfile>]
+  REINDEX CNX [<name-or-path.cnx>]
+  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  REINDEX SIX [<tagfile>]
+  REINDEX SCX [<tagfile>]
+  REINDEX ALL
+  REINDEX CUSTOM
+  REINDEX <tagfile>
+Remarques :
+  - Par défaut : table de type v64 -> CDX ; table de type v32 -> INX.
+  - CNX délègue à REBUILD ; CDX délègue à BUILDLMDB.
+  - REINDEX <tagfile> est traité comme REINDEX INX <tagfile>.
+Utilisation :
+  SCX USAGE
+  SCX CREATE <file>
+  SCX ADDTAG <file> <name> FIELD <n> [DESC]
+  SCX BUILD <file>
+  SCX TAGS <file>
+  SCX INFO <file>
+Utilisation :
+  EXPORTFUNCTIONS
+  EXPORTFUNCTIONS USAGE
+  EXPORTFUNCTIONS MD
+  EXPORTFUNCTIONS MD <path>
+  EXPORTFUNCTIONS <path>
+
+Sortie par défaut :
+  ./data/docs/functions.md
+
+Utilisation :
+  INDEXSEEK USAGE
+  INDEXSEEK <value>
+  INDEXSEEK <value> SOFT
+  INDEXSEEK <value> TAG <tag-or-path>
+  INDEXSEEK <value> SOFT TAG <tag-or-path>
+Exemples :
+  INDEXSEEK "TAYLOR"
+  INDEXSEEK "TAYLOR" SOFT
+  INDEXSEEK "TAYLOR" TAG students.cdx
+Remarques :
+  - INDEXSEEK affiche INDEXSEEK(): <recno> et restaure le curseur au mieux.
+  - INDEXSEEK USAGE fonctionne sans table ouverte.
+
+Nachrichten-Sprache: de
+--- de : localized command USAGE sweep ---
+Verwendung:
+  ROLLBACK USAGE
+  ROLLBACK
+  ROLLBACK ALL
+Beispiele:
+  ROLLBACK
+  ROLLBACK ALL
+Hinweise:
+  - ROLLBACK USAGE ändert den Pufferzustand nicht.
+  - ROLLBACK verwirft gepufferte/nicht bestätigte Tabellenänderungen.
+Verwendung:
+  DELETE USAGE
+  DELETE                         (löscht den aktuellen Datensatz)
+  DELETE ALL
+  DELETE REST
+  DELETE NEXT <n>
+  DELETE FOR <field> <op> <value>
+Hinweise:
+  - DELETE erfordert eine geöffnete Tabelle, außer DELETE USAGE.
+  - DELETE berücksichtigt das aktive SET FILTER bei ALL/REST/NEXT/FOR-Durchläufen.
+  - Der Direktschreibmodus aktualisiert aktive Indizes nach Möglichkeit.
+Verwendung:
+  RECALL USAGE
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT <n>
+  RECALL FOR <expr>
+Beispiele:
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT 10
+  RECALL FOR LNAME = "SMITH"
+Hinweise:
+  - RECALL USAGE erfordert keine geöffnete Tabelle.
+  - RECALL ohne Argumente stellt den aktuellen Datensatz wieder her.
+  - Die RECALL-Auswahl betrifft nur gelöschte Datensätze.
+Verwendung:
+  ERASE USAGE
+  ERASE <table> [CONFIRM]
+  ERASE TABLE <table> [CONFIRM]
+Beispiele:
+  ERASE TABLE clients
+  ERASE TABLE clients CONFIRM
+  ERASE students.dbf CONFIRM
+Hinweise:
+  - ERASE USAGE prüft oder löscht keine Dateien.
+  - Löscht physisch <table>.dbf und bekannte Begleitdateien mit gleichem Stamm.
+  - Ohne CONFIRM wird ein Probelauf ausgeführt und angezeigt, was gelöscht würde.
+  - CONFIRM führt die Löschung aus.
+Verwendung:
+  IMPORT USAGE
+  IMPORT <csvfile>
+Hinweise:
+  - IMPORT erfordert eine geöffnete Tabelle, außer IMPORT USAGE.
+  - CSV-Kopfzeilen werden den Feldnamen ohne Beachtung der Groß-/Kleinschreibung zugeordnet.
+  - IMPORT fügt Datensätze an die aktuelle Tabelle an.
+Verwendung:
+  EXPORT USAGE
+  EXPORT [TO] <file> [CSV|PIPE]
+  EXPORT <open-area-token> TO <file> [CSV|PIPE]
+Hinweise:
+  - EXPORT schreibt die aktuelle Tabelle standardmäßig als CSV.
+  - EXPORT <open-area-token> TO <file> schreibt einen bereits geöffneten Arbeitsbereich.
+  - Benanntes EXPORT öffnet keine Tabellen von der Festplatte.
+  - PIPE verwendet | als Trennzeichen.
+  - Eine fehlende Erweiterung wird automatisch ergänzt (.csv für CSV, .txt für PIPE).
+  - EXPORT berücksichtigt das aktive SET FILTER des exportierten Bereichs.
+  - EXPORT erfordert eine geöffnete Tabelle, außer EXPORT USAGE.
+Verwendung:
+  CREATE USAGE
+  CREATE <name> (<field> <type>[, ...])
+  CREATE MSDOS <name> (<field> <type>[, ...])
+  CREATE DBASE <name> (<field> <type>[, ...])
+  CREATE FOX26 <name> (<field> <type>[, ...])
+  CREATE FOXPRO <name> (<field> <type>[, ...])
+  CREATE VFP <name> (<field> <type>[, ...])
+  CREATE X64 <name> (<field> <type>[, ...])
+Typen:
+  XBASE derzeit implementiert: C(n), N(n[,d]), F(n[,d]), D, L, M
+  VFP/X64 derzeit implementiert: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T
+Beispiele:
+  CREATE students (sid N(6), lname C(20), fname C(15))
+  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+Hinweise:
+  - CREATE schreibt bei relativen Namen eine DBF-Datei in den konfigurierten DBF-Pfad-Slot.
+  - CREATE löscht den aktiven Ordnungszustand und schließt den aktuellen Bereich vor dem Schreiben.
+  - CREATE öffnet die erstellte Tabelle nach erfolgreichem Schreiben.
+  - M-Felder lösen nach dem Öffnen das automatische Memo-Anhängen aus.
+  - CREATE X64 kann Deskriptor-Ersatztoken für die DBF/VFP-Deskriptorsicherheit verwenden.
+Verwendung:
+  ZAP USAGE
+  ZAP
+Beispiele:
+  ZAP
+Hinweise:
+  - ZAP USAGE erfordert keine geöffnete Tabelle.
+  - ZAP entfernt alle Datensätze aus der aktuellen Nicht-Memo-DBF unter Beibehaltung der Struktur.
+  - ZAP schließt die Tabelle bei Erfolg; mit USE <table> erneut öffnen.
+  - Index-Container müssen nach ZAP neu erstellt/neu gebunden werden.
+Verwendung:
+  PACK USAGE
+  PACK
+Beispiele:
+  PACK
+Hinweise:
+  - PACK USAGE erfordert keine geöffnete Tabelle und schreibt keine Dateien neu.
+  - PACK entfernt gelöschte Datensätze physisch aus der aktuellen DBF.
+  - PACK schließt die Tabelle bei Erfolg; erneut öffnen mit USE <table>.
+  - PACK unterstützt x64-M(8)-Memotabellen durch gemeinsames Neuaufbauen von DBF und DTX.
+  - Ältere Memotabellen werden abgelehnt.
+  - Indexcontainer müssen nach PACK neu aufgebaut/neu gebunden werden.
+Verwendung:
+  COPY USAGE
+  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+  COPY FILE <SRC> TO <DST> [OVERWRITE]
+
+Beispiele:
+  COPY TO students_copy
+  COPY TO students_x64 AS X64 VECTOR OVERWRITE
+  COPY TO students_vfp AS VFP
+  COPY TO students_backup WITH SIDECARS OVERWRITE
+  COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+
+Hinweise:
+  - COPY USAGE gibt die Verwendung aus und erfordert keine geöffnete Tabelle.
+  - COPY TO <name>                 : binäre Kopie der aktuellen DBF
+  - COPY TO <name> AS <flavor>     : logische Tabellenkopie/-konvertierung
+  - COPY TO <name> AS X64 VECTOR   : einstufige Kopie einer beliebigen geöffneten Tabelle in die x64-Vektorform
+  - VECTOR wird vom Ziel bestimmt und ist nur mit AS X64 gültig
+  - AS X64 steuert nur das Ausgabeformat; der Zielpfad wird beachtet
+  - AS VFP/FOX/MSDOS schreibt Feldnamen mit 10-Byte-Deskriptor für freie Tabellen
+  - COPY AS für freie Tabellen schlägt fehl, wenn 10-Byte-Deskriptornamen kollidieren würden
+  - WITH SIDECARS gilt nur für binäres COPY TO
+  - OVERWRITE ist erforderlich, wenn das Ziel bereits existiert
+  - x64-Ausgabe schreibt vorerst weiterhin .dbf (noch kein .dbfx)
+
+BEGLEITDATEIEN (falls neben der DBF vorhanden): .inx .cnx .dtx .dti.json
+Verwendung:
+  COMMIT USAGE
+  COMMIT
+  COMMIT ALL
+  COMMIT MANUAL
+  COMMIT INTERACTIVE
+  COMMIT AUTO
+  COMMIT ALL MANUAL
+  COMMIT ALL INTERACTIVE
+  COMMIT ALL AUTO
+Hinweise:
+  - COMMIT wendet gepufferte TABLE-Änderungen mit Sperrung zum Commit-Zeitpunkt an.
+  - COMMIT ALL wendet alle geöffneten gepufferten Bereiche an.
+  - CDX/LMDB-Neuaufbauten werden von COMMIT bewusst nicht durchgeführt.
+Verwendung:
+  TURBOPACK USAGE
+  TURBOPACK
+Beispiele:
+  TURBOPACK
+Hinweise:
+  - TURBOPACK USAGE erfordert keine geöffnete Tabelle und schreibt keine Dateien neu.
+  - TURBOPACK ist ein schneller Pfad nur für einfache DBF-Tabellen ohne Memo und ohne x64.
+  - Memo- und x64-Tabellen werden abgelehnt; verwenden Sie stattdessen PACK.
+  - TURBOPACK schließt die Tabelle bei Erfolg; erneut öffnen mit USE <table>.
+  - Indexcontainer müssen nach TURBOPACK neu aufgebaut/neu gebunden werden.
+Verwendung:
+  REBUILD USAGE
+  REBUILD
+  REBUILD <name-or-path.cnx>
+Hinweise:
+  - Baut den CNX-Container einmal neu auf.
+  - Ohne Argumente wird der aktuelle CNX oder standardmäßig <table>.cnx verwendet.
+  - Geänderte TABLE-Puffer werden erst nach Bestätigung committet.
+Verwendung:
+  SORT USAGE
+  SORT TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> ASC
+  SORT TO <outdbf> ON <expr> DESC
+  SORT TO <outdbf> ON <expr>, <expr>
+  SORT ALL TO <outdbf> ON <expr>
+  SORT DELETED TO <outdbf> ON <expr>
+  SORT OVERWRITE TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> FOR <expr>
+  SORT TO <outdbf> ON <expr> WHILE <expr>
+  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+  SORT TO <outdbf> ON <expr> UNIQUE
+Verwendung:
+  REINDEX USAGE
+  REINDEX
+  REINDEX INX [<tagfile>]
+  REINDEX CNX [<name-or-path.cnx>]
+  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  REINDEX SIX [<tagfile>]
+  REINDEX SCX [<tagfile>]
+  REINDEX ALL
+  REINDEX CUSTOM
+  REINDEX <tagfile>
+Hinweise:
+  - Standard: v64-ähnliche Tabelle -> CDX; v32-ähnliche Tabelle -> INX.
+  - CNX delegiert an REBUILD; CDX delegiert an BUILDLMDB.
+  - REINDEX <tagfile> wird als REINDEX INX <tagfile> behandelt.
+Verwendung:
+  SCX USAGE
+  SCX CREATE <file>
+  SCX ADDTAG <file> <name> FIELD <n> [DESC]
+  SCX BUILD <file>
+  SCX TAGS <file>
+  SCX INFO <file>
+Verwendung:
+  EXPORTFUNCTIONS
+  EXPORTFUNCTIONS USAGE
+  EXPORTFUNCTIONS MD
+  EXPORTFUNCTIONS MD <path>
+  EXPORTFUNCTIONS <path>
+
+Standardausgabe:
+  ./data/docs/functions.md
+
+Verwendung:
+  INDEXSEEK USAGE
+  INDEXSEEK <value>
+  INDEXSEEK <value> SOFT
+  INDEXSEEK <value> TAG <tag-or-path>
+  INDEXSEEK <value> SOFT TAG <tag-or-path>
+Beispiele:
+  INDEXSEEK "TAYLOR"
+  INDEXSEEK "TAYLOR" SOFT
+  INDEXSEEK "TAYLOR" TAG students.cdx
+Hinweise:
+  - INDEXSEEK gibt INDEXSEEK(): <recno> aus und stellt den Cursor bestmöglich wieder her.
+  - INDEXSEEK USAGE funktioniert ohne geöffnete Tabelle.
+
+Lingua dei messaggi: it
+--- it : localized command USAGE sweep ---
+Uso:
+  ROLLBACK USAGE
+  ROLLBACK
+  ROLLBACK ALL
+Esempi:
+  ROLLBACK
+  ROLLBACK ALL
+Note:
+  - ROLLBACK USAGE non modifica lo stato del buffer.
+  - ROLLBACK annulla le modifiche alla tabella nel buffer/non confermate.
+Uso:
+  DELETE USAGE
+  DELETE                         (elimina il record corrente)
+  DELETE ALL
+  DELETE REST
+  DELETE NEXT <n>
+  DELETE FOR <field> <op> <value>
+Note:
+  - DELETE richiede una tabella aperta, tranne DELETE USAGE.
+  - DELETE rispetta il SET FILTER attivo nelle scansioni ALL/REST/NEXT/FOR.
+  - La modalità di scrittura diretta aggiorna gli indici attivi al meglio.
+Uso:
+  RECALL USAGE
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT <n>
+  RECALL FOR <expr>
+Esempi:
+  RECALL
+  RECALL ALL
+  RECALL REST
+  RECALL NEXT 10
+  RECALL FOR LNAME = "SMITH"
+Note:
+  - RECALL USAGE non richiede una tabella aperta.
+  - RECALL senza argomenti ripristina il record corrente.
+  - La selezione di RECALL riguarda solo i record eliminati.
+Uso:
+  ERASE USAGE
+  ERASE <table> [CONFIRM]
+  ERASE TABLE <table> [CONFIRM]
+Esempi:
+  ERASE TABLE clients
+  ERASE TABLE clients CONFIRM
+  ERASE students.dbf CONFIRM
+Note:
+  - ERASE USAGE non ispeziona né elimina file.
+  - Elimina fisicamente <table>.dbf e i file collaterali con lo stesso stem.
+  - Senza CONFIRM esegue una simulazione e stampa ciò che verrebbe eliminato.
+  - CONFIRM esegue l'eliminazione.
+Uso:
+  IMPORT USAGE
+  IMPORT <csvfile>
+Note:
+  - IMPORT richiede una tabella aperta, tranne IMPORT USAGE.
+  - Le intestazioni CSV vengono associate ai nomi dei campi senza distinzione tra maiuscole e minuscole.
+  - IMPORT aggiunge record alla tabella corrente.
+Uso:
+  EXPORT USAGE
+  EXPORT [TO] <file> [CSV|PIPE]
+  EXPORT <open-area-token> TO <file> [CSV|PIPE]
+Note:
+  - EXPORT scrive la tabella corrente come CSV per impostazione predefinita.
+  - EXPORT <open-area-token> TO <file> scrive un'area di lavoro già aperta.
+  - EXPORT con nome non apre tabelle dal disco.
+  - PIPE usa | come delimitatore.
+  - Un'estensione mancante viene aggiunta automaticamente (.csv per CSV, .txt per PIPE).
+  - EXPORT rispetta il SET FILTER attivo dell'area esportata.
+  - EXPORT richiede una tabella aperta, tranne EXPORT USAGE.
+Uso:
+  CREATE USAGE
+  CREATE <name> (<field> <type>[, ...])
+  CREATE MSDOS <name> (<field> <type>[, ...])
+  CREATE DBASE <name> (<field> <type>[, ...])
+  CREATE FOX26 <name> (<field> <type>[, ...])
+  CREATE FOXPRO <name> (<field> <type>[, ...])
+  CREATE VFP <name> (<field> <type>[, ...])
+  CREATE X64 <name> (<field> <type>[, ...])
+Tipi:
+  XBASE attualmente implementati: C(n), N(n[,d]), F(n[,d]), D, L, M
+  VFP/X64 attualmente implementati: C(n), N(n[,d]), F(n[,d]), D, L, M, I, B, Y, T
+Esempi:
+  CREATE students (sid N(6), lname C(20), fname C(15))
+  CREATE X64 teachers (teacher_id I, full_name C(80), bio M)
+Note:
+  - CREATE scrive un file DBF nello slot di percorso DBF configurato per i nomi relativi.
+  - CREATE cancella lo stato di ordine attivo e chiude l'area corrente prima di scrivere.
+  - CREATE apre la tabella creata dopo una scrittura riuscita.
+  - I campi M attivano il collegamento memo automatico dopo l'apertura.
+  - CREATE X64 può usare token di ripiego del descrittore per la sicurezza del descrittore DBF/VFP.
+Uso:
+  ZAP USAGE
+  ZAP
+Esempi:
+  ZAP
+Note:
+  - ZAP USAGE non richiede una tabella aperta.
+  - ZAP rimuove tutti i record dal DBF non-memo corrente mantenendo la struttura.
+  - ZAP chiude la tabella in caso di successo; riaprirla con USE <table>.
+  - I contenitori di indice devono essere ricostruiti/ricollegati dopo ZAP.
+Uso:
+  PACK USAGE
+  PACK
+Esempi:
+  PACK
+Note:
+  - PACK USAGE non richiede una tabella aperta e non riscrive file.
+  - PACK rimuove fisicamente i record eliminati dal DBF corrente.
+  - PACK chiude la tabella in caso di successo; riaprire con USE <table>.
+  - PACK supporta le tabelle memo x64 M(8) ricostruendo insieme DBF e DTX.
+  - Le tabelle memo legacy vengono rifiutate.
+  - I contenitori di indice devono essere ricostruiti/ricollegati dopo PACK.
+Uso:
+  COPY USAGE
+  COPY TO <DBFNAME> [WITH SIDECARS] [OVERWRITE]
+  COPY TO <DBFNAME> AS <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> [OVERWRITE]
+  COPY TO <DBFNAME> AS X64 VECTOR [OVERWRITE]
+  COPY FILE <SRC> TO <DST> [OVERWRITE]
+
+Esempi:
+  COPY TO students_copy
+  COPY TO students_x64 AS X64 VECTOR OVERWRITE
+  COPY TO students_vfp AS VFP
+  COPY TO students_backup WITH SIDECARS OVERWRITE
+  COPY FILE source.txt TO tmp\source_copy.txt OVERWRITE
+
+Note:
+  - COPY USAGE stampa l'uso e non richiede una tabella aperta.
+  - COPY TO <name>                 : copia binaria del DBF corrente
+  - COPY TO <name> AS <flavor>     : copia/conversione logica della tabella
+  - COPY TO <name> AS X64 VECTOR   : copia in un passaggio da qualsiasi tabella aperta alla forma vettoriale x64
+  - VECTOR è determinato dalla destinazione ed è valido solo con AS X64
+  - AS X64 controlla solo il formato di output; il percorso di destinazione viene rispettato
+  - AS VFP/FOX/MSDOS scrive nomi di campo con descrittore a 10 byte per tabelle libere
+  - COPY AS per tabelle libere fallisce se i nomi del descrittore a 10 byte collidono
+  - WITH SIDECARS si applica solo a COPY TO binario
+  - OVERWRITE è obbligatorio quando la destinazione esiste già
+  - l'output x64 scrive ancora .dbf per ora (ancora nessun .dbfx)
+
+FILE COLLATERALI (se presenti accanto al DBF): .inx .cnx .dtx .dti.json
+Uso:
+  COMMIT USAGE
+  COMMIT
+  COMMIT ALL
+  COMMIT MANUAL
+  COMMIT INTERACTIVE
+  COMMIT AUTO
+  COMMIT ALL MANUAL
+  COMMIT ALL INTERACTIVE
+  COMMIT ALL AUTO
+Note:
+  - COMMIT applica le modifiche TABLE nel buffer con blocco al momento del commit.
+  - COMMIT ALL applica tutte le aree bufferizzate aperte.
+  - Le ricostruzioni CDX/LMDB non vengono eseguite intenzionalmente da COMMIT.
+Uso:
+  TURBOPACK USAGE
+  TURBOPACK
+Esempi:
+  TURBOPACK
+Note:
+  - TURBOPACK USAGE non richiede una tabella aperta e non riscrive file.
+  - TURBOPACK è un percorso rapido solo per tabelle DBF semplici senza memo e non x64.
+  - Le tabelle memo e x64 vengono rifiutate; usare PACK.
+  - TURBOPACK chiude la tabella in caso di successo; riaprire con USE <table>.
+  - I contenitori di indice devono essere ricostruiti/ricollegati dopo TURBOPACK.
+Uso:
+  REBUILD USAGE
+  REBUILD
+  REBUILD <name-or-path.cnx>
+Note:
+  - Ricostruisce il contenitore CNX una volta.
+  - Senza argomenti usa il CNX corrente o per impostazione predefinita <table>.cnx.
+  - I buffer TABLE modificati vengono confermati solo dopo conferma.
+Uso:
+  SORT USAGE
+  SORT TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> ASC
+  SORT TO <outdbf> ON <expr> DESC
+  SORT TO <outdbf> ON <expr>, <expr>
+  SORT ALL TO <outdbf> ON <expr>
+  SORT DELETED TO <outdbf> ON <expr>
+  SORT OVERWRITE TO <outdbf> ON <expr>
+  SORT TO <outdbf> ON <expr> FOR <expr>
+  SORT TO <outdbf> ON <expr> WHILE <expr>
+  SORT TO <outdbf> ON <expr> FIELDS <fieldlist>
+  SORT TO <outdbf> ON <expr> UNIQUE
+Uso:
+  REINDEX USAGE
+  REINDEX
+  REINDEX INX [<tagfile>]
+  REINDEX CNX [<name-or-path.cnx>]
+  REINDEX CDX [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  REINDEX SIX [<tagfile>]
+  REINDEX SCX [<tagfile>]
+  REINDEX ALL
+  REINDEX CUSTOM
+  REINDEX <tagfile>
+Note:
+  - Predefinito: tabella tipo v64 -> CDX; tabella tipo v32 -> INX.
+  - CNX delega a REBUILD; CDX delega a BUILDLMDB.
+  - REINDEX <tagfile> è trattato come REINDEX INX <tagfile>.
+Uso:
+  SCX USAGE
+  SCX CREATE <file>
+  SCX ADDTAG <file> <name> FIELD <n> [DESC]
+  SCX BUILD <file>
+  SCX TAGS <file>
+  SCX INFO <file>
+Uso:
+  EXPORTFUNCTIONS
+  EXPORTFUNCTIONS USAGE
+  EXPORTFUNCTIONS MD
+  EXPORTFUNCTIONS MD <path>
+  EXPORTFUNCTIONS <path>
+
+Output predefinito:
+  ./data/docs/functions.md
+
+Uso:
+  INDEXSEEK USAGE
+  INDEXSEEK <value>
+  INDEXSEEK <value> SOFT
+  INDEXSEEK <value> TAG <tag-or-path>
+  INDEXSEEK <value> SOFT TAG <tag-or-path>
+Esempi:
+  INDEXSEEK "TAYLOR"
+  INDEXSEEK "TAYLOR" SOFT
+  INDEXSEEK "TAYLOR" TAG students.cdx
+Note:
+  - INDEXSEEK stampa INDEXSEEK(): <recno> e ripristina il cursore per quanto possibile.
+  - INDEXSEEK USAGE funziona senza una tabella aperta.
+
+Message locale is en-US
+--- en-US : stable result-payload boundary probe ---
+INDEXSEEK(): 0
+=== LANGUAGE SHAKEDOWN CANARY DONE ===
+. SHUTDOWN: no shutdown.ini found in D:\code\ccode\build\src\Release

@@ -1,0 +1,85 @@
+LabTalk proof transcript
+timestamp: 20260712_230855
+item_id: probe.ai_portal.maint_ai_portal_readback.v1
+label: Prove Native MAINT AI Portal Readback
+kind: dottalk_script
+command_line: C:\x64base\dottalkpp\bin\dottalkpp.exe --script C:\x64base\labtalk\ai_portal\probes\maint_ai_portal_readback_v1.dts
+return_code: 0
+process_return_code: 0
+output_acceptance: accepted
+
+OUTPUT ACCEPTANCE
+=================
+accepted
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : C:\x64base\dottalkpp\bin
+  DATA       : C:\x64base\dottalkpp\data
+  DBF        : C:\x64base\dottalkpp\data\dbf
+  INDEXES    : C:\x64base\dottalkpp\data\indexes
+  LMDB       : C:\x64base\dottalkpp\data\lmdb
+  WORKSPACES : C:\x64base\dottalkpp\data\workspaces
+  SCHEMAS    : C:\x64base\dottalkpp\data\schemas
+  PROJECTS   : C:\x64base\dottalkpp\data\projects
+  SCRIPTS    : C:\x64base\dottalkpp\data\scripts
+  TESTS      : C:\x64base\dottalkpp\data\tests
+  HELP       : C:\x64base\dottalkpp\data\help
+  LOGS       : C:\x64base\dottalkpp\data\logs
+  TMP        : C:\x64base\dottalkpp\data\tmp
+INIT: processing system .ini C:\x64base\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini C:\x64base\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-06, b466a9ce dirty)  (Jul 12 2026 23:00:04)
+DotTalk++ build Jul 12 2026 23:00:04
+SQLite available: 1, version: 3.50.4
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . ; AI_PORTAL_MAINT_READBACK_BEGIN
+. MAINT AI status
+  lane          : AI Portal / AI Friendly
+  mode          : Alpha Python/registry portal plus read-only native visibility
+  root entry    : AI_PORTAL.md
+  portal        : labtalk/portal/labtalk_portal.py
+  seeds         : labtalk/ai_portal
+  registry      : labtalk/registries/ai_portal.yaml
+  legacy docs   : docs/ai-friendly
+  dashboard     : docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+  book          : docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+  manifest      : docs/ai-friendly/AI_FRIENDLY_LANE_MANIFEST_V1.md
+  workflow      : docs/ai-friendly/AI_FRIENDLY_WORKFLOW_V1.md
+  intake queue  : docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md
+  purpose       : fast-start AI development partners with durable authority, SDLC, contracts, and proof
+  native scope  : reports paths only; does not launch the portal or grant source mutation
+. MAINT AI dashboard
+  user surface  : docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+  shows         : lane state, status buckets, authority levels, work log, review needs, proof needs, drift risks
+  current state : seeded
+  portal state  : Alpha/Experimental
+  portal entry  : AI_PORTAL.md
+  portal launch : launch_portal.ps1
+  implementation: Python plus reviewed YAML/Markdown registries; no native autonomous AI runtime
+. MAINT AI assimilate
+  purpose       : durable AI development-partner fast start when prior chat/provider memory is unavailable
+  root entry    : AI_PORTAL.md
+  portal launch : launch_portal.ps1
+  first reads   :
+    1. AI_PORTAL.md
+    2. labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md
+    3. labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+    4. labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    5. labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+  rule          : use repo-local evidence and contracts; do not rely on lost chat history or model memory
+  boundary      : MAINT AI reports onboarding paths only; portal execution remains external and guarded
+. ; AI_PORTAL_MAINT_READBACK_END
+. SHUTDOWN: processing C:\x64base\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+(none)

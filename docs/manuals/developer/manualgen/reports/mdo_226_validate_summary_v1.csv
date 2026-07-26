@@ -1,0 +1,9 @@
+metric,count,note
+validation_checks,25,Validation checks executed.
+validation_fail_rows,0,Validation FAIL rows.
+validation_review_rows,0,Validation REVIEW rows.
+boundary_fail_rows,0,Boundary FAIL rows.
+manual_publication_rebuilt,0,Validate does not rebuild publication.
+x64base_tables_created,0,Validate does not create x64base tables.
+cpp_files_created,0,Validate does not create C++ files.
+protected_system_mutations,0,No HELP/META/CMDHELPCHK/source/runtime mutation.

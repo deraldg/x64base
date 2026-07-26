@@ -1,0 +1,161 @@
+LabTalk proof transcript
+timestamp: 20260704_075057
+item_id: runtime.selfdoc.comments_to_contracts.first_lab
+label: Run SelfDoc Comments to Contracts Lab
+kind: lab_script
+command_line: powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\labtalk\labs\self_documenting_systems\run_selfdoc_first_lab.ps1
+return_code: 0
+
+STDOUT
+======
+LabTalk SelfDoc first lab
+repo_root=D:\code\ccode
+labtalk_root=D:\code\ccode\labtalk
+runtime_script=D:\code\ccode\labtalk\labs\self_documenting_systems\cmdhelp_cmdhelpchk_selfdoc_v0.dts
+command_set=CMDHELP, CMDHELPCHK
+boundary=report-only; no HELP DATA, DBF metadata, CMDHELPCHK, source, or manual publication mutation
+
+== Runtime HELP/CMDHELPCHK ==
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta-0  (Jul 02 2026 19:27:25)
+DotTalk++ build Jul 02 2026 19:27:25
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. CMDHELP CMDHELP
+Matched topics: DOT|CMDHELP FOX|CMDHELP
+
+DOT|CMDHELP
+===========
+
+SUMMARY
+-------
+Build / report the HELP command catalogs.
+        Examples:
+            CMDHELP BUILD
+            CH               (alias report, if enabled)
+        Notes:
+            Mines command registry + foxref + optional DBF help sources.
+
+SYNTAX
+------
+CMDHELP [BUILD]
+
+FOX|CMDHELP
+===========
+
+SUMMARY
+-------
+Build / report the HELP command catalogs.
+        Examples:
+            CMDHELP BUILD
+            CH               (alias report, if enabled)
+        Notes:
+            Mines command registry + foxref + optional DBF help sources.
+
+SYNTAX
+------
+CMDHELP [BUILD]
+. CMDHELP CMDHELPCHK
+Matched topics: DOT|CMDHELPCHK FOX|CMDHELPCHK
+
+DOT|CMDHELPCHK
+==============
+
+SUMMARY
+-------
+Validate HELP catalogs vs the command registry.
+
+SYNTAX
+------
+CMDHELPCHK
+
+FOX|CMDHELPCHK
+==============
+
+SUMMARY
+-------
+Validate HELP catalogs vs the command registry.
+
+SYNTAX
+------
+CMDHELPCHK
+. Usage:
+  CMDHELPCHK
+  CMDHELPCHK USAGE
+  CMDHELPCHK REF
+  CMDHELPCHK REFLECT
+  CMDHELPCHK ARTIFACTS [dir] [limit]
+  CMDHELPCHK V2 [dir] [limit]
+  CMDHELPCHK <dir> [limit]
+
+Modes:
+  REF/REFLECT  Validate reflected command/function metadata.
+  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.
+  <dir>        Validate legacy commands.dbf/.dbt in a help directory.
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+runtime_return_code=0
+
+== Contracts Scanner Summary ==
+root=D:\code\ccode
+contract_like_docs=148
+source_contract_annotation_files=38
+source_usage_marker_files=262
+registry_rows=22
+likely_unregistered_contract_docs=134
+registered_but_not_discovered=10
+contracts_scan_return_code=0
+
+== Source Usage Contract Crosswalk ==
+CMDHELP -> src\cli\cmdhelp.cpp
+  L1: // @dottalk.usage v1; L2: // owner: DOT|CMDHELP; L3: // command: CMDHELP; L9: // usage-access: CMDHELP USAGE; L1358: if (u == "COMMAND-OWNED @DOTTALK.USAGE V1 SUMMARY.") return true;
+CMDHELPCHK -> src\cli\command_helpchk.cpp
+  L3: // @dottalk.usage v1; L4: // owner: DOT|CMDHELPCHK; L5: // command: CMDHELPCHK; L11: // usage-access: CMDHELPCHK USAGE
+
+crosswalk_report=D:\code\ccode\labtalk\reports\selfdoc\lab_selfdoc_first_crosswalk_v0.md
+lab_result=PASS
+
+STDERR
+======
+

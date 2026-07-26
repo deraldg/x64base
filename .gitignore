@@ -37,6 +37,25 @@ DartConfiguration.tcl
 *.tmp
 *.cache
 
+# ---------------------------------------------------------------------------
+# EXEMPT: proof transcripts are EVIDENCE, not logs (2026-07-25, AIF-062)
+#
+# The blanket `*.log` above was written for build/runtime noise (dottalk_*_trace.log
+# and friends). It also silently swallowed labtalk/proofs/runs/*.log -- the teed
+# transcripts that proofs.yaml rows POINT AT as their evidence.
+#
+# Measured consequence: 71 proof artifacts on disk, 0 tracked; 7 proofs.yaml rows
+# referencing files absent from a clone. The registry's core claim -- that
+# `runtime_observed` means a transcript exists -- was unverifiable by anyone who
+# was not at this machine. The Table-Buffer WAL lane (2026-07-19) was fully built,
+# crash-proven in three phases, and closed out, yet appeared unbuilt to a partner
+# surveying the repo.
+#
+# Evidence must be versioned or the proof registry is fiction.
+# ---------------------------------------------------------------------------
+!labtalk/proofs/**
+!labtalk/reports/**
+
 # Local environments
 .venv/
 .venv312/
@@ -67,7 +86,17 @@ DartConfiguration.tcl
 /docs/messaging/backups/
 /docs/messaging/reports/
 /docs/messaging/sandbox/
-/docs/manuals/developer/manualgen/reports/
+/docs/manuals/developer/manualgen/reports/*
+# Two files here are CITED as evidence by proof.product.manualgen.board_preserved, so
+# they are exempt while the rest of the directory stays ignored. Two gitignore rules
+# had to be respected to make this work, both easy to get wrong:
+#   1. git does not descend into an EXCLUDED DIRECTORY, so the rule above is
+#      `reports/*` (contents) not `reports/` (the directory) -- a `!` negation under
+#      an excluded directory is silently inert.
+#   2. LATER RULES WIN, so these negations must come AFTER the exclusion, not before.
+# Verify with `git check-ignore -v <file>`; do not assume.
+!/docs/manuals/developer/manualgen/reports/mdo_226_validate_summary_v1.csv
+!/docs/manuals/developer/manualgen/reports/mdo_226_build_dry_run_summary_v1.csv
 /docs/manuals/developer/manualgen/runlog/
 /docs/manuals/developer/proofs/
 
@@ -242,20 +271,30 @@ zz_*
 #   src/tests/*.cpp, src/reference/, src/schemas/, src/cli/cmd_transaction.cpp
 #   and other plausible future source.
 # ---------------------------------------------------------------------------
+# CORRECTED 2026-07-25, same day, by the rule in AIF-062. The first draft of this
+# section ignored /src/AIPortal/, /src/**/*.patch and /src/**/*.dts as "scratch". That
+# was the identical mistake the *.log rule made: src/AIPortal/sessions/ is the
+# OUTSIDE-AI CHANGE PACKAGE INTAKE AREA, and the contract
+# (labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md) requires the received archive be
+# PRESERVED AS INTAKE EVIDENCE. 46 files were hidden, including AI_CHANGE_PACKAGE_*.md,
+# BUILD_TEST_PLAN_*, closeouts, and 7 .patch deliverables. `.patch` and `.dts` are
+# DELIVERABLE TYPES here, not noise -- never blanket-ignore them.
+#
+# What remains ignored is only what is genuinely disposable: loose prose dropped in the
+# source tree, pre-edit sidecars, and binary/data blobs.
+
 # prose/notes dropped into the source tree (CMakeLists.txt is unaffected:
 # gitignore never hides tracked files, and new cmake files are *.txt-negated)
 /src/**/*.txt
 !/src/**/CMakeLists.txt
+!/src/AIPortal/**
 /include/*.txt
-# ad-hoc scripts and patch/sidecar drops in the source tree
-/src/**/*.dts
-/src/**/*.patch
+# pre-edit sidecars only -- NOT .patch or .dts, which are deliverables
 /src/**/*.before_image_web_defaults
 # archives and binary data inside src/ and include/
 /src/*.zip
 /src/data/
 /include/manuals/
-# session/collection areas parked under src/
-/src/AIPortal/
+# collection stubs parked under src/ (prose only; AIPortal is intake evidence, kept)
 /src/psych/
 /src/labtalk/

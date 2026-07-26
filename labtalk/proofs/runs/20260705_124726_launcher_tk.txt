@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_124726
+item_id: launcher.tk
+label: ArcticTalk Tk GUI
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\tk.run.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\tk.run.ps1
+
+STDERR
+======
+

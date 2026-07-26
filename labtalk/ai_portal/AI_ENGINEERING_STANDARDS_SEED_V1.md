@@ -130,6 +130,25 @@ What this means for you, concretely:
 - **Before granting or assuming any capacity:** can you name the identity, enumerate the authority,
   verify the authentication, and point at who is accountable? Any "no" means capability, not agency.
 
+## 5c. Evidence must be versioned or the registry is fiction
+
+Grounded 2026-07-25 (AIF-062): a blanket `*.log` in `.gitignore` -- written for runtime noise --
+also swallowed `labtalk/proofs/runs/*.log`, the transcripts `proofs.yaml` rows cite as evidence.
+Measured: **71 proof artifacts on disk, 0 tracked; 7 rows citing files absent from a clone; 57
+untracked session closeouts against 18 tracked.** The Table-Buffer WAL lane was designed, built,
+**crash-proven in three teed phases**, and closed out -- and was indistinguishable from unbuilt to
+anyone reading the repository. A partner consequently recorded its proof at `source_defined`
+("untested"), which was wrong in fact. Invisible evidence does not just fail to help; it **produces
+wrong records that propagate.**
+
+- **A proof row must cite a committed artifact.** Before setting `runtime_observed` or `validated`,
+  confirm `git ls-files --error-unmatch <artifact>` succeeds. A row pointing at an untracked file is
+  a note, not evidence.
+- **Never blanket-ignore an extension that evidence uses.** `*.log`, `*.txt`, `*.csv` all carry proof
+  here. Scope ignores to **directories that generate noise**, never to extensions.
+- **Closeouts and transcripts are part of the deliverable.** A lane is not closed until they are
+  committed. "Done locally" is not done.
+
 ## 6. Survey what exists before you build -- or assert absence
 
 Before designing a feature or claiming a capability is missing, **survey the existing architecture.**
@@ -141,6 +160,11 @@ in `AI_PORTAL_HARDENING_LANE_V1.md`).
   AI-BBS lane: the BBS was ~80% already wired (identity/RBAC, the grant loop, the AFB runtime, the
   duplex docs) and only needed integration; and the engine already had cross-process record/file
   locking (`xbase::locks`, RLOCK/FLOCK) -- both were nearly missed.
+- **A repository can under-report itself.** Absence of evidence in the tree is not evidence of
+  absence: the WAL case (AIF-062) had correct code, a design doc, and crash proofs -- with the docs
+  and proofs untracked and the header comment stale. When source and docs disagree, **the source is
+  the truth**; read `src/` before concluding a capability is missing, and check whether the docs that
+  would have told you are simply uncommitted.
 - Before asserting "there is no X": confirm it. The engine likely already has X. Never state a
   capability is absent without checking the source. If you catch yourself saying "there's no lock /
   no crypto / no persistence / no permission check," stop and grep first.

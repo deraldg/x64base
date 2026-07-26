@@ -277,21 +277,31 @@ proofs:
   # --- WAL / memo atomicity (AIF-061) ---
   - id: proof.wal.dbf_record
     label: TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery
-    state: source_defined
-    source: D:/code/ccode/src/cli/table_state.cpp
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md
     related:
+      - D:/code/ccode/docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
+      - D:/code/ccode/src/cli/table_state.cpp
       - D:/code/ccode/include/cli/table_state.hpp
-      - D:/code/ccode/docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
+      - D:/code/ccode/labtalk/proofs/runs/wal_phaseA_proof_teed_20260719T080435Z.log
+      - D:/code/ccode/labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log
+      - D:/code/ccode/labtalk/proofs/runs/wal_phaseC_proof_teed_20260719T082345Z.log
+    proof_logs:
+      - wal_phaseA sha 938D4EC361EB34D8D7A3130E62ABDC06F8868DF3C75698C002F6FBE1A6292F60
+      - wal_phaseB sha 16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A
+      - wal_phaseC sha FBA1FC92FA1CC531B8B54094D8BC644B1FA51DD13B35053D02775511A257EE54
     notes: >-
-      SHIPPED, previously mis-labelled as stubs. Per-transaction append-only redo log at <dbf>.tbj
-      (format TBJ1; U/D records with priority + H|S retention so retained edits survive replay, values
-      hex-encoded). journal_begin_commit writes a C <count> marker and performs ONE durable sync
-      (FlushFileBuffers / fsync) BEFORE any buffered change reaches the DBF -- the write-ahead
-      invariant, correctly ordered; a failed sync aborts the commit.
-      recover_table_buffer_journal replays idempotently on open when the C marker is present,
-      discards otherwise, then removes the log. Gated by BufferPersistenceMode::RamJournal.
-      Marked source_defined not runtime_observed on purpose: the crash-window case has not been
-      observed under fault injection, and an untested WAL is a design, not a guarantee.
+      Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo log
+      with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the
+      highest-priority Edit3). Phase B: CRASH RECOVERY OBSERVED -- setup left an uncommitted
+      `U 1 1 S 2:<hex "Recovered">`, the runner appended `C 1`, reopening replayed it (NAME=Recovered)
+      and removed the log. Phase C: buffered DELETE journals a D record and defers the DBF mutation to
+      COMMIT, discarded on ROLLBACK, replayed on recovery; the buffer-off write-through DELETE path is
+      unregressed. Format TBJ1; one durable fsync of the C marker BEFORE the DBF apply.
+      CLASSIFICATION HISTORY: first entered at source_defined on the belief the crash window was
+      untested. Wrong -- the evidence existed but was gitignored by a blanket `*.log` rule, so a
+      partner surveying the repo could not see it. Corrected to runtime_observed when the proof
+      transcripts were un-ignored and committed (AIF-062).
   - id: proof.wal.memo_atomicity
     label: Whole-row atomicity including the memo store
     state: design-intended
@@ -306,3 +316,27 @@ proofs:
       accepts TBJ1. cmd_replace already declares writes_memo / clears_memo_field, so the call sites to
       instrument are pre-identified. Closing this retires the COMMIT contract's own disclaimer that it
       "is not an atomic transaction across DBF, memo, and index storage."
+
+  # --- Evidence layer versioning (AIF-062) ---
+  - id: proof.evidence.layer_versioned
+    label: Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md
+    notes: >-
+      MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it
+      also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR
+      EVIDENCE. 71 proof artifacts on disk, 0 tracked; 7 rows citing files absent from a clone; 57
+      untracked session closeouts against 18 tracked -- roughly three quarters of the completed-work
+      record outside version control. The registry's central claim, that runtime_observed means a
+      transcript exists, was unverifiable by anyone not at this machine. Surfaced when a partner
+      reported x64base had no write-ahead log: the WAL was designed, built, crash-proven in three
+      teed phases and closed out on 2026-07-19, but design doc, closeout and all three transcripts
+      were untracked, so it was indistinguishable from unbuilt. Second-order cost: the partner then
+      recorded proof.wal.dbf_record at source_defined ("untested"), which was wrong in fact --
+      invisible evidence does not merely fail to help, it produces wrong records that propagate.
+      FIX: targeted negations (!labtalk/proofs/**, !labtalk/reports/**) immediately after the blanket
+      rule, verified both directions (proof logs no longer ignored; dottalk_exit_trace.log still is);
+      81 proof/report artifacts + 57 closeouts + the WAL design doc committed; proof.wal.dbf_record
+      corrected to runtime_observed citing Phase A/B/C by SHA. Same failure as the @dottalk.file gap
+      (AIF-050) one layer up: there source files were invisible to the harvest, here proofs were
+      invisible to a clone.

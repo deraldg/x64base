@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_193735
+item_id: launcher.wsl_runtime
+label: WSL DotTalk++ Runtime
+kind: wsl_launcher
+command_line: wsl.exe -e bash -lc cd /mnt/d/code/ccode && /mnt/d/code/ccode/wslrun.sh
+return_code: 0
+
+STDOUT
+======
+Launched external WSL process for launcher.wsl_runtime
+
+STDERR
+======
+

@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_113602
+item_id: launcher.wx_next
+label: wx Next GUI
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\wx.next.run.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\wx.next.run.ps1
+
+STDERR
+======
+

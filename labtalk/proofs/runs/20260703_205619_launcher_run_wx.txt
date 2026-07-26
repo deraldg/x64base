@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260703_205619
+item_id: launcher.run_wx
+label: run-wx.ps1
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -ExecutionPolicy Bypass -File D:\code\ccode\run-wx.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\run-wx.ps1
+
+STDERR
+======
+

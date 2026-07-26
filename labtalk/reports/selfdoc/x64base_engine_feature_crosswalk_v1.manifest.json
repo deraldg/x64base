@@ -1,0 +1,8 @@
+{
+  "generated_utc": "2026-07-04T03:32:01Z",
+  "feature_count": 28,
+  "source_file_mentions": 4520,
+  "help_command_count": 290,
+  "manualgen_validation_status": "FAIL",
+  "manualgen_validation_caveat": "Python 3.12 required; prior manualgen validation used Python 3.11."
+}

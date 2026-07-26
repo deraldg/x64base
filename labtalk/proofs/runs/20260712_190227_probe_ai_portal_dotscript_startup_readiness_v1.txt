@@ -1,0 +1,317 @@
+LabTalk proof transcript
+timestamp: 20260712_190227
+item_id: probe.ai_portal.dotscript_startup_readiness.v1
+label: Run DotTalk++ / DotScript Startup Readiness Probe
+kind: dottalk_script
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\ai_portal\probes\dotscript_startup_readiness_v1.dts
+return_code: 0
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-08, 86c767e5 dirty)  (Jul 09 2026 13:03:38)
+DotTalk++ build Jul 09 2026 13:03:38
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . ; AI_DOTSCRIPT_READINESS_BEGIN
+. MAINT AI assimilate
+  purpose       : durable new-AI onboarding if prior chat/provider memory is unavailable
+  portal        : docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+  book          : docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+  first reads   :
+    1. docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+    2. docs/agents/AI_BABY_BOOTSTRAP_CARD.md
+    3. docs/agents/CURRENT_TARGET.md
+    4. DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md
+    5. docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+  rule          : use repo-local evidence; do not rely on lost chat history or model memory
+. Usage:
+  DOTSCRIPT USAGE
+  DOTSCRIPT <file>
+  DOTSCRIPT @<file>
+  DOTSCRIPT TRACE
+  DOTSCRIPT TRACE ON|OFF
+  DOTSCRIPT TRACE <file>
+  DOTSCRIPT TRACE @<file>
+  DOTSCRIPT TRACE ON|OFF <file>
+  DOTSCRIPT TRACE ON|OFF @<file>
+Notes:
+  - Bare names resolve as typed, .dts, scripts/, then tests/.
+  - Lines beginning with *, //, &&, or ; after trimming are skipped.
+  - DOTSCRIPT executes commands; side effects depend on script contents.
+  - OUT/OUTPUT tees full command output to a transcript file.
+  - Nesting is limited to main script plus one subscript.
+. CMDHELP DOTSCRIPT
+Matched topics: DOT|DOTSCRIPT FOX|DOTSCRIPT
+
+DOT|DOTSCRIPT
+=============
+
+SUMMARY
+-------
+Run a DotTalk++ script file, resolving bare names through script/test search locations, supporting @file notation, TRACE mode, and one-level subscript nesting.
+Run a DotTalk script file (test harness / automation).
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+USAGE
+-----
+DOTSCRIPT <file>
+DOTSCRIPT @<file>
+DOTSCRIPT TRACE
+DOTSCRIPT TRACE <file>
+DOTSCRIPT TRACE @<file>
+DOTSCRIPT TRACE OFF
+DOTSCRIPT TRACE OFF <file>
+DOTSCRIPT TRACE OFF @<file>
+DOTSCRIPT TRACE ON
+DOTSCRIPT TRACE ON <file>
+DOTSCRIPT TRACE ON @<file>
+
+SYNTAX
+------
+DOTSCRIPT <file.dts>
+
+NOTE
+----
+@file notation is accepted and unquoted before path resolution.
+Bare script names try the typed name, .dts extension, scripts/, and tests/ candidates.
+DOTSCRIPT itself delegates side effects to the commands inside the script; it is not read-only.
+DOTSCRIPT reads an external script file and executes each nonblank,
+DOTSCRIPT with no arguments shows usage.
+Nesting is limited to main script plus one subscript.
+Script comments/blank lines are ignored when they begin with *, //, &&, or ; after trimming.
+TRACE <file> runs a single script with trace enabled without changing global trace state.
+TRACE ON/OFF changes global DOTSCRIPT trace state.
+TRACE without a file reports the current trace state and usage.
+noncomment line through the shell command executor.
+
+FOX|DOTSCRIPT
+=============
+
+SUMMARY
+-------
+Run a DotTalk script file (test harness / automation).
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+SYNTAX
+------
+DOTSCRIPT <file.dts>
+. DOTSCRIPT
+  DOTSCRIPT <file.dts>
+  Run a DotTalk script file (test harness / automation).
+
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+. CMDHELP DO
+
+FOX|DO
+======
+
+SUMMARY
+-------
+Execute a program. (Use DOTSCRIPT instead.)
+
+SYNTAX
+------
+DO <program> [WITH <args>]
+. CMDHELP ECHO
+Matched topics: DOT|ECHO FOX|ECHO
+
+DOT|ECHO
+========
+
+SUMMARY
+-------
+Print or comment-echo text through the output router depending on SET ECHO state.
+Echo text to the current DotTalk++ output route.
+
+USAGE
+-----
+ECHO
+ECHO <text>
+
+SYNTAX
+------
+ECHO <text...>
+
+NOTE
+----
+ECHO <text> is comment-style console output when router echo is OFF.
+ECHO <text> routes normally when router echo is ON.
+ECHO ON is not the toggle command; use SET ECHO ON or SET ECHO OFF.
+ECHO USAGE prints usage directly and does not route through echo mode.
+ECHO with no arguments preserves existing behavior and emits an empty comment/output line.
+
+FOX|ECHO
+========
+
+SUMMARY
+-------
+Print text to the console.
+
+SYNTAX
+------
+ECHO <text>
+. CMDHELP SMARTLIST
+Matched topics: DOT|SMARTLIST FOX|SMARTLIST
+
+DOT|SMARTLIST
+=============
+
+SUMMARY
+-------
+Filter-aware, order-aware table listing with optional projections, tuple output, debug tracing, deleted-record modes, and predicate filtering.
+Order-aware list output with predicate support
+LIST-style output with SQL-grade filtering (order-aware).
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+
+USAGE
+-----
+SMARTLIST
+SMARTLIST <fields>
+SMARTLIST <limit>
+SMARTLIST ALL
+SMARTLIST DEBUG
+SMARTLIST DELETED
+SMARTLIST FIRST <n>
+SMARTLIST FOR <pred>
+SMARTLIST NEXT <n>
+SMARTLIST TUPLES
+
+SYNTAX
+------
+SMARTLIST
+SMARTLIST <n>
+SMARTLIST ALL
+SMARTLIST DEBUG
+SMARTLIST DELETED
+SMARTLIST FOR <expr>
+SMARTLIST [ALL|DELETED|<n>] [DEBUG] [FOR <expr>]
+
+EXAMPLE
+-------
+SMARTLIST
+SMARTLIST 20
+SMARTLIST ALL FOR GPA >= 3.5
+SMARTLIST FOR LNAME LIKE "SMI%"
+
+NOTE
+----
+ALL removes the output limit.
+DEBUG emits order/filter diagnostics.
+DELETED selects deleted records.
+FOR applies predicate filtering.
+Field projections are comma-separated.
+NEXT and FIRST limit scan scope.
+SMARTLIST is read-only for table data.
+SMARTLIST requires an open table except for SMARTLIST USAGE.
+SMARTLIST restores the original cursor best-effort after listing.
+SMARTLIST with no arguments preserves existing behavior and prints usage before continuing with default listing.
+TUPLES emits tuple bridge output.
+Preferred listing command for user-facing ordered output
+Respects active order and active filter where available
+Uses expression/predicate services rather than ad-hoc string matching
+
+FOX|SMARTLIST
+=============
+
+SUMMARY
+-------
+Order-aware list output with predicate support
+LIST-style output with SQL-grade filtering (order-aware).
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+
+SYNTAX
+------
+SMARTLIST
+SMARTLIST <n>
+SMARTLIST ALL
+SMARTLIST DEBUG
+SMARTLIST DELETED
+SMARTLIST FOR <expr>
+SMARTLIST [ALL|DELETED|<n>] [DEBUG] [FOR <expr>]
+
+EXAMPLE
+-------
+SMARTLIST
+SMARTLIST 20
+SMARTLIST ALL FOR GPA >= 3.5
+SMARTLIST FOR LNAME LIKE "SMI%"
+
+NOTE
+----
+Preferred listing command for user-facing ordered output
+Respects active order and active filter where available
+Uses expression/predicate services rather than ad-hoc string matching
+. Usage:
+  CMDHELPCHK
+  CMDHELPCHK USAGE
+  CMDHELPCHK REF
+  CMDHELPCHK REFLECT
+  CMDHELPCHK ARTIFACTS [dir] [limit]
+  CMDHELPCHK V2 [dir] [limit]
+  CMDHELPCHK <dir> [limit]
+
+Modes:
+  REF/REFLECT  Validate reflected command/function metadata.
+  ARTIFACTS    Validate HELP DATA v2 help_artifacts.dbf/.dbt.
+  <dir>        Validate legacy commands.dbf/.dbt in a help directory.
+. ; AI_DOTSCRIPT_READINESS_END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+

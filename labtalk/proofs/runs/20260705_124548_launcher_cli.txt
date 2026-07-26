@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_124548
+item_id: launcher.cli
+label: DotTalk++ CLI
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\datarun.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\datarun.ps1
+
+STDERR
+======
+

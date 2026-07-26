@@ -1,0 +1,73 @@
+LabTalk proof transcript
+timestamp: 20260705_182913
+item_id: runtime.maint_ai_assimilate
+label: MAINT AI ASSIMILATE
+kind: dottalk_command
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\tmp\runtime_maint_ai_assimilate.dts
+return_code: 0
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta-0  (Jul 05 2026 18:24:49)
+DotTalk++ build Jul 05 2026 18:24:49
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. MAINT AI assimilate
+  purpose       : durable new-AI onboarding if prior chat/provider memory is unavailable
+  portal        : docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+  book          : docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+  first reads   :
+    1. docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+    2. docs/agents/AI_BABY_BOOTSTRAP_CARD.md
+    3. docs/agents/CURRENT_TARGET.md
+    4. DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md
+    5. docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+  rule          : use repo-local evidence; do not rely on lost chat history or model memory
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+

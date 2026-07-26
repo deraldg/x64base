@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_194145
+item_id: launcher.artic_runtime
+label: Artic Runtime Alias
+kind: powershell_launcher
+command_line: powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -File D:\code\ccode\labtalk\..\artic.datarun.ps1
+return_code: 0
+
+STDOUT
+======
+Launched external PowerShell process for D:\code\ccode\labtalk\..\artic.datarun.ps1
+
+STDERR
+======
+

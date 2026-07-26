@@ -1,0 +1,649 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-15, 1ce8f45d dirty)  (Jul 17 2026 18:15:42)
+DotTalk++ build Jul 17 2026 18:15:42
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  John 3:19
+  And this is the condemnation, that light is come into the world, and men loved darkness rather than light, because their deeds were evil.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . Echo is OFF
+. Timer is ON
+. TIMER START: 0.000222200 s
+Talk is ON
+TIMER END  : 0.001154000 s
+ELAPSED    : 0.000931800 s
+. TIMER START: 0.001257200 s
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\pinocchio
+TIMER END  : 0.001430600 s
+ELAPSED    : 0.000173400 s
+. TIMER START: 0.001483000 s
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\pinocchio
+TIMER END  : 0.001609300 s
+ELAPSED    : 0.000126300 s
+. TIMER START: 0.001652500 s
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\pinocchio
+TIMER END  : 0.001778300 s
+ELAPSED    : 0.000125800 s
+. . . . TIMER START: 0.001843200 s
+;
+TIMER END  : 0.001887300 s
+ELAPSED    : 0.000044100 s
+. TIMER START: 0.001922900 s
+;
+TIMER END  : 0.001951200 s
+ELAPSED    : 0.000028300 s
+. TIMER START: 0.002043700 s
+;
+TIMER END  : 0.002088900 s
+ELAPSED    : 0.000045200 s
+. TIMER START: 0.002133400 s
+Selected area 0.
+Current area: 0
+TIMER END  : 0.002249000 s
+ELAPSED    : 0.000115600 s
+. TIMER START: 0.002288300 s
+Opened STUDENTS (v64) : Record count 1000000
+Valid Index/Indices   : CDX
+Auto-attached order: STUDENTS.cdx (tag: SID)
+TIMER END  : 0.008762700 s
+ELAPSED    : 0.006474400 s
+. TIMER START: 0.008845200 s
+SET INDEX: CDX attached
+  Container: STUDENTS.cdx
+  LMDB env : D:\code\ccode\dottalkpp\data\LMDB\pinocchio\STUDENTS.cdx.d
+Use SET ORDER TO TAG <tag>
+TIMER END  : 0.009531200 s
+ELAPSED    : 0.000686000 s
+. TIMER START: 0.009594000 s
+SET ORDER: CDX TAG 'SID' (ASC)
+TIMER END  : 0.014375600 s
+ELAPSED    : 0.004781600 s
+. TIMER START: 0.014430900 s
+; === A-GROUP: FLAT verbs (should be ~identical on both tables) ===
+TIMER END  : 0.014492400 s
+ELAPSED    : 0.000061500 s
+. TIMER START: 0.014575300 s
+; --- A1. COUNT (no filter) -> header recCount, expect 1000000, O(1) ---
+TIMER END  : 0.014663800 s
+ELAPSED    : 0.000088500 s
+. TIMER START: 0.014708400 s
+1000000
+TIMER END  : 0.014796400 s
+ELAPSED    : 0.000088000 s
+. TIMER START: 0.014844000 s
+; --- A2. GO TOP / GO BOTTOM / GO 500000 -> absolute positioning, O(1) ---
+TIMER END  : 0.014902800 s
+ELAPSED    : 0.000058800 s
+. TIMER START: 0.014942800 s
+Recno: 1
+TIMER END  : 0.015114000 s
+ELAPSED    : 0.000171200 s
+. TIMER START: 0.015148800 s
+Recno: 1000000
+TIMER END  : 0.015288100 s
+ELAPSED    : 0.000139300 s
+. TIMER START: 0.015332700 s
+; (max SID printed below; SEEK Group C assumes the ENROLL/STUDENTS max is 50999999) ---
+TIMER END  : 0.015412400 s
+ELAPSED    : 0.000079700 s
+. TIMER START: 0.015578800 s
+  RECNO SID      LNAME                FNAME           
+
+      1 50000000 Taylor               Quinn           
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 0.060470700 s
+ELAPSED    : 0.044891900 s
+. TIMER START: 0.060545300 s
+Recno: 500000
+TIMER END  : 0.060646800 s
+ELAPSED    : 0.000101500 s
+. TIMER START: 0.060709200 s
+; --- A3. TOP -> canary must read 50000000 Taylor Quinn, O(log n) ---
+TIMER END  : 0.060795800 s
+ELAPSED    : 0.000086600 s
+. TIMER START: 0.060864000 s
+Recno: 1
+TIMER END  : 0.061085000 s
+ELAPSED    : 0.000221000 s
+. TIMER START: 0.061170300 s
+  RECNO SID      LNAME                FNAME           
+
+      1 50000000 Taylor               Quinn           
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 0.095630700 s
+ELAPSED    : 0.034460400 s
+. TIMER START: 0.095703300 s
+; --- A4. BOTTOM -> O(log n) ---
+TIMER END  : 0.095778300 s
+ELAPSED    : 0.000075000 s
+. TIMER START: 0.095878500 s
+Recno: 1000000
+TIMER END  : 0.096045600 s
+ELAPSED    : 0.000167100 s
+. TIMER START: 0.096119000 s
+; --- A5. SKIP +100000 / SKIP -100000 -> CDX cursor, O(log n) ---
+TIMER END  : 0.096174000 s
+ELAPSED    : 0.000055000 s
+. TIMER START: 0.096210700 s
+Recno: 1
+TIMER END  : 0.096319000 s
+ELAPSED    : 0.000108300 s
+. TIMER START: 0.096362500 s
+Recno: 100001
+TIMER END  : 0.097605300 s
+ELAPSED    : 0.001242800 s
+. TIMER START: 0.097654600 s
+Recno: 1
+TIMER END  : 0.098814600 s
+ELAPSED    : 0.001160000 s
+. TIMER START: 0.098953400 s
+; === B-GROUP: LINEAR verbs (EXPECTED to scale ~5.5x on ENROLL) ===
+TIMER END  : 0.099020300 s
+ELAPSED    : 0.000066900 s
+. TIMER START: 0.099066400 s
+; --- B1. COUNT FOR MAJOR = CSCI -> predicate full scan, O(n) ---
+TIMER END  : 0.099127000 s
+ELAPSED    : 0.000060600 s
+. TIMER START: 0.099181000 s
+90700
+TIMER END  : 33.036612400 s
+ELAPSED    : 32.937431400 s
+. TIMER START: 33.036686300 s
+; --- B2. COUNT under SET FILTER -> filter forces scan (no header shortcut), O(n) ---
+TIMER END  : 33.036753300 s
+ELAPSED    : 0.000067000 s
+. TIMER START: 33.036802800 s
+SET FILTER: TO MAJOR = CSCI
+TIMER END  : 33.036934300 s
+ELAPSED    : 0.000131500 s
+. TIMER START: 33.037016900 s
+0
+TIMER END  : 53.781196500 s
+ELAPSED    : 20.744179600 s
+. TIMER START: 53.781272000 s
+SET FILTER: cleared.
+TIMER END  : 53.781380000 s
+ELAPSED    : 0.000108000 s
+. TIMER START: 53.781433100 s
+; --- B3. aggregates over GPA -> each is an independent full scan, O(n) each ---
+TIMER END  : 53.781512700 s
+ELAPSED    : 0.000079600 s
+. TIMER START: 53.781558300 s
+2.99933
+TIMER END  : 71.223436600 s
+ELAPSED    : 17.441878300 s
+. TIMER START: 71.223521800 s
+2.99933e+06
+TIMER END  : 88.702103100 s
+ELAPSED    : 17.478581300 s
+. TIMER START: 88.702159800 s
+2
+TIMER END  : 105.742790400 s
+ELAPSED    : 17.040630600 s
+. TIMER START: 105.742840900 s
+4
+TIMER END  : 122.913987100 s
+ELAPSED    : 17.171146200 s
+. TIMER START: 122.914054200 s
+; --- B4. LIST FOR SID = 50999999 -> selective predicate (small output), full scan, O(n) ---
+TIMER END  : 122.914120500 s
+ELAPSED    : 0.000066300 s
+. TIMER START: 122.914156700 s
+          SID      LNAME                FNAME           DOB      GENDER MAJOR ENROLL_D GPA  EMAIL                                    
+; ORDER: file 'D:\code\ccode\dottalkpp\data\INDEXES\pinocchio\STUDENTS.cdx'  TAG 'SID'  MODE LMDB  ASC
+   1000000 50999999 Brown                Jordan          20050301 M      CHEM  20241227 3.06 jordan.brown99@student.mcc.edu           
+1 cdx(lmdb) indexed record(s) (tag=SID) listed (limit 20). Use LIST ALL to show more.
+Cursor: Area 0 of 0 ... 255  Physical Recno 1,000,000, Logical Row 1,000,000
+TIMER END  : 160.156840200 s
+ELAPSED    : 37.242683500 s
+. TIMER START: 160.156921300 s
+; --- B5. LOCATE near-front vs near-end (physical scan distance) ---
+TIMER END  : 160.156993100 s
+ELAPSED    : 0.000071800 s
+. TIMER START: 160.157039200 s
+; B5a LOCATE FOR SID = 50000000 -> record 1, near-instant baseline
+TIMER END  : 160.157166300 s
+ELAPSED    : 0.000127100 s
+. TIMER START: 160.157224600 s
+Located.
+TIMER END  : 160.157459400 s
+ELAPSED    : 0.000234800 s
+. TIMER START: 160.157548900 s
+; B5b LOCATE FOR SID = 50999999 -> near-end physical, full scan
+TIMER END  : 160.157653300 s
+ELAPSED    : 0.000104400 s
+. TIMER START: 160.157731400 s
+Located.
+TIMER END  : 188.675825600 s
+ELAPSED    : 28.518094200 s
+. TIMER START: 188.675927500 s
+; B5c CONTINUE -> resume the last LOCATE predicate
+TIMER END  : 188.676015400 s
+ELAPSED    : 0.000087900 s
+. TIMER START: 188.676077300 s
+CONTINUE: not found.
+TIMER END  : 188.721509400 s
+ELAPSED    : 0.045432100 s
+. TIMER START: 188.721607200 s
+; --- B6. SCAN...ENDSCAN empty body -> pure full iteration cost, O(n) ---
+TIMER END  : 188.721704300 s
+ELAPSED    : 0.000097100 s
+. TIMER START: 188.721756800 s
+SCAN: buffering lines. Type ENDSCAN to execute.
+TIMER END  : 188.721843400 s
+ELAPSED    : 0.000086600 s
+.. TIMER START: 188.721922400 s
+ENDSCAN: 1000000 match(es), 1000000 iteration(s) over 0 line(s).
+TIMER END  : 220.056634900 s
+ELAPSED    : 31.334712500 s
+. TIMER START: 220.056829100 s
+; === C-GROUP: SEEK positional profile (SENTINEL -- currently linear on CDX) ===
+TIMER END  : 220.056971000 s
+ELAPSED    : 0.000141900 s
+. TIMER START: 220.057071800 s
+SET ORDER: CDX TAG 'SID' (ASC)
+TIMER END  : 220.082453600 s
+ELAPSED    : 0.025381800 s
+. TIMER START: 220.082520700 s
+; --- C1. SEEK 50000000 -> FIRST key ascending, should be fast ---
+TIMER END  : 220.082597000 s
+ELAPSED    : 0.000076300 s
+. TIMER START: 220.082633700 s
+Found at 1.
+TIMER END  : 220.082784300 s
+ELAPSED    : 0.000150600 s
+. TIMER START: 220.082834500 s
+  RECNO SID      LNAME                FNAME           
+
+      1 50000000 Taylor               Quinn           
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 220.124436700 s
+ELAPSED    : 0.041602200 s
+. TIMER START: 220.124536300 s
+; --- C2. SEEK 50999999 -> near-LAST key ascending, full index walk if linear ---
+TIMER END  : 220.124627600 s
+ELAPSED    : 0.000091300 s
+. TIMER START: 220.124699100 s
+Found at 1000000.
+TIMER END  : 236.997943200 s
+ELAPSED    : 16.873244100 s
+. TIMER START: 236.998004000 s
+  RECNO SID      LNAME                FNAME           
+
+      1 50000000 Taylor               Quinn           
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 237.021973000 s
+ELAPSED    : 0.023969000 s
+. TIMER START: 237.022051500 s
+; --- C3. value-safe: same canary, DESCENDING order -> canary is now LAST key ---
+TIMER END  : 237.022124700 s
+ELAPSED    : 0.000073200 s
+. TIMER START: 237.022165500 s
+Order: DESCENDING.
+TIMER END  : 237.022230700 s
+ELAPSED    : 0.000065200 s
+. TIMER START: 237.022292600 s
+Found at 1.
+TIMER END  : 253.752811700 s
+ELAPSED    : 16.730519100 s
+. TIMER START: 253.752885400 s
+  RECNO SID      LNAME                FNAME           
+
+1000000 50999999 Brown                Jordan          
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 253.776913700 s
+ELAPSED    : 0.024028300 s
+. TIMER START: 253.776983400 s
+Order: ASCENDING.
+TIMER END  : 253.777104900 s
+ELAPSED    : 0.000121500 s
+. . . . TIMER START: 253.777180500 s
+;
+TIMER END  : 253.777217800 s
+ELAPSED    : 0.000037300 s
+. TIMER START: 253.777280900 s
+;
+TIMER END  : 253.777311900 s
+ELAPSED    : 0.000031000 s
+. TIMER START: 253.777345700 s
+;
+TIMER END  : 253.777371500 s
+ELAPSED    : 0.000025800 s
+. TIMER START: 253.777399600 s
+Selected area 1.
+Current area: 1
+TIMER END  : 253.777450500 s
+ELAPSED    : 0.000050900 s
+. TIMER START: 253.777587600 s
+Opened ENROLL (v64) : Record count 5501358
+Valid Index/Indices   : CDX
+Auto-attached order: ENROLL.cdx (tag: SID)
+TIMER END  : 253.786747400 s
+ELAPSED    : 0.009159800 s
+. TIMER START: 253.786814000 s
+SET INDEX: CDX attached
+  Container: ENROLL.cdx
+  LMDB env : D:\code\ccode\dottalkpp\data\LMDB\pinocchio\ENROLL.cdx.d
+Use SET ORDER TO TAG <tag>
+TIMER END  : 253.787410300 s
+ELAPSED    : 0.000596300 s
+. TIMER START: 253.787483800 s
+SET ORDER: CDX TAG 'SID' (ASC)
+TIMER END  : 253.791040000 s
+ELAPSED    : 0.003556200 s
+. TIMER START: 253.791150900 s
+; === A-GROUP: FLAT verbs ===
+TIMER END  : 253.791247100 s
+ELAPSED    : 0.000096200 s
+. TIMER START: 253.791327400 s
+; --- A1. COUNT (no filter) -> expect 5501358, O(1) ---
+TIMER END  : 253.791423800 s
+ELAPSED    : 0.000096400 s
+. TIMER START: 253.791506600 s
+5501358
+TIMER END  : 253.791603900 s
+ELAPSED    : 0.000097300 s
+. TIMER START: 253.791686600 s
+; --- A2. GO TOP / GO BOTTOM / GO 2750000 -> O(1) ---
+TIMER END  : 253.791870100 s
+ELAPSED    : 0.000183500 s
+. TIMER START: 253.791932000 s
+Recno: 1
+TIMER END  : 253.792110200 s
+ELAPSED    : 0.000178200 s
+. TIMER START: 253.792197400 s
+Recno: 5501358
+TIMER END  : 253.792337100 s
+ELAPSED    : 0.000139700 s
+. TIMER START: 253.792380200 s
+  RECNO SID      CLS_ID       
+
+      1 50000000 W26BIOL288   
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 253.992793900 s
+ELAPSED    : 0.200413700 s
+. TIMER START: 253.992877800 s
+Recno: 2750000
+TIMER END  : 253.992956000 s
+ELAPSED    : 0.000078200 s
+. TIMER START: 253.993080800 s
+; --- A3. TOP -> canary 50000000, O(log n) ---
+TIMER END  : 253.993148200 s
+ELAPSED    : 0.000067400 s
+. TIMER START: 253.993181300 s
+Recno: 1
+TIMER END  : 253.993299900 s
+ELAPSED    : 0.000118600 s
+. TIMER START: 253.993348800 s
+  RECNO SID      CLS_ID       
+
+      1 50000000 W26BIOL288   
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 254.147432500 s
+ELAPSED    : 0.154083700 s
+. TIMER START: 254.147488500 s
+; --- A4. BOTTOM -> O(log n) ---
+TIMER END  : 254.147538600 s
+ELAPSED    : 0.000050100 s
+. TIMER START: 254.147576300 s
+Recno: 5501358
+TIMER END  : 254.147679000 s
+ELAPSED    : 0.000102700 s
+. TIMER START: 254.147718900 s
+; --- A5. SKIP +100000 / SKIP -100000 -> CDX cursor, O(log n) ---
+TIMER END  : 254.147821400 s
+ELAPSED    : 0.000102500 s
+. TIMER START: 254.147857500 s
+Recno: 1
+TIMER END  : 254.147942600 s
+ELAPSED    : 0.000085100 s
+. TIMER START: 254.148005100 s
+Recno: 100001
+TIMER END  : 254.149031600 s
+ELAPSED    : 0.001026500 s
+. TIMER START: 254.149073800 s
+Recno: 1
+TIMER END  : 254.150032500 s
+ELAPSED    : 0.000958700 s
+. TIMER START: 254.150079900 s
+; === B-GROUP: LINEAR verbs (compare each ELAPSED to the STUDENTS value) ===
+TIMER END  : 254.150134100 s
+ELAPSED    : 0.000054200 s
+. TIMER START: 254.150184100 s
+; --- B1. COUNT FOR SID = 50500000 -> predicate full scan, O(n) ---
+TIMER END  : 254.150291900 s
+ELAPSED    : 0.000107800 s
+. TIMER START: 254.150333900 s
+6
+TIMER END  : 325.958838300 s
+ELAPSED    : 71.808504400 s
+. TIMER START: 325.959018500 s
+; --- B2. COUNT under SET FILTER -> O(n) ---
+TIMER END  : 325.959249900 s
+ELAPSED    : 0.000231400 s
+. TIMER START: 325.959349100 s
+SET FILTER: TO SID = 50500000
+TIMER END  : 325.959528600 s
+ELAPSED    : 0.000179500 s
+. TIMER START: 325.959622400 s
+6
+TIMER END  : 394.951046700 s
+ELAPSED    : 68.991424300 s
+. TIMER START: 394.951153900 s
+SET FILTER: cleared.
+TIMER END  : 394.951276300 s
+ELAPSED    : 0.000122400 s
+. TIMER START: 394.951476400 s
+; --- B3. aggregates over SID -> full scan each, O(n) ---
+TIMER END  : 394.951590600 s
+ELAPSED    : 0.000114200 s
+. TIMER START: 394.951653300 s
+5.05e+07
+TIMER END  : 463.260595500 s
+ELAPSED    : 68.308942200 s
+. TIMER START: 463.260648900 s
+5e+07
+TIMER END  : 530.713063600 s
+ELAPSED    : 67.452414700 s
+. TIMER START: 530.713120800 s
+5.1e+07
+TIMER END  : 603.302743300 s
+ELAPSED    : 72.589622500 s
+. TIMER START: 603.302873500 s
+; --- B4. LIST FOR SID = 50999999 -> full scan, small output, O(n) ---
+TIMER END  : 603.302952000 s
+ELAPSED    : 0.000078500 s
+. TIMER START: 603.303017500 s
+          SID      CLS_ID       
+; ORDER: file 'D:\code\ccode\dottalkpp\data\INDEXES\pinocchio\ENROLL.cdx'  TAG 'SID'  MODE LMDB  ASC
+   5501354 50999999 F25CHEM382   
+   5501355 50999999 F25ENGL393   
+   5501356 50999999 W26BIOL215   
+   5501357 50999999 S26CSCI369   
+   5501358 50999999 S26PSYC248   
+5 cdx(lmdb) indexed record(s) (tag=SID) listed (limit 20). Use LIST ALL to show more.
+Cursor: Area 1 of 0 ... 255  Physical Recno 5,501,358, Logical Row 5,501,358
+TIMER END  : 745.045800800 s
+ELAPSED    : 141.742783300 s
+. TIMER START: 745.045891800 s
+; --- B5. LOCATE near-front vs near-end ---
+TIMER END  : 745.045961200 s
+ELAPSED    : 0.000069400 s
+. TIMER START: 745.046008900 s
+; B5a LOCATE FOR SID = 50000000 -> near-front baseline
+TIMER END  : 745.046077600 s
+ELAPSED    : 0.000068700 s
+. TIMER START: 745.046122700 s
+Located.
+TIMER END  : 745.046264600 s
+ELAPSED    : 0.000141900 s
+. TIMER START: 745.046311900 s
+; B5b LOCATE FOR SID = 50999999 -> near-end physical, full scan
+TIMER END  : 745.046368300 s
+ELAPSED    : 0.000056400 s
+. TIMER START: 745.046415300 s
+Located.
+TIMER END  : 846.935324200 s
+ELAPSED    : 101.888908900 s
+. TIMER START: 846.935411100 s
+; B5c CONTINUE -> resume last LOCATE
+TIMER END  : 846.935482500 s
+ELAPSED    : 0.000071400 s
+. TIMER START: 846.935540800 s
+CONTINUE: not found.
+TIMER END  : 847.099053400 s
+ELAPSED    : 0.163512600 s
+. TIMER START: 847.099187200 s
+; --- B6. SCAN...ENDSCAN empty body -> pure full iteration cost, O(n) ---
+TIMER END  : 847.099297000 s
+ELAPSED    : 0.000109800 s
+. TIMER START: 847.099381300 s
+SCAN: buffering lines. Type ENDSCAN to execute.
+TIMER END  : 847.099482700 s
+ELAPSED    : 0.000101400 s
+.. TIMER START: 847.099615700 s
+ENDSCAN: 5501358 match(es), 5501358 iteration(s) over 0 line(s).
+TIMER END  : 978.772162700 s
+ELAPSED    : 131.672547000 s
+. TIMER START: 978.772334200 s
+; === C-GROUP: SEEK positional profile (SENTINEL) ===
+TIMER END  : 978.772455300 s
+ELAPSED    : 0.000121100 s
+. TIMER START: 978.772549800 s
+SET ORDER: CDX TAG 'SID' (ASC)
+TIMER END  : 978.850956200 s
+ELAPSED    : 0.078406400 s
+. TIMER START: 978.851021900 s
+; --- C1. SEEK 50000000 -> FIRST key ascending, should be fast ---
+TIMER END  : 978.851138900 s
+ELAPSED    : 0.000117000 s
+. TIMER START: 978.851182100 s
+Found at 1.
+TIMER END  : 978.851285200 s
+ELAPSED    : 0.000103100 s
+. TIMER START: 978.851317800 s
+  RECNO SID      CLS_ID       
+
+      1 50000000 W26BIOL288   
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 979.072912800 s
+ELAPSED    : 0.221595000 s
+. TIMER START: 979.073023100 s
+; --- C2. SEEK 50999999 -> near-LAST key ascending, full index walk if linear ---
+TIMER END  : 979.073163600 s
+ELAPSED    : 0.000140500 s
+. TIMER START: 979.073228500 s
+Found at 5501354.
+TIMER END  : 1044.029542400 s
+ELAPSED    : 64.956313900 s
+. TIMER START: 1044.029640200 s
+  RECNO SID      CLS_ID       
+
+      1 50000000 W26BIOL288   
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 1044.227545300 s
+ELAPSED    : 0.197905100 s
+. TIMER START: 1044.227621200 s
+; --- C3. value-safe: same canary, DESCENDING order -> canary is now LAST key ---
+TIMER END  : 1044.227688500 s
+ELAPSED    : 0.000067300 s
+. TIMER START: 1044.227733800 s
+Order: DESCENDING.
+TIMER END  : 1044.227792700 s
+ELAPSED    : 0.000058900 s
+. TIMER START: 1044.227823000 s
+Found at 8.
+TIMER END  : 1113.499873400 s
+ELAPSED    : 69.272050400 s
+. TIMER START: 1113.500167500 s
+  RECNO SID      CLS_ID       
+
+5501358 50999999 S26PSYC248   
+1 record(s) listed (limit 1). Use SMARTLIST ALL to show more.
+TIMER END  : 1113.673075700 s
+ELAPSED    : 0.172908200 s
+. TIMER START: 1113.673181400 s
+Order: ASCENDING.
+TIMER END  : 1113.673275000 s
+ELAPSED    : 0.000093600 s
+. TIMER START: 1113.673356100 s
+; ============================================================
+TIMER END  : 1113.673444300 s
+ELAPSED    : 0.000088200 s
+. TIMER START: 1113.673521200 s
+; SCALE READ-ONLY BATTERY COMPLETE. How to read it:
+TIMER END  : 1113.673605600 s
+ELAPSED    : 0.000084400 s
+. TIMER START: 1113.673681000 s
+; FLAT check   : A-GROUP ELAPSED on ENROLL ~= on STUDENTS (NOT ~5.5x).
+TIMER END  : 1113.673779900 s
+ELAPSED    : 0.000098900 s
+. TIMER START: 1113.673854100 s
+; If any A verb grows with rows, it fell off the index path.
+TIMER END  : 1113.674034300 s
+ELAPSED    : 0.000180200 s
+. TIMER START: 1113.674112200 s
+; LINEAR check : B-GROUP ELAPSED on ENROLL ~= 5.5x the STUDENTS value.
+TIMER END  : 1113.674195400 s
+ELAPSED    : 0.000083200 s
+. TIMER START: 1113.674251700 s
+; SEEK sentinel: C2 (near-last) and C3 (canary descending) should be much
+TIMER END  : 1113.674327100 s
+ELAPSED    : 0.000075400 s
+. TIMER START: 1113.674383600 s
+; slower than C1 (first). That gap is SEEK's linear walk --
+TIMER END  : 1113.674459400 s
+ELAPSED    : 0.000075800 s
+. TIMER START: 1113.674524900 s
+; the next optimization target (make it a keyed range-seek).
+TIMER END  : 1113.674653100 s
+ELAPSED    : 0.000128200 s
+. TIMER START: 1113.674718600 s
+; Correctness  : COUNT = 1000000 / 5501358; TOP canary = 50000000 Taylor
+TIMER END  : 1113.674810100 s
+ELAPSED    : 0.000091500 s
+. TIMER START: 1113.674933200 s
+; Quinn; every SEEK/LOCATE lands the expected SID.
+TIMER END  : 1113.674996400 s
+ELAPSED    : 0.000063200 s
+. TIMER START: 1113.675047100 s
+; ============================================================
+TIMER END  : 1113.675101700 s
+ELAPSED    : 0.000054600 s
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

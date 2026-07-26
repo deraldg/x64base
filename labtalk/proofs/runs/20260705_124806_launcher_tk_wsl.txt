@@ -1,0 +1,15 @@
+LabTalk proof transcript
+timestamp: 20260705_124806
+item_id: launcher.tk_wsl
+label: ArcticTalk Tk GUI (WSL)
+kind: wsl_launcher
+command_line: wsl.exe -e bash -lc cd /mnt/d/code/ccode && bash /mnt/d/code/ccode/tk.run.sh
+return_code: 0
+
+STDOUT
+======
+Launched external WSL process for launcher.tk_wsl
+
+STDERR
+======
+

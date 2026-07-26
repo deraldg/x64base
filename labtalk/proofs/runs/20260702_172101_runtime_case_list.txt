@@ -1,0 +1,78 @@
+LabTalk proof transcript
+timestamp: 20260702_172101
+item_id: runtime.case_list
+label: CASE LIST
+kind: dottalk_command
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\tmp\runtime_case_list.dts
+return_code: 0
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta-0  (Jul 01 2026 11:44:47)
+DotTalk++ build Jul 01 2026 11:44:47
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. CASE LIST (15)
+ENG-010               Indexed Navigation: CDX / LMDB                      engine_case1985-present
+ENG-020               SEEK vs SCAN                                        engine_case1985-present
+ENG-030               Buffering and COMMIT Lifecycle                      engine_case1990s-present
+ENG-040               Metadata and Data Dictionary                        engine_case1980s-present
+ENG-050               File-Based DB to Engine-Based DB                    engine_case1980s-present
+HIST-000              The Data Trail Overview                             historical_case1970s-present
+HIST-010              COBOL and Connected Computers                       historical_case1950s-1970s
+HIST-020              JUMPS / 73C Army System                             historical_case1983-1985
+HIST-030              Unisys / CODASYL at ALCOA                           historical_case1970s-1980s
+HIST-040              xBase as a Major Platform                           historical_case1980s-2000s
+HIST-050              Earthkids to CAREPAX                                historical_case1990s
+HIST-060              TitleSCAN / Paxon Database Transfers                historical_case1990s-2000s
+HIST-070              ERP, SQL, Auto-ID, and Industrial Scale             historical_case1990s-2010s
+HIST-080              HYNIX Semiconductor Process Data                    historical_case2000s-2010s
+HIST-090              DotTalk++ / LabTalk and the AI Future               historical_casepresent-future
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+

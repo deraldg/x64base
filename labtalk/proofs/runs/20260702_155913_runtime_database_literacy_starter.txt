@@ -1,0 +1,193 @@
+LabTalk proof transcript
+timestamp: 20260702_155913
+item_id: runtime.database_literacy_starter
+label: Run Database Literacy Starter
+kind: dottalk_script
+command_line: D:\code\ccode\dottalkpp\bin\dottalkpp.exe --script D:\code\ccode\labtalk\labs\database_literacy_starter\database_literacy_starter_v0.dts
+return_code: 0
+
+STDOUT
+======
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ beta-0  (Jul 01 2026 11:44:47)
+DotTalk++ build Jul 01 2026 11:44:47
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK QUOTE failed: BibleTalk SQLite seed not found. Tried:
+  biblebase\biblebase.sqlite
+  data\biblebase\biblebase.sqlite
+  biblebase\bible_kjv_x64.sqlite
+  data\biblebase\bible_kjv_x64.sqlite
+  bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+  data\bible_kjv_x64_rdbms\bible_kjv_x64.sqlite
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. ; LABTALK_DATABASE_LITERACY_START
+. MODEL
+  SYSTEM MODEL
+How to think about DotTalk++
+
+DotTalk++ is best understood as four layers working together:
+
+1. Command Layer
+    The CLI accepts commands such as:
+        USE
+        SELECT
+        LIST
+        SET ORDER
+        SET RELATION
+        REL ENUM
+
+2. Data Layer
+    The engine works with:
+        tables
+        records
+        fields
+        indexes
+        relations
+
+3. Logic Layer
+    DotScript and command execution provide:
+        sequential flow
+        decision flow
+        looping flow
+        expression evaluation
+
+4. View / Projection Layer
+    Results are shown through:
+        LIST
+        DISPLAY
+        TUPLE
+        SMARTLIST
+        REL ENUM
+        browser commands
+
+A practical mental model
+    Table       = stored rows
+    Record      = one row
+    Field       = one column value in a row
+    Index       = alternate ordered path through rows
+    Relation    = parent-child path between tables
+    Tuple       = projected logical row, possibly across multiple tables 
+. TABLE_RECORD_FIELD
+  TABLE / RECORD / FIELD
+Core data hierarchy
+
+Table
+    A collection of records with a defined structure.
+
+Record
+    One row in a table.
+
+Field
+    One named value inside a record.
+
+Example
+    Table: STUDENTS
+    Record: the current student row
+    Fields:
+        SID
+        LNAME
+        FNAME
+        GPA
+
+Typical commands
+    STRUCT
+    FIELDS
+    DISPLAY
+    TUPLE *
+    REPLACE FNAME WITH "Derald"
+
+Teaching point
+    Most command behavior becomes clearer once this hierarchy is firm:
+        table > record > field 
+. INDEX
+  INDEXES AND ORDERING
+An index provides an alternate path through records.
+
+Physical order
+    The natural storage order in the table.
+
+Indexed order
+    An order defined by a tag or key expression.
+
+Typical commands
+    SET INDEX TO students.cdx
+    SET ORDER TO TAG LNAME
+    TOP
+    SEEK TAYLOR
+    FIND TAYLOR
+
+Why indexes matter
+    They change navigation behavior.
+    They make seeks possible.
+    They define logical ordering independent of physical storage order.
+
+Teaching point
+    An index does not usually change the record data itself.
+    It changes how the engine reaches the records.
+. SCAN
+  SCAN AS A DATA LOOP
+SCAN deserves special emphasis.
+
+What SCAN is
+    SCAN is not just a general loop.
+    It is a record-processing loop tied to the current work area.
+
+What it does
+    It iterates record by record through the active table context,
+    respecting the current order and, where applicable, filtering behavior.
+
+Example
+    SELECT BUILDING
+    SCAN
+        TUPLE *
+    ENDSCAN
+
+What students should learn
+    - SCAN is the database equivalent of "for each row"
+    - SCAN makes table traversal explicit
+    - SCAN is usually more educational than hiding iteration inside a command
+
+Related idea
+    LIST shows records.
+    SCAN processes records.
+. ; LABTALK_DATABASE_LITERACY_END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+
+STDERR
+======
+
