@@ -1,0 +1,217 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>DotTalk++ AI Portal -- Lanes, Runs and Proofs</title>
+<style>
+:root{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
+--acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;--mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+h2{font-size:19px;margin:34px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line);color:var(--acc)}
+h3{font-size:15px;margin:20px 0 8px;color:var(--tx)}
+.sub{color:var(--dim);font-size:13px;margin-bottom:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:15px 17px;margin:11px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:9px 0}
+th{text-align:left;color:var(--dim);font-weight:600;font-size:11.5px;letter-spacing:.5px;
+text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--line)}
+td{padding:8px 9px;border-bottom:1px solid #1e2731;vertical-align:top}
+tr:last-child td{border-bottom:none}
+code,.m{font-family:var(--mono);font-size:12.5px}
+.pill{display:inline-block;padding:1.5px 8px;border-radius:11px;font-size:11px;font-family:var(--mono);
+border:1px solid var(--line);background:#1d262f;color:var(--dim)}
+.pill.ok{color:var(--ok);border-color:#2c5c4c}.pill.warn{color:var(--warn);border-color:#5c4c22}
+.pill.bad{color:var(--bad);border-color:#5c2c2c}.pill.acc{color:var(--acc);border-color:#28516b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px;margin:14px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:13px 15px}
+.kpi .n{font-size:26px;font-weight:600;color:var(--acc);line-height:1.1}
+.kpi .l{font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.post{border-left:2px solid var(--line);padding:2px 0 2px 13px;margin:13px 0}
+.post .h{font-size:12px;color:var(--dim);font-family:var(--mono)}
+.post .b{margin-top:5px;white-space:pre-wrap;word-break:break-word}
+.dim{color:var(--dim)}.small{font-size:12.5px}
+.note{border-left:3px solid var(--acc);background:#141c24;padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0}
+.note.w{border-left-color:var(--warn)}
+ul{margin:7px 0;padding-left:20px}li{margin:3px 0}
+a{color:var(--acc)}
+.foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
+</style></head><body><div class="wrap">
+<h1>DotTalk++ AI Portal -- Lanes, Runs and Proofs</h1><div class="sub">Who worked what, what is proven, and where to pick the thread back up.</div>
+<div class="grid">
+<div class="kpi"><div class="n">11</div><div class="l">Tracked lanes</div></div>
+<div class="kpi"><div class="n">4</div><div class="l">Recorded runs</div></div>
+<div class="kpi"><div class="n">11</div><div class="l">Runtime-observed proofs</div></div>
+<div class="kpi"><div class="n">10</div><div class="l">Source-defined proofs</div></div>
+</div><div class="note"><b>The portal front door, in order</b>
+<ol style="margin:7px 0 0">
+<li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
+<li><code>AI_PORTAL.md</code> -- what this repo is, and what <code>C:\x64base</code> is not.</li>
+<li><code>labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md</code> -- contracts, regression doctrine,
+definition of done, house conventions, git hygiene.</li>
+<li><code>docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md</code> -- which kind of AI you are talking to.</li>
+<li>The lane doc for whatever you are touching, then its newest run below.</li>
+</ol></div><h2>Lanes -- and the newest run on each</h2><table><tr><th>Lane</th><th>What it is</th><th>Evidence</th>
+<th>Newest run (return here)</th></tr><tr><td><code>AIF-045</code></td>
+<td class="small">Identity/RBAC/authorization management for the AI Portal, 2026-07-21</td>
+<td><span class="pill ">**ACTIVE — core stack implemented, committed, and runtime-proven through 2d-3.** M0/M1 strong-ID domain and deny-precedence resolver; nine-table identity DBF persistence; APH-5 save/reload/compare proof; DBF boot adoption with degraded read-only fallback; USER admission/request/approve/grant/revoke/delete; low-privilege unauthenticated `member.public` startup; principal + acting-member session model; human credential and owner-issued rotatable AI/service token authentication. Real enforcement is wired into the AI dev-tools gate, `!` host shell, and SFTP; `DOTTALK_ALLOW_HOST_COMMANDS`/network policy remain independent final constraints. `SECURITY LOGIN` is explicitly a legacy diagnostic selector and grants no USER/RBAC access. Commits include `c59f688ca`, `b44a32fe2`, `0d4b9b407`, `be021e8b7`, `cf977b160`, `6b350ffed`, `2a89cc5c3`, `bfa6bb0fd`, `8afac8f63`. Open: M4 registry import, M5 portable YAML bootstrap, M6 teaching loop. Dev-stage, not promoted.</span></td>
+<td class="small"><code>AIPR-20260722-005</code></td></tr><tr><td><code>AIF-046</code></td>
+<td class="small">Scan-evaluator optimization session `AIPR-20260722-007`, 2026-07-22</td>
+<td><span class="pill ">**M0–M4 complete, committed dev-only; mirror has M0 only; not promoted/pushed** — parent `project.x64base.runtime`</span></td>
+<td class="small"><code>AIPR-20260722-007</code></td></tr><tr><td><code>AIF-050</code></td>
+<td class="small">AI run traceability governance session `AIPR-20260722-007`, 2026-07-22</td>
+<td><span class="pill ">**M0–M7 landed as candidates dev-only; M8 (Agent-Sync + peer) remaining; not promoted — parent `project.x64base.runtime`.** Owner: member.derald · steward/author: member.ai.claude.cowork (assigned 2026-07-22). **Records who did the work, in which run, reachable how — separate from who owns/commits.** Motivation is measured, not asserted: git attributes 100% of AI work to the maintainer (he commits); the report-audit envelope traces only to product level (`model`/`session` = `not_exposed`); and planner≠implementer is invisible (identity/RBAC was **ChatGPT-planned, Cowork-implemented, Derald-owned**). **Delivered:** the five-role attribution contract (owner/committer/author/planner/attestor); the RUN registry `ai_runs.yaml` seeded with real runs + a lane→newest-run return index (`current_by_lane`); the universal per-file `@dottalk.file` contract (a new AIF-042 KIND) with a runnable census/coverage tool — measured **1009 source files, 227 (22%) carry `@dottalk.usage`, 782 (78%) invisible to the harvest today**; the `ai-report-audit-v2` envelope (`authored_by`/`planned_by` vs `owner`/`committer`, `run_id`/`chat_handle`/`handle_binding`); an advisory closeout validator (run: 68 closeouts, all v1); and portal doctrine (&quot;Ownership and Authorship&quot;, &quot;Prove the Bottleneck First&quot;). **Live proof of need:** this lane was first mislabeled AIF-047 and collided on-branch with a *parallel* Cowork session&#x27;s AIF-047 (HELP UX) — caught by `git log`, renumbered 047→048→050 as three parallel Cowork sessions each claimed the number in turn; the exact failure the lane removes, observed while writing it. chat_handle for every seeded run is `MAINTAINER_ATTESTED` (platform stamps the session id `not_exposed`). Dev-only, candidate, not promoted.</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-052</code></td>
+<td class="small">AI-BBS agent-server lane (M1/M4) built + runtime-observed</td>
+<td><span class="pill ok">runtime-observed</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-053</code></td>
+<td class="small">NET egress-security + M3 Argon2id token crypto built + runtime-observed</td>
+<td><span class="pill ok">runtime-observed</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-054</code></td>
+<td class="small">AI-BBS M6 standalone daemon + The Lounge room</td>
+<td><span class="pill ok">runtime-observed</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-055</code></td>
+<td class="small">AI-BBS guest leave-a-message (member.guest + Guestbook)</td>
+<td><span class="pill ok">runtime-observed</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-056</code></td>
+<td class="small">AI Portal onboarding hardening: engineering-standards / definition-of-done seed</td>
+<td><span class="pill acc">source-defined</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-057</code></td>
+<td class="small">AI-BBS worklog/handoff simplex drop-point (design note)</td>
+<td><span class="pill ">source-defined (small end built)</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-058</code></td>
+<td class="small">AI roles taxonomy: agents vs Ollama vs GPTbase</td>
+<td><span class="pill acc">source-defined</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-059</code></td>
+<td class="small">Git-lock &quot;Hot Potato&quot; commit-coordination lane (design note)</td>
+<td><span class="pill warn">design-intended -- not started</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr></table><div class="note w"><b>How to return to the last agent on a lane</b><br>
+<code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
+Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the session id
+<i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
+That is by design -- the record lives in the repo, not in a vendor's session store.</div><h2>Runs</h2><div class="card"><b><code>AIPR-20260725-001</code></b>
+<span class="pill ok">active</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+</div>
+<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span></div>
+<div class="small dim">project <code>project.ai_friendly</code>
+&middot; branch <code>development</code>
+&middot; started 2026-07-25
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md</span></div></div><div class="card"><b><code>AIPR-20260722-007</code></b>
+<span class="pill ok">active</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>steward</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+</div>
+<div style="margin:7px 0"><span class="pill acc">AIF-046</span> <span class="pill acc">AIF-050</span></div>
+<div class="small dim">project <code>project.x64base.runtime</code>
+&middot; branch <code>homegrown-cnx-20251112-branch</code>
+&middot; started 2026-07-22
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-005</code></b>
+<span class="pill ">closed</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.ai.chatgpt</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
+<div class="small dim">project <code>project.x64base.identity</code>
+&middot; branch <code>homegrown-cnx-20251112-branch</code>
+&middot; started 2026-07-22
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260722-004</code></b>
+<span class="pill ">closed</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.ai.chatgpt</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-045</span></div>
+<div class="small dim">project <code>project.x64base.identity</code>
+
+&middot; started 2026-07-22
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md</span></div></div><h2>Proof ledger</h2><table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr><tr><td><code>proof.edref.topic_exists</code><br>
+<span class="small">EDREF topic exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.case.registry_exists</code><br>
+<span class="small">Case registry exists</span></td>
+<td><span class="pill ">case_registered</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.help.cmdhelp_source_exists</code><br>
+<span class="small">CMDHELP source exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.selfdoc.comments_workflow_exists</code><br>
+<span class="small">Comments to HELP workflow exists</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim"></td></tr><tr><td><code>proof.lab.database_literacy_starter.first_run</code><br>
+<span class="small">Database Literacy Starter first portal/runtime transcript</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.</td></tr><tr><td><code>proof.lab.selfdoc.comments_to_contracts.first_run</code><br>
+<span class="small">SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP and CMDHELPCHK.</td></tr><tr><td><code>proof.product.manualgen.board_preserved</code><br>
+<span class="small">Manualgen product board and map preservation</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Preserves the first Manualgen product board and records initial hardening evidence using repo-local vcpkg Python 3.12.9.</td></tr><tr><td><code>proof.portal.truth_audit.latest</code><br>
+<span class="small">Portal truth audit latest report</span></td>
+<td><span class="pill ">validated</span></td>
+<td class="small dim">Captures the portal collection-of-truths audit across LabTalk registries, local proof records, and x64base.com SelfDoc/SDLC publication pages.</td></tr><tr><td><code>proof.ai_friendly.assimilation_docs_seed</code><br>
+<span class="small">AI Friendly assimilation portal and book seeded</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context is unavailable.</td></tr><tr><td><code>proof.ai_friendly.maint_ai_assimilate.first_run</code><br>
+<span class="small">MAINT AI ASSIMILATE first portal/runtime transcript</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the onboarding readback.</td></tr><tr><td><code>proof.ai_portal.lane_registered</code><br>
+<span class="small">AI Portal Alpha/Experimental lane registered</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.</td></tr><tr><td><code>proof.ai_portal.dotscript_startup_readiness.v1</code><br>
+<span class="small">DotTalk++ / DotScript startup readiness probe v1</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that the portal&#x27;s transcript acceptance gate accepts the green path. ORIENTED permits drafting and review only; it does not authorize a muta...</td></tr><tr><td><code>proof.ai_portal.source_mutation_contract_gate.v1</code><br>
+<span class="small">Source mutation contract preflight registered</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract, and source-annotation review before a patch is applied. This record does not grant mutation authority.</td></tr><tr><td><code>proof.ai_portal.seed_connection_prototype_direction.v1</code><br>
+<span class="small">AI fast-start seed connection prototype direction registered</span></td>
+<td><span class="pill ">design_intended</span></td>
+<td class="small dim">Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.</td></tr><tr><td><code>proof.ai_portal.root_entry_and_external_package.v1</code><br>
+<span class="small">Root AI Portal entry and external change-package contract defined</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted and verified in the public ...</td></tr><tr><td><code>proof.ai_portal.sdlc_fast_start.v1</code><br>
+<span class="small">AI Portal SDLC fast-start seed registered</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.</td></tr><tr><td><code>proof.bbs.m1_board</code><br>
+<span class="small">AI-BBS M1 board tables + BBS command</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects SYSGRANT.</td></tr><tr><td><code>proof.bbs.m2_net_egress</code><br>
+<span class="small">AI-BBS M2 NET EGRESS permissioned toggle</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AI member refused NET EGRESS OPEN (&quot;no in-scope role permission&quot;); owner STATUS = Block. host.network.egress owner-only.</td></tr><tr><td><code>proof.bbs.m3_argon2</code><br>
+<span class="small">AI-BBS M3 Argon2id token crypto (libsodium)</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">USER TOKEN -&gt; 43-char base64url CSPRNG; correct token logs in, wrong token rejected. Gates M4.</td></tr><tr><td><code>proof.bbs.m4_serve</code><br>
+<span class="small">AI-BBS M4 BBS SERVE loopback listener + Ollama bridge</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block; OK posted.</td></tr><tr><td><code>proof.bbs.m6_daemon</code><br>
+<span class="small">AI-BBS M6 standalone dottalk_bbsd daemon</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.</td></tr><tr><td><code>proof.bbs.guest</code><br>
+<span class="small">AI-BBS guest leave-a-message (member.guest + board.guestbook)</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">As member.guest -&gt; POST board.guestbook OK posted</td></tr><tr><td><code>proof.ai_portal.engineering_standards_seed</code><br>
+<span class="small">AI Portal engineering-standards / definition-of-done seed on the mandatory path</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined by nature; VERIFICATI...</td></tr><tr><td><code>proof.bbs.worklog</code><br>
+<span class="small">AI-BBS worklog/handoff board + simplex cascade guard</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -&gt; OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/O...</td></tr><tr><td><code>proof.ai.roles_taxonomy</code><br>
+<span class="small">AI roles taxonomy - agents vs Ollama vs GPTbase</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not autho...</td></tr><tr><td><code>proof.contract.dottalk_file_fulltree</code><br>
+<span class="small">@dottalk.file universal contract - full-tree backfill at 100% coverage</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr></table>
+<div class="foot">Generated 2026-07-26 02:02 UTC from live DotTalk++ state
+(<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
+<code>tools/reports/build_reports.py</code>.</div>
+</div></body></html>

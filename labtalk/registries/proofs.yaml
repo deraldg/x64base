@@ -221,7 +221,8 @@ proofs:
     label: AI-BBS worklog/handoff board + simplex cascade guard
     state: runtime_observed
     source: D:/code/ccode/docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md
-    notes: 2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff line (AI_README step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade guard (SO_RCVTIMEO idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary. Duplex switch remains design-intended (needs M4.1).
+    notes: >-
+      2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff line (AI_README step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade guard (SO_RCVTIMEO idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary. Duplex switch remains design-intended (needs M4.1).
 
   # --- AI roles taxonomy (AIF-058) ---
   - id: proof.ai.roles_taxonomy
@@ -229,3 +230,22 @@ proofs:
     state: source_defined
     source: D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
     notes: Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not authority, cloud/not-isolated, snapshot goes stale). First artifact of the portal capability inventory. Doc/boundary artifact; source_defined by nature.
+
+  # --- AIF-050 M2/M3 full-tree @dottalk.file backfill (2026-07-25) ---
+  - id: proof.contract.dottalk_file_fulltree
+    label: "@dottalk.file universal contract - full-tree backfill at 100% coverage"
+    state: runtime_observed
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md
+    related:
+      - D:/code/ccode/tools/fullstack_docs/source_census.py
+      - D:/code/ccode/docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md
+    notes: >-
+      census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0
+      (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped
+      (duplicated git tracking; path: goes stale on rename), lane:/owner: added so a file self-identifies
+      AND resolves to its lane doc -> ai_runs.yaml run -> current_by_lane -> last agent. 12 pre-existing
+      dogfood blocks upgraded with hand-set layer:/owns: PRESERVED (glue/engine-core, DOT|BBS/DOT|NET),
+      verified file by file; 1022 written fresh with derived fields. Incident same session - a
+      directory-level `git add -- src include` swept ~111 untracked scratch files into 6f86c8aed;
+      repaired by reset + `git add -u` + force-push (3706da78c, 1035 files clean), the 111 restored to
+      disk, and the scratch categories gitignored. main never touched.
