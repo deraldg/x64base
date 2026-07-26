@@ -408,6 +408,27 @@ static int run_program_path(const fs::path& raw_program_path)
 
     fs::create_directories(cobol_bin_root(), ec);
 
+    // BUILD/RUN extension symmetry.
+    //
+    // default_build_output_from_source() appends ".exe" on Windows, but RUN
+    // did a bare existence check with no fallback. That made the documented,
+    // natural sequence
+    //     COBOL BUILD first_cobol_test.cob     -> creates first_cobol_test.exe
+    //     COBOL RUN   first_cobol_test         -> "file not found"
+    // fail on Windows even though BUILD had just succeeded, forcing the user
+    // to type an extension BUILD had added silently. Retry once with the
+    // platform executable suffix when the bare name has no extension.
+    // Found by tests/conversion/12_cobol_fixed_record_v1.dts, 2026-07-26.
+#if defined(_WIN32)
+    if (!fs::exists(program_path) && !program_path.has_extension()) {
+        fs::path with_exe = program_path;
+        with_exe += ".exe";
+        if (fs::exists(with_exe)) {
+            program_path = with_exe;
+        }
+    }
+#endif
+
     if (!fs::exists(program_path)) {
         std::cout << "COBOL RUN: file not found: " << program_path.string() << "\n";
         return -1;
