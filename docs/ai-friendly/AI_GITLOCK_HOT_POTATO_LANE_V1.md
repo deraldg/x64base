@@ -54,6 +54,32 @@ The coordination need **grows** as more agents gain direct access: two direct co
 serializing point (which is safe but is also the "just one more thing, left uncommitted" bottleneck
 the lock aims to make visible).
 
+## Grounded instance (observed 2026-07-25)
+
+After a clean two-commit push of the AI-BBS bundle, the maintainer noted that "almost every time we
+push, the git lock does not clear." Inspection of `.git` showed no lingering lock at that moment --
+so it was not a failed cleanup but a **stale `.git/index.lock` left by concurrent access to one
+repo**. The maintainer's `D:\code\ccode\.git` is mounted into the Cowork Linux sandbox, and the agent
+ran read-only git commands there (`git status`, `git ls-files`, `git rev-parse`, `git log`) throughout
+the session -- against the SAME `.git` the maintainer commits to on Windows. Two git processes across
+two operating systems: when they overlap, one creates `index.lock` and the other's cleanup does not
+remove it, so it lingers and the next Windows `git` reports "Another git process seems to be running."
+
+This is the Hot Potato race itself, **observed between the agent and the maintainer before the lock
+existed to prevent it** -- the same way the ignorance-bleed and cascade-guard lanes were grounded in a
+real miss rather than a hypothetical. Interim rule adopted immediately: the agent does not run git in
+the sandbox while the maintainer is operating git ("one hand on the potato at a time").
+
+Note the layering: `.git/index.lock` is **git's own internal lock**, not the coordination marker this
+lane proposes. The lane's marker sits *above* git and coordinates *who may run git at all*; when it
+works, `index.lock` collisions like this one stop happening because only one actor touches the repo at
+a time. Checking for the stale artifact on Windows:
+
+```powershell
+Get-ChildItem D:\code\ccode\.git -Recurse -Filter *.lock | Select FullName, LastWriteTime
+# if only .git\index.lock and no live git: Get-Process git ; then Remove-Item D:\code\ccode\.git\index.lock
+```
+
 ## Boundaries / non-goals
 
 - Not a replacement for git's own concurrency (fetch / rebase / merge). It reduces *contention*; it
