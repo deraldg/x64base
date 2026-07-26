@@ -52,3 +52,26 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
 - Owner/maintainer: `member.derald`. Author docs as review-needed until committed; mirror `C:\x64base`
   and public repo are separate promotion steps.
 - No em-dashes in scripts or docs (maintainer preference); use `--` / `->`.
+
+## Commit coordination + pre-push gate (AIF-050)
+
+Concurrent AI sessions share ONE working tree, so commits go out as scoped, per-path
+slices -- NEVER `git add -A`/`git add .` (that fuses several sessions' half-done work).
+`git status --short` between add and commit is the safety check.
+
+Anti-collision loop (prevents two sessions claiming the same AIF-NNN lane number):
+
+- **Claim/release numbers:** `python tools/coordination/session_coordinator.py claim-aif`
+  (atomic `O_EXCL`); the ledger lives at `coordination/aif/AIF-NNN.claim` (tracked).
+  `coordination/active_sessions/` and `coordination/locks/` are transient (gitignored).
+- **Detection:** `tools/coordination/aif_collision_gate.py` hard-fails (exit 1) a duplicate
+  AIF number in the intake queue.
+- **Enforcement:** `tools/staging/prepush_gate.py` runs that gate by default and HARD-blocks
+  (exit 2) on a duplicate. It also blocks build trees/binaries and warns on data fixtures.
+
+**Per-clone one-time setup (hooks are NOT version-controlled):**
+`python tools/staging/prepush_gate.py --install-hook` installs `.git/hooks/pre-commit`, so
+every `git commit` runs the gate automatically. Re-run on each machine/clone/worktree.
+Bypass one deliberate commit with `git commit --no-verify`.
+
+Authoritative doctrine: `docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md`.

@@ -50,6 +50,25 @@ Documentation cannot fix a coordination problem; an allocator and a presence sur
 - **This coordinates, it does not authorize**: coordination sits *beside* the identity/RBAC gates
   (AIF-045) and the promotion gates — it prevents collisions, it does not confer authority.
 
+## Enforcement (the claim is not optional -- the commit chokepoint proves it)
+
+The claim step above is coordination; this makes it binding. Every parallel session funnels through
+one place: the maintainer's commit. So the duplicate-number check runs there, regardless of whether
+any session bothered to run the coordinator.
+
+- **Detector:** `tools/coordination/aif_collision_gate.py` -- HARD fails (exit 1) on a duplicate
+  `AIF-NNN` in the intake queue; advisory reconciliation of the claim ledger vs intake (`--strict`
+  promotes it to hard).
+- **Gate:** `tools/staging/prepush_gate.py` runs the detector by default and folds a duplicate into
+  its HARD-BLOCK lane (exit 2), alongside its build-tree/binary blocks and data-fixture warnings.
+  Flags: `--strict-aif`, `--skip-aif`.
+- **Automatic on every commit:** `python tools/staging/prepush_gate.py --install-hook` writes
+  `.git/hooks/pre-commit`, so `git commit` runs the gate with no one having to remember.
+  **Hooks are NOT version-controlled -- run `--install-hook` once per machine / clone / worktree.**
+  Bypass a single deliberate commit with `git commit --no-verify`.
+
+Proven: clean tree PASS; synthetic and full-root double-`AIF-048` FAIL (exit 1 -> block).
+
 ## Limits / honest reach
 
 - Coordinates **local concurrent sessions on one machine/working tree** — the actual scenario. It is
