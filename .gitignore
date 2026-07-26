@@ -298,3 +298,25 @@ zz_*
 # collection stubs parked under src/ (prose only; AIPortal is intake evidence, kept)
 /src/psych/
 /src/labtalk/
+
+# ---------------------------------------------------------------------------
+# Untracked-triage v1 (2026-07-26): quiet regenerable/generated EXHAUST only.
+# Verified zero collision with tracked files at add time (~2,284 untracked hidden).
+# Deliberately does NOT ignore dottalkpp/data DBF/index TABLES: dbf/ help/ indexes/
+# carry 84 tracked fixtures (a track-the-source-tables policy), and indexes/ is mixed
+# (36 tracked / 144 cache) -- left for a later per-subtype decision. Also does NOT
+# ignore *.patch / *.dts (AIPortal deliverables, per the AIF-062 note above).
+# ---------------------------------------------------------------------------
+# archive/backup trees (copies, never a source of truth)
+docs/**/backups/
+docs/**/_backups/
+dottalkpp/docs/_backups/
+# manual-generation run logs + generated per-step status files
+docs/manuals/developer/manualgen/logs/
+docs/manuals/developer/manualgen/MDO-*_STATUS.md
+docs/manuals/developer/manualgen/PIP-*_STATUS.md
+# regenerable RAM cache + legacy mcc DBF copies parked at repo root
+dottalkpp/data/ram/
+mcc/*.DBF
+# stray root-level accidental python saves (e.g. "import sys.py")
+/import*.py
