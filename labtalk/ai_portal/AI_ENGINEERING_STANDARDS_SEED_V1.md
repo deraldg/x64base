@@ -19,11 +19,13 @@ tag. `@dottalk.usage` is only the *command* KIND; know the whole family before y
 "documented" (this is exactly the kind of ignorance section 6 warns against).
 
 - **`@dottalk.file` v1 -- the universal per-file contract.** One block on **every** source file:
-  path + demographics + a provenance pointer (never embedded change history -- the closeout/run
-  registry hold that). This is the spine that turns the tree into a harvestable object graph (census,
-  coverage gate, architecture map). AIF-050; adoption is **emerging** (the harvest sees ~22% of files
-  today, mostly commands), coverage gate advisory. New source files SHOULD carry it. Spec:
-  `docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md`.
+  demographics + `lane:` + `owner:` (never embedded change history -- the closeout/run registry hold
+  that; and never the path, which git already tracks and which goes stale on rename). This is the
+  spine that turns the tree into a harvestable object graph (census, coverage gate, architecture map)
+  and connects each file back to its lane and accountable member. AIF-050; **coverage is 100% as of
+  2026-07-25** (1034/1034 tracked source files; the `--strict` gate now passes and is promotable to a
+  hard drift gate). Every new source file MUST carry it -- `tools/fullstack_docs/source_census.py
+  --write` inserts it idempotently. Spec: `docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md`.
 - **`@dottalk.usage` v1 -- command behavior.** Only on `src/cli/cmd_*.cpp`. `src/meta/metacollect.cpp`
   auto-harvests every command whose contract is `status: supported` into HELP/META and the manual
   command reference -- the contract IS the publish trigger. Fields: `owner`, `command`, `category`,
@@ -37,8 +39,9 @@ tag. `@dottalk.usage` is only the *command* KIND; know the whole family before y
 - **`@x64base` (fact)** -- format/provenance facts reconciled against the actual struct/constant.
 - **`@dottalk.contract`** -- durable-decision annotations (the contract registry, `docs/contracts/`).
 
-**Do not assume a file is contracted because a command near it is.** The harvest today is dominated by
-`@dottalk.usage`; most files are still invisible to it. Check for `@dottalk.file`. (Reconciled
+**Do not assume a file is contracted because a command near it is.** `@dottalk.file` is now on every
+tracked source file, but `@dottalk.usage` (command behavior) remains on only ~230 of them -- the two
+answer different questions. Check for the one you actually need. (Reconciled
 2026-07-25 after the maintainer flagged that the seed named only `@dottalk.usage` -- the exact narrow
 view this seed exists to prevent.)
 
@@ -141,6 +144,13 @@ in `AI_PORTAL_HARDENING_LANE_V1.md`).
 - Before asserting "there is no X": confirm it. The engine likely already has X. Never state a
   capability is absent without checking the source. If you catch yourself saying "there's no lock /
   no crypto / no persistence / no permission check," stop and grep first.
+- **When a placeholder becomes an implementation, the comment above it is part of the change.**
+  Grounded 2026-07-25: `table_state.hpp` labelled a fully implemented write-ahead log
+  (`.tbj`, fsync-before-apply, idempotent replay) as *"stubs ... intentionally no-op placeholders."*
+  A partner surveyed the header, correctly trusted it, and reported that x64base had no WAL. Stale
+  docs that **understate** a shipped capability are worse than absent ones: they make working code
+  invisible to exactly the readers who were told to read first. If you implement behind a stub
+  comment, fix the comment in the same commit.
 - Prefer routing into an existing subsystem over adding a parallel one (AI Friendly non-goal: do not
   build a second contract/SelfDoc/lock/identity system).
 

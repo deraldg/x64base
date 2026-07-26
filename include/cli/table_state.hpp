@@ -130,7 +130,20 @@ int  count_stale();
 
 void reset_all();
 
-// Persistent buffer / journal stubs
+// Persistent buffer / write-ahead journal.
+//
+// NOT stubs. This is an implemented WAL: `<dbf>.tbj`, a per-transaction append-only
+// redo log (format TBJ1; `U`/`D` records carrying priority + H/S retention mode, values
+// hex-encoded), durably fsynced with a `C <count>` COMMIT marker BEFORE the buffered
+// changes are applied to the DBF, and replayed idempotently on open by
+// recover_table_buffer_journal(). See src/cli/table_state.cpp.
+//
+// SCOPE (AIF-061): the log covers DBF RECORD writes. It does NOT yet cover the memo
+// store -- an x64 memo REPLACE converts text to a stored object-id and journals only
+// that id, so a crash between the DBF apply and the memo write can leave a recovered
+// record referencing an object the memo store never durably wrote. Record-level
+// atomicity is real; whole-row atomicity for memo-bearing rows is not yet.
+// Lane: docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
 BufferPersistenceMode persistence_mode(int area0);
 bool is_persistent_enabled(int area0);
 void set_persistence_mode(int area0, BufferPersistenceMode mode);
@@ -138,8 +151,9 @@ std::string journal_path(int area0);
 void set_journal_path(int area0, const std::string& path);
 void clear_journal_state(int area0);
 
-// Stub hooks. These are intentionally no-op placeholders for the future
-// persistent TABLE BUFFER journal. They centralize the future update points.
+// Implemented WAL hooks. Each is a no-op returning true when persistence mode is
+// not RamJournal, so callers can invoke them unconditionally; when RamJournal is
+// active they do real durable work. (These were placeholders once; they are not now.)
 bool journal_note_buffer_on(int area0, const std::string& table_name = std::string{});
 bool journal_note_change(int area0, const ChangeEntry& entry);
 // Write-ahead: append the COMMIT marker and durably fsync the redo log BEFORE the

@@ -35,7 +35,7 @@ runs:
     member: member.ai.claude.cowork
     product: Cowork                         # Anthropic / Cowork; model not_exposed
     project: project.ai_friendly
-    lanes: [AIF-050, AIF-052, AIF-053, AIF-054, AIF-055, AIF-056, AIF-057, AIF-058, AIF-059, AIF-060]   # contract-track full-tree backfill, BBS server, NET egress+crypto, M6+Lounge, guest, portal-onboarding-hardening, worklog/handoff, AI-roles-taxonomy, gitlock-hot-potato, agency-model+reports
+    lanes: [AIF-050, AIF-052, AIF-053, AIF-054, AIF-055, AIF-056, AIF-057, AIF-058, AIF-059, AIF-060, AIF-061]   # contract-track full-tree backfill, BBS server, NET egress+crypto, M6+Lounge, guest, portal-onboarding-hardening, worklog/handoff, AI-roles-taxonomy, gitlock-hot-potato, agency-model+reports, memo-wal-atomicity
     role: implementer
     authored_by: member.ai.claude.cowork
     planned_by: null
@@ -129,6 +129,7 @@ current_by_lane:
   AIF-058: AIPR-20260725-001      # AI roles taxonomy (agents vs Ollama vs GPTbase)
   AIF-059: AIPR-20260725-001      # git-lock Hot Potato commit-coordination (design)
   AIF-060: AIPR-20260725-001      # agency model + human-readable reports
+  AIF-061: AIPR-20260725-001      # memo/WAL atomicity (design) + stale-stub correction
 
 current_by_project:
   project.x64base.runtime: AIPR-20260722-007
