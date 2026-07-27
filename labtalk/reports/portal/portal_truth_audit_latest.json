@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-07-12T20:51:09",
+  "generated_at": "2026-07-26T15:29:36",
   "labtalk_root": "D:\\code\\ccode\\labtalk",
   "repo_root": "D:\\code\\ccode",
   "portal_registry": "D:\\code\\ccode\\labtalk\\registries\\portal.yaml",
-  "section_count": 13,
-  "item_count": 185,
-  "runnable_count": 31,
-  "proof_like_count": 49,
+  "section_count": 14,
+  "item_count": 221,
+  "runnable_count": 32,
+  "proof_like_count": 65,
   "duplicate_item_ids": [],
   "missing_paths": [
     {
@@ -34,12 +34,131 @@
       "path": "D:\\code\\ccode\\sqlite-gui"
     },
     {
+      "item_id": "project.x64base.identity",
+      "label": "Identity, RBAC & Authorization Management",
+      "field": "docs",
+      "path": "D:\\code\\ccode\\docs\\## AI Portal re-examination.txt"
+    },
+    {
       "item_id": "lesson.student.properties_of_valid_data",
       "label": "The Properties of Valid Data",
       "field": "path",
       "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\properties_of_valid_data_v0.md"
     }
   ],
+  "ai_report_audit": {
+    "schema": "ai-report-audit-v1",
+    "status": "active_mandatory",
+    "policy_path": "labtalk/registries/ai_report_audit.yaml",
+    "project_registry": "labtalk/registries/projects.yaml",
+    "closeout_count": 74,
+    "grandfathered_count": 9,
+    "enforced_count": 65,
+    "valid_count": 46,
+    "finding_count": 20,
+    "findings": [
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md",
+        "field": "ai_report_audit.report_id",
+        "issue": "duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_REGRESSION_ENVIRONMENT_MENU_2026-07-22.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_2026-07-22.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_TVISION_GRID_BROWSER_2026-07-22.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_ARRAYS_PDLC_LANES_2026-07-20.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_DOTSCRIPT_ERRORSTOP_LEXING_2026-07-20.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_DTV_FOUNDATION_INTEGRATED_2026-07-20.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_HELP_GIANT_ALL_BRANCH_RENAME_2026-07-23.md",
+        "field": "ai_report_audit.report_id",
+        "issue": "duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AFB_OLLAMA_APP_REGISTRATION_2026-07-23.md"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_MANUAL_ASSEMBLY_2026-07-20.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_AGGS_ALL_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_DELETE_BATCH_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2026-07-23.md",
+        "field": "ai_report_audit.project.id",
+        "issue": "unknown project id: x64base / DotTalk++ Runtime"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_RECNO64_M1_M4_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md",
+        "field": "front_matter",
+        "issue": "missing YAML front matter"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md",
+        "field": "ai_report_audit.git.branch",
+        "issue": "required field missing"
+      },
+      {
+        "report": "docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md",
+        "field": "ai_report_audit.git.baseline_commit",
+        "issue": "required field missing"
+      }
+    ]
+  },
   "sections": [
     {
       "id": "portal.docs",
@@ -100,6 +219,12 @@
       "label": "Proofs",
       "registry_state": "ok",
       "registry_path": "D:\\code\\ccode\\labtalk\\registries\\proofs.yaml"
+    },
+    {
+      "id": "portal.reports",
+      "label": "Reports",
+      "registry_state": "inline",
+      "registry_path": ""
     },
     {
       "id": "portal.diagrams",
@@ -952,6 +1077,25 @@
       "derived_from": []
     },
     {
+      "id": "seed.ai_portal.scope_calibration.v1",
+      "label": "AI Portal Scope Calibration Seed v1",
+      "section": "portal.ai_portal_work",
+      "kind": "mandatory_context_seed",
+      "status": "active_mandatory_for_material_work",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SCOPE_CALIBRATION_SEED_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "recipe.ai_portal.x64base_development_change.v1",
       "label": "Resume or Begin an x64base Development Change",
       "section": "portal.ai_portal_work",
@@ -1097,6 +1241,25 @@
           "field": "script",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\ai_portal\\probes\\dotscript_startup_readiness_v1.dts"
+        }
+      ],
+      "runnable": true,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "probe.ai_portal.maint_ai_portal_readback.v1",
+      "label": "Prove Native MAINT AI Portal Readback",
+      "section": "portal.ai_portal_work",
+      "kind": "dottalk_script",
+      "status": "proof_passed",
+      "truth_state": "runtime_observed",
+      "proof_state": "validated",
+      "paths": [
+        {
+          "field": "script",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\probes\\maint_ai_portal_readback_v1.dts"
         }
       ],
       "runnable": true,
@@ -1385,6 +1548,25 @@
       "derived_from": []
     },
     {
+      "id": "app.labtalk.afb",
+      "label": "Arctic Fox Batch \u2014 Local Ollama AI Lab",
+      "section": "portal.apps",
+      "kind": "local_ai_lab",
+      "status": "alpha_experimental",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "project.x64base.runtime",
       "label": "x64base / DotTalk++ Runtime",
       "section": "portal.projects",
@@ -1417,6 +1599,26 @@
           "field": "docs",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DDL_SCHEMA_PDLC_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\RETRO_LANE_CHARTER_20260726.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\RETRO_LANE_PROPOSAL_V2_20260726.md"
         }
       ],
       "runnable": false,
@@ -1759,6 +1961,186 @@
       "derived_from": []
     },
     {
+      "id": "project.x64base.dotscript",
+      "label": "DotScript Language",
+      "section": "portal.projects",
+      "kind": "language_project",
+      "status": "active_beta",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_ARRAYS_SPEC_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_ARRAYS_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.pdlc",
+      "label": "PDLC - Programming Development Life Cycle (Student/Working Model)",
+      "section": "portal.projects",
+      "kind": "methodology_project",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\PDLC_STUDENT_WORKING_MODEL_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SCOPE_CALIBRATION_SEED_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.historical_database_migration",
+      "label": "Historical Database Migration Laboratory",
+      "section": "portal.projects",
+      "kind": "pdlc_project",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\HISTORICAL_DATABASE_MIGRATION_PDLC_PROJECT_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\LABTALK_SDLC_FRAMEWORK_v0.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\projects.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.labtalk.sdlc",
+      "label": "SDLC - Software Development Life Cycle Working Model",
+      "section": "portal.projects",
+      "kind": "methodology_project",
+      "status": "active_seed",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\DOTTALKPP_SDLC_CHARTER_v0.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\SCOPE_CALIBRATION_SEED_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "project.x64base.identity",
+      "label": "Identity, RBAC & Authorization Management",
+      "section": "portal.projects",
+      "kind": "governance_project",
+      "status": "active_development",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "root",
+          "state": "ok",
+          "path": "D:\\code\\ccode"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\IDENTITY_RBAC_MANAGEMENT_LANE_V1.md"
+        },
+        {
+          "field": "docs",
+          "state": "missing",
+          "path": "D:\\code\\ccode\\docs\\## AI Portal re-examination.txt"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\cmd_security.cpp"
+        },
+        {
+          "field": "docs",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
       "id": "lms.lane.overview",
       "label": "LMS Work Lane Overview",
       "section": "portal.lms",
@@ -2075,6 +2457,25 @@
           "field": "evidence",
           "state": "ok",
           "path": "D:\\code\\ccode\\docs\\media\\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "lesson.student.agency_who_may_act",
+      "label": "Agency: Who May Act, and Who Answers For It",
+      "section": "portal.lessons",
+      "kind": "lesson",
+      "status": "draft",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
         }
       ],
       "runnable": false,
@@ -2422,6 +2823,123 @@
     {
       "id": "concept.database.durability",
       "label": "Durability",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency",
+      "label": "Agency",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.identity",
+      "label": "Identity (who is acting)",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.authority",
+      "label": "Authority (what they may do)",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.authentication",
+      "label": "Authentication (proof of identity)",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.accountability",
+      "label": "Accountability (who answers for it)",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.capability_vs_agency",
+      "label": "Capability is not Agency",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.influence_vs_authority",
+      "label": "Influence is not Authority",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.delegation",
+      "label": "Delegation without Surrender",
+      "section": "portal.concepts",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "concept.agency.serialization",
+      "label": "Serializing Shared Agency",
       "section": "portal.concepts",
       "kind": "registry_item",
       "status": "",
@@ -3040,6 +3558,423 @@
           "field": "related",
           "state": "ok",
           "path": "D:\\code\\ccode\\labtalk\\registries\\ai_portal.yaml"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.m1_board",
+      "label": "AI-BBS M1 board tables + BBS command",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.m2_net_egress",
+      "label": "AI-BBS M2 NET EGRESS permissioned toggle",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.m3_argon2",
+      "label": "AI-BBS M3 Argon2id token crypto (libsodium)",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.m4_serve",
+      "label": "AI-BBS M4 BBS SERVE loopback listener + Ollama bridge",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.m6_daemon",
+      "label": "AI-BBS M6 standalone dottalk_bbsd daemon",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_BBS_M6_STANDALONE_DAEMON_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.guest",
+      "label": "AI-BBS guest leave-a-message (member.guest + board.guestbook)",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_BBS_LOUNGE_ROOM_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai_portal.engineering_standards_seed",
+      "label": "AI Portal engineering-standards / definition-of-done seed on the mandatory path",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_README.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\AI_PORTAL.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\ROOT_AI_PORTAL_ENTRY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_PORTAL_HARDENING_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.bbs.worklog",
+      "label": "AI-BBS worklog/handoff board + simplex cascade guard",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_BBS_WORKLOG_HANDOFF_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.ai.roles_taxonomy",
+      "label": "AI roles taxonomy - agents vs Ollama vs GPTbase",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.contract.dottalk_file_fulltree",
+      "label": "@dottalk.file universal contract - full-tree backfill at 100% coverage",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\tools\\fullstack_docs\\source_census.py"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_RUN_TRACEABILITY_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.agency.model",
+      "label": "Agency model -- capacity to act plus accountability for having acted",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "source_defined",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AGENCY_MODEL_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\lessons\\student\\agency_who_may_act_v0.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\ai-friendly\\AI_ROLES_TAXONOMY_V1.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\ai_portal\\AI_ENGINEERING_STANDARDS_SEED_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.wal.dbf_record",
+      "label": "TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\TABLE_BUFFER_WAL_DESIGN_2026-07-19.md"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\src\\cli\\table_state.cpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\include\\cli\\table_state.hpp"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\wal_phaseA_proof_teed_20260719T080435Z.log"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\wal_phaseB_verify_teed_20260719T081647Z.log"
+        },
+        {
+          "field": "related",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\labtalk\\proofs\\runs\\wal_phaseC_proof_teed_20260719T082345Z.log"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.wal.memo_atomicity",
+      "label": "Whole-row atomicity including the memo store",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "design-intended",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_MEMO_WAL_ATOMICITY_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "proof.evidence.layer_versioned",
+      "label": "Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone",
+      "section": "portal.proofs",
+      "kind": "registry_item",
+      "status": "",
+      "truth_state": "",
+      "proof_state": "runtime_observed",
+      "paths": [
+        {
+          "field": "source",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\maintenance\\AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "report.index",
+      "label": "Reports Index (start here)",
+      "section": "portal.reports",
+      "kind": "html",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\reports\\index.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "report.ai_portal",
+      "label": "AI Portal -- Lanes, Runs and Proofs",
+      "section": "portal.reports",
+      "kind": "html",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\reports\\AI_PORTAL_REPORT.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "report.bbs_boards",
+      "label": "BBS -- Boards and Traffic",
+      "section": "portal.reports",
+      "kind": "html",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\reports\\BBS_BOARDS_REPORT.html"
+        }
+      ],
+      "runnable": false,
+      "provenance_state": "",
+      "derived_from": []
+    },
+    {
+      "id": "report.bbs_access",
+      "label": "BBS -- Access and Identity",
+      "section": "portal.reports",
+      "kind": "html",
+      "status": "generated",
+      "truth_state": "",
+      "proof_state": "",
+      "paths": [
+        {
+          "field": "path",
+          "state": "ok",
+          "path": "D:\\code\\ccode\\docs\\reports\\BBS_ACCESS_REPORT.html"
         }
       ],
       "runnable": false,

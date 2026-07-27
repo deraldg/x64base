@@ -1,15 +1,16 @@
 # LabTalk Portal Truth Audit
 
-Generated: 2026-07-12T20:51:09
+Generated: 2026-07-26T15:29:36
 
 ## Summary
 
-- Sections: 13
-- Items: 185
-- Runnable items: 31
-- Proof-like records: 49
-- Missing paths: 5
+- Sections: 14
+- Items: 221
+- Runnable items: 32
+- Proof-like records: 65
+- Missing paths: 6
 - Duplicate item IDs: 0
+- AI report audit findings: 20
 
 ## Missing Paths
 
@@ -19,11 +20,43 @@ Generated: 2026-07-12T20:51:09
 | `project.db_converter` | `docs` | `D:\code\ccode\Side Projects\DB_Converter\README.md` |
 | `project.db_converter` | `launchers` | `D:\code\ccode\Side Projects\DB_Converter\Start-DBConverter.ps1` |
 | `project.sqlite_gui` | `root` | `D:\code\ccode\sqlite-gui` |
+| `project.x64base.identity` | `docs` | `D:\code\ccode\docs\## AI Portal re-examination.txt` |
 | `lesson.student.properties_of_valid_data` | `path` | `D:\code\ccode\labtalk\lessons\student\properties_of_valid_data_v0.md` |
 
 ## Duplicate IDs
 
 No duplicate item IDs found.
+
+## AI Report Identity and Provenance
+
+- Schema: `ai-report-audit-v1`
+- Enforced closeouts: 65
+- Valid closeouts: 46
+- Grandfathered closeouts: 9
+- Findings: 20
+
+| Report | Field | Finding |
+|---|---|---|
+| `docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md` | `ai_report_audit.report_id` | duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md |
+| `docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_REGRESSION_ENVIRONMENT_MENU_2026-07-22.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_2026-07-22.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_ARCTICTALK_TVISION_GRID_BROWSER_2026-07-22.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_ARRAYS_PDLC_LANES_2026-07-20.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_DOTSCRIPT_ERRORSTOP_LEXING_2026-07-20.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_DTV_FOUNDATION_INTEGRATED_2026-07-20.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_ENGINE_LIMITS_AND_CORRECTIONS_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_FIELDTYPE_CODEC_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_HELP_GIANT_ALL_BRANCH_RENAME_2026-07-23.md` | `ai_report_audit.report_id` | duplicate report id also used by docs/maintenance/SESSION_CLOSEOUT_AFB_OLLAMA_APP_REGISTRATION_2026-07-23.md |
+| `docs/maintenance/SESSION_CLOSEOUT_MANUAL_ASSEMBLY_2026-07-20.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_AGGS_ALL_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_DELETE_BATCH_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_PINOCCHIO_SEEK_FIX_2026-07-18.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2026-07-23.md` | `ai_report_audit.project.id` | unknown project id: x64base / DotTalk++ Runtime |
+| `docs/maintenance/SESSION_CLOSEOUT_RECNO64_M1_M4_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md` | `front_matter` | missing YAML front matter |
+| `docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md` | `ai_report_audit.git.branch` | required field missing |
+| `docs/maintenance/SESSION_CLOSEOUT_WEBSITE_SOURCE_DERIVED_CATALOG_HARVEST_2026-07-19.md` | `ai_report_audit.git.baseline_commit` | required field missing |
 
 ## Sections
 
@@ -39,6 +72,7 @@ No duplicate item IDs found.
 | `portal.lessons` | ok: `D:\code\ccode\labtalk\registries\lessons.yaml` |
 | `portal.concepts` | ok: `D:\code\ccode\labtalk\registries\concepts.yaml` |
 | `portal.proofs` | ok: `D:\code\ccode\labtalk\registries\proofs.yaml` |
+| `portal.reports` | inline |
 | `portal.diagrams` | inline |
 | `portal.runtime` | inline |
 | `portal.launchers` | inline |
@@ -89,6 +123,7 @@ No duplicate item IDs found.
 | `seed.ai_portal.source_mutation_contract_preflight.v1` | `portal.ai_portal_work` | `mandatory_context_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md`<br>`evidence` ok: `D:\code\ccode\docs\contracts\README.md`<br>`evidence` ok: `D:\code\ccode\docs\contracts\CONTRACT_REGISTRY_V1.md`<br>`evidence` ok: `D:\code\ccode\docs\contracts\CONTRACT_LIFECYCLE_V1.md`<br>`evidence` ok: `D:\code\ccode\docs\contracts\CONTRACT_INTAKE_QUEUE_V1.md` |
 | `seed.ai_portal.external_ai_change_package.v1` | `portal.ai_portal_work` | `mandatory_context_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md` |
 | `seed.ai_portal.sdlc_fast_start.v1` | `portal.ai_portal_work` | `mandatory_context_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`evidence` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`evidence` ok: `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`<br>`evidence` ok: `D:\code\ccode\docs\planning\SDLC_PLDC_PLANNING_ADOPTION_v0.md` |
+| `seed.ai_portal.scope_calibration.v1` | `portal.ai_portal_work` | `mandatory_context_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\SCOPE_CALIBRATION_SEED_V1.md` |
 | `recipe.ai_portal.x64base_development_change.v1` | `portal.ai_portal_work` | `task_recipe_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` |
 | `recipe.ai_portal.x64base_stage_and_publish.v1` | `portal.ai_portal_work` | `task_recipe_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` |
 | `recipe.ai_portal.reconcile_public_only_change.v1` | `portal.ai_portal_work` | `task_recipe_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` |
@@ -97,6 +132,7 @@ No duplicate item IDs found.
 | `recipe.ai_portal.source_mutation_contract_preflight.v1` | `portal.ai_portal_work` | `task_recipe_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
 | `recipe.ai_portal.external_ai_change_package_intake.v1` | `portal.ai_portal_work` | `task_recipe_seed` | `path` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md` |
 | `probe.ai_portal.dotscript_startup_readiness.v1` | `portal.ai_portal_work` | `dottalk_script` | `script` ok: `D:\code\ccode\labtalk\ai_portal\probes\dotscript_startup_readiness_v1.dts` |
+| `probe.ai_portal.maint_ai_portal_readback.v1` | `portal.ai_portal_work` | `dottalk_script` | `script` ok: `D:\code\ccode\labtalk\ai_portal\probes\maint_ai_portal_readback_v1.dts` |
 | `lane.ai_portal.hardening` | `portal.ai_portal_work` | `work_lane` | `path` ok: `D:\code\ccode\labtalk\ai_portal\README.md` |
 | `concept.ai_portal.seed_connection_prototype.v1` | `portal.ai_portal_work` | `prototype_direction` | `path` ok: `D:\code\ccode\labtalk\ai_portal\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md` |
 | `plan.ai_portal.hardening.v1` | `portal.ai_portal_work` | `lane_plan` | `path` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md` |
@@ -114,7 +150,8 @@ No duplicate item IDs found.
 | `app.labtalk.ai_portal` | `portal.apps` | `experimental_context_lab` | `root` ok: `D:\code\ccode\labtalk\ai_portal` |
 | `app.labtalk.case_library` | `portal.apps` | `case_library` | `root` ok: `D:\code\ccode\docs\cases` |
 | `app.labtalk.dataset_library` | `portal.apps` | `dataset_library` | `root` ok: `D:\code\ccode\dottalkpp\data` |
-| `project.x64base.runtime` | `portal.projects` | `runtime_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\README.md`<br>`docs` ok: `D:\code\ccode\AI_PORTAL.md`<br>`docs` ok: `D:\code\ccode\docs\governance\REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md` |
+| `app.labtalk.afb` | `portal.apps` | `local_ai_lab` | `root` ok: `D:\code` |
+| `project.x64base.runtime` | `portal.projects` | `runtime_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\README.md`<br>`docs` ok: `D:\code\ccode\AI_PORTAL.md`<br>`docs` ok: `D:\code\ccode\docs\governance\REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DDL_SCHEMA_PDLC_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_CHARTER_20260726.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\RETRO_LANE_PROPOSAL_V2_20260726.md` |
 | `project.x64base.public_staging` | `portal.projects` | `publication_staging_project` | `root` ok: `C:\x64base` |
 | `project.labtalk.campus` | `portal.projects` | `campus_project` | `root` ok: `D:\code\ccode\labtalk`<br>`docs` ok: `D:\code\ccode\labtalk\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\portal\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\LABTALK_CAMPUS_ARCHITECTURE_v0.md` |
 | `project.labtalk.lms` | `portal.projects` | `integration_project` | `root` ok: `D:\code\ccode\labtalk\lms`<br>`docs` ok: `D:\code\ccode\labtalk\lms\README.md`<br>`docs` ok: `D:\code\ccode\labtalk\lms\contracts\lms_message_v1.schema.json` |
@@ -125,6 +162,11 @@ No duplicate item IDs found.
 | `project.db_converter` | `portal.projects` | `migration_project` | `root` missing: `D:\code\ccode\Side Projects\DB_Converter`<br>`docs` missing: `D:\code\ccode\Side Projects\DB_Converter\README.md`<br>`launchers` missing: `D:\code\ccode\Side Projects\DB_Converter\Start-DBConverter.ps1` |
 | `project.dottalk_webui` | `portal.projects` | `web_ui_project` | `root` ok: `D:\code\ccode\dottalk-webui`<br>`docs` ok: `D:\code\ccode\dottalk-webui\selfdoc-lane.html` |
 | `project.sqlite_gui` | `portal.projects` | `gui_project` | `root` missing: `D:\code\ccode\sqlite-gui` |
+| `project.x64base.dotscript` | `portal.projects` | `language_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTSCRIPT_ARRAYS_SPEC_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTSCRIPT_ARRAYS_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md` |
+| `project.labtalk.pdlc` | `portal.projects` | `methodology_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\SCOPE_CALIBRATION_SEED_V1.md` |
+| `project.labtalk.historical_database_migration` | `portal.projects` | `pdlc_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\HISTORICAL_DATABASE_MIGRATION_PDLC_PROJECT_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`<br>`docs` ok: `D:\code\ccode\labtalk\registries\projects.yaml` |
+| `project.labtalk.sdlc` | `portal.projects` | `methodology_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`docs` ok: `D:\code\ccode\docs\maintenance\SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`<br>`docs` ok: `D:\code\ccode\labtalk\ai_portal\SCOPE_CALIBRATION_SEED_V1.md`<br>`docs` ok: `D:\code\ccode\AI_PORTAL.md` |
+| `project.x64base.identity` | `portal.projects` | `governance_project` | `root` ok: `D:\code\ccode`<br>`docs` ok: `D:\code\ccode\docs\maintenance\IDENTITY_RBAC_MANAGEMENT_LANE_V1.md`<br>`docs` missing: `D:\code\ccode\docs\## AI Portal re-examination.txt`<br>`docs` ok: `D:\code\ccode\src\cli\cmd_security.cpp`<br>`docs` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
 | `lms.lane.overview` | `portal.lms` | `markdown` | `path` ok: `D:\code\ccode\labtalk\lms\README.md` |
 | `lms.message.contract` | `portal.lms` | `json_schema` | `path` ok: `D:\code\ccode\labtalk\lms\contracts\lms_message_v1.schema.json` |
 | `lms.outbox` | `portal.lms` | `directory` | `path` ok: `D:\code\ccode\labtalk\lms\queue\outbox` |
@@ -140,6 +182,7 @@ No duplicate item IDs found.
 | `lesson.student.database_history_trail` | `portal.lessons` | `lesson` | `path` ok: `D:\code\ccode\labtalk\lessons\student\data_systems_history_trail_v0.md`<br>`evidence` ok: `D:\code\ccode\docs\media\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx`<br>`evidence` ok: `D:\code\ccode\labtalk\LABTALK_EDUCATION_MAP_v0.md` |
 | `lesson.career.proof_first_development` | `portal.lessons` | `lesson` | `path` ok: `D:\code\ccode\labtalk\lessons\career\proof_first_development_v0.md` |
 | `lesson.career.legacy_systems_as_labs` | `portal.lessons` | `lesson` | `path` ok: `D:\code\ccode\labtalk\lessons\career\legacy_systems_as_labs_v0.md`<br>`evidence` ok: `D:\code\ccode\docs\media\LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx` |
+| `lesson.student.agency_who_may_act` | `portal.lessons` | `lesson` | `path` ok: `D:\code\ccode\labtalk\lessons\student\agency_who_may_act_v0.md` |
 | `concept.database.table` | `portal.concepts` | `registry_item` | none |
 | `concept.database.record` | `portal.concepts` | `registry_item` | none |
 | `concept.database.field` | `portal.concepts` | `registry_item` | none |
@@ -167,6 +210,15 @@ No duplicate item IDs found.
 | `concept.database.consistency` | `portal.concepts` | `registry_item` | none |
 | `concept.database.isolation` | `portal.concepts` | `registry_item` | none |
 | `concept.database.durability` | `portal.concepts` | `registry_item` | none |
+| `concept.agency` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.identity` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.authority` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.authentication` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.accountability` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.capability_vs_agency` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.influence_vs_authority` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.delegation` | `portal.concepts` | `registry_item` | none |
+| `concept.agency.serialization` | `portal.concepts` | `registry_item` | none |
 | `idea` | `portal.proofs` | `registry_item` | none |
 | `source_defined` | `portal.proofs` | `registry_item` | none |
 | `runtime_observed` | `portal.proofs` | `registry_item` | none |
@@ -193,6 +245,24 @@ No duplicate item IDs found.
 | `proof.ai_portal.seed_connection_prototype_direction.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\SEED_CONNECTION_PROTOTYPE_NOTE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\README.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
 | `proof.ai_portal.root_entry_and_external_package.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\AI_PORTAL.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\EXTERNAL_AI_CHANGE_PACKAGE_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
 | `proof.ai_portal.sdlc_fast_start.v1` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\SDLC_FAST_START_SEED_V1.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`<br>`related` ok: `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`<br>`related` ok: `D:\code\ccode\docs\planning\SDLC_PLDC_PLANNING_ADOPTION_v0.md`<br>`related` ok: `D:\code\ccode\labtalk\registries\ai_portal.yaml` |
+| `proof.bbs.m1_board` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md` |
+| `proof.bbs.m2_net_egress` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md` |
+| `proof.bbs.m3_argon2` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md` |
+| `proof.bbs.m4_serve` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md` |
+| `proof.bbs.m6_daemon` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AI_BBS_M6_STANDALONE_DAEMON_V1.md` |
+| `proof.bbs.guest` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\ai-friendly\AI_BBS_LOUNGE_ROOM_V1.md` |
+| `proof.ai_portal.engineering_standards_seed` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\labtalk\ai_portal\AI_ENGINEERING_STANDARDS_SEED_V1.md`<br>`related` ok: `D:\code\ccode\AI_README.md`<br>`related` ok: `D:\code\ccode\AI_PORTAL.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\ROOT_AI_PORTAL_ENTRY_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_PORTAL_HARDENING_LANE_V1.md` |
+| `proof.bbs.worklog` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\ai-friendly\AI_BBS_WORKLOG_HANDOFF_LANE_V1.md` |
+| `proof.ai.roles_taxonomy` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\ai-friendly\AI_ROLES_TAXONOMY_V1.md` |
+| `proof.contract.dottalk_file_fulltree` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md`<br>`related` ok: `D:\code\ccode\tools\fullstack_docs\source_census.py`<br>`related` ok: `D:\code\ccode\docs\maintenance\AI_RUN_TRACEABILITY_LANE_V1.md` |
+| `proof.agency.model` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\ai-friendly\AGENCY_MODEL_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\lessons\student\agency_who_may_act_v0.md`<br>`related` ok: `D:\code\ccode\docs\ai-friendly\AI_ROLES_TAXONOMY_V1.md`<br>`related` ok: `D:\code\ccode\labtalk\ai_portal\AI_ENGINEERING_STANDARDS_SEED_V1.md` |
+| `proof.wal.dbf_record` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md`<br>`related` ok: `D:\code\ccode\docs\maintenance\TABLE_BUFFER_WAL_DESIGN_2026-07-19.md`<br>`related` ok: `D:\code\ccode\src\cli\table_state.cpp`<br>`related` ok: `D:\code\ccode\include\cli\table_state.hpp`<br>`related` ok: `D:\code\ccode\labtalk\proofs\runs\wal_phaseA_proof_teed_20260719T080435Z.log`<br>`related` ok: `D:\code\ccode\labtalk\proofs\runs\wal_phaseB_verify_teed_20260719T081647Z.log`<br>`related` ok: `D:\code\ccode\labtalk\proofs\runs\wal_phaseC_proof_teed_20260719T082345Z.log` |
+| `proof.wal.memo_atomicity` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AI_MEMO_WAL_ATOMICITY_LANE_V1.md` |
+| `proof.evidence.layer_versioned` | `portal.proofs` | `registry_item` | `source` ok: `D:\code\ccode\docs\maintenance\AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md` |
+| `report.index` | `portal.reports` | `html` | `path` ok: `D:\code\ccode\docs\reports\index.html` |
+| `report.ai_portal` | `portal.reports` | `html` | `path` ok: `D:\code\ccode\docs\reports\AI_PORTAL_REPORT.html` |
+| `report.bbs_boards` | `portal.reports` | `html` | `path` ok: `D:\code\ccode\docs\reports\BBS_BOARDS_REPORT.html` |
+| `report.bbs_access` | `portal.reports` | `html` | `path` ok: `D:\code\ccode\docs\reports\BBS_ACCESS_REPORT.html` |
 | `diagram.selfdoc_contract_lane_drawio` | `portal.diagrams` | `diagram` | `path` ok: `D:\code\ccode\labtalk\diagrams\selfdoc_contract_lane_v1.drawio` |
 | `diagram.labtalk_sdlc` | `portal.diagrams` | `markdown` | `path` ok: `D:\code\ccode\labtalk\diagrams\LABTALK_SDLC_DIAGRAMS_v0.md` |
 | `diagram.dottalkpp_sdlc` | `portal.diagrams` | `markdown` | `path` ok: `D:\code\ccode\docs\maintenance\diagrams\DOTTALKPP_SDLC_DIAGRAMS_v0.md` |

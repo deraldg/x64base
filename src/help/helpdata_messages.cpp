@@ -5448,7 +5448,7 @@ const std::vector<MessageDef>& all_messages()
             "COMMAND:AUTODBF",
             "STATUS",
             "INFO",
-            "CSV parsing uses the existing comma CSV parser."
+            "CSV parsing accepts quoted commas, doubled quotes, and embedded newlines; malformed quote syntax is rejected."
         },
         {
             MessageId::AutoDbfLongTextRejectedNote,
@@ -11444,7 +11444,7 @@ const std::vector<MessageTextDef>& all_message_texts()
         { MessageId::AutoDbfDefaultHeaderNote, "en-US", "AUTO header detection, conservative" },
         { MessageId::AutoDbfDefaultInferNote, "en-US", "INFER field types" },
         { MessageId::AutoDbfDefaultOverwriteNote, "en-US", "no overwrite unless OVERWRITE is supplied" },
-        { MessageId::AutoDbfCsvParserNote,  "en-US", "CSV parsing uses the existing comma CSV parser." },
+        { MessageId::AutoDbfCsvParserNote,  "en-US", "CSV parsing accepts quoted commas, doubled quotes, and embedded newlines; malformed quote syntax is rejected." },
         { MessageId::AutoDbfLongTextRejectedNote, "en-US", "Long text is rejected for now rather than auto-promoted to M." },
         { MessageId::AutoDbfHeaderNormalizeNote, "en-US", "Header names are normalized, uniquified, and sent through x64 fallback-name mangling." },
         { MessageId::AutoDbfMissingTableName, "en-US", "missing table name." },

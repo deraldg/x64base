@@ -7,13 +7,16 @@ projects:
     status: active_beta
     root: D:/code/ccode
     owner_repo: deraldg/x64base
-    lanes: [engine, cli, dotscript, help, selfdoc, contracts, gui, arctictalk_tui_workbench, maintenance]
+    lanes: [engine, cli, ddl_schema_pdlc, dotscript, help, selfdoc, contracts, gui, arctictalk_tui_workbench, retro_launchpad, maintenance]
     docs:
       - README.md
       - AI_PORTAL.md
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+      - docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md
       - docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md
+      - docs/maintenance/RETRO_LANE_CHARTER_20260726.md
+      - docs/maintenance/RETRO_LANE_PROPOSAL_V2_20260726.md
     publication_staging: C:/x64base
     publication_target: github.com/deraldg/x64base
     notes: Authoritative active development source and runtime truth for DotTalk++ / x64base. The current workspace branch is inspected, not invented per AI chat. Clean relevant work is selectively promoted to C:/x64base for publication.
