@@ -1,0 +1,96 @@
+SYSCMD_IMPORT_v2.csv -- correction record
+=========================================
+Date:   2026-07-26
+Run:    COWORK-20260726-001
+By:     member.ai.claude.cowork  (owner member.derald)
+Change: one row removed. 216 -> 215.
+
+A CSV cannot carry a comment, so the correction is recorded here.
+
+
+WHAT WAS REMOVED
+----------------
+
+    CMD_LOAD,LOAD,command,public,cmd_LOAD,T
+
+LOAD is not a command. It is a SUBCOMMAND, and the row was fabricated.
+
+Evidence, all four checks failing:
+
+  1. HANDLER claims `cmd_LOAD`. No such function exists anywhere in tracked
+     source. Verified by reading every tracked .cpp/.hpp/.h/.cc/.cxx/.hxx under
+     src, include and bindings into one text blob and testing membership of the
+     identifier -- of all 216 HANDLER values in this file, `cmd_LOAD` was the
+     ONLY one that did not resolve.
+  2. There is no src/cli/cmd_load.* translation unit.
+  3. include/dotref.hpp does not list LOAD.
+  4. The live canonical table (dottalkpp/data/metadata/SYSCMD.dbf, 203 records)
+     does not contain it.
+
+LOAD appears in the codebase only as a subcommand token --
+    BETA LOAD, CODASYL LOAD, ERSATZ LOAD, REL LOAD, USER LOAD
+-- and in include/reserved_words.hpp. A seed generator promoted that token to a
+top-level command and synthesised a plausible handler name to go with it. The
+error propagated into BOTH SYSCMD_IMPORT_v1.csv and SYSCMD_IMPORT_v2.csv.
+
+The live table was correct all along. The CSVs were wrong.
+
+The row was removed surgically -- byte replacement of that one CRLF-terminated
+line -- so ordering, quoting, CRLF endings and the trailing newline are all
+unchanged. Verified 10,480 -> 10,439 bytes, delta exactly 41, and a whitespace-
+normalised diff showing that single line and nothing else.
+
+v1 is not edited here. It is refreshed FROM the live table by
+tools/fullstack_docs/export_syscmd_mirror.ps1, which drops LOAD as an
+acknowledged CSV-only phantom (-AcceptCsvOnly LOAD).
+
+
+HOW IT WAS FOUND
+----------------
+
+Not by review. By exporting the live table to refresh v1 and letting a guard
+compare the two. The guard was written to catch the EXPORT dropping table rows
+-- which it structurally cannot do, since the row count is checked against the
+DBF header -- and instead caught the tracked CSV asserting a command that was
+never real. Right alarm, wrong reason, useful result.
+
+Companion finding to AIF-065: nothing in the toolchain was checking whether a
+declared thing actually exists downstream.
+
+
+WHAT THIS FILE IS AND IS NOT
+----------------------------
+
+IT IS a seed-gap CANDIDATE list. IT IS NOT a replacement for the live table and
+must never be imported wholesale.
+
+Measured 2026-07-26, after this correction:
+
+    live table   203 rows
+    v2 CSV       215 rows
+
+    In v2, not live -- 27 SEED-GAP CANDIDATES for review:
+      AVERAGE, BBS, BETA, BROWSETV, CANARY, COMMANDSHELP, DEFCMD, DEFFN, EXIT,
+      EXPFUNCS, FOXTALK, GENERIC, LMDB, LMDBDUMP, LOOP_BUFFER, NET, REL_LIST,
+      SCAN_BUFFER, STOP_ON_ERROR, STRCAT, UNDEFCMD, UNDEFFN, UNDELETE,
+      UNTIL_BUFFER, USER, VDISK, WHILE_BUFFER
+
+    Live, not in v2 -- 15 rows a wholesale import would DESTROY:
+      BUILDLMDB, PREDHELP, SETPATH, WHERECACHE, STUDENTECHO, STUDENTHELLO,
+      SET CASE, SET CDX, SET CNX, SET FILTER, SET INDEX, SET NEAR, SET ORDER,
+      SET RELATION, SET UNIQUE
+
+215 > 203 makes this file look like a superset. It is not. The nine SET
+compounds plus six others are deliberate maintainer entries that exist only in
+the table. An earlier coverage generator read the 40-row v1 snapshot and
+reported 14.9% coverage when the true figure against the table was 78.4%;
+acting on that number would have erased exactly these rows.
+
+Every handler in the 27 candidates resolves to a real identifier in tracked
+source, so they are plausible -- but "the handler exists" is not the same as
+"this is a registered top-level command", which is precisely the confusion that
+produced the LOAD row. Each candidate needs adjudication against the command
+registry before it is appended to the table, ONE AT A TIME, additively.
+
+NEXT GATE: adjudicate the 27 against the live registry; append the confirmed
+ones to SYSCMD; never overwrite.

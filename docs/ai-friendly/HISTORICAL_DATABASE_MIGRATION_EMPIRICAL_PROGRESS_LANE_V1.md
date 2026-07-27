@@ -19,7 +19,7 @@ future publication work.
 | Project and lane registration | complete | PDLC charter and `projects.yaml` registration parse and name the authority chain. |
 | Runtime starters | strong | COBOL, CODASYL, SQLite, BIBLETALK, ERP, CASE, and MCC command surfaces exist and are registered. |
 | Sample databases | strong | Bible SQLite and Cascade ERP include schemas, dumps, CSV exports, manifests, and validation figures. |
-| DBF/xBase and CSV | **runtime-observed, transcripts preserved** | DBF→CSV→DBF proven LOSSLESS: origin and return legs identical in rows, fields, type letters, widths and decimals. CSV→x64base proven with type/NULL/long-name fidelity. `proof.pdlc.dbf_csv_dbf.roundtrip_lossless`, `proof.pdlc.csv_to_x64base.type_fidelity`. **CORRECTED 2026-07-26 — see note below: the previously cited evidence could not execute.** |
+| DBF/xBase and CSV | **runtime-observed, transcripts preserved** | DBF→CSV→DBF proven LOSSLESS: origin and return legs identical in rows, fields, type letters, widths and decimals. CSV→x64base proven with type/NULL/long-name fidelity. `proof.pdlc.dbf_csv_dbf.roundtrip_lossless`, `proof.pdlc.csv_to_x64base.type_fidelity`. **CORRECTED 2026-07-26 — see note below: the previously cited evidence could not execute.** **SCOPE NARROWED 2026-07-26: "lossless" is proven for STRUCTURE, not byte-identity — `EXPORT` lowercases `L` fields. See the round-trip caveat below.** |
 | xBase dialect ladder | **runtime-observed** | dBASE III (0x03) → FoxPro 2.6 → VFP → x64 → x64 VECTOR via `COPY ... AS`, in-engine, no external tool. 200 rows and 9 fields at every rung; `GPA` held `N(4,2)`; `DOB`/`ENROLL_D` held type `D` with values byte-identical end to end. Indexes migrate with the dialect (CNX/INX → CDX). `proof.pdlc.dialect_ladder.dbase3_to_x64`. **This surface was absent from the previous assessment.** |
 | COBOL fixed records | **runtime-observed, hop closed** | `COBOL EXPORT` wrote 200 records; file is 22,200 bytes = 200 × 111 exactly. GnuCOBOL compiled clean, program ran, `RECORDS READ: 0000200`, exit 0. Record 1 identical read by COBOL and by DotTalk++. The copybook FD sums to 109 bytes — the dBASE III record length, field for field. `proof.pdlc.cobol_fixed_record.hop_closed`. |
 | DBF ↔ SQLite | **capability gap, not demonstrated** | No DBF→SQLite row pump (needs field substitution in `SCAN`/`SQLITE EXEC` or a bulk command) and no SQLite-result→file path. Asserted explicitly, not hidden, in `tests/conversion/03_04_sqlite_capability_gap_v2.dts`. The SQLite legs of the chartered chain are untraversable from inside DotTalk++ in either direction. |
@@ -67,6 +67,48 @@ And `DDL CREATE DBF ... FROM <schema.json>` undercuts "JSON is design-stage".
 
 Method note: every finding here came from *executing* an artifact that had only
 ever been *written*. Recorded as `lesson.career.a_script_never_run_is_not_evidence`.
+
+## Round-trip caveat recorded 2026-07-26 — what "lossless" has actually been proven to mean
+
+The DBF→CSV→DBF proof is sound, and its scope is narrower than the word
+"lossless" suggests. It established that the origin and return legs are
+identical in **rows, field names, type letters, widths and decimals** — that is,
+in *structure*. It did not establish **byte-identity of values**, and at least
+one value transformation is now measured:
+
+```text
+DBF stores an L field as   T
+EXPORT emits               t        (lowercase, all 203 rows of SYSCMD)
+```
+
+Both forms parse on `IMPORT`, so the round trip returns a table with the same
+logical content and no data is lost. But the intermediate CSV is not the bytes
+the DBF held, which has three practical consequences worth stating before anyone
+relies on the word:
+
+- **A text diff of two exports of the same table is not a data diff.** Refreshing
+  a tracked CSV from a table shows every row as changed when only the case moved.
+- **Checksum-based identity checks across a CSV hop will fail** even when the
+  data is intact. Identity must be compared field-by-field after parsing, not by
+  hashing the intermediate file.
+- **A third-party consumer may not accept both spellings.** `t` is fine for our
+  own `IMPORT`; an external xBase or ODBC reader taking the CSV is a different
+  question, and an unanswered one.
+
+Found while exporting the live `SYSCMD` table to refresh its tracked CSV, not by
+a conversion test — the conversion proofs compare structure, so this class of
+difference is invisible to them by construction.
+
+**What is owed:** the round-trip proof should be extended to compare values, not
+just schema, across every field type — `L` is simply the one that surfaced first.
+`D`, `N` with decimals, and `M` are the obvious next candidates, and memo is the
+one most likely to hold a surprise. Until that runs, the lane's claim is
+`structure-lossless`, and this document should not be read as asserting more.
+
+The narrower claim is still the useful one for the migration thesis: a table can
+leave x64base, cross a text format, and return with its shape intact. That was
+the question being asked. Byte-identity is a different and stricter question that
+nobody had yet posed.
 
 ## Storage-footprint caveat recorded 2026-07-26 (AIF-065)
 
@@ -122,7 +164,8 @@ COBOL fixed record -> DBF/xBase -> CSV/JSON -> SQLite -> x64base comparison
 ```text
 COBOL fixed record <-> DBF     PROVEN   200 recs, 22,200 = 200 x 111 exactly
 dBASE III -> ... -> x64        PROVEN   lossless across 4 dialects + VECTOR
-DBF -> CSV -> DBF              PROVEN   lossless, schema re-inferred exactly
+DBF -> CSV -> DBF              PROVEN   STRUCTURE-lossless, schema re-inferred exactly
+                                        (values not byte-identical: EXPORT lowercases L)
 CSV -> x64base                 PROVEN   types, NULLs, long names preserved
 JSON schema -> DBF             WORKS    DDL CREATE DBF FROM <schema.json>
 JSON/CSV -> rows via DDL       GAP      SEED CSV recognised, not implemented

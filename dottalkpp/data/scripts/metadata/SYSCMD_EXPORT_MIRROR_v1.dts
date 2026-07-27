@@ -1,0 +1,50 @@
+&& SYSCMD_EXPORT_MIRROR_v1.dts
+&&
+&& Export the LIVE SYSCMD table to CSV so the tracked CSV mirrors the canonical
+&& table. This is an EXPORT, not an import. The table is authority; the CSV is
+&& its readable shadow.
+&&
+&& WHY THIS DIRECTION, EMPHATICALLY
+&&   stack_audit reports CSV_VS_TABLE/STALE_CSV: table=203 csv=40. The reflex is
+&&   to import the CSV. That is backwards and destructive. Measured 2026-07-26:
+&&
+&&     SYSCMD_IMPORT_v2.csv holds 216 rows, and is NOT a superset of the live 203.
+&&     Importing it would ADD 28 rows and SILENTLY LOSE 15:
+&&       BUILDLMDB, PREDHELP, SETPATH, WHERECACHE, STUDENTECHO, STUDENTHELLO,
+&&       and the nine SET compounds -- SET CASE, SET CDX, SET CNX, SET FILTER,
+&&       SET INDEX, SET NEAR, SET ORDER, SET RELATION, SET UNIQUE.
+&&
+&&   Those 15 are deliberate maintainer entries. An earlier coverage generator
+&&   read the 40-row CSV and reported 14.9% when the true figure against the
+&&   table was 78.4%; acting on that number would have erased them.
+&&
+&&   The 28 rows v2 adds are a SEED GAP to be reviewed and appended one at a
+&&   time. They are not applied here and this script cannot apply them.
+&&
+&& MUTATION
+&&   Writes one file under DATA\tmp. Touches no table, no index, no LMDB.
+&&   The caller decides whether the result is promoted over the tracked CSV.
+&&
+&& PATH PROTOCOL
+&&   SETPATH DBF <dir>, then a BARE table name. Slashed relative paths resolve
+&&   against the DATA root, not the DBF slot.
+&&
+&& Run:  ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path to this file>'
+
+SET TALK OFF
+
+; ===== SYSCMD EXPORT MIRROR START =====
+
+SETPATH DBF metadata
+
+WORKSPACE CLOSE
+USE SYSCMD
+
+; structure and count first -- the export is only meaningful against a known shape
+FIELDS
+COUNT
+
+EXPORT TO tmp/SYSCMD_EXPORT_MIRROR_v1.csv CSV
+
+; ===== SYSCMD EXPORT MIRROR END =====
+QUIT
