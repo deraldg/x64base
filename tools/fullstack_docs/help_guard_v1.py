@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import struct
@@ -173,7 +174,82 @@ def check_shadow(root: Path, live):
     return findings, detail
 
 
+def dbf_rows(path: Path):
+    """Read an x64 DBF into dicts. Returns [] on any problem.
+
+    TWO TRAPS, both hit while building this check (AIF-066):
+
+    1. The x64 0x64 variant prepends extended descriptors whose name bytes are
+       not printable. Counting them as fields shifts every offset. Filter on
+       "name starts with a letter".
+    2. x64's unique-name fallback produces names like LOCALIZE~1 when two
+       logical names truncate to the same 10-char physical name (here
+       LOCALIZED_TITLE and LOCALIZED_HASH both -> LOCALIZED_). A tidy
+       [A-Z0-9_]+ filter DROPS that column and silently shifts everything after
+       it by its width -- which is how a first pass "proved" SOURCE_HASH was
+       sha256(SOURCE_TITLE) when it is not. Widths must reconcile:
+       sum(field widths) + 1 deleted-flag byte == record length.
+    """
+    try:
+        raw = path.read_bytes()
+        recs = struct.unpack("<I", raw[4:8])[0]
+        hl = struct.unpack("<H", raw[8:10])[0]
+        rl = struct.unpack("<H", raw[10:12])[0]
+        off, fields = 32, []
+        while off < hl - 1 and raw[off] != 0x0D:
+            nm = raw[off:off + 11].split(b"\0")[0].decode("latin-1")
+            w = raw[off + 16]
+            if nm and nm[0].isalpha():
+                fields.append((nm, w))
+            off += 32
+        if sum(w for _, w in fields) + 1 != rl:
+            return []                      # refuse to guess at a layout we cannot verify
+        out = []
+        for i in range(recs):
+            rec = raw[hl + i * rl: hl + (i + 1) * rl]
+            if len(rec) < rl or rec[0:1] == b"*":
+                continue
+            o, d = 1, {}
+            for nm, w in fields:
+                d[nm] = rec[o:o + w].decode("latin-1").strip()
+                o += w
+            out.append(d)
+        return out
+    except Exception:
+        return []
+
+
 def check_locale(root: Path):
+    """C. LOCALE_SET -- presence, and now integrity, of the locale companions.
+
+    LOCALE_DRIFT added 2026-07-27 (AIF-066). HELP_TOPIC_LOCALE carries
+    SOURCE_HASH and LOCALIZED_HASH columns whose only purpose is detecting that
+    the underlying HELP source moved since the locale row was generated.
+    Measured that day: HelpTopicLocaleView in src/cli/cmdhelp.cpp reads SIX of
+    the table's fourteen columns and SOURCE_HASH is not among them -- the string
+    appears nowhere under src/ or include/. Written on every row, compared by
+    nothing.
+
+    That gap is invisible at the prompt by construction: under the
+    @dottalk.locale-preview-contract, a DRAFT_PLACEHOLDER row falls back to
+    source text -- correctly -- and a STALE row falls back to source text too,
+    because nothing checks. Identical output, so drift has no symptom.
+
+    Running these checks for the first time found the fixture 2/5 orphaned:
+    DOT|SET LANGUAGE and DOT|SET LOCALE no longer exist in HELP_TOPIC after the
+    2026-07-22 rebuild. Those are the two topics documenting the locale feature
+    itself.
+
+    WHAT IS AND IS NOT VERIFIABLE HERE:
+      LOCALIZED_HASH  IS recomputable -- confirmed sha256(LOCALIZED_TITLE)[:16]
+                      on 25/25 rows -- so it is checked outright.
+      SOURCE_HASH     is NOT recomputable from here. It holds one value per
+                      topic, stable across that topic's locale rows, so it
+                      hashes topic SOURCE CONTENT rather than the title. The
+                      generator (RUN_ID PHASE23J-*) is not in the tree, so the
+                      exact input is unknown. Cohesion is checked; correctness
+                      is not, and must not be claimed.
+    """
     findings, detail = [], {}
     hroot = root / CANONICAL_HELP
     found = read_set(hroot, LOCALE_TABLES)
@@ -184,6 +260,67 @@ def check_locale(root: Path):
         findings.append({"check": "LOCALE_SET", "code": "MISSING_LOCALE_TABLE",
                          "severity": "WARN",
                          "message": f"locale companion(s) absent: {', '.join(missing)}"})
+
+    tl_path = find_table(hroot, "HELP_TOPIC_LOCALE")
+    ht_path = find_table(hroot, "HELP_TOPIC")
+    if not tl_path or not ht_path:
+        return findings, detail
+
+    tl, ht = dbf_rows(tl_path), dbf_rows(ht_path)
+    if not tl or not ht:
+        findings.append({"check": "LOCALE_DRIFT", "code": "UNREADABLE",
+                         "severity": "WARN",
+                         "message": "HELP_TOPIC_LOCALE or HELP_TOPIC could not be "
+                                    "parsed with a width-reconciled layout -- "
+                                    "drift NOT checked, do not read this as clean"})
+        return findings, detail
+
+    live = {r.get("TOPICKEY", ""): r for r in ht}
+    orphans, drifted, badhash = [], [], 0
+    src_by_topic = {}
+    for r in tl:
+        key = r.get("TOPICKEY", "")
+        src_by_topic.setdefault(key, set()).add(r.get("SOURCE_HAS", ""))
+        loc_title = r.get("LOCALIZED_", "")
+        if hashlib.sha256(loc_title.encode()).hexdigest()[:16] != r.get("LOCALIZE~1", ""):
+            badhash += 1
+        if r.get("LOCALE_ID") != "en-US":
+            continue
+        if key not in live:
+            orphans.append(key)
+        else:
+            cur = live[key].get("TITLE") or live[key].get("TOPIC") or ""
+            if r.get("SOURCE_TIT", "") != cur:
+                drifted.append(f"{key} (stored '{r.get('SOURCE_TIT')}' vs live '{cur}')")
+
+    incoherent = [k for k, v in src_by_topic.items() if len(v) > 1]
+    detail["locale_drift"] = {"topics_checked": len(src_by_topic),
+                              "orphaned": len(orphans), "title_drift": len(drifted),
+                              "localized_hash_mismatch": badhash,
+                              "source_hash_incoherent": len(incoherent)}
+
+    if orphans:
+        findings.append({"check": "LOCALE_DRIFT", "code": "ORPHANED_TOPIC",
+                         "severity": "WARN",
+                         "message": f"{len(orphans)} locale topic(s) no longer exist in "
+                                    f"HELP_TOPIC -- preview falls back silently, which is "
+                                    f"indistinguishable from a draft row: {', '.join(orphans)}"})
+    if drifted:
+        findings.append({"check": "LOCALE_DRIFT", "code": "TITLE_DRIFT",
+                         "severity": "WARN",
+                         "message": f"{len(drifted)} locale row(s) hold a SOURCE_TITLE that no "
+                                    f"longer matches HELP_TOPIC: {'; '.join(drifted)}"})
+    if badhash:
+        findings.append({"check": "LOCALE_DRIFT", "code": "LOCALIZED_HASH_MISMATCH",
+                         "severity": "FAIL",
+                         "message": f"{badhash} row(s) where LOCALIZED_HASH != "
+                                    f"sha256(LOCALIZED_TITLE)[:16] -- the one hash that IS "
+                                    f"recomputable does not reproduce"})
+    if incoherent:
+        findings.append({"check": "LOCALE_DRIFT", "code": "SOURCE_HASH_INCOHERENT",
+                         "severity": "WARN",
+                         "message": f"{len(incoherent)} topic(s) whose locale rows disagree on "
+                                    f"SOURCE_HASH; one source, one hash: {', '.join(incoherent)}"})
     return findings, detail
 
 
