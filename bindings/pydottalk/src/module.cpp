@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: bindings
+// layer: glue
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

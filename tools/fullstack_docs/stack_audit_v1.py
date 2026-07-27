@@ -53,8 +53,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-SRC_DIRS = ("src", "include")
-EXTS = {".cpp", ".hpp", ".h", ".cc", ".cxx", ".hxx"}
+# Membership rule, settled 2026-07-26 (member.derald): git ls-files over these
+# roots. Must stay identical to tools/comments/reharvest_source_comment_catalog.py
+# and tools/fullstack_docs/source_census.py -- when the harvester and the guard
+# disagree about what "the source set" is, every drift finding is noise. The
+# 2026-07-26 reload proved it: the harvester walked the filesystem over
+# {src, include, bindings} while this guard used git over {src, include}, so
+# stack_audit reported 10 PHANTOM + 1 UNCOLLECTED rows that were entirely an
+# artifact of the two tools answering different questions.
+SRC_DIRS = ("src", "include", "bindings")
+# Widened 2026-07-26 to match the harvester's DEFAULT_EXTENSIONS. Zero tracked
+# .c/.inl/.ipp exist under the roots today, so this changes no count -- it closes
+# a latent trap: the first such file added would otherwise be harvested into the
+# catalog and then reported PHANTOM by this guard.
+EXTS = {".cpp", ".hpp", ".h", ".cc", ".cxx", ".hxx", ".c", ".inl", ".ipp"}
 UTF8_BOM = b"\xef\xbb\xbf"
 
 BANNER_RE = re.compile(r"// @dottalk\.file v1\n(?://[^\n]*\n)+")

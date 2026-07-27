@@ -31,8 +31,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-SRC_DIRS = ("src", "include")
-EXTS = {".cpp", ".hpp", ".h", ".cc", ".cxx", ".hxx"}
+# Keep identical to stack_audit_v1.py and reharvest_source_comment_catalog.py.
+# See the SRC_DIRS note in stack_audit_v1.py for why divergence here manufactures
+# phantom drift findings. Settled 2026-07-26: git ls-files over these roots.
+SRC_DIRS = ("src", "include", "bindings")
+EXTS = {".cpp", ".hpp", ".h", ".cc", ".cxx", ".hxx", ".c", ".inl", ".ipp"}
 FILE_RE = re.compile(r"@dottalk\.file\b")
 USAGE_RE = re.compile(r"@dottalk\.usage\b")
 
@@ -56,11 +59,23 @@ STEM_LANE: dict[str, str] = {
 
 
 def source_files(root: Path):
-    """Tracked source under src/ + include/. Prefer git ls-files; fall back to walk."""
+    """Tracked source under SRC_DIRS. Prefer git ls-files; fall back to walk.
+
+    The roots MUST come from SRC_DIRS on both paths. They did not: the git call
+    hardcoded ("src", "include") while only the fallback walk read the constant,
+    so widening SRC_DIRS to include bindings/ changed nothing in normal operation
+    and the census silently kept reporting 1034/1034 = 100%.
+
+    That is the same defect this repo documented the same evening in AIF-065
+    (BUILDLMDB's size ladder is parsed and echoed, then overridden downstream):
+    a value that looks authoritative because it is declared at the top of the
+    file, and is not consulted by the path that actually runs.
+    """
     rels = []
     try:
         out = subprocess.check_output(
-            ["git", "-C", str(root), "ls-files", "src", "include"], text=True
+            ["git", "--no-optional-locks", "-C", str(root), "ls-files", *SRC_DIRS],
+            text=True,
         )
         rels = out.splitlines()
     except Exception:
