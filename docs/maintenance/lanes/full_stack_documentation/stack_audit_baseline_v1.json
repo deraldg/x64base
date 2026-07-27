@@ -3,12 +3,11 @@
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
     "CSV_VS_TABLE": 4,
-    "DOTREF_COV": 1,
-    "SRCFILE_DRIFT": 2
+    "DOTREF_COV": 1
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 21
+    "WARN": 19
   },
   "detail": {
     "banner_census": {
@@ -18,41 +17,41 @@
         "lane": {
           "A": 0,
           "D": 23,
-          "E": 1011
+          "E": 1012
         },
         "layer": {
-          "A": 3,
+          "A": 4,
           "D": 1031,
           "E": 0
         },
         "owner": {
           "A": 0,
-          "D": 1034,
+          "D": 1035,
           "E": 0
         },
         "owns": {
           "A": 0,
           "D": 2,
-          "E": 1032
+          "E": 1033
         },
         "project": {
           "A": 0,
-          "D": 1034,
+          "D": 1035,
           "E": 0
         },
         "status": {
           "A": 0,
-          "D": 1034,
+          "D": 1035,
           "E": 0
         },
         "subsystem": {
-          "A": 0,
+          "A": 1,
           "D": 1034,
           "E": 0
         }
       },
-      "total_source": 1034,
-      "with_banner": 1034
+      "total_source": 1035,
+      "with_banner": 1035
     },
     "contract_qa": {
       "contract_blocks": 238,
@@ -93,12 +92,12 @@
       "offenders": 0
     },
     "srcfile_drift": {
-      "catalog_rows": 1032,
-      "catalog_rows_in_scope": 1031,
-      "phantom": 11,
-      "tracked_source": 1034,
-      "uncollected": 14
+      "catalog_rows": 1035,
+      "catalog_rows_in_scope": 1035,
+      "phantom": 0,
+      "tracked_source": 1035,
+      "uncollected": 0
     }
   },
-  "tracked_source_files": 1034
+  "tracked_source_files": 1035
 }
