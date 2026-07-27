@@ -120,25 +120,48 @@ lifecycle. There is no second system to keep in sync -- which matters, because
 this project's recurring defect is precisely two systems that never compare
 themselves.
 
-Roughly, an entity progresses:
+### The vocabulary is already declared. Use it.
 
-```
-  named             a file exists; nothing else
-    |
-  described         @dottalk.file -- subsystem, layer, owner, status
-    |
-  contracted        @dottalk.usage / @dottalk.subusage -- an identity, once
-    |               there is something to identify
-  catalogued        SYSCMD / SYSSUBCMD / SYSFUNC row, generated not typed
-    |
-  surfaced          HELP topic, SET USAGE line, dotref entry
-    |
-  proven            runtime_observed -- someone ran it and recorded the output
-```
+**Corrected 2026-07-27, within hours of this document being written.** A first
+draft invented a chain here -- named / described / contracted / catalogued /
+surfaced / proven -- without checking whether the project already had one. It
+does. `labtalk/registries/proofs.yaml` declares ten `proof_states`:
 
-The `proof_state` vocabulary already in use across the lane docs and registries
-(`design-intended`, `source_defined`, `runtime_observed`, `active_development`,
-`review_needed`) is not documentation metadata. **It is lifecycle state.**
+| state | meaning |
+|---|---|
+| `idea` | Concept captured, not reviewed. |
+| `source_defined` | Current source declares behavior or contract. |
+| `runtime_observed` | Runtime transcript or smoke output exists. |
+| `help_documented` | HELP or CMDHELP exposes the behavior. |
+| `validated` | CMDHELPCHK, SelfDoc, or another validator checked it. |
+| `case_registered` | Case registry knows the teaching context. |
+| `runtime_lab_candidate` | Lab is identified but needs proof attachment. |
+| `student_ready` | Reviewed for student-facing use. |
+| `simulated` | Demonstration is intentionally simulated, not live runtime. |
+| `historical_review_needed` | Historical claim needs source or fact review. |
+
+This is strictly better than the invented chain, in two ways that matter.
+
+**`idea` is the zero-byte state.** "Concept captured, not reviewed" is precisely
+what `app_army.cpp` is. The system already had a name for the thing this
+document spent three paragraphs arguing for.
+
+**It carries the teaching dimension, which the invented chain dropped entirely.**
+`case_registered`, `runtime_lab_candidate` and `student_ready` are lifecycle
+states in a project whose purpose includes education. Omitting them is not a
+simplification, it is a different and smaller system.
+
+Note also that these are **not a single linear position**. An entity holds a SET
+of achieved states: something can be `source_defined` and `help_documented`
+without being `runtime_observed`, and `validated` without being `student_ready`.
+A stage report must therefore show which states an entity holds, not one label.
+
+That this document reproduced the defect it exists to warn about -- a second
+description of an already-declared thing, written without comparing -- is
+recorded rather than quietly fixed. It is the same failure as every span defect
+in section 3, committed by the author of the section describing them, on the
+same day. The rule is not hard to state and is evidently easy to break: **before
+declaring a vocabulary, search for the one that exists.**
 
 ### The rule this produces
 
@@ -151,6 +174,126 @@ real command surface and counts it.
 That single rule resolves the whole confusion this document was written after.
 The empty file was right. The contract on it was wrong. They are different
 stages, and only one had been reached.
+
+## 2a. The contract a zero-byte entity SHOULD carry: `@dottalk.pdlc`
+
+Section 2's rule says an entity may not claim a stage later than it occupies.
+That is stated as a prohibition, which leaves the obvious question unanswered:
+what may it claim? A file at the beginning of its life is not contract-less. It
+is at a REAL STEP, and that step deserves a contract.
+
+`docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md` already declares the
+six steps, and `owning_lifecycle: labtalk_pdlc` is already a live field in
+`labtalk/registries/ai_portal_tasks.yaml` -- PDLC is in use in the AI portals
+today, not a proposal:
+
+```
+PDLC (inside one milestone)      SDLC / lane governance (around it)
+  analyze the problem      <->   intake row (AIF-NNN), truth state
+  design the solution      <->   lane doc + contracts
+  code                     <->   source change on the branch
+  test & debug             <->   proof: unit test / REGRESSION / transcript
+  document                 <->   document-as-you-work (AIF-024)
+  maintain                 <->   closeout, drift gates
+```
+
+A zero-byte entity is not stalled or unfinished. **It is at `analyze` or
+`design`,** and those are steps a working programmer is paid to be at.
+
+### Proposed marker (member.derald, 2026-07-27: "you can give them a PDLC
+### contract, or similar")
+
+```
+// @dottalk.pdlc v1
+// pdlc-step: design
+// proof-state: idea
+// owning-lifecycle: labtalk_pdlc
+// planned-command: ARMY
+// case: CASE_HIST_020
+// gate:
+//   Advances to `code` when the JUMPS/Army dataset shape is settled and a
+//   handler signature is agreed. At that point a usage contract is written IN
+//   THE SAME COMMIT as the handler.
+```
+
+### Why this is safe where a usage contract is not
+
+The decisive detail is `planned-command:` rather than `command:`. Nothing
+downstream harvests `planned-command`, so `SYSCMD`, `SYSSUBCMD`, HELP, `dotref`
+and the census cannot mistake an intention for a surface. The entity becomes
+legible to lifecycle tooling WITHOUT becoming countable as a command.
+
+That is the whole shape of the problem this document was written after: the
+placeholder files were not wrong to carry a contract, they were wrong to carry
+*that* contract. `command: none` was an attempt to say "I am at an early step"
+in a vocabulary that only knows how to say "I am a command".
+
+### What it buys
+
+- `entity_stages.py` can report `idea` and `design` entities as INTENTIONAL,
+  distinguishing a reserved slot from an oversight -- today it can only observe
+  that a file declares no command.
+- The AI portal's task registry and the source tree describe the same lifecycle
+  in the same words, so a partner reading either sees one system.
+- The gate is written down, so advancing a stage becomes a checkable event
+  rather than someone's judgement.
+- Deleting a reserved slot becomes a visible decision against a stated intent.
+
+### Owed
+
+- Ratify the field set with member.derald before applying it widely; this
+  section is a proposal captured at the moment it was made, not a settled spec.
+- Apply first to the six known early-step entities: `app_army.cpp`,
+  `app_paxon.cpp`, `app_alcoa.cpp` (design layer, matching CASE_HIST_020/030/060)
+  and `edu_boyce_codd.cpp`, `edu_dewey_decimal.cpp`, `edu_snx.cpp` (education
+  placeholders).
+- Teach `entity_stages.py` to read it, and `stack_audit_v1` to treat a declared
+  `pdlc-step` as the answer to "why does this file declare no command".
+
+## 2b. One progression, five views
+
+The pieces above were built at different times by different hands and have never
+been shown together. They are not five systems. They are five vocabularies for
+the same movement, and once aligned the whole model is one table.
+
+| PDLC step | proof_state | source contract | catalog / surface | SDLC governance | direction |
+|---|---|---|---|---|---|
+| **analyze** | `idea` | `@dottalk.pdlc` (`pdlc-step: analyze`) | -- | intake row, AIF-NNN | up |
+| **design** | `idea` | `@dottalk.pdlc` + `@dottalk.file` | -- | lane doc | up |
+| **code** | `source_defined` | `@dottalk.usage` / `@dottalk.subusage` | `SYSCMD` / `SYSSUBCMD` row, generated | source change on branch | up |
+| **test & debug** | `runtime_observed` | -- | -- | proof: REGRESSION / teed transcript | **down** |
+| **document** | `help_documented` | (contract feeds it) | `HELP_TOPIC`, `SET USAGE`, `dotref` | document-as-you-work (AIF-024) | **down** |
+| **maintain** | `validated` | -- | drift gates | closeout (AIF-006), `stack_audit_v1` | **span** |
+
+Education overlays the same track rather than paralleling it:
+`case_registered` → `runtime_lab_candidate` → `student_ready`, carried in
+`labtalk/registries/` and pointing at the same entity.
+
+### What the alignment shows
+
+**The direction column is not decoration.** The first three rows are built UP --
+deductive, declared, true before anything runs. The next two are built DOWN --
+inductive, observed, meaningless until something runs. `maintain` is the only
+row that is neither, because maintenance IS span work: it exists to keep the two
+halves meeting after they first met.
+
+**Every artifact has exactly one home.** A fact is declared in one vocabulary and
+translated into the others -- contract to catalog to surface -- rather than
+authored twice. Where that discipline broke, we got this run's defects: a ladder
+and a usage text both hand-written; a schema in a table and a different one in a
+CSV; a lifecycle chain invented in a doctrine document when `proofs.yaml` already
+had one.
+
+**A gap is now nameable rather than merely felt.** "This entity is `code` but not
+`document`" is a sentence with a remedy attached. `entity_stages.py` found 24 of
+them on first run -- contracted and HELP-documented but absent from `SYSCMD`,
+meaning the surface got ahead of the catalog it derives from.
+
+**And the honest asymmetry:** the up-rows are cheap and the down-rows are
+expensive. Anyone can declare; only running the thing and recording the output
+earns `runtime_observed`. That is why `proof_state` promotion is guarded and why
+"I read the source" never becomes "I observed it" by confidence. The table makes
+the temptation visible: every row above the fold can be written at a desk.
 
 ## 3. Build up, build down, then build the span
 
