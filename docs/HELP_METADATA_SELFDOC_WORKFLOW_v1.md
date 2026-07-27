@@ -186,6 +186,30 @@ Key rule:
 
 Manuals are promoted narrative views assembled from reviewed evidence.
 
+Harvest export (feeder), added 2026-07-27:
+
+The manual lane CONSUMES a HELP/META CSV harvest under
+`docs/manuals/developer/manualgen/harvested/` (gitignored, regenerable exhaust).
+That harvest is produced by exporting the live HELP + META tables table by table
+-- the table is authority, the CSV is its readable shadow. The reproducible
+feeder is `dottalkpp/data/scripts/metadata/HELP_META_HARVEST_EXPORT_v1.{dts,ps1}`.
+Before it, only 1 of 14 per-table exports (`SYSCMD_EXPORT_MIRROR_v1.dts`) had ever
+been committed, so a fresh clone could not regenerate the harvest at all.
+
+The feeder exports the 10 CURRENTLY-maintained tables -- 6 `HELP_*`
+(COMMANDS/CMD_ARGS/HELP_ARTIFACTS/HELP_LINE/HELP_SECTION/HELP_TOPIC) and 4
+`META_*` (SYSCMD/SYSFUNC/SYSARGS/SYSSUBCMD) -- into a stamped `export_runs/<id>/`,
+and carries the four stale `META_*` (SYSENTVAR/SYSFLDDIC/SYSHELP/SYSMSG) forward
+LABELLED `CARRIED_STALE_MAY` so manualgen sees all 14 required files without
+pretending the stale four are current. Those four remain OWED until their sources
+are refreshed: the live message catalog is the separate
+`SYSTEM_MESSAGES`/`SYSTEM_MESSAGE_TEXT` pair (messaging lane), and DDICT is
+PLANNED-only (datadict lane).
+
+Lane note: this feeder is MAINT-lane scaffolding. BBOX only TEACHES the manualgen
+lane (it is a lesson lane); MAINT is the maintenance execution surface, and a
+native MAINT harvest verb should eventually replace the script.
+
 ### 6. Diagram promotion lane
 
 Primary surfaces:
