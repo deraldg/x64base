@@ -1,0 +1,86 @@
+&& SYSARGS_SEED_v1.dts
+&&
+&& Seed the canonical SYSARGS metadata table from its tracked CSV.
+&& Lane: full_stack_documentation.  Clears stack_audit CSV_VS_TABLE/EMPTY_TABLE.
+&&
+&& DERIVED FROM  SYSARGS_NATIVE_CREATE_IMPORT_v1.proposal.txt, which stays inert.
+&&               That file is prose plus a "reference sketch" and is NOT runnable:
+&&                 - it carries no CREATE at all, deferring to a schema file it
+&&                   only names (scripts/SYSTEM_METADATA_SCHEMA_v4_safe10_FIXED.dts)
+&&                 - its sketch is ZAP + IMPORT, which CANNOT WORK here: the live
+&&                   table has 13 fields and the CSV has 15. ZAP empties rows, it
+&&                   does not add columns, so DEF_LOCALE and REGION_ID would be
+&&                   silently dropped on import.
+&&                 - `SELECT SYSARGS` and `SET INDEX TO SYSARGS` are not the
+&&                   grammar those operations use.
+&&
+&& SCHEMA PROVENANCE -- read from the live table, not copied from a document.
+&&   The 13 existing fields below were dumped from dottalkpp\data\metadata\
+&&   SYSARGS.dbf (0 records) on 2026-07-27: exact names, types, widths.
+&&   DEF_LOCALE C(16) and REGION_ID C(16) are added at CSV positions 5 and 6,
+&&   widths matched to SYSFUNC's locale spine so the two tables agree.
+&&   Column ORDER matches SYSARGS_IMPORT_v1.csv exactly.
+&&
+&&   The table predates the locale spine. It holds ZERO records, so recreating
+&&   it risks nothing.
+&&
+&& ORDER  CREATE -> USE -> CDX CREATE -> CDX ADDTAG -> IMPORT -> BUILDLMDB
+&&        Index LAST, over populated data. The SYSFUNC proposal had BUILDLMDB
+&&        before IMPORT, which builds an index over an empty table; do not
+&&        reintroduce that here.
+&&
+&& BEFORE RUNNING -- regenerate the CSV. The tracked seed CSVs are produced by
+&& metacollect, and the SYSFUNC seed proved they can be stale BY GENERATOR, not
+&& just by content: the committed 64-row SYSFUNC CSV was written by an older
+&& metacollect binary that omitted an alias row and mis-attributed a SRC_FILE.
+&& Nothing in these CSVs records which build produced them.
+&&
+&&   cmake -S . -B build -DDOTTALK_BUILD_METACOLLECT=ON
+&&   cmake --build build --target metacollect --config Release
+&&   .\build\Release\metacollect.exe . --sysargs-import-out ^
+&&        dottalkpp\data\scripts\metadata\SYSARGS_IMPORT_v1.csv
+&&
+&& EXPECTED AFTER RUN: whatever metacollect emitted. Check the IMPORT count
+&& against the CSV row count -- do not trust the 215 figure from before the
+&& regeneration.
+&&
+&& Run:  ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path to this file>'
+
+SET TALK OFF
+
+; ===== SYSARGS SEED START =====
+
+SETPATH DBF metadata
+SETPATH INDEXES INDEXES/metadata
+SETPATH LMDB LMDB/metadata
+
+WORKSPACE CLOSE
+SELECT 0
+
+CREATE X64 SYSARGS ( ARG_ID C(32), OWNER_KND C(32), OWNER_NAM C(140), ARG_NAME C(80), DEF_LOCALE C(16), REGION_ID C(16), ARG_KIND C(32), VAL_SHAPE C(48), REQUIRED L, REPEAT L, SRC_AUTH C(64), SRC_FILE C(180), ACTIVE L, VER_AT C(24), NOTES M )
+
+USE SYSARGS
+STRUCT
+
+CDX CREATE
+CDX ADDTAG ARG_ID
+CDX ADDTAG OWNER_NAM
+CDX ADDTAG ARG_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG ARG_KIND
+CDX ADDTAG SRC_AUTH
+
+IMPORT scripts/metadata/SYSARGS_IMPORT_v1.csv
+
+BUILDLMDB CLEAN YES
+
+; ===== READBACK =====
+USE SYSARGS
+COUNT
+STRUCT
+GO TOP
+LIST
+
+; ===== SYSARGS SEED END =====
+QUIT

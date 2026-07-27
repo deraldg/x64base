@@ -2,12 +2,12 @@
   "by_check": {
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
-    "CSV_VS_TABLE": 3,
+    "CSV_VS_TABLE": 2,
     "DOTREF_COV": 1
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 18
+    "WARN": 17
   },
   "detail": {
     "banner_census": {
@@ -65,18 +65,22 @@
     "csv_vs_table": {
       "SYSARGS": {
         "csv_rows": 215,
+        "csv_tracked": true,
         "table_rows": 0
       },
       "SYSCMD": {
         "csv_rows": 203,
+        "csv_tracked": true,
         "table_rows": 203
       },
       "SYSFUNC": {
         "csv_rows": 64,
-        "table_rows": 0
+        "csv_tracked": true,
+        "table_rows": 64
       },
       "SYSMSG": {
         "csv_rows": 1006,
+        "csv_tracked": true,
         "table_rows": 0
       }
     },
