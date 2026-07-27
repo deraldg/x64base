@@ -1271,8 +1271,27 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
     // ─────────────────────────────────────────────────────────────
     // SET DEVDIAG
-    // Controls passive startup/shutdown/relation diagnostics in dev builds.
-    // Explicit command traces remain under their own command surfaces.
+    // Controls passive startup and shutdown diagnostics in dev builds,
+    // including the RELATIONS BOOT trace. Explicit command traces remain under
+    // their own command surfaces.
+    //
+    // CORRECTED 2026-07-27 (AIF-067). This comment previously read
+    // "startup/shutdown/relation diagnostics", which reads as ongoing relation
+    // diagnostics. There are none. cli::Settings::passiveDevDiagnosticsEnabled()
+    // is consulted at exactly seven sites:
+    //     cmd_set.cpp   x3   this command reporting its own state
+    //     main.cpp      x4   startup / shutdown
+    //     shell.cpp:184      shell startup
+    //     relations_boot.cpp:39   relations BOOT, once
+    // NONE of them is in a relation-refresh path, so turning DEVDIAG on emits
+    // nothing when relations_api::refresh_if_enabled() fires.
+    //
+    // This matters beyond wording: the flag was used to try to observe whether
+    // AREA51 triggers a relation refresh, and the test could not have produced
+    // a signal either way. A diagnostic switch that does not cover the path
+    // being investigated yields a NULL result that reads exactly like a
+    // negative one. If ongoing relation-refresh tracing is wanted, it has to be
+    // added; it does not exist today.
     // ─────────────────────────────────────────────────────────────
     // @dottalk.subusage v1
     // parent: SET
@@ -1284,9 +1303,10 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // handler: cmd_SET
     // usage-access: SET USAGE
     // summary:
-    //   Control PASSIVE startup/shutdown/relation diagnostics in dev
-    //   builds. Explicit command traces stay under their own surfaces.
-    //   Bare form reports current state.
+    //   Control PASSIVE startup and shutdown diagnostics in dev builds,
+    //   including the relations BOOT trace. Does NOT trace ongoing relation
+    //   refresh -- no such diagnostic exists. Explicit command traces stay
+    //   under their own surfaces. Bare form reports current state.
     // usage:
     //   SET DEVDIAG
     //   SET DEVDIAG ON|OFF
