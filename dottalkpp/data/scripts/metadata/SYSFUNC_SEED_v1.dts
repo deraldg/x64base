@@ -1,0 +1,79 @@
+&& SYSFUNC_SEED_v1.dts
+&&
+&& Seed the canonical SYSFUNC metadata table from its tracked CSV.
+&& Lane: full_stack_documentation.  Clears stack_audit CSV_VS_TABLE/EMPTY_TABLE.
+&&
+&& DERIVED FROM  SYSFUNC_NATIVE_CREATE_IMPORT_v1.proposal.txt, which is marked
+&&               INERT_PROPOSAL_TEXT / DO_NOT_EXECUTE_AS-IS and stays that way.
+&&               That file remains the design record; this is the runnable one.
+&&
+&& ------------------------------------------------------------------------
+&& THREE CORRECTIONS vs the proposal -- verified 2026-07-26, do not revert
+&& ------------------------------------------------------------------------
+&&
+&& 1. ORDER: the proposal ran BUILDLMDB CLEAN YES *BEFORE* IMPORT, which builds
+&&    the LMDB index over an EMPTY table and then adds 64 rows it will never
+&&    see. The canonical order, proven twice tonight by
+&&    scripts\comments\SOURCE_COMMENT_RESET_RELOAD.dts across eight tables, is:
+&&        CREATE -> USE -> CDX CREATE -> CDX ADDTAG -> IMPORT -> BUILDLMDB
+&&    Index last, over populated data.
+&&
+&& 2. PATHS: the proposal set no paths and relied on a written precondition
+&&    ("DBF path points to data\metadata"). Preconditions in prose are not
+&&    preconditions. SETPATH is explicit here, per the DBF path protocol:
+&&    SETPATH the slot, then use BARE table names.
+&&
+&& 3. NO ERASE: the proposal opened with ERASE SYSFUNC CONFIRM. CREATE X64
+&&    already replaces the table, which is how RESET_RELOAD recreates all eight
+&&    of its tables. ERASE adds a destructive verb for no gain. Dropped.
+&&
+&& ------------------------------------------------------------------------
+&& SCHEMA -- verified against the CSV header, 2026-07-26
+&& ------------------------------------------------------------------------
+&& 21 columns, IDENTICAL ORDER to SYSFUNC_IMPORT_v1.csv. The live table
+&& currently has 19 fields and 0 records: it predates the locale spine and
+&& lacks DEF_LOCALE and REGION_ID, which is why it must be recreated rather
+&& than imported into. Zero rows are at risk.
+&&
+&& EXPECTED AFTER RUN: 64 records.
+&&
+&& Run:  ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path to this file>'
+
+SET TALK OFF
+
+; ===== SYSFUNC SEED START =====
+
+SETPATH DBF metadata
+SETPATH INDEXES INDEXES/metadata
+SETPATH LMDB LMDB/metadata
+
+WORKSPACE CLOSE
+SELECT 0
+
+CREATE X64 SYSFUNC ( FUNC_ID C(32), CAN_NAME C(80), DISP_NAME C(80), DEF_LOCALE C(16), REGION_ID C(16), FUNC_CAT C(40), MIN_ARGS N(4,0), MAX_ARGS N(4,0), IMPL_STAT C(32), VIS_TIER C(32), OWNER C(64), SRC_AUTH C(64), SRC_FILE C(180), HANDLER C(96), CALC_CALL L, PUB_SURF L, SELF_REG L, MSG_CAT L, ACTIVE L, VER_AT C(24), NOTES M )
+
+USE SYSFUNC
+STRUCT
+
+CDX CREATE
+CDX ADDTAG FUNC_ID
+CDX ADDTAG CAN_NAME
+CDX ADDTAG DEF_LOCALE
+CDX ADDTAG REGION_ID
+CDX ADDTAG FUNC_CAT
+CDX ADDTAG IMPL_STAT
+CDX ADDTAG OWNER
+CDX ADDTAG SRC_AUTH
+
+IMPORT scripts/metadata/SYSFUNC_IMPORT_v1.csv
+
+BUILDLMDB CLEAN YES
+
+; ===== READBACK =====
+USE SYSFUNC
+COUNT
+STRUCT
+LIST
+
+; ===== SYSFUNC SEED END =====
+QUIT
