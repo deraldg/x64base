@@ -24,6 +24,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 COORD = "coordination"
@@ -36,7 +37,11 @@ INTAKE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
 
 
 def now():
-    return dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Timezone-aware UTC. Emits the identical "...Z" string utcnow() produced,
+    # without the DeprecationWarning utcnow() raises on Python 3.12+ (this repo
+    # runs 3.12.9), and without leaving a naive value that later arithmetic can
+    # misread as local -- the bug fixed in _age_min().
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def ensure_dirs(root: Path):
@@ -120,12 +125,32 @@ def checkin(root: Path, member, run, lanes, files):
 
 
 def checkout(root: Path, run):
+    """Deregister a session.
+
+    FIXED 2026-07-26: p.unlink() was unguarded, so a permission or sharing
+    failure raised a raw PermissionError traceback rather than saying what went
+    wrong. Observed when a sandboxed agent could read coordination/ but not
+    unlink within it: the session stayed listed as active holding files nobody
+    was editing, and the operator saw a stack trace instead of a next step.
+    A coordination tool that crashes while releasing a claim is worse than one
+    that never held it.
+    """
     p = root / SESS_DIR / f"{run}.yaml"
-    if p.exists():
-        p.unlink()
-        print(f"CHECKED OUT {run}")
-    else:
+    if not p.exists():
         print(f"(no active session {run})")
+        return 0
+    try:
+        p.unlink()
+    except OSError as exc:
+        print(f"CHECKOUT FAILED {run}: {exc}", file=sys.stderr)
+        print(f"  the session record is still present: {p}", file=sys.stderr)
+        print("  it will keep appearing in `status` until removed; delete it by hand",
+              file=sys.stderr)
+        print("  or re-run this checkout from an account that can write there.",
+              file=sys.stderr)
+        return 1
+    print(f"CHECKED OUT {run}")
+    return 0
 
 
 def lock(root: Path, target, run):
@@ -154,9 +179,22 @@ def unlock(root: Path, target, run):
 
 
 def _age_min(p: Path):
+    """Age of a presence/lock file in minutes.
+
+    FIXED 2026-07-26: this read `dt.datetime.utcnow().timestamp()`. utcnow()
+    returns a NAIVE datetime holding UTC wall-clock, and .timestamp() on a
+    naive value interprets it as LOCAL time -- so on a UTC-7 host the result
+    was inflated by exactly 420 minutes. Every session was reported
+    "(420 min ago) [STALE]" the instant it checked in, which meant staleness
+    detection could never fire and the [STALE] marker carried no information.
+    Observed live during run COWORK-20260726-001.
+
+    st_mtime is a true epoch, so compare it against a true epoch. time.time()
+    is that, with no timezone in the path at all.
+    """
     try:
-        return (dt.datetime.utcnow().timestamp() - p.stat().st_mtime) / 60.0
-    except Exception:
+        return (time.time() - p.stat().st_mtime) / 60.0
+    except OSError:
         return 0.0
 
 
@@ -198,7 +236,7 @@ def main() -> int:
     if a.cmd == "checkin":
         checkin(root, a.member, a.run, a.lanes, a.files); return 0
     if a.cmd == "checkout":
-        checkout(root, a.run); return 0
+        return checkout(root, a.run)
     if a.cmd == "lock":
         return lock(root, a.target, a.run)
     if a.cmd == "unlock":
