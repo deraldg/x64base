@@ -295,6 +295,149 @@ earns `runtime_observed`. That is why `proof_state` promotion is guarded and why
 "I read the source" never becomes "I observed it" by confidence. The table makes
 the temptation visible: every row above the fold can be written at a desk.
 
+## 2c. Declared vs derived -- the rule that keeps this small
+
+Settled 2026-07-27 with member.derald, who asked whether to add SDLC-stage and
+PDLC-stage fields to the header contracts and answered his own question in the
+asking: *"too much categorisation and we get lost, I prefer the KISS principle as
+long as it's gold standard too. I want my cake and keep it too."*
+
+Both are obtainable, because the tension dissolves once declaration and
+derivation are separated.
+
+```
+status:   INTENT     what the owner promises      DECLARED   tiny closed set
+stage     EVIDENCE   what the system can prove    DERIVED    never typed
+```
+
+### Why stage must not be a field
+
+**A derived stage cannot drift, because it IS the evidence.** `entity_stages.py`
+computes an entity's position from artifacts that already exist -- does it carry a
+contract, does it have a catalog row, a HELP topic, a cited proof. Nothing to
+maintain, nothing to get wrong, and it cannot disagree with reality because it is
+read from reality.
+
+A declared stage field would be a SECOND description of the same fact, on 1036
+files, maintained by hand. That is the defect class this entire run catalogued,
+adopted deliberately and at scale.
+
+**And a field earns existence by being CONSUMED.** This run found three fields
+written and never read -- `SOURCE_HASH` in `HELP_TOPIC_LOCALE`, the X64M
+displacement in every DBF descriptor, `mapsize_explicit` in `BUILDLMDB`. Each was
+a value produced for a decision nobody made. A stage field on every source file,
+read by nothing, would be the largest instance yet.
+
+### The field already exists, and its condition is the argument
+
+`status:` has been carrying stage informally, and it shows:
+
+```
+877  supported          94.5% -- no discriminating power
+ 11  experimental
+  9  developer
+  6  placeholder-shim
+  4  supported-conditional / implementation-shim / active
+  3  "source-defined from MDO-282 native MANUAL implementation"   <- a sentence
+  2  supported-stub-mixed
+  1  supported-stub / stub / supplemental / sample-extension
+```
+
+`stub`, `supported-stub`, `supported-stub-mixed`, `placeholder-shim`,
+`implementation-shim` and `implementation-helper` are six attempts at one idea by
+authors with no vocabulary to reach for. Adding two more stage fields would
+reproduce this twice.
+
+Worse, the 877 are not decisions. `tools/fullstack_docs/source_census.py:157`
+WRITES `// status: supported` as a backfill default, and says so at line 301.
+`stack_audit`'s own `BANNER_CENSUS/DERIVED_ONLY` finding already concludes:
+**"Do not treat status/owner/project as authority."**
+
+So the field being considered for extension is 94.5% machine-fabricated and
+explicitly flagged untrustworthy by this project's own guard.
+
+### The rules
+
+1. **Do not add SDLC or PDLC stage fields.** Both are derivable from artifacts
+   that already exist. Derive them.
+2. **`status:` expresses INTENT only** -- what the owner promises, from a small
+   closed set. Anything encoding *how finished* a thing is belongs to derivation.
+3. **Declare only what cannot be derived.** A zero-byte entity has no artifacts
+   to derive from; that is the sole case, and it is `@dottalk.pdlc` on a handful
+   of files rather than a field on a thousand.
+4. **A field earns existence by being consumed.** If nothing reads it, it is not
+   documentation, it is decoration that will drift.
+5. **An unauthored default is not information.** `status: supported` on 877
+   backfilled files discriminates nothing. Consider making `status:` appear only
+   when it is NOT the normal case -- absence carrying the default -- which is
+   smaller and more honest than what exists.
+
+## 2d. Interface with the permissions lane
+
+Written 2026-07-27 so a concurrent RBAC session has something to read against.
+Neither lane needs the other's internals. **The shared object is `proof_state`
+promotion**: the permissions lane owns WHO MAY ASSERT it, this lane owns WHAT
+EVIDENCE MAKES IT TRUE.
+
+Existing permission keys are all actions on the system -- `database.read`,
+`git.push`, `host.shell`, `source.mutate`, `perm.empty`. Nothing yet covers
+claims, proofs, or lifecycle transitions.
+
+### Derivation needs no permission, and that is the point
+
+A derived stage is a READING, not an assertion. It cannot be falsified without
+falsifying its inputs -- a `SYSCMD` row, a HELP topic, a source contract -- and
+each of those is written by an already-permissioned act.
+
+> **Derived facts inherit their trust from their sources' permissions.**
+
+No new gate, no new surface. Which turns the KISS argument of section 2c into a
+security argument as well: **every field not declared is a permission that never
+has to be defined.** Keeping the declared surface tiny shrinks the RBAC lane's
+scope as a side effect.
+
+### The claim worth gating is promotion, not mutation
+
+`source.mutate` already covers editing a file. The consequential act is asserting
+*"this entity is now `runtime_observed`"*, because downstream work trusts it.
+Today anyone who can write `proofs.yaml` can assert it; during AIF-065 the AI
+partner asserted it four times on its own authority.
+
+That maps onto machinery already built, without inventing a mechanism:
+
+```
+agent runs the proof and cites the transcript
+    USER REQUEST proof.promote FOR member.ai.claude.cowork   [transcript]
+owner reviews the EVIDENCE, not the assertion
+    USER APPROVE <id>
+```
+
+Teamwork agency (see `AGENCY_MODEL_V1.md` section 8) applied to a lifecycle
+transition, through the existing REQUEST/APPROVE flow.
+
+### What must NOT be gated: description
+
+If writing lane documents or analysis required permission, the work that produced
+this document would not have happened. The value came from writing freely and
+being corrected -- repeatedly, in the same session, by the maintainer attacking
+premises.
+
+> **Permission attaches to assertions of FACT, not to EXPLANATIONS.**
+
+Gate `proof_state`, catalog rows, and `status:` promotion. Leave prose, lane docs
+and analysis ungated: they are arguments, and arguments are checked by reading,
+not by authority. A system that requires authorisation to think will only ever
+record what it already believed.
+
+### Owed / to confirm in the permissions lane
+
+- `perm.empty` may be a placeholder that grants nothing while reading as a
+  permission -- the same category error as the `command: none` contracts retired
+  on 2026-07-27. Confirm it is intentional.
+- Whether promotion should be one permission or several (`proof.promote`,
+  `catalog.write`, `status.promote`). This lane has no opinion beyond: fewer is
+  better, and each must be consumed by something.
+
 ## 3. Build up, build down, then build the span
 
 The method has two directions, and they are different KINDS of work.

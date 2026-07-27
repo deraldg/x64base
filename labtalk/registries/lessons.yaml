@@ -387,6 +387,37 @@ lessons:
       our own tooling without anyone knowing. The audit finds what it was built to look
       for; the QUESTION finds what nobody had thought to look for.
 
+      THE CONTRACT SETTLED A DESIGN QUESTION IT HAD ALREADY ANSWERED. The clearest
+      instance of the thesis in this run was not a defect found but a DESIGN decision
+      resolved by reading a contract that had been correct all along. Should BUILDLMDB
+      CLEAN archive the environment it replaces? Three rounds narrowed it: keep archives
+      with a retention policy; then discard by default with ARCHIVE opt-in; then the
+      actual answer -- THE OPERATION HAS NOTHING TO PROTECT. That answer was already
+      written in the command's own risk block: "reads_cdx_container: yes /
+      writes_lmdb_environment: yes". BUILDLMDB reads the declaration and writes the
+      derived artifact, so a size change alters nothing declarative and no prior state is
+      at risk. The contract had stated that relationship since it was authored; nobody had
+      asked it the question.
+
+      This is documentation being GENERATIVE rather than descriptive -- not a summary of
+      behaviour written afterwards, but a statement of what the command IS, sufficient to
+      decide what it SHOULD DO. Reading it replaced an argument.
+
+      IT ALSO PRODUCED THE GENERAL RULE, which reasoning about storage would not have
+      reached: archive the thing that CHANGES, at the command that CHANGES it; size is not
+      a reason to keep a copy, irrecoverability is. Applied, it inverts the subsystem --
+      BUILDLMDB archived a 1 GiB regenerable environment while CDX CREATE and CDX ADDTAG,
+      the only operations that restructure the ~3 KB declaration that no other file can
+      rebuild, archive nothing.
+
+      THE HABIT WORTH COPYING: each round was narrowed by the maintainer pushing on the
+      PREMISE rather than the implementation -- "we don't need to back up the .mdb files",
+      then "why archive the cdx when changing sizes". The instinct to keep a copy survived
+      three rounds of the author's own analysis unexamined, because the question kept
+      being HOW to retain safely rather than WHETHER anything was at risk. A review that
+      only interrogates the mechanism will refine a mechanism nobody needs; the premise is
+      cheaper to attack, and the contract is where the premise is usually already written.
+
       WHERE THESE DEFECTS COME FROM (member.derald): "these type of problems can occur
       from unremedied dev tests, or one AI clobbering another. Which is why we are building
       the AI portal, a project derived from need." The catalogue above is SHAPES; this is

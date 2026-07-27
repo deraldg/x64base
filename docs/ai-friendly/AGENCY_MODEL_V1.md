@@ -189,6 +189,11 @@ Honest gaps, so nobody reads this as a completed thing:
   this member actually do" cannot be reconstructed. The BBS boards capture posts, not decisions.
 - **Ollama has no harness.** Turning capability into agency needs the four legs, and the missing one
   is identity plus a loop.
+- **Composed agency is half-built, and the built half is the prospective one.** `USER REQUEST` /
+  `APPROVE` / `DENY` / `REVOKE` already model a two-party act BEFORE it happens: an agent asks for a
+  permission, the owner decides, and the grant is durable with an id, a reason and an expiry. What
+  has no mechanism is the RETROSPECTIVE half -- who actually contributed what to a completed change.
+  See section 8.
 
 Each gap is a missing leg on some actor. That is the diagnostic value of naming the model.
 
@@ -199,6 +204,107 @@ Each gap is a missing leg on some actor. That is the diagnostic value of naming 
 > Before granting an actor the ability to change something: **can you name its identity, enumerate its
 > authority, verify its authentication, and point at who is accountable?** If any answer is no, you are
 > granting capability, not agency -- and capability without accountability is the thing that bites.
+
+---
+
+## 8. Teamwork agency: one act, several authors
+
+Added 2026-07-27 (AIF-065/067). Sections 1-7 answer *may this actor act?* -- a
+question about ONE actor. Almost no real work here is one actor. A change is
+typically directed by one party, found by another, corrected by the first, and
+settled by neither.
+
+### Two halves, and only one is built
+
+**PROSPECTIVE -- implemented.** `cmd_user.cpp` already models a two-party act
+before it happens:
+
+```
+USER REQUEST <permission.key> FOR <member.key> [reason]   agent asks
+USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>     owner decides
+USER GRANT <permission.key> TO <member.key> [HOURS n]
+```
+
+This is genuine teamwork agency: two members, distinct roles, a negotiated
+outcome, and a durable record carrying an id, a stated reason and an expiry. The
+asking and the granting are separate acts by separate identities, and both are
+recoverable later. Nothing about it is prose.
+
+**RETROSPECTIVE -- not built.** Once a change is complete, nothing records who
+contributed what. `USER` answers "was this member permitted"; it does not answer
+"who found this, and who was wrong first". Git stamps a single committer.
+
+### The roles observed in one act
+
+AIF-065 -- the LMDB mapsize defect -- decomposed as:
+
+| role | what it is | who, in that lane |
+|---|---|---|
+| **direction** | pointing attention at a region | member.derald: *"check the usage contract in buildlmdb for TINY GIANT CUSTOM etc"* |
+| **discovery** | establishing the fact | cowork: the ladder is parsed, echoed, written, then overridden at attach |
+| **correction** | narrowing scope or premise | member.derald, three times: the unit is containers; vdisk makes it fatal; archiving should be removed, not reduced |
+| **adjudication** | settling a disputed remedy | **neither party** -- the vendored `lmdb.h` showed the proposed deletion was wrong |
+| **verification** | making it observed rather than argued | cowork, four attempts, three of which failed in the apparatus |
+
+Being told where to look is not finding. Finding is not being right about the
+remedy. And the decisive authority was **a primary source, not an agent** -- which
+sections 1-7 have no place for, because a header file has no identity, no
+authority and no accountability, yet it ended the argument.
+
+### Why this needs recording at all
+
+Accountability stays singular -- `member.derald` owns the repository and answers
+for its state, exactly as section 1 says. But **authorship is plural**, and
+collapsing plural authorship into singular accountability loses the information
+that makes the work improvable. You cannot tell which party's habits are
+producing results, or which is producing rework, from a commit log that names one
+person for everything.
+
+One pattern already visible and worth watching: in this run the human attacked
+PREMISES and the AI elaborated MECHANISMS. That division was productive -- three
+premise challenges each shrank the solution -- and it names the corresponding
+failure mode: **an agent left to itself refines a mechanism nobody needs.**
+
+### Current mechanism, and what is owed
+
+The mechanism today is a **provenance table in the lane document**, written by
+hand (see `LMDB_MAPSIZE_OVERRIDE_LANE_V1.md`). That is prose, and section 6's
+standing complaint applies to it: prose is not a mechanism.
+
+Owed:
+
+- a durable record of role-per-contribution on a completed change, in the same
+  spirit as `USER`'s grant records -- not a new vocabulary if `ai_runs.yaml` or
+  the audit envelope can carry it
+- a way to mark **adjudication by artifact**, since the deciding authority is
+  frequently a primary source rather than any member
+- do NOT build this before checking what `ai_runs.yaml`, the AIF intake queue and
+  the audit envelope already express. A parallel vocabulary invented without
+  looking is the exact error this run made with `proof_states`.
+
+### Interface with the entity-lifecycle lane
+
+`ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md` section 2d states the shared boundary, so
+a concurrent RBAC session and a documentation session do not clobber each other.
+In short:
+
+- **The shared object is `proof_state` promotion.** This model owns who may
+  assert it; the lifecycle model owns what evidence makes it true.
+- **Derived facts need no permission.** A computed stage is a reading, not a
+  claim, and cannot be falsified without falsifying inputs that are already
+  permissioned. Derived facts inherit their trust from their sources.
+- **Gate assertions of fact, never explanations.** `proof_state`, catalog rows
+  and `status:` promotion are claims and belong behind authority. Lane documents,
+  analysis and prose are arguments, checked by reading rather than by permission.
+  A system that requires authorisation to think will only ever record what it
+  already believed.
+- **Promotion maps onto machinery that exists**: `USER REQUEST proof.promote`
+  citing a transcript, then `USER APPROVE <id>` after the owner reviews the
+  evidence rather than the assertion. No new mechanism needed.
+
+Note for this lane: during AIF-065 the AI partner promoted four proofs to
+`runtime_observed` on its own authority, with transcripts, and nobody could have
+stopped it. That is the concrete gap -- not hypothetical.
 
 ---
 

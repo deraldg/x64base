@@ -101,6 +101,110 @@ every deliberate audit that day. Worth remembering when planning the next pass:
 **the audit finds what it was built to look for; the question finds what nobody
 had thought to look for.**
 
+## The strongest evidence: it contradicted a belief, not a gap
+
+Every defect in the table above filled a gap -- nobody knew the thing. AIF-065 is
+different and stronger, and member.derald named why:
+
+> "You need to record it was you who first tagged a problem with the sizes, that
+> I thought I had fixed."
+
+**The maintainer believed the LMDB sizing was already fixed.** The documentation
+work did not discover an unknown; it disproved a settled belief.
+
+That is a harder result to obtain, because an absence eventually announces itself
+-- something is missing, someone trips over it -- whereas a false belief is
+self-silencing. Nothing prompts a re-check of a thing you are confident about.
+`BUILDLMDB` reinforced the confidence every time it ran: it parsed the size,
+echoed it, and wrote a file of exactly that size. Everything visible agreed with
+the belief. Only the byte count of an environment that had been *used* disagreed,
+and nothing was comparing those two facts.
+
+### Attribution, precisely, because the steps had different authors
+
+- member.derald **directed** the attention: *"check the usage contract in
+  buildlmdb for TINY GIANT CUSTOM etc for size options."*
+- member.ai.claude.cowork **found** that the ladder is parsed, echoed, written,
+  and then overridden at attach; and proved it across three tables.
+- member.derald **corrected the remedy** more than once: the unit is containers
+  not tags, the vdisk consequence is fatal rather than wasteful, and archiving
+  should not merely be reduced but removed from the operation entirely.
+- The first proposed fix -- deleting the calls -- was **wrong**, and was caught
+  by reading the vendored header rather than by either party's reasoning.
+
+Being told where to look is not finding. Finding is not being right about the
+remedy. Recording all three separately is the point of `AGENCY_MODEL_V1.md`,
+which notes that git stamps one name where the truth had several.
+
+### Why this counts as documentation PROVING code
+
+The belief was "the sizes work". The proof that it was false came from the
+documentation chain doing its ordinary job:
+
+1. a usage contract that stated a ladder precisely enough to be checkable
+2. a measurement of what the system actually produced
+3. the two compared
+
+Had the contract been vague -- "sets an appropriate size" -- there would have
+been nothing to contradict, and the belief would have survived indefinitely. **A
+contract specific enough to be wrong is what makes a system provable.** Vague
+documentation cannot be violated, which is the same as saying it cannot be
+trusted.
+
+## The contract settled a design question it had already answered
+
+The clearest single instance of the thesis in this run was not a defect found. It
+was a DESIGN decision resolved by reading a contract that had been correct the
+whole time.
+
+The question was whether `BUILDLMDB CLEAN` should archive the environment it
+replaces. Three rounds of reasoning narrowed it:
+
+1. first answer -- keep archives, add a retention policy (`-Keep N`)
+2. second answer -- discard by default, `ARCHIVE` opts in
+3. actual answer -- **the operation has nothing to protect**
+
+And the third answer was already written down, in the command's own risk block:
+
+```
+reads_cdx_container:     yes
+writes_lmdb_environment: yes
+```
+
+`BUILDLMDB` reads the declaration and writes the derived artifact. A size change
+alters nothing declarative, so no prior state is at risk, so there is nothing to
+archive. The contract had stated that relationship since it was authored. Nobody
+had asked it the question.
+
+**This is documentation being generative rather than descriptive.** The risk
+block was not a summary of behaviour written after the fact -- it was a statement
+of what the command IS, and it was sufficient to decide what the command SHOULD
+DO. Reading it replaced an argument.
+
+It also produced the general rule, which no amount of reasoning about storage
+would have reached:
+
+> Archive the thing that CHANGES, at the command that CHANGES it. Size is not a
+> reason to keep a copy; irrecoverability is.
+
+Applied, it inverts the subsystem: `BUILDLMDB` archived a 1 GiB regenerable
+environment, while `CDX CREATE` and `CDX ADDTAG` -- the only operations that
+restructure the ~3 KB declaration, the one artifact no other file can rebuild --
+archive nothing at all.
+
+### The habit worth copying
+
+Each of the three rounds was narrowed by the MAINTAINER pushing on the premise
+rather than the implementation: *"we don't need to back up the .mdb files"*, then
+*"why archive the cdx when changing sizes."* Both times the scope shrank and the
+reasoning sharpened. The instinct to keep a copy survived three rounds of my own
+analysis unexamined, because I kept asking HOW to retain safely instead of
+WHETHER anything was at risk.
+
+A design review that only interrogates the mechanism will refine a mechanism
+nobody needs. The premise is the cheaper thing to attack, and the contract is
+where the premise is usually already written.
+
 ## Where these defects come from
 
 Everything above describes SHAPES. member.derald supplied the origin, and it

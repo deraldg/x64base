@@ -409,6 +409,31 @@ The reclaim's operational trap -- that rebuilding 63 containers first writes
 environments. The batching and prune-between-batches discipline is a workaround
 for a behaviour that should not exist.
 
+## Provenance of the finding -- recorded because attribution is a lane concern here
+
+Set down deliberately, per `AGENCY_MODEL_V1.md`, which observes that git stamps
+one name where the truth often had several.
+
+| step | who |
+|---|---|
+| disk filled during a SRC* reload (a copy-based backup of regenerable LMDB) | member.ai.claude.cowork, own error |
+| directed attention to the size options -- *"check the usage contract in buildlmdb for TINY GIANT CUSTOM etc"* | member.derald |
+| found that the ladder is parsed, echoed, written, and then overridden on attach | member.ai.claude.cowork |
+| proved it, three tables, pre- and post-fix | member.ai.claude.cowork |
+| corrected the fix from deletion to `set_mapsize(0)`, corrected the unit to containers, identified the vdisk consequence, and reduced archiving from a policy to nothing | member.derald |
+
+**The maintainer believed the sizing had already been fixed.** That is the part
+worth recording, and it is a stronger result than finding an unknown defect: the
+documentation process did not fill a gap in what was known, it **contradicted
+something believed to be settled**. A held belief is harder to dislodge than an
+absence, because nothing prompts you to re-check it.
+
+Note also that the direction and the discovery are separate acts. Being told
+where to look is not the same as finding, and finding is not the same as being
+right about the remedy -- the first proposed fix here was wrong and was caught by
+reading the header. All three steps had different authors, which is precisely the
+pattern the agency model exists to record.
+
 ## Archiving is attached to the wrong command entirely (member.derald)
 
 > "why archive the cdx when changing sizes -- the only reason to archive is if
