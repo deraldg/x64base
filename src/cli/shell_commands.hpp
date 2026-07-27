@@ -133,6 +133,7 @@ void browse_bind_invoke(void (*fn)(DbArea&, const std::string&));
 
 //   RUNTIME REPORTS
 void cmd_AREA(DbArea&, std::istringstream&);
+void cmd_AREA51(DbArea&, std::istringstream&);   // src/cli/cmd_area51.cpp -- diagnostics, not AREA family
 void cmd_WAMREPORT(DbArea&, std::istringstream&);
 void cmd_DBAREA(DbArea&, std::istringstream&);
 void cmd_DBAREAS(DbArea&, std::istringstream&);

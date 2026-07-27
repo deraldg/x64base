@@ -61,6 +61,13 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 {
     using namespace dli;
 
+    // AREA51 was the last registration here that captured the engine directly;
+    // it moved to src/cli/cmd_area51.cpp on 2026-07-27 and now reaches engine
+    // state through shell_engine() like every other standalone command. The
+    // parameter stays because this is an extern "C" entry point with a stable
+    // signature, and future registrations may want it again.
+    (void)eng;
+
     // ---------------------------------------------------------------------
     // Relation-refresh policy
     // ---------------------------------------------------------------------
@@ -104,26 +111,11 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 
     // Developer/debug status command. It reports current area and order state
     // without invoking the full AREA command and without refreshing relations.
-    registry().add("AREA51",    [&](DbArea&, std::istringstream&){
-        int i = eng.currentArea();
-        DbArea& cur = eng.area(i);
-        std::cout << "Current area: " << i << "\n";
-        if (cur.isOpen()) {
-            std::cout << "  File: " << cur.name()
-                      << "  Recs: " << cur.recCount()
-                      << "  Recno: " << cur.recno() << "\n";
-            try {
-                bool asc = orderstate::isAscending(cur);
-                std::string idx = orderstate::hasOrder(cur) ? orderstate::orderName(cur) : std::string("(none)");
-                std::string tag = orderstate::hasOrder(cur) ? orderstate::activeTag(cur) : std::string("(none)");
-                std::cout << "  Order: " << (asc ? "ASCEND" : "DESCEND") << "\n"
-                          << "  Index file  : " << idx << "\n"
-                          << "  Active tag  : " << tag << "\n";
-            } catch (...) {}
-        } else {
-            std::cout << "  (no file open)\n";
-        }
-    });
+    // Moved to src/cli/cmd_area51.cpp 2026-07-27 (AIF-066 follow-on): registered
+    // inline it had no source file, so no @dottalk.usage contract, so no SYSCMD
+    // row and no HELP topic. Behaviour unchanged; it now has an identity the
+    // documentation chain can see.
+    registry().add("AREA51",       [](DbArea& A, std::istringstream& S){ cmd_AREA51(A,S); });
 
     // ---------------------------------------------------------------------
     // Direct cursor movers
