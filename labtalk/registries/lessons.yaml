@@ -312,3 +312,179 @@ lessons:
       tables, and the census compares source against contracts. Neither compares a
       documented option against its observable effect. Every option in every @dottalk.usage
       block is currently an unverified claim.
+
+  - id: lesson.career.discovery_by_documentation
+    title: Discovery by Documentation
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, technical writer, ai_partner, student]
+    path: lessons/career/discovery_by_documentation_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.contract.usage
+      - concept.selfdoc.validation
+      - concept.evidence.review
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.selfdoc
+    commands: [SET, SET USAGE, AREA51, REL]
+    lane_doc: docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md
+    aif: AIF-067
+    proof_state: runtime_observed
+    observed: 2026-07-27
+    run: DOCFLUSH-20260722-001
+    body: |
+      DIRECT EVIDENCE FOR THE PROJECT THESIS -- "documentation improves and proves the
+      code" -- recorded because the thesis is otherwise only asserted.
+
+      EIGHT defects in one session were found by the ACT OF WRITING DOCUMENTATION, none
+      by a failing test, a user report, or a crash:
+
+        1. SET ERRORSTOP and SET INDEXTXN dispatch correctly and are undiscoverable
+           (found while contracting the 33-arm SET ladder)
+        2. SYSSUBCMD held 12 scratch rows; its harvest CSV carried a 10-field schema
+           against a 20-field table and could never have loaded
+        3. SetUsageText exists TWICE; only one copy was being generated
+        4. SET DEVDIAG claims relation diagnostics that do not exist -- 7 call sites,
+           none in a refresh path
+        5. 9 commands registered twice, 2 with handlers DIFFERING on relation
+           maintenance; the live one decided by static-init order, not by rule
+        6. SYSFUNC.dbf unreadable by the doc toolchain for its entire life
+        7. MEMO_LINES.dbf unreadable -- LINECONT is C(1024), classic width byte
+           clamps at 255
+        8. 8 registry keys are undispatchable dead code
+
+      WHY DOCUMENTING FINDS WHAT TESTING CANNOT: a test asks "does this behave as I
+      expect", so it can only fail where someone already suspected something.
+      Documenting asks "what IS this, and where is that written down" -- a question with
+      no expectation to satisfy, which therefore goes where nobody suspected. And it
+      forces TWO DESCRIPTIONS OF ONE THING into the same field of view. Every defect
+      above has that shape: ladder vs usage text vs table; descriptor copy vs locale
+      copy; hub registration vs self-registration; classic width byte vs X64M width;
+      registry key vs what the dispatcher can produce. Each artifact was internally
+      consistent, which is exactly why nothing failed. The defect lived in the
+      RELATIONSHIP, and only an activity obliged to reconcile both sides can see it.
+
+      THE COUNTER-EVIDENCE, WHICH MATTERS MORE. The same session propagated an error at
+      pipeline speed: a slightly wrong source comment on SET DEVDIAG was inherited into
+      a @dottalk.subusage summary and generated into SET USAGE and SYSSUBCMD within
+      hours -- one inaccurate sentence became three inaccurate artifacts BECAUSE the
+      pipeline worked. Separately, the first generated SET USAGE silently dropped four
+      SET LOCALE lines: generation removes drift but cannot preserve an intent that was
+      never written down.
+
+      SO THE THESIS IS NARROWER THAN ITS SLOGAN: documentation authored against SOURCE
+      proves code; documentation authored against neighbouring documentation propagates
+      error faster than review can catch it. Read the parser, not the comment above the
+      parser. Read the bytes, not the field name.
+
+      STRONGEST SINGLE INSTANCE: the most productive question of the day was not an
+      audit instruction but the maintainer asking "what flavor of dbf?". Answering it
+      required reading actual header bytes, and produced the X64M extended-header
+      layout, two format versions, the true-width and logical-name mechanism, the
+      explanation for LOCALIZE~1, and two canonical tables that had been unreadable by
+      our own tooling without anyone knowing. The audit finds what it was built to look
+      for; the QUESTION finds what nobody had thought to look for.
+
+      THE RULE: when documenting, name the two artifacts that describe the same fact and
+      compare them -- if there is only one, ask why the other is not written down.
+      Author from the primary artifact. When a description is derived, verify the
+      derivation preserves INTENT and not merely content. And attribute discoveries to
+      the activity that produced them, because a thesis is only demonstrable if its
+      evidence is recorded.
+
+  - id: lesson.career.entities_and_the_bridge
+    title: "Entities and the Bridge: Build Up Solid, Build Down Empirical"
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, architect, ai_partner, student]
+    path: lessons/career/entities_and_the_bridge_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.contract.usage
+      - concept.selfdoc.validation
+      - concept.evidence.review
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.selfdoc
+    commands: []
+    lane_doc: docs/ai-friendly/ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md
+    aif: AIF-067
+    proof_state: source_defined
+    observed: 2026-07-27
+    run: DOCFLUSH-20260722-001
+    body: |
+      DECLARING IS THE FIRST ACT OF BUILDING, not paperwork that precedes it.
+      member.derald: "declaring something is the first step to making it real by defining
+      it and then building it, testing it, proofing it and release etc." The chain is
+      declare -> define -> build -> test -> proof -> release, and DECLARATION IS
+      GENERATIVE: naming the entity brings it into the system, and everything after is
+      elaboration of something that already exists.
+
+      THIS GIVES THE THESIS ITS SECOND READING, AND THE TWO ARE EQUALLY IMPORTANT
+      (member.derald). Declaration-is-generative is documentation UPSTREAM -- building up,
+      solid and deductive, answering "what is this supposed to be". Documentation-verifies
+      is documentation DOWNSTREAM -- building down, empirical and inductive, answering
+      "does it actually do that". Neither subsumes the other: upstream alone is an elegant
+      declaration nothing satisfies, downstream alone is a pile of true observations about
+      whatever happened to get built. A first draft of this lesson called the upstream
+      reading "the strongest form", which was wrong, and wrong in a way this lesson should
+      have caught -- it makes a hierarchy of the two directions that are supposed to meet.
+      THE THESIS IS THE SPAN: documentation improves and proves the code because it both
+      ORIGINATES the entity and later MEASURES it, and the gap between those two acts is
+      where every recorded defect actually lives.
+
+      Skip the declaration and later stages have nothing to be measured against -- you
+      cannot detect drift from a specification never written.
+
+      THE UNIT OF TRACKING IS THE ENTITY, NOT THE TASK. A named thing the design has
+      decided should exist is an entity from the moment it has a file, even a zero-byte
+      one. member.derald: "0 byte commands, plugs, and prototypes help define the top
+      level layer of our systems design" and "even unfinished, they are entities and can
+      be tracked in the SDLC as they are onboarded into the system, and we just track
+      their progression through our documentation process."
+
+      A zero-byte translation unit outperforms a TODO or a backlog item on three axes:
+      it survives refactors, it appears in the census, and removing it is a deliberate
+      act with an author. The names are not arbitrary either -- app_army, app_alcoa and
+      app_paxon match CASE_HIST_020, CASE_HIST_030 and CASE_HIST_060 exactly. The empty
+      files and the historical case studies are one list expressed twice.
+
+      DOCUMENTATION IS THE TRACKER. An entity's position in the documentation chain IS
+      its lifecycle stage: named -> described (@dottalk.file) -> contracted
+      (@dottalk.usage) -> catalogued (SYSCMD row) -> surfaced (HELP topic) -> proven
+      (runtime_observed). There is no second system to keep in sync, which matters in a
+      project whose recurring defect is two systems that never compare themselves. The
+      proof_state vocabulary is not metadata about documents; it is lifecycle state.
+
+      THE ONE RULE: an entity may sit at any stage, but may not CLAIM a later stage than
+      it occupies. A zero-byte file may say "I am a reserved slot"; it may not say "I am
+      the ARMY command", because SYSCMD, HELP, dotref and the census all read a usage
+      contract as a real command surface and count it.
+
+      BUILD UP, BUILD DOWN, BUILD THE SPAN. Two directions, two kinds of work. Building
+      UP is solid and deductive -- structure, reserved names, contracts, schemas; it says
+      what the system IS and can precede any running code. Building DOWN is empirical and
+      inductive -- runtime proofs, measured sizes, actual header bytes, real command
+      output; it says what the system DOES. Neither reaches the far bank alone. The SPAN
+      is the reconciliation, and every defect this project has recorded lives exactly
+      there: a documented LMDB size ladder against two observed file sizes (AIF-065); a
+      SOURCE_HASH written and never read (AIF-066); 33 ladder arms against 30 listed
+      options, a 20-field table against a 10-field CSV, a registry key the dispatcher
+      cannot produce (AIF-067). Nothing in those pairs is individually wrong, which is
+      why no test failed -- a test checks one end of a bridge.
+
+      CONSEQUENCE FOR TOOLING: stack_audit_v1 is span inspection. Its WARN count is not
+      a quality score, it is the measured distance between what has been declared and
+      what has been observed. A finding closes when the two ends meet, not when someone
+      silences it.
+
+      CONSEQUENCE FOR CONTRIBUTORS, HUMAN OR AI: do not "clean up" entities -- check
+      docs/cases and the registries before deleting anything empty. Do not let an entity
+      claim a stage it has not reached. Say which direction you are working in, because
+      "I read the source" and "I ran it and observed X" are different evidence and earn
+      different proof_state values. When the ends do not meet, RECORD the gap; a
+      documented gap is span work scheduled, an undocumented one is a bridge that looks
+      finished.
