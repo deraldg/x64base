@@ -402,6 +402,43 @@ def check_srcfile_drift(root: Path, files):
     return out, detail
 
 
+def command_resolution_paths(root: Path):
+    """Every way a name can become reachable at the prompt.
+
+    Adjudicating 43 dotref entries on 2026-07-27 found FIVE registration paths.
+    A check that knows only registry().add() reports the other four as
+    "uncovered", which is how 14 legitimately-reachable names were nearly
+    written off -- and how two genuinely broken ones nearly hid among them.
+
+      core       registry().add("NAME", ...)                 -- shell_commands.cpp
+      shortcut   { "ALIAS", "TARGET" } pairs                 -- shortcut_resolver.hpp
+      extension  dli::register_extension_command("NAME", ..) -- src/ext/cmd/
+      alias      add(ALIAS, TARGET, "alias", ...)            -- reference_collection.cpp
+      function   fn_NAME / BuiltinFnSpec                     -- NOT a command at all
+
+    The last one matters: STU_REPEAT and STU_UPPER are student programming
+    STUBS registered as FUNCTIONS (fn_STU_*). They will never have a SYSCMD row
+    and should never be counted against command coverage.
+    """
+    src = subprocess.run(["git", "--no-optional-locks", "-C", str(root), "ls-files",
+                          "src", "include"], capture_output=True, text=True).stdout.split()
+    blob = []
+    for rel in src:
+        if rel.endswith((".cpp", ".hpp", ".h")):
+            try:
+                blob.append((root / rel).read_text(encoding="utf-8", errors="ignore"))
+            except Exception:
+                pass
+    text = "\n".join(blob)
+    return {
+        "core":      {m.upper() for m in re.findall(r'registry\(\)\.add\(\s*"([^"]+)"', text)},
+        "shortcut":  {m.upper() for m in re.findall(r'\{\s*"([A-Z0-9_ ]+)"\s*,\s*"[A-Z0-9_ ]+"\s*\}', text)},
+        "extension": {m.upper() for m in re.findall(r'register_extension_command\(\s*"([^"]+)"', text)},
+        "alias":     {m.upper() for m in re.findall(r'add\(\s*"([A-Z0-9_ ]+)"\s*,\s*"[A-Z0-9_ ]+"\s*,\s*"alias"', text)},
+        "function":  {m.upper() for m in re.findall(r'\bfn_([A-Z][A-Z0-9_]*)\b', text)},
+    }
+
+
 def fold_command_name(name: str) -> str:
     """Fold a command name to a spelling-insensitive key.
 
@@ -496,14 +533,215 @@ def check_dotref_coverage(root: Path):
     detail["alias_pairs_resolved"] = len(collisions) - len(unresolved_pairs)
     detail["alias_pairs_unresolved"] = sorted("/".join(v) for v in unresolved_pairs.values())
 
+    # Split `uncovered` by HOW the name is reachable. Only a name registered as
+    # a command and missing a SYSCMD row is a catalog gap; a shortcut, an alias,
+    # an extension command or a function is reachable by design and will never
+    # have its own canonical row.
+    paths = command_resolution_paths(root)
+    folded = {k: {fold_command_name(n) for n in v} for k, v in paths.items()}
+    gaps, elsewhere, subcmds, unresolvable = [], {}, [], []
+    for e in uncovered:
+        f = fold_command_name(e)
+        if f in folded["core"]:
+            gaps.append(e)
+            continue
+        for kind in ("shortcut", "alias", "extension", "function"):
+            if f in folded[kind]:
+                elsewhere.setdefault(kind, []).append(e)
+                break
+        else:
+            # A multi-word name whose FIRST token is a registered command is a
+            # SUBCOMMAND: typeable (the parent's dispatcher parses it) but never
+            # independently registered, so no registry lookup and no catalog row.
+            # This is the same structural gap that left DOT|SET LANGUAGE and
+            # DOT|SET LOCALE as orphaned HELP locale topics (AIF-066) --
+            # DotTalk++ has no convention for declaring a subcommand identity.
+            head = e.split()[0].upper() if " " in e else ""
+            if head and fold_command_name(head) in folded["core"]:
+                subcmds.append(e)
+            else:
+                unresolvable.append(e)
+    detail["registered_no_syscmd_row"] = sorted(gaps)
+    detail["reachable_elsewhere"] = {k: sorted(v) for k, v in elsewhere.items()}
+    detail["subcommand_only"] = sorted(subcmds)
+    detail["unresolvable"] = sorted(unresolvable)
+
     out = []
-    if uncovered:
+    if gaps:
         out.append({"check": "DOTREF_COV", "code": "UNCOVERED_ENTRIES", "severity": "WARN",
-                    "message": f"{len(uncovered)} dotref entr(ies) have no live SYSCMD row even "
-                               f"after folding spaces/underscores (coverage {pct_norm}% "
-                               f"normalized, {pct_raw}% raw; {len(spelling)} alias spelling(s) "
-                               f"resolved, {detail['alias_pairs_resolved']} alias pair(s) intact)"})
+                    "message": f"{len(gaps)} command(s) are registered via registry().add() but "
+                               f"have no live SYSCMD row -- a real catalog gap "
+                               f"(coverage {pct_norm}% normalized, {pct_raw}% raw; "
+                               f"{len(spelling)} alias spelling(s) folded, "
+                               f"{sum(len(v) for v in elsewhere.values())} reachable via "
+                               f"shortcut/alias/extension/function)"})
+    if subcmds:
+        out.append({"check": "DOTREF_COV", "code": "SUBCOMMAND_ONLY", "severity": "WARN",
+                    "message": f"{len(subcmds)} dotref entr(ies) are subcommands of a registered "
+                               f"parent -- typeable, but never independently registered, so no "
+                               f"contract, no SYSCMD row and no HELP topic. Same gap that orphaned "
+                               f"the SET LANGUAGE / SET LOCALE locale topics: "
+                               f"{', '.join(sorted(subcmds))}"})
+    if unresolvable:
+        out.append({"check": "DOTREF_COV", "code": "UNRESOLVABLE_ENTRY", "severity": "WARN",
+                    "message": f"{len(unresolvable)} dotref entr(ies) resolve through NO path and "
+                               f"are not a subcommand of any registered parent -- dotref documents "
+                               f"a command that CANNOT be typed: "
+                               f"{', '.join(sorted(unresolvable))}"})
     return out, detail
+
+
+def check_subcmd_coverage(root: Path):
+    """G. AIF-067. THREE representations of the SET subcommand surface, compared.
+
+    Until this check existed, the surface was described in three places that
+    never met:
+
+        1. the LADDER   -- `if (opt == "X")` arms in src/cli/cmd_set.cpp,
+                           the only one that actually dispatches anything
+        2. the USAGE TEXT -- MessageId::SetUsageText, a hand-typed ~40-line
+                           string literal in src/help/helpdata_messages.cpp
+        3. the TABLE    -- dottalkpp/data/metadata/SYSSUBCMD.dbf
+
+    Measured when this check was written: the ladder had 33 option tokens, the
+    usage text listed 30. ERRORSTOP and INDEXTXN dispatch correctly and are
+    undiscoverable from the product itself. The table held 12 scratch rows.
+
+    ACCEPTANCE TEST FOR THIS CHECK (AIF-067 sec 7): run against the tree as it
+    stood on 2026-07-27 it MUST report ERRORSTOP and INDEXTXN under
+    USAGE_TEXT_DRIFT. A check that passes on the broken tree has proved nothing,
+    so do not "fix" that finding by relaxing the check -- it clears when
+    SET USAGE is rendered from SYSSUBCMD (M4) and not before.
+
+    Note SETCASE and SETNEAR are deliberately NOT reported: they are alias
+    spellings of CASE and NEAR, both of which the usage text does list. Folding
+    them is the same normalization DOTREF_COV learned to apply.
+    """
+    findings, detail = [], {}
+
+    ladder_src = root / "src" / "cli" / "cmd_set.cpp"
+    msg_src = root / "src" / "help" / "helpdata_messages.cpp"
+    if not ladder_src.is_file():
+        return findings, {"skipped": "cmd_set.cpp not found"}
+
+    text = ladder_src.read_text(encoding="utf-8", errors="replace")
+
+    # 1. ladder arms
+    ladder = {m.upper() for m in re.findall(r'opt\s*==\s*"([A-Z0-9_]+)"', text)}
+    # Do NOT strip USAGE/HELP here. An earlier draft did, on the reasoning that
+    # they are "meta" rather than real options -- which then reported the
+    # `sub: USAGE` contract as a CONTRACT_ORPHAN describing something untypeable.
+    # It is typeable: `if (opt == "USAGE" || opt == "HELP" || opt == "?")` is an
+    # arm like any other. The exclusion invented the very defect it claimed to
+    # find. HELP and ? are carried as that contract's aliases and fold normally.
+
+    # 2. contracts (parent SET), plus their alias spellings
+    contracts, aliases = set(), set()
+    for block in re.findall(r"// @dottalk\.subusage v1\n(?:\s*//[^\n]*\n)+", text):
+        sub = re.search(r"//\s*sub:\s*(\S+)", block)
+        if not sub:
+            continue
+        contracts.add(sub.group(1).upper())
+        al = re.search(r"//\s*aliases:\s*(.+)", block)
+        if al:
+            aliases |= {a.strip().upper() for a in al.group(1).split(";") if a.strip()}
+    contracts_all = contracts | aliases
+
+    # 3. live table
+    table = set()
+    dbf = root / "dottalkpp" / "data" / "metadata" / "SYSSUBCMD.dbf"
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import dbfread  # sibling module; refuses on a layout it cannot reconcile
+        for r in dbfread.read(dbf).rows:
+            if r.get("PARENT", "").upper() == "SET" and r.get("SUB_NAME"):
+                table.add(r["SUB_NAME"].upper())
+    except Exception as e:                                  # noqa: BLE001
+        detail["table_error"] = str(e)
+
+    # 4. the SetUsageText copies.
+    #
+    # This was ONE hand-typed single-line literal; it is now TWO generated
+    # regions of #if-guarded adjacent string literals (AIF-067 M4). The old
+    # parser matched `\n  SET X` inside one long line and would return an EMPTY
+    # set against the new shape -- making every option look undiscoverable and
+    # turning this check into noise nobody trusts.
+    #
+    # Both regions are parsed and INTERSECTED: an option must appear in the
+    # descriptor default AND the en-US locale row to count as listed. The
+    # descriptor copy is the one that was found stale (it still lacked
+    # ERRORSTOP, INDEXTXN and DEVDIAG after the locale row was generated), so
+    # accepting either alone would hide precisely that failure.
+    listed = set()
+    if msg_src.is_file():
+        mt = msg_src.read_text(encoding="utf-8", errors="replace")
+        regions = []
+        for begin, end in (("@generated:set-usage-text BEGIN",
+                            "@generated:set-usage-text END"),
+                           ("@generated:set-usage-descriptor BEGIN",
+                            "@generated:set-usage-descriptor END")):
+            s = mt.find(begin)
+            e = mt.find(end, s + 1) if s >= 0 else -1
+            if s >= 0 and e > s:
+                regions.append({m.upper() for m in
+                                re.findall(r'"\s*SET ([A-Z0-9_]+)', mt[s:e])})
+        if regions:
+            listed = set.intersection(*regions)
+        else:
+            # pre-migration single-line form, kept so this check still means
+            # something on an older tree instead of reporting a false gap
+            for line in mt.splitlines():
+                if 'SetUsageText, "en-US"' in line:
+                    listed = {m.upper() for m in
+                              re.findall(r"\\n\s+SET ([A-Z0-9_]+)", line)}
+                    break
+        detail["usage_text_regions"] = len(regions)
+        detail["usage_text_listed"] = len(listed)
+
+    uncontracted = sorted(ladder - contracts_all)
+    orphaned = sorted(contracts - ladder)
+    undiscoverable = sorted(ladder - listed - contracts_all.intersection(aliases) - aliases)
+    table_missing = sorted(contracts - table) if table or "table_error" not in detail else []
+
+    if uncontracted:
+        findings.append({"check": "SUBCMD_COV", "code": "LADDER_UNCONTRACTED",
+                         "severity": "WARN",
+                         "message": f"{len(uncontracted)} SET ladder arm(s) dispatch with no "
+                                    f"@dottalk.subusage contract, so they have no identity for "
+                                    f"SYSSUBCMD or HELP: " + ", ".join(uncontracted)})
+    if orphaned:
+        findings.append({"check": "SUBCMD_COV", "code": "CONTRACT_ORPHAN",
+                         "severity": "WARN",
+                         "message": f"{len(orphaned)} @dottalk.subusage contract(s) describe a "
+                                    f"subcommand the ladder does not dispatch -- the contract "
+                                    f"documents something untypeable: " + ", ".join(orphaned)})
+    if undiscoverable:
+        findings.append({"check": "SUBCMD_COV", "code": "USAGE_TEXT_DRIFT",
+                         "severity": "WARN",
+                         "message": f"{len(undiscoverable)} SET option(s) dispatch but are absent "
+                                    f"from MessageId::SetUsageText, so they work and cannot be "
+                                    f"discovered from the product: " + ", ".join(undiscoverable)
+                                    + ". NOTE the localization cost is PROSPECTIVE, not incurred: "
+                                      "SetUsageText currently exists in en-US only (de/es/fr/it "
+                                      "carry 290 messages each and this is not among them), so the "
+                                      "gap exists once. It multiplies the first time this string "
+                                      "is translated, which is an argument for generating it "
+                                      "BEFORE the locale spine reaches it, not after."})
+    if table_missing:
+        findings.append({"check": "SUBCMD_COV", "code": "TABLE_DRIFT",
+                         "severity": "WARN",
+                         "message": f"{len(table_missing)} contracted subcommand(s) have no live "
+                                    f"SYSSUBCMD row -- the table has not been reseeded from the "
+                                    f"contracts (tools/fullstack_docs/generate_syssubcmd.py): "
+                                    + ", ".join(table_missing[:12])})
+
+    detail.update({"ladder_arms": len(ladder), "contracts": len(contracts),
+                   "aliases": len(aliases), "usage_text_listed": len(listed),
+                   "table_rows_set": len(table),
+                   "uncontracted": uncontracted, "orphaned": orphaned,
+                   "undiscoverable": undiscoverable,
+                   "table_missing": table_missing[:20]})
+    return findings, detail
 
 
 def check_embedded_bom(root: Path, files):
@@ -535,10 +773,14 @@ def run_audit(root: Path):
                      ("contract_qa", lambda: check_contract_qa(root, files)),
                      ("srcfile_drift", lambda: check_srcfile_drift(root, files)),
                      ("dotref_coverage", lambda: check_dotref_coverage(root)),
+                     ("subcmd_coverage", lambda: check_subcmd_coverage(root)),
                      ("embedded_bom", lambda: check_embedded_bom(root, files))):
         f, d = fn()
         findings.extend(f)
         detail[name] = d
+
+    findings, expected, stale = apply_expectations(findings)
+
     counts = {"FAIL": sum(1 for f in findings if f["severity"] == "FAIL"),
               "WARN": sum(1 for f in findings if f["severity"] == "WARN")}
     by_check = {}
@@ -547,11 +789,107 @@ def run_audit(root: Path):
     return {"generated_at": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
             "root": str(root), "tracked_source_files": len(files),
             "counts": counts, "by_check": by_check,
-            "detail": detail, "findings": findings}
+            "detail": detail, "findings": findings,
+            "expected": expected, "stale_expectations": len(stale)}
+
+
+# --------------------------------------------------------------------------- #
+# EXPECTED findings (AIF-067 M6)
+# --------------------------------------------------------------------------- #
+#
+# A deliberate open finding and a neglected one look IDENTICAL in a count-based
+# ratchet. Before this registry existed, the only thing distinguishing the two
+# was a paragraph in a lane document -- which the next session may not read, and
+# which cannot notify anyone of anything.
+#
+# WHAT MAKES THIS A REGISTRY AND NOT A SUPPRESSION LIST
+#     Every entry MUST stop matching eventually, and when it does, its own
+#     staleness is reported as a finding (STALE_EXPECTATION). Without that rule
+#     this is just a way to hide things -- which is precisely the defect class
+#     this run keeps uncovering (a value written and never read; a list typed
+#     twice and never compared). An expectation nobody re-checks is one more
+#     thing that never compares itself.
+#
+# Fields:
+#     check/code  the finding this expects
+#     token       a substring that must appear in the finding's message; this is
+#                 what keeps an expectation NARROW. Expecting a whole check would
+#                 blind the guard to unrelated instances of the same code.
+#     reason      why it is open on purpose
+#     expires     the observable condition that should retire it, in plain words
+#     owner/lane  who decided, and under what lane number
+#
+EXPECTED = [
+    {
+        "check": "SRCFILE_DRIFT",
+        "code": "UNCOLLECTED",
+        "token": "src/cli/cmd_area51.cpp",
+        "reason": "Planted fixture. cmd_area51.cpp is a real, tracked, "
+                  "contract-bearing source file deliberately left out of the SRC* "
+                  "catalog so the next first-class full-stack pass has one piece of "
+                  "unplanted evidence to be tested against. Seeding the catalog "
+                  "first would destroy the only honest test available.",
+        "expires": "The new full-stack pass reports this file as tree-present and "
+                   "catalog-absent from its own traversal, WITHOUT being told where "
+                   "to look. On that event: harvest the file, delete this entry, and "
+                   "record the catch as evidence.",
+        "owner": "member.derald",
+        "lane": "AIF-067",
+        "recorded": "2026-07-27",
+        "doc": "docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md sec 9a",
+    },
+]
+
+
+def apply_expectations(findings: list) -> tuple[list, list, list]:
+    """
+    Split findings into (active, expected_hits) and raise STALE_EXPECTATION for
+    any registry entry that matched nothing.
+
+    Matching is check + code + message substring. Deliberately narrow: an
+    expectation for one file must not silence the same code for another.
+    """
+    active, expected_hits, stale = [], [], []
+    matched = {id(e): 0 for e in EXPECTED}
+
+    for f in findings:
+        hit = None
+        for e in EXPECTED:
+            if (f["check"] == e["check"] and f["code"] == e["code"]
+                    and e["token"] in f["message"]):
+                hit = e
+                break
+        if hit is not None:
+            matched[id(hit)] += 1
+            expected_hits.append({**f, "expected_reason": hit["reason"],
+                                  "expected_lane": hit["lane"]})
+        else:
+            active.append(f)
+
+    for e in EXPECTED:
+        if matched[id(e)] == 0:
+            stale.append({
+                "check": "EXPECTATION", "code": "STALE_EXPECTATION",
+                "severity": "WARN",
+                "message": f"{e['lane']} expected {e['check']}/{e['code']} matching "
+                           f"'{e['token']}' and it no longer occurs. Either the "
+                           f"condition was resolved -- in which case DELETE the entry "
+                           f"from EXPECTED, and if it was the planted fixture, record "
+                           f"the catch -- or the check stopped looking. An expectation "
+                           f"that silently stops matching is how a suppression list "
+                           f"turns into a blind spot. Recorded {e['recorded']} by "
+                           f"{e['owner']}; see {e['doc']}.",
+            })
+    return active + stale, expected_hits, stale
 
 
 def comparable(summary: dict) -> dict:
-    """Baseline view -- excludes the timestamp and free-text messages."""
+    """Baseline view -- excludes the timestamp and free-text messages.
+
+    Note this ratchets on ACTIVE findings only. Expected findings are reported
+    but never counted, so a deliberate open item cannot masquerade as a
+    regression, and equally cannot be quietly absorbed into a raised baseline.
+    """
     return {"counts": summary["counts"], "by_check": summary["by_check"],
             "detail": summary["detail"], "tracked_source_files": summary["tracked_source_files"]}
 
@@ -651,9 +989,14 @@ def main() -> int:
                 print(f"     {k:26} {b} -> {n}")
         elif bpath.is_file() is False:
             print(f"  baseline            : none recorded (--write-baseline to create)")
+        if s.get("expected"):
+            print(f"  expected (not counted): {len(s['expected'])}")
         print()
         for f in s["findings"]:
             print(f"  [{f['severity']}] {f['check']}/{f['code']}: {f['message']}")
+        for f in s.get("expected", []):
+            print(f"  [EXPECTED {f['expected_lane']}] {f['check']}/{f['code']}: "
+                  f"{f['message']}")
 
     if args.out_dir:
         od = Path(args.out_dir)

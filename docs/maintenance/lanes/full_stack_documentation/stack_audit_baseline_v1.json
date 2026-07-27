@@ -2,64 +2,64 @@
   "by_check": {
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
-    "DOTREF_COV": 1
+    "DOTREF_COV": 3
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 15
+    "WARN": 17
   },
   "detail": {
     "banner_census": {
       "coverage_pct": 100.0,
-      "files_zero_authored_fields": 1031,
+      "files_zero_authored_fields": 1030,
       "provenance": {
         "lane": {
-          "A": 0,
+          "A": 1,
           "D": 23,
           "E": 1012
         },
         "layer": {
-          "A": 4,
+          "A": 5,
           "D": 1031,
           "E": 0
         },
         "owner": {
           "A": 0,
-          "D": 1035,
+          "D": 1036,
           "E": 0
         },
         "owns": {
           "A": 0,
           "D": 2,
-          "E": 1033
+          "E": 1034
         },
         "project": {
           "A": 0,
-          "D": 1035,
+          "D": 1036,
           "E": 0
         },
         "status": {
           "A": 0,
-          "D": 1035,
+          "D": 1036,
           "E": 0
         },
         "subsystem": {
           "A": 1,
-          "D": 1034,
+          "D": 1035,
           "E": 0
         }
       },
-      "total_source": 1035,
-      "with_banner": 1035
+      "total_source": 1036,
+      "with_banner": 1036
     },
     "contract_qa": {
-      "contract_blocks": 238,
+      "contract_blocks": 239,
       "dialects": {
         "block": 1,
-        "slash": 237
+        "slash": 238
       },
-      "distinct_commands": 218,
-      "mention_only": 5
+      "distinct_commands": 219,
+      "mention_only": 6
     },
     "csv_vs_table": {
       "SYSARGS": {
@@ -94,6 +94,57 @@
       "exact_match": 200,
       "fold_collisions": 12,
       "live_syscmd_rows": 203,
+      "reachable_elsewhere": {
+        "alias": [
+          "SCHEMA"
+        ],
+        "extension": [
+          "SECHO",
+          "SHELLO"
+        ],
+        "function": [
+          "STU_REPEAT",
+          "STU_UPPER"
+        ],
+        "shortcut": [
+          "EVAL",
+          "SB",
+          "SM",
+          "SMART",
+          "TABLE"
+        ]
+      },
+      "registered_no_syscmd_row": [
+        "AREA51",
+        "AVERAGE",
+        "BETA",
+        "BROWSETV",
+        "BUILDVECTORS",
+        "COMMANDSHELP",
+        "DEFCMD",
+        "DEFFN",
+        "EXIT",
+        "EXPFUNCS",
+        "FOXTALK",
+        "GENERIC",
+        "LMDB",
+        "LMDBDUMP",
+        "LOOP_BUFFER",
+        "PREDICATES",
+        "REL_LIST",
+        "SCAN_BUFFER",
+        "SET LMDB",
+        "SETLMDB",
+        "STOP_ON_ERROR",
+        "STRCAT",
+        "UNDEFCMD",
+        "UNDEFFN",
+        "UNDELETE",
+        "UNTIL_BUFFER",
+        "USER",
+        "VDISK",
+        "WHILE_BUFFER"
+      ],
       "spelling_variant": 11,
       "spelling_variants": [
         "ERROR CLEAR",
@@ -107,6 +158,11 @@
         "SETINDEX",
         "SETNEAR",
         "SETORDER"
+      ],
+      "subcommand_only": [
+        "REL ENUM",
+        "SET VAR",
+        "SET VAR!"
       ],
       "uncovered": 44,
       "uncovered_names": [
@@ -154,6 +210,10 @@
         "USER",
         "VDISK",
         "WHILE_BUFFER"
+      ],
+      "unresolvable": [
+        "SIMPLEBROWSER",
+        "SMARTBROWSER"
       ]
     },
     "embedded_bom": {
@@ -164,9 +224,20 @@
       "catalog_rows": 1035,
       "catalog_rows_in_scope": 1035,
       "phantom": 0,
-      "tracked_source": 1035,
-      "uncollected": 0
+      "tracked_source": 1036,
+      "uncollected": 1
+    },
+    "subcmd_coverage": {
+      "aliases": 5,
+      "contracts": 31,
+      "ladder_arms": 35,
+      "orphaned": [],
+      "table_missing": [],
+      "table_rows_set": 31,
+      "uncontracted": [],
+      "undiscoverable": [],
+      "usage_text_listed": 32
     }
   },
-  "tracked_source_files": 1035
+  "tracked_source_files": 1036
 }

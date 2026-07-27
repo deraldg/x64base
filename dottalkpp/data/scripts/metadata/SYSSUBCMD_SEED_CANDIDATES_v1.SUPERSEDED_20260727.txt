@@ -1,0 +1,46 @@
+SYSSUBCMD_SEED_CANDIDATES_v1.csv -- SUPERSEDED 2026-07-27 (AIF-067 M2)
+
+WHY IT IS SUPERSEDED, NOT DELETED
+    It remains the record of the first subcommand harvest (37 candidates across
+    parents BUILD, ERROR, SET, with per-row evidence tags: ladder / compound /
+    concat / doc). That harvest reasoning is still useful. What it cannot do is
+    load.
+
+THE DEFECT
+    The CSV carries a 10-field schema:
+
+        SUBCMD_ID, PARENT_CMD, CAN_NAME, TOKEN, HANDLER, OWNER, ACTIVE,
+        SRC_FILE, HELP_TOPIC, NOTES
+
+    The live table SYSSUBCMD.dbf carries a 20-field schema:
+
+        SUB_ID, PARENT, SUB_NAME, QUAL_NAME, DISP_STYL, IMPL_STAT, VIS_TIER,
+        OWNER, REG_RING, LIFE_PH, SRC_AUTH, SRC_FILE, HANDLER, PUB_SURF,
+        DISP_REACH, OUT_ROUTE, MSG_CAT, ACTIVE, VER_AT, NOTES
+
+    Different names, different arity, different order. Only OWNER, ACTIVE,
+    SRC_FILE, HANDLER and NOTES appear in both. This CSV could never have been
+    imported into this table.
+
+    Nobody tried, so nobody found out. The harvest was written, committed, and
+    left next to a table it did not fit for two months, while the table itself
+    sat on 12 scratch rows. Same shape as AIF-065 and AIF-066: two artifacts
+    that were never compared to each other.
+
+REPLACED BY
+    SYSSUBCMD_IMPORT_v1.csv   -- generated, 20 columns, verified identical in
+                                 name AND order to the live DBF header
+    SYSSUBCMD_SEED_v1.dts     -- generated seeding script
+
+    Both are emitted by tools/fullstack_docs/generate_syssubcmd.py from the
+    @dottalk.subusage contracts in source. The column-order equality is asserted
+    by the generator rather than assumed, which is the check whose absence this
+    file documents.
+
+STILL OWED FROM THIS HARVEST
+    The 37 candidates included parents BUILD and ERROR (BUILD INFO, BUILD LMDB,
+    BUILD VECTORS, ERROR CLEAR, ERROR STATUS, ERROR TEST). The generated
+    replacement covers SET only (31 contracts). Deciding whether the BUILD and
+    ERROR compounds adopt @dottalk.subusage or stay concatenated commands is
+    recorded as owed in
+    docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md section 9.
