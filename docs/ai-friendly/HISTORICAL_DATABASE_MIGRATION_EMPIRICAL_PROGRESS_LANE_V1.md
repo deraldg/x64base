@@ -26,7 +26,7 @@ future publication work.
 | CODASYL | teaching adapter | Set/ring traversal is implemented over DotTalk work areas; this is not a physical CODASYL store. |
 | Historical cases | review-gated | CASE files load structurally, but source/media alignment and fact review remain open. |
 | JSON and spreadsheets | design-stage for data, **implemented for schema** | `DDL CREATE DBF <flavor> <out.dbf> FROM <schema.json>` creates flavored tables from JSON today, with `DDL VALIDATE <schema.json> USING <validator.json>` alongside. Data seeding is the gap: DDL's own notes state `SEED CSV` is "recognized but not yet implemented". So JSON schema → table works; JSON/CSV → rows does not. |
-| x64base vs SQLite benchmark | planned | The benchmark lane is chartered; no dedicated same-machine result set is yet authoritative. |
+| x64base vs SQLite benchmark | planned, **storage axis blocked** | The benchmark lane is chartered; no dedicated same-machine result set is yet authoritative. **Storage-footprint comparison must not be attempted until AIF-065 is corrected** — see the note below. |
 | Website publication | planned | Public evolution/case pages exist, but the sample-database catalog and migration proof pages are not yet published. |
 | GnuCOBOL acknowledgement | open gate | Add the acknowledgement before public promotion. |
 
@@ -67,6 +67,41 @@ And `DDL CREATE DBF ... FROM <schema.json>` undercuts "JSON is design-stage".
 
 Method note: every finding here came from *executing* an artifact that had only
 ever been *written*. Recorded as `lesson.career.a_script_never_run_is_not_evidence`.
+
+## Storage-footprint caveat recorded 2026-07-26 (AIF-065)
+
+**No storage or footprint claim about x64base may be made from the current tree.**
+
+`BUILDLMDB` documents a size ladder — `TINY` 32M through `HUGE` 1G, plus
+`MAPSIZE <n>` — and honours it when writing an environment. Two reader-side call
+sites, `src/xindex/cdx_backend.cpp:189` and `src/xindex/lmdb_backend.cpp:80`,
+then hardcode a 1 GiB mapsize, so an environment grows to 1 GiB the first time
+its index is attached, regardless of what was requested.
+
+Measured across `dottalkpp\data\lmdb`: every `data.mdb` in the tree holds one of
+exactly two sizes — 128 MiB (71 live files) or 1 GiB (41 live files) — the two
+constants in the source, with nothing in between. A 30,124-row table and a
+9-row table both occupy 1,073,741,824 bytes.
+
+So index footprint today is a function of **attach history**, not of schema,
+row count, key width or operator choice. Any x64base-vs-SQLite storage number
+taken now would measure that accident. Row-count, latency and correctness axes
+are unaffected and remain runnable.
+
+Full analysis, measurements and proposed correction:
+[LMDB mapsize override lane](../maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md).
+
+Two caveats on that document, both deliberate. The *effect* is measured; the
+*cause* is inferred from source plus size distribution and is not yet backed by
+a transcript — two `stat` calls around a `BUILDLMDB CLEAN TINY YES` will settle
+it. And the proposed fix rests on LMDB adopting the meta-page map size when
+`mdb_env_set_mapsize` is not called, which must be confirmed against the linked
+LMDB version before the change lands.
+
+Related but separate: `BUILDLMDB CLEAN` archives each superseded environment
+with no retention limit, which had accumulated ~50 GB across four lanes since
+2026-06-25. That is documented behaviour without a documented bound, and it
+filled the disk mid-reload on 2026-07-26.
 
 ## Maturity boundary
 

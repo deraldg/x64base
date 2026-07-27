@@ -1,0 +1,5 @@
+aif: AIF-065
+run_id: COWORK-20260726-001
+member: member.ai.claude.cowork
+lane: LMDB mapsize override -- BUILDLMDB size ladder not honoured by attach path
+claimed_utc: 2026-07-27T04:44:10Z

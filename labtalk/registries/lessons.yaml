@@ -244,3 +244,71 @@ lessons:
       Companion to the AIF-062 proofs.yaml finding one layer down: there, real evidence was
       invisible to a clone; here, absent evidence looked real. Both produce wrong records that
       propagate.
+
+  - id: lesson.career.a_documented_option_is_not_an_honoured_option
+    title: A Documented Option Is Not an Honoured Option
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, technical writer, ai_partner]
+    path: lessons/career/a_documented_option_is_not_an_honoured_option_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.contract.usage
+      - concept.selfdoc.validation
+      - concept.evidence.review
+    apps:
+      - app.dottalkpp.runtime
+      - app.dottalkpp.selfdoc
+    commands: [BUILDLMDB, CDX, SET ORDER, REINDEX]
+    lane_doc: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+    aif: AIF-065
+    proof_state: source_defined
+    observed: 2026-07-26
+    run: COWORK-20260726-001
+    next_gate: >-
+      Run BUILDLMDB CLEAN TINY YES on a small table, stat data.mdb, force an index attach,
+      stat again. Preserve the transcript, register it in proofs.yaml, then promote this
+      lesson's proof_state from source_defined to runtime_observed and write the body.
+    notes: >-
+      BUILDLMDB documents a six-step size ladder -- TINY 32M, SMALL 64M, MEDIUM 128M,
+      LARGE 256M, XL 512M, HUGE 1G -- plus an explicit MAPSIZE <n>[K|M|G] spec with an
+      8 MiB floor. Every part of that works: the presets parse, the floor is enforced, the
+      chosen value is echoed back to the operator, and the environment is written at that
+      size. The documentation is correct and the parser is correct.
+
+      Two other call sites then override it. src/xindex/cdx_backend.cpp:189 and
+      src/xindex/lmdb_backend.cpp:80 each hardcode mdb_env_set_mapsize(env_, 1 GiB), so an
+      environment grows to 1 GiB the first time its index is attached, whatever was asked
+      for. BUILDLMDB TINY requests 32 MiB, prints 32 MiB, and yields a 1 GiB file. The
+      whole ladder is cosmetic and has been since it was written.
+
+      WHAT MADE IT INVISIBLE: every individual piece is correct in isolation. The usage
+      contract matches the writer. The writer matches its own output. The readers are
+      internally consistent. Nothing is stale, nothing is a typo, no test fails. Reading
+      any one file leaves the impression of a working feature. The defect exists only in
+      the RELATIONSHIP between two paths over one artifact -- the same shape as
+      DOTSCRIPT_COMMENT_PREFIX_EXECUTION_PATH_DRIFT_V1, where DOTSCRIPT and --script
+      disagreed about comment prefixes and both returned exit 0.
+
+      HOW IT WAS ACTUALLY FOUND: a disk filled during an unrelated catalog reload. Not an
+      audit, not a test, not review. The confirming check took one command -- stat every
+      data.mdb and count distinct sizes -- and the answer named both offending constants
+      before either file was opened: 71 live files at exactly 134,217,728 bytes, 41 at
+      exactly 1,073,741,824, nothing in between. Two values, two constants. Bimodality in
+      a measurement that should be continuous is a signature of two writers disagreeing.
+
+      THE COST: roughly 8x storage inflation wherever an index has ever been attached, a
+      99 GB lmdb tree, and a benchmark axis that cannot be used -- a 30,124-row table and
+      a 9-row table both occupy 1,073,741,824 bytes, so any storage comparison would
+      measure attach history rather than the database.
+
+      THE RULE: a documented option is a claim about behaviour, and claims need evidence
+      like any other. Verifying an option means observing its EFFECT, not confirming that
+      the parser accepted it and echoed it back. Ask what should differ on disk, in memory
+      or in output between the option set and unset, then measure both.
+
+      GAP THIS EXPOSES IN OUR OWN TOOLING: stack_audit_v1 compares documentation against
+      tables, and the census compares source against contracts. Neither compares a
+      documented option against its observable effect. Every option in every @dottalk.usage
+      block is currently an unverified claim.
