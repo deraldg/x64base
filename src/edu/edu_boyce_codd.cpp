@@ -1,35 +1,33 @@
 // @dottalk.file v1
 // subsystem: edu
-// layer: command
-// owns: 
+// layer: helper
+// owns:
 // project: project.x64base.runtime
-// lane: 
+// lane: AIF-067
 // owner: member.derald
 // status: supported
 
-// @dottalk.usage v1
-// owner: EDU|BOYCE_CODD_IMPL
-// command: none
-// category: education-placeholder
-// status: empty-placeholder
-// noargs: n/a
-// effect: none
-// mutates: none
-// usage-access: not-registered
-// summary:
-//   Placeholder translation unit reserved for future Boyce-Codd normal form
-//   educational material.
+// NO USAGE CONTRACT HERE, DELIBERATELY. Removed 2026-07-27 (AIF-067).
+// (Marker token deliberately not spelled out -- CONTRACT_QA/MENTION_ONLY counts
+// files naming it without carrying one, and an explanation of an absence must
+// not read as a malformed presence.)
 //
-// usage:
-//   This file currently exports no shell command.
-//   If a BCNF/Boyce-Codd command becomes user-facing, add the runtime command
-//   handler and full usage contract together.
+// This translation unit contains NO CODE -- it is a reserved placeholder for
+// future Boyce-Codd normal form educational material, and has been since it was
+// created. It exports no shell command, registers nothing, and defines nothing.
 //
-// notes:
-//   Marker documents that this file was inspected and intentionally left
-//   behavior-neutral.
+// It previously carried a usage-contract block declaring `command: none`, which
+// CONTRACT_QA reported as a non-identity name. The report was right and the
+// remedy is not a better name: a usage contract asserts "I am this command",
+// and a file with no code is not a command. `layer:` was also `command`, which
+// was wrong for the same reason and is now `helper`.
 //
-// risk:
-//   mutates_table_data: no
+// Rule settled with member.derald, 2026-07-27: a file that owns no command gets
+// @dottalk.file only. The placeholder's purpose is recorded here, in prose,
+// which is the right place for prose.
 //
-
+// IF A BCNF COMMAND EVER BECOMES USER-FACING: add the runtime handler and the
+// full usage contract IN THE SAME COMMIT. A contract written ahead of
+// its implementation is a claim with nothing behind it, and this file is the
+// cautionary example -- the block sat here long enough to be counted as a
+// documented command by tooling that had no way to know better.

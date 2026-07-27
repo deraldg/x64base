@@ -351,9 +351,26 @@ def check_contract_qa(root: Path, files):
             continue
         for blk, dialect in blocks:
             dialects[dialect] += 1
-            m = (re.search(r"(?m)^\s*(?://)?\s*command:\s*(\S+)", blk)
-                 or re.search(r"(?m)^\s*(?://)?\s*surface:\s*(\S+)", blk))
-            nm = m.group(1).strip().upper() if m else ""
+            # CAPTURE THE WHOLE NAME, NOT THE FIRST TOKEN.
+            #
+            # This was `(\S+)`, which read `command: SET CASE` as `SET`. Every
+            # multi-word command identity collapsed to its first word, so the
+            # eleven files correctly declaring SET CASE, SET CDX, SET CNX,
+            # SET FILTER, SET INDEX, SET LMDB, SET NEAR, SET ORDER, SET PATH,
+            # SET RELATION and SET UNIQUE were folded together with cmd_set.cpp
+            # and reported as "command SET declared in 12 places".
+            #
+            # That single false finding was the largest item in CONTRACT_QA and
+            # was cited repeatedly, by this session included, as evidence of a
+            # documentation problem. The contracts were right. The guard was
+            # reading them one word at a time.
+            #
+            # Note the multi-word identity is exactly what AIF-067 formalised as
+            # QUAL_NAME (parent + sub). A checker for contract identity must be
+            # able to express the identities the contract system supports.
+            m = (re.search(r"(?m)^\s*(?://)?\s*command:\s*(.+?)\s*$", blk)
+                 or re.search(r"(?m)^\s*(?://)?\s*surface:\s*(.+?)\s*$", blk))
+            nm = re.sub(r"\s+", " ", m.group(1)).strip().upper() if m else ""
             contracts.append(nm)
             if nm:
                 names.setdefault(nm, []).append(rel)
@@ -860,6 +877,159 @@ def check_registration_policy(root: Path):
     return findings, detail
 
 
+def check_dead_registration(root: Path):
+    """J. Registered names the dispatcher can never produce.
+
+    shell_dispatch (src/cli/shell_api.cpp) keys the registry on the FIRST TOKEN
+    of the line:
+
+        std::istringstream tok(line); std::string cmd; tok >> cmd;
+        registry().run(area, textio::up(cmd), tok);
+
+    Two consequences nobody was checking:
+
+    1. MULTI-WORD KEYS ARE UNREACHABLE. A key containing a space cannot be the
+       first token, so `registry().add("SET RELATION", ...)` never fires.
+       Eight such keys exist. They look like working registrations, they appear
+       in command inventories, and they are dead.
+
+       This is not cosmetic. `"SET RELATION"` is bound to cmd_SET_RELATIONS --
+       the house-SQL handler -- while the SET ladder routes the singular
+       spelling to cmd_SET_RELATION, the VFP-compatibility front-end. The dead
+       entry, if ever revived, would INVERT the intended layering.
+
+    2. NAMES REWRITTEN BEFORE DISPATCH ARE UNREACHABLE. preprocess_for_dispatch
+       (src/cli/shell_api_extras.cpp) rewrites the line before the registry is
+       consulted -- today `SET RELATIONS ...` and `RELATIONS ...` both become
+       `REL ...`. So the registration of "RELATIONS" is dead too, and so is the
+       `opt == "RELATIONS"` arm inside cmd_SET.
+
+    The rewrite rules are PARSED from that source rather than hardcoded, so a
+    new rule cannot silently invalidate this check the way it invalidated the
+    registrations.
+
+    WARN: a dead registration harms nothing at runtime. It misleads every
+    reader and every inventory that treats the registry as the command surface,
+    which this run has been doing all day.
+    """
+    findings, detail = [], {}
+    hub = root / "src" / "cli" / "shell_commands.cpp"
+    pre = root / "src" / "cli" / "shell_api_extras.cpp"
+    if not hub.is_file():
+        return findings, {"skipped": "shell_commands.cpp not found"}
+
+    names: dict[str, list[str]] = {}
+    for rel in tracked_sources(root):
+        if not rel.endswith(".cpp"):
+            continue
+        try:
+            text = (root / rel).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for m in re.finditer(r'registry\(\)\.add\(\s*"([^"]+)"', text):
+            names.setdefault(m.group(1).upper(), []).append(rel)
+
+    rewritten: set[str] = set()
+    if pre.is_file():
+        pt = pre.read_text(encoding="utf-8", errors="replace")
+        for m in re.finditer(r'starts_with_tokens_ci\([^,]+,\s*"([^"]+)"\s*,\s*"([^"]+)"', pt):
+            rewritten.add(f"{m.group(1)} {m.group(2)}".upper())
+        for m in re.finditer(r'starts_with_token_ci\([^,]+,\s*"([^"]+)"', pt):
+            rewritten.add(m.group(1).upper())
+
+    multiword = sorted(n for n in names if " " in n)
+    shadowed = sorted(n for n in names if n in rewritten and " " not in n)
+
+    if multiword:
+        findings.append({"check": "DEAD_REG", "code": "MULTIWORD_KEY",
+                         "severity": "WARN",
+                         "message": f"{len(multiword)} registry key(s) contain a space and can "
+                                    f"never be dispatched -- shell_dispatch keys on the FIRST "
+                                    f"TOKEN only. They read as working registrations and are "
+                                    f"dead: " + ", ".join(multiword)})
+    if shadowed:
+        findings.append({"check": "DEAD_REG", "code": "REWRITTEN_BEFORE_DISPATCH",
+                         "severity": "WARN",
+                         "message": f"{len(shadowed)} registry key(s) are rewritten by "
+                                    f"preprocess_for_dispatch before the registry is consulted, "
+                                    f"so the registration never fires: " + ", ".join(shadowed)
+                                    + f" (rules parsed from shell_api_extras.cpp: "
+                                    + ", ".join(sorted(rewritten)) + ")"})
+
+    detail.update({"registered_names": len(names), "multiword": multiword,
+                   "rewrite_rules": sorted(rewritten), "shadowed": shadowed})
+    return findings, detail
+
+
+CANONICAL_TABLE_DIRS = ("metadata", "messaging", "help", "locale", "comments")
+
+
+def check_table_parse(root: Path):
+    """I. Every canonical table must parse end to end.
+
+    WHY THIS EXISTS
+        CSV_VS_TABLE reads only the DBF header for a row count. A table can be
+        structurally unreadable by the documentation toolchain and still pass
+        every check in this file -- which is not hypothetical:
+
+            SYSFUNC.dbf     unreadable for the life of tools/fullstack_docs
+                            (a phantom descriptor named 0x45 = 'E' was admitted
+                            as a 10-byte field, shifting all 21 real fields)
+            MEMO_LINES.dbf  unreadable (LINECONT is C(1024); the classic width
+                            byte clamps at 255, leaving 769 bytes of every
+                            record undescribed)
+
+        Both were found by hand, on the same afternoon, only because someone
+        asked what flavour of DBF these were. Nothing was watching.
+
+    WHAT A FAILURE MEANS -- TWO POSSIBILITIES, DELIBERATELY NOT CONFLATED
+        A table this check cannot read is NOT necessarily corrupt. The engine
+        reads SYSFUNC and MEMO_LINES perfectly well; it was the PYTHON READER
+        that could not express an X64 construct. So a finding here means "the
+        documentation toolchain cannot audit this table", which is either a
+        data defect or a reader gap, and the message says so rather than
+        asserting the alarming one.
+
+        WARN, not FAIL, for the same reason plus the house rule: this is a dev
+        repository whose tree runs ahead of its documentation.
+    """
+    findings, detail = [], {}
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import dbfread
+    except Exception as e:                                   # noqa: BLE001
+        return findings, {"skipped": f"dbfread unavailable: {e}"}
+
+    checked, failures = 0, []
+    for sub in CANONICAL_TABLE_DIRS:
+        d = root / "dottalkpp" / "data" / sub
+        if not d.is_dir():
+            continue
+        for f in sorted(d.glob("*.dbf")):
+            checked += 1
+            try:
+                t = dbfread.read(f)
+                if t.live != t.header_rows - t.deleted:
+                    failures.append(f"{sub}/{f.name}: row accounting mismatch")
+            except Exception as e:                           # noqa: BLE001
+                msg = str(e).split(": ", 1)[-1].split(" Refusing")[0].strip()
+                failures.append(f"{sub}/{f.name}: {msg[:120]}")
+
+    if failures:
+        findings.append({"check": "TABLE_PARSE", "code": "UNPARSEABLE",
+                         "severity": "WARN",
+                         "message": f"{len(failures)} of {checked} canonical table(s) cannot be "
+                                    f"read end to end by the documentation toolchain. This is "
+                                    f"EITHER a data defect OR a gap in tools/fullstack_docs/"
+                                    f"dbfread.py -- the engine may read a table this cannot. "
+                                    f"Determine which before acting: "
+                                    + "; ".join(failures[:6])})
+
+    detail.update({"checked": checked, "failures": failures,
+                   "dirs": list(CANONICAL_TABLE_DIRS)})
+    return findings, detail
+
+
 def check_embedded_bom(root: Path, files):
     """F. Build-breaking. Non-negotiable FAIL."""
     bad = []
@@ -891,6 +1061,8 @@ def run_audit(root: Path):
                      ("dotref_coverage", lambda: check_dotref_coverage(root)),
                      ("subcmd_coverage", lambda: check_subcmd_coverage(root)),
                      ("registration_policy", lambda: check_registration_policy(root)),
+                     ("table_parse", lambda: check_table_parse(root)),
+                     ("dead_registration", lambda: check_dead_registration(root)),
                      ("embedded_bom", lambda: check_embedded_bom(root, files))):
         f, d = fn()
         findings.extend(f)

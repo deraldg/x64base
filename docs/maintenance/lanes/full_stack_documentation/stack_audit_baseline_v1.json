@@ -1,27 +1,28 @@
 {
   "by_check": {
     "BANNER_CENSUS": 1,
-    "CONTRACT_QA": 13,
+    "CONTRACT_QA": 9,
+    "DEAD_REG": 2,
     "DOTREF_COV": 3,
     "REG_POLICY": 3
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 20
+    "WARN": 18
   },
   "detail": {
     "banner_census": {
       "coverage_pct": 100.0,
-      "files_zero_authored_fields": 1030,
+      "files_zero_authored_fields": 1026,
       "provenance": {
         "lane": {
-          "A": 1,
+          "A": 4,
           "D": 23,
-          "E": 1012
+          "E": 1009
         },
         "layer": {
-          "A": 5,
-          "D": 1031,
+          "A": 6,
+          "D": 1030,
           "E": 0
         },
         "owner": {
@@ -54,12 +55,12 @@
       "with_banner": 1036
     },
     "contract_qa": {
-      "contract_blocks": 239,
+      "contract_blocks": 235,
       "dialects": {
         "block": 1,
-        "slash": 238
+        "slash": 234
       },
-      "distinct_commands": 219,
+      "distinct_commands": 229,
       "mention_only": 6
     },
     "csv_vs_table": {
@@ -83,6 +84,25 @@
         "csv_tracked": true,
         "table_rows": 1006
       }
+    },
+    "dead_registration": {
+      "multiword": [
+        "BUILD INFO",
+        "BUILD VECTORS",
+        "ERROR CLEAR",
+        "ERROR STATUS",
+        "ERROR TEST",
+        "SET RELATION",
+        "SET UNIQUE"
+      ],
+      "registered_names": 238,
+      "rewrite_rules": [
+        "RELATIONS",
+        "SET RELATIONS"
+      ],
+      "shadowed": [
+        "RELATIONS"
+      ]
     },
     "dotref_coverage": {
       "alias_pairs_resolved": 11,
@@ -273,6 +293,17 @@
       "undiscoverable": [],
       "usage_text_listed": 32,
       "usage_text_regions": 2
+    },
+    "table_parse": {
+      "checked": 30,
+      "dirs": [
+        "metadata",
+        "messaging",
+        "help",
+        "locale",
+        "comments"
+      ],
+      "failures": []
     }
   },
   "tracked_source_files": 1036

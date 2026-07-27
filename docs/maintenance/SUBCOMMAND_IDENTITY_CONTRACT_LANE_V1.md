@@ -325,6 +325,138 @@ header explicitly permits custom and student commands to self-register.
 - The file's own `@dottalk.file` banner reads `layer: helper` with empty `owns:`
   and `lane:`, for the file that owns the entire built-in command namespace.
 
+## 9c. FLAGGED: dead code, labelled not removed (DEAD_REG)
+
+Detected by `stack_audit_v1` `DEAD_REG`. **Deliberately not deleted** -- removal
+is a behaviour change and wants its own AIF number. Labelled so the next reader
+does not have to re-derive any of it.
+
+`shell_dispatch` (`src/cli/shell_api.cpp`) keys the registry on the FIRST TOKEN
+of the line:
+
+```cpp
+std::istringstream tok(line);  std::string cmd;  tok >> cmd;
+registry().run(area, textio::up(cmd), tok);
+```
+
+So a registry key containing a space can never be produced. Seven exist:
+
+```
+BUILD INFO   BUILD VECTORS   ERROR CLEAR   ERROR STATUS   ERROR TEST
+SET RELATION   SET UNIQUE
+```
+
+An eighth, `RELATIONS`, is dead for a different reason:
+`preprocess_for_dispatch` (`src/cli/shell_api_extras.cpp:79,84`) rewrites both
+`SET RELATIONS <args>` and `RELATIONS <args>` to `REL <args>` BEFORE the registry
+is consulted.
+
+And one dead ladder arm: `cmd_set.cpp`'s `opt == "RELATIONS"` branch can never
+fire, for the same reason.
+
+### Why this is more than tidiness
+
+`shell_commands.cpp:303` binds the dead key `"SET RELATION"` -- the SINGULAR,
+VFP-compatibility spelling -- to `cmd_SET_RELATIONS`, the HOUSE-SQL handler.
+Confirmed with the maintainer: `cmd_rel.cpp` is the native relation engine
+("our house SQL") and `SET RELATION` is a front-end parser for traditional VFP
+commands. Runtime honours that split correctly today. But if that dead
+registration were ever revived, it would route the VFP spelling into the native
+engine and **invert the intended layering**. A dead entry that would be wrong if
+it worked is worth more attention than one that is merely unused.
+
+### Also: they inflate every command inventory
+
+Anything that treats `registry().add()` as the command surface has been counting
+eight names that cannot be typed -- including this lane's own `DOTREF_COV` work
+earlier the same day.
+
+### Owed
+
+- Decide per key: delete, or make reachable by teaching the dispatcher to try a
+  two-token key before falling back to one. The second option would make
+  `SET UNIQUE`, `BUILD VECTORS` and the `ERROR *` compounds real, and is the
+  same mechanism the `SUBCOMMAND_ONLY` finding wants.
+- If two-token dispatch is adopted, `"SET RELATION"` must be re-pointed at
+  `cmd_SET_RELATION` first, or the layering inverts on the day it starts working.
+- Delete or keep the dead `opt == "RELATIONS"` arm as part of the same decision.
+
+## 9d. OWED (needs its own lane): the shim file is excluded from the builds it exists for
+
+`src/edu/edu_missing_shims.cpp` defines `edu_TEXT`, `edu_EDIT` and `edu_COBOL`,
+declares them in `src/cli/shell_commands.hpp` (lines 298, 300, 321), and they are
+referenced **nowhere**. Registration uses `cmd_TEXT` / `cmd_EDIT` / `cmd_COBOL`
+instead.
+
+The obvious reading is "dead code from a refactor". That is wrong. Tracing where
+the real handlers live:
+
+```
+cmd_TEXT   -> src/edu/edu_text.cpp    ESSENTIAL   (always compiled)
+cmd_EDIT   -> src/edu/edu_edit.cpp    ESSENTIAL   (always compiled)
+cmd_COBOL  -> src/edu/edu_cobol.cpp   NOT essential -> stripped in non-LabTalk
+```
+
+`src/CMakeLists.txt:214-224` removes every `src/edu/` translation unit from a
+non-LabTalk build unless it appears in `DOTTALKPP_EDU_ESSENTIAL_SOURCES`
+(`edu_ascii_table`, `edu_boolean`, `edu_evaluate`, `edu_formula`,
+`edu_normalize`, `edu_edit`, `edu_text`).
+
+**`edu_missing_shims.cpp` is not on that list.** So the file whose entire purpose
+is to supply fallbacks when the education layer is absent is itself removed
+whenever the education layer is absent. It can only ever be compiled in the build
+that does not need it -- which is precisely why nothing references it.
+
+That is why the functions look dead: they are dead in the only configuration
+where they exist.
+
+### Consequence today: NOTHING IS BROKEN. Emphasis corrected 2026-07-27.
+
+**`COBOL` works.** It was runtime-proofed in this run. An earlier draft of this
+section led with the stripping and read as though something were wrong with the
+command; that was misleading and is corrected here.
+
+The full picture: `COBOL`'s registration is `#if DOTTALK_COMPONENT_LABTALK`, and
+`edu_cobol.cpp` is stripped from non-LabTalk builds -- so the two agree. A
+LabTalk build (the one that ships and the one that gets built here) defines and
+registers it normally. `TEXT` and `EDIT` are registered unconditionally and their
+handlers are on the essential list, so they are always present.
+
+The finding is therefore about the SHIM FILE ONLY, and it is latent rather than
+active: `edu_missing_shims.cpp` cannot execute in the configuration it was
+written for. No user-facing behaviour is affected in any configuration built
+today.
+
+Recording the distinction because it matters for how findings are read: "a file
+is excluded from the build it targets" is a real structural defect, and
+"COBOL is broken" would have been false. Both sentences could be written from
+the same grep. Only one of them survives asking whether the command runs.
+
+### Why it still needs fixing
+
+Decided with member.derald 2026-07-27: these **should be wired up**. The shim
+mechanism is intended, not abandoned. But the fix is NOT simply adding
+registrations -- that would fail to link, or silently do nothing, because the
+definitions are absent from the target build. The order matters:
+
+1. add `edu_missing_shims.cpp` to `DOTTALKPP_EDU_ESSENTIAL_SOURCES`, so it
+   survives into a non-LabTalk build
+2. register `TEXT` / `EDIT` / `COBOL` against the `edu_*` shims under
+   `#if !DOTTALK_COMPONENT_LABTALK`, mirroring the existing gated registrations
+3. prove it with a non-LabTalk build -- the same unexercised configuration that
+   makes the `SET USAGE` build-gate work unproven (sec 9c)
+
+Steps 1 and 2 in either order alone leave the tree in a worse state than today.
+
+### The general shape
+
+This is a build-configuration instance of the pattern the whole lane has been
+tracking: two things that never compare themselves. The CMake essential list and
+the set of files needed by a restricted build are both descriptions of "what a
+minimal build requires", maintained separately, and never reconciled. A file was
+written for configuration X and excluded from configuration X, and nothing
+noticed because the only build anyone runs is configuration Y.
+
 ## 10. `app_` is a reserved name, not an existing convention (corrected)
 
 Recorded because the first reading was wrong and the wrong reading was acted on.

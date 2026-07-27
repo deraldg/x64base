@@ -52,7 +52,8 @@
 
 // @dottalk.usage v1
 // owner: EDU|ERP
-// command: ERP / EDU_ERP
+// command: ERP
+// handler: edu_ERP
 // category: education-database-demo
 // status: supported
 // noargs: status-and-brief-usage
