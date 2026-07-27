@@ -176,14 +176,62 @@ def head_text(path: Path, n: int = 8192) -> str:
 # --------------------------------------------------------------------------- #
 # checks
 # --------------------------------------------------------------------------- #
+def tracked_paths(root: Path) -> set:
+    """Everything git knows about, as repo-relative posix strings.
+
+    Used to check THIS GUARD'S OWN INPUTS. See check_csv_vs_table.
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "--no-optional-locks", "-C", str(root), "ls-files"], text=True)
+        return set(out.splitlines())
+    except Exception:
+        return set()
+
+
 def check_csv_vs_table(root: Path):
-    """A. The stale-snapshot trap. A number is only canonical if its input is."""
+    """A. The stale-snapshot trap. A number is only canonical if its input is.
+
+    UNTRACKED_INPUT added 2026-07-26 -- this guard was not applying its own rule
+    to itself.
+
+    Discovered at the close of run COWORK-20260726-001: every lane CSV this
+    check reads was being compared against a canonical table WITHOUT verifying
+    the CSV exists in the repository. Measured at the time:
+
+        SYSCMD_IMPORT_v1.csv   untracked until 32747e423
+        SYSCMD_IMPORT_v2.csv   untracked until 492ac73f0
+        SYSMSG_IMPORT_v1.csv   untracked, 1,006 rows
+
+    So the guard was reporting agreement or drift between a canonical table and
+    a file that no clone has. On another machine the same run means something
+    different, or nothing.
+
+    That is precisely the AIF-062 failure -- evidence invisible outside one
+    working tree -- for which the registry validator (proofs must cite COMMITTED
+    artifacts) was built. It was never pointed at this guard's own inputs.
+
+    Severity is WARN, not FAIL, because an untracked CSV is a real state during
+    seeding work; the point is that it can never again be silent. A guard that
+    reads untracked evidence can pass on one machine and mean nothing on
+    another, which is the exact failure it exists to prevent.
+    """
     findings, detail = [], {}
+    tracked = tracked_paths(root)
     for lane, (dbf_rel, csv_rel) in LANES.items():
         dbf, csvp = root / dbf_rel, root / csv_rel
+
+        if tracked and csvp.is_file() and csv_rel not in tracked:
+            findings.append({"check": "CSV_VS_TABLE", "lane": lane,
+                             "code": "UNTRACKED_INPUT", "severity": "WARN",
+                             "message": f"{lane}: {csv_rel} is NOT tracked by git -- this "
+                                        f"guard is comparing a canonical table against a "
+                                        f"file no clone has. Commit it or stop citing it."})
+
         rec = dbf_header(dbf)[0] if dbf.is_file() else None
         rows = len(csv_rows(csvp)) if csvp.is_file() else None
-        detail[lane] = {"table_rows": rec, "csv_rows": rows}
+        detail[lane] = {"table_rows": rec, "csv_rows": rows,
+                        "csv_tracked": (csv_rel in tracked) if tracked else None}
         if rec is None or rows is None:
             findings.append({"check": "CSV_VS_TABLE", "lane": lane,
                              "code": "MISSING_INPUT", "severity": "WARN",
