@@ -199,6 +199,95 @@ the data or the operator chose. A 30,124-row table and a 9-row table both occupy
 1,073,741,824 bytes. Recorded against the benchmark row in
 `docs/ai-friendly/HISTORICAL_DATABASE_MIGRATION_EMPIRICAL_PROGRESS_LANE_V1.md`.
 
+## CORRECTION 2026-07-27: the proposed fix was WRONG. Do not delete the calls.
+
+The correction proposed earlier in this document -- delete both
+`mdb_env_set_mapsize` calls so LMDB adopts the meta-page size -- **would have
+made things worse.** Checking the vendored header before implementing
+(`build/vcpkg_installed/x64-windows/include/lmdb.h`, `mdb_env_set_mapsize`)
+settles it:
+
+> "The size should be a multiple of the OS page size. **The default is 10485760
+> bytes.**"
+>
+> "The new size takes effect immediately for the current process but will not be
+> persisted to any others until a write transaction has been committed by the
+> current process. Also, **only mapsize increases are persisted** into the
+> environment."
+>
+> "This function **may be called with a size of zero to adopt the new size.**"
+>
+> "Any attempt to set a size smaller than the space already consumed by the
+> environment **will be silently changed to the current size of the used space.**"
+
+Deleting the calls does not fall back to the persisted size. It falls back to
+LMDB's **10 MiB default**, which is smaller than every environment in this tree
+and would produce `MDB_MAP_FULL` on contact -- an 8x storage overcharge traded
+for immediate failure.
+
+### The correct fix
+
+```c
+mdb_env_set_mapsize(env_, 0);   // adopt the size persisted in the meta page
+```
+
+Zero is the documented "adopt" argument. It is one character different from the
+deletion this document recommended for a day, and the difference is between
+honouring `BUILDLMDB`'s ladder and breaking every index in the repository.
+
+**`cdx_backend.cpp:189` is the primary site** -- CDX builds the index CONTAINERS
+(member.derald), so that path is what almost every environment goes through.
+`lmdb_backend.cpp:80` takes the same change.
+
+### The unit of waste is the CONTAINER, not the table or the tag
+
+Worth stating precisely, because it changes the arithmetic. A `.cdx` container
+holds MANY tags, and one LMDB environment backs the whole container:
+
+```
+SYSSUBCMD.cdx          one container, 8 tags
+  SUB_ID  PARENT  SUB_NAME  QUAL_NAME  DISP_STYL  VIS_TIER  REG_RING  SRC_AUTH
+SYSSUBCMD.cdx.d        ONE environment  ->  1,073,741,824 bytes after attach
+```
+
+So the 1 GiB is asserted once per container, not once per tag -- eight tags did
+not cost eight gigabytes. Equally, it is not per table in general: it is per
+container, and the container is the thing `CDX CREATE` makes.
+
+That is why the count that matters is the number of containers, and why the
+figure quoted in this lane is ~112 environments rather than a count of tables or
+of tags.
+
+### The library already agrees with the rebuild rule
+
+The sizing rule decided below was reached independently, and the header shows it
+matches LMDB's own semantics:
+
+| rule as decided | LMDB behaviour |
+|---|---|
+| larger size grows the env | "only mapsize increases are persisted" |
+| smaller size is refused | "silently changed to the current size of the used space" |
+| no size reuses the current | `mdb_env_set_mapsize(env, 0)` adopts it |
+
+LMDB will not let you shrink below what is used; the rule adds the missing half,
+which is not shrinking below what was *declared*. The mechanism to implement all
+three already exists in the API.
+
+### Why this matters far beyond disk: vdisk
+
+> "great catch -- it would have killed us in vdisk sessions" (member.derald)
+
+The vdisk lane runs LMDB environments in RAM (`xbase::ramfs`, the
+LMDB-in-RAM/symlink route). On disk a 1 GiB mapsize for a 31-row table is waste.
+**In RAM it is fatal.** The live tree holds 112 environments; at the asserted
+1 GiB each that is ~112 GiB of address space and, on a RAM-backed mount, real
+memory. A vdisk session would have died on contact with no obvious cause, and
+the diagnosis -- an attach-path constant overriding a documented size ladder --
+is not one anybody would reach for while debugging an out-of-memory.
+
+The defect was found on a full disk and proven on a 31-row table. Its worst
+consequence was waiting in a lane that had not been exercised yet.
+
 ## Rebuild sizing rule -- DECIDED 2026-07-27 (member.derald)
 
 > "if we rebuild, the command should default to the current size unless a larger
