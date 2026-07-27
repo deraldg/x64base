@@ -186,7 +186,40 @@ bool CdxBackend::open_env_dir_(const std::string& env_dir, std::string* err) {
     }
 
     (void)mdb_env_set_maxdbs(env_, 128);
-    (void)mdb_env_set_mapsize(env_, 1024ull * 1024ull * 1024ull); // 1 GiB
+
+    // ADOPT THE PERSISTED MAPSIZE -- do not assert one here. (AIF-065)
+    //
+    // This line used to read
+    //     mdb_env_set_mapsize(env_, 1024ull * 1024ull * 1024ull); // 1 GiB
+    // and it silently destroyed the entire BUILDLMDB size ladder. BUILDLMDB
+    // parses TINY/SMALL/MEDIUM/LARGE/XL/HUGE, honours the 8 MiB floor, echoes
+    // the choice and writes the environment at that size -- and then the first
+    // index attach through this function overwrote it with 1 GiB.
+    //
+    // PROVEN TWICE, 2026-07-27, on never-attached environments built at 128 MiB
+    // earlier the same day:
+    //     SYSSUBCMD  31 rows   134,217,728 -> 1,073,741,824
+    //     SYSFUNC    69 rows   134,217,728 -> 1,073,741,824
+    // Independent of row count: the assertion had nothing to do with how much
+    // data existed. Transcripts in labtalk/proofs/runs/, registered in
+    // proofs.yaml. That is also why every data.mdb in the tree held one of
+    // exactly two sizes -- the one BUILDLMDB wrote, or the one asserted here.
+    //
+    // NOTE THIS IS *NOT* A DELETION. Deleting the call was the obvious remedy
+    // and is WRONG: LMDB documents its default as 10485760 bytes (10 MiB),
+    // smaller than every environment here, which would trade an 8x overcharge
+    // for MDB_MAP_FULL on contact. Passing ZERO is the documented "adopt the
+    // persisted size" form (lmdb.h, mdb_env_set_mapsize).
+    //
+    // CDX builds the index CONTAINERS, so this site -- not lmdb_backend.cpp --
+    // is the path almost every environment goes through. One environment backs
+    // a whole container, not a tag.
+    //
+    // VERIFY BY MEASUREMENT, NOT BY READING THIS COMMENT: BUILDLMDB TINY on a
+    // never-attached table must produce a 32 MiB file that is STILL 32 MiB
+    // after an attach. tools/proofs/run_proof.ps1 with -ExpectNoChange is the
+    // regression. SYSARGS is the last unspent control.
+    (void)mdb_env_set_mapsize(env_, 0);
 
     rc = mdb_env_open(env_, env_dir_.c_str(), 0, 0664);
     if (rc != MDB_SUCCESS) {

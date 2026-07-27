@@ -1,5 +1,25 @@
 # LMDB Mapsize Override -- BUILDLMDB Size Ladder Not Honoured v1
 
+> **RESOLVED 2026-07-27.** Fix applied and verified. `mdb_env_set_mapsize(env_, 0)`
+> replaces the hardcoded 1 GiB at both attach sites, so the environment adopts the
+> size `BUILDLMDB` persisted instead of having one asserted over it.
+>
+> **Controlled comparison -- same table, same commands, only the binary differs:**
+>
+> ```
+> SYSARGS pre-fix    33,554,432 -> 1,073,741,824
+> SYSARGS post-fix   33,554,432 ->    33,554,432    delta 0
+> ```
+>
+> `BUILDLMDB TINY` now produces a 32 MiB environment that is still 32 MiB after an
+> index attach. **This is the first time the size ladder has been observed to hold
+> through use since it was written.** 32x storage reduction for this table.
+>
+> Proof: `proof.lmdb.mapsize_ladder_honoured_after_fix`, transcript in
+> `labtalk/proofs/runs/`. Still owed: the rebuild sizing rule
+> (`mapsize_explicit`), deliberately kept out of this change so the fix could earn
+> its own verdict.
+
 Date: 2026-07-26
 Status: **source-defined defect; size distribution measured; direct runtime proof OWED**
 AI Friendly route: **AIF-065**

@@ -483,3 +483,30 @@ proofs:
       the harness produces the same numbers as a mechanism that does not exist. This run is
       also the PRE-FIX CONTROL for the same command with -ExpectNoChange, which becomes the
       regression once mdb_env_set_mapsize(env_, 0) is applied.
+
+  - id: proof.lmdb.mapsize_ladder_honoured_after_fix
+    label: BUILDLMDB TINY survives an index attach -- the size ladder is honoured
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_tiny_survives_attach_postfix.txt
+    item_id: src/xindex/cdx_backend.cpp
+    return_code: 0
+    related:
+      - D:/code/ccode/src/xindex/lmdb_backend.cpp
+      - D:/code/ccode/tools/proofs/run_proof.ps1
+      - D:/code/ccode/docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+    notes: >-
+      AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at
+      cdx_backend.cpp and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize
+      instead of asserting one. SYSARGS rebuilt with BUILDLMDB CLEAN TINY YES measured
+      33,554,432 bytes (exactly 32 MiB) and STILL measured 33,554,432 after an index
+      auto-attach -- delta 0. CONTROLLED COMPARISON, same table and same commands, only the
+      binary differing: pre-fix 33,554,432 -> 1,073,741,824; post-fix 33,554,432 ->
+      33,554,432. This is the first time the BUILDLMDB size ladder has been observed to hold
+      through use since it was written. Storage effect for this table 32x
+      (1,073,741,824 / 33,554,432). Preceded by three pre-fix observations of the defect
+      (SYSSUBCMD 31 rows, SYSFUNC 69 rows, SYSARGS 249 rows), all 128 or 32 MiB -> 1 GiB,
+      confirming the assertion was independent of data volume. Note the deletion originally
+      proposed for these two call sites would have been WRONG -- LMDB defaults to 10 MiB
+      when no mapsize is set -- and passing zero is the documented adopt-persisted form.
+      UNBLOCKS the x64base-vs-SQLite storage benchmark axis, which until now measured attach
+      history rather than databases.

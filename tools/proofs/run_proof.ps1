@@ -54,7 +54,22 @@ param(
     [hashtable] $MeasureFiles = @{},
 
     [switch] $ExpectChange,
-    [switch] $ExpectNoChange
+    [switch] $ExpectNoChange,
+
+    # Source files whose change is THE SUBJECT of this proof. If any is newer
+    # than the runtime binary, the binary cannot contain the change and the run
+    # is reported STALE BUILD -- a NULL result, not a negative one.
+    #
+    # Added after the third harness failure in one afternoon, each at a higher
+    # level than the last:
+    #   1. the transcript path aborted the pipeline before the shell ran
+    #   2. the shell ran but never reached the code path under test
+    #   3. the code path ran but THE BINARY PREDATED THE FIX -- sources edited
+    #      09:13, dottalkpp.exe built 06:53. The run reported CONTRADICTED,
+    #      which read exactly like "the fix does not work".
+    # Verifying that the commands executed is not the same as verifying that
+    # the change executed.
+    [string[]] $SourceUnderTest = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -71,6 +86,37 @@ function Resolve-Measured([string]$p) {
 }
 function Get-SizeOrNull([string]$p) {
     if (Test-Path $p) { (Get-Item $p).Length } else { $null }
+}
+
+# Rule 0: is the change under test actually IN the binary?
+if ($SourceUnderTest.Count -gt 0) {
+    $exe = Join-Path $repo 'dottalkpp\bin\dottalkpp.exe'
+    if (-not (Test-Path $exe)) {
+        $exe = Join-Path $repo 'build\src\Release\dottalkpp.exe'
+    }
+    if (Test-Path $exe) {
+        $exeTime = (Get-Item $exe).LastWriteTime
+        $stale = @()
+        foreach ($s in $SourceUnderTest) {
+            $sp = Resolve-Measured $s
+            if ((Test-Path $sp) -and (Get-Item $sp).LastWriteTime -gt $exeTime) {
+                $stale += ("{0}  (edited {1}, binary built {2})" -f `
+                    $s, (Get-Item $sp).LastWriteTime.ToString('HH:mm:ss'), `
+                    $exeTime.ToString('HH:mm:ss'))
+            }
+        }
+        if ($stale.Count -gt 0) {
+            Write-Host ''
+            Write-Host 'STALE BUILD -- the binary predates the change under test.' -ForegroundColor Yellow
+            $stale | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
+            Write-Host 'Any verdict from this run would describe the OLD code.' -ForegroundColor Yellow
+            Write-Host 'Rebuild, then run again:' -ForegroundColor Yellow
+            Write-Host '    cmake --build build --target dottalkpp --config Release' -ForegroundColor Yellow
+            exit 2
+        }
+        Write-Host ("  binary    {0}  (newer than the source under test)" -f `
+            $exeTime.ToString('yyyy-MM-dd HH:mm:ss'))
+    }
 }
 
 $before = @{}
