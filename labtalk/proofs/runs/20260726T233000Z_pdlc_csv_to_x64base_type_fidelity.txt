@@ -1,0 +1,111 @@
+INIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-24, dfa8c136 dirty)  (Jul 26 2026 12:52:47)
+DotTalk++ build Jul 26 2026 12:52:47
+SQLite available: 1, version: 3.50.4
+         *
+         ^
+        ^o^
+       ^^#^^
+      ^^^*^^^
+     ^^+^^^^^^
+    ^^^^^o^^^^^
+   ^^^#^^^^^+^^^
+  ^^o^^^^*^^^^^^^
+ ^^^^^+^^^^^^o^^^^
+^^^^#^^^^o^^^^+^^^^
+         |||
+         |||
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  1 Samuel 15:25
+  Now therefore, I pray thee, pardon my sin, and turn again with me, that I may worship the LORD.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. Talk is ON
+; CONV02 BEGIN csv-to-dbf
+; CONV02 LOAD
+AUTODBF plan
+  CSV: cascade_precision_erp/data/Items.csv
+  Header: HEADER
+  Data rows: 18
+  Columns: 13
+    1  ITEM_ID  N(2,0)  source='Item_ID'
+    2  SKU  C(16)
+    3  DESCRIPTION  C(30)  descriptor=DESCRIPTIO  source='Description'
+    4  UOM  C(4)
+    5  ITEM_TYPE  C(10)  source='Item_Type'
+    6  COST_METHOD  C(10)  descriptor=COST_METHO  source='Cost_Method'
+    7  STANDARD_COST  N(6,2)  descriptor=STANDARD_C  source='Standard_Cost'
+    8  LIST_PRICE  N(5,1)  source='List_Price'
+    9  REORDER_POINT  N(5,1)  descriptor=REORDER_PO  source='Reorder_Point'
+    10  REORDER_QTY  N(5,1)  descriptor=REORDER_QT  source='Reorder_Qty'
+    11  LEAD_DAYS  N(2,0)  source='Lead_Days'
+    12  CATEGORY  C(17)  source='Category'
+    13  ACTIVE  N(1,0)  source='Active'
+AUTODBF OK
+  Created: D:\code\ccode\dottalkpp\data\dbf\CONVERSION_CSV_TO_DBF_ITEMS_V1.dbf [X64]
+  Imported rows: 18
+  Opened: D:\code\ccode\dottalkpp\data\dbf\CONVERSION_CSV_TO_DBF_ITEMS_V1.dbf
+; CONV02 VERIFY
+USE: 'CONVERSION_CSV_TO_DBF_ITEMS_V1.dbf' is already open in current area 0.
+18
+Fields (13)
+  #  Name          Type   Len   Dec
+   1  ITEM_ID       N        2     0
+   2  SKU           C       16     0
+   3  DESCRIPTION   C       30     0
+   4  UOM           C        4     0
+   5  ITEM_TYPE     C       10     0
+   6  COST_METHOD   C       10     0
+   7  STANDARD_COST  N        6     2
+   8  LIST_PRICE    N        5     1
+   9  REORDER_POINT  N        5     1
+  10  REORDER_QTY   N        5     1
+  11  LEAD_DAYS     N        2     0
+  12  CATEGORY      C       17     0
+  13  ACTIVE        N        1     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\CONVERSION_CSV_TO_DBF_ITEMS_V1.dbf  (CONVERSION_CSV_TO_DBF_ITEMS_V1.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; CONV02 TRIPWIRE list-price-must-be-N-despite-14-empties
+; CONV02 TRIPWIRE active-must-be-N-not-L
+; CONV02 NULLCHECK
+Located.
+Record 1
+  ITEM_ID = 1
+  SKU = RAW-SHAFT-4140
+  DESCRIPTION = 4140 steel shaft blank
+  UOM = EA
+  ITEM_TYPE = RAW
+  COST_METHOD = STANDARD
+  STANDARD_COST = 48.0
+  LIST_PRICE = 
+  REORDER_POINT = 20.0
+  REORDER_QTY = 50.0
+  LEAD_DAYS = 14
+  CATEGORY = Raw Metal
+  ACTIVE = 1
+; CONV02 END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

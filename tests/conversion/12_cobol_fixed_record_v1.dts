@@ -190,6 +190,29 @@ ECHO COBOL END fixed-record-hop
 *   is the migration evidence, not just a size coincidence.
 *
 * ============================================================================
+* RETRACTION -- A FALSE FINDING THIS SESSION PRODUCED (recorded 2026-07-26)
+* ============================================================================
+*   Gate 4's guard reported "staged PDF predates the assembly it evidences by
+*   3h35m". THAT FINDING WAS FALSE and has been retracted.
+*
+*   The guard compared datetime.fromtimestamp(mtime) -- NAIVE, holding LOCAL
+*   time -- against build_utc parsed with the "Z" stripped, also naive. On a
+*   UTC-7 host that made the PDF look 7 hours older than it was.
+*     PDF mtime, true UTC : 2026-07-23T07:39:07Z
+*     assembly build_utc  : 2026-07-23T04:14:23Z
+*   The PDF is 3h24m45s AFTER the assembly -- the CORRECT order. There was no
+*   provenance violation. Acting on the finding would have meant re-rendering a
+*   PDF that was fine.
+*
+*   Same defect class as session_coordinator.py _age_min(), found the same day,
+*   in code written hours apart. Timestamps crossing a process boundary must be
+*   epochs or carry a timezone; naive local compared to UTC lies silently and
+*   in a plausible direction. FIXED in manual_guard_v1.py parse_iso().
+*
+*   A guard that invents a violation is worse than no guard. Gate 4 is now
+*   FAIL 0 / WARN 4, and all four remaining warnings are real.
+*
+* ============================================================================
 * THIRD DEFECT, SELF-INFLICTED -- FIXED-FORMAT COMMENTS IN A FREE-FORMAT SOURCE
 * ============================================================================
 *   The repair above was written with fixed-format comments ('*' in column 7).

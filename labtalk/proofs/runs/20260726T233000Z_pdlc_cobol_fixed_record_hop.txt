@@ -1,0 +1,299 @@
+INIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-24, dfa8c136 dirty)  (Jul 26 2026 16:29:43)
+DotTalk++ build Jul 26 2026 16:29:43
+SQLite available: 1, version: 3.50.4
+         *
+         ^
+        ^o^
+       ^^#^^
+      ^^^*^^^
+     ^^+^^^^^^
+    ^^^^^o^^^^^
+   ^^^#^^^^^+^^^
+  ^^o^^^^*^^^^^^^
+ ^^^^^+^^^^^^o^^^^
+^^^^#^^^^o^^^^+^^^^
+         |||
+         |||
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  1 Chronicles 27:19
+  Of Zebulun, Ishmaiah the son of Obadiah: of Naphtali, Jerimoth the son of Azriel:
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. Talk is ON
+; COBOL BEGIN fixed-record-hop
+; COBOL C1 ORIGIN
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH
+----------------------------------------
+  DATA            = D:\code\ccode\dottalkpp\data
+  DOCS            = D:\code\ccode\dottalkpp\docs
+  SYSTEM_DIAGRAMS = D:\code\ccode\dottalkpp\docs\generated\diagrams
+  USER_DIAGRAMS   = D:\code\ccode\dottalkpp\user\default\diagrams
+  DBF             = D:\code\ccode\dottalkpp\data\dbf\og
+  XDBF            = D:\code\ccode\dottalkpp\data\xdbf
+  INDEXES         = D:\code\ccode\dottalkpp\data\indexes
+  LMDB            = D:\code\ccode\dottalkpp\data\lmdb
+  RAM             = D:\code\ccode\dottalkpp\data\ram
+  WORKSPACES      = D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS         = D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS        = D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS         = D:\code\ccode\dottalkpp\data\scripts
+  TESTS           = D:\code\ccode\dottalkpp\data\tests
+  HELP            = D:\code\ccode\dottalkpp\data\help
+  LOGS            = D:\code\ccode\dottalkpp\data\logs
+  TMP             = D:\code\ccode\dottalkpp\data\tmp
+
+Opened STUDENTS (v32) : Record count 200
+Valid Index/Indices   : CNX, INX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\og\STUDENTS.DBF  (STUDENTS.DBF)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; COBOL C1 END
+; COBOL C2 EXPORT
+COBOL EXPORT: wrote 200 STUDENTS record(s) to D:\code\ccode\dottalkpp\data\projects\cobol\data\students_ro.dat
+; COBOL C2 END
+; COBOL C3 BUILD
+COBOL BUILD: D:\code\ccode\dottalkpp\data\projects\cobol\src\first_cobol_test.cob
+COBOL BUILD: created D:\code\ccode\dottalkpp\data\projects\cobol\bin\first_cobol_test.exe
+; COBOL C3 RUN
+50000000  Taylor                Quinn             2.97
+50000001  Martin                Mason             3.59
+50000002  Ramirez               Skyler            2.58
+50000003  Davis                 Sophia            3.81
+50000004  Rodriguez             Evan              2.37
+50000005  Rodriguez             Alex              2.88
+50000006  Garcia                Mia               3.55
+50000007  Ramirez               Jordan            2.57
+50000008  Lopez                 Ethan             3.77
+50000009  Martin                Ava               2.47
+50000010  Clark                 Parker            3.58
+50000011  White                 Ava               2.45
+50000012  Lewis                 Parker            3.10
+50000013  Smith                 Isabella          3.58
+50000014  Jackson               Taylor            2.17
+50000015  Martin                Adrien            3.72
+50000016  Brown                 Logan             3.39
+50000017  Williams              Sophia            2.48
+50000018  Harris                Drew              2.52
+50000019  Martinez              Harper            3.78
+50000020  Anderson              Taylor            2.74
+50000021  Lopez                 Reese             3.33
+50000022  Davis                 Isabella          3.51
+50000023  Thompson              Morgan            3.51
+50000024  Taylor                Mason             2.88
+50000025  Gonzalez              Evan              2.35
+50000026  Miller                Rowan             2.83
+50000027  Robinson              Olivia            2.58
+50000028  Ramirez               Parker            3.30
+50000029  Williams              Noah              2.53
+50000030  Garcia                Noah              2.03
+50000031  Lee                   Harper            2.32
+50000032  Sanchez               Morgan            3.11
+50000033  Taylor                Liam              3.08
+50000034  Robinson              Taylor            2.76
+50000035  Davis                 Alex              3.72
+50000036  Harris                Drew              3.02
+50000037  Harris                Jamie             2.31
+50000038  Hernandez             Emma              2.56
+50000039  Lopez                 Ava               2.40
+50000040  Martinez              Skyler            2.68
+50000041  Williams              Alex              3.39
+50000042  Miller                Harper            2.86
+50000043  Lopez                 Cameron           2.34
+50000044  Clark                 Taylor            2.88
+50000045  Smith                 Taylor            2.59
+50000046  Anderson              Avery             3.27
+50000047  Moore                 Jamie             2.24
+50000048  Martin                Quinn             3.21
+50000049  Johnson               Logan             3.69
+50000050  Martinez              Sophia            3.81
+50000051  Harris                Mia               2.25
+50000052  Robinson              Ava               2.27
+50000053  Davis                 Taylor            2.23
+50000054  White                 Alex              3.27
+50000055  Harris                Skyler            2.36
+50000056  Sanchez               Adrien            2.34
+50000057  Garcia                Mia               3.71
+50000058  Harris                Skyler            2.48
+50000059  Ramirez               Sam               2.98
+50000060  Taylor                Liam              2.93
+50000061  Moore                 Mason             3.42
+50000062  Jackson               Sophia            2.70
+50000063  Martinez              Adrien            3.42
+50000064  Thompson              Alex              2.26
+50000065  Thomas                Mason             2.30
+50000066  Perez                 Parker            3.45
+50000067  Martinez              Taylor            3.23
+50000068  Clark                 Mason             3.24
+50000069  Johnson               Alex              2.04
+50000070  Martin                Harper            2.32
+50000071  Martin                Skyler            2.88
+50000072  Lewis                 Taylor            3.90
+50000073  Hernandez             Mason             2.61
+50000074  Sanchez               Rowan             3.49
+50000075  Wilson                Sophia            3.74
+50000076  Brown                 Logan             2.31
+50000077  Taylor                Olivia            2.00
+50000078  Anderson              Noah              2.99
+50000079  Thomas                Harper            3.50
+50000080  Johnson               Harper            2.56
+50000081  Sanchez               Quinn             3.00
+50000082  Williams              Logan             3.40
+50000083  Anderson              Alex              3.95
+50000084  Rodriguez             Liam              3.79
+50000085  Anderson              Olivia            3.23
+50000086  Ramirez               Emma              3.77
+50000087  Harris                Sophia            3.59
+50000088  Miller                Mia               3.50
+50000089  Clark                 Jamie             2.45
+50000090  Jackson               Riley             2.04
+50000091  Smith                 Logan             3.26
+50000092  Jackson               Parker            3.99
+50000093  White                 Reese             2.61
+50000094  Martin                Noah              3.88
+50000095  Garcia                Taylor            2.60
+50000096  Miller                Cameron           3.42
+50000097  Lee                   Avery             3.63
+50000098  Sanchez               Alex              3.08
+50000099  Lee                   Ethan             2.31
+50000100  White                 Mia               2.33
+50000101  Lewis                 Olivia            3.56
+50000102  Williams              Adrien            3.73
+50000103  Moore                 Evan              3.94
+50000104  Rodriguez             Cameron           2.01
+50000105  Lopez                 Avery             3.60
+50000106  Sanchez               Jordan            3.55
+50000107  Wilson                Liam              3.34
+50000108  Gonzalez              Riley             2.74
+50000109  Miller                Emma              3.15
+50000110  Garcia                Taylor            3.99
+50000111  Ramirez               Evan              3.02
+50000112  Anderson              Reese             2.82
+50000113  Clark                 Adrien            2.04
+50000114  Sanchez               Rowan             2.54
+50000115  Rodriguez             Morgan            2.12
+50000116  White                 Quinn             2.55
+50000117  Martin                Alex              2.87
+50000118  Gonzalez              Noah              3.41
+50000119  Robinson              Noah              2.40
+50000120  Taylor                Riley             3.22
+50000121  Miller                Quinn             2.61
+50000122  Miller                Riley             2.12
+50000123  Johnson               Quinn             2.07
+50000124  Jackson               Evan              3.69
+50000125  Rodriguez             Rowan             3.41
+50000126  Miller                Mason             3.36
+50000127  Robinson              Cameron           2.30
+50000128  Wilson                Skyler            2.91
+50000129  Robinson              Jamie             2.72
+50000130  Perez                 Riley             2.61
+50000131  Brown                 Quinn             2.68
+50000132  Wilson                Drew              2.40
+50000133  Johnson               Isabella          3.00
+50000134  Robinson              Olivia            2.40
+50000135  Brown                 Harper            3.18
+50000136  Anderson              Casey             2.83
+50000137  Thompson              Logan             2.84
+50000138  Williams              Jordan            2.74
+50000139  Taylor                Sophia            3.87
+50000140  Rodriguez             Liam              3.30
+50000141  Clark                 Ethan             2.85
+50000142  Martinez              Evan              2.53
+50000143  Gonzalez              Skyler            2.64
+50000144  Miller                Mason             3.07
+50000145  Miller                Drew              3.81
+50000146  Rodriguez             Mason             3.49
+50000147  Jones                 Mason             2.26
+50000148  White                 Evan              2.53
+50000149  Smith                 Riley             2.18
+50000150  Rodriguez             Skyler            3.68
+50000151  Lee                   Olivia            3.01
+50000152  Jackson               Emma              2.34
+50000153  Ramirez               Noah              3.75
+50000154  Clark                 Jordan            2.27
+50000155  Moore                 Casey             3.41
+50000156  Wilson                Quinn             3.47
+50000157  Thompson              Morgan            2.39
+50000158  Harris                Mason             2.55
+50000159  Hernandez             Quinn             2.38
+50000160  Thompson              Mia               3.03
+50000161  Harris                Rowan             2.61
+50000162  Anderson              Avery             2.00
+50000163  Smith                 Taylor            3.70
+50000164  Robinson              Drew              3.28
+50000165  Moore                 Jamie             3.02
+50000166  Lewis                 Ava               2.56
+50000167  White                 Ethan             2.01
+50000168  Martinez              Sam               2.89
+50000169  Lewis                 Emma              3.61
+50000170  Davis                 Emma              2.66
+50000171  Jones                 Mason             2.81
+50000172  Martin                Avery             2.42
+50000173  Miller                Evan              2.86
+50000174  Sanchez               Jamie             2.32
+50000175  Jones                 Cameron           2.18
+50000176  Sanchez               Liam              3.22
+50000177  Ramirez               Riley             2.60
+50000178  Williams              Skyler            3.54
+50000179  Anderson              Rowan             2.21
+50000180  Rodriguez             Alex              2.06
+50000181  Jones                 Olivia            2.18
+50000182  Thompson              Mason             2.79
+50000183  Martin                Olivia            2.91
+50000184  Williams              Taylor            3.85
+50000185  Clark                 Sam               2.84
+50000186  Lee                   Taylor            3.07
+50000187  Gonzalez              Liam              2.55
+50000188  Harris                Sophia            2.63
+50000189  Martinez              Parker            3.30
+50000190  Harris                Cameron           3.85
+50000191  Robinson              Liam              2.47
+50000192  Johnson               Avery             3.19
+50000193  Jackson               Mason             2.63
+50000194  Rodriguez             Liam              3.89
+50000195  Miller                Parker            3.86
+50000196  Perez                 Parker            2.69
+50000197  Perez                 Ava               3.97
+50000198  Rodriguez             Evan              3.95
+50000199  Davis                 Avery             2.11
+RECORDS READ: 0000200
+COBOL RUN: exit code 0
+; COBOL C3 END
+; COBOL END fixed-record-hop
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

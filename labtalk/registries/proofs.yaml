@@ -23,6 +23,96 @@ proof_states:
     meaning: Historical claim needs source or fact review.
 
 proofs:
+  # ---------------------------------------------------------------------------
+  # PDLC historical migration -- four hops, run COWORK-20260726-001, 2026-07-26.
+  # Engine v0.6, build Jul 26 2026 12:52:47. Each cites the preserved transcript,
+  # not the script: a script is a claim, a transcript is the evidence.
+  # ---------------------------------------------------------------------------
+  - id: proof.pdlc.csv_to_x64base.type_fidelity
+    label: CSV to x64base preserves types, NULLs and long names
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_csv_to_x64base_type_fidelity.txt
+    item_id: tests/conversion/02_csv_to_dbf_v2.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/tests/conversion/02_csv_to_dbf_v2.dts
+      - D:/code/ccode/tests/conversion/10_crosswalk_cascade_items_v1.dts
+    notes: >-
+      18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a
+      derivation taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N.
+      Two behaviours predicted from the code and confirmed by the engine -- LIST_PRICE classifies
+      DECIMAL (N) despite 14 of 18 cells being empty, because update_profile() returns on an empty
+      value before setting any category flag; and ACTIVE (1/0) classifies INTEGER not LOGICAL,
+      because is_integer_text() is tested first and returns, making the LOGICAL branch unreachable
+      for numeric literals. NULL fidelity held: LIST_PRICE renders empty, not 0. Long field names
+      survived with legacy 10-char descriptors carried alongside (STANDARD_COST + STANDARD_C).
+
+  - id: proof.pdlc.dbf_csv_dbf.roundtrip_lossless
+    label: DBF to CSV to DBF round trip is lossless
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_dbf_csv_dbf_roundtrip.txt
+    item_id: tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+      - D:/code/ccode/tests/conversion/README_SUITE_REPAIR_V1.md
+    notes: >-
+      Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type
+      letters, same widths, same decimal counts. EXPORT rendered every value such that
+      re-inference reproduced the origin schema exactly, which is stronger than the test required.
+      Values identical field for field, including LIST_PRICE still empty rather than 0 on the
+      return leg. Supersedes tests/conversion/05_roundtrip_dbf_csv_dbf.dts, which the PDLC review
+      cited as evidence but which could not execute: four of its five lines used grammar the
+      engine does not implement, and all five wrote to a directory that does not exist.
+
+  - id: proof.pdlc.dialect_ladder.dbase3_to_x64
+    label: dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_historical_dialect_ladder.txt
+    item_id: tests/conversion/11_historical_dialect_ladder_v1.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/tests/conversion/11_historical_dialect_ladder_v1.dts
+      - D:/code/ccode/src/cli/cmd_copy.cpp
+      # NOT cited: docs/maintenance/HISTORICAL_XBASE_PRODUCT_FAMILY_TREE_V1.md.
+      # It is the natural companion, but it is untracked and belongs to another
+      # session -- citing it would put a dangling reference in the registry, the
+      # exact failure the AIF-062 audit was written to stop. Add it here once
+      # its owner commits it.
+    notes: >-
+      The historical migration demonstration proper, walked inside one engine with no external
+      tool, from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records,
+      9 fields, every field name at or under the classic 10-character cap. 200 rows and 9 fields
+      at EVERY rung. GPA held N(4,2) through all four conversions -- decimal loss is silent and
+      fatal, and did not occur. DOB and ENROLL_D held type D, with values byte-identical at the
+      1985 end and the modern end. Unlooked-for result: the index estate migrates with the
+      dialect, CNX/INX through FOX26 and VFP becoming CDX at x64. COPY converts indexes, not just
+      tables. Not asserted by the pass criteria; should be in v2.
+
+  - id: proof.pdlc.cobol_fixed_record.hop_closed
+    label: DBF to fixed-record to GnuCOBOL read, 200 records
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_cobol_fixed_record_hop.txt
+    item_id: tests/conversion/12_cobol_fixed_record_v1.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/tests/conversion/12_cobol_fixed_record_v1.dts
+      - D:/code/ccode/dottalkpp/data/projects/cobol/src/first_cobol_test.cob
+      - D:/code/ccode/src/edu/edu_cobol.cpp
+    notes: >-
+      COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division
+      is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so
+      a short write is invisible to anything that merely opens and reads. GnuCOBOL compiled
+      clean and the program ran: 200 student lines, RECORDS READ 0000200, exit 0. Record 1 read
+      by COBOL is identical to record 1 read by DotTalk++ from the dBASE III table, GPA decimals
+      included. THE COPYBOOK IS THE CROSSWALK: the FD sums to exactly 109 bytes, the dBASE III
+      record length, field for field; the file's 111 is 109 plus CRLF under LINE SEQUENTIAL.
+      Closing this hop required fixing two latent defects neither of which was visible to
+      reading -- a BUILD/RUN extension asymmetry in edu_cobol.cpp (BUILD appended .exe on
+      Windows, RUN had no fallback) and a stale ASSIGN path in the fixture naming a location
+      nothing had ever written to. The PDLC review's "runtime-capable, proof incomplete" was
+      right about the gap and wrong about the cause: the missing piece was never GnuCOBOL.
+
   - id: proof.edref.topic_exists
     label: EDREF topic exists
     state: source_defined

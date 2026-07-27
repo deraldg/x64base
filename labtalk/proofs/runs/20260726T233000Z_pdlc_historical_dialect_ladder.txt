@@ -1,0 +1,211 @@
+INIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-24, dfa8c136 dirty)  (Jul 26 2026 12:52:47)
+DotTalk++ build Jul 26 2026 12:52:47
+SQLite available: 1, version: 3.50.4
+         *
+         ^
+        ^o^
+       ^^#^^
+      ^^^*^^^
+     ^^+^^^^^^
+    ^^^^^o^^^^^
+   ^^^#^^^^^+^^^
+  ^^o^^^^*^^^^^^^
+ ^^^^^+^^^^^^o^^^^
+^^^^#^^^^o^^^^+^^^^
+         |||
+         |||
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Job 13:15
+  Though he slay me, yet will I trust in him: but I will maintain mine own ways before him.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. Talk is ON
+; LADDER BEGIN historical-dialect
+; LADDER PATHS set-dbf-slot-to-og
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH
+----------------------------------------
+  DATA            = D:\code\ccode\dottalkpp\data
+  DOCS            = D:\code\ccode\dottalkpp\docs
+  SYSTEM_DIAGRAMS = D:\code\ccode\dottalkpp\docs\generated\diagrams
+  USER_DIAGRAMS   = D:\code\ccode\dottalkpp\user\default\diagrams
+  DBF             = D:\code\ccode\dottalkpp\data\dbf\og
+  XDBF            = D:\code\ccode\dottalkpp\data\xdbf
+  INDEXES         = D:\code\ccode\dottalkpp\data\indexes
+  LMDB            = D:\code\ccode\dottalkpp\data\lmdb
+  RAM             = D:\code\ccode\dottalkpp\data\ram
+  WORKSPACES      = D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS         = D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS        = D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS         = D:\code\ccode\dottalkpp\data\scripts
+  TESTS           = D:\code\ccode\dottalkpp\data\tests
+  HELP            = D:\code\ccode\dottalkpp\data\help
+  LOGS            = D:\code\ccode\dottalkpp\data\logs
+  TMP             = D:\code\ccode\dottalkpp\data\tmp
+
+; LADDER L0 ORIGIN dbase3 STUDENTS
+Opened STUDENTS (v32) : Record count 200
+Valid Index/Indices   : CNX, INX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\og\STUDENTS.DBF  (STUDENTS.DBF)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; LADDER L0 END
+; LADDER L1 COPY as-fox26
+Copied table to D:\code\ccode\dottalkpp\data\dbf\ladder\students_fox26.dbf [FOXPRO 2.6]
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\dbf\ladder
+Opened students_fox26 (v32) : Record count 200
+Valid Index/Indices   : CNX, INX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\ladder\students_fox26.dbf  (students_fox26.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; LADDER L1 END
+; LADDER L2 COPY as-vfp
+USE: 'students_fox26.dbf' is already open in current area 0.
+Copied table to D:\code\ccode\dottalkpp\data\dbf\ladder\students_vfp.dbf [VFP]
+Opened students_vfp (vfp) : Record count 200
+Valid Index/Indices   : CNX, INX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\ladder\students_vfp.dbf  (students_vfp.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; LADDER L2 END
+; LADDER L3 COPY as-x64
+USE: 'students_vfp.dbf' is already open in current area 0.
+Copied table to D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64.dbf [X64]
+Opened students_x64 (v64) : Record count 200
+Valid Index/Indices   : CDX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64.dbf  (students_x64.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; LADDER L3 END
+; LADDER L4 COPY as-x64-vector
+Opened students_vfp (vfp) : Record count 200
+Valid Index/Indices   : CNX, INX
+COPY TO AS X64 VECTOR: using current x64 vector metadata policy.
+Copied table to D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64vec.dbf [X64] VECTOR
+Opened students_x64vec (v64) : Record count 200
+Valid Index/Indices   : CDX
+200
+Fields (9)
+  #  Name          Type   Len   Dec
+   1  SID           N        8     0
+   2  LNAME         C       20     0
+   3  FNAME         C       15     0
+   4  DOB           D        8     0
+   5  GENDER        C        1     0
+   6  MAJOR         C        4     0
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : D:\code\ccode\dottalkpp\data\dbf\ladder\students_x64vec.dbf  (students_x64vec.dbf)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+; LADDER L4 END
+; LADDER L5 COMPARE origin
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\dbf\og
+Opened STUDENTS (v32) : Record count 200
+Valid Index/Indices   : CNX, INX
+Recno: 1
+Record 1
+  SID = 50000000
+  LNAME = Taylor
+  FNAME = Quinn
+  DOB = 19921225
+  GENDER = X
+  MAJOR = CSCI
+  ENROLL_D = 20250220
+  GPA = 2.97
+  EMAIL = quinn.taylor0@student.mcc.edu
+; LADDER L5 COMPARE x64
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\dbf\ladder
+Opened students_x64 (v64) : Record count 200
+Valid Index/Indices   : CDX
+Recno: 1
+Record 1
+  SID = 50000000
+  LNAME = Taylor
+  FNAME = Quinn
+  DOB = 19921225
+  GENDER = X
+  MAJOR = CSCI
+  ENROLL_D = 20250220
+  GPA = 2.97
+  EMAIL = quinn.taylor0@student.mcc.edu
+; LADDER L5 END
+; LADDER END historical-dialect
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
