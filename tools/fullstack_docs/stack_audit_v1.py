@@ -75,6 +75,32 @@ USAGE_BLOCK_RE = re.compile(r"/\*\s*\n?\s*@dottalk\.usage v1\n(.*?)\*/", re.DOTA
 BANNER_FIELDS = ["subsystem", "layer", "owns", "project", "lane", "owner", "status"]
 
 # lane table  ->  (live DBF, canonical import CSV)
+#
+# NOT ALL FOUR LANES ARE THE SAME KIND OF THING. Settled 2026-07-27, member.derald.
+#
+# SYSCMD / SYSARGS / SYSFUNC are metacollect-generated catalogs. Their CSV is
+# regenerated from source (--syscmd-import-out / --sysargs-import-out /
+# --sysfunc-import-out) and then imported. For those, "table rows == csv rows"
+# is the right question and EMPTY_TABLE means genuinely unseeded.
+#
+# SYSTEM_MESSAGES is NOT metacollect-generated. It is the messaging lane's own
+# table, populated and maintained by MSGMGR SEED PRIORITY{A,B,C} APPLY, and it
+# lives under data/messaging rather than data/metadata. It is listed here so the
+# guard watches the table that is actually authoritative -- but note metacollect
+# has no --sysmsg-import-out, and that absence is deliberate, not an oversight.
+#
+# SYSMSG (data/metadata/SYSMSG.dbf) IS RETIRED -- deliberately not listed.
+#   Measured 2026-07-27: SYSTEM_MESSAGES held 1006 records; SYSMSG held 0; and
+#   SYSMSG_IMPORT_v1.csv held the SAME 1006 messages -- SYMBOL overlap 1006/1006,
+#   zero on either side only. Both cite src/help/helpdata_messages.cpp. SYSMSG was
+#   an empty parallel schema (17 fields, CSV 23 cols) for data that was already
+#   seeded, indexed and maintained elsewhere.
+#
+#   Seeding it would have produced a second copy under a third schema with no
+#   generator, no maintenance command and no sync rule. The guard reported
+#   "EMPTY_TABLE: lane is unseeded" only because this map assumed all four lanes
+#   were peers. A guard cannot distinguish "not yet done" from "should never be
+#   done" -- that distinction has to be encoded here.
 LANES = {
     "SYSCMD":  ("dottalkpp/data/metadata/SYSCMD.dbf",
                 "dottalkpp/data/scripts/metadata/SYSCMD_IMPORT_v1.csv"),
@@ -82,8 +108,8 @@ LANES = {
                 "dottalkpp/data/scripts/metadata/SYSARGS_IMPORT_v1.csv"),
     "SYSFUNC": ("dottalkpp/data/metadata/SYSFUNC.dbf",
                 "dottalkpp/data/scripts/metadata/SYSFUNC_IMPORT_v1.csv"),
-    "SYSMSG":  ("dottalkpp/data/metadata/SYSMSG.dbf",
-                "dottalkpp/data/scripts/metadata/SYSMSG_IMPORT_v1.csv"),
+    "SYSTEM_MESSAGES": ("dottalkpp/data/messaging/SYSTEM_MESSAGES.dbf",
+                        "dottalkpp/data/scripts/metadata/SYSMSG_IMPORT_v1.csv"),
 }
 SRCFILE_DBF = "dottalkpp/data/comments/SRCFILE.dbf"
 DOTREF_HPP = "include/dotref.hpp"
@@ -376,8 +402,56 @@ def check_srcfile_drift(root: Path, files):
     return out, detail
 
 
+def fold_command_name(name: str) -> str:
+    """Fold a command name to a spelling-insensitive key.
+
+    dotref.hpp and SYSCMD spell the same command two ways, because they are
+    generated from different things: dotref carries HANDLER-SYMBOL spellings
+    (SETCASE, APPEND BLANK, ERROR CLEAR) while SYSCMD carries CANONICAL ones
+    (SET CASE, APPEND_BLANK, ERROR_CLEAR). Neither is wrong; they are different
+    conventions for one identity.
+
+    Measured 2026-07-27: of 55 dotref entries reported UNCOVERED, TWELVE were
+    pure spelling -- SETCASE/SET CASE, SETCDX/SET CDX, SETCNX, SETFILTER,
+    SETINDEX, SETNEAR, SETORDER, SET PATH/SETPATH, APPEND BLANK/APPEND_BLANK,
+    ERROR CLEAR/STATUS/TEST. Reporting those as missing coverage invites the
+    obvious "fix": adding rows that already exist under another spelling, which
+    would create duplicates in the canonical table.
+
+    Fold rule: uppercase, then drop spaces and underscores. Deliberately narrow.
+    It does NOT strip punctuation or attempt stemming -- SIMPLEBROWSER vs
+    SIMPLEBROWSE is a real difference in identity and must stay visible.
+    """
+    return re.sub(r"[ _]", "", name.strip().upper())
+
+
 def check_dotref_coverage(root: Path):
-    """E. Measured against the LIVE table -- never a CSV."""
+    """E. Measured against the LIVE table -- never a CSV.
+
+    Coverage is measured on FOLDED names (2026-07-27, AIF-066 follow-on).
+
+    "Coverage 78.4%" was conflating aliasing with absence, and pointed at the
+    wrong remedy for a fifth of its own findings. dotref.hpp INTENTIONALLY
+    registers both spellings of a command so both parse at the prompt -- its own
+    text says so:
+
+        {"SET CASE", "SET CASE ON|OFF",
+         "Control case-sensitivity using the spaced compatibility form.", true},
+        {"SETCASE",  "SETCASE ON|OFF",
+         "Control case-sensitivity / collation mode for comparisons.", true},
+
+    SYSCMD, being a canonical catalog, holds exactly ONE of each pair. So the
+    alias form was scored as "no live SYSCMD row" -- true literally, misleading
+    completely, and it invited the fix of adding a duplicate canonical row.
+
+    Twelve such pairs exist. Eleven resolve; the twelfth (SET LMDB / SETLMDB)
+    resolves to nothing and is a genuine gap, already counted as uncovered.
+
+    NOTE, worth a separate decision: SYSCMD is not consistent about WHICH form
+    it treats as canonical -- spaced for SET CASE, underscored for ERROR_CLEAR.
+    Folding makes coverage correct either way, but the inconsistency is real and
+    will surface anywhere the canonical name is used as a key.
+    """
     hpp, dbf = root / DOTREF_HPP, root / LANES["SYSCMD"][0]
     if not hpp.is_file() or not dbf.is_file():
         return ([], {})
@@ -389,17 +463,46 @@ def check_dotref_coverage(root: Path):
     except Exception as exc:
         return ([{"check": "DOTREF_COV", "code": "PARSE_FAILED", "severity": "WARN",
                   "message": f"could not parse {DOTREF_HPP}: {exc}"}], {})
+
     live = {v.strip().upper() for v in dbf_column(dbf, "CAN_NAME") if v.strip()}
-    covered = sum(1 for e in entries if e in live)
-    pct = round(100.0 * covered / len(entries), 1) if entries else 0.0
+    live_folded = {fold_command_name(v) for v in live}
+
+    exact = [e for e in entries if e in live]
+    rest = [e for e in entries if e not in live]
+    spelling = [e for e in rest if fold_command_name(e) in live_folded]
+    uncovered = [e for e in rest if fold_command_name(e) not in live_folded]
+
+    # Guard the fold: if two different dotref names collapse to one key, the
+    # rule is over-folding and would hide a real distinction.
+    folds = {}
+    for e in entries:
+        folds.setdefault(fold_command_name(e), []).append(e)
+    collisions = {k: v for k, v in folds.items() if len(v) > 1}
+
+    matched = len(exact) + len(spelling)
+    pct_raw = round(100.0 * len(exact) / len(entries), 1) if entries else 0.0
+    pct_norm = round(100.0 * matched / len(entries), 1) if entries else 0.0
+
     detail = {"dotref_entries": len(entries), "live_syscmd_rows": len(live),
-              "metadata_backed": covered, "coverage_pct": pct,
-              "uncovered": len(entries) - covered}
+              "exact_match": len(exact), "spelling_variant": len(spelling),
+              "uncovered": len(uncovered), "fold_collisions": len(collisions),
+              "coverage_pct_raw": pct_raw, "coverage_pct_normalized": pct_norm,
+              "spelling_variants": sorted(spelling),
+              "uncovered_names": sorted(uncovered)}
+    # An alias pair whose members BOTH fold onto a live canonical row is the
+    # system working, not a finding. Only a pair that resolves to nothing is
+    # interesting, and those members are already in `uncovered`.
+    unresolved_pairs = {k: v for k, v in collisions.items() if k not in live_folded}
+    detail["alias_pairs_resolved"] = len(collisions) - len(unresolved_pairs)
+    detail["alias_pairs_unresolved"] = sorted("/".join(v) for v in unresolved_pairs.values())
+
     out = []
-    if covered < len(entries):
+    if uncovered:
         out.append({"check": "DOTREF_COV", "code": "UNCOVERED_ENTRIES", "severity": "WARN",
-                    "message": f"{len(entries) - covered} dotref entr(ies) have no live SYSCMD row "
-                               f"(coverage {pct}% against the TABLE)"})
+                    "message": f"{len(uncovered)} dotref entr(ies) have no live SYSCMD row even "
+                               f"after folding spaces/underscores (coverage {pct_norm}% "
+                               f"normalized, {pct_raw}% raw; {len(spelling)} alias spelling(s) "
+                               f"resolved, {detail['alias_pairs_resolved']} alias pair(s) intact)"})
     return out, detail
 
 

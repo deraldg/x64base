@@ -2,12 +2,11 @@
   "by_check": {
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
-    "CSV_VS_TABLE": 2,
     "DOTREF_COV": 1
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 17
+    "WARN": 15
   },
   "detail": {
     "banner_census": {
@@ -64,9 +63,9 @@
     },
     "csv_vs_table": {
       "SYSARGS": {
-        "csv_rows": 215,
+        "csv_rows": 249,
         "csv_tracked": true,
-        "table_rows": 0
+        "table_rows": 249
       },
       "SYSCMD": {
         "csv_rows": 203,
@@ -74,22 +73,88 @@
         "table_rows": 203
       },
       "SYSFUNC": {
-        "csv_rows": 64,
+        "csv_rows": 69,
         "csv_tracked": true,
-        "table_rows": 64
+        "table_rows": 69
       },
-      "SYSMSG": {
+      "SYSTEM_MESSAGES": {
         "csv_rows": 1006,
         "csv_tracked": true,
-        "table_rows": 0
+        "table_rows": 1006
       }
     },
     "dotref_coverage": {
-      "coverage_pct": 78.4,
+      "alias_pairs_resolved": 11,
+      "alias_pairs_unresolved": [
+        "SET LMDB/SETLMDB"
+      ],
+      "coverage_pct_normalized": 82.7,
+      "coverage_pct_raw": 78.4,
       "dotref_entries": 255,
+      "exact_match": 200,
+      "fold_collisions": 12,
       "live_syscmd_rows": 203,
-      "metadata_backed": 200,
-      "uncovered": 55
+      "spelling_variant": 11,
+      "spelling_variants": [
+        "ERROR CLEAR",
+        "ERROR STATUS",
+        "ERROR TEST",
+        "SET PATH",
+        "SETCASE",
+        "SETCDX",
+        "SETCNX",
+        "SETFILTER",
+        "SETINDEX",
+        "SETNEAR",
+        "SETORDER"
+      ],
+      "uncovered": 44,
+      "uncovered_names": [
+        "AREA51",
+        "AVERAGE",
+        "BETA",
+        "BROWSETV",
+        "BUILDVECTORS",
+        "COMMANDSHELP",
+        "DEFCMD",
+        "DEFFN",
+        "EVAL",
+        "EXIT",
+        "EXPFUNCS",
+        "FOXTALK",
+        "GENERIC",
+        "LMDB",
+        "LMDBDUMP",
+        "LOOP_BUFFER",
+        "PREDICATES",
+        "REL ENUM",
+        "REL_LIST",
+        "SB",
+        "SCAN_BUFFER",
+        "SCHEMA",
+        "SECHO",
+        "SET LMDB",
+        "SET VAR",
+        "SET VAR!",
+        "SETLMDB",
+        "SHELLO",
+        "SIMPLEBROWSER",
+        "SM",
+        "SMART",
+        "SMARTBROWSER",
+        "STOP_ON_ERROR",
+        "STRCAT",
+        "STU_REPEAT",
+        "STU_UPPER",
+        "TABLE",
+        "UNDEFCMD",
+        "UNDEFFN",
+        "UNDELETE",
+        "UNTIL_BUFFER",
+        "USER",
+        "VDISK",
+        "WHILE_BUFFER"
+      ]
     },
     "embedded_bom": {
       "files": [],
