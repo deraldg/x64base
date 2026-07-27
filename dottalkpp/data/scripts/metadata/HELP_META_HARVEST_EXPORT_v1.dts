@@ -1,0 +1,91 @@
+&& HELP_META_HARVEST_EXPORT_v1.dts
+&&
+&& LANE: MAINT (maintenance/SDLC) -- the manualgen HELP/META harvest feeder.
+&&   BBOX only TEACHES this lane (data -> process -> information out); MAINT is
+&&   the maintenance EXECUTION surface it belongs to. MAINT is read-only first
+&&   wave and states "PowerShell is MDO scaffolding only; the permanent
+&&   maintenance app is native C++" -- so this script IS that scaffolding,
+&&   standing in until a native MAINT harvest verb adopts it.
+&&
+&& Re-export the LIVE HELP + META tables to CSV so the manualgen harvest can be
+&& refreshed from CURRENT runtime evidence. This is the "feeder" the manualgen
+&& system needs and that was mostly never committed: the harvest workspace
+&& (docs\manuals\developer\manualgen\harvested) is regenerable, gitignored
+&& EXHAUST, and only ONE per-table export (SYSCMD_EXPORT_MIRROR_v1) existed.
+&&
+&& DIRECTION, EMPHATICALLY: the table is authority; the CSV is its readable
+&& shadow. This is an EXPORT, never an import.
+&&
+&& COVERS the 10 CURRENT tables:
+&&   6 HELP_*  from data\help    -> COMMANDS, CMD_ARGS, HELP_ARTIFACTS,
+&&                                  HELP_LINE, HELP_SECTION, HELP_TOPIC
+&&   4 META_*  from data\metadata-> SYSCMD, SYSFUNC, SYSARGS, SYSSUBCMD
+&&
+&& DELIBERATELY OMITTED (do NOT launder stale data into the manual):
+&&   META_SYSENTVAR, META_SYSFLDDIC, META_SYSHELP, META_SYSMSG.
+&&   These sources are stale May seeds/stubs; the live message catalog is the
+&&   separate SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT pair, and DDICT is
+&&   PLANNED-only. The companion .ps1 carries the prior May CSVs forward
+&&   LABELLED CARRIED_STALE so manualgen still sees 14 files, without pretending
+&&   they are current. They stay owed until their sources are refreshed.
+&&
+&& MUTATION: writes 10 files under DATA\tmp. Touches no table, index, or LMDB.
+&&   The companion HELP_META_HARVEST_EXPORT_v1.ps1 promotes + stamps + hashes.
+&&
+&& PATH PROTOCOL: SETPATH DBF <dir>, then a BARE table name. Slashed relative
+&&   paths (tmp/...) resolve against the DATA root, not the DBF slot.
+&&
+&& Run via the companion .ps1, or directly:
+&&   ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path to this file>'
+
+SET TALK OFF
+
+; ===== HELP lane (data\help) -> HELP_*.csv =====
+SETPATH DBF help
+WORKSPACE CLOSE
+
+USE COMMANDS
+COUNT
+EXPORT TO tmp/HELP_COMMANDS.csv CSV
+
+USE CMD_ARGS
+COUNT
+EXPORT TO tmp/HELP_CMD_ARGS.csv CSV
+
+USE HELP_ARTIFACTS
+COUNT
+EXPORT TO tmp/HELP_HELP_ARTIFACTS.csv CSV
+
+USE HELP_LINE
+COUNT
+EXPORT TO tmp/HELP_HELP_LINE.csv CSV
+
+USE HELP_SECTION
+COUNT
+EXPORT TO tmp/HELP_HELP_SECTION.csv CSV
+
+USE HELP_TOPIC
+COUNT
+EXPORT TO tmp/HELP_HELP_TOPIC.csv CSV
+
+; ===== META lane (data\metadata) -> META_*.csv (the CURRENT four only) =====
+SETPATH DBF metadata
+WORKSPACE CLOSE
+
+USE SYSCMD
+COUNT
+EXPORT TO tmp/META_SYSCMD.csv CSV
+
+USE SYSFUNC
+COUNT
+EXPORT TO tmp/META_SYSFUNC.csv CSV
+
+USE SYSARGS
+COUNT
+EXPORT TO tmp/META_SYSARGS.csv CSV
+
+USE SYSSUBCMD
+COUNT
+EXPORT TO tmp/META_SYSSUBCMD.csv CSV
+
+QUIT
