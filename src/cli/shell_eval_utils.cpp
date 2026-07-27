@@ -112,7 +112,16 @@ bool eval_for_varbang(xbase::DbArea& A, const std::string& expr, VarBangEval& ou
     src = textio::trim(expanded);
     if (src.empty()) { err = "empty expression"; return false; }
 
-    // Clock-only fast path
+    // Clock-only fast path.
+    //
+    // These match the ZERO-ARGUMENT spellings exactly ("DATE()", "NOW()", ...),
+    // which are local by definition and unchanged. The zone-argument forms
+    // added 2026-07-26 -- DATE("UTC"), NOW("UTC") -- do not match here and fall
+    // through to the general evaluator, which dispatches via the kDateFns table
+    // in fn_date.cpp. That is correct, not an oversight: the fast path exists to
+    // skip parsing for the common bare call, and a zone argument needs parsing.
+    // Do not "optimise" the argument forms into this block without also
+    // handling the invalid-zone case, which must yield empty rather than local.
     const auto cs = dottalk::date::now_local();
     const std::string U = textio::up(src);
     if (U == "DATE()" || U == "TODAY()") {
@@ -128,6 +137,26 @@ bool eval_for_varbang(xbase::DbArea& A, const std::string& expr, VarBangEval& ou
     if (U == "NOW()" || U == "DATETIME()") {
         out.kind = VarBangEval::K_String;
         out.text = cs.datetime14;
+        return true;
+    }
+
+    // UTC aliases, added 2026-07-26. Zero-argument by design, so they belong in
+    // the fast path exactly as their local twins do. The snapshot is taken
+    // lazily here rather than beside cs above, so the common local-only path
+    // pays for one clock read, not two.
+    if (U == "UDATE()") {
+        out.kind = VarBangEval::K_Date8;
+        out.text = dottalk::date::now_utc().date8;
+        return true;
+    }
+    if (U == "UTIME()") {
+        out.kind = VarBangEval::K_String;
+        out.text = dottalk::date::now_utc().time6;
+        return true;
+    }
+    if (U == "UNOW()" || U == "UDATETIME()") {
+        out.kind = VarBangEval::K_String;
+        out.text = dottalk::date::now_utc().datetime14;
         return true;
     }
 

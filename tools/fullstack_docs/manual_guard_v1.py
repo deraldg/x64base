@@ -81,14 +81,39 @@ def sha256_upper(path: Path) -> str:
 
 
 def parse_iso(s: str):
+    """Parse an ISO timestamp into a TIMEZONE-AWARE UTC datetime.
+
+    FIXED 2026-07-26. This stripped the "Z" and returned a NAIVE datetime,
+    which was then compared against datetime.fromtimestamp(mtime) -- also
+    naive, but holding LOCAL time. On a UTC-7 host that made every artifact
+    look 7 hours older than it was, and the guard reported
+
+        PDF_PREDATES_ASSEMBLY: staged PDF (2026-07-23T00:39) is OLDER than
+        the assembly it is evidence for (2026-07-23T04:14:23Z) by 3:35:15
+
+    which was FALSE. The PDF's true mtime is 07:39:07Z -- 3h24m45s AFTER the
+    assembly, the correct order. A guard that invents a provenance violation
+    is worse than no guard: it sends someone re-rendering a PDF that was fine.
+
+    Same defect class as tools/coordination/session_coordinator.py _age_min(),
+    found the same day. Timestamps crossing a process boundary must carry a
+    timezone or be epochs; naive local values compared to UTC silently lie.
+    """
     if not s:
         return None
-    s = s.strip().replace("Z", "")
+    s = s.strip()
+    had_z = s.endswith("Z")
+    if had_z:
+        s = s[:-1]
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
         try:
-            return datetime.datetime.strptime(s, fmt)
+            naive = datetime.datetime.strptime(s, fmt)
         except ValueError:
             continue
+        # A "Z" means UTC. Without one, assume UTC too: every producer in this
+        # lane (assembly_report build_utc, coordinator heartbeat_utc, run ids)
+        # emits UTC, and assuming local is what caused the false finding above.
+        return naive.replace(tzinfo=datetime.timezone.utc)
     return None
 
 
@@ -199,10 +224,12 @@ def check_pdf(root: Path, pdf_arg, assembly_detail):
     digest = sha256_upper(p)
     blob = p.read_bytes()
     pages = len(re.findall(rb"/Type\s*/Page[^s]", blob))
-    mtime = datetime.datetime.fromtimestamp(p.stat().st_mtime)
+    # AWARE UTC, not naive local -- see parse_iso() for the false finding this
+    # caused. Both sides of the comparison below must be in the same frame.
+    mtime = datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc)
     build = parse_iso(assembly_detail.get("build_utc") or "")
     detail = {"path": str(p), "sha256": digest, "pages": pages,
-              "mtime": mtime.strftime("%Y-%m-%dT%H:%M:%S"),
+              "mtime_utc": mtime.strftime("%Y-%m-%dT%H:%M:%SZ"),
               "assembly_build_utc": assembly_detail.get("build_utc"),
               "sha_matches_recorded": digest == PDF_RECORDED_SHA256}
 
@@ -219,10 +246,13 @@ def check_pdf(root: Path, pdf_arg, assembly_detail):
         delta = build - mtime
         findings.append({"check": "PDF_PROVENANCE", "code": "PDF_PREDATES_ASSEMBLY",
                          "severity": "WARN",
-                         "message": f"staged PDF ({mtime:%Y-%m-%dT%H:%M}) is OLDER than the "
+                         "message": f"staged PDF ({mtime:%Y-%m-%dT%H:%MZ}) is OLDER than the "
                                     f"assembly it is evidence for ({assembly_detail.get('build_utc')}) "
                                     f"by {delta}. The published PDF was rendered from a different "
-                                    f"assembly than the one preserved -- re-render before promoting."})
+                                    f"assembly than the one preserved -- re-render before promoting. "
+                                    f"(Both times are UTC; verify before acting -- an earlier version "
+                                    f"of this check compared naive local against UTC and reported a "
+                                    f"violation that did not exist.)"})
     return findings, detail
 
 

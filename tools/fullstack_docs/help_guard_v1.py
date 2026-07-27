@@ -91,8 +91,14 @@ def read_set(root: Path, names):
         out[n] = {"path": str(p.relative_to(root.parents[len(root.parents) - 1]))
                   if p else None,
                   "rows": dbf_rowcount(p) if p else None,
-                  "mtime": (datetime.datetime.fromtimestamp(p.stat().st_mtime)
-                            .strftime("%Y-%m-%dT%H:%M:%S") if p else None)}
+                  # AWARE UTC. These mtimes are only REPORTED here, never
+                  # compared against another timestamp -- so this was not the
+                  # false-finding bug that hit manual_guard_v1.py parse_iso().
+                  # Made explicit anyway: a naive local string in an evidence
+                  # bundle invites exactly that comparison later.
+                  "mtime": (datetime.datetime
+                            .fromtimestamp(p.stat().st_mtime, datetime.timezone.utc)
+                            .strftime("%Y-%m-%dT%H:%M:%SZ") if p else None)}
     return out
 
 
