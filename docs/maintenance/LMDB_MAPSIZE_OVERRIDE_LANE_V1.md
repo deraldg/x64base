@@ -388,17 +388,37 @@ path that aborted the pipeline; the second reached the shell but set only
 env stayed at 128 MiB. Both produced an identical, plausible, meaningless
 `134217728 -> 134217728`.
 
-### Specimen ledger after the proof
+### Replicated on a second table, 2026-07-27
+
+`SYSFUNC` (69 rows) run through `tools/proofs/run_proof.ps1`:
 
 ```
-SYSSUBCMD   1,073,741,824   SPENT -- this proof
-SYSFUNC       134,217,728   spare, 69 rows, never attached
-SYSARGS       134,217,728   spare, 249 rows, never attached
+env   134,217,728 -> 1,073,741,824   delta 939,524,096
+markers all present -- the subject ran
+verdict OBSERVED
+```
+
+Two tables, two row counts, identical outcome. The attach path asserts 1 GiB
+regardless of what `BUILDLMDB` wrote, and regardless of how much data exists.
+Transcript: `labtalk/proofs/runs/20260727_aif065_mapsize_tiny_survives_attach.txt`.
+
+This was also the first use of the proof runner, and it is the **pre-fix
+control**: the identical command with `-ExpectNoChange` becomes the regression
+once `mdb_env_set_mapsize(env_, 0)` is applied.
+
+### Specimen ledger
+
+```
+SYSSUBCMD   1,073,741,824   SPENT -- first proof
+SYSFUNC     1,073,741,824   SPENT -- replication + pre-fix control
+SYSARGS       134,217,728   LAST SPARE, 249 rows, never attached
 SYSCMD      1,073,741,824   pre-existing attached control
 ```
 
-Two spares remain for verifying the FIX -- a `TINY` request must produce and
-keep a 32 MiB file across an attach.
+**One spare left.** Reserve `SYSARGS` for the post-fix verification, where a
+`TINY` request must produce a 32 MiB file that STAYS 32 MiB across an attach.
+If it is spent early, making another control means a full `CREATE -> CDX ->
+IMPORT -> BUILDLMDB` cycle on a fresh table.
 
 ### Method note that earned its place
 
