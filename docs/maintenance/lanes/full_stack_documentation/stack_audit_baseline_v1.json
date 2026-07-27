@@ -2,12 +2,12 @@
   "by_check": {
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
-    "CSV_VS_TABLE": 4,
+    "CSV_VS_TABLE": 3,
     "DOTREF_COV": 1
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 19
+    "WARN": 18
   },
   "detail": {
     "banner_census": {
@@ -68,7 +68,7 @@
         "table_rows": 0
       },
       "SYSCMD": {
-        "csv_rows": 40,
+        "csv_rows": 203,
         "table_rows": 203
       },
       "SYSFUNC": {
