@@ -252,6 +252,79 @@ PASS/FAIL PREDICATE FOR THE NEXT PASS
     On PASS, harvest it, delete this section, and record the catch as evidence.
     Until then the WARN stays and the baseline carries it.
 
+## 9b. AUDIT POINT: command registration integrity (REG_POLICY)
+
+Added 2026-07-27 at the maintainer's request, after a read of
+`src/cli/shell_commands.cpp`. **This is a different defect from the rest of this
+lane and deserves its own AIF number when remediation starts**; detection is
+recorded here because that is where the check was built.
+
+`shell_commands.cpp` opens with a policy in its own header:
+
+> Built-in CLI commands are registered here. Do not self-register built-in
+> commands elsewhere; otherwise startup order, duplicate names, help/reflection,
+> and command-audit tooling become harder to reason about.
+
+Nothing enforced it. Measured:
+
+```
+SPLIT_REGISTRATION   9  BBS CASE CODASYL DELETE ERASE EXPORTFUNCTIONS
+                        NET RECALL SQLHELP
+DUPLICATE_IN_HUB     1  EXAMPLE (lines 474 and 563)
+WRAPPER_ASYMMETRY    2  DELETE, RECALL
+```
+
+The third number is the one that matters. `CommandRegistry::add_with_origin`
+does `map_[key] = std::move(h)` unconditionally for Core origin -- the
+protection check rejects only Extension and Function -- so Core-vs-Core is a
+silent overwrite with no diagnostic. And the two definitions are not the same:
+
+```
+cmd_delete.cpp:486    registry().add("DELETE", &cmd_DELETE)
+shell_commands.cpp:216 registry().add("DELETE", ... cmd_DELETE(A,S);
+                                      relations_api::refresh_if_enabled(); )
+```
+
+One maintains relations after a mutation; the other does not. Self-registration
+runs at static initialization, `register_shell_commands` is called later from
+`shell.cpp:535`, so the wrapped version wins **by construction order, not by
+rule**. Nothing pins that order, and `cmd_foxpro.cpp:568` calls
+`register_shell_commands` a second time, so registration is not once-only
+either.
+
+`ERASE` is split but NOT flagged for asymmetry -- neither copy refreshes. The
+check compares the two handlers rather than assuming that a split implies a
+difference.
+
+### Severity is WARN on purpose
+
+This is a development repository. Its working tree is expected to run slightly
+ahead of the documentation that describes it, and a gate that blocks on that lag
+would be wrong. The objective is narrower and permanent: a name bound twice, to
+handlers that differ in whether they maintain relations, can never again be
+invisible.
+
+Extension registrations (`register_extension_command`) are excluded -- the same
+header explicitly permits custom and student commands to self-register.
+
+### Also observed, not yet checked
+
+- `SET RELATION` is registered at `shell_commands.cpp:303` against
+  `cmd_SET_RELATIONS` (PLURAL), while the `cmd_set.cpp` ladder routes
+  `RELATION -> cmd_SET_RELATION` (SINGULAR). Two handlers for one spelling.
+  Which one wins was NOT determined: the registry is a flat map on a key the
+  dispatcher assembles, and the two-word key construction was not located.
+  Recorded as an open question rather than a finding.
+- `shell_commands.cpp:302` gates the relation surface with
+  `DOTTALK_WITH_RELATIONS`, a FOURTH build macro; the `@dottalk.subusage`
+  contracts for `SET RELATION` / `SET RELATIONS` record only `DOTTALK_WITH_DEV`
+  from the ladder. Those two contracts are incomplete.
+- `SIMPLEBROWSE` (line 153) and `SMARTBROWSE` (line 160) confirm the two
+  `dotref.hpp` entries are typos. `BROWSER` at line 158 is a real command, which
+  is the likely source of the spurious trailing `R`.
+- The file's own `@dottalk.file` banner reads `layer: helper` with empty `owns:`
+  and `lane:`, for the file that owns the entire built-in command namespace.
+
 ## 10. `app_` is a reserved name, not an existing convention (corrected)
 
 Recorded because the first reading was wrong and the wrong reading was acted on.

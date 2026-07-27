@@ -744,6 +744,122 @@ def check_subcmd_coverage(root: Path):
     return findings, detail
 
 
+def check_registration_policy(root: Path):
+    """H. src/cli/shell_commands.cpp states a policy that nothing enforces.
+
+    Its header says, verbatim:
+
+        "Built-in CLI commands are registered here. Do not self-register built-in
+         commands elsewhere; otherwise startup order, duplicate names,
+         help/reflection, and command-audit tooling become harder to reason about."
+
+    Measured when this check was written: ten other translation units call
+    registry().add() for eleven names, NINE of which shell_commands.cpp also
+    registers -- BBS, CASE, CODASYL, DELETE, ERASE, EXPORTFUNCTIONS, NET,
+    RECALL, SQLHELP.
+
+    WHY THIS IS NOT MERELY UNTIDY
+        CommandRegistry::add_with_origin does `map_[key] = std::move(h)`
+        unconditionally for Core origin; the protection check only rejects
+        Extension and Function. So Core-vs-Core is a SILENT overwrite with no
+        diagnostic, and the duplicates are NOT equivalent:
+
+            cmd_delete.cpp   registry().add("DELETE", &cmd_DELETE)
+            shell_commands   registry().add("DELETE", ... cmd_DELETE(A,S);
+                                            relations_api::refresh_if_enabled(); )
+
+        One version performs relation maintenance after a mutation and the other
+        does not. Self-registration runs at static init; register_shell_commands
+        is called later from shell.cpp:535, so the wrapped version wins TODAY --
+        by construction order, not by rule. Nothing pins that order, and
+        cmd_foxpro.cpp:568 calls register_shell_commands a second time, so
+        registration is not even once-only.
+
+    SEVERITY IS WARN, DELIBERATELY
+        This is a development repository whose working tree is expected to run
+        slightly ahead of its documentation. The point is not to block; it is
+        that a name silently bound twice, to handlers that differ in whether
+        they maintain relations, can never again be invisible.
+
+    Extension registrations (register_extension_command) are EXCLUDED: the same
+    header explicitly permits custom/student commands to self-register.
+    """
+    findings, detail = [], {}
+    hub_rel = "src/cli/shell_commands.cpp"
+    hub = root / hub_rel
+    if not hub.is_file():
+        return findings, {"skipped": "shell_commands.cpp not found"}
+
+    add_re = re.compile(r'registry\(\)\.add\(\s*"([^"]+)"')
+    sites: dict[str, list[tuple[str, int, str]]] = {}
+
+    for rel in tracked_sources(root):
+        if not rel.endswith(".cpp"):
+            continue
+        try:
+            text = (root / rel).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if "registry().add(" not in text:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            m = add_re.search(line)
+            if m:
+                sites.setdefault(m.group(1).upper(), []).append((rel, n, line.strip()))
+
+    dup_in_hub, split, asymmetric = [], [], []
+    for name, occ in sorted(sites.items()):
+        in_hub = [o for o in occ if o[0].replace("\\", "/") == hub_rel]
+        elsewhere = [o for o in occ if o[0].replace("\\", "/") != hub_rel]
+        if len(in_hub) > 1:
+            dup_in_hub.append(f"{name} ({', '.join(str(o[1]) for o in in_hub)})")
+        if in_hub and elsewhere:
+            other = elsewhere[0]
+            split.append(f"{name} (also {other[0]}:{other[1]})")
+            hub_wrapped = any("refresh_if_enabled" in o[2] for o in in_hub)
+            oth_wrapped = any("refresh_if_enabled" in o[2] for o in elsewhere)
+            if hub_wrapped != oth_wrapped:
+                asymmetric.append(
+                    f"{name}: {'hub' if hub_wrapped else other[0]} refreshes relations, "
+                    f"{other[0] if hub_wrapped else 'hub'} does not")
+
+    if asymmetric:
+        findings.append({"check": "REG_POLICY", "code": "WRAPPER_ASYMMETRY",
+                         "severity": "WARN",
+                         "message": f"{len(asymmetric)} command(s) are registered TWICE with "
+                                    f"handlers that DIFFER in whether they call "
+                                    f"relations_api::refresh_if_enabled(). Core-vs-Core "
+                                    f"registration is a silent overwrite, so which one is live "
+                                    f"depends on static-init vs shell-bootstrap ORDER, not on "
+                                    f"any rule: " + "; ".join(asymmetric)})
+    if split:
+        findings.append({"check": "REG_POLICY", "code": "SPLIT_REGISTRATION",
+                         "severity": "WARN",
+                         "message": f"{len(split)} built-in command(s) are registered both in "
+                                    f"{hub_rel} and in their own translation unit, against that "
+                                    f"file's own stated policy ('Do not self-register built-in "
+                                    f"commands elsewhere'). Last writer wins with no diagnostic: "
+                                    + ", ".join(split)})
+    if dup_in_hub:
+        findings.append({"check": "REG_POLICY", "code": "DUPLICATE_IN_HUB",
+                         "severity": "WARN",
+                         "message": f"{len(dup_in_hub)} command(s) are registered more than once "
+                                    f"within {hub_rel} itself -- the duplicate the file's own "
+                                    f"policy warns about, in the file that states it: "
+                                    + ", ".join(dup_in_hub)})
+
+    detail.update({"distinct_names": len(sites),
+                   "hub_registrations": sum(
+                       1 for occ in sites.values()
+                       for o in occ if o[0].replace("\\", "/") == hub_rel),
+                   "self_registering_files": sorted(
+                       {o[0] for occ in sites.values() for o in occ
+                        if o[0].replace("\\", "/") != hub_rel}),
+                   "split": split, "duplicate_in_hub": dup_in_hub,
+                   "wrapper_asymmetry": asymmetric})
+    return findings, detail
+
+
 def check_embedded_bom(root: Path, files):
     """F. Build-breaking. Non-negotiable FAIL."""
     bad = []
@@ -774,6 +890,7 @@ def run_audit(root: Path):
                      ("srcfile_drift", lambda: check_srcfile_drift(root, files)),
                      ("dotref_coverage", lambda: check_dotref_coverage(root)),
                      ("subcmd_coverage", lambda: check_subcmd_coverage(root)),
+                     ("registration_policy", lambda: check_registration_policy(root)),
                      ("embedded_bom", lambda: check_embedded_bom(root, files))):
         f, d = fn()
         findings.extend(f)

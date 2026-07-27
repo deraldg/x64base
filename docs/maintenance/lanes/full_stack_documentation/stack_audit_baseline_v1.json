@@ -2,11 +2,12 @@
   "by_check": {
     "BANNER_CENSUS": 1,
     "CONTRACT_QA": 13,
-    "DOTREF_COV": 3
+    "DOTREF_COV": 3,
+    "REG_POLICY": 3
   },
   "counts": {
     "FAIL": 0,
-    "WARN": 17
+    "WARN": 20
   },
   "detail": {
     "banner_census": {
@@ -220,6 +221,40 @@
       "files": [],
       "offenders": 0
     },
+    "registration_policy": {
+      "distinct_names": 238,
+      "duplicate_in_hub": [
+        "EXAMPLE (474, 563)"
+      ],
+      "hub_registrations": 237,
+      "self_registering_files": [
+        "src/cli/cmd_bbs.cpp",
+        "src/cli/cmd_codaysl.cpp",
+        "src/cli/cmd_delete.cpp",
+        "src/cli/cmd_erase.cpp",
+        "src/cli/cmd_export_functions.cpp",
+        "src/cli/cmd_net.cpp",
+        "src/cli/cmd_recall.cpp",
+        "src/cli/cmd_sql_help.cpp",
+        "src/cli/help_predicates.cpp",
+        "src/edu/edu_case.cpp"
+      ],
+      "split": [
+        "BBS (also src/cli/cmd_bbs.cpp:178)",
+        "CASE (also src/edu/edu_case.cpp:202)",
+        "CODASYL (also src/cli/cmd_codaysl.cpp:863)",
+        "DELETE (also src/cli/cmd_delete.cpp:486)",
+        "ERASE (also src/cli/cmd_erase.cpp:341)",
+        "EXPORTFUNCTIONS (also src/cli/cmd_export_functions.cpp:337)",
+        "NET (also src/cli/cmd_net.cpp:189)",
+        "RECALL (also src/cli/cmd_recall.cpp:460)",
+        "SQLHELP (also src/cli/cmd_sql_help.cpp:209)"
+      ],
+      "wrapper_asymmetry": [
+        "DELETE: hub refreshes relations, src/cli/cmd_delete.cpp does not",
+        "RECALL: hub refreshes relations, src/cli/cmd_recall.cpp does not"
+      ]
+    },
     "srcfile_drift": {
       "catalog_rows": 1035,
       "catalog_rows_in_scope": 1035,
@@ -236,7 +271,8 @@
       "table_rows_set": 31,
       "uncontracted": [],
       "undiscoverable": [],
-      "usage_text_listed": 32
+      "usage_text_listed": 32,
+      "usage_text_regions": 2
     }
   },
   "tracked_source_files": 1036
