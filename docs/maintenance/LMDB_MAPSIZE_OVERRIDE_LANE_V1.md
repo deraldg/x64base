@@ -249,6 +249,77 @@ left unwired, and the gap invisible because nothing compares the two halves.
 never checked (`dbfread`); `mapsize_explicit` computed and never used. Worth
 naming as a class: *a value produced for a decision that is never made.*
 
+## PROVEN 2026-07-27 -- mechanism observed, lane promoted to `runtime_observed`
+
+The inference in "Mechanism -- inferred, NOT yet proven" is now observed. One
+index attach, on a never-attached environment `BUILDLMDB` had written at 128 MiB:
+
+```
+BEFORE: 134,217,728                    (128 MiB, as BUILDLMDB wrote it)
+
+  . SETPATH: DBF     = ...\data\metadata
+  . SETPATH: INDEXES = ...\data\INDEXES\metadata
+  . SETPATH: LMDB    = ...\data\LMDB\metadata
+  . Opened SYSSUBCMD (v64) : Record count 31
+    Valid Index/Indices   : CDX
+    Auto-attached order: SYSSUBCMD.cdx (tag: SUB_ID)
+  . SET ORDER: CDX TAG 'SUB_ID' (ASC)
+  . Found at 31.
+
+AFTER : 1,073,741,824                  (1 GiB)
+```
+
+Transcript: `labtalk/proofs/runs/20260727_aif065_mapsize_attach.txt` (committed;
+`.gitignore:56` negation `!labtalk/proofs/**` keeps proof artifacts trackable per
+AIF-062).
+
+**Exactly 8x, on a 31-row table, from one attach.** The bimodal distribution
+reported under "Measured evidence" is explained: every environment holds either
+the size `BUILDLMDB` wrote or the 1 GiB the attach path asserts, and which one
+depends solely on whether an index has ever been opened.
+
+### Correction to the predicted trigger
+
+The protocol below anticipated that `SET ORDER` or `SEEK` would cause the
+attach. The transcript shows otherwise:
+
+```
+. Opened SYSSUBCMD ...
+  Auto-attached order: SYSSUBCMD.cdx (tag: SUB_ID)      <- attach happens HERE
+```
+
+**The attach occurs at `USE`,** as an auto-attach, when the index is findable.
+`SET ORDER` merely selects a tag on an environment already opened and already
+resized. This matters for anyone reproducing it: the trigger is not an index
+*operation*, it is the index being *locatable* when the table opens.
+
+That also explains the two failed probes below. The first had a relative tee
+path that aborted the pipeline; the second reached the shell but set only
+`SETPATH DBF`, so the CDX was not findable, no auto-attach occurred, and the
+env stayed at 128 MiB. Both produced an identical, plausible, meaningless
+`134217728 -> 134217728`.
+
+### Specimen ledger after the proof
+
+```
+SYSSUBCMD   1,073,741,824   SPENT -- this proof
+SYSFUNC       134,217,728   spare, 69 rows, never attached
+SYSARGS       134,217,728   spare, 249 rows, never attached
+SYSCMD      1,073,741,824   pre-existing attached control
+```
+
+Two spares remain for verifying the FIX -- a `TINY` request must produce and
+keep a 32 MiB file across an attach.
+
+### Method note that earned its place
+
+Two consecutive probes returned `134217728 -> 134217728` for two unrelated
+reasons, neither of them the mechanism. **A null probe and a negative result are
+indistinguishable from the outside.** A proof protocol must therefore state what
+SUCCESS LOOKS LIKE IN THE TRANSCRIPT, not merely what to measure -- here,
+`Auto-attached order:` and `Found at N.`. The two `stat` calls were never the
+hard part; knowing whether the thing under test ran was.
+
 ## Runtime proof protocol -- the specimen is PERISHABLE
 
 The lane is blocked at `source_defined` because nobody has watched a single

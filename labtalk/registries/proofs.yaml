@@ -430,3 +430,34 @@ proofs:
       corrected to runtime_observed citing Phase A/B/C by SHA. Same failure as the @dottalk.file gap
       (AIF-050) one layer up: there source files were invisible to the harvest, here proofs were
       invisible to a clone.
+
+  - id: proof.lmdb.mapsize_override_on_attach
+    label: LMDB env resizes 128 MiB -> 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_attach.txt
+    item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+    return_code: 0
+    related:
+      - D:/code/ccode/src/xindex/cdx_backend.cpp
+      - D:/code/ccode/src/xindex/lmdb_backend.cpp
+      - D:/code/ccode/src/cli/cmd_buildlmdb.cpp
+    notes: >-
+      AIF-065 promoted from source_defined to runtime_observed. SYSSUBCMD.cdx.d/data.mdb
+      measured at 134,217,728 bytes immediately before the run and 1,073,741,824 bytes
+      immediately after -- exactly 8x, on a 31-ROW TABLE, from a single index attach. The
+      environment had been written by BUILDLMDB at 128 MiB earlier the same day and never
+      attached, making it a clean control; SYSCMD (203 rows, 1 GiB, attached) was the
+      opposite arm. This explains the bimodal distribution recorded in the lane doc: every
+      data.mdb holds either the size BUILDLMDB wrote or the 1 GiB asserted by
+      mdb_env_set_mapsize at cdx_backend.cpp:189 / lmdb_backend.cpp:80, and which one
+      depends solely on whether an index has ever been opened. TRIGGER CORRECTED BY THE
+      TRANSCRIPT -- the attach fires at USE ("Auto-attached order: SYSSUBCMD.cdx (tag:
+      SUB_ID)"), not at SET ORDER or SEEK as the protocol had predicted; it is caused by
+      the index being FINDABLE when the table opens, not by an index operation. METHOD
+      NOTE: two earlier probes returned an identical, plausible 134217728 -> 134217728 for
+      two unrelated reasons (a relative tee path that aborted the pipeline; a run that set
+      only SETPATH DBF so the CDX was not findable). A null probe and a negative result are
+      indistinguishable from the outside, so the protocol now names the transcript lines
+      that constitute success -- "Auto-attached order:" and "Found at N." -- rather than
+      only the bytes to measure. Consequence unblocked: the x64base-vs-SQLite storage
+      benchmark axis, which until now compared attach history rather than databases.

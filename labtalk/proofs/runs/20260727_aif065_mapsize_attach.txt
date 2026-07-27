@@ -1,0 +1,54 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-27, 3e63c258 dirty)  (Jul 27 2026 06:53:14)
+DotTalk++ build Jul 27 2026 06:53:14
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  1 Kings 2:41
+  And it was told Solomon that Shimei had gone from Jerusalem to Gath, and was come again.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. SETPATH: DBF = D:\code\ccode\dottalkpp\data\metadata
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\metadata
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\metadata
+. Opened SYSSUBCMD (v64) : Record count 31
+Valid Index/Indices   : CDX
+Auto-attached order: SYSSUBCMD.cdx (tag: SUB_ID)
+. SET ORDER: CDX TAG 'SUB_ID' (ASC)
+. Found at 31.
+. 31
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
