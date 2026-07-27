@@ -23,7 +23,11 @@
 // - BUILDLMDB is shell-safe: no nested std::cin prompt reads.
 // - If an existing LMDB env would be destructively rebuilt, caller must supply
 //   YES / Y / AUTO / NOPROMPT / QUIET / SILENT explicitly.
-// - CLEAN / FORCE archives first and proceeds without the destructive prompt path.
+// - CLEAN / FORCE DISCARDS the superseded environment first and proceeds without
+//   the destructive prompt path. The environment is derived from the .cdx
+//   container and the table, both of which this command reads, so nothing is
+//   lost. Pass ARCHIVE (or KEEP) to retain it under backups/ instead.
+//   Changed 2026-07-27, AIF-065: archiving was the silent default.
 
 // @dottalk.usage v1
 // owner: DOT|BUILDLMDB
@@ -56,12 +60,27 @@
 //   BUILDLMDB HUGE
 //   BUILDLMDB MAPSIZE <size> YES
 //   BUILDLMDB CLEAN MAPSIZE <size> YES
+//   BUILDLMDB CLEAN ARCHIVE YES
 //
 // notes:
 //   BUILDLMDB requires an open table except for usage/help requests.
 //   The public CDX container resolves under INDEXES and the LMDB backend environment resolves under LMDB.
 //   If an existing LMDB environment would be destructively rebuilt, explicit YES, AUTO, NOPROMPT, QUIET, or SILENT is required.
-//   CLEAN and FORCE archive the existing environment before rebuild.
+//   CLEAN and FORCE DISCARD the superseded environment before rebuild. It is a
+//     DERIVED artifact, regenerated here from the .cdx container and the table;
+//     the container is ~3 KB against a multi-hundred-megabyte environment, so
+//     retaining the environment protects nothing the sources do not.
+//   ARCHIVE (or KEEP) opts in to retaining it under backups/ instead. This was
+//     the silent default until 2026-07-27 (AIF-065) and is how a 73 GB LMDB tree
+//     accumulated one rebuild at a time.
+//   ARCHIVE IS NOT A SAFETY FEATURE. BUILDLMDB reads the container and writes
+//     the environment (see risk block); it never modifies the declaration, so a
+//     size change puts nothing irrecoverable at risk. ARCHIVE exists only for a
+//     deliberate before/after comparison of index CONTENT. The commands that DO
+//     restructure the container -- CDX CREATE and CDX ADDTAG -- archive nothing
+//     today, which is where a ~3 KB snapshot would actually earn its place.
+//     Archive the thing that CHANGES, at the command that changes it; size is
+//     not a reason to keep a copy, irrecoverability is.
 //   BUILDLMDB releases active index/order state before destructive rebuild.
 //   BUILDLMDB rebuilds tag databases from current table data.
 //
@@ -70,7 +89,8 @@
 //   reads_cdx_container: yes
 //   writes_lmdb_environment: yes
 //   drops_or_recreates_lmdb_databases: yes
-//   archives_existing_environment: CLEAN or FORCE
+//   discards_existing_environment: CLEAN or FORCE (default)
+//   archives_existing_environment: ARCHIVE or KEEP (opt-in)
 //   clears_order_state: before rebuild
 //   requires_confirmation_for_existing_environment: yes
 //   mutates_table_data: no
@@ -242,7 +262,59 @@ static std::string timestamp_ymdhms()
     return std::string(buf);
 }
 
-// Move envdir to backups folder next to it
+// DISCARD the superseded environment. This is the DEFAULT for CLEAN/FORCE.
+//
+// AIF-065, decided by member.derald 2026-07-27:
+//   "we don't need to back up the .mdb lmdb files, instead we back up the cdx
+//    container. The containers are small and by design we can rebuild the lmdb
+//    files, so why back them up in the first place."
+//
+// MEASURED, same day:
+//     SYSCMD   .cdx      776 bytes      data.mdb  1,073,741,824 bytes
+//     ALL 93 .cdx containers  0.1 MB    ALL LMDB  73 GB
+// Roughly 730,000 to 1. The declaration layer -- every container, every tag,
+// the entire statement of what the indexes ARE -- fits in a tenth of a
+// megabyte. Everything else is regenerated from it plus the DBF by this very
+// command:
+//
+//     DBF (data) + .cdx (declares tags)  --BUILDLMDB-->  LMDB env (derived)
+//        SOURCE        SOURCE                            REGENERABLE
+//
+// Retaining a superseded environment therefore protects nothing the sources do
+// not already protect, while consuming storage proportional to the DERIVED
+// size. 25 such archives existed when this changed, holding no information
+// recoverable only from them.
+//
+// Archiving remains available via the explicit ARCHIVE keyword, because a
+// deliberate before/after comparison is a legitimate thing to want. It is now
+// opt-in rather than the silent default that let a 73 GB tree accumulate.
+static bool discard_envdir(const fs::path& envdir, bool quiet)
+{
+    std::error_code ec;
+    if (!fs::exists(envdir, ec)) return true;
+
+    fs::remove_all(envdir, ec);
+    if (ec) {
+        cli::cmdout::print_prefixed_message(
+            "BUILDLMDB CLEAN",
+            MessageId::BuildLmdbRemoveAllFailed,
+            {{"detail", ec.message()}});
+        return false;
+    }
+    if (!quiet) {
+        cli::cmdout::print_line(
+            "BUILDLMDB CLEAN: discarded superseded environment (regenerable from "
+            "the .cdx container; use ARCHIVE to retain it)");
+    }
+    return true;
+}
+
+// Move envdir to backups folder next to it. OPT-IN via the ARCHIVE keyword.
+//
+// Note this is a RENAME, not a copy, so it does not spike disk usage -- it
+// ACCUMULATES it. That distinction matters: the disk-filling incident that
+// opened this lane was a copy-based backup script, not this function. This one
+// grew a 73 GB tree quietly, one rebuild at a time.
 static bool archive_envdir_to_backups(const fs::path& envdir, bool quiet)
 {
     std::error_code ec;
@@ -618,6 +690,9 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
     bool do_clean = false;
     bool do_force = false;
     bool auto_confirm = false;
+    // AIF-065: the superseded environment is DERIVED and is discarded by
+    // default. ARCHIVE opts back in to retaining it under backups/.
+    bool do_archive = false;
     bool quiet = false;
     bool show_help = false;
     bool mapsize_explicit = false;
@@ -639,6 +714,10 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
         } else if (t == "FORCE") {
             do_clean = true;
             do_force = true;
+        } else if (t == "ARCHIVE" || t == "KEEP") {
+            // Opt in to retaining the superseded environment. Was the silent
+            // default until AIF-065; see discard_envdir() for why it is not.
+            do_archive = true;
         } else if (t == "AUTO" || t == "NOPROMPT" || t == "YES" || t == "Y") {
             auto_confirm = true;
         } else if (t == "QUIET" || t == "SILENT") {
@@ -746,10 +825,17 @@ void cmd_BUILDLMDB(xbase::DbArea& area, std::istringstream& args)
         orderstate::clearOrder(area);
     }
 
-// CLEAN/FORCE: archive first
+// CLEAN/FORCE: clear the superseded environment first.
+//
+// DISCARD by default; ARCHIVE only when explicitly asked (AIF-065). The env is
+// regenerated from the .cdx container and the DBF by the build immediately
+// below, so retaining it stores a derived artifact at ~730,000x the size of the
+// declaration it derives from.
 
     if (do_clean || do_force) {
-        if (!archive_envdir_to_backups(envdir, quiet)) {
+        const bool ok = do_archive ? archive_envdir_to_backups(envdir, quiet)
+                                   : discard_envdir(envdir, quiet);
+        if (!ok) {
             cli::cmdout::print_prefixed_message("BUILDLMDB", MessageId::BuildLmdbArchiveFailedAborting);
             return;
         }

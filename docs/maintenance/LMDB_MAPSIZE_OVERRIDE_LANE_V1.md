@@ -308,6 +308,222 @@ is not one anybody would reach for while debugging an out-of-memory.
 The defect was found on a full disk and proven on a 31-row table. Its worst
 consequence was waiting in a lane that had not been exercised yet.
 
+### Headroom hid it, and would have stopped hiding it at the worst moment
+
+> "I've been lucky during testing because I have 64gb ram" (member.derald)
+
+That is the whole reason this survived. 64 GB is generous enough that nothing in
+ordinary CLI use ever pressed against the waste -- and it is NOT enough for the
+lane that was next:
+
+```
+112 containers x 1 GiB   = ~112 GiB    exceeds 64 GB   -- vdisk dies
+112 containers x 32 MiB  =  ~3.5 GiB   comfortable     -- vdisk viable
+```
+
+So the luck was not going to run out gradually. It would have run out the first
+time someone mounted the LMDB tree in RAM, all at once, in a session where the
+obvious suspect is **the new code**. The defect is four months old and lives in
+an attach path nobody was editing; the vdisk lane would have been three days old
+and under active development. Every instinct would have pointed at the wrong
+file.
+
+**The general shape: abundant resources do not prevent resource defects, they
+postpone them -- and they postpone them until a new consumer arrives, which is
+precisely when the blame lands somewhere else.** A machine sized for comfort is
+a machine that cannot feel this class of problem, so the measurement has to come
+from somewhere other than "does it still work here".
+
+That is also the argument for the storage benchmark axis being unblocked rather
+than merely nice: it is the instrument that would have caught this without
+anyone's disk filling or anyone's RAM running out.
+
+## THE LMDB ENVIRONMENT IS DERIVED. DO NOT BACK IT UP. (member.derald)
+
+> "we don't need to back up the .mdb lmdb files, instead we back up the cdx
+> container. The containers are small and by design we can rebuild the lmdb
+> files, so why back them up in the first place."
+
+Measured 2026-07-27:
+
+```
+SYSCMD        .cdx        776 bytes      data.mdb  1,073,741,824 bytes
+SYSSUBCMD     .cdx      3,656 bytes      data.mdb  1,073,741,824 bytes
+SYSFUNC       .cdx      3,656 bytes      data.mdb  1,073,741,824 bytes
+
+ALL 93 .cdx containers   0.1 MB
+ALL LMDB                 73 GB
+```
+
+**Roughly 730,000 to 1.** The declaration layer -- every tag, every container,
+the entire statement of what the indexes ARE -- fits in a tenth of a megabyte.
+The other 73 GB is regenerated from it plus the DBF by `BUILDLMDB`.
+
+### The dependency, stated plainly
+
+```
+DBF (data)  +  .cdx (declares the tags)   --BUILDLMDB-->   LMDB env (derived)
+   SOURCE           SOURCE                                  REGENERABLE
+```
+
+A `.cdx` is a declaration shell; the keys live in LMDB and are rebuilt on every
+`BUILDLMDB`. So the environment holds no information not derivable from two
+things that together weigh almost nothing.
+
+**Backing up a derived artifact is not caution, it is a category error.** It
+costs storage proportional to the derived size while protecting nothing that the
+source does not already protect -- and it competes for the very disk the
+regeneration needs.
+
+### This was learned the hard way, twice, in one day
+
+1. A reload driver copied `lmdb/COMMENTS` recursively "to be safe" -- 47 GB of
+   regenerable data -- and filled the disk mid-run. Fixed to back up source data
+   only, with a hard abort above 500 MB. Recorded then as: *"back up everything
+   to be safe is a reflex, and it is wrong when the thing copied is rebuilt by
+   the very next step."*
+2. `BUILDLMDB CLEAN` does the same thing structurally: it archives the
+   superseded ENVIRONMENT. 25 archived environments exist today, holding nothing
+   that could not be regenerated in seconds from a 3 KB container.
+
+### Follow-on fix (own lane): CLEAN should not archive the environment
+
+`BUILDLMDB CLEAN` currently archives the env with no retention limit, which is
+what compounded the mapsize defect into a disk-filling event. Given the ratio
+above, the correct behaviour is one of:
+
+- **archive nothing** -- the env is regenerable by definition, and `CLEAN` is
+  followed immediately by a rebuild
+- **archive the `.cdx` only** -- 3 KB, preserves the declaration if the rebuild
+  is destructive to it, costs nothing
+
+Either makes the 25 existing archives straightforwardly DELETABLE rather than
+subject to a retention policy. `prune_lmdb_archives.ps1 -Keep N` was the right
+tool for a world where the archives were worth keeping; the measurement says
+that world does not exist.
+
+### Consequence for the reclaim below
+
+The reclaim's operational trap -- that rebuilding 63 containers first writes
+63 GiB of fresh archives -- **disappears entirely** once `CLEAN` stops archiving
+environments. The batching and prune-between-batches discipline is a workaround
+for a behaviour that should not exist.
+
+## Archiving is attached to the wrong command entirely (member.derald)
+
+> "why archive the cdx when changing sizes -- the only reason to archive is if
+> modifying the cdx structure itself."
+
+Correct, and checking it produces a clean inversion. `BUILDLMDB`'s own risk block
+already states the relationship:
+
+```
+reads_cdx_container:     yes      <- the declaration, read only
+writes_lmdb_environment: yes      <- the derived artifact
+```
+
+`BUILDLMDB` never modifies the container. It reads the declaration and rebuilds
+the derived environment from it. **A size change alters nothing declarative**, so
+there is nothing whose prior state could be worth keeping. Archiving during
+`BUILDLMDB` is protecting the wrong artifact at a moment when no protected thing
+is at risk.
+
+Meanwhile:
+
+| command | changes | archives today |
+|---|---|---|
+| `BUILDLMDB` | the derived environment (up to 1 GiB) | **yes** (now opt-in) |
+| `CDX CREATE` | the container structure (~3 KB) | **no** |
+| `CDX ADDTAG` | the container structure (~3 KB) | **no** |
+
+Archiving exists exactly where it protects nothing, and is absent exactly where
+it would be cheap and meaningful.
+
+### The principle
+
+**Archive the thing that CHANGES, at the command that CHANGES it -- not the
+thing that is large.** Size is not a reason to keep a copy; irrecoverability is.
+A 1 GiB environment regenerated by the very command that replaced it is worth
+nothing; a 3 KB declaration being restructured is worth a snapshot, because a
+mistaken `ADDTAG` or a re-`CREATE` discards tag definitions that no other file
+holds.
+
+### Consequences
+
+1. `ARCHIVE`/`KEEP` on `BUILDLMDB` is **not a safety feature** and should not be
+   documented as one. It is a debugging convenience for a deliberate before/after
+   comparison of index CONTENT. Recorded as such rather than removed, so nobody
+   reaches for it expecting protection.
+2. **Owed, and the real gap:** `CDX CREATE` and `CDX ADDTAG` should snapshot the
+   prior `.cdx` before restructuring it. At ~3 KB this costs nothing measurable
+   and protects the only artifact in the subsystem that is not regenerable.
+   Wants its own lane -- it is a change to a different command, with its own
+   verification.
+3. The 25 archived environments remain deletable. They were never protecting a
+   declaration.
+
+## Reclaim: the fix stops the bleeding, it does not heal the wound
+
+Measured immediately after the fix landed, 2026-07-27:
+
+```
+dottalkpp/data/LMDB          73 GB
+  63 envs @ 1,073,741,824    ~63 GiB    87% of the tree
+  75 envs @   134,217,728     ~9.4 GiB
+   2 envs @    33,554,432      today's rebuilt SYSARGS
+live envs 115   archived envs 25
+```
+
+Sixty-three files hold 87% of the tree, and they are 1 GiB **only because they
+were once attached**. The fix prevents new inflation; it cannot shrink an
+environment that already exists. Reclaiming requires rebuilding each container.
+
+### The compounding that actually filled the disk
+
+member.derald: *"it's also been consuming large amounts of disk space, especially
+with the backups."* That is the second defect in this subsystem multiplying the
+first:
+
+- every attached env is 1 GiB rather than its declared size
+- `BUILDLMDB CLEAN` archives each superseded env with **no retention limit**
+- so every rebuild banks *another* 1 GiB copy
+
+Neither alone would have filled a disk. Together, each maintenance operation on
+an over-sized environment permanently deposits an over-sized archive. **The fix
+therefore improves the archive growth rate by the same factor as the live size**
+-- future `CLEAN` operations bank a 32 MiB archive where they used to bank 1 GiB.
+
+### The operational trap is GONE -- and the version above was wrong twice
+
+An earlier draft of this section warned that rebuilding all 63 one-gig containers
+would "first write ~63 GiB of fresh archives" and prescribed batching with prunes
+between. **Both halves were wrong, and they were wrong in opposite directions.**
+
+`archive_envdir_to_backups` uses `fs::rename` -- a MOVE, not a copy. Archiving
+never spiked disk usage; it ACCUMULATED it. The disk-filling incident that opened
+this lane was a copy-based backup script, an entirely different mechanism that I
+had conflated with this one. Both retain regenerable data; only one doubles it.
+
+And as of 2026-07-27 `BUILDLMDB CLEAN` **discards** the superseded environment by
+default (`ARCHIVE`/`KEEP` opts in), so there are no archives to accumulate or
+prune. The reclaim is therefore a single pass:
+
+1. rebuild each over-sized container at an appropriate rung
+2. delete the 25 pre-existing archives -- regenerable, no retention policy needed
+
+Projected end state is roughly 63 x 128 MiB in place of 63 x 1 GiB, about 55 GiB
+recovered, and more where a smaller rung suits -- most of these catalogs are
+small enough for `TINY` or `SMALL`.
+
+`prune_lmdb_archives.ps1 -Keep N` was the right tool for a world in which the
+archives were worth keeping. The 730,000:1 measurement says that world does not
+exist, and the tool is now vestigial rather than load-bearing.
+
+### Why this is worth doing now rather than later
+
+Every container left at 1 GiB is one that will bank a 1 GiB archive the next time
+anything rebuilds it. The debt compounds on maintenance, not on use.
+
 ## Rebuild sizing rule -- DECIDED 2026-07-27 (member.derald)
 
 > "if we rebuild, the command should default to the current size unless a larger
