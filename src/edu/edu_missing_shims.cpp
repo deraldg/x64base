@@ -18,9 +18,13 @@
 // Remove one shim at a time when a real implementation provides the same
 // edu_* entrypoint.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: EDU|MISSING_SHIMS
-// command: TEXT/EDIT/COBOL shim aliases
+// documents: TEXT/EDIT/COBOL shim aliases
 // category: education-shim
 // status: compatibility-shim
 // noargs: report

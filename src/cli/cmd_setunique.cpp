@@ -10,9 +10,13 @@
 // SET UNIQUE FIELD <name> ON|OFF
 // Lists current unique fields if called without args.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET UNIQUE
-// command: SET UNIQUE
+// documents: SET UNIQUE
 // category: constraints
 // status: supported
 // noargs: report

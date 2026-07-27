@@ -457,6 +457,44 @@ minimal build requires", maintained separately, and never reconciled. A file was
 written for configuration X and excluded from configuration X, and nothing
 noticed because the only build anyone runs is configuration Y.
 
+## 9e. TURNED OVER: DDICT contract repair is a PDLC lane, not an inline fix
+
+Decided 2026-07-27 (member.derald): *"we turn over ddict for pldc repair."*
+
+`src/cli/cmd_ddict.cpp` is the sole `CONTRACT_QA/NON_CANONICAL_DIALECT` finding
+and the reason `DDICT` cannot be generated into `SYSCMD`. It uses a block-comment
+dialect inside `/* */` with `surface:` in place of `command:` and `forms:` in
+place of `usage:`.
+
+**It is not a mechanical conversion, which is why it is turned over rather than
+patched.** The block carries five field groups the canonical dialect has no home
+for:
+
+```
+alias_bridge     DDOBJECT -> DATA_DICTIONARY_OBJECTS, and five more legacy
+                 spellings that must keep resolving
+active_roots     DBF / CDX / LMDB roots for the datadict subtree
+contract_notes   three behavioural requirements, including an honest-reporting
+                 rule for physical tag artifacts without catalog rows
+safety           five read-only guarantees
+evidence_lane    DD096Z-D2ZS
+```
+
+Converting means DECIDING where each group lives -- canonical field, prose note,
+a new contract kind, or a different artifact entirely. That is analyse and design
+work with a real risk of information loss, so it takes the full PDLC cycle rather
+than a find-and-replace.
+
+Consequences while it is out of scope here:
+
+- `DDICT` is excluded from the generated `SYSCMD` and will remain absent until the
+  contract is repaired. Recorded so its absence is not mistaken for the catalog
+  being wrong.
+- `CONTRACT_QA/NON_CANONICAL_DIALECT` stays at 1 and should not be treated as a
+  regression.
+- The generator needs no special case for it. A file whose contract cannot be
+  parsed simply produces no row, which is the correct behaviour.
+
 ## 10. `app_` is a reserved name, not an existing convention (corrected)
 
 Recorded because the first reading was wrong and the wrong reading was acted on.

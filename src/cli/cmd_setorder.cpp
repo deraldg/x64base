@@ -38,9 +38,13 @@
 // - LMDB backend resolves under LMDB.
 // - This command validates both paths before attempting backend activation.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET ORDER
-// command: SET ORDER
+// documents: SET ORDER
 // category: index
 // status: supported
 // noargs: report
