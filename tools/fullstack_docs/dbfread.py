@@ -120,9 +120,99 @@ def read(path: str | Path, *, include_deleted: bool = False) -> Table:
         ))
         off += 32
 
+    # ----------------------------------------------------------------- #
+    # X64M extended header -- the AUTHORITATIVE field table when present
+    # ----------------------------------------------------------------- #
+    # After the 0x0D descriptor terminator, X64 writes a block:
+    #
+    #   +0   "X64M"
+    #   +4   u32  version (2 observed)
+    #   +8   u32  extension length
+    #   +12  u32  reserved (0 observed)
+    #   +16  u32  table-name length
+    #   +20  u32  field-record offset (44 observed)
+    #   +24  u32  field count
+    #   +28  u32  names-blob offset
+    #   +32  u32  names-blob length
+    #   +36..44   two u32s, purpose not identified -- recorded as unknown
+    #             rather than guessed
+    #   +44  field records, 16 bytes each:
+    #             u32 index, u32 name offset, u32 name length, u32 WIDTH
+    #   names blob: table name, then each field name, concatenated
+    #
+    # TWO THINGS LIVE HERE THAT THE CLASSIC DESCRIPTOR CANNOT HOLD:
+    #
+    #   TRUE WIDTH, 32-bit. The classic width byte is CLAMPED to 0xFF. That is
+    #   why comments/MEMO_LINES.dbf was unreadable: LINECONT is C(1024) and read
+    #   back as 255, leaving 769 bytes of every record undescribed. Nothing was
+    #   corrupt; the reader simply could not express the field.
+    #
+    #   LOGICAL NAME, up to 128 chars. The classic name is 10 bytes, so
+    #   HELP_TOPIC_LOCALE's TOPIC_LOCALE_ID (15 chars) is truncated there, and
+    #   collisions get the unique-name fallback that produced LOCALIZE~1 -- the
+    #   value that broke an earlier field filter and nearly produced a false
+    #   SOURCE_HASH finding.
+    #
+    # Verified against three tables of different shape (3, 14 and 20 fields;
+    # one field wider than 255): sum(X64M widths) + 1 == reclen in every case.
+    # TWO VERSIONS EXIST, and the block states which without being asked:
+    #
+    #   v2  16-byte records: idx, name-offset, name-length, WIDTH
+    #   v1  12-byte records: idx, name-offset, name-length      (no width)
+    #
+    # v1 carries logical NAMES only; widths still come from the classic
+    # descriptor byte. Rather than branch on the version field, DERIVE the
+    # stride from the block's own geometry:
+    #
+    #     stride = (names_off - frec_off) / nfields
+    #
+    # which is self-checking: if it does not divide evenly, the block is not
+    # laid out the way this reader believes and it declines the extension
+    # instead of reading past the field table. Keying on the version number
+    # would have hardcoded an assumption that a v3 could quietly break.
+    x64m: list[tuple[str, int | None]] = []
+    term = 32
+    while term + 32 <= hdrlen and b[term] != 0x0D:
+        term += 32
+    ext = b[term + 1:hdrlen] if term < hdrlen else b""
+    if ext[:4] == b"X64M":
+        try:
+            (_ver, _extlen, _rsv, _tnamelen, frec_off,
+             nfields, names_off, names_len) = struct.unpack_from("<8I", ext, 4)
+            span = names_off - frec_off
+            if nfields > 0 and span > 0 and span % nfields == 0:
+                stride = span // nfields
+                blob = ext[names_off:names_off + names_len]
+                for i in range(nfields):
+                    base = frec_off + stride * i
+                    # The stored index is 1-BASED (house convention: 0-based
+                    # behind the scenes, 1-based at user fronts -- and a field
+                    # number is a user front). It is read but NOT used: fields
+                    # are taken in FILE ORDER, so a sparse or renumbered index
+                    # cannot silently reorder a record layout. An earlier draft
+                    # keyed a dict on it and raised KeyError(2) on four tables.
+                    _idx, noff, nlen = struct.unpack_from("<3I", ext, base)
+                    width = (struct.unpack_from("<I", ext, base + 12)[0]
+                             if stride >= 16 else None)
+                    x64m.append((blob[noff:noff + nlen].decode("latin1"), width))
+        except (struct.error, IndexError):
+            x64m = []          # malformed extension: fall through, do not guess
+
     real: list[Field] = []
     phantoms = 0
-    if any(d[3] for d in raw_desc):
+    if x64m:
+        # X64M supplies logical name and (v2) true width. The classic
+        # descriptors still supply the TYPE character and, for v1, the width --
+        # so pair them in file order across the non-phantom descriptors.
+        classic = [d for d in raw_desc if d[3]] or raw_desc[-len(x64m):]
+        run = 1
+        for i, (name, width) in enumerate(x64m):
+            ftype = classic[i][1] if i < len(classic) else "C"
+            w = width if width is not None else (classic[i][2] if i < len(classic) else 0)
+            real.append(Field(name, ftype, w, run, run))
+            run += w
+        phantoms = len(raw_desc) - len(x64m)
+    elif any(d[3] for d in raw_desc):
         run = 1
         for name, ftype, width, disp in raw_desc:
             if disp == run:

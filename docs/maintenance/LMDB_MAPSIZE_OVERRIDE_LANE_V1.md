@@ -199,6 +199,99 @@ the data or the operator chose. A 30,124-row table and a 9-row table both occupy
 1,073,741,824 bytes. Recorded against the benchmark row in
 `docs/ai-friendly/HISTORICAL_DATABASE_MIGRATION_EMPIRICAL_PROGRESS_LANE_V1.md`.
 
+## Rebuild sizing rule -- DECIDED 2026-07-27 (member.derald)
+
+> "if we rebuild, the command should default to the current size unless a larger
+> size is declared (probably for more room)."
+
+This is a second, separable correction from the override deletion, and it should
+land with it because together they make the ladder mean something.
+
+### The rule
+
+| invocation | behaviour |
+|---|---|
+| rebuild, **no size given** | reuse the env's CURRENT mapsize -- do not fall back to a compiled default |
+| rebuild, **larger size given** | grow to the requested size |
+| rebuild, **smaller size given** | refuse, or require an explicit force token; shrinking risks `MDB_MAP_FULL` and silent data loss on an env that already holds more |
+
+Rationale: a rebuild is a maintenance operation on an EXISTING environment. It
+should preserve the operator's earlier sizing decision by default and change it
+only when told. Today a bare rebuild silently reasserts a compiled constant,
+which means the size an operator chose survives exactly until the next routine
+rebuild -- a decision with no memory.
+
+### The flag already exists and is discarded
+
+`src/cli/cmd_buildlmdb.cpp:676`:
+
+```cpp
+(void)mapsize_explicit; // available if you later want to report preset/default distinction
+```
+
+`mapsize_explicit` -- precisely the "did the operator name a size?" predicate the
+rule needs -- is already computed, then thrown away with a comment anticipating
+the use it was never put to. `chosen_mapsize` is initialised from
+`LMDB_DEFAULT_MAPSIZE` (line 624) regardless.
+
+So implementing the rule is not new machinery. It is:
+
+1. when `!mapsize_explicit`, read the existing env's current mapsize (LMDB meta
+   page, via `mdb_env_info`) and use it instead of `LMDB_DEFAULT_MAPSIZE`
+2. when explicit and larger, use the request
+3. when explicit and smaller, refuse with a message naming both sizes
+4. delete the `(void)` and report which branch was taken, which is what the
+   comment wanted in the first place
+
+**This is the third instance in one run of the same shape**: a mechanism built,
+left unwired, and the gap invisible because nothing compares the two halves.
+`SOURCE_HASH` written and never read (AIF-066); `X64M` displacement declared and
+never checked (`dbfread`); `mapsize_explicit` computed and never used. Worth
+naming as a class: *a value produced for a decision that is never made.*
+
+## Runtime proof protocol -- the specimen is PERISHABLE
+
+The lane is blocked at `source_defined` because nobody has watched a single
+environment change size. Two `stat` calls settle it, and today's seeding created
+clean controls:
+
+```
+SYSSUBCMD   134,217,728   written 2026-07-27 07:31   31 rows   NEVER ATTACHED
+SYSFUNC     134,217,728   written 2026-07-27 04:47   69 rows   never attached
+SYSARGS     134,217,728   written 2026-07-27 04:54  249 rows   never attached
+SYSCMD    1,073,741,824   written 2026-07-17        203 rows   attached
+```
+
+`SYSCMD` is the opposite arm: comparable row count, 8x the size, differing only
+in attach history.
+
+```powershell
+$e = "D:\code\ccode\dottalkpp\data\LMDB\metadata\SYSSUBCMD.cdx.d\data.mdb"
+(Get-Item $e).Length          # expect 134217728
+./datarun.ps1 -CommandLines 'SETPATH DBF metadata','USE SYSSUBCMD',`
+                            'SET ORDER TO SUB_ID','SEEK "SUB_SET_WRAP"'
+(Get-Item $e).Length          # 1073741824 confirms the mechanism
+```
+
+**Design caveat that matters.** A plain `USE` does NOT trigger it. This morning's
+seed ran `USE SYSSUBCMD; COUNT; STRUCT; LIST` after `BUILDLMDB` and the env is
+still 128 MiB. The attach path needs a real index operation -- `SET ORDER`,
+`SEEK`, a tag-based read. If the sizes match after the probe, suspect the PROBE
+before concluding the mechanism is absent: a diagnostic that does not cover the
+path under investigation returns silence indistinguishable from a negative
+result (see the `SET DEVDIAG` null result, AIF-067).
+
+**Perishability.** Any index attach on any of the three consumes that specimen.
+`SYSFUNC` and `SYSARGS` are spares. Once all three are attached, re-creating a
+control means a full `BUILDLMDB` cycle on a fresh table.
+
+### On success
+
+Promote AIF-065 to `runtime_observed`, cite the two sizes and the transcript in
+`proofs.yaml`, then apply the correction and re-run the same protocol to show a
+`TINY` request producing a 32 MiB file -- which is the ladder working for the
+first time.
+
 ## Method note
 
 This was found because a disk filled, not because anything was audited. The

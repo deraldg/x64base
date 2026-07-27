@@ -109,7 +109,22 @@ def parse_block(block: str) -> dict:
         if not line.startswith("//"):
             continue
         body = line[2:].rstrip()
-        if not body.strip() or "@dottalk.subusage" in body:
+        if "@dottalk.subusage" in body:
+            continue
+        # A BLANK COMMENT LINE TERMINATES THE CURRENT LIST.
+        #
+        # This previously did `continue` without clearing `key`, so prose that
+        # followed a blank line INSIDE the block kept appending to whatever list
+        # was open. SYSSUBCMD's RELATIONS row shipped with
+        #     syntax=SET RELATIONS <args...> | CORRECTED 2026-07-27. This
+        #     contract previously read
+        # -- an explanatory sentence advertised as a command syntax form.
+        #
+        # A contract block is a machine-read region. Commentary belongs above it,
+        # and the parser now enforces the boundary rather than trusting authors
+        # to remember (the author who forgot wrote this parser).
+        if not body.strip():
+            key = None
             continue
         m = re.match(r"^ (\S[^:]*):\s*(.*)$", body)
         if m:

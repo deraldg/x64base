@@ -1924,19 +1924,40 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET RELATIONS
     // ─────────────────────────────────────────────────────────────
+    // CORRECTED 2026-07-27. The contract below previously read
+    // "disp-style: routed / handler: cmd_SET_RELATIONS", describing a path the
+    // dispatcher never takes -- and it had already been generated into
+    // SET USAGE and seeded into SYSSUBCMD before anyone checked.
+    //
+    // THE ARM BELOW IS DEAD CODE. shell_api_extras.cpp:79 rewrites the line
+    // before shell_dispatch runs, so `opt` can never equal "RELATIONS" here.
+    // Left in place rather than deleted: removing it is a behaviour change that
+    // wants its own lane, and a dead arm that is LABELLED is safer than one
+    // silently removed from under a reader who expects it. Tracked as owed.
+    //
+    // NOTE THIS PROSE SITS ABOVE THE CONTRACT, NOT INSIDE IT. When it followed
+    // the `usage:` list, the harvester collected these sentences AS USAGE LINES
+    // -- SYSSUBCMD's RELATIONS row shipped with
+    // "syntax=SET RELATIONS <args...> | CORRECTED 2026-07-27. This contract
+    // previously read". A contract block is a machine-read region; commentary
+    // goes before it or after a blank line, never trailing inside it.
+
     // @dottalk.subusage v1
     // parent: SET
     // sub: RELATIONS
     // category: relations
     // tier: developer
     // status: supported
-    // disp-style: routed
-    // handler: cmd_SET_RELATIONS
+    // disp-style: rewritten
+    // handler: cmd_REL
     // build-gate: DOTTALK_WITH_DEV
     // usage-access: SET USAGE
     // summary:
-    //   Plural form, routed to cmd_SET_RELATIONS. Distinct handler from
-    //   the singular SET RELATION.
+    //   Plural form. REWRITTEN BEFORE DISPATCH: preprocess_for_dispatch turns
+    //   `SET RELATIONS <args>` into `REL <args>`, so this reaches the native
+    //   relation engine (the cmd_rel.cpp house-SQL family), NOT the ladder arm
+    //   below. Contrast the SINGULAR SET RELATION, which is not rewritten and
+    //   is the VFP-compatibility front-end over relations_api.
     // usage:
     //   SET RELATIONS <args...>
     if (opt == "RELATIONS") {

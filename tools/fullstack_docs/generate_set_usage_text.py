@@ -144,8 +144,13 @@ def parse_contracts(root: Path) -> list[dict]:
                 if re.match(r"^\s{0,3}\S+:\s*", b):
                     collecting = False
                     continue
-                if b.strip():
-                    usage.append(b.strip())
+                # A blank comment line ends the usage list. Without this, prose
+                # trailing inside the block is collected as syntax -- see the
+                # matching note in generate_syssubcmd.py.
+                if not b.strip():
+                    collecting = False
+                    continue
+                usage.append(b.strip())
         out.append({"sub": sub.upper(), "tier": get("tier") or "public",
                     "gate": get("build-gate"), "usage": usage})
     return out

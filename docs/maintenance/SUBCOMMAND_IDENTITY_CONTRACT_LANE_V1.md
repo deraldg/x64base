@@ -473,10 +473,53 @@ say so explicitly --
 
 -- and `src/CMakeLists.txt:226-230` removes all three from non-LabTalk builds.
 
-So there is no working `app_` exemplar to copy, and equally no bad pattern being
-propagated. A `cmd_ -> app_` rename would be **establishing** the convention. That
-is a better position than inheriting a broken one, but it means the first renamed
-file defines the shape for the rest and should be chosen deliberately.
+### CORRECTED 2026-07-27 -- the stubs are the design layer, not unfinished work
+
+The reading above ("no working exemplar", "contract-incomplete") treats those
+files as work that stopped early. The maintainer's account is the opposite:
+
+> "0 byte commands, plugs, and prototypes help define the top level layer of our
+> systems design"
+
+Under that account `app_army.cpp`, `app_paxon.cpp` and `app_alcoa.cpp` are doing
+their job precisely by being empty. They reserve three named slots -- and the
+names are not arbitrary, they match the historical case studies already written
+up in `docs/cases/`: `CASE_HIST_020` (Army/JUMPS), `CASE_HIST_030`
+(Unisys/CODASYL/Alcoa), `CASE_HIST_060` (TitleScan/Paxon). The empty translation
+unit is the design asserting, in the vocabulary the build actually reads, that
+these apps have a place.
+
+That is a stronger statement than a TODO in a document: it survives refactors,
+it appears in the census, and someone has to decide to delete it.
+
+So the corrected position:
+
+- The **zero-byte file** is right and deliberate. Do not "clean it up".
+- The **usage contract** on such a file is wrong, because SYSCMD, HELP, dotref
+  and the census all treat a usage contract as a real command surface and count
+  it. Design intent goes in `@dottalk.file` and prose; command identity goes in
+  a usage contract, and only once a command exists.
+- A `cmd_ -> app_` rename is therefore not "establishing" a convention from
+  nothing. The convention EXISTS as a declared top-level layer; what is missing
+  is that the ten implemented apps do not yet live in it.
+
+### The ten implemented apps
+
+All are registered and all already carry usage contracts. What they lack is the
+`app_` identity:
+
+```
+COBOL      src/edu/edu_cobol.cpp        RETRO      src/cli/cmd_retro.cpp
+CODASYL    src/cli/cmd_codaysl.cpp      DRAWIO     src/cli/cmd_drawio.cpp
+ERP        src/cli/cmd_erp.cpp          BIBLETALK  src/edu/edu_bibletalk.cpp
+MCC        src/cli/cmd_mcc.cpp          CASE       src/edu/edu_case.cpp
+IDX        src/cli/cmd_idx.cpp          SIX        src/edu/edu_six.cpp
+```
+
+So the rename is ten files, not one, and it is a CATEGORY decision rather than a
+documentation gap -- the contracts are already written. `cmd_cobol -> app_cobol`
+is scheduled for the next run (member.derald), and COBOL is runtime-proofed, so
+it is a safe first mover.
 
 Owed before any rename:
 
