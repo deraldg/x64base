@@ -387,6 +387,42 @@ lessons:
       our own tooling without anyone knowing. The audit finds what it was built to look
       for; the QUESTION finds what nobody had thought to look for.
 
+      WHERE THESE DEFECTS COME FROM (member.derald): "these type of problems can occur
+      from unremedied dev tests, or one AI clobbering another. Which is why we are building
+      the AI portal, a project derived from need." The catalogue above is SHAPES; this is
+      origin, and it changes the remedy.
+
+      CAUSE 1, THE UNREMEDIED DEV TEST -- a mechanism 90% built with a comment describing
+      the missing 10%. mapsize_explicit computed then (void)'d with "available if you later
+      want to..."; SOURCE_HASH written and never read; X64M displacement declared and never
+      checked; edu_missing_shims written for restricted builds and excluded from them;
+      SYSSUBCMD left holding three identical batches of an import tested three times.
+
+      CAUSE 2, ONE AI CLOBBERING ANOTHER -- multiple sessions on one branch and one working
+      tree. The coordination protocol records the founding incident: four parallel sessions
+      collided on AIF-047->050 in a single sitting on 2026-07-22, caught only by reading git
+      log. The signature is A PARALLEL IMPLEMENTATION INSTEAD OF AN EDIT: cmd_help.cpp +
+      cmd_help_grouped.cpp both declaring HELP; cmd_struct.cpp + cmd_struct_basic.cpp both
+      declaring STRUCT; cmd_pshell.cpp + cmd_pshell_help.cpp; nine commands registered in
+      both the hub and their own TU, two with handlers differing on relation maintenance;
+      orderstate:: and order_state:: as two spellings of one namespace. Suffixes like
+      _basic, _grouped and _help are what "I'll add mine next to yours" looks like in a
+      file listing.
+
+      WHY THE PORTAL AND NOT MORE DOCUMENTATION: documentation is the right remedy for
+      cause 1 -- a wire left unconnected is discoverable by describing the system, which
+      this lesson demonstrates eight times. It is the WRONG remedy for cause 2, and the
+      coordination protocol says so directly: "Documentation cannot fix a coordination
+      problem; an allocator and a presence surface can." Two agents writing accurate
+      documentation about incompatible changes produce two accurate documents and one
+      broken tree. Hence session_coordinator.py with atomic O_EXCL claims, the AIF
+      collision gate, the pre-push gate, the agency model, and the still-open git-lock
+      lane (AIF-059).
+
+      A defect's SHAPE tells you how to detect it; its CAUSE tells you what to build.
+      Detecting well while never asking why leads to proposing more checks where an
+      allocator was wanted.
+
       THE RULE: when documenting, name the two artifacts that describe the same fact and
       compare them -- if there is only one, ask why the other is not written down.
       Author from the primary artifact. When a description is derived, verify the
