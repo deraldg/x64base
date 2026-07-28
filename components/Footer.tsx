@@ -22,15 +22,22 @@ export function Footer() {
               <Link href="/docs/dev/selfdoc-website-publication" className="text-muted hover:text-fg">
                 SelfDoc → Website
               </Link>
-              <Link href="/about/contributors" className="text-muted hover:text-fg">
-                Contributors
-              </Link>
-              <Link href="/docs/dev/third-party-acknowledgements" className="text-muted hover:text-fg">
-                Third-party credits
-              </Link>
               <Link href="/downloads" className="text-muted hover:text-fg">
                 Downloads
               </Link>
+            </div>
+            <div className="mt-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Credits &amp; Contributors
+              </div>
+              <div className="mt-2 flex flex-wrap gap-4 text-xs">
+                <Link href="/about/contributors" className="text-muted hover:text-fg">
+                  Contributors
+                </Link>
+                <Link href="/docs/dev/third-party-acknowledgements" className="text-muted hover:text-fg">
+                  Third-party credits
+                </Link>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">

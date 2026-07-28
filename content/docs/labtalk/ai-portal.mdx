@@ -77,6 +77,17 @@ The present foundation includes:
 These pieces are useful and increasingly connected, but they do not yet
 constitute validated autonomous project memory.
 
+## Live BBS &amp; Portal Reports
+
+Read-only snapshots generated from live DotTalk++ state are published at
+[`/reports/`](/reports/): the **AI Portal report** (every tracked lane, each
+recorded run with its owner / committer / author split, and the full proof
+ledger) and the **AI-BBS Boards and Traffic report** (the local bulletin board's
+structure, traffic, and the agent handoff worklog). They are produced by a
+governed public build mode (`build_reports.py --public`) that omits anything
+marked private in the portal registry — the authentication-surface map (member
+keys, permission matrix, port) is kept internal by design and is never published.
+
 ## Hardening Gates
 
 | Gate | Required outcome |

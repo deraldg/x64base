@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 };
 
 const items = [
+  { title: "Contributors", description: "The human and AI partners recognized in the project record — people, advisors, and tools.", href: "/about/contributors" },
   { title: "Mission & Vision", description: "The Laboratory Campus direction and the project’s proof-backed purpose.", href: "/about/mission-vision" },
   {
     title: "Origin Story (1993–2026)",
@@ -15,7 +16,6 @@ const items = [
   },
   { title: "Timeline", description: "Key milestones from 1993 to 2026.", href: "/about/timeline" },
   { title: "Project Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
-  { title: "Contributors", description: "Human and AI contributors recognized in the project record.", href: "/about/contributors" },
   { title: "Project Identity", description: "Naming, visual identity, attribution, and trademark notes.", href: "/brand" },
   { title: "Project Notice", description: "A concise statement of the public source’s tentative license status.", href: "/licensing" }
 ];
