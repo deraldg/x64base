@@ -1,0 +1,61 @@
+/* macro defs for 'select area' and 'select area index' */ 
+#define SA s[area] 
+#define SI SA->i[SA->ord] 
+
+#pragma pack(1)   
+
+typedef struct child
+{
+	char a;
+	char i;
+}   child;
+typedef struct parent
+{   
+	char a;
+	char i;
+}   parent;		
+typedef struct rel
+{
+	child  c;
+	parent p;   
+}   rel;	       
+
+int    FAR PASCAL _export WEP(int nParam);
+
+#pragma pack()
+    
+void   FAR PASCAL _export select(char newarea);
+void   FAR PASCAL _export order(char area, char neworder);
+void   FAR PASCAL _export use(char * pstr1, char * pstr2, char indexed);
+void   FAR PASCAL _export close_area(char area);  
+void   FAR PASCAL _export build_index(char * xfile, int order); 
+int    FAR PASCAL _export update_index();
+int    FAR PASCAL _export open_index(char *fn,int dupok);
+int    FAR PASCAL _export close_index(IX_DESC *pix);
+void   FAR PASCAL _export reindex(char *idxname);  
+int    FAR PASCAL _export skip(int skipped);
+int    FAR PASCAL _export top();
+int    FAR PASCAL _export bottom();
+char   FAR PASCAL _export delete_rec(char area); 
+int    FAR PASCAL _export append_blank(char area);        
+int    FAR PASCAL _export save_rec(char area);
+int    FAR PASCAL _export edit_field(char *fld_str,char *newstr);
+int    FAR PASCAL _export find(char *key);       
+void   FAR PASCAL _export locate(char * field, char * fld_data);
+int    FAR PASCAL _export match(char * fld_str);
+int    FAR PASCAL _export strnicmps(char *str1,char *str2) ;
+void   FAR PASCAL _export ascendtree();
+void   FAR PASCAL _export descendtree();
+void   FAR PASCAL _export relation(char a,char o); 
+void   FAR PASCAL _export setrelationships(char a,char o); 
+void   FAR PASCAL _export initcmds();        
+void   FAR PASCAL _export relate(int c_area,int c_order,int p_area,int p_order);
+int    FAR PASCAL _export copyfile(char *cp[]);    
+
+/* following functions use printf */ 
+void   FAR PASCAL _export sayfield(int field_idx); 
+void   FAR PASCAL _export display();
+
+
+
+

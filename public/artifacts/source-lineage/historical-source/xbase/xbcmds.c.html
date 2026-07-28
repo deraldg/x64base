@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xBase core — XBCMDS.C — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>xBase core — XBCMDS.C</h1>
+    <p>Read-only archive view · 1993-10-26 · 19,456 bytes · SHA-256 081A2DCCBDBA96E705476A095684FFD74FE830A3802ED4A54E7CC8829C3F8667</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xbase/xbcmds.c.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>/* xbcmds.c is a module that combines the modules xbase.c and xbindex.c
+   xbindex is a proprietary index system, while dbase.c should work with any
+   xbase file system
+*/    
+#include &lt;stdio.h&gt;   
+#include &lt;stdarg.h&gt;
+#include &lt;stdlib.h&gt; 
+#include &lt;string.h&gt;    
+#include &lt;fcntl.h&gt;
+#include &lt;math.h&gt;   
+#include &quot;xbindex.h&quot;
+#include &quot;xbase.h&quot;     
+#include &quot;xbcmds.h&quot;    
+#if MSDOS
+   #include &lt;malloc.h&gt;   
+#endif   
+
+/* index info for global purposes */    
+/* xbase global variables */  
+
+extern select_rec *s[max_area]; 
+extern long  rec_num ;
+extern char  area;  
+extern int   GRERROR ; 
+extern int   DOSERROR ;
+extern char  IBMPC;
+extern int   rr ;                     /* records_read */     
+extern char *filemode ;               /* filemode */       
+/* field types */
+extern char *character;
+extern char  date[date_size] ;
+extern char  numeric[19];
+extern char *memo;             
+extern FILE *tofile ;        
+extern int   scr_limit ;
+extern long  result ;             
+extern unsigned long memory;
+extern order_array_type temporder ;      
+
+/* index &amp; dummy info */   
+extern IX_DESC *pci;
+extern BLOCK   spare_block;                  
+
+#define KEY_SIZE 20
+int ndum = KEY_SIZE + sizeof(NULLREC);   
+int fs = 20480;
+
+ENTRY dume=
+{
+	NULLREC, 
+	{
+		0xff,0xff,0xff,0xff,0xff,
+		0xff,0xff,0xff,0xff,0xff,    
+		0xff,0xff,0xff,0xff,0xff,		
+		0xff,0xff,0xff,0xff,0xff,
+		0xff,0xff,0xff,0xff,0xf0
+	}
+};
+
+int compf(ENTRY *p1, ENTRY *p2)
+{
+ 	return(strcmp((char *)&amp;p1-&gt;key,(char *)&amp;p2-&gt;key));
+}
+int sizef(ENTRY *p1)	             
+{
+	return(strlen(p1-&gt;key) + 1 + sizeof(RECPOS));
+}	
+										
+/* end of dummy vars */ 
+      
+char  *dxfile;
+FILE  *idx_file; 
+char  *xfile;  
+
+char   found;
+int    keylen;
+char  *keystr; 
+rel    r[max_area][max_index];  
+char   deleted = TRUE ; /* set delete status TRUE or FALSE */   
+
+/* begin xbase command functions */
+
+void initcmds()
+{ 
+  int i,j;
+
+
+  for (i=1;i&lt;max_area;i++)
+  	  for (j=1;j&lt;max_index;j++)
+  	  	  {
+   	  	  	 r[i][j].c.a=0;
+  	  	  	 r[i][j].c.i=0;
+  	  	  }  
+
+  memset((char *)&amp;spare_block,0,sizeof(BLOCK));  	  	  
+}  	  	  
+
+void relate(int c_area,int c_order,int p_area,int p_order)
+{     
+  r[c_area][c_order].c.a = p_area;  
+  r[c_area][c_order].c.i = p_order;
+} 
+
+void other_rel(char a)
+{   
+/* the whole purpose here is to update the position of other index files
+   for an area if open - skipping the one just updated before this call
+*/         
+    int i,field_no;
+    
+    for (i=1;i&lt;max_index;i++)
+    {
+        if (i != SA-&gt;ord) /* skip if this is the current order */
+        {             
+           if (s[a]-&gt;i[i].idx) /* check if index open */
+           {  
+              field_no = s[a]-&gt;i[i].pix-&gt;dx.order;
+              strcpy((char *)s[a]-&gt;i[i].pe-&gt;key,
+                     s[a]-&gt;fd[field_no]); /* copy field info and record pointer */
+              s[a]-&gt;i[i].pe-&gt;rptr = s[a]-&gt;i[s[a]-&gt;ord].pe-&gt;rptr; 
+           }
+        }
+    }	
+}				      	        
+				          
+void relation(char a, char o)
+{       
+	int i,j;       
+	char save_area,save_order;
+		               
+	save_area = a;
+	save_order = o;
+	
+	for (i=a;i&lt;max_area;i++) /* start with the current area */
+	    for (j=1;j&lt;max_index;j++)
+			if (r[i][j].c.a != 0)  
+			   if (r[i][j].c.i != 0)
+			   {                                      
+			   /* activate parent area */
+   				  area = r[i][j].c.a;
+				  SA-&gt;ord = r[i][j].c.i;  
+				  rtrim(s[i]-&gt;i[j].pe-&gt;key);                   
+	              strcpy((char *)SI.pe-&gt;key,s[i]-&gt;i[j].pe-&gt;key);  
+	              rec_num = find_key(SI.pe,SI.pix);
+                  if (rec_num != 0)     
+                     {   
+    	                goto_rec(rec_num);  				  
+ 				        other_rel(area);
+ 				     }   
+			   }
+    area = save_area; 
+    SA-&gt;ord = save_order;   
+}
+
+void relationtemp(char a,char o)
+{                             
+     char savarea,savorder; 
+                  
+     if (!SI.idx) return;             
+                  
+     savarea = a;
+     savorder = o;
+     
+     setrelationships(a,o);
+     
+     area = savarea;
+     SA-&gt;ord = savorder;
+}  
+
+void setrelationships(char a,char o)
+{
+     int ret;
+                                   
+     if (r[a][o].c.a == 0) return;  /* done */
+     
+	 /* activate parent area */
+   	 area = r[a][o].c.a;
+	 SA-&gt;ord = r[a][o].c.i;             
+
+	 /* copy child key to parent key */   
+	 strcpy((char *)SI.pe-&gt;key,(char *)s[a]-&gt;i[o].pe-&gt;key); 
+				   
+	 ret = find_key(SI.pe,SI.pix);
+	 if (ret)
+	 {
+		goto_rec(SI.pe-&gt;rptr);  
+        setrelationships(area,SA-&gt;ord);	
+     }   
+}
+
+int open_index(char *fn,int dupok)  
+{   
+    int dupixok;
+    
+    dupixok = dupok; 
+          
+    SI.idx = TRUE;
+    SI.pix = (IX_DESC *)calloc(1,sizeof(IX_DESC));                         
+    memchk((char *)SI.pix,&quot;open_index&quot;,&quot;SI.pix&quot;,sizeof(IX_DESC));
+    SI.pe = (ENTRY *)calloc(1,sizeof(ENTRY));
+    memchk((char *)SI.pe,&quot;open_index&quot;,&quot;SI.pe&quot;,sizeof(ENTRY));  
+    
+    if (openix(fn,SI.pix,compf,sizef)&lt;0)
+       {  
+          SI.idx = FALSE;
+          free(SI.pix);
+          free(SI.pe);
+          return(0);
+       }    
+    else 
+       {
+          rtrim(SA-&gt;fd[SA-&gt;ord]);
+          strcpy(SI.pe-&gt;key,SA-&gt;fd[SA-&gt;ord]);
+          SI.pe-&gt;rptr = SA-&gt;crn;
+          find_key(SI.pe,SI.pix);
+       } 
+   
+    return(1);   
+}                
+
+int close_index(IX_DESC *pix)
+{              
+   int ret;
+   ret = close_if(pix-&gt;ixfile);
+   if (ret)
+   {
+      SI.idx = FALSE;  
+      free((void *)SI.pix);
+      free((void *)SI.pe); 
+   }
+
+   return(ret);   
+}              
+void build_index(string xfile, int order)
+{             
+   int i,ret;   
+   
+   if ((order &lt; 0) || (order &gt; SA-&gt;num_of_fields))
+      return;     
+                         
+   if (!make_index(xfile,1,order))
+   {
+      return;   
+   }       
+   else  
+   {  
+      if (SA-&gt;hr-&gt;num_of_recs &lt; 1)
+         return;                                
+         
+      goto_rec(1);   /* this ignores any indexes open */
+   	  if (open_index(xfile,1))
+      {  
+         for (i=1;i&lt;=SA-&gt;hr-&gt;num_of_recs;i++)
+         {   
+             if (SA-&gt;del != is_deleted)
+             {
+                SI.pe-&gt;rptr = i;       
+                rtrim(SA-&gt;fd[order]); 
+                strcpy((char *)SI.pe-&gt;key,SA-&gt;fd[order]);
+                ret = add_key(SI.pe,SI.pix);  
+             }   
+             if (i &lt; SA-&gt;hr-&gt;num_of_recs)  
+             {
+                read_rec(area);
+             }   
+         }       
+         close_index(SI.pix);  
+      }
+   }          
+}
+
+
+void reindex(char *idxname)
+{  
+   char order;
+     
+   dxname(idxname);  
+   if (SI.idx)
+      {       
+         order = SI.pix-&gt;dx.order;            
+         close_index(SI.pix);         
+         build_index(idxname,order);  
+         open_index(idxname,1);
+      }
+}
+
+void select(char newarea)
+{
+    area = newarea;
+}    
+
+void order(char area, char neworder)
+{                     
+    s[area]-&gt;ord = neworder;
+}        
+
+void use(string pstr1, string pstr2, char indexed)  
+{
+   int checkbreak; 
+      
+   pstr1 = dbname(pstr1);
+   pstr2 = dxname(pstr2);
+    
+   close_area(area);
+   if (strlen(pstr1) &gt; 4) 
+   {  
+/* SA not calloced unless file open sucessfully */   
+   if (open_file(pstr1,area)) 
+      SI.idx = indexed;
+   }
+   else
+   {
+     return;
+   } 
+   checkbreak = TRUE;
+   if (GRERROR != 0) 
+   {
+      return; 
+   }
+   else
+   {
+      SA-&gt;fok = TRUE;
+      read_header(area);
+      read_fields(area);
+      read_rec(area);
+      SA-&gt;crn = 1;
+      if (SI.idx) 
+      {  
+         if (!open_index(pstr2,1))  
+             SI.idx = FALSE;
+      }   
+      top();
+   }
+}    
+
+void close_area(char area)                  
+{       
+    int i;
+    
+    if (SA-&gt;fok)  
+    {
+       for (i=1;i&lt;max_index;i++)
+       	   if (s[area]-&gt;i[i].idx)
+       	       close_index(s[area]-&gt;i[i].pix);
+       close_file(area); 
+    }   
+}       
+
+/* indexed function only */
+int find(char *key)
+{   
+    int rec_num;
+                   
+    if (!SI.idx)               
+       return(0);
+       
+    first_key(SI.pe,SI.pix);
+	strcpy((char *)SI.pe-&gt;key,key);
+	rec_num = find_key(SI.pe,SI.pix);
+    if (rec_num != 0)     
+    {   
+    	goto_rec(rec_num);  
+        relation(area,SA-&gt;ord);
+        return(1);    	
+    }
+    return(0);
+}	
+
+int top()
+{
+   long offset;
+   long rec_num;
+
+   if (SA-&gt;fok) 
+   {
+      if (SI.idx)
+      {
+	     rec_num = first_key(SI.pe,SI.pix);  
+         goto_rec(rec_num); 
+      }
+      else
+      {
+         offset = (long)SA-&gt;hr-&gt;data_start;
+         fseek(SA-&gt;fp,offset,0);
+         read_rec(area);
+         SA-&gt;crn = 1;
+      }         
+   }
+   else 
+   {
+      return(0);
+   }  
+   relation(area,SA-&gt;ord);
+   return(1); 
+}
+ 
+int bottom()
+{
+   long offset;
+   long rec_num;
+
+   if (SA-&gt;fok)
+   {
+      if (SI.idx)
+      {
+         last_key(SI.pe,SI.pix);
+         rec_num = prev_key(SI.pe,SI.pix); 
+         goto_rec(rec_num); 
+      }
+      else
+      {
+         offset = (long)SA-&gt;hr-&gt;data_start+((SA-&gt;hr-&gt;num_of_recs-1)
+                   *SA-&gt;hr-&gt;cpr);
+         fseek(SA-&gt;fp,offset,0);
+         read_rec(area);
+         SA-&gt;crn = (short)SA-&gt;hr-&gt;num_of_recs;
+      }
+   }
+   else  
+   {
+      return(0);
+   }   
+   relation(area,SA-&gt;ord);   
+   return(1);
+}  
+
+int skip(int skipped)
+{
+   long offset;
+   int stat;
+                
+   stat = 0;             
+   if (SA-&gt;fok) 
+   {
+      if (SI.idx)  
+      {                    
+         if (skipped == 1) 
+         {
+            stat = next_key(SI.pe,SI.pix); 
+            if (stat != EOIX)
+            {
+               goto_rec(SI.pe-&gt;rptr);
+               SA-&gt;crn = SI.pe-&gt;rptr;   
+            }                                             
+         }
+         else
+         {
+            if (skipped == -1) 
+            {
+  	           stat = prev_key(SI.pe,SI.pix);
+               goto_rec(SI.pe-&gt;rptr);
+               SA-&gt;crn = SI.pe-&gt;rptr;
+            }
+         }  
+      }      
+      if (!SI.idx)
+      {
+         if ((SA-&gt;crn + skipped) &gt; SA-&gt;hr-&gt;num_of_recs) 
+         {
+            stat = bottom();  
+         }
+         else 
+         {   
+            if ((SA-&gt;crn + skipped) &lt; 1) 
+            {
+               stat = top();
+            }
+            else
+            {
+               offset = (long)SA-&gt;hr-&gt;data_start+
+                  ((SA-&gt;crn+(skipped-1))*SA-&gt;hr-&gt;cpr);                  
+               SA-&gt;crn = SA-&gt;crn + skipped;  
+               fseek(SA-&gt;fp,offset,0);
+               stat = read_rec(area); 
+            }
+         }   
+      }  
+   }
+   relation(area,SA-&gt;ord);
+   return(stat);   
+}      
+
+int match(string fld_str) 
+{                                
+/* returns the index position of a fieldname */
+
+  int i;
+  for(i=1;i&lt;=SA-&gt;num_of_fields;i++)
+  {
+      if (strnicmps(SA-&gt;fr[i]-&gt;field_name,fld_str)==0) 
+         return(i);
+  }   
+  return(0);
+}
+   
+/* non-indexed only */
+void locate(string field, string fld_data)
+{         
+    int i;
+    
+    if (SI.idx)
+       return;
+       
+ 	top();
+ 	i = match(field);
+ 	while((strnicmps(SA-&gt;fd[i],fld_data)!=0) &amp;&amp; (!feof(SA-&gt;fp)))
+ 	   skip(1);
+ 	return;
+}              
+
+int edit_field_old(char *fld_str,char *newstr)
+{   
+/*  If the field the file is indexed on is changed then the index needs
+    to be updated too.
+*/                             
+    char field_no,save_order;
+
+    if (!SA-&gt;fok)
+       return(0);
+       
+    field_no = match((string)fld_str);
+    if (field_no) 
+    {               
+       save_order = SA-&gt;ord;
+       order(area,field_no);
+       if ((SI.idx) &amp;&amp; (field_no == SI.pix-&gt;dx.order))
+       {                        
+          rtrim(SA-&gt;fd[field_no]); 
+          SI.pe-&gt;rptr = SA-&gt;crn;       
+          strcpy((char *)SI.pe-&gt;key,SA-&gt;fd[field_no]); 
+          if (!delete_key(SI.pe,SI.pix))  
+          {   
+             order(area,(char)save_order);
+             return(0);             
+          }   
+       } 
+         
+       strcpy((char *)SA-&gt;fd[field_no],(char *)newstr);
+       
+       if ((SI.idx) &amp;&amp; (field_no == SI.pix-&gt;dx.order))
+       {
+          SI.pe-&gt;rptr = SA-&gt;crn;  
+          rtrim(SA-&gt;fd[field_no]);     
+          strcpy((char *)SI.pe-&gt;key,SA-&gt;fd[field_no]);
+          if (!add_key(SI.pe,SI.pix))
+          {
+             order(area,save_order);
+             return(0);            
+          }   
+       }   
+    }   
+    else
+       return(0);   
+    order(area,save_order);   
+    return(1);
+}              
+       
+int edit_field(char *fld_str,char *newstr)
+{   
+    char field_no;
+                                          
+    field_no = match((string)fld_str); 
+    if (field_no)
+    {
+       strcpy((char *)SA-&gt;fd[field_no],(char *)newstr);  
+       return(1);
+    }
+    else
+       return(0);   
+}  
+            
+int update_index(char *oldkey,char *newkey,char ord)
+{   
+
+    char old[MAXKEY];
+    char new[MAXKEY];
+       
+    strcpy((char *)&amp;old,oldkey);
+    strcpy((char *)&amp;new,newkey); 
+      
+    /* insert the new key */
+    if (s[area]-&gt;i[ord].idx)
+    {  
+       s[area]-&gt;i[ord].pe-&gt;rptr = SA-&gt;crn;  
+       strcpy((char *)s[area]-&gt;i[ord].pe-&gt;key,new);
+       rtrim(s[area]-&gt;i[ord].pe-&gt;key);
+       if (!add_key(s[area]-&gt;i[ord].pe,s[area]-&gt;i[ord].pix))
+       {
+          return(0);            
+       }   
+    }              
+    else 
+       return(0);
+        
+    /* delete the old key */
+	if (s[area]-&gt;i[ord].idx)
+    {                        
+       s[area]-&gt;i[ord].pe-&gt;rptr = SA-&gt;crn;       
+       strcpy((char *)s[area]-&gt;i[ord].pe-&gt;key,old);  
+       rtrim(s[area]-&gt;i[ord].pe-&gt;key);
+       if (!delete_key(s[area]-&gt;i[ord].pe,s[area]-&gt;i[ord].pix))  
+       {   
+          return(0);             
+       }   
+    }  
+    else 
+       return(0);        
+    
+ 	return(1);
+}
+   
+int save_rec(char area)
+{                            
+	char i;
+
+    if (!SA-&gt;fok) 
+       return(0);
+    else                 
+       write_rec(area);   
+    
+    for (i=1;i&lt;max_index;i++) 
+       if (s[area]-&gt;i[i].idx)                   
+          if (strnicmps(SA-&gt;fd[s[area]-&gt;i[i].pix-&gt;dx.order],
+             s[area]-&gt;i[i].pe-&gt;key)!=0) 
+             if (update_index(s[area]-&gt;i[i].pe-&gt;key,
+                SA-&gt;fd[s[area]-&gt;i[i].pix-&gt;dx.order],i))
+                return(1); 
+             else
+                return(0);
+    return(1);            
+}    
+
+int append_blank(char area)
+{            
+     int i;
+     
+     if (add_rec(area)) 
+     {  /* go to the appended record */     
+        s[area]-&gt;crn = (short)s[area]-&gt;hr-&gt;num_of_recs;      
+        goto_rec(s[area]-&gt;hr-&gt;num_of_recs); 
+     }
+     else   
+        return(0);
+
+/*   if the file is indexed we need to add the keys */   
+     for (i=1;i&lt;max_index;i++) /* all possible indexes */
+         if (s[area]-&gt;i[i].idx) /* if this index area is used */
+         {                   
+     	    strcpy((char *)s[area]-&gt;i[i].pe-&gt;key,
+     	           SA-&gt;fd[s[area]-&gt;i[i].pix-&gt;dx.order]); 
+     	    rtrim(s[area]-&gt;i[i].pe-&gt;key);        
+     	    s[area]-&gt;i[i].pe-&gt;rptr = SA-&gt;crn; 
+            add_key(s[area]-&gt;i[i].pe,s[area]-&gt;i[i].pix); 
+            /* add error routine */
+         } 
+         
+     return(1);    
+}  
+     
+char delete_rec(char area)     
+{  
+   int i;
+   
+   if (!SA-&gt;fok)
+      return(FALSE); 
+   else
+      del_rec(area);
+      for (i=1;i&lt;max_index;i++)
+          if (s[area]-&gt;i[i].idx)
+             delete_key(s[area]-&gt;i[i].pe,s[area]-&gt;i[i].pix);   
+}    
+   
+/*    
+void copy_for(var ok : boolean; var records_copied : int;
+                   field_num : int)
+{                   
+   i : int;
+   temp : string;
+   operator : char;
+{
+   ok = FALSE;
+   temp = trim(field_data[field_num]);
+   operator = cp[6][1];
+   case operator of
+   &#x27;=&#x27; : if cp[6][2] = &#x27;=&#x27; 
+            {
+               if temp = cp[7] 
+                  ok = TRUE;       
+            }
+         else
+            if upstr(temp) =  upstr(cp[7]) 
+               ok = TRUE;
+
+   &#x27;#&#x27; : if upstr(temp) &lt;&gt; upstr(cp[7]) 
+            ok = TRUE;              
+
+   &#x27;&lt;&#x27; : if cp[6][2] = &#x27;=&#x27; 
+            {
+               if upstr(temp) &lt;= upstr(cp[7]) 
+                  ok = TRUE
+            }
+         else
+            if upstr(temp) &lt; upstr(cp[7]) 
+               ok = TRUE;
+
+   &#x27;&gt;&#x27; : if cp[6][2] = &#x27;=&#x27; 
+            {
+               if upstr(temp) &gt;= upstr(cp[7]) 
+                  ok = TRUE
+               }
+         else
+            if upstr(temp) &gt; upstr(cp[7]) 
+               ok = TRUE;
+   &#x27;D&#x27; : if delete_flag &lt;&gt; &#x27;D&#x27; 
+            ok = TRUE;
+   else
+      printf(&#x27;invalid operator&#x27;)
+   };
+   if ok 
+      inc(records_copied);
+};    
+
+*/
+
+void copyfile(char *cp[])
+{
+   long i;
+   char ok;
+   char header_terminator;                 
+   
+   int num_of_fields;      /* for local use only */
+   long num_of_recs;   
+   field_rec field;
+   
+   char eof_marker;
+   int records_copied;
+   int field_num;
+   string tmpname;
+
+   records_copied = 0;
+   ok = TRUE;
+   if (strnicmps(cp[2],&quot;TO&quot;)==0)
+   {                             
+      /* from file would be SA-&gt;fp */
+      cp[3] = dbname(cp[3]);    /* to file */
+      tmpname = cp[3];
+      /* select 0 is reserved for temporary files */
+      if ((s[0]-&gt;fp=fopen(cp[3],&quot;wb+&quot;))==NULL)  /* create &quot;to&quot; file */
+         exit(0);
+      fseek(SA-&gt;fp,0,0);        /* reset ptr to beg of infile */ 
+      read_header(area);        /* copy header to new file */      
+      num_of_recs = SA-&gt;hr-&gt;num_of_recs;
+      rr = fwrite((char *)SA-&gt;hr,sizeof(header_rec),1,s[0]-&gt;fp);
+/*    copy field information, then add terminator byte  */
+      num_of_fields = SA-&gt;num_of_fields;
+      for (i=1;i&lt;=num_of_fields;i++)
+      {
+          rr = fread((char *)&amp;field,sizeof(field_rec),1,SA-&gt;fp);
+          rr = fwrite((char *)&amp;field,sizeof(field_rec),1,s[0]-&gt;fp);
+      }
+      rr = fread(&amp;header_terminator,1,1,SA-&gt;fp);
+      rr = fwrite(&amp;header_terminator,1,1,s[0]-&gt;fp);   
+      /* now we decide which records to copy */
+      if (strnicmps(cp[5],&quot; &quot;)==0)
+         field_num = 1;
+      else
+         field_num = match(cp[5]); /*field name*/
+      for (i=1;i&lt;=SA-&gt;hr-&gt;num_of_recs;i++)
+      {
+          if ((strnicmps(cp[4],&quot;FOR&quot;)!=0) &amp;&amp; (strnicmps(cp[4],&quot;WHILE&quot;)!=0))
+             rr = fread(SA-&gt;rd,SA-&gt;hr-&gt;cpr,1,SA-&gt;fp);
+          else
+          {
+             read_rec(area);
+/*           copy_for(ok,records_copied,field_num);   */
+          }
+          if (ok)
+             rr = fwrite(SA-&gt;rd,(SA-&gt;hr-&gt;cpr),1,s[0]-&gt;fp);
+      }
+      rr = fread(&amp;eof_marker,1,1,SA-&gt;fp);
+      rr = fwrite(&amp;eof_marker,1,1,s[0]-&gt;fp);
+      /* adjust the SA-&gt;hr of the to file */
+      if ((strnicmps(cp[4],&quot;FOR&quot;)==0) || (strnicmps(cp[4],&quot;WHILE&quot;)==0))
+      {  
+         fseek(s[0]-&gt;fp,0,0);
+         SA-&gt;hr-&gt;num_of_recs = records_copied;
+         rr = fwrite((char *)&amp;SA-&gt;hr,sizeof(header_rec),1,s[0]-&gt;fp);
+      }
+      SA-&gt;hr-&gt;num_of_recs = num_of_recs; /*restore infile rec count*/
+      close_file(0);
+   }
+}
+
+</pre>
+</body>
+</html>

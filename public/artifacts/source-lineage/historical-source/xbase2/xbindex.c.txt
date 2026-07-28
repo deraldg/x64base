@@ -1,0 +1,993 @@
+#include "stdio.h"  
+#include "stdlib.h"
+#include "string.h" 
+#include "fcntl.h"  
+#include "math.h"
+#if MSDOS
+   #include "io.h"     
+   #include "sys\stat.h" 
+#endif
+#include "xbindex.h"
+
+#define FREE_LEVEL (-1)
+#define BOF_REL    0
+
+extern int sizef();
+extern int compf();
+extern int ndum;
+extern int fs;  
+extern ENTRY dume;
+
+int    split_size = IXB_SPACE;
+int    comb_size  = (IXB_SPACE/2);  
+
+IX_DESC *pci;
+BLOCK   spare_block; 
+
+#if !MSDOS
+void memmove(char *to,char *from,unsigned int count)
+{
+    movmem(from,to,count);
+}
+#endif
+       
+double idx_size(long num_of_recs)
+{ 
+/*    
+    blocks = 1024 
+    max index entry = 100 bytes 
+    levels = 4        
+
+    formula to compute max entries  
+    entries = (b/e) * (b/2e)**(l-1);   
+*/   
+    long b = 1024;
+    long e = 100;
+    int l = 4;  
+    double file_size;
+    
+/*  
+    emperically speaking this does not seem to work
+    example - best case scenario for 800 records * 100 byte entries = 800,000 
+    so the average size of the key is paramount for reducing index file size
+    however, now that I have added dynamic file expansion through add_key
+    and append_if perhaps we should shoot for a best case scenario and let
+    the dynamic algorithm compensate in case we are wrong.
+*/
+                                
+/*  fn1 = (b/(2*e));
+    fn2 = (l-1);                            
+    entries = (b/e) * (long)exp(fn1) * fn2;
+    printf("entries = %d\n",entries);    
+*/
+    file_size = b + ((num_of_recs * e ) / 2);    
+    printf("file_size = %f\n",file_size);           
+    return(file_size);   
+}    
+        
+int make_index(char *fn,int dupok,int field_no, double ifs)
+{   
+/*  SI is not needed just to create an index, SI is used when the index is 
+    opened with a datafile. */  
+    int dupixok; 
+        
+	dupixok = dupok;     
+   	
+	if (creatix(fn,ifs,&dume,ndum,field_no)<0)
+	   return(0);
+	else  
+	   return(1);		
+}  
+
+int first_key(ENTRY *pe,IX_DESC *pix)
+{                  
+    if (go_first(pix)==IX_OK)  
+    {
+       get_current(pe,pix); 
+       return((int)pe->rptr);
+    }
+    else
+       return(0);   
+}
+int last_key(ENTRY *pe,IX_DESC *pix)
+{   
+    if (go_last(pix)==IX_OK)
+    {
+       get_current(pe,pix);
+       return((int)pe->rptr);
+    }
+    else
+       return(0);   
+}                   
+
+int next_key(ENTRY *pe,IX_DESC *pix)
+{ 
+    if (get_next(pe,pix) == IX_OK)
+       return((int)pe->rptr);
+    else
+       return(EOIX);   
+}
+
+int prev_key(ENTRY *pe,IX_DESC *pix)
+{                
+    if (get_previous(pe,pix) == IX_OK)
+       return((int)pe->rptr);
+    else
+       return(EOIX);       
+} 
+
+int find_key(ENTRY *pe,IX_DESC *pix)
+{
+	if (find_ix(pe,pix) == IX_OK)
+	{
+	   get_current(pe,pix);
+       return((int)pe->rptr);
+	}   
+	else
+	   return(0);
+}
+
+int add_key(ENTRY *pe,IX_DESC *pix)
+{   
+    if (find_ins(pe,pix) == IX_OK)
+	   return(1);
+	{  
+	   append_if();
+	   if (find_ins(pe,pix) == IX_OK)
+	       return(1);
+	   else
+	   
+	   return(0);   
+	}   	        
+}
+
+int locate_key(ENTRY *pe,IX_DESC *pix)
+{   
+    return(0);
+}                       
+
+int delete_key(ENTRY *pe,IX_DESC *pix)
+{                
+    if (find_del(pe,pix)==IX_FAIL)
+       return(0);
+    else
+       return(1);   
+}
+
+/* book code - "The C Toolbox" by William Hunt */
+
+int prev_entry(BLOCK *pb,int off)
+{
+    if (off <= 0)
+	return (-1) ;
+    off = scan_blk(pb,off);
+    return(off);
+}
+
+int next_entry(BLOCK *pb,int off)
+{
+	if (off >= pb->bend)
+		return(-1);
+	off = off+ENT_SIZE(ENT_ADR(pb,off));
+	if (off >= pb->bend)
+		return(-1);
+	return(off);
+}
+
+void copy_entry(ENTRY *to,ENTRY *from)                                  
+{
+	int ne;
+	
+	ne = ENT_SIZE(from);
+	memmove((char *)to,(char *)from,ne);
+}       
+
+
+int scan_blk(BLOCK *pb,int n)
+{
+	int i,last;
+	
+	i=0;last=0;
+	while(i<n)
+	{       
+		last = i;
+		i = i+ENT_SIZE(ENT_ADR(pb,i));
+	}
+	return(last);
+}
+
+int last_entry(BLOCK *pb)
+{
+	return(scan_blk(pb,pb->bend));
+}
+
+FILE *creat_if(char fn[])
+{   
+    return(fopen(fn,"wb+"));
+}
+
+int read_if(RECPOS start,char buf[],int nrd)    
+{
+        fseek(pci->ixfile,start,BOF_REL);
+        return(fread(buf,nrd,1,pci->ixfile));
+}
+     
+     
+int append_if()
+{   
+
+/* new routine to dynamically add two blocks of space if 
+   a new entry can not be added (assumed to be a space limitation in 
+   file - fseek sets the filepointer at the end of the file and ftell
+   returns the postion which gives us our filesize
+   
+   when makefree is called it sets filepointer to eof_pos and writes
+   the blocks at the end of the file - then add_key tries to write the key
+   again
+   
+   I'm writing two blocks on the theory only, that if the entry needs to go 
+   in a new last block, the spare block may need to be moved also - at least
+   when I only wrote one block the indexing made it to the last few records 
+   and bombed - when I changed it to two blocks it was successful.
+*/   
+    long eof_pos;
+ 	BLOCK b;
+
+	memset((char *)&b,0,sizeof(BLOCK)); 
+	if (fseek(pci->ixfile,0,SEEK_END)==0)
+	   eof_pos = ftell(pci->ixfile);
+	make_free(eof_pos,(eof_pos+(2*sizeof(BLOCK))));
+	return(IX_OK);
+}
+     
+int write_if(RECPOS start,char buf[],int nwrt)  
+{   
+	fseek(pci->ixfile,start,BOF_REL); 
+	return(fwrite(buf,nwrt,1,pci->ixfile));
+}
+      
+/* may need to examine this */      
+int close_if()
+{   
+	if (fclose(pci->ixfile)==0)
+	   return(1);
+	else
+	   return(0);   
+}
+
+FILE *open_if(char fn[])
+{        
+    return(fopen(fn,"rb+"));
+}
+
+void make_free(RECPOS fstart,RECPOS filesize)
+{
+	BLOCK *pb;
+	RECPOS r;
+	
+	pb = &spare_block;
+	pci->dx.ff = NULLREC;
+	for (r=fstart;r<filesize;r=r+IXB_SIZE)
+		write_free(r,pb);
+}
+
+RECPOS get_free()
+{
+	RECPOS r, rt;
+	
+	r=pci->dx.ff;
+	if (r!=NULLREC)
+	{
+	   read_if(r,(char *)&rt,sizeof(RECPOS));
+	   pci->dx.ff = rt;
+	}
+	return(r);   
+}
+
+void write_free(RECPOS r,BLOCK *pb)
+{
+	pb->lvl=FREE_LEVEL;
+	memset((char *)&pb->entries,0,IXB_SPACE);
+	pb->brec=pci->dx.ff;
+	write_block(r,pb);
+	pci->dx.ff = r;
+}       
+
+void init_bio()
+{
+	init_cache();
+}
+
+int retrieve_block(int l,RECPOS r,BLOCK *pb,int current)        
+{
+	if (chk_cache(l,r) !=0)
+		get_cache(l,r,pb);
+	else
+	{
+		read_block(r,pb);
+		pb->brec = r;
+		pb->lvl = l;
+		if (current)
+			put_cache(l,pb);
+	}
+	return(IX_OK);
+}
+
+void update_block(BLOCK *pb)
+{
+	if (chk_cache(pb->lvl,pb->brec) !=0)
+		put_cache(pb->lvl,pb);
+	write_block(pb->brec,pb);
+}
+
+int get_block(int l,BLOCK *pb)
+{              
+    RECPOS r;
+
+	r = get_free();
+	if (r==NULLREC)
+		return(IX_FAIL);
+	pb->brec = r;
+	pb->lvl = l;
+	return(IX_OK);
+}       
+
+void put_free(BLOCK *pb)
+{
+	scrub_cache(pb->brec);
+	pb->lvl = FREE_LEVEL;
+	write_free(pb->brec,pb);
+}
+
+int read_block(RECPOS r,BLOCK *pb)
+{
+	int ret;
+	
+	ret = read_if(r,(char *)pb,sizeof(BLOCK));
+	return(ret);
+}
+
+int write_block(RECPOS r,BLOCK *pb)
+{                                  
+	int ret;
+	
+	ret = write_if(r,(char*)pb,sizeof(BLOCK));
+	return(ret);    
+}
+
+void init_cache()
+{
+	int l;
+	
+	for (l=0;l<MAX_LEVELS;l++)
+		pci->cache[l].brec = NULLREC;
+}
+
+int chk_cache(int l, RECPOS r)
+{                                        
+/*      BLOCK *pb;  */
+	
+	if (pci->cache[l].brec != r)
+		return(0);
+	return(1);
+}                               
+
+int get_cache(int l,RECPOS r,BLOCK *to)
+{                                      
+    BLOCK *pb;
+    
+	if (pci->cache[l].brec != r)
+		return(0);              
+	pb = &pci->cache[l];
+	memmove((char*)to,(char *)pb,sizeof(BLOCK));
+	pb->brec = r;   
+	return(1);
+}               
+
+void put_cache(int l, BLOCK *pb)
+{                                  
+    BLOCK *to;
+    
+	to = &pci->cache[l];
+	memmove((char *)to,(char *)pb,sizeof(BLOCK));
+}
+
+void scrub_cache(RECPOS r)
+{
+	int l;
+	
+	for (l=0;l<pci->dx.nl;l++)
+	{
+		if ((r==NULLREC) || (r==pci->cache[l].brec))
+			pci->cache[l].brec = NULLREC;
+	}
+}
+
+int openix(char name[],IX_DESC *pix,int (*cfun) (),int (*sfun) ())
+{
+	FILE *ret;
+	
+	pci = pix;
+	ret = open_if(name);
+	if (ret == 0)
+           return(IX_FAIL);
+	pci->ixfile = ret;
+	read_if(0L,(char *)&pix->dx,sizeof(IX_DISK));
+	pci->pcomp = cfun;
+	pci->psize = sfun;
+	init_bio();
+	go_first(pix);
+	return(IX_OK);
+}
+
+void closeix(IX_DESC *pix)
+{
+	pci = pix;
+	write_if(0L,(char *)&pci->dx,sizeof(IX_DISK));
+	close_if();
+}
+
+int creatix(char name[],double filesize,ENTRY *pdum,int ndum,int field_no)
+{
+	BLOCK b;
+	IX_DESC ixd;
+	FILE *ret;
+     
+    memset((char *)&ixd,0,sizeof(IX_DESC)); 	
+	pci = &ixd;
+	ret = creat_if(name);
+	if (ret == 0)
+       return(IX_FAIL);
+	ixd.ixfile = ret;
+	ixd.dx.nl = MAX_LEVELS;   
+	ixd.dx.order = (short)field_no;
+	memmove((char *)&ixd.dx.dume,(char *)pdum,ndum);  
+	memset((char *)&b,0,sizeof(BLOCK));
+	write_block(0L,&b);
+	
+	ixd.dx.rb = wrt_dum(pdum,ndum);   
+	
+	make_free(((RECPOS)(MAX_LEVELS+1))*IXB_SIZE,(long)filesize);
+	closeix(&ixd);
+	return(IX_OK);
+}
+
+RECPOS wrt_dum(ENTRY *pdum, int ndum)
+{
+	BLOCK b;
+	int l;                  
+	RECPOS r;
+	
+	pdum->rptr = NULLREC;
+	r = 0;
+	for (l=0;l<MAX_LEVELS;l++)
+	{
+		r=r+IXB_SIZE; 
+		memmove((char *)&b.entries,(char *)pdum,ndum); 
+		b.lvl = l;
+		b.bend = ndum;
+		write_block(r,&b);
+		pdum->rptr = r;
+	}
+	return(r);
+}
+
+void removeix(char name[])
+{
+	unlink(name);
+}       
+
+int go_first(IX_DESC *pix)
+{
+	BLOCK b;
+	
+	pci = pix;
+	
+	first_ix(pci->dx.nl-1,pci->dx.rb,&b);
+	return(IX_OK);
+}
+
+void first_ix(int l,RECPOS r,BLOCK *pb) 
+{
+	CB(l) = r;
+	CO(l) = 0;
+	retrieve_block(l,CB(l),pb,CURR);
+	
+	if (l > 0)
+           first_ix(l-1,ENT_ADR(pb,0)->rptr,pb);
+}
+
+int go_last(IX_DESC *pix)               
+{
+	BLOCK b;
+	
+	pci = pix;
+	
+	final_ix(pci->dx.nl-1,pci->dx.rb,&b);
+	
+	return(IX_OK);
+}
+
+void final_ix(int l, RECPOS r, BLOCK *pb)
+{
+	int off; 
+	
+	CB(l) = r;
+	retrieve_block(l,r,pb,CURR);
+	off = last_entry(pb);
+	CO(l) = off;
+	if (l > 0)
+           final_ix(l-1,ENT_ADR(pb,off)->rptr,pb);
+}                               
+
+int get_next(ENTRY *pe,IX_DESC *pix)
+{
+	BLOCK b;
+	pci = pix;
+	
+	copy_current(0,pe);
+	if (call(pci->pcomp)(pe,&pci->dx.dume)==0)
+		return(EOIX);
+	if (next_ix(0,&b) != NULLREC)
+	{
+		copy_current(0,pe);
+		return(IX_OK);
+	}
+	else
+		return(EOIX);
+}
+
+RECPOS next_ix(int l,BLOCK *pb)
+{
+	int off;
+	RECPOS newblk;
+	RECPOS temp;
+	
+	if (l >= pci->dx.nl)
+		return(NULLREC);
+	retrieve_block(l,CB(l),pb,CURR);
+	off = next_entry(pb,CO(l));
+	if (off >= 0)
+		CO(l) = off;
+	else
+	{
+		newblk=next_ix(l+1,pb);
+		if (newblk!=NULLREC)
+		{
+			CB(l) = newblk;
+			retrieve_block(l,CB(l),pb,CURR);
+			CO(l) = 0;
+		}
+		else
+			return(NULLREC);
+	}
+	temp = (RECPOS)(ENT_ADR(pb,CO(l))->rptr);               
+	return(temp);                        
+}
+
+int get_previous(ENTRY *pe,IX_DESC *pix)
+{
+	BLOCK b;
+	
+	pci = pix;
+	if (last_ix(0,&b) != NULLREC)
+	{
+		copy_current(0,pe);
+		return(IX_OK);
+	}
+	else return(EOIX);
+}
+
+RECPOS last_ix(int l,BLOCK *pb)
+{
+	int off;
+	RECPOS newblk;
+	
+	if (l >= pci->dx.nl)
+		return(NULLREC);
+	retrieve_block(l,CB(l),pb,CURR);
+	off = prev_entry(pb,CO(l));
+	if (off >= 0)
+		CO(l) = off;
+	else
+	{
+		newblk = last_ix(l+1,pb);
+		if (newblk != NULLREC)
+		{
+			CB(l) = newblk;
+			retrieve_block(l,CB(l),pb,CURR);
+			CO(l) = last_entry(pb);
+		}   
+	else return(NULLREC);
+    }
+    return((RECPOS)ENT_ADR(pb,CO(l))->rptr);
+}
+
+void get_current(ENTRY *pe,IX_DESC *pix)
+{
+	pci = pix;
+	copy_current(0,pe);
+}                               
+					
+int find_block(ENTRY *pe,BLOCK *pb,int *poff,int (*comp_fun) ())
+{
+	int i;
+	int ret;
+	ENTRY *p;
+	
+	i = 0;
+	while(i<pb->bend)
+	{
+		p = ENT_ADR(pb,i);
+		ret = call(comp_fun)(pe,ENT_ADR(pb,i));
+		if (ret<=0)
+			break;
+		i = next_entry(pb,i);
+	}
+	*poff = i;
+	return(ret);
+}
+
+void ins_block(BLOCK *pb,ENTRY *pe,int off)
+{
+	int ne;
+	ne = ENT_SIZE(pe);
+	
+	moveup(pb,off,ne);
+	copy_entry(ENT_ADR(pb,off),pe);
+	pb->bend = pb->bend + ne;
+}
+
+void del_block(BLOCK *pb,int off)
+{
+	int ne;
+	
+	ne = ENT_SIZE(ENT_ADR(pb,off));
+	movedown(pb,off,ne);
+	pb->bend = pb->bend - ne;
+}
+
+void moveup(BLOCK *pb,int off,int n)
+{                                       
+/*      ENTRY *p; */
+	
+	memmove((char *)ENT_ADR(pb,off+n),
+		   (char *)ENT_ADR(pb,off),
+		   pb->bend-off);
+}
+
+void movedown(BLOCK *pb,int off,int n)
+{
+/*      ENTRY *p; */
+	
+	memmove((char *)ENT_ADR(pb,off),
+		  (char *)ENT_ADR(pb,off+n),
+		  pb->bend-(off+n));
+}
+
+void combine(BLOCK *pl,BLOCK *pr)
+{
+	moveup(pr,0,pl->bend);
+	memmove((char *)ENT_ADR(pr,0),(char *)ENT_ADR(pl,0),pl->bend);
+	pr->bend = pr->bend + pl->bend;
+}
+
+int find_ix(ENTRY *pe,IX_DESC *pix)
+{
+	int ret;
+	ENTRY tempe;
+	
+	pci = pix;
+	
+	if (call(pci->pcomp)(pe,&pci->dx.dume)>=0)
+	{
+		go_last(pix);
+		return(1);
+	}
+	
+	ret = find_level(pci->dx.nl-1,pe,pci->dx.rb);
+	if (ret==0)
+	{
+		copy_current(0,&tempe);
+		pe->rptr=tempe.rptr;
+	}
+	return(ret);
+}
+
+int find_level(int l,ENTRY *pe,RECPOS r)
+{
+	BLOCK b;
+	int ret,off;
+	
+	retrieve_block(l,r,&b,CURR);
+	ret=find_block(pe,&b,&off,pci->pcomp);
+	CB(l) = r;
+	CO(l) = off;
+	
+	if (l>0)
+		ret = find_level(l-1,pe,ENT_ADR(&b,off)->rptr);
+	return(ret);
+}
+
+int insert_ix(ENTRY *pe,IX_DESC *pix)
+{
+	int ret;
+	BLOCK b;
+	
+	pci = pix;
+	ret = ins_level(0,pe,&b);
+	
+	if (ret==IX_OK)
+		next_ix(0,&b);    
+	return(ret);
+}
+
+int ins_level(int l,ENTRY *pe,BLOCK *pb)
+{
+/*      RECPOS r; */
+	int ret;
+	
+	if (l>=pci->dx.nl)
+		return(IX_FAIL);     
+		
+	retrieve_block(l,CB(l),pb,CURR);
+	if ((pb->bend+ENT_SIZE(pe)) <= split_size)
+	{
+		ins_block(pb,pe,CO(l));
+		update_block(pb);
+		ret = IX_OK;
+	}
+	else 
+		ret = split(l,pe,pb);
+	return(ret);
+}
+
+int split(int l,ENTRY *pe,BLOCK *pb)
+{
+	int half,ins_pos,last,ret;
+	BLOCK *pbb;
+	ENTRY e;
+	
+	ins_pos = CO(l);
+	if ((l+1) >= pci->dx.nl)
+		return(IX_FAIL); 
+		
+	pbb = (BLOCK *) calloc(1,sizeof(BLOCK)+sizeof(ENTRY));
+	if (pbb == NULL)
+		return(IX_FAIL);
+	pbb->bend = 0;
+	combine(pb,pbb);
+	ins_block(pbb,pe,CO(l));
+	
+	last = scan_blk(pbb,pbb->bend/2);
+	half = next_entry(pbb,last);
+	
+	if (get_block(l,pbb)==IX_FAIL)
+	{
+		free((void *)pbb);
+		return(IX_FAIL);
+	}
+	
+	copy_entry(&e,ENT_ADR(pbb,last));
+	e.rptr = pbb->brec;
+	
+	ret=ins_level(l+1,&e,pb);
+	
+	if (ret != IX_OK)
+	{       
+		free((void *)pbb);
+		put_free(pbb);
+		return(ret);
+	}
+	memmove((char *)ENT_ADR(pb,0),(char *)ENT_ADR(pbb,half),pbb->bend-half);
+	pb->bend = pbb->bend - half;
+	pb->brec = CB(l);
+	pb->lvl = l;
+	update_block(pb);
+	
+	pbb->bend = half;
+	update_block(pbb);
+	
+	if(ins_pos >= half)
+	{
+		CO(l) = CO(l)-half;
+		next_ix(l+1,pb);
+	}
+	else 
+		CB(l) = e.rptr;
+	free((void *)pbb);
+	
+	return(ret);
+}                       
+
+int delete_ix(IX_DESC *pix)
+{
+	ENTRY tempe;
+	BLOCK b;
+	int ret;
+	
+	pci = pix;
+	
+	copy_current(0,&tempe);
+	if (call(pci->pcomp)(&tempe,&pci->dx.dume)==0)
+		return(IX_FAIL);
+	ret = del_level(0,&b);
+	return(ret);
+}
+
+int del_level(int l,BLOCK *pb)
+{
+/*      RECPOS r; */
+	int ret;
+	ENTRY tempe;
+	
+	ret = IX_OK;
+	retrieve_block(l,CB(l),pb,CURR);
+	del_block(pb,CO(l));
+	
+	if (pb->bend == 0)
+	{
+		put_free(pb);
+		ret=del_level(l+1,pb);
+		copy_current(l+1,&tempe); 
+/*      first_ix(l,pb,tempe.rptr) (sic) */
+		first_ix(l,tempe.rptr,pb);
+		return(ret);
+	}
+	if (CO(l) >= pb->bend)
+		fix_last(l,pb->brec,ENT_ADR(pb,last_entry(pb)));
+	if (pb->bend < comb_size)
+		ret = compress(l,pb);
+	else
+		update_block(pb);
+	retrieve_block(l,CB(l),pb,CURR);
+	if (CO(l) >= pb->bend)       
+/*     first_ix(l,pb,next_ix(l+1)); (sic) */
+	   first_ix(l,next_ix(l+1,pb),pb);
+	return(ret);
+}
+
+int compress(int l,BLOCK *pb)
+{
+/*      int nb; */
+	BLOCK *pt;
+/*      ENTRY tempe; */
+	
+	if ((l+1) == pci->dx.nl)
+	{
+		update_block(pb);
+		return(IX_OK);
+	}
+	pt = neighbor(l,LEFTN);
+	if ((pt!=NULL) && (pt->bend+pb->bend <= IXB_SPACE))
+	{
+		combine(pt,pb);
+		update_block(pb);
+		put_free(pt);
+		
+		CO(l)=CO(l)+pt->bend;
+		last_ix(l+1,pb);
+		del_level(l+1,pb);
+		return(IX_OK);
+	}
+	pt = neighbor(l,RIGHTN);
+	if ((pt!=NULL) && (pt->bend+pb->bend <= IXB_SPACE))
+	{
+		combine(pb,pt);
+		update_block(pt);
+		CB(l) = pt->brec;
+		
+		put_free(pb);
+		del_level(l+1,pb);
+		return(IX_OK);
+	}
+	
+	update_block(pb);
+	return(IX_OK);
+}
+
+int fix_last(int l,RECPOS r, ENTRY *pe)
+{
+	ENTRY tempe;
+	
+	copy_entry(&tempe,pe);
+	tempe.rptr = r;
+	return(replace_entry(l+1,&tempe));
+}
+
+int replace_entry(int l,ENTRY *pe)
+{
+	BLOCK b;
+	int ret;
+	
+	retrieve_block(l,CB(l),&b,CURR);
+	if (CO(l) == last_entry(&b))
+		fix_last(l,CB(l),pe);
+		
+	del_block(&b,CO(l));
+	
+	if ((b.bend+ENT_SIZE(pe)) <= split_size)
+	{
+		ins_block(&b,pe,CO(l));
+		update_block(&b);
+		ret = IX_OK;
+	}
+	else
+		ret = split(l,pe,&b);
+	return(ret);
+}
+
+BLOCK *neighbor(int l,int direction)
+{
+	RECPOS rnext;
+	int off;
+	BLOCK *pb;
+	
+	pb=&spare_block;
+	l++;
+	retrieve_block(l,CB(l),pb,CURR);
+	
+	if (direction == RIGHTN)
+		off = next_entry(pb,CO(l));
+	else
+		off = prev_entry(pb,CO(l));
+		
+	if (off < 0)
+		return(NULL);
+	rnext = ENT_ADR(pb,off)->rptr;
+	
+	retrieve_block(l-1,rnext,pb,NOT_CURR);
+	return(pb);
+}
+
+int copy_current(int l,ENTRY *pe)
+{
+	BLOCK *pb;
+	
+	pb = &spare_block;
+	retrieve_block(l,CB(l),pb,CURR);
+	copy_entry(pe,ENT_ADR(pb,CO(l)));
+	return(IX_OK);
+}
+
+int find_exact(ENTRY *pe,IX_DESC *pix)
+{
+	int ret;
+	ENTRY e;
+	
+	pci = pix;
+	copy_entry(&e,pe);
+	ret = find_ix(&e,pix);
+	
+	while(ret == 0)
+	{
+		if (e.rptr==pe->rptr)
+			return(0);
+		if (get_next(&e,pix)==EOIX)
+			return(1);
+		ret=call(pci->pcomp) (&e,pe);
+	}
+	return(ret);
+}                           
+
+int find_ins(ENTRY *pe, IX_DESC *pix)
+{
+/*      int ret;
+	ENTRY tempe; */
+	
+	if (find_exact(pe,pix) == 0)
+		return(IX_FAIL);
+	return(insert_ix(pe,pix));
+}
+
+int find_del(ENTRY *pe,IX_DESC *pix)
+{
+/*      int ret;
+	ENTRY tempe; */
+	
+	if (find_exact(pe,pix) != 0)
+		return(IX_FAIL);
+	
+	return(delete_ix(pix));
+}                  
+

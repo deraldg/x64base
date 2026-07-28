@@ -31,6 +31,65 @@ SelfDoc, manualgen, and the Laboratory Campus documentation system.
 That contrast is important enough to preserve as a first-class documentation
 lane.
 
+## Recovered simple family tree
+
+The concise hierarchy has been recovered from the preserved `xbase.zip` archive
+and restored here. The first three branches are exact archive siblings; later
+recovery and modern-continuation edges are labeled separately so the diagram
+does not manufacture a single linear history.
+
+```text
+xBase source family
+├── xbase/ — core C DBF, command, and index source (1993)
+├── xdll/ — XDLL / “xBase DLL” export-oriented branch (1993–1996)
+└── xbase2/ — extended source branch (1995)
+    └── DOTTALK.C — DotTalk 1995 command shell
+
+Later preservation and recovery
+├── xBase2 no-touch MSVC bring-up
+├── gTalk / DotTalk recovery
+└── DotTalk old-code recovery
+
+Modern conceptual continuation
+├── x64base engine
+│   ├── xbase.lib — physical DBF and record behavior
+│   └── xindex.lib — optional index provider
+└── DotTalk++ runtime
+    ├── dottalkpp.exe — command-language host
+    └── pydottalk — Python 3.12 extension surface
+```
+
+### What “xBase DLL” means here
+
+The remembered name survives as the archive's `xdll/` branch. Its source has
+`LibMain`, `WEP`, and extensive `FAR PASCAL _export` declarations, so
+**DLL-export-oriented branch** is source-evidenced. A reviewed portability copy
+documents a build to `xdll.lib`.
+
+No historical file named `xbase.dll` was located in the reviewed roots. The
+tree therefore preserves the familiar “xBase DLL” label but does not claim
+that the original DLL binary itself survives.
+
+### Relationship and proof labels
+
+| Node | Relationship | Preserved evidence | Current proof label |
+| --- | --- | --- | --- |
+| xBase core | archive sibling | `xbase/xbase/` with `XBASE`, `XBCMDS`, and `XBINDEX` source/header pairs | `file-found` |
+| XDLL / xBase DLL-oriented branch | archive sibling | `xbase/xdll/`; DLL entry/exit and exported API source | `source-reviewed` |
+| xBase2 | archive sibling | `xbase/xbase2/`; extended DBF/command/index source | `source-reviewed` |
+| DotTalk 1995 | contained shell | `xbase/xbase2/DOTTALK.C` | `source-reviewed` |
+| xBase2 modern bring-up | recovery/build lane | `xbase2_legacy.lib` and `dottalk_1995.exe` observed in the recovery build | `artifact-found` |
+| gTalk / DotTalk recovery | recovery line | buildable sequential shell; stubbed index copy | `source-reviewed/recovery` |
+| DotTalk old-code recovery | recovery line | smaller buildable shell; stubbed index copy | `source-reviewed/recovery` |
+| x64base / DotTalk++ | conceptual continuation | current engine, command host, binding, source, and build-proof records | `build/runtime-evidenced` |
+
+The archive SHA-256 is
+`F4ABE4EBA8C71DE36880C4AB95E1BDB9B0D693D62B8FF7FB48E36910EBC3BD4A`.
+
+- [Open the dedicated family-tree page](/docs/dev/historical-family-tree).
+- [Inspect the preserved historical source files](/docs/dev/historical-source-files).
+- [Download the machine-readable family-tree CSV](/artifacts/source-lineage/xbase-product-family-tree-v1.csv).
+
 ## Preservation layout
 
 Use a small archive structure rather than a loose pile of folders:
@@ -149,6 +208,13 @@ Use these labels:
 The first checksum manifest is published as a website artifact:
 
 - [source-lineage-seed.csv](/artifacts/source-lineage/source-lineage-seed.csv)
+- [xbase-product-family-tree-v1.csv](/artifacts/source-lineage/xbase-product-family-tree-v1.csv)
+  is a machine-readable download, not a rendered page. It preserves the
+  recovered hierarchy, edge types, evidence labels, and missing `xbase.dll`
+  binary boundary.
+- [historical-source-files-v1.json](/artifacts/source-lineage/historical-source-files-v1.json)
+  and [historical-source-files-v1.csv](/artifacts/source-lineage/historical-source-files-v1.csv)
+  bind the 21 inspectable source files to their archive members and hashes.
 
 This seed should be expanded by a report-only script that scans known folders,
 hashes files, detects duplicates, inventories functions, and writes reviewable

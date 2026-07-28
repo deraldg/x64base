@@ -1,0 +1,118 @@
+---
+title: "Current Tasks & Projects"
+description: "Maintained current-state view of AI Portal tasks, project lanes, tickets, Pseudo-Chat returns, evidence state, and next gates."
+---
+
+> **As of 2026-07-28 · maintenance class `maintained_current`.**
+> This is a permanent route with a replaceable present-state region. Event history
+> remains in the linked intake, proof, and closeout records.
+
+## What this page is
+
+This is the human-viewable projection of the AI Portal project and task registries.
+It answers four operational questions: **what is active, who owns it, what has been
+proved, and what gate comes next**. Pseudo-Chat is represented here as an asynchronous
+return inbox; it is not a second task authority.
+
+Website status is reporting only. It does not commit source, publish a release, or
+promote a local proof into public runtime truth.
+
+## Documentation flush at a glance
+
+| Field | Current value |
+| --- | --- |
+| Run | `DOCFLUSH-20260722-001` / `AIF-048` |
+| State | `gate6_scope_pending` |
+| Publication | `local-preview-not-deployed` |
+| Source contracts | 243 |
+| HELP | 575 topics / 29,197 lines |
+| Command reference | 191 pages / 4,604 lineage rows |
+| Assembled manual | 26 parts / 14,542 lines / 298 PDF pages |
+| Next gate | Prepare and review an exact selective source-promotion scope; then regenerate the website against the resulting source commit. |
+
+[Inspect the complete vertical](/docs/dev/full-stack-documentation-push) ·
+[Open documentation progress](/docs/dev/documentation-progress) ·
+[Review the assembled manual](/docs/dev/developer-manual)
+
+## Manualgen command-reference lane
+
+Manualgen command-reference lane -- a distinct pipeline stage from the assembled-manual headline above; do not compare the two counts directly.
+
+| Field | Value |
+| --- | --- |
+| Run / harvest | `DOCFLUSH-20260722-001` / `HELPMETA-20260728T003402Z` |
+| HELP | 709 topics / 28,196 lines |
+| Command reference | 164 pages / 10,502 lineage rows |
+| Catalogs | SYSCMD 212 / SYSFUNC 74 |
+| Functions accepted | 5 (STUFF, PADL, PADR, PADC, PROPER) |
+| Gate 4 | `applied` (MANRUN-20260728T041930Z-5DE4733C) |
+| Publication readiness | `PASS_PUBLICATION_READY` |
+| State | `accepted-in-dev-manual-not-ascended` |
+
+The five FoxPro string functions were accepted into the dev-tree command reference via an authorized, reversible gate-4 apply. Not yet ascended to the public site; the assembled-manual headline above remains the current published website measurement.
+
+## Current tickets and tasks
+
+**13 tracked tasks.** Status distribution: `active` 2, `active_prototype` 1, `active_seed` 2, `backlog` 1, `closed_runtime_observed` 1, `gate6_scope_pending` 1, `proposed` 2, `returned_for_correction` 1, `review_needed` 1, `staged` 1.
+
+| Ticket | Task | Status | Owner | Project(s) | Next gate | Review |
+| --- | --- | --- | --- | --- | --- | --- |
+| AIF-048 | Full-stack documentation flush II | `gate6_scope_pending` | Derald | x64base / DotTalk++ Runtime, x64base.com Website Publication, AI Friendly Lane | Prepare and review the selective Gate 6 source-promotion scope before any commit, staging overlay, or deployment. | [open](/docs/dev/full-stack-documentation-push) · [open](/docs/dev/documentation-progress) · [open](/docs/dottalk/command-reference) · [open](/docs/dev/developer-manual) · [open](/docs/labtalk/current-work) · [open](/docs/dev/historical-family-tree) · [open](/docs/dev/historical-source-files) |
+| METACOLLECT-238 | METACOLLECT 238-finding metadata mission | `backlog` | Derald | x64base / DotTalk++ Runtime, AI Friendly Lane | Classify the 238 findings by metadata collector and authority before any repair. | [open](/docs/dev/current-lanes) |
+| AIF-045 | Identity, authentication, RBAC, and authorization follow-through | `active` | Derald | Identity, RBAC & Authorization Management, x64base / DotTalk++ Runtime | M4 registry import, M5 portable YAML bootstrap, then M6 teaching loop. | [open](/docs/engine/identity-security) |
+| AIF-041 | BETA-1 stabilization and regression validation | `active` | Derald | x64base / DotTalk++ Runtime | Complete new-work coverage, full regression sweep, refactor analysis, reference-header decision, manual scope, and peer review. | [open](/docs/dev/current-lanes) |
+| AIF-042 | Script header and usage-contract lane | `proposed` | Derald | x64base / DotTalk++ Runtime, AI Friendly Lane | Inventory scripts and freeze the @script.usage v1 field contract before harvesting. | [open](/docs/dev/current-lanes) |
+| AIF-046 | Bulk record-I/O scan follow-on | `staged` | Derald | x64base / DotTalk++ Runtime | Run the bulk record-I/O Phase-0 go/no-go benchmark before source changes. | [open](/docs/engine/pinocchio-benchmarks) |
+| AIF-049 | ArcticTalk retro TUI workbench | `active_prototype` | Derald | x64base / DotTalk++ Runtime | Complete M0 inventory and interactive visual proof while preserving the shared GUI API boundary. | [open](/docs/talk-family/arctictalk) |
+| PSEUDO-Q4 | Palette generated-stub disposition | `returned_for_correction` | Derald | x64base / DotTalk++ Runtime, AI Friendly Lane | Re-ground the task as either a narrow orphan-stub cleanup or a separate PALETTE feature lane. | [open](/docs/labtalk/agent-sync) |
+| AIF-058 | Historical database migration empirical progress | `active_seed` | Derald | Historical Database Migration Laboratory, x64base / DotTalk++ Runtime, x64base.com Website Publication, AI Friendly Lane | Complete Analyze and Design, then produce a preserved canonical COBOL fixed-record -> DBF/xBase -> CSV/JSON -> SQLite -> x64base crosswalk proof with row, field, rejection, identity, and correctness checks. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) · [open](/docs/labtalk/database-evolution) |
+| AIF-063 | DDL schema PDLC and JSON/DBF parity lane | `active_seed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), AI Friendly Lane | R1/M3/M4: repair or warn on COPY memo semantics, document x32-style output as CNX-indexed rather than traditional xBase-indexed, restore source cursor after logical COPY AS, register focused COPY flavor regression, then implement SEED CSV and explicit BUILD INDEXES/sidecar round-trip gates. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
+| AIF-064 | Retro VM/emulator launchpad lane | `review_needed` | Derald | x64base / DotTalk++ Runtime, AI Friendly Lane | Owner review: decide whether to keep public RETRO screens while adding private launcher subcommands, then implement X64BASE_ENABLE_RETRO default-OFF lane and prove E1 isolation before any launch behavior. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
+| AIF-068 | x32 traditional xBase support feasibility lane | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), Historical Database Migration Laboratory, AI Friendly Lane | M0 feasibility: inventory real legacy fixtures and decide whether this remains documentation doctrine, read-only preservation/import, or a broader traditional index/memo compatibility project. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
+| AIF-069 | EXPORT SDF fixed-width output | `closed_runtime_observed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), AI Friendly Lane | Optional future gate: SDF import/readback or an in-engine exact-byte file assertion if SDF becomes a round-trip contract. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
+
+## Pseudo-Chat return inbox
+
+The Pseudo-Chat lane carries reviewed external replies back into the Portal. A return
+stays here until it is corrected, promoted into a governed task, or explicitly closed.
+
+| Ticket | Return | Status | Required next action |
+| --- | --- | --- | --- |
+| PSEUDO-Q4 | Palette generated-stub disposition | `returned_for_correction` | Re-ground the task as either a narrow orphan-stub cleanup or a separate PALETTE feature lane. |
+
+[Read the full Pseudo-Chat log](/docs/labtalk/agent-sync).
+
+## Registered projects
+
+These are project-level containers, not claims that every child lane is complete.
+
+| Project | Registry status | Kind |
+| --- | --- | --- |
+| x64base / DotTalk++ Runtime | `active_beta` | runtime_project |
+| x64base Curated Public Staging | `active_curated_staging` | publication_staging_project |
+| LabTalk Campus | `active_seed` | campus_project |
+| LabTalk LMS Communications Lane | `reserved_local_only` | integration_project |
+| LabTalk Above-Runtime Staging | `seed` | staging_project |
+| x64base.com Website Publication | `downstream_publication_truth` | publication_project |
+| AI Friendly Lane | `seed` | knowledge_project |
+| pycrud Companion | `prototype` | companion_app_project |
+| DB_Converter | `prototype` | migration_project |
+| DotTalk Web UI Prototypes | `local_prototype` | web_ui_project |
+| SQLite GUI Prototype | `local_prototype` | gui_project |
+| DotScript Language | `active_beta` | language_project |
+| PDLC - Programming Development Life Cycle (Student/Working Model) | `active_seed` | methodology_project |
+| Historical Database Migration Laboratory | `active_seed` | pdlc_project |
+| SDLC - Software Development Life Cycle Working Model | `active_seed` | methodology_project |
+| Identity, RBAC & Authorization Management | `active_development` | governance_project |
+
+## Maintenance contract
+
+- Refresh this page from the registries during every full-stack documentation push
+  and at a governed task closeout that changes status or next gate.
+- Advance the **as-of date** only when the registry is reconciled.
+- Keep historical event dates in their original records; do not rewrite them to look
+  current.
+- Retain `Unverified`, `backlog`, `proposed`, and `not deployed` labels until their
+  named proof or promotion gate closes.
+- The machine-readable companion is
+  [current-work-v1.json](/artifacts/current-work-v1.json).

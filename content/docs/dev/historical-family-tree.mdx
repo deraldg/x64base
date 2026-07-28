@@ -1,0 +1,89 @@
+---
+title: "Historical xBase Family Tree"
+description: "Readable hierarchy of the preserved xBase, XDLL, xBase2/DotTalk, recovery, and modern conceptual-continuation families."
+---
+
+> **Historical evidence page.** Archive membership is verified. Recovery and
+> conceptual-continuation relationships are labeled separately and do not claim
+> direct byte ancestry.
+
+## Preserved archive hierarchy
+
+The original SHA-256-bound `xbase.zip` archive contains three sibling source
+branches. DotTalk is physically contained in xBase2:
+
+```text
+xBase source family
+├── xbase/                         core C source, 1993
+│   ├── XBASE                     DBF and work-area core
+│   ├── XBCMDS                    command and relation layer
+│   └── XBINDEX                   index layer
+├── xdll/                          DLL-export branch, 1993–1996
+│   ├── XBASE                     exported DBF operations
+│   ├── XBCMDS                    LibMain, WEP, commands and relations
+│   └── XBINDEX                   exported index layer
+└── xbase2/                        extended branch, 1995
+    ├── DOTTALK.C / DOTTALK.H     DotTalk command shell
+    ├── XBASE
+    ├── XBCMDS
+    ├── XBINDEX
+    └── TEST.C
+```
+
+[Inspect all 21 preserved files](/docs/dev/historical-source-files).
+
+## Later preservation and recovery
+
+These are later recovery/build lanes. Similar vocabulary and files are
+source-evidenced, but this page does not assert an unbroken version-control
+chain from the 1995 archive.
+
+```text
+DotTalk/xBase recovery evidence
+├── xBase2 no-touch MSVC bring-up
+│   ├── xbase2_legacy.lib
+│   └── dottalk_1995.exe
+├── gTalk / DotTalk recovery
+│   └── buildable sequential shell; index copy stubbed
+└── DotTalk old-code recovery
+    └── smaller buildable shell; index copy stubbed
+```
+
+## Modern conceptual continuation
+
+The current system carries the engine/shell separation forward, but current
+behavior is proved by modern source and runtime evidence—not by the archive:
+
+```text
+x64base / DotTalk++ composition
+├── x64base engine
+│   ├── xbase.lib                 physical DBF and record behavior
+│   ├── memo.lib                  memo storage behavior
+│   └── xindex.lib                optional index provider
+└── DotTalk++ runtime
+    ├── dottalkpp.exe             command-language host
+    └── pydottalk                 Python 3.12 extension surface
+```
+
+## “xBase DLL” evidence boundary
+
+The remembered “xBase DLL” name maps to the preserved `xdll/` branch. The
+source contains `LibMain`, `WEP`, and many `FAR PASCAL _export` declarations,
+which proves DLL-oriented source. No historical binary named `xbase.dll` was
+located in the reviewed archive or recovery roots. The portability record
+builds `xdll.lib`.
+
+That distinction is intentional:
+
+- **preserved:** the branch name, source files, exports, dates, and hashes;
+- **not claimed:** possession or runtime verification of an original
+  `xbase.dll` binary.
+
+## Evidence and downloads
+
+- Archive SHA-256:
+  `F4ABE4EBA8C71DE36880C4AB95E1BDB9B0D693D62B8FF7FB48E36910EBC3BD4A`
+- [Open the source-file browser](/docs/dev/historical-source-files)
+- [Download the family-tree CSV](/artifacts/source-lineage/xbase-product-family-tree-v1.csv)
+- [Download the source-file JSON manifest](/artifacts/source-lineage/historical-source-files-v1.json)
+- [Return to Historical Source Lineage](/docs/dev/historical-source-lineage)

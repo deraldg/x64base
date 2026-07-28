@@ -32,6 +32,7 @@ Status language:
 | DBF table runtime and `DbArea` object model | runtime-evidenced | `USE`, `DBAREA`, `AREA`, `STRUCT`, `FIELDS`; `src/xbase`, `src/cli/cmd_dbarea.cpp` |
 | Workspaces wrapping active areas | runtime-evidenced | `WORKSPACE`, `WSREPORT`, `DBAREAS`; `include/workspace`, `src/cli/cmd_workspace.cpp` |
 | DBF flavor trinity: MS-DOS/classic, VFP, and x64 DBF_64 | runtime-evidenced | `include/xbase.hpp`, `include/xbase_vfp.hpp`, `include/xbase_64.hpp`; classic versions `0x03`, `0x83`, `0xF5`; VFP versions `0x30`, `0x31`, `0x32`; x64 version `0x64` |
+| In-process RAM DBF and native CDX-V64 through VDISK | runtime-evidenced | `VDISK`, `SET PATH RAM`, `CREATE X64`, `USE`, `CDX`, `SET ORDER`, `REINDEX`; process-local lifetime and destructive unmount boundary |
 | Visual FoxPro DBF field/data type compatibility | runtime-evidenced | VFP probe/header/codecs; currency and newer type support evidence |
 | x64 DBF extensions and newer data types | runtime-evidenced | x64 header/meta contracts and DBF64 validation surfaces |
 | Vectored table and field names with fallback mangling | runtime-evidenced | x64 metadata/vector naming contract and fallback policy evidence |
@@ -58,7 +59,8 @@ Status language:
 | SQL bridge, CSV import/export, DBF copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT`, `AUTODBF`; `IMPORT` reads CSV into an open DBF and `EXPORT` writes CSV by default |
 | External app, shell, image, web, URL, SFTP, and archive boundaries | runtime-evidenced | `EDIT`, `TEXT`, `IMAGE`, `WEB`, `SFTP`, `PSHELL`, `BANG`, `ZIP`; external app/network/filesystem risks are separate from DBF mutation |
 | Remote and system integration surfaces | runtime-evidenced | `SFTP`, `PSHELL`, `WEB`, `ZIP`; platform zip backends |
-| Security and policy surfaces | runtime-evidenced | `SECURITY`, security policy/runtime/signature headers |
+| Identity, authentication, RBAC, and policy enforcement | runtime-evidenced | `USER`; persisted HUMAN/AI/SERVICE members, roles, permissions, requests/grants, authenticated sessions, acting identity, AI/service tokens, owner administration, DBF-backed boot/store, and enforcement at admin, host shell, AI tools, and SFTP chokepoints |
+| Legacy security diagnostics | runtime-evidenced | `SECURITY`; policy/runtime reports and self-tests. Its `LOGIN` form is a diagnostic selector only and does not grant USER identity or RBAC access |
 | Education, retro, ASCII, blackbox, and student extension commands | runtime-evidenced | `ASCII`, `BBOX`, `RETRO`, `SHELLO`, `STUDENTHELLO`, `IDX`, `BOOLEAN`, `CASE`, `CHRISTMAS`, `COBOL`, `CODASYL`, `NORMALIZE`, `SIX` |
 
 ## Language, UI, and observability
@@ -79,8 +81,10 @@ The guarded manualgen lane has now completed its reviewed publication cycle:
 
 - Runtime: Python `3.12.9`.
 - Accepted reader: 4,118 lines, 237 headings, 24 sections, and four appendices.
-- Accepted command reference: 183 pages, including 164 reader-linked and 19
-  supplemental pages, with 3,974 lineage rows.
+- Current command-reference candidate: 191 pages, including 164 reader-linked,
+  19 supplemental, and 8 post-baseline repair pages, with 4,604 lineage rows.
+- Source-to-reference repair gate: 0 blocking findings; 102 inherited historical
+  backlog entries remain separately visible.
 - Publication-readiness findings: `0`.
 - Public source snapshot: [`be935053`](https://github.com/deraldg/x64base/tree/be9350531251bb682f0476d652d99ca137861577).
 

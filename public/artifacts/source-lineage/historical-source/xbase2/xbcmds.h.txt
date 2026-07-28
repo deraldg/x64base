@@ -1,0 +1,78 @@
+/* macro defs for 'select area' and 'select area index' */ 
+#define SA s[area] 
+#define SI SA->i[SA->ord] 
+
+/*
+typedef struct child
+{
+	char a;
+	char i;
+}   child;
+typedef struct parent
+{   
+	char a;
+	char i;
+}   parent;             
+typedef struct rel
+{
+	child  c;
+	parent p;   
+}   rel;               
+*/    
+
+typedef struct child
+{
+	short a;
+	short i;
+}   child;
+typedef struct parent
+{   
+	short a;
+	short i;
+}   parent;             
+typedef struct rel
+{
+	child  c;
+	parent p;   
+}   rel;               
+
+int    FAR PASCAL _export WEP(int nParam);
+    
+void   FAR PASCAL _export select(short newarea);
+void   FAR PASCAL _export order(short area, short neworder);
+void   FAR PASCAL _export use(char * pstr1, char * pstr2, char indexed);
+void   FAR PASCAL _export close_area(short area);  
+void   FAR PASCAL _export build_index(char * xfile, short order, long num_of_recs); 
+int    FAR PASCAL _export update_index(char *oldkey,char *newkey,short ord);
+int    FAR PASCAL _export open_index(char *fn,int dupok);
+int    FAR PASCAL _export close_index(IX_DESC *pix);
+void   FAR PASCAL _export reindex(char *idxname);  
+int    FAR PASCAL _export skip(int skipped);
+int    FAR PASCAL _export top();
+int    FAR PASCAL _export bottom();
+char   FAR PASCAL _export delete_rec(short area); 
+int    FAR PASCAL _export append_blank(short area);        
+int    FAR PASCAL _export save_rec(short area);
+int    FAR PASCAL _export edit_field(char *fld_str,char *newstr);
+int    FAR PASCAL _export find(char *key);       
+void   FAR PASCAL _export locate(char * field, char * fld_data);
+int    FAR PASCAL _export match(char * fld_str);
+int    FAR PASCAL _export strnicmps(char *str1,char *str2) ;
+/*
+void   FAR PASCAL _export ascendtree();
+void   FAR PASCAL _export descendtree();
+*/
+void   FAR PASCAL _export relation(short a,short o); 
+void   FAR PASCAL _export setrelationships(short a,short o); 
+void   FAR PASCAL _export initcmds();        
+void   FAR PASCAL _export relate(short c_area,short c_order,short p_area,short p_order);
+int    FAR PASCAL _export copyfile(char *cp[]);    
+
+/* following functions use printf */ 
+/*
+void   FAR PASCAL _export sayfield(int field_idx); 
+void   FAR PASCAL _export display();
+*/
+
+
+

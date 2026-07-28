@@ -1,0 +1,58 @@
+---
+title: "RAM DBF and VDISK"
+description: "Process-local X64 DBF tables and CDX-V64 indexes in the x64base in-process virtual disk, including lifetime and path boundaries."
+---
+
+`VDISK` is the in-process RAM virtual disk used by x64base for transient X64
+DBF tables, native CDX-V64 indexes, and related storage. It is a real engine
+lane—not a disk cache metaphor—but it is deliberately **ephemeral**.
+
+This page reflects current development source and runtime proof. It is visible
+in the local website preview and is not yet a tagged-release or public-deployment
+claim.
+
+## What lives in RAM
+
+While VDISK is mounted, the runtime redirects the DBF, INDEXES, and LMDB path
+slots beneath the configured RAM root. Normal database commands can then create
+and operate on tables and indexes without corresponding table or index files on
+disk:
+
+```text
+SET PATH RAM <path>
+VDISK MOUNT
+CREATE X64
+USE
+CDX
+SET ORDER
+REINDEX
+VDISK STATUS
+```
+
+The default RAM root is `<DATA>/ram`. `SET PATH RAM <path>` relocates it before
+mounting. The optional `bin/vdisk.ini` administrator configuration remains a
+local, review-required extension until its source and configuration files are
+committed.
+
+## Lifetime contract
+
+| Operation | Effect |
+| --- | --- |
+| `VDISK MOUNT` / `ON` | Mount the RAM root and redirect the engine storage path slots. |
+| `VDISK STATUS` | Report the root, mount state, byte use, and resident files; read-only. |
+| `VDISK CONFIG` | Report the current configuration boundary. |
+| `VDISK UNMOUNT` / `OFF` / `CLEAR` | Drop every resident RAM file and alter path state. |
+
+`UNMOUNT`, `OFF`, and `CLEAR` are destructive for resident RAM data. VDISK does
+not promise persistence across those operations or process termination. Data
+that must survive belongs in a durable table or in an explicit, reviewed export
+workflow.
+
+## Documentation authority
+
+The current contract is owned by `src/cli/cmd_vdisk.cpp`, projected into HELP,
+the 191-page command-reference candidate, and the assembled developer manual.
+The [command catalog](/docs/dottalk/command-catalog) is a derivative. The
+[documentation progress page](/docs/dev/documentation-progress) records the
+promotion state.
+

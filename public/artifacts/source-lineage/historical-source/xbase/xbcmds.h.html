@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xBase core — XBCMDS.H — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>xBase core — XBCMDS.H</h1>
+    <p>Read-only archive view · 1993-10-25 · 1,346 bytes · SHA-256 6432767F082144088E7972606DE9DAE2B25321417FF94CBF118A023FA7689D2B</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xbase/xbcmds.h.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>/* macro defs for &#x27;select area&#x27; and &#x27;select area index&#x27; */ 
+#define SA s[area] 
+#define SI SA-&gt;i[SA-&gt;ord] 
+
+typedef struct child
+{
+	char a;
+	char i;
+}   child;
+typedef struct parent
+{   
+	char a;
+	char i;
+}   parent;		
+typedef struct rel
+{
+	child  c;
+	parent p;   
+}   rel;	
+
+void   select(char newarea);
+void   order(char area, char neworder);
+void   use(string pstr1, string pstr2, char indexed);
+void   close_area(char area);  
+void   build_index(string xfile, int order); 
+int    update_index();
+int    open_index(char *fn,int dupok);
+int    close_index(IX_DESC *pix);
+void   reindex(char *idxname);  
+int    skip(int skipped);
+int    top();
+int    bottom();
+char   delete_rec(char area); 
+int    append_blank(char area);        
+int    save_rec(char area);
+int    edit_field(char *fld_str,char *newstr);
+int    find(char *key);       
+void   locate(string field, string fld_data);
+int    match(string fld_str);
+int    strnicmps(char *str1,char *str2) ;
+void   ascendtree();
+void   descendtree();
+void   relation(char a,char o); 
+void   setrelationships(char a,char o); 
+void   initcmds();        
+void   relate(int c_area,int c_order,int p_area,int p_order);
+void   copyfile(char *cp[]);    
+
+/* following functions use printf */ 
+void   sayfield(int field_idx); 
+void   display();
+
+
+
+
+</pre>
+</body>
+</html>

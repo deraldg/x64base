@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xBase2 / DotTalk 1995 — DOTTALK.C — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>xBase2 / DotTalk 1995 — DOTTALK.C</h1>
+    <p>Read-only archive view · 1995-08-14 · 12,348 bytes · SHA-256 9DD694B8772A0DA8AAAF437CFDC3E0A7316C7C576B430964D1728FCF64AA804B</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xbase2/dottalk.c.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;fcntl.h&gt;   
+#include &lt;malloc.h&gt;
+#include &quot;xbindex.h&quot;
+#include &quot;xbase.h&quot;
+#include &quot;xbcmds.h&quot;
+#include &quot;dottalk.h&quot;  
+
+extern select_rec * FAR s[max_area];
+extern short far area;   
+
+extern long  memory;
+extern int   DOSERROR; 
+extern int   XERROR;
+extern char *XMSG[];
+
+char *dfile,*xfile;
+
+void main()
+{          
+  char command_line[max_params*param_size];       
+  
+  memory = 0;                        
+  initcmds();              
+  initbase();                       
+  memset((char *)command_line,&#x27; &#x27;,sizeof(command_line));
+  commands(command_line); 
+} 
+
+static char *help[] =
+{   
+	&quot;QUIT&quot;,
+	&quot;USE FILENAME [INDEX &lt;INDEXNAME&gt;]&quot;,
+	&quot;INDEX &lt;INDEXNAME&gt; &lt;FIELD_NUMBER&gt;&quot;,
+	&quot;LIST &lt;FIELDNAME...&gt;&quot;,
+	&quot;FIELD &lt;FIELDNAME...&gt;&quot;,
+	&quot;TOP&quot;,
+	&quot;BOTTOM&quot;,
+	&quot;SKIP &lt;NUM_OF_RECORDS&gt;&quot;,
+	&quot;DISPLAY&quot;,
+	&quot;GOTO &lt;RECORD_NUMBER&gt;&quot;,
+	&quot;COPY TO FILENAME [FOR | WHILE FIELDNAME &lt;|&gt;|&gt;=|&lt;= &lt;STRING&gt;] [TYPE SDF] [TYPE DELIMITED] &quot;,
+	&quot;RECNO&quot;,
+	&quot;DIR&quot;,
+	&quot;!&quot;,
+	&quot;ASCEND&quot;,
+	&quot;DESCEND&quot;,
+	&quot;NIDX&quot;,
+	&quot;PIDX&quot;,
+	&quot;RTREE&quot;,
+	&quot;FIND&quot;,
+	&quot;LOCATE &lt;FIELDNAME&gt; &lt;STRING&gt;&quot;,
+	&quot;SAYGET&quot;,
+	&quot;EDIT &lt;FIELDNAME&gt; &lt;STRING&gt;&quot;,
+	&quot;APPEND&quot;,
+	&quot;SAVE&quot;,
+	&quot;DELETE&quot;,
+	&quot;PACK&quot;,
+	&quot;COUNT&quot;,                    
+	&quot;SELECT &lt;AREA&gt;&quot;,
+	&quot;DEBUG [BUFFER] [FIELD &lt;FIELDNUMBER&gt;]&quot;,
+	&quot;HELP&quot;
+};      
+
+void sayfield(int field_idx)           
+{
+   printf(&quot;%s &quot;,SA-&gt;fd[field_idx]);
+}   
+
+void display()
+{
+   short i ;
+
+   if (!SA-&gt;fok)
+   {
+      return;
+   }
+   printf(&quot;\n&quot;);
+   for (i = 1; i &lt;= SA-&gt;num_of_fields; i++)
+       {
+	      printf(&quot;%s\n&quot;,SA-&gt;fd[i]);
+       };
+   printf(&quot;\n&quot;);
+}  
+       
+void ascendtree()
+{  
+    int i;
+    
+	i = first_key(SI.pe,SI.pix);
+	while (i != EOIX)        
+	{      
+		printf(&quot;%s %d\n&quot;,SI.pe-&gt;key,SI.pe-&gt;rptr);       
+		i = next_key(SI.pe,SI.pix);
+	}               
+}
+
+void descendtree()
+{   
+	int i; 
+	
+	last_key(SI.pe,SI.pix);   
+	i = prev_key(SI.pe,SI.pix);
+	while (i != EOIX)
+	{ 
+		printf(&quot;%s %d\n&quot;,SI.pe-&gt;key,SI.pe-&gt;rptr);       
+		i = prev_key(SI.pe,SI.pix);
+	}       
+}
+
+char * FAR PASCAL _export parsecom(char *comstr,char *cp[])
+{ 
+/*num_of_params is a global variable in xbcmds.h */
+  num_of_params = (char)sscanf(comstr,&quot;%s%s%s%s%s&quot;,cp[1],cp[2],cp[3],cp[4],cp[5]); 
+  return(cp[1]);
+}                                                  
+
+	   
+void commands(char *command_str)  
+{                            
+
+   int i,j,ret;
+   int stat;
+   short fieldno;
+   char *cp[6];
+   char *dfile;  
+   SA-&gt;fok = FALSE;
+   SI.idx = FALSE;   
+   for (i=1;i&lt;=5;i++) 
+   {
+	   cp[i] = calloc(param_size,sizeof(char));
+	   memchk(cp[i],&quot;commands&quot;,&quot;cp[i]&quot;,(long)(param_size*sizeof(char)));
+   }    
+   while (strnicmp(command_str,&quot;QUIT&quot;,3)!=0)  
+   {  
+      printf(&quot;.&quot;);
+      memset(command_str,&#x27; &#x27;,sizeof(command_str)); 
+      for (i=1;i&lt;=5;i++)
+      {
+          /* cp[i] = &quot;\0&quot;; */ 
+          memset(cp[i],&#x27; &#x27;,sizeof(cp[i]));
+      }
+      gets(command_str);
+      command_verb = parsecom(command_str,cp);  
+      if (strnicmp(command_verb,&quot;LIST&quot;,3)==0) 
+      {  
+	      if (!SA-&gt;fok) return;
+	          stat = 1;
+	      if (!SI.idx)
+	      {                                      
+	          for (i=(int)SA-&gt;crn;i&lt;=SA-&gt;hr-&gt;num_of_recs;i++)
+	          {        
+	 	          if (num_of_params &lt; 2)   
+		          {          
+		             display(); 
+
+		          }
+		          else  
+		          { 
+		             for (j=2;j&lt;=num_of_params;j++)  
+		             {
+		                 sayfield(match(cp[j]));   
+		             }     
+		          printf(&quot;\n&quot;);                             
+		          }  
+		          if (i != SA-&gt;hr-&gt;num_of_recs)
+		             stat = skip(1); 
+	          }             
+	      }  
+	      else
+	      {
+	         while (stat != EOIX)
+	         {        
+		         if (num_of_params &lt;2)   
+		         {          
+		            display(); 
+
+		         }
+		         else  
+		         { 
+		            for (j=2;j&lt;=num_of_params;j++)  
+		            {
+		                sayfield(match(cp[j]));   
+		            }     
+		            printf(&quot;\n&quot;);                             
+		         }  
+	  	         stat = skip(1); 
+	         }                               
+	      }
+      }         
+      if (strnicmp(command_verb,&quot;FIELD&quot;,3)==0) 
+      {
+	     for (i=2;i&lt;=num_of_params;i++)
+	         sayfield(match(cp[i]));
+	     printf(&quot;\n&quot;);    
+      }                                 
+      if (strnicmp(command_verb,&quot;LOCA&quot;,3)==0)
+	     locate(cp[2],cp[3]);
+      if (strnicmp(command_verb,&quot;GOTO&quot;,3)==0)
+	  {
+	     i = atoi(cp[2]);
+	     if ((i &gt;= 0) &amp;&amp; (i &lt;= SA-&gt;hr-&gt;num_of_recs))
+		    goto_rec(i);
+	     else
+		   printf(&quot;%d is not a valid number\n&quot;,i);
+	  }
+      if (strnicmp(command_verb,&quot;TOP &quot;,3)==0) top();
+      if (strnicmp(command_verb,&quot;BOTT&quot;,3)==0) bottom();
+      if (strnicmp(command_verb,&quot;SKIP&quot;,3)==0) 
+	  {
+	    i = atoi(cp[2]);
+	    if (abs(i) &lt;= SA-&gt;hr-&gt;num_of_recs)
+	       skip(i);
+	    else
+	       if ((strnicmp(cp[2],&quot;               &quot;,3)==0) ||
+		  (num_of_params == 1)) 
+		      skip(1);
+	       else
+		  printf(&quot;%d is not a valid record number\n&quot;,i);
+	  }
+      if (strnicmp(command_verb,&quot;COPY&quot;,3)==0) copyfile(cp);
+      if (strnicmp(command_verb,&quot;DISP&quot;,3)==0) display();
+      if (strnicmp(command_verb,&quot;USE &quot;,3)==0) 
+      {  
+	  if (num_of_params == 1)
+	  {
+	    if (SI.idx)
+	    {
+	       close_index(SI.pix);
+	       free(SI.pix);
+	       free(SI.pe);               
+	    }   
+	    if (SA-&gt;fok)
+	       close_file(area);
+	  }      
+	  else 
+	  {   
+	    if (strnicmp(cp[3],&quot;INDEX&quot;,3)==0)
+	       stat=TRUE;
+	    else
+	    {  
+	       stat=FALSE;
+	       if (SI.idx)  
+	       {
+		      close_index(SI.pix);
+		      free(SI.pix);
+		      free(SI.pe);         
+	       }   
+	    }                  
+	    dfile = dbname(cp[2]); 
+	    xfile = dxname(cp[4]); 
+	    use(dfile,xfile,(char)stat);  
+	  }  
+      }   
+      if (strnicmp(command_verb,&quot;SAVE&quot;,3)==0) 
+      {
+	     save_rec(area);      
+	     printf(&quot;record updated\n&quot;);    
+      }    
+      if (strnicmp(command_verb,&quot;EDIT&quot;,3)==0) 
+      {                                       
+	     if (num_of_params == 3) 
+	     {  
+	         if (edit_field(cp[2],cp[3]) == 0)
+	         {
+	             printf(&quot;could not edit %s\n&quot;,cp[2]);
+	         }
+	     }      
+      }     
+      if (strnicmp(command_verb,&quot;SELE&quot;,3)==0)
+      {   
+	     i = atoi(cp[2]); 
+	     if (i==0)            
+	        printf(&quot;current work area = %d\n&quot;,area);
+	     else    
+	     {   
+	        if ((i&gt;-1) &amp;&amp; (i&lt;256))
+	           area = (char)i;
+	        else
+	           printf(&quot;select %s failed\n&quot;,cp[2]);
+	     }      
+      }         
+      if (strnicmp(command_verb,&quot;RECO&quot;,3)==0) printf(&quot;%d\n&quot;,SA-&gt;crn);
+      if (strnicmp(command_verb,&quot;DIR &quot;,3)==0) 
+      {
+/*       DOSERROR = system(&quot;C:\\COMMAND.COM /C DIR *.*&quot;); */
+	  if (DOSERROR != 0)
+	      printf(&quot;#%d DOS ERROR\n&quot;,DOSERROR);   
+      }
+      if (strnicmp(command_verb,&quot;!   &quot;,3)==0)
+      {
+/*       DOSERROR = system(&quot;C:\\COMMAND.COM&quot;); */
+	  if (DOSERROR != 0)
+	      printf(&quot;#%d DOS ERROR\n&quot;,DOSERROR);
+      }
+/*    if (strnicmp(command_verb,&quot;BROW&quot;,3)==0) browse(W,H,X,Y);   */
+      if (strnicmp(command_verb,&quot;RELA&quot;,3)==0) 
+	      relate((char)atoi(cp[2]),(char)atoi(cp[3]),
+		  (char)atoi(cp[4]),(char)atoi(cp[5]));
+      if (strnicmp(command_verb,&quot;ASCE&quot;,3)==0) ascendtree();
+      if (strnicmp(command_verb,&quot;DESC&quot;,3)==0) descendtree();
+      if (strnicmp(command_verb,&quot;NIDX&quot;,3)==0) 
+      {
+	      ret = next_key(SI.pe,SI.pix);
+	      if (ret==IX_OK)
+		      goto_rec(SI.pe-&gt;rptr);
+	      else
+	          printf(&quot;%d\n&quot;,ret);
+      } 
+     
+      if (strnicmp(command_verb,&quot;PIDX&quot;,3)==0)  
+      {
+		 if (prev_key(SI.pe,SI.pix)==IX_OK)
+		     goto_rec(SI.pe-&gt;rptr);
+      }
+      if (strnicmp(command_verb,&quot;INDE&quot;,3)==0) 
+      {
+	      fieldno = (short)atoi(cp[3]);
+	      if ((fieldno &gt; 0) &amp;&amp; (fieldno &lt;= SA-&gt;num_of_fields))
+	      {  
+	       /* syntax - INDEX indexname fieldnumber */
+	         SI.idx= FALSE;
+	         xfile = dxname(cp[2]);   
+	         build_index(xfile,fieldno,SA-&gt;hr-&gt;num_of_recs); 
+	      }
+	      else
+	         printf(&quot;invalid order\n&quot;);
+      }
+      if (strnicmp(command_verb,&quot;FIND&quot;,3)==0)
+      {  
+	      if (!SI.idx)
+	           printf(&quot;this area not indexed\n&quot;);
+	      else
+	      {  
+		       if (num_of_params == 1)
+		          cp[2] = &quot; &quot;;
+		       if (!find(cp[2]))
+		          printf(&quot;could not find %s\n&quot;,cp[2]);
+	      }      
+      }   
+      if (strnicmp(command_verb,&quot;SAYGET&quot;,3)==0) 
+      {
+      }     
+      if (strnicmp(command_verb,&quot;APPE&quot;,3)==0) append_blank(area);
+      if (strnicmp(command_verb,&quot;DELE&quot;,3)==0)
+	      delete_rec(area);
+      if (strnicmp(command_verb,&quot;PACK&quot;,3)==0)
+      {
+/*       pack(area); */
+      }
+      if (strnicmp(command_verb,&quot;COUN&quot;,3)==0) 
+	     printf(&quot;%d\n&quot;,SA-&gt;hr-&gt;num_of_recs);
+      if (strnicmp(command_verb,&quot;REIN&quot;,3)==0)
+	     reindex(cp[2]); 
+      if (strnicmp(command_verb,&quot;HELP&quot;,3)==0)
+	     for (i=0;i&lt;=25;i++) printf(&quot;%s\n&quot;,help[i]); 
+#if MSDOS        
+      if (strnicmp(command_verb,&quot;MEMO&quot;,3)==0)
+	  printf(&quot;memory available = %d free count = %d\n&quot;,_memavl(),_freect(1));         
+#endif         
+      if (strnicmp(command_verb,&quot;ORDE&quot;,3)==0)
+      {
+	     i = atoi(cp[2]); 
+	     if (i==0)            
+	        printf(&quot;current order in area %d = %d\n&quot;,area,SA-&gt;ord);
+	     else    
+	        order((char)atoi(cp[2]),(char)atoi(cp[3]));
+      }  
+      if (strnicmp(command_verb,&quot;OPEN&quot;,3)==0)
+      {
+	     if (strnicmp(cp[2],&quot;INDEX&quot;,3)==0)   
+	     {
+		     if (open_index(dxname(cp[3]),1)==0)
+		         printf(&quot;index open error\n&quot;);  
+	     }       
+      }  
+      if (strnicmp(command_verb,&quot;SWAB&quot;,3)==0) swabdbf(cp[2]);
+      if (strnicmp(command_verb,&quot;FIXH&quot;,3)==0)
+      {
+	     SA-&gt;hr-&gt;num_of_recs = atol(cp[2]);
+	     printf(&quot;num_of_recs = %d %x\n&quot;,
+		 SA-&gt;hr-&gt;num_of_recs,
+		 SA-&gt;hr-&gt;num_of_recs);
+      }
+      if (strnicmp(command_verb,&quot;DEBU&quot;,3)==0)
+      {
+	      printf(&quot;   Select Record Information\n&quot;);
+	      printf(&quot;area = %d\n&quot;,SA-&gt;a);
+	      printf(&quot;file pointer = %d\n&quot;,*SA-&gt;fp);
+	      printf(&quot;file ok = %d\n&quot;,SA-&gt;fok);
+	      printf(&quot;curr rec no = %d\n&quot;,SA-&gt;crn);   
+	      if (strnicmp(cp[2],&quot;BUFF&quot;,3)==0) 
+	      {
+	        for (i=0;i&lt;SA-&gt;hr-&gt;cpr;i++) printf(&quot;%c&quot;,SA-&gt;rd[i]);
+	      }
+	      printf(&quot;indexed = %d\n&quot;,SI.idx);            
+	      printf(&quot;index order = %d\n&quot;,SA-&gt;ord);  
+	      printf(&quot;num_of_fields = %d\n&quot;,SA-&gt;num_of_fields);
+/*          
+	      field_rec  *fr[max_fields];  
+	      string      fd[max_fields];  
+*/
+	      printf(&quot;   Header Information - %s\n&quot;,dbname);
+	      printf(&quot;version = %x\n&quot;,SA-&gt;hr-&gt;version);
+	      /*   update last_updated   */
+	      printf(&quot;num of recs = %d\n&quot;,SA-&gt;hr-&gt;num_of_recs);
+	      printf(&quot;data start = %d\n&quot;,SA-&gt;hr-&gt;data_start);     
+	      printf(&quot;chars per rec = %d\n&quot;,SA-&gt;hr-&gt;cpr);            
+
+	      if (strnicmp(cp[2],&quot;FIEL&quot;,3)==0)
+	      {         
+	          i = atoi(cp[3]);    
+	          printf(&quot;%d\n&quot;,i);
+	          if (i == 0)
+	          {     
+	             for (i=1;i&lt;=SA-&gt;num_of_fields;i++) 
+	             {
+	          		printf(&quot;   Field %d Information \n&quot;,i);
+	          		printf(&quot;field name char = %c\n&quot;,SA-&gt;fr[i]-&gt;field_name[0]); 
+	          		printf(&quot;field_type = %c\n&quot;,SA-&gt;fr[i]-&gt;field_type); 
+	          		printf(&quot;field_data_address = %d\n&quot;,SA-&gt;fr[i]-&gt;field_data_address);
+	          		printf(&quot;field_length = %d\n&quot;,SA-&gt;fr[i]-&gt;field_length);
+	          		printf(&quot;decimal_places = %d\n&quot;,SA-&gt;fr[i]-&gt;decimal_places) ;
+	          	 }
+	          }	 
+	          else
+	          {
+	          		printf(&quot;   Field %d Information  \n&quot;,i);
+	          		printf(&quot;field name char = %c\n&quot;,SA-&gt;fr[i]-&gt;field_name[0]); 
+	          		printf(&quot;field_type = %c\n&quot;,SA-&gt;fr[i]-&gt;field_type); 
+	          		printf(&quot;field_data_address = %d\n&quot;,SA-&gt;fr[i]-&gt;field_data_address);
+	          		printf(&quot;field_length = %d\n&quot;,SA-&gt;fr[i]-&gt;field_length);
+	          		printf(&quot;decimal_places = %d\n&quot;,SA-&gt;fr[i]-&gt;decimal_places) ;	 	
+	          }		
+	      }
+      }
+   }  
+   fcloseall();  
+}                  
+</pre>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xBase2 / DotTalk 1995 — DOTTALK.H — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>xBase2 / DotTalk 1995 — DOTTALK.H</h1>
+    <p>Read-only archive view · 1995-07-21 · 310 bytes · SHA-256 8E7CCCD124B56A6E1DCD5973E5C5641E57D3B7095A5299CFEEE8609792259A1C</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xbase2/dottalk.h.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>#define max_params 20   /* see num_of_params */
+#define param_size 30    
+
+char    num_of_params;   /* limit to 256 params */
+char   *command_str;
+char   *command_verb;           
+                       
+char * FAR PASCAL _export parsecom(char *comstr,char *cp[6]); 
+void   commands(char *command_str);</pre>
+</body>
+</html>

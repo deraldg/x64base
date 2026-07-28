@@ -1,0 +1,9 @@
+#define max_params 20   /* see num_of_params */
+#define param_size 30    
+
+char    num_of_params;   /* limit to 256 params */
+char   *command_str;
+char   *command_verb;           
+                       
+char * FAR PASCAL _export parsecom(char *comstr,char *cp[6]); 
+void   commands(char *command_str);

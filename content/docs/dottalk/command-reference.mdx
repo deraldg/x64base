@@ -1,13 +1,13 @@
 ---
 title: "DotTalk++ Command Reference"
-description: "Accepted 183-page DotTalk++ command-reference snapshot with review status, provenance, and regeneration boundaries."
+description: "Sealed 183-page publication checkpoint and current 191-page local candidate, with provenance and regeneration boundaries."
 ---
 
-This page is the stable website entrypoint for the accepted DotTalk++ command
-reference. It identifies the reviewed snapshot without duplicating all 183
-generated command pages into the website repository.
+This page is the stable website entrypoint for the DotTalk++ command reference.
+It keeps the sealed public checkpoint distinct from the current local candidate
+without duplicating generated command pages into the website repository.
 
-## Accepted snapshot
+## Published checkpoint — sealed 2026-07-18
 
 | Measure | Accepted value |
 | --- | ---: |
@@ -21,6 +21,28 @@ generated command pages into the website repository.
 The 164 reader-linked pages follow the commands resolved from the accepted
 developer manual. The 19 supplemental pages close reviewed source/HELP gaps
 without pretending that every page came from the reader body.
+
+## Current local candidate — not deployed
+
+| Measure | Current value |
+| --- | ---: |
+| Standalone command pages | 191 |
+| Reader-linked pages | 164 |
+| Supplemental pages | 19 |
+| Post-baseline repair pages | 8 |
+| Command lineage rows | 4,604 |
+| Blocking coverage findings | 0 |
+| Inherited historical backlog | 102 |
+
+The refresh preserves the independently accepted supplemental set and adds
+focused pages for `BUILDVECTORS`, `DEFCMD`, `DEFFN`, `STOP_ON_ERROR`,
+`UNDEFCMD`, `UNDEFFN`, `USER`, and `VDISK`. Those eight pages repair current
+source/HELP publication gaps; they do not erase the inherited historical
+backlog or rewrite the sealed July 18 checkpoint.
+
+The complete generated index labels all three provenance layers. Public-source
+links below remain pinned to the sealed snapshot until this local candidate
+passes review, source promotion, deployment, and live-readback gates.
 
 ## Read and inspect
 

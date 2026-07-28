@@ -1,0 +1,103 @@
+---
+title: "Full-stack Documentation Push"
+description: "Complete maintained record of the current source-to-comments-to-HELP-to-reference-to-manual-to-website documentation vertical."
+---
+
+> **Current as of 2026-07-23 · `maintained_current` · local review only.**
+> Run `DOCFLUSH-20260722-001` is source-through-local-site green. It has not been
+> committed, pushed, versioned, deployed, or verified on the public site.
+
+## Why this vertical exists
+
+The documentation system derives from source behavior, source comments, usage
+contracts, and file metadata. A major messaging and runtime change therefore requires
+a governed reharvest: not because every small change deserves a full publication run,
+but because this change crossed enough source, HELP, manual, and public-documentation
+boundaries to justify the complete vertical.
+
+The chain is:
+
+```text
+source and *ref.hpp contracts
+-> COMMENTS SRC* evidence and mutation audit
+-> CMDHELP build + CMDHELPCHK + locale canaries
+-> SelfDoc / reference identity / lineage
+-> manualgen candidate + accepted-layer preservation
+-> assembled Markdown, HTML, and PDF
+-> reviewed website pages and machine-readable feeds
+-> human review
+-> explicit commit, publication, and live-readback gates
+```
+
+## Current proof table
+
+| Layer | Reviewed current state | Boundary |
+| --- | --- | --- |
+| Source harvest | 1,032 files; 243 complete source usage contracts | Source defines; contracts describe. |
+| COMMENTS | Guarded reload with rollback set and independent readback | Snapshot/audit evidence; not permission to mutate source. |
+| HELP | 459 commands; 2,566 arguments; 575 topics; 29,197 lines | `CMDHELPCHK` and focused command/locale canaries pass. |
+| Command reference | 191 pages; 4,604 lineage rows | 164 reader-linked + 19 preserved supplemental + 8 post-baseline repairs. |
+| Accepted reader | 4,118 lines; 237 headings; publication readiness 26/26 | Accepted reader remains pinned and unchanged. |
+| Assembled manual | 26 parts; 14,542 lines; 1,666 headings; 298-page PDF | Local candidate, not a published release claim. |
+| Website | Dedicated VDISK, identity/security, current-work, and full-vertical pages | Local build/review surface only. |
+
+## Coverage repairs made during review
+
+The first local website candidate was too scant. A source-to-reference reconciliation
+found and repaired eight post-baseline command pages: `BUILDVECTORS`, `DEFCMD`,
+`DEFFN`, `STOP_ON_ERROR`, `UNDEFCMD`, `UNDEFFN`, `USER`, and `VDISK`.
+The current-source blocking count is zero; 102 inherited historical gaps remain visible
+as backlog rather than being relabeled as new regressions.
+
+Two large implementation families also received dedicated documentation:
+
+- [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk): process-local X64 DBF tables,
+  CDX-V64 indexes, path routing, and destructive lifetime boundaries.
+- [Identity, Authentication, and RBAC](/docs/engine/identity-security):
+  `USERS` identity records, `TEAM_MEMBER` participation, authentication sessions,
+  roles, permissions, authorization grants, DBF persistence, owner-gated management,
+  runtime enforcement, and the diagnostic-only legacy `SECURITY` selector.
+
+## Human-viewable products
+
+- [Current Tasks & Projects](/docs/labtalk/current-work) — what is active, owner,
+  evidence state, Pseudo-Chat inbox, and next gate.
+- [Documentation Progress](/docs/dev/documentation-progress) — published checkpoint
+  plus current vertical without conflating their dates.
+- [Developer Manual](/docs/dev/developer-manual) — assembled current manual.
+- [Command Reference](/docs/dottalk/command-reference) — accepted and current page
+  layers with lineage.
+- [Website Documentation Matrix](/docs/dev/website-documentation-matrix) — content
+  maintenance classes, feed authorities, and proof gates.
+- [Pinocchio Benchmarks](/docs/engine/pinocchio-benchmarks) — historical before/after
+  evidence and machine identity limitations.
+
+Machine-readable companions:
+
+- [current-work-v1.json](/artifacts/current-work-v1.json)
+- [documentation-progress-v1.json](/artifacts/documentation-progress-v1.json)
+
+## Date and maintenance contract
+
+This page, Current Tasks & Projects, Documentation Progress, project truth, roadmap,
+manual landing, and AI Agent Sync are permanent but not static. They use the
+`maintained_current` class:
+
+1. Display a reconciled `as_of_date`.
+2. Name the authority that feeds the present state.
+3. Show proof state and next gate.
+4. Replace the present-state region when work advances.
+5. Preserve historical event dates and immutable closeout evidence.
+
+Reported products such as benchmark rows and sealed publication checkpoints remain
+append-only. Static brand/history pages change only by deliberate human review.
+
+## Separate missions and open boundaries
+
+- `METACOLLECT-238` is a separate 238-finding metadata mission. It was not silently
+  folded into this documentation flush.
+- The Pseudo-Chat palette-stub return is held for correction and is not implemented.
+- A local green website does not equal a commit, GitHub push, saved deployment,
+  production deployment, or public live-readback.
+- The next gate is human inspection of the complete local website followed by an
+  explicit publication decision.

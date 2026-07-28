@@ -7,21 +7,21 @@
 | | |
 | --- | --- |
 | Manual id | `developer_manual_publication_v1` |
-| Public source snapshot | `8ee746dee` |
-| Accepted reader baseline | `EA2E12A9D3E1` (accepted 2026-07-18T05:06:03Z) |
-| Command-reference pages | 183 |
-| Build date (UTC) | 2026-07-20T19:17:26Z |
+| Repository HEAD (context only) | `cc0761e8f` |
+| Accepted reader baseline | `EA2E12A9D3E1` (accepted 2026-07-23T04:29:18Z) |
+| Command-reference pages | 191 |
+| Build date (UTC) | 2026-07-23T07:23:14Z |
 | Machine (maintainer-attested) | Alienware m16 R2 / Intel Core Ultra 9 185H |
 <!-- MAN:END id=fm-title -->
 
-<!-- MAN:APPEND id=fm-provenance at=2026-07-20T19:17:26Z -->
+<!-- MAN:APPEND id=fm-provenance at=2026-07-23T07:23:14Z -->
 ## Provenance & attestation
 
 This manual is assembled from source, HELP/metadata, SelfDoc reports, and
 reviewed manualgen sections. Proof labels travel with each part.
 
-- Accepted reader baseline: `EA2E12A9D3E1`, 4118 lines, 237 headings (2026-07-18T05:06:03Z).
-- Command reference: 183 pages (164 reader-linked + 19 supplemental).
+- Accepted reader baseline: `EA2E12A9D3E1`, 4118 lines, 237 headings (2026-07-23T04:29:18Z).
+- Command reference: 191 pages (164 reader-linked + 19 supplemental + 8 post-baseline repair).
 - MDO lane: `DOCFLUSH-20260716-001`.
 - Machine attestation: MAINTAINER_ATTESTED (Alienware m16 R2). The individual run transcripts did not self-record the machine; this binding is a maintainer attestation made after the fact, not a value captured inside each run's output. Recorded as MAINTAINER_ATTESTED rather than silently auto-attached.
 <!-- MAN:END id=fm-provenance -->
@@ -54,6 +54,7 @@ _To be authored._
   - [BROWSER](#browser)
   - [BUFFERING](#buffering)
   - [BUILDLMDB](#buildlmdb)
+  - [BUILDVECTORS](#buildvectors)
   - [CANARY](#canary)
   - [CDX](#cdx)
   - [CHR](#chr)
@@ -72,6 +73,8 @@ _To be authored._
   - [CTOD](#ctod)
   - [DATE](#date)
   - [DECISION](#decision)
+  - [DEFCMD](#defcmd)
+  - [DEFFN](#deffn)
   - [DELETE](#delete)
   - [DESCEND](#descend)
   - [DIR](#dir)
@@ -185,6 +188,7 @@ _To be authored._
   - [SQLSEL](#sqlsel)
   - [SQLVER](#sqlver)
   - [STATE](#state)
+  - [STOP_ON_ERROR](#stoponerror)
   - [STR](#str)
   - [STRUCT](#struct)
   - [STU_REPEAT](#sturepeat)
@@ -205,6 +209,8 @@ _To be authored._
   - [TUPVALIDATE](#tupvalidate)
   - [TURBOPACK](#turbopack)
   - [TVISION](#tvision)
+  - [UNDEFCMD](#undefcmd)
+  - [UNDEFFN](#undeffn)
   - [UNDELETE](#undelete)
   - [UNLOCK](#unlock)
   - [UNTIL](#until)
@@ -212,8 +218,10 @@ _To be authored._
   - [UPDATE](#update)
   - [UPPER](#upper)
   - [USE](#use)
+  - [USER](#user)
   - [VAL](#val)
   - [VALIDATE](#validate)
+  - [VDISK](#vdisk)
   - [WEB](#web)
   - [WHILE](#while)
   - [WHILE_BUFFER](#whilebuffer)
@@ -353,8 +361,33 @@ _To be authored._
   - [Evidence crosswalks](#evidence-crosswalks)
   - [No-mutation safety](#no-mutation-safety)
   - [Canary non-disappearance boundary](#canary-non-disappearance-boundary)
+- [VDISK, RAM DBF, and Transient Storage](#vdisk-ram-dbf-and-transient-storage)
+  - [What VDISK is](#what-vdisk-is)
+  - [Core workflow](#core-workflow)
+  - [Commands and observability](#commands-and-observability)
+  - [Ephemeral-data contract](#ephemeral-data-contract)
+  - [Configuration boundary](#configuration-boundary)
+  - [Documentation and proof contract](#documentation-and-proof-contract)
+- [Identity, Authentication, RBAC, and Security](#identity-authentication-rbac-and-security)
+  - [The current security model](#the-current-security-model)
+  - [Session and authentication](#session-and-authentication)
+  - [Authorization and deny precedence](#authorization-and-deny-precedence)
+  - [Enforcement points](#enforcement-points)
+  - [Legacy SECURITY boundary](#legacy-security-boundary)
+  - [Promotion status](#promotion-status)
+- [Runtime Configuration, Definitions, and HELP Controls](#runtime-configuration-definitions-and-help-controls)
+  - [Generated build vectors](#generated-build-vectors)
+  - [Runtime command and function definitions](#runtime-command-and-function-definitions)
+  - [Script error policy](#script-error-policy)
+  - [HELP miss behavior](#help-miss-behavior)
+  - [Coverage rule](#coverage-rule)
 - [Diagrams](#diagrams)
 - [Appendices](#appendices)
+- [Appendix — Working with AI: the Portal & Pseudo-Chat](#appendix-working-with-ai-the-portal-pseudo-chat)
+  - [The AI Portal](#the-ai-portal)
+  - [Pseudo-Chat — the return lane](#pseudo-chat-the-return-lane)
+  - [Roles and the turn cycle](#roles-and-the-turn-cycle)
+  - [Where the details live](#where-the-details-live)
 - [Glossary](#glossary)
 - [Colophon — build provenance](#colophon-build-provenance)
 <!-- MAN:END id=fm-toc -->
@@ -362,9 +395,9 @@ _To be authored._
 <!-- MAN:BEGIN id=spine-command-reference gen=manualgen build-command-reference-candidate src=HELP/META harvest -> command_reference_candidate.py -->
 ## Command Reference
 
-<!-- MAN:BIND id=spine-command-reference set=command_reference_v1/commands count=183 -->
+<!-- MAN:BIND id=spine-command-reference set=command_reference_v1/commands count=191 -->
 
-183 command pages bound from the reference set.
+191 command pages bound from the reference set.
 
 <a id="cmd-alltrim"></a>
 ### ALLTRIM
@@ -393,8 +426,8 @@ Remove leading and trailing spaces from &lt;cExpression&gt;.
 
 - Topic key: `FOX|ALLTRIM`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-append"></a>
@@ -465,8 +498,8 @@ Append a new record using current table defaults and active buffering rules.
 
 - Topic key: `DOT|APPEND`
 - Included HELP rows: `34`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-area"></a>
@@ -557,8 +590,8 @@ Developer sandbox / experimental command.
 
 - Topic key: `DOT|AREA51`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-asc"></a>
@@ -588,8 +621,8 @@ Return the ASCII code (0-255) of the first character of &lt;cExpression&gt;.
 
 - Topic key: `FOX|ASC`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-ascend"></a>
@@ -644,8 +677,8 @@ Set ascending sort direction for the active order/tag.
 
 - Topic key: `DOT|ASCEND`
 - Included HELP rows: `18`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-ascii"></a>
@@ -675,8 +708,8 @@ Display ASCII/character-code reference information for teaching and diagnostics.
 
 - Topic key: `DOT|ASCII`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-at"></a>
@@ -706,8 +739,8 @@ Return the 1-based position of &lt;cSearch&gt; within &lt;cExpression&gt; (case-
 
 - Topic key: `FOX|AT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-atc"></a>
@@ -737,8 +770,8 @@ Return the 1-based position of &lt;cSearch&gt; within &lt;cExpression&gt; (case-
 
 - Topic key: `FOX|ATC`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-autodbf"></a>
@@ -815,8 +848,8 @@ Create or infer a DBF table from an input source using DotTalk++ automatic DBF-g
 
 - Topic key: `DOT|AUTODBF`
 - Included HELP rows: `40`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-bibletalk"></a>
@@ -846,8 +879,8 @@ Use the BibleTalk educational seed database for quote, lookup, and teaching/demo
 
 - Topic key: `DOT|BIBLETALK`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-bottom"></a>
@@ -1119,8 +1152,8 @@ Buffering means changes are staged before permanent commit.<br><br>Commands<br> 
 
 - Topic key: `ED|BUFFERING`
 - Included HELP rows: `17`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-buildlmdb"></a>
@@ -1202,9 +1235,48 @@ Build or rebuild the LMDB backing store for the current CDX container; may mutat
 
 - Topic key: `DOT|BUILDLMDB`
 - Included HELP rows: `45`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
+
+<a id="cmd-buildvectors"></a>
+### BUILDVECTORS
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### BUILDVECTORS
+
+- Catalog/topic: `DOT` / `BUILDVECTORS`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Report the compiled engine capacity "build vectors" (AIF-044) — the selected maximums this binary was configured with, plus a fingerprint.
+
+##### Syntax
+
+- BUILDVECTORS
+- BUILD VECTORS
+- BUILD INFO
+
+##### Note
+
+- Values come from the generated build-vector authority.
+- The command is read-only.
+- The fingerprint distinguishes binaries built with different capacities.
+
+##### Related
+
+- ABOUT
+- VERSION
+
+##### Provenance
+
+- Topic key: `DOT|BUILDVECTORS`
+- Included HELP rows: `16`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
 
 <a id="cmd-canary"></a>
 ### CANARY
@@ -1231,8 +1303,8 @@ CANARY is a registered DotTalk++ command; curated DOTREF support status and help
 
 - Topic key: `DOT|CANARY`
 - Included HELP rows: `2`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-cdx"></a>
@@ -1248,7 +1320,10 @@ CANARY is a registered DotTalk++ command; curated DOTREF support status and help
 
 ##### Summary
 
-Inspect or manage CDX container metadata and tag directories.
+Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware: under a mounted VDISK the container resolves from RAM (a native CDX-V64), so CREATE/ADDTAG/DROPTAG operate on the in-RA
+
+- Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware: under a mounted VDISK the container resolves from RAM (a native CDX-V64), so CREATE/ADDTAG/DROPTAG operate on the in-RAM container with no file on disk (AIF-04
+- 3).
 
 ##### Status
 
@@ -1299,13 +1374,18 @@ Inspect or manage CDX container metadata and tag directories.
 - SET ORDER
 - REINDEX
 - include "xbase.hpp"
+- namespace fs = std::filesystem;
+- using cdxfile::CDXHandle;
+- namespace {
+- static inline std::string trim_copy(std::string s)
+- {
 
 ##### Provenance
 
 - Topic key: `DOT|CDX`
-- Included HELP rows: `36`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- Included HELP rows: `42`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-chr"></a>
@@ -1335,8 +1415,8 @@ Convert an integer ASCII code (0-255) to a 1-character string.
 
 - Topic key: `FOX|CHR`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-christmas"></a>
@@ -1366,8 +1446,8 @@ Display the DotTalk++ Christmas/holiday console splash screen.
 
 - Topic key: `DOT|CHRISTMAS`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-close"></a>
@@ -1407,7 +1487,7 @@ Close the current table, a selected area, or all open work areas.
 ##### Note
 
 - CLOSE with no arguments closes the current work area.
-- CLOSE ALL currently clears all relations before closing the current area.
+- CLOSE ALL clears all relations and closes every open work area.
 - CLOSE prompts or cancels through dirty table-buffer protection when needed.
 - CLOSE runs memo sidecar lifecycle hooks before clearing area identity.
 - CLOSE clears active order/index state.
@@ -1445,8 +1525,8 @@ Close the current table, a selected area, or all open work areas.
 
 - Topic key: `DOT|CLOSE`
 - Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-cmdrel"></a>
@@ -1478,8 +1558,8 @@ Print the recipe for relating HELP COMMANDS to CMD_ARGS.
 
 - Topic key: `DOT|CMDREL`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-cnx"></a>
@@ -1559,8 +1639,8 @@ Index container command (CNX multi-tag support).
 
 - Topic key: `DOT|CNX`
 - Included HELP rows: `41`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-cobol"></a>
@@ -1590,8 +1670,8 @@ Display COBOL-oriented educational/demo material for historical data-processing 
 
 - Topic key: `DOT|COBOL`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-codasyl"></a>
@@ -1674,8 +1754,8 @@ Display CODASYL/network-database educational/demo material for historical databa
 
 - Topic key: `DOT|CODASYL`
 - Included HELP rows: `49`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-commandshelp"></a>
@@ -1705,8 +1785,8 @@ Command help (alias of CMDHELP).
 
 - Topic key: `DOT|COMMANDSHELP`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-commit"></a>
@@ -1775,32 +1855,17 @@ Commit buffered TABLE updates to disk.<br><br>        Notes (current shakedown o
 - COMMIT does not rebuild CDX or LMDB containers.
 - Legacy INX/IDX and CNX rebuild behavior remains only for legacy index families.
 - COMMIT is a data mutation command when buffers contain changes.
-- COMMIT is a best-effort buffer apply operation, not an atomic transaction.
-- risk:
-- writes_dbf_records: yes when buffered changes exist
-- writes_memo: when buffered memo changes exist
-- record_locking: yes at commit time
-- clears_table_buffer_changes: on successful commit
-- partial_commit_possible: yes
-- cdx_lmdb_rebuild: no
 
 ##### Warning
 
 - COMMIT is a mutation boundary; keep help wording conservative until runtime behavior is verified
 
-##### Related
-
-- TABLE
-- REPLACE
-- CALCWRITE
-- ROLLBACK
-
 ##### Provenance
 
 - Topic key: `DOT|COMMIT`
-- Included HELP rows: `49`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- Included HELP rows: `37`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-concat"></a>
@@ -1859,8 +1924,8 @@ Concatenate string arguments. (Available as CALC function; also usable as a comm
 
 - Topic key: `DOT|CONCAT`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-continue"></a>
@@ -1963,8 +2028,8 @@ Copy table or data content into another target using DotTalk++ copy semantics.
 
 - Topic key: `DOT|COPY`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-create"></a>
@@ -2025,8 +2090,8 @@ Create a new table, structure, or local project artifact through the implemented
 
 - Topic key: `DOT|CREATE`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-ctod"></a>
@@ -2056,8 +2121,8 @@ Convert a character date to a Date value using current SET DATE/SET CENTURY.
 
 - Topic key: `FOX|CTOD`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-date"></a>
@@ -2087,8 +2152,8 @@ Return the current system date.
 
 - Topic key: `FOX|DATE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-decision"></a>
@@ -2143,9 +2208,101 @@ Programming Construct 2: Decision Flow<br><br>Definition<br>    Decision flow ch
 
 - Topic key: `ED|DECISION`
 - Included HELP rows: `26`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
+
+<a id="cmd-defcmd"></a>
+### DEFCMD
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### DEFCMD
+
+- Catalog/topic: `DOT` / `DEFCMD`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Define an ephemeral, session-only scratch command without rebuilding or editing source.
+
+##### Syntax
+
+- `DEFCMD USAGE`
+- `DEFCMD LIST`
+- `DEFCMD <NAME> = <body-text>`
+- `DEFCMD <NAME> <body-text>`
+
+##### Example
+
+- `DEFCMD PING = pong`
+- `DEFCMD GREET = hello there`
+
+##### Note
+
+- Scratch commands vanish on EXIT and are never written to disk.
+- A scratch command prints its stored body plus trailing arguments.
+- DEFCMD cannot shadow protected built-ins or overwrite non-scratch commands.
+- Remove a scratch command with UNDEFCMD.
+
+##### Related
+
+- UNDEFCMD
+- EXAMPLE
+
+##### Provenance
+
+- Topic key: `DOT|DEFCMD`
+- Included HELP rows: `26`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
+
+<a id="cmd-deffn"></a>
+### DEFFN
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### DEFFN
+
+- Catalog/topic: `DOT` / `DEFFN`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Define an ephemeral, session-only expression function through the runtime custom-function seam.
+
+##### Syntax
+
+- `DEFFN USAGE`
+- `DEFFN LIST`
+- `DEFFN <NAME> = <body-text>`
+- `DEFFN <NAME> <body-text>`
+
+##### Example
+
+- `DEFFN GREET = hello`
+- `? GREET()` returns `hello`
+
+##### Note
+
+- Custom functions vanish on EXIT and are never written to disk.
+- The current body returns stored text; arguments are accepted but ignored.
+- DEFFN cannot shadow a compiled built-in function.
+- Remove a custom function with UNDEFFN.
+
+##### Related
+
+- UNDEFFN
+- DEFCMD
+
+##### Provenance
+
+- Topic key: `DOT|DEFFN`
+- Included HELP rows: `20`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
 
 <a id="cmd-delete"></a>
 ### DELETE
@@ -2196,8 +2353,8 @@ Mark the current record deleted using current table semantics.
 
 - Topic key: `DOT|DELETE`
 - Included HELP rows: `18`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-descend"></a>
@@ -2240,8 +2397,8 @@ Set descending sort direction for the active order/tag.
 
 - Topic key: `DOT|DESCEND`
 - Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-dir"></a>
@@ -2281,14 +2438,14 @@ List directory or file entries through the DotTalk++ shell surface.
 - DIR with no arguments lists the configured DBF path.
 - DIR &lt;path&gt; lists a directory or prints a single file entry.
 - Slot-style paths resolve through the common path resolver.
-- DIR is read-only and does not mutate table data or filesystem contents.
+- A trailing wildcard component (containing * or ?) filters the listing by
 
 ##### Provenance
 
 - Topic key: `DOT|DIR`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-do"></a>
@@ -2320,8 +2477,8 @@ Execute a program. (Use DOTSCRIPT instead.)
 
 - Topic key: `FOX|DO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-dothelp"></a>
@@ -2366,8 +2523,8 @@ Show project-native DotTalk++ reference entries from the DOTREF catalog.
 
 - Topic key: `DOT|DOTHELP`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-dotscript"></a>
@@ -2436,8 +2593,8 @@ Run a DotTalk script file (test harness / automation).<br><br>        Example:<b
 
 - Topic key: `DOT|DOTSCRIPT`
 - Included HELP rows: `34`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-drawio"></a>
@@ -2493,8 +2650,8 @@ Generate or manage Draw.io-oriented diagram artifacts for documentation and teac
 
 - Topic key: `DOT|DRAWIO`
 - Included HELP rows: `22`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-dtoc"></a>
@@ -2524,8 +2681,8 @@ Convert a Date value to a character string using current SET DATE/SET CENTURY.
 
 - Topic key: `FOX|DTOC`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-dump"></a>
@@ -2571,8 +2728,8 @@ Debug: print a structured dump of an internal value/state.
 
 - Topic key: `DOT|DUMP`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-edit"></a>
@@ -2602,8 +2759,8 @@ Edit a field/value interactively (where supported).
 
 - Topic key: `FOX|EDIT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-educationaluse"></a>
@@ -2670,8 +2827,8 @@ A practical study order<br><br>1. Open a table<br>    USE STUDENTS<br>    STRUCT
 
 - Topic key: `ED|EDUCATIONAL_USE`
 - Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-else"></a>
@@ -2713,8 +2870,8 @@ Begin the alternate branch of an IF block when the IF condition is false.
 
 - Topic key: `DOT|ELSE`
 - Included HELP rows: `8`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-endif"></a>
@@ -2754,8 +2911,8 @@ End an IF/ELSE conditional block.
 
 - Topic key: `DOT|ENDIF`
 - Included HELP rows: `6`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-endloop"></a>
@@ -2801,8 +2958,8 @@ End a LOOP block (scripting).
 
 - Topic key: `DOT|ENDLOOP`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-endscan"></a>
@@ -2842,8 +2999,8 @@ End a SCAN block.
 
 - Topic key: `DOT|ENDSCAN`
 - Included HELP rows: `6`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-enduntil"></a>
@@ -2883,8 +3040,8 @@ End an UNTIL block (scripting).
 
 - Topic key: `DOT|ENDUNTIL`
 - Included HELP rows: `6`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-endwhile"></a>
@@ -2924,8 +3081,8 @@ End a WHILE block (scripting control flow).
 
 - Topic key: `DOT|ENDWHILE`
 - Included HELP rows: `6`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-erase"></a>
@@ -2975,8 +3132,8 @@ Erase a file or supported target through the DotTalk++ shell surface.
 
 - Topic key: `DOT|ERASE`
 - Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-erp"></a>
@@ -3017,8 +3174,8 @@ Display ERP-oriented educational/demo material connecting database concepts to b
 
 - Topic key: `DOT|ERP`
 - Included HELP rows: `7`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-ersatz"></a>
@@ -3127,8 +3284,8 @@ Evaluate an expression and print its value.
 
 - Topic key: `DOT|EVAL`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-evaluate"></a>
@@ -3158,8 +3315,8 @@ Evaluate an expression through the DotTalk++ expression layer and display the re
 
 - Topic key: `DOT|EVALUATE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-example"></a>
@@ -3202,8 +3359,8 @@ Show or run small DotTalk++ example/demo material for teaching and verification 
 
 - Topic key: `DOT|EXAMPLE`
 - Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-expfuncs"></a>
@@ -3233,8 +3390,8 @@ Export the expression/function catalog to Markdown documentation.
 
 - Topic key: `DOT|EXPFUNCS`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-export"></a>
@@ -3287,8 +3444,8 @@ Export to CSV.
 
 - Topic key: `DOT|EXPORT`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-exportsql"></a>
@@ -3336,8 +3493,8 @@ Export DotTalk++ table or workspace data through the SQL export helper surface.
 
 - Topic key: `DOT|EXPORTSQL`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-expression"></a>
@@ -3390,8 +3547,8 @@ An expression is something the engine evaluates to produce a value.<br><br>Kinds
 
 - Topic key: `ED|EXPRESSION`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-find"></a>
@@ -3514,8 +3671,8 @@ List or search command help topics.<br><br>        Examples:<br>            FOXH
 
 - Topic key: `DOT|FOXHELP`
 - Included HELP rows: `22`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-foxpro"></a>
@@ -3545,8 +3702,8 @@ DotTalk++ UI / browser command.
 
 - Topic key: `DOT|FOXPRO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-foxstandard"></a>
@@ -3593,8 +3750,8 @@ Display FoxPro/xBase standard-reference or compatibility teaching material.
 
 - Topic key: `DOT|FOXSTANDARD`
 - Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-foxtalk"></a>
@@ -3631,8 +3788,8 @@ Legacy alias for the ArcticTalk Turbo Vision TUI shell.<br><br>        Example:<
 
 - Topic key: `DOT|FOXTALK`
 - Included HELP rows: `8`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-glossary"></a>
@@ -3704,8 +3861,8 @@ Quick glossary<br><br>Alias<br>    Name used to refer to a table/work area.<br><
 
 - Topic key: `ED|GLOSSARY`
 - Included HELP rows: `43`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-go"></a>
@@ -3905,8 +4062,8 @@ Report current session/navigation position and work-area orientation diagnostics
 
 - Topic key: `DOT|GPS`
 - Included HELP rows: `10`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-idx"></a>
@@ -3965,8 +4122,8 @@ Memory-only educational index lab for teaching sort and index concepts without w
 
 - Topic key: `DOT|IDX`
 - Included HELP rows: `22`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-if"></a>
@@ -4023,8 +4180,8 @@ Begin a conditional DotScript block; execute the following block when the logica
 
 - Topic key: `DOT|IF`
 - Included HELP rows: `20`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-image"></a>
@@ -4055,13 +4212,17 @@ Inspect image file metadata or open a supported image file in the operating-syst
 ##### Usage
 
 - IMAGE USAGE
+- IMAGE DEFAULT
 - IMAGE &lt;file&gt;
+- IMAGE INFO DEFAULT
 - IMAGE INFO &lt;file&gt;
 
 ##### Note
 
 - IMAGE with no arguments prints usage.
 - IMAGE USAGE prints usage and does not open a viewer.
+- IMAGE DEFAULT opens "arctic fox.png" beside the running executable.
+- IMAGE INFO DEFAULT reports metadata for the default image.
 - IMAGE INFO &lt;file&gt; prints file extension, size, and recognized-image status.
 - IMAGE &lt;file&gt; opens the OS viewer on Windows.
 - Non-Windows viewer launch is currently not implemented.
@@ -4070,9 +4231,9 @@ Inspect image file metadata or open a supported image file in the operating-syst
 ##### Provenance
 
 - Topic key: `DOT|IMAGE`
-- Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- Included HELP rows: `17`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-import"></a>
@@ -4119,8 +4280,8 @@ Import from CSV.
 
 - Topic key: `DOT|IMPORT`
 - Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-importsql"></a>
@@ -4175,8 +4336,8 @@ Import or bridge SQL data into DotTalk++ through the SQL import helper surface.
 
 - Topic key: `DOT|IMPORTSQL`
 - Included HELP rows: `18`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-index"></a>
@@ -4238,8 +4399,8 @@ General index-management command surface for the current table.
 
 - Topic key: `DOT|INDEX`
 - Included HELP rows: `25`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-init"></a>
@@ -4284,8 +4445,8 @@ Initialize default paths, perform best-effort stale-lock cleanup, and process st
 
 - Topic key: `DOT|INIT`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-intro"></a>
@@ -4334,8 +4495,8 @@ DotTalk++ Educational Reference<br><br>Purpose<br>    EDREF is the instructional
 
 - Topic key: `ED|INTRO`
 - Included HELP rows: `20`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-left"></a>
@@ -4365,8 +4526,8 @@ Return the left-most &lt;nChars&gt; characters of &lt;cExpression&gt;.
 
 - Topic key: `FOX|LEFT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-len"></a>
@@ -4396,8 +4557,8 @@ Return the length (character count) of &lt;cExpression&gt;.
 
 - Topic key: `FOX|LEN`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-list"></a>
@@ -4531,8 +4692,8 @@ Inspect or manage per-area LMDB-backed index/storage wiring where supported.
 
 - Topic key: `DOT|LMDB`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-lmdbutil"></a>
@@ -4576,8 +4737,8 @@ Developer/diagnostic LMDB utility surface for low-level backend inspection and m
 
 - Topic key: `DOT|LMDB_UTIL`
 - Included HELP rows: `10`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-lmdbdump"></a>
@@ -4638,8 +4799,8 @@ Developer/diagnostic surface for dumping or inspecting LMDB-backed index/storage
 
 - Topic key: `DOT|LMDBDUMP`
 - Included HELP rows: `24`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-locate"></a>
@@ -4747,8 +4908,8 @@ Lock the current record (or table) for editing.
 
 - Topic key: `DOT|LOCK`
 - Included HELP rows: `18`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-loop"></a>
@@ -4803,8 +4964,8 @@ Begin a LOOP block (scripting).
 
 - Topic key: `DOT|LOOP`
 - Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-loopbuffer"></a>
@@ -4834,8 +4995,8 @@ Developer/diagnostic helper surface for inspecting or testing buffered LOOP cont
 
 - Topic key: `DOT|LOOP_BUFFER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-loops"></a>
@@ -4896,8 +5057,8 @@ Programming Construct 3: Iteration / Looping<br><br>Definition<br>    A loop rep
 
 - Topic key: `ED|LOOPS`
 - Included HELP rows: `32`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-lower"></a>
@@ -4927,8 +5088,8 @@ Convert &lt;cExpression&gt; to lower-case.
 
 - Topic key: `FOX|LOWER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-ltrim"></a>
@@ -4958,8 +5119,8 @@ Remove leading spaces from &lt;cExpression&gt;.
 
 - Topic key: `FOX|LTRIM`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-mcc"></a>
@@ -5007,8 +5168,8 @@ Load the MCC v32 demo workspace by running DotScript x32 and WORKSPACE LOAD mcc.
 
 - Topic key: `DOT|MCC`
 - Included HELP rows: `14`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-model"></a>
@@ -5075,8 +5236,8 @@ How to think about DotTalk++<br><br>DotTalk++ is best understood as four layers 
 
 - Topic key: `ED|MODEL`
 - Included HELP rows: `38`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-navigation"></a>
@@ -5121,8 +5282,8 @@ Navigation means moving the current record pointer.<br><br>Common navigation com
 
 - Topic key: `ED|NAVIGATION`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-normalize"></a>
@@ -5152,8 +5313,8 @@ Normalize/clean an input expression or text (developer utility).
 
 - Topic key: `DOT|NORMALIZE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-order"></a>
@@ -5205,8 +5366,8 @@ Order means the currently active navigation sequence.<br><br>Examples<br>    phy
 
 - Topic key: `ED|ORDER`
 - Included HELP rows: `23`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-pack"></a>
@@ -5255,8 +5416,8 @@ Permanently remove deleted records from the current table.
 
 - Topic key: `DOT|PACK`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-padc"></a>
@@ -5286,8 +5447,8 @@ Center-pad to length &lt;nLen&gt;.
 
 - Topic key: `FOX|PADC`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-padl"></a>
@@ -5317,8 +5478,8 @@ Left-pad to length &lt;nLen&gt;.
 
 - Topic key: `FOX|PADL`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-padr"></a>
@@ -5348,8 +5509,8 @@ Right-pad to length &lt;nLen&gt;.
 
 - Topic key: `FOX|PADR`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-predhelp"></a>
@@ -5394,8 +5555,8 @@ Help for predicates/expressions and filtering.
 
 - Topic key: `DOT|PREDHELP`
 - Included HELP rows: `8`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-predicate"></a>
@@ -5445,8 +5606,8 @@ A predicate is a true/false expression.<br><br>Examples<br>    GPA &gt; 3.5<br> 
 
 - Topic key: `ED|PREDICATE`
 - Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-predicates"></a>
@@ -5476,8 +5637,8 @@ List supported predicates/operators for filtering.
 
 - Topic key: `DOT|PREDICATES`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-projection"></a>
@@ -5518,8 +5679,8 @@ Projection means choosing which columns/fields to show.<br><br>Examples<br>    T
 
 - Topic key: `ED|PROJECTION`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-projects"></a>
@@ -5577,8 +5738,8 @@ Inspect or manage DotTalk++ project/workflow entries and project-oriented local 
 
 - Topic key: `DOT|PROJECTS`
 - Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-proper"></a>
@@ -5608,8 +5769,8 @@ Convert &lt;cExpression&gt; to Proper Case (title case).
 
 - Topic key: `FOX|PROPER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-pshell"></a>
@@ -5667,8 +5828,8 @@ Invoke or document the PowerShell/platform-shell helper surface where enabled by
 
 - Topic key: `DOT|PSHELL`
 - Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-rebuild"></a>
@@ -5716,8 +5877,8 @@ Rebuild table/index/help-related derived state where supported by the current ta
 
 - Topic key: `DOT|REBUILD`
 - Included HELP rows: `14`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-recall"></a>
@@ -5779,8 +5940,8 @@ Unmark the current deleted record when supported by the current table state.
 
 - Topic key: `DOT|RECALL`
 - Included HELP rows: `22`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-reindex"></a>
@@ -5796,9 +5957,10 @@ Unmark the current deleted record when supported by the current table state.
 
 ##### Summary
 
-Rebuild index files for the current table (or all open tables).
+Rebuild index files for the current table (or all open tables). ramfs/VDISK-aware: under a mounted VDISK, REINDEX CDX rebuilds the native CDX-V64 (RUN8) container in RAM with no LMDB and no file on di
 
 - Canonical rebuild dispatcher for INX, CNX, CDX/LMDB, and student index families, choosing a default family by table flavor when no family is given.
+- Rebuild index files for the current table (or all open tables). ramfs/VDISK-aware: under a mounted VDISK, REINDEX CDX rebuilds the native CDX-V64 (RUN8) container in RAM with no LMDB and no file on disk (AIF-043).
 
 ##### Status
 
@@ -5849,8 +6011,8 @@ Rebuild index files for the current table (or all open tables).
 
 - Topic key: `DOT|REINDEX`
 - Included HELP rows: `35`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-rel"></a>
@@ -5956,8 +6118,8 @@ Relations engine commands (native DotTalk++ relation graph).<br><br>Subcommands:
 
 - Topic key: `DOT|REL`
 - Included HELP rows: `68`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-relenum"></a>
@@ -6013,8 +6175,8 @@ Traverse a relation chain and emit tuple rows.<br><br>Syntax:<br>    REL ENUM [L
 
 - Topic key: `DOT|REL ENUM`
 - Included HELP rows: `27`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-relrefresh"></a>
@@ -6055,8 +6217,8 @@ Refresh relation state for the current workspace through the native REL backend.
 
 - Topic key: `DOT|REL_REFRESH`
 - Included HELP rows: `7`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-relation"></a>
@@ -6128,8 +6290,8 @@ A relation connects a parent table to a child table.<br><br>Example<br>    STUDE
 
 - Topic key: `ED|RELATION`
 - Included HELP rows: `37`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-relations"></a>
@@ -6215,8 +6377,8 @@ Compatibility-facing relation listing surface backed by the native REL engine.<b
 
 - Topic key: `DOT|RELATIONS`
 - Included HELP rows: `45`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-replace"></a>
@@ -6272,8 +6434,8 @@ Replace one field in the current record using table-buffer and memo-aware semant
 
 - Topic key: `DOT|REPLACE`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-replicate"></a>
@@ -6303,8 +6465,8 @@ Repeat &lt;cExpression&gt; &lt;nTimes&gt; times.
 
 - Topic key: `FOX|REPLICATE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-retro"></a>
@@ -6377,8 +6539,8 @@ Display ASCII-safe retro computer and system splash screens.
 
 - Topic key: `DOT|RETRO`
 - Included HELP rows: `36`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-right"></a>
@@ -6408,8 +6570,8 @@ Return the right-most &lt;nChars&gt; characters of &lt;cExpression&gt;.
 
 - Topic key: `FOX|RIGHT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-rollback"></a>
@@ -6453,13 +6615,14 @@ Discard staged TABLE/buffered changes without committing them; operational behav
 - ROLLBACK USAGE returns before modifying buffer state.
 - ROLLBACK without arguments clears buffered state for the current area.
 - ROLLBACK ALL clears buffered state across all areas.
+- ROLLBACK best-effort notes a ROLLBACK marker in the durable journal for the area.
 
 ##### Provenance
 
 - Topic key: `DOT|ROLLBACK`
-- Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- Included HELP rows: `13`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-rtrim"></a>
@@ -6489,8 +6652,8 @@ Remove trailing spaces from &lt;cExpression&gt;.
 
 - Topic key: `FOX|RTRIM`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-rule"></a>
@@ -6546,8 +6709,8 @@ Inspect or manage validation-rule metadata and rule-oriented helper workflows.
 
 - Topic key: `DOT|RULE`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-run"></a>
@@ -6579,8 +6742,8 @@ Run an OS command (FoxPro).
 
 - Topic key: `FOX|RUN`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-scan"></a>
@@ -6629,8 +6792,8 @@ Iterate records using a SCAN block (record loop).
 
 - Topic key: `DOT|SCAN`
 - Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-scanbuffer"></a>
@@ -6660,8 +6823,8 @@ Developer/diagnostic helper surface for inspecting or testing buffered SCAN/tabl
 
 - Topic key: `DOT|SCAN_BUFFER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-schemas"></a>
@@ -6784,8 +6947,8 @@ DotScript is the scripting surface of DotTalk++.<br><br>Purpose<br>    - automat
 
 - Topic key: `ED|SCRIPT`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-scx"></a>
@@ -6834,8 +6997,8 @@ Student/local SCX index-file lab command for creating, tagging, building, listin
 
 - Topic key: `DOT|SCX`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-secho"></a>
@@ -6865,8 +7028,8 @@ Scripted/student echo helper for emitting text from teaching, demo, or test scri
 
 - Topic key: `DOT|SECHO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-security"></a>
@@ -6921,8 +7084,8 @@ Inspect DotTalk++ security policy/runtime rules and manage the current shell-ses
 
 - Topic key: `DOT|SECURITY`
 - Included HELP rows: `21`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-seek"></a>
@@ -7080,8 +7243,8 @@ File-transfer helper surface for SFTP-oriented workflows where enabled by local 
 
 - Topic key: `DOT|SFTP`
 - Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-shello"></a>
@@ -7111,8 +7274,8 @@ Small shell/student hello demonstration command for teaching command wiring and 
 
 - Topic key: `DOT|SHELLO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-showini"></a>
@@ -7163,8 +7326,8 @@ Display DotTalk++ initialization/configuration files and resolved startup settin
 
 - Topic key: `DOT|SHOWINI`
 - Included HELP rows: `14`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-shutdown"></a>
@@ -7209,8 +7372,8 @@ Run DotTalk++ shutdown processing, including shutdown.ini when present.
 
 - Topic key: `DOT|SHUTDOWN`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-six"></a>
@@ -7240,8 +7403,8 @@ Experimental or compatibility index-related surface for SIX-style indexing conce
 
 - Topic key: `DOT|SIX`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-skip"></a>
@@ -7416,8 +7579,8 @@ Return a character string containing &lt;nSpaces&gt; spaces.
 
 - Topic key: `FOX|SPACE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sql"></a>
@@ -7469,8 +7632,8 @@ Execute an SQL statement using the configured SQL engine.
 
 - Topic key: `DOT|SQL`
 - Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sqlerase"></a>
@@ -7518,8 +7681,8 @@ SQL helper surface for erase/drop/delete-style SQL maintenance workflows where e
 
 - Topic key: `DOT|SQLERASE`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sqlhelp"></a>
@@ -7572,8 +7735,8 @@ Show SQL-oriented help and guidance for DotTalk++ SQL bridge workflows.
 
 - Topic key: `DOT|SQLHELP`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sqlite"></a>
@@ -7633,8 +7796,8 @@ SQLite integration.<br><br>        Examples:<br>            SQLITE DB data\sql_r
 
 - Topic key: `DOT|SQLITE`
 - Included HELP rows: `25`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sqlsel"></a>
@@ -7684,8 +7847,8 @@ Execute an SQL SELECT and display results.
 
 - Topic key: `DOT|SQLSEL`
 - Included HELP rows: `13`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sqlver"></a>
@@ -7727,8 +7890,8 @@ Report SQLite availability and version.
 
 - Topic key: `DOT|SQLVER`
 - Included HELP rows: `8`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-state"></a>
@@ -7784,9 +7947,50 @@ State is one of the most important DotTalk++ concepts.<br><br>Definition<br>    
 
 - Topic key: `ED|STATE`
 - Included HELP rows: `27`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
+
+<a id="cmd-stoponerror"></a>
+### STOP_ON_ERROR
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### STOP_ON_ERROR
+
+- Catalog/topic: `DOT` / `STOP_ON_ERROR`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Set or report the severity threshold at which a running DotScript aborts.
+
+##### Syntax
+
+- `STOP_ON_ERROR`
+- `STOP_ON_ERROR OFF | WARNING | ERROR`
+- `STOP_ON_ERROR USAGE`
+
+##### Note
+
+- With no argument, the command reports the current threshold.
+- OFF never aborts; WARNING aborts on warning-or-worse; ERROR aborts on errors.
+- `DOTTALK_ERRORSTOP` supplies the startup default.
+- `SET ERRORSTOP TO <severity>` is the compatibility form.
+- The threshold is evaluated against canonical errors recorded through the messaging path.
+
+##### Related
+
+- ERROR_STATUS
+- SET ERRORSTOP
+
+##### Provenance
+
+- Topic key: `DOT|STOP_ON_ERROR`
+- Included HELP rows: `20`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
 
 <a id="cmd-str"></a>
 ### STR
@@ -7815,8 +8019,8 @@ Convert numeric &lt;nExpr&gt; to a character string (optionally controlling widt
 
 - Topic key: `FOX|STR`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-struct"></a>
@@ -7879,8 +8083,8 @@ Display table structure.
 
 - Topic key: `DOT|STRUCT`
 - Included HELP rows: `26`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-sturepeat"></a>
@@ -7910,8 +8114,8 @@ Student/demo repeat command used to teach argument handling, loops, and command 
 
 - Topic key: `DOT|STU_REPEAT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-stuupper"></a>
@@ -7941,8 +8145,8 @@ Student/demo uppercase command used to teach string handling and command output.
 
 - Topic key: `DOT|STU_UPPER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-studentecho"></a>
@@ -7972,8 +8176,8 @@ Student/demo echo command used to teach command registration, argument handling,
 
 - Topic key: `DOT|STUDENTECHO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-studenthello"></a>
@@ -8003,8 +8207,8 @@ Student/demo hello command used to teach the simplest command registration and o
 
 - Topic key: `DOT|STUDENTHELLO`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-stuff"></a>
@@ -8034,8 +8238,8 @@ Replace &lt;nLen&gt; characters of &lt;cExpr&gt; starting at &lt;nStart&gt; with
 
 - Topic key: `FOX|STUFF`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-substr"></a>
@@ -8065,8 +8269,8 @@ Return substring of &lt;cExpr&gt; starting at &lt;nStart&gt; for &lt;nLen&gt; ch
 
 - Topic key: `FOX|SUBSTR`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tablebuffer"></a>
@@ -8109,8 +8313,8 @@ Developer/diagnostic helper surface for inspecting or testing TABLE buffering an
 
 - Topic key: `DOT|TABLE_BUFFER`
 - Included HELP rows: `9`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-text"></a>
@@ -8140,8 +8344,8 @@ Text-oriented helper command surface for demonstration, teaching, or local text 
 
 - Topic key: `DOT|TEXT`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-time"></a>
@@ -8171,8 +8375,8 @@ Return the current system time as a character string (HH:MM:SS).
 
 - Topic key: `FOX|TIME`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-top"></a>
@@ -8254,8 +8458,8 @@ Remove trailing spaces from &lt;cExpression&gt; (alias/compat; see RTRIM).
 
 - Topic key: `FOX|TRIM`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tupexport"></a>
@@ -8307,8 +8511,8 @@ Export tuple/projection output through the tuple export helper surface.
 
 - Topic key: `DOT|TUPEXPORT`
 - Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tuple"></a>
@@ -8385,8 +8589,8 @@ Build one tuple row from fields across work areas.<br><br>        Examples:<br> 
 
 - Topic key: `DOT|TUPLE`
 - Included HELP rows: `39`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tupledelta"></a>
@@ -8431,8 +8635,8 @@ Tuple diagnostic helper surface for comparing projected tuple output or tuple-st
 
 - Topic key: `DOT|TUPLEDELTA`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tuptalk"></a>
@@ -8502,8 +8706,8 @@ DotTalk++ tuple/logical-row command.
 
 - Topic key: `DOT|TUPTALK`
 - Included HELP rows: `33`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tupvalidate"></a>
@@ -8559,8 +8763,8 @@ Tuple validation helper surface for checking tuple projection, relation-walk, or
 
 - Topic key: `DOT|TUPVALIDATE`
 - Included HELP rows: `19`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-turbopack"></a>
@@ -8609,8 +8813,8 @@ Turbo Vision / pack-related utility.
 
 - Topic key: `DOT|TURBOPACK`
 - Included HELP rows: `12`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-tvision"></a>
@@ -8657,9 +8861,81 @@ Turbo Vision diagnostics / demos.
 
 - Topic key: `DOT|TVISION`
 - Included HELP rows: `10`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
+
+<a id="cmd-undefcmd"></a>
+### UNDEFCMD
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### UNDEFCMD
+
+- Catalog/topic: `DOT` / `UNDEFCMD`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Remove a scratch command previously defined with DEFCMD.
+
+##### Syntax
+
+- `UNDEFCMD USAGE`
+- `UNDEFCMD <NAME>`
+
+##### Note
+
+- Only DEFCMD scratch commands can be removed.
+- Protected built-ins and unrelated extensions are never removed.
+
+##### Related
+
+- DEFCMD
+
+##### Provenance
+
+- Topic key: `DOT|UNDEFCMD`
+- Included HELP rows: `10`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
+
+<a id="cmd-undeffn"></a>
+### UNDEFFN
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### UNDEFFN
+
+- Catalog/topic: `DOT` / `UNDEFFN`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Remove a session custom function previously defined with DEFFN.
+
+##### Syntax
+
+- `UNDEFFN USAGE`
+- `UNDEFFN <NAME>`
+
+##### Note
+
+- Only DEFFN custom functions can be removed.
+- Compiled built-in functions are never removed.
+
+##### Related
+
+- DEFFN
+
+##### Provenance
+
+- Topic key: `DOT|UNDEFFN`
+- Included HELP rows: `10`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
 
 <a id="cmd-undelete"></a>
 ### UNDELETE
@@ -8688,8 +8964,8 @@ Compatibility alias for RECALL to unmark the current deleted record.
 
 - Topic key: `DOT|UNDELETE`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-unlock"></a>
@@ -8742,8 +9018,8 @@ Release a previously acquired lock (optionally all locks).
 
 - Topic key: `DOT|UNLOCK`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-until"></a>
@@ -8796,8 +9072,8 @@ Begin an UNTIL block (scripting).
 
 - Topic key: `DOT|UNTIL`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-untilbuffer"></a>
@@ -8827,8 +9103,8 @@ Developer/diagnostic helper surface for inspecting or testing buffered UNTIL con
 
 - Topic key: `DOT|UNTIL_BUFFER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-update"></a>
@@ -8876,8 +9152,8 @@ Update data rows (scripting/SQL helper; see command usage).
 
 - Topic key: `DOT|UPDATE`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-upper"></a>
@@ -8907,8 +9183,8 @@ Convert &lt;cExpression&gt; to upper-case.
 
 - Topic key: `FOX|UPPER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-use"></a>
@@ -8966,6 +9242,66 @@ Open a DBF table in the active DotTalk++ work area.
 - Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
+<a id="cmd-user"></a>
+### USER
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### USER
+
+- Catalog/topic: `DOT` / `USER`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Inspect and administer identity, authentication, roles, permissions, authorization grants, and effective session state.
+
+##### Syntax
+
+- `USER LIST | ROLES | PERMS | WHOAMI`
+- `USER CAN <permission.key> [FOR <member.key>]`
+- `USER STORE`
+- `USER ADD <key> [HUMAN|AI|SERVICE] [role.key]`
+- `USER REQUEST <permission.key> FOR <member.key> [reason]`
+- `USER REQUESTS | GRANTS`
+- `USER APPROVE <id> [HOURS n] | DENY <id> | REVOKE <id>`
+- `USER GRANT <permission.key> TO <member.key> [HOURS n]`
+- `USER UNGRANT <permission.key> FROM <member.key>`
+- `USER DELETE <member.key>`
+- `USER LOGIN <member.key> [secret] | LOGOUT`
+- `USER PASSWD <member.key> <secret> | TOKEN <member.key>`
+- `USER AS [member.key] | ENFORCE <permission.key>`
+- `USER SAVE [dir] | LOAD [dir] | VERIFY [dir]`
+
+##### Security model
+
+- A session has an authenticated principal and an effective acting member.
+- The console boots as unauthenticated `member.public`; owner powers require login.
+- Owner-only mutations are authentication-gated.
+- AI and service members authenticate with owner-issued, rotatable tokens.
+- Permission eligibility, explicit authorization, session state, and runtime security policy are evaluated separately.
+- Deny takes precedence; host-shell execution also respects `DOTTALK_ALLOW_HOST_COMMANDS`.
+- A degraded identity store remains read-only.
+
+##### Persistence and proof
+
+- Identity metadata is persisted in the identity DBF family when the store is writable.
+- `USER STORE` reports boot origin, writability, and active counts.
+- `USER VERIFY` performs the APH-5 save, reload, and comparison proof.
+- USER mutations affect identity metadata and authorization state, not application-table records.
+
+##### Legacy boundary
+
+`SECURITY LOGIN` is a legacy diagnostic role selector. It is not authenticated USER identity and grants no RBAC access. Use USER LOGIN, LOGOUT, and WHOAMI for effective security state.
+
+##### Provenance
+
+- Topic key: `DOT|USER`
+- Included HELP rows: `68`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
+
 <a id="cmd-val"></a>
 ### VAL
 
@@ -8993,8 +9329,8 @@ Convert a numeric-looking character expression to a number.
 
 - Topic key: `FOX|VAL`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-validate"></a>
@@ -9046,9 +9382,61 @@ Schema/sidecar validation command.
 
 - Topic key: `DOT|VALIDATE`
 - Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
+
+<a id="cmd-vdisk"></a>
+### VDISK
+
+<!-- CANDIDATE ONLY: report-only command-reference page; no publication authority. -->
+#### VDISK
+
+- Catalog/topic: `DOT` / `VDISK`
+- Status: `supported`
+- Implemented/supported: `T` / `T`
+- Primary/confidence: `DOTREF` / `CATALOG`
+
+##### Summary
+
+Manage the in-process RAM virtual disk used by in-memory X64 DBF tables, native CDX-V64 indexes, and related transient storage.
+
+##### Syntax
+
+- `VDISK USAGE`
+- `VDISK MOUNT | ON`
+- `VDISK UNMOUNT | OFF | CLEAR`
+- `VDISK STATUS`
+- `VDISK CONFIG`
+
+##### Storage behavior
+
+- MOUNT points DBF, INDEXES, and LMDB slots under the relocatable RAM slot.
+- CREATE X64, USE, CDX, SET ORDER, and REINDEX can then operate with no corresponding table or index file on disk.
+- STATUS reports the RAM root, mount state, bytes used, and resident files.
+- The default RAM root is `<DATA>/ram`; use `SET PATH RAM <path>` before MOUNT to relocate it.
+
+##### Ephemeral-data warning
+
+UNMOUNT, OFF, and CLEAR drop every resident RAM file. VDISK is process-local and ephemeral; treat those actions as destructive to in-memory data.
+
+##### Configuration boundary
+
+The optional `bin/vdisk.ini` configuration is a local, review-required extension until its source/config files are committed. Core VDISK and ramfs behavior are supported and runtime-proven independently of that extension.
+
+##### Related
+
+- SET PATH
+- CDX
+- SET ORDER
+- REINDEX
+
+##### Provenance
+
+- Topic key: `DOT|VDISK`
+- Included HELP rows: `37`
+- HELP reference run: `DOCFLUSH-20260722-001/help_meta_export_v5`
+- Disposition run: `POSTBASELINE_SUPPORTED_COVERAGE_REPAIR`
 
 <a id="cmd-web"></a>
 ### WEB
@@ -9078,15 +9466,25 @@ Web-oriented helper command surface for local documentation, preview, or integra
 ##### Usage
 
 - WEB USAGE
-- WEB OPEN &lt;url&gt;
-- WEB LAUNCH &lt;url&gt;
-- WEB GET &lt;url&gt;
-- WEB HEAD &lt;url&gt;
-- WEB FETCH &lt;url&gt; TO &lt;file&gt;
+- WEB DEFAULT
+- WEB RETRO
+- WEB OPEN &lt;url|DEFAULT|RETRO&gt;
+- WEB LAUNCH &lt;url|DEFAULT|RETRO&gt;
+- WEB GET &lt;url|DEFAULT|RETRO&gt;
+- WEB HEAD &lt;url|DEFAULT|RETRO&gt;
+- WEB FETCH &lt;url|DEFAULT|RETRO&gt; TO &lt;file&gt;
+
+##### Example
+
+- WEB DEFAULT
+- WEB RETRO
 
 ##### Note
 
 - WEB USAGE prints usage and does not launch a browser, make a network request, or write files.
+- WEB DEFAULT opens x64base.com.
+- WEB RETRO opens the Flying Toasters page.
+- DEFAULT and RETRO are accepted anywhere a URL operand is accepted.
 - WEB OPEN/LAUNCH use the OS default URL handler.
 - WEB GET/HEAD use HTTP request support where implemented.
 - WEB FETCH writes the response body to the requested file.
@@ -9094,9 +9492,9 @@ Web-oriented helper command surface for local documentation, preview, or integra
 ##### Provenance
 
 - Topic key: `DOT|WEB`
-- Included HELP rows: `14`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- Included HELP rows: `21`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-while"></a>
@@ -9149,8 +9547,8 @@ Begin a WHILE block (scripting).
 
 - Topic key: `DOT|WHILE`
 - Included HELP rows: `16`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-whilebuffer"></a>
@@ -9180,8 +9578,8 @@ Developer/diagnostic helper surface for inspecting or testing buffered WHILE con
 
 - Topic key: `DOT|WHILE_BUFFER`
 - Included HELP rows: `3`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-workspace"></a>
@@ -9323,8 +9721,8 @@ Workspace report / diagnostics.
 
 - Topic key: `DOT|WSREPORT`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-zap"></a>
@@ -9372,8 +9770,8 @@ Delete all records from the current table.
 
 - Topic key: `DOT|ZAP`
 - Included HELP rows: `11`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <a id="cmd-zip"></a>
@@ -9425,8 +9823,8 @@ Archive helper command surface for ZIP-oriented local packaging or inspection wo
 
 - Topic key: `DOT|ZIP`
 - Included HELP rows: `15`
-- HELP reference run: `MANRUN-20260717T222026Z-28C704E0`
-- Disposition run: `MANRUN-20260717T230554Z-DB3F2DC8`
+- HELP reference run: `MANRUN-20260723T040750Z-ADA15580`
+- Disposition run: `MANRUN-20260723T041125Z-D8D11490`
 - Authority: `candidate_only`; `publication_authority_claimed=0`
 
 <!-- MAN:END id=spine-command-reference -->
@@ -12508,7 +12906,7 @@ Recommended required tokens for later PIP-003:
 - no production SelfDoc metadata promotion
 <!-- MAN:END id=art-promoted-draft-review -->
 
-<!-- MAN:APPEND id=art-runtime-evidence at=2026-07-20T19:17:28Z -->
+<!-- MAN:APPEND id=art-runtime-evidence at=2026-07-23T07:23:14Z -->
 ## Runtime Evidence, Source Verification, and Canary Closure
 
 
@@ -13035,6 +13433,240 @@ Recommended required tokens for later PIP-003:
 - no production SelfDoc metadata promotion
 <!-- MAN:END id=art-runtime-evidence -->
 
+<!-- MAN:BEGIN id=art-vdisk-ram-dbf gen=authored src=src/cli/cmd_vdisk.cpp + src/fs/ramfs.cpp + VDISK HELP contract -->
+<div class="manual-part-break"></div>
+
+## VDISK, RAM DBF, and Transient Storage
+
+### What VDISK is
+
+`VDISK` is the engine-facing control surface for DotTalk++'s in-process RAM
+virtual disk. Once mounted, the relocatable RAM slot can hold X64 DBF tables,
+native CDX-V64 indexes, and related transient storage. Ordinary database
+commands still operate on named files; the difference is that the file bytes
+live in the process-local RAM filesystem instead of a persistent host volume.
+
+This is not a cache layered over an authoritative disk copy. A RAM DBF created
+under the mounted slot is the active table. The corresponding DBF and CDX
+files do not have to exist on disk.
+
+### Core workflow
+
+```text
+SET PATH RAM <path>
+VDISK MOUNT
+VDISK STATUS
+
+CREATE X64 <table>
+USE <table>
+INDEX ON <expression> TAG <tag>
+SET ORDER TO <tag>
+
+VDISK STATUS
+```
+
+`CREATE X64`, `USE`, `CDX`, `SET ORDER`, and `REINDEX` use the same database
+and index contracts they use on persistent storage. The RAM slot changes the
+storage location, not the DBF/CDX data model.
+
+### Commands and observability
+
+- `VDISK MOUNT` or `VDISK ON` activates the RAM slot.
+- `VDISK STATUS` reports the configured root, mount state, bytes used, and
+  resident files.
+- `VDISK CONFIG` reports the optional configuration extension.
+- `VDISK UNMOUNT`, `VDISK OFF`, and `VDISK CLEAR` discard all resident RAM
+  files.
+
+The default RAM root is `<DATA>/ram`. `SET PATH RAM <path>` relocates it before
+mounting. The current command contract is in the
+[VDISK command page](../../command_reference_v1/commands/vdisk.md).
+
+### Ephemeral-data contract
+
+The RAM filesystem is process-local and ephemeral. Unmounting it, clearing it,
+or terminating the process destroys its resident DBF, memo, CDX, and related
+files. That behavior is intentional and must be treated as a destructive
+storage operation.
+
+Use VDISK for controlled transient workloads, repeatable tests, scratch data,
+and workloads that explicitly arrange their own persistence or export. Do not
+present a RAM table as durable merely because it uses the normal DBF command
+surface.
+
+### Configuration boundary
+
+Core `VDISK` and RAM filesystem behavior are supported and have runtime proof.
+The optional `bin/vdisk.ini` extension remains a local, review-required
+configuration surface until its source and configuration artifacts are
+committed and promoted. Documentation and tests must keep that boundary
+visible.
+
+### Documentation and proof contract
+
+The source `@dottalk.usage` contract is harvested into the `SRC*` comment
+evidence family, projected into HELP, checked by `CMDHELPCHK`, and then used by
+manualgen. A new supported VDISK topic without a physical command page is now a
+fail-closed documentation finding.
+
+Current coverage-repair evidence:
+
+- 243 complete source usage contracts after reharvest;
+- 3,105 structured contract lines checked with zero missing continuations;
+- a physical VDISK command page bound into the complete reference;
+- the inherited supported-topic backlog remains visible rather than being
+  silently declared complete.
+<!-- MAN:END id=art-vdisk-ram-dbf -->
+
+<!-- MAN:BEGIN id=art-identity-security gen=authored src=src/cli/cmd_user.cpp + src/identity + enforcement chokepoints -->
+<div class="manual-part-break"></div>
+
+## Identity, Authentication, RBAC, and Security
+
+### The current security model
+
+DotTalk++ now separates identity, participation, roles, permissions,
+authorization grants, session state, and the runtime security policy. These
+layers answer different questions:
+
+| Layer | Question |
+| --- | --- |
+| Identity / user | Who can authenticate? |
+| Team member | Who participates in the project or organization? |
+| Role and permission | What operation is the member eligible to perform? |
+| Authorization grant | Who approved this action, for whom, and for how long? |
+| Session | Which principal authenticated, and which member is acting? |
+| Runtime security policy | Is the operation permitted under current hard constraints? |
+
+Permission establishes eligibility. A current authorization permits the
+specific action. The runtime security policy may still deny it.
+
+### Session and authentication
+
+The console boots unauthenticated as `member.public`. A session carries both:
+
+- the authenticated principal; and
+- the effective acting member.
+
+Human members authenticate with `USER LOGIN` and a locally stored salted
+password hash. AI and service members authenticate with owner-issued,
+rotatable tokens. Owner-only mutations require an authenticated owner session.
+Acting as another member is an explicit session operation, not proof that the
+acting member authenticated.
+
+Use these surfaces to inspect the effective state:
+
+```text
+USER WHOAMI
+USER STORE
+USER ROLES
+USER PERMS
+USER CAN <permission.key> [FOR <member.key>]
+```
+
+The complete syntax is in the
+[USER command page](../../command_reference_v1/commands/user.md).
+
+### Authorization and deny precedence
+
+The resolver evaluates role permissions, explicit grants and overrides,
+session state, scoped authorization, and runtime policy independently. Deny
+takes precedence. Grants can expire, be revoked, and be audited.
+
+The administrative flow includes:
+
+```text
+USER REQUEST <permission.key> FOR <member.key> [reason]
+USER APPROVE <id> [HOURS n]
+USER DENY <id>
+USER REVOKE <id>
+USER GRANT <permission.key> TO <member.key> [HOURS n]
+USER UNGRANT <permission.key> FROM <member.key>
+```
+
+Identity metadata persists in the identity DBF family. Startup adopts the
+persistent store when it is valid; a degraded store is read-only. `USER
+VERIFY` performs the APH-5 save, reload, and comparison proof.
+
+### Enforcement points
+
+The model is wired into execution chokepoints rather than being only a catalog:
+
+- the AI development-tool permission bridge;
+- direct host-shell execution, with `DOTTALK_ALLOW_HOST_COMMANDS` retained as
+  an independent final policy constraint;
+- SFTP host-command execution;
+- owner-gated USER mutations.
+
+Each enforcement point must retain its own proof. A green role lookup is not a
+substitute for authentication, authorization, or the hard runtime policy.
+
+### Legacy SECURITY boundary
+
+`SECURITY LOGIN` is a legacy diagnostic role selector. It does not authenticate
+a USER principal and grants no RBAC access. Use `USER LOGIN`, `USER LOGOUT`, and
+`USER WHOAMI` for effective identity and session state. The SECURITY command
+remains documented because it is observable compatibility behavior, but it
+must not be described as the authentication system.
+
+### Promotion status
+
+The USER command surface is supported in the current development HELP catalog
+and runtime-proven. The broader identity project remains development-stage,
+not a promoted release claim. Registry import for organization/work hierarchy,
+portable YAML bootstrap, and the teaching loop remain explicit follow-on
+milestones.
+<!-- MAN:END id=art-identity-security -->
+
+<!-- MAN:BEGIN id=art-runtime-controls gen=authored src=BUILDVECTORS/DEF/STOP_ON_ERROR/HELP source contracts -->
+<div class="manual-part-break"></div>
+
+## Runtime Configuration, Definitions, and HELP Controls
+
+### Generated build vectors
+
+`BUILDVECTORS` exposes the generated build-capacity authority used by the
+compiled engine. It makes configured limits observable and reduces drift
+between CMake reporting, generated headers, runtime consumers, bindings, and
+tests. Format geometry remains source-owned; build vectors control engine
+acceptance and creation policy.
+
+See the [BUILDVECTORS command page](../../command_reference_v1/commands/buildvectors.md).
+
+### Runtime command and function definitions
+
+The definition family lets a controlled runtime register and remove command or
+function definitions:
+
+- `DEFCMD` and `UNDEFCMD`;
+- `DEFFN` and `UNDEFFN`.
+
+These are distinct public documentation surfaces, even when they share an
+implementation family. Each has its own command page, HELP topic, source
+contract, and publication-coverage disposition.
+
+### Script error policy
+
+`STOP_ON_ERROR` controls whether a script stops after an error or continues.
+Because this changes control flow and proof interpretation, scripts and
+transcripts should record the active setting. A successful final command does
+not erase an earlier error when continuation is enabled.
+
+### HELP miss behavior
+
+HELP now reports an explicit not-found result and produces deterministic
+did-you-mean suggestions from the indexed candidate set. A miss does not
+silently fall back into the router or loop without progress. The behavior is a
+source contract and regression surface, not merely interface polish.
+
+### Coverage rule
+
+Current supported commands added after the documentation baseline must have a
+physical command page or a reviewed disposition. New gaps fail closed. The
+historical backlog is separately reported so improvement does not rewrite
+earlier evidence.
+<!-- MAN:END id=art-runtime-controls -->
+
 <!-- MAN:BEGIN id=diagrams-from-matrix gen=assembler:diagrams src=diagram_matrix -->
 ## Diagrams
 
@@ -13061,6 +13693,93 @@ Recommended required tokens for later PIP-003:
 
 _part pending generator (manualgen build-dry-run (section candidate))_
 <!-- MAN:END id=bm-appendices -->
+
+<!-- MAN:BEGIN id=bm-ai-portal gen=authored src=AI collaboration governance (tracked subjects: AI_PORTAL.md; docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md) -->
+## Appendix — Working with AI: the Portal & Pseudo-Chat
+
+This project is developed in collaboration with AI partners, and that collaboration is
+itself governed — not ad hoc. This appendix is the reader-facing explanation of how it
+works. It is deliberately a **standalone appendix**: the subject is *orthogonal* to the
+engine chapters (it is about how the project is built and coordinated, not about DBF
+records, indexes, or expressions), yet it cuts across all of them. Standalone here means
+"its own axis," not "optional" — the coordination model is load-bearing, so it gets a
+single, addressable home rather than being scattered through the reference.
+
+### The AI Portal
+
+An outside AI partner cannot read the maintainer's private development tree, and the
+GitHub copy of the governance portal moves only on full engine snapshots — so between
+snapshots an external partner's picture of lane state, decisions, and doctrine can go
+stale. The **doc-only live portal** closes that gap. A public, frequently updated page —
+*AI Agent Sync — Live Current State*, published at `/docs/labtalk/agent-sync` — carries the
+current governance surface (working agreement, doctrine, accepted decisions, active-track
+state, open questions), dated, and refreshed at each maintainer-session closeout. It
+publishes on the website's cadence, so it is the freshest public state an outside agent can
+reach without local access.
+
+Two coordination surfaces exist, one per kind of partner:
+
+- A partner with access to the development tree reads the in-repo governance directly (the
+  intake queue, lane docs, and per-session handoff notes) and exchanges work as files.
+- A **web-only** partner (for example, a browser-based assistant) reads the live Agent Sync
+  page and hands work back as standalone, compile-only packets.
+
+Precedence is explicit and never in doubt: the live page is fresher than the GitHub
+snapshot between snapshots, but the maintainer's reconciliation against the development
+tree is authoritative over both. The page is not autonomous authority and does not bypass a
+proof gate.
+
+### Pseudo-Chat — the return lane
+
+For a long time the portal only spoke *outward*: it broadcast state, but a partner's
+answers had nowhere structured to land. **Pseudo-Chat** is the return lane that closes the
+loop. The page's Open questions are a tracked table; the Pseudo-Chat lane carries a reply
+protocol and a dated log; an external partner's answer is transcribed back onto the page at
+closeout and flips the matching question's status — so the question and its answer live
+together on one durable page instead of scattering across two disconnected conversations.
+
+The name is the honest part. It is called **Pseudo-Chat** precisely because it is **not
+real-time**. It moves at closeout cadence, one turn at a time.
+
+**In plain terms**, Pseudo-Chat works like an old bulletin-board system: a shared board you
+check on your own schedule, where posts and replies accumulate over time — never a live
+chat. The published page is the "server" (a board anyone can read); the twist is that only
+the maintainer's in-repo agent can *post* to it, so an outside partner's reply reaches the
+board by being handed over and transcribed — **read-by-visit, write-by-relay.** If a closer
+analogy helps, it is a letters-to-the-editor column: the page is a newsletter published on
+a schedule (each closeout), the Open questions are the editorial, partners write in, and
+the editor prints selected replies in the next issue with a note on which question each one
+settled. Same asymmetry, same cadence, same curation — which is exactly why *pseudo* is the
+honest prefix.
+
+### Roles and the turn cycle
+
+Three roles keep it moving, none of them automatic: the **external partner** reads the page
+and replies in its own session in a fixed `RE:` format; the **in-repo agent** curates the
+Open questions, broadcasts state, and transcribes accepted replies at closeout; the
+**maintainer** is both the transport (relaying replies between isolated sessions) and the
+gate (deciding what is accepted, and owning every commit, push, and publish). A full round
+trip is: broadcast state and questions → the partner reads → the partner replies → the
+maintainer relays → the in-repo agent logs the reply and updates the question's status at
+closeout → republish → the partner sees the resolution on its next read. Nothing polls; a
+human triggers each hop, and the freshness date is the contract that tells a reader how
+stale the page might be.
+
+A recorded reply is a recorded *conversation*, not a filed *decision*: anything
+substantive still promotes into the governed record — the intake queue, a lane document,
+the dashboard — through the normal review gate. Pseudo-Chat is the dialogue surface; the
+ledger is elsewhere.
+
+### Where the details live
+
+The full mechanism — the `RE:` reply protocol, the log format, status transitions, the
+worked example, and the closeout integration — is specified in
+`docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md`, and the governance hooks that keep it
+maintained live in `AI_PORTAL.md`. The live channel itself is the Agent Sync page at
+`/docs/labtalk/agent-sync`. This appendix is the durable, reader-facing companion to those:
+it explains *why* the collaboration is shaped this way and *why the standalone placement is
+a statement of orthogonality, not of lesser importance.*
+<!-- MAN:END id=bm-ai-portal -->
 
 <!-- MAN:BEGIN id=bm-glossary gen=assembler:glossary src=term harvest from HELP/meta + article headings (reviewed definitions) -->
 ## Glossary
@@ -13098,6 +13817,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 | `BROWSER` | _definition — review_ |
 | `BUFFERING` | _definition — review_ |
 | `BUILDLMDB` | _definition — review_ |
+| `BUILDVECTORS` | _definition — review_ |
 | `CANARY` | _definition — review_ |
 | `CDOW` | _definition — review_ |
 | `CEILING` | _definition — review_ |
@@ -13116,8 +13836,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 | `CONTINUE` | _definition — review_ |
 | `COPY` | _definition — review_ |
 | `COS` | _definition — review_ |
-| `CREATE` | _definition — review_ |
-| … | _184 further harvested terms pending review_ |
+| … | _192 further harvested terms pending review_ |
 <!-- MAN:END id=bm-glossary -->
 
 <!-- MAN:BEGIN id=bm-index gen=assembler:index src=assembled headings + command/function names + anchor ids -->
@@ -13138,6 +13857,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [APPEND (command)](#cmd-append)
 - [APPEND BLANK and APPEND_BLANK](#append-blank-and-appendblank)
 - [Appendices](#appendices)
+- [Appendix — Working with AI: the Portal & Pseudo-Chat](#appendix-working-with-ai-the-portal-pseudo-chat)
 - [Appendix: Review and Deferred: SET-family](#appendix-review-and-deferred-set-family)
 - [AREA](#area)
 - [AREA (command)](#cmd-area)
@@ -13161,6 +13881,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [ATC (function)](#function-reference)
 - [Authority boundaries](#authority-boundaries)
 - [Authority model for command reference assembly](#authority-model-for-command-reference-assembly)
+- [Authorization and deny precedence](#authorization-and-deny-precedence)
 - [AUTODBF](#autodbf)
 - [AUTODBF (command)](#cmd-autodbf)
 
@@ -13180,6 +13901,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [BUFFERING (command)](#cmd-buffering)
 - [BUILDLMDB](#buildlmdb)
 - [BUILDLMDB (command)](#cmd-buildlmdb)
+- [BUILDVECTORS](#buildvectors)
+- [BUILDVECTORS (command)](#cmd-buildvectors)
 
 **C**
 
@@ -13223,6 +13946,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [Command surface](#command-surface)
 - [Command Surface, Dispatch, and Entry Variants](#command-surface-dispatch-and-entry-variants)
 - [Command-reference crosswalks](#command-reference-crosswalks)
+- [Commands and observability](#commands-and-observability)
 - [Commands in this section](#commands-in-this-section)
 - [COMMANDSHELP](#commandshelp)
 - [COMMANDSHELP (command)](#cmd-commandshelp)
@@ -13232,13 +13956,16 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [CONCAT](#concat)
 - [CONCAT (command)](#cmd-concat)
 - [CONCAT (function)](#function-reference)
+- [Configuration boundary](#configuration-boundary)
 - [CONTINUE](#continue)
 - [CONTINUE (command)](#cmd-continue)
 - [COPY](#copy)
 - [COPY (command)](#cmd-copy)
 - [Core doctrine](#core-doctrine)
+- [Core workflow](#core-workflow)
 - [COS (function)](#function-reference)
 - [COUNT and aggregate commands](#count-and-aggregate-commands)
+- [Coverage rule](#coverage-rule)
 - [CREATE](#create)
 - [CREATE (command)](#cmd-create)
 - [Crosswalk discipline](#crosswalk-discipline)
@@ -13257,6 +13984,10 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [DAY (function)](#function-reference)
 - [DECISION](#decision)
 - [DECISION (command)](#cmd-decision)
+- [DEFCMD](#defcmd)
+- [DEFCMD (command)](#cmd-defcmd)
+- [DEFFN](#deffn)
+- [DEFFN (command)](#cmd-deffn)
 - [DELETE](#delete)
 - [DELETE (command)](#cmd-delete)
 - [Deleted-record filters](#deleted-record-filters)
@@ -13268,6 +13999,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [Direct aggregate verbs and AGGS](#direct-aggregate-verbs-and-aggs)
 - [DO](#do)
 - [DO (command)](#cmd-do)
+- [Documentation and proof contract](#documentation-and-proof-contract)
 - [DOTHELP](#dothelp)
 - [DOTHELP (command)](#cmd-dothelp)
 - [DOTSCRIPT](#dotscript)
@@ -13302,6 +14034,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [ENDUNTIL (command)](#cmd-enduntil)
 - [ENDWHILE](#endwhile)
 - [ENDWHILE (command)](#cmd-endwhile)
+- [Enforcement points](#enforcement-points)
+- [Ephemeral-data contract](#ephemeral-data-contract)
 - [ERASE](#erase)
 - [ERASE (command)](#cmd-erase)
 - [ERP](#erp)
@@ -13353,6 +14087,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 
 **G**
 
+- [Generated build vectors](#generated-build-vectors)
 - [Generated command pages](#generated-command-pages)
 - [Generated command pages and evidence artifacts](#generated-command-pages-and-evidence-artifacts)
 - [GLOSSARY](#glossary)
@@ -13372,6 +14107,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [HELP and CMDHELPCHK](#help-and-cmdhelpchk)
 - [HELP FUNCTIONS and FUNCTION help](#help-functions-and-function-help)
 - [HELP lane](#help-lane)
+- [HELP miss behavior](#help-miss-behavior)
 - [HELP rows as diagnostic evidence](#help-rows-as-diagnostic-evidence)
 - [HELP, CMDHELPCHK, and metadata boundaries](#help-cmdhelpchk-and-metadata-boundaries)
 - [HELP, CMDHELPCHK, and metadata in evidence practice](#help-cmdhelpchk-and-metadata-in-evidence-practice)
@@ -13380,6 +14116,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 
 **I**
 
+- [Identity, Authentication, RBAC, and Security](#identity-authentication-rbac-and-security)
 - [IDX](#idx)
 - [IDX (command)](#cmd-idx)
 - [IF](#if)
@@ -13412,6 +14149,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [LEFT (command)](#cmd-left)
 - [LEFT (function)](#function-reference)
 - [Legacy documents](#legacy-documents)
+- [Legacy SECURITY boundary](#legacy-security-boundary)
 - [LEN](#len)
 - [LEN (command)](#cmd-len)
 - [LEN (function)](#function-reference)
@@ -13510,9 +14248,11 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [PROJECTS (command)](#cmd-projects)
 - [Promoted Draft Review, Header Normalization, and Publication Readiness](#promoted-draft-review-header-normalization-and-publication-readiness)
 - [Promoted draft workspace](#promoted-draft-workspace)
+- [Promotion status](#promotion-status)
 - [PROPER](#proper)
 - [PROPER (command)](#cmd-proper)
 - [Provenance & attestation](#provenance-attestation)
+- [Pseudo-Chat — the return lane](#pseudo-chat-the-return-lane)
 - [PSHELL](#pshell)
 - [PSHELL (command)](#cmd-pshell)
 - [Publication readiness](#publication-readiness)
@@ -13557,6 +14297,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [RIGHT](#right)
 - [RIGHT (command)](#cmd-right)
 - [RIGHT (function)](#function-reference)
+- [Roles and the turn cycle](#roles-and-the-turn-cycle)
 - [ROLLBACK](#rollback)
 - [ROLLBACK (command)](#cmd-rollback)
 - [ROUND (function)](#function-reference)
@@ -13568,6 +14309,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [RUN](#run)
 - [RUN (command)](#cmd-run)
 - [Runtime and source together](#runtime-and-source-together)
+- [Runtime command and function definitions](#runtime-command-and-function-definitions)
+- [Runtime Configuration, Definitions, and HELP Controls](#runtime-configuration-definitions-and-help-controls)
 - [Runtime diagnostic examples](#runtime-diagnostic-examples)
 - [Runtime evidence](#runtime-evidence)
 - [Runtime Evidence, Source Verification, and Canary Closure](#runtime-evidence-source-verification-and-canary-closure)
@@ -13586,6 +14329,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [SCHEMAS (command)](#cmd-schemas)
 - [SCRIPT](#script)
 - [SCRIPT (command)](#cmd-script)
+- [Script error policy](#script-error-policy)
 - [SCX](#scx)
 - [SCX (command)](#cmd-scx)
 - [SECHO](#secho)
@@ -13602,6 +14346,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [SELECT (command)](#cmd-select)
 - [SelfDoc and manualgen evidence](#selfdoc-and-manualgen-evidence)
 - [SelfDoc lane](#selfdoc-lane)
+- [Session and authentication](#session-and-authentication)
 - [SET family boundary](#set-family-boundary)
 - [SET-family boundary and canonicalization canary](#set-family-boundary-and-canonicalization-canary)
 - [SET-family canonicalization](#set-family-canonicalization)
@@ -13648,6 +14393,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [SQRT (function)](#function-reference)
 - [STATE](#state)
 - [STATE (command)](#cmd-state)
+- [STOP_ON_ERROR](#stoponerror)
+- [STOP_ON_ERROR (command)](#cmd-stoponerror)
 - [STR](#str)
 - [STR (command)](#cmd-str)
 - [STR (function)](#function-reference)
@@ -13682,6 +14429,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [Temporary evidence lanes](#temporary-evidence-lanes)
 - [TEXT](#text)
 - [TEXT (command)](#cmd-text)
+- [The AI Portal](#the-ai-portal)
+- [The current security model](#the-current-security-model)
 - [TIME](#time)
 - [TIME (command)](#cmd-time)
 - [TIME (function)](#function-reference)
@@ -13709,6 +14458,10 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 
 **U**
 
+- [UNDEFCMD](#undefcmd)
+- [UNDEFCMD (command)](#cmd-undefcmd)
+- [UNDEFFN](#undeffn)
+- [UNDEFFN (command)](#cmd-undeffn)
 - [UNDELETE](#undelete)
 - [UNDELETE (command)](#cmd-undelete)
 - [UNLOCK](#unlock)
@@ -13724,6 +14477,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [UPPER (function)](#function-reference)
 - [USE](#use)
 - [USE (command)](#cmd-use)
+- [USER](#user)
+- [USER (command)](#cmd-user)
 
 **V**
 
@@ -13732,6 +14487,9 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [VAL (function)](#function-reference)
 - [VALIDATE](#validate)
 - [VALIDATE (command)](#cmd-validate)
+- [VDISK](#vdisk)
+- [VDISK (command)](#cmd-vdisk)
+- [VDISK, RAM DBF, and Transient Storage](#vdisk-ram-dbf-and-transient-storage)
 - [Views and projection boundary](#views-and-projection-boundary)
 
 **W**
@@ -13739,6 +14497,8 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [WEB](#web)
 - [WEB (command)](#cmd-web)
 - [What this section should not do yet](#what-this-section-should-not-do-yet)
+- [What VDISK is](#what-vdisk-is)
+- [Where the details live](#where-the-details-live)
 - [WHILE](#while)
 - [WHILE (command)](#cmd-while)
 - [WHILE_BUFFER](#whilebuffer)
@@ -13761,7 +14521,7 @@ _part pending generator (manualgen build-dry-run (section candidate))_
 - [ZIP (command)](#cmd-zip)
 <!-- MAN:END id=bm-index -->
 
-<!-- MAN:APPEND id=bm-colophon at=2026-07-20T19:17:28Z -->
+<!-- MAN:APPEND id=bm-colophon at=2026-07-23T07:23:14Z -->
 ## Colophon — build provenance
 
 This manual assembled itself. The record below is emitted by the assembler
@@ -13771,11 +14531,11 @@ so the self-documentation claim is auditable end to end.
 | --- | --- |
 | Assembler | `manual-assembler/0.1.0 (MANUAL-ASSEMBLY M3)` |
 | Manifest | `tools/manualgen/manual_assembly_manifest.yaml` (dottalk.manual.assembly_manifest.v1) |
-| Parts assembled | 22 (of 22 declared) |
+| Parts assembled | 26 (of 26 declared) |
 | Greenfield parts generated | 8 |
-| Public source snapshot | `8ee746dee` |
-| Python (build) | 3.10.12 (target 3.12) |
-| Build timestamp (UTC) | 2026-07-20T19:17:26Z |
+| Repository HEAD (context only) | `cc0761e8f` |
+| Python (build) | 3.12.9 (target 3.12) |
+| Build timestamp (UTC) | 2026-07-23T07:23:14Z |
 | Machine | Alienware m16 R2 — MAINTAINER_ATTESTED |
 | Accepted reader baseline | `EA2E12A9D3E1` |
 <!-- MAN:END id=bm-colophon -->

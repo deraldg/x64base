@@ -1,0 +1,64 @@
+---
+title: "Identity, Authentication, and RBAC"
+description: "The x64base USER identity store, authentication sessions, role and permission model, owner-gated administration, and SECURITY compatibility boundary."
+---
+
+x64base now has a layered identity and authorization system. The `USER` command
+is the administrative and diagnostic surface for members, authentication,
+roles, permissions, grants, acting identity, persistence, and enforcement.
+
+This is current development source and runtime evidence. The lane is not yet a
+tagged-release claim; M4/M5/M6 promotion work remains open.
+
+## The model
+
+| Layer | Responsibility |
+| --- | --- |
+| Identity | Persist HUMAN, AI, and SERVICE members in the identity DBF store. |
+| Authentication | Establish and clear login sessions; passwords serve human identities, while AI/service identities can use rotated tokens. |
+| RBAC | Resolve roles, permissions, direct grants, authorization requests, deny precedence, and time-bounded decisions. |
+| Acting identity | Track principal and acting member without treating impersonation as a permission grant. |
+| Runtime policy | Enforce permission checks at owner administration, host shell, AI/tool, and SFTP chokepoints. |
+| Degraded boot | Preserve a read-only identity view when the persistent store cannot safely open. |
+
+Representative inspection and administration commands include:
+
+```text
+USER WHOAMI
+USER STORE
+USER LIST
+USER ROLES
+USER PERMS
+USER CAN <permission.key> [FOR <member.key>]
+USER LOGIN <member.key> [secret]
+USER LOGOUT
+USER REQUEST <permission.key> FOR <member.key> [reason]
+USER GRANT <permission.key> TO <member.key> [HOURS n]
+USER VERIFY [dir]
+```
+
+Mutating forms such as member admission/deletion, password or token rotation,
+grant decisions, and persistent saves are owner- or authorization-gated. They
+change identity metadata and session state, not user application tables.
+
+## `SECURITY` is a separate compatibility surface
+
+`SECURITY SHOW`, `SELFTEST`, and `RUNTIME` report policy and runtime diagnostics.
+Its `SECURITY LOGIN <DEVELOPER|TEACHER|STUDENT>` form selects only a legacy
+diagnostic role used by that command. It does **not** authenticate a `USER`
+member, establish an RBAC session, or grant permissions.
+
+Use `USER LOGIN`, `LOGOUT`, `WHOAMI`, and `CAN` for the authenticated model.
+Keeping these surfaces separate prevents a diagnostic selector from being
+mistaken for an authorization boundary.
+
+## Proof and promotion boundary
+
+The development lane has source and runtime proof for DBF-backed persistence,
+boot/degraded behavior, enforcement bridging, direct grants and deletion, host
+shell enforcement, session authentication, AI/service tokens, and SFTP
+enforcement. The [Current Work Lanes](/docs/dev/current-lanes) page preserves
+the remaining promotion gates, while [Documentation Progress](/docs/dev/documentation-progress)
+records the documentation flush that carried this model into HELP, the command
+reference, the manual, and this local website preview.
+

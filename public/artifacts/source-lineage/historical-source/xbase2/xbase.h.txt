@@ -1,0 +1,139 @@
+#include <windows.h>
+/* main dbf file functions */
+
+/* Compiling - using other than 1 byte alignment causes problems with the data files
+   extra bytes are added to the structure causing problems when writing to memory or
+   to disk - compile with 1 byte alignment or adjust code accordingly
+*/   
+
+/* system definitions */
+#define AMIGADOS 0 
+#define IBMPCDOS 1 
+#define UNIXSYS  0
+#define MACSYS   0
+/* dbase constants */      
+#define TRUE 1 
+#define FALSE 0 
+#define block_size 32  
+#define end_of_field "/r"
+#define max_recs 1000     /* 4000 chars or 128 fields */
+#define max_fields 128
+#define max_numeric 19
+#define max_index 5   
+#define max_area 25     
+#define date_size 8
+#define fld_nam_len 11
+#define header_terminator_byte 0x0D                          
+#define is_deleted 0x2A
+#define not_deleted 0x20
+
+/* dbase type definitions */
+typedef char update[3];   
+typedef char dbfile[12];      
+typedef char order_type[3];
+typedef order_type order_array_type[max_fields] ;  
+typedef char field_name[fld_nam_len];            
+
+
+typedef struct header_rec
+{
+   char version ;                  /* 0x03 for DBIII */
+   update last_updated ;
+   long num_of_recs ;
+   short data_start ;              /* offset of actual data */
+   short cpr ;                     /* chars per rec */
+   char reserved[20] ;
+}  header_rec ;					   /* 32 bytes */	
+
+typedef struct field_rec           /* 32 bytes for each field */
+{
+   char field_name[11] ; 
+   char field_type ; 
+   long field_data_address ;
+   unsigned char field_length ;
+   char decimal_places ;
+   short  multiuser1 ;
+   unsigned char workid ;
+   short  multiuser2 ;
+   unsigned char flag ;
+   char reserved[8] ;
+}  field_rec ;    
+
+typedef struct field_rec field_array[max_fields];         
+              
+typedef struct index
+{                 
+   char       idx; 
+   ENTRY      *pe;
+   IX_DESC    *pix;             
+}  index;	  
+
+typedef struct select_rec
+{  
+   short       a;               /* area used for this file */
+   FILE       *fp;              /* file pointer */   
+   char        fok;             /* file status */
+   header_rec *hr;              /* header info */
+   field_rec  *fr[max_fields];  /* field info */
+   char *      fd[max_fields];  /* make a char * for each field in a rec */
+   short       num_of_fields;
+   long        crn;             /* current record number */
+   char       *rd;              /* record data buffer */    
+   char        del;             /* delete status of current record */
+   short       ord;             /* current index order */ 
+/* index fields for bplus */ 
+   index       i[max_index];  
+}  select_rec ;
+   
+/* Prototypes */    
+   
+/* misc functions */
+#if AMIGADOS       
+   void FAR PASCAL _export swab(char *int1, char *int2, int no_bytes) ; 
+#endif   
+
+#if UNIXSYS
+   int    FAR PASCAL _export strnicmp(char *str1, char *str2, int len) ;  
+   void   FAR PASCAL _export fcloseall();    
+   int    FAR PASCAL _export strcmpi(char *str1, char *str2) ;
+   double FAR PASCAL _export floor(double bottom) ; 
+   char   FAR PASCAL _export lower(char ch);   
+   int    FAR PASCAL _export min(int num1, int num2) ;        
+#endif
+
+char   FAR PASCAL _export wait(char ch);       
+void   FAR PASCAL _export charproc(char *field, char length, long sub) ;
+char * FAR PASCAL _export dateproc(int length, int sub, int sub2) ;
+char   FAR PASCAL _export logiproc(int sub, int sub2) ;
+char * FAR PASCAL _export memoproc(int sub,int sub2) ;
+char * FAR PASCAL _export nmbrproc(int length, int sub, int sub2) ;
+char * FAR PASCAL _export dbname(char *tmpstr) ;
+char * FAR PASCAL _export dxname(char *tmpstr) ;  
+char * FAR PASCAL _export rstr(char *tmpstr, int newlen);
+char * FAR PASCAL _export lstr(char *tmpstr, int newlen);
+void   FAR PASCAL _export rtrim(char *tmpfld);   
+int    FAR PASCAL _export strnicmps(char *str1,char *str2) ;  
+int    FAR PASCAL _export memchk(char *buff,char *function,char variable[],unsigned long mem);
+
+/* file functions */    
+int  FAR PASCAL _export initbase(); 
+int  FAR PASCAL _export read_rec(short area);
+int  FAR PASCAL _export write_rec(short area);
+int  FAR PASCAL _export add_rec(short area);
+int  FAR PASCAL _export goto_rec(long recnum); 
+int  FAR PASCAL _export del_rec(short area);
+void FAR PASCAL _export pack(short area);
+int  FAR PASCAL _export read_header(short area);  
+int  FAR PASCAL _export open_file(dbfile filename, short area);
+int  FAR PASCAL _export close_file(short area);
+void FAR PASCAL _export read_fields(short area);
+int  FAR PASCAL _export import(dbfile infile, dbfile outfile);
+void FAR PASCAL _export export(dbfile infile, dbfile outfile);    
+void FAR PASCAL _export swabdbf(dbfile infile);   
+int  FAR PASCAL _export copyfile(char *cp[]);  
+int  FAR PASCAL _export create_dbf(dbfile outfile,field_array fields,int num_of_fields);
+int  FAR PASCAL _export copy_stru(dbfile outfile);
+
+
+
+

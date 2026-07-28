@@ -57,11 +57,23 @@ truth system.
 | SelfDoc reports | Report-only extracts for features, contracts, comments, evidence, diagrams, and crosswalks. | Selected reports are promoted after review. |
 | MDO organization | Master Documentation Organizer structure for lanes, manuals, evidence, sections, and promotion decisions. | Public pages should cite the organized lane, not raw scanner guesses. |
 | AI-friendly artifacts | Compact summaries, manifests, crosswalks, inventories, and review notes designed for model-assisted maintenance. | Should be exposed when reviewed and clearly marked as derivative. |
-| Manualgen outputs | Generated manual inventories, validation reports, dry-runs, and accepted manual sections. | The current Markdown developer manual and 183-page command reference are reviewed public outputs; future regenerations repeat the same gate. |
+| Manualgen outputs | Generated manual inventories, validation reports, dry-runs, and accepted manual sections. | The sealed 183-page reference remains the reviewed public checkpoint; the current 191-page, 26-part assembled candidate is a separately labeled local preview. |
 | Website derivatives | Public pages under `x64base.com` that present reviewed, status-labeled slices of the above. | This site is the current publication surface. |
 
 ## Current Public Anchors
 
+- [Current Tasks & Projects](/docs/labtalk/current-work) is the maintained view of
+  AI Portal tickets, project status, owners, proof state, Pseudo-Chat returns, and
+  next gates.
+- [Full-stack Documentation Push](/docs/dev/full-stack-documentation-push) records
+  the current bottom-to-top vertical from source contracts through local website review.
+- [Historical Source Lineage](/docs/dev/historical-source-lineage) restores the
+  compact xBase → XDLL/xBase2 → DotTalk family tree, preserves recovery branches,
+  and labels the modern x64base/DotTalk++ continuation without inventing ancestry.
+- [Historical Family Tree](/docs/dev/historical-family-tree) is the readable
+  hierarchy page; its CSV companion is explicitly labeled as a download.
+- [Historical xBase Source Files](/docs/dev/historical-source-files) opens the
+  21 canonical archive members as read-only text with timestamps and SHA-256 hashes.
 - [Current Project Truth](/docs/dev/project-truth) records conservative wording rules and the observed implementation state.
 - [Current Work Lanes](/docs/dev/current-lanes) lists active, canary, planned, and integration lanes without crowding the front page.
 - [Documentation Progress](/docs/dev/documentation-progress) records the nine-gate publication checkpoint, accepted manual metadata, current follow-up delta, and separate missions.
@@ -76,7 +88,9 @@ truth system.
 - [Engine Feature Crosswalk](/docs/engine/feature-crosswalk) summarizes engine features from a generated SelfDoc report.
 - [Command Catalog](/docs/dottalk/command-catalog) and [Function Catalog](/docs/dottalk/function-catalog) are public catalog derivatives that should eventually be regenerated from HELP/metadata/contract evidence.
 - [Accepted Developer Manual](/downloads/current/developer_manual_publication_v1.md) is the current manual-reviewed Markdown artifact.
-- [DotTalk++ Command Reference](/docs/dottalk/command-reference) identifies the accepted 183-page snapshot and its pinned public-source provenance.
+- [DotTalk++ Command Reference](/docs/dottalk/command-reference) separates the accepted 183-page checkpoint from the current 191-page local candidate.
+- [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk) records the transient in-process storage contract.
+- [Identity, Authentication, and RBAC](/docs/engine/identity-security) records the USER model and the legacy SECURITY boundary.
 
 ## DotTalk++ Artifact Room
 
@@ -96,14 +110,20 @@ certificate is unhealthy.
 The artifact manifest must carry proof status, review status, and accessibility
 status so public links do not outrun the evidence behind them.
 
-## Current Manual Publication
+## Published checkpoint and current candidate
 
 The reviewed 2026-07-18 snapshot is now public as a Markdown download. It
 contains 4,118 lines, 237 headings, 24 sections, and four appendices. Its
 command-reference companion contains 183 standalone pages: 164 linked from the
-reader and 19 supplemental pages, with 3,974 recorded lineage rows.
+reader and 19 supplemental pages.
 
 - Proof label: `manual-reviewed`.
+
+The current local candidate is a separate 26-part, 14,542-line assembly. It
+binds 191 command pages—164 reader-linked, 19 supplemental, and 8 post-baseline
+repairs—with 4,604 lineage rows. Its stable HTML, PDF, Markdown, and build
+manifest are staged for local review but do not replace the sealed public
+checkpoint until the remaining publication gates pass.
 - Public source snapshot: [`be935053`](https://github.com/deraldg/x64base/tree/be9350531251bb682f0476d652d99ca137861577).
 - Acceptance evidence: [primary reader manifest](https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json).
 

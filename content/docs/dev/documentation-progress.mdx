@@ -7,6 +7,13 @@ This page is the public progress surface for the full-stack documentation
 pipeline. It reports completed checkpoints and separately labels work that is
 still local, under review, or waiting for public-source promotion.
 
+> **Maintained current status — as of 2026-07-23.**
+> This permanent page contains both immutable publication checkpoints and a
+> replaceable current-state section. The current task registry and next gates are
+> available at [Current Tasks & Projects](/docs/labtalk/current-work); the full
+> second vertical is documented at
+> [Full-stack Documentation Push](/docs/dev/full-stack-documentation-push).
+
 ## Published checkpoint — 2026-07-18
 
 The documentation-to-x64base.com vertical completed all nine controlled gates:
@@ -36,6 +43,45 @@ and GitHub Pages commit `0ef77ea9`.
 - [Open the command-reference checkpoint](/docs/dottalk/command-reference).
 - [Inspect the machine-readable progress artifact](/artifacts/documentation-progress-v1.json).
 
+## Local preview — second vertical, 2026-07-22
+
+`DOCFLUSH-20260722-001` is a new bottom-to-top maintenance vertical. It is
+visible here for local review but is **not yet a public deployment**.
+
+| Layer | Local reviewed state |
+| --- | --- |
+| Source comments/contracts | 1,032 files; 243 complete source contracts; guarded live COMMENTS reload independently read back |
+| HELP | 459 commands; 2,566 arguments; 575 current topics; 29,197 lines; `CMDHELPCHK` and focused command canaries pass |
+| Current command-reference candidate | 191 pages: 164 reader-linked, 19 supplemental, and 8 post-baseline repair pages; 4,604 combined lineage rows |
+| Accepted primary reader | Unchanged at 4,118 lines / 237 headings; publication readiness 26/26 |
+| Latest assembled candidate | 14,542 lines; 26 parts; 1,666 headings; 191 bound pages; 298-page Letter PDF |
+| Current gate | Gates 0–4 pass; Gate 5 website reconciliation passes locally and awaits human review |
+
+The refresh also repaired documentation workflow assumptions that had treated
+historical fixed counts as permanent contracts. Current gates now validate
+relational invariants and preserve the separately accepted supplemental
+reference lane during later reader-linked refreshes.
+
+The post-baseline repair closed eight current-source publication gaps:
+`BUILDVECTORS`, `DEFCMD`, `DEFFN`, `STOP_ON_ERROR`, `UNDEFCMD`, `UNDEFFN`,
+`USER`, and `VDISK`. The source-to-reference coverage audit now has zero
+blocking findings. Its 102 inherited historical backlog entries remain visible
+rather than being silently relabeled as current regressions.
+
+Two implementation lanes that had been materially understated on the site are
+now explicit:
+
+- [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk) documents process-local X64
+  DBF tables, native CDX-V64 indexes, path routing, and destructive lifetime
+  boundaries.
+- [Identity, Authentication, and RBAC](/docs/engine/identity-security)
+  distinguishes persisted members, sessions, roles, permissions, owner-gated
+  administration, runtime enforcement chokepoints, and the legacy diagnostic
+  selector exposed by `SECURITY`.
+
+`METACOLLECT-238` remains a separate 238-finding mission. This vertical neither
+closes nor silently absorbs it.
+
 ## Promoted follow-up delta
 
 The reviewed progress and Pinocchio evidence packet is now preserved in
@@ -46,9 +92,9 @@ benchmark evidence into a runtime-release claim:
 | Lane | Current state | Publication rule |
 | --- | --- | --- |
 | Pinocchio historical benchmarks | Eight-row baseline, plan, runner, validator, and machine identity rule are public-source promoted; historical machine is now maintainer-attested (Alienware m16 R2 / Intel Core Ultra 9 185H). | A public evidence commit is not proof that the navigation correction is in a tagged runtime release. |
-| Comments collection audit trail | Current-source reharvest and governance evidence remain in the development lane. | Keep snapshots immutable and review mutations before a separate promotion. |
+| Comments collection audit trail | Current-source reharvest, live COMMENTS reload, rollback manifest, and governance evidence are complete in the development lane. | Keep snapshots immutable and review mutations before public-source promotion. |
 | Documentation closeout records | Gate 6–9 results, progress ledger, publication closeouts, and reproducibility tools are preserved in public source. | Append later closeouts; do not rewrite the sealed evidence packet. |
-| Messaging normalization | Large source change set passed regression without obvious canaries. | Reharvest documentation/metadata and preserve proof labels per command. |
+| Messaging normalization | Large source change set passed regression without obvious canaries; the responsible COMMENTS and HELP reharvest has now completed. | Preserve the reharvest and command canaries with the next reviewed source promotion. |
 | METACOLLECT-238 | Separate mission created from 238 metadata-collection findings. | Do not fold the backlog silently into the completed vertical. |
 
 ## Accuracy rule

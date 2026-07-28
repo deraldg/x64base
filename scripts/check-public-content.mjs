@@ -41,6 +41,13 @@ const blocked = [
 ];
 
 const ignoreDirs = new Set([".git", ".next", "node_modules", "out"]);
+const historicalSourceArchivePrefix = [
+  "public",
+  "artifacts",
+  "source-lineage",
+  "historical-source",
+  ""
+].join(path.sep);
 const findings = [];
 
 function walk(dir) {
@@ -58,13 +65,23 @@ function walk(dir) {
 function scanFile(file) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
+  const relativeFile = path.relative(root, file);
   for (const rule of blocked) {
     for (let i = 0; i < lines.length; i += 1) {
       rule.pattern.lastIndex = 0;
       const line = lines[i];
       if (!rule.pattern.test(line)) continue;
+      // The historical source museum is a SHA-256-bound, byte-preserved
+      // publication of 1993-1996 source. DOS paths in that source are program
+      // literals, not workstation-path leaks. Keep every other rule active.
+      if (
+        rule.name === "Windows absolute path" &&
+        relativeFile.startsWith(historicalSourceArchivePrefix)
+      ) {
+        continue;
+      }
       findings.push({
-        file: path.relative(root, file),
+        file: relativeFile,
         line: i + 1,
         rule: rule.name,
         text: line.trim().slice(0, 220)

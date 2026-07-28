@@ -21,6 +21,21 @@
     "manual_source_url": "https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/developer_manual_publication_v1.md",
     "command_reference_source_url": "https://github.com/deraldg/x64base/blob/be9350531251bb682f0476d652d99ca137861577/docs/manuals/developer/manualgen/published/developer_manual_publication_v1/command_reference_v1/README.md"
   },
+  "latest_assembled_candidate": {
+    "status": "local-preview-not-yet-deployed",
+    "proof_label": "generated-reviewed",
+    "manifest": "/downloads/current/DEVELOPER_MANUAL_LATEST.json",
+    "parts": 26,
+    "lines": 14542,
+    "headings": 1666,
+    "command_reference_pages": 191,
+    "reader_linked_command_pages": 164,
+    "supplemental_command_pages": 19,
+    "postbaseline_repair_pages": 8,
+    "command_lineage_rows": 4604,
+    "pdf_pages": 298,
+    "authority_note": "This always-current assembled candidate does not replace the sealed manual-reviewed checkpoint until publication review completes."
+  },
   "items": [
     {
       "file": "DotTalkPP_x64base_Manual_Preview_V1.docx",

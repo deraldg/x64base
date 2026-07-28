@@ -1,0 +1,74 @@
+---
+title: "Historical xBase Source Files"
+description: "Read-only browser for the canonical xBase, XDLL, xBase2, and DotTalk source files preserved in the original archive."
+---
+
+> **Read-only historical evidence.** These files are byte-preserved projections
+> from the original archive. They are not compiled as the current product and
+> must not be edited in place.
+
+## Source museum contract
+
+This page makes the preserved source inspectable without exposing private local
+paths. Each file link opens an escaped, read-only HTML view generated from the
+archived bytes and provides a link to the byte-preserved text. The file hash,
+archive member name, original archive timestamp, viewer URL, and raw URL are
+retained in the companion manifests.
+
+- Archive SHA-256:
+  `F4ABE4EBA8C71DE36880C4AB95E1BDB9B0D693D62B8FF7FB48E36910EBC3BD4A`
+- Canonical files: **21**
+- [Download the JSON manifest](/artifacts/source-lineage/historical-source-files-v1.json)
+- [Download the CSV manifest](/artifacts/source-lineage/historical-source-files-v1.csv)
+- [Open the historical family tree](/docs/dev/historical-family-tree)
+
+## xBase core
+
+Archive era: **1993** · 6 canonical files.
+
+| File | Archive date | Bytes | SHA-256 prefix |
+| --- | --- | ---: | --- |
+| [XBASE.C](/artifacts/source-lineage/historical-source/xbase/xbase.c.html) | 1993-10-26 | 20,466 | `BDA550134F7EA868` |
+| [XBASE.H](/artifacts/source-lineage/historical-source/xbase/xbase.h.html) | 1993-10-26 | 3,707 | `4CB91A7958E1235C` |
+| [XBCMDS.C](/artifacts/source-lineage/historical-source/xbase/xbcmds.c.html) | 1993-10-26 | 19,456 | `081A2DCCBDBA96E7` |
+| [XBCMDS.H](/artifacts/source-lineage/historical-source/xbase/xbcmds.h.html) | 1993-10-25 | 1,346 | `6432767F08214408` |
+| [XBINDEX.C](/artifacts/source-lineage/historical-source/xbase/xbindex.c.html) | 1993-10-26 | 16,016 | `E58932CA7F6514B0` |
+| [XBINDEX.H](/artifacts/source-lineage/historical-source/xbase/xbindex.h.html) | 1993-10-26 | 4,288 | `6C8556F5E4B3B0E6` |
+
+## XDLL / xBase DLL-oriented branch
+
+Archive era: **1993-1996** · 6 canonical files.
+
+| File | Archive date | Bytes | SHA-256 prefix |
+| --- | --- | ---: | --- |
+| [XBASE.C](/artifacts/source-lineage/historical-source/xdll/xbase.c.html) | 1993-11-04 | 21,052 | `6B60C66C93577982` |
+| [XBASE.H](/artifacts/source-lineage/historical-source/xdll/xbase.h.html) | 1996-07-25 | 4,312 | `476D6D7742ED16FF` |
+| [XBCMDS.C](/artifacts/source-lineage/historical-source/xdll/xbcmds.c.html) | 1993-11-04 | 20,347 | `ED003B255DE994B4` |
+| [XBCMDS.H](/artifacts/source-lineage/historical-source/xdll/xbcmds.h.html) | 1996-07-25 | 1,994 | `BDC7AEC487FCEC0D` |
+| [XBINDEX.C](/artifacts/source-lineage/historical-source/xdll/xbindex.c.html) | 1993-10-26 | 16,016 | `E58932CA7F6514B0` |
+| [XBINDEX.H](/artifacts/source-lineage/historical-source/xdll/xbindex.h.html) | 1996-07-25 | 4,326 | `CFB9DF17575634E7` |
+
+## xBase2 / DotTalk 1995
+
+Archive era: **1995** · 9 canonical files.
+
+| File | Archive date | Bytes | SHA-256 prefix |
+| --- | --- | ---: | --- |
+| [DOTTALK.C](/artifacts/source-lineage/historical-source/xbase2/dottalk.c.html) | 1995-08-14 | 12,348 | `9DD694B8772A0DA8` |
+| [DOTTALK.H](/artifacts/source-lineage/historical-source/xbase2/dottalk.h.html) | 1995-07-21 | 310 | `8E7CCCD124B56A6E` |
+| [TEST.C](/artifacts/source-lineage/historical-source/xbase2/test.c.html) | 1995-08-16 | 3,231 | `7D2E071107C93F05` |
+| [XBASE.C](/artifacts/source-lineage/historical-source/xbase2/xbase.c.html) | 1995-08-14 | 21,916 | `3ED072803564560A` |
+| [XBASE.H](/artifacts/source-lineage/historical-source/xbase2/xbase.h.html) | 1995-08-14 | 4,991 | `C63126FE1B49E347` |
+| [XBCMDS.C](/artifacts/source-lineage/historical-source/xbase2/xbcmds.c.html) | 1995-08-14 | 21,107 | `A588A77F9178CD80` |
+| [XBCMDS.H](/artifacts/source-lineage/historical-source/xbase2/xbcmds.h.html) | 1995-08-14 | 2,285 | `07A46AEDF3E0595D` |
+| [XBINDEX.C](/artifacts/source-lineage/historical-source/xbase2/xbindex.c.html) | 1995-08-16 | 18,264 | `E7280EEB47A3E856` |
+| [XBINDEX.H](/artifacts/source-lineage/historical-source/xbase2/xbindex.h.html) | 1995-08-14 | 4,371 | `7A36458CD60FD00C` |
+
+## Interpretation boundary
+
+- `xbase/`, `xdll/`, and `xbase2/` are verified siblings in the archive.
+- `DOTTALK.C` is physically contained in the xBase2 branch.
+- XDLL is DLL-export-oriented source; no historical `xbase.dll` binary was
+  found in the reviewed archive.
+- Modern x64base and DotTalk++ claims come from current source and runtime
+  proof, not from these archived files.
