@@ -1,0 +1,741 @@
+#include <stdio.h>  
+#include <stdarg.h>
+#include <stdlib.h> 
+#include <string.h>    
+#include <fcntl.h>
+#include <math.h>   
+#include "xbindex.h"
+#include "xbase.h" 
+#if IBMPCDOS
+   #include <conio.h> 
+   #include <io.h>
+#endif   
+
+/* xbase global variables */  
+
+select_rec *s[max_area]; 
+ 
+char  ch ;     
+long  rec_num ; 
+int   GRERROR ; 
+int   DOSERROR ;
+char  IBMPC;
+
+int   rr ;                     /* records_read */     
+
+char *filemode ;               /* filemode */       
+
+/* field types */
+char *character;
+char  date[date_size] ;
+char  numeric[19];
+char *memo ;              /* should be ? */ 
+
+char  area; 
+FILE  *tofile ;        
+int   scr_limit ;
+long  result ;
+char  delete_flag ;
+char  deleted ;    
+               
+unsigned long memory;
+
+order_array_type temporder ;    
+
+
+/* start of functions */
+
+void memchk(char *buff,char *function,char variable[],unsigned long mem)
+{   
+    memory = memory + mem;
+	if (buff == NULL) 
+	   exit(0);   
+}
+
+int initbase()
+{          
+	int i;
+	
+	memory = 0;
+    IBMPC = IBMPCDOS;
+    area = 1;  /* initial default area - 0 reserved for library */
+     
+/*  Preallocate the memory for all 25 select areas - just enough to set
+	flags etc. Members - hr,rd,fd etc. (which are the memory hogs) are not
+	set until an open or a use (which calls open) are called. 
+	Total initial memory = 25 * 530 bytes = 13250 bytes.
+	Note: add 30 more to each area for indexes.
+*/                                                  
+    for (i=0;i<max_area;i++)
+    {                 
+        s[i] = (select_rec *)calloc(1,sizeof(select_rec));
+        memchk((char *)s[i],"initbase","s[i]",(long)sizeof(select_rec));
+    	s[i]->a = 0;
+        s[i]->fp = NULL;   
+    	s[i]->fok = FALSE;     
+    	s[i]->crn = 0;
+    	s[i]->num_of_fields = 0; 
+    	s[i]->ord = 1;  
+    	s[i]->del = FALSE;
+    }
+    GRERROR = 0;               
+    return(0);
+}             
+
+void rtrim(string tmpfld)
+{
+	int i,len,newlen; 
+
+	char newstr[256];
+	
+    newlen=strlen(tmpfld);          
+    len=newlen;
+    while ((tmpfld[--len]==' ') && (len > 0)) newlen--; 
+    newstr[newlen]='\0';
+    for(i=0;i < newlen;i++) newstr[i] = tmpfld[i];  
+    strcpy(tmpfld,(char *)newstr); 
+    return;
+}        
+
+string rstr(string tmpstr, int newlen)
+{                                     
+  int i,len;   
+  string newstr;   
+  
+  len = strlen(tmpstr);
+  if (newlen >= len) return(tmpstr); 
+  newstr = (char *)calloc(newlen+1,sizeof(char));   
+  memchk(newstr,"rstr","newstr",(long)((newlen+1)*sizeof(char)));
+  newstr[newlen+1]='\0';   
+  for(i = newlen; i > -1; i--) newstr[i] = tmpstr[len--];
+  return(newstr);
+}
+
+string lstr(string tmpstr, int newlen)
+{
+  int i,len;
+  string newstr;
+  len = strlen(tmpstr);
+  if (newlen >= len) return(tmpstr);
+  newstr = (char *)calloc(newlen+1,sizeof(char));  
+  memchk(newstr,"lstr","newstr",(long)(newlen+1)*sizeof(char));
+  newstr[newlen+1]='\0';
+  for(i = 0; i < newlen; i++) newstr[i] = tmpstr[i];
+  return(newstr); 
+}
+string dbname(string tmpstr)
+{                
+   string ext;  
+   string tmpstr2;
+   char *dbfext;
+
+/* this line is for testing only 
+   return(tmpstr); */
+   rtrim(tmpstr);
+   dbfext = ".dbf";    
+   tmpstr2 = (char *)calloc(13,sizeof(char));
+   memchk(tmpstr2,"dbname","tmpstr2",(long)13*sizeof(char));
+   ext = rstr(tmpstr,4);
+
+   if (strcmpi(ext,dbfext)==0)
+   {
+      return(tmpstr);
+   }
+   else
+   {      
+      strcpy(tmpstr2,tmpstr);
+      strcat(tmpstr2,dbfext);
+      return(tmpstr2);
+   }
+}  
+
+string dxname(string tmpstr)
+{                
+   string ext;  
+   string tmpstr2;
+   char *idxext;    
+                  
+/* this line is for testing only 
+   return(tmpstr);           */
+   rtrim(tmpstr);
+   idxext = ".idx";    
+   tmpstr2 = (char *)calloc(13,sizeof(char)); 
+   memchk(tmpstr2,"dxname","tmpstr2",(long)13*sizeof(char));
+   ext = rstr(tmpstr,4);
+
+   if (strcmpi(ext,idxext)==0)
+   {
+      return(tmpstr);
+   }
+   else
+   {      
+      strcpy(tmpstr2,tmpstr);
+      strcat(tmpstr2,idxext);
+      return(tmpstr2);
+   }
+
+}  
+
+int open_file(dbfile filename, char area)
+{         
+/* int i; */
+            
+   filemode = "rb+";   
+   
+/* s[area] is currently built in function initbase() */                                           
+
+   if ((s[area]->fp = fopen(filename,filemode)) == NULL)
+   {
+     GRERROR = 1; 
+     return(0);
+   }  
+   else        
+   {        
+/*   build header rec */
+     s[area]->hr = (header_rec *)calloc(1,sizeof(header_rec));
+     memchk((char *)s[area]->hr,"open_file","s[area]->hr",sizeof(header_rec));   
+     s[area]->fok = TRUE;  
+     s[area]->a = area; 
+     GRERROR = 0;
+     return(1);
+   }   
+}     
+
+void close_file(char area)
+{  
+   int i,num_of_fields;
+     
+   num_of_fields = s[area]->num_of_fields;
+   if (fclose(s[area]->fp)) 
+   {
+      exit(0);
+   }              
+   else
+   {
+   	  s[area]->fp = NULL;    
+      s[area]->a = 0;
+   	  s[area]->crn = 0;
+      s[area]->num_of_fields = 0;	  
+      s[area]->fok = FALSE;	  
+      free((void *)s[area]->hr);
+      for (i=1;i<=num_of_fields;i++)             
+      {
+   	      free((void *)s[area]->fd[i]);
+      	  free((void *)s[area]->fr[i]);
+      }      
+      free((void *)s[area]->rd);      
+   }   
+}
+
+int read_header(char area)
+{   
+    double tmpdbl;         
+
+    rr = fread((char *)s[area]->hr,block_size,1,s[area]->fp);  
+    tmpdbl = (s[area]->hr->data_start - block_size)/block_size;
+    s[area]->num_of_fields = (short)(floor(tmpdbl));  
+	s[area]->rd = (char *)calloc(s[area]->hr->cpr,sizeof(char)); /* allocate data buffer */   
+	memchk((char *)s[area]->rd,"read_header","s[area]->rd",
+	       (long)s[area]->hr->cpr*sizeof(char));
+
+	if (s[area]->hr->version == 0x08)
+	{
+		if (IBMPC==1)
+		{
+		   close_file(area);
+		   exit(0);
+		}   
+	}
+    return rr;
+}
+
+void read_fields(char area)
+{                                  
+    int i,k,j; 
+    char header_terminator;      
+    
+    header_terminator = (char)0x0D;
+	  
+    /* now we know how many field_recs to build from read_header */
+            
+    for (i = 1;i <= s[area]->num_of_fields; i++)
+    {                                            
+        s[area]->fr[i] = (field_rec *)calloc(1,sizeof(field_rec));  
+        memchk((char *)s[area]->fr[i],"read_fields","s[area]->fr[i]",
+              (long)sizeof(field_rec));
+	    rr = fread((char *)s[area]->fr[i],block_size,1,s[area]->fp);       
+	    k = 1;
+    	while ((s[area]->fr[i]->field_name[k] != ' ') && (k <= 11)) k++;
+  	    if (k < 11) 
+           for (j = k; j <= 11; j++)
+               s[area]->fr[i]->field_name[j] = ' ';   
+        /* allocate space for field data */        
+        s[area]->fd[i] = (char *)calloc(s[area]->fr[i]->field_length+1,sizeof(char)); 
+        memchk((char *)s[area]->fd[i],"read_fields","s[area]->fd[i]",
+              (long)(s[area]->fr[i]->field_length+1)*sizeof(char));
+	} 
+	 
+    rr = fread((char *)&header_terminator,1,1,s[area]->fp);
+    s[area]->crn = 1;    
+     
+/* This little baby threw me off big time! 32 for the header, then 
+   after the header is 32 chars for each field, finally the header
+   terminator char comes, after the header and before the s[area]->rd. */     
+
+}                                     
+
+int strnicmps(char *str1,char *str2)
+{   
+    /* case insensitive str compare to the length of the smallest str */
+    return(strnicmp(str1,str2,(min(strlen(str1),strlen(str2)))));
+}
+
+void charproc(char *field, char length, long sub) 
+{                                           
+/* My main problem here was I was too used to pascal.
+   To dynamically build a string one must allocate the length of the string
+   plus 1 (for the null byte). Loop operations must start at 0 and continue
+   to length-1. For example, the string "Hello" is 5 bytes long, 
+   bytes 0 to 4, the storage required by calloc will be 6 bytes.
+*/   
+    int i;
+
+    for (i=0;i<length;i++)
+        field[i]=s[area]->rd[sub+i];
+    field[length] = '\0';    
+        
+	return;  
+}
+
+int read_rec(char area)
+{
+    int j;
+	long offset;
+    int hbr; 
+    char fl;
+
+    if (s[area]->num_of_fields < 60)  
+    {
+		scr_limit = s[area]->num_of_fields;
+	}       
+    else
+    {
+		scr_limit = 60;
+	}       
+
+/* Note: I was missing the final char on a record of dates, I will need to
+check to see if that was true for all records and if so adjust the chars per
+record in the header, it may be a difference in foxpro and dbase, in any case
+it requires further testing. */
+
+	 hbr = s[area]->hr->cpr;   
+	 rr = fread(s[area]->rd,sizeof(char),hbr,s[area]->fp);
+	 if (rr != hbr)
+	    return(0);          
+/* first byte of record is the delete flag */	    
+	 s[area]->del = s[area]->rd[1];   
+	 if (s[area]->del != is_deleted)
+	    s[area]->del = not_deleted;
+	 offset = 1;                
+			
+     for (j = 1;j <= scr_limit; j++)
+     {
+    	 fl = s[area]->fr[j]->field_length; 
+	 
+	 switch (s[area]->fr[j]->field_type) 
+	 {  
+	   case 'C': case 'c': 
+	      charproc(s[area]->fd[j],fl,offset); 
+		  offset = offset + fl;  
+		  break;        
+/*     case 'D': case 'd': 
+		  field_s[area]->rd[j] = dateproc(fl,offset,j);
+		  offset = offset + fl;
+	      break;
+	   case 'L': case'l':
+	      field_s[area]->rd[j] = logiproc(offset,j);
+	      offset = offset + 1;
+	      break;  
+	   case 'M': case 'm':
+	      field_s[area]->rd[j] = memoproc(offset,j);
+	      offset = offset + 10;
+	      break;                    
+	   case 'N': case 'n':
+	      field_s[area]->rd[j] = numbrproc(fl,offset,j);
+	      offset = offset + fl;
+*/     default:            
+	      charproc(s[area]->fd[j],fl,offset);	      
+		  offset = offset + fl;             
+		  break; 
+    }         
+    }             
+    return(1);    
+}
+     
+int add_rec(char area)
+{         
+     if (!s[area]->fok) return(0); 
+     
+     s[area]->del = not_deleted;   
+     
+/*   go to the end of the file */     
+     fseek(s[area]->fp,0,SEEK_END);   
+     
+/*   fill the record with spaces */          
+     memset((char *)s[area]->rd,' ',s[area]->hr->cpr);   
+     result = fwrite(&s[area]->del,sizeof(char),1,s[area]->fp);
+     result = fwrite(s[area]->rd,sizeof(char),
+                    (s[area]->hr->cpr-sizeof(char)),s[area]->fp);
+     
+/*   return to the beginning of the file and adjust the header */  
+     fseek(s[area]->fp,0,SEEK_SET);        
+     s[area]->hr->num_of_recs++;
+     result = fwrite((char *)s[area]->hr,(sizeof(header_rec)),1,s[area]->fp);
+     
+     return(1);                       
+}  
+
+int del_rec(char area)
+{       
+     s[area]->del = is_deleted;
+     write_rec(area);   
+     return(1);
+} 
+    
+void write_rec(char area)
+{
+/* This function flushes all fd strings back to the rd buffer and
+   writes them to disk. Therefore it is only necessary to modify the 
+   fd strings to edit a record and then call write_rec to post them to
+   the database file.
+*/        
+   long i,j,k,offset;    
+   
+   i = 0; /* C buffer rd starts at 0 */
+   j = 1;
+   while (j <= scr_limit) 
+   {
+	 k = 0; /* C string s[area]->rd starts at 0 */
+	 while (k < s[area]->fr[j]->field_length) /* no null byte in buff */
+	 {     
+	       if (k < (int)strlen(s[area]->fd[j])) 
+	          s[area]->rd[i] = s[area]->fd[j][k];   
+	       else   
+	          s[area]->rd[i] = ' '; /* pad with spaces */	          
+	       i++;
+	       k++;
+	 }; 
+	 j++;        
+   };    
+   offset = s[area]->hr->cpr;      
+   offset = s[area]->hr->data_start+((s[area]->crn-1)*offset);
+   
+   fseek(s[area]->fp,offset,SEEK_SET);
+   rr = fwrite((char *)&s[area]->del,sizeof(char),1,s[area]->fp);
+   rr = fwrite((char *)s[area]->rd,sizeof(char),(s[area]->hr->cpr-sizeof(char)),s[area]->fp);  
+   fseek(s[area]->fp,offset,SEEK_SET); /* return to beginning of record */
+}      
+      
+int goto_rec(long rec_num)
+{                          
+/* it is imperitive that goto_rec is not affected by indexing, a method
+   is always required to directly fetch a record */
+   long offset;
+   if (!s[area]->fok) return(0);
+
+   if ((rec_num < 1) || (rec_num > s[area]->hr->num_of_recs))
+   {  
+      return(0);                                  
+   }   
+      
+   offset = s[area]->hr->cpr;
+   offset = offset*(rec_num-1);
+   offset = offset+s[area]->hr->data_start;  
+   
+   if (fseek(s[area]->fp,offset,0)==0)
+   {
+   	   if (read_rec(area))
+   	      if (s[area]->del==is_deleted)
+             return(0);
+   	      else
+             s[area]->crn = rec_num;
+       else 
+       {
+          return(0);                                      
+       }  
+   }    
+   else
+   {
+   	   return(0);	     
+   }           
+   return(1);
+}
+
+      
+int copy_stru(dbfile outfile)
+{
+   int i;
+   char htb;
+   
+   if (!s[area]->fok) /* is file to be copied open */
+      return(0);  
+      
+   if ((s[0]->fp = fopen(outfile,"wb+")) == NULL)
+   {
+      GRERROR = 1; 
+      return(0);
+   }
+   s[0]->hr = (header_rec *)calloc(1,sizeof(header_rec));
+   memmove(s[0]->hr,s[area]->hr,sizeof(header_rec));
+   s[0]->hr->num_of_recs = 0; 
+   fseek(s[area]->fp,0,SEEK_SET);
+   fwrite((char *)s[0]->hr,1,sizeof(header_rec),s[0]->fp);
+   for (i=1;i<=s[area]->num_of_fields;i++)
+       fwrite((char *)s[area]->fr,1,sizeof(field_rec),s[0]->fp);  
+   htb = header_terminator_byte;       
+   fwrite((char *)&htb,1,1,s[0]->fp);    
+   fclose(s[0]->fp); 
+   free(s[0]->hr);
+   s[0]->fp = NULL; 
+   return(1);
+}
+	   
+void create_dbf(dbfile outfile,field_array fields,int num_of_fields)
+{        
+    int i;
+    header_rec new_header;
+    char htb;     
+    
+    filemode = "wb+";  
+    if ((s[0]->fp = fopen(outfile,filemode)) == NULL)
+    {
+      GRERROR = 1 ;      
+      exit(0) ;
+    }              
+                   
+    memset((char *)&new_header,'\0',block_size);
+    new_header.version = 3;
+    htb = header_terminator_byte;           
+    /* replace last_updated with real date */
+    new_header.last_updated[0] = 93;
+    new_header.last_updated[1] = 9;
+    new_header.last_updated[2] = 15;                             
+    new_header.num_of_recs = 0;                  
+    new_header.cpr = 1;    /* plus delete flag */
+    new_header.data_start = 32+(32*num_of_fields)+1;   
+    /* write header */
+    rr = fwrite((char *)&new_header,block_size,1,s[0]->fp);
+    /* write fields */
+    for (i=1;i<=num_of_fields;i++)
+    {   
+        /* length,type,and name should be passed */
+        fields[i].field_data_address = new_header.cpr;
+        fields[i].decimal_places = 0;
+        fields[i].multiuser1 = 0;
+        fields[i].workid = 0;
+        fields[i].multiuser2 = 0;
+        fields[i].flag = 0;   
+        new_header.cpr = new_header.cpr + fields[i].field_length;  
+        rr = fwrite((char *)&fields[i],block_size,1,s[0]->fp); 
+    }
+    rr = fwrite((char *)&htb,1,1,s[0]->fp);
+    fseek(s[0]->fp,0,SEEK_SET); 
+    /* update header */
+    rr = fwrite((char *)&new_header,block_size,1,s[0]->fp);    
+    if (fclose(s[0]->fp))
+       exit(0);
+}    
+
+void import(dbfile infile, dbfile outfile)
+{                                    
+    int rw ;   
+    char data_buff[10];       
+    char delete_flag; 
+	FILE *import_file,*new_dbf;   
+	
+	rw = 0;     
+	delete_flag = not_deleted;                    
+	filemode = "r";                        
+	if ((import_file = fopen(infile,filemode)) == NULL) exit(0);  
+    filemode = "ab+";  
+    if ((new_dbf = fopen(outfile,filemode)) == NULL)
+    {
+      GRERROR = 1 ;
+      exit(0) ;
+    } 
+	while (!feof(import_file))
+	{    
+		fread((char *)&data_buff,10,1,import_file);
+		if (!feof(import_file))
+		{                                      
+		    fwrite((char *)&delete_flag,1,1,new_dbf);
+			fwrite((char *)&data_buff,10,1,new_dbf);
+			rw++;                              
+		}       
+    }                   
+	fclose(import_file);
+	fclose(new_dbf); 
+} 
+   
+/* Even though swab is a UNIX function, the Amiga needs one written */   
+#ifdef AMIGADOS
+void _swab(char *int1, char *int2, int num_bytes)
+{  
+   /* I learned a lesson here. When I passed the address of the int's
+   into this function I was referencing them as &int1,&int2. They are
+   already an address so it really screwed things up. */
+            
+   char tmpshort[2];
+   char tmplong[4];
+   char tmp;
+   if (num_bytes == 2)
+   {                      
+      memcpy((char *)&tmpshort,(char *)int1,2);
+      tmp = tmpshort[0];
+      tmpshort[0] = tmpshort[1];
+      tmpshort[1] = tmp;
+      memcpy((char *)int2,(char *)&tmpshort,2);
+   }
+   if (num_bytes == 4)
+   {  
+      memcpy((char *)&tmplong,(char *)int1,4);
+      tmp = tmplong[0];
+      tmplong[0] = tmplong[1];
+      tmplong[1] = tmp;
+      tmp = tmplong[2];
+      tmplong[2] = tmplong[3] ;
+      tmplong[3] = tmp;         
+      memcpy((char *)int2,(char *)&tmplong,4);
+   } 
+}              
+#endif
+
+void swabdbf(dbfile infile)
+{                    
+    int i;
+    long tmplong,srclong;
+    short tmpshort,srcshort;   
+    
+    open_file(infile,area);
+    read_header(area);
+    read_fields(area);
+
+    srclong = s[area]->hr->num_of_recs;
+    _swab((char *)&srclong,(char *)&tmplong,4);
+    s[area]->hr->num_of_recs = tmplong; 
+					 
+    srcshort = s[area]->hr->data_start;                                     
+    _swab((char *)&srcshort,(char *)&tmpshort,2);
+    s[area]->hr->data_start = tmpshort;  
+
+    srcshort = s[area]->hr->cpr;
+    _swab((char *)&srcshort,(char *)&tmpshort,2);
+    s[area]->hr->cpr = tmpshort;
+    
+    for (i = 1; i <= s[area]->num_of_fields; i++) 
+    {                                                 
+       srclong = s[area]->fr[i]->field_data_address;
+       _swab((char *)&srclong,(char *)&tmplong,4);
+       s[area]->fr[i]->field_data_address = tmplong;
+	    
+       srcshort = s[area]->fr[i]->multiuser1;     
+       _swab((char *)&srcshort,(char *)&tmpshort,2);
+       s[area]->fr[i]->multiuser1 = tmpshort;
+       
+       srcshort = s[area]->fr[i]->multiuser2;
+       _swab((char *)&srcshort,(char *)&tmpshort,2);
+       s[area]->fr[i]->multiuser2 = tmpshort;
+    }  
+        
+    /* toggle versions */    
+    if (IBMPC==1)
+        s[area]->hr->version = 0x08;
+    else
+        s[area]->hr->version = 0x03; 
+         
+    rewind(s[area]->fp); 
+    fwrite((char *)s[area]->hr,block_size,1,s[area]->fp);   
+	
+    for (i = 1; i<= s[area]->num_of_fields; i++)
+    {
+        fwrite((char *)s[area]->fr[i],block_size,1,s[area]->fp); 
+    }          
+		      
+    close_file(area); 
+}
+
+/*
+string dateproc(length,sub,sub2:int) 
+{
+	 int i,j;
+	 yr : string[4];
+	 mn : string[2];
+     dy : string[2];
+	 tmpstr : string[10];
+
+{
+	 j := length;
+	 for i := 1 to length do
+	 {
+	    tmpstr[i] := s[area]->rd[sub+i];
+	 };
+     tmpstr[0] := chr(8);
+
+     To preconvert replace above with below.
+	 {
+		if i < 5 then yr[i]   := s[area]->rd[sub+i];
+    	if i = 5 then mn[i-4] := s[area]->rd[sub+i];
+	    if i = 6 then mn[i-4] := s[area]->rd[sub+i];
+		if i > 6 then dy[i-6] := s[area]->rd[sub+i];
+	 };
+	 tmpstr[0] := chr(10);
+	 yr[0] := chr(4);
+	 mn[0] := chr(2);
+	 dy[0] := chr(2);
+	 tmpstr := (mn+'/'+dy+'/'+yr);}
+
+	 dateproc := tmpstr;
+}
+
+function LogiProc(sub,sub2:int) : char;
+{
+    case s[area]->rd[sub+1] of
+    't','y','T','Y' : logiproc := 'T';
+    'f','n','F','N' : logiproc := 'F';
+    '?' :             logiproc := '?';
+	 };
+}; 
+
+function MemoProc(sub,sub2:int) : string;
+{
+    memoproc := 'MEMO';
+};
+
+
+function NumbrProc(length,sub,sub2:int) : string;
+Var
+    i : int;
+    num : real;
+    field_str : string;
+
+{
+    num := 0;
+    for i := 1 to length do
+    {
+	field_str[0] := chr(length);
+	field_str[i] := s[area]->rd[sub + i];
+    }; {for}
+    if s[area]->fr[sub2].decimal_places > 0 then
+    {
+	following converts to real
+{      num := strreal(length,field_str,s[area]->fr[sub2].decimal_places);
+       writeln(s[area]->fr[sub2].field_name,' ',num:10:2); }
+       numbrproc := field_str;
+    }
+    else
+{      writeln(s[area]->fr[sub2].field_name,' ',field_str);    }
+       numbrproc := field_str;
+};   
+
+*/
+		     

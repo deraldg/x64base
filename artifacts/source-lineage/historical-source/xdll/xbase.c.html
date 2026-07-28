@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XDLL / xBase DLL-oriented branch — XBASE.C — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>XDLL / xBase DLL-oriented branch — XBASE.C</h1>
+    <p>Read-only archive view · 1993-11-04 · 21,052 bytes · SHA-256 6B60C66C935779821144E1064D1107F0E5CAC56AED4A5772039D4FEA24BF8662</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xdll/xbase.c.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>#include &lt;windows.h&gt;
+#include &lt;stdio.h&gt;  
+#include &lt;stdarg.h&gt;
+#include &lt;stdlib.h&gt; 
+#include &lt;string.h&gt;    
+#include &lt;fcntl.h&gt;
+#include &lt;math.h&gt;   
+#include &quot;xbindex.h&quot;
+#include &quot;xbase.h&quot; 
+#if IBMPCDOS
+   #include &lt;conio.h&gt; 
+   #include &lt;io.h&gt;
+#endif   
+
+/* xbase global variables */  
+select_rec * FAR  _export s[max_area]; 
+char FAR _export area; 
+
+char  ch ;     
+long  rec_num ; 
+int   GRERROR ; 
+int   DOSERROR ;
+char  IBMPC;
+
+int   rr ;                     /* records_read */     
+
+char *filemode ;               /* filemode */       
+
+/* field types */
+char *character;
+char  date[date_size] ;
+char  numeric[19];
+char *memo ;              /* should be ? */ 
+
+
+FILE  *tofile ;        
+int   scr_limit ;
+long  result ;
+char  delete_flag ;
+char  deleted ;    
+               
+unsigned long memory;
+
+order_array_type temporder ;    
+
+
+/* start of functions */
+
+int FAR PASCAL _export memchk(char *buff,char *function,char variable[],unsigned long mem)
+{   
+    memory = memory + mem;
+	if (buff == NULL) 
+	   return(0);  
+	else
+	   return(1);    
+}
+
+int FAR PASCAL _export initbase()
+{          
+	int i;
+	
+	memory = 0;
+    IBMPC = IBMPCDOS;
+    area = 1;  /* initial default area - 0 reserved for library */
+     
+/*  Preallocate the memory for all 25 select areas - just enough to set
+	flags etc. Members - hr,rd,fd etc. (which are the memory hogs) are not
+	set until an open or a use (which calls open) are called. 
+	Total initial memory = 25 * 530 bytes = 13250 bytes.
+	Note: add 30 more to each area for indexes.
+*/                                                  
+    for (i=0;i&lt;max_area;i++)
+    {                 
+        s[i] = (select_rec *)calloc(1,sizeof(select_rec));
+        memchk((char *)s[i],&quot;initbase&quot;,&quot;s[i]&quot;,(long)sizeof(select_rec));
+    	s[i]-&gt;a = 0;
+        s[i]-&gt;fp = NULL;   
+    	s[i]-&gt;fok = FALSE;     
+    	s[i]-&gt;crn = 0;
+    	s[i]-&gt;num_of_fields = 0; 
+    	s[i]-&gt;ord = 1;  
+    	s[i]-&gt;del = FALSE;
+    }
+    GRERROR = 0;               
+    return(0);
+}             
+
+void FAR PASCAL _export rtrim(char * tmpfld)
+{
+	int i,len,newlen; 
+
+	char newstr[256];
+	
+    newlen=strlen(tmpfld);          
+    len=newlen;
+    while ((tmpfld[--len]==&#x27; &#x27;) &amp;&amp; (len &gt; 0)) newlen--; 
+    newstr[newlen]=&#x27;\0&#x27;;
+    for(i=0;i &lt; newlen;i++) newstr[i] = tmpfld[i];  
+    strcpy(tmpfld,(char *)newstr); 
+    return;
+}        
+
+char * FAR PASCAL _export  rstr(char * tmpstr, int newlen)
+{                                     
+  int i,len;   
+  char * newstr;   
+  
+  len = strlen(tmpstr);
+  if (newlen &gt;= len) return(tmpstr); 
+  newstr = (char *)calloc(newlen+1,sizeof(char));   
+  memchk(newstr,&quot;rstr&quot;,&quot;newstr&quot;,(long)((newlen+1)*sizeof(char)));
+  newstr[newlen+1]=&#x27;\0&#x27;;   
+  for(i = newlen; i &gt; -1; i--) newstr[i] = tmpstr[len--];
+  return(newstr);
+}
+
+char * FAR PASCAL _export lstr(char * tmpstr, int newlen)
+{
+  int i,len;
+  char * newstr;
+  len = strlen(tmpstr);
+  if (newlen &gt;= len) return(tmpstr);
+  newstr = (char *)calloc(newlen+1,sizeof(char));  
+  memchk(newstr,&quot;lstr&quot;,&quot;newstr&quot;,(long)(newlen+1)*sizeof(char));
+  newstr[newlen+1]=&#x27;\0&#x27;;
+  for(i = 0; i &lt; newlen; i++) newstr[i] = tmpstr[i];
+  return(newstr); 
+}
+char * FAR PASCAL _export dbname(char * tmpstr)
+{                
+   char * ext;  
+   char * tmpstr2;
+   char *dbfext;
+
+/* this line is for testing only 
+   return(tmpstr); */
+   rtrim(tmpstr);
+   dbfext = &quot;.dbf&quot;;    
+   tmpstr2 = (char *)calloc(13,sizeof(char));
+   memchk(tmpstr2,&quot;dbname&quot;,&quot;tmpstr2&quot;,(long)13*sizeof(char));
+   ext = rstr(tmpstr,4);
+
+   if (strcmpi(ext,dbfext)==0)
+   {
+      return(tmpstr);
+   }
+   else
+   {      
+      strcpy(tmpstr2,tmpstr);
+      strcat(tmpstr2,dbfext);
+      return(tmpstr2);
+   }
+}  
+
+char * FAR PASCAL _export dxname(char * tmpstr)
+{                
+   char * ext;  
+   char * tmpstr2;
+   char *idxext;    
+                  
+/* this line is for testing only 
+   return(tmpstr);           */
+   rtrim(tmpstr);
+   idxext = &quot;.idx&quot;;    
+   tmpstr2 = (char *)calloc(13,sizeof(char)); 
+   memchk(tmpstr2,&quot;dxname&quot;,&quot;tmpstr2&quot;,(long)13*sizeof(char));
+   ext = rstr(tmpstr,4);
+
+   if (strcmpi(ext,idxext)==0)
+   {
+      return(tmpstr);
+   }
+   else
+   {      
+      strcpy(tmpstr2,tmpstr);
+      strcat(tmpstr2,idxext);
+      return(tmpstr2);
+   }
+
+}  
+
+int FAR PASCAL _export open_file(dbfile filename, char area)
+{         
+/* int i; */
+            
+   filemode = &quot;rb+&quot;;   
+   
+/* s[area] is currently built in function initbase() */                                           
+
+   if ((s[area]-&gt;fp = fopen(filename,filemode)) == NULL)
+   {
+     GRERROR = 1; 
+     return(0);
+   }  
+   else        
+   {        
+/*   build header rec */
+     s[area]-&gt;hr = (header_rec *)calloc(1,sizeof(header_rec));
+     memchk((char *)s[area]-&gt;hr,&quot;open_file&quot;,&quot;s[area]-&gt;hr&quot;,sizeof(header_rec));   
+     s[area]-&gt;fok = TRUE;  
+     s[area]-&gt;a = area; 
+     GRERROR = 0;
+     return(1);
+   }   
+}     
+
+int FAR PASCAL _export close_file(char area)
+{  
+   int i,num_of_fields;
+     
+   num_of_fields = s[area]-&gt;num_of_fields;
+   if (fclose(s[area]-&gt;fp)) 
+   {
+      return(0);
+   }              
+   else
+   {
+   	  s[area]-&gt;fp = NULL;    
+      s[area]-&gt;a = 0;
+   	  s[area]-&gt;crn = 0;
+      s[area]-&gt;num_of_fields = 0;	  
+      s[area]-&gt;fok = FALSE;	  
+      free((void *)s[area]-&gt;hr);
+      for (i=1;i&lt;=num_of_fields;i++)             
+      {
+   	      free((void *)s[area]-&gt;fd[i]);
+      	  free((void *)s[area]-&gt;fr[i]);
+      }      
+      free((void *)s[area]-&gt;rd);      
+   }
+   return(1);   
+}
+
+int FAR PASCAL _export read_header(char area)
+{   
+    double tmpdbl;         
+
+    rr = fread((char *)s[area]-&gt;hr,block_size,1,s[area]-&gt;fp);  
+    tmpdbl = (s[area]-&gt;hr-&gt;data_start - block_size)/block_size;
+    s[area]-&gt;num_of_fields = (short)(floor(tmpdbl));  
+	s[area]-&gt;rd = (char *)calloc(s[area]-&gt;hr-&gt;cpr,sizeof(char)); /* allocate data buffer */   
+	memchk((char *)s[area]-&gt;rd,&quot;read_header&quot;,&quot;s[area]-&gt;rd&quot;,
+	       (long)s[area]-&gt;hr-&gt;cpr*sizeof(char));
+
+	if (s[area]-&gt;hr-&gt;version == 0x08)
+	{
+		if (IBMPC==1)
+		{
+		   close_file(area);
+		   return(0);
+		}   
+	}
+    return rr;
+}
+
+void FAR PASCAL _export read_fields(char area)
+{                                  
+    int i,k,j; 
+    char header_terminator;      
+    
+    header_terminator = (char)0x0D;
+	  
+    /* now we know how many field_recs to build from read_header */
+            
+    for (i = 1;i &lt;= s[area]-&gt;num_of_fields; i++)
+    {                                            
+        s[area]-&gt;fr[i] = (field_rec *)calloc(1,sizeof(field_rec));  
+        memchk((char *)s[area]-&gt;fr[i],&quot;read_fields&quot;,&quot;s[area]-&gt;fr[i]&quot;,
+              (long)sizeof(field_rec));
+	    rr = fread((char *)s[area]-&gt;fr[i],block_size,1,s[area]-&gt;fp);       
+	    k = 1;
+    	while ((s[area]-&gt;fr[i]-&gt;field_name[k] != &#x27; &#x27;) &amp;&amp; (k &lt;= 11)) k++;
+  	    if (k &lt; 11) 
+           for (j = k; j &lt;= 11; j++)
+               s[area]-&gt;fr[i]-&gt;field_name[j] = &#x27; &#x27;;   
+        /* allocate space for field data */        
+        s[area]-&gt;fd[i] = (char *)calloc(s[area]-&gt;fr[i]-&gt;field_length+1,sizeof(char)); 
+        memchk((char *)s[area]-&gt;fd[i],&quot;read_fields&quot;,&quot;s[area]-&gt;fd[i]&quot;,
+              (long)(s[area]-&gt;fr[i]-&gt;field_length+1)*sizeof(char));
+	} 
+	 
+    rr = fread((char *)&amp;header_terminator,1,1,s[area]-&gt;fp);
+    s[area]-&gt;crn = 1;    
+     
+/* This little baby threw me off big time! 32 for the header, then 
+   after the header is 32 chars for each field, finally the header
+   terminator char comes, after the header and before the s[area]-&gt;rd. */     
+
+}                                     
+
+int FAR PASCAL _export strnicmps(char *str1,char *str2)
+{   
+    /* case insensitive str compare to the length of the smallest str */
+    return(strnicmp(str1,str2,(min(strlen(str1),strlen(str2)))));
+}
+
+void FAR PASCAL _export charproc(char *field, char length, long sub) 
+{                                           
+/* My main problem here was I was too used to pascal.
+   To dynamically build a char * one must allocate the length of the char *
+   plus 1 (for the null byte). Loop operations must start at 0 and continue
+   to length-1. For example, the char * &quot;Hello&quot; is 5 bytes long, 
+   bytes 0 to 4, the storage required by calloc will be 6 bytes.
+*/   
+    int i;
+
+    for (i=0;i&lt;length;i++)
+        field[i]=s[area]-&gt;rd[sub+i];
+    field[length] = &#x27;\0&#x27;;    
+        
+	return;  
+}
+
+int FAR PASCAL _export read_rec(char area)
+{
+    int j;
+	long offset;
+    int hbr; 
+    char fl;
+
+    if (s[area]-&gt;num_of_fields &lt; 60)  
+    {
+		scr_limit = s[area]-&gt;num_of_fields;
+	}       
+    else
+    {
+		scr_limit = 60;
+	}       
+
+/* Note: I was missing the final char on a record of dates, I will need to
+check to see if that was true for all records and if so adjust the chars per
+record in the header, it may be a difference in foxpro and dbase, in any case
+it requires further testing. */
+
+	 hbr = s[area]-&gt;hr-&gt;cpr;   
+	 rr = fread(s[area]-&gt;rd,sizeof(char),hbr,s[area]-&gt;fp);
+	 if (rr != hbr)
+	    return(0);          
+/* first byte of record is the delete flag */	    
+	 s[area]-&gt;del = s[area]-&gt;rd[1];   
+	 if (s[area]-&gt;del != is_deleted)
+	    s[area]-&gt;del = not_deleted;
+	 offset = 1;                
+			
+     for (j = 1;j &lt;= scr_limit; j++)
+     {
+    	 fl = s[area]-&gt;fr[j]-&gt;field_length; 
+	 
+	 switch (s[area]-&gt;fr[j]-&gt;field_type) 
+	 {  
+	   case &#x27;C&#x27;: case &#x27;c&#x27;: 
+	      charproc(s[area]-&gt;fd[j],fl,offset); 
+		  offset = offset + fl;  
+		  break;        
+/*     case &#x27;D&#x27;: case &#x27;d&#x27;: 
+		  field_s[area]-&gt;rd[j] = dateproc(fl,offset,j);
+		  offset = offset + fl;
+	      break;
+	   case &#x27;L&#x27;: case&#x27;l&#x27;:
+	      field_s[area]-&gt;rd[j] = logiproc(offset,j);
+	      offset = offset + 1;
+	      break;  
+	   case &#x27;M&#x27;: case &#x27;m&#x27;:
+	      field_s[area]-&gt;rd[j] = memoproc(offset,j);
+	      offset = offset + 10;
+	      break;                    
+	   case &#x27;N&#x27;: case &#x27;n&#x27;:
+	      field_s[area]-&gt;rd[j] = numbrproc(fl,offset,j);
+	      offset = offset + fl;
+*/     default:            
+	      charproc(s[area]-&gt;fd[j],fl,offset);	      
+		  offset = offset + fl;             
+		  break; 
+    }         
+    }             
+    return(1);    
+}
+     
+int FAR PASCAL _export add_rec(char area)
+{         
+     if (!s[area]-&gt;fok) return(0); 
+     
+     s[area]-&gt;del = not_deleted;   
+     
+/*   go to the end of the file */     
+     fseek(s[area]-&gt;fp,0,SEEK_END);   
+     
+/*   fill the record with spaces */          
+     memset((char *)s[area]-&gt;rd,&#x27; &#x27;,s[area]-&gt;hr-&gt;cpr);   
+     result = fwrite(&amp;s[area]-&gt;del,sizeof(char),1,s[area]-&gt;fp);
+     result = fwrite(s[area]-&gt;rd,sizeof(char),
+                    (s[area]-&gt;hr-&gt;cpr-sizeof(char)),s[area]-&gt;fp);
+     
+/*   return to the beginning of the file and adjust the header */  
+     fseek(s[area]-&gt;fp,0,SEEK_SET);        
+     s[area]-&gt;hr-&gt;num_of_recs++;
+     result = fwrite((char *)s[area]-&gt;hr,(sizeof(header_rec)),1,s[area]-&gt;fp);
+     
+     return(1);                       
+}  
+
+int FAR PASCAL _export del_rec(char area)
+{       
+     s[area]-&gt;del = is_deleted;
+     write_rec(area);   
+     return(1);
+} 
+    
+int FAR PASCAL _export write_rec(char area)
+{
+/* This function flushes all fd char *s back to the rd buffer and
+   writes them to disk. Therefore it is only necessary to modify the 
+   fd char *s to edit a record and then call write_rec to post them to
+   the database file.
+*/        
+   long i,j,k,offset;    
+   
+   i = 0; /* C buffer rd starts at 0 */
+   j = 1;
+   while (j &lt;= scr_limit) 
+   {
+	 k = 0; /* C char * s[area]-&gt;rd starts at 0 */
+	 while (k &lt; s[area]-&gt;fr[j]-&gt;field_length) /* no null byte in buff */
+	 {     
+	       if (k &lt; (int)strlen(s[area]-&gt;fd[j])) 
+	          s[area]-&gt;rd[i] = s[area]-&gt;fd[j][k];   
+	       else   
+	          s[area]-&gt;rd[i] = &#x27; &#x27;; /* pad with spaces */	          
+	       i++;
+	       k++;
+	 }; 
+	 j++;        
+   };    
+   offset = s[area]-&gt;hr-&gt;cpr;      
+   offset = s[area]-&gt;hr-&gt;data_start+((s[area]-&gt;crn-1)*offset);
+   
+   fseek(s[area]-&gt;fp,offset,SEEK_SET);
+   rr = fwrite((char *)&amp;s[area]-&gt;del,sizeof(char),1,s[area]-&gt;fp);
+   rr = fwrite((char *)s[area]-&gt;rd,sizeof(char),(s[area]-&gt;hr-&gt;cpr-sizeof(char)),s[area]-&gt;fp);  
+   fseek(s[area]-&gt;fp,offset,SEEK_SET); /* return to beginning of record */
+   return(1);
+}      
+      
+int FAR PASCAL _export goto_rec(long rec_num)
+{                          
+/* it is imperitive that goto_rec is not affected by indexing, a method
+   is always required to directly fetch a record */
+   long offset;
+   if (!s[area]-&gt;fok) return(0);
+
+   if ((rec_num &lt; 1) || (rec_num &gt; s[area]-&gt;hr-&gt;num_of_recs))
+   {  
+      return(0);                                  
+   }   
+      
+   offset = s[area]-&gt;hr-&gt;cpr;
+   offset = offset*(rec_num-1);
+   offset = offset+s[area]-&gt;hr-&gt;data_start;  
+   
+   if (fseek(s[area]-&gt;fp,offset,0)==0)
+   {
+   	   if (read_rec(area))
+   	      if (s[area]-&gt;del==is_deleted)
+             return(0);
+   	      else
+             s[area]-&gt;crn = rec_num;
+       else 
+       {
+          return(0);                                      
+       }  
+   }    
+   else
+   {
+   	   return(0);	     
+   }           
+   return(1);
+}
+
+      
+int FAR PASCAL _export copy_stru(dbfile outfile)
+{
+   int i;
+   char htb;
+   
+   if (!s[area]-&gt;fok) /* is file to be copied open */
+      return(0);  
+      
+   if ((s[0]-&gt;fp = fopen(outfile,&quot;wb+&quot;)) == NULL)
+   {
+      GRERROR = 1; 
+      return(0);
+   }
+   s[0]-&gt;hr = (header_rec *)calloc(1,sizeof(header_rec));
+   memmove(s[0]-&gt;hr,s[area]-&gt;hr,sizeof(header_rec));
+   s[0]-&gt;hr-&gt;num_of_recs = 0; 
+   fseek(s[area]-&gt;fp,0,SEEK_SET);
+   fwrite((char *)s[0]-&gt;hr,1,sizeof(header_rec),s[0]-&gt;fp);
+   for (i=1;i&lt;=s[area]-&gt;num_of_fields;i++)
+       fwrite((char *)s[area]-&gt;fr,1,sizeof(field_rec),s[0]-&gt;fp);  
+   htb = header_terminator_byte;       
+   fwrite((char *)&amp;htb,1,1,s[0]-&gt;fp);    
+   fclose(s[0]-&gt;fp); 
+   free(s[0]-&gt;hr);
+   s[0]-&gt;fp = NULL; 
+   return(1);
+}
+	   
+int FAR PASCAL _export create_dbf(dbfile outfile,field_array fields,int num_of_fields)
+{        
+    int i;
+    header_rec new_header;
+    char htb;     
+    
+    filemode = &quot;wb+&quot;;  
+    if ((s[0]-&gt;fp = fopen(outfile,filemode)) == NULL)
+    {
+      	GRERROR = 1 ;      
+		return(0) ;   
+    }              
+                       
+    memset((char *)&amp;new_header,&#x27;\0&#x27;,block_size);
+    new_header.version = 3;
+    htb = header_terminator_byte;           
+    /* replace last_updated with real date */
+    new_header.last_updated[0] = 93;
+    new_header.last_updated[1] = 9;
+    new_header.last_updated[2] = 15;                             
+    new_header.num_of_recs = 0;                  
+    new_header.cpr = 1;    /* plus delete flag */
+    new_header.data_start = 32+(32*num_of_fields)+1;   
+    /* write header */
+    rr = fwrite((char *)&amp;new_header,block_size,1,s[0]-&gt;fp);
+    /* write fields */
+    for (i=1;i&lt;=num_of_fields;i++)
+    {   
+        /* length,type,and name should be passed */
+        fields[i].field_data_address = new_header.cpr;
+        fields[i].decimal_places = 0;
+        fields[i].multiuser1 = 0;
+        fields[i].workid = 0;
+        fields[i].multiuser2 = 0;
+        fields[i].flag = 0;   
+        new_header.cpr = new_header.cpr + fields[i].field_length;  
+        rr = fwrite((char *)&amp;fields[i],block_size,1,s[0]-&gt;fp); 
+    }
+    rr = fwrite((char *)&amp;htb,1,1,s[0]-&gt;fp);
+    fseek(s[0]-&gt;fp,0,SEEK_SET); 
+    /* update header */
+    rr = fwrite((char *)&amp;new_header,block_size,1,s[0]-&gt;fp);    
+    if (fclose(s[0]-&gt;fp))
+       return(0); 
+    return(1);   
+}    
+
+int FAR PASCAL _export import(dbfile infile, dbfile outfile)
+{                                    
+    int rw ;   
+    char data_buff[10];       
+    char delete_flag; 
+	FILE *import_file,*new_dbf;   
+	
+	rw = 0;     
+	delete_flag = not_deleted;                    
+	filemode = &quot;r&quot;;                        
+	if ((import_file = fopen(infile,filemode)) == NULL) return(0);  
+    filemode = &quot;ab+&quot;;  
+    if ((new_dbf = fopen(outfile,filemode)) == NULL)
+    {
+      GRERROR = 1 ;
+      return(0) ;
+    } 
+	while (!feof(import_file))
+	{    
+		fread((char *)&amp;data_buff,10,1,import_file);
+		if (!feof(import_file))
+		{                                      
+		    fwrite((char *)&amp;delete_flag,1,1,new_dbf);
+			fwrite((char *)&amp;data_buff,10,1,new_dbf);
+			rw++;                              
+		}       
+    }                   
+	fclose(import_file);
+	fclose(new_dbf); 
+	return(1);
+} 
+   
+/* Even though swab is a UNIX function, the Amiga needs one written */   
+#ifdef AMIGADOS
+void _swab(char *int1, char *int2, int num_bytes)
+{  
+   /* I learned a lesson here. When I passed the address of the int&#x27;s
+   into this function I was referencing them as &amp;int1,&amp;int2. They are
+   already an address so it really screwed things up. */
+            
+   char tmpshort[2];
+   char tmplong[4];
+   char tmp;
+   if (num_bytes == 2)
+   {                      
+      memcpy((char *)&amp;tmpshort,(char *)int1,2);
+      tmp = tmpshort[0];
+      tmpshort[0] = tmpshort[1];
+      tmpshort[1] = tmp;
+      memcpy((char *)int2,(char *)&amp;tmpshort,2);
+   }
+   if (num_bytes == 4)
+   {  
+      memcpy((char *)&amp;tmplong,(char *)int1,4);
+      tmp = tmplong[0];
+      tmplong[0] = tmplong[1];
+      tmplong[1] = tmp;
+      tmp = tmplong[2];
+      tmplong[2] = tmplong[3] ;
+      tmplong[3] = tmp;         
+      memcpy((char *)int2,(char *)&amp;tmplong,4);
+   } 
+}              
+#endif
+
+void FAR PASCAL _export swabdbf(dbfile infile)
+{                    
+    int i;
+    long tmplong,srclong;
+    short tmpshort,srcshort;   
+    
+    open_file(infile,area);
+    read_header(area);
+    read_fields(area);
+
+    srclong = s[area]-&gt;hr-&gt;num_of_recs;
+    _swab((char *)&amp;srclong,(char *)&amp;tmplong,4);
+    s[area]-&gt;hr-&gt;num_of_recs = tmplong; 
+					 
+    srcshort = s[area]-&gt;hr-&gt;data_start;                                     
+    _swab((char *)&amp;srcshort,(char *)&amp;tmpshort,2);
+    s[area]-&gt;hr-&gt;data_start = tmpshort;  
+
+    srcshort = s[area]-&gt;hr-&gt;cpr;
+    _swab((char *)&amp;srcshort,(char *)&amp;tmpshort,2);
+    s[area]-&gt;hr-&gt;cpr = tmpshort;
+    
+    for (i = 1; i &lt;= s[area]-&gt;num_of_fields; i++) 
+    {                                                 
+       srclong = s[area]-&gt;fr[i]-&gt;field_data_address;
+       _swab((char *)&amp;srclong,(char *)&amp;tmplong,4);
+       s[area]-&gt;fr[i]-&gt;field_data_address = tmplong;
+	    
+       srcshort = s[area]-&gt;fr[i]-&gt;multiuser1;     
+       _swab((char *)&amp;srcshort,(char *)&amp;tmpshort,2);
+       s[area]-&gt;fr[i]-&gt;multiuser1 = tmpshort;
+       
+       srcshort = s[area]-&gt;fr[i]-&gt;multiuser2;
+       _swab((char *)&amp;srcshort,(char *)&amp;tmpshort,2);
+       s[area]-&gt;fr[i]-&gt;multiuser2 = tmpshort;
+    }  
+        
+    /* toggle versions */    
+    if (IBMPC==1)
+        s[area]-&gt;hr-&gt;version = 0x08;
+    else
+        s[area]-&gt;hr-&gt;version = 0x03; 
+         
+    rewind(s[area]-&gt;fp); 
+    fwrite((char *)s[area]-&gt;hr,block_size,1,s[area]-&gt;fp);   
+	
+    for (i = 1; i&lt;= s[area]-&gt;num_of_fields; i++)
+    {
+        fwrite((char *)s[area]-&gt;fr[i],block_size,1,s[area]-&gt;fp); 
+    }          
+		      
+    close_file(area); 
+}
+
+/*
+char * FAR PASCAL _export dateproc(length,sub,sub2:int) 
+{
+	 int i,j;
+	 yr : char *[4];
+	 mn : char *[2];
+     dy : char *[2];
+	 tmpstr : char *[10];
+
+{
+	 j := length;
+	 for i := 1 to length do
+	 {
+	    tmpstr[i] := s[area]-&gt;rd[sub+i];
+	 };
+     tmpstr[0] := chr(8);
+
+     To preconvert replace above with below.
+	 {
+		if i &lt; 5 then yr[i]   := s[area]-&gt;rd[sub+i];
+    	if i = 5 then mn[i-4] := s[area]-&gt;rd[sub+i];
+	    if i = 6 then mn[i-4] := s[area]-&gt;rd[sub+i];
+		if i &gt; 6 then dy[i-6] := s[area]-&gt;rd[sub+i];
+	 };
+	 tmpstr[0] := chr(10);
+	 yr[0] := chr(4);
+	 mn[0] := chr(2);
+	 dy[0] := chr(2);
+	 tmpstr := (mn+&#x27;/&#x27;+dy+&#x27;/&#x27;+yr);}
+
+	 dateproc := tmpstr;
+}
+
+function LogiProc(sub,sub2:int) : char;
+{
+    case s[area]-&gt;rd[sub+1] of
+    &#x27;t&#x27;,&#x27;y&#x27;,&#x27;T&#x27;,&#x27;Y&#x27; : logiproc := &#x27;T&#x27;;
+    &#x27;f&#x27;,&#x27;n&#x27;,&#x27;F&#x27;,&#x27;N&#x27; : logiproc := &#x27;F&#x27;;
+    &#x27;?&#x27; :             logiproc := &#x27;?&#x27;;
+	 };
+}; 
+
+function MemoProc(sub,sub2:int) : char *;
+{
+    memoproc := &#x27;MEMO&#x27;;
+};
+
+
+function NumbrProc(length,sub,sub2:int) : char *;
+Var
+    i : int;
+    num : real;
+    field_str : char *;
+
+{
+    num := 0;
+    for i := 1 to length do
+    {
+	field_str[0] := chr(length);
+	field_str[i] := s[area]-&gt;rd[sub + i];
+    }; {for}
+    if s[area]-&gt;fr[sub2].decimal_places &gt; 0 then
+    {
+	following converts to real
+{      num := strreal(length,field_str,s[area]-&gt;fr[sub2].decimal_places);
+       writeln(s[area]-&gt;fr[sub2].field_name,&#x27; &#x27;,num:10:2); }
+       numbrproc := field_str;
+    }
+    else
+{      writeln(s[area]-&gt;fr[sub2].field_name,&#x27; &#x27;,field_str);    }
+       numbrproc := field_str;
+};   
+
+*/
+		     
+</pre>
+</body>
+</html>

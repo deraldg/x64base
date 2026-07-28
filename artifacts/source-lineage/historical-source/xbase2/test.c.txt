@@ -1,0 +1,137 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h> 
+#include <time.h>
+#include "xbindex.h"
+#include "xbase.h"
+#include "xbcmds.h" 
+#include "dottalk.h"
+           
+#define max_records 10;
+
+extern select_rec *s[max_area];
+extern short area; 
+extern long int memory;
+
+
+
+void make_testdbf(char *filename);
+void addrecords(char fdata[]);
+int  num_of_fields;
+
+
+                   
+void main()                   
+{   
+    char i,j; /* areas and orders are limited to type char */
+    char command_line[max_params*param_size];           
+    int max_indexs;      
+
+    char filename[] = "test00      "; /* 13 chars */ 
+    char fdata[] = "field_data99";
+        
+    /*printf("beginning memory = %d\n",memory);*/
+    initcmds();   
+	initbase();  
+	
+    num_of_fields = 5;
+    max_indexs = max_index;
+    
+	for (i=1;i<4;i++)  
+	{                      
+	    if (i > 9) 
+	       filename[4] = '1';
+	    if (i > 19)
+	       filename[4] = '2';
+	    if ((i == 10) || (i==20))
+	       filename[5] = '0';
+	    else   
+	       filename[5]++; 	    
+	    select(i);   	
+	    make_testdbf(dbname(filename));
+	    use(dbname(filename)," ",0);    
+        addrecords(fdata);   
+        for (j=1;j<3;j++)
+        {  
+           order(i,j); 
+	       filename[6] = j+64;           
+	       build_index(dxname(filename),j,SA->hr->num_of_recs);
+	       open_index(dxname(filename),1); 
+	    }                     
+	    filename[6] = ' ';
+	    printf("current memory used = %d\n",memory);
+	}
+	printf("ending memory = %d\n",memory);    
+
+
+}	
+
+void make_testdbf(char *filename)
+{
+    int i;                             
+    field_array fields;
+    char fname[] = "field1     ";
+        
+	for (i=1;i<=num_of_fields;i++)
+	{
+		memmove(fields[i].field_name,fname,fld_nam_len);
+		fname[5]++;
+		fields[i].field_length = 20;
+		fields[i].field_type = 'C';
+ 	}
+ 	create_dbf(filename,fields,num_of_fields);
+} 			
+
+void addrecords(char *ndata)   
+{
+    int j,k; 
+    int no_recs;           
+    char fdata[12];
+    long random;
+    
+    memmove(&fdata,ndata,sizeof(fdata));
+    no_recs = max_records;
+    for (j=1;j<no_recs;j++)
+    {
+        add_rec(area);  /* add a blank record */   
+        srand((unsigned)time(NULL));        
+        /* change the fields in the blank record */
+        for (k=1;k<=num_of_fields;k++)
+        {
+        	memmove(SA->fd[k],fdata,sizeof(fdata));
+        	SA->fd[k][11]--;
+        	SA->fd[k][12] = k+64;  
+        	random = rand();
+            random = random % (random-10);
+        	SA->fd[k][13] = 64+(char)random;
+        }
+        write_rec(area); /* write the changes */  
+        fdata[10]--;
+    } 
+}    
+
+/*	                              
+	use("child.dbf"," ",0);   
+	build_index("clname.idx",2);
+	open_index("clname.idx",1);  
+	
+	display();
+	
+	select(2);
+	use("parent.dbf"," ",0);
+	build_index("plname.idx",2);
+	open_index("plname.idx",1); 
+    order(2,2);
+	build_index("pphone.idx",4);
+	open_index("pphone.idx",1);
+	order(2,1);
+	
+	display();
+	
+	select(3);                      
+	use("work.dbf"," ",0);
+	build_index("wphone.idx",1);	
+    open_index("wphone.idx",1);
+	
+	display();
+*/	

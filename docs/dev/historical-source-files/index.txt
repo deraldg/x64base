@@ -1,0 +1,223 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+a:I[68027,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/3krymh1b13kig.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","docs","dev","historical-source-files",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","dev/historical-source-files","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/3krymh1b13kig.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2m-vw90eiwlx2.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":["This site is ",["$","span",null,{"className":"text-fg","children":"AI-generated"}]," from the x64base project"," · ",["$","span",null,{"className":"font-mono text-brand","children":"ALPHA"}]," · ","Updated 2026-07-19"]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=5703c5ad64ba","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication?v=5703c5ad64ba","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors?v=5703c5ad64ba","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements?v=5703c5ad64ba","children":"Third-party credits"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=5703c5ad64ba","children":"Downloads"}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs?v=5703c5ad64ba","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products?v=5703c5ad64ba","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads?v=5703c5ad64ba","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news?v=5703c5ad64ba","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact?v=5703c5ad64ba","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":"© 1993–2026 Derald R Grimwood Jr. All rights reserved."}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]]}]}]]}]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":"$L5","templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["$L6",{"children":["$L7",{},null,false,null]},null,false,"$@8"]},null,false,"$@8"]},null,false,null],"$L9",false]],"m":"$undefined","G":["$a",["$Lb"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"fdLdY6VBHbVo3O9rdzrNx"}
+d:I[97367,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+e:"$Sreact.suspense"
+11:I[97367,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+13:I[97367,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","$L4",null,{}]
+6:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+7:["$","$1","c",{"children":["$Lc",[["$","script","script-0",{"src":"/_next/static/chunks/3zguxvz6lw9iq.js","async":true,"nonce":"$undefined"}]],["$","$Ld",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@f"}]}]]}]
+10:[]
+8:"$W10"
+9:["$","$1","h",{"children":[null,["$","$L11",null,{"children":"$L12"}],["$","div",null,{"hidden":true,"children":["$","$L13",null,{"children":["$","$e",null,{"name":"Next.Metadata","children":"$L14"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+b:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/3krymh1b13kig.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+15:I[87771,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
+c:["$","div",null,{"className":"flex gap-8","children":[["$","$L15",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"RAM DBF and VDISK","href":"/docs/engine/ram-dbf-vdisk"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Regression & Proof Testing","href":"/docs/engine/regression-and-proof-testing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"Messaging & Localization","href":"/docs/engine/messaging-and-localization"},{"label":"Identity, Authentication & RBAC","href":"/docs/engine/identity-security"},{"label":"API Reference","href":"/docs/engine/api-reference"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"AI Agent Sync — Live State","href":"/docs/labtalk/agent-sync"},{"label":"Current Tasks & Projects","href":"/docs/labtalk/current-work"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Roadmap","href":"/docs/dev/roadmap"},{"label":"Developer Manual (Assembled)","href":"/docs/dev/developer-manual"},{"label":"How the Manual Assembles Itself","href":"/docs/dev/manual-assembly"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Full-stack Documentation Push","href":"/docs/dev/full-stack-documentation-push"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Historical Family Tree","href":"/docs/dev/historical-family-tree"},{"label":"Historical Source Files","href":"/docs/dev/historical-source-files"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L16"]}]
+17:T1ab5,<blockquote>
+<p><strong>Read-only historical evidence.</strong> These files are byte-preserved projections
+from the original archive. They are not compiled as the current product and
+must not be edited in place.</p>
+</blockquote>
+<h2 id="source-museum-contract"><a class="no-underline" href="#source-museum-contract">Source museum contract</a></h2>
+<p>This page makes the preserved source inspectable without exposing private local
+paths. Each file link opens an escaped, read-only HTML view generated from the
+archived bytes and provides a link to the byte-preserved text. The file hash,
+archive member name, original archive timestamp, viewer URL, and raw URL are
+retained in the companion manifests.</p>
+<ul>
+<li>Archive SHA-256:
+<code>F4ABE4EBA8C71DE36880C4AB95E1BDB9B0D693D62B8FF7FB48E36910EBC3BD4A</code></li>
+<li>Canonical files: <strong>21</strong></li>
+<li><a href="/artifacts/source-lineage/historical-source-files-v1.json">Download the JSON manifest</a></li>
+<li><a href="/artifacts/source-lineage/historical-source-files-v1.csv">Download the CSV manifest</a></li>
+<li><a href="/docs/dev/historical-family-tree">Open the historical family tree</a></li>
+</ul>
+<h2 id="xbase-core"><a class="no-underline" href="#xbase-core">xBase core</a></h2>
+<p>Archive era: <strong>1993</strong> · 6 canonical files.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>File</th><th>Archive date</th><th align="right">Bytes</th><th>SHA-256 prefix</th></tr></thead><tbody><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbase.c.html">XBASE.C</a></td><td>1993-10-26</td><td align="right">20,466</td><td><code>BDA550134F7EA868</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbase.h.html">XBASE.H</a></td><td>1993-10-26</td><td align="right">3,707</td><td><code>4CB91A7958E1235C</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbcmds.c.html">XBCMDS.C</a></td><td>1993-10-26</td><td align="right">19,456</td><td><code>081A2DCCBDBA96E7</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbcmds.h.html">XBCMDS.H</a></td><td>1993-10-25</td><td align="right">1,346</td><td><code>6432767F08214408</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbindex.c.html">XBINDEX.C</a></td><td>1993-10-26</td><td align="right">16,016</td><td><code>E58932CA7F6514B0</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase/xbindex.h.html">XBINDEX.H</a></td><td>1993-10-26</td><td align="right">4,288</td><td><code>6C8556F5E4B3B0E6</code></td></tr></tbody></table>
+<h2 id="xdll--xbase-dll-oriented-branch"><a class="no-underline" href="#xdll--xbase-dll-oriented-branch">XDLL / xBase DLL-oriented branch</a></h2>
+<p>Archive era: <strong>1993-1996</strong> · 6 canonical files.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>File</th><th>Archive date</th><th align="right">Bytes</th><th>SHA-256 prefix</th></tr></thead><tbody><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbase.c.html">XBASE.C</a></td><td>1993-11-04</td><td align="right">21,052</td><td><code>6B60C66C93577982</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbase.h.html">XBASE.H</a></td><td>1996-07-25</td><td align="right">4,312</td><td><code>476D6D7742ED16FF</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbcmds.c.html">XBCMDS.C</a></td><td>1993-11-04</td><td align="right">20,347</td><td><code>ED003B255DE994B4</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbcmds.h.html">XBCMDS.H</a></td><td>1996-07-25</td><td align="right">1,994</td><td><code>BDC7AEC487FCEC0D</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbindex.c.html">XBINDEX.C</a></td><td>1993-10-26</td><td align="right">16,016</td><td><code>E58932CA7F6514B0</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xdll/xbindex.h.html">XBINDEX.H</a></td><td>1996-07-25</td><td align="right">4,326</td><td><code>CFB9DF17575634E7</code></td></tr></tbody></table>
+<h2 id="xbase2--dottalk-1995"><a class="no-underline" href="#xbase2--dottalk-1995">xBase2 / DotTalk 1995</a></h2>
+<p>Archive era: <strong>1995</strong> · 9 canonical files.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>File</th><th>Archive date</th><th align="right">Bytes</th><th>SHA-256 prefix</th></tr></thead><tbody><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/dottalk.c.html">DOTTALK.C</a></td><td>1995-08-14</td><td align="right">12,348</td><td><code>9DD694B8772A0DA8</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/dottalk.h.html">DOTTALK.H</a></td><td>1995-07-21</td><td align="right">310</td><td><code>8E7CCCD124B56A6E</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/test.c.html">TEST.C</a></td><td>1995-08-16</td><td align="right">3,231</td><td><code>7D2E071107C93F05</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbase.c.html">XBASE.C</a></td><td>1995-08-14</td><td align="right">21,916</td><td><code>3ED072803564560A</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbase.h.html">XBASE.H</a></td><td>1995-08-14</td><td align="right">4,991</td><td><code>C63126FE1B49E347</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbcmds.c.html">XBCMDS.C</a></td><td>1995-08-14</td><td align="right">21,107</td><td><code>A588A77F9178CD80</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbcmds.h.html">XBCMDS.H</a></td><td>1995-08-14</td><td align="right">2,285</td><td><code>07A46AEDF3E0595D</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbindex.c.html">XBINDEX.C</a></td><td>1995-08-16</td><td align="right">18,264</td><td><code>E7280EEB47A3E856</code></td></tr><tr><td><a href="/artifacts/source-lineage/historical-source/xbase2/xbindex.h.html">XBINDEX.H</a></td><td>1995-08-14</td><td align="right">4,371</td><td><code>7A36458CD60FD00C</code></td></tr></tbody></table>
+<h2 id="interpretation-boundary"><a class="no-underline" href="#interpretation-boundary">Interpretation boundary</a></h2>
+<ul>
+<li><code>xbase/</code>, <code>xdll/</code>, and <code>xbase2/</code> are verified siblings in the archive.</li>
+<li><code>DOTTALK.C</code> is physically contained in the xBase2 branch.</li>
+<li>XDLL is DLL-export-oriented source; no historical <code>xbase.dll</code> binary was
+found in the reviewed archive.</li>
+<li>Modern x64base and DotTalk++ claims come from current source and runtime
+proof, not from these archived files.</li>
+</ul>16:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=5703c5ad64ba","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs?v=5703c5ad64ba","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/dev/historical-source-files",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/dev/historical-source-files?v=5703c5ad64ba","children":"Historical xBase Source Files"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Historical xBase Source Files"}],["$","p",null,{"className":"mt-2 text-muted","children":"Read-only browser for the canonical xBase, XDLL, xBase2, and DotTalk source files preserved in the original archive."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$17"},"children":null}]}],"$L18"]}]
+18:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/historical-family-tree?v=5703c5ad64ba","children":["← ","Historical Family Tree"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/application-ui-dsl-lane?v=5703c5ad64ba","children":["Application UI DSL Lane"," →"]}]}]]}]
+12:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+19:I[27201,["/_next/static/chunks/2m-vw90eiwlx2.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+f:null
+14:[["$","title","0",{"children":"Historical xBase Source Files — x64base"}],["$","meta","1",{"name":"description","content":"Read-only browser for the canonical xBase, XDLL, xBase2, and DotTalk source files preserved in the original archive."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/dev/historical-source-files/"}],["$","meta","3",{"property":"og:title","content":"Historical xBase Source Files"}],["$","meta","4",{"property":"og:description","content":"Read-only browser for the canonical xBase, XDLL, xBase2, and DotTalk source files preserved in the original archive."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/dev/historical-source-files/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Historical xBase Source Files"}],["$","meta","12",{"name":"twitter:description","content":"Read-only browser for the canonical xBase, XDLL, xBase2, and DotTalk source files preserved in the original archive."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L19","17",{}]]

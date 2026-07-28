@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>xBase2 / DotTalk 1995 — TEST.C — x64base historical source</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }
+    header { position: sticky; top: 0; padding: 1rem 1.25rem; background: #0f1d2e; border-bottom: 1px solid #29415f; }
+    h1 { margin: 0 0 .35rem; color: #70d8e6; font-size: 1.2rem; }
+    p { margin: .25rem 0; color: #a9c1df; }
+    a { color: #70d8e6; }
+    pre { margin: 0; padding: 1.25rem; overflow: auto; tab-size: 4; font: 14px/1.45 Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>xBase2 / DotTalk 1995 — TEST.C</h1>
+    <p>Read-only archive view · 1995-08-16 · 3,231 bytes · SHA-256 7D2E071107C93F0555684518A672D2A3CF970795A8DE9E482925F7F02B873384</p>
+    <p><a href="/docs/dev/historical-source-files">Back to source browser</a> ·
+       <a href="/artifacts/source-lineage/historical-source/xbase2/test.c.txt">Open byte-preserved text</a></p>
+  </header>
+  <pre>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt; 
+#include &lt;time.h&gt;
+#include &quot;xbindex.h&quot;
+#include &quot;xbase.h&quot;
+#include &quot;xbcmds.h&quot; 
+#include &quot;dottalk.h&quot;
+           
+#define max_records 10;
+
+extern select_rec *s[max_area];
+extern short area; 
+extern long int memory;
+
+
+
+void make_testdbf(char *filename);
+void addrecords(char fdata[]);
+int  num_of_fields;
+
+
+                   
+void main()                   
+{   
+    char i,j; /* areas and orders are limited to type char */
+    char command_line[max_params*param_size];           
+    int max_indexs;      
+
+    char filename[] = &quot;test00      &quot;; /* 13 chars */ 
+    char fdata[] = &quot;field_data99&quot;;
+        
+    /*printf(&quot;beginning memory = %d\n&quot;,memory);*/
+    initcmds();   
+	initbase();  
+	
+    num_of_fields = 5;
+    max_indexs = max_index;
+    
+	for (i=1;i&lt;4;i++)  
+	{                      
+	    if (i &gt; 9) 
+	       filename[4] = &#x27;1&#x27;;
+	    if (i &gt; 19)
+	       filename[4] = &#x27;2&#x27;;
+	    if ((i == 10) || (i==20))
+	       filename[5] = &#x27;0&#x27;;
+	    else   
+	       filename[5]++; 	    
+	    select(i);   	
+	    make_testdbf(dbname(filename));
+	    use(dbname(filename),&quot; &quot;,0);    
+        addrecords(fdata);   
+        for (j=1;j&lt;3;j++)
+        {  
+           order(i,j); 
+	       filename[6] = j+64;           
+	       build_index(dxname(filename),j,SA-&gt;hr-&gt;num_of_recs);
+	       open_index(dxname(filename),1); 
+	    }                     
+	    filename[6] = &#x27; &#x27;;
+	    printf(&quot;current memory used = %d\n&quot;,memory);
+	}
+	printf(&quot;ending memory = %d\n&quot;,memory);    
+
+
+}	
+
+void make_testdbf(char *filename)
+{
+    int i;                             
+    field_array fields;
+    char fname[] = &quot;field1     &quot;;
+        
+	for (i=1;i&lt;=num_of_fields;i++)
+	{
+		memmove(fields[i].field_name,fname,fld_nam_len);
+		fname[5]++;
+		fields[i].field_length = 20;
+		fields[i].field_type = &#x27;C&#x27;;
+ 	}
+ 	create_dbf(filename,fields,num_of_fields);
+} 			
+
+void addrecords(char *ndata)   
+{
+    int j,k; 
+    int no_recs;           
+    char fdata[12];
+    long random;
+    
+    memmove(&amp;fdata,ndata,sizeof(fdata));
+    no_recs = max_records;
+    for (j=1;j&lt;no_recs;j++)
+    {
+        add_rec(area);  /* add a blank record */   
+        srand((unsigned)time(NULL));        
+        /* change the fields in the blank record */
+        for (k=1;k&lt;=num_of_fields;k++)
+        {
+        	memmove(SA-&gt;fd[k],fdata,sizeof(fdata));
+        	SA-&gt;fd[k][11]--;
+        	SA-&gt;fd[k][12] = k+64;  
+        	random = rand();
+            random = random % (random-10);
+        	SA-&gt;fd[k][13] = 64+(char)random;
+        }
+        write_rec(area); /* write the changes */  
+        fdata[10]--;
+    } 
+}    
+
+/*	                              
+	use(&quot;child.dbf&quot;,&quot; &quot;,0);   
+	build_index(&quot;clname.idx&quot;,2);
+	open_index(&quot;clname.idx&quot;,1);  
+	
+	display();
+	
+	select(2);
+	use(&quot;parent.dbf&quot;,&quot; &quot;,0);
+	build_index(&quot;plname.idx&quot;,2);
+	open_index(&quot;plname.idx&quot;,1); 
+    order(2,2);
+	build_index(&quot;pphone.idx&quot;,4);
+	open_index(&quot;pphone.idx&quot;,1);
+	order(2,1);
+	
+	display();
+	
+	select(3);                      
+	use(&quot;work.dbf&quot;,&quot; &quot;,0);
+	build_index(&quot;wphone.idx&quot;,1);	
+    open_index(&quot;wphone.idx&quot;,1);
+	
+	display();
+*/	</pre>
+</body>
+</html>

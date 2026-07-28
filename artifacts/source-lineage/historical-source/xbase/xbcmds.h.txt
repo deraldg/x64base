@@ -1,0 +1,55 @@
+/* macro defs for 'select area' and 'select area index' */ 
+#define SA s[area] 
+#define SI SA->i[SA->ord] 
+
+typedef struct child
+{
+	char a;
+	char i;
+}   child;
+typedef struct parent
+{   
+	char a;
+	char i;
+}   parent;		
+typedef struct rel
+{
+	child  c;
+	parent p;   
+}   rel;	
+
+void   select(char newarea);
+void   order(char area, char neworder);
+void   use(string pstr1, string pstr2, char indexed);
+void   close_area(char area);  
+void   build_index(string xfile, int order); 
+int    update_index();
+int    open_index(char *fn,int dupok);
+int    close_index(IX_DESC *pix);
+void   reindex(char *idxname);  
+int    skip(int skipped);
+int    top();
+int    bottom();
+char   delete_rec(char area); 
+int    append_blank(char area);        
+int    save_rec(char area);
+int    edit_field(char *fld_str,char *newstr);
+int    find(char *key);       
+void   locate(string field, string fld_data);
+int    match(string fld_str);
+int    strnicmps(char *str1,char *str2) ;
+void   ascendtree();
+void   descendtree();
+void   relation(char a,char o); 
+void   setrelationships(char a,char o); 
+void   initcmds();        
+void   relate(int c_area,int c_order,int p_area,int p_order);
+void   copyfile(char *cp[]);    
+
+/* following functions use printf */ 
+void   sayfield(int field_idx); 
+void   display();
+
+
+
+

@@ -1,0 +1,148 @@
+#define EOIX            (-2)
+#define IX_FAIL         (-1)
+#define IX_OK           0
+#define FREE_LEVEL      (-1)
+#define LEFTN           (-1)
+#define RIGHTN          1
+#define BIN_MODE        0
+#define ASC_MODE        1
+
+#define NULLREC         (-1L)
+
+#define MAXKEY          100
+#define IXB_SIZE        1024
+#define IXB_SPACE       IXB_SIZE - sizeof(int)*2 - sizeof(long)
+#define MAX_LEVELS      4
+
+typedef long RECPOS ;
+
+typedef struct 
+{
+	RECPOS rptr ;
+	unsigned char key[MAXKEY];
+    /* DATA TYPE */     
+} ENTRY;        
+
+typedef struct 
+{
+	RECPOS  brec ;
+	int     bend;
+	int     lvl;
+	unsigned char entries[IXB_SPACE];
+} BLOCK;
+
+typedef struct 
+{
+	int nl;    
+	int order;        /* relative field file was indexed on */	
+	RECPOS rb;
+	RECPOS ff;              
+	ENTRY  dume;
+} IX_DISK;      
+
+typedef struct
+{
+	FILE *ixfile ;
+	struct 
+	{
+		RECPOS cblock;
+		int coffset;
+	} pos[MAX_LEVELS];
+	int (*pcomp) () ;
+	int (*psize) () ;
+	BLOCK cache[MAX_LEVELS];
+	IX_DISK dx;
+} IX_DESC;   
+      
+
+/* macros */
+
+#define CURR 1
+#define NOT_CURR 0
+
+#define CALL(pfun)      (* (pfun))
+#define call(pfun)      (* (pfun))
+
+#define ENT_ADR(pb,off) ((ENTRY *) ((char *) (& (pb)->entries)+off))
+
+#define ENT_SIZE(pe) (*(pci->psize)) (pe)
+
+#define CB(l)   (pci->pos[l].cblock)
+#define CO(l)   (pci->pos[l].coffset)
+
+/* prototypes */          
+int    make_index(char *fn,int dupok,int file_no);
+int    first_key(ENTRY *pe,IX_DESC *pix);
+int    last_key(ENTRY *pe,IX_DESC *pix);
+int    next_key(ENTRY *pe,IX_DESC *pix);    
+int    prev_key(ENTRY *pe,IX_DESC *pix);
+int    find_key(ENTRY *pe,IX_DESC *pix);
+int    add_key(ENTRY *pe,IX_DESC *pix);
+int    locate_key(ENTRY *pe,IX_DESC *pix);
+int    delete_key(ENTRY *pe,IX_DESC *pix);
+
+BLOCK  *neighbor(int l,int direction);
+int    copy_current(int l,ENTRY *pe);
+int    prev_entry(BLOCK *pb,int off);
+int    next_entry(BLOCK *pb,int off);
+void   copy_entry(ENTRY *to,ENTRY *from);
+int    scan_blk(BLOCK *pb,int n);
+int    last_entry(BLOCK *pb);
+FILE  *creat_if(char fn[]);
+int    read_if(RECPOS start,char buf[],int nrd);
+int    write_if(RECPOS start,char buf[],int nwrt);
+int    close_if();
+FILE  *open_if(char fn[]);
+void   make_free(RECPOS fstart,RECPOS filesize);
+RECPOS get_free();
+void   write_free(RECPOS r,BLOCK *pb);
+void   init_bio();
+int    retrieve_block(int l,RECPOS r,BLOCK *pb,int current);
+void   update_block(BLOCK *pb);
+int    get_block(int l,BLOCK *pb);
+void   put_free(BLOCK *pb);
+int    read_block(RECPOS r,BLOCK *pb);
+int    write_block(RECPOS r,BLOCK *pb);
+void   init_cache();
+int    chk_cache(int l, RECPOS r);
+int    get_cache(int l,RECPOS r,BLOCK *to);
+void   put_cache(int l, BLOCK *pb);
+void   scrub_cache(RECPOS r);
+int    openix(char name[],IX_DESC *pix,int (*cfun) (),int (*sfun) ());
+void   closeix(IX_DESC *pix);
+int    creatix(char name[],long filesize,ENTRY *pdum,int ndum,int field_no);
+RECPOS wrt_dum(ENTRY *pdum, int ndum);
+void   removeix(char name[]);
+int    go_first(IX_DESC *pix);
+void   first_ix(int l,RECPOS r,BLOCK *pb);
+int    go_last(IX_DESC *pix);
+void   final_ix(int l, RECPOS r, BLOCK *pb);
+int    get_next(ENTRY *pe,IX_DESC *pix);
+RECPOS next_ix(int l,BLOCK *pb);
+int    get_previous(ENTRY *pe,IX_DESC *pix);
+RECPOS last_ix(int l,BLOCK *pb);
+void   get_current(ENTRY *pe,IX_DESC *pix);
+int    find_block(ENTRY *pe,BLOCK *pb,int *poff,int (*comp_fun) ());
+void   ins_block(BLOCK *pb,ENTRY *pe,int off);
+void   del_block(BLOCK *pb,int off);
+void   moveup(BLOCK *pb,int off,int n);
+void   movedown(BLOCK *pb,int off,int n);
+void   combine(BLOCK *pl,BLOCK *pr);
+int    find_ix(ENTRY *pe,IX_DESC *pix);
+int    find_level(int l,ENTRY *pe,RECPOS r);
+int    insert_ix(ENTRY *pe,IX_DESC *pix);
+int    ins_level(int l,ENTRY *pe,BLOCK *pb);
+int    split(int l,ENTRY *pe,BLOCK *pb);
+int    delete_ix(IX_DESC *pix);
+int    del_level(int l,BLOCK *pb);
+int    compress(int l,BLOCK *pb);
+int    fix_last(int l,RECPOS r, ENTRY *pe);
+int    replace_entry(int l,ENTRY *pe);
+int    find_exact(ENTRY *pe,IX_DESC *pix);
+int    find_ins(ENTRY *pe, IX_DESC *pix);
+int    find_del(ENTRY *pe,IX_DESC *pix);
+
+#if !MSDOS
+void   memmove(char *to,char *from,unsigned int count);
+#endif
+

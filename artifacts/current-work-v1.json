@@ -1,0 +1,453 @@
+{
+  "schema": "x64base.current_work.v1",
+  "as_of_date": "2026-07-28",
+  "maintenance_class": "maintained_current",
+  "publication_state": "local-preview-not-deployed",
+  "authority": {
+    "system_of_record": "AI Portal intake queue plus named lane and proof records",
+    "pseudo_chat_role": "asynchronous return and correction channel; not a system of record",
+    "publication_rule": "website reports reviewed state; it does not promote source, releases, or deployments"
+  },
+  "current_documentation_flush": {
+    "run_id": "DOCFLUSH-20260722-001",
+    "ticket": "AIF-048",
+    "state": "gate6_scope_pending",
+    "publication_state": "local-preview-not-deployed",
+    "maintenance_class": "maintained_current",
+    "source_contracts": 243,
+    "help_topics": 575,
+    "help_lines": 29197,
+    "command_reference_pages": 191,
+    "command_lineage_rows": 4604,
+    "manual_parts": 26,
+    "manual_lines": 14542,
+    "manual_pdf_pages": 298,
+    "website_static_pages": 132,
+    "next_gate": "Prepare and review an exact selective source-promotion scope; then regenerate the website against the resulting source commit.",
+    "manualgen_command_reference_lane": {
+      "label": "Manualgen command-reference lane -- a distinct pipeline stage from the assembled-manual headline above; do not compare the two counts directly.",
+      "run_id": "DOCFLUSH-20260722-001",
+      "as_of": "2026-07-28",
+      "harvest": "HELPMETA-20260728T003402Z",
+      "help_topics": 709,
+      "help_lines": 28196,
+      "command_reference_pages": 164,
+      "command_lineage_rows": 10502,
+      "syscmd": 212,
+      "sysfunc": 74,
+      "functions_accepted": 5,
+      "functions": "STUFF, PADL, PADR, PADC, PROPER",
+      "gate4": "applied",
+      "gate4_apply_run": "MANRUN-20260728T041930Z-5DE4733C",
+      "publication_readiness": "PASS_PUBLICATION_READY",
+      "publication_state": "accepted-in-dev-manual-not-ascended",
+      "note": "The five FoxPro string functions were accepted into the dev-tree command reference via an authorized, reversible gate-4 apply. Not yet ascended to the public site; the assembled-manual headline above remains the current published website measurement."
+    }
+  },
+  "summary": {
+    "projects": 16,
+    "tasks": 13,
+    "task_statuses": {
+      "active": 2,
+      "active_prototype": 1,
+      "active_seed": 2,
+      "backlog": 1,
+      "closed_runtime_observed": 1,
+      "gate6_scope_pending": 1,
+      "proposed": 2,
+      "returned_for_correction": 1,
+      "review_needed": 1,
+      "staged": 1
+    },
+    "pseudo_chat_inbox": 1
+  },
+  "projects": [
+    {
+      "id": "project.x64base.runtime",
+      "name": "x64base / DotTalk++ Runtime",
+      "kind": "runtime_project",
+      "status": "active_beta"
+    },
+    {
+      "id": "project.x64base.public_staging",
+      "name": "x64base Curated Public Staging",
+      "kind": "publication_staging_project",
+      "status": "active_curated_staging"
+    },
+    {
+      "id": "project.labtalk.campus",
+      "name": "LabTalk Campus",
+      "kind": "campus_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.labtalk.lms",
+      "name": "LabTalk LMS Communications Lane",
+      "kind": "integration_project",
+      "status": "reserved_local_only"
+    },
+    {
+      "id": "project.labtalk.staging",
+      "name": "LabTalk Above-Runtime Staging",
+      "kind": "staging_project",
+      "status": "seed"
+    },
+    {
+      "id": "project.x64base.website",
+      "name": "x64base.com Website Publication",
+      "kind": "publication_project",
+      "status": "downstream_publication_truth"
+    },
+    {
+      "id": "project.ai_friendly",
+      "name": "AI Friendly Lane",
+      "kind": "knowledge_project",
+      "status": "seed"
+    },
+    {
+      "id": "project.pycrud",
+      "name": "pycrud Companion",
+      "kind": "companion_app_project",
+      "status": "prototype"
+    },
+    {
+      "id": "project.db_converter",
+      "name": "DB_Converter",
+      "kind": "migration_project",
+      "status": "prototype"
+    },
+    {
+      "id": "project.dottalk_webui",
+      "name": "DotTalk Web UI Prototypes",
+      "kind": "web_ui_project",
+      "status": "local_prototype"
+    },
+    {
+      "id": "project.sqlite_gui",
+      "name": "SQLite GUI Prototype",
+      "kind": "gui_project",
+      "status": "local_prototype"
+    },
+    {
+      "id": "project.x64base.dotscript",
+      "name": "DotScript Language",
+      "kind": "language_project",
+      "status": "active_beta"
+    },
+    {
+      "id": "project.labtalk.pdlc",
+      "name": "PDLC - Programming Development Life Cycle (Student/Working Model)",
+      "kind": "methodology_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.labtalk.historical_database_migration",
+      "name": "Historical Database Migration Laboratory",
+      "kind": "pdlc_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.labtalk.sdlc",
+      "name": "SDLC - Software Development Life Cycle Working Model",
+      "kind": "methodology_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.x64base.identity",
+      "name": "Identity, RBAC & Authorization Management",
+      "kind": "governance_project",
+      "status": "active_development"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task.docs.fullstack.flush.20260722",
+      "title": "Full-stack documentation flush II",
+      "ticket": "AIF-048",
+      "kind": "documentation_flush",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.x64base.website",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "gate6_scope_pending",
+      "owner": "Derald",
+      "updated_on": "2026-07-26",
+      "truth_state": "source-through-local-site-green",
+      "proof_state": "Gates 0-5 PASS locally; complete command handoff and 581-file run inventory recorded; no commit or deployment",
+      "next_gate": "Prepare and review the selective Gate 6 source-promotion scope before any commit, staging overlay, or deployment.",
+      "summary": "Reharvested source contracts and HELP, refreshed the complete command reference and manual, repaired VDISK and identity/security omissions, restored the historical family tree and inspectable source museum, and documented the complete restart path.",
+      "website_paths": [
+        "/docs/dev/full-stack-documentation-push",
+        "/docs/dev/documentation-progress",
+        "/docs/dottalk/command-reference",
+        "/docs/dev/developer-manual",
+        "/docs/labtalk/current-work",
+        "/docs/dev/historical-family-tree",
+        "/docs/dev/historical-source-files"
+      ]
+    },
+    {
+      "id": "task.metadata.metacollect.238",
+      "title": "METACOLLECT 238-finding metadata mission",
+      "ticket": "METACOLLECT-238",
+      "kind": "metadata_audit",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "backlog",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "findings-preserved-separate",
+      "proof_state": "238 findings identified; not absorbed into the documentation flush",
+      "next_gate": "Classify the 238 findings by metadata collector and authority before any repair.",
+      "summary": "A separate mission for metadata collection systems discovered during the documentation audit.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.identity.rbac.m4_m6",
+      "title": "Identity, authentication, RBAC, and authorization follow-through",
+      "ticket": "AIF-045",
+      "kind": "security_governance",
+      "project_ids": [
+        "project.x64base.identity",
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "core-implemented-runtime-proven",
+      "proof_state": "USERS identity, TEAM_MEMBER participation, sessions, roles, permissions, grants, persistence, and enforcement proven through milestone 2d-3",
+      "next_gate": "M4 registry import, M5 portable YAML bootstrap, then M6 teaching loop.",
+      "summary": "USERS and TEAM_MEMBER are implemented parts of the active identity stack, alongside authentication sessions, roles, permissions, authorization grants, persistence, and enforcement; registry import, portable bootstrap, and teaching integration remain open.",
+      "website_paths": [
+        "/docs/engine/identity-security"
+      ]
+    },
+    {
+      "id": "task.beta1.stabilization",
+      "title": "BETA-1 stabilization and regression validation",
+      "ticket": "AIF-041",
+      "kind": "stabilization",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "active-development-lane",
+      "proof_state": "Milestone and regression evidence accumulates per lane",
+      "next_gate": "Complete new-work coverage, full regression sweep, refactor analysis, reference-header decision, manual scope, and peer review.",
+      "summary": "The evidence path from green milestones to a defensible BETA-1 release.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.script.header.contract",
+      "title": "Script header and usage-contract lane",
+      "ticket": "AIF-042",
+      "kind": "documentation_contract",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "contract-lane-open",
+      "proof_state": "Working token and scope proposed; implementation not started",
+      "next_gate": "Inventory scripts and freeze the @script.usage v1 field contract before harvesting.",
+      "summary": "Extends governed source usage contracts to DotScript, PowerShell, and later script families.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.scan.bulk_record_io",
+      "title": "Bulk record-I/O scan follow-on",
+      "ticket": "AIF-046",
+      "kind": "performance",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "staged",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "predecessor-optimization-proven",
+      "proof_state": "Scan evaluator M0-M4 complete; residual per-row I/O isolated",
+      "next_gate": "Run the bulk record-I/O Phase-0 go/no-go benchmark before source changes.",
+      "summary": "The remaining scan-performance lane after compiled predicates and selective field decoding.",
+      "website_paths": [
+        "/docs/engine/pinocchio-benchmarks"
+      ]
+    },
+    {
+      "id": "task.arctictalk.workbench",
+      "title": "ArcticTalk retro TUI workbench",
+      "ticket": "AIF-049",
+      "kind": "workbench",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active_prototype",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "two-slices-release-build-proven",
+      "proof_state": "Environment/tests routing and read-only BROWSETV slices build-proven",
+      "next_gate": "Complete M0 inventory and interactive visual proof while preserving the shared GUI API boundary.",
+      "summary": "Retro Turbo Vision workbench kept in parity with the wxWidgets and Python/Tk workbench family.",
+      "website_paths": [
+        "/docs/talk-family/arctictalk"
+      ]
+    },
+    {
+      "id": "task.build.palette_stub_parking.v1",
+      "title": "Palette generated-stub disposition",
+      "ticket": "PSEUDO-Q4",
+      "kind": "build_hygiene",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "pseudo_chat",
+      "status": "returned_for_correction",
+      "owner": "Derald",
+      "updated_on": "2026-07-22",
+      "truth_state": "authoritative-review-complete",
+      "proof_state": "External task held; claimed public commit not locally authoritative",
+      "next_gate": "Re-ground the task as either a narrow orphan-stub cleanup or a separate PALETTE feature lane.",
+      "summary": "Pseudo-Chat return found an unconditional generated stub but no registered PALETTE command; no implementation was accepted.",
+      "website_paths": [
+        "/docs/labtalk/agent-sync"
+      ]
+    },
+    {
+      "id": "task.historical_database_migration.empirical_progress",
+      "title": "Historical database migration empirical progress",
+      "ticket": "AIF-058",
+      "kind": "evidence_assessment",
+      "project_ids": [
+        "project.labtalk.historical_database_migration",
+        "project.x64base.runtime",
+        "project.x64base.website",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "active_seed",
+      "owner": "Derald",
+      "updated_on": "2026-07-26",
+      "truth_state": "component_surfaces_real_integration_proof_open",
+      "proof_state": "Registration, runtime starters, sample databases, and local conversion exercises are evidenced; canonical cross-format proof and same-machine benchmark results are not yet authoritative.",
+      "next_gate": "Complete Analyze and Design, then produce a preserved canonical COBOL fixed-record -> DBF/xBase -> CSV/JSON -> SQLite -> x64base crosswalk proof with row, field, rejection, identity, and correctness checks.",
+      "summary": "AI Portal SDLC lane separating empirical migration evidence from planned historical cases, benchmark work, and website publication.",
+      "website_paths": [
+        "/docs/dev/current-lanes",
+        "/docs/labtalk/current-work",
+        "/docs/labtalk/database-evolution"
+      ]
+    },
+    {
+      "id": "task.ddl.schema_pdlc",
+      "title": "DDL schema PDLC and JSON/DBF parity lane",
+      "ticket": "AIF-063",
+      "kind": "schema_runtime_pdlc",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "active_seed",
+      "owner": "Derald",
+      "updated_on": "2026-07-27",
+      "truth_state": "current_cmd_ddl_m1_flavor_parity_seed_with_copy_repair_registered",
+      "proof_state": "DDL M0/M1 seed routes DBF creation through xbase::dbf_create with explicit MSDOS/DBASE, FOX26/FOXPRO, VFP, and X64 flavors, validates the in-tree schema subset, and emits metadata-only index sidecars. COPY source inspection registered companion repair R1: x32-style output does not imply traditional xBase index/memo support; supported indexing is CNX, memo remains stub/limited unless separately proven, logical COPY AS should restore the source cursor, and converted output remains data-only unless indexes are explicitly rebuilt.",
+      "next_gate": "R1/M3/M4: repair or warn on COPY memo semantics, document x32-style output as CNX-indexed rather than traditional xBase-indexed, restore source cursor after logical COPY AS, register focused COPY flavor regression, then implement SEED CSV and explicit BUILD INDEXES/sidecar round-trip gates.",
+      "summary": "Owned PDLC lane for making DDL and companion COPY behavior a schema orchestration path across JSON, DBF flavors, sidecars, seed import, current memo semantics, CNX indexing, and explicit index plans rather than parallel hand-written DBF writers.",
+      "website_paths": [
+        "/docs/dev/current-lanes",
+        "/docs/labtalk/current-work"
+      ]
+    },
+    {
+      "id": "task.retro.launchpad_lane",
+      "title": "Retro VM/emulator launchpad lane",
+      "ticket": "AIF-064",
+      "kind": "runtime_private_optional_lane",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "review_needed",
+      "owner": "Derald",
+      "updated_on": "2026-07-26",
+      "truth_state": "charter_and_v2_review_package_source_verified",
+      "proof_state": "No source or runtime mutation yet. Live tree facts verified: target is dottalkpp; command registration is registry().add in src/cli/shell_commands.cpp; existing RETRO source and screen repros live in src/cli/cmd_retro.cpp plus retro_screen.* and retro_render.*.",
+      "next_gate": "Owner review: decide whether to keep public RETRO screens while adding private launcher subcommands, then implement X64BASE_ENABLE_RETRO default-OFF lane and prove E1 isolation before any launch behavior.",
+      "summary": "Private optional Retro lane for a DBF-backed gallery and launcher for VMware, WinUAE, FS-UAE, DOSBox, and generic exec entries, preserving current RETRO screen truth unless explicitly changed.",
+      "website_paths": [
+        "/docs/dev/current-lanes",
+        "/docs/labtalk/current-work"
+      ]
+    },
+    {
+      "id": "task.x32.traditional_xbase_support",
+      "title": "x32 traditional xBase support feasibility lane",
+      "ticket": "AIF-068",
+      "kind": "compatibility_feasibility",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc",
+        "project.labtalk.historical_database_migration",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-07-27",
+      "truth_state": "dbf_shaped_output_supported_traditional_xbase_support_unproven",
+      "proof_state": "Source/PDLC review records that x64base supports DBF-shaped output flavors and CNX indexing, but not traditional xBase index/memo ecosystems. Memo behavior remains stub/limited unless separately proven.",
+      "next_gate": "M0 feasibility: inventory real legacy fixtures and decide whether this remains documentation doctrine, read-only preservation/import, or a broader traditional index/memo compatibility project.",
+      "summary": "Separate lane for deciding whether traditional x32/xBase support is worth building. It is linked from DDL/COPY R1 so COPY repairs do not accidentally imply .ndx/.mdx/.cdx or .dbt/.fpt compatibility.",
+      "website_paths": [
+        "/docs/dev/current-lanes",
+        "/docs/labtalk/current-work"
+      ]
+    },
+    {
+      "id": "task.export.sdf_fixed_width",
+      "title": "EXPORT SDF fixed-width output",
+      "ticket": "AIF-069",
+      "kind": "runtime_export_pdlc",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "closed_runtime_observed",
+      "owner": "Derald",
+      "updated_on": "2026-07-27",
+      "truth_state": "source_defined_runtime_observed",
+      "proof_state": "Debug build passed; REGRESSION RUN EXPORT_SDF exported two fixed-width rows using the shared TUPTALK row formatter.",
+      "next_gate": "Optional future gate: SDF import/readback or an in-engine exact-byte file assertion if SDF becomes a round-trip contract.",
+      "summary": "Adds EXPORT SDF as a fixed-width, no-header export format while reusing TUPTALK PUSH ROW semantics and keeping broader SDF and traditional xBase compatibility out of this closed slice.",
+      "website_paths": [
+        "/docs/dev/current-lanes",
+        "/docs/labtalk/current-work"
+      ]
+    }
+  ]
+}

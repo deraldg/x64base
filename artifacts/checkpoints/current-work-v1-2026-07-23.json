@@ -1,0 +1,305 @@
+{
+  "schema": "x64base.current_work.v1",
+  "as_of_date": "2026-07-23",
+  "maintenance_class": "maintained_current",
+  "publication_state": "local-preview-not-deployed",
+  "authority": {
+    "system_of_record": "AI Portal intake queue plus named lane and proof records",
+    "pseudo_chat_role": "asynchronous return and correction channel; not a system of record",
+    "publication_rule": "website reports reviewed state; it does not promote source, releases, or deployments"
+  },
+  "current_documentation_flush": {
+    "run_id": "DOCFLUSH-20260722-001",
+    "ticket": "AIF-048",
+    "state": "awaiting_human_review",
+    "publication_state": "local-preview-not-deployed",
+    "maintenance_class": "maintained_current",
+    "source_contracts": 243,
+    "help_topics": 575,
+    "help_lines": 29197,
+    "command_reference_pages": 191,
+    "command_lineage_rows": 4604,
+    "manual_parts": 26,
+    "manual_lines": 14542,
+    "manual_pdf_pages": 298,
+    "website_static_pages": 128,
+    "next_gate": "Human review of the complete local website; then an explicit commit and publication decision."
+  },
+  "summary": {
+    "projects": 15,
+    "tasks": 8,
+    "task_statuses": {
+      "active": 2,
+      "active_prototype": 1,
+      "awaiting_human_review": 1,
+      "backlog": 1,
+      "proposed": 1,
+      "returned_for_correction": 1,
+      "staged": 1
+    },
+    "pseudo_chat_inbox": 1
+  },
+  "projects": [
+    {
+      "id": "project.x64base.runtime",
+      "name": "x64base / DotTalk++ Runtime",
+      "kind": "runtime_project",
+      "status": "active_beta"
+    },
+    {
+      "id": "project.x64base.public_staging",
+      "name": "x64base Curated Public Staging",
+      "kind": "publication_staging_project",
+      "status": "active_curated_staging"
+    },
+    {
+      "id": "project.labtalk.campus",
+      "name": "LabTalk Campus",
+      "kind": "campus_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.labtalk.lms",
+      "name": "LabTalk LMS Communications Lane",
+      "kind": "integration_project",
+      "status": "reserved_local_only"
+    },
+    {
+      "id": "project.labtalk.staging",
+      "name": "LabTalk Above-Runtime Staging",
+      "kind": "staging_project",
+      "status": "seed"
+    },
+    {
+      "id": "project.x64base.website",
+      "name": "x64base.com Website Publication",
+      "kind": "publication_project",
+      "status": "downstream_publication_truth"
+    },
+    {
+      "id": "project.ai_friendly",
+      "name": "AI Friendly Lane",
+      "kind": "knowledge_project",
+      "status": "seed"
+    },
+    {
+      "id": "project.pycrud",
+      "name": "pycrud Companion",
+      "kind": "companion_app_project",
+      "status": "prototype"
+    },
+    {
+      "id": "project.db_converter",
+      "name": "DB_Converter",
+      "kind": "migration_project",
+      "status": "prototype"
+    },
+    {
+      "id": "project.dottalk_webui",
+      "name": "DotTalk Web UI Prototypes",
+      "kind": "web_ui_project",
+      "status": "local_prototype"
+    },
+    {
+      "id": "project.sqlite_gui",
+      "name": "SQLite GUI Prototype",
+      "kind": "gui_project",
+      "status": "local_prototype"
+    },
+    {
+      "id": "project.x64base.dotscript",
+      "name": "DotScript Language",
+      "kind": "language_project",
+      "status": "active_beta"
+    },
+    {
+      "id": "project.labtalk.pdlc",
+      "name": "PDLC - Programming Development Life Cycle (Student/Working Model)",
+      "kind": "methodology_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.labtalk.sdlc",
+      "name": "SDLC - Software Development Life Cycle Working Model",
+      "kind": "methodology_project",
+      "status": "active_seed"
+    },
+    {
+      "id": "project.x64base.identity",
+      "name": "Identity, RBAC & Authorization Management",
+      "kind": "governance_project",
+      "status": "active_development"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task.docs.fullstack.flush.20260722",
+      "title": "Full-stack documentation flush II",
+      "ticket": "AIF-048",
+      "kind": "documentation_flush",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.x64base.website",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "awaiting_human_review",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "source-through-local-site-green",
+      "proof_state": "Gate 5 repaired local preview PASS; no commit or deployment",
+      "next_gate": "Inspect the local website, approve or correct it, then authorize commit/publication separately.",
+      "summary": "Reharvested source contracts and HELP, refreshed the complete command reference and manual, repaired VDISK and identity/security omissions, and reconciled the local website.",
+      "website_paths": [
+        "/docs/dev/full-stack-documentation-push",
+        "/docs/dev/documentation-progress",
+        "/docs/dottalk/command-reference",
+        "/docs/dev/developer-manual"
+      ]
+    },
+    {
+      "id": "task.metadata.metacollect.238",
+      "title": "METACOLLECT 238-finding metadata mission",
+      "ticket": "METACOLLECT-238",
+      "kind": "metadata_audit",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "backlog",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "findings-preserved-separate",
+      "proof_state": "238 findings identified; not absorbed into the documentation flush",
+      "next_gate": "Classify the 238 findings by metadata collector and authority before any repair.",
+      "summary": "A separate mission for metadata collection systems discovered during the documentation audit.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.identity.rbac.m4_m6",
+      "title": "Identity, authentication, RBAC, and authorization follow-through",
+      "ticket": "AIF-045",
+      "kind": "security_governance",
+      "project_ids": [
+        "project.x64base.identity",
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "core-implemented-runtime-proven",
+      "proof_state": "USERS identity, TEAM_MEMBER participation, sessions, roles, permissions, grants, persistence, and enforcement proven through milestone 2d-3",
+      "next_gate": "M4 registry import, M5 portable YAML bootstrap, then M6 teaching loop.",
+      "summary": "USERS and TEAM_MEMBER are implemented parts of the active identity stack, alongside authentication sessions, roles, permissions, authorization grants, persistence, and enforcement; registry import, portable bootstrap, and teaching integration remain open.",
+      "website_paths": [
+        "/docs/engine/identity-security"
+      ]
+    },
+    {
+      "id": "task.beta1.stabilization",
+      "title": "BETA-1 stabilization and regression validation",
+      "ticket": "AIF-041",
+      "kind": "stabilization",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "active-development-lane",
+      "proof_state": "Milestone and regression evidence accumulates per lane",
+      "next_gate": "Complete new-work coverage, full regression sweep, refactor analysis, reference-header decision, manual scope, and peer review.",
+      "summary": "The evidence path from green milestones to a defensible BETA-1 release.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.script.header.contract",
+      "title": "Script header and usage-contract lane",
+      "ticket": "AIF-042",
+      "kind": "documentation_contract",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "contract-lane-open",
+      "proof_state": "Working token and scope proposed; implementation not started",
+      "next_gate": "Inventory scripts and freeze the @script.usage v1 field contract before harvesting.",
+      "summary": "Extends governed source usage contracts to DotScript, PowerShell, and later script families.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.scan.bulk_record_io",
+      "title": "Bulk record-I/O scan follow-on",
+      "ticket": "AIF-046",
+      "kind": "performance",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "staged",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "predecessor-optimization-proven",
+      "proof_state": "Scan evaluator M0-M4 complete; residual per-row I/O isolated",
+      "next_gate": "Run the bulk record-I/O Phase-0 go/no-go benchmark before source changes.",
+      "summary": "The remaining scan-performance lane after compiled predicates and selective field decoding.",
+      "website_paths": [
+        "/docs/engine/pinocchio-benchmarks"
+      ]
+    },
+    {
+      "id": "task.arctictalk.workbench",
+      "title": "ArcticTalk retro TUI workbench",
+      "ticket": "AIF-049",
+      "kind": "workbench",
+      "project_ids": [
+        "project.x64base.runtime"
+      ],
+      "channel": "ai_portal",
+      "status": "active_prototype",
+      "owner": "Derald",
+      "updated_on": "2026-07-23",
+      "truth_state": "two-slices-release-build-proven",
+      "proof_state": "Environment/tests routing and read-only BROWSETV slices build-proven",
+      "next_gate": "Complete M0 inventory and interactive visual proof while preserving the shared GUI API boundary.",
+      "summary": "Retro Turbo Vision workbench kept in parity with the wxWidgets and Python/Tk workbench family.",
+      "website_paths": [
+        "/docs/talk-family/arctictalk"
+      ]
+    },
+    {
+      "id": "task.build.palette_stub_parking.v1",
+      "title": "Palette generated-stub disposition",
+      "ticket": "PSEUDO-Q4",
+      "kind": "build_hygiene",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.ai_friendly"
+      ],
+      "channel": "pseudo_chat",
+      "status": "returned_for_correction",
+      "owner": "Derald",
+      "updated_on": "2026-07-22",
+      "truth_state": "authoritative-review-complete",
+      "proof_state": "External task held; claimed public commit not locally authoritative",
+      "next_gate": "Re-ground the task as either a narrow orphan-stub cleanup or a separate PALETTE feature lane.",
+      "summary": "Pseudo-Chat return found an unconditional generated stub but no registered PALETTE command; no implementation was accepted.",
+      "website_paths": [
+        "/docs/labtalk/agent-sync"
+      ]
+    }
+  ]
+}

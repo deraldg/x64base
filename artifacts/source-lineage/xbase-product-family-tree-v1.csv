@@ -1,0 +1,11 @@
+node_id,parent_id,label,era,relationship,evidence,truth_level,notes
+HXBASE-ROOT,,xBase source family,1993-1996,preservation-root,xbase.zip,archive-verified,"SHA-256 F4ABE4EBA8C71DE36880C4AB95E1BDB9B0D693D62B8FF7FB48E36910EBC3BD4A"
+HXBASE-CORE,HXBASE-ROOT,xBase core,1993,archive-sibling,xbase/xbase/,file-found,"XBASE XBCMDS and XBINDEX C/header pairs"
+HXDLL,HXBASE-ROOT,XDLL / xBase DLL-oriented branch,1993-1996,archive-sibling,xbase/xdll/,source-reviewed,"LibMain WEP and FAR PASCAL _export evidence; no historical xbase.dll binary located"
+HXBASE2,HXBASE-ROOT,xBase2,1995,archive-sibling,xbase/xbase2/,source-reviewed,"Extended source branch with real XBINDEX"
+HDOTTALK95,HXBASE2,DotTalk 1995 command shell,1995,contains,xbase/xbase2/DOTTALK.C,source-reviewed,"SHA-256 854BC795C9758BA65FF4EA39614B7236FDD5D2A150B60013CB18160F06262967"
+HXBASE2-BRINGUP,HDOTTALK95,xBase2 no-touch MSVC bring-up,2025,recovery-build-lane,recovery-build/xbase2,artifact-found,"xbase2_legacy.lib and dottalk_1995.exe observed"
+HGTALK,HDOTTALK95,gTalk / DotTalk recovery,2025,recovery-line,recovery/gtalk,source-reviewed-recovery,"Buildable sequential shell; index layer stubbed"
+HOLD-DOTTALK,HDOTTALK95,DotTalk old-code recovery,2025,recovery-line,recovery/dottalk-old-code,source-reviewed-recovery,"Small recovery source; index layer stubbed"
+HX64BASE,HXBASE-ROOT,x64base engine,2026,conceptual-continuation,current/x64base,build-runtime-evidenced,"xbase.lib table truth plus optional xindex.lib provider"
+HDOTTALKPP,HX64BASE,DotTalk++ runtime,2026,composition-root,current/dottalkpp,build-runtime-evidenced,"dottalkpp.exe command host; pydottalk is a Python extension"

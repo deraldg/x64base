@@ -1,0 +1,885 @@
+/* xbcmds.c is a module that combines the modules xbase.c and xbindex.c
+   xbindex is a proprietary index system, while xbase.c should work with any
+   xbase file system
+*/ 
+#include <windows.h>   
+#include <stdio.h>   
+#include <stdarg.h>
+#include <stdlib.h> 
+#include <string.h>    
+#include <fcntl.h>
+#include <math.h>   
+#include "xbindex.h"
+#include "xbase.h"     
+#include "xbcmds.h"    
+#if IBMPCDOS
+   #include <malloc.h>   
+#endif   
+
+/* index info for global purposes */    
+/* xbase global variables */  
+
+
+extern select_rec * FAR _export s[max_area];
+extern short FAR _export area;   
+ 
+extern long  rec_num ;
+extern int   GRERROR ; 
+extern int   DOSERROR ;
+extern char  IBMPC;
+extern int   rr ;                     /* records_read */     
+extern char *filemode ;               /* filemode */       
+
+/* field types 
+extern char *character;
+extern char  date[date_size] ;
+extern char  numeric[19];
+extern char *memo;             
+extern FILE *tofile ;        
+extern int   scr_limit ;
+extern long  result ;             
+extern unsigned long memory;
+extern order_array_type temporder ;      
+*/
+
+/* index & dummy info */   
+extern IX_DESC *pci;
+extern BLOCK   spare_block;                  
+
+#define KEY_SIZE 20
+int ndum = KEY_SIZE + sizeof(NULLREC);   
+long fs = 20480;
+
+ENTRY dume=
+{
+	NULLREC, 
+	{
+		0xff,0xff,0xff,0xff,0xff,
+		0xff,0xff,0xff,0xff,0xff,    
+		0xff,0xff,0xff,0xff,0xff,               
+		0xff,0xff,0xff,0xff,0xff,
+		0xff,0xff,0xff,0xff,0xf0
+	}
+};
+
+int compf(ENTRY *p1, ENTRY *p2)
+{
+	return(strcmp((char *)&p1->key,(char *)&p2->key));
+}
+int sizef(ENTRY *p1)                 
+{
+	return(strlen(p1->key) + 1 + sizeof(RECPOS));
+}       
+										
+/* end of dummy vars */ 
+      
+char  *dxfile;
+FILE  *idx_file; 
+char  *xfile;  
+
+char   found;
+int    keylen;
+char  *keystr; 
+rel    r[max_area][max_index];  
+char   deleted = TRUE ; /* set delete status TRUE or FALSE */   
+
+/* DLL entry */
+/*
+int FAR PASCAL LibMain(HANDLE hInstance, WORD wDataSeg, WORD wHeapSize, LPSTR lpszCmdLine)
+{
+	if (wHeapSize > 0)
+		UnlockData(0); 
+		
+	initbase();     
+	initcmds();
+	
+	return 1;
+}
+*/
+
+/* DLL exit */
+/*
+int FAR PASCAL _export WEP (int nParam)
+{
+	return 1;
+}                       
+*/
+
+/* begin xbase command functions */
+
+void FAR PASCAL _export initcmds()
+{ 
+  int i,j;
+
+
+  for (i=1;i<max_area;i++)
+	  for (j=1;j<max_index;j++)
+		  {
+			 r[i][j].c.a=0;
+			 r[i][j].c.i=0;
+		  }  
+
+  memset((char *)&spare_block,0,sizeof(BLOCK));                   
+}                 
+
+void FAR PASCAL _export relate(short c_area,short c_order,short p_area,short p_order)
+{     
+  r[c_area][c_order].c.a = p_area;  
+  r[c_area][c_order].c.i = p_order;
+} 
+
+void FAR PASCAL _export other_rel(short a)
+{   
+/* the whole purpose here is to update the position of other index files
+   for an area if open - skipping the one just updated before this call
+*/         
+    int i,field_no;
+    
+    for (i=1;i<max_index;i++)
+    {
+	if (i != SA->ord) /* skip if this is the current order */
+	{             
+	   if (s[a]->i[i].idx) /* check if index open */
+	   {  
+	      field_no = s[a]->i[i].pix->dx.order;
+	      strcpy((char *)s[a]->i[i].pe->key,
+		     s[a]->fd[field_no]); /* copy field info and record pointer */
+	      s[a]->i[i].pe->rptr = s[a]->i[s[a]->ord].pe->rptr; 
+	   }
+	}
+    }   
+}                                               
+					  
+void FAR PASCAL _export relation(short a, short o)
+{       
+	int i,j;       
+	short save_area,save_order;
+			       
+	save_area = a;
+	save_order = o;
+	
+	for (i=a;i<max_area;i++) /* start with the current area */
+	    for (j=1;j<max_index;j++)
+			if (r[i][j].c.a != 0)  
+			   if (r[i][j].c.i != 0)
+			   {                                      
+			   /* activate parent area */
+				  area = r[i][j].c.a;
+				  SA->ord = r[i][j].c.i;  
+				  rtrim(s[i]->i[j].pe->key);                   
+		      strcpy((char *)SI.pe->key,s[i]->i[j].pe->key);  
+		      rec_num = find_key(SI.pe,SI.pix);
+		  if (rec_num != 0)     
+		     {   
+			goto_rec(rec_num);                                
+					other_rel(area);
+				     }   
+			   }
+    area = save_area; 
+    SA->ord = save_order;   
+}
+
+void FAR PASCAL _export relationtemp(short a,short o)
+{                             
+     short savarea,savorder; 
+		  
+     if (!SI.idx) return;             
+		  
+     savarea = a;
+     savorder = o;
+     
+     setrelationships(a,o);
+     
+     area = savarea;
+     SA->ord = savorder;
+}  
+
+void FAR PASCAL _export setrelationships(short a, short o)
+{
+     int ret;
+				   
+     if (r[a][o].c.a == 0) return;  /* done */
+     
+	 /* activate parent area */
+	 area = r[a][o].c.a;
+	 SA->ord = r[a][o].c.i;             
+
+	 /* copy child key to parent key */   
+	 strcpy((char *)SI.pe->key,(char *)s[a]->i[o].pe->key); 
+				   
+	 ret = find_key(SI.pe,SI.pix);
+	 if (ret)
+	 {
+		goto_rec(SI.pe->rptr);  
+	    setrelationships(area,SA->ord); 
+     }   
+}
+
+int FAR PASCAL _export open_index(char *fn,int dupok)  
+{   
+    int dupixok;
+    
+    dupixok = dupok; 
+	  
+    SI.idx = TRUE;
+    SI.pix = (IX_DESC *)calloc(1,sizeof(IX_DESC));                         
+    memchk((char *)SI.pix,"open_index","SI.pix",sizeof(IX_DESC));
+    SI.pe = (ENTRY *)calloc(1,sizeof(ENTRY));
+    memchk((char *)SI.pe,"open_index","SI.pe",sizeof(ENTRY));  
+    
+    if (openix(fn,SI.pix,compf,sizef)<0)
+       {  
+	  SI.idx = FALSE;
+	  free(SI.pix);
+	  free(SI.pe);
+	  return(0);
+       }    
+    else 
+       {
+	  rtrim(SA->fd[SA->ord]);
+	  strcpy(SI.pe->key,SA->fd[SA->ord]);
+	  SI.pe->rptr = SA->crn;
+	  find_key(SI.pe,SI.pix);
+       } 
+   
+    return(1);   
+}                
+
+int FAR PASCAL _export close_index(IX_DESC *pix)
+{              
+   int ret;
+   ret = close_if(pix->ixfile);
+   if (ret)
+   {
+      SI.idx = FALSE;  
+      free((void *)SI.pix);
+      free((void *)SI.pe); 
+   }
+
+   return(ret);   
+}              
+void FAR PASCAL _export build_index(char * xfile, short order, long num_of_recs)
+{             
+   int i,ret;   
+   double ifs;
+   
+   ifs = idx_size(num_of_recs);
+   
+   if ((order < 0) || (order > SA->num_of_fields))
+      return;     
+			 
+   if (!make_index(xfile,1,order,ifs))
+   {
+      return;   
+   }       
+   else  
+   {  
+      if (SA->hr->num_of_recs < 1)
+	     return;                                
+	 
+      goto_rec(1);   /* this ignores any indexes open */
+	  if (open_index(xfile,1))
+      {  
+	      for (i=1;i<=SA->hr->num_of_recs;i++)
+	      {   
+	           if (SA->del != is_deleted)
+	           {
+		           SI.pe->rptr = i;       
+		           rtrim(SA->fd[order]); 
+		           strcpy((char *)SI.pe->key,SA->fd[order]);
+		           ret = add_key(SI.pe,SI.pix);  
+	           }   
+	           if (i < SA->hr->num_of_recs)  
+	     {
+		    read_rec(area);
+	     }   
+	  }       
+	     close_index(SI.pix);  
+      }
+   }          
+}
+
+
+void FAR PASCAL _export reindex(char *idxname)
+{  
+   short order;
+     
+   dxname(idxname);  
+   if (SI.idx)
+      {       
+	     order = SI.pix->dx.order;            
+	     close_index(SI.pix);         
+	     build_index(idxname,order,SA->hr->num_of_recs);  
+	     open_index(idxname,1);
+      }
+}
+
+void FAR PASCAL _export select(short newarea)
+{
+    area = newarea;
+}    
+
+void FAR PASCAL _export order(short area, short neworder)
+{                     
+    SA->ord = neworder;
+}        
+
+void FAR PASCAL _export use(char * pstr1, char * pstr2, char indexed)  
+{
+   int checkbreak; 
+      
+   pstr1 = dbname(pstr1);
+   pstr2 = dxname(pstr2);
+    
+   close_area(area);
+   if (strlen(pstr1) > 4) 
+   {  
+/* SA not calloced unless file open sucessfully */   
+   if (open_file(pstr1,area)) 
+      SI.idx = indexed;
+   }
+   else
+   {
+     return;
+   } 
+   checkbreak = TRUE;
+   if (GRERROR != 0) 
+   {
+      return; 
+   }
+   else
+   {
+      SA->fok = TRUE;
+      read_header(area);
+      read_fields(area);
+      read_rec(area);
+      SA->crn = 1;
+      if (SI.idx) 
+      {  
+	 if (!open_index(pstr2,1))  
+	     SI.idx = FALSE;
+      }   
+      top();
+   }
+}    
+
+void FAR PASCAL _export close_area(short area)                  
+{       
+    int i;
+    
+    if (SA->fok)  
+    {
+       for (i=1;i<max_index;i++)
+	   if (SA->i[i].idx)
+	       close_index(SA->i[i].pix);
+       close_file(area); 
+    }   
+}       
+
+/* indexed function only */
+int FAR PASCAL _export find(char *key)
+{   
+    int rec_num;
+		   
+    if (!SI.idx)               
+       return(0);
+       
+    first_key(SI.pe,SI.pix);
+	strcpy((char *)SI.pe->key,key);
+	rec_num = find_key(SI.pe,SI.pix);
+    if (rec_num != 0)     
+    {   
+	goto_rec(rec_num);  
+	relation(area,SA->ord);
+	return(1);      
+    }
+    return(0);
+}       
+
+int FAR PASCAL _export top()
+{
+   long offset;
+   long rec_num;
+
+   if (SA->fok) 
+   {
+      if (SI.idx)
+      {
+	     rec_num = first_key(SI.pe,SI.pix);  
+	 goto_rec(rec_num); 
+      }
+      else
+      {
+	 offset = (long)SA->hr->data_start;
+	 fseek(SA->fp,offset,0);
+	 read_rec(area);
+	 SA->crn = 1;
+      }         
+   }
+   else 
+   {
+      return(0);
+   }  
+   relation(area,SA->ord);
+   return(1); 
+}
+ 
+int FAR PASCAL _export bottom()
+{
+   long offset;
+   long rec_num;
+
+   if (SA->fok)
+   {
+      if (SI.idx)
+      {
+	 last_key(SI.pe,SI.pix);
+	 rec_num = prev_key(SI.pe,SI.pix); 
+	 goto_rec(rec_num); 
+      }
+      else
+      {
+	 offset = (long)SA->hr->data_start+((SA->hr->num_of_recs-1)
+		   *SA->hr->cpr);
+	 fseek(SA->fp,offset,0);
+	 read_rec(area);
+	 SA->crn = (short)SA->hr->num_of_recs;
+      }
+   }
+   else  
+   {
+      return(0);
+   }   
+   relation(area,SA->ord);   
+   return(1);
+}  
+
+int FAR PASCAL _export skip(int skipped)
+{
+   long offset;
+   int stat;
+		
+   stat = 0;             
+   if (SA->fok) 
+   {
+      if (SI.idx)  
+      {                    
+	 if (skipped == 1) 
+	 {
+	    stat = next_key(SI.pe,SI.pix); 
+	    if (stat != EOIX)
+	    {
+	       goto_rec(SI.pe->rptr);
+	       SA->crn = SI.pe->rptr;   
+	    }                                             
+	 }
+	 else
+	 {
+	    if (skipped == -1) 
+	    {
+		   stat = prev_key(SI.pe,SI.pix);
+	       goto_rec(SI.pe->rptr);
+	       SA->crn = SI.pe->rptr;
+	    }
+	 }  
+      }      
+      if (!SI.idx)
+      {
+	 if ((SA->crn + skipped) > SA->hr->num_of_recs) 
+	 {
+	    stat = bottom();  
+	 }
+	 else 
+	 {   
+	    if ((SA->crn + skipped) < 1) 
+	    {
+	       stat = top();
+	    }
+	    else
+	    {
+	       offset = (long)SA->hr->data_start+
+		  ((SA->crn+(skipped-1))*SA->hr->cpr);                  
+	       SA->crn = SA->crn + skipped;  
+	       fseek(SA->fp,offset,0);
+	       stat = read_rec(area); 
+	    }
+	 }   
+      }  
+   }
+   relation(area,SA->ord);
+   return(stat);   
+}      
+
+int FAR PASCAL _export match(char * fld_str) 
+{                                
+/* returns the index position of a fieldname */
+
+  int i;
+  for(i=1;i<=SA->num_of_fields;i++)
+  {
+      if (strnicmps(SA->fr[i]->field_name,fld_str)==0) 
+	 return(i);
+  }   
+  return(0);
+}
+   
+/* non-indexed only */
+void FAR PASCAL _export locate(char * field, char * fld_data)
+{         
+    int i;
+    
+    if (SI.idx)
+       return;
+       
+	top();
+	i = match(field);
+	while((strnicmps(SA->fd[i],fld_data)!=0) && (!feof(SA->fp)))
+	   skip(1);
+	return;
+}              
+
+int FAR PASCAL _export edit_field_old(char *fld_str,char *newstr)
+{   
+/*  If the field the file is indexed on is changed, then the index needs
+    to be updated too.
+*/                             
+    short field_no;
+    short save_order;
+
+    if (!SA->fok)
+       return(0);
+       
+    field_no = (short)match((char *)fld_str);
+    if (field_no) 
+    {               
+       save_order = SA->ord;
+       order(area,field_no);
+       if ((SI.idx) && (field_no == SI.pix->dx.order))
+       {                        
+	  rtrim(SA->fd[field_no]); 
+	  SI.pe->rptr = SA->crn;       
+	  strcpy((char *)SI.pe->key,SA->fd[field_no]); 
+	  if (!delete_key(SI.pe,SI.pix))  
+	  {   
+	     order(area,save_order);
+	     return(0);             
+	  }   
+       } 
+	 
+       strcpy((char *)SA->fd[field_no],(char *)newstr);
+       
+       if ((SI.idx) && (field_no == SI.pix->dx.order))
+       {
+	  SI.pe->rptr = SA->crn;  
+	  rtrim(SA->fd[field_no]);     
+	  strcpy((char *)SI.pe->key,SA->fd[field_no]);
+	  if (!add_key(SI.pe,SI.pix))
+	  {
+	     order(area,save_order);
+	     return(0);            
+	  }   
+       }   
+    }   
+    else
+       return(0);   
+    order(area,save_order);   
+    return(1);
+}              
+       
+int FAR PASCAL _export edit_field(char *fld_str,char *newstr)
+{   
+    short field_no;
+					  
+    field_no = (short)match((char *)fld_str); 
+    if (field_no)
+    {
+       strcpy((char *)SA->fd[field_no],(char *)newstr);  
+       return(1);
+    }
+    else
+       return(0);   
+}  
+	    
+int FAR PASCAL _export update_index(char *oldkey,char *newkey,short ord)
+{   
+
+    char old[MAXKEY];
+    char new[MAXKEY];
+       
+    strcpy((char *)&old,oldkey);
+    strcpy((char *)&new,newkey); 
+      
+    /* insert the new key */
+    if (SA->i[ord].idx)
+    {  
+       SA->i[ord].pe->rptr = SA->crn;  
+       strcpy((char *)SA->i[ord].pe->key,new);
+       rtrim(SA->i[ord].pe->key);
+       if (!add_key(SA->i[ord].pe,SA->i[ord].pix))
+       {
+	  return(0);            
+       }   
+    }              
+    else 
+       return(0);
+	
+    /* delete the old key */
+	if (SA->i[ord].idx)
+    {                        
+       SA->i[ord].pe->rptr = SA->crn;       
+       strcpy((char *)SA->i[ord].pe->key,old);  
+       rtrim(SA->i[ord].pe->key);
+       if (!delete_key(SA->i[ord].pe,SA->i[ord].pix))  
+       {   
+	  return(0);             
+       }   
+    }  
+    else 
+       return(0);        
+    
+	return(1);
+}
+   
+int FAR PASCAL _export save_rec(short area)
+{                            
+	char i;
+
+    if (!SA->fok) 
+       return(0);
+    else                 
+       write_rec(area);   
+    
+    for (i=1;i<max_index;i++) 
+       if (SA->i[i].idx)                   
+	  if (strnicmps(SA->fd[SA->i[i].pix->dx.order],
+	     SA->i[i].pe->key)!=0) 
+	     if (update_index(SA->i[i].pe->key,
+		SA->fd[SA->i[i].pix->dx.order],i))
+		return(1); 
+	     else
+		return(0);
+    return(1);            
+}    
+
+int FAR PASCAL _export append_blank(short area)
+{            
+     int i;
+     
+     if (add_rec(area)) 
+     {  /* go to the appended record */     
+	SA->crn = (short)SA->hr->num_of_recs;      
+	goto_rec(SA->hr->num_of_recs); 
+     }
+     else   
+	return(0);
+
+/*   if the file is indexed we need to add the keys */   
+     for (i=1;i<max_index;i++) /* all possible indexes */
+	 if (SA->i[i].idx) /* if this index area is used */
+	 {                   
+	    strcpy((char *)SA->i[i].pe->key,
+		   SA->fd[SA->i[i].pix->dx.order]); 
+	    rtrim(SA->i[i].pe->key);        
+	    SA->i[i].pe->rptr = SA->crn; 
+	    add_key(SA->i[i].pe,SA->i[i].pix); 
+	    /* add error routine */
+	 } 
+	 
+     return(1);    
+}  
+     
+char FAR PASCAL _export delete_rec(short area)     
+{  
+   int i;
+   
+   if (!SA->fok)
+      return(FALSE); 
+   else
+      del_rec(area);
+      for (i=1;i<max_index;i++)
+	  if (SA->i[i].idx)
+	     delete_key(SA->i[i].pe,SA->i[i].pix);   
+}    
+   
+/*    
+void FAR PASCAL _export copy_for(var ok : boolean; var records_copied : int;
+		   field_num : int)
+{                   
+   i : int;
+   temp : char *;
+   operator : char;
+{
+   ok = FALSE;
+   temp = trim(field_data[field_num]);
+   operator = cp[6][1];
+   case operator of
+   '=' : if cp[6][2] = '=' 
+	    {
+	       if temp = cp[7] 
+		  ok = TRUE;       
+	    }
+	 else
+	    if upstr(temp) =  upstr(cp[7]) 
+	       ok = TRUE;
+
+   '#' : if upstr(temp) <> upstr(cp[7]) 
+	    ok = TRUE;              
+
+   '<' : if cp[6][2] = '=' 
+	    {
+	       if upstr(temp) <= upstr(cp[7]) 
+		  ok = TRUE
+	    }
+	 else
+	    if upstr(temp) < upstr(cp[7]) 
+	       ok = TRUE;
+
+   '>' : if cp[6][2] = '=' 
+	    {
+	       if upstr(temp) >= upstr(cp[7]) 
+		  ok = TRUE
+	       }
+	 else
+	    if upstr(temp) > upstr(cp[7]) 
+	       ok = TRUE;
+   'D' : if delete_flag <> 'D' 
+	    ok = TRUE;
+   else
+      printf('invalid operator')
+   };
+   if ok 
+      inc(records_copied);
+};    
+
+*/
+
+int FAR PASCAL _export copyfile(char *cp[])
+{
+   long i,j,k;
+   char ok;
+   char header_terminator;                 
+   
+   int num_of_fields;      /* for local use only */
+   long num_of_recs;   
+   field_rec field;
+   
+   char cr = 13;
+   char lf = 10;           
+   char delimiter = ',';
+   char eof_marker;
+   int records_copied;
+   int field_num;
+   char * tmpname;
+   char * strbuf;
+
+   records_copied = 0;                                            
+   ok = TRUE;    
+   
+   if (strnicmps(cp[2],"TO")==0)
+   {  
+      fseek(SA->fp,0,0);        /* reset ptr to beg of infile */ 
+      read_header(area);        /* copy header to new file */      
+      num_of_recs = SA->hr->num_of_recs;
+      records_copied = (int)num_of_recs;     
+      
+      /* if SDF just write record data and return */  
+      /* 64 is arbitrary - didn't want to pass the number yet */
+
+      if ((strnicmp(cp[5],"SDF",3)==0) || (strnicmp(cp[5],"DELI",4)==0))
+      {  
+         /* from file would be SA->fp */
+         tmpname = cp[3];   /* to file */
+         /* select 0 is reserved for temporary files */
+         if ((s[0]->fp=fopen(cp[3],"wb+"))==NULL)  /* create "to" file */
+	          return(0);
+         for (j=1;j<=num_of_recs;j++)
+         {   
+             goto_rec(j); /* reads as well */
+/*           rr = fwrite(SA->rd,(SA->hr->cpr),1,s[0]->fp);      */
+             for (k = 1; k <= SA->num_of_fields; k++)
+             {                                                        
+                 if (strnicmp(cp[5],"SDF",3)==0)
+                 {
+	                fwrite(SA->fd[k],SA->fr[k]->field_length,1,s[0]->fp);   
+	                /*
+	                printf("%d\n",SA->num_of_fields);
+	                printf("%d\n",SA->hr->num_of_recs);
+	                printf("%s\n",SA->fd[k]);
+	                printf("%d\n",SA->fr[k]->field_length); 
+	                close_file(0);
+	                return(0);
+	                */
+	             }
+	             else
+	             {  
+	                /* Potentially dangerous - verify array vs string
+	                   don't want to write null either */
+	                rtrim(SA->fd[k]);
+	                fwrite(SA->fd[k],strlen(SA->fd[k]),1,s[0]->fp);
+	             
+	                if (k < SA->num_of_fields)
+	                   fwrite(&delimiter,1,1,s[0]->fp);
+	             }   
+             }
+             rr = fwrite(&cr,1,1,s[0]->fp);
+             rr = fwrite(&lf,1,1,s[0]->fp);  
+         }    
+              close_file(0);   
+              return(1);    
+      }    
+      
+      
+            
+      /* from file would be SA->fp */
+      cp[3] = dbname(cp[3]);    /* to file */
+      tmpname = cp[3];
+      /* select 0 is reserved for temporary files */
+      if ((s[0]->fp=fopen(cp[3],"wb+"))==NULL)  /* create "to" file */
+	      return(0);
+      rr = fwrite((char *)SA->hr,sizeof(header_rec),1,s[0]->fp);
+/*    copy field information, then add terminator byte  */
+      num_of_fields = SA->num_of_fields;
+      for (i=1;i<=num_of_fields;i++)
+      {
+	       rr = fread((char *)&field,sizeof(field_rec),1,SA->fp);
+	       rr = fwrite((char *)&field,sizeof(field_rec),1,s[0]->fp);
+      }
+      rr = fread(&header_terminator,1,1,SA->fp);
+      rr = fwrite(&header_terminator,1,1,s[0]->fp);   
+      /* now we decide which records to copy */
+      if (strnicmps(cp[5]," ")==0)
+	      field_num = 1;
+      else
+	      field_num = match(cp[5]); /*field name*/
+      for (i=1;i<=num_of_recs;i++)
+      {   
+          read_rec(area);
+	      if ((strnicmps(cp[4],"FOR")==0) || (strnicmps(cp[4],"WHILE")==0))  
+	      {
+/*            copy_for(ok,records_copied,field_num);   */
+	      }
+	      if (ok) 
+	      {
+	         rr = fwrite(SA->rd,SA->hr->cpr,1,s[0]->fp);    
+	         records_copied++;  
+	      }   
+      }   
+      
+      rr = fread(&eof_marker,1,1,SA->fp);
+      rr = fwrite(&eof_marker,1,1,s[0]->fp);
+      
+      /* adjust the SA->hr of the to file */
+      if ((strnicmp(cp[4],"FOR",3)==0) || (strnicmp(cp[4],"WHILE",5)==0))
+      {  
+         printf("FOR or WHILE used\n");
+	     fseek(s[0]->fp,0,0);
+	     s[0]->hr->num_of_recs = records_copied;
+	     rr = fwrite((char *)s[0]->hr,sizeof(header_rec),1,s[0]->fp);
+      }
+/*    SA->hr->num_of_recs = num_of_recs; restore infile rec count*/  
+      
+      close_file(0);
+   } 
+   return(1);
+}
+

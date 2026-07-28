@@ -1,0 +1,124 @@
+/* main dbf file functions */
+
+/* system definitions */
+#define AMIGADOS 0 
+#define IBMPCDOS 1
+/* dbase constants */      
+#define TRUE 1 
+#define FALSE 0 
+#define block_size 32  
+#define end_of_field "/r"
+#define max_recs 1000     /* 4000 chars or 128 fields */
+#define max_fields 128
+#define max_numeric 19
+#define max_index 5   
+#define max_area 25     
+#define date_size 8
+#define fld_nam_len 11
+#define header_terminator_byte 0x0D                          
+#define is_deleted 0x2A
+#define not_deleted 0x20
+
+/* dbase type definitions */
+typedef char *string ;
+typedef char update[3];   
+typedef char dbfile[12];      
+typedef char order_type[3];
+typedef order_type order_array_type[max_fields] ;  
+typedef char field_name[fld_nam_len];            
+
+
+typedef struct header_rec
+{
+   char version ;                  /* 0x03 for DBIII */
+   update last_updated ;
+   long num_of_recs ;
+   short data_start ;              /* offset of actual data */
+   short cpr ;                     /* chars per rec */
+   char reserved[20] ;
+}  header_rec ;					   /* 32 bytes */	
+
+typedef struct field_rec           /* 32 bytes for each field */
+{
+   char field_name[11] ; 
+   char field_type ; 
+   long field_data_address ;
+   char field_length ;
+   char decimal_places ;
+   short  multiuser1 ;
+   char workid ;
+   short  multiuser2 ;
+   char flag ;
+   char reserved[8] ;
+}  field_rec ;    
+
+typedef struct field_rec field_array[max_fields];         
+              
+typedef struct index
+{                 
+   char       idx; 
+   ENTRY      *pe;
+   IX_DESC    *pix;             
+}  index;	  
+
+typedef struct select_rec
+{  
+   char        a;               /* area used for this file */
+   FILE       *fp;              /* file pointer */   
+   char        fok;             /* file status */
+   header_rec *hr;              /* header info */
+   field_rec  *fr[max_fields];  /* field info */
+   string      fd[max_fields];  /* make a string for each field in a rec */
+   short       num_of_fields;
+   long        crn;             /* current record number */
+   char       *rd;              /* record data buffer */    
+   char        del;             /* delete status of current record */
+   char        ord;             /* current index order */ 
+/* index fields for bplus */ 
+   index       i[max_index];  
+}  select_rec ;
+   
+/* Prototypes */    
+   
+/* misc functions */
+#ifdef AMIGADOS
+   void swab(char *int1,char *int2, int no_bytes) ; 
+#endif   
+       
+char   wait(char ch);       
+void   charproc(char *field, char length, long sub) ;
+string dateproc(int length, int sub, int sub2) ;
+char   logiproc(int sub, int sub2) ;
+string memoproc(int sub,int sub2) ;
+string nmbrproc(int length, int sub, int sub2) ;
+string dbname(string tmpstr) ;
+string dxname(string tmpstr) ;  
+string rstr(string tmpstr, int newlen);
+string lstr(string tmpstr, int newlen);
+void   rtrim(string tmpfld);   
+int    strnicmps(char *str1,char *str2) ;  
+void   memchk(char *buff,char *function,char variable[],unsigned long mem);
+
+
+/* file functions */    
+int  initbase(); 
+int  read_rec(char area);
+void write_rec(char area);
+int  add_rec(char area);
+int  goto_rec(long recnum); 
+int  del_rec(char area);
+void pack(char area);
+int  read_header(char area);  
+int  open_file(dbfile filename, char area);
+void close_file(char area);
+void read_fields(char area);
+void import(dbfile infile, dbfile outfile);
+void export(dbfile infile, dbfile outfile);    
+void swabdbf(dbfile infile);   
+void copyfile(char *cp[]);  
+void create_dbf(dbfile outfile,field_array fields,int num_of_fields);
+int  copy_stru(dbfile outfile);
+
+
+
+
