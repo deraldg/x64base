@@ -1,8 +1,35 @@
 # Current Target
 
 Status: active.
-Updated: 2026-07-23.
+Updated: 2026-07-28.
 Supersedes: the completed staging-restoration/publication target recorded below.
+
+## ▶ NEXT TARGET — Phase 7: Manual Web-Ascent (AIF-072)
+
+**Pick up here.** The DOCFLUSH manual payload — the manualgen command-reference
+lane (the five FoxPro string functions `STUFF`/`PADL`/`PADR`/`PADC`/`PROPER`, 236
+registered command keys, 74 scalar functions) — is **accepted in `development`
+but not yet projected to x64base.com.** Promoting and live-verifying it is the
+current recommended next lane.
+
+Full pick-up point (objective, current state, the gates, and sources):
+`docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md`. Registered as intake
+lane **AIF-072** (`docflush-manual-web-ascent`) — claimed, not started.
+
+## Mandatory Repository Role Override - 2026-07-27
+
+This file contains dated historical state below. It does not override the
+repository-role contract:
+
+- `D:\code\ccode` on `development` is the sole authoring workspace.
+- `C:\x64base` on `main` is sterilized publication staging.
+- Never push or merge `development` to `main`.
+- Only the reviewed staging workflow in `C:\x64base` may update GitHub `main`.
+
+Current authority:
+`docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`.
+Historical uses of "backup", "mirror", "disposable", or a direct
+development-to-main merge route are superseded.
 
 ## Development Focus Update — 2026-07-23 (promotion manifest projection realignment)
 
@@ -15,9 +42,10 @@ this lane):
 - **`PROMOTE.manifest` realigned to `PROMOTION_MODEL_SEED_V1.md`.** An
   intermediate version wrongly added engine source (`src/**`, `include/**`,
   `bindings/**`, CMake/vcpkg) to the allow-list; re-onboarding through the AI
-  Portal caught it. The manifest is now projection-only — engine source/build
-  reach `main` via git (branch → cold-clone → merge), not the overlay. Commit
-  `10fa7e4a5`.
+  Portal caught it. The manifest is now projection-only. Engine source/build
+  uses a reviewed branch created from `main` in sterilized staging, followed by
+  cold-clone proof and merge to staging `main`. The `development` branch itself
+  is never pushed or merged to `main`. Commit `10fa7e4a5`.
 - **New projection gate** `tools/staging/audit-drift.ps1` (judges git-tracked
   files, skips git-managed source) + `PROMOTION_PROCESS.md` /
   `PROMOTION_CHECKLIST.md` runbook.
@@ -31,7 +59,7 @@ See `docs/maintenance/SESSION_CLOSEOUT_PROMOTE_MANIFEST_PROJECTION_REALIGNMENT_2
 
 ## Development Focus Update — 2026-07-22 (scan-evaluator optimization lane, AIF-046)
 
-Cowork development (committed dev-only; mirror `C:\x64base` has M0 only; not pushed to public by this lane):
+Cowork development (committed dev-only; staging `C:\x64base` has M0 only; not pushed to public by this lane):
 
 - **Scan/expression-evaluator optimization (AIF-046) — M0–M4 complete.** The redirect from the
   **AIF-043 Ticket B Phase-0 KILL**: Phase-0 proved the in-memory *store* was not the scan
@@ -52,7 +80,7 @@ Cowork development (committed dev-only; mirror `C:\x64base` has M0 only; not pus
 - **Not the ≥40× target** — after the lane the residual is per-row **record I/O** (`gotoRec` + seek
   + read ≈ 21 µs/row), a different subsystem now chartered as the **STAGED Bulk Record-I/O lane**
   (Phase-0 go/no-go owed; may KILL if already at memory bandwidth).
-- **Owed:** promote M1–M4 to the `C:\x64base` mirror (M0 promoted surgically); run the Bulk
+- **Owed:** promote M1-M4 through sterilized `C:\x64base` staging (M0 promoted surgically); run the Bulk
   Record-I/O Phase-0.
 
 See `docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md` and the lane charters
@@ -221,7 +249,7 @@ Public AI Portal consistency work was completed through:
 Those corrections were made against the public GitHub snapshot. This local
 session is reconciling them into the authoritative development tree without
 overwriting newer development facts, then projecting the reviewed result back
-through disposable staging.
+through sterilized publication staging.
 
 ```text
 D:\code\ccode -> C:\x64base -> github.com/deraldg/x64base
