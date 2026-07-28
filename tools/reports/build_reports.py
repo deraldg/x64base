@@ -50,6 +50,10 @@ _ap = argparse.ArgumentParser(description=__doc__)
 _ap.add_argument('--root', default=str(Path(__file__).resolve().parents[2]),
                  help='repo root (default: two levels up from this script)')
 _ap.add_argument('--out', default=None, help='output dir (default: <root>/docs/reports)')
+_ap.add_argument('--public', action='store_true',
+                 help='emit only publishable reports for x64base.com: skip any report marked '
+                      'sensitivity: private in portal.yaml, and apply the documented public omissions '
+                      '(no auth-surface map, no connection recipe, no internal absolute paths/banner).')
 _args = _ap.parse_args()
 
 ROOT = Path(_args.root).resolve()
@@ -59,6 +63,33 @@ OUT.mkdir(parents=True, exist_ok=True)
 if not MD.is_dir():
     sys.exit(f"no metadata dir at {MD} -- pass --root <repo>")
 NOW  = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+PUBLIC = bool(_args.public)
+
+def _report_sensitivity():
+    """basename -> sensitivity ('public'/'internal'/'private') from portal.yaml (portal.reports).
+    Governs the public build: a report marked 'private' is never emitted with --public."""
+    sens = {}
+    try:
+        data = yaml.safe_load((ROOT/'labtalk'/'registries'/'portal.yaml').read_text(encoding='utf-8', errors='replace'))
+    except Exception:
+        return sens
+    def walk(o):
+        if isinstance(o, dict):
+            p, s = o.get('path'), o.get('sensitivity')
+            if isinstance(p, str) and isinstance(s, str) and p.lower().endswith('.html'):
+                sens[Path(p).name] = s.strip().lower()
+            for v in o.values(): walk(v)
+        elif isinstance(o, list):
+            for v in o: walk(v)
+    walk(data)
+    return sens
+SENS = _report_sensitivity()
+def is_private(fname): return SENS.get(fname, '') == 'private'
+def emit(fname, htmltext):
+    if PUBLIC and is_private(fname):
+        print(f"SKIPPED (private per portal.yaml): {fname}"); return False
+    (OUT/fname).write_text(htmltext, encoding='utf-8')
+    print(("wrote (public): " if PUBLIC else "wrote ")+fname); return True
 
 T = lambda d,n: read_dbf(MD/d/f'{n}.dbf')[1]
 B  = {n:T('bbs',n)      for n in ['SYSBOARD','SYSTHREAD','SYSPOST']}
@@ -146,17 +177,23 @@ BANDS = {
 }
 
 def page(title, sub, body, sensitivity='internal'):
-    cls, msg = BANDS.get(sensitivity, BANDS['internal'])
-    band = f'<div class="{cls}">{e(msg)}</div>'
+    if PUBLIC:
+        band = ('<div class="band int">Public snapshot &mdash; a read-only view generated from live '
+                'DotTalk++ state. Credentials and the authentication-surface map are deliberately excluded.</div>')
+        foot = f'<div class="foot">Generated {NOW} from live DotTalk++ state. Read-only snapshot &middot; x64base.com</div>'
+    else:
+        cls, msg = BANDS.get(sensitivity, BANDS['internal'])
+        band = f'<div class="{cls}">{e(msg)}</div>'
+        foot = ('<div class="foot">Generated ' + NOW + ' from live DotTalk++ state\n'
+                '(<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with\n'
+                '<code>tools/reports/build_reports.py</code>.</div>')
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{e(title)}</title>
 <style>{CSS}</style></head><body><div class="wrap">
 {band}
 <h1>{e(title)}</h1><div class="sub">{sub}</div>
 {body}
-<div class="foot">Generated {NOW} from live DotTalk++ state
-(<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
-<code>tools/reports/build_reports.py</code>.</div>
+{foot}
 </div></body></html>"""
 
 # =====================================================================
@@ -207,7 +244,9 @@ for b in B['SYSBOARD']:
 &middot; <span class="pill">{AK.get(p['AUTHKIND'],p['AUTHKIND'])}</span></div>
 <div class="b">{e(body)}</div></div>"""
 
-howto="""<div class="note"><b>How to read a board yourself</b><br>
+# The connection recipe names a member key + the AUTH command form (access surface);
+# omit it from the public build.
+howto="" if PUBLIC else """<div class="note"><b>How to read a board yourself</b><br>
 Start the daemon (or <kbd>BBS SERVE</kbd> in the shell), then from any socket client:
 <pre class="m" style="margin:7px 0 0">AUTH member.derald &lt;token&gt;
 BBS READ board.worklog
@@ -216,8 +255,7 @@ QUIT</pre></div>"""
 r1=page("DotTalk++ BBS -- Boards and Traffic",
         "Every room on the board, who may post to it, and everything posted so far.",
         kpi+board_tbl+howto+"<h2>All posts, by board</h2>"+feed)
-(OUT/'BBS_BOARDS_REPORT.html').write_text(r1,encoding='utf-8')
-print("wrote BBS_BOARDS_REPORT.html")
+emit('BBS_BOARDS_REPORT.html', r1)
 
 # =====================================================================
 # REPORT 2 -- BBS ACCESS: members, roles, permissions, connection
@@ -365,8 +403,7 @@ r2=page("DotTalk++ BBS -- Access and Identity",
         + "<h2>Roles and their permissions</h2>" + role_tbl
         + "<h2>Connecting</h2>" + conn,
         sensitivity='private')
-(OUT/'BBS_ACCESS_REPORT.html').write_text(r2,encoding='utf-8')
-print("wrote BBS_ACCESS_REPORT.html")
+emit('BBS_ACCESS_REPORT.html', r2)
 
 # =====================================================================
 # REPORT 3 -- AI PORTAL: lanes, runs, proofs, who is working what
@@ -452,6 +489,9 @@ definition of done, house conventions, git hygiene.</li>
 <li><code>docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md</code> -- which kind of AI you are talking to.</li>
 <li>The lane doc for whatever you are touching, then its newest run below.</li>
 </ol></div>"""
+if PUBLIC:
+    portal_map = portal_map.replace('what <code>C:\\x64base</code> is not',
+                                    'what the publication-staging tree is not')
 
 howret="""<div class="note w"><b>How to return to the last agent on a lane</b><br>
 <code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
@@ -471,21 +511,34 @@ r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
         + "<h2>Lanes -- and the newest run on each</h2>" + lane_tbl + howret
         + "<h2>Runs</h2>" + runcards
         + "<h2>Proof ledger</h2>" + proof_tbl)
-(OUT/'AI_PORTAL_REPORT.html').write_text(r3,encoding='utf-8')
-print("wrote AI_PORTAL_REPORT.html")
+emit('AI_PORTAL_REPORT.html', r3)
 
 # =====================================================================
 # INDEX
 # =====================================================================
-idx=page("DotTalk++ Reports",
- "Human-readable views over live project state. Regenerate any time.",
- f"""<div class="grid">
+_idx_kpi = f"""<div class="grid">
 <div class="kpi"><div class="n">{len(B['SYSBOARD'])}</div><div class="l">BBS boards</div></div>
 <div class="kpi"><div class="n">{len(B['SYSPOST'])}</div><div class="l">Posts</div></div>
 <div class="kpi"><div class="n">{len(I['SYSMEMBER'])}</div><div class="l">Members</div></div>
 <div class="kpi"><div class="n">{len(by_lane)}</div><div class="l">Lanes</div></div>
-</div>
+</div>"""
 
+if PUBLIC:
+    idx_body = _idx_kpi + """
+<div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
+<div class="dim small">Every tracked lane with its evidence class, each recorded run with its
+owner/committer/author split, and the full proof ledger.
+Answers: <i>what has been worked, what is actually proven, and where do I pick it back up?</i></div></div>
+
+<div class="card"><h3 style="margin-top:0"><a href="BBS_BOARDS_REPORT.html">AI-BBS -- Boards and Traffic</a></h3>
+<div class="dim small">The local bulletin-board structure, post permissions, and public traffic,
+including the agent handoff worklog. Answers: <i>what is on the board right now?</i></div></div>
+
+<div class="note">Read-only snapshots that run entirely locally (the BBS listener is loopback-only).
+The access-and-identity report -- the authentication-surface map -- is kept internal by design and is not
+published here.</div>"""
+else:
+    idx_body = _idx_kpi + """
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
 each recorded run with its owner/committer/author split, and the full proof ledger.
@@ -505,6 +558,7 @@ and the connection recipe. Answers: <i>who can do what, and how do I get in?</i>
 <div class="note"><b>Regenerate</b><br>
 <pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>
 <div class="small dim" style="margin-top:7px">Reads the DBF tables and YAML registries directly. Read-only --
-it never writes to the store, so it is safe to run while the daemon is up.</div></div>""")
-(OUT/'index.html').write_text(idx,encoding='utf-8')
-print("wrote index.html")
+it never writes to the store, so it is safe to run while the daemon is up.</div></div>"""
+
+idx = page("DotTalk++ Reports", "Human-readable views over live project state.", idx_body)
+emit('index.html', idx)
