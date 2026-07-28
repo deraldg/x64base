@@ -104,7 +104,13 @@ Reject or return the package for correction when:
 
 The local workbench should:
 
-1. preserve the received archive unchanged as intake evidence;
+1. preserve the received archive unchanged as intake evidence under the
+   canonical landing zone
+   `docs/maintenance/external_ai_intake/<concept-slug>_<YYYY-MM-DD>/`, and record
+   it in the discoverability index `labtalk/registries/ai_report_index.yaml`
+   (auto-populated by `python labtalk/ai_portal/audit_trail.py --emit-index`).
+   Give the folder slug the maintainer's concept words so the package is findable
+   by description, and add spoken aliases to its index entry;
 2. verify the manifest and baseline commit;
 3. inspect the patch before applying it;
 4. compare the public baseline with current `D:\code\ccode` target files;

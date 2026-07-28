@@ -1,0 +1,102 @@
+# AI report discoverability index v1
+#
+# Purpose
+# -------
+# The single lookup layer for AI-authored reports and received external-AI
+# change packages. Resolve any report by `report_id`, provider, `kind`, or a
+# free-text `alias` WITHOUT grepping the working tree. This exists because the
+# audit validator (`labtalk/ai_portal/audit_trail.py`) historically scanned only
+# `docs/maintenance/SESSION_CLOSEOUT_*.md`, leaving received external-AI packages
+# under `docs/maintenance/external_ai_intake/` unindexed and effectively
+# undiscoverable (see AIPR-20260728-002).
+#
+# Landing-zone convention
+# -----------------------
+# Received external-AI packages are preserved unchanged under
+#   docs/maintenance/external_ai_intake/<concept-slug>_<YYYY-MM-DD>/
+# and MUST be added here (report_id, provider, date, kind, topics, aliases,
+# path, status). `aliases` carries the maintainer's spoken concept vocabulary so
+# a description like "virtual databases / object-oriented memos" resolves to the
+# right report even when the folder slug does not contain those words.
+#
+# Maintenance
+# -----------
+# Manually seeded now. Once `audit_trail.py` gains an
+# `external_intake_glob: docs/maintenance/external_ai_intake/**/MANIFEST.md`
+# (proposed Part C in INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md), this file is
+# emitted/refreshed on each audit run. External AIs may only propose entries;
+# the maintainer commits.
+
+schema: ai-report-index-v1
+status: active_seed
+generated_by: manual_seed (AIPR-20260728-002)
+landing_zone: docs/maintenance/external_ai_intake/
+
+reports:
+  - report_id: AIPR-20260728-GROK-002
+    provider: xAI
+    product: Grok
+    date: 2026-07-28
+    kind: review_needed_change_package
+    project: project.x64base.runtime
+    path: docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/MANIFEST.md
+    status: review-needed
+    topics:
+      - virtual workspaces
+      - memo-resident mini-databases
+      - extended DTSHEMA
+      - concurrent named workspaces
+      - area budgeting
+      - student work as nested database
+    aliases:
+      - virtual databases
+      - object-oriented memos
+      - OO memos
+      - memo databases
+      - nested database in a memo
+      - in-memory workspaces
+    notes: >
+      Design intake only, no source mutation. Renumbered from Grok's suggested
+      AIF-055 (taken) to AIF-070. Return-for-correction: missing baseline-commit
+      SHA. Whitepaper is a .docx pending local delivery.
+
+  - report_id: AIPR-20260728-001
+    provider: Anthropic
+    product: Cowork (Claude)
+    date: 2026-07-28
+    kind: intake_assessment
+    project: project.x64base.runtime
+    path: docs/maintenance/external_ai_intake/virtual_workspaces_memo_resident_2026-07-28/ASSESSMENT_LOCAL_WORKBENCH.md
+    status: assessment-complete
+    related_to: AIPR-20260728-GROK-002
+    topics:
+      - external ai intake
+      - aif numbering
+      - contract compliance
+    aliases:
+      - grok package assessment
+      - workspace intake review
+    notes: >
+      Local workbench assessment of the Grok package: accept in substance,
+      return for two corrections, renumber to AIF-070.
+
+  - report_id: AIPR-20260728-002
+    provider: Anthropic
+    product: Cowork (Claude)
+    date: 2026-07-28
+    kind: portal_gap_analysis
+    project: project.labtalk.campus
+    path: labtalk/ai_portal/INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md
+    status: delivered
+    topics:
+      - ai portal
+      - external ai intake
+      - report discoverability
+      - report index
+    aliases:
+      - why grok package was hard to find
+      - intake discoverability gap
+      - portal index fix
+    notes: >
+      Root-cause + fix for the external-intake discoverability gap. Delivers this
+      index (Part A); proposes contract/validator/pointer changes (Parts B-D).

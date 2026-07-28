@@ -19,6 +19,11 @@ Start here before making source, manual, website, or documentation-lane
 changes:
 
 - AI orientation: AI_README.md
+- Received external-AI packages + report lookup: landing zone
+  docs/maintenance/external_ai_intake/ ; discoverability index
+  labtalk/registries/ai_report_index.yaml (resolve any report by id, provider,
+  or concept alias -- do not grep the tree). Kept current by
+  labtalk/ai_portal/audit_trail.py --emit-index.
 - Authority order: docs/governance/authority_order.md
 - Manual safety: docs/governance/manual_safety_rules.md
 - Evidence rules: docs/manuals/developer/dev/dev-00-evidence-rules.md

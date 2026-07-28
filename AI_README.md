@@ -2,6 +2,18 @@
 
 Root start point for a new AI assistant working in this repo.
 
+## STOP: Repository Roles Before Any Other Read
+
+| Location | Branch | Role |
+| --- | --- | --- |
+| `D:\code\ccode` | `development` | Sole development and authoring workspace |
+| `C:\x64base` | `main` | Sterilized publication staging for GitHub `main` |
+
+Never work on original changes in `C:\x64base`. Never push or merge
+`development` to `main`. A push from `D:\code\ccode` may target only
+`development`; only the reviewed staging workflow in `C:\x64base` may update
+`main`. See `docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`.
+
 ## Purpose
 
 Use this file when prior chat history, hosted memory, or model-specific context
@@ -33,6 +45,13 @@ Start here, in this order, and stop when you have enough for the task:
 
 Everything else — the assimilation book, the bootstrap card, the older portal
 docs — is context you pull *when the task needs it*, not a mandatory prefix.
+
+**Looking for a prior report or a received external-AI package** (e.g. "the Grok
+post about virtual databases")? Do **not** grep the tree. Look it up by
+`report_id`, provider, or concept alias in
+`labtalk/registries/ai_report_index.yaml`. Received external-AI packages land
+under `docs/maintenance/external_ai_intake/`; the index is kept current by
+`python labtalk/ai_portal/audit_trail.py --emit-index`.
 
 The older ordered list below is retained for continuity, but the table above is
 the canonical entry sequence.
@@ -179,14 +198,17 @@ Use this as the default local authority map:
 - primary implementation/source truth: `D:\code\ccode`
 - DotTalk++ runtime tree: `D:\code\ccode\dottalkpp`
 - Laboratory Campus / LabTalk tree: `D:\code\ccode\labtalk`
-- clean staging mirror: `C:\x64base`
-- staged DotTalk++ mirror: `C:\x64base\dottalkpp`
+- sterilized publication staging: `C:\x64base`
+- staged DotTalk++ projection: `C:\x64base\dottalkpp`
 - website source tree: `D:\dev\x64base-site`
 
 Normal source flow:
 
 ```text
-D:\code\ccode -> C:\x64base -> GitHub repository
+D:\code\ccode (development authoring)
+-> reviewed promotion
+-> C:\x64base (sterilized main staging)
+-> GitHub main
 ```
 
 Normal website flow:

@@ -32,7 +32,7 @@ Usage:
   python tools/staging/prepush_gate.py --allow-mass     # ack a large change set
   python tools/staging/prepush_gate.py --strict-aif     # AIF ledger/intake recon is hard
   python tools/staging/prepush_gate.py --skip-aif       # skip the AIF-number collision gate
-  python tools/staging/prepush_gate.py --install-hook   # install as .git/hooks/pre-commit
+  python tools/staging/prepush_gate.py --install-hook   # install managed commit + push hooks
 
 The gate is advisory-by-design for the WARN lane: it never silently drops a
 file, it reports and asks a human (or an agent) to name the mutation. It also
@@ -98,6 +98,41 @@ DATA_DIR_SEGMENTS = (
 # duplicate-AIF check runs here regardless of whether any session ran the
 # coordinator. A duplicate is a HARD block (it can never be a legitimate commit).
 AIF_COLLISION_GATE = "tools/coordination/aif_collision_gate.py"
+REPOSITORY_ROLE_GUARD = "tools/staging/repository_role_guard.py"
+
+# --- AI report-audit gate (portal report-hygiene enforcement) ------------------
+# When a push touches the AI-portal report surface (closeouts, received external
+# intake packages, or the report registries/contracts), the ai_report_audit
+# invariant must hold tree-wide: every enforced closeout carries a valid
+# provenance envelope and no report id is duplicated. This is the "hallmark" that
+# keeps the audit green -- a HARD block on any hard finding (intake findings are
+# advisory and never block).
+REPORT_AUDIT_GATE = "labtalk/ai_portal/audit_trail.py"
+REPORT_SURFACE_PREFIXES = (
+    "docs/maintenance/SESSION_CLOSEOUT_",
+    "docs/maintenance/external_ai_intake/",
+    "labtalk/ai_portal/",
+    "labtalk/registries/ai_report_audit.yaml",
+    "labtalk/registries/ai_report_index.yaml",
+    "labtalk/registries/projects.yaml",
+)
+
+# --- Normalization guards (refcheck / normcheck) — catalog-drift enforcement ----
+# The command/function surface is described in several places (registry, SYSCMD,
+# SYSFUNC, the *ref help catalogs, command_catalog) authored by different hands at
+# different times. These guards fail when those descriptions disagree, so the drift
+# a multi-session flush accumulates ("herding cats") cannot quietly re-open. Run
+# ADVISORY by default (report, never block an in-flight commit); promote to a hard
+# block per-lane via each guard's own LANE_SEVERITY, or wholesale with --strict-norm.
+# Only run when the change set actually touches the surface (doc-only commits skip).
+NORMALIZATION_GUARDS = (
+    ("refcheck", "tools/fullstack_docs/refcheck_v1.py", ("--root", "{root}")),
+    ("normcheck", "tools/fullstack_docs/normcheck_v1.py", ("{root}",)),
+)
+NORM_RELEVANT_PREFIXES = (
+    "include/", "src/cli/", "src/ext/", "src/help/",
+    "dottalkpp/data/metadata/", "tools/fullstack_docs/",
+)
 
 # --- Embedded-BOM guard --------------------------------------------------------
 # A UTF-8 BOM (EF BB BF) after byte 0 breaks MSVC (C3872/C2014/C2143). This is the
@@ -204,25 +239,57 @@ def run_aif_collision_gate(strict: bool) -> int:
     return subprocess.run(cmd).returncode
 
 
+def run_report_audit_gate() -> int:
+    """Run the AI report-audit at the repo root and return its exit code (0 green,
+    1 hard closeout findings). A missing script is non-fatal (returns 0) so the
+    gate stays robust if the portal toolkit is absent; the audit's own report is
+    inherited to stdout in place."""
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    gate = os.path.join(root, *REPORT_AUDIT_GATE.split("/"))
+    if not os.path.isfile(gate):
+        print(f"prepush-gate: report-audit gate not found (skipped): {REPORT_AUDIT_GATE}",
+              file=sys.stderr)
+        return 0
+    return subprocess.run([sys.executable, gate, "--repo-root", root]).returncode
+
+
+def run_normalization_guards() -> int:
+    """Run refcheck + normcheck. Their reports print (so drift is never forgotten);
+    returns 1 if any reported a fail-lane, 0 otherwise. A missing guard is skipped
+    (non-fatal), so this stays robust if the fullstack-docs toolkit is absent."""
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    worst = 0
+    for name, rel, extra in NORMALIZATION_GUARDS:
+        script = os.path.join(root, *rel.split("/"))
+        if not os.path.isfile(script):
+            print(f"prepush-gate: normalization guard not found (skipped): {rel}",
+                  file=sys.stderr)
+            continue
+        cmd = [sys.executable, script] + [a.format(root=root) for a in extra]
+        if subprocess.run(cmd, cwd=root).returncode != 0:
+            worst = 1
+    return worst
+
+
+def run_repository_role_guard() -> int:
+    """Validate the current path and branch before inspecting a change set."""
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    guard = os.path.join(root, *REPOSITORY_ROLE_GUARD.split("/"))
+    if not os.path.isfile(guard):
+        print(
+            f"prepush-gate: repository role guard missing: {REPOSITORY_ROLE_GUARD}",
+            file=sys.stderr,
+        )
+        return 2
+    return subprocess.run([sys.executable, guard, "--root", root]).returncode
+
+
 def install_hook() -> int:
-    hook_dir = run_git(["rev-parse", "--git-path", "hooks"]).strip()
-    os.makedirs(hook_dir, exist_ok=True)
-    hook_path = os.path.join(hook_dir, "pre-commit")
-    script = (
-        "#!/bin/sh\n"
-        "# Installed by tools/staging/prepush_gate.py --install-hook\n"
-        "# Enforces the AI_PORTAL Pre-Push Gate on the staged index.\n"
-        'python "$(git rev-parse --show-toplevel)/tools/staging/prepush_gate.py" || exit 1\n'
-    )
-    with open(hook_path, "w", newline="\n") as f:
-        f.write(script)
-    try:
-        os.chmod(hook_path, 0o755)
-    except OSError:
-        pass
-    print(f"prepush-gate: installed pre-commit hook at {hook_path}")
-    print("  (bypass a single intentional commit with: git commit --no-verify)")
-    return 0
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    guard = os.path.join(root, *REPOSITORY_ROLE_GUARD.split("/"))
+    return subprocess.run(
+        [sys.executable, guard, "--root", root, "--install-hooks"]
+    ).returncode
 
 
 def main() -> int:
@@ -239,10 +306,23 @@ def main() -> int:
                     help="promote the AIF ledger/intake reconciliation to a hard failure")
     ap.add_argument("--skip-aif", action="store_true",
                     help="skip the AIF-number collision gate")
+    ap.add_argument("--skip-report-audit", action="store_true",
+                    help="skip the AI report-audit (portal report-hygiene) gate")
+    ap.add_argument("--skip-norm", action="store_true",
+                    help="skip the normalization (refcheck/normcheck) catalog-drift guards")
+    ap.add_argument("--strict-norm", action="store_true",
+                    help="promote normalization catalog drift to a hard failure (exit 2)")
     args = ap.parse_args()
 
     if args.install_hook:
         return install_hook()
+
+    if run_repository_role_guard() != 0:
+        print(
+            "prepush-gate: BLOCKED -- repository path/branch role check failed.",
+            file=sys.stderr,
+        )
+        return 2
 
     paths = changed_paths(args.range_spec)
     scope = args.range_spec or "staged index"
@@ -312,6 +392,31 @@ def main() -> int:
                   "in the intake queue. Renumber one via "
                   "tools/coordination/session_coordinator.py claim-aif.", file=sys.stderr)
             exit_code = 2  # hard block dominates any WARN already set
+
+    touches_report_surface = any(
+        p.replace("\\", "/").startswith(REPORT_SURFACE_PREFIXES) for p in paths)
+    if not args.skip_report_audit and touches_report_surface:
+        print("\n=== AI report-audit (portal report hygiene) ===")
+        if run_report_audit_gate() != 0:
+            print("\n  BLOCKED — AI report-audit found hard findings (a closeout is missing "
+                  "its ai_report_audit envelope, or a report id is duplicated). Fix the "
+                  "envelope(s) or renumber the id; intake-package findings are advisory and "
+                  "never block.", file=sys.stderr)
+            exit_code = 2  # hard block
+
+    touches_surface = any(
+        p.replace("\\", "/").startswith(NORM_RELEVANT_PREFIXES) for p in paths)
+    if not args.skip_norm and touches_surface:
+        print("\n=== normalization guards (refcheck / normcheck) ===")
+        if run_normalization_guards() != 0:
+            if args.strict_norm:
+                print("\n  BLOCKED — normalization guard found catalog drift "
+                      "(--strict-norm).", file=sys.stderr)
+                exit_code = 2
+            else:
+                print("\n  ADVISORY — catalog drift present (see above); NOT blocking. "
+                      "Re-derive the lagging catalog (SYSCMD/SYSFUNC), or promote to a "
+                      "hard block with --strict-norm / a lane's LANE_SEVERITY.")
 
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "

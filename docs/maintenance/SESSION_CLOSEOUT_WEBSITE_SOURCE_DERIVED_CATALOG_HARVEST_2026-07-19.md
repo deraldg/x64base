@@ -15,6 +15,8 @@ ai_report_audit:
     id: project.x64base.runtime
     root: D:/code/ccode
   git:
+    branch: development
+    baseline_commit: 8ee746dee
     website_repo: D:/dev/x64base-site
     website_branch: codex/lean-sites-publish
     website_baseline_commit: 780ffb89ad3b

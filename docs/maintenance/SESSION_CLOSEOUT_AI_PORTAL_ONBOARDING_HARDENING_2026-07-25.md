@@ -1,7 +1,7 @@
 ---
 ai_report_audit:
   schema: ai-report-audit-v1
-  report_id: AIPR-20260725-001
+  report_id: AIPR-20260725-002
   recorded_at_utc: 2026-07-25T22:10:00Z
   agent:
     provider: Anthropic

@@ -12,7 +12,7 @@ ai_report_audit:
     id: not_exposed
     chat_reference: promotion manifest projection realignment
   project:
-    id: x64base / DotTalk++ Runtime
+    id: project.x64base.runtime
     root: D:/code/ccode
   git:
     branch: development

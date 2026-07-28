@@ -5,6 +5,11 @@ report_audit:
   status: active_mandatory
   contract: labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md
   closeout_glob: docs/maintenance/SESSION_CLOSEOUT_*.md
+  # Received external-AI change/intake packages preserved under the intake
+  # landing zone. Scanned advisorily (verbatim evidence: findings do not fail the
+  # audit and report.path agreement is not enforced). Feeds the discoverability
+  # index (labtalk/registries/ai_report_index.yaml) via `audit_trail.py --emit-index`.
+  external_intake_glob: docs/maintenance/external_ai_intake/**/*.md
   template: docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md
   project_registry: labtalk/registries/projects.yaml
 

@@ -11,7 +11,7 @@ LABTALK_ROOT = Path(__file__).resolve().parents[2]
 if str(LABTALK_ROOT) not in sys.path:
     sys.path.insert(0, str(LABTALK_ROOT))
 
-from ai_portal.audit_trail import audit_closeouts  # noqa: E402
+from ai_portal.audit_trail import audit_closeouts, emit_index  # noqa: E402
 
 
 REQUIRED_FIELDS = [
@@ -54,6 +54,7 @@ class AuditTrailTests(unittest.TestCase):
                   schema: ai-report-audit-v1
                   status: active_mandatory
                   closeout_glob: docs/maintenance/SESSION_CLOSEOUT_*.md
+                  external_intake_glob: docs/maintenance/external_ai_intake/**/*.md
                   template: docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md
                   project_registry: labtalk/registries/projects.yaml
                   required_fields:
@@ -176,6 +177,93 @@ class AuditTrailTests(unittest.TestCase):
 
         fields = {finding["field"] for finding in audit["findings"]}
         self.assertIn("ai_report_audit.report.kind", fields)
+
+
+    def intake_manifest(self, report_id: str = "AIPR-INTAKE-001", *, with_git: bool = False) -> str:
+        lines = [
+            "---",
+            "ai_report_audit:",
+            "  schema: ai-report-audit-v1",
+            f"  report_id: {report_id}",
+            "  recorded_at_utc: 2026-07-28T00:00:00Z",
+            "  agent:",
+            "    provider: xAI",
+            "    product: Grok",
+            "    model: not_exposed",
+            "    access_mode: hosted_proposal",
+            "  session:",
+            "    id: not_exposed",
+            "    chat_reference: not_exposed",
+            "  project:",
+            "    id: project.test",
+            "    root: .",
+        ]
+        if with_git:
+            lines += ["  git:", "    branch: development", "    baseline_commit: 0123456789abcdef"]
+        lines += [
+            "  authorization:",
+            "    requested_by: maintainer",
+            "    scope: external design intake",
+            "  report:",
+            "    path: change_packages/whatever/MANIFEST.md",
+            "    kind: review_needed_change_package",
+            "primary_topics:",
+            "  - virtual workspaces",
+            "---",
+            "# Received package",
+            "",
+        ]
+        return "\n".join(lines)
+
+    def test_intake_findings_are_advisory_not_hard(self) -> None:
+        root, policy, temp = self.make_repo()
+        self.addCleanup(temp.cleanup)
+        # A clean closeout keeps the hard audit green.
+        rep = "docs/maintenance/SESSION_CLOSEOUT_OK_2026-07-28.md"
+        (root / rep).write_text(self.valid_closeout(rep), encoding="utf-8")
+        # A received package missing its git block: envelope present, intake kind.
+        pkg = root / "docs" / "maintenance" / "external_ai_intake" / "pkg_2026-07-28" / "MANIFEST.md"
+        pkg.parent.mkdir(parents=True)
+        pkg.write_text(self.intake_manifest(with_git=False), encoding="utf-8")
+
+        audit = audit_closeouts(root, policy)
+
+        # Intake gaps are advisory: hard findings stay zero, but the package is scanned.
+        self.assertEqual(audit["finding_count"], 0)
+        self.assertEqual(audit["intake_enforced_count"], 1)
+        self.assertGreaterEqual(audit["intake_finding_count"], 1)
+        intake_fields = {f["field"] for f in audit["intake_findings"]}
+        self.assertIn("ai_report_audit.git.branch", intake_fields)
+        # report.path is NOT enforced on verbatim-preserved packages.
+        self.assertNotIn("ai_report_audit.report.path", intake_fields)
+        # The package is discoverable via the emitted index record.
+        ids = {r["report_id"] for r in audit["reports"]}
+        self.assertIn("AIPR-INTAKE-001", ids)
+
+    def test_emit_index_preserves_curated_entries(self) -> None:
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        index_path = Path(temp.name) / "ai_report_index.yaml"
+        index_path.write_text(
+            "schema: ai-report-index-v1\n"
+            "reports:\n"
+            "  - report_id: AIPR-CURATED-001\n"
+            "    aliases: [special curated alias]\n",
+            encoding="utf-8",
+        )
+        reports = [
+            {"report_id": "AIPR-CURATED-001", "provider": "X", "path": "a.md"},  # existing
+            {"report_id": "AIPR-NEW-001", "provider": "Y", "path": "b.md"},      # new
+        ]
+        result = emit_index(reports, index_path)
+
+        import yaml as _yaml
+        data = _yaml.safe_load(index_path.read_text(encoding="utf-8"))
+        by_id = {r["report_id"]: r for r in data["reports"]}
+        self.assertEqual(result["appended"], 1)
+        self.assertIn("AIPR-NEW-001", by_id)
+        # Curated aliases on the existing entry are preserved, not clobbered.
+        self.assertEqual(by_id["AIPR-CURATED-001"].get("aliases"), ["special curated alias"])
 
 
 if __name__ == "__main__":

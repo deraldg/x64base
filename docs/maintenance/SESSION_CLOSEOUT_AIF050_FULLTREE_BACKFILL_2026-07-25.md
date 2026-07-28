@@ -1,3 +1,35 @@
+---
+ai_report_audit:
+  schema: ai-report-audit-v1
+  report_id: AIPR-20260725-BF1
+  recorded_at_utc: 2026-07-26T02:33:51Z
+  agent:
+    provider: not_exposed
+    product: not_exposed
+    model: not_exposed
+    access_mode: human_operated_tool
+  session:
+    id: not_exposed
+    chat_reference: not_exposed
+  project:
+    id: project.x64base.runtime
+    root: D:/code/ccode
+  git:
+    branch: development
+    baseline_commit: 238c85f22
+  authorization:
+    requested_by: maintainer
+    scope: >
+      Envelope reconstructed 2026-07-28 during AI-portal audit backfill
+      (AIPR-20260728-002). AI-authored, human-committed (introducing commit
+      238c85f22, 2026-07-26); original session/agent identity was not recorded and is
+      marked not_exposed; access_mode human_operated_tool per
+      AI_REPORT_AUDIT_CONTRACT_V1.md.
+  report:
+    path: docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md
+    kind: session_closeout
+---
+
 # Session Closeout -- AIF-050 M2/M3: `@dottalk.file` full-tree backfill + schema v1 revision
 
 **Run:** AIPR-20260725-001 (continues; same session as the AI-BBS bundle).
