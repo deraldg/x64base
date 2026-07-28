@@ -6,30 +6,40 @@ description: "Observed DotTalk++ release executable size, dynamic dependencies, 
 ## Snapshot
 
 This page records the observed Windows release payload from the local build on
-July 7, 2026:
+2026-07-27:
 
 | File | Size | Role |
 | --- | ---: | --- |
-| `dottalkpp.exe` | 6,675,456 bytes | DotTalk++ command shell, x64base runtime surface, scripting, HELP, browser, relation, metadata, and TUI-enabled command host. |
-| `lmdb.dll` | 82,432 bytes | LMDB runtime used as the physical backend for LMDB-backed index environments. |
+| `dottalkpp.exe` | 7,707,648 bytes | DotTalk++ command shell, x64base runtime surface, scripting, HELP, browser, relation, metadata, identity / AI-BBS, and TUI-enabled command host. |
 | `sqlite3.dll` | 1,077,760 bytes | SQLite runtime used by SQLite and SQL bridge lanes. |
+| `libsodium.dll` | 344,064 bytes | libsodium runtime for identity crypto (Argon2id password hashing and a CSPRNG) on the AI-BBS / identity lane. |
+| `lmdb.dll` | 82,432 bytes | LMDB runtime used as the physical backend for LMDB-backed index environments. |
 
-The important point is that LMDB and SQLite are streamlined external runtime
-dependencies. They are not what makes `dottalkpp.exe` larger.
+The important point is that LMDB, SQLite, and libsodium are streamlined external
+runtime dependencies. They are not what makes `dottalkpp.exe` larger; the
+executable grew from `6,675,456` bytes (July 7) as the identity / AI-BBS,
+expression-function, and related application code landed — not from the DLLs.
 
 ## Dynamic dependencies
 
 PE inspection of `dottalkpp.exe` shows that the executable imports:
 
 - `sqlite3.dll`
+- `libsodium.dll`
 - `lmdb.dll`
 - Windows system libraries such as `KERNEL32.dll`, `USER32.dll`, `SHELL32.dll`,
   `ADVAPI32.dll`, `WINHTTP.dll`, and `WS2_32.dll`
 - MSVC runtime libraries such as `MSVCP140.dll`, `VCRUNTIME140.dll`,
   `VCRUNTIME140_1.dll`, and Universal CRT DLLs
 
-That means SQLite and LMDB are dynamically loaded support libraries. Their code
-is not statically folded into the DotTalk++ executable.
+That means SQLite, LMDB, and libsodium are dynamically loaded support libraries.
+Their code is not statically folded into the DotTalk++ executable.
+
+The required cross-platform build libraries come from vcpkg: `sqlite3`, `lmdb`,
+`libsodium`, and header-only `nlohmann-json`. Of these, `sqlite3`, `lmdb`, and
+`libsodium` ship as the runtime DLLs above; `nlohmann-json` is header-only and
+adds no DLL. The Windows system and MSVC libraries are platform-specific and
+resolve to their equivalents in a cross-platform build.
 
 ## Why the executable is larger
 
@@ -60,6 +70,11 @@ with a broad command/documentation surface, not as a minimal embedded database
 library.
 
 ## Observed binary layout
+
+> The PE-section and largest-object breakdowns below are from the July 7 baseline
+> build (`6,675,456` bytes) and predate the growth to `7,707,648` bytes (identity /
+> AI-BBS, expression functions, and related code); a future re-measure will
+> refresh them.
 
 The observed release executable contains these main PE sections:
 
@@ -135,9 +150,9 @@ When documenting the runtime footprint:
 
 - Do say that DotTalk++ is a compact native runtime compared with framework-heavy
   app stacks.
-- Do say that LMDB and SQLite are streamlined external DLL dependencies.
+- Do say that LMDB, SQLite, and libsodium are streamlined external DLL dependencies.
 - Do not imply that `dottalkpp.exe` is only a database kernel.
-- Do not blame the size on SQLite or LMDB; they are dynamically imported.
+- Do not blame the size on SQLite, LMDB, or libsodium; they are dynamically imported.
 - Do explain that the executable contains the command shell, engine services,
   scripting, SelfDoc/HELP, metadata, browsers, relations, and TUI hooks.
 

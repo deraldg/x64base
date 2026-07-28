@@ -1,0 +1,122 @@
+---
+title: "In-Memory Databases"
+description: "The x64base in-memory database initiative: a self-owned RAM substrate that runs the full DBF and CDX-V64 stack in memory, its two-layer sizing governance, and the proposed virtual-workspace and memo-resident mini-database direction."
+---
+
+In-memory databases are a distinct branch of x64base work: running the same
+DBF-family engine — tables, native CDX-V64 indexes, relations, scripts — entirely
+in RAM, with **no change to the record, create, or loader code**. Residency comes
+from swapping the *substrate* underneath the file layer, not from a parallel
+in-memory engine. This page is the section home; the operational command contract
+lives on [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk).
+
+> **Evidence boundary.** The VDISK / in-process RAM substrate below is
+> implemented development source with runtime proof (AIF-043), visible in the
+> local preview and not yet a tagged-release claim. The virtual-workspace and
+> memo-resident direction at the end of this page is **external design intake
+> only** — proposed, not implemented, and not runtime truth. See
+> [Current Project Truth](/docs/dev/project-truth) for the evidence order.
+
+## Two substrates
+
+The initiative deliberately has two RAM substrates, chosen so the engine owns as
+much of the mechanism as possible.
+
+The **primary substrate is a self-owned in-process virtual filesystem**
+(`xbase::ramfs`). It is the modern re-implementation of the 1980s `RAMDRIVE.SYS`
+/ `VDISK.SYS` idea, but owned by the engine instead of the operating system — no
+signed kernel driver, no drive letter, and no third-party license to vet for
+redistribution. A process-global registry maps normalized absolute paths to
+growable byte buffers (`RamFile`s). The DBF and native-CDX file layers simply
+consult that registry: a virtual path reads and writes a RAM buffer, a real path
+uses the OS. Because the entire file stack runs unchanged, a table created in RAM
+behaves exactly like its on-disk twin — `USE` can reopen it and its sibling
+`.cdx` still resolves, since RAM files persist in the registry across stream
+open and close.
+
+The **optional add-on is LMDB-in-RAM via an operating-system symlink.** LMDB must
+`mmap` a real OS file, so it cannot live in the in-process VFS. If a user wants
+LMDB-backed index environments in RAM as well, they opt into a symlink or
+junction that points the `mem` path slots at a real RAM volume — `/dev/shm`
+(tmpfs) on Linux with zero setup, or a driver-backed RAM disk on Windows. This is
+the only path that needs the `vdisk.ini` administrator configuration.
+
+## The VDISK lane
+
+`VDISK MOUNT` redirects the DBF, INDEXES, and LMDB path slots beneath the RAM
+root (default `<DATA>/ram`) and mounts it as an in-process `ramfs` root. While
+mounted, `CREATE X64`, `USE`, and native CDX-V64 all live in RAM with nothing
+written to disk; `VDISK STATUS` and `VDISK CONFIG` report the live state; and
+`VDISK UNMOUNT` / `OFF` / `CLEAR` drop every resident RAM file. The lane is
+deliberately **ephemeral** — data that must survive belongs in a durable table or
+an explicit export. The full command and lifetime contract, owned by
+`src/cli/cmd_vdisk.cpp`, is documented on
+[RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk).
+
+## Two-layer sizing and governance
+
+The *hard* size limit belongs to the OS mount (tmpfs or a RAM-disk driver), which
+the engine did not create and cannot unilaterally resize. So sizing is split into
+two honest layers, per the AIF-043 spec (*VDISK RAM Sizing & Admin Config v1*).
+
+**Layer 1 is a provisioning recommendation — advisory, not enforced.** In
+`mode = auto` the engine computes a suggested volume size as
+`clamp(25% × available RAM, 64 MB floor, 2 GB ceiling)`, then caps it at 50% of
+total RAM so it never starves the host. A 16 GB machine with 10 GB free is advised
+2 GB; a 4 GB machine with 1.5 GB free, 384 MB; a 1 GB machine with 300 MB free,
+75 MB — degrading gracefully. `VDISK CONFIG` reports this number for an
+administrator or a provisioning script to act on.
+
+**Layer 2 is the engine's own soft budget — owned and enforced.** The engine
+tracks `used_bytes` for files under the RAM root, warns at a high-water mark
+(`warn_pct`, default 80%), and applies an `on_full` policy at 100%: `warn` (let
+the OS write fail with a clear message), `spill` (fall back to the real-disk slot,
+converting RAM to disk), or `fail`. `VDISK STATUS` reports the live counter and
+resident-file count. This layer stays portable and honest even when the OS mount
+size is out of the engine's hands.
+
+The `vdisk.ini` file ships **inert** — every line commented, so the feature is off
+until a user opts in. It is a true INI file (not a DotScript), read by its own
+`[vdisk]` parser with keys for `enabled`, `root`, `mode`, `size_mb`, `percent`,
+`floor_mb`, `ceil_mb`, `warn_pct`, and `on_full`.
+
+## Proposed direction — virtual workspaces and memo-resident mini-databases
+
+> **Status: external design intake, not implemented.** Recorded on the
+> development side as intake package `AIPR-20260728-GROK-002` (proposed
+> `AIF-070`), an architecture proposal from xAI Grok reviewed by the local
+> workbench on 2026-07-28. It mutates no source and carries no runtime proof. It
+> is described here as a forward direction, not a current capability.
+
+The next design question builds on two existing primitives: the DTSHEMA workspace
+format (`src/workspace/schema_workspace.cpp`) and the payload-agnostic 64-bit
+memo reference (`MemoRef`, `src/memo/memo_ref.cpp`). The proposal explores
+**concurrent named workspaces** with first-class area ownership and **area
+budgeting**, replacing today's manual area-partitioning technique with a
+supported one; and **memo-resident mini-databases**, in which an entire
+serialized workspace — schema plus data — is stored as a memo payload, so a memo
+becomes a self-contained object-oriented mini-database. A student's private work
+could then live as a nested database inside a single memo, hydrated on demand
+(memo bytes → DTSHEMA and data → virtual areas or VDISK), which aligns closely
+with the Laboratory Campus teaching mission.
+
+The proposal carries explicit hard constraints: memos stay **payload-agnostic**
+(no privileged "workspace memo" type that would restrict other memo payloads);
+the classic destructive `WORKSPACE OPEN` remains available **with a warning** for
+existing scripts; and the work is **fenced away from the AI-BBS agent-server
+lane**. Illustrated future effects — a DTSHEMA version bump with a per-area
+`kind`, scoped `WORKSPACE SAVE` by named workspace, and the hydration path above —
+are planning sketches only. The design whitepaper is authored in the proposing
+agent's workspace and pending delivery into the local tree before it can be
+linked here.
+
+## Authority and provenance
+
+The implemented substrate is owned by `src/xbase/ramfs.cpp` /
+`include/xbase/ramfs.hpp` (the in-process VFS) and `src/cli/cmd_vdisk.cpp` (the
+`VDISK` command), with sizing governed by the AIF-043 spec *VDISK RAM Sizing &
+Admin Config v1*. The proposed workspace / memo-resident direction is preserved
+as review-needed intake evidence under the development tree's external-AI intake
+folder. See also [FPT64 Memo Format](/docs/engine/fpt64-memo-format),
+[CDX and LMDB Indexing](/docs/engine/cdx-lmdb-indexing), and
+[Current Work Lanes](/docs/dev/current-lanes).

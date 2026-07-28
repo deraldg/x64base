@@ -35,6 +35,21 @@ silently treating it as current public runtime truth.
 
 See [Documentation Progress](/docs/dev/documentation-progress).
 
+### 2026-07-28 update — full-stack documentation flush (DOCFLUSH-20260728)
+
+A full-stack documentation flush re-harvested the live HELP / SelfDoc metadata
+(the SYSCMD, SYSFUNC, SYSARGS, and SYSSUBCMD catalogs) and re-ran the manualgen
+curation and data-driven command-reference lanes. The manualgen
+command-reference lane is **accepted in the development branch and not yet
+deployed to public `main`** — under the evidence order above it is development
+evidence, not public runtime truth. The development tree now carries 236
+registered command keys and 74 scalar functions, including five
+FoxPro-compatible string functions (`STUFF`, `PADL`, `PADR`, `PADC`, `PROPER`)
+added to the expression engine's string-function surface. These counts describe
+the development
+tree; the public `main` figures remain those of the last promoted release until
+this work is promoted through a reviewed public change.
+
 ## Current status
 
 DotTalk++ / x64base is active beta research and education software, not a
@@ -46,9 +61,20 @@ relations, scripts, HELP/metadata work, and optional UI experiments. Each lane
 must carry its own test and maturity status; the existence of source does not
 prove production readiness.
 
+An identity / AI-BBS lane has since landed in source, using `libsodium` for
+Argon2id password hashing and a CSPRNG (linked as a required build library). A
+standalone BBS agent-server daemon (`dottalk_bbsd`) can run this lane headless,
+bound to loopback (`127.0.0.1`) only. Both are active-beta source evidence on
+the development side, not a promoted public guarantee.
+
 ## Important limitations
 
-- No atomic transaction guarantee spans DBF, memo, and index persistence.
+- No atomic transaction guarantee spans DBF, memo, and index persistence. The
+  buffered table-lane did gain a scoped, proof-backed write-ahead redo log
+  (2026-07-19) that rates its Atomicity and Durability Partial, but that is a
+  single-lane gain and does not extend across the direct/non-buffered paths or a
+  multi-store DBF + memo + index transaction (see [ACID and the Glass-Box
+  Engine](/docs/engine/acid-and-glass-box)).
 - x64 widening is backend- and command-path-specific, not universal unlimited
   scale.
 - GUI/TUI, Python, SelfDoc, and Laboratory Campus work are optional research or

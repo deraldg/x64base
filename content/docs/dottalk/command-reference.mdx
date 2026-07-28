@@ -44,6 +44,31 @@ The complete generated index labels all three provenance layers. Public-source
 links below remain pinned to the sealed snapshot until this local candidate
 passes review, source promotion, deployment, and live-readback gates.
 
+## Manualgen command-reference lane — accepted in dev, not deployed (2026-07-28)
+
+| Measure | Value |
+| --- | ---: |
+| Reader-linked pages | 164 |
+| Command lineage rows | 10,502 |
+| SYSCMD / SYSFUNC | 212 / 74 |
+| Functions accepted | 5 (`STUFF`, `PADL`, `PADR`, `PADC`, `PROPER`) |
+| Blocking coverage findings | 0 |
+| Gate 4 | applied (`MANRUN-20260728T041930Z-5DE4733C`) |
+| Publication readiness | `PASS` |
+
+This is a distinct pipeline stage from the 191-page candidate above, not a newer
+count of the same assembly. It is a separate manualgen command-reference run
+(harvest `HELPMETA-20260728T003402Z`) that accepted the five FoxPro string
+functions `STUFF`, `PADL`, `PADR`, `PADC`, and `PROPER` into the dev-tree
+command reference through an authorized, reversible gate-4 apply. Do not compare
+its page count directly with the 191-page candidate; they measure different
+assemblies.
+
+Not source-promoted or deployed. As with every candidate on this page, website
+prose cannot promote a command or change its support status; this lane still
+owes source promotion, deployment, and live-readback gates before it can advance
+the sealed checkpoint.
+
 ## Read and inspect
 
 - [Download the accepted developer manual](/downloads/current/developer_manual_publication_v1.md).

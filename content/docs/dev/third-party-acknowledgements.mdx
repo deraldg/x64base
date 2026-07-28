@@ -11,13 +11,15 @@ Acknowledgement here does not imply endorsement by the third-party project. Fina
 
 | Project | Role in x64base / DotTalk++ / LabTalk | Credit and official link | Maintainer fork |
 | --- | --- | --- | --- |
-| LMDB | Embedded key-value database used as the physical backend for CDX-backed index environments. | Lightning Memory-Mapped Database Manager by Howard Chu / Symas and the OpenLDAP project. Official documentation: [lmdb.tech](https://www.lmdb.tech/doc/). Upstream mirror: [LMDB/lmdb](https://github.com/LMDB/lmdb). | [deraldg/lmdb](https://github.com/deraldg/lmdb) |
+| LMDB | Embedded key-value database used as the physical backend for CDX-backed index environments. | Lightning Memory-Mapped Database Manager by Howard Chu / Symas and the OpenLDAP project. Official home page: [Symas LMDB](https://www.symas.com/lmdb.php). Documentation: [lmdb.tech](https://www.lmdb.tech/doc/). Upstream mirror: [LMDB/lmdb](https://github.com/LMDB/lmdb). | [deraldg/lmdb](https://github.com/deraldg/lmdb) |
 | Turbo Vision / tvision | Text UI foundation for console/TUI lanes where enabled. | Modern Turbo Vision port maintained by the tvision project. Official repository: [magiblot/tvision](https://github.com/magiblot/tvision). | [deraldg/tvision](https://github.com/deraldg/tvision) |
 | SQLite | Embedded SQL database support and educational database demonstrations. | SQLite project. Official site: [sqlite.org](https://www.sqlite.org/). Copyright/public-domain information: [SQLite Copyright](https://sqlite.org/copyright.html). Upstream mirror: [sqlite/sqlite](https://github.com/sqlite/sqlite). | [deraldg/sqlite](https://github.com/deraldg/sqlite) |
+| libsodium | Identity crypto for the AI-BBS / identity lane: Argon2id password hashing and a CSPRNG (linked as `unofficial-sodium::sodium`). | libsodium by Frank Denis and contributors. Official site: [libsodium.org](https://libsodium.org/). Upstream repository: [jedisct1/libsodium](https://github.com/jedisct1/libsodium). | [jedisct1/libsodium](https://github.com/jedisct1/libsodium) (upstream; no maintainer fork) |
 | pybind11 | Optional C++ to Python binding support. | pybind11 project and contributors. Official documentation: [pybind11.readthedocs.io](https://pybind11.readthedocs.io/). Upstream repository: [pybind/pybind11](https://github.com/pybind/pybind11). | [deraldg/pybind11](https://github.com/deraldg/pybind11) |
 | nlohmann/json | JSON support for C++ tooling and structured data paths. | JSON for Modern C++ by Niels Lohmann and contributors. Official site: [json.nlohmann.me](https://json.nlohmann.me/). Upstream repository: [nlohmann/json](https://github.com/nlohmann/json). | [deraldg/json](https://github.com/deraldg/json) |
 | wxWidgets | Optional cross-platform GUI frontend lane. | wxWidgets project. Official site: [wxwidgets.org](https://wxwidgets.org/). Upstream repository: [wxWidgets/wxWidgets](https://github.com/wxWidgets/wxWidgets). | [deraldg/wxWidgets](https://github.com/deraldg/wxWidgets) |
 | vcpkg | C/C++ dependency acquisition and build integration. | Microsoft and the C++ community. Official site: [vcpkg.io](https://vcpkg.io/). Upstream repository: [microsoft/vcpkg](https://github.com/microsoft/vcpkg). | [deraldg/vcpkg](https://github.com/deraldg/vcpkg) |
+| Ollama | Local large-language-model server for the DotTalk++ CHAT and AI-portal lane. | Ollama project. Official site: [ollama.com](https://ollama.com/). Upstream repository: [ollama/ollama](https://github.com/ollama/ollama). | Run as a local service (not a compiled fork). |
 
 ## Education and Integration Candidates
 
@@ -28,6 +30,14 @@ services, or active connections.
 | Project | Current role | Credit and official links | Integration state |
 | --- | --- | --- | --- |
 | Moodle LMS | First future provider candidate for the Laboratory Campus LMS communications boundary. | Moodle LMS is an open-source learning-management system maintained by Moodle and its community. Official links: [Moodle LMS](https://moodle.com/lms/), [open-source overview](https://moodle.com/about/open-source/), and [External Services documentation](https://moodledev.io/docs/5.0/apis/subsystems/external). | Reserved/local-only. No endpoint, token, student data, grade data, or live delivery is configured. |
+
+## Contributor Credits
+
+Beyond upstream open-source projects, x64base credits individual contributors.
+
+| Contributor | Contribution | Affiliation |
+| --- | --- | --- |
+| Nathaniel Strickland | The Ollama server and GPTbase (local-only dev; to be promoted through the PDLC). | Student, South Dakota School of Mines &amp; Technology. |
 
 ## Website and Documentation Tooling
 

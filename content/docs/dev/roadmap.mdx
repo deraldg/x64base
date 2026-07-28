@@ -22,7 +22,7 @@ Landed in the public build and backed by source + runtime/unit-test evidence.
 | Custom field types (register-once codec registry) | runtime-evidenced | A type registers code + codec + width + flavor eligibility once and flows through `CREATE`/validation/storage; the built-in binary types use the same registry. See [API Reference](/docs/engine/api-reference). |
 | Raised engine limits | source-evidenced | `MAX_AREA` 512, `MAX_FIELDS` 256, x64 name ceilings 256, 16 MiB record hard ceiling + 64 KiB advisory. |
 | Ordered navigation & SEEK at scale | runtime-evidenced | CDX/LMDB streaming `TOP`/`SKIP`, keyed range-`SEEK`, single-pass `AGGS ALL`, batched `DELETE`/`RECALL`. See [Pinocchio Benchmarks](/docs/engine/pinocchio-benchmarks). |
-| Command & function surface | mixed checkpoint/current | 234 registered command keys in current source; the sealed public checkpoint has 183 reference pages, while the local reviewed candidate has 191. See [Command Catalog](/docs/dottalk/command-catalog) and [Command Reference](/docs/dottalk/command-reference). |
+| Command & function surface | mixed checkpoint/current | 236 registered command keys in current source; the sealed public checkpoint has 183 reference pages, while the local reviewed candidate has 191. See [Command Catalog](/docs/dottalk/command-catalog) and [Command Reference](/docs/dottalk/command-reference). |
 | Messaging & localization spine | generated-reviewed | `cmdout` channel with `en-US` + `de`/`es`/`fr`/`it`, a canonical HRESULT error catalog. See [Messaging & Localization](/docs/engine/messaging-and-localization). |
 | Locale-safe numeric / date formatting | source-evidenced | Value/storage/`STR()` formatters guard against thousands-grouping and precision loss (AIF-031). |
 

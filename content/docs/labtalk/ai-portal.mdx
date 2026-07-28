@@ -118,6 +118,67 @@ and a test plan. That package is reviewed and selectively applied in the
 maintainer-controlled authoritative development tree identified by the current
 AI Portal location seed.
 
+## Submit a Change Package (copy-paste)
+
+An outside AI reviews the public snapshot and returns a reviewable package **as
+text** — it never writes to the tree, commits, or pushes. Hand it the request
+below. This example registers a project; change the **Task** and **Target** for
+any other proposal.
+
+> **There is no web upload form or submission page.** The outside AI's entire
+> deliverable is the four package files as text in your chat with it. The
+> maintainer files that text into the repository intake zone — the AI must not
+> look for a portal page to post into, and must not try to write, commit, or push
+> anything itself. "Submit" here means "emit the package text for the maintainer."
+
+```text
+You are proposing a change to x64base through its AI Portal. You have NO write
+access — you return a reviewable package as text. Do not commit, push, or claim
+anything compiles or runs.
+
+Repository: https://github.com/deraldg/x64base   Branch: main
+Start here: https://github.com/deraldg/x64base/blob/main/AI_PORTAL.md
+
+FIRST read these and list what you actually read; record the exact main commit SHA:
+- AI_PORTAL.md and AI_README.md
+- labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md   (how to return a package)
+- labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md     (the ai_report_audit envelope)
+- labtalk/registries/projects.yaml                     (registry + schema)
+
+TASK: Register one new project in labtalk/registries/projects.yaml.
+- APPEND a single entry; do not modify existing entries.
+- Follow the schema exactly: id (project.<dotted.name>), name, kind, status,
+  root, owner_repo, lanes, docs (optional), publication_staging /
+  publication_target (if applicable), notes.
+
+ALLOWED SCOPE: labtalk/registries/projects.yaml only (plus the package files).
+EXCLUDED SCOPE: engine/source code, binaries, generated data, other registry
+entries, contracts, and any branch operations.
+
+Return a package as text with four parts:
+1) MANIFEST.md — opening with ai_report_audit YAML front matter (schema
+   ai-report-audit-v1; your own report_id AIPR-YYYYMMDD-NNN; recorded_at_utc;
+   agent {provider, product, model or not_exposed, access_mode: hosted_proposal};
+   session {id or not_exposed, chat_reference or not_exposed}; project {id + root
+   taken from projects.yaml}; git {branch: main, baseline_commit: <SHA you read>};
+   authorization {requested_by: maintainer, scope}; report {path, kind:
+   review_needed_change_package}) plus a sibling primary_topics list of concept
+   keywords — then the human-readable manifest.
+2) changes.patch — unified diff adding your one entry, relative to the baseline.
+3) TEST_PLAN.md — what you checked, what you could not, non-promotion conditions.
+4) NOTES.md — assumptions and every unresolved contract conflict.
+
+Never invent a session id, model, SHA, or reviewer — use not_exposed when a value
+is not exposed. Do not paste raw chat text, tokens, or secrets. This is registry
+intake only.
+```
+
+The returned package is preserved verbatim under the intake landing zone
+(`docs/maintenance/external_ai_intake/`) and recorded in the report index, so it
+is discoverable later by report id, provider, or concept alias. The maintainer
+reviews it and applies only the proven, relevant result. A package is never
+treated as compiled, integrated, or approved merely because it looks complete.
+
 ## Authority and Publication Flow
 
 ```text

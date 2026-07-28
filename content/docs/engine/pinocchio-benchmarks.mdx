@@ -8,6 +8,11 @@ question: can the educational database behave like a real engine at
 million-row scale? Its generated data, tables, indexes, and LMDB stores remain
 isolated from protected project data.
 
+> **Benchmark evidence current through 2026-07-22** (the scan-evaluator baseline
+> below). The documentation flush, identity / AI-BBS, and expression-function
+> work since then added no new Pinocchio run; per the append-only rule, none of
+> the figures below have been altered.
+
 ## Current proof state
 
 The retained Phase 1 workload contains 1,000,000 student rows and 5,501,358
