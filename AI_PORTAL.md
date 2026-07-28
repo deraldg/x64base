@@ -11,6 +11,19 @@ It is not a student portal for accessing an AI service. It prepares an AI to
 work as a development partner using repo-local authority, contracts, runtime
 evidence, safety gates, and task recipes.
 
+## STOP: Repository Roles
+
+| Location | Branch | Role |
+| --- | --- | --- |
+| `D:\code\ccode` | `development` | Sole development and authoring workspace |
+| `C:\x64base` | `main` | Sterilized publication staging for GitHub `main` |
+
+Never author original work in `C:\x64base`. Never push or merge `development`
+to `main`. A development push may update only `development`; a `main` update
+may originate only from the reviewed staging workflow in `C:\x64base`.
+The binding rule is
+[`docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`](docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md).
+
 ## Mandatory Start
 
 `AI_README.md` is the one canonical front door. Follow its ordered table first:
@@ -37,6 +50,33 @@ After that canonical start, use these task-specific sources only when relevant:
 
 Then inspect only the contracts, source, tests, HELP, and proof material needed
 for the assigned task.
+
+### A hand-off record does not replace the Mandatory Start
+
+Recorded 2026-07-27 because it happened this day. The Cowork resume record
+`docs/maintenance/lanes/full_stack_documentation/SESSION_RECORD_CLAUDE_COWORK_2026-07-27_V1.md`
+(run DOCFLUSH-20260722-001) told the resuming agent which docs to read and named
+the next action (seed `SYSCMD`) -- but it did **not** direct the agent to this
+portal or to `AI_README.md` for initiation. Acting on the hand-off alone, the
+agent connected the staging repo `C:\x64base` and began toward the task. The
+maintainer corrected it mid-session: *"divert to the ai portal and read it
+immediately ... you are in the wrong repo."*
+
+The rule this makes explicit: **a session record is a resume aid, not an entry
+point.** It carries state ("what happened, what is next"); it does not carry
+initiation (authority chain, correct tree, mandatory reads, SDLC lane, mutation
+gate). A hand-off that omits "start at `AI_README.md`" lets a resuming agent skip
+the front door precisely because the record looks complete enough to act on.
+
+This is the same failure class as the 2026-07-14 `CURRENT_TARGET.md` drift that
+motivated AIF-006: onboarding/hand-off material is the one lane the evidence
+system did not cover, so it silently goes stale or incomplete. Consequences:
+
+- Every hand-off / session record MUST open by pointing back to the Mandatory
+  Start (`AI_README.md`, then this portal), before its reads and next-actions.
+- A resuming agent that is handed a record and no portal pointer should treat the
+  portal initiation as still owed and perform it first -- reaching the authoritative
+  tree (`D:\code\ccode`), not the staging repo, is part of that initiation.
 
 ## AI-Friendly Dev-Tools — Ask for Limited Permission First
 
@@ -626,18 +666,36 @@ reaching for "everything" is the near-miss this gate prevents. A push is a
    deletions, line-ending renormalization, and branch moves are their own
    deliberate passes, never smuggled into a feature commit.
 
-**The mechanical guard.** `tools/staging/prepush_gate.py` enforces this list
-against the staged index (or a commit range). It hard-blocks build trees and
-binaries (exit 2), warns-and-requires-acknowledgement on data/fixture churn and
-oversized change sets (exit 3, cleared with `--allow-data` / `--allow-mass`), and
-passes on a clean source/docs/config slice. It reads the same exclusion list
-stated here, so this section and the script stay a single source of truth.
+**The mechanical guards.** `tools/staging/repository_role_guard.py` enforces the
+declared root, current branch, and actual refs presented to a pre-push hook.
+It blocks `development -> main`, a `main` push from the development worktree,
+and a `development` push from staging. `tools/staging/prepush_gate.py` enforces
+the change-set list against the staged index (or a commit range). It hard-blocks
+build trees and binaries (exit 2), warns-and-requires-acknowledgement on
+data/fixture churn and oversized change sets (exit 3, cleared with
+`--allow-data` / `--allow-mass`), and passes on a clean source/docs/config slice.
 
 ```text
-python tools/staging/prepush_gate.py                 # check the staged slice
+python tools/staging/repository_role_guard.py        # check root and branch
+python tools/staging/prepush_gate.py                  # check the staged slice
 python tools/staging/prepush_gate.py --range HEAD..@{u}   # check a push range
-python tools/staging/prepush_gate.py --install-hook   # enforce on every commit
+python tools/staging/repository_role_guard.py --install-hooks # commit + push hooks
 ```
+
+**Sandbox / non-host agents — two false blocks, not bugs.** An agent that runs against a
+mounted *copy* of this tree (e.g. a Linux sandbox mount rather than the real `D:\code\ccode`)
+will hit two environment artifacts that look like failures but are not:
+
+1. **`git fetch`/`push` returns `403 ... from proxy`** — network egress to GitHub is blocked
+   from the sandbox by design. The maintainer's host git uses an unblocked path; pushes are
+   **host-side only**.
+2. **`repository_role_guard.py` BLOCKS with "repository root is not a declared … root"** — the
+   guard checks the *host* path (`D:\code\ccode` / `C:\x64base`), which a sandbox mount path
+   cannot match, so it short-circuits `prepush_gate.py` before classification.
+
+Neither is a repo problem. In-sandbox, verify the slice **manually** (source/docs/config only;
+no build trees, binaries, or unnamed data/fixture churn), then hand the staged files to the
+maintainer to run the real gate + commit + push on the host. Do not chase these as defects.
 
 Reading this portal — this section in particular — is a **mandatory pre-push
 read**. The gate is the belt; consulting the portal first is the suspenders.
