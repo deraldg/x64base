@@ -68,14 +68,25 @@ until fixed; "medium" = review/architecture, current state can ship if labeled;
   inspectors, "possibly antiquated").
 - Restored x64 `STUDENTS` env is 128 MiB; a `BUILDLMDB CLEAN TINY` drops it to 32.
 - `SMARTBROWSE` back-compat alias dropped in the rename.
-- **Browser `@dottalk.usage` contracts lag the `BROWSE->BROWSER` rename** (surfaced by
-  the 2026-07-27 SYSCMD re-seed, 214->212). `app_simple_browser.cpp` /
-  `app_smart_browser.cpp` now REGISTER `SIMPLEBROWSER`/`SMARTBROWSER`, but their usage
-  contract's `command:` field still reads the old `...BROWSE`, so `generate_syscmd`
-  drops both from SYSCMD (registered + documented, but no longer catalogued). Fix: set
-  `command: SIMPLEBROWSER` / `command: SMARTBROWSER` in each file's `@dottalk.usage`
-  block; the next SYSCMD seed re-admits them. Non-blocking -- a coverage gap, not a
-  contradiction, so `normcheck`/`refcheck` stay green until then.
+- **Browsers dropped from SYSCMD by the `BROWSE->BROWSER` rename** (surfaced by the
+  2026-07-27 SYSCMD re-seed, 214->212). Root cause (found 2026-07-27):
+  `generate_syscmd.tracked()` mines only `git ls-files`, so it sees ONLY git-tracked
+  files. The renamed impls `src/cli/app_simple_browser.cpp` / `app_smart_browser.cpp`
+  are UNTRACKED and the old `cmd_*_browser.cpp` are `git rm`-pending, so their
+  `@dottalk.usage` contracts are invisible to the generator. Registration lives in
+  tracked `shell_commands.cpp` (-> "registered"); the contract lives only in the
+  untracked file (-> "registered but uncontracted"). Two parts:
+    - DONE: fixed a typo in `app_simple_browser.cpp` -- it declared
+      `command: SIMPLEBROWSERR` / `owner: DOT|SIMPLEBROWSERR` (double-R); corrected to
+      `SIMPLEBROWSER` so the eventual commit lands without a new IDENTITY ERROR.
+      (`app_smart_browser.cpp` was already correct.)
+    - OWED: commit the browser rename slice (`git add` the two `app_*_browser.cpp`,
+      `git rm` the two `cmd_*_browser.cpp`; CMakeLists already updated, runtime already
+      works). Only once tracked does `generate_syscmd` mine `SIMPLEBROWSER`/
+      `SMARTBROWSER`; the next SYSCMD seed then re-admits them (212 -> 214). Likely
+      another session's in-flight work -- do not fuse into unrelated slices.
+  Non-blocking -- a coverage gap, not a contradiction, so `normcheck`/`refcheck` stay
+  green until then.
 - **Manualgen harvest feeder -- BUILT 2026-07-27** (`HELP_META_HARVEST_EXPORT_v1`).
   The HELP/META CSV harvest (manualgen's input) is regenerable again; it had been
   frozen May exhaust with only 1 of 14 export scripts committed. Run
