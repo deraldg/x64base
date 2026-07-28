@@ -212,10 +212,19 @@ implies. Rather than inflate the index, we added a second, explicit front door.
   reports the full corpus (492 topics / 12,784 rows). Re-run in the MSVC build confirmed the clean
   recollection: each topic renders as `STATUS/SUMMARY/SYNTAX/USAGE/EXAMPLE/NOTE/RELATED` with no
   provenance lines.
-- **Follow-on filed → AIF-051 (HELP DATA hygiene).** The M5 exhaustive view surfaced a family of
-  **phantom/mis-keyed topic keys** in the corpus (`DOT|PRINT` catch-all, `DOT|PRINT *`, `DOT|SHOW
-  SQL`, `DOT|WITH`, …) — a miner TOPICKEY-assignment bug, not a renderer bug. Logged as AIF-051 for
-  the mining/catalog stage; `HELP GIANT ALL` correctly renders whatever the corpus contains.
+- **Follow-on AIF-051 (HELP DATA hygiene) — FIXED dev-only (g++-proven).** The M5 exhaustive view
+  surfaced a family of **phantom/mis-keyed topic keys** in the corpus (`DOT|PRINT` catch-all,
+  `DOT|PRINT *`, `DOT|SHOW SQL`, `DOT|SHOW PSHELL`, `DOT|SHOW BROWSER COMMAND`, `DOT|WITH`, …) — a
+  miner TOPICKEY-assignment bug, not a renderer bug. Root cause: `helpdata_source_miner.cpp` derived
+  the key from generic presentation-helper function names (`print_usage`, `show_sql_help`,
+  `show_pshell_help`, `show_browser_command_usage`) and let that win over the file's real registered
+  command. Fix in `command_from_file_or_usage`: a function-name-derived command is trusted only when
+  the file has no registered command context or the name matches a registered command; otherwise the
+  mined block is re-homed onto a real command (a registered command named by a syntax line, else the
+  file's primary command). Focused harness: 5 phantom cases re-home to HELP/PSHELL/BROWSER; SEEK /
+  SET ORDER / USER unchanged. Acceptance after MSVC rebuild + HELP DATA regenerate: no `DOT|PRINT*` /
+  `DOT|SHOW SQL` / `DOT|WITH` keys, `CMDHELPCHK` clean. `HELP GIANT ALL` itself was always correct —
+  it renders whatever the corpus contains; this repairs the corpus at the mining stage.
 
 **AIF-047 status: M0–M5 COMPLETE (M5 syntax-proven, MSVC demo pending).** Owner: Claude/Cowork.
 Dev-only; committed, not yet promoted to `C:\x64base`.

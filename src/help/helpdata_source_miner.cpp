@@ -790,20 +790,49 @@ static std::string command_from_file_or_usage(const fs::path& file,
                                               const std::vector<std::string>& lines,
                                               const std::string& function_name = {})
 {
+    auto is_registered = [&](const std::string& c) {
+        if (c.empty()) {
+            return false;
+        }
+        const std::string uc = upper(c);
+        for (const auto& rc : commands) {
+            if (upper(rc) == uc) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     const std::string fn_cmd = command_from_usage_function_name(function_name);
-    if (!fn_cmd.empty()) {
+
+    // A function-name-derived command is only trustworthy when the file exposes no
+    // registered command context, or the derived name actually matches one of the
+    // file's registered commands. Generic presentation helpers (print_usage,
+    // show_sql_help, show_pshell_help, show_browser_command_usage, ...) otherwise
+    // mint phantom topic keys (PRINT, SHOW SQL, SHOW PSHELL, WITH, ...). When the file
+    // has real registered commands, prefer them over the helper name (AIF-051).
+    if (!fn_cmd.empty() && (commands.empty() || is_registered(fn_cmd))) {
         return fn_cmd;
     }
 
+    if (!commands.empty()) {
+        // Re-home the mined block onto a real command: prefer a registered command
+        // named by a syntax line in the block, else the file's primary command.
+        for (const auto& line : lines) {
+            const std::string cmd = command_from_syntax_line(line);
+            if (is_registered(cmd)) {
+                return cmd;
+            }
+        }
+        return commands.front();
+    }
+
+    // No registered command context for this file: fall back to heuristics.
     for (const auto& line : lines) {
         const std::string cmd = command_from_syntax_line(line);
         if (!cmd.empty()) {
             return cmd;
         }
-    }
-
-    if (!commands.empty()) {
-        return commands.front();
     }
 
     const std::string hint = command_hint_from_path(file);
