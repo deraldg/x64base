@@ -1,0 +1,11 @@
+{
+  "schema": "dottalk.fullstack.gate4_status_disposition_approval.v1",
+  "structure_candidate_run": "MANRUN-20260728T034317Z-BB9D66A2",
+  "status_ledger_sha256": "1A0DBD33E3EC2F01AFF9699367EE6E8E58B9294A081446CB33F87A9C7160D47F",
+  "decision": "NO_CHANGES_ALREADY_ACCEPTED",
+  "approved_rows": 0,
+  "held_rows": 0,
+  "owner": "member.derald",
+  "run": "DOCFLUSH-20260722-001 (AIF-068)",
+  "note": "Publication-structure candidate MANRUN-20260728T034317Z-BB9D66A2 reports zero status dispositions (markers=0, statuses=0, remaining=0). No per-section status promotions to approve. This records the no-change disposition so gate-4 can project the 164-page command reference (five FoxPro functions + 212-command set). The browser rename is out of scope for this partial flush pending its uncommitted source slice."
+}

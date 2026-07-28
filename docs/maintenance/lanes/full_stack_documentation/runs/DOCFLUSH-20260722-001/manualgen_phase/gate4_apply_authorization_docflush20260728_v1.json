@@ -1,0 +1,18 @@
+{
+  "schema": "dottalk.manualgen.gate4_apply_authorization.v1",
+  "decision": "AUTHORIZED_FOR_CANONICAL_APPLY",
+  "plan_run": "MANRUN-20260728T040202Z-333DC61D",
+  "plan_manifest_sha256": "BA76CFA4454AAA6D0170004105B6E9E188BC663A8F3C9D0AE92402D18801B908",
+  "mutation_ledger_sha256": "0B3F077B8A1D1FA7A198F548097C577EFC8889D32A896A4E519649A668E464D0",
+  "mutation_rows_authorized": 168,
+  "required_interpreter": "Python 3.12",
+  "apply_time_finalization_targets": [
+    "docs/manuals/developer/manualgen/accepted_artifacts/primary_reader_artifact_v1.json",
+    "docs/manuals/developer/manualgen/accepted_manifests/developer_manual_canonical_manifest_v1.json",
+    "docs/manuals/developer/manualgen/accepted_artifacts/command_reference_artifact_v1.json"
+  ],
+  "owner": "member.derald",
+  "run": "DOCFLUSH-20260722-001 (AIF-068)",
+  "authorized_utc": "2026-07-28",
+  "note": "Authorizes the exact 168-row REPLACE gate-4 apply that accepts the refreshed 164-page command reference (five FoxPro functions STUFF/PADL/PADR/PADC/PROPER + the LMDB_UTIL/TABLE_BUFFER/ORDER alias-merge fixes) into the dev-tree accepted manual artifacts. Non-publishing: C:\\x64base promotion and website ascent remain separately gated. Browser rename out of scope (uncommitted source slice)."
+}
