@@ -40,10 +40,36 @@ Ordered by what blocks publication. "Hard stop" = the published docs would be WR
 until fixed; "medium" = review/architecture, current state can ship if labeled;
 "minor" = note and defer.
 
+### 2026-07-28 push -- manual phase COMPLETE and PUBLICATION-READY
+Full record: `runs/DOCFLUSH-20260722-001/SESSION_CLOSEOUT_SELFDOC_FULLSTACK_PUSH_2026-07-28.md`.
+The manualgen curation chain was re-based to harvest `HELPMETA-20260728T003402Z`
+(six gates green), the prose lane was parked (July-identical, hardcoded renderer),
+and the data-driven command reference (164/164) was ACCEPTED via an authorized
+gate-4 apply (`MANRUN-20260728T041930Z-5DE4733C`, 168 rows, reversible). The five
+functions `STUFF/PADL/PADR/PADC/PROPER` are in the accepted manual;
+`audit_manual_publication_readiness` = `pass=26 review=0 fail=0`. Commits AIF-068
+`2d138e001`, `9a1c8981b`, `08173b663`. Web ascent (promotion -> website -> Pages ->
+verify) NOT started. Flush is PARTIAL: browser rename deferred (owed, below).
+New owed items from this push:
+- Revert the parked prose-policy expansion (prose_review.py 8->16 + selective_merge
+  selector) to restore its two risk-boundary tests; the 2026-07-28 prose decision
+  then becomes moot.
+- Add `@dottalk.usage` contracts for uncontracted-but-real commands `UDATE`,
+  `UDATETIME`, `UNOW`, `UTIME`, `ORDER`; re-harvest to promote them out of
+  partial-help (they currently mis-classify as source-miner noise).
+- MDO-347E candidate combined still 25 sections; refresh to 28 for clean MDO-350E
+  re-execution lineage (active target already reconciled to 28 in the status doc).
+- Published manual + accepted artifacts are untracked working state -- decide track
+  vs documented-gitignore.
+- AIF-068 has a claim file but no intake-queue row (prepush advisory).
+
 ### HARD STOP -- must be true before the catalog-derived docs publish
-- **Re-seed SYSCMD** (runtime). It still names `SIMPLEBROWSE`/`SMARTBROWSE`; the
-  registry now has `...BROWSER`. `normcheck` IDENTITY fails until re-seeded. Anything
-  the site derives from SYSCMD would publish the dead names.
+- **Re-seed SYSCMD** (runtime). Status 2026-07-28: SYSCMD is 212 and no longer names
+  the dead `SIMPLEBROWSE`/`SMARTBROWSE` -- but it does NOT yet name the new
+  `...BROWSER` either, because the `app_*_browser.cpp` rename slice is uncommitted and
+  `generate_syscmd` mines only git-tracked files. Commit that slice -> re-seed to
+  SYSCMD 214 -> re-harvest so the browser rename can publish (see the 2026-07-28
+  push block above; deferred from the partial flush).
 - **Remove the stale `dotref` browse duplicates** (lines 854/1013: `SMARTBROWSE`/
   `SIMPLEBROWSE`, no-R) that sit beside the correct `...BROWSER` entries. `refcheck`
   flags them; `cmdhelp` mines `dotref`, so they publish wrong help.
@@ -53,8 +79,9 @@ until fixed; "medium" = review/architecture, current state can ship if labeled;
   current source (M0 unwind). Single source of truth.
 - Build the **M3 `*ref` emitter** (contracts -> `dotref`/`foxref`/... via metacollect)
   so the catalogs generate instead of drift.
-- `foxref` documents 5 unimplemented functions (`STUFF/PADL/PADR/PADC/PROPER`) --
-  implement, catalog, or drop.
+- ~~`foxref` documents 5 unimplemented functions (`STUFF/PADL/PADR/PADC/PROPER`)~~
+  DONE (2026-07-28): implemented, catalogued (SYSFUNC 74), and accepted into the
+  manual command reference via gate-4 apply `MANRUN-20260728T041930Z-5DE4733C`.
 - `FOXREF` -> `@dottalk.file` reference-module reclassification (last identity error).
 - `DDICT` PDLC turnover (non-canonical contract; excluded from SYSCMD until repaired).
 - `@dottalk.inert` ratification (proposed; no confirmed instance).
