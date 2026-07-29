@@ -8,11 +8,18 @@
 // status: supported
 
 // src/cli/cmd_sql.cpp
-// SQL command ? COUNT with optional ALL|DELETED and FOR <expr>.
+// SQL command -- COUNT with optional ALL|DELETED and FOR <expr>.
 // Uses shared DotTalk evaluator + LRU cache (DOTTALK_WHERECACHE, default 256).
 //
 // Change: Suppress "false" per-record logs by default. Print per-record lines
 // only for matches (ok==true). Use VERBOSE to print all (true/false) details.
+//
+// Change (AIF-074, 2026-07-29): COUNT now reports the number WITHOUT the
+// per-match lines. The earlier behavior printed one line per hit even when the
+// caller asked only for a count -- 90 lines before the answer on the students
+// fixture. VERBOSE still prints every row, so no detail is lost, and a bare
+// predicate scan (no COUNT) still lists its matches as before. Also: the seven
+// SQL DEBUG emitters were unconditional and are now behind VERBOSE.
 
 // @dottalk.usage v1
 // owner: DOT|SQL
@@ -42,6 +49,16 @@
 //   SQL USAGE prints usage before open-table checks.
 //   SQL reads records and may temporarily move the cursor.
 //   SQL does not mutate table data.
+//   COUNT reports the number only. A bare predicate scan lists its matches.
+//   VERBOSE prints every record with its true/false verdict, plus scan diagnostics.
+//   SQL DOES NOT EXECUTE SQL STATEMENTS. The name is historical: this command
+//   scans the CURRENT area with a predicate and reports matches or a count.
+//   Family boundary, stated here because the three names invite confusion:
+//     SQL     -- predicate scan/count over the current area (this command)
+//     SQLSEL  -- SQLsel, the SELECT statement surface over a named open table
+//     SQLITE  -- the SQLite bridge, for talking to an actual SQLite database
+//   SQLSEL also accepts this same predicate-scan form for compatibility, so
+//   `SQL COUNT FOR <expr>` and `SQLSEL COUNT FOR <expr>` are equivalent.
 //
 // risk:
 //   requires_open_table: yes except usage
@@ -108,9 +125,10 @@ static std::pair<std::string,bool> strip_token_ci(const std::string& text, const
 enum class DelMode { SkipDeleted, OnlyDeleted, IncludeAll };
 
 struct Opts {
-    DelMode     mode    = DelMode::SkipDeleted;
-    bool        haveFor = false;
-    bool        verbose = false;
+    DelMode     mode      = DelMode::SkipDeleted;
+    bool        haveFor   = false;
+    bool        verbose   = false;
+    bool        wantCount = false;  // COUNT was requested: report the number, not the rows
     std::string forRaw;    // expression after FOR, or whole expr if no "FOR"
     std::string tailRaw;   // everything after SQL keyword (for debug echo)
 };
@@ -144,11 +162,17 @@ static Opts parse_opts(std::istringstream& iss) {
 
     std::istringstream head(o.tailRaw);
 
-    // Optional COUNT
+    // Optional COUNT. AIF-074: the token used to be read and DISCARDED, so the
+    // command could not tell `SQL COUNT ...` from a bare predicate scan and
+    // printed a per-match line for every hit either way. Asking for a count and
+    // receiving 90 detail lines before the number is not an answer to the
+    // question asked. Record it.
     std::streampos afterFirst = head.tellg();
     std::string t;
     if (head >> t) {
-        if (up(t) != "COUNT") {
+        if (up(t) == "COUNT") {
+            o.wantCount = true;
+        } else {
             head.clear();
             head.seekg(afterFirst);
         }
@@ -214,7 +238,11 @@ static void print_sql_usage_contract()
         << "  SQL VERBOSE COUNT FOR GPA >= 3.0\n"
         << "Notes:\n"
         << "  - SQL USAGE does not require an open table.\n"
-        << "  - SQL scans records and does not mutate table data.\n";
+        << "  - SQL scans records and does not mutate table data.\n"
+        << "  - SQL does NOT execute SQL statements. The name is historical.\n"
+        << "Looking for something else?\n"
+        << "  SQLSEL  -- SELECT statements: SQLSEL SELECT <cols> FROM <table> ...\n"
+        << "  SQLITE  -- the SQLite bridge, for an actual SQLite database\n";
 }
 
 static bool sql_usage_contract(std::string tok)
@@ -238,6 +266,24 @@ void cmd_SQL(xbase::DbArea& A, std::istringstream& iss) {
                 print_sql_usage_contract();
                 return;
             }
+
+            // AIF-074: SQL is a predicate scanner, not a statement executor, but
+            // its name invites `SQL SELECT ... FROM ...`. Without this guard that
+            // line is parsed as a PREDICATE and reports a confusing failure or a
+            // false zero -- the silent-nonsense class this lane closed elsewhere.
+            // Redirect to the command that does own the grammar.
+            {
+                std::string lead = textio::up(usage_tok);
+                if (lead == "SELECT") {
+                    std::cout << "SQL: SELECT statements are not run by SQL.\n"
+                              << "     SQL scans the current area with a predicate; the name is historical.\n"
+                              << "     Use SQLSEL for statements:\n"
+                              << "       SQLSEL SELECT <col>[,<col>...] FROM <table>\n"
+                              << "              [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]\n"
+                              << "     See SQLSEL USAGE. For an actual SQLite database, see SQLITE USAGE.\n";
+                    return;
+                }
+            }
         } else {
             iss.clear();
             if (usage_pos != std::streampos(-1)) {
@@ -250,38 +296,40 @@ void cmd_SQL(xbase::DbArea& A, std::istringstream& iss) {
 
     const Opts opt = parse_opts(iss);
 
-    std::cout << "SQL DEBUG ? raw: \"" << opt.tailRaw << "\"\n";
+    if (opt.verbose) std::cout << "SQL DEBUG -- raw: \"" << opt.tailRaw << "\"\n";
 
     std::vector<std::string> debug_fields;
     std::shared_ptr<const where_eval::CacheEntry> ce;
 
     if (opt.haveFor) {
         const std::string normalized = sqlnorm::sql_to_dottalk_where(opt.forRaw);
-        std::cout << "SQL DEBUG ? normalized: " << normalized << "\n";
+        if (opt.verbose) std::cout << "SQL DEBUG -- normalized: " << normalized << "\n";
 
         // Fields to print per-record when we emit lines
         debug_fields = where_eval::extract_field_names(normalized);
         if (!debug_fields.empty()) {
-            std::cout << "SQL DEBUG ? fields: ";
-            for (size_t i=0;i<debug_fields.size();++i) {
-                if (i) std::cout << ", ";
-                std::cout << debug_fields[i];
+            if (opt.verbose) {
+                std::cout << "SQL DEBUG -- fields: ";
+                for (size_t i=0;i<debug_fields.size();++i) {
+                    if (i) std::cout << ", ";
+                    std::cout << debug_fields[i];
+                }
+                std::cout << "\n";
             }
-            std::cout << "\n";
         } else {
-            std::cout << "SQL DEBUG ? fields: (none detected)\n";
+            if (opt.verbose) std::cout << "SQL DEBUG -- fields: (none detected)\n";
         }
 
         try {
             // Compile via shared env/LRU cache
             ce = where_eval::compile_where_expr_cached(opt.forRaw);
-            std::cout << "SQL DEBUG ? compiled: " << where_eval::plan_kind(*ce->plan) << "\n";
+            if (opt.verbose) std::cout << "SQL DEBUG -- compiled: " << where_eval::plan_kind(*ce->plan) << "\n";
         } catch (const std::exception& ex) {
             std::cout << "Syntax error in FOR: " << ex.what() << "\n";
             return;
         }
     } else {
-        std::cout << "SQL DEBUG ? no clause (plain COUNT)\n";
+        if (opt.verbose) std::cout << "SQL DEBUG -- no clause (plain COUNT)\n";
     }
 
     long long cnt = 0, scanned = 0;
@@ -319,8 +367,10 @@ void cmd_SQL(xbase::DbArea& A, std::istringstream& iss) {
                     fv << " => " << (ok ? "true" : "false");
                     std::cout << fv.str() << "\n";
                 }
-            } else if (ok) {
-                // Non-verbose: emit only matches (or nothing if none)
+            } else if (ok && !opt.wantCount) {
+                // Non-verbose: emit only matches (or nothing if none).
+                // Suppressed under COUNT -- the caller asked for a number.
+                // VERBOSE still shows every row, so the detail is never lost.
                 if (debug_fields.empty()) {
                     std::cout << "[rec " << A.recno() << "]\n";
                 } else {
@@ -349,7 +399,7 @@ void cmd_SQL(xbase::DbArea& A, std::istringstream& iss) {
         } while (A.skip(+1) && A.readCurrent());
     }
 
-    std::cout << "SQL DEBUG ? scanned: " << scanned << "  matched: " << cnt << "\n";
+    if (opt.verbose) std::cout << "SQL DEBUG -- scanned: " << scanned << "  matched: " << cnt << "\n";
     std::cout << cnt << "\n";
 }
 

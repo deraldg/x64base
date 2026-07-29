@@ -191,7 +191,7 @@ inline const std::vector<Item>& catalog() {
         Notes (current shakedown observations):
             - Clears TABLE stale state on success.
             - May currently trigger full INX rebuild work as part of the commit path (performance issue).)", true},
-{"EXPORT", "EXPORT <csv>", "Export to CSV.", true},
+{"EXPORT", "EXPORT [TO] <file> [CSV|PIPE|SDF]", "Export to CSV, pipe-delimited text, or fixed-width SDF.", true},
 
         {"EXPORTFUNCTIONS", "EXPORTFUNCTIONS [MD [<path>]]", "Export the expression/function catalog through the canonical command surface.", true},
 
@@ -727,9 +727,11 @@ Notes:
 
         {"SQLVER", "SQLVER", "Report SQLite availability and version.", true},
 
-        {"SQL",    "SQL <statement>", "Execute an SQL statement using the configured SQL engine.", true},
+        {"SQL",    "SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>] [VERBOSE]",
+                 "Scan the CURRENT work area with a predicate and report matches or a count. It does NOT execute SQL statements -- for a SELECT statement use SQLSEL, and for the SQLite bridge use SQLITE. Reads records and may temporarily move the cursor; does not mutate table data.", true},
 
-        {"SQLSEL", "SQLSEL <expr>", "Execute an SQL SELECT and display results.", true},
+        {"SQLSEL", "SQLSEL SELECT <cols>|*|COUNT(*) FROM <table> [WHERE <pred>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]",
+                 "SQLsel: run a SELECT statement over an OPEN work area. Statement-scoped -- it names its own table, ignores session filter and cursor state, restores every cursor, and reads committed table truth. Bare column names only in v1 (no expression projection, joins, or GROUP BY). The legacy predicate-scan form SQLSEL [COUNT] [FOR <expr>] is still accepted. See SQLSEL USAGE.", true},
 
         {"INSERT", "INSERT <statement>", "Insert data rows (scripting/SQL helper; see command usage).", true},
 
@@ -850,11 +852,6 @@ Notes:
 
         {"SECURITY", "SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN <role> [AS <worker>]|WHOAMI|ASSIGNMENTS|LOGOUT]",
                  "Inspect DotTalk++ security policy/runtime rules and manage the current shell-session role identity and assignment view.", true},
-
-        {"SMARTBROWSE", "SMARTBROWSE [<source>] [FOR <expr>] [ORDER <tag>|PHYSICAL]",
-                 "Launch the smart browser surface for relational, expression-aware, and order-aware browsing.", true},
-
-        // Phase 5 DOTREF curation batch 3: small command-surface cleanup.
 
         // Phase 5 DOTREF curation batch 3: small command-surface cleanup.
         {"BELL", "BELL [ON|OFF]",
@@ -1009,9 +1006,6 @@ Notes:
 
         {"INIT", "INIT [USAGE]",
                  "Initialize default paths, perform best-effort stale-lock cleanup, and process startup ini scripts.", true},
-
-        {"SIMPLEBROWSE", "SIMPLEBROWSE [FOR <expr>] [ORDER <tag>|PHYSICAL] [LIMIT <n>]",
-                 "Launch the implemented simple browser surface for current work-area, relation, and logical-row inspection.", true},
 
         {"SIX", "SIX [USAGE|<args...>]",
                  "Experimental or compatibility index-related surface for SIX-style indexing concepts and diagnostics.", true},
