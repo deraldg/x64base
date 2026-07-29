@@ -123,6 +123,167 @@ expression consumer). Only open owner ruling: product name (P6).
 Two findings converted from divergence to fix this session: RDB-03 (typed equality)
 and RDB-06 (scan-limit honesty). Truth-harness divergence table is SHRINKING.
 
+## Incomplete work handed to Codex -- recorded per AIF-006
+
+**Item: table-buffer visibility split. Status: UNFINISHED BY ME, handed off
+unverified.** See `docs/agents/HANDOFF_CODEX_BUFFER_VISIBILITY_2026-07-29.md`.
+
+What I completed: a source-verified reading that under `TABLE BUFFER ON` the
+tuple projection path overlays buffered edits through a FILE-LOCAL helper
+(`tuple_builder.cpp:90`, used at :391) that nothing else in the tree calls, while
+predicates and classic display paths read the on-disk record -- so a
+`SQLSEL SELECT ... WHERE` can filter on the committed value and project the
+buffered one.
+
+**What I did NOT complete, and why it matters:**
+
+1. **I wrote the probe and did not run it.** `buffer_visibility_probe.dts` exists
+   and states four predicted outcomes. It was never executed. By this project's
+   own lesson -- `lesson.career.a_script_never_run_is_not_evidence`, cited in the
+   AIF-073 closeout -- what I handed Codex is a CLAIM, not evidence. The finding
+   is `source_defined`; I have no transcript. I should have run it before writing
+   a handoff around it, and the handoff had to carry my predictions as
+   falsifiable guesses precisely because I had not.
+2. **I did not enumerate the affected read surfaces.** I verified that
+   `get_buffer_override` has no other caller and inferred from that "every other
+   read path sees disk." I did not individually confirm `SET FILTER`, `LOCATE`,
+   `SCAN`, `SMARTLIST`, the browsers, or `EXPORT`. The inference is reasonable
+   and is probably right; it is not verified, and the handoff states it more
+   confidently than my evidence supports. Codex should re-verify before acting.
+3. **I could not close the semantics.** Whether a statement should see its own
+   session's uncommitted writes is a durable-write policy question. Deferring it
+   to the owner is correct, not a failure -- but I also could not resolve the
+   internal tension I surfaced: R16b says statements ignore session state, and a
+   table buffer is arguably session state, which argues against the very
+   read-your-own-writes behavior SQL users expect. I left that contradiction
+   standing rather than resolving it.
+
+**Why it was handed off rather than finished:** the finding straddles the
+buffer/COMMIT subsystem (Codex's prior lane work) and the new SQLSEL surface
+(mine), and any fix touches durable-write behavior. Splitting it across two
+agents mid-investigation is itself a risk; handing it over with the boundary
+explicitly drawn was the lower-risk option. That reasoning does not excuse
+shipping an unrun probe.
+
+**Correction for the ledger (item 11):** the failure mode is *building the
+instrument and then narrating its expected output instead of reading its actual
+output.* Same family as the earlier corrections -- acting from an anticipated
+result rather than an observed one -- and notably it recurred AFTER a full day
+of the discipline working. The rule stands and I broke it: run the probe, then
+write the finding.
+
+**RESOLVED SAME DAY -- probe run, one prediction FALSIFIED.** Transcript:
+`labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe.txt`.
+
+- The central claim held: `SQLSEL ... WHERE MAJOR="CSCI"` returned a row whose
+  MAJOR column printed `MATH` -- a statement contradicting its own filter.
+- The claim I had flagged as unverified inference was WRONG: `LIST` overlays
+  buffered edits too, so the overlay is not confined to the tuple path. Verified
+  split: `LIST`/`TUPLE` see buffered; `DISPLAY` and all predicate paths see
+  committed. The hedge in the handoff was warranted and the falsification landed
+  exactly where the hedge pointed -- which is the value of naming a weak claim
+  instead of burying it.
+- The "NEW finding" I reported (DISPLAY vs LIST disagreeing) is **WITHDRAWN**
+  after owner correction, and is correction item 12. `LIST` is a DEVELOPER tool
+  that does not maintain cursor control -- stated in its own contract
+  (`cursor_restore: best effort`) -- while HELP names `SMARTLIST` the "Preferred
+  listing command for user-facing ordered output". I probed with the developer
+  tool and compared it against a user surface. The remaining genuine question is
+  `DISPLAY` vs `SMARTLIST` (which is already partly buffer-aware: it consumes
+  `dottalk::table::Row` and marks buffered deletes), plus the browsers and
+  `EXPORT`. Untested.
+- Owner ruled R18 (SQLSEL reads committed truth; TUP/TUPLE remain preview) and
+  the implementation landed via `TupleBuildOptions::overlay_table_buffer`.
+
+Item 11 stands as recorded: the process failure was real even though the
+finding survived it. Running the probe first would have produced a correct
+handoff instead of a corrected one.
+
+**Correction item 12 (owner):** I probed listing behavior with `LIST` and
+reported a "DISPLAY vs LIST inconsistency". `LIST` is a DEVELOPER tool that does
+not maintain cursor control (its own contract: `cursor_restore: best effort`);
+HELP names `SMARTLIST` the preferred user-facing listing command, in output I had
+already read that morning. Finding withdrawn; re-probed with SMARTLIST, which
+DID show the split -- so the concern was right and the instrument was wrong.
+Failure mode: **using a tool without reading its contract.**
+
+**Correction item 13 (self-caught, same day):** probe v3 (SMARTBROWSER) was
+INVALID and produced no evidence. Its header asserted as fact that under script
+mode a failed `std::getline(std::cin, ...)` would quit the pager. It does not --
+stdin still carries the script, so SMARTBROWSER consumed the entire remainder of
+the file as pager commands and the buffered edit under test was never created.
+Teardown never ran; `BUFVIS3.dbf` left in SANDBOX. Failure mode: **an inference
+from source stated as established runtime behavior, inside the very artifact
+built to test inferences.** Third instance today of the same root cause
+(items 11, 12, 13), each in a different disguise. SMARTBROWSER's coherence --
+the load-bearing claim of
+`docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md` -- therefore remains
+`source_defined`, and the document says so.
+
+## Later same day -- P3 landed, and a buffer-visibility investigation
+
+**Commits after 4a9ff7525** (all gated, all green):
+
+| Commit | Content |
+|---|---|
+| 38a9631fe | **P3 slice 1**: `SQLSEL SELECT <cols\|*> FROM <table> [WHERE] [LIMIT]` -- the lane's ONE new component. Oracle-verified row-for-row against SQLite; cursor-neutral (R16b proven by data); corrective errors for unopened table / expression select-item / bad LIMIT; legacy predicate form preserved |
+| 336b61741 | Runtime `SQLSEL USAGE` text realigned to its own `@dottalk.usage` contract -- documented-not-honoured caught by the smoke test inside the lane's own command |
+| (staged) | **P3 slice 2**: `ORDER BY <field> [ASC\|DESC]` and `COUNT(*)`. Oracle-verified, including the load-bearing case: `ORDER BY LNAME DESC LIMIT 2` returns the two HIGHEST rows, proving LIMIT cuts the SORTED set (two-pass collect/sort/project). Access path reported on every ORDER BY -- silent degradation is forbidden. Three help copies consolidated to one (`sqlsel::print_statement_usage`) after the same drift recurred one slice later |
+| (staged) | Buffer-visibility finding + three probe scripts + four preserved transcripts + `proof.engine.two_read_families_buffer_visibility` |
+
+**P3 demonstration achieved.** `SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS LIMIT 5`
+returns five real rows from the 200-record fixture. The same line that morning
+emitted 200 lines of `SQL DEBUG` and a false `0`. Before/after transcripts are
+the curriculum exhibit.
+
+**Buffer-visibility investigation (arc):** source read -> unrun handoff (item 11)
+-> probe v1 with the wrong tool (item 12) -> probe v2 finding the real SMARTLIST
+split -> probe v3 invalid, pager ate the script (item 13) -> maintainer's
+INTERACTIVE run proving SMARTBROWSER coherent. Result:
+`docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md`. Open for ruling:
+is SMARTLIST a preview surface or a truth surface?
+
+## Engine mechanics assimilated (closes the R2 gate for phases P0-P3)
+
+Recorded because R2 makes engine understanding a precondition for SQL design,
+and because most of this was learned by owner redirection rather than by reading:
+
+- **CDX is metadata; LMDB is the store.** `CDX CREATE`/`ADDTAG` write container
+  header + tag directory; `BUILDLMDB` builds the actual index into
+  `<name>.cdx.d`. Sequential stages, not rival backends. `CDX INFO`/`TAGS`
+  expose the directory.
+- **Order direction is runtime state, not stored in the tag.** `SET ORDER ... [ASC|DESC|ASCEND|DESCEND]`
+  resolves to `orderstate::setAscending` (`cmd_setorder.cpp:205-215`); the tag
+  defines the key, the session defines the walk direction.
+- **Session idiom:** `SELECT <n>` picks the slot, `USE <table>` opens INTO the
+  current slot, `SELECT <name>` addresses an ALREADY-OPEN table, `AREA` reports
+  position. Bare `USE` repeated stacks tables into one slot -- this cost a
+  harness run (RT-01) and belongs in the readiness rules.
+- **GPS makes the index observable**: physical recno vs logical row, the latter
+  computed by walking `order_iterate_recnos` in active order. Divergence between
+  those two numbers IS the index working.
+- **Streaming order seam:** `order_stream_display` walks the active CDX cursor
+  (first/next or last/prev) WITHOUT materializing, visitor stops early, reverse
+  is a parameter. Richer than `order_collect_recnos_asc`, which SQLSEL currently
+  uses; the streaming path is a P4-gated optimization, not a correctness fix
+  (statements must not depend on session order state -- R16b).
+- **COMMIT is a transaction protocol, not a flush:** per-record lock AT COMMIT
+  TIME only (buffered editing holds no locks), index pre-image snapshot via
+  `xbase::index_hooks::capture`, apply, post-image, `apply_replace` (delete old
+  keys / insert new per tag), unlock. WAL: redo log + COMMIT marker fsynced
+  BEFORE any DBF write, commit aborted if the sync fails; the index bulk commits
+  BEFORE the journal's final marker; committed journals replay at `USE`.
+  `COMMIT` must never call `BUILDLMDB` -- CDX/LMDB is maintained transactionally.
+- **Staleness is per FIELD**, not per record: `AreaState.stale_bits[kWords]` with
+  `mark_stale_field`, and `auto_reindex_if_needed` gates on `is_stale(area0)` --
+  so the staleness bitmap feeds the commit path's reindex decision.
+- **Two read families** (see the finding doc): tuple-stream binds filter and
+  display to `TupleRow`; classic binds both to `DbArea`. Mixing them is the only
+  place buffer-visibility defects occur.
+- **`SEEK` seam for P1.5:** `CdxBackend::seek/scan` plus `stepOrdered`, which is
+  O(log n + steps), all-or-nothing, and distinguishes "located but at an order
+  boundary" from "never found" -- richer than the plan assumed.
+
 ## Standing operational notes
 
 - Canonical contract gate invocation: `contract_parser_gate.py <root> --union`.

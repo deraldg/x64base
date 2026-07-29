@@ -1,0 +1,69 @@
+AIF-074 -- SMARTBROWSER tuple-value FOR filter, INTERACTIVE runtime proof
+Captured 2026-07-29 by member.derald at the live DotTalk++ prompt and pasted
+into the session record. Interactive because SMARTBROWSER is a pager: a scripted
+attempt (probe v3) failed -- under script mode stdin still carries the script, so
+the pager consumed the remainder of the file as pager commands.
+
+QUESTION
+  Under TABLE BUFFER ON with record 1 edited CSCI -> MATH (uncommitted), does
+  SMARTBROWSER's FOR filter evaluate against TUPLE values (buffered) or against
+  the committed DbArea record?
+
+FIXTURE (SANDBOX BUFVIS4, x64)
+  rec1  SID=1  MAJOR=CSCI     <- buffered to MATH, never committed
+  rec2  SID=2  MAJOR=MATH
+
+SETUP (both runs)
+  . USE BUFVIS4
+    Opened BUFVIS4 (v64) : Record count 2
+  . TABLE BUFFER ON
+    TABLE BUFFER: 1 area(s) updated.
+  . GO 1
+  . REPLACE MAJOR WITH "MATH"
+
+--------------------------------------------------------------------------
+RUN 1 -- inclusion test
+--------------------------------------------------------------------------
+  . tup
+    1 | MATH
+      (projection reads the buffered value -- consistent with prior probes)
+
+  . SMARTBROWSER BUFVIS4.SID,BUFVIS4.MAJOR FOR MAJOR = "MATH"
+    RECNO=1 | BUFVIS4.SID=1 | BUFVIS4.MAJOR=MATH
+    RECNO=2 | BUFVIS4.SID=2 | BUFVIS4.MAJOR=MATH
+    SMARTBROWSE: rec 2 / 2  [physical]  FOR  |  AREA: BUFVIS4 [BUFVIS4]
+
+  Record 1 MATCHED. It is CSCI on disk and MATH only in the buffer, so a
+  committed-reading filter could not have matched it.
+
+  . ROLLBACK
+    ROLLBACK: discarded 1 change(s).
+
+--------------------------------------------------------------------------
+RUN 2 -- exclusion test (run 1 alone could not rule out a no-op filter,
+         because the table has 2 records and BOTH were MATH under buffering)
+--------------------------------------------------------------------------
+  . SMARTBROWSER BUFVIS4.SID,BUFVIS4.MAJOR FOR MAJOR = "CSCI"
+    (end)
+    SMARTBROWSE: rec 2 / 2  [physical]  FOR  |  AREA: BUFVIS4 [BUFVIS4]
+
+  NOTHING matched, although record 1 IS CSCI on disk. The filter therefore
+  excludes correctly and is not a no-op.
+
+--------------------------------------------------------------------------
+CONCLUSION
+--------------------------------------------------------------------------
+  SMARTBROWSER's FOR filter evaluates against TUPLE values (buffer-overlaid),
+  the same source its display renders from. Filter and projection agree.
+  SMARTBROWSER is SELF-CONSISTENT under TABLE BUFFER.
+
+  This confirms at runtime what expr_tuple_glue.hpp:11 states ("Bind the
+  dottalk::expr AST engine to TupleRow for tuple-value FOR evaluation") and what
+  BETA-6.2 requires ("FOR filters evaluate on tuple values only").
+
+  Contrast, same fixture shape, probe v2 transcript: SMARTLIST filters on
+  COMMITTED values while displaying BUFFERED ones -- a row printed under a
+  filter it fails.
+
+TEARDOWN
+  . ROLLBACK / TABLE BUFFER OFF / CLOSE / ERASE TABLE BUFVIS4 CONFIRM
