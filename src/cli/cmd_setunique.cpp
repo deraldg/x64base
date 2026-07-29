@@ -81,10 +81,12 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
             return;
         }
 
+        const std::string prim = unique_reg::primary_field(A);
         std::string joined;
         for (size_t i = 0; i < fields.size(); ++i) {
             if (i) joined += ", ";
             joined += fields[i];
+            if (!prim.empty() && fields[i] == prim) joined += " (PRIMARY)";
         }
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetUniqueFieldsText,
@@ -109,6 +111,17 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     const std::string Uon = upcopy(onoff);
+    if (Uon == "PRIMARY") {
+        // AIF-074 P1.1: PRIMARY designates the table's primary key (implies ON).
+        unique_reg::set_primary_field(A, fname);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetUniqueFieldStatusText,
+            {
+                {"state", "PRIMARY"},
+                {"field", upcopy(fname)}
+            });
+        return;
+    }
     if (Uon != "ON" && Uon != "OFF") {
         print_setunique_usage();
         return;

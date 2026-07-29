@@ -40,9 +40,21 @@ static std::string upcopy(std::string s) {
 
 namespace unique_reg {
 
-std::string current_alias_or_area_name(xbase::DbArea& /*A*/) {
-    // Phase 1: single-bucket. Replace with alias/areaNo later when convenient.
+std::string current_alias_or_area_name(xbase::DbArea& A) {
+    // Phase 2 (AIF-074 P1.1): bucket by table identity so per-table
+    // declarations do not collide and match the dtschema KEY <table> identity
+    // (the header's own Phase-1 note asked for this). Falls back to the
+    // Phase-1 single bucket when no table identity is available.
+    try {
+        const std::string n = upcopy(A.name());
+        if (!n.empty()) return n;
+    } catch (...) {}
     return std::string("AREA");
+}
+
+static std::unordered_map<std::string, std::string>& primary_store() {
+    static std::unordered_map<std::string, std::string> store;
+    return store;
 }
 
 void set_unique_field(xbase::DbArea& A, const std::string& field_name, bool on) {
@@ -50,8 +62,31 @@ void set_unique_field(xbase::DbArea& A, const std::string& field_name, bool on) 
     std::lock_guard<std::mutex> lk(unique_mutex());
     auto& set = unique_store()[bucket];
     const auto key = upcopy(field_name);
-    if (on) set.insert(key);
-    else    set.erase(key);
+    if (on) {
+        set.insert(key);
+    } else {
+        set.erase(key);
+        // Dropping uniqueness on the primary field drops the primary too.
+        auto pit = primary_store().find(bucket);
+        if (pit != primary_store().end() && pit->second == key) {
+            primary_store().erase(pit);
+        }
+    }
+}
+
+void set_primary_field(xbase::DbArea& A, const std::string& field_name) {
+    const std::string bucket = current_alias_or_area_name(A);
+    const auto key = upcopy(field_name);
+    std::lock_guard<std::mutex> lk(unique_mutex());
+    unique_store()[bucket].insert(key);   // PRIMARY implies UNIQUE
+    primary_store()[bucket] = key;        // one primary per table; last set wins
+}
+
+std::string primary_field(xbase::DbArea& A) {
+    const std::string bucket = current_alias_or_area_name(A);
+    std::lock_guard<std::mutex> lk(unique_mutex());
+    const auto it = primary_store().find(bucket);
+    return it == primary_store().end() ? std::string() : it->second;
 }
 
 bool is_unique_field(xbase::DbArea& A, const std::string& field_name) {

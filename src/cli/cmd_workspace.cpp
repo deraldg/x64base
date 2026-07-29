@@ -140,6 +140,8 @@
 #include "cli/cmd_setpath.hpp"
 #include "relations_boot.hpp"
 #include "tuple_builder.hpp"
+#include "cli/unique_registry.hpp"
+#include "workarea_util.hpp"
 
 #define HAVE_PATHS 1
 
@@ -1017,7 +1019,7 @@ static std::vector<OpenResult> schema_open_directory(const fs::path& dir, IndexM
 }
 
 static std::vector<OpenResult> schema_open_directory_recursive(const fs::path& dir, IndexMode mode, bool fallback) {
-    std::cout << "WORKSPACE OPEN: 'recursive' requested — stubbed; falling back to flat scan.\n";
+    std::cout << "WORKSPACE OPEN: 'recursive' requested -- stubbed; falling back to flat scan.\n";
     return schema_open_directory(dir, mode, fallback);
 }
 
@@ -1474,6 +1476,22 @@ static void schema_save_to_file(const fs::path& file) {
         out << "RELATION " << rline << "\n";
     }
 
+    // AIF-074 P1.1: persist unique/primary key declarations (unique_reg Phase 2).
+    // KEY <table> <field> UNIQUE|PRIMARY -- older loaders skip unknown line kinds.
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+            const std::string tname = getNameIf(A, 0);
+            if (tname.empty()) continue;
+            const std::string prim = unique_reg::primary_field(A);
+            for (const auto& f : unique_reg::list_unique_fields(A)) {
+                out << "KEY " << tname << " " << f
+                    << (f == prim ? " PRIMARY" : " UNIQUE") << "\n";
+            }
+        } catch (...) {}
+    }
+
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
@@ -1618,6 +1636,23 @@ static void schema_load_from_file(const fs::path& file) {
 #else
             std::cout << "  ~ RELATION ignored (relations module not present): " << body << "\n";
 #endif
+        } else if (to_lower(t).rfind("key ", 0) == 0) {
+            // AIF-074 P1.1: KEY <table> <field> UNIQUE|PRIMARY -> unique_reg.
+            std::string body = trim_copy(t.substr(4));
+            std::istringstream ks(body);
+            std::string tbl, fld, kind;
+            ks >> tbl >> fld >> kind;
+            if (tbl.empty() || fld.empty()) {
+                std::cout << "  ! KEY skipped (bad syntax): " << body << "\n";
+            } else if (xbase::DbArea* ka = cli::find_open_area_by_name_ci(tbl)) {
+                const bool is_primary = (to_lower(kind) == "primary");
+                unique_reg::set_unique_field(*ka, fld, true);
+                if (is_primary) unique_reg::set_primary_field(*ka, fld);
+                std::cout << "  KEY: " << tbl << "." << fld
+                          << (is_primary ? " PRIMARY" : " UNIQUE") << "\n";
+            } else {
+                std::cout << "  ! KEY skipped (table not open): " << tbl << "\n";
+            }
         } else {
             std::cout << "  ~ Unknown line (ignored): " << t << "\n";
         }
