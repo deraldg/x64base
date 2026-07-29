@@ -1,0 +1,340 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, 9a30383d dirty)  (Jul 29 2026 08:41:33)
+DotTalk++ build Jul 29 2026 08:41:33
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Acts 10:28
+  And he said unto them, Ye know how that it is an unlawful thing for a man that is a Jew to keep company, or come unto one of another nation; but God hath shewed me that I should not call any man common or unclean.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . RDB-TRUTH-M0-BEGIN
+. . . ERASE: Table not found: RDBPAR.dbf
+. ERASE: Table not found: RDBTYP.dbf
+. ERASE: Table not found: RDBBLK.dbf
+. ERASE: Table not found: RDBDEL.dbf
+. ERASE: Table not found: RDBFAN.dbf
+. REL: cleared all
+OK
+. . . . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RDBPAR.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf with 0 records.
+. . . . . . . . . . . . . . . . . . . . Closed.
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RDBTYP.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBTYP.dbf with 0 records.
+. . . . . . . . . Closed.
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RDBBLK.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBBLK.dbf with 0 records.
+. . . . . . Closed.
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RDBDEL.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf with 0 records.
+. . . . . . . . . . . . . Closed.
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RDBFAN.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBFAN.dbf with 0 records.
+. . . . . . . . . . . . . Closed.
+. . . Selected area 1.
+Current area: 1
+. Opened RDBPAR (v64) : Record count 5
+Valid Index/Indices   : CDX
+. Selected area 2.
+Current area: 2
+. Opened RDBTYP (v64) : Record count 2
+Valid Index/Indices   : CDX
+. Selected area 3.
+Current area: 3
+. Opened RDBBLK (v64) : Record count 2
+Valid Index/Indices   : CDX
+. Selected area 4.
+Current area: 4
+. Opened RDBDEL (v64) : Record count 4
+Valid Index/Indices   : CDX
+. Selected area 5.
+Current area: 5
+. Opened RDBFAN (v64) : Record count 4
+Valid Index/Indices   : CDX
+. . . Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 1
+. . F00_positioned_on_delrow:.T.
+. 1 deleted
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. F01_fixture_parent_selected:.T.
+. . . . . REL: cleared all
+OK
+. REL: RDBPAR -> RDBTYP ON PN TO TC
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. Located.
+. OK
+. Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBTYP.dbf  Recs: 2  Recno: 2
+. CONFORM_R03A_typed_equality_crosses_char_numeric:.T.
+. . REL: cleared all
+OK
+. REL: RDBPAR -> RDBTYP ON PK TO TN
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 5
+. Located.
+. OK
+. Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBTYP.dbf  Recs: 2  Recno: 2
+. DIVERGE_R03B_numeric_child_allows_same_equality:.T.
+. . . . . REL: cleared all
+OK
+. REL: RDBPAR -> RDBBLK ON PK TO BK
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 5
+. Located.
+. OK
+. Selected area 3.
+Current area: 3
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBBLK.dbf  Recs: 2  Recno: 2
+. DIVERGE_R04_blank_key_joins_blank_key:.T.
+. . . . . REL: cleared all
+OK
+. REL: RDBPAR -> RDBDEL ON PK TO DK
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 2
+. Located.
+. OK
+. Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 3
+. CONFORM_R05A_deleted_child_skipped:.T.
+. . Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 3
+. . 1 deleted
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 3
+. Located.
+. OK
+. Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 1
+. DIVERGE_R05B_no_match_is_indistinguishable_from_top:.T.
+. . Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 3
+. Located.
+. 1 deleted
+. F02_parent_marked_deleted_here:.T.
+. OK
+. Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 4
+. DIVERGE_R05C_deleted_parent_still_resolves_children:.T.
+. . Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 4
+. Located.
+. 1 recalled
+. F03_fixture_parent_recalled:.T.
+. . . . . REL: cleared all
+OK
+. REL: RDBPAR -> RDBPAR ON PK
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 4
+. Located.
+. RDB-TRUTH-SELFREL-PROBE-BEGIN
+. Relations (tree) rooted at: RDBPAR
+RDBPAR
+  -> RDBPAR ON PK  (matches: 1)
+. A | P_FANOUT
+OK
+. RDB-TRUTH-SELFREL-PROBE-END
+. F04_survived_self_relation_probe:.T.
+. REL: cleared all
+OK
+. . . . . REL: cleared all
+OK
+. REL: RDBPAR -> RDBFAN ON PK TO FK
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. Located.
+. . ORACLE-A-REL-ENUM-CURRENT-PARENT-BEGIN
+. A | P_FANOUT | F_A1
+A | P_FANOUT | F_A2
+A | P_FANOUT | F_A3
+OK
+. ORACLE-A-REL-ENUM-CURRENT-PARENT-END
+. . Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. Located.
+. ORACLE-B-REL-ENUM-OTHER-PARENT-BEGIN
+. OK
+. ORACLE-B-REL-ENUM-OTHER-PARENT-END
+. . REL: RDBPAR -> RDBTYP ON PK TO TC
+OK
+. REL: RDBPAR -> RDBBLK ON PK TO BK
+OK
+. REL: RDBPAR -> RDBDEL ON PK TO DK
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 3
+. Located.
+. ORACLE-C-REL-ENUM-NO-PATH-MULTICHILD-BEGIN
+. Relations for parent: RDBPAR
+  -> RDBFAN  (matches: 3)
+  -> RDBTYP  (matches: 0)
+  -> RDBBLK  (matches: 0)
+  -> RDBDEL  (matches: 0)
+. REL ENUM engine: enum_emit_for_current_parent failed.
+. ORACLE-C-REL-ENUM-NO-PATH-MULTICHILD-END
+. . ORACLE-D-LIMIT-INDISTINGUISHABLE-BEGIN
+. A | F_A1
+A | F_A2
+A | F_A3
+OK
+. A | F_A1
+A | F_A2
+OK
+. ORACLE-D-LIMIT-INDISTINGUISHABLE-END
+. . ORACLE-E-DISTINCT-DEGRADATION-BEGIN
+. A
+OK
+. ""
+""
+""
+OK
+. ORACLE-E-DISTINCT-DEGRADATION-END
+. . ORACLE-F-MATCHES-COLUMN-SEMANTICS-BEGIN
+. REL: cleared all
+OK
+. REL: RDBPAR -> RDBFAN ON PK TO FK
+OK
+. REL: RDBFAN -> RDBTYP ON FK TO TC
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. Located.
+. Relations for parent: RDBPAR
+  -> RDBFAN  (matches: 3)
+. Relations (tree) rooted at: RDBPAR
+RDBPAR
+  -> RDBFAN ON PK TO FK  (matches: 3)
+    -> RDBTYP ON FK TO TC  (matches: n/a)
+. ORACLE-F-MATCHES-COLUMN-SEMANTICS-END
+. . ORACLE-G-SQLITE-GROUND-TRUTH-BEGIN
+. SQLITE: opened :memory:
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. OK
+. PK | PLBL     | FLBL
+---+----------+-----
+A  | P_FANOUT | F_A1
+A  | P_FANOUT | F_A2
+A  | P_FANOUT | F_A3
+. FULL_JOIN_ROWS
+--------------
+3             
+. NULL_JOIN_ROWS
+--------------
+0             
+. SQLITE: closed
+. ORACLE-G-SQLITE-GROUND-TRUTH-END
+. . . REL: cleared all
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBPAR.dbf  Recs: 5  Recno: 1
+. Closed.
+. Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBTYP.dbf  Recs: 2  Recno: 1
+. Closed.
+. Selected area 3.
+Current area: 3
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBBLK.dbf  Recs: 2  Recno: 1
+. Closed.
+. Selected area 4.
+Current area: 4
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBDEL.dbf  Recs: 4  Recno: 1
+. Closed.
+. Selected area 5.
+Current area: 5
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RDBFAN.dbf  Recs: 4  Recno: 2
+. Closed.
+. ERASE: deleting 1 file(s) for table: RDBPAR
+  Deleted: RDBPAR.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. ERASE: deleting 1 file(s) for table: RDBTYP
+  Deleted: RDBTYP.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. ERASE: deleting 1 file(s) for table: RDBBLK
+  Deleted: RDBBLK.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. ERASE: deleting 1 file(s) for table: RDBDEL
+  Deleted: RDBDEL.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. ERASE: deleting 1 file(s) for table: RDBFAN
+  Deleted: RDBFAN.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . RDB-TRUTH-M0-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

@@ -1,0 +1,105 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, a401c147 dirty)  (Jul 29 2026 08:09:56)
+DotTalk++ build Jul 29 2026 08:09:56
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Judges 1:14
+  And it came to pass, when she came to him, that she moved him to ask of her father a field: and she lighted from off her ass; and Caleb said unto her, What wilt thou?
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . RELSCAN-REGRESSION-BEGIN
+. . ERASE: Table not found: RSLPAR.dbf
+. ERASE: Table not found: RSLCHD.dbf
+. REL: cleared all
+OK
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RSLPAR.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RSLPAR.dbf with 0 records.
+. . . . Closed.
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\RSLCHD.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\RSLCHD.dbf with 0 records.
+. . . . . . . . . . Closed.
+. . Selected area 1.
+Current area: 1
+. Opened RSLPAR (v64) : Record count 1
+Valid Index/Indices   : CDX
+. Selected area 2.
+Current area: 2
+. Opened RSLCHD (v64) : Record count 3
+Valid Index/Indices   : CDX
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RSLPAR.dbf  Recs: 1  Recno: 1
+. REL: RSLPAR -> RSLCHD ON PK TO CK
+OK
+. . . RELSCAN-T1-BEGIN
+. REL: scan limit is 500000.
+. REL: scan limit set to 1.
+. RELSCAN-T1-END
+. . . RELSCAN-T2-BEGIN
+. Relations for parent: RSLPAR
+REL: scan limit (1) reached; results may be incomplete.
+  -> RSLCHD  (matches: 0)
+. RELSCAN-T2-END
+. . . REL: scan limit set to 500000.
+. RELSCAN-T4-BEGIN
+. Relations for parent: RSLPAR
+  -> RSLCHD  (matches: 2)
+. RELSCAN-T4-END
+. . . REL: cleared all
+OK
+. Selected area 1.
+Current area: 1
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RSLPAR.dbf  Recs: 1  Recno: 1
+. Closed.
+. Selected area 2.
+Current area: 2
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\RSLCHD.dbf  Recs: 3  Recno: 2
+. Closed.
+. ERASE: deleting 1 file(s) for table: RSLPAR
+  Deleted: RSLPAR.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. ERASE: deleting 1 file(s) for table: RSLCHD
+  Deleted: RSLCHD.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . RELSCAN-REGRESSION-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

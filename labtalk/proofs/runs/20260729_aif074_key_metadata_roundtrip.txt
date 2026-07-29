@@ -1,0 +1,94 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, a401c147 dirty)  (Jul 29 2026 08:01:55)
+DotTalk++ build Jul 29 2026 08:01:55
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  John 19:6
+  When the chief priests therefore and officers saw him, they cried out, saying, Crucify him, crucify him. Pilate saith unto them, Take ye him, and crucify him: for I find no fault in him.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . KEYMETA-REGRESSION-BEGIN
+. . ERASE: Table not found: KEYREGR.dbf
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\KEYREGR.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\KEYREGR.dbf with 0 records.
+. . . . . . . . . UNIQUE PRIMARY for FIELD KID.
+. UNIQUE ON for FIELD KLBL.
+. KEYMETA-T1-LISTING-BEGIN
+. UNIQUE fields: KID (PRIMARY), KLBL
+. KEYMETA-T1-LISTING-END
+. . . WORKSPACE SAVE: wrote D:\code\ccode\dottalkpp\data\workspaces\keyregr_sandbox.dtschema
+. UNIQUE OFF for FIELD KID.
+. UNIQUE OFF for FIELD KLBL.
+. KEYMETA-T2-CLEARED-BEGIN
+. UNIQUE: (none)
+. KEYMETA-T2-CLEARED-END
+. WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 1 area(s) closed.
+  KEY: KEYREGR.KID PRIMARY
+  KEY: KEYREGR.KLBL UNIQUE
+WORKSPACE LOAD: restored 1 area(s) and 0 relation(s).
+. Selected area 0.
+Current area: 0
+  File: D:\code\ccode\dottalkpp\data\dbf\sandbox\KEYREGR.dbf  Recs: 2  Recno: 1
+. KEYMETA-T2-RESTORED-BEGIN
+. UNIQUE fields: KID (PRIMARY), KLBL
+. KEYMETA-T2-RESTORED-END
+. . . KEYMETA-T3-CLEAN-BEGIN
+. VALIDATE: OK - field 'KID' is unique across 2 record(s).
+. KEYMETA-T3-CLEAN-END
+. . . . KEYMETA-T3-DUP-BEGIN
+. VALIDATE: Found 1 problem record(s) on field 'KID'.
+  dup value='2' at rec 3 (first seen at rec 2)
+. KEYMETA-T3-DUP-END
+. . . . KEYMETA-T4-REGISTRY-BEGIN
+. VALIDATE: Found 1 problem record(s) on field 'KID'.
+  dup value='2' at rec 3 (first seen at rec 2)
+VALIDATE: OK - field 'KLBL' is unique across 3 record(s).
+. KEYMETA-T4-REGISTRY-END
+. . . Closed.
+. ERASE: deleting 1 file(s) for table: KEYREGR
+  Deleted: KEYREGR.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . KEYMETA-REGRESSION-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

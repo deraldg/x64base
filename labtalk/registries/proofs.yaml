@@ -552,3 +552,111 @@ proofs:
       an audit -- and "we will remember to pick it up" is not a pick-up point. Evidence is two
       commits: the fix (AIF-071) and its immediate self-application (AIF-072). A durable record
       beats a good intention; an index beats a memory.
+
+  # ---------------------------------------------------------------------------
+  # AIF-074 SQLSEL lane -- run AIPR-20260729-001, 2026-07-29. Engine v0.6.
+  # Fifteen gated commits: a phantom SQL surface demoted, engine seams landed,
+  # then the first working statement. Each proof cites its preserved transcript.
+  # ---------------------------------------------------------------------------
+  - id: proof.sqlsel.select_statement_matches_sqlite
+    label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_sqlsel_select_v1_oracle.txt
+    item_id: dottalkpp/data/scripts/sqlsel_select_v1_regression.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/src/cli/sqlsel_statement.cpp
+      - D:/code/ccode/src/cli/sqlsel_statement.hpp
+      - D:/code/ccode/src/cli/cmd_sql_select.cpp
+      - D:/code/ccode/src/cli/workarea_util.cpp
+      - D:/code/ccode/src/cli/tuple_builder.cpp
+    notes: >-
+      The lane's one genuinely new component. Projection, star, WHERE and LIMIT each
+      returned the same rows as the in-process SQLite oracle over identical data
+      (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI; WHERE MAJOR='CSCI' -> ADAMS + CARTER).
+      Cursor neutrality proven by data: the cursor was parked on record 2 (BAKER) before
+      four statements and still read BAKER after (S5A/S5B .T.), so a statement neither
+      reads nor disturbs session state. Corrective errors fired for an unopened table, an
+      expression select-item, and a bad LIMIT -- never a silent wrong answer. The BEFORE
+      state is the same command on the same data emitting 200 lines of debug and a false
+      "0" (evidence record Sec. 7): that pair is the teaching exhibit. Everything under
+      the parser was consumed, not built -- area resolution, predicate compile/eval,
+      tuple projection, cursor guards all pre-existed and were proven earlier the same day.
+
+  - id: proof.engine.typed_equality_crosses_declared_types
+    label: Relation equality compares numerically whenever both sides are numeric literals
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rdb_truth_typed_equality.txt
+    item_id: dottalkpp/data/scripts/rdb_truth_proof_v2.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/src/cli/set_relations.cpp
+      - D:/code/ccode/dottalkpp/data/scripts/rdb_truth_check_v1.py
+    notes: >-
+      AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a
+      numerically DECLARED child field got numeric comparison, so a character child holding
+      "1" failed against a numeric parent's "1.00" -- an asymmetry invisible to the user.
+      Now both sides decide. Scorer verdict PASS, 11/11 markers, 4/4 derived checks; the
+      marker itself was rewritten from DIVERGE_ to CONFORM_ because the engine changed.
+      RELJOIN 12/12 unchanged, so the fix altered exactly what it claimed and nothing else.
+
+  - id: proof.engine.scan_limit_reports_truncation
+    label: Relation scans announce when the scan limit stopped them
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rel_scanlimit_honesty.txt
+    item_id: dottalkpp/data/scripts/rel_scanlimit_honesty_regression.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/src/cli/set_relations.cpp
+      - D:/code/ccode/src/cli/set_relations.hpp
+      - D:/code/ccode/src/cli/cmd_rel.cpp
+    notes: >-
+      AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a
+      plausible-looking partial answer with no indication -- a wrong result indistinguishable
+      from a right one. At limit 1 the run reports "REL: scan limit (1) reached; results may
+      be incomplete." exactly once per command; at the restored default the same command is
+      silent. REL SCANLIMIT also gives the limit CLI reach for the first time, closing
+      open question OQ-1.
+
+  - id: proof.engine.key_metadata_survives_workspace_roundtrip
+    label: PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_key_metadata_roundtrip.txt
+    item_id: dottalkpp/data/scripts/key_metadata_regression.dts
+    return_code: 0
+    related:
+      - D:/code/ccode/include/cli/unique_registry.hpp
+      - D:/code/ccode/src/cli/unique_registry.cpp
+      - D:/code/ccode/src/cli/cmd_setunique.cpp
+      - D:/code/ccode/src/cli/cmd_workspace.cpp
+      - D:/code/ccode/src/cli/cmd_validate_unique.cpp
+    notes: >-
+      Phase 2 of a registry whose own header asked for it ("Phase 1: session-scoped ...
+      storage/backfill policy belongs elsewhere"). The registry was emptied between SAVE and
+      LOAD, so restoration is proven, not assumed: LOAD echoed KEY KEYREGR.KID PRIMARY and
+      KEY KEYREGR.KLBL UNIQUE and the listing matched pre-save exactly. VALIDATE UNIQUE
+      passes clean data and reports one duplicate with provenance. Green on first run.
+
+  - id: proof.codev.system_corrects_its_extender
+    label: The tree's own artifacts and gates corrected an outside AI extender, repeatedly
+    state: source_defined
+    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
+    item_id: docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+    return_code: 0
+    related:
+      - D:/code/ccode/labtalk/registries/ai_report_audit.yaml
+      - D:/code/ccode/AI_README.md
+      - D:/code/ccode/docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md
+    notes: >-
+      Eleven recorded corrections in one lane. Owner redirects (five) converted construction
+      proposals into consumption of existing machinery -- locks, tuple carrier, buffering,
+      unique registry -- with catch latency falling to zero by the last one. The toolchain
+      caught the rest without human involvement: the pre-commit report-audit rejected a
+      closeout envelope three times until it matched the ENFORCED registry rather than the
+      published spec; MSVC C4244 caught a legacy 32-bit gotoRec in new x64 code before it
+      shipped; the non-destructive smoke exposed a runtime usage text that had drifted from
+      its own contract minutes after commit. State is source_defined rather than
+      runtime_observed because the evidence is a document trail, not a transcript -- but the
+      trail is complete and each instance is timestamped, quoted, and retained unedited.
+      Falsifiable going forward: the statement parser was the first need inward search could
+      not satisfy, which bounds the claim rather than breaking it.

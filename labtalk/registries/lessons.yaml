@@ -125,8 +125,15 @@ lessons:
     proofs:
       - proof.portal.truth_audit.latest
       - proof.ai_friendly.assimilation_docs_seed
-    proof_state: source_defined
-    next_gate: Add dated build notes and one concrete before/after example from the current LabTalk work.
+      - proof.sqlsel.select_statement_matches_sqlite
+      - proof.engine.scan_limit_reports_truncation
+    proof_state: runtime_observed
+    next_gate: >-
+      The concrete before/after example this gate asked for now exists (AIF-074, 2026-07-29):
+      SQLSEL SELECT ... FROM STUDENTS emitting 200 debug lines and a false "0" BEFORE, and
+      three oracle-verified columns AFTER, on the same data and the same command. Both
+      transcripts are preserved under labtalk/proofs/runs/. Remaining gate: fold that pair
+      and its dated build notes into the lesson document itself.
 
   - id: lesson.career.legacy_systems_as_labs
     title: Turning Legacy Systems into Learning Labs
@@ -555,3 +562,86 @@ lessons:
       different proof_state values. When the ends do not meet, RECORD the gap; a
       documented gap is span work scheduled, an undocumented one is a bridge that looks
       finished.
+
+  # ---------------------------------------------------------------------------
+  # AIF-074 SQLSEL lane, 2026-07-29. Three lessons the lane earned in one day.
+  # ---------------------------------------------------------------------------
+  - id: lesson.student.cursor_versus_set
+    title: Two Ways to Ask a Database a Question
+    kind: lesson
+    lane: student
+    status: idea
+    audience: [student, self-learner, instructor]
+    path: lessons/student/cursor_versus_set_v0.md
+    website_path: /docs/labtalk/student-lessons
+    concepts:
+      - concept.database.record
+      - concept.database.schema
+    apps:
+      - app.dottalkpp.runtime
+    commands: [REL ADD, REL ENUM, SQLSEL, SQLITE, USE, GO]
+    proofs:
+      - proof.sqlsel.select_statement_matches_sqlite
+      - proof.engine.typed_equality_crosses_declared_types
+    proof_state: runtime_observed
+    next_gate: >-
+      Write the side-by-side exercise. x64base is unusual in carrying BOTH methodologies
+      over one engine and one dataset: REL walks children from the record the cursor is
+      sitting on (move the cursor, the answer changes), while SQLSEL evaluates a statement
+      that names its own table and leaves every cursor untouched. Most students only ever
+      meet the set model and never see the cursor machinery underneath it. Same data, same
+      keys, same equality rules, two answers with different shapes -- and a SQLite oracle
+      to check both against. Needs one runnable lab file before promotion to draft.
+
+  - id: lesson.career.a_wrong_answer_that_looks_right
+    title: The Worst Failure Is the One That Returns a Number
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, educator]
+    path: lessons/career/a_wrong_answer_that_looks_right_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.evidence.review
+      - concept.contract.usage
+    proofs:
+      - proof.engine.scan_limit_reports_truncation
+      - proof.sqlsel.select_statement_matches_sqlite
+    proof_state: runtime_observed
+    next_gate: >-
+      Three defects found in one lane shared a shape: a scan that stopped at its limit and
+      reported a partial result as complete; a SELECT statement the parser could not read,
+      which scanned 200 records and answered "0"; a boolean that stringified to nothing so
+      a proof marker silently vanished. None raised an error. Each returned something a
+      reader would accept. A crash is a gift by comparison -- it tells you where to look.
+      The remedy is not more testing but a design rule: separate the error axis from the
+      value axis, so a FAILURE reports while a legitimate blank stays quiet. Add the
+      before/after transcript pair as the exhibit, then promote.
+
+  - id: lesson.career.the_tree_already_has_it
+    title: Search Before You Build, and Trust the Enforcer Over the Spec
+    kind: lesson
+    lane: career
+    status: draft
+    audience: [developer, maintainer, ai-collaborator]
+    path: lessons/career/the_tree_already_has_it_v0.md
+    website_path: /docs/labtalk/career-lessons
+    concepts:
+      - concept.evidence.review
+      - concept.selfdoc.validation
+    proofs:
+      - proof.codev.system_corrects_its_extender
+      - proof.engine.key_metadata_survives_workspace_roundtrip
+    proof_state: source_defined
+    next_gate: >-
+      Two rules, both learned the expensive way. FIRST: before designing a component, cite
+      the search that proved it absent -- every capability the lane "needed" already
+      existed (locking, the tuple carrier, table buffering, a unique-field registry whose
+      own header requested the very phase being designed), and construction was the right
+      answer zero times out of seven. SECOND, a hierarchy of trust when authoring anything
+      the toolchain checks: a passing in-tree example beats the enforced policy registry,
+      which beats the specification document, which beats memory -- and an artifact you
+      generated yourself but never ran through the gate ranks below all of them. Learned by
+      having a pre-commit gate reject the same closeout envelope three times: the spec
+      described a v2 schema the validator does not yet enforce. Add the worked example and
+      promote.
