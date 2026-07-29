@@ -7,34 +7,34 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_smart_browser.cpp
+// src/cli/app_smart_browser.cpp
 // @dottalk.usage v1
-// owner: DOT|SMARTBROWSE
-// command: SMARTBROWSE
+// owner: DOT|SMARTBROWSER
+// command: SMARTBROWSER
 // aliases: SM, SMART
 // category: browser
 // status: supported
 // noargs: interactive
 // effect: browse
 // mutates: cursor
-// usage-access: SMARTBROWSE USAGE
+// usage-access: SMARTBROWSER USAGE
 // summary:
 //   Interactive tuple-stream smart browser with paging, relation child browsing,
 //   schema/json display toggles, filtering, navigation, and breadcrumbs.
 //
 // usage:
-//   SMARTBROWSE
-//   SMARTBROWSE USAGE
-//   SMARTBROWSE <spec>
-//   SMARTBROWSE <spec> FOR <expr>
-//   SMARTBROWSE <spec> PAGESIZE <n>
-//   SMARTBROWSE <spec> SHOW SCHEMA
-//   SMARTBROWSE <spec> SHOW JSON
-//   SMARTBROWSE <spec> STATUS VERBOSE
+//   SMARTBROWSER
+//   SMARTBROWSER USAGE
+//   SMARTBROWSER <spec>
+//   SMARTBROWSER <spec> FOR <expr>
+//   SMARTBROWSER <spec> PAGESIZE <n>
+//   SMARTBROWSER <spec> SHOW SCHEMA
+//   SMARTBROWSER <spec> SHOW JSON
+//   SMARTBROWSER <spec> STATUS VERBOSE
 //
 // notes:
-//   SMARTBROWSE with no arguments opens the interactive browser using default spec.
-//   SM and SMART are shell shortcuts that resolve to SMARTBROWSE.
+//   SMARTBROWSER with no arguments opens the interactive browser using default spec.
+//   SM and SMART are shell shortcuts that resolve to SMARTBROWSER.
 //   The browser is read-only for table data but traverses tuple streams and may move cursors.
 //   Work-area cursors are restored best-effort when the browser exits.
 //   Interactive pager commands include TOP, BOTTOM, SKIP, GOTO, FOR, CLEAR FOR, ORDER, SPEC, SHOW, OPEN CHILD, BACK, STATUS, HELP, and QUIT.
@@ -128,20 +128,20 @@ static void print_smart_browser_usage()
 {
     std::cout
         << "Usage:\n"
-        << "  SMARTBROWSE\n"
-        << "  SMARTBROWSE USAGE\n"
-        << "  SMARTBROWSE <spec>\n"
-        << "  SMARTBROWSE <spec> FOR <expr>\n"
-        << "  SMARTBROWSE <spec> PAGESIZE <n>\n"
-        << "  SMARTBROWSE <spec> SHOW SCHEMA\n"
-        << "  SMARTBROWSE <spec> SHOW JSON\n"
-        << "  SMARTBROWSE <spec> STATUS VERBOSE\n";
+        << "  SMARTBROWSER\n"
+        << "  SMARTBROWSER USAGE\n"
+        << "  SMARTBROWSER <spec>\n"
+        << "  SMARTBROWSER <spec> FOR <expr>\n"
+        << "  SMARTBROWSER <spec> PAGESIZE <n>\n"
+        << "  SMARTBROWSER <spec> SHOW SCHEMA\n"
+        << "  SMARTBROWSER <spec> SHOW JSON\n"
+        << "  SMARTBROWSER <spec> STATUS VERBOSE\n";
 }
 
 static bool is_smart_browser_usage_request(std::string raw)
 {
     raw = up(trim(raw));
-    if (raw.rfind("SMARTBROWSE ", 0) == 0) raw = up(trim(raw.substr(12)));
+    if (raw.rfind("SMARTBROWSER ", 0) == 0) raw = up(trim(raw.substr(12)));
     return raw == "USAGE" || raw == "HELP" || raw == "?";
 }
 
@@ -331,7 +331,7 @@ static void run_smart_browser(std::istringstream& iss) {
 
 } // namespace
 
-void cmd_SMART_BROWSER(xbase::DbArea& /*A*/, std::istringstream& iss)
+void app_SMART_BROWSER(xbase::DbArea& /*A*/, std::istringstream& iss)
 {
     const std::string raw_args = iss.str();
     if (is_smart_browser_usage_request(raw_args)) {
@@ -339,9 +339,13 @@ void cmd_SMART_BROWSER(xbase::DbArea& /*A*/, std::istringstream& iss)
         return;
     }
 
-    WorkAreaCursorRestore __restore; // keep SMARTBROWSER read-only w.r.t. workarea cursors
+    WorkAreaCursorRestore __restore; // keep SMARTBROWSERR read-only w.r.t. workarea cursors
     run_smart_browser(iss);
 }
 
-void cmd_SMARTBROWSER(xbase::DbArea& A, std::istringstream& iss) { cmd_SMART_BROWSER(A, iss); }
+// AIF-074: app_SMARTBROWSERR (double R) removed 2026-07-29. It was a wrapper
+// delegating straight to app_SMART_BROWSER, declared in no header and called by
+// nothing -- debris from the SMARTBROWSE -> SMARTBROWSER rename, where the new
+// name picked up an extra R. Same rename left four dead shortcut targets, two
+// mislabeled runtime messages, a stale prose header and a stale pager banner.
 
