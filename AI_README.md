@@ -398,3 +398,22 @@ session changed lane state — objective, branch, authority pointer, contract,
 dashboard status, intake row — the AI-facing document describing that state
 must be updated in the same session, or the omission explicitly justified. See
 `AI_PORTAL.md` -> "Closeout Updates Startup".
+
+**Authoring your closeout (AIF-074 lesson, 2026-07-29 -- three gate rejections
+taught this):**
+
+1. START FROM `docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md`. Copy it; do not
+   reconstruct the envelope from memory or from any draft that never passed
+   the gate.
+2. The ENFORCED envelope schema is whatever
+   `labtalk/registries/ai_report_audit.yaml` says (currently
+   `ai-report-audit-v1` with its exact `required_fields` list). The v2 spec
+   (`AI_REPORT_AUDIT_V2_SPEC.md`) is SPECIFIED BUT NOT YET ENFORCED; v2 fields
+   are welcome additively, but the schema string and required set must satisfy
+   the registry or the pre-commit gate hard-blocks the commit.
+3. The envelope is real YAML front matter: `---` on line 1, `---` after, THEN
+   the title. A fenced ```yaml block does not count.
+4. General trust order when authoring ANY portal artifact, highest first: a
+   passing in-tree example > the enforced policy registry > the spec document >
+   your memory. Self-generated artifacts that never passed a gate rank below
+   all of these.

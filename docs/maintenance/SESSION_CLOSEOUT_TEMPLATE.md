@@ -25,7 +25,7 @@ ai_report_audit:
     kind: session_closeout
 ---
 
-# Session Closeout — <topic>
+# Session Closeout -- <topic>
 
 Date: <YYYY-MM-DD>.
 Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PLDC>.
