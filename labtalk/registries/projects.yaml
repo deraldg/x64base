@@ -7,13 +7,15 @@ projects:
     status: active_beta
     root: D:/code/ccode
     owner_repo: deraldg/x64base
-    lanes: [engine, cli, ddl_schema_pdlc, dotscript, help, selfdoc, contracts, gui, arctictalk_tui_workbench, retro_launchpad, maintenance]
+    lanes: [engine, cli, export_sdf, ddl_schema_pdlc, x32_traditional_xbase_support, dotscript, help, selfdoc, contracts, gui, arctictalk_tui_workbench, retro_launchpad, maintenance]
     docs:
       - README.md
       - AI_PORTAL.md
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
       - docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md
+      - docs/maintenance/EXPORT_SDF_PDLC_CLOSEOUT_V1.md
+      - docs/maintenance/X32_TRADITIONAL_XBASE_SUPPORT_LANE_V1.md
       - docs/maintenance/ARCTICTALK_RETRO_TUI_WORKBENCH_LANE_V1.md
       - docs/maintenance/RETRO_LANE_CHARTER_20260726.md
       - docs/maintenance/RETRO_LANE_PROPOSAL_V2_20260726.md
@@ -105,6 +107,23 @@ projects:
       - docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
       - labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
     notes: Routes AI-assisted work into durable, anchored project knowledge.
+
+  - id: project.ai_friendly.agent_memory
+    name: External Agent Memory & Continuity
+    kind: knowledge_project
+    status: design_intended
+    root: D:/code/ccode
+    owner: member.derald                 # human -- owns, commits, promotes (AIF-050)
+    ai_steward: member.ai.chatgpt        # GPTbase -- AI author + continuity steward (hosted advisor)
+    lanes: [AIF-073, external-agent-memory]
+    docs:
+      - docs/maintenance/EXTERNAL_AGENT_MEMORY_LANE_V1.md
+    notes: >-
+      Model the AI Portal as event-sourced external memory (working / episodic /
+      prospective / semantic / procedural / evidence) for continuing human+AI agent
+      work. Registered from a GPTbase design proposal (2026-07-28); design-intended,
+      not implemented. GPTbase self-assigned as maintainer; corrected to steward,
+      human ownership retained.
 
   - id: project.pycrud
     name: pycrud Companion
