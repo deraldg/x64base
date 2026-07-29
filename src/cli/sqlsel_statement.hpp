@@ -32,4 +32,10 @@ namespace sqlsel {
 // not a SELECT statement, so the caller keeps its legacy predicate-scan path.
 bool try_execute_select(const std::string& tail);
 
+// The ONE runtime description of the statement grammar. Exported so the SQLSEL
+// usage printer shares it instead of keeping a second copy -- three authorities
+// for one command's help is how the text drifts from the code (AIF-074 caught
+// this twice in one day).
+void print_statement_usage();
+
 } // namespace sqlsel

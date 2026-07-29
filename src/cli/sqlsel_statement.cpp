@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "xbase_field_getters.hpp"
 #include "textio.hpp"
 #include "workarea_util.hpp"
 #include "tuple_builder.hpp"
@@ -97,20 +98,46 @@ bool is_bare_column(const std::string& s) {
     return !std::isdigit(static_cast<unsigned char>(s.front()));
 }
 
-void usage() {
-    std::cout
-        << "SQLSEL statement usage:\n"
-        << "  SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [LIMIT <n>]\n"
-        << "  SQLSEL SELECT * FROM <table>\n"
-        << "Notes:\n"
-        << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
-        << "  v1 accepts bare column names; expression projection is not yet supported.\n"
-        << "  A statement does not change the current area or any record pointer.\n";
+// Numeric-literal test and typed comparison, matching the engine's P1.4 rule:
+// compare numerically when BOTH sides are numeric literals, else as trimmed text.
+// One ordering model, shared with relation equality (R16 orthogonality).
+bool is_numeric_literal(const std::string& s) {
+    if (s.empty()) return false;
+    std::size_t i = 0;
+    if (s[0] == '+' || s[0] == '-') i = 1;
+    bool digit = false, dot = false;
+    for (; i < s.size(); ++i) {
+        const unsigned char c = static_cast<unsigned char>(s[i]);
+        if (std::isdigit(c)) { digit = true; continue; }
+        if (c == '.' && !dot) { dot = true; continue; }
+        return false;
+    }
+    return digit;
+}
+
+bool value_less(const std::string& a, const std::string& b) {
+    if (is_numeric_literal(a) && is_numeric_literal(b)) {
+        try { return std::stod(a) < std::stod(b); } catch (...) {}
+    }
+    return a < b;
 }
 
 } // namespace
 
 namespace sqlsel {
+
+void print_statement_usage() {
+    std::cout
+        << "SQLSEL statement usage:\n"
+        << "  SQLSEL SELECT <col>[,<col>...] FROM <table>\n"
+        << "         [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]\n"
+        << "  SQLSEL SELECT * FROM <table>\n"
+        << "  SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]\n"
+        << "Notes:\n"
+        << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
+        << "  v1 accepts bare column names; expression projection is not yet supported.\n"
+        << "  A statement does not change the current area or any record pointer.\n";
+}
 
 bool try_execute_select(const std::string& tail_in) {
     const std::string tail = trim(tail_in);
@@ -129,23 +156,25 @@ bool try_execute_select(const std::string& tail_in) {
     const std::size_t from_pos = find_kw(tail, "FROM", sel_pos + 6);
     if (from_pos == std::string::npos) {
         std::cout << "SQLSEL: expected FROM after the select list.\n";
-        usage();
+        print_statement_usage();
         return true;
     }
 
     const std::string select_list = trim(tail.substr(sel_pos + 6, from_pos - (sel_pos + 6)));
     if (select_list.empty()) {
         std::cout << "SQLSEL: the select list is empty.\n";
-        usage();
+        print_statement_usage();
         return true;
     }
 
     // Optional trailing clauses, in grammar order.
     const std::size_t where_pos = find_kw(tail, "WHERE", from_pos + 4);
+    const std::size_t order_pos = find_kw(tail, "ORDER", from_pos + 4);
     const std::size_t limit_pos = find_kw(tail, "LIMIT", from_pos + 4);
 
     std::size_t from_end = tail.size();
     if (where_pos != std::string::npos) from_end = std::min(from_end, where_pos);
+    if (order_pos != std::string::npos) from_end = std::min(from_end, order_pos);
     if (limit_pos != std::string::npos) from_end = std::min(from_end, limit_pos);
 
     const std::string table_clause = trim(tail.substr(from_pos + 4, from_end - (from_pos + 4)));
@@ -162,19 +191,57 @@ bool try_execute_select(const std::string& tail_in) {
     }
     if (table_name.empty()) {
         std::cout << "SQLSEL: expected a table name after FROM.\n";
-        usage();
+        print_statement_usage();
         return true;
     }
 
     std::string where_text;
     if (where_pos != std::string::npos) {
         std::size_t where_end = tail.size();
-        if (limit_pos != std::string::npos && limit_pos > where_pos) where_end = limit_pos;
+        if (order_pos != std::string::npos && order_pos > where_pos) where_end = std::min(where_end, order_pos);
+        if (limit_pos != std::string::npos && limit_pos > where_pos) where_end = std::min(where_end, limit_pos);
         where_text = trim(tail.substr(where_pos + 5, where_end - (where_pos + 5)));
         if (where_text.empty()) {
             std::cout << "SQLSEL: WHERE requires a predicate.\n";
             return true;
         }
+    }
+
+    // ORDER BY <field> [ASC|DESC]
+    std::string order_field;
+    bool order_desc = false;
+    if (order_pos != std::string::npos) {
+        std::size_t order_end = tail.size();
+        if (limit_pos != std::string::npos && limit_pos > order_pos) order_end = limit_pos;
+        std::string order_text = trim(tail.substr(order_pos + 5, order_end - (order_pos + 5)));
+        std::istringstream os(order_text);
+        std::string by_tok;
+        os >> by_tok;
+        if (up(by_tok) != "BY") {
+            std::cout << "SQLSEL: expected ORDER BY <field> [ASC|DESC].\n";
+            return true;
+        }
+        os >> order_field;
+        if (order_field.empty()) {
+            std::cout << "SQLSEL: ORDER BY requires a field name.\n";
+            return true;
+        }
+        std::string dir;
+        if (os >> dir) {
+            const std::string D = up(dir);
+            if (D == "DESC")      order_desc = true;
+            else if (D != "ASC") {
+                std::cout << "SQLSEL: ORDER BY direction must be ASC or DESC (got '" << dir << "').\n";
+                return true;
+            }
+        }
+        if (!is_bare_column(order_field)) {
+            std::cout << "SQLSEL: ORDER BY accepts a bare field name (got '" << order_field << "').\n";
+            return true;
+        }
+        // strip any TABLE. prefix for the field read
+        const std::size_t dot = order_field.find('.');
+        if (dot != std::string::npos) order_field = order_field.substr(dot + 1);
     }
 
     long long limit_n = -1;
@@ -202,8 +269,22 @@ bool try_execute_select(const std::string& tail_in) {
     // --- build the projection spec ------------------------------------------
     const std::string area_label = table_name;
     std::string spec;
+
+    // COUNT(*) -- an aggregate, not a projection: one row, one column.
+    std::string count_norm;
+    for (const char c : select_list) {
+        if (!std::isspace(static_cast<unsigned char>(c))) count_norm.push_back(c);
+    }
+    const bool count_star = (up(count_norm) == "COUNT(*)");
+    if (count_star && !order_field.empty()) {
+        std::cout << "SQLSEL: ORDER BY does not apply to COUNT(*).\n";
+        return true;
+    }
+
     const bool star = (trim(select_list) == "*");
-    if (star) {
+    if (count_star) {
+        spec.clear();   // no projection needed
+    } else if (star) {
         spec = area_label + ".*";
     } else {
         const std::vector<std::string> cols = split_csv(select_list);
@@ -243,11 +324,15 @@ bool try_execute_select(const std::string& tail_in) {
     opts.refresh_relations = false;   // a statement must not touch relation state
     opts.strict_fields     = true;    // missing field reports; never a silent blank
     opts.want_header       = false;
+    opts.overlay_table_buffer = false; // SELECT projects the same committed truth WHERE scans
 
-    long long emitted = 0;
-    bool more_available = false;
-    bool header_done = false;
-    std::string build_error;
+    // Two passes. PASS 1 collects every matching recno (plus its sort key when
+    // ORDER BY is present); PASS 2 projects. Collecting first is what makes
+    // ORDER BY correct: LIMIT must cut the SORTED set, not the scan order.
+    struct MatchRow { int64_t recno; std::string key; };
+    std::vector<MatchRow> matches;
+    long long matched_total = 0;
+    std::string scan_error;
 
     {
         cli::ScopedAreaSelect focus(area);
@@ -269,36 +354,24 @@ bool try_execute_select(const std::string& tail_in) {
                     bool tf = false;
                     std::string perr;
                     if (!dottalk::expr::eval_bool_compiled(*pred, *area, tf, &perr)) {
-                        std::cout << "SQLSEL: predicate evaluation failed: "
-                                  << (perr.empty() ? where_text : perr) << "\n";
+                        scan_error = "predicate evaluation failed: " +
+                                     (perr.empty() ? where_text : perr);
                         break;
                     }
                     keep = tf;
                 }
 
                 if (keep) {
-                    if (limit_n >= 0 && emitted >= limit_n) { more_available = true; break; }
-
-                    const dottalk::TupleBuildResult r = dottalk::build_tuple_from_spec(spec, opts);
-                    if (!r.ok) { build_error = r.error; break; }
-
-                    if (!header_done) {
-                        std::string head;
-                        for (std::size_t i = 0; i < r.row.columns.size(); ++i) {
-                            if (i) head += " | ";
-                            head += r.row.columns[i].name;
+                    ++matched_total;
+                    if (!count_star) {
+                        MatchRow m;
+                        m.recno = cur;
+                        if (!order_field.empty()) {
+                            try { m.key = trim(xfg::getFieldAsString(*area, order_field)); }
+                            catch (...) { m.key.clear(); }
                         }
-                        std::cout << head << "\n";
-                        header_done = true;
+                        matches.push_back(std::move(m));
                     }
-
-                    std::string line;
-                    for (std::size_t i = 0; i < r.row.values.size(); ++i) {
-                        if (i) line += " | ";
-                        line += trim(r.row.values[i]);
-                    }
-                    std::cout << line << "\n";
-                    ++emitted;
                 }
 
                 const int64_t prev = static_cast<int64_t>(area->recno());
@@ -307,6 +380,61 @@ bool try_execute_select(const std::string& tail_in) {
                 if (!moved) break;
                 const int64_t next = static_cast<int64_t>(area->recno());
                 if (next <= prev || next > rec_count) break;
+            }
+        }
+
+        if (scan_error.empty() && !count_star && !order_field.empty()) {
+            // Field existence check: an unknown ORDER BY field must report, not
+            // silently sort every row on an empty key (R16d).
+            bool have_field = false;
+            try {
+                const std::string want = up(order_field);
+                for (const auto& fd : area->fields()) {
+                    if (up(fd.name) == want) { have_field = true; break; }
+                }
+            } catch (...) {}
+            if (!have_field) {
+                scan_error = "ORDER BY field '" + order_field + "' is not in " + table_name + ".";
+            } else {
+                std::stable_sort(matches.begin(), matches.end(),
+                    [&](const MatchRow& a, const MatchRow& b) {
+                        return order_desc ? value_less(b.key, a.key)
+                                          : value_less(a.key, b.key);
+                    });
+            }
+        }
+
+        // PASS 2: project the (possibly sorted) match set, honoring LIMIT.
+        if (scan_error.empty() && !count_star) {
+            bool header_done = false;
+            std::size_t shown = 0;
+            for (const auto& m : matches) {
+                if (limit_n >= 0 && static_cast<long long>(shown) >= limit_n) break;
+                try {
+                    area->gotoRec64(static_cast<std::uint64_t>(m.recno));
+                    if (!area->readCurrent()) break;
+                } catch (...) { break; }
+
+                const dottalk::TupleBuildResult r = dottalk::build_tuple_from_spec(spec, opts);
+                if (!r.ok) { scan_error = "projection failed: " + r.error; break; }
+
+                if (!header_done) {
+                    std::string head;
+                    for (std::size_t i = 0; i < r.row.columns.size(); ++i) {
+                        if (i) head += " | ";
+                        head += r.row.columns[i].name;
+                    }
+                    std::cout << head << "\n";
+                    header_done = true;
+                }
+
+                std::string line;
+                for (std::size_t i = 0; i < r.row.values.size(); ++i) {
+                    if (i) line += " | ";
+                    line += trim(r.row.values[i]);
+                }
+                std::cout << line << "\n";
+                ++shown;
             }
         }
 
@@ -321,14 +449,31 @@ bool try_execute_select(const std::string& tail_in) {
         } catch (...) {}
     }
 
-    if (!build_error.empty()) {
-        std::cout << "SQLSEL: projection failed: " << build_error << "\n";
+    if (!scan_error.empty()) {
+        std::cout << "SQLSEL: " << scan_error << "\n";
         return true;
     }
 
-    std::cout << emitted << " row(s) selected.\n";
-    if (more_available) {
-        std::cout << "SQLSEL: LIMIT reached; more rows available.\n";
+    if (count_star) {
+        std::cout << "COUNT(*)\n" << matched_total << "\n";
+        std::cout << "1 row(s) selected.\n";
+        return true;
+    }
+
+    const long long shown = (limit_n >= 0 && limit_n < static_cast<long long>(matches.size()))
+                          ? limit_n : static_cast<long long>(matches.size());
+    std::cout << shown << " row(s) selected.\n";
+    if (limit_n >= 0 && static_cast<long long>(matches.size()) > limit_n) {
+        std::cout << "SQLSEL: LIMIT reached; " << (static_cast<long long>(matches.size()) - limit_n)
+                  << " more row(s) available.\n";
+    }
+    if (!order_field.empty()) {
+        // Report the access path. A plan choice is never silent: this v1 always
+        // materializes and sorts; the index-ordered path arrives with the first
+        // production seek() consumer (P1.5).
+        std::cout << "SQLSEL: ORDER BY " << order_field
+                  << (order_desc ? " DESC" : " ASC")
+                  << " -- materialized sort over " << matched_total << " matching row(s).\n";
     }
     return true;
 }
