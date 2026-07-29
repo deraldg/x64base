@@ -18,21 +18,33 @@
 // mutates: cursor-temporary
 // usage-access: SQLSEL USAGE
 // summary:
-//   Evaluate SQL-like selection predicates over the current DBF work area.
+//   Set-oriented SELECT statement over an open work area, plus the legacy
+//   predicate-scan form over the current area.
 //
 // usage:
 //   SQLSEL USAGE
+//   SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [LIMIT <n>]
+//   SQLSEL SELECT * FROM <table>
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
+//   SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
+//   SQLSEL SELECT * FROM STUDENTS LIMIT 5
+//   SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
 //   SQLSEL COUNT
-//   SQLSEL COUNT ALL
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
 //
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
-//   SQLSEL reads records and may temporarily move the cursor.
+//   A SELECT statement names its own table in FROM; the table must be OPEN.
+//   A SELECT statement does not read or disturb session state -- not the
+//   current area, not the record pointer, not SET FILTER, not SET RELATION.
+//   SELECT projects bare column names; expression projection is not yet
+//   supported and reports rather than emitting empty values.
+//   LIMIT reports when rows remain rather than truncating silently.
+//   ORDER BY and COUNT(*) are not yet implemented in the statement form.
+//   The legacy predicate form reads records and may temporarily move the cursor.
 //   SQLSEL does not mutate table data.
 //
 // risk:
@@ -88,6 +100,7 @@ static inline bool ieq(std::string a, std::string b) {
 
 // SQL normalizer
 #include "expr/sql_normalize.hpp"
+#include "sqlsel_statement.hpp"   // AIF-074 P3: SELECT ... FROM statement surface
 
 // External ? provided by DotTalk expr
 dottalk::expr::CompileResult compile_where(const std::string& text);
@@ -441,6 +454,25 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
                 iss.seekg(usage_pos);
             }
         }
+    }
+
+    // AIF-074 P3: statement path. If the tail begins with SELECT, this is a
+    // set-oriented SQL statement -- it names its own table in FROM and does not
+    // require (or disturb) a current area. Anything else falls through to the
+    // legacy predicate-scan behavior below. Dispatch by keyword, never by guess.
+    {
+        const std::streampos stmt_pos = iss.tellg();
+        std::string stmt_tail;
+        {
+            std::ostringstream rest;
+            rest << iss.rdbuf();
+            stmt_tail = rest.str();
+        }
+        iss.clear();
+        if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
+        if (sqlsel::try_execute_select(stmt_tail)) return;
+        iss.clear();
+        if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
     }
 
     if (!A.isOpen()) { std::cout << "No file open\n"; return; }
