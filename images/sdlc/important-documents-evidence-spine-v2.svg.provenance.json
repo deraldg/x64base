@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "important-documents-evidence-spine-v2",
+  "path": "public/images/sdlc/important-documents-evidence-spine-v2.svg",
+  "derived_from": [
+    "diagrams/sources/important_documents_evidence_spine_v2.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/important_documents_evidence_spine_v2.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "404cebe6a9a38ee8739ab97eeafe55668e178573a2a7ac8293883cd481822679",
+  "output_sha256": "939faec26b6c523c0f229e46482be98da4b16d043b3d11c11ee3e1731c77ea94",
+  "truth_status": "governance-derived",
+  "review_status": "reviewed"
+}

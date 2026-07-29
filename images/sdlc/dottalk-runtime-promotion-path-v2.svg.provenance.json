@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "dottalk-runtime-promotion-path-v2",
+  "path": "public/images/sdlc/dottalk-runtime-promotion-path-v2.svg",
+  "derived_from": [
+    "diagrams/sources/dottalk_runtime_promotion_path_v2.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/dottalk_runtime_promotion_path_v2.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "2413315d3bb9c8a198452cf08c39d1eb1db6b96c6e368654e25b2dd70d5c2380",
+  "output_sha256": "9b3c10d91b47a4cf47dd5317a0f69be79e175a34f765a11e255a338f241a73f9",
+  "truth_status": "contract-derived",
+  "review_status": "reviewed"
+}

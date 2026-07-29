@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "x64base-com-site-architecture-v1",
+  "path": "public/images/sdlc/x64base-com-site-architecture-v1.svg",
+  "derived_from": [
+    "diagrams/sources/x64base_com_site_architecture_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/x64base_com_site_architecture_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "5114d0af6a191c2ae8e375b29e8c38a969e0049db2532033995206d66c247b04",
+  "output_sha256": "9627cc69b615ab8dcc2b644921900e94e1e0c213d0bcd4d36cbca1afa635b297",
+  "truth_status": "source-derived",
+  "review_status": "reviewed"
+}

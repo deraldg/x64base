@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "help-message-selfdoc-level2-promotion-dfd-v1",
+  "path": "public/images/sdlc/help-message-selfdoc-level2-promotion-dfd-v1.svg",
+  "derived_from": [
+    "diagrams/sources/help_message_selfdoc_level2_promotion_dfd_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_level2_promotion_dfd_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "50c2ce62843ef608389f5d087dd93ea366db1fc7724cd18097df75aad0e1bb84",
+  "output_sha256": "a90a5c248576a6655eb3c22f989bf1ee58c083a62dda8a904d1d7c13c8f5e570",
+  "truth_status": "source-derived-draft",
+  "review_status": "reviewed"
+}

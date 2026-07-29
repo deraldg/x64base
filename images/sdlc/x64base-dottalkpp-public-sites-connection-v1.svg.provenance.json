@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "x64base-dottalkpp-public-sites-connection-v1",
+  "path": "public/images/sdlc/x64base-dottalkpp-public-sites-connection-v1.svg",
+  "derived_from": [
+    "diagrams/sources/x64base_dottalkpp_public_sites_connection_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/x64base_dottalkpp_public_sites_connection_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "767f38561bdc42e61bb2e7326071837595f04d08a832d5c0308ffdc7d4cf3d3c",
+  "output_sha256": "969d76c4758c446cc105366c3e048c78841fb267b83fc95cf2e8e0e328bc00f9",
+  "truth_status": "source-derived",
+  "review_status": "reviewed"
+}

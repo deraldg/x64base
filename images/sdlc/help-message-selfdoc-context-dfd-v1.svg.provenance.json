@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "help-message-selfdoc-context-dfd-v1",
+  "path": "public/images/sdlc/help-message-selfdoc-context-dfd-v1.svg",
+  "derived_from": [
+    "diagrams/sources/help_message_selfdoc_context_dfd_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_context_dfd_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "452cb48245bfd55bef4952a02b156e9da9f5a7e758b47a374e28b98bfb940b06",
+  "output_sha256": "380ff4e712f8311e37a0f3a0b080a5db470a50ea478411c664e57f90cbfbc85f",
+  "truth_status": "source-derived-draft",
+  "review_status": "reviewed"
+}

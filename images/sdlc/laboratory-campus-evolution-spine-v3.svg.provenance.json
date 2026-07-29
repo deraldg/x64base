@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "laboratory-campus-evolution-spine-v3",
+  "path": "public/images/sdlc/laboratory-campus-evolution-spine-v3.svg",
+  "derived_from": [
+    "diagrams/sources/laboratory_campus_evolution_spine_v3.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/laboratory_campus_evolution_spine_v3.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "187a5d0e15c63db3fb5661f0ee55d3cd37c92b475092e8fce92ff20a2022d5ae",
+  "output_sha256": "7fa85013a9739cf2ee24ab7355a659554b72e976a191933b220570b0523c2dd8",
+  "truth_status": "governance-derived",
+  "review_status": "reviewed"
+}
