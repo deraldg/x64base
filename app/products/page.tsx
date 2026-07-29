@@ -7,6 +7,7 @@ const products = [
   { slug: "tuptalk", title: "TupTalk", description: "Tuple-facing record views, projections, export, validation, and relation-aware row output." },
   { slug: "tabletalk", title: "TableTalk", description: "Table buffering, dirty/stale state, commit/rollback, and buffered mutation workflows." },
   { slug: "reltalk", title: "RelTalk", description: "Relation graphs, asymmetric links, workspace persistence, and ERSATZ traversal." },
+  { slug: "sqlsel", title: "SQLsel", description: "Set-oriented SELECT over open work areas, with WHERE, ORDER BY, LIMIT, and COUNT(*), verified against a SQLite oracle." },
   { slug: "parallel-gui-tui", title: "Parallel GUI/TUI", description: "DotTalk++ Workbench lane for keeping graphical and terminal surfaces aligned over the same engine services." },
   { slug: "labtalk", title: "Laboratory Campus / LabTalk", description: "Public campus frame and LabTalk mark for planning, in-development labs, and existing x64base / DotTalk++ learning evidence." }
 ];

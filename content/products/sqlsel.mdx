@@ -1,0 +1,55 @@
+---
+title: "SQLsel"
+description: "Set-oriented SELECT over open work areas, verified against a SQLite oracle."
+---
+
+## Overview
+
+SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.
+
+Its subject is set-oriented retrieval: a `SELECT` statement that describes the
+rows it wants and returns them, rather than positioning a cursor and navigating.
+It is a supported surface as of 2026-07-29.
+
+```text
+SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 10
+SQLSEL SELECT * FROM STUDENTS
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+```
+
+A statement is scoped to itself: it names its own table, ignores session filter
+and cursor state, restores every cursor it touches, and reads committed table
+truth. The table must already be open.
+
+Current SQL-facing surfaces include:
+
+- `SQLSEL SELECT ... FROM ... WHERE ... ORDER BY ... LIMIT`
+- `SQLSEL SELECT COUNT(*)`
+- `SQLSEL USAGE` for the runtime grammar
+- `REGRESSION SQLSEL_SELECT_V1`, an oracle comparison against SQLite
+- a SQL conformance map in `include/sql_ref.hpp`
+
+## The SQL family
+
+Four commands share the `SQL` prefix and are not interchangeable. `SQLSEL` is
+SQLsel, the statement surface described above. `SQL` scans the current work area
+with a predicate and does not execute SQL statements, its name being historical.
+`SQLITE` bridges to an actual SQLite database. `SQLVER` reports SQLite
+availability. Each command states the boundary in its own `USAGE` output.
+
+## Not yet implemented
+
+`JOIN`, `GROUP BY` / `HAVING`, expression projection in the select list, SQL
+`INSERT` / `UPDATE` / `DELETE`, and bare `SELECT` without the `SQLSEL` prefix.
+
+## Relationship to RelTalk
+
+SQLsel and [RelTalk](/products/reltalk) both reach connected data and are not the
+same thing. RelTalk is navigational: relations are declared with `REL ADD` and
+followed. SQLsel is relational: a condition is stated and a set is returned.
+RelTalk is the older model, inherited through the xBase line; SQLsel is the newer
+one. Neither replaces the other.
+
+See [SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance) for the
+verification detail and the conformance map, [RelTalk docs](/docs/talk-family/reltalk),
+and the canonical public repo [deraldg/x64base](https://github.com/deraldg/x64base).

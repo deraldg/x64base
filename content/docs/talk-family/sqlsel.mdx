@@ -1,0 +1,72 @@
+---
+title: "SQLsel"
+description: "Set-oriented SELECT over open work areas, with the gaps stated and the claims verifiable."
+---
+
+## What it does
+
+SQLsel names the SQL-facing query workflows in DotTalk++ / x64base.
+
+Its subject is set-oriented retrieval rather than cursor navigation. It covers:
+
+- a `SELECT` statement over an open work area
+- `WHERE` filtering, `ORDER BY` with direction, `LIMIT`
+- `COUNT(*)` with or without a predicate
+- statement scoping: no session state read, no cursor moved
+
+Real local command surfaces include:
+
+```text
+SQLSEL SELECT SID,LNAME FROM STUDENTS
+SQLSEL SELECT * FROM STUDENTS WHERE MAJOR = "CSCI"
+SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 2
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+SQLSEL USAGE
+```
+
+## Statement scoping
+
+A SQLsel statement names its own table and does not consult session state. It
+ignores any active `SET FILTER`, does not depend on the current work area, and
+restores every cursor it moves. Two consequences worth knowing:
+
+- the same statement returns the same rows regardless of where you were
+  positioned or what filter was set
+- it reads **committed** table truth, so under `TABLE BUFFER ON` an uncommitted
+  edit is not visible to it
+
+The second is a deliberate ruling rather than an accident. A statement that
+filtered on committed data but displayed buffered data would return a row that
+visibly fails its own `WHERE` clause.
+
+## Verification
+
+`REGRESSION SQLSEL_SELECT_V1` compares every result set against an in-process
+SQLite oracle over identical data in the same run, and asserts:
+
+- `ORDER BY` sorts the full match set before `LIMIT` cuts it
+- cursor position is unchanged, checked by data
+- corrective errors for an unopened table, an expression where a column belongs,
+  a bad `LIMIT`, an unknown `ORDER BY` field, and `ORDER BY` on `COUNT(*)`
+- `LIMIT` reports what it withheld; `ORDER BY` reports its access path
+
+## Not yet implemented
+
+`JOIN`, `GROUP BY` / `HAVING`, expression projection, SQL DML, and the bare
+`SELECT` alias. The table must already be open: SQLsel reads open work areas and
+does not open files.
+
+## SQLsel and RelTalk
+
+Two related surfaces, one older and one newer, neither replacing the other.
+
+| | RelTalk | SQLsel |
+|---|---|---|
+| Model | Navigational | Relational |
+| Setup | `REL ADD` declares links in advance | Nothing declared |
+| Question | "where do I go from here?" | "which rows satisfy this?" |
+| Result | One row per leaf combination along a declared path | A set matching a condition |
+
+Both read the same tables through the same indexes. See
+[RelTalk](/docs/talk-family/reltalk) and
+[SQLsel and SQL Conformance](/docs/engine/sqlsel-and-sql-conformance).

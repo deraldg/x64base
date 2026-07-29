@@ -19,7 +19,9 @@ developing around that core.
 - **Yes** means the feature is present or clearly supported.
 - **Partial** means the feature exists in a limited, developing, or scoped form.
 - **No** means it is not a meaningful feature of that system.
-- **Unknown** means we should not claim it without better source proof.
+- **Unknown** means we should not claim it without better source proof. It is
+  not a claim that the feature is absent, and it is preferred over a plausible
+  guess. Unknowns are omitted or marked; they are not filled in.
 - **Not same claim** means the project has adjacent capability but not the same
   architectural goal.
 
@@ -48,7 +50,7 @@ still applies unless specifically marked production-ready.
 | 64-bit record navigation and locking | Yes, in the public build: `GO`/`GOTO`/`SKIP`/`RECNO`/`TOP`/`BOTTOM`/`FIRST`/`LAST`/`NEXT`/`PRIOR`, the table-buffer change key, and the record-lock API were widened to 64-bit (CURSOR and INDEX_X64 regression-checked), and the classic `recno()`/`recLength()`/`recCount()`/`cpr()` accessors now return `-1` past their 32-bit range instead of saturating. Addressing past `2^31` is proven end-to-end — the engine reads distinct records at recno `2^31+1`/`+2` off a sparse x64 table | Classic xBase record model | Classic xBase record model | Runtime/DBE dependent | Runtime dependent | Classic | Library/dialect dependent |
 | 32-bit/classic DBF support | Yes, MS-DOS/classic lane | Yes | Yes | Yes | Dialect/runtime dependent | Yes | Yes |
 | VFP DBF support | Yes, VFP headers/types lane | DBF/RDD dependent | DBF/RDD dependent | Yes | VFP dialect/runtime work | Yes | Yes in selected libraries |
-| VFP currency field support | Yes | DBF/RDD dependent | DBF/RDD dependent | Likely/product dependent | Runtime dependent | Yes in VFP/dBASE variants | Yes in `dbf`; read support varies |
+| VFP currency field support | Yes | DBF/RDD dependent | DBF/RDD dependent | Unknown | Runtime dependent | Yes in VFP/dBASE variants | Yes in `dbf`; read support varies |
 | Memo fields | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
 | Vectored long table/field names with fallback mangling | Yes, x64 metadata supports up to 256-byte table/field names (ceiling raised from 128 in 2026-07; default 128) with classic 10-byte fallback descriptor tokens | Not same claim | Not same claim | Product dependent | .NET/runtime dependent | Product dependent | No |
 | Custom field types | Yes — register-once codec registry (type code + codec + on-disk width + flavor eligibility); the built-in `I`/`B`/`Y`/`T` binary types use the same path, and a worked custom type ships as a demo | Not same claim | Not same claim | Product/runtime dependent | .NET type system | Product dependent | Conversion hooks only |
@@ -58,7 +60,7 @@ still applies unless specifically marked production-ready.
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | xBase-style command language | Yes | Yes | Yes | Yes | Yes/dialects | Yes | No |
-| DotScript / script files | Yes | Harbour scripts/tools | Yes/likely | Yes/product dependent | Yes/compiler/runtime dependent | Product dependent | Python scripts only |
+| DotScript / script files | Yes | Harbour scripts/tools | Unknown | Yes/product dependent | Yes/compiler/runtime dependent | Product dependent | Python scripts only |
 | Variables | Yes | Yes | Yes | Yes | Yes | Yes | Python variables |
 | Conditionals | Yes: `IF`, `ELSE`, `ENDIF` | Yes | Yes | Yes | Yes | Yes | Python |
 | Loops | Yes: `LOOP`, `ENDLOOP`, `WHILE`, `UNTIL`, `SCAN`, `ENDSCAN` | Yes | Yes | Yes | Yes | Yes | Python |
@@ -86,9 +88,10 @@ still applies unless specifically marked production-ready.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Work areas / DB areas | Yes | Yes | Yes | Yes | Runtime dependent | Yes | No |
 | Workspace wrapper over areas | Yes | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
-| Relations | Yes: `REL`, relation tree, relation-aware browse | Yes/xBase model | Yes | Yes | Runtime dependent | Yes/product dependent | No native |
+| Relations (navigational model) | Yes: `REL`, relation tree, relation-aware browse; declared edges followed by traversal | Yes/xBase model | Yes | Yes | Runtime dependent | Yes/product dependent | No native |
+| SQL `SELECT` over native DBF tables | Partial: `SQLSEL SELECT` with `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`, oracle-verified against SQLite; no `JOIN` or `GROUP BY` yet | Vendor site lists "Native RDDs, SQL, ODBC" as connectivity features; SQL over local DBF not evidenced there | Unknown | Yes: Universal-SQL runs `SELECT`/`INSERT`/`UPDATE`/`DELETE` against a local or shared DBF table, per vendor feature list | Dialect model confirmed (a VFP dialect exists); SQL-over-DBF specifics Unknown | Unknown | No |
 | Tuple/grid relational view | Yes | App/library dependent | App/library dependent | Product/app dependent | App dependent | Product dependent | No |
-| Built-in SQL bridge | Partial: SQL, SQLite, import/export, and DDL bridge lanes | Yes, SQL/ODBC listed | Extensions/libraries likely | Yes, Universal SQL | .NET data access | Yes/product dependent | External Python SQL only |
+| Built-in SQL bridge | Partial: SQL, SQLite, import/export, and DDL bridge lanes | Yes, SQL/ODBC listed | Unknown | Yes, Universal SQL | .NET data access | Yes/product dependent | External Python SQL only |
 | Full SQL server/RDBMS | No | No, but can bridge | No, but can bridge | Can bridge to server DBs | Uses .NET DBs | Product dependent | No |
 | Referential validation | Partial: relations, rules, validation hooks | App/RDD dependent | App/RDD dependent | Product/database dependent | Database dependent | Product dependent | No native |
 | Database triggers | Yes: `TRIGGER`, `RULE`, `VALIDATE` lanes | App/RDD/SQL dependent | App/RDD/SQL dependent | Product/database dependent | Database dependent | Product dependent | No native |
@@ -102,7 +105,7 @@ still applies unless specifically marked production-ready.
 | CSV import | Yes | Possible via libraries/code | Possible via libraries/code | Yes, Universal SQL mentions CSV | .NET libraries | Product/tool dependent | Yes via Python |
 | CSV export | Yes | Possible via libraries/code | Possible via libraries/code | Yes | .NET libraries | Product/tool dependent | Yes via Python |
 | DBF import/export | Yes | Yes | Yes | Yes | Runtime dependent | Yes | Yes |
-| SQL import/export | Yes, scoped bridge | Yes/ODBC/SQL backends | Likely via libs | Yes | Yes via .NET | Yes/product dependent | Python ecosystem |
+| SQL import/export | Yes, scoped bridge | Yes/ODBC/SQL backends | Unknown | Yes | Yes via .NET | Yes/product dependent | Python ecosystem |
 | Memo import/export | Yes, developing with known CSV newline caveats | Yes | Yes | Yes | Runtime dependent | Yes | Yes, library dependent |
 | Data dictionary / metadata catalogs | Yes, DDICT, META, SelfDoc, manualgen, and website-feed lanes | Documentation/tool dependent | Tool dependent | Product/workbench dependent | Tool dependent | Product dependent | No |
 
@@ -123,12 +126,12 @@ still applies unless specifically marked production-ready.
 
 | Feature | x64base / DotTalk++ Workbench | Harbour | xHarbour | Alaska Xbase++ | XSharp | dBASE / DBF tools | Python DBF libs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Language/runtime localization | Yes, seeded runtime message catalog plus locale lanes in progress | Yes/ecosystem | Likely/verify | Product/framework dependent | .NET globalization available | Product dependent | Python locale/libs |
-| International text/codepages | In progress; classic/VFP codepage work should be documented carefully | Yes | Likely | Yes/product dependent | .NET Unicode/globalization | Product dependent | Varies by library |
+| Language/runtime localization | Yes, seeded runtime message catalog plus locale lanes in progress | Yes/ecosystem | Unknown | Product/framework dependent | .NET globalization available | Product dependent | Python locale/libs |
+| International text/codepages | In progress; classic/VFP codepage work should be documented carefully | Yes | Unknown | Yes/product dependent | .NET Unicode/globalization | Product dependent | Varies by library |
 | Currency data type | Yes, VFP currency/newer type support evidenced | DBF/RDD dependent | DBF/RDD dependent | Yes/product dependent | Runtime dependent | Yes in VFP/dBASE variants | `dbf` supports Decimal currency |
 | Date/datetime/logical/numeric types | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
 | Message catalog | Yes, runtime catalog, import/reset/reload scripts, and GUI message-contract lane | Tooling/ecosystem | Tooling/ecosystem | Product/framework dependent | .NET resources | Product dependent | Python ecosystem |
-| Locale-aware formatting | In progress; messaging and language seams are in place before wider shell replacement | Yes/ecosystem | Likely | Yes | Yes | Product dependent | Python ecosystem |
+| Locale-aware formatting | In progress; messaging and language seams are in place before wider shell replacement | Yes/ecosystem | Unknown | Yes | Yes | Product dependent | Python ecosystem |
 
 ## Documentation And SelfDoc
 
@@ -136,7 +139,7 @@ still applies unless specifically marked production-ready.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Built-in help | Yes | Yes | Yes | Yes | Yes | Yes | Package docs |
 | Self-documenting source/contracts | Yes, major lane with usage contracts, comment harvesting, and command-help feeds | Not same claim | Not same claim | Product docs/workbench | Tooling/docs | Product docs | No |
-| Manual generation | Yes, manualgen/MDO lanes plus website publication feed | hbdoc/tooling exists | Tooling likely | Product docs | Tooling/docs | Product docs | No |
+| Manual generation | Yes, manualgen/MDO lanes plus website publication feed | hbdoc/tooling exists | Unknown | Product docs | Tooling/docs | Product docs | No |
 | AI-friendly documentation layer | Yes, planned/developing | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
 | Website generated from docs | Developing vertical content generation | Project website/docs | Project docs | Product website/docs | Project docs | Product docs | Package docs |
 
@@ -175,6 +178,25 @@ It should not be positioned as:
 - a finished commercial DBMS
 - a fully compatible Visual FoxPro clone
 - the only 64-bit xBase-related technology
+
+## What is actually claimed for x32
+
+The list above states what x64base is not. This states what it does claim.
+
+**For classic 32-bit xBase formats, x64base claims exactly two things: table
+operations and host services.** Table operations means reading and writing
+DBF-family tables - their headers, field types, records, memos and indexes.
+Host services means what the surrounding runtime provides.
+
+Nothing else is claimed. Not language compatibility, not runtime compatibility,
+not feature parity with any 32-bit product, and not application portability.
+
+**Comparisons here inform direction; they are not promises.** The tables on this
+page, and the FoxPro / Clipper / Harbour / Xbase++ comparisons elsewhere in these
+docs, are used to decide which capabilities are worth building and to locate
+gaps. A "Yes" in a comparison row is not a compatibility guarantee: a comparison
+describes two systems, whereas a compatibility claim asserts that one will run
+the other's work.
 
 For the capacity side of this comparison, see
 [x64 Capacity Math](/docs/engine/x64-capacity-math). That page separates

@@ -31,6 +31,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Pinocchio Benchmarks", href: "/docs/engine/pinocchio-benchmarks" },
       { label: "Regression & Proof Testing", href: "/docs/engine/regression-and-proof-testing" },
       { label: "Engine Feature Crosswalk", href: "/docs/engine/feature-crosswalk" },
+      { label: "SQLsel and SQL Conformance", href: "/docs/engine/sqlsel-and-sql-conformance" },
       { label: "Error Codes", href: "/docs/engine/error-codes" },
       { label: "Messaging & Localization", href: "/docs/engine/messaging-and-localization" },
       { label: "Identity, Authentication & RBAC", href: "/docs/engine/identity-security" },
@@ -60,6 +61,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "TupTalk", href: "/docs/talk-family/tuptalk" },
       { label: "TableTalk", href: "/docs/talk-family/tabletalk" },
       { label: "RelTalk", href: "/docs/talk-family/reltalk" },
+      { label: "SQLsel", href: "/docs/talk-family/sqlsel" },
       { label: "Parallel GUI/TUI", href: "/docs/talk-family/parallel-gui-tui" },
       { label: "Arctic TUI", href: "/docs/talk-family/arctic" }
     ]

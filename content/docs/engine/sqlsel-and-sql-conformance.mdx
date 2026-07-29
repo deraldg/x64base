@@ -1,0 +1,158 @@
+---
+title: "SQLsel and SQL Conformance"
+description: "The SELECT surface x64base actually implements, verified against SQLite, with the gaps listed rather than glossed."
+---
+
+## What SQLsel is
+
+`SQLsel` is a set-oriented `SELECT` statement over an open work area. It is a
+supported surface as of 2026-07-29.
+
+```text
+SQLSEL SELECT <col>[,<col>...] FROM <table>
+       [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
+SQLSEL SELECT * FROM <table>
+SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
+```
+
+It is deliberately **statement-scoped**. A statement names its own table, ignores
+session filter and cursor state, restores every cursor it touches, and reads
+committed table truth. Running one changes nothing about where you were.
+
+## How it is verified
+
+Every result set is compared against an **in-process SQLite oracle over identical
+data in the same run** - the same rows loaded into both engines, the same query
+asked of both, the outputs compared row for row. That comparison is a registered
+regression (`REGRESSION SQLSEL_SELECT_V1`), not a one-time exercise.
+
+The regression also asserts the parts that are easy to get quietly wrong:
+
+- **`ORDER BY` sorts the full match set BEFORE `LIMIT` cuts it.** `ORDER BY LNAME
+  DESC LIMIT 2` returns the two highest rows, not the first two rows found.
+- **Cursor neutrality, proven by data** - the cursor is parked on a known record
+  before the statement and checked after.
+- **Corrective errors, never silent zeros** - an unopened table, an expression
+  where a column name belongs, a bad `LIMIT`, an unknown `ORDER BY` field, and
+  `ORDER BY` on `COUNT(*)` each report what is wrong.
+- **`LIMIT` says what it withheld**, and `ORDER BY` names its access path.
+
+## What it does not do
+
+| Not supported | Status |
+|---|---|
+| `JOIN` (any form) | Planned. See the note on relational methodology below |
+| `GROUP BY` / `HAVING` | Not implemented anywhere in the engine |
+| Expression projection (`UPPER(name)` in the select list) | v1 accepts bare column names only |
+| `INSERT` / `UPDATE` / `DELETE` as SQL syntax | The engine mutates through `APPEND`, `REPLACE`, `DELETE`; SQL DML is planned |
+| Bare `SELECT ...` without the `SQLSEL` prefix | Planned convenience layer |
+
+The table must already be open (`USE <table>`). SQLsel reads open work areas; it
+does not open files for you.
+
+## The SQL command family
+
+Four commands begin with `SQL` and do different things. The names invite
+confusion, so the boundary is stated in each command's own contract, in its
+runtime `USAGE` output, and in `HELP`.
+
+| Command | What it is |
+|---|---|
+| `SQLSEL` | **SQLsel.** The `SELECT` statement surface, over a named table that is already open |
+| `SQL` | A **predicate scan or count over the CURRENT work area**. It does not execute SQL statements; the name is historical |
+| `SQLITE` | The **bridge to an actual SQLite database** |
+| `SQLVER` | Reports SQLite availability and version |
+
+Two consequences worth knowing.
+
+`SQL SELECT * FROM STUDENTS` does not run a query. Until 2026-07-29 that line was
+parsed as a *predicate* and returned a confusing failure; it now detects the
+leading `SELECT` and redirects to `SQLSEL` with the real grammar rather than
+answering a question nobody asked.
+
+`SQL COUNT FOR <expr>` and `SQLSEL COUNT FOR <expr>` are **equivalent**. SQLsel
+kept the predicate-scan form when it gained statements, so the overlap is
+deliberate rather than accidental.
+
+## RelTalk and SQLsel: two ways to reach connected data
+
+These are two different things that are related. One is old, one is new, and the
+new one does not replace the old one. Both are supported surfaces.
+
+| | **RelTalk** (old) | **SQLsel** (new) |
+|---|---|---|
+| Lineage | Inherited from the xBase / FoxPro line, itself descended from navigational database practice | Relational algebra, the SQL tradition |
+| How you ask | **Navigate** - declare the links, then follow them | **Declare** - describe the result, let the engine find it |
+| Setup | `REL ADD` wires parent to child on a key, ahead of time | Nothing declared; match any two columns on demand |
+| Shape | Walks a configured path in a direction, emitting one row per leaf combination | Matches two row sets |
+| Commands | `REL ADD`, `REL JOIN`, `REL ENUM`, `ERSATZ`, `SET RELATION` | `SQLSEL SELECT` |
+| Today | Supported | `SELECT` supported; `JOIN` planned |
+
+The distinction is the navigational/relational one. The navigational model asks
+"where do I go from here?" - you position on a parent record and follow declared
+links to its children, as CODASYL sets and xBase `SET RELATION` did. The
+relational model asks "which rows satisfy this?" - you state a condition and
+receive a set, with no notion of where you were positioned.
+
+Both can be run against the same tables in the same session, which makes the
+difference observable rather than described. RelTalk is therefore not deprecated
+by the arrival of SQL; the two answer different questions.
+
+**They are related** in that both ultimately read the same DBF tables through the
+same indexes, and both can produce join-shaped rows. They are **not the same
+thing**, and this documentation will not describe one as the other. When SQL
+joins arrive they will be built as their own set-matching path rather than
+compiled down to declared traversal, specifically so the distinction survives
+contact with the implementation.
+
+See [RelTalk](/docs/talk-family/reltalk) for the relation-graph surface in full.
+
+There is one further honest wrinkle: SQL `LEFT JOIN` fills unmatched columns with
+`NULL`, and **x64base has no NULL** - a blank is a value. Unmatched rows will
+therefore carry an explicit marker rather than a blank that could be mistaken for
+real data, and the count of extended rows will be reported.
+
+## SQL conformance map
+
+The engine ships a machine-readable answer to "I know this SQL construct - does
+x64base do it, and how?" It lives in `include/sql_ref.hpp`, alongside the SQL
+reference itself, and covers equivalences as well as absences:
+
+- `SELECT` basic and `COUNT(*)` - **supported**, SQLsel
+- `CREATE TABLE` - **equivalent, different syntax** (`CREATE X64`, `DDL CREATE DBF`);
+  xBase types are C/N/D/L/M, and there is no `AUTOINCREMENT`
+- `CREATE INDEX` - **equivalent, two steps** (`INDEX ON ... TAG`, then `BUILDLMDB`)
+- `INSERT` - **equivalent, two steps** (`APPEND`, then `REPLACE`); cursor-oriented
+- `DELETE` - **equivalent with a real difference**: `DELETE` marks, `RECALL`
+  un-marks, `PACK` removes. Closer to a soft delete than SQL's
+- `BEGIN TRANSACTION` / `COMMIT` / `ROLLBACK` - **supported**, via `TABLE BUFFER ON`,
+  `COMMIT`, `ROLLBACK`, with a write-ahead journal fsynced before any DBF byte moves
+- `EXPLAIN QUERY PLAN` - **partial**: there is no planner to explain, because
+  access paths are chosen by the operator, not a cost model. What exists is
+  reporting - SQLsel names its access path, and `GPS` shows physical record
+  against logical row
+- `GROUP BY`, `JOIN` - **not supported**, as above
+
+Entries nobody has verified yet are left **empty on purpose**. Empty means
+unchecked, not absent - guessing would defeat the point of the map. A gate
+(`sql_conformance_gate.py`) checks that every command the map points at is a
+command the shell actually registers.
+
+**The map describes, it does not promise.** It exists to answer "does x64base do
+this, and how?" for someone who already knows SQL, and to show where the gaps
+are. It is not a compatibility claim: x64base does not offer to run SQLite or
+MSSQL work, and an "equivalent" row means the engine achieves the same intent by
+different syntax with its own semantics - `DELETE` marks rather than removes,
+there is no `NULL`, and types are C/N/D/L/M rather than SQL types. Read those
+rows as translation guidance, not as portability.
+
+## Checking these claims
+
+Each claim on this page is intended to be verifiable by running something:
+
+- the `SELECT` behavior, via `REGRESSION SQLSEL_SELECT_V1`
+- the conformance map's command references, via `sql_conformance_gate.py`
+- the command's own grammar, via `SQLSEL USAGE`
+
+A claim here that the engine does not honor is a defect in one or the other, and
+either is worth reporting.
