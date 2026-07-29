@@ -337,6 +337,17 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             i = j;
             continue;
         }
+
+        // AIF-074 P1.6 (RT-02): xBase boolean literals .T. / .F. were
+        // unlexable -- a dot not followed by a digit ended the lex and the
+        // whole expression silently failed. Map them onto the T/F idents the
+        // evaluator already understands.
+        if (c == '.' && i + 2 < src.size() && src[i + 2] == '.') {
+            const char m = src[i + 1];
+            if (m == 'T' || m == 't') { out.push_back({Tok::Ident, "T"}); i += 3; continue; }
+            if (m == 'F' || m == 'f') { out.push_back({Tok::Ident, "F"}); i += 3; continue; }
+        }
+
         break;
     }
     out.push_back({Tok::End, ""});
