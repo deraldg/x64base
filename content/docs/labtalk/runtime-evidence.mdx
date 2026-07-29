@@ -58,7 +58,7 @@ Observed evidence:
 Observed evidence:
 
 - Terminal/TUI shell shows the Arctic code-name surface with menus and command/output panes.
-- Tuple grid displays joined fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, and `tassign.CLS_ID`.
+- Tuple grid displays a tuple projection across related areas, with fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, and `tassign.CLS_ID`. This is correlated traversal from the current parent record, not a relational join result set.
 - A record popup displays `BLDG` and `NAME` for a related record.
 - This supports the SmartBrowser/TupTalk/RelTalk evidence lane: tuple output, relation readback, and record inspection are visible in the runtime.
 
@@ -96,7 +96,7 @@ Observed evidence:
 - DotTalk++ CLI shows the current root record with fields including `SID`, `LNAME`, `FNAME`, `DOB`, `GENDER`, `MAJOR`, `ENROLL_D`, `GPA`, and `EMAIL`.
 - Relation tree output expands from `STUDENTS` through `ENROLL`, `CLASSES`, `COURSES`, `DEPT`, `TERMS`, `ROOMS`, `BUILDING`, `TEACHERS`, `TASSIGN`, `STUD_MAJ`, and `MAJORS`.
 - Descendant summary and tuple grid are visible in the CLI, separate from the TUI surface.
-- Tuple grid includes joined fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, `tassign.CLS_ID`, `TID`, and `teachers.LNAME`.
+- Tuple grid includes a tuple projection across related areas, with fields such as `STUDENTS.LNAME`, `STUDENTS.FNAME`, `enroll.CLS_ID`, `GRADE`, `classes.CLS_ID`, `tassign.CLS_ID`, `TID`, and `teachers.LNAME`. This is correlated traversal from the current parent record, not a relational join result set.
 
 ## DotTalk++ Workbench Preview
 
