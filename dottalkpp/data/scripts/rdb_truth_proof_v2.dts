@@ -139,7 +139,7 @@ SELECT RDBPAR
 LOCATE FOR PLBL = "P_TYPEASYM"
 REL REFRESH
 SELECT RDBTYP
-? "DIVERGE_R03A_char_child_blocks_numeric_equality:" + (ALLTRIM(TLBL) = "T_TOP")
+? "CONFORM_R03A_typed_equality_crosses_char_numeric:" + (ALLTRIM(TLBL) = "T_ONE")
 
 REL CLEAR ALL
 REL ADD RDBPAR RDBTYP ON PK TO TN

@@ -41,8 +41,10 @@ TIER_A = {
     "F02_parent_marked_deleted_here": ("fixture", "fixture built correctly"),
     "F03_fixture_parent_recalled": ("fixture", "fixture restored"),
     "F04_survived_self_relation_probe": ("fixture", "engine survived RDB-14 probe"),
-    "DIVERGE_R03A_char_child_blocks_numeric_equality":
-        ("diverge", "RDB-03 confirmed: character child field blocks numeric equality"),
+    # AIF-074 P1.4: typed equality closed the RDB-03 asymmetry; the marker now
+    # asserts the char/numeric match SUCCEEDS (was DIVERGE_..._blocks_...).
+    "CONFORM_R03A_typed_equality_crosses_char_numeric":
+        ("conform", "P1.4 typed equality: char child matches numeric parent value"),
     "DIVERGE_R03B_numeric_child_allows_same_equality":
         ("diverge", "RDB-03 confirmed: same comparison succeeds when child is numeric"),
     "DIVERGE_R04_blank_key_joins_blank_key":

@@ -319,13 +319,15 @@ static bool values_match(xbase::DbArea& child,
     for (const auto& [child_field_index, expected_raw] : kv) {
         const std::string expected = textio::trim(expected_raw);
 
-        const auto& fds = child.fields();
-        const std::size_t idx0 = static_cast<std::size_t>(child_field_index - 1);
-        const xbase::FieldDef* fd = (child_field_index > 0 && idx0 < fds.size()) ? &fds[idx0] : nullptr;
-
         const std::string actual = textio::trim(get_by_index_as_string(child, child_field_index));
 
-        if (fd && fd->type == 'N' && !expected.empty() && !actual.empty()
+        // AIF-074 P1.4 (typed equality, closes RDB-03): numeric comparison
+        // applies when BOTH sides are numeric literals, regardless of which
+        // side's field is declared numeric -- previously only a numeric CHILD
+        // field got numeric compare, so a char child holding "1" failed
+        // against a numeric parent's "1.00". Blank-is-a-value (R16a) is
+        // preserved: empty values take the exact string path.
+        if (!expected.empty() && !actual.empty()
             && is_numeric_literal(expected) && is_numeric_literal(actual)) {
             try {
                 const double e = std::stod(expected);
