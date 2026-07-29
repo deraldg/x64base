@@ -5,15 +5,15 @@
 // project: project.x64base.runtime
 // lane: AIF-074
 // owner: member.derald
-// status: experimental
+// status: supported
 
 // src/cli/workarea_util.hpp -- shared work-area lookup and cursor-guard helpers.
 //
 // AIF-074 P0.2 consolidation: these were duplicated verbatim across the REL
 // family (cmd_relations.cpp, rel_enum_engine.cpp, set_relations.cpp). One home
 // now serves REL and, later, SQLSEL FROM resolution (open relationship
-// platform, ruling R11). Flip status to supported when gate G0 records
-// REGRESSION ALL green over this consolidation.
+// platform, ruling R11). Status flipped experimental -> supported at gate G0
+// (2026-07-29): build green, REGRESSION ALL green over the consolidated paths.
 //
 // Nothing here mutates table data; ScopedAreaSelect/ScopedEngineArea mutate
 // only the current-area selection and restore it on scope exit.

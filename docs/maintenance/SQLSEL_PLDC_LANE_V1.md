@@ -129,6 +129,28 @@ full record: `G0_RUN1_EVIDENCE_RECORD_V1_20260729.md` in the AIF-074 package):
   P0.1-P0.3 code work (an earlier "G0 green" wording was corrected by the adversarial
   pass, AP-4).
 
+**2026-07-29, later same day: GATE G0 CLOSED -- GREEN.** Evidence:
+
+- P0.1 applied+committed (a401c1470): 8 early-SQL contracts supported -> experimental;
+  operator HELP check confirms SQLERASE/INSERT now render a stub, not the phantom
+  supported surface. `contract_parser_gate.py --union` PASS post-demotion (canonical
+  invocation is --union; per-file mode false-positives on cross-file dispatch).
+- P0.3 applied+committed (same commit): 3 dead AliasRegistry headers + orphan
+  command_join_alias.cpp removed (zero includers/references, verified).
+- P0.2 applied+committed (12269891e): cli::workarea_util consolidation, REL re-pointed,
+  net -36 lines; g++ -fsyntax-only clean on all 4 TUs pre-handoff.
+- P0.4 done (harness runs 1-2, Sec. above).
+- Operator evidence: MSVC Release build green; **REGRESSION ALL green** (NONDESTRUCTIVE,
+  INDEX_X32, INDEX_X64, X64_METRICS, LANGUAGE, DOTSCRIPT_EXPR, DOTSCRIPT_PARITY, LEXING
+  -- every self-asserting marker .T./PASS), exercising the consolidated paths directly
+  (by-name SELECT, REL LIST/REFRESH). Normalization guards: 0 guarded phantoms, no
+  fail-lane findings, both commits.
+- workarea_util contracts flipped experimental -> supported per the flip-at-green-gate
+  rule (the flip is this gate's publish action).
+
+Phase P0 is CLOSED. Next: P1 (engine seams), opening with P1.1 PRIMARY/UNIQUE KEY
+metadata; owner rulings OQ-2 (blank-vs-NULL) blocks P1.2.
+
 **Adversarial pass on the plan of record** (task-17 discipline, 2026-07-29): plan
 structure survived; 6 corrections (2 substantive: a cited regression filename that does
 not exist -- G5 respecified against `commit_rollback_test.dts` + the pinocchio WAL phase

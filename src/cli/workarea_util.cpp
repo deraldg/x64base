@@ -5,7 +5,7 @@
 // project: project.x64base.runtime
 // lane: AIF-074
 // owner: member.derald
-// status: experimental
+// status: supported
 
 // src/cli/workarea_util.cpp -- see workarea_util.hpp. Implementations are the
 // canonical copies formerly duplicated in cmd_relations.cpp,
