@@ -413,17 +413,30 @@ static bool eval_chain(const std::vector<Clause>& cs, const std::vector<STok>& o
 
 static void print_sqlsel_usage_contract()
 {
+    // AIF-074 P3: this runtime text and the @dottalk.usage contract block at the
+    // top of this file are two authorities describing one command. They must be
+    // changed together -- a divergence here is the documented-not-honoured
+    // defect (AIF-065) that this very lane exists to cure.
     std::cout
         << "Usage:\n"
         << "  SQLSEL USAGE\n"
+        << "  SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [LIMIT <n>]\n"
+        << "  SQLSEL SELECT * FROM <table>\n"
         << "  SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]\n"
         << "Examples:\n"
+        << "  SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS\n"
+        << "  SQLSEL SELECT * FROM STUDENTS LIMIT 5\n"
+        << "  SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = \"CSCI\"\n"
         << "  SQLSEL COUNT\n"
-        << "  SQLSEL COUNT ALL\n"
         << "  SQLSEL COUNT FOR GPA >= 3.0\n"
         << "  SQLSEL LNAME = \"SMITH\"\n"
         << "Notes:\n"
         << "  - SQLSEL USAGE does not require an open table.\n"
+        << "  - A SELECT statement names its own table in FROM; that table must be OPEN.\n"
+        << "  - A SELECT statement does not change the current area or any record pointer.\n"
+        << "  - SELECT projects bare column names; expression projection is not yet supported.\n"
+        << "  - LIMIT reports when rows remain rather than truncating silently.\n"
+        << "  - ORDER BY and COUNT(*) are not yet implemented in the statement form.\n"
         << "  - SQLSEL scans records and does not mutate table data.\n";
 }
 
