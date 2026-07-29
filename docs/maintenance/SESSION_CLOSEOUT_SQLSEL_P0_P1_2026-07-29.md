@@ -243,6 +243,35 @@ INTERACTIVE run proving SMARTBROWSER coherent. Result:
 `docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md`. Open for ruling:
 is SMARTLIST a preview surface or a truth surface?
 
+## Afternoon: publication, conformance, and the SQL family
+
+| Commit | Content |
+|---|---|
+| 2d8218c6f | **P3 slice 2** landed; G3 closed and REGISTERED as `SQLSEL_SELECT_V1` (the "authored AND registered" half of definition-of-done, which was missing) |
+| b02178ea6 | Findings: R19 names the product **SQLsel**; two-families buffer-visibility finding; engine-mechanics survey closing R2 |
+| 1cd113cd3 | **`SQLSEL` contract flipped `experimental` -> `supported` (R20)** -- the act that publishes the surface. Flipped in all three headers at once, because a surface supported in one header and experimental in another is the between-files disagreement this lane spent the day finding |
+| 22124a5d0 | **SQL conformance map**: an `x64` field on `sql_ref` answering, per SQL construct, whether x64base does it and by which command. 16 of 33 mapped; the rest left EMPTY, which reads as unchecked, not absent. Gate `sql_conformance_gate.py` enforces that every `USAGE` pointer resolves to a registered command (negative-tested) |
+| 24b709f6b | **SQL command brought to the same standard.** Seven `SQL DEBUG` emitters fired unconditionally in a shipped command while the grammar already had a `VERBOSE` flag they ignored. `COUNT` printed one line per match BEFORE the number (90 lines before the answer) because `parse_opts` read the `COUNT` token and discarded it. `SQL SELECT ...` was parsed as a PREDICATE and reported nonsense. `dotref` told users `SQL` would "Execute an SQL statement using the configured SQL engine" -- it never could |
+
+**Fusion recorded (unavoidable, per-path staging cannot split a file).** Commit
+24b709f6b also carried a CONCURRENT SESSION's `dotref` work -- removal of the
+stale no-R `SMARTBROWSE`/`SIMPLEBROWSE` entries -- under a SQL-titled message.
+That removal is very likely what holds dotref phantoms at 0. Anyone reading
+history will find browser-entry removals inside a SQL commit; this is the note
+that explains why.
+
+**Website (`D:/dev/x64base-site`, uncommitted at closeout).** SQLsel added to the
+product taxonomy where it belongs: `/products/sqlsel`, `/docs/talk-family/sqlsel`,
+the products index, and the sidebar -- I first filed it under Engine internals
+alone, which was wrong, since R19 made it a product and every family member has
+both pages. Plus `/docs/engine/sqlsel-and-sql-conformance` for the verification
+detail, an x32 scope statement (table operations and host services ONLY;
+comparisons inform direction, they are not compatibility promises), and a
+conversion of every guess-cell in the ecosystem table to the table's own
+**`Unknown`** token. Owner rule driving that last one: *omit the unknown or mark
+it as such*. I had invented "Not verified here" for a concept the page had
+already standardized at its legend -- the same drift this lane exists to close.
+
 ## Engine mechanics assimilated (closes the R2 gate for phases P0-P3)
 
 Recorded because R2 makes engine understanding a precondition for SQL design,

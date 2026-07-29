@@ -1,6 +1,32 @@
 # LabTalk app registry v0
 
 apps:
+  - id: app.dottalkpp.sql_family
+    name: SQL Family (SQLsel)
+    kind: query_surface
+    status: active_source
+    languages: [c++, dotscript, sql]
+    root: D:/code/ccode/src/cli
+    concepts:
+      - concept.database.table
+      - concept.database.index
+      - concept.runtime.state
+    cases:
+      - case.eng_020.seek_vs_scan
+    notes: >-
+      Four commands share the SQL prefix and do different things; the boundary is
+      stated in each contract because the names invite confusion. SQLSEL is
+      SQLsel, the SELECT statement surface over a named OPEN table (supported
+      2026-07-29: WHERE, ORDER BY with direction, LIMIT, COUNT(*), verified
+      against an in-process SQLite oracle by REGRESSION SQLSEL_SELECT_V1). SQL is
+      a predicate scan/count over the CURRENT area and does NOT execute SQL
+      statements -- the name is historical, and it now redirects a leading SELECT
+      to SQLSEL rather than parsing it as a predicate. SQLITE is the bridge to an
+      actual SQLite database. SQLVER reports SQLite availability. Conformance to
+      SQL-the-language is mapped construct by construct in include/sql_ref.hpp,
+      gaps included, with unknowns left empty rather than guessed. Not yet
+      implemented: JOIN (P4), GROUP BY, expression projection, SQL DML (P5).
+
   - id: app.dottalkpp.runtime
     name: DotTalk++ Runtime Systems Lab
     kind: runtime_lab
