@@ -22,18 +22,21 @@ This tool has two modes:
          matched `@dottalk.usage` block, else a registered-only fallback row).
 
 Anchor contract: the maintained page is identified by the marker line
-`Diagram attachment: \`DIAG-CMDAUTH-004\`` and the `Source extraction snapshot:`
+`Diagram attachment: DIAG-CMDAUTH-004` and the `Source extraction snapshot:`
 line. `check` requires both to be present so the tool refuses to validate the
 wrong file.
 
 Usage:
   python command_catalog_sync.py check --source-root D:/code/ccode \
       --catalog D:/dev/x64base-site/content/docs/dottalk/command-catalog.mdx
-  python command_catalog_sync.py emit  --source-root D:/code/ccode --out <path>
+  python command_catalog_sync.py emit  --source-root D:/code/ccode --out <path> \
+      --diagram-out <command_reference_harvest_v1.svg>
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -279,7 +282,59 @@ def check(source_root: Path, catalog: Path, syscmd: Path | None = None) -> int:
     return 0 if status == "PASS" else 2
 
 
-def emit(source_root: Path, out: Path) -> int:
+def render_command_diagram(
+    source_root: Path,
+    diagram_out: Path,
+    registered: int,
+    parsed: int,
+    provenance_out: Path | None = None,
+    public_path: str | None = None,
+) -> None:
+    template = (
+        source_root
+        / "docs/manuals/assets/diagrams/templates/command_reference_harvest_v1.svg.in"
+    )
+    text = template.read_text(encoding="utf-8")
+    text = text.replace("{{REGISTERED}}", str(registered))
+    text = text.replace("{{PARSED}}", str(parsed))
+    if "{{" in text or "}}" in text:
+        raise ValueError(f"unresolved diagram template marker in {template}")
+    diagram_out.parent.mkdir(parents=True, exist_ok=True)
+    diagram_out.write_text(text, encoding="utf-8", newline="\n")
+    if provenance_out is not None:
+        registry = source_root / "src/cli/shell_commands.cpp"
+        record = {
+            "schema_version": 1,
+            "diagram_id": ANCHOR_DIAGRAM,
+            "path": public_path or diagram_out.name,
+            "derived_from": [
+                "ccode:src/cli/shell_commands.cpp",
+                "ccode:src/**/@dottalk.usage",
+                "ccode:docs/manuals/assets/diagrams/templates/"
+                "command_reference_harvest_v1.svg.in",
+            ],
+            "generator": "ccode:tools/fullstack_docs/command_catalog_sync.py",
+            "registered_command_keys": registered,
+            "parsed_usage_contracts": parsed,
+            "registry_sha256": hashlib.sha256(registry.read_bytes()).hexdigest(),
+            "template_sha256": hashlib.sha256(template.read_bytes()).hexdigest(),
+            "output_sha256": hashlib.sha256(diagram_out.read_bytes()).hexdigest(),
+            "truth_status": "source-derived",
+            "review_status": "reviewed",
+        }
+        provenance_out.parent.mkdir(parents=True, exist_ok=True)
+        provenance_out.write_text(
+            f"{json.dumps(record, indent=2)}\n", encoding="utf-8", newline="\n"
+        )
+
+
+def emit(
+    source_root: Path,
+    out: Path,
+    diagram_out: Path | None = None,
+    diagram_provenance_out: Path | None = None,
+    diagram_public_path: str | None = None,
+) -> int:
     keys = registry_keys(source_root)
     blocks = usage_blocks(source_root)
     rows: list[str] = []
@@ -299,7 +354,18 @@ def emit(source_root: Path, out: Path) -> int:
     header = _HEADER.format(keys=len(keys), parsed=parsed)
     table = "| Command | Category | Status | Summary | Source |\n| --- | --- | --- | --- | --- |\n" + "\n".join(rows) + "\n"
     out.write_text(header + table, encoding="utf-8")
+    if diagram_out is not None:
+        render_command_diagram(
+            source_root,
+            diagram_out,
+            len(keys),
+            parsed,
+            diagram_provenance_out,
+            diagram_public_path,
+        )
     print(f"command_catalog emit -> {out} keys={len(keys)} parsed={parsed} fallback={len(keys)-parsed}")
+    if diagram_out is not None:
+        print(f"command_catalog diagram -> {diagram_out}")
     return 0
 
 
@@ -549,6 +615,23 @@ def main() -> int:
     e = sub.add_parser("emit", help="re-derive a full catalog page from source")
     e.add_argument("--source-root", type=Path, required=True)
     e.add_argument("--out", type=Path, required=True)
+    e.add_argument(
+        "--diagram-out",
+        type=Path,
+        default=None,
+        help="optional generated command-reference SVG output",
+    )
+    e.add_argument(
+        "--diagram-provenance-out",
+        type=Path,
+        default=None,
+        help="optional provenance sidecar for --diagram-out",
+    )
+    e.add_argument(
+        "--diagram-public-path",
+        default=None,
+        help="public-safe path recorded in the diagram provenance sidecar",
+    )
     fc = sub.add_parser("fn-check", help="validate the website function catalog against source")
     fc.add_argument("--source-root", type=Path, required=True)
     fc.add_argument("--catalog", type=Path, required=True,
@@ -574,7 +657,21 @@ def main() -> int:
         return err_check(args.source_root.resolve(), args.page.resolve())
     if args.mode == "loc-check":
         return loc_check(args.source_root.resolve(), args.page.resolve())
-    return emit(args.source_root.resolve(), args.out.resolve())
+    diagram_out = args.diagram_out.resolve() if args.diagram_out else None
+    provenance_out = (
+        args.diagram_provenance_out.resolve()
+        if args.diagram_provenance_out
+        else None
+    )
+    if provenance_out is not None and diagram_out is None:
+        p.error("--diagram-provenance-out requires --diagram-out")
+    return emit(
+        args.source_root.resolve(),
+        args.out.resolve(),
+        diagram_out,
+        provenance_out,
+        args.diagram_public_path,
+    )
 
 
 if __name__ == "__main__":

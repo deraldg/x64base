@@ -21,7 +21,7 @@ flowchart TB
     downloads["Curated downloads and links\nsmall public artifacts + routes to deeper artifact room"]:::site
   end
 
-  guard{"Publication gates\npublic-content guard\nno local paths or secrets\nstatus/provenance labels\nroute and link validation"}:::gate
+  guard{"Publication gates\nautomated public-content and build checks\nno local paths or secrets\nreviewed status, provenance, route, and link checks"}:::gate
   build["Static build and release metadata\nversioned website source -> reviewed public artifact"]:::process
   github["deraldg/x64base\nwebsite source branch + versioned gh-pages branch"]:::output
   live["x64base.com\nMAIN ECOSYSTEM WEBSITE\nHTTPS GitHub Pages publication"]:::output

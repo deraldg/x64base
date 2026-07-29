@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "VIEW_SELFDOC_CONTRACT_LANE",
+  "path": "public/diagrams/selfdoc/selfdoc_contract_lane_v1.drawio",
+  "derived_from": [
+    "ccode:tools/diagram/diagram_seed_selfdoc_lane_v1.meta"
+  ],
+  "generator": "ccode:tools/diagram/generate_drawio_from_meta.py",
+  "view_id": "VIEW_SELFDOC_CONTRACT_LANE",
+  "seed_sha256": "8263fe9a921233a475986ca548242689bdcf542e6eab73b3dce7cb200dedd3b2",
+  "generator_sha256": "6726cf514e136ff01d756fbddfab9e392be2678fa911367a0081b47fe43c783f",
+  "output_sha256": "d87f71f7870d64929727e539c9c577ea840f724c21434bc693aa115444f23e02",
+  "truth_status": "metadata-derived",
+  "review_status": "reviewed"
+}
