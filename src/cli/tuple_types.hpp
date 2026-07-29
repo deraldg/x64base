@@ -30,6 +30,11 @@ struct TupleColumn {
     std::string name;       // column label (resolved to canonical field name when possible)
     int         area_slot;  // work area slot (0..MAX_AREA-1) that owns it; -1 if unknown
     std::string field;      // resolved field name in that area, or original token if unresolved
+    // AIF-074 P1.2 (R16a): engine-owned type surface, mode-invariant.
+    // Blank-is-a-value; there is no null state. ' ' = type not resolved.
+    char        ftype = ' ';
+    int         flen  = 0;
+    int         fdec  = 0;
 };
 
 struct TupleFragment {

@@ -402,7 +402,17 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
             }
         }
 
-        row.columns.push_back(TupleColumn{colName, slot, canonicalField});
+        TupleColumn col{colName, slot, canonicalField};
+        // AIF-074 P1.2 (R16a): carry the engine FieldDef type surface.
+        if (have_area && field1 > 0) {
+            try {
+                const auto& fd = ar->fields().at(static_cast<std::size_t>(field1 - 1));
+                col.ftype = fd.type;
+                col.flen  = static_cast<int>(fd.length);
+                col.fdec  = static_cast<int>(fd.decimals);
+            } catch (...) {}
+        }
+        row.columns.push_back(col);
         row.values.push_back(val);
 
         if (have_area) touched_slots.insert(slot);
