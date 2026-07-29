@@ -101,6 +101,28 @@ proposed default: blank-is-a-value, no NULL literal in v1). P1.4 typed
 equality. P1.5 first production seek() consumer. P1.6 expr convergence (above).
 Then P2 (SET MODE + SELECT router).
 
+## Session continuation (same day, after this closeout was first written)
+
+Four more commits landed; final ledger is TWELVE commits, ending 7a76cb89f:
+
+| Commit | Content |
+|---|---|
+| 49f014c73 | P1.3 committed + this closeout (envelope corrected to enforced v1 after 3 gate rejections -- pattern item 10) |
+| 91bc30d7d | AI Portal: closeout authoring guidance, v2-spec enforcement-status correction, template em-dash fix |
+| eae4b786d | P1.6 slice 1: .T./.F. literals lexable in rhs_eval (RT-02 closed for literals); runtime-proven |
+| 9a30383d2 | P1.2 core + **R16 ORTHOGONALITY RULING**: TupleColumn carries FieldDef type surface; R16 closes OQ-2 (blank-is-a-value), SET FILTER stance (statements ignore session state), bare-SQL (retired), null-concat (failures report, blanks are values) |
+| 7a76cb89f | P1.4: typed equality both sides in values_match -- **RDB-03 divergence HEALED**; truth harness updated (CONFORM_R03A), scorer PASS, RELJOIN 12/12 unchanged |
+
+P1 register at true session end: P1.1 DONE, P1.2 core DONE, P1.3 DONE, P1.4 DONE,
+P1.6 slice 1 DONE. NEXT ENTRY POINT: **P1.5** (first production seek() consumer;
+seams verified: IIndexBackend::seek/Cursor, buildActiveTagBaseKeyFromString,
+recordNumberFitsBackend; gate G1 spec in the implementation plan). Then P1.6 tail
+(DELETED() builtin needing area access; failure-reporting per R16d; tuple-projection
+expression consumer). Only open owner ruling: product name (P6).
+
+Two findings converted from divergence to fix this session: RDB-03 (typed equality)
+and RDB-06 (scan-limit honesty). Truth-harness divergence table is SHRINKING.
+
 ## Standing operational notes
 
 - Canonical contract gate invocation: `contract_parser_gate.py <root> --union`.
