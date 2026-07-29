@@ -1,0 +1,104 @@
+* buffer_visibility_probe_v2.dts
+* ============================================================================
+* AIF-074 -- PROBE v2: buffer visibility across USER-FACING surfaces
+*
+* v1 used LIST and drew a wrong conclusion. LIST is a DEVELOPER tool and does
+* not maintain cursor control (cmd_list.cpp: "cursor_restore: best effort").
+* HELP names SMARTLIST the "Preferred listing command for user-facing ordered
+* output". v2 probes the surfaces a USER actually reads.
+*
+* Question: while a REPLACE is buffered and uncommitted, which user-facing
+* surfaces show the buffered value and which show committed table truth?
+*
+* Known going in (v1, transcript 20260729_aif074_buffer_visibility_probe.txt):
+*   DISPLAY -> committed | TUPLE -> buffered | COUNT FOR -> committed
+*   SQLSEL  -> committed since R18
+*   LIST    -> buffered, but LIST is a developer tool; not a peer comparison
+*
+* Safety: MUTATING (SANDBOX only; ROLLBACK discards; table erased at the end).
+* Asserts nothing -- records behavior for a ruling.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "BUFVIS2-PROBE-BEGIN"
+
+ERASE TABLE BUFVIS2 CONFIRM
+
+CREATE X64 BUFVIS2 (SID N(6,0), MAJOR C(4))
+APPEND
+REPLACE SID WITH "1"
+REPLACE MAJOR WITH "CSCI"
+APPEND
+REPLACE SID WITH "2"
+REPLACE MAJOR WITH "MATH"
+APPEND
+REPLACE SID WITH "3"
+REPLACE MAJOR WITH "HIST"
+CLOSE
+
+SELECT 1
+USE BUFVIS2
+
+FORMULA "BUFVIS2-BASELINE-BEGIN"
+SMARTLIST
+FORMULA "BUFVIS2-BASELINE-END"
+
+* --- buffer TWO kinds of change on record 1: a value edit and a delete on 3 ---
+TABLE BUFFER ON
+GO 1
+REPLACE MAJOR WITH "MATH"
+GO 3
+DELETE
+
+FORMULA "BUFVIS2-STATUS-BEGIN"
+TABLE BUFFER STATUS
+FORMULA "BUFVIS2-STATUS-END"
+
+* --- A. SMARTLIST: the user-facing listing surface. Values? Delete marks? ---
+FORMULA "BUFVIS2-A-SMARTLIST-BEGIN"
+SMARTLIST
+FORMULA "BUFVIS2-A-SMARTLIST-END"
+
+* --- B. DISPLAY: committed record view (v1 says committed) ---
+FORMULA "BUFVIS2-B-DISPLAY-BEGIN"
+GO 1
+DISPLAY
+FORMULA "BUFVIS2-B-DISPLAY-END"
+
+* --- C. SMARTLIST with a predicate: does the FILTER see buffered values? ---
+* rec1 is buffered CSCI->MATH. FOR MAJOR="MATH" should show rec2 always;
+* whether it also shows rec1 tells us if the predicate reads the buffer.
+FORMULA "BUFVIS2-C-SMARTLIST-PREDICATE-BEGIN"
+SMARTLIST FOR MAJOR = "MATH"
+SMARTLIST FOR MAJOR = "CSCI"
+FORMULA "BUFVIS2-C-SMARTLIST-PREDICATE-END"
+
+* --- D. SQLSEL after R18: must be committed truth, self-consistent ---
+FORMULA "BUFVIS2-D-SQLSEL-BEGIN"
+SQLSEL SELECT SID,MAJOR FROM BUFVIS2
+SQLSEL SELECT SID,MAJOR FROM BUFVIS2 WHERE MAJOR = "CSCI"
+FORMULA "BUFVIS2-D-SQLSEL-END"
+
+* --- E. EXPORT: does an exported file carry buffered or committed values? ---
+FORMULA "BUFVIS2-E-EXPORT-BEGIN"
+EXPORT TO bufvis2_probe CSV
+FORMULA "BUFVIS2-E-EXPORT-END"
+
+* --- discard ---
+ROLLBACK
+TABLE BUFFER OFF
+
+FORMULA "BUFVIS2-AFTER-ROLLBACK-BEGIN"
+SMARTLIST
+FORMULA "BUFVIS2-AFTER-ROLLBACK-END"
+
+CLOSE
+ERASE TABLE BUFVIS2 CONFIRM
+
+FORMULA "BUFVIS2-PROBE-END"
