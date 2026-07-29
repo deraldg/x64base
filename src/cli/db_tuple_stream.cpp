@@ -483,10 +483,10 @@ std::string DbTupleStream::status_line() const {
     if (mode_ == NavMode::OrderVector) {
         const long pos_show = (order_pos_ < 0 ? 0 : (order_pos_ + 1));
         const long total = static_cast<long>(order_recnos_.size());
-        oss << "SMARTBROWSE: pos " << pos_show << " / " << total << "  [" << oh << "]";
+        oss << "SMARTBROWSER: pos " << pos_show << " / " << total << "  [" << oh << "]";
     } else {
         const long show = (last_emitted_recno_ > 0 ? last_emitted_recno_ : cur_recno_);
-        oss << "SMARTBROWSE: rec " << show << " / " << max_recno_ << "  [" << oh << "]";
+        oss << "SMARTBROWSER: rec " << show << " / " << max_recno_ << "  [" << oh << "]";
     }
 
     if (!filter_for_.empty()) oss << "  FOR";
