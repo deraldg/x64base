@@ -71,6 +71,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/unique_registry.hpp"
 
 using namespace textio;
 
@@ -80,6 +81,7 @@ static void print_validate_unique_usage()
     std::cout
         << "Usage:\n"
         << "  VALIDATE UNIQUE USAGE\n"
+        << "  VALIDATE UNIQUE                (all fields declared via SET UNIQUE)\n"
         << "  VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n"
         << "Examples:\n"
         << "  VALIDATE UNIQUE FIELD SID\n"
@@ -195,6 +197,27 @@ void cmd_VALIDATE_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!(in >> tok2)) {
+        if (T1 == "UNIQUE") {
+            // AIF-074 P1.1 slice 2: no-FIELD form -- validate every field the
+            // unique_reg registry declares for the current table (report-only;
+            // the explicit FIELD form keeps REPAIR/REPORT options).
+            if (!A.isOpen()) {
+                std::cout << "VALIDATE: No file open.\n";
+                return;
+            }
+            const auto declared = unique_reg::list_unique_fields(A);
+            if (declared.empty()) {
+                std::cout << "VALIDATE: no unique fields declared for this "
+                             "table. Use SET UNIQUE FIELD <name> ON|PRIMARY, "
+                             "or VALIDATE UNIQUE FIELD <name>.\n";
+                return;
+            }
+            for (const auto& f : declared) {
+                std::istringstream sub("UNIQUE FIELD " + f);
+                cmd_VALIDATE_UNIQUE(A, sub);
+            }
+            return;
+        }
         print_validate_unique_usage();
         return;
     }

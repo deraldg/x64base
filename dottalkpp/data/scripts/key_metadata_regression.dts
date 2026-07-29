@@ -66,6 +66,12 @@ FORMULA "KEYMETA-T3-DUP-BEGIN"
 VALIDATE UNIQUE FIELD KID
 FORMULA "KEYMETA-T3-DUP-END"
 
+* --- T4 (slice 2): no-FIELD form validates ALL declared fields ---
+* Expect: KID reports 1 problem record; KLBL reports OK (3 unique values).
+FORMULA "KEYMETA-T4-REGISTRY-BEGIN"
+VALIDATE UNIQUE
+FORMULA "KEYMETA-T4-REGISTRY-END"
+
 * --- cleanup (dtschema keyregr_sandbox left in workspaces; erase manually) ---
 CLOSE
 ERASE TABLE KEYREGR CONFIRM
