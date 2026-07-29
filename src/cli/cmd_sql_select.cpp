@@ -7,12 +7,12 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_sql.cpp
+// src/cli/cmd_sql_select.cpp
 // @dottalk.usage v1
 // owner: DOT|SQLSEL
 // command: SQLSEL
 // category: sql
-// status: experimental
+// status: supported
 // noargs: scan/report
 // effect: query
 // mutates: cursor-temporary
