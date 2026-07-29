@@ -1,0 +1,43 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/3ovfsh-wl8ggp.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:Tb5f,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+<p>SQLsel names the SQL-facing query workflow in the DotTalk++ / x64base system.</p>
+<p>Its subject is set-oriented retrieval: a <code>SELECT</code> statement that describes the
+rows it wants and returns them, rather than positioning a cursor and navigating.
+It is a supported surface as of 2026-07-29.</p>
+<pre><code class="language-text">SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS WHERE MAJOR = "CSCI" ORDER BY LNAME LIMIT 10
+SQLSEL SELECT * FROM STUDENTS
+SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
+</code></pre>
+<p>A statement is scoped to itself: it names its own table, ignores session filter
+and cursor state, restores every cursor it touches, and reads committed table
+truth. The table must already be open.</p>
+<p>Current SQL-facing surfaces include:</p>
+<ul>
+<li><code>SQLSEL SELECT ... FROM ... WHERE ... ORDER BY ... LIMIT</code></li>
+<li><code>SQLSEL SELECT COUNT(*)</code></li>
+<li><code>SQLSEL USAGE</code> for the runtime grammar</li>
+<li><code>REGRESSION SQLSEL_SELECT_V1</code>, an oracle comparison against SQLite</li>
+<li>a SQL conformance map in <code>include/sql_ref.hpp</code></li>
+</ul>
+<h2 id="the-sql-family"><a class="no-underline" href="#the-sql-family">The SQL family</a></h2>
+<p>Four commands share the <code>SQL</code> prefix and are not interchangeable. <code>SQLSEL</code> is
+SQLsel, the statement surface described above. <code>SQL</code> scans the current work area
+with a predicate and does not execute SQL statements, its name being historical.
+<code>SQLITE</code> bridges to an actual SQLite database. <code>SQLVER</code> reports SQLite
+availability. Each command states the boundary in its own <code>USAGE</code> output.</p>
+<h2 id="not-yet-implemented"><a class="no-underline" href="#not-yet-implemented">Not yet implemented</a></h2>
+<p><code>JOIN</code>, <code>GROUP BY</code> / <code>HAVING</code>, expression projection in the select list, SQL
+<code>INSERT</code> / <code>UPDATE</code> / <code>DELETE</code>, and bare <code>SELECT</code> without the <code>SQLSEL</code> prefix.</p>
+<h2 id="relationship-to-reltalk"><a class="no-underline" href="#relationship-to-reltalk">Relationship to RelTalk</a></h2>
+<p>SQLsel and <a href="/products/reltalk">RelTalk</a> both reach connected data and are not the
+same thing. RelTalk is navigational: relations are declared with <code>REL ADD</code> and
+followed. SQLsel is relational: a condition is stated and a set is returned.
+RelTalk is the older model, inherited through the xBase line; SQLsel is the newer
+one. Neither replaces the other.</p>
+<p>See <a href="/docs/engine/sqlsel-and-sql-conformance">SQLsel and SQL Conformance</a> for the
+verification detail and the conformance map, <a href="/docs/talk-family/reltalk">RelTalk docs</a>,
+and the canonical public repo <a href="https://github.com/deraldg/x64base">deraldg/x64base</a>.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=da6ab4c2f3b0","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products?v=da6ab4c2f3b0","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/sqlsel",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/sqlsel?v=da6ab4c2f3b0","children":"SQLsel"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"SQLsel"}],["$","p",null,{"className":"mt-2 text-muted","children":"Set-oriented SELECT over open work areas, verified against a SQLite oracle."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"aVYAuVzpEMHanErCxdt1i"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
