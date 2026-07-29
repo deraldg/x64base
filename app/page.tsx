@@ -50,7 +50,7 @@ const ecosystem = [
   {
     title: "RelTalk",
     href: "/products/reltalk",
-    desc: "A relation-focused layer for joins, algebra, and connected data exploration.",
+    desc: "A relation-focused layer for declared relation graphs, traversal, and connected data exploration.",
     icon: GitBranch
   },
   {
