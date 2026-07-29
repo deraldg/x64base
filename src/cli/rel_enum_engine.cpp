@@ -15,6 +15,7 @@
 #include "workareas.hpp"
 #include "xbase_field_getters.hpp"
 #include "textio.hpp"
+#include "workarea_util.hpp"
 #include "cli/command_registry.hpp"
 
 #include <cctype>
@@ -36,72 +37,10 @@ namespace
     static std::string trim(std::string s) { return textio::trim(std::move(s)); }
     static std::string up(std::string s)   { return textio::up(std::move(s)); }
 
-    static int slot_of_area(xbase::DbArea* area)
-    {
-        if (!area) return -1;
-        const std::size_t n = workareas::count();
-        for (std::size_t i = 0; i < n; ++i) {
-            if (workareas::db(i) == area) return static_cast<int>(i);
-        }
-        return -1;
-    }
-
-    class ScopedAreaSelect {
-    public:
-        explicit ScopedAreaSelect(xbase::DbArea* area) noexcept {
-            eng_ = shell_engine();
-            if (!eng_ || !area) return;
-
-            const int slot = slot_of_area(area);
-            if (slot < 0) return;
-
-            try {
-                prev_ = eng_->currentArea();
-                if (prev_ != slot) {
-                    eng_->selectArea(slot);
-                    active_ = true;
-                }
-            } catch (...) { active_ = false; }
-        }
-
-        ~ScopedAreaSelect() noexcept {
-            if (!active_ || !eng_) return;
-            try { eng_->selectArea(prev_); } catch (...) {}
-        }
-
-        ScopedAreaSelect(const ScopedAreaSelect&) = delete;
-        ScopedAreaSelect& operator=(const ScopedAreaSelect&) = delete;
-
-    private:
-        xbase::XBaseEngine* eng_{nullptr};
-        int prev_{-1};
-        bool active_{false};
-    };
-
-    class ScopedEngineArea {
-    public:
-        ScopedEngineArea() noexcept {
-            eng_ = shell_engine();
-            if (!eng_) return;
-            try {
-                prev_ = eng_->currentArea();
-                active_ = true;
-            } catch (...) { active_ = false; }
-        }
-
-        ~ScopedEngineArea() noexcept {
-            if (!active_ || !eng_) return;
-            try { eng_->selectArea(prev_); } catch (...) {}
-        }
-
-        ScopedEngineArea(const ScopedEngineArea&) = delete;
-        ScopedEngineArea& operator=(const ScopedEngineArea&) = delete;
-
-    private:
-        xbase::XBaseEngine* eng_{nullptr};
-        int prev_{-1};
-        bool active_{false};
-    };
+    // AIF-074 P0.2: slot_of_area, ScopedAreaSelect, ScopedEngineArea moved to
+    // the shared home in workarea_util.{hpp,cpp}; behavior unchanged.
+    using cli::ScopedAreaSelect;
+    using cli::ScopedEngineArea;
 
     class ScopedStdoutCapture {
     public:
@@ -118,62 +57,10 @@ namespace
         std::streambuf* old_{nullptr};
     };
 
-    static xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name)
-    {
-        const std::string target = up(trim(logical_or_name));
-        if (target.empty()) return nullptr;
-
-        const std::size_t n = workareas::count();
-        for (std::size_t i = 0; i < n; ++i) {
-            xbase::DbArea* a = workareas::db(i);
-            if (!a) continue;
-
-            bool open = false;
-            try { open = a->isOpen(); } catch (...) { open = false; }
-            if (!open) continue;
-
-            try {
-                const std::string ln = a->logicalName();
-                if (!ln.empty() && up(ln) == target) return a;
-                const std::string nm = a->name();
-                if (!nm.empty() && up(nm) == target) return a;
-            } catch (...) {}
-        }
-        return nullptr;
-    }
-
-    static std::vector<std::string> split_tuple_expr_csv(const std::string& s)
-    {
-        std::vector<std::string> out;
-        std::string cur;
-        int paren_depth = 0;
-        bool in_quote = false;
-
-        for (std::size_t i = 0; i < s.size(); ++i) {
-            const char c = s[i];
-
-            if (c == '"' && (i == 0 || s[i - 1] != '\\')) {
-                in_quote = !in_quote;
-                cur.push_back(c);
-                continue;
-            }
-            if (!in_quote) {
-                if (c == '(') { ++paren_depth; cur.push_back(c); continue; }
-                if (c == ')' && paren_depth > 0) { --paren_depth; cur.push_back(c); continue; }
-                if (c == ',' && paren_depth == 0) {
-                    std::string t = trim(cur);
-                    if (!t.empty()) out.push_back(std::move(t));
-                    cur.clear();
-                    continue;
-                }
-            }
-            cur.push_back(c);
-        }
-
-        std::string t = trim(cur);
-        if (!t.empty()) out.push_back(std::move(t));
-        return out;
-    }
+    // AIF-074 P0.2: find_open_area_by_name_ci and split_tuple_expr_csv moved
+    // to the shared home in workarea_util.{hpp,cpp}; behavior unchanged.
+    using cli::find_open_area_by_name_ci;
+    using cli::split_tuple_expr_csv;
 
     static bool parse_field_ref(const std::string& term,
                                 std::string& area_name_out,

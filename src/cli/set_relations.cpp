@@ -23,6 +23,7 @@
 #include "db_tuple_stream.hpp"
 #include "tuple_types.hpp"
 #include "textio.hpp"
+#include "workarea_util.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -152,27 +153,9 @@ static bool is_numeric_literal(const std::string& s) {
     return any_digit;
 }
 
-static xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name) {
-    const std::string target = up_copy(textio::trim(logical_or_name));
-    if (target.empty()) return nullptr;
-
-    const std::size_t n = workareas::count();
-    for (std::size_t i = 0; i < n; ++i) {
-        xbase::DbArea* a = workareas::db(i);
-        if (!a) continue;
-        bool open = false;
-        try { open = a->isOpen(); } catch (...) { open = false; }
-        if (!open) continue;
-
-        try {
-            const std::string ln = a->logicalName();
-            if (!ln.empty() && up_copy(ln) == target) return a;
-            const std::string nm = a->name();
-            if (!nm.empty() && up_copy(nm) == target) return a;
-        } catch (...) {}
-    }
-    return nullptr;
-}
+// AIF-074 P0.2: find_open_area_by_name_ci moved to the shared home in
+// workarea_util.{hpp,cpp}; behavior unchanged.
+using cli::find_open_area_by_name_ci;
 
 static int slot_of_area_ptr(const xbase::DbArea* area) {
     if (!area) return -1;

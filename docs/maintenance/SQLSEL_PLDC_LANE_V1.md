@@ -40,6 +40,7 @@ Lifecycle placement per `SDLC_FAST_START_SEED_V1.md`:
 | R11 | **Open relationship platform**: REL, SQLSEL, future consumers (graph, CODASYL) are peers over shared engine seams |
 | R12 | **expr is the preferred expression engine** (owner, 2026-07-29). A simpler boolean evaluator exists beside it; all SQLSEL evaluation routes through expr, and the two-evaluators defect (RT-02/RT-02a, three runtime sightings) is engine consolidation work, not something to code around |
 | R13 | CALC, CALCWRITE, and REPLACE already carry table buffering for recovery/commit/recall (owner note, 2026-07-29) -- SQLSEL DML consumes an already-buffered seam; statement-scoped wiring is the only new part |
+| R14 | **No OS-dependent code baked into lane deliverables** (owner, 2026-07-29). Portable standard C++ only; where a platform seam is unavoidable, use the tree's existing guarded-code convention, never inline platform assumptions. MSVC and WSL builds are both first-class |
 
 Catalog ruling: `.dtschema` is the catalog, read declaratively in SQL mode (RELATION
 lines = join edges; machinery blocked per R8); `.graph` only ever as a **generated**
