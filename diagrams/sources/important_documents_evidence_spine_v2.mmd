@@ -1,0 +1,31 @@
+flowchart TB
+  classDef source fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef evidence fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef curate fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef draft fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef public fill:#172334,stroke:#172334,color:#ffffff,stroke-width:2px
+
+  subgraph truth["Truth and evidence intake"]
+    direction LR
+    source["Implementation authority\nsource + runtime + HELP\nmetadata + contracts"]:::source
+    evidence["Evidence lane\nvalidation reports, canaries,\ntranscripts, hashes, screenshots"]:::evidence
+    selfdoc["SelfDoc\ncollect, normalize,\ncross-link, preserve provenance"]:::curate
+    source --> evidence
+    source --> selfdoc
+    evidence --> selfdoc
+  end
+
+  subgraph review["Curation and draft assembly"]
+    direction LR
+    mdo["MDO review\naccept, reject, defer,\nstatus-label and organize"]:::curate
+    manualgen["Manualgen\ninventory, parity-check,\nvalidate and build drafts"]:::draft
+    human{"Human promotion gate\nreviewed claims + provenance"}:::curate
+    mdo --> manualgen
+    manualgen --> human
+  end
+
+  publish["Reviewed manuals, diagrams,\ncatalogs and website pages"]:::public
+
+  selfdoc --> mdo
+  evidence --> human
+  human --> publish

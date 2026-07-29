@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "renderer": {
+    "package": "@mermaid-js/mermaid-cli",
+    "version": "11.16.0",
+    "config": "diagrams/mermaid-config.json"
+  },
+  "diagrams": [
+    {
+      "id": "x64base-dottalkpp-campus-relationship-map-v1",
+      "source": "diagrams/sources/x64base_dottalkpp_campus_relationship_map_v1.mmd",
+      "output": "public/images/engine/x64base-dottalkpp-campus-relationship-map-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/x64base_dottalkpp_campus_relationship_map_v1.mmd",
+      "truth_status": "source-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "x64base-com-site-architecture-v1",
+      "source": "diagrams/sources/x64base_com_site_architecture_v1.mmd",
+      "output": "public/images/sdlc/x64base-com-site-architecture-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/x64base_com_site_architecture_v1.mmd",
+      "truth_status": "source-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "dottalkpp-com-site-architecture-v1",
+      "source": "diagrams/sources/dottalkpp_com_site_architecture_v1.mmd",
+      "output": "public/images/sdlc/dottalkpp-com-site-architecture-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/dottalkpp_com_site_architecture_v1.mmd",
+      "truth_status": "source-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "x64base-dottalkpp-public-sites-connection-v1",
+      "source": "diagrams/sources/x64base_dottalkpp_public_sites_connection_v1.mmd",
+      "output": "public/images/sdlc/x64base-dottalkpp-public-sites-connection-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/x64base_dottalkpp_public_sites_connection_v1.mmd",
+      "truth_status": "source-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "help-message-selfdoc-context-dfd-v1",
+      "source": "diagrams/sources/help_message_selfdoc_context_dfd_v1.mmd",
+      "output": "public/images/sdlc/help-message-selfdoc-context-dfd-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_context_dfd_v1.mmd",
+      "truth_status": "source-derived-draft",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "help-message-selfdoc-level1-dfd-v1",
+      "source": "diagrams/sources/help_message_selfdoc_level1_dfd_v1.mmd",
+      "output": "public/images/sdlc/help-message-selfdoc-level1-dfd-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_level1_dfd_v1.mmd",
+      "truth_status": "source-derived-draft",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "help-message-selfdoc-level2-runtime-dfd-v1",
+      "source": "diagrams/sources/help_message_selfdoc_level2_runtime_dfd_v1.mmd",
+      "output": "public/images/sdlc/help-message-selfdoc-level2-runtime-dfd-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_level2_runtime_dfd_v1.mmd",
+      "truth_status": "source-derived-draft",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "help-message-selfdoc-level2-promotion-dfd-v1",
+      "source": "diagrams/sources/help_message_selfdoc_level2_promotion_dfd_v1.mmd",
+      "output": "public/images/sdlc/help-message-selfdoc-level2-promotion-dfd-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/help_message_selfdoc_level2_promotion_dfd_v1.mmd",
+      "truth_status": "source-derived-draft",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "dottalk-runtime-promotion-path-v2",
+      "source": "diagrams/sources/dottalk_runtime_promotion_path_v2.mmd",
+      "output": "public/images/sdlc/dottalk-runtime-promotion-path-v2.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/dottalk_runtime_promotion_path_v2.mmd",
+      "truth_status": "contract-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "laboratory-campus-evolution-spine-v3",
+      "source": "diagrams/sources/laboratory_campus_evolution_spine_v3.mmd",
+      "output": "public/images/sdlc/laboratory-campus-evolution-spine-v3.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/laboratory_campus_evolution_spine_v3.mmd",
+      "truth_status": "governance-derived",
+      "review_status": "reviewed"
+    },
+    {
+      "id": "important-documents-evidence-spine-v2",
+      "source": "diagrams/sources/important_documents_evidence_spine_v2.mmd",
+      "output": "public/images/sdlc/important-documents-evidence-spine-v2.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/important_documents_evidence_spine_v2.mmd",
+      "truth_status": "governance-derived",
+      "review_status": "reviewed"
+    }
+  ]
+}

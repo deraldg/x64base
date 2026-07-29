@@ -1,0 +1,28 @@
+flowchart TB
+  classDef authority fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef review fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef stage fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef public fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef gate fill:#f7f7f4,stroke:#606a73,color:#1e2429,stroke-width:2px
+
+  subgraph authoring["Development authority and reviewed selection"]
+    direction LR
+    dev["Author and prove\ndevelopment branch\nsole development authority"]:::authority
+    select["Select reviewed public slice\nsource or documentation lane\nnever a blanket branch merge"]:::review
+    manifest["Record promotion intent\nmanifest or reviewed source list\nprovenance + authorization"]:::review
+    dev -->|"reviewed candidates only"| select
+    select --> manifest
+  end
+
+  subgraph publication["Sterilized publication and release proof"]
+    direction LR
+    stage["Sterilized publication staging\nmain branch only\nnot mirror, backup, or development"]:::stage
+    guard["Repository-role guard\npre-push and public-content gates"]:::gate
+    cold["Cold-clone build and smoke proof\nreproduce the staged public state"]:::gate
+    github["GitHub main\npublic snapshot\nnot an authoring authority"]:::public
+    stage --> guard
+    guard --> cold
+    cold -->|"explicit publication authorization"| github
+  end
+
+  manifest --> stage

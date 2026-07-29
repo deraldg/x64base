@@ -5,11 +5,14 @@ description: "Runtime SDLC, proof gates, and maintenance boundaries for DotTalk+
 
 DotTalk++ is large enough to have its own SDLC.
 
-[![x64base / DotTalk++ operational SDLC promotion workflow](/images/sdlc/dottalk-operational-sdlc-promotion-workflow.jpg)](/docs/labtalk/cases-storyboard)
+[![Current DotTalk++ development and publication path from the development authority through reviewed selection, sterilized staging, repository guards, cold-clone proof, and the public GitHub snapshot](/images/sdlc/dottalk-runtime-promotion-path-v2.svg)](/images/sdlc/dottalk-runtime-promotion-path-v2.svg)
 
-The current promotion workflow starts in primary development, moves through
-curated staging, optional runtime proof, and GitHub publication, then feeds the
-website/manual evidence loop.
+The current workflow begins on the `development` branch in the sole authoring
+workspace. Reviewed material is selected explicitly and moved through the
+appropriate source or data/documentation promotion lane. The `main` staging
+workspace is sterilized publication staging: it is not a mirror, backup, or
+second development workspace. Repository-role guards and cold-clone proof
+precede an authorized publication to GitHub `main`.
 
 The maintained source lives in the repository:
 
@@ -34,8 +37,6 @@ LabTalk and the Laboratory Campus may teach DotTalk++ behavior, but DotTalk++
 owns whether that behavior is real.
 
 ## Evidence Ladder
-
-[![DotTalk++ runtime promotion path](/images/sdlc/dottalk-runtime-promotion-path.svg)](/docs/labtalk/cases-storyboard)
 
 ```text
 source_defined

@@ -1,0 +1,23 @@
+{
+  "deterministicIds": true,
+  "deterministicIDSeed": "x64base-public-diagrams-v1",
+  "fontFamily": "Segoe UI, Arial, sans-serif",
+  "flowchart": {
+    "curve": "basis",
+    "htmlLabels": true,
+    "nodeSpacing": 42,
+    "rankSpacing": 54,
+    "useMaxWidth": false
+  },
+  "theme": "base",
+  "themeVariables": {
+    "background": "#f4f7f8",
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "lineColor": "#52616c",
+    "primaryColor": "#e8f4ef",
+    "primaryBorderColor": "#26705a",
+    "primaryTextColor": "#172334",
+    "secondaryColor": "#eef3fb",
+    "tertiaryColor": "#fff4dc"
+  }
+}

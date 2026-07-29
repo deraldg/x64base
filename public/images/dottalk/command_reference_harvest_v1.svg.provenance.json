@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "diagram_id": "DIAG-CMDAUTH-004",
+  "path": "public/images/dottalk/command_reference_harvest_v1.svg",
+  "derived_from": [
+    "ccode:src/cli/shell_commands.cpp",
+    "ccode:src/**/@dottalk.usage",
+    "ccode:docs/manuals/assets/diagrams/templates/command_reference_harvest_v1.svg.in"
+  ],
+  "generator": "ccode:tools/fullstack_docs/command_catalog_sync.py",
+  "registered_command_keys": 236,
+  "parsed_usage_contracts": 215,
+  "registry_sha256": "e478ef50df3e749f220076c9e57f615dc29deecf632717ec57e6ac4db316a181",
+  "template_sha256": "ab88b38dbc067572c1d47aaa54f027a25ee52b81043a950fcc76599561857e9e",
+  "output_sha256": "cfe457ad0646312bf0b031988702dd8fcca9312ddc822c0afad531f2b3e85a5d",
+  "truth_status": "source-derived",
+  "review_status": "reviewed"
+}

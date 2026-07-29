@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "generate:diagrams": "node scripts/generate-diagrams.mjs",
+    "check:diagrams": "node scripts/check-diagrams.mjs",
     "check:public-content": "node scripts/check-public-content.mjs",
-    "build": "node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/build-sites-dist.mjs",
+    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/build-sites-dist.mjs",
     "start": "next start",
     "lint": "next lint",
     "build:apache": "node scripts/build-apache-static.mjs",
@@ -31,6 +33,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.16.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^20.14.15",
     "@types/react": "^19.2.17",

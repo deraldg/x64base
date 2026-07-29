@@ -1,0 +1,32 @@
+flowchart TB
+  classDef work fill:#e8f4ef,stroke:#26705a,color:#13251f,stroke-width:2px
+  classDef stage fill:#eef3fb,stroke:#416c9e,color:#172334,stroke-width:2px
+  classDef doc fill:#f3eef8,stroke:#765694,color:#251b30,stroke-width:2px
+  classDef campus fill:#fff4dc,stroke:#a46a12,color:#302313,stroke-width:2px
+  classDef proof fill:#f7f7f4,stroke:#606a73,color:#1e2429,stroke-width:2px
+  classDef publish fill:#172334,stroke:#172334,color:#ffffff,stroke-width:2px
+
+  subgraph implementation["Implementation and proof"]
+    direction LR
+    develop["Develop\nsource, runtime,\ncommands, fixes"]:::work
+    stage["Reviewed staging\nselective public slice\nrole-guarded"]:::stage
+    prove["Prove\ntranscripts, tests,\nscreenshots, hashes"]:::proof
+    develop --> stage
+    develop --> prove
+    stage --> prove
+  end
+
+  subgraph knowledge["Documentation and learning"]
+    direction LR
+    document["Document\nHELP, metadata,\nSelfDoc, MDO"]:::doc
+    campus["Campus\nlabs, datasets,\ncases, lessons"]:::campus
+    publish["Publish\nreviewed manuals,\ndiagrams, x64base.com"]:::publish
+    document --> campus
+    campus --> publish
+  end
+
+  develop --> document
+  campus --> prove
+  prove --> document
+  prove --> publish
+  publish -. "feedback returns as candidate evidence" .-> document

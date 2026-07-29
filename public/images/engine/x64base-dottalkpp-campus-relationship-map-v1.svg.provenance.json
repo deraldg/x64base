@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "x64base-dottalkpp-campus-relationship-map-v1",
+  "path": "public/images/engine/x64base-dottalkpp-campus-relationship-map-v1.svg",
+  "derived_from": [
+    "diagrams/sources/x64base_dottalkpp_campus_relationship_map_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/x64base_dottalkpp_campus_relationship_map_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "9f2ad54b71e99718efe266c93a24af4f4e9e6a4fa0f67095b13f2c8e0b48448e",
+  "output_sha256": "43206c796fac4d652edcdd96008863dde9f1f03bf841ee5a076e141ec28b5939",
+  "truth_status": "source-derived",
+  "review_status": "reviewed"
+}
