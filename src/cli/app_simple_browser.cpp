@@ -9,18 +9,28 @@
 
 // src/cli/app_simple_browser.cpp
 // -----------------------------------------------------------------------------
-// Simple Browser ("workspace" browser) — order-aware via shared iterator,
-// with an interactive record editor session.
+// Simple Browser -- order-aware via shared iterator, with an interactive
+// record editor session.
+//
+// NAMING HISTORY (kept because it explains two live oddities): this file was
+// cmd_simple_browser.cpp and its command was SIMPLEBROWSE, invoked in an
+// earlier design as the "workspace" browser. The command was later renamed
+// SIMPLEBROWSER and WORKSPACE became a separate command (cmd_workspace.cpp,
+// work-area listing). Fallout found 2026-07-29 (AIF-074): the shortcut
+// resolver still pointed SB/WS at the pre-rename name SIMPLEBROWSE, which is
+// registered nowhere, so both shortcuts were dead; and this file's no-table
+// guard still printed a "WORKSPACE:" prefix. WS has since been reclaimed for
+// the WORKSPACE command, where the mnemonic now belongs.
 //
 // This file deliberately stays *single-table* and *DBF-centric*.
 // Multi-table / tuple-stacking / relational browsing lives in Smart Browser.
 //
 // Usage (non-interactive):
-//   WORKSPACE [FOR <expr>] [RAW|PRETTY] [PAGE <n>] [ALL] [TOP|BOTTOM]
-//             [START KEY <literal>] [QUIET]
+//   SIMPLEBROWSER [FOR <expr>] [RAW|PRETTY] [PAGE <n>] [ALL] [TOP|BOTTOM]
+//                 [START KEY <literal>] [QUIET]
 //
 // Usage (interactive editor session):
-//   WORKSPACE ... [EDIT|SESSION]
+//   SIMPLEBROWSER ... [EDIT|SESSION]
 //
 // Interactive keys:
 //   N/P  next/prev   |  E edit field   | SAVE/CANCEL
@@ -42,6 +52,7 @@
 // @dottalk.usage v1
 // owner: DOT|SIMPLEBROWSER
 // command: SIMPLEBROWSER
+// aliases: SB
 // category: browser
 // status: supported
 // noargs: launch
@@ -529,7 +540,7 @@ void app_SIMPLE_BROWSER(xbase::DbArea& area, std::istringstream& in)
     }
 
     if (!opts.quiet) {
-        std::cout << "Entered WORKSPACE mode " << (opts.interactive ? "(interactive)" : "(read-only)") << ".\n";
+        std::cout << "Entered SIMPLEBROWSER mode " << (opts.interactive ? "(interactive)" : "(read-only)") << ".\n";
         std::cout << "ORDER: " << order_banner(area) << "\n";
         std::cout << "Format: " << (opts.want_raw ? "RAW" : "PRETTY")
                   << " | Start: " << (opts.start_pos == StartPos::TOP ? "TOP" : "BOTTOM")
