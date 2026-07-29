@@ -1,0 +1,159 @@
+# Website content manifest (WEBSITE-ASSEMBLY lane M1, AIF-033).
+# Classifies every x64base-site content page on the simplex/duplex spine x content class.
+# Detail + source-of-record per page: docs/maintenance/WEBSITE_CONTENT_MANIFEST_M1_CLASSIFICATION_V1.md
+schema: dottalk.website.content_manifest.v2
+generated_at: "2026-07-23"
+spine: simplex_duplex_direction_gates   # S-impl | S-rep | D-man | WO
+site_root: x64base-site/content
+totals: {generated: 7, derived: 27, maintained: 55, maintained_current: 8, reported: 4, static: 19, total: 120}
+classes:
+  generated:
+    direction: S-impl
+    rule: "regenerate every fullstack push; anchor-region edits blocked; drift = build fail"
+    proof_default: generated-reviewed
+    pages:
+      - {path: docs/dottalk/command-catalog, generator: tools/fullstack_docs/command_catalog_sync.py, source: "shell_commands.cpp + @dottalk.usage"}
+      - {path: docs/dottalk/function-catalog, generator: tools/fullstack_docs/command_catalog_sync.py, source: "function_catalog.cpp + fn_student_text_autoreg.cpp"}
+      - {path: docs/dottalk/command-families, generator: tools/fullstack_docs/command_catalog_sync.py, source: "command registry family grouping"}
+      - {path: docs/dottalk/command-reference, generator: tools/manualgen, source: "manualgen from source (fullstack doc suite)"}
+      - {path: docs/dev/historical-source-files, generator: tools/fullstack_docs/build_historical_source_museum.py, source: "SHA-256-bound xbase.zip archive"}
+      - {path: docs/engine/error-codes, generator: fullstack error harvest, source: "xbase_error_codes.hpp / HRESULT catalog", anchor: DIAG-ERRCODE-010}
+      - {path: docs/engine/messaging-and-localization, generator: fullstack messaging harvest, source: "message_catalog + locale spine"}
+  derived:
+    direction: S-impl
+    rule: "regenerate-or-review when source-of-record changes; human framing allowed"
+    proof_default: source-evidenced
+    pages:
+      - docs/engine/x64-capacity-math
+      - docs/engine/dbf-64-specification
+      - docs/engine/fpt64-memo-format
+      - docs/engine/feature-crosswalk
+      - docs/engine/ecosystem-feature-comparison
+      - docs/engine/architecture
+      - docs/engine/cdx-lmdb-indexing
+      - docs/engine/identity-security
+      - docs/engine/ram-dbf-vdisk
+      - docs/engine/api-reference
+      - docs/engine/sqlsel-and-sql-conformance
+      - docs/dottalk/data-mutators
+      - docs/dottalk/dotscript-language-guide
+      - docs/dottalk/set-family
+      - docs/dottalk/syntax
+      - docs/dottalk/repl
+      - products/arctictalk
+      - products/dotscript
+      - products/dottalk
+      - products/labtalk
+      - products/parallel-gui-tui
+      - products/reltalk
+      - products/sqlsel
+      - products/tabletalk
+      - products/tuptalk
+      - products/turbotalk
+      - products/x64base-engine
+  maintained:
+    direction: S-impl
+    rule: "hand-authored; review-gate when the tracked subject changes; excluded from auto-regen"
+    proof_default: reviewed
+    pages:
+      - docs/dev/application-ui-dsl-lane
+      - docs/dev/coding-standards
+      - docs/dev/contribution-guide
+      - docs/dev/developer-handbook
+      - docs/dev/developer-profile
+      - docs/dev/experimental
+      - docs/dev/help-message-selfdoc-dfd
+      - docs/dev/important-documents
+      - docs/dev/manual-assembly
+      - docs/dev/naming-conventions
+      - docs/dev/onboarding-guide
+      - docs/dev/public-site-architecture
+      - docs/dev/recursive-co-development
+      - docs/dev/selfdoc-feed-pipeline
+      - docs/dev/selfdoc-website-publication
+      - docs/dev/site-improvement-plan
+      - docs/dev/third-party-acknowledgements
+      - docs/dev/website-documentation-matrix
+      - docs/dottalk/curriculum
+      - docs/dottalk/examples
+      - docs/dottalk/language-guide
+      - docs/dottalk/sdlc
+      - docs/engine/acid-and-glass-box
+      - docs/engine/dbf-flavors-and-indexes
+      - docs/engine/indexing-rules
+      - docs/engine/regression-and-proof-testing
+      - docs/engine/runtime-footprint
+      - docs/engine/xbase-ecosystem-context
+      - docs/getting-started/faq
+      - docs/getting-started/installation
+      - docs/getting-started/overview
+      - docs/getting-started/quickstart
+      - docs/labtalk/academic-positioning
+      - docs/labtalk/ai-portal
+      - docs/labtalk/career-lessons
+      - docs/labtalk/cases-storyboard
+      - docs/labtalk/database-evolution
+      - docs/labtalk/education-features
+      - docs/labtalk/examples
+      - docs/labtalk/lessons
+      - docs/labtalk/lms-integration-lane
+      - docs/labtalk/non-profit-guide
+      - docs/labtalk/overview
+      - docs/labtalk/sdlc
+      - docs/labtalk/selfdoc-lane
+      - docs/labtalk/student-lessons
+      - docs/labtalk/suggest-a-lesson
+      - docs/talk-family/arctic
+      - docs/talk-family/arctictalk
+      - docs/talk-family/parallel-gui-tui
+      - docs/talk-family/reltalk
+      - docs/talk-family/sqlsel
+      - docs/talk-family/tabletalk
+      - docs/talk-family/tuptalk
+      - docs/talk-family/turbotalk
+  maintained_current:
+    direction: S-rep
+    rule: "permanent route with a replaceable present-state region; refresh from named authorities and expose as-of date, evidence state, and next gate"
+    proof_default: reviewed-current
+    pages:
+      - docs/dev/current-lanes
+      - docs/dev/developer-manual
+      - docs/dev/documentation-progress
+      - docs/dev/full-stack-documentation-push
+      - docs/dev/project-truth
+      - docs/dev/roadmap
+      - docs/labtalk/agent-sync
+      - {path: docs/labtalk/current-work, generator: tools/fullstack_docs/build_current_work_feed.py, source: "labtalk/registries/projects.yaml + labtalk/registries/ai_portal_tasks.yaml"}
+  reported:
+    direction: S-rep
+    rule: "append snapshot + provenance; never overwrite prior rows"
+    proof_default: generated-reviewed
+    pages:
+      - docs/engine/pinocchio-benchmarks
+      - docs/dev/historical-family-tree
+      - docs/dev/historical-source-lineage
+      - docs/labtalk/runtime-evidence
+  static:
+    direction: WO
+    rule: "website-owned; human review only; excluded from source-drift checks"
+    proof_default: reviewed
+    pages:
+      - about/brand-story
+      - about/contributors
+      - about/mission-vision
+      - about/origin-story
+      - about/timeline
+      - brand/logo-concepts
+      - brand/trademarks
+      - brand/usage-guide
+      - brand/visual-identity
+      - news/announcements/curriculum-update
+      - news/announcements/developer-manual-gate5-published
+      - news/announcements/documentation-flush-pinocchio-progress
+      - news/announcements/message-catalog-and-locale-spine-promoted
+      - news/announcements/regression-canary-lane-curated
+      - news/announcements/wsl-and-wx-lanes-documented
+      - news/press-releases/launch-announcement
+      - news/press-releases/manual-publication-refresh
+      - news/press-releases/open-architecture-doctrine-published
+      - news/press-releases/version-0-1
