@@ -41,6 +41,7 @@ Lifecycle placement per `SDLC_FAST_START_SEED_V1.md`:
 | R12 | **expr is the preferred expression engine** (owner, 2026-07-29). A simpler boolean evaluator exists beside it; all SQLSEL evaluation routes through expr, and the two-evaluators defect (RT-02/RT-02a, three runtime sightings) is engine consolidation work, not something to code around |
 | R13 | CALC, CALCWRITE, and REPLACE already carry table buffering for recovery/commit/recall (owner note, 2026-07-29) -- SQLSEL DML consumes an already-buffered seam; statement-scoped wiring is the only new part |
 | R14 | **No OS-dependent code baked into lane deliverables** (owner, 2026-07-29). Portable standard C++ only; where a platform seam is unavoidable, use the tree's existing guarded-code convention, never inline platform assumptions. MSVC and WSL builds are both first-class |
+| R15 | **Mission to completion** (owner, 2026-07-29): delay and restart degrade team performance. Within a phase, execute unblocked items continuously; do not park work awaiting ceremony. Blocked items (owner rulings) queue without stalling the rest |
 
 Catalog ruling: `.dtschema` is the catalog, read declaratively in SQL mode (RELATION
 lines = join edges; machinery blocked per R8); `.graph` only ever as a **generated**
@@ -131,10 +132,17 @@ full record: `G0_RUN1_EVIDENCE_RECORD_V1_20260729.md` in the AIF-074 package):
 
 **2026-07-29, later same day: GATE G0 CLOSED -- GREEN.** Evidence:
 
-- P0.1 applied+committed (a401c1470): 8 early-SQL contracts supported -> experimental;
-  operator HELP check confirms SQLERASE/INSERT now render a stub, not the phantom
-  supported surface. `contract_parser_gate.py --union` PASS post-demotion (canonical
-  invocation is --union; per-file mode false-positives on cross-file dispatch).
+- P0.1 applied+committed (a401c1470): 8 early-SQL contracts supported -> experimental.
+  `contract_parser_gate.py --union` PASS post-demotion (canonical invocation is --union;
+  per-file mode false-positives on cross-file dispatch).
+  CORRECTED (owner, same day): the flip IS the whole action; publication state
+  (HELP/META/manual de-advertisement) propagates and is verified at the NEXT
+  documentation full-stack push by that pipeline's own gates. The operator HELP
+  spot-check originally cited here was weak evidence (live help store not yet
+  re-harvested) and was unnecessary. Doctrine adopted for the lane: verification
+  proportional to change class -- contract flips: commit gates + next docflush;
+  dead-code deletion: build green; shared-path code changes: targeted or full
+  regression (REGRESSION ALL here was warranted by P0.2, not P0.1).
 - P0.3 applied+committed (same commit): 3 dead AliasRegistry headers + orphan
   command_join_alias.cpp removed (zero includers/references, verified).
 - P0.2 applied+committed (12269891e): cli::workarea_util consolidation, REL re-pointed,

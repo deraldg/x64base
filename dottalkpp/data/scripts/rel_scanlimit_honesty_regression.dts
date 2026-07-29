@@ -1,0 +1,84 @@
+* rel_scanlimit_honesty_regression.dts
+* ============================================================================
+* AIF-074 P1.3 -- scan-limit honesty (RDB-06) + REL SCANLIMIT reach (OQ-1)
+*
+* NOTE: "scan-limit truncation" = RESULT-SET rows cut off by the relation
+* engine's scan-step cap. Unrelated to x64base long-name mangling.
+*
+* Status: CANDIDATE / explicit-run
+* Safety: MUTATING (SANDBOX only: throwaway RSLPAR/RSLCHD; session scan limit
+*         is restored to the 500000 default at the end)
+* Proves:
+*   T1  REL SCANLIMIT reports and sets (previously unreachable from CLI)
+*   T2  With limit 1, REL LIST's match count scan warns
+*       "REL: scan limit (1) reached; results may be incomplete."  (RED path)
+*   T3  Warning appears ONCE per REL command even with multiple children
+*   T4  With the default limit restored, the same REL LIST is warning-free
+* Read rule: T2 block MUST contain the warning; T4 block MUST NOT.
+* ============================================================================
+
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+
+FORMULA "RELSCAN-REGRESSION-BEGIN"
+
+ERASE TABLE RSLPAR CONFIRM
+ERASE TABLE RSLCHD CONFIRM
+REL CLEAR ALL
+
+CREATE X64 RSLPAR (PK C(4), PLBL C(10))
+APPEND
+REPLACE PK WITH "A"
+REPLACE PLBL WITH "P_ONE"
+CLOSE
+
+CREATE X64 RSLCHD (CK C(4), CLBL C(10))
+APPEND
+REPLACE CK WITH "ZZ"
+REPLACE CLBL WITH "C_TOP"
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "C_A1"
+APPEND
+REPLACE CK WITH "A"
+REPLACE CLBL WITH "C_A2"
+CLOSE
+
+SELECT 1
+USE RSLPAR
+SELECT 2
+USE RSLCHD
+SELECT RSLPAR
+REL ADD RSLPAR RSLCHD ON PK TO CK
+
+* --- T1: report, then set to 1 ---
+FORMULA "RELSCAN-T1-BEGIN"
+REL SCANLIMIT
+REL SCANLIMIT 1
+FORMULA "RELSCAN-T1-END"
+
+* --- T2/T3: limit 1 forces the honesty warning, once per command ---
+FORMULA "RELSCAN-T2-BEGIN"
+REL LIST
+FORMULA "RELSCAN-T2-END"
+
+* --- T4: default restored; same command must be warning-free ---
+REL SCANLIMIT 500000
+FORMULA "RELSCAN-T4-BEGIN"
+REL LIST
+FORMULA "RELSCAN-T4-END"
+
+* --- cleanup ---
+REL CLEAR ALL
+SELECT 1
+CLOSE
+SELECT 2
+CLOSE
+ERASE TABLE RSLPAR CONFIRM
+ERASE TABLE RSLCHD CONFIRM
+
+FORMULA "RELSCAN-REGRESSION-END"

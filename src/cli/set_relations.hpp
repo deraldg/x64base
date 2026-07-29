@@ -27,6 +27,16 @@ void set_autorefresh(bool on) noexcept;
 void set_verbose(bool on) noexcept;
 void set_scan_limit(std::size_t max_steps) noexcept;
 
+// AIF-074 P1.3 (RDB-06 truncation honesty): sticky latch set whenever any
+// relation scan stops at the scan limit. Prints one warning on first trip;
+// stays set until cleared at the next REL command dispatch. Consumers may
+// poll scan_truncated() to label results as possibly incomplete.
+void clear_scan_truncated() noexcept;
+bool scan_truncated() noexcept;
+
+// Current relation scan limit (CLI: REL SCANLIMIT [<n>]).
+std::size_t scan_limit() noexcept;
+
 // Relation graph editing
 // Same-field relation: parent.<field> == child.<field>.
 bool add_relation(const std::string& parent_area,
@@ -47,7 +57,7 @@ bool remove_relation(const std::string& parent_area,
 void clear_relations(const std::string& parent_area);
 void clear_all_relations();
 
-// Parent “anchor” (the starting parent for traversal when refreshing)
+// Parent "anchor" (the starting parent for traversal when refreshing)
 void set_current_parent_name(const std::string& logical_name) noexcept;
 std::string current_parent_name();
 

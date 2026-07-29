@@ -72,6 +72,17 @@ bool        g_autorefresh = true;
 bool        g_verbose     = default_relation_verbose;
 std::size_t g_scan_limit  = 500000;
 
+// AIF-074 P1.3 (RDB-06): truncation latch. note_scan_truncated() warns ONCE
+// per latch cycle so cascaded refresh loops cannot spam the transcript.
+bool g_scan_truncated = false;
+static void note_scan_truncated() {
+    if (!g_scan_truncated) {
+        g_scan_truncated = true;
+        std::cout << "REL: scan limit (" << g_scan_limit
+                  << ") reached; results may be incomplete.\n";
+    }
+}
+
 xbase::XBaseEngine* g_engine = nullptr;
 
 // Optional override anchor. IMPORTANT:
@@ -353,7 +364,7 @@ static bool goto_first_match(xbase::DbArea& child,
             try { child.readCurrent(); } catch (...) {}
             if (!child.isDeleted() && values_match(child, kv)) return true;
 
-            if (++scanned >= scan_limit) return false;
+            if (++scanned >= scan_limit) { note_scan_truncated(); return false; }
 
             const int prev = child.recno();
             if (!child.skip(1)) return false;
@@ -480,6 +491,11 @@ void attach_engine(xbase::XBaseEngine* eng) noexcept { g_engine = eng; }
 void set_autorefresh(bool on) noexcept { g_autorefresh = on; }
 void set_verbose(bool on) noexcept { g_verbose = on; }
 void set_scan_limit(std::size_t max_steps) noexcept { g_scan_limit = max_steps ? max_steps : 1; }
+
+// AIF-074 P1.3 (RDB-06 truncation honesty).
+void clear_scan_truncated() noexcept { g_scan_truncated = false; }
+bool scan_truncated() noexcept { return g_scan_truncated; }
+std::size_t scan_limit() noexcept { return g_scan_limit; }
 
 bool add_relation(const std::string& parent_area,
                   const std::string& child_area,
@@ -690,7 +706,7 @@ int match_count_for_child(const std::string& child_area) {
                 try { child_db->readCurrent(); } catch (...) {}
                 if (!child_db->isDeleted() && values_match(*child_db, kv)) ++count;
 
-                if (++scanned >= g_scan_limit) break;
+                if (++scanned >= g_scan_limit) { note_scan_truncated(); break; }
 
                 const int prev = child_db->recno();
                 if (!child_db->skip(1)) break;
@@ -1038,7 +1054,8 @@ static bool enum_chain_dfs(
 
     if (child_db->recno() <= 0 || child_db->recno() > rec_count) return true;
 
-    for (std::size_t scanned = 0; scanned < g_scan_limit; ++scanned) {
+    std::size_t scanned = 0;
+    for (; scanned < g_scan_limit; ++scanned) {
         ScopedEngineSelect focus(child_db);
 
         const int cur = child_db->recno();
@@ -1073,6 +1090,10 @@ static bool enum_chain_dfs(
         if (post_read_recno <= prev_recno) break;
         if (post_read_recno > rec_count) break;
     }
+
+    // AIF-074 P1.3 (RDB-06): natural loop exit means the scan limit stopped
+    // the enumeration, not end-of-table -- say so.
+    if (scanned >= g_scan_limit) note_scan_truncated();
 
     return true;
 }

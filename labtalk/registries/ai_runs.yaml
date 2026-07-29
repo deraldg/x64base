@@ -143,7 +143,8 @@ runs:
     continues_run: null
     started: 2026-07-29
     closeouts:
-      - docs/maintenance/SQLSEL_PLDC_LANE_V1.md   # charter is the lane record; closeout owed at session end
+      - docs/maintenance/SQLSEL_PLDC_LANE_V1.md   # charter is the lane record
+      - docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
     status: active
 
 # ---------------------------------------------------------------------------
