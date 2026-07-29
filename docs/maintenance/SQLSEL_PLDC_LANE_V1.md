@@ -38,6 +38,8 @@ Lifecycle placement per `SDLC_FAST_START_SEED_V1.md`:
 | R9 | `DELETE` modal alias **after** SQLSEL proves the pattern (plan: P5) |
 | R10 | **SQLSEL is a consumer; the engine is core.** Own library + manuals via the same harvest pipeline; anything the engine lacks, the engine gains through its own gates |
 | R11 | **Open relationship platform**: REL, SQLSEL, future consumers (graph, CODASYL) are peers over shared engine seams |
+| R12 | **expr is the preferred expression engine** (owner, 2026-07-29). A simpler boolean evaluator exists beside it; all SQLSEL evaluation routes through expr, and the two-evaluators defect (RT-02/RT-02a, three runtime sightings) is engine consolidation work, not something to code around |
+| R13 | CALC, CALCWRITE, and REPLACE already carry table buffering for recovery/commit/recall (owner note, 2026-07-29) -- SQLSEL DML consumes an already-buffered seam; statement-scoped wiring is the only new part |
 
 Catalog ruling: `.dtschema` is the catalog, read declaratively in SQL mode (RELATION
 lines = join edges; machinery blocked per R8); `.graph` only ever as a **generated**
@@ -62,7 +64,7 @@ projection, never a hand-authored sibling authority.
 | Phase | One line | Gate |
 |---|---|---|
 | P0 | Demote phantom SQL contracts (8 files, `supported` -> `experimental`); consolidate 5 duplicated helpers; resolve `cli::AliasRegistry`; run the AIF-073 harness | G0 |
-| P1 | Engine seams: PRIMARY/UNIQUE metadata (4 consumers), TupleRow type surface + null ruling (OQ-2), truncation honesty (RDB-06), typed equality, first production `seek()` consumer (+PS-01 gate) | G1 |
+| P1 | Engine seams: PRIMARY/UNIQUE metadata (4 consumers), TupleRow type surface + null ruling (OQ-2), truncation honesty (RDB-06), typed equality, first production `seek()` consumer (+PS-01 gate), P1.6 route projection/print expression terms through expr (R12; until it lands, SQLSEL v1 projection is bare columns only with corrective errors) | G1 |
 | P2 | `src/sqlsel/` library target; `SET MODE`; `SELECT` router; R8 block; expression-fallback interception | G2 (`SQLMODE_SMOKE`) |
 | P3 | Single-table `SELECT` (projection/WHERE/ORDER/LIMIT/COUNT) -> TupleRow streams -> existing renderers | G3 (SQLite oracle) |
 | P4 | Joins: declared-edge validation/inference; chain nested-loop; index-nested-loop; minimal EXPLAIN | G4 (oracle + cross-algorithm identity) |
@@ -95,9 +97,38 @@ GROUP BY, x32 support, any second SQL dialect surface.
 ## 7. Provenance
 
 This charter distills the AIF-073/074 record: 8 analysis documents, 2 tools (one run
-clean tree-wide across 201 contract-carrying files), 11 owner rulings, a 7/7 measured
-consumption pattern (reframed under PDLC by owner correction: investigation IS the
-analyze phase), and an implementation plan in which exactly one component -- the
-statement parser -- is `searched-and-absent`; everything else consumes. Evidence tier of
-the lane at charter time: source_defined throughout; zero runtime evidence; first runtime
-proofs are owed at G0.
+clean tree-wide across 201 contract-carrying files), 13 owner rulings, an 8/8 measured
+consumption/correction pattern (reframed under PDLC by owner correction: investigation IS
+the analyze phase), and an implementation plan in which exactly one component -- the
+statement parser -- is `searched-and-absent`; everything else consumes. Evidence tier at
+charter time was source_defined throughout; Sec. 8 records the first runtime evidence.
+
+## 8. Runtime evidence log (post-charter)
+
+**2026-07-29, harness runs 1-2** (`rdb_truth_proof_v1/v2.dts` + scorer, operator-run;
+transcripts `rdb_truth_transcript*.txt`, reports `rdb_truth_report*.json` at repo root;
+full record: `G0_RUN1_EVIDENCE_RECORD_V1_20260729.md` in the AIF-074 package):
+
+- Run 1 = fixture-failure run, correctly voided by its own reading rule. Yield: SQLite
+  oracle proven end-to-end; RT-02 found (bare booleans stringify empty in the `?` path;
+  comparisons render `.T./.F.`); RT-01 raised and then RESOLVED AGAINST THE HARNESS --
+  bare `USE` opens into the CURRENT area (`cmd_use.cpp:504,563`), classic xBase; not an
+  engine defect. Correction #8 in the pattern ledger, self-caught. Doc-gap candidate:
+  one readiness-rules line stating the semantics.
+- Run 2 (v2: SELECT 1..5 before each USE; comparisons-only markers) = **clean
+  confirmation run: PASS exit 0; 11/11 Tier A, 4/4 derived, 7/7 oracle blocks.**
+  Findings RDB-01, -02, -03, -04, -05(A/B/C), -07, -10, -12 promoted from
+  source_defined to **runtime_observed**; RDB-14 self-relation survival observed.
+  Two scorer defects found+fixed by runtime (prompt-prefix strip; stacked prompt dots
+  from silent lines).
+- RDB-10 hand check over-delivered: `TUPLE ALLTRIM(f)` emitted empty values -- the
+  projection expression was never evaluated. Third sighting of the two-evaluators
+  defect; consolidated under R12 as P1.6.
+- **Gate status: G0 harness/oracle component proven; G0 itself remains OPEN** pending
+  P0.1-P0.3 code work (an earlier "G0 green" wording was corrected by the adversarial
+  pass, AP-4).
+
+**Adversarial pass on the plan of record** (task-17 discipline, 2026-07-29): plan
+structure survived; 6 corrections (2 substantive: a cited regression filename that does
+not exist -- G5 respecified against `commit_rollback_test.dts` + the pinocchio WAL phase
+proofs -- and the AP-4 gate overclaim). Full appendix in the plan document.
