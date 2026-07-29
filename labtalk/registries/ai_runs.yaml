@@ -31,6 +31,25 @@ runs_registry:
 # from its closeout regardless (the closeout, not the chat, is the record).
 # ---------------------------------------------------------------------------
 runs:
+  - run_id: AIPR-20260727-001
+    member: member.ai.codex
+    product: Codex                          # OpenAI / Codex; model not_exposed
+    project: project.x64base.runtime
+    lanes: [AIF-069]                        # EXPORT SDF fixed-width output
+    role: implementer
+    authored_by: member.ai.codex
+    planned_by: member.derald
+    owner: member.derald
+    committer: member.derald
+    git: { branch: development, baseline: 099cb70ce, head: 099cb70ce }
+    chat_handle: ""
+    handle_binding: NOT_RESOLVABLE
+    continues_run: null
+    started: 2026-07-27
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_EXPORT_SDF_PDLC_2026-07-27.md
+    status: closed
+
   - run_id: AIPR-20260725-001
     member: member.ai.claude.cowork
     product: Cowork                         # Anthropic / Cowork; model not_exposed
@@ -109,6 +128,24 @@ runs:
       - docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md
     status: closed
 
+  - run_id: AIPR-20260729-001
+    member: member.ai.claude.cowork
+    product: Cowork
+    project: project.x64base.runtime
+    lanes: [AIF-074]                        # SQLSEL PLDC lane -- charter + plan of record
+    role: planner_steward                   # scoping/charter run; descriptive claim id SQLGOLD-SCOPING-20260729
+    authored_by: member.ai.claude.cowork
+    planned_by: member.derald               # assignment + 11 in-session rulings (R1-R11)
+    owner: member.derald
+    committer: member.derald
+    chat_handle: ""
+    handle_binding: MAINTAINER_ATTESTED
+    continues_run: null
+    started: 2026-07-29
+    closeouts:
+      - docs/maintenance/SQLSEL_PLDC_LANE_V1.md   # charter is the lane record; closeout owed at session end
+    status: active
+
 # ---------------------------------------------------------------------------
 # The "return to the last agent" index (AIF-050 M5). For each lane, the newest
 # run holds the most current knowledge. Resolve: lane -> run_id -> chat_handle
@@ -117,6 +154,8 @@ runs:
 # lane docs and dashboard carry.
 # ---------------------------------------------------------------------------
 current_by_lane:
+  AIF-074: AIPR-20260729-001      # SQLSEL PLDC lane charter -- Cowork/Claude, active
+  AIF-069: AIPR-20260727-001      # EXPORT SDF fixed-width output -- Codex, closed
   AIF-050: AIPR-20260725-001      # AI run traceability / @dottalk.file contract -- full-tree backfill 100%, Cowork/Claude
   AIF-046: AIPR-20260722-007      # scan-evaluator — Cowork/Claude, same session
   AIF-045: AIPR-20260722-005      # identity/RBAC — Cowork-implemented, ChatGPT-planned, closed
@@ -133,7 +172,7 @@ current_by_lane:
   AIF-062: AIPR-20260725-001      # evidence layer versioning -- proof registry made verifiable
 
 current_by_project:
-  project.x64base.runtime: AIPR-20260722-007
+  project.x64base.runtime: AIPR-20260727-001
   project.x64base.identity: AIPR-20260722-005
   project.ai_friendly: AIPR-20260725-001
 
