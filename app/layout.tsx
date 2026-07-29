@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import currentWork from "@/public/artifacts/current-work-v1.json";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -59,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {" · "}
           <span className="font-mono text-brand">ALPHA</span>
           {" · "}
-          Updated 2026-07-19
+          Updated {currentWork.as_of_date}
         </div>
         <Navbar />
         <main className="mx-auto w-full max-w-6xl px-4 py-10">{children}</main>
