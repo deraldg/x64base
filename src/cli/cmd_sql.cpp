@@ -18,7 +18,7 @@
 // owner: DOT|SQL
 // command: SQL
 // category: sql
-// status: supported
+// status: experimental
 // noargs: scan/report
 // effect: query
 // mutates: cursor-temporary

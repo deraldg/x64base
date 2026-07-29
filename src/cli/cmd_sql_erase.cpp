@@ -11,7 +11,7 @@
 // owner: DOT|SQLERASE
 // command: SQLERASE
 // category: sql
-// status: supported
+// status: experimental
 // noargs: usage
 // effect: delete-records
 // mutates: table-data

@@ -11,7 +11,7 @@
 // owner: DOT|UPDATE
 // command: UPDATE
 // category: sql
-// status: supported
+// status: experimental
 // noargs: usage
 // effect: update-records
 // mutates: table-data

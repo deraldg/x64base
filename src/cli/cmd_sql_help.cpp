@@ -12,7 +12,7 @@
 // owner: DOT|SQLHELP
 // command: SQLHELP
 // category: reference
-// status: supported
+// status: experimental
 // noargs: report
 // effect: report
 // mutates: none
