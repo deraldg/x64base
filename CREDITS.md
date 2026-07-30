@@ -20,14 +20,15 @@ in this repository rests here.
 
 ## Contributors
 
-**Nathaniel A. Strickland** -- the **Ollama local model** and **GPTbase**.
+**Nathaniel A. Strickland** -- contributed to the **Ollama server** and **GPTbase**.
 
-The local-inference direction and the hosted knowledge-bundle advisor both trace to Nathaniel A.
-Strickland. Their effect on the architecture is larger than their footprint suggests: the isolated
-local model is what makes `CHAT` answerable while `host.network.egress` stays blocked -- the AFB
-air-gap property the BBS lane depends on -- and GPTbase established the "ask the project expert"
-front-end pattern. Both are documented in `docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md`, where they are
-named as distinct roles precisely because neither is an agent.
+Nathaniel A. Strickland's contributions to the Ollama server and GPTbase informed the project's
+local-inference and hosted knowledge-bundle directions. Their effect on the architecture is larger
+than their footprint suggests: the isolated local model is what makes `CHAT` answerable while
+`host.network.egress` stays blocked -- the AFB air-gap property the BBS lane depends on -- and
+GPTbase established the "ask the project expert" front-end pattern. Both are documented in
+`docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md`, where they are named as distinct roles precisely because
+neither is an agent.
 
 **Nathaniel L. Grimwood** -- the **chat idea**.
 
