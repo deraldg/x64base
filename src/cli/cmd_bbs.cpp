@@ -17,9 +17,14 @@
 // mutates: bbs-board-store
 // usage-access: BBS USAGE
 // summary:
-//   AI-BBS / pseudo-chat board (M1): boards, threads, and posts persisted as x64base DBF
-//   tables under data/metadata/bbs/. The read-only board.governance projects the identity
-//   SYSGRANT request/approve loop (the agent<->owner "pseudo chat") as posts.
+//   AI-BBS persistence substrate (Lane 1): durable boards, threads, and posts persisted as
+//   x64base DBF tables under data/metadata/bbs/, with RBAC + attributed authorship (AIF-075).
+//   The read-only board.governance projects the identity SYSGRANT request/approve loop as posts.
+//
+//   NOTE (AIF-076): this file is the BBS persistence substrate only. "Pseudo-chat" (live
+//   agent<->agent/owner conversation, the future PSEUDO command) and the Ollama CHAT bridge are
+//   SEPARATE lanes that persist THROUGH this substrate via the attributed post path; they are not
+//   implemented here. See D:\code\Frontal_Mem\DESIGN_bbs_pseudochat_two_lanes.md.
 //
 // usage:
 //   BBS USAGE
@@ -39,7 +44,8 @@
 // notes:
 //   All file work uses the house x64base DBF engine (DbArea / create_dbf X64). Local only in
 //   M1 -- no server, no egress, no crypto dependency. board.governance is a read-only view;
-//   post to it with USER REQUEST. Author identity binding lands in a later milestone.
+//   post to it with USER REQUEST. Author identity binding landed in AIF-075 (posts are attributed
+//   to the acting member; the interactive path no longer writes author-zero).
 //
 // risk:
 //   mutates_table_data: no

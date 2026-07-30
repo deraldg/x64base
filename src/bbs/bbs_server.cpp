@@ -24,6 +24,12 @@
 //
 // THIS IS THE HIGHEST-RISK SLICE. Review the bind address, the auth gate, and the request-size
 // caps before trusting it. Requires M3 (token crypto) -- do not run on placeholder crypto.
+//
+// LANE NOTE (AIF-076): this server carries THREE distinct concerns that must not be conflated.
+// (1) BBS = the persistence substrate (durable, attributed posts; Lane 1). (2) CHAT = the Ollama
+// agent<->model bridge (Lane 3). (3) pseudo-chat = live agent<->agent/owner conversation (Lane 2,
+// the future PSEUDO command) which is NOT the same as CHAT. Lanes 2 and 3 persist THROUGH the BBS
+// substrate via the attributed post path. See DESIGN_bbs_pseudochat_two_lanes.md.
 
 #include "bbs/bbs_server.hpp"
 #include "bbs/bbs_store.hpp"
