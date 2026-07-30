@@ -54,6 +54,7 @@
 #include "bbs/bbs_store.hpp"
 #include "bbs/bbs_server.hpp"       // M4: BBS SERVE
 #include "cli/command_output.hpp"
+#include "identity/identity_admin.hpp"  // AIF-075: agent_permitted + current_member (RBAC + attribution)
 #include "xbase.hpp"
 
 #include <algorithm>
@@ -123,8 +124,13 @@ void do_read(std::istringstream& iss) {
     print_line("BOARD " + board + "  threads=" + std::to_string(threads.size()) + "  posts=" + std::to_string(posts.size()));
     for (const auto& t : threads)
         print_line("  [thread " + std::to_string(t.id) + "] " + t.subject + (t.state == 2 ? "  (closed)" : ""));
-    for (const auto& p : posts)
-        print_line("    #" + std::to_string(p.id) + " (thr " + std::to_string(p.thread_id) + ") " + p.body);
+    for (const auto& p : posts) {
+        // AIF-075: quarantine-as-history. Author zero is a pre-fix unattributed record (a real
+        // authored post can no longer be written with author 0), so label it and never present it
+        // as authenticated. Non-destructive: the row is untouched.
+        const std::string tag = (p.author_id == 0) ? "  [unattributed history]" : "";
+        print_line("    #" + std::to_string(p.id) + " (thr " + std::to_string(p.thread_id) + ") " + p.body + tag);
+    }
 }
 
 void do_post(std::istringstream& iss) {
@@ -135,8 +141,18 @@ void do_post(std::istringstream& iss) {
     std::string up = upcase(tail);
     if (up.rfind("SUBJECT", 0) == 0) tail = trim(tail.substr(7));
     if (!split_subject_body(tail, subject, body)) { print_info("BBS", "POST needs: SUBJECT <subject> BODY <text>"); return; }
+    const std::string dir = dottalk::bbs::default_bbs_dir();
+    // AIF-075: enforce the board's post permission (fall back to bbs.post) exactly like the socket
+    // path, so a shell POST can no longer bypass RBAC. Anon (not logged in) is denied here.
+    std::string need = dottalk::bbs::board_postperm(dir, board);
+    if (need.empty()) need = "bbs.post";
+    dottalk::identity::Decision d = dottalk::identity::agent_permitted(need);
+    if (!d.allowed()) { print_info("BBS", need + " denied: " + d.reason); return; }
+    // AIF-075: attribute the post to the real acting member instead of hard-coded author zero.
+    std::uint64_t author_id = 0; int author_kind = 0;
+    dottalk::identity::current_member(author_id, author_kind);
     std::uint64_t pid = 0; std::string err;
-    if (!dottalk::bbs::post_new(dottalk::bbs::default_bbs_dir(), board, subject, body, /*author_id*/0, /*author_kind*/0, pid, err))
+    if (!dottalk::bbs::post_new(dir, board, subject, body, author_id, author_kind, pid, err))
         { print_info("BBS", err); return; }
     print_info("BBS", "posted #" + std::to_string(pid) + " to " + board);
 }
@@ -147,8 +163,14 @@ void do_reply(std::istringstream& iss) {
     std::string up = upcase(tail);
     if (up.rfind("BODY", 0) == 0) tail = trim(tail.substr(4));
     if (post_id == 0 || tail.empty()) { print_info("BBS", "REPLY needs: <post.id> BODY <text>"); return; }
+    // AIF-075: reply permissions are not scoped per board today, so enforce the single bbs.post
+    // permission and attribute to the real acting member (never author zero).
+    dottalk::identity::Decision d = dottalk::identity::agent_permitted("bbs.post");
+    if (!d.allowed()) { print_info("BBS", std::string("bbs.post denied: ") + d.reason); return; }
+    std::uint64_t author_id = 0; int author_kind = 0;
+    dottalk::identity::current_member(author_id, author_kind);
     std::uint64_t pid = 0; std::string err;
-    if (!dottalk::bbs::reply_to(dottalk::bbs::default_bbs_dir(), post_id, tail, 0, 0, pid, err)) { print_info("BBS", err); return; }
+    if (!dottalk::bbs::reply_to(dottalk::bbs::default_bbs_dir(), post_id, tail, author_id, author_kind, pid, err)) { print_info("BBS", err); return; }
     print_info("BBS", "replied #" + std::to_string(pid) + " to post " + std::to_string(post_id));
 }
 

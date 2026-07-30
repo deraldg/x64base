@@ -220,11 +220,11 @@ void do_chat(socket_t s, const std::string& model, const std::string& text) {
 
 // ---- BBS READ / POST over the wire (identity-bound author) ----
 std::uint64_t current_member_id(int& kind_out) {
-    const auto& store = dottalk::identity::identity_store();
-    const auto* m = dottalk::identity::find_member_by_key(store, dottalk::identity::acting_member_key());
-    if (!m) { kind_out = 0; return 0; }
-    kind_out = static_cast<int>(m->kind);
-    return m->id.value();
+    // Delegate to the shared identity helper so the socket and the interactive CLI attribute
+    // authorship identically (AIF-075).
+    std::uint64_t id = 0;
+    dottalk::identity::current_member(id, kind_out);
+    return id;
 }
 
 void do_bbs(socket_t s, std::istringstream& iss) {
@@ -238,7 +238,10 @@ void do_bbs(socket_t s, std::istringstream& iss) {
         std::vector<Thread> th; std::vector<Post> po;
         if (!read_board(dir, board, std::nullopt, 0, th, po, err)) { send_line(s, "ERR " + err); send_line(s, "."); return; }
         send_line(s, "OK");
-        for (const auto& p : po) send_line(s, "#" + std::to_string(p.id) + " " + p.body);
+        // AIF-075: mark pre-fix author-zero posts as unattributed history over the wire too, so a
+        // client can never mistake them for authenticated authorship. Non-destructive.
+        for (const auto& p : po)
+            send_line(s, "#" + std::to_string(p.id) + (p.author_id == 0 ? " [unattributed history] " : " ") + p.body);
         send_line(s, ".");
     } else if (op == "POST") {
         std::string board; iss >> board;

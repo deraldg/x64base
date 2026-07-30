@@ -1,0 +1,34 @@
+&& AIF-075 BBS provenance smoke -- run against a Release build over a seeded catalog.
+&& Fed to dottalkpp.exe on stdin (see runsmoke.ps1). Pass criteria are annotated below and
+&& mirrored in PLAN_bbs_shell_provenance_fix.md. Comments use && on their own lines because
+&& BBS POST reads free text to end-of-line and must stay comment-free.
+&&
+&& --- identity: unauthenticated boot ---
+USER WHOAMI
+&& EXPECT: acting identity is member.public (the low-privilege boot identity, not the owner).
+&&
+&& --- READ is public (no login) ---
+BBS BOARDS
+BBS READ board.lounge LAST 10
+&& EXPECT: the READ succeeds while unauthenticated (public read).
+&& EXPECT: any pre-fix author-zero post renders with the "[unattributed history]" tag.
+&&
+&& --- POST is denied when unauthenticated (member.public lacks bbs.post) ---
+BBS POST board.lounge SUBJECT aif075-unauth BODY this unauthenticated post must be denied
+&& EXPECT: "bbs.post denied: ..."  and NO "posted #<id>" line. Board count unchanged.
+&&
+&& --- REPLY is likewise denied when unauthenticated ---
+BBS REPLY 1 BODY this unauthenticated reply must be denied
+&& EXPECT: "bbs.post denied: ..."  and NO "replied #<id>" line.
+&&
+&& --- attribution on login (environment-dependent; see note) ---
+&& The credential-free assertions above are the deterministic core of this smoke.
+&& To exercise ATTRIBUTION, log in as a member holding bbs.post, then POST, e.g.:
+&&   USER LOGIN member.derald            (owner bootstrap login if no password is set)
+&&   BBS POST board.lounge SUBJECT aif075-attributed BODY attributed to the acting member
+&&   BBS READ board.lounge LAST 3
+&&   USER LOGOUT
+&& EXPECT: "posted #<id>"; the new post is attributed to the acting member (author_id != 0)
+&& and does NOT carry the "[unattributed history]" tag. This step is left commented because it
+&& requires a credential/token present in the target environment.
+QUIT

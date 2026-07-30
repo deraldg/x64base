@@ -366,6 +366,18 @@ bool session_authenticated()         { return g_authenticated; }
 const std::string& acting_member_key() { return g_acting; }
 void set_acting_member(const std::string& key) { g_acting = key.empty() ? std::string(kAnon) : key; }
 
+// Single source of truth for authorship attribution (AIF-075). The socket server and the
+// interactive CLI both resolve the posting author through this, so a post can never be written
+// with a fabricated author-zero while a real member is acting.
+bool current_member(std::uint64_t& id_out, int& kind_out) {
+    const InMemoryIdentityStore& s = identity_store();
+    const TeamMember* m = find_member_by_key(s, acting_member_key());
+    if (!m) { id_out = 0; kind_out = 0; return false; }
+    id_out   = m->id.value();
+    kind_out = static_cast<int>(m->kind);
+    return true;
+}
+
 AdminResult login(const std::string& member_key, const std::string& secret) {
     const InMemoryIdentityStore& s = identity_store();
     const TeamMember* m = find_member_by_key(s, member_key);

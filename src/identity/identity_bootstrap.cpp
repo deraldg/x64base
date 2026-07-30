@@ -76,15 +76,16 @@ InMemoryIdentityStore build_seed() {
     grant_role(MAINTAINER, {src_read, src_prop, src_mut, db_read, db_mut, promote, git_commit,
                             git_push, publish, branch, user_mgr, role_asn, auth_grant, host_shell,
                             host_egress, bbs_read, bbs_post, chat_invoke});
-    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit});
-    grant_role(REVIEWER,  {src_read, db_read});
-    grant_role(TEACHER,   {src_read, db_read, db_mut});
-    grant_role(STUDENT,   {src_read, db_read});
+    grant_role(DEVELOPER, {src_read, src_prop, src_mut, db_read, db_mut, git_commit, bbs_read});
+    grant_role(REVIEWER,  {src_read, db_read, bbs_read});
+    grant_role(TEACHER,   {src_read, db_read, db_mut, bbs_read});
+    grant_role(STUDENT,   {src_read, db_read, bbs_read});
     // AI partners: propose + board + chat; NOT source.mutate, NOT host.network.egress.
     grant_role(AI_PARTNER,{src_read, src_prop, db_read, bbs_read, bbs_post, chat_invoke});
-    grant_role(PUB_OP,    {promote, git_commit, git_push, publish});
-    // Guest: leave a message on the guestbook and nothing else. No read, no chat, no egress.
-    grant_role(GUEST,     {bbs_guest});
+    grant_role(PUB_OP,    {promote, git_commit, git_push, publish, bbs_read});
+    // AIF-075: BBS READ is public. Every seeded role (incl. the guest "leave a message" role and
+    // the default member.public/STUDENT identity) may read; only posting stays permission-scoped.
+    grant_role(GUEST,     {bbs_guest, bbs_read});
 
     // --- Users seeded from the known profile homes (Contract §5) ---
     auto U = [&](std::uint64_t id, const char* key, const char* login, const char* disp,

@@ -99,6 +99,12 @@ void               set_acting_member(const std::string& key);   // internal/test
 // unchanged until an action runs AS a non-owner agent.
 bool is_owner_member(const std::string& member_key);
 
+// Resolve the acting member's numeric id + kind for authorship / provenance. Returns true when a
+// concrete member is acting; false for anon/unknown (id_out=0, kind_out=0). Single source of truth
+// for "who is posting", shared by the interactive CLI and the socket server so the two surfaces
+// cannot drift apart. (AIF-075: interactive BBS attribution.)
+bool current_member(std::uint64_t& id_out, int& kind_out);
+
 // The enforcement decision an engine action should consult before acting: resolves
 // `perm_key` for the acting member with the live clock and host-shell policy, with
 // the owner exempt. This is the single entry that turns 'the resolver says DENY'
