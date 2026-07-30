@@ -7,24 +7,21 @@
 // owner: member.derald
 // status: supported
 
-// @dottalk.usage v1
+// @dottalk.pdlc v1
 // owner: DOT|RPG_IMPL
-// command: RPG
+// planned-command: RPG
 // category: integration-stub
-// status: placeholder-shim
-// noargs: n/a
-// effect: none
-// mutates: none
-// usage-access: not-registered-here
+// pdlc-step: design
+// proof-state: idea
+// owning-lifecycle: labtalk_pdlc
 // summary:
-//   Placeholder translation unit for future RPG command/integration work.
+//   Reserved design-layer slot for future RPG command/integration work. Declares
+//   the RPG name; no handler exists yet. Not counted as a command surface --
+//   `planned-command` is not harvested into SYSCMD/HELP/dotref.
 //
-// usage:
-//   This file currently does not export a command handler.
-//   If RPG becomes user-facing, add the runtime command handler and full usage contract together.
-//
-// notes:
-//   Contract marker documents that this file was inspected and intentionally left behavior-neutral.
+// gate:
+//   Advances to `code` when RPG becomes user-facing: add the runtime command
+//   handler and a @dottalk.usage contract IN THE SAME COMMIT as the handler.
 //
 // risk:
 //   mutates_table_data: no

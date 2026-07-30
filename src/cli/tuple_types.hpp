@@ -59,6 +59,7 @@ struct TupleBuildOptions {
     bool        values_area_prefix_echo = false; // for pretty printers
     bool        strict_fields           = false; // error on missing explicit field
     bool        refresh_relations       = true;  // refresh SET RELATION before build
+    bool        overlay_table_buffer    = true;  // preview uncommitted TABLE BUFFER edits
     std::string null_token              = "";    // pretty placeholder
 };
 

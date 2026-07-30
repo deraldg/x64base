@@ -22,8 +22,8 @@
 //
 // usage:
 //   EXPORT USAGE
-//   EXPORT [TO] <file> [CSV|PIPE]
-//   EXPORT <open-area-token> TO <file> [CSV|PIPE]
+//   EXPORT [TO] <file> [CSV|PIPE|SDF]
+//   EXPORT <open-area-token> TO <file> [CSV|PIPE|SDF]
 //
 // notes:
 //   EXPORT [TO] <file> writes the current table to the named file.
@@ -32,9 +32,9 @@
 //   Named tokens may be an area number, #area, alias/name, logical name, DBF basename/stem,
 //   filename, or full path, if those values resolve uniquely to an open area.
 //   Named EXPORT does not auto-open tables from disk.
-//   CSV is the default format; PIPE uses a pipe delimiter.
-//   A missing extension is added automatically (.csv for CSV, .txt for PIPE).
-//   EXPORT writes a header row.
+//   CSV is the default format; PIPE uses a pipe delimiter; SDF writes fixed-width rows.
+//   A missing extension is added automatically (.csv for CSV, .txt for PIPE, .sdf for SDF).
+//   EXPORT writes a header row for CSV and PIPE; SDF writes data records only.
 //   EXPORT honors the active SET FILTER for the exported area.
 //   EXPORT reads records in physical table order.
 //   EXPORT may report file/write errors and still emit a summary when appropriate.
@@ -66,6 +66,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/fixed_width_row.hpp"
 #include "cli/command_output.hpp"
 #include "textio.hpp"
 #include "filters/filter_registry.hpp"
@@ -76,6 +77,12 @@ using namespace xbase;
 namespace {
 
 namespace fs = std::filesystem;
+
+enum class ExportFormat {
+    Csv,
+    Pipe,
+    Sdf
+};
 
 extern "C" xbase::XBaseEngine* shell_engine();
 
@@ -139,9 +146,24 @@ static bool has_any_extension(const std::string& path) {
     return dot != std::string::npos && (slash == std::string::npos || dot > slash);
 }
 
-static void add_default_export_extension(std::string& dest, char delimiter) {
+static void add_default_export_extension(std::string& dest, ExportFormat format) {
     if (has_any_extension(dest)) return;
-    dest += (delimiter == '|') ? ".txt" : ".csv";
+    switch (format) {
+        case ExportFormat::Csv:
+            dest += ".csv";
+            break;
+        case ExportFormat::Pipe:
+            dest += ".txt";
+            break;
+        case ExportFormat::Sdf:
+            dest += ".sdf";
+            break;
+    }
+}
+
+static char export_delimiter(ExportFormat format)
+{
+    return format == ExportFormat::Pipe ? '|' : ',';
 }
 
 static void write_delimited_cell(std::ostream& out, const std::string& value, char delimiter)
@@ -360,10 +382,10 @@ static void print_ambiguous_export_token(const std::string& token,
 
 static bool export_area_to_file(xbase::DbArea& area,
                                 std::string dest,
-                                char delimiter,
+                                ExportFormat format,
                                 bool restore_cursors)
 {
-    add_default_export_extension(dest, delimiter);
+    add_default_export_extension(dest, format);
 
     std::unique_ptr<dottalk::tupleaugment::WorkAreaCursorRestore> restore_guard;
     if (restore_cursors) {
@@ -379,10 +401,12 @@ static bool export_area_to_file(xbase::DbArea& area,
 
     const auto& fields = area.fields();
 
-    std::vector<std::string> header;
-    header.reserve(fields.size());
-    for (const auto& f : fields) header.push_back(f.name);
-    write_delimited_row(out, header, delimiter);
+    if (format != ExportFormat::Sdf) {
+        std::vector<std::string> header;
+        header.reserve(fields.size());
+        for (const auto& f : fields) header.push_back(f.name);
+        write_delimited_row(out, header, export_delimiter(format));
+    }
 
     std::size_t exported = 0;
     const int nrecs = area.recCount();
@@ -398,12 +422,16 @@ static bool export_area_to_file(xbase::DbArea& area,
         // Honor persistent SET FILTER. Null FOR AST means no additional ad-hoc predicate.
         if (!filter::visible(&area, nullptr)) continue;
 
-        std::vector<std::string> row;
-        row.reserve(fields.size());
-        for (std::size_t i = 0; i < fields.size(); ++i) {
-            row.push_back(area.get(static_cast<int>(i + 1)));
+        if (format == ExportFormat::Sdf) {
+            out << cli::fixed_width::build_schema_aligned_row(area) << "\n";
+        } else {
+            std::vector<std::string> row;
+            row.reserve(fields.size());
+            for (std::size_t i = 0; i < fields.size(); ++i) {
+                row.push_back(area.get(static_cast<int>(i + 1)));
+            }
+            write_delimited_row(out, row, export_delimiter(format));
         }
-        write_delimited_row(out, row, delimiter);
         ++exported;
     }
 
@@ -437,23 +465,26 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
     }
 
     // Accepted forms:
-    //   EXPORT <file> [CSV|PIPE]
-    //   EXPORT TO <file> [CSV|PIPE]
-    //   EXPORT <open-area-token> TO <file> [CSV|PIPE]
+    //   EXPORT <file> [CSV|PIPE|SDF]
+    //   EXPORT TO <file> [CSV|PIPE|SDF]
+    //   EXPORT <open-area-token> TO <file> [CSV|PIPE|SDF]
     //
     // Canary fix: "EXPORT TO tmp\\x PIPE" must not treat literal TO as
     // the filename. Parse optional TO and format keywords before selecting dest.
     std::vector<std::string> toks;
     for (std::string t; iss >> t; ) toks.push_back(t);
 
-    char delimiter = ',';
+    ExportFormat format = ExportFormat::Csv;
     if (!toks.empty()) {
         const std::string last = export_upper(toks.back());
         if (last == "CSV") {
-            delimiter = ',';
+            format = ExportFormat::Csv;
             toks.pop_back();
         } else if (last == "PIPE") {
-            delimiter = '|';
+            format = ExportFormat::Pipe;
+            toks.pop_back();
+        } else if (last == "SDF") {
+            format = ExportFormat::Sdf;
             toks.pop_back();
         }
     }
@@ -475,7 +506,7 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
             return;
         }
         dest = toks[1];
-        (void)export_area_to_file(a, dest, delimiter, false);
+        (void)export_area_to_file(a, dest, format, false);
         return;
     }
 
@@ -504,7 +535,7 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
             return;
         }
 
-        (void)export_area_to_file(*resolved.matches[0].area, dest, delimiter, true);
+        (void)export_area_to_file(*resolved.matches[0].area, dest, format, true);
         return;
     }
 
@@ -515,7 +546,7 @@ void cmd_EXPORT(DbArea& a, std::istringstream& iss) {
             return;
         }
         dest = toks[0];
-        (void)export_area_to_file(a, dest, delimiter, false);
+        (void)export_area_to_file(a, dest, format, false);
         return;
     }
 

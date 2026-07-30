@@ -10,20 +10,22 @@
 // src/cli/cmd_catalogcanary.cpp
 // @dottalk.usage v1
 // owner: DOT|CATALOGCANARY
-// command: CATALOGCANARY
+// command: CANARY
 // category: metadata-dev
 // status: dev-canary
 // noargs: inspect-current-area
 // effect: report
 // mutates: none
-// usage-access: CATALOGCANARY USAGE
+// usage-access: CANARY USAGE
 // summary:
 //   Dev canary for the metadata catalog reader adapter. Reads the current
 //   already-open SYSCMD area and reports adapter row/distribution counts.
+//   Invoked as CANARY (registered in shell_commands.cpp); cmd_CATALOGCANARY is
+//   the handler, not the command name.
 //
 // usage:
-//   CATALOGCANARY
-//   CATALOGCANARY USAGE
+//   CANARY
+//   CANARY USAGE
 //
 // notes:
 //   CATALOGCANARY does not open SYSCMD.dbf.

@@ -382,8 +382,8 @@ TupleBuildResult build_tuple_from_spec(const std::string& spec_in, const TupleBu
             return res;
         }
 
-        // Overlay TABLE-buffered edits (preview) for this area+recno+field.
-        if (have_area) {
+        // Overlay TABLE-buffered edits only for preview-oriented callers.
+        if (opt.overlay_table_buffer && have_area) {
             const int area0 = slot;
             const int recno = safe_recno(ar);
 

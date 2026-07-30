@@ -87,6 +87,76 @@ FunctionDoc{
 },
 
 FunctionDoc{
+    "PROPER",
+    {},
+    FunctionCategory::String,
+    1, 1,
+    "Convert text to proper case: capitalize the first letter of each word and lowercase the rest.",
+    { "PROPER(<expr>)" },
+    { "PROPER(NAME)", "PROPER(\"john smith\")" },
+    {
+        "FoxPro-compatible string helper; input is coerced through the expression engine string path."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADL",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on the left to a given length, optionally with a specified pad character.",
+    { "PADL(<expr>, <length>)", "PADL(<expr>, <length>, <pad>)" },
+    { "PADL(NAME, 10)", "PADL(\"7\", 4, \"0\")" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADR",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on the right to a given length, optionally with a specified pad character.",
+    { "PADR(<expr>, <length>)", "PADR(<expr>, <length>, <pad>)" },
+    { "PADR(NAME, 10)", "PADR(\"7\", 4, \"0\")" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADC",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on both sides to center it within a given length, optionally with a specified pad character.",
+    { "PADC(<expr>, <length>)", "PADC(<expr>, <length>, <pad>)" },
+    { "PADC(NAME, 10)", "PADC(\"AB\", 6)" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "STUFF",
+    {},
+    FunctionCategory::String,
+    4, 4,
+    "Replace part of a string: remove <length> characters starting at <start> and insert the replacement text.",
+    { "STUFF(<expr>, <start>, <length>, <replacement>)" },
+    { "STUFF(\"abcDE\", 4, 0, \"xy\")", "STUFF(NAME, 1, 3, \"XXX\")" },
+    {
+        "FoxPro-compatible string helper; positions are 1-based and a <length> of 0 inserts without deleting."
+    },
+    {}
+},
+
+FunctionDoc{
     "RTRIM",
     { "TRIM" },
     FunctionCategory::String,

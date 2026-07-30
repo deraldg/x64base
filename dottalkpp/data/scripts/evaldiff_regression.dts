@@ -87,6 +87,30 @@ EVALDIFF FOR NOSUCH = "X"
 EVALDIFF FOR NVAL = "NOTNUM"
 EVALDIFF FOR (CVAL = "ALPHA"
 
+*
+* ---------------------------------------------------------------------------
+* ED-01b -- END-OF-INPUT. Repair landed 2026-07-30 in src/cli/expr/api.cpp;
+* these two lines are its permanent guard. compile_where() is the ONE funnel
+* both evaluator families reach, so a single missing check produced identical
+* wrong answers on both sides -- agreement is not correctness.
+*
+* Expected AFTER the repair, both lines: PARITY-ON-FAILURE.
+*   NVAL = 12.5 GARBAGE  -- FLIPS. Before the repair both evaluators returned
+*                           the bare `NVAL = 12.5` verdict (1/3/0) and the run
+*                           printed VERDICT-PARITY: a green label on a wrong
+*                           answer. A VERDICT-PARITY line here is a REGRESSION.
+*   NVAL = 12.5 AND      -- UNCHANGED. Malformed control; the parser cannot
+*                           build a right operand, so it failed before the
+*                           repair and must keep failing. Proves the harness
+*                           can still see a genuine parse failure.
+*
+* The third proof of ED-01b needs STUDENTS (area 8, a MAJOR column) and cannot
+* live in this SANDBOX fixture: `8.MAJOR = "CSCI"` returned 200/0/0 against a
+* true 21/179/0. Captured in labtalk/proofs/runs/20260730_evaldiff_eof_probe.txt.
+* ---------------------------------------------------------------------------
+EVALDIFF FOR NVAL = 12.5 GARBAGE
+EVALDIFF FOR NVAL = 12.5 AND
+
 FORMULA "EVALDIFF-CURSOR-AFTER"
 ? ALLTRIM(CVAL) = ""
 
