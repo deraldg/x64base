@@ -118,8 +118,8 @@ void cmd_CONTINUE(DbArea&, std::istringstream&);
 //   REPORTING
 
 //   RELATIONAL BROWSING
-void cmd_SMART_BROWSER(DbArea&, std::istringstream&);
-void cmd_SIMPLE_BROWSER(DbArea&, std::istringstream&);
+void app_SMART_BROWSER(DbArea&, std::istringstream&);
+void app_SIMPLE_BROWSER(DbArea&, std::istringstream&);
 void cmd_ERSATZ(DbArea&, std::istringstream&);
 void cmd_RBROWSE(DbArea&, std::istringstream&);
 
@@ -134,6 +134,7 @@ void browse_bind_invoke(void (*fn)(DbArea&, const std::string&));
 //   RUNTIME REPORTS
 void cmd_AREA(DbArea&, std::istringstream&);
 void cmd_AREA51(DbArea&, std::istringstream&);   // src/cli/cmd_area51.cpp -- diagnostics, not AREA family
+void cmd_EVALDIFF(DbArea&, std::istringstream&); // AIF-074 P4.0a evaluator observer
 void cmd_WAMREPORT(DbArea&, std::istringstream&);
 void cmd_DBAREA(DbArea&, std::istringstream&);
 void cmd_DBAREAS(DbArea&, std::istringstream&);

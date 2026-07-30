@@ -116,6 +116,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // row and no HELP topic. Behaviour unchanged; it now has an identity the
     // documentation chain can see.
     registry().add("AREA51",       [](DbArea& A, std::istringstream& S){ cmd_AREA51(A,S); });
+    registry().add("EVALDIFF",     [](DbArea& A, std::istringstream& S){ cmd_EVALDIFF(A,S); });
 
     // ---------------------------------------------------------------------
     // Direct cursor movers
@@ -150,14 +151,14 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Browsers may move the active record during navigation. That movement
     // should flow through engine cursor APIs so the hook sees it.
     // Interactive browsers typically move cursor internally; hook covers it.
-    registry().add("SIMPLEBROWSE", [](DbArea& A, std::istringstream& S){ cmd_SIMPLE_BROWSER(A,S); });
+    registry().add("SIMPLEBROWSER",[](DbArea& A, std::istringstream& S){ app_SIMPLE_BROWSER(A,S); });
     registry().add("BROWSE",       [](DbArea& A, std::istringstream& S){ cmd_BROWSE(A,S);         });
     registry().add("RBROWSE",      [](DbArea& A, std::istringstream& S){ cmd_RBROWSE(A,S);        });
     registry().add("ERSATZ",       [](DbArea& A, std::istringstream& S){ cmd_ERSATZ(A,S);         });
     registry().add("HIER",         [](DbArea& A, std::istringstream& S){ cmd_HIER(A,S);           });
     registry().add("BROWSER",      [](DbArea& A, std::istringstream& S){ cmd_BROWSER(A,S);        });
     registry().add("BROWSETUI",    [](DbArea& A, std::istringstream& S){ cmd_BROWSETUI(A,S);      });
-    registry().add("SMARTBROWSE",  [](DbArea& A, std::istringstream& S){ cmd_SMART_BROWSER(A,S);  });
+    registry().add("SMARTBROWSER", [](DbArea& A, std::istringstream& S){ app_SMART_BROWSER(A,S);  });
 
     // ---------------------------------------------------------------------
     // TABLE buffering

@@ -745,6 +745,9 @@ Notes:
 
         {"AREA51", "AREA51", "Developer sandbox / experimental command.", true},
 
+        {"EVALDIFF", "EVALDIFF FOR <predicate>",
+                 "Compare classic DbArea and TupleRow predicate-evaluator outcomes over the same physical records without changing either evaluator.", true},
+
         {"GENERIC", "GENERIC", "Developer utility placeholder command.", true},
 
         {"NORMALIZE", "NORMALIZE <expr>", "Normalize/clean an input expression or text (developer utility).", true},

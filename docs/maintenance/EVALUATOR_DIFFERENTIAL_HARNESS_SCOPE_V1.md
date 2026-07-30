@@ -37,7 +37,7 @@ ai_report_audit:
 
 # Evaluator Differential Harness -- Scope and Cost
 
-**Date:** 2026-07-29 - **Status:** `review-needed` - **Lane:** AIF-074 (P4.0)
+**Date:** 2026-07-29 - **Status:** `implemented-findings` - **Lane:** AIF-074 (P4.0a)
 **Owner:** `member.derald` - **Author:** `member.ai.claude.cowork`
 
 ## Why this exists
@@ -143,3 +143,57 @@ one question -- do the two evaluators agree? -- so that P4.0's design is chosen
 on measurement instead of assumption. If the answer is "they agree everywhere",
 that is a cheap and genuinely good result, and it should be recorded as such
 rather than treated as a wasted slice.
+
+## 2026-07-30 implementation result
+
+The GOLD harness is implemented as:
+
+- `src/cli/cmd_evaldiff.cpp` -- permanent observer command and usage contract;
+- `EVALDIFF` entries in the shell registry and `include/dotref.hpp`;
+- `dottalkpp/data/scripts/evaldiff_regression.dts` -- four-row typed X64
+  SANDBOX fixture, predicate corpus, cursor check, and self-erasure;
+- `REGRESSION EVALDIFF` -- curated, explicit-run registration.
+
+Build and real-runtime execution both completed. The durable transcript is
+`labtalk/proofs/runs/20260730_evaldiff_p4_0a.txt`. The fixture erased cleanly
+and the before/after cursor assertions were both true.
+
+The measured answer is **NO: the evaluator families do not agree across the
+required corpus.** The refined 20-predicate run reports 10 `VERDICT-PARITY`,
+2 `PARITY-ON-FAILURE`, and 8 `DIFFERENCES` summaries. Those eight differing
+predicates are not eight independent defects.
+
+### Two root-cause clusters behind the differences
+
+| Finding | Runtime fingerprint | Source confirmation |
+|---|---|---|
+| ED-01: the TupleRow AST route does not parse function calls | A function on the left collapses to TRUE on all four rows; `CTOD` on the right collapses to FALSE. The impossible control `ALLTRIM(CVAL) = "ZZZZZ"` still returns tuple 4/0/0 while classic returns 0/4/0. `UPPER("ALPHA") = "ALPHA"` shows the behavior does not require TupleRow field access | `Parser::nud` maps every identifier directly to `FieldRef`; there is no function-call production. `Parser::parse_expr` returns without requiring end-of-input, so the remaining `(...) = ...` tokens can be ignored |
+| ED-02: classic `EMPTY()` loses its logical type | classic returns ERROR on all four rows for both `EMPTY(CVAL)` and `EMPTY(NVAL)`; tuple returns TRUE on all four | `dt_empty` returns `.T.` / `.F.` text. Classic preprocessing quotes that non-numeric result as a string literal; `eval_bool` then rejects the resulting string because it is neither boolean nor numeric |
+
+This is one TupleRow function-call/parser defect plus one classic `EMPTY`
+logical-typing defect. `ALLTRIM`, `UPPER`, `SUBSTR`, `DTOS`, and `CTOD` are
+examples exposing ED-01, not five separate function implementation defects.
+
+### Parity is not correctness
+
+Three `VERDICT-PARITY` cases are settled wrong answers, not clean results:
+
+| Predicate | Both paths report | Why it is wrong |
+|---|---|---|
+| `DELETED()` | TRUE on all four rows | the fixture has exactly one deleted row, record 4 |
+| `NOSUCH = "X"` | FALSE on all four rows | an unknown field silently becomes an empty result instead of a reported name error |
+| `NVAL = "NOTNUM"` | FALSE on all four rows | an incompatible numeric-vs-string comparison silently becomes no match |
+
+The compound predicate containing `EMPTY()` and the malformed-parenthesis
+control now report `PARITY-ON-FAILURE`, not `PASS`: both evaluators failed every
+row, so no verdict was evaluated. No EVALDIFF summary uses `PASS` now.
+
+This is a hard scope boundary for the tool: `VERDICT-PARITY` proves only that
+the two outcome classes match. It never proves that either outcome is correct.
+Correctness requires an expected-result or external-oracle assertion.
+
+**Gate disposition:** harness delivery is complete; evaluator parity is RED.
+P4.0b is not mechanical and must not migrate SQLsel's `WHERE` onto the tuple
+path until ED-01 and ED-02 are repaired and the shared silent-wrong-answer cases
+are converted to reported failures under explicit oracle cases. The harness
+itself changes neither evaluator.
