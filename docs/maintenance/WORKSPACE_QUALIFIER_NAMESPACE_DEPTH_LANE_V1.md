@@ -285,6 +285,48 @@ Then amend R27 with a scope clause -- *"`any two OPEN tables` means open within 
 
 Reserving the sigil costs nothing and keeps a workspace prefix un-confusable with P4.1's table alias (`FROM STUDENTS S`) -- which is the argument for a sigil over a bare word.
 
+### 5b. Recursive / hierarchical workspaces -- the scalar-vs-path decision
+
+*(Raised by the maintainer 2026-07-30 after the lane opened: "can workspaces be recursive/hierarchical?" Recorded here because chat is an input channel, never the record -- AIF-073.)*
+
+**The parser already says yes.** `src/reference/qualified_reference.cpp:82` is a `while (true)` segment loop emitting `SegmentSyntax::{Member, Index, Key, Wildcard}` (`qualified_reference.hpp:18-23`). `@MCC.FALL2026.SEC3.STUDENTS.SID` parses **today**, at unlimited depth, with no change. The grammar is free.
+
+**`DataAddress` says no, and the asymmetry looks accidental:**
+
+```
+include/reference/data_address.hpp:131    WorkspaceIdentity          workspace_;   // scalar
+include/reference/data_address.hpp:136    std::vector<RelationStep>  relations_;   // vector
+```
+
+Relations were designed to chain. Workspaces were designed not to. Nothing in the tree records that as a decision.
+
+#### Arguments for
+
+1. **Memo-residency makes recursion structural, not optional.** AIF-070 proposes memo bytes -> schema+data -> hydrated virtual areas. A workspace living in a memo field lives in a row, in a table, in a workspace. That is containment by construction. The choice is not whether to allow nesting but whether to *forbid* it -- and forbidding it requires a containment invariant that does not exist.
+2. **The retention fit is exact, and this lane's task is memory retention.** AIF-073 models the Portal as event-sourced external memory in six classes (working / episodic / prospective / semantic / procedural / evidence). A hierarchy gives retention policy somewhere to attach that a flat namespace does not: drop `@AGENT.CLAUDE.SESSION-*` older than N, keep `@AGENT.CLAUDE.SEMANTIC` indefinitely. `@AGENT.CLAUDE.SESSION-20260730.EPISODIC.EVENTS` is simultaneously an address, a scope, and a retention boundary. For an append-only memory store the tree is not decoration -- it is the structure.
+3. **The engine already has one tree.** `SET RELATION`'s parent->child traversal graph. Containment would be a second tree over the same objects. They must stay distinct: a relation crossing a containment boundary should be legal, as a foreign key crosses schemas. Naming that distinction now costs a sentence; discovering it after the join engine ships is a semantics change.
+
+#### Costs
+
+1. **The invariant weakens twice, not once.** Flat multi-workspace: *an alias resolves to one table given a scope.* Hierarchical: *given a scope AND a search rule.* Does bare `STUDENTS` search the current node only, or walk up ancestors? Lexical scoping is convenient and is exactly how action-at-a-distance arises. **Ruling proposed: no implicit ancestor walk in v1.** Resolution is current-node-only unless qualified. That can be relaxed later; it cannot be tightened.
+2. **Cycles become reachable once memo-resident** -- a table whose memo holds a workspace containing that table. Needs a containment-DAG invariant and a depth cap. Natural home is `config/build_vectors.cmake` (`DOTTALK_MAX_WORKSPACE_DEPTH`), which per §2 is the established mechanism for exactly this kind of vectored capacity.
+3. **Storage stays flat.** A workspace hierarchy still bottoms out in one `_areas[MAX_AREA]`. Naming is hierarchical, storage is not -- two different things wearing one word. Unless memo-residency makes *some* levels hydratable, in which case the tree is heterogeneous and that must be explicit rather than discovered.
+4. **`RelationStep` carries flat `DbAreaIdentity{slot, alias, generation}`** with no path, so cross-level relations need the same widening as `workspace_`.
+
+#### Recommendation
+
+The question is not *"should we build recursion."* It is **"should `DataAddress::workspace_` be a scalar or a path."**
+
+Make it `std::vector<WorkspaceIdentity>` (or a dedicated `WorkspacePath`) **now**, while `dottalk_value` is compile-only with exactly one consumer (`src/tests/test_pdlc_foundation_smoke.cpp`, per `src/CMakeLists.txt:46-49`). Default to length <= 1. Recursion then becomes a policy knob rather than a rewrite.
+
+Cost today: one type change, one test touched, nothing else in the tree depends on it. Cost once P4.1 or AIF-070 consumes it: a breaking change across two lanes.
+
+This is `COST_BENEFIT_GATE_DOCTRINE_V1.md` rule 3 applied to this lane's own foundation -- same change, different date, order-of-magnitude difference. **It is the cheapest moment this decision will ever have**, and unlike §5's P1-P3 it is not on AIF-074's clock, it is on AIF-070's and AIF-073's.
+
+#### Three lanes, one hinge
+
+AIF-070 owns *what a workspace is* (named, concurrent, memo-resident, hydratable). AIF-073 owns *agent memory as an event-sourced external store*. AIF-078 owns *how a name resolves once more than one workspace exists*. **Recursion is the hinge between them**: memo-resident containers nest structurally, nested containers are how retention scopes are expressed, and a nested namespace is what the resolver must then address. No one of the three can settle depth alone. Recorded as a cross-lane dependency, not as a proposal to merge them.
+
 ---
 
 ## 6. Gates / falsifiable exit conditions
@@ -308,6 +350,9 @@ Reserving the sigil costs nothing and keeps a workspace prefix un-confusable wit
 - **Q3.** Should P2 fold into AIF-074's P4.0b (already touching the evaluator seam, already blocked on ED-01/ED-02), or land ahead of it as its own gate?
 - **Q4.** `DOTTALK_MAX_AREAS` upper bound -- `INT_MAX` (correctness floor) or a lower advisory ceiling forcing a deliberate override?
 - **Q5.** Terminology: if multi-workspace is ever built, does `WORKSPACE` widen (it currently means "all open slots") or does a new word appear? This affects HELP, CMDHELP, manualgen, and every `@dottalk.usage` block that cites the current definition. **Decide before any build, not during.**
+- **Q7 (depth).** Scalar or path for `DataAddress::workspace_` -- see §5b. Decide while `dottalk_value` is still compile-only. Cross-lane: AIF-070 and AIF-073 both bear on it.
+- **Q8 (search rule).** If depth > 1 is ever allowed, does an unqualified name search the current node only, or walk up ancestors? §5b proposes current-node-only. This is the invariant, and it should be ruled before any depth is built, not after.
+- **Q9 (two trees).** Containment (workspace) vs navigation (`SET RELATION`). Confirm they stay distinct and that a relation may legally cross a containment boundary.
 - **Q6.** Expression-level qualification is deliberately excluded -- `include/cli/expr/*` has no alias environment at all (`ast.hpp:48` `FieldRef{name}`; `.` is not an ident char per `lexer.cpp:16-21`). Acceptable boundary, or does `WHERE` need qualification too? If yes, that is a substantially larger lane.
 
 ---

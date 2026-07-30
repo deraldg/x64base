@@ -31,9 +31,17 @@ That reframes the whole question. The package proposes a **standalone multi-work
 
 **What is withdrawn:** §9 Q8 asked whether the 512 slots should be rationed per workspace. `MAX_AREA` is a settable build vector (`config/build_vectors.cmake:14`, AIF-044; `:8-12` states 512 is a compatibility default). There is no budget to ration. Maintainer caught it; see the lane doc §9.
 
-## Related artifacts committed elsewhere in this changeset
+## Related artifacts
+
+Landed in `809128e2b` (this package's commit):
 
 - `docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md` -- lane charter, `AIPR-20260730-001`
 - `docs/maintenance/COST_BENEFIT_GATE_DOCTRINE_V1.md` -- doctrine, `AIPR-20260730-002`
 - `docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md` -- audited closeout, `AIPR-20260730-003`
-- `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- AIF-078 row
+- `coordination/aif/AIF-078.claim` -- lane claim
+
+Landed separately:
+
+- `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- AIF-078 row. Held out of `809128e2b` because the working-tree file also carried the uncommitted AIF-075/076/077 rows, and fusing four lanes' rows into one lane's slice is what `AI_SESSION_COORDINATION_PROTOCOL_V1.md` forbids. Landed in the follow-up commit that lands all four.
+
+*(Corrected after `809128e2b`: this section previously listed the intake row as "committed elsewhere in this changeset," which it was not. A note that was true when written and false at commit time -- the AIF-061 lesson, that a comment is part of the change.)*
