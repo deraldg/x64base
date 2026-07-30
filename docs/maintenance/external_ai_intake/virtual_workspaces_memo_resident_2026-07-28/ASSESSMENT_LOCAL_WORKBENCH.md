@@ -46,7 +46,8 @@ Accept in substance; **return for two corrections**; **renumber the AIF**. Hones
 
 - Intake queue `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md`: rows **001–069** (043, 068 absent from the table).
 - Claim ledger `coordination/aif/`: 050, 065, 066, 067, **068**.
-- `AIF-055` (Grok's suggestion) is an existing row → **taken.** `043` was a real historical lane; `068` is claimed. → **Next clean number: `AIF-070`** (reserve via `session_coordinator.py claim-aif`).
+- `AIF-055` (Grok's suggestion) is an existing row → **taken.** `043` was a real historical lane; `068` is claimed. → **Assigned `AIF-070`** (a free gap between row 069 and claims 071+).
+- **RESERVED 2026-07-28** via `session_coordinator.py claim-aif` → `coordination/aif/AIF-070.claim` (run `AIPR-20260728-GROK-002`, `member.ai.grok.xai`, lane `workspace.virtual_and_memo_resident`). Locked; no renumber needed.
 
 ## Contract compliance (`EXTERNAL_AI_CHANGE_PACKAGE_V1.md`)
 
