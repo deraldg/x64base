@@ -87,7 +87,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 32> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 33> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -282,6 +282,12 @@ constexpr std::array<RegressionSpec, 32> kRegressionSpecs{{
         "VUREPAIR",
         "validate_unique_repair_index_proof.dts",
         "VALIDATE UNIQUE ... REPAIR maintains the active index (item C1, session 2026-07-30): builds a throwaway x64 table with a duplicated key, indexes the uniqueness-candidate field via CDX, repairs the duplicate, then asserts the repaired record is reachable at its NEW key with NO REINDEX between (VUR_T2) and that the surviving legitimate duplicate is still correct (VUR_T3). Runtime-proven 2026-07-30 on the wsl-lean build. REPAIR previously used set()+writeCurrent(), which carry no index hook, and left the tag pointing at the old value with nothing marked stale. Requires x64/CDX: CnxBackend upsert/erase are still stubs (XIDX-TXN-02), so x32/CNX would fail for an unrelated reason. Self-bootstrapping and self-erasing; explicit-run until proven green.",
+        false
+    },
+    {
+        "IDXSTALE",
+        "index_maintenance_failure_proof.dts",
+        "Index-staleness REPORTING on the batch backends (item E, session 2026-07-31): apply_replace_snapshot compares wasStale() across the apply and reports a false->true transition, so a backend that CANNOT maintain incrementally is no longer silent. CnxBackend/CdxNativeBackend upsert/erase are no-ops that set stale_=true and return normally, so every replace against a CNX order left the index stale and said nothing; wasStale() had seven overrides and ZERO call sites (AIF-079 instance 1). Runtime-proven 2026-07-31 on the wsl-lean build: REPLACE now prints 'record written, but index update failed; REINDEX/REBUILD needed' with trace 'ok=yes staleBefore=no leftStale=yes'. Scored on ORDER, not key lookup -- CNX SEEK compares LIVE field values through a stale recno ordering, so a key probe proves nothing either way (measured: after moving MILLER->AAAAA, SEEK MILLER misses and SEEK AAAAA still hits). E_G0/E_G1 guard the fixture, E_T2 shows the stale order still starting at ANDERSON, E_T4 shows REBUILD fixing it. Every marker is a FIELD comparison: RECNO() and FOUND() render EMPTY in a '?' marker and STR() does not rescue them. Self-bootstrapping v32 table, self-erasing; explicit-run until soaked.",
         false
     }
 }};

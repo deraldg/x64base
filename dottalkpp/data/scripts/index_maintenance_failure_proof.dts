@@ -1,0 +1,154 @@
+* ============================================================================
+* index_maintenance_failure_proof.dts
+*
+* Proves ITEM E: when index maintenance does not happen, the record write
+* still lands AND the engine says so.
+*
+* Contract under test:
+*   replaceFieldStored (src/xbase/dbarea.cpp:281-307) returns TRUE with a
+*   NON-EMPTY err when the physical write succeeded but the index was not
+*   maintained. cmd_REPLACE then marks the field stale and warns:
+*     "record written, but index update failed...; REINDEX/REBUILD needed."
+*
+* WHY CNX AND NOT LMDB
+*   The first attempt tried to force an LMDB MDB_MAP_FULL via BUILDLMDB
+*   MAPSIZE. That is unreachable: parse_mapsize_spec has an 8 MiB floor
+*   (cmd_buildlmdb.cpp:206), and a fixture small enough to author cannot fill
+*   8 MiB. It needed no forcing at all. CnxBackend::upsert/erase are no-ops
+*   that set stale_ = true and return normally (cnx_backend.cpp:521-533), so
+*   EVERY replace against a CNX order leaves the index stale. That is the
+*   routine case, not an edge case, and until wasStale() was wired into
+*   apply_replace_snapshot it was entirely silent -- the backend reported
+*   success while maintaining nothing.
+*
+* MARKER DESIGN -- READ BEFORE EDITING
+*   The first version of this proof PASSED WHILE PROVING NOTHING. Its SEEKs
+*   errored out (no active order), the cursor never moved, and the markers
+*   re-read whatever record happened to be current, so they printed .T.
+*   regardless of index behavior. A test that reports success while not
+*   running is AIF-079 instance 8; this file managed to be one.
+*
+*   Two rules came out of that, and both are load-bearing:
+*     1. Park the cursor on a KNOWN DIFFERENT record before every SEEK, then
+*        assert RECNO() moved. A SEEK that silently no-ops now fails the
+*        guard instead of inheriting a passing position.
+*     2. Markers must be STRING comparisons. "? <str> + FOUND()" and
+*        "? <str> + (RECNO() = 1)" both render EMPTY, which reads as failure.
+*        ALLTRIM(STR(RECNO())) = "1" is a string compare and renders .T./.F.
+*        correctly -- that is what makes the position guard expressible.
+*
+* Self-contained: builds and erases its own throwaway v32 table; never
+* touches STUDENTS or any live fixture.
+*   Standalone:  DO index_maintenance_failure_proof
+*   Regression:  REGRESSION RUN IDXSTALE   (register only once proven)
+*
+* Runtime status: NOT YET PROVEN. Authored 2026-07-31 alongside the
+* wasStale() wiring it exercises.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x32 lane: CNX is the v32 indexing backend
+DO x32
+
+FORMULA "INDEX-STALE-REPORTING-PROOF-BEGIN"
+
+* --- throwaway v32 table (bare CREATE defaults to MSDOS/DBASE = v32) --------
+CREATE IDXSTALE (SID N(8), LNAME C(20))
+
+APPEND
+REPLACE SID WITH 1
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 2
+REPLACE LNAME WITH "ANDERSON"
+APPEND
+REPLACE SID WITH 3
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 4
+REPLACE LNAME WITH "YOUNG"
+
+* --- CNX index on LNAME ------------------------------------------------------
+CNX CREATE
+CNX ADDTAG LNAME
+REBUILD
+SET ORDER TAG LNAME
+
+* --- G0: the ORDER IS LIVE ---------------------------------------------------
+* Guards everything below. Park on 4 (YOUNG), seek a key that lives on 1. The
+* guard is the FIELD VALUE at the cursor, not RECNO(): if the seek no-ops the
+* cursor stays on YOUNG and G0 reads .F., so a broken fixture can never be
+* mistaken for a proven contract.
+*
+* Field values, not RECNO(). Measured 2026-07-31: ALLTRIM(LNAME) = "X" renders
+* .T./.F. correctly, while ALLTRIM(STR(RECNO())) = "1" renders EMPTY -- same
+* family as FOUND(). Wrapping RECNO() in STR() does NOT make it usable; the
+* problem is RECNO(), not the comparison type. Parking on a record with a
+* known distinct field value gives the same guard without it.
+GO 4
+SEEK "MILLER"
+? "E_G0_seek_works_before_mutation:" + (ALLTRIM(LNAME) = "MILLER")
+
+* --- G1: baseline ORDER, before any mutation ---------------------------------
+* Under LNAME order the first row must be ANDERSON. This is the measurement
+* T2 compares against, so it is taken before anything moves.
+GO TOP
+? "E_G1_baseline_top_is_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- the mutation under test -------------------------------------------------
+* Expect BOTH lines on the wired path:
+*   REPLACE: Replaced field #2 at rec 1.
+*   REPLACE: record written, but index update failed...; REINDEX/REBUILD needed.
+* Before the wasStale() wiring, only the first line appeared.
+GO 1
+REPLACE LNAME WITH "AAAAA"
+
+* --- E_T1: the RECORD WRITE LANDED -------------------------------------------
+* The half that must never regress. An unmaintained index must not be
+* reported as a failed write; the record is on disk.
+GO 1
+? "E_T1_record_carries_new_value:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- E_T2: the index is STALE, and provably so -------------------------------
+* THE OBSERVABLE IS THE ORDER, NOT THE KEY LOOKUP.
+*
+* Corrected 2026-07-31 against a real run. The first version asserted that the
+* OLD key still resolved and the NEW key did not. Both were wrong, because CNX
+* SEEK compares LIVE FIELD VALUES while walking a possibly-stale recno
+* ordering. Measured after moving MILLER -> AAAAA on a stale index:
+*     SEEK "MILLER"  -> Not found.    (no record holds MILLER any more)
+*     SEEK "AAAAA"   -> Found at 1.   (record 1 does, and the walk reached it)
+* So key lookup can look healthy on a stale index and proves nothing either
+* way.
+*
+* What the stale index actually costs is ORDER. Record 1 still occupies the
+* slot MILLER sorted into (after ANDERSON), so an ordered walk still starts at
+* ANDERSON even though AAAAA now sorts first. That is directly observable and
+* is what a stale index means to a reader.
+GO TOP
+? "E_T2_stale_order_still_starts_at_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
+
+* --- E_T3: SEEK still reaches the record (documents the real behavior) -------
+* Not a staleness assertion -- a guard against over-claiming. Recorded so the
+* next reader does not repeat the wrong model above.
+GO 4
+SEEK "AAAAA"
+? "E_T3_seek_reaches_moved_record_despite_stale_order:" + (ALLTRIM(LNAME) = "AAAAA")
+
+* --- E_T4: REBUILD is the documented remedy, and it works --------------------
+* The warning tells the operator to REINDEX/REBUILD. Prove that advice is good
+* rather than merely well-phrased: after the rebuild the order is correct and
+* AAAAA sorts first, which is exactly what T2 showed it was not.
+REBUILD
+SET ORDER TAG LNAME
+GO TOP
+? "E_T4_after_rebuild_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
+
+FORMULA "INDEX-STALE-REPORTING-PROOF-END"
+
+* --- teardown ----------------------------------------------------------------
+* No bare "SET ORDER TO" -- it reports "SET ORDER: missing target."
+* CLOSE drops the order with the table.
+CLOSE
+ERASE IDXSTALE CONFIRM

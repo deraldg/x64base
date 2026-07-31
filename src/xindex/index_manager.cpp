@@ -613,6 +613,21 @@ bool IndexManager::apply_replace_snapshot(const DeleteSnapshot& before,
     // a table with no index open.
     if (!backend_) return true;
 
+    // wasStale() TRANSITION, not a bare read.
+    //
+    // A backend that cannot maintain incrementally does not fail: CnxBackend
+    // and CdxNativeBackend upsert/erase are no-ops that set stale_ = true and
+    // return normally (cnx_backend.cpp:521-533). So every loop below reports
+    // ok, all_ok stays true, and the caller is told the index was maintained
+    // when it was not. That silent path is the COMMON case for CNX/native CDX
+    // -- the exceptional LMDB throw is the rare one.
+    //
+    // Reading wasStale() bare would be wrong: stale_ is also set when a load
+    // FAILS (cnx_backend.cpp:396), so a table whose index never opened would
+    // warn on every REPLACE forever. Only a false -> true transition ACROSS
+    // this apply means "this operation left the index stale".
+    const bool stale_before = backend_->wasStale();
+
     auto usable = [](const DeleteSnapshotEntry& e) {
         return !e.tag_upper.empty() && !e.key.empty();
     };
@@ -674,6 +689,23 @@ bool IndexManager::apply_replace_snapshot(const DeleteSnapshot& before,
     // insert-all this line would have read emitted_del=N emitted_ins=N skipped=0
     // for any N-tag table; the win is visible as skipped rising while emitted
     // stays at the number of tags whose key actually moved.
+    // Did this apply leave the index stale? Only counts if the backend was NOT
+    // already stale on entry -- see the note at stale_before.
+    //
+    // Reported through the SAME false return the exceptional path uses, so
+    // replaceFieldStored sets err and REPLACE/CALCWRITE warn
+    // "record written, but index update failed...; REINDEX/REBUILD needed."
+    // That wording is accurate here rather than merely reused: the index was
+    // not updated, and REINDEX/REBUILD is exactly the remedy for a backend
+    // that only maintains by rebuilding.
+    //
+    // Note on volume: this fires on EVERY replace against a CNX or native-CDX
+    // order, because every one of them genuinely leaves the index stale. That
+    // is honest but repetitive. If it proves too noisy in practice the fix is
+    // to throttle the MESSAGE (once per area per order), not to re-silence the
+    // condition -- the silence is what this change exists to end.
+    const bool left_stale = (!stale_before && backend_->wasStale());
+
     if (index_trace_enabled_()) {
         std::cout << "[INDEX TRACE] apply_replace rec=" << rec
                   << " before=" << before.size()
@@ -682,11 +714,13 @@ bool IndexManager::apply_replace_snapshot(const DeleteSnapshot& before,
                   << " emitted_ins=" << emitted_ins
                   << " skipped=" << skipped
                   << " ok=" << (all_ok ? "yes" : "no")
+                  << " staleBefore=" << (stale_before ? "yes" : "no")
+                  << " leftStale=" << (left_stale ? "yes" : "no")
                   << " tags=[" << emitted_tags << "]"
                   << "\n";
     }
 
-    return all_ok;
+    return all_ok && !left_stale;
 }
 
 bool IndexManager::apply_insert_snapshot(const DeleteSnapshot& snap,
