@@ -183,6 +183,43 @@ static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignor
     return mx;
 }
 
+// REPAIR routes through DbArea::replaceFieldStored(), which takes a per-record
+// lock and maintains the active index. Two things can therefore go wrong for an
+// individual record without invalidating the pass as a whole, and both must be
+// visible rather than absorbed into a bare "updated N record(s)" count:
+//
+//   skipped   -- not written at all (record locked by another process, or the
+//                write failed). The duplicate/blank value is still there.
+//   unindexed -- written, but index maintenance afterwards failed. The value is
+//                corrected on disk while an active tag still points at the old
+//                one, so that record needs a REINDEX/REBUILD to be findable.
+static void report_repair_exceptions(const std::vector<std::int64_t>& skipped,
+                                     const std::vector<std::int64_t>& unindexed)
+{
+    auto print_recnos = [](const std::vector<std::int64_t>& v) {
+        const std::size_t preview = std::min<std::size_t>(5, v.size());
+        for (std::size_t i = 0; i < preview; ++i) {
+            std::cout << (i ? ", " : " ") << v[i];
+        }
+        if (v.size() > preview) {
+            std::cout << ", ... and " << (v.size() - preview) << " more";
+        }
+        std::cout << "\n";
+    };
+
+    if (!skipped.empty()) {
+        std::cout << "VALIDATE: REPAIR skipped " << skipped.size()
+                  << " record(s) (locked or write failed) at rec:";
+        print_recnos(skipped);
+    }
+
+    if (!unindexed.empty()) {
+        std::cout << "VALIDATE: REPAIR wrote " << unindexed.size()
+                  << " record(s) whose index update failed; REINDEX/REBUILD needed. rec:";
+        print_recnos(unindexed);
+    }
+}
+
 void cmd_VALIDATE_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     std::string tok1, tok2;
     if (!(in >> tok1)) {
@@ -336,25 +373,56 @@ const std::string fieldU = upcopy(fieldName);
     }
 
     int repaired = 0;
+    std::vector<std::int64_t> repairSkipped;    // not written (locked / write failed)
+    std::vector<std::int64_t> repairUnindexed;  // written, but index not maintained
 
     if (doRepair && !dups.empty()) {
         long long nextValue = compute_max_numeric_value(A, idx, ignoreDeleted) + 1;
 
         for (const auto& d : dups) {
-            if (!A.gotoRec64(static_cast<std::uint64_t>(d.recno))) continue;
+            if (!A.gotoRec64(static_cast<std::uint64_t>(d.recno))) {
+                repairSkipped.push_back(d.recno);
+                continue;
+            }
 
             if (ignoreDeleted) {
                 try { if (A.isDeleted()) continue; } catch (...) {}
             }
 
             try {
-                A.readCurrent();
-                A.set(idx, std::to_string(nextValue));
-                if (A.writeCurrent()) {
+                // Must succeed before the write: replaceFieldStored() captures
+                // the index key set from the current record buffer, so writing
+                // on a failed read could delete key entries belonging to a
+                // different record.
+                if (!A.readCurrent()) {
+                    repairSkipped.push_back(d.recno);
+                    continue;
+                }
+
+                // Use the engine mutation funnel, not set() + writeCurrent().
+                // REPAIR rewrites a uniqueness-candidate field -- precisely the
+                // kind of field likely to carry an index tag -- and the raw
+                // write path carries no index hook, so the previous code left
+                // active CDX/CNX tags pointing at the old value with nothing
+                // recording the divergence. replaceFieldStored() owns the record
+                // lock, the physical write, and the index replace snapshot.
+                //
+                // Consequence accepted deliberately: this now takes a per-record
+                // lock the old loop did not. A record held by another process is
+                // skipped and reported rather than silently rewritten or
+                // aborting the whole pass -- REPAIR stays a reporting command.
+                std::string write_err;
+                if (A.replaceFieldStored(idx, std::to_string(nextValue), &write_err)) {
                     ++repaired;
                     ++nextValue;
+
+                    // true + non-empty err means "written, index not maintained".
+                    if (!write_err.empty()) repairUnindexed.push_back(d.recno);
+                } else {
+                    repairSkipped.push_back(d.recno);
                 }
             } catch (...) {
+                repairSkipped.push_back(d.recno);
             }
         }
 
@@ -408,6 +476,7 @@ const std::string fieldU = upcopy(fieldName);
             std::cout << " REPAIR updated " << repaired << " record(s).";
         }
         std::cout << "\n";
+        if (doRepair) report_repair_exceptions(repairSkipped, repairUnindexed);
         return;
     }
 
@@ -433,6 +502,7 @@ const std::string fieldU = upcopy(fieldName);
         std::cout << "VALIDATE: REPAIR updated " << repaired
                   << " record(s), but " << dups.size()
                   << " problem record(s) remain.\n";
+        report_repair_exceptions(repairSkipped, repairUnindexed);
     }
 
     if (!reportPath.empty()) {

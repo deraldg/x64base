@@ -526,23 +526,36 @@ void CdxBackend::setTag(const std::string& tag_upper) {
     const auto up = upper_copy_(tag_upper);
     if (up.empty()) return;
 
-    // Bulk mode: resolve (or create) the tag DBI INSIDE the shared bulk write
-    // transaction. The normal path below opens its own RO txn (and a RW txn with
-    // MDB_CREATE for a new tag); doing that while a bulk write txn is already held
-    // on this thread would be a second transaction on the same env -> LMDB
-    // conflict/deadlock. Opening the DBI in bulk_txn_ avoids it and keeps the
-    // whole bulk DELETE/RECALL in one transaction. Preserves the existing
-    // create-on-demand behavior, just inside the batch.
+    // TAG SELECTION DOES NOT CREATE TAGS.
+    //
+    // Both branches below used to fall back to mdb_dbi_open(..., MDB_CREATE),
+    // so asking to select a tag that did not exist silently manufactured a real
+    // LMDB sub-database for it. Combined with two callers upstream --
+    // capture_delete_snapshot_for_current_record enumerating FIELDS rather than
+    // tags, and IndexManager::setTag never validating against the container --
+    // that meant every field a record ever mutated became a de-facto tag DB.
+    //
+    // Observed 2026-07-30 (regression IDXDIFF): a 5-field table with 4 tags
+    // produced "tags=[-NOTE,+NOTE] ok=yes" when the untagged NOTE field was
+    // edited. The .cdx tagdir said 4 tags; the env held 5. BUILDLMDB, which
+    // reads the container, rebuilt only the real 4 -- so container and env
+    // diverge silently and the phantoms are invisible to every listing.
+    //
+    // It also has a hard ceiling: this env is opened with maxdbs=128 while
+    // DOTTALK_MAX_FIELDS is 256, so a wide table could exhaust maxdbs and fail
+    // a legitimate write with MDB_DBS_FULL.
+    //
+    // Tag creation belongs to CDX ADDTAG and BUILDLMDB, which own the container
+    // tagdir. A maintenance path must never mint one as a side effect of being
+    // asked to look at it. Selecting an unknown tag is now an error.
     if (bulk_txn_) {
         MDB_dbi dbi = 0;
         unsigned int flags = 0;
         std::string err;
         if (!open_dbi_for_tag_(bulk_txn_, up, dbi, flags, err)) {
-            const int rc = mdb_dbi_open(bulk_txn_, up.c_str(), MDB_CREATE, &dbi);
-            if (rc != MDB_SUCCESS) {
-                throw_on_mdb_err_(rc, "mdb_dbi_open(MDB_CREATE bulk)");
-            }
-            (void)mdb_dbi_flags(bulk_txn_, dbi, &flags);
+            throw std::runtime_error(
+                "setTag(bulk): tag '" + up + "' is not built in the LMDB environment"
+                " (if CDX ADDTAG declared it, run REINDEX CDX / BUILDLMDB)");
         }
         dbis_[up] = dbi;
         tag_upper_ = up;
@@ -559,21 +572,25 @@ void CdxBackend::setTag(const std::string& tag_upper) {
         std::string err;
 
         ro = ensure_ro_txn_();
-        if (!open_dbi_for_tag_(ro, up, dbi, flags, err)) {
-            mdb_txn_abort(ro);
-            ro = nullptr;
+        const bool found = open_dbi_for_tag_(ro, up, dbi, flags, err);
+        mdb_txn_abort(ro);
+        ro = nullptr;
 
-            MDB_txn* rw = begin_rw_txn_();
-            const int rc = mdb_dbi_open(rw, up.c_str(), MDB_CREATE, &dbi);
-            if (rc != MDB_SUCCESS) {
-                end_txn_abort_(rw);
-                throw_on_mdb_err_(rc, "mdb_dbi_open(MDB_CREATE)");
-            }
-            (void)mdb_dbi_flags(rw, dbi, &flags);
-            end_txn_commit_(rw);
-        } else {
-            mdb_txn_abort(ro);
-            ro = nullptr;
+        // See the note above: no MDB_CREATE fallback. An unknown tag is an
+        // error, not an invitation to create one.
+        //
+        // Two sources of truth meet here, and the message has to distinguish
+        // them or the operator cannot act on it. SET ORDER validates the tag
+        // against the CONTAINER tagdir (cmd_setorder.cpp cdx_has_tag ->
+        // cdxfile::read_tagdir); this check is against the LMDB ENVIRONMENT.
+        // A tag declared by CDX ADDTAG but never built by REINDEX CDX /
+        // BUILDLMDB exists in the first and not the second. That used to
+        // auto-create an empty env DB, so ordered traversal silently returned
+        // nothing; it is now a clean failure, and the remedy belongs in the text.
+        if (!found) {
+            throw std::runtime_error(
+                "setTag: tag '" + up + "' is not built in the LMDB environment"
+                " (if CDX ADDTAG declared it, run REINDEX CDX / BUILDLMDB)");
         }
 
         dbis_[up] = dbi;

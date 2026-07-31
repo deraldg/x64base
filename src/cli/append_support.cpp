@@ -261,8 +261,8 @@ namespace
                         std::cout << "[APPEND TRACE] index backend="
                                   << (im.hasBackend() ? "yes" : "no")
                                   << " type=" << (im.isCdx() ? "CDX" : (im.isCnx() ? "CNX" : "OTHER"))
-                                  << " container="" << im.containerPath() << """
-                                  << " activeTag="" << im.activeTag() << ""\n";
+                                  << " container=\"" << im.containerPath() << "\""
+                                  << " activeTag=\"" << im.activeTag() << "\"\n";
                     }
 
                     // Snapshot the completed current row across all relevant tags,

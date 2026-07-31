@@ -282,7 +282,32 @@ bool IndexManager::setTag(const std::string& tag_upper, std::string* err) {
         return false;
     }
     const auto up = to_upper_copy_ascii_(tag_upper);
-    tb->setTag(up);
+
+    // Selecting a tag that does not exist is a clean failure, not an exception
+    // and not a silent success.
+    //
+    // This used to call tb->setTag(up) and unconditionally return true, because
+    // setTag returns void. Nothing validated the name against the container, so
+    // any string was accepted -- and CdxBackend::setTag then created an LMDB
+    // sub-database for it on demand. capture_delete_snapshot_for_current_record
+    // enumerates FIELDS, so every mutated field silently became a tag DB.
+    //
+    // CdxBackend::setTag now throws for an unknown tag. Converting that to false
+    // here matters: with_tag_switched_ calls this OUTSIDE its own try block, so
+    // an escaping exception would unwind through apply_replace_snapshot and be
+    // reported by replaceFieldStored as "index update failed" on every edit of
+    // an untagged field. A clean false makes capture simply skip the field,
+    // which is the correct outcome -- an untagged field has no index work.
+    try {
+        tb->setTag(up);
+    } catch (const std::exception& ex) {
+        if (err) *err = ex.what();
+        return false;
+    } catch (...) {
+        if (err) *err = "setTag: unknown failure for tag " + up;
+        return false;
+    }
+
     tag_upper_ = up;
     return true;
 }
@@ -544,37 +569,124 @@ bool IndexManager::apply_delete_snapshot(const DeleteSnapshot& snap, RecNo rec)
     return any;
 }
 
+// Emit only the tags whose key actually changed.
+//
+// The snapshots carry one entry per field-backed tag (see
+// capture_delete_snapshot_for_current_record), so a single-field REPLACE on an
+// N-tag table used to issue N deletes and N inserts -- 2N committed LMDB write
+// transactions -- when at most one tag's key had moved. The old==new guard on
+// on_replace() was never reachable from here, because this path calls
+// on_delete()/on_append() directly rather than going through it.
+//
+// Diffing on the (tag, key) pair restores that guard for every caller of this
+// function at once: REPLACE/CALCWRITE (via index_hooks), REPLACE_MULTI, and the
+// buffered COMMIT apply all funnel here.
+//
+// Behavior deliberately given up: the old delete-all/insert-all was accidentally
+// self-repairing, because on_append() is an upsert. A record whose index entry
+// had gone missing got silently re-inserted by the next unrelated REPLACE. That
+// no longer happens -- an unchanged tag is skipped, so a missing entry stays
+// missing until REINDEX/REBUILD. This is a deliberate trade: paying 2N index
+// writes on every record edit is an unacceptable price for an undocumented
+// repair that also hid the failure it was repairing. The failure is now
+// reported instead (see DbArea::replaceFieldStored).
+//
+// Return-value contract (load-bearing -- do not "simplify" to `any`):
+// callers treat false as an index-maintenance failure and mark fields stale
+// (see cmd_replace_multi.cpp). A record edit that touches no indexed field is a
+// legitimate no-op, not a failure, and must report success. `any` alone cannot
+// distinguish "nothing needed doing" from "everything failed", so success is
+// tracked as "no attempted operation failed".
 bool IndexManager::apply_replace_snapshot(const DeleteSnapshot& before,
                                           const DeleteSnapshot& after,
                                           RecNo rec)
 {
-    if (!backend_) return false;
+    // No backend means there is no index to maintain, so the index is
+    // vacuously consistent -- that is success, not failure.
+    //
+    // This must be true, not false. A manager is created by ensure_manager()
+    // and stays in the registry for the life of the area; close() clears the
+    // backend but leaves the manager attached. So an area that merely ran
+    // LOCATE/FIND/SEEK once, or had SET ORDER TO issued, has an attached
+    // manager with a null backend for the rest of the session. Returning false
+    // there made every later REPLACE/CALCWRITE report "index update failed" on
+    // a table with no index open.
+    if (!backend_) return true;
 
-    bool any = false;
+    auto usable = [](const DeleteSnapshotEntry& e) {
+        return !e.tag_upper.empty() && !e.key.empty();
+    };
 
-    // Remove old keys first.
+    auto same_entry = [](const DeleteSnapshotEntry& a,
+                         const DeleteSnapshotEntry& b) {
+        return a.tag_upper == b.tag_upper && a.key == b.key;
+    };
+
+    auto present_in = [&](const DeleteSnapshot& snap,
+                          const DeleteSnapshotEntry& e) {
+        for (const auto& other : snap) {
+            if (usable(other) && same_entry(other, e)) return true;
+        }
+        return false;
+    };
+
+    bool all_ok = true;
+    std::size_t emitted_del = 0;
+    std::size_t emitted_ins = 0;
+    std::size_t skipped = 0;
+    std::string emitted_tags;   // trace only: which tags actually moved
+
+    auto note_tag = [&emitted_tags](const std::string& tag, const char* op) {
+        if (!emitted_tags.empty()) emitted_tags += ",";
+        emitted_tags += op;
+        emitted_tags += tag;
+    };
+
+    // Remove old keys that the after-image no longer carries.
     for (const auto& e : before) {
-        if (e.tag_upper.empty() || e.key.empty()) continue;
+        if (!usable(e)) continue;
+        if (present_in(after, e)) { ++skipped; continue; }  // unchanged tag
 
+        ++emitted_del;
         const bool ok = with_tag_switched_(*this, e.tag_upper, [&]() {
             on_delete(e.key, rec);
         });
 
-        if (ok) any = true;
+        if (index_trace_enabled_()) note_tag(e.tag_upper, ok ? "-" : "-FAIL:");
+        if (!ok) all_ok = false;
     }
 
-    // Insert new keys.
+    // Insert new keys the before-image did not already carry.
     for (const auto& e : after) {
-        if (e.tag_upper.empty() || e.key.empty()) continue;
+        if (!usable(e)) continue;
+        if (present_in(before, e)) { ++skipped; continue; }  // already correct
 
+        ++emitted_ins;
         const bool ok = with_tag_switched_(*this, e.tag_upper, [&]() {
             on_append(e.key, rec);
         });
 
-        if (ok) any = true;
+        if (index_trace_enabled_()) note_tag(e.tag_upper, ok ? "+" : "+FAIL:");
+        if (!ok) all_ok = false;
     }
 
-    return any;
+    // Makes the diff measurable instead of inferred. Under the old delete-all/
+    // insert-all this line would have read emitted_del=N emitted_ins=N skipped=0
+    // for any N-tag table; the win is visible as skipped rising while emitted
+    // stays at the number of tags whose key actually moved.
+    if (index_trace_enabled_()) {
+        std::cout << "[INDEX TRACE] apply_replace rec=" << rec
+                  << " before=" << before.size()
+                  << " after=" << after.size()
+                  << " emitted_del=" << emitted_del
+                  << " emitted_ins=" << emitted_ins
+                  << " skipped=" << skipped
+                  << " ok=" << (all_ok ? "yes" : "no")
+                  << " tags=[" << emitted_tags << "]"
+                  << "\n";
+    }
+
+    return all_ok;
 }
 
 bool IndexManager::apply_insert_snapshot(const DeleteSnapshot& snap,

@@ -278,9 +278,24 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         return false;
     }
 
+    // Index maintenance runs after the physical write succeeded. A failure here
+    // does NOT undo the record write, so this still returns true: the caller's
+    // "did the write land" question is answered yes.
+    //
+    // What it must not do is swallow the failure. The apply_replace() result was
+    // previously discarded, so an index that silently stopped tracking this
+    // record produced no message, no stale mark, and no return-code difference --
+    // the failure was invisible to every caller. Report it through `err` and let
+    // the caller decide what to do (warn, mark the field stale, both).
+    //
+    // Contract for callers: a `true` return with a NON-EMPTY `err` means
+    // "record written, index not maintained" -- treat the index as stale for the
+    // affected field. Stale-index reporting itself belongs above DbArea.
     try {
         const auto after_snap = index_hooks::capture(*this);
-        (void)index_hooks::apply_replace(*this, before_snap, after_snap, rn);
+        if (!index_hooks::apply_replace(*this, before_snap, after_snap, rn)) {
+            if (err && err->empty()) *err = "index update failed";
+        }
     }
     catch (const std::exception& ex) {
         if (err && err->empty()) *err = std::string("index update failed (") + ex.what() + ")";
@@ -289,7 +304,6 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         if (err && err->empty()) *err = "index update failed";
     }
 
-    // Stale-index reporting belongs above DbArea, not here.
     return true;
 }
 
