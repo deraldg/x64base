@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""
+refcheck_v1 -- the `*ref` existence guard (AIF-067 / dotref-automation lane, M2).
+
+WHY THIS EXISTS
+    The `*ref.hpp` reference catalogs (`dotref`, `foxref`, `edref`, `devref`,
+    `pshell_ref`, `sql_ref`) are hand-authored today and mined by `cmdhelp` as
+    `registry U foxref U dotref U edref`. A hand-authored catalog can name a command
+    that does not exist -- e.g. `SIMPLEBROWSER` while the command registered as
+    `SIMPLEBROWSE` (fixed 2026-07-27 by renaming the command to `SIMPLEBROWSER`).
+    Nothing caught that until it was read by eye. This guard catches it.
+
+THE AUTHORITY MODEL (measured 2026-07-27, see the lane scope doc M2 section)
+    A `*ref` entry is NOT required to be a top-level command. The family mixes:
+      - commands            -> the live registry
+      - subcommand forms    -> "PARENT SUB" whose PARENT is a registered command
+                               (SET ORDER, REL ENUM, ...)
+      - expression funcs    -> SYSFUNC (ALLTRIM, TRIM, ...)
+    So an entry RESOLVES if it is any of those. Only `dotref` and `foxref` (the
+    native + legacy COMMAND references) are guarded; `edref` (education topics),
+    `pshell_ref` and `sql_ref` (PSHELL/SQL sub-form namespaces) are their own
+    authorities and are reported informationally, not failed.
+
+    A true PHANTOM is a single-token `dotref`/`foxref` entry that is neither a
+    command, nor a function, nor a sub-form of a command. That is the defect class
+    this guard fails on.
+
+EXIT: 0 clean; 1 phantom(s) found; 2 could not resolve authorities.
+Read-only. No mutation.
+"""
+from __future__ import annotations
+import argparse, re, sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import generate_syscmd as g   # reuse registry_map()
+import dbfread
+
+NAME_RE = re.compile(r'(?m)^\s*\{\s*"([^"]+)"')
+GUARDED = ("dotref", "foxref")
+NAMESPACES = ("dotref", "foxref", "edref", "devref", "pshell_ref", "sql_ref")
+
+
+def catalog_names(root: Path, ns: str) -> list[str]:
+    p = root / "include" / f"{ns}.hpp"
+    if not p.exists():
+        return []
+    seg = p.read_text(encoding="utf-8", errors="replace").split("catalog()", 1)[-1]
+    return [m.group(1).strip().upper() for m in NAME_RE.finditer(seg) if m.group(1).strip()]
+
+
+def function_names(root: Path) -> set[str]:
+    """Authoritative expression-function names, from the seeded SYSFUNC catalog."""
+    dbf = root / "dottalkpp/data/metadata/SYSFUNC.dbf"
+    if not dbf.exists():
+        return set()
+    try:
+        t = dbfread.read(dbf)
+    except Exception:
+        return set()
+    col = "CAN_NAME" if any(f.name == "CAN_NAME" for f in t.fields) else t.fields[1].name
+    return {r[col].strip().upper() for r in t.rows if r[col].strip()}
+
+
+EXT_FN_RE = re.compile(r'\bstatic\s+std::string\s+fn_([A-Z_][A-Z0-9_]*)\s*\(')
+FN_SPEC_RE = re.compile(r'\{\s*"([A-Z_][A-Z0-9_]*)"\s*,\s*\d+\s*,\s*\d+\s*,\s*&')
+FUNCDOC_RE = re.compile(r'FunctionDoc\s*\{[^"]*?"([A-Z_][A-Z0-9_]*)"', re.DOTALL)
+
+
+def implemented_core_functions(root: Path) -> set[str]:
+    """Functions that actually evaluate NOW, from source (BuiltinFnSpec arrays +
+    function_catalog FunctionDocs) -- source truth, ahead of the SYSFUNC re-harvest."""
+    out: set[str] = set()
+    exprdir = root / "src/cli/expr"
+    if exprdir.exists():
+        for p in exprdir.glob("*.cpp"):
+            text = p.read_text(errors="replace")
+            out |= {m.group(1).upper() for m in FN_SPEC_RE.finditer(text)}
+            if p.name == "function_catalog.cpp":
+                out |= {m.group(1).upper() for m in FUNCDOC_RE.finditer(text)}
+    return out
+
+
+def ext_functions(root: Path) -> set[str]:
+    """Extension functions (e.g. student STU_*) defined in src/ext/fn/*.cpp -- real
+    functions that are not part of the core SYSFUNC catalog."""
+    d = root / "src/ext/fn"
+    if not d.exists():
+        return set()
+    out: set[str] = set()
+    for p in d.glob("*.cpp"):
+        out |= {m.group(1).upper() for m in EXT_FN_RE.finditer(p.read_text(errors="replace"))}
+    return out
+
+
+def shortcut_aliases(root: Path) -> set[str]:
+    p = root / "src/cli/shortcut_resolver.hpp"
+    if not p.exists():
+        return set()
+    return {m.group(1).upper() for m in
+            re.finditer(r'\{\s*"([^"]+)"\s*,\s*"[^"]+"\s*\}', p.read_text(errors="replace"))}
+
+
+def routed_aliases(root: Path) -> set[str]:
+    """Routed/compat aliases registered in reference_collection.cpp add("NAME", ...)."""
+    p = root / "src/cli/reference_collection.cpp"
+    if not p.exists():
+        return set()
+    return {m.group(1).upper() for m in
+            re.finditer(r'add\(\s*"([A-Za-z_][A-Za-z0-9_]*)"', p.read_text(errors="replace"))}
+
+
+def classify(name: str, commands: set[str], funcs: set[str]) -> str:
+    if name in commands:
+        return "command"
+    if name in funcs:
+        return "function"
+    if " " in name and name.split()[0] in commands:
+        return "subform"           # "SET ORDER", "REL ENUM", ...
+    return "PHANTOM"
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", default=".")
+    ap.add_argument("--selftest", action="store_true",
+                    help="inject a synthetic phantom and confirm the guard flags it")
+    a = ap.parse_args()
+    root = Path(a.root).resolve()
+
+    commands = set(g.registry_map(root)) | shortcut_aliases(root) | routed_aliases(root)
+    funcs = function_names(root) | ext_functions(root) | implemented_core_functions(root)
+    if not commands:
+        print("refcheck: could not resolve the command registry", file=sys.stderr)
+        return 2
+
+    print(f"authorities: {len(commands)} commands/aliases, {len(funcs)} functions (SYSFUNC)\n")
+    print(f"{'catalog':<12} {'entries':>7} {'cmd':>5} {'fn':>4} {'sub':>5} {'PHANTOM':>8}   phantoms")
+    total_phantoms = 0
+    for ns in NAMESPACES:
+        names = catalog_names(root, ns)
+        if not names:
+            print(f"{ns:<12} {'(empty)':>7}")
+            continue
+        counts = {"command": 0, "function": 0, "subform": 0, "PHANTOM": 0}
+        phantoms = []
+        for n in names:
+            k = classify(n, commands, funcs)
+            counts[k] += 1
+            if k == "PHANTOM":
+                phantoms.append(n)
+        guarded = ns in GUARDED
+        shown = (", ".join(phantoms[:8]) if phantoms else "-")
+        if not guarded and phantoms:
+            shown = f"[{ns} owns its namespace; not failed] " + shown
+        print(f"{ns:<12} {len(names):>7} {counts['command']:>5} {counts['function']:>4} "
+              f"{counts['subform']:>5} {counts['PHANTOM']:>8}   {shown}")
+        if guarded:
+            total_phantoms += counts["PHANTOM"]
+
+    if a.selftest:
+        planted = classify("ZZ_PLANTED_PHANTOM", commands, funcs)
+        ok = planted == "PHANTOM"
+        print(f"\nselftest: planted 'ZZ_PLANTED_PHANTOM' -> classified '{planted}' "
+              f"({'CAUGHT' if ok else 'MISSED -- guard is broken'})")
+        if not ok:
+            return 2
+
+    print(f"\nGUARDED phantoms (dotref+foxref): {total_phantoms}")
+    if total_phantoms:
+        print("FAIL: a native/legacy reference entry names no command, function, or sub-form.")
+        return 1
+    print("PASS: every dotref/foxref entry resolves to a command, function, or sub-form.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
