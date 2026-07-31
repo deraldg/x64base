@@ -1,0 +1,455 @@
+---
+ai_report_audit:
+  schema: ai-report-audit-v1
+  report_id: AIPR-20260731-001
+  recorded_at_utc: 2026-07-31T12:09:17Z
+  agent:
+    provider: Anthropic
+    product: Claude (Cowork)
+    model: not_exposed
+    access_mode: local_write
+  session:
+    id: not_exposed
+    chat_reference: not_exposed
+  project:
+    id: project.x64base.runtime
+    root: D:/code/ccode
+  git:
+    branch: development
+    baseline_commit: 0803f0f135b399886591265412c56f1f506ba817
+  authorization:
+    requested_by: maintainer
+    scope: >
+      Onboard a fresh Cowork session at the AI Portal, then rate the onboarding
+      experience while the cold-start impression was still intact. Owner then
+      directed: take ownership as a lane, write it up properly, make sure the AI
+      portal has a lane for the effort, and embed it as a PDLC.
+  report:
+    path: docs/maintenance/SESSION_CLOSEOUT_ONBOARDING_COST_AND_ACCEPTANCE_2026-07-31.md
+    kind: session_closeout
+---
+
+# Session Closeout -- Onboarding cost, cold-start entry, and portal acceptance (AIF-082)
+
+Opened: 2026-07-31T11:52:00Z. Last updated: 2026-07-31T12:38:28Z.
+Sittings: 4 (M0 author; recursion and decrement; automation and cadence;
+manifest, dogfooding, and the M1 sheet).
+Run: `2026-07-31_cowork_onboarding_cost_and_acceptance`. Owner: `member.derald`.
+Steward: `member.ai.claude.cowork`.
+Baseline: `0803f0f135b399886591265412c56f1f506ba817` on `development`.
+Owning lifecycle: maintenance SDLC (portal / onboarding surface).
+SDLC lane: intake / design. Truth state: mixed. Proof state: report.
+
+## One-line summary
+
+A cold Cowork session onboarded through the AI Portal, measured what that cost
+(127,704 bytes across nine files before it could act), found that the corpus has
+no stopping rule and no falsifiable acceptance test, and opened `AIF-082` to own
+onboarding cost and acceptance -- reconciled against three pieces of prior art
+so it duplicates none of them.
+
+## Scope calibration
+
+Declared BEFORE authoring, in section 1 of the lane charter. This is the first
+lane to do so; the 2026-07-30 closeout recorded retroactive declaration as a
+process defect and this session treated that as binding.
+
+```text
+operating_mode: maintenance
+change_class: C0 (documentation only)
+build_target: documentation_only
+product_profile: not_applicable
+index_profile: not_applicable
+```
+
+## What was asked, in three parts
+
+1. **Onboard.** "Go to my AI portal for onboarding."
+2. **Rate it.** "Rate, your on-boarding experience or me ... What was helpful,
+   what was useful, what could have been staged? What would you have liked to
+   see that was missing, what could be better, what is a waste or duplication?"
+3. **Own it.** "Do take ownership as a lane and write this up properly ... Make
+   sure the AI portal has a lane for this effort and embed it as a PDLC."
+
+## What was found
+
+### The measurement that did not exist
+
+The mandatory start path is **127,704 bytes / 2,380 lines across nine files**
+(approximately 32,000 tokens) before an agent can act, rising to 152,023 bytes
+with the three source-gated seeds. No figure for this existed anywhere in the
+tree. It is not by itself a defect; it is the number every future decision about
+adding a mandatory read should be measured against, and it was previously
+unavailable to anyone making that decision.
+
+Two components dominate and both are largely recoverable:
+`AI_PORTAL.md` at 40,509 bytes, and `docs/agents/CURRENT_TARGET.md` at 23,877
+bytes of which **96 percent is dated historical strata** -- 433 lines, of which
+lines 1-18 are current and lines 19-433 are eighteen sections reaching back to
+2026-06-29.
+
+### The cold-start entry defect, and why it was invisible until now
+
+`AI_PORTAL.md:29` says `AI_README.md` is the one canonical front door, then
+continues for 703 more lines. `AI_README.md:23` says it is itself the one front
+door. The 2026-07-29 Codex re-onboarding assessment concluded the opposite of
+this lane -- "One front door ... clearly identifies itself as the canonical
+start" (`:135-138`).
+
+Both reports are honest. They diverge because the sessions entered by different
+doors: Codex already knew to open `AI_README.md`; this session had one input,
+the owner's phrase "my AI portal," which correctly resolves to the root file
+named `AI_PORTAL.md`.
+
+**A re-onboarding test cannot detect an entry-point defect, because the
+re-onboarding agent already knows the entry point.** The portal's only prior
+acceptance evidence was a re-onboarding test. This is the portal's own
+resume-aid-is-not-an-entry-point rule (`AI_PORTAL.md:54-80`) applying to its own
+acceptance testing.
+
+### A reviewed recommendation that did not convert to action
+
+`CURRENT_TARGET.md` declared AIF-072 on 2026-07-29 while the freshest work was
+AIF-074; it still declares AIF-072 on 2026-07-31 while AIF-079/080/081 have
+landed past it. The 07-29 assessment recorded this defect and recommended
+resolving it as its gate 4.
+
+The finding is not the staleness. It is that the recommendation did not convert,
+**because the assessment was filed as a document and never opened as a lane** --
+no AIF number, no claim file, no milestones, no gate. Same invisible-evidence
+shape as AIF-062, AIF-078 and AIF-080, one layer out: not un-committed evidence
+this time, but un-numbered work.
+
+### The central asymmetry
+
+The most valuable content in the corpus -- dated scar tissue attached to each
+rule -- is the least needed at entry. A rule read 40 KB before it becomes
+relevant will not be applied when it matters. That is why fast and complete are
+not in tension: nothing needs cutting, it needs to arrive when actionable. Every
+proposed remedy is constrained so that **no scar tissue is deleted**, only
+re-indexed by trigger.
+
+## Changed (development, `D:\code\ccode`)
+
+| Area | Files | Note |
+| --- | --- | --- |
+| Coordination | `coordination/aif/AIF-082.claim` | Claimed via `session_coordinator.py claim-aif` (atomic `O_EXCL`) |
+| Coordination | `coordination/active_sessions/2026-07-31_cowork_onboarding_cost_and_acceptance.yaml` | Session check-in, lane `AIF-082` (transient, gitignored) |
+| Lane doc | `docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md` | New `AIF-082` charter; C1-C7 findings, three-tier model, Tier-0 spec, five-question self-test, M0-M5 gates, PDLC embedding |
+| This closeout | `docs/maintenance/SESSION_CLOSEOUT_ONBOARDING_COST_AND_ACCEPTANCE_2026-07-31.md` | |
+
+**No engine source was changed. No portal document was edited.** Every remedy in
+the charter is proposed, not landed.
+
+## Verified (proof performed this session)
+
+- **Byte/line probe**, reproducible: `wc -c` / `wc -l` over the nine mandatory
+  start files at `0803f0f13`. Totals in charter section 3.
+- **Structural claims carry file:line anchors** -- charter section 10 is the
+  anchor table; each of C2, C4, C5, C6, C7 resolves to a named line range that
+  was read, not inferred.
+- **Prior-art check performed BEFORE claiming the number.** Three related
+  artifacts found and reconciled in charter section 7 (C7): the 2026-07-12
+  hardening lane already charters the context compiler, AIF-056 covers the
+  standards seed, and the 07-29 assessment owns the freshness axis. AIF-082 was
+  scoped to the one axis none of them measure.
+- **Claim allocated atomically.** `CLAIMED AIF-082`; `status` reports next-free
+  083 and the claim ledger carries `AIF-082.claim`.
+- **House style.** Both authored files sweep clean for em-dashes, en-dashes,
+  smart quotes, and Unicode arrows.
+- **Tree state.** New paths are untracked; nothing staged; no existing file
+  modified, so no other session's dirty work was touched.
+
+**Explicitly NOT verified:** no build, no runtime, no `.dts`, no benchmark. The
+token figures are bytes/4, a convention rather than a tokenizer result, and are
+labelled as such in the charter. The five-question self-test has never been
+administered to a cold agent, so the acceptance test itself is unproven -- only
+a future fresh session can prove it, and this session cannot be that session.
+
+## AI-facing docs updated (AIF-006 gate)
+
+- **`docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- row ADDED.**
+  Reversal recorded honestly: this session first decided to author the row
+  without applying it, on the AIF-078 grounds that the file carries several
+  sessions' uncommitted rows and a commit would fuse them. That was wrong, and
+  the lane's own subject is why. AIF-080's governance finding is that a lane
+  committed while its number still reads as abandoned from HEAD is the
+  invisible-evidence failure; leaving the row unwritten would have reproduced it
+  in a lane whose entire topic is work that stays invisible because it was never
+  registered. **Fusion is a commit-slicing problem, which is the maintainer's;
+  invisibility is a registration problem, which was mine.** The row is written
+  to the working tree, where the collision gate can see it. The row is
+  deliberately short, demonstrating the cap the charter proposes rather than
+  arguing for it.
+- **`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` -- Session Log row ADDED**,
+  newest-first. Noted while doing it: the newest existing row was 2026-07-30
+  (AIF-079). The AIF-080 and AIF-081 sessions committed lane docs and an engine
+  change without adding Session Log rows, so the dashboard is two lanes behind
+  HEAD. Reported, not repaired -- those rows belong to their own sessions and
+  writing them here would be a third party reconstructing work it did not do.
+- **`docs/agents/CURRENT_TARGET.md` -- UPDATED on owner ruling
+  2026-07-31T12:45Z.** First filed as "not updated, deliberately," on the
+  grounds that a lane must not decide its own finding. The owner then ruled X1:
+  **AIF-072 retired as controlling target**, still claimed and pick-up-ready.
+  Top section rewritten to name the five in-flight lanes (AIF-082, 081, 080,
+  079, 043 V6), the retired-but-available AIF-072, and the two unrelated owed
+  items (AIF-070 allocation; missing AIF-080/081 Session Log rows). Surgical:
+  one hunk, 49 added, 12 removed, lines 1 to 60 only. The historical strata
+  below were left untouched because splitting them is proposal 6.5a and is
+  still unruled. My section sweeps clean for house style; the 61 pre-existing
+  violations in the historical strata are reported, not repaired.
+
+  Recorded honestly: **this file will drift again.** It is hand-maintained, and
+  the mechanism that would stop it is the Tier-0 staleness warning (6.1), which
+  is proposed and unbuilt. That sentence is now in the file itself so the next
+  reader knows the guarantee's strength.
+- **`D:\dev\x64base-site/content/docs/labtalk/agent-sync.mdx` -- not refreshed.**
+  Nothing an outside partner depends on changed: no lane proven, no doctrine
+  altered, no Phase-0 decision made. Explicitly declined with that reason.
+
+## Published
+
+**Not promoted. Not published.** Nothing staged to `C:\x64base` (which is not
+mounted in this session), no commit, no push. Development stage only.
+
+## Still open -- for the next session
+
+1. **M1 owner rulings.** Charter section 6 has five remedy groups; each is
+   independently accept/reject/defer. Nothing proceeds without them.
+2. **Commit slicing for the two shared files -- fusion risk MEASURED, not
+   assumed.** Both files were already dirty before this session touched them:
+
+   - `AI_INTERACTION_INTAKE_QUEUE_V1.md`: the **AIF-081 row** differs from HEAD
+     (its evidence-anchor column was enriched after that row was committed).
+   - `AI_FRIENDLY_DASHBOARD_V1.md`: the **AIF-063** Current-Lane-State row
+     changed date 2026-07-26 to 2026-07-27, and rows for **AIF-068** and
+     **AIF-069** were added.
+
+   `git add` on either file therefore fuses another session's in-flight work
+   with AIF-082's. Both AIF-082 additions are strictly additive and contiguous,
+   so a path-scoped or hunk-scoped commit can separate them. Maintainer call.
+   Verified this session that the AIF-081 row was already in its worktree form
+   before the AIF-082 row was inserted, so none of that delta is attributable
+   here.
+
+   Also owed by their own sessions, not repaired here: AIF-080 and AIF-081 have
+   no Session Log rows, leaving the dashboard two lanes behind HEAD.
+3. **The AIF-072 question, now twice-recorded and still open.** Does AIF-072
+   remain the controlling target, or does the freshest lane get promoted into
+   `CURRENT_TARGET.md`? Recommended either way: whatever the answer, the
+   staleness warning in Tier 0 (charter 6.1) is what stops it recurring a third
+   time.
+4. **M2, the Tier-0 generator** -- unstarted, and it belongs to
+   `AI_PORTAL_HARDENING_LANE_V1.md` as its packet-compiler milestone rather than
+   to this lane.
+5. **The self-test is a draft** and must be administered to a genuinely cold
+   agent to be worth anything.
+6. **Inherited from the 07-29 assessment, still owed on the freshness axis:**
+   the ten unresolved registry paths remain unclassified, and `latest`-named
+   reports still lack generated-at stamps.
+7. **AIF-070 allocation** remains owed from AIF-078; unrelated to this lane but
+   still unclaimed.
+
+## Addendum -- second sitting, 2026-07-31
+
+Appended rather than folded into the sections above, so the first sitting's
+report stays as filed and audited. Charter grew from 26,869 to approximately
+40 KB; no other file changed.
+
+Owner raised two things after the closeout was filed: that the project
+recursively refines its processes as it optimizes them, and whether onboarding
+can be automatic and how often it must repeat in a session persisting for days.
+Both were answered into the charter as new sections, and both changed the lane's
+shape rather than decorating it.
+
+**6.6 -- the decrement operator.** The refinement loop only adds. C1's 127,704
+bytes are the product of eighty lanes of individually correct decisions, which
+is why a one-off cleanup does not fix it. Proposed rule: when a rule becomes
+mechanically enforced, its prose demotes one tier, because the gate is now the
+memory. Five conversions from prose to mechanism already exist in the tree
+(shadow guard, pre-push gate, claim allocator, envelope audit, manual drift
+gate) and **not one demotion has ever been collected.** Strict test: only a
+HARD-failing gate earns a demotion, since this tree contains dormant and
+advisory gates that would be mis-demoted. That makes 6.6 depend on AIF-079 M1 --
+the declared-capability validator is what proves a gate enforces rather than
+merely exists.
+
+**6.7 -- governance cost is the unmeasured second axis.** C1 measured entry cost;
+nothing measures run cost. This lane executed twelve mandatory governance
+actions. `SCOPE_CALIBRATION_SEED_V1.md:11-24` calibrates PROOF gates by change
+class and says nothing about GOVERNANCE gates, so a C0 doc lane and a C3 engine
+lane pay identically. Recorded as an estimate, not a measurement; M6 is the
+probe.
+
+**6.8 -- automation and cadence.** State and rules have opposite refresh
+profiles and the corpus fuses them. Automatic Tier 1 already exists and works:
+`CLAUDE.md` is injected without being fetched and is the best file in the tree.
+Its defect is vendor fragmentation -- `CLAUDE.md` 4,314 B against `AGENTS.md`
+1,496 B, so two partners onboard to different depths by accident. Cadence is
+event-driven, not clock-driven, because the invalidator here is concurrency on a
+shared working tree, not elapsed time.
+
+**A gap in this session, recorded against itself.** Tree state was read at
+approximately 11:50 UTC and asserted in closeout claims at 12:09 UTC with no
+re-check for newly active sessions between. Nothing went wrong, but the
+verification was valid for 11:50 and was reported as current. Correct procedure
+would have produced a false statement had a concurrent session touched those
+files in the interval. This is now cadence rule 2 in 6.8.
+
+**And the signal that rule depends on is degraded.** `status` reported three
+active sessions of which two were stale by 765 and 1,095 minutes, and this
+session's own `checkout` failed to deregister because the mount refuses deletes
+(`LOCAL_ACCESS_AGENT_CHECKLIST_V1.md:36-42`), leaving a third false positive.
+Heartbeats are emitted, nothing consumes staleness, and retraction is
+unreliable. Repairing that is a precondition for the cadence rule, added as M8.
+
+Milestones M6, M7, M8 added.
+
+## Addendum 2 -- third sitting, 2026-07-31
+
+**5a, framing correction on maintainer direction ("huge documentation is our
+meat and potatoes").** Accepted and written in as a section rather than a note,
+because a future reader could otherwise take this lane as an argument for less
+documentation, which would damage the project's principal asset. Corpus size is
+the product; entry-path size is the cost; the two are different quantities and
+this lane only ever addressed the second. Nothing in section 6 reduces the
+corpus -- the decrement operator demotes a tier and deletes nothing, and the
+structural items move strata to a sibling file. The work is cataloguing, not
+pruning. Lane position now stated in one sentence: **keep every byte, stop
+making the entry path carry all of them.**
+
+**6.9, refresh by diff on a required read manifest.** Owner proposal. Prior-art
+checked: no such mechanism exists. It plugs into `AI_README.md:363-375`, whose
+`Files read:` field is already required and currently unverifiable prose -- this
+session filled it from memory. One blind spot recorded and it is load-bearing:
+**a diff detects edits, not staleness.** `CURRENT_TARGET.md` has not changed
+since 07-28 and that is exactly why it is wrong, so a hash-only refresh would
+report green about a document three lanes behind. Refresh therefore needs two
+signals, hash-compare plus the Tier 0 staleness warning. Placement: not `tmp/`
+(AIF-081 proved that is how evidence goes invisible), not committed (churn), but
+`coordination/active_sessions/`, which is transient, shared, and already built
+for exactly this. Must be a gate, not a discipline: the Tier 0 pull emits the
+manifest as a side effect and the closeout gate validates it -- which would have
+caught this session's 11:50-asserted-at-12:09 gap mechanically instead of by
+confession. It also supplies the instrument M4 was missing.
+
+**6.10, dogfooding the store.** Owner direction. The manifest's authority belongs
+in the DBF store on the memo/64-bit object structure, sitting directly on the
+house thesis that documentation consumes and proves the database. The workload is
+complementary rather than a toy: few records with large variable-length memo
+payloads, append-heavy, which is the opposite shape to AIF-046's wide fixed-width
+scans and is where the 64-bit memo work actually gets stressed. **Bootstrap
+paradox identified and resolved:** onboarding must never require a running engine
+or a live daemon, or the portal can lock out the agent it exists to admit, so the
+store is authoritative and a generated flat projection under 4 KB is what a cold
+agent reads. **Scope discipline recorded:** the storage design is NOT AIF-082's to
+build. This lane specifies the interface and the projection requirement and hands
+the schema, memo work, and durability proof to the owning memo lane with its own
+number and its own Phase-0. Folding an engine workload into a documentation lane
+would make AIF-082 the thing it criticises.
+
+Milestones M9, M10 added.
+
+**6.10 gate strengthened on maintainer acknowledgement of the bootstrap catch.**
+"Engine down, daemon down" was not the real floor. The Outside-AI Delivery Rule
+(`AI_PORTAL.md:433-451`) admits hosted partners with no disk and no shell, so the
+weakest admitted partner sets the constraint: **Tier 0 must be a persisted
+artifact left behind by the last tool run, never generated on demand by the
+reader.** A generate-on-read design would silently re-tier the portal to local
+agents only and drop the hosted partners that rule exists to serve. Generalized
+for reuse against any future entry-path proposal: an onboarding step may not
+require a capability the least capable admitted partner lacks; anything richer
+than reading a file is a convenience layer over the projection, never the
+projection itself. M10's gate updated from "engine down and daemon down" to
+"readable with no execution capability at all."
+
+**6.5e added on maintainer correction, 2026-07-31T12:38Z: headers need a
+timestamp, not a bare date.** This lane had four sittings in one day and
+`date: 2026-07-31` cannot order them, nor order this lane against AIF-080 and
+AIF-081 which share their filename date. The envelope already solved this --
+`recorded_at_utc` is full ISO-8601 UTC and `audit_trail.py` enforces it -- but
+the human-readable header blocks never inherited the convention, so the machine
+surface is ordered and the human surface is not. 66 files under
+`docs/maintenance/` carry a bare-date header. This lane's three documents were
+converted to `created_utc` / `updated_utc` immediately; the remaining sweep is
+6.5e on the ruling sheet. Filenames keep their date, being identifiers rather
+than ordering keys.
+
+**M1 ruling sheet authored** (`docs/maintenance/AIF_082_M1_RULING_SHEET_V1_20260731.md`,
+7.3 KB against the 51.5 KB charter). The gate had no instrument: reviewing ten
+proposals by reading the charter would have repeated the defect the lane exists
+to fix. Sheet carries a three-item fast path, per-item cost and reversibility,
+recommendations, a KILL option, and a ruling record table.
+
+Still no portal document edited, no tool built, no engine source touched,
+nothing staged, nothing committed.
+
+## Addendum 3 -- fifth sitting, 2026-07-31T13:10Z: portal documents edited
+
+Prior addenda all reported "no portal document edited." That is no longer true.
+Owner directed the lesson and the WSL rules be written into the onboarding
+surface, so three portal-tier files were modified. Recorded separately because
+it is a change in this session's mutation posture, not just more findings.
+
+**`AI_PORTAL.md`** -- added a third case study to "Observed failure modes
+(proven case studies)": *Retrieval failure -- a canonical copy nobody can
+reach.* Placed there deliberately, because it EXTENDS the section's closing
+sentence rather than sitting beside it: the two existing cases are about having
+too many copies, this one is about having exactly one, correct, and unreachable.
+Carries C6/C7/C8, the first-person proof from 5b, four corollaries, and the
+maintainer's evaluation-method rule.
+
+**`AI_README.md`** -- new "WSL working environment" section under Runtime Start
+Points: `wslbuild.sh` invocations, the `wsl-lean` preset and staging path, the
+four rules that have each already cost a session (no vcpkg manifest swap,
+`ninja: no work to do` is not proof, `SET ALTERNATE` not `DOTSCRIPT OUT`, traces
+default ON), and a "**A sandbox is not the WSL host**" subsection with the
+measured host-vs-sandbox table and the no-git rule.
+
+**`CLAUDE.md`** -- new "Sandbox agents: NO git, and you cannot build" section.
+Placed here specifically because `CLAUDE.md` is **auto-injected into an agent's
+context at session start**, so this is the only surface where the rule arrives
+before the mistake rather than after. That placement IS the lane's thesis
+applied: the rule now fires at the moment it constrains an action.
+
+**Method claim recorded as lane section 10a**, on maintainer observation that
+working the system is what teaches it. Every finding this lane produced came
+from performing the process, not reviewing it, and the 2026-07-29 assessment is
+the control group -- same corpus, careful inspection, none of these findings,
+because an inspection reads documents while working the system exercises the
+paths between them. Consequence carried into M4: the acceptance test must be a
+real task, not a quiz. A quiz checks that onboarding happened; only a worked
+task checks that it sufficed.
+
+**New finding while verifying style, 6.5h.** `CLAUDE.md:54` forbids em-dashes.
+Measured: `AI_PORTAL.md` carries 88 em-dashes and 7 unicode arrows,
+`CURRENT_TARGET.md` 50 and 11, `AI_README.md` 7. A declared rule with no gate,
+which is the AIF-079 declared-capability class applied to prose. **Reported, not
+repaired** -- a bulk character sweep across portal documents is its own scoped
+slice and would fuse with this one. Proposed gate checks changed doc lines only,
+so the backlog never blocks work while new violations become impossible.
+
+All content authored this session is ASCII-clean under the stricter
+`grep -P '[^\x00-\x7F]'` test, including every inserted block in the three portal
+files. Pre-existing violations in those files are reported above and untouched.
+
+Still no tool built, no engine source touched, nothing staged, nothing
+committed. The slice is now seven files instead of five.
+
+## Provenance pointers
+
+- Lane charter: `docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md`
+- Claim: `coordination/aif/AIF-082.claim`
+- Prior art reconciled: `labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md`
+  (2026-07-12, context compiler);
+  `labtalk/ai_portal/AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md`
+  (freshness axis, six recommended gates adopted by reference);
+  AIF-056 onboarding hardening,
+  `docs/maintenance/SESSION_CLOSEOUT_AI_PORTAL_ONBOARDING_HARDENING_2026-07-25.md`
+- PDLC model: `docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`
+- Process precedent for up-front scope calibration:
+  `docs/maintenance/SESSION_CLOSEOUT_HOUSE_INDEX_VDISK_AND_CAPABILITY_VALIDATOR_2026-07-30.md`
+  section 5
+- Doctrine: `AI_PORTAL.md` (AIF-006 closeout-updates-startup; AIF-024
+  document-as-you-work; AIF-037 representative by design; falsifiable-target
+  rule at `:339-341`)
