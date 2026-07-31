@@ -1,0 +1,12 @@
+{
+  "name": "ccode",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "libsodium",
+    "lmdb",
+    "nlohmann-json",
+    "sqlite3",
+    "tvision",
+    "wxwidgets"
+  ]
+}
