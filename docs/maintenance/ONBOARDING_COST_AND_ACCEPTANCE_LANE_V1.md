@@ -808,6 +808,73 @@ Consequence for 6.7's remedy: do not start by cutting artifacts. The measured
 problem is not volume, it is that the obligation people actually skip is the one
 nobody enforces. Gate the Session Log row first and re-measure.
 
+#### M6 CORRECTED -- the denominator was wrong, 2026-07-31T21:00Z
+
+The 33 percent figure above is **withdrawn**. It was hand-counted over 18 lanes
+by asking whether each AIF number appeared anywhere in the dashboard, which is
+not the same question as whether it has a Session Log row.
+
+Worse, the checker built to replace the hand count inherited a different error:
+it walked `SESSION_CLOSEOUT_*.md` and asked whether each had a row. **A lane is
+not a closeout.** AIF-080 and AIF-081 each landed committed evidence -- a lane
+charter, and for 081 a separate runtime-proof document -- and neither wrote a
+closeout. They were invisible to the check, which reported
+
+    session-log-check: OK -- every closeout in scope has a Session Log row
+
+while the two lanes known to be missing rows sat outside its scope. **That is
+this project's signature defect, in the gate written to detect it**, and the
+result was reported to the owner as green and used to justify wiring the gate
+into the pre-commit hook.
+
+Found by a cold subagent on its first task, in nineteen tool calls. Not by the
+author, in a day.
+
+Corrected measurement, over lanes holding a claim file plus at least one durable
+artifact:
+
+| Basis | Compliance |
+| --- | --- |
+| closeouts (wrong unit) | reported "all green" |
+| hand count over AIF mentions | 33 percent (withdrawn) |
+| **lanes with committed evidence** | **65 percent, 6 of 17 missing** |
+| after backfill, same day | **100 percent** |
+
+The direction of the original finding survives -- the Session Log remained the
+worst-performing obligation in the closeout chain -- but the number was asserted
+before it was measured properly, which is the error this lane spends most of its
+length warning about.
+
+Six lanes backfilled: AIF-066, 067, 073, 075, 076, 077. Each row is labelled
+BACKFILLED and names the evidence it was written from, because a Session Log row
+that reads as first-hand when it is third-party reconstruction is a
+false-provenance defect of exactly the kind AIF-050 exists to prevent.
+
+#### Method note -- the documentation IS the proof instrument
+
+Owner, 2026-07-31: *"we are proving our thesis proofing our system as we document
+it."*
+
+Four artifacts built this session were wrong on first build, and all four were
+caught:
+
+| Artifact | Defect | Found by |
+| --- | --- | --- |
+| `check_house_style.py` | git output decoded with the Windows locale; detection right, diagnosis wrong | falsification test before wiring in |
+| `recall.py` | matcher failed on the natural-language phrasing the tool asks for | running it |
+| `check_session_log_row.py` v1 | matched any AIF anywhere; 79 of 83 passed vacuously | running the audit |
+| `check_session_log_row.py` v2 | wrong denominator, blind to lanes without closeouts | a cold agent's first task |
+
+**None would have surfaced from design review.** Each surfaced because building
+the thing exercised the path, which is 10a's claim (working the system finds
+what inspection cannot) arriving a second time, now about the instruments rather
+than the corpus.
+
+The uncomfortable corollary, recorded because it is the honest one: a session
+that ships four first-build defects in a day either has a poor verification rate
+or a high detection rate, and those are not distinguishable from the inside. The
+only external check is the fresh-session M4 run, which remains unperformed.
+
 #### Observed instance, 2026-07-31T15:00Z -- effort is not calibrated either
 
 Maintainer, during a parallel website session: *"so far i'm paying a huge price

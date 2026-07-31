@@ -71,6 +71,58 @@ def changed_closeouts(root: Path, rng: str | None, audit: bool) -> list[str]:
     ]
 
 
+def lanes_with_evidence(root: Path) -> dict[str, list[str]]:
+    """AIF ids that demonstrably happened, mapped to the evidence that proves it.
+
+    CORRECTED 2026-07-31T21:00Z. The first version audited CLOSEOUTS and asked
+    whether each had a Session Log row. That denominator is wrong, and it was
+    wrong in the direction that flatters the checker: **a lane is not a
+    closeout.** AIF-080 and AIF-081 each landed committed evidence -- a lane
+    charter, and for 081 a separate runtime-proof document -- and neither wrote
+    a `SESSION_CLOSEOUT_*` file. They were therefore invisible to this check,
+    which reported "OK, every closeout in scope has a Session Log row" while the
+    two lanes known to be missing rows sat outside its scope entirely.
+
+    That is this project's signature defect (something reporting success without
+    doing its job) inside the gate written to detect that defect. Found by a
+    cold agent on its first task, not by the author.
+
+    A lane counts as having happened if it holds a claim file AND at least one
+    durable artifact. The claim ledger is the authoritative allocator, so it is
+    the right spine to hang this on.
+    """
+    evidence: dict[str, list[str]] = {}
+    claim_dir = root / "coordination" / "aif"
+    if not claim_dir.is_dir():
+        return evidence
+
+    maint = root / "docs" / "maintenance"
+    queue = root / "docs" / "ai-friendly" / "AI_INTERACTION_INTAKE_QUEUE_V1.md"
+    queue_text = queue.read_text(encoding="utf-8", errors="replace") if queue.is_file() else ""
+
+    docs: list[tuple[str, str]] = []
+    if maint.is_dir():
+        for p in maint.glob("*.md"):
+            if p.name == "SESSION_CLOSEOUT_TEMPLATE.md":
+                continue
+            head = "\n".join(
+                p.read_text(encoding="utf-8", errors="replace").splitlines()[:60]
+            )
+            docs.append((f"docs/maintenance/{p.name}", head))
+
+    for claim in sorted(claim_dir.glob("AIF-*.claim")):
+        aif = claim.stem
+        found: list[str] = []
+        for rel, head in docs:
+            if aif in head:
+                found.append(rel)
+        if re.search(rf"^\|\s*{re.escape(aif)}\s*\|", queue_text, flags=re.MULTILINE):
+            found.append("intake row")
+        if found:
+            evidence[aif] = found
+    return evidence
+
+
 def owning_lane(path: Path) -> str | None:
     """The lane this closeout is ABOUT, not every lane it mentions.
 
@@ -106,13 +158,32 @@ def main() -> int:
     args = parser.parse_args()
 
     root = repo_root()
+    dashboard_text = (root / DASHBOARD).read_text(encoding="utf-8", errors="replace") \
+        if (root / DASHBOARD).is_file() else ""
+
+    # AUDIT walks LANES, not closeouts. See lanes_with_evidence() for why the
+    # original denominator was wrong and what it hid.
+    if args.audit:
+        lanes = lanes_with_evidence(root)
+        missing = {a: ev for a, ev in lanes.items() if a not in dashboard_text}
+        print(f"session-log-check: {len(lanes)} lane(s) with committed evidence")
+        if not missing:
+            print("session-log-check: OK -- every such lane has a Session Log row")
+            return 0
+        pct = round(100 * (len(lanes) - len(missing)) / len(lanes))
+        print(f"session-log-check: WARNING -- {len(missing)} lane(s) with NO Session Log row "
+              f"({pct}% compliance)")
+        for aif in sorted(missing):
+            print(f"  {aif}  evidence: {', '.join(missing[aif][:3])}")
+        print("")
+        print(f"AIF-006 asks for a row in {DASHBOARD}.")
+        print("Warning, not a block. Add the row, or say in the lane doc why none is owed.")
+        return 3
+
     closeouts = changed_closeouts(root, args.rng, args.audit)
     if not closeouts:
         print("session-log-check: no closeouts in scope -- nothing to check")
         return 0
-
-    dashboard_text = (root / DASHBOARD).read_text(encoding="utf-8", errors="replace") \
-        if (root / DASHBOARD).is_file() else ""
 
     findings: list[str] = []
     unattributed = 0
