@@ -313,6 +313,71 @@ Generalized check, cheap and worth running once: **every file the portal names a
 mandatory or auto-read should be verified present in `git ls-files`.** Four of
 the five instances above would have been caught by that one command.
 
+### C8 MEASURED -- the authority chain is substantially unpublished
+
+Ran 2026-07-31T19:20Z, `labtalk/ai_portal/check_mandatory_tracked.py`, host-side.
+45 declared documents and 10 declared scripts checked against `git ls-files`.
+
+**16 untracked: 10 documents and 6 scripts.** The individual instances found
+earlier by accident were not a few stragglers. They were the visible edge of this.
+
+**The worst single item, and it is not close:**
+
+    docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md   UNTRACKED
+
+That is the binding contract of the entire authority chain. It is cited as
+authoritative in `AI_README.md`, `AI_PORTAL.md`, `AGENTS.md`, the Tier 1 seed,
+and `CURRENT_TARGET.md` -- always with wording like "the durable rule is" or "the
+binding rule is". **A clone cannot read it.** Every document that rests on it is
+published; it is not.
+
+The rest, grouped by what they govern:
+
+| Untracked | Governs |
+| --- | --- |
+| `tools/staging/repository_role_guard.py` | the gate `prepush_gate.py` invokes, so a clone's gate cannot find its own dependency |
+| `tools/fullstack_docs/run_attribution_check.py` | AIF-050 run attribution |
+| `docs/governance/authority_order.md` | the authority order the portal defers to on conflicts |
+| `docs/governance/manual_safety_rules.md` | manual safety |
+| `docs/governance/README.md`, `REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md` | repository boundaries |
+| `docs/database/DATABASE_SAFETY_CONTRACT_V1.md` | database mutation safety |
+| `docs/database/VALUE_LOCALE_COLLATION_CONTRACT_V1.md` | value/locale/collation policy |
+| `docs/maintenance/MAINTENANCE_SCRIPT_ROOT_POLICY_v1.md` | script placement, cited for `.dts` bootstrapping |
+| `docs/maintenance/SELF_DOC_APPS_INDEX_v1.md`, `SELF_DOC_SUBSYSTEM_MATRIX_v1.md` | SelfDoc surface |
+| `run-wx.ps1`, `run-wx-next.ps1`, `run-pydottalk.ps1`, `tk.run.ps1` | launchers, convenience rather than gates |
+
+**This reframes C8 entirely.** It was recorded as "the best operational onboarding
+artifact was never put in the tree" -- a documentation-hygiene finding. The
+measurement says the problem is structural and reaches the constitution:
+**the portal publishes the rules that cite the contracts, and does not publish
+the contracts.**
+
+It bears directly on the Outside-AI Delivery Rule (`AI_PORTAL.md:433-451`), which
+explicitly admits hosted partners reading the public GitHub snapshot. Such a
+partner is told the repository-role contract is binding, told the authority order
+governs conflicts, told the database safety contract constrains mutation -- and
+can read none of them. It is being held to rules it has no access to.
+
+**Two resolutions, both the owner's, and the current state is neither:**
+
+1. **Commit them.** They are cited as binding, so they should be reachable by
+   anyone held to them.
+2. **Mark them local-only** and stop citing them to partners who cannot read
+   them -- the portal would then need to say which authorities are host-side and
+   what an outside partner defers to instead.
+
+What is not defensible is the present arrangement: cited as binding, absent from
+the tree, with nothing anywhere recording that the citation is unreachable. That
+is the declared-capability class (AIF-079) applied to authority itself -- the
+reference exists, the referent does not.
+
+**Method note against this lane's own tool.** The checker labels all six scripts
+"a gate that will not run downstream". That is right for
+`repository_role_guard.py` and `run_attribution_check.py` and overstated for the
+four launchers, which are convenience. The label should distinguish gates from
+launchers; recorded rather than silently softened, because an over-severe check
+trains people to ignore it.
+
 Proposed, added to the sheet as 6.5g: land the handoff in the tree as the seed of
 Tier 1, and make "leave a handoff in the tree" an explicit closeout obligation
 alongside the session closeout. A closeout records what happened; a handoff
