@@ -314,6 +314,15 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: doctrine.build_to_prove
+    label: Build It to Prove It -- why review does not find these
+    path: AI_PORTAL.md
+    anchor: "## Build It to Prove It"
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: state.tier0
     label: Tier 0 generated state
     path: labtalk/ai_portal/TIER0_STATE.md
@@ -375,6 +384,10 @@ edges:
   - {from: trigger.understand_why, to: doctrine.retrieval_failure, type: fires_at}
   - {from: trigger.understand_why, to: doctrine.prove_bottleneck, type: fires_at}
 
+  - {from: trigger.understand_why, to: doctrine.build_to_prove, type: fires_at}
+  - {from: trigger.plan_gates, to: doctrine.build_to_prove, type: fires_at}
+  - {from: doctrine.prove_bottleneck, to: doctrine.build_to_prove, type: requires}
+  - {from: doctrine.build_to_prove, to: doctrine.retrieval_failure, type: evidenced_by}
   - {from: seed.tier1, to: doctrine.operator_contract, type: requires}
   - {from: seed.tier1, to: doctrine.mandatory_start, type: supersedes}
 

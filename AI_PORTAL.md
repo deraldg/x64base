@@ -423,6 +423,57 @@ This is the empirical companion to *Representative by Design*: representative co
 standard for **how** you build; prove-the-bottleneck-first is the standard for **whether
 and what** to build.
 
+## Build It to Prove It -- Why Review Does Not Find These (AIF-082)
+
+Companion to *Prove the Bottleneck First*. That rule governs **whether** to build:
+measure before you spend. This one governs **when you may conclude**: an artifact
+is unproven until it has been run, and a design review will not tell you
+otherwise.
+
+Recorded 2026-07-31, when four instruments were built in one session to enforce
+existing rules. **All four were wrong on first build. All four were caught by
+running them, none by inspection:**
+
+- a style gate that detected correctly and *diagnosed* wrongly, because it
+  decoded git's output with the Windows locale and named characters that were
+  not in the file;
+- a recall resolver that failed on the natural-language phrasing it explicitly
+  asks the user for;
+- a Session Log checker that matched any lane number anywhere, so 79 of 83 cases
+  passed vacuously;
+- its replacement, which counted **closeouts** when the unit of work is
+  **lanes**, and therefore reported "all green" while the two lanes known to be
+  missing rows sat outside its scope.
+
+The fourth is the instructive one. It was the gate written to catch *something
+reporting success without doing its job*, and it reported success without doing
+its job. It was reported to the owner as green and used to justify wiring it into
+the pre-commit hook. It was found by a cold agent on its first task, not by its
+author in a day of looking at it.
+
+Rules that follow, and they are cheap:
+
+- **A checker is unproven until you have seen it FAIL.** A passing run and a run
+  that parsed nothing are indistinguishable from outside. Feed it a known-bad
+  input before you trust a green.
+- **State the unit of measurement before you measure.** Three of the four defects
+  above were denominator or encoding errors, not logic errors. The code was
+  right about the wrong question.
+- **A number asserted before it is measured properly is a finding you will
+  withdraw.** The compliance figure this session first published was 33 percent,
+  hand-counted; measured properly it was 65.
+- **Prefer an outside runner.** The author of an instrument is its worst tester,
+  for the same reason a warm assessor cannot test a cold entry path.
+
+This is the empirical companion to *Representative by Design*: that standard says
+source teaches, so source must be worth teaching from. This one says a **gate**
+teaches too, and a gate that passes vacuously teaches that the rule is satisfied.
+
+Full evidence, including what each defect cost and how it was found:
+`docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md` (AIF-082), 6.7
+"M6 CORRECTED" and the method note beneath it. The detail is episodic and stays
+in the lane; the rule is what promotes here.
+
 ## Projects, Lanes, and Promotion (AIF-040)
 
 Work is organized in three tiers, and items move between them:
