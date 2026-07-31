@@ -41,14 +41,14 @@ letter-spacing:.3px}
 kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
 </style></head><body><div class="wrap">
 <div class="band int">INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
-<h1>DotTalk++ Reports</h1><div class="sub">Human-readable views over live project state. Regenerate any time.</div>
+<h1>DotTalk++ Reports</h1><div class="sub">Human-readable views over live project state.</div>
 <div class="grid">
 <div class="kpi"><div class="n">6</div><div class="l">BBS boards</div></div>
 <div class="kpi"><div class="n">6</div><div class="l">Posts</div></div>
 <div class="kpi"><div class="n">6</div><div class="l">Members</div></div>
-<div class="kpi"><div class="n">12</div><div class="l">Lanes</div></div>
+<div class="kpi"><div class="n">16</div><div class="l">Lanes</div></div>
+<div class="kpi"><div class="n">17</div><div class="l">Open rulings</div></div>
 </div>
-
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
 each recorded run with its owner/committer/author split, and the full proof ledger.
@@ -65,11 +65,18 @@ with handoff posts pretty-printed. Answers: <i>what is on the board right now?</
 and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div>
 <div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
 
+<div class="card"><h3 style="margin-top:0"><a href="AIF_RULINGS_REPORT.html">AI Portal -- Open Rulings</a></h3>
+<div class="dim small">Every owner decision outstanding across AIF lanes, with the steward's
+recommendation and any declared bias, plus what each ruling blocks.
+Answers: <i>what is waiting on me, and what unblocks if I decide it?</i>
+Currently <b>17 open</b>, 13 ratified.</div>
+<div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
+
 <div class="note"><b>Regenerate</b><br>
 <pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>
 <div class="small dim" style="margin-top:7px">Reads the DBF tables and YAML registries directly. Read-only --
 it never writes to the store, so it is safe to run while the daemon is up.</div></div>
-<div class="foot">Generated 2026-07-26 02:53 UTC from live DotTalk++ state
+<div class="foot">Generated 2026-07-31 22:38 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>

@@ -43,10 +43,10 @@ kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);bord
 <div class="band int">INTERNAL -- review before any publication to x64base.com or public main. See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md</div>
 <h1>DotTalk++ AI Portal -- Lanes, Runs and Proofs</h1><div class="sub">Who worked what, what is proven, and where to pick the thread back up.</div>
 <div class="grid">
-<div class="kpi"><div class="n">12</div><div class="l">Tracked lanes</div></div>
-<div class="kpi"><div class="n">4</div><div class="l">Recorded runs</div></div>
-<div class="kpi"><div class="n">11</div><div class="l">Runtime-observed proofs</div></div>
-<div class="kpi"><div class="n">11</div><div class="l">Source-defined proofs</div></div>
+<div class="kpi"><div class="n">16</div><div class="l">Tracked lanes</div></div>
+<div class="kpi"><div class="n">6</div><div class="l">Recorded runs</div></div>
+<div class="kpi"><div class="n">26</div><div class="l">Runtime-observed proofs</div></div>
+<div class="kpi"><div class="n">13</div><div class="l">Source-defined proofs</div></div>
 </div><div class="note"><b>The portal front door, in order</b>
 <ol style="margin:7px 0 0">
 <li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
@@ -92,17 +92,40 @@ definition of done, house conventions, git hygiene.</li>
 <td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-060</code></td>
 <td class="small">Agency model + reports: name the capacity/accountability frame the system already implements</td>
 <td><span class="pill acc">source-defined</span></td>
-<td class="small"><code>AIPR-20260725-001</code></td></tr></table><div class="note w"><b>How to return to the last agent on a lane</b><br>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-061</code></td>
+<td class="small">Memo/WAL atomicity: close the last store; correct the stale &#x27;stubs&#x27; comment on a shipped WAL</td>
+<td><span class="pill warn">design-intended</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-062</code></td>
+<td class="small">Evidence layer versioning: blanket `*.log` was hiding the entire proof registry</td>
+<td><span class="pill ok">runtime-observed</span></td>
+<td class="small"><code>AIPR-20260725-001</code></td></tr><tr><td><code>AIF-069</code></td>
+<td class="small">EXPORT SDF fixed-width output, Codex 2026-07-27</td>
+<td><span class="pill ">closed_runtime_observed</span></td>
+<td class="small"><code>AIPR-20260727-001</code></td></tr><tr><td><code>AIF-074</code></td>
+<td class="small">SQLSEL product lane -- gold-standard SQL over the Open Relationship Platform</td>
+<td><span class="pill ">**CHARTERED -- plan of record under review; no engine source changed; zero runtime evidence.** Maintainer-assigned lane run through Portal onboarding (task packet first). Findings: the early SQL group is abandoned pre-engine-maturity work published as `supported` (SQ-01: `SQLERASE` discards its FROM table and deletes from the current area, 0 corpus users; SQ-04: corpus scripts call `SQLSEL SELECT ... FROM ...`, an interface never built -- the parser greps clean of SELECT/FROM); `SHOW` (199 uses) and `sqlnorm` (5 external consumers) are live and excluded from the group. **Eleven owner rulings** (R1-R11, ledger in the lane doc): start-new-keep-SQLSEL; SQL mode with modal SELECT alias (`SET MODE SQL\</span></td>
+<td class="small"><code>AIPR-20260729-001</code></td></tr></table><div class="note w"><b>How to return to the last agent on a lane</b><br>
 <code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
 Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the session id
 <i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
-That is by design -- the record lives in the repo, not in a vendor's session store.</div><h2>Runs</h2><div class="card"><b><code>AIPR-20260725-001</code></b>
+That is by design -- the record lives in the repo, not in a vendor's session store.</div><h2>Runs</h2><div class="card"><b><code>AIPR-20260727-001</code></b>
+<span class="pill ">closed</span>
+<span class="pill">Codex</span>
+<div class="small dim" style="margin:5px 0">member.ai.codex as <b>implementer</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.derald</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-069</span></div>
+<div class="small dim">project <code>project.x64base.runtime</code>
+&middot; branch <code>development</code>
+&middot; started 2026-07-27
+&middot; handle <span class="pill warn">NOT_RESOLVABLE</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_EXPORT_SDF_PDLC_2026-07-27.md</span></div></div><div class="card"><b><code>AIPR-20260725-001</code></b>
 <span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>implementer</b>
 &middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
 </div>
-<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span> <span class="pill acc">AIF-060</span></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-050</span> <span class="pill acc">AIF-052</span> <span class="pill acc">AIF-053</span> <span class="pill acc">AIF-054</span> <span class="pill acc">AIF-055</span> <span class="pill acc">AIF-056</span> <span class="pill acc">AIF-057</span> <span class="pill acc">AIF-058</span> <span class="pill acc">AIF-059</span> <span class="pill acc">AIF-060</span> <span class="pill acc">AIF-061</span> <span class="pill acc">AIF-062</span></div>
 <div class="small dim">project <code>project.ai_friendly</code>
 &middot; branch <code>development</code>
 &middot; started 2026-07-25
@@ -140,7 +163,33 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 
 &middot; started 2026-07-22
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md</span></div></div><h2>Proof ledger</h2><table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr><tr><td><code>proof.edref.topic_exists</code><br>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md</span></div></div><div class="card"><b><code>AIPR-20260729-001</code></b>
+<span class="pill ok">active</span>
+<span class="pill">Cowork</span>
+<div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>planner_steward</b>
+&middot; owner <code>member.derald</code> &middot; committer <code>member.derald</code>
+&middot; planned by <code>member.derald</code></div>
+<div style="margin:7px 0"><span class="pill acc">AIF-074</span></div>
+<div class="small dim">project <code>project.x64base.runtime</code>
+
+&middot; started 2026-07-29
+&middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SQLSEL_PLDC_LANE_V1.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md</span></div></div><h2>Proof ledger</h2><table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr><tr><td><code>proof.export.sdf.fixed_width_export</code><br>
+<span class="small">EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN EXPORT_SDF exported two schema-width rows with no header: &quot;AB    7  12.3T&quot; and &quot;WXYZ123  -4.5F&quot;, each length 14. The generated temp SDF ...</td></tr><tr><td><code>proof.pdlc.csv_to_x64base.type_fidelity</code><br>
+<span class="small">CSV to x64base preserves types, NULLs and long names</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a derivation taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N. Two behaviours predicted from the code and confirme...</td></tr><tr><td><code>proof.pdlc.dbf_csv_dbf.roundtrip_lossless</code><br>
+<span class="small">DBF to CSV to DBF round trip is lossless</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type letters, same widths, same decimal counts. EXPORT rendered every value such that re-inference reproduced the origin schema exactly, which is st...</td></tr><tr><td><code>proof.pdlc.dialect_ladder.dbase3_to_x64</code><br>
+<span class="small">dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">The historical migration demonstration proper, walked inside one engine with no external tool, from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records, 9 fields, every field name at or under the classic...</td></tr><tr><td><code>proof.pdlc.cobol_fixed_record.hop_closed</code><br>
+<span class="small">DBF to fixed-record to GnuCOBOL read, 200 records</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so a short write is invisible to anything that mer...</td></tr><tr><td><code>proof.edref.topic_exists</code><br>
 <span class="small">EDREF topic exists</span></td>
 <td><span class="pill acc">source_defined</span></td>
 <td class="small dim"></td></tr><tr><td><code>proof.case.registry_exists</code><br>
@@ -221,8 +270,47 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 <td class="small dim">census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped (duplicated git tracking; path: go...</td></tr><tr><td><code>proof.agency.model</code><br>
 <span class="small">Agency model -- capacity to act plus accountability for having acted</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE-&gt;SYSROLEPERM-&gt;SYSPERM), authentication (Arg...</td></tr></table>
-<div class="foot">Generated 2026-07-26 02:53 UTC from live DotTalk++ state
+<td class="small dim">Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE-&gt;SYSROLEPERM-&gt;SYSPERM), authentication (Arg...</td></tr><tr><td><code>proof.wal.dbf_record</code><br>
+<span class="small">TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo log with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the highest-priority Edit3). Phase B: CRAS...</td></tr><tr><td><code>proof.wal.memo_atomicity</code><br>
+<span class="small">Whole-row atomicity including the memo store</span></td>
+<td><span class="pill warn">design-intended</span></td>
+<td class="small dim">GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit and the memo store&#x27;s own write le...</td></tr><tr><td><code>proof.evidence.layer_versioned</code><br>
+<span class="small">Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR EVIDENCE. 71 proof artifacts on disk, 0 tracked...</td></tr><tr><td><code>proof.lmdb.mapsize_override_on_attach</code><br>
+<span class="small">LMDB env resizes 128 MiB -&gt; 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-065 promoted from source_defined to runtime_observed. SYSSUBCMD.cdx.d/data.mdb measured at 134,217,728 bytes immediately before the run and 1,073,741,824 bytes immediately after -- exactly 8x, on a 31-ROW TABLE, from a single ...</td></tr><tr><td><code>proof.lmdb.mapsize_override_replication_sysfunc</code><br>
+<span class="small">LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Independent replication of proof.lmdb.mapsize_override_on_attach on a different table. SYSFUNC.cdx.d/data.mdb measured 134,217,728 before and 1,073,741,824 after a single index auto-attach at USE -- delta 939,524,096 on a 69-row t...</td></tr><tr><td><code>proof.lmdb.mapsize_ladder_honoured_after_fix</code><br>
+<span class="small">BUILDLMDB TINY survives an index attach -- the size ladder is honoured</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at cdx_backend.cpp and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize instead of asserting one. SYSARGS rebuilt with BUILDLMDB CLEA...</td></tr><tr><td><code>proof.ai_portal.discoverability_caught_its_own_author</code><br>
+<span class="small">The discoverability fix caught its own maker -- Phase 7 was the next dropped thread</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">IRONY, RECORDED. On 2026-07-28 the AI Portal&#x27;s external-intake discoverability gap (AIF-071) was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted chat, an assistant task list -- cannot be found later, so i...</td></tr><tr><td><code>proof.sqlsel.select_statement_matches_sqlite</code><br>
+<span class="small">SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">The lane&#x27;s one genuinely new component. Projection, star, WHERE and LIMIT each returned the same rows as the in-process SQLite oracle over identical data (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI; WHERE MAJOR=&#x27;CSCI&#x27; -&gt; ADAMS + CA...</td></tr><tr><td><code>proof.engine.typed_equality_crosses_declared_types</code><br>
+<span class="small">Relation equality compares numerically whenever both sides are numeric literals</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a numerically DECLARED child field got numeric comparison, so a character child holding &quot;1&quot; failed against a numeric parent&#x27;s &quot;1.00&quot; -- an asymmetry ...</td></tr><tr><td><code>proof.engine.scan_limit_reports_truncation</code><br>
+<span class="small">Relation scans announce when the scan limit stopped them</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a plausible-looking partial answer with no indication -- a wrong result indistinguishable from a right one. At limit 1 the run reports &quot;REL: scan li...</td></tr><tr><td><code>proof.engine.key_metadata_survives_workspace_roundtrip</code><br>
+<span class="small">PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Phase 2 of a registry whose own header asked for it (&quot;Phase 1: session-scoped ... storage/backfill policy belongs elsewhere&quot;). The registry was emptied between SAVE and LOAD, so restoration is proven, not assumed: LOAD echoed KEY ...</td></tr><tr><td><code>proof.engine.two_read_families_buffer_visibility</code><br>
+<span class="small">Two coherent read families; buffer-visibility defects occur only at the hybrid seam</span></td>
+<td><span class="pill ok">runtime_observed</span></td>
+<td class="small dim">Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every reader must choose a source. Three probes established that x64base has TWO internally coherent families and that defects appear ONLY where they are mixe...</td></tr><tr><td><code>proof.codev.system_corrects_its_extender</code><br>
+<span class="small">The tree&#x27;s own artifacts and gates corrected an outside AI extender, repeatedly</span></td>
+<td><span class="pill acc">source_defined</span></td>
+<td class="small dim">Eleven recorded corrections in one lane. Owner redirects (five) converted construction proposals into consumption of existing machinery -- locks, tuple carrier, buffering, unique registry -- with catch latency falling to zero by t...</td></tr></table>
+<div class="foot">Generated 2026-07-31 22:38 UTC from live DotTalk++ state
 (<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with
 <code>tools/reports/build_reports.py</code>.</div>
 </div></body></html>

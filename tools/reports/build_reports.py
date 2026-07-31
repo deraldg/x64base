@@ -514,6 +514,54 @@ r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
 emit('AI_PORTAL_REPORT.html', r3)
 
 # =====================================================================
+# RULINGS -- delegated to build_rulings_report.py (document state, not DBF)
+# =====================================================================
+def _build_rulings():
+    """Run the rulings generator in-process and return (open, ratified) or None.
+
+    Kept as a separate module because it reads DOCUMENT state (the ruling sheets
+    and Tier 0) rather than the DBF store, and must stay runnable on a host that
+    has no data directory. Failure here is advisory: the rest of the console is
+    still worth emitting, so this never aborts the build."""
+    import io, runpy, contextlib, re as _re
+    script = ROOT / 'tools' / 'reports' / 'build_rulings_report.py'
+    if not script.is_file():
+        return None
+    # The rulings view is PRIVATE (portal.yaml: report.aif_rulings) -- unratified
+    # decisions, steward recommendations, declared biases, the open error ledger.
+    # It does not route through emit(), so the private-skip there cannot protect
+    # it; refuse at the source instead. Gate on PUBLIC alone, NOT on is_private():
+    # `private` means never PUBLISH, not never GENERATE -- BBS_ACCESS_REPORT is
+    # private and still builds for internal use. An earlier revision checked
+    # `PUBLIC or is_private(...)`, which blocked the leak AND suppressed the
+    # internal copy, i.e. the report's only reason to exist. Gating on the flag
+    # also fails closed if the registry entry is ever removed.
+    if PUBLIC:
+        print('SKIPPED (private per portal.yaml): AIF_RULINGS_REPORT.html')
+        return None
+    argv = sys.argv[:]
+    buf = io.StringIO()
+    try:
+        sys.argv = [str(script), '--root', str(ROOT), '--out', str(OUT)]
+        with contextlib.redirect_stdout(buf):
+            runpy.run_path(str(script), run_name='__main__')
+    except SystemExit as ex:
+        if ex.code not in (0, None):
+            print(f'rulings report: FAILED (exit {ex.code}) -- console emitted without it')
+            return None
+    except Exception as ex:
+        print(f'rulings report: FAILED ({type(ex).__name__}: {ex}) -- console emitted without it')
+        return None
+    finally:
+        sys.argv = argv
+    out = buf.getvalue().strip()
+    print(out or 'rulings report: wrote AIF_RULINGS_REPORT.html')
+    m = _re.search(r'\((\d+) open, (\d+) ratified', out)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+_rulings = _build_rulings()
+
+# =====================================================================
 # INDEX
 # =====================================================================
 _idx_kpi = f"""<div class="grid">
@@ -521,7 +569,16 @@ _idx_kpi = f"""<div class="grid">
 <div class="kpi"><div class="n">{len(B['SYSPOST'])}</div><div class="l">Posts</div></div>
 <div class="kpi"><div class="n">{len(I['SYSMEMBER'])}</div><div class="l">Members</div></div>
 <div class="kpi"><div class="n">{len(by_lane)}</div><div class="l">Lanes</div></div>
+{f'<div class="kpi"><div class="n">{_rulings[0]}</div><div class="l">Open rulings</div></div>' if _rulings else ''}
 </div>"""
+
+_rulings_card = ('' if _rulings is None else f"""
+<div class="card"><h3 style="margin-top:0"><a href="AIF_RULINGS_REPORT.html">AI Portal -- Open Rulings</a></h3>
+<div class="dim small">Every owner decision outstanding across AIF lanes, with the steward's
+recommendation and any declared bias, plus what each ruling blocks.
+Answers: <i>what is waiting on me, and what unblocks if I decide it?</i>
+Currently <b>{_rulings[0]} open</b>, {_rulings[1]} ratified.</div>
+<div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>""")
 
 if PUBLIC:
     idx_body = _idx_kpi + """
@@ -554,6 +611,7 @@ with handoff posts pretty-printed. Answers: <i>what is on the board right now?</
 <div class="dim small">Members, roles, the full permission matrix, who may post to which room,
 and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div>
 <div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
+""" + _rulings_card + """
 
 <div class="note"><b>Regenerate</b><br>
 <pre class="m" style="margin:7px 0 0">python tools/reports/build_reports.py</pre>

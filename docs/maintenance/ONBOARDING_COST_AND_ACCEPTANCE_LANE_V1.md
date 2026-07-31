@@ -2216,3 +2216,57 @@ LFS objects remain in `.git/lfs/objects` if anything is ever wanted back. This i
 the first place in the campaign where the right answer is removal rather than
 registration, and it is worth naming as a category -- R27a assumed every untracked
 file wanted a home, and some want a bin.
+
+### 12.19 A rulings console, and a publication leak I wrote and then caught
+
+Owner asked whether the rulings view was dynamic or hard-coded. **It was
+hard-coded** -- every figure typed by hand, no history, stale on the next ruling.
+A perishable artifact placed in `docs/reports/`, a folder whose own index says
+"Regenerate any time" and whose contents read live DBF state. The lane's own
+anti-pattern, committed by the lane.
+
+Replaced with `tools/reports/build_rulings_report.py`, which derives everything
+from `docs/maintenance/AIF_*RULING_SHEET*.md` and `TIER0_STATE.md`, and is invoked
+by `build_reports.py` so one command builds the whole console. It borrows `CSS`
+and `BANDS` out of `build_reports.py` at run time rather than copying them, so the
+two cannot skew. First run: **17 open, 13 ratified, 2 dated events.**
+
+**It disagreed with the sheet immediately.** The sheet's hand-kept footer says
+`Total open: 20`; parsing finds 17. A running total maintained by hand drifts
+every time a row lands without the footer being touched. The page now renders the
+disagreement rather than picking a side.
+
+**LEAK -- written, shipped, and caught in the same sitting.** The private-skip
+lives in `emit()`; the rulings generator writes with `write_text()` and never
+passes through it. So `--public` emitted `AIF_RULINGS_REPORT.html` into the public
+output, on the line directly below `SKIPPED (private per portal.yaml):
+BBS_ACCESS_REPORT.html`. I had labelled that card *private -- never publish* in
+the same script that published it. This is the AIF-060 hazard exactly, authored by
+the steward who cited AIF-060 twice in this session as a reason to keep governance
+out of the site tree.
+
+Caught by running BOTH modes and reading the file list, not by inspection. Fixed
+at both ends: registered `report.aif_rulings` with `sensitivity: private` in
+`portal.yaml`, and refused at the source in `_build_rulings()`.
+
+**Then overcorrected.** The first fix gated on `PUBLIC or is_private(...)`, which
+blocked the leak AND suppressed the internal build -- the report's only reason to
+exist. `private` means never PUBLISH, not never GENERATE; `BBS_ACCESS_REPORT` is
+private and builds internally every run. Conflating those two is a second defect
+and it was caught the same way, by running both modes and looking. Final gate is
+`if PUBLIC:` alone, which also fails closed if the registry entry is ever deleted.
+
+**Both defects took under a minute to find and neither was findable by reading.**
+That is the R27b argument in miniature: the check that works is the one whose
+denominator comes from outside the author's expectations. Here it was `ls` on two
+output directories.
+
+**HISTORY IS THIN, AND THAT IS THE FINDING.** The console can render only two
+kinds of dated event: a group-ratification header and a file mtime. Individual
+rulings carry no dated status transition, because the sheet stores them as prose
+with an empty `Ruling` cell. **Real history needs ruling state in a structured
+store** -- `proposed / ratified / rejected / superseded` with a UTC stamp per
+transition. The house answer is obvious and is already load-bearing elsewhere:
+the BBS reports read DBF, and the maintainer's standing instruction is that we
+dogfood our own database. Filed as the natural successor to this console, not
+built, because where ruling state lives is an owner decision.

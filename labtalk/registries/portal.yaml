@@ -244,6 +244,17 @@ sections:
         status: generated
         sensitivity: private           # DO NOT PUBLISH -- auth-surface map (member keys,
                                        # permission matrix, port + protocol). Internal only.
+      - id: report.aif_rulings
+        label: AI Portal -- Open Rulings
+        kind: html
+        path: ../docs/reports/AIF_RULINGS_REPORT.html
+        status: generated
+        sensitivity: private           # DO NOT PUBLISH -- unratified owner decisions, steward
+                                       # recommendations and declared biases, plus the open
+                                       # defect and error ledger. Governance in progress, not
+                                       # a published position. Internal only.
+        generator: ../tools/reports/build_rulings_report.py
+        source: docs/maintenance/AIF_*RULING_SHEET*.md + labtalk/ai_portal/TIER0_STATE.md
     generator: ../tools/reports/build_reports.py
     publication_note: >-
       Sensitivity is per item, not per section. `private` items must never reach
