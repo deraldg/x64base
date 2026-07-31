@@ -133,7 +133,7 @@ measurement rather than a build, and the number stays useful either way.
 | 6.6 | | | |
 | 6.10 | | | |
 | X1 | **A** (retire) | 2026-07-31T12:45Z | AIF-072 retired as controlling target; stays claimed and pick-up-ready. `CURRENT_TARGET.md` top section rewritten to name the five in-flight lanes. Applied. |
-| X2 | **A** (push) | 2026-07-31T12:45Z | "see x1". Slices prepared and manually verified; host-side commands handed to the maintainer. Steward does not commit or push. |
+| X2 | **A** (done, dev stage) | 2026-07-31T14:05Z | Committed host-side as two themed slices: `1024a53d5` (lane artifacts) and `8a3dea347` (tier 1 seed + portal surfaces, +411/-12). `prepush_gate.py` PASS on both. **NOT pushed** -- `origin/development` still at `0803f0f13`. |
 
 M1 closes when every row above carries a ruling. Partial rulings are fine and
 unblock their own items; nothing waits on the sheet being complete.

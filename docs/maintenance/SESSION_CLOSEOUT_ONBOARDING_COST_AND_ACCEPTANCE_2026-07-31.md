@@ -209,8 +209,57 @@ a future fresh session can prove it, and this session cannot be that session.
 
 ## Published
 
-**Not promoted. Not published.** Nothing staged to `C:\x64base` (which is not
-mounted in this session), no commit, no push. Development stage only.
+Reported by stage. **Stage reached: Dev, committed. NOT pushed, NOT promoted.**
+
+| Stage | State |
+| --- | --- |
+| 1. Dev (`D:\code\ccode`) | **DONE.** Two commits on `development`, maintainer-operated 2026-07-31 |
+| 2. Promoted to staging (`C:\x64base`) | **NOT REACHED.** Staging is not mounted in this session |
+| 3. Validated in staging | **NOT REACHED** |
+| 4. Published (pushed) | **NOT REACHED.** `origin/development` is still at `0803f0f13` |
+
+Commits, themed rather than blobbed:
+
+| SHA | Scope |
+| --- | --- |
+| `1024a53d5` | `docs(AIF-082): onboarding cost and acceptance lane` -- claim, charter, closeout, M1 ruling sheet, and the two registry rows |
+| `8a3dea347` | `docs(AIF-082): tier 1 seed, retrieval lesson, WSL rules, retire AIF-072 as target` -- 5 files, +411/-12, creating `labtalk/ai_portal/AI_TIER1_SEED_V1.md` |
+| `71f9b850e` | `docs(agents): WSL/dottalkpp handoff, and publish the front door's own onboarding files` -- 3 files, +431, all creates. Lands the handoff whose absence caused C8, plus `AI_BABY_BOOTSTRAP_CARD.md` and `docs/agents/README.md`, both reachable from `AI_README.md` and previously invisible to a clone |
+
+`prepush_gate.py` returned **PASS** on both: source/docs/config only, no embedded
+BOM, no AIF-number collision. `repository_role_guard.py` passed host-side,
+confirming this session's sandbox false-block diagnosis. The three
+`audit_trail.py` advisories are pre-existing findings against the 2026-07-28 Grok
+external-intake manifest and are not attributable to this lane; enforced records
+are `74 valid=74 findings=0`.
+
+**The steward did not commit.** All git was maintainer-operated from the host,
+per the sandbox rule this session learned the expensive way (5b).
+
+## Recorded for the record -- first clean registration (positive finding)
+
+`1024a53d5` and `8a3dea347` are, as far as this session can determine, **the
+first commits in this project where a lane's number, claim file, intake row,
+dashboard Session Log row, charter, and closeout all landed together rather than
+trailing the work.**
+
+That matters because the opposite is this tree's most-repeated governance defect,
+recorded three times before this lane opened: AIF-062 (evidence hidden by a
+blanket ignore), AIF-078 (queue rows written and never committed, so the same
+numbers re-derived as free), and AIF-080 (charter and engine change committed
+while the number still read as ABANDONED from HEAD). The pre-push gate advisory
+"claim(s) with no intake row" existed precisely to catch it and was being
+observed rather than acted on.
+
+The fix was not a new mechanism. Every tool needed already existed --
+`claim-aif`, the collision gate, the intake queue, the dashboard. What changed is
+**ordering**: claim first, register second, work third, close out fourth. The
+collision gate confirms it, reporting AIF-082 absent from the abandoned-claim
+advisory while AIF-068 and AIF-070 remain listed.
+
+Recorded as a positive control for AIF-082's own thesis: the corpus did not need
+better content here, it needed the rule to arrive before the work rather than
+after it. That is the same claim as section 5b, with the sign reversed.
 
 ## Still open -- for the next session
 
@@ -249,6 +298,45 @@ mounted in this session), no commit, no push. Development stage only.
    reports still lack generated-at stamps.
 7. **AIF-070 allocation** remains owed from AIF-078; unrelated to this lane but
    still unclaimed.
+8. **RESOLVED 2026-07-31T14:25Z -- the WSL handoff is committed.** It was blocked
+   twice: first by the stale `index.lock` this session created (5b), then by
+   simply not being retried. Landed in `71f9b850e`. **C8 is now closed by
+   action**: the artifact written specifically to onboard the next agent is in
+   the tree, alongside the two front-door files that were also invisible. The
+   finding stands as recorded; the instance is fixed.
+9. **`docs/agents/` is half-published -- MEASURED 2026-07-31T14:20Z, and both
+   prior predictions were wrong.** `git ls-files docs/agents/` returns two paths
+   against seven files on disk:
+
+   | State | File | Named by the front door? |
+   | --- | --- | --- |
+   | tracked | `CURRENT_TARGET.md` | yes, step 1 of the ordered table |
+   | tracked | `HANDOFF_CODEX_BUFFER_VISIBILITY_2026-07-29.md` | no |
+   | **untracked** | `AI_BABY_BOOTSTRAP_CARD.md` | **yes** (`AI_README.md:27,:66`) |
+   | **untracked** | `README.md` | directory index |
+   | **untracked** | `HANDOFF_CLAUDE_WSL_DOTTALKPP_2026-07-31.md` | the current handoff |
+   | **untracked** | `HANDOFF_CLAUDE_FOUNDATIONS_SOURCE_PACKET_2026-07-26.md` | no |
+   | **untracked** | `HANDOFF_CLAUDE_MESSAGING_CORRECTIVE_AUDIT_2026-07-16.md` | no |
+
+   The maintainer's draft commit message said the directory is "entirely
+   untracked" -- false, two files are tracked. This steward predicted the split
+   was "handoffs untracked, `CURRENT_TARGET.md` tracked" -- also false, since one
+   handoff is tracked. **Neither guess survived one command.** Recorded because
+   the lane's own rule is measure rather than infer, and two people inferred.
+
+   The accurate and sharper claim: **`AI_README.md` names
+   `AI_BABY_BOOTSTRAP_CARD.md` as onboarding material at two places
+   (`:27`, `:66`) and that file is invisible to a clone**, as is the directory's
+   own `README.md`. This is C8 with numbers: the onboarding directory does not
+   publish its own onboarding material. It is inconsistency rather than policy --
+   one handoff was tracked, so somebody has committed one before.
+
+   **Partly resolved in `71f9b850e`:** the WSL handoff,
+   `AI_BABY_BOOTSTRAP_CARD.md`, and `docs/agents/README.md` were published, so
+   the directory now tracks 5 of 7 and every file the front door names is
+   reachable from a clone. **Still untracked, owner call, historical:**
+   `HANDOFF_CLAUDE_FOUNDATIONS_SOURCE_PACKET_2026-07-26.md` and
+   `HANDOFF_CLAUDE_MESSAGING_CORRECTIVE_AUDIT_2026-07-16.md`.
 
 ## Addendum -- second sitting, 2026-07-31
 
@@ -433,8 +521,9 @@ All content authored this session is ASCII-clean under the stricter
 `grep -P '[^\x00-\x7F]'` test, including every inserted block in the three portal
 files. Pre-existing violations in those files are reported above and untouched.
 
-Still no tool built, no engine source touched, nothing staged, nothing
-committed. The slice is now seven files instead of five.
+Still no tool built and no engine source touched. (Written before the commits;
+the current stage is in "Published" above, which supersedes the
+"nothing committed" statements in these addenda.)
 
 ## Provenance pointers
 
