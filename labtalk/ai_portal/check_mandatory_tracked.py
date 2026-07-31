@@ -35,7 +35,19 @@ from pathlib import Path
 
 ENTRY_DOCS = ("AI_README.md", "AI_PORTAL.md")
 ALWAYS_READ = ("CLAUDE.md", "AGENTS.md")
-PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./-]*\.md)`")
+
+# Documents the portal points at, inline: `docs/agents/CURRENT_TARGET.md`
+DOC_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./-]*\.md)`")
+
+# Scripts the portal instructs you to RUN. These matter more than the documents:
+# a missing document can be worked around, a missing gate cannot. Found the hard
+# way on 2026-07-31 -- `tools/staging/repository_role_guard.py` was untracked
+# while `prepush_gate.py`, which invokes it, was tracked. A clone therefore got a
+# pre-push gate whose first dependency did not exist. The first version of this
+# checker looked only at backticked .md paths and missed it.
+SCRIPT_RE = re.compile(
+    r"(?:^|[\s`\"'(])((?:[A-Za-z0-9_.-]+[/\\])*[A-Za-z0-9_.-]+\.(?:py|ps1|sh))"
+)
 
 
 def repo_root() -> Path:
@@ -47,19 +59,28 @@ def repo_root() -> Path:
     raise SystemExit(1)
 
 
-def declared(root: Path) -> set[str]:
-    """Every existing repo-relative .md path the entry documents point at."""
-    found: set[str] = set(ENTRY_DOCS) | set(ALWAYS_READ)
+def declared(root: Path) -> tuple[set[str], set[str]]:
+    """Return (documents, scripts) the entry documents declare, that exist on disk.
+
+    Reported separately because they fail differently. A missing document can be
+    worked around by reading something else; a missing gate silently does not run.
+    """
+    docs: set[str] = set(ENTRY_DOCS) | set(ALWAYS_READ)
+    scripts: set[str] = set()
+
     for name in ENTRY_DOCS:
         path = root / name
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        for hit in PATH_RE.findall(text):
-            hit = hit.lstrip("./")
-            if (root / hit).is_file():
-                found.add(hit)
-    return {f for f in found if (root / f).is_file()}
+        for hit in DOC_RE.findall(text):
+            docs.add(hit.lstrip("./"))
+        for hit in SCRIPT_RE.findall(text):
+            scripts.add(hit.lstrip("./").replace("\\", "/"))
+
+    docs = {f for f in docs if (root / f).is_file()}
+    scripts = {f for f in scripts if (root / f).is_file()}
+    return docs, scripts
 
 
 def tracked(root: Path) -> set[str]:
@@ -79,21 +100,32 @@ def tracked(root: Path) -> set[str]:
 
 def main() -> int:
     root = repo_root()
-    want = declared(root)
+    docs, scripts = declared(root)
     have = tracked(root)
-    missing = sorted(want - have)
 
-    print(f"mandatory-tracked: {len(want)} declared file(s) checked")
-    if not missing:
+    missing_docs = sorted(docs - have)
+    missing_scripts = sorted(scripts - have)
+
+    print(
+        f"mandatory-tracked: {len(docs)} document(s) and {len(scripts)} script(s) checked"
+    )
+    if not missing_docs and not missing_scripts:
         print("mandatory-tracked: PASS -- every declared file is tracked")
         return 0
 
-    print(f"mandatory-tracked: FAIL -- {len(missing)} declared file(s) UNTRACKED")
-    for name in missing:
-        print(f"  UNTRACKED  {name}")
+    print(
+        "mandatory-tracked: FAIL -- "
+        f"{len(missing_docs)} document(s) and {len(missing_scripts)} script(s) UNTRACKED"
+    )
+    for name in missing_scripts:
+        print(f"  UNTRACKED SCRIPT  {name}   <-- a gate that will not run downstream")
+    for name in missing_docs:
+        print(f"  UNTRACKED DOC     {name}")
     print("")
-    print("These are invisible to a clone. An agent onboarding from GitHub")
-    print("cannot read them. Commit them, or stop declaring them mandatory.")
+    print("These are invisible to a clone. An agent onboarding from GitHub cannot")
+    print("read the documents and cannot run the gates. Commit them, or stop")
+    print("declaring them mandatory. An untracked script is the worse case: it")
+    print("does not error, it silently does not exist.")
     return 2
 
 
