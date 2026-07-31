@@ -136,6 +136,41 @@ def walk(g: dict, start: str) -> list[tuple[int, str, dict]]:
     return out
 
 
+def section_size(root: Path, node: dict) -> int:
+    """Bytes an agent must actually read for this node.
+
+    CORRECTED 2026-07-31T21:30Z. The first version summed whole FILE sizes, so a
+    query touching six sections of AI_PORTAL.md counted that 48 KB file six
+    times and reported a 217 KB "working set" -- larger than the 127,704-byte
+    entry path the graph exists to replace. The headline metric of the tool
+    proving this lane's thesis was itself unmeasured, and it was printed
+    directly beneath the words "read these, not the corpus".
+
+    An anchored node costs its SECTION: from the anchor to the next heading at
+    the same level. Only an unanchored node costs its whole file. Nothing is
+    counted twice, because sections do not overlap.
+    """
+    path = root / str(node.get("path", ""))
+    if not path.is_file():
+        return 0
+    anchor = node.get("anchor")
+    if not anchor:
+        return path.stat().st_size
+
+    text = path.read_text(encoding="utf-8", errors="replace")
+    start = text.find(anchor)
+    if start < 0:
+        return path.stat().st_size
+
+    level = len(anchor) - len(anchor.lstrip("#"))
+    if level:
+        nxt = re.search(rf"^#{{1,{level}}} ", text[start + len(anchor):], flags=re.MULTILINE)
+    else:
+        nxt = re.search(r"^## ", text[start + len(anchor):], flags=re.MULTILINE)
+    end = start + len(anchor) + (nxt.start() if nxt else len(text) - start - len(anchor))
+    return len(text[start:end].encode("utf-8"))
+
+
 def demotable(g: dict) -> int:
     print("recall: 6.6 decay report -- which doctrine may demote out of the entry path")
     print("")
@@ -232,12 +267,12 @@ def main() -> int:
         pad = "  " + "    " * depth
         anchor = f"   [{n['anchor']}]" if n.get("anchor") else ""
         print(f"{pad}{etype:<12} {n['path']}{anchor}")
-        print(f"{pad}             {n.get('label','')}  ({n.get('class','?')}, tier {n.get('tier','?')})")
-        p = root / str(n["path"])
-        if p.is_file():
-            total += p.stat().st_size
+        size = section_size(root, n)
+        print(f"{pad}             {n.get('label','')}  "
+              f"({n.get('class','?')}, tier {n.get('tier','?')}, {size} B)")
+        total += size
     print("")
-    print(f"working set: {len(rows)} node(s), {total} B of source. Read these, not the corpus.")
+    print(f"working set: {len(rows)} node(s), {total} B to read.")
     return 0
 
 
