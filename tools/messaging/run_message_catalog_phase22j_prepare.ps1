@@ -1,0 +1,32 @@
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$RepoRoot,
+
+    [Parameter(Mandatory=$false)]
+    [string]$PythonExe = "",
+
+    [switch]$AcceptReportOnlyHandoff
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+if (-not $AcceptReportOnlyHandoff) {
+    throw "Refusing Phase 22J report-only handoff without -AcceptReportOnlyHandoff"
+}
+
+if (-not $PythonExe) {
+    if ($env:PYTHON_EXE) { $PythonExe = $env:PYTHON_EXE }
+    elseif (Get-Command py -ErrorAction SilentlyContinue) { $PythonExe = "py" }
+    elseif (Get-Command python -ErrorAction SilentlyContinue) { $PythonExe = "python" }
+    else { throw "No Python runtime found. Pass -PythonExe `$py12 or set PYTHON_EXE." }
+}
+
+$script = Join-Path $RepoRoot "tools\messaging\prepare_message_catalog_phase22j_help_manualgen_handoff.py"
+
+if ($PythonExe -eq "py") {
+    & py -3.12 $script --repo-root $RepoRoot --accept-report-only-handoff
+} else {
+    & $PythonExe $script --repo-root $RepoRoot --accept-report-only-handoff
+}
+exit $LASTEXITCODE
