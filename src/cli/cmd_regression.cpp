@@ -87,7 +87,7 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 30> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 32> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -271,6 +271,18 @@ constexpr std::array<RegressionSpec, 30> kRegressionSpecs{{
         "export\\export_sdf_regression.dts",
         "EXPORT SDF smoke: creates a throwaway table in SANDBOX and exports fixed-width, space-padded records with TUPTALK PUSH ROW-compatible alignment. Explicit-run because it writes an output text file.",
         false
+    },
+    {
+        "IDXDIFF",
+        "index_replace_diff_bench.dts",
+        "Index replace-diff benchmark (item A, session 2026-07-30): apply_replace_snapshot now emits only the tags whose (tag,key) actually moved instead of deleting and re-inserting every tag, turning a single-field REPLACE on an N-tag table from 2N committed LMDB write transactions into 2. Builds a throwaway 4-tag x64 table, replaces one indexed field then one non-indexed field, and carries two correctness markers (moved key reachable, skipped tag intact). MEASUREMENT is external: run with DOTTALK_INDEX_TRACE=1 and read the '[INDEX TRACE] apply_replace ... emitted_del/emitted_ins/skipped' lines; a .dts cannot count engine trace output. Expect 1/1 skipped=3 for the indexed edit and 0/0 skipped=4 for the unindexed one. Explicit-run: benchmark, not a pass/fail gate.",
+        false
+    },
+    {
+        "VUREPAIR",
+        "validate_unique_repair_index_proof.dts",
+        "VALIDATE UNIQUE ... REPAIR maintains the active index (item C1, session 2026-07-30): builds a throwaway x64 table with a duplicated key, indexes the uniqueness-candidate field via CDX, repairs the duplicate, then asserts the repaired record is reachable at its NEW key with NO REINDEX between (VUR_T2) and that the surviving legitimate duplicate is still correct (VUR_T3). Runtime-proven 2026-07-30 on the wsl-lean build. REPAIR previously used set()+writeCurrent(), which carry no index hook, and left the tag pointing at the old value with nothing marked stale. Requires x64/CDX: CnxBackend upsert/erase are still stubs (XIDX-TXN-02), so x32/CNX would fail for an unrelated reason. Self-bootstrapping and self-erasing; explicit-run until proven green.",
+        false
     }
 }};
 
@@ -303,11 +315,37 @@ const RegressionSpec* find_regression_spec(const std::string& token)
     return nullptr;
 }
 
+// Normalize a spec's script path separators for the host filesystem.
+//
+// kRegressionSpecs stores subdirectory paths with Windows backslashes
+// ("canaries\\x64_matrix_metrics_boundary_canary.dts"). On Windows that is a
+// path separator; on Linux it is an ordinary filename character, so the whole
+// string is treated as one impossible filename and the script is never found.
+//
+// Measured 2026-07-30 on WSL: 22 of 32 specs carry backslash paths, including
+// 5 of the 8 DEFAULT-suite entries. REGRESSION ALL therefore ran 3 of 8 default
+// suites and reported the rest as "script not found" WITHOUT failing the run --
+// a green-looking Linux regression pass missing five eighths of its default
+// coverage. The engine is cross-platform; the harness quietly was not.
+//
+// Fixing it here rather than editing 22 string literals keeps the specs readable
+// in their authored form and makes any future backslash entry work too. '/' is
+// accepted on Windows as well, so this is safe in both directions.
+static std::string normalize_script_separators(const std::string& raw)
+{
+    std::string out = raw;
+    for (char& c : out) {
+        if (c == '\\') c = '/';
+    }
+    return out;
+}
+
 std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
 {
     namespace fs = std::filesystem;
 
-    const fs::path raw(spec.script);
+    const std::string script = normalize_script_separators(spec.script);
+    const fs::path raw(script);
     if (raw.is_absolute()) return raw.lexically_normal();
 
     try {
@@ -322,7 +360,7 @@ std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
     } catch (...) {
     }
 
-    return shell_resolve_script_path(spec.script);
+    return shell_resolve_script_path(script);
 }
 
 void print_regression_usage()

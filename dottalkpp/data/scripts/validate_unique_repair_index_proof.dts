@@ -1,0 +1,98 @@
+* ============================================================================
+* validate_unique_repair_index_proof.dts
+*
+* Proves: VALIDATE UNIQUE ... REPAIR maintains the ACTIVE INDEX while it
+* rewrites a duplicate key, so the repaired record is reachable through the
+* index with NO REINDEX/REBUILD in between.
+*
+* Why this exists (item C1, session 2026-07-30_cowork_house_index_vdisk):
+* the REPAIR loop used A.set() + A.writeCurrent(), which carry no index hook.
+* It rewrote a uniqueness-candidate field -- exactly the kind of field likely
+* to carry a tag -- and left the index pointing at the old value with nothing
+* marking it stale. REPAIR now routes through DbArea::replaceFieldStored(),
+* which owns the record lock, the write, and the index replace snapshot.
+*
+* MUST run on x64/CDX, not x32/CNX. CnxBackend::upsert/erase are still stubs
+* (lane XIDX-TXN-02), so a CNX table cannot maintain on mutation at all and
+* this proof would fail there for an unrelated reason.
+*
+* Self-contained: builds and erases its own throwaway table; never touches
+* students or any live fixture. Run standalone: DO validate_unique_repair_index_proof
+* Regression: REGRESSION RUN VUREPAIR
+* Markers: VUR_T2 and VUR_T3 must both print .T. (there is no T1 -- see the
+* marker-authoring note below the REPAIR step).
+*
+* Runtime status: PROVEN 2026-07-30 on the wsl-lean build (Linux, Ninja, LMDB).
+* First run: T2 and T3 green, plus engine output "Found at 3." / "Found at 2."
+* confirming SEEK landed on the repaired record at its NEW key with no REINDEX
+* between. T1 printed empty because of a marker-authoring bug (FOUND() does not
+* concatenate); corrected below, and the underlying behaviour it was meant to
+* assert was already evidenced by "Found at 3." plus T2.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* x64 lane: DBF/INDEXES/LMDB path slots for the CDX-LMDB backend
+DO x64
+
+FORMULA "VU-REPAIR-INDEX-PROOF-BEGIN"
+
+* --- throwaway table with a duplicated key value ---
+* SID 10, 20, 20, 30. Rec 3 is the duplicate REPAIR must renumber.
+* compute_max_numeric_value() sees 30, so rec 3 becomes 31 -- deterministic.
+CREATE X64 VUREP (SID N(6), LNAME C(20))
+APPEND
+REPLACE SID WITH 10
+REPLACE LNAME WITH "ADAMS"
+APPEND
+REPLACE SID WITH 20
+REPLACE LNAME WITH "MILLER"
+APPEND
+REPLACE SID WITH 20
+REPLACE LNAME WITH "ZEBRA"
+APPEND
+REPLACE SID WITH 30
+REPLACE LNAME WITH "YOUNG"
+
+* --- index the uniqueness-candidate field and make it the active order ---
+CDX CREATE
+CDX ADDTAG SID
+REINDEX CDX
+SET ORDER TAG SID
+
+* --- repair. NOTE: no REINDEX after this line, deliberately. ---
+VALIDATE UNIQUE FIELD SID REPAIR
+
+* --- T1: the repaired record is reachable through the index at its NEW key ---
+* Before the fix the index still carried 20 for this record, so SEEK 31 missed.
+*
+* MARKER-AUTHORING NOTE, learned the hard way (two failed attempts 2026-07-30):
+* "? <string> + <logical>" renders the logical ONLY when the logical came from a
+* STRING comparison. Both of these printed the label with NO value at all:
+*     ? "x:" + FOUND()                 && function returning logical -> empty
+*     ? "x:" + (RECNO() = 3)           && numeric comparison         -> empty
+* while (ALLTRIM(LNAME) = "ZEBRA") renders .T. correctly. Use string comparisons
+* for markers, or the assertion silently reads as a failure when it is not.
+*
+* There is deliberately no T1 marker now. It was redundant: if SEEK 31 missed,
+* the record pointer would not be on the repaired row and T2 below would read
+* .F. So T2 proves both "found" and "found the right record" in one assertion,
+* and the engine's own "Found at 3." line is the corroborating evidence.
+SEEK 31
+
+* --- T2: and it is the right record ---
+? "VUR_T2_seek_new_key_is_ZEBRA:" + (ALLTRIM(LNAME) = "ZEBRA")
+
+* --- T3: the surviving legitimate 20 is still findable and is MILLER ---
+* Guards the other direction: the fix must not have erased the wrong entry
+* from the equal-key run.
+SEEK 20
+? "VUR_T3_seek_old_key_is_MILLER:" + (ALLTRIM(LNAME) = "MILLER")
+
+FORMULA "VU-REPAIR-INDEX-PROOF-END"
+
+* --- teardown ---
+* No bare "SET ORDER TO" here: it reports "SET ORDER: missing target."
+* CLOSE drops the order with the table.
+CLOSE
+ERASE VUREP CONFIRM
