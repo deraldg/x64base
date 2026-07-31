@@ -1264,6 +1264,87 @@ and that is a complete result.
 
 ---
 
+## 9a. Reframing -- the portal is already a memory system, missing three parts
+
+Recorded 2026-07-31T20:00Z, on the owner supplying *Toward Persistent Memory for
+Artificial Minds* (review-needed) and assigning this steward the portal and the
+BBS. The thesis does not add work to this lane. It **names** what the lane found,
+and the naming says which remaining proposals are structural and which are
+decoration.
+
+### The findings were instances of thesis claims
+
+| This lane measured, independently | Thesis |
+| --- | --- |
+| C8 -- a canonical copy nobody can reach is the same as no copy | 5.1, "a memory that cannot be reached is, functionally, a memory that does not exist" |
+| 6.6 -- the corpus only adds; 128 KB is eighty lanes of correct decisions | 2.2, forgetting as a designed function rather than a defect |
+| 5b -- scar tissue read at entry is not applied when it constrains | 5.4, recall as assembling the smallest set that restores competence |
+| Section 6 -- the defect is something reporting success without doing its job | 8, arrived at in nearly the same words |
+
+Four derivations from evidence landing on claims already written. Corroboration
+in both directions: the thesis is not speculative, and these findings are not
+local accidents.
+
+### The diagnosis this makes available
+
+The portal has **capture** and **storage** in abundance. It lacks the three parts
+the thesis says do the work:
+
+- **Triage (4).** Nothing decides what is worth promoting. Every lane yields a
+  charter, a closeout and an intake row, and all of it is kept. No value gate, so
+  the store grows monotonically. **That is the 127,704 bytes.** Accretion is not a
+  hygiene failure; it is the predictable output of a pipeline with no triage stage.
+- **Decay (2.2, 3.2).** Nothing carries a decay clock. Working memory that should
+  evaporate is committed as permanently as a settled convention, which is why the
+  legacy Start Here list and eighteen strata of `CURRENT_TARGET.md` sat on the
+  entry path long after they stopped being true.
+- **Recall (5).** No typed links, only prose cross-reference. Recall is therefore
+  a full scan by whoever needs it, which is precisely what the 128 KB traversal
+  was. **C8 is the reachability constraint failing.**
+
+### What this changes in the proposals already on the sheet
+
+- **6.6 is the decay function**, not tidiness. "A rule that gains a hard-failing
+  gate demotes one tier" is selective forgetting with a value signal: the gate is
+  what is retained, the prose is the working copy free to fade. Argue it from 2.2.
+  It matters more than its position suggests.
+- **6.3 is the recall graph in embryo.** A trigger index is a first cut at 5.2's
+  typed edges -- *about to push* is an edge type. Built as a flat table it is a
+  lookup; built as typed links between doctrine nodes it starts the graph the
+  thesis needs. Small cost difference, large difference in what it becomes.
+- **The tier model maps onto the taxonomy (3)** and inherits its decay rules:
+
+  | Tier | Class | Decays |
+  | --- | --- | --- |
+  | Tier 0, generated state | working / short-term | yes, by regeneration |
+  | Tier 1 seed | procedural -- applied, not consulted | no |
+  | Tier 2, trigger-indexed doctrine | semantic | no; revised |
+  | Dated scar tissue | **episodic** | slowly |
+
+  Naming the scar tissue **episodic** is the useful move. 3.4 says episodic is the
+  class naive designs neglect, keeping facts and discarding the history that gives
+  facts meaning. This corpus does the opposite and keeps it unusually well, which
+  is why its rules persuade rather than merely instruct. **It must not be traded
+  away in any consolidation** -- that is now a constraint on 6.3, not a preference.
+
+### The standing obligation on the steward
+
+4.6 is an instruction, not an observation: **deferral without a stated reason is a
+silent demotion**, and the unpromoted work then decays on the ordinary schedule.
+Audited against this lane, each deferral does carry a reason -- 6.6 blocked on
+AIF-079, 6.10 owned by the memo lane, 6.12 in the website repo, AIF-068/070 a
+maintainer call, the 76 unattributed closeouts being history rather than working
+set. Recorded so the standard is explicit rather than accidental, and so a future
+session is measured against it.
+
+### Not claimed
+
+The thesis is the owner's and is review-needed. Nothing here promotes it. This
+section records only where its structure explains findings reached independently,
+and what that implies for work already proposed.
+
+---
+
 ## 10a. Method note -- working the system is what found the defects
 
 Maintainer, 2026-07-31: *"Working the system makes you learn the system, which

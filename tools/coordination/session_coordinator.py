@@ -142,13 +142,37 @@ def checkout(root: Path, run):
     try:
         p.unlink()
     except OSError as exc:
-        print(f"CHECKOUT FAILED {run}: {exc}", file=sys.stderr)
-        print(f"  the session record is still present: {p}", file=sys.stderr)
-        print("  it will keep appearing in `status` until removed; delete it by hand",
-              file=sys.stderr)
-        print("  or re-run this checkout from an account that can write there.",
-              file=sys.stderr)
-        return 1
+        # AIF-082 6.8b, 2026-07-31: the 2026-07-26 fix stopped the traceback but
+        # left the record reading `status: active` forever, so a session that
+        # could not delete stayed listed as live. Observed that day: `status`
+        # showed three active sessions, two stale by 12+ hours and one that had
+        # tried to check out and failed. A presence signal that is mostly false
+        # is a signal nobody reads, which is why no closeout in the tree records
+        # having consulted it.
+        #
+        # Deleting is the preferred outcome; being HONEST is the required one.
+        # If we cannot remove the file, rewrite it as closed so `status` can
+        # filter it. Writing usually succeeds where unlinking fails, because the
+        # mounts that refuse unlink still allow truncate-and-write.
+        try:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            if "status: active" in text:
+                text = text.replace("status: active", "status: closed")
+            else:
+                text = text.rstrip("\n") + "\nstatus: closed\n"
+            text = text.rstrip("\n") + f"\nclosed_utc: {now()}\n"
+            p.write_text(text, encoding="utf-8")
+            print(f"CHECKED OUT {run} (marked closed; file could not be removed: {exc})")
+            return 0
+        except OSError as exc2:
+            print(f"CHECKOUT FAILED {run}: {exc}", file=sys.stderr)
+            print(f"  could not mark it closed either: {exc2}", file=sys.stderr)
+            print(f"  the session record is still present: {p}", file=sys.stderr)
+            print("  it will keep appearing in `status` until removed; delete it by hand",
+                  file=sys.stderr)
+            print("  or re-run this checkout from an account that can write there.",
+                  file=sys.stderr)
+            return 1
     print(f"CHECKED OUT {run}")
     return 0
 
@@ -206,10 +230,35 @@ def status(root: Path):
     print(f"AIF taken: {', '.join('%03d' % n for n in used) or '(none)'}")
     print(f"next-free AIF: {nxt:03d}" if nxt else "next-free: (none)")
     print(f"claim ledger: {sorted(f.name for f in (root/AIF_DIR).glob('AIF-*.claim'))}")
-    print("\nactive sessions:")
+    # AIF-082 6.8b, 2026-07-31: separate LIVE from CLOSED and STALE. Previously
+    # everything under active_sessions/ printed as an active session with a
+    # [STALE] suffix, so the list was mostly noise and nobody consulted it. A
+    # presence signal is only useful if "listed" means "probably working right
+    # now" -- see cadence rule 4 in the Tier 1 seed, which depends on this.
+    live, closed, stale_rows = [], [], []
     for f in sorted((root / SESS_DIR).glob("*.yaml")):
-        stale = " [STALE]" if _age_min(f) > STALE_MIN else ""
-        print(f"  {f.stem}  ({_age_min(f):.0f} min ago){stale}")
+        age = _age_min(f)
+        body = f.read_text(errors="ignore")
+        if "status: closed" in body:
+            closed.append((f, age))
+        elif age > STALE_MIN:
+            stale_rows.append((f, age))
+        else:
+            live.append((f, age))
+
+    print("\nactive sessions (live):")
+    for f, age in live:
+        print(f"  {f.stem}  ({age:.0f} min ago)")
+    if not live:
+        print("  (none)")
+    if stale_rows:
+        print(f"\nstale, older than {STALE_MIN} min -- probably abandoned, reapable:")
+        for f, age in stale_rows:
+            print(f"  {f.stem}  ({age:.0f} min ago) [STALE]")
+    if closed:
+        print("\nclosed but not removed (checkout could not unlink):")
+        for f, age in closed:
+            print(f"  {f.stem}  ({age:.0f} min ago) [CLOSED]")
     print("locks:")
     for f in sorted((root / LOCK_DIR).glob("*.lock")):
         stale = " [STALE]" if _age_min(f) > STALE_MIN else ""
