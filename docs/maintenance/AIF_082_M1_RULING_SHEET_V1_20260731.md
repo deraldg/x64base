@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T18:22:15Z
-    baseline    : cf5ac99b8 (development, pushed)
-    status      : Group A ratified; 22 rows, 6 closed (X1, X2, 6.2, 6.11, 6.5g, 6.5e), 16 open
+    updated_utc : 2026-07-31T18:41:00Z
+    baseline    : a1e5e228f (development, pushed)
+    status      : 22 rows, 9 closed (X1, X2, 6.2, 6.11, 6.5g, 6.5e, 6.8a, 6.1, 6.7), 13 open
 
 ---
 
@@ -127,7 +127,7 @@ measurement rather than a build, and the number stays useful either way.
 | --- | --- | --- | --- |
 | 6.8a | **A** done | 2026-07-31T18:29Z | `AGENTS.md` rewritten as a shim over `AI_TIER1_SEED_V1.md`, matching `CLAUDE.md`. Verified first that the seed already asserts everything `AGENTS.md` did. Kept the role table verbatim -- the one fact the portal deliberately duplicates, per `AI_PORTAL.md:321-323`. Push-authorisation detail moved to the seed's "commit or push" trigger row, where it fires. Vendor onboarding depth is now equal by construction rather than by accident. |
 | 6.8b | | | |
-| 6.7 | | | |
+| 6.7 | **A** done | 2026-07-31T18:40Z | Probe run over AIF-063..082. Governance cost is FLAT (3-5 artifacts per lane) and mildly INVERTED: doc-only lanes mean 4.09, source-changing 3.71. Second finding: the dashboard Session Log row is the only obligation with no gate and is present in 6 of 18 lanes (33%), against 83-94% for the four that have gates. Result in charter 6.7, 'M6 RESULT'.
 | 6.5a | | | |
 | 6.5b | | | |
 | 6.5c | | | |
@@ -136,7 +136,7 @@ measurement rather than a build, and the number stays useful either way.
 | 6.5f | | | |
 | 6.5g | **A** ratified | 2026-07-31T18:22Z | "Leave a handoff, not only a closeout" becomes a closeout obligation alongside AIF-006. Both handoffs landed: `HANDOFF_CLAUDE_WSL_DOTTALKPP_2026-07-31.md` (`71f9b850e`) and `HANDOFF_CLAUDE_COWORK_ONBOARDING_2026-07-31.md` (`554891db5`). **Owed:** add the obligation to `AI_PORTAL.md` "Closeout Updates Startup" and to `SESSION_CLOSEOUT_TEMPLATE.md` so it is a gate rather than a precedent. |
 | 6.5h | | | |
-| 6.1 | | | |
+| 6.1 | **A** done | 2026-07-31T18:33Z | `labtalk/ai_portal/generate_tier0_state.py` + committed `TIER0_STATE.md`, 2,133 B against a 4,096 target. Commit `a1e5e228f`. Warnings cross-validate against `aif_collision_gate.py` independently. **Owed:** nothing regenerates it, so it goes stale on the next commit -- wiring it to the pre-commit hook is an open decision.
 | 6.2 | **A** ratified | 2026-07-31T18:22Z | Tier 1 seed accepted as the standard. `labtalk/ai_portal/AI_TIER1_SEED_V1.md`, 8,191 B against its 8,192 ceiling, committed `8a3dea347`. The 8 KB ceiling and its enforcement are ratified with it. |
 | 6.3 | | | |
 | 6.4 | | | |

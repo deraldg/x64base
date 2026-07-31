@@ -637,9 +637,8 @@ itself.
 
 Proposed, in order:
 
-1. **Measure before prescribing.** Count artifacts and mandatory steps per lane
-   across the last twenty lanes, bucketed by declared `change_class`. The data
-   is already in the tree: claim files, lane docs, closeouts, queue rows.
+1. ~~**Measure before prescribing.**~~ **DONE 2026-07-31T18:40Z -- see M6 result
+   below.**
 2. **Then decide** whether low-class lanes may collapse artifacts -- for
    example a C0 lane filing one document that is both charter and closeout,
    rather than two that restate each other. This lane's own charter and closeout
@@ -650,6 +649,54 @@ Recorded as an estimate, not a measurement, per
 `COST_BENEFIT_GATE_DOCTRINE_V1.md`: estimates suggest, probes measure. The
 one-third figure above is this steward's impression of a single session and is
 not evidence. M6 is the probe.
+
+#### M6 RESULT -- governance cost measured, 2026-07-31T18:40Z
+
+Probe: AIF-063 through AIF-082, the last eighteen lanes carrying an intake row.
+Artifacts counted per lane: claim file, lane doc, closeout, dashboard Session Log
+row, intake row. Class taken from the intake row's own tags
+(`source_change` present or not). Reproducible by walking
+`coordination/aif/`, `docs/maintenance/`, and the two `docs/ai-friendly/`
+registers.
+
+| Class | Lanes | Mean artifacts |
+| --- | ---: | ---: |
+| source-changing | 7 | **3.71** |
+| documentation-only | 11 | **4.09** |
+
+**The hypothesis was right and the sign is inverted.** Governance cost is flat --
+every lane lands 3 to 5 artifacts regardless of what it changed -- and
+documentation-only lanes carry *more* of it than lanes that touched the engine.
+If governance scaled with change class, the source column would be the larger
+one. It is the smaller one.
+
+That is a stronger result than "governance is uncalibrated," which is what the
+estimate in the section above claimed. Uncalibrated would produce noise around a
+common mean. This is a mild *inverse* relationship: the cheapest changes pay the
+most process, because a doc-only lane's deliverable IS its paperwork, so charter,
+closeout and queue row are all mandatory, while a source lane can land a fix and
+defer its lane doc.
+
+**Second finding, not sought.** Compliance is uneven by obligation, not by lane:
+
+| Obligation | Present |
+| --- | ---: |
+| closeout | 17 of 18 (94%) |
+| claim file | 15 of 18 (83%) |
+| lane doc | 15 of 18 (83%) |
+| **dashboard Session Log row** | **6 of 18 (33%)** |
+
+The AIF-006 dashboard row is skipped two times in three. It is the only
+obligation in the set with no gate behind it -- `prepush_gate.py` checks claims
+and collisions, `audit_trail.py` checks the closeout envelope, and nothing checks
+the Session Log at all. **A rule with no gate is obeyed a third of the time.**
+That is the AIF-079 declared-capability class measured, in the governance layer
+itself, and it is the best available argument for 6.6's demotion rule: the four
+obligations with mechanisms hold above 80 percent, the one without does not.
+
+Consequence for 6.7's remedy: do not start by cutting artifacts. The measured
+problem is not volume, it is that the obligation people actually skip is the one
+nobody enforces. Gate the Session Log row first and re-measure.
 
 #### Observed instance, 2026-07-31T15:00Z -- effort is not calibrated either
 

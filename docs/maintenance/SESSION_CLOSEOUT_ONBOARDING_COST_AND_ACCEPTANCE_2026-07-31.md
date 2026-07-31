@@ -239,6 +239,8 @@ Commits, themed rather than blobbed:
 | `1024a53d5` | `docs(AIF-082): onboarding cost and acceptance lane` -- claim, charter, closeout, M1 ruling sheet, and the two registry rows |
 | `8a3dea347` | `docs(AIF-082): tier 1 seed, retrieval lesson, WSL rules, retire AIF-072 as target` -- 5 files, +411/-12, creating `labtalk/ai_portal/AI_TIER1_SEED_V1.md` |
 | `71f9b850e` | `docs(agents): WSL/dottalkpp handoff, and publish the front door's own onboarding files` -- 3 files, +431, all creates. Lands the handoff whose absence caused C8, plus `AI_BABY_BOOTSTRAP_CARD.md` and `docs/agents/README.md`, both reachable from `AI_README.md` and previously invisible to a clone |
+| `554891db5` | `docs(AIF-082): Cowork onboarding handoff, observability boundary finding, website concurrency gap` -- creates `docs/agents/HANDOFF_CLAUDE_COWORK_ONBOARDING_2026-07-31.md` (8,839 B) |
+| `3550705dd` | `docs(AIF-082): handoff obligation becomes a gate, created_utc policy adopted (M1 group A follow-ups)` -- 3 files, +111/-7. `AI_PORTAL.md` gains "Leave a Handoff as well"; `SESSION_CLOSEOUT_TEMPLATE.md` gains a "Handoff left" field |
 
 `prepush_gate.py` returned **PASS** on both: source/docs/config only, no embedded
 BOM, no AIF-number collision. `repository_role_guard.py` passed host-side,
