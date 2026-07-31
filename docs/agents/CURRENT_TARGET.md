@@ -1,20 +1,57 @@
 # Current Target
 
 Status: active.
-Updated: 2026-07-28.
+Updated_utc: 2026-07-31T12:45:00Z.
+Baseline at update: `0803f0f135b399886591265412c56f1f506ba817` on `development`.
 Supersedes: the completed staging-restoration/publication target recorded below.
 
-## ▶ NEXT TARGET — Phase 7: Manual Web-Ascent (AIF-072)
+## NEXT TARGET -- owner ruling 2026-07-31: no single controlling lane
 
-**Pick up here.** The DOCFLUSH manual payload — the manualgen command-reference
-lane (the five FoxPro string functions `STUFF`/`PADL`/`PADR`/`PADC`/`PROPER`, 236
-registered command keys, 74 scalar functions) — is **accepted in `development`
-but not yet projected to x64base.com.** Promoting and live-verifying it is the
-current recommended next lane.
+Maintainer ruling, 2026-07-31 (AIF-082 X1). **AIF-072 is retired as the
+controlling target.** It remains claimed, chartered, and pick-up-ready; it is
+simply no longer what this file declares. The lanes below are what is actually
+in flight.
 
-Full pick-up point (objective, current state, the gates, and sources):
-`docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md`. Registered as intake
-lane **AIF-072** (`docflush-manual-web-ascent`) — claimed, not started.
+### Why this section changed
+
+AIF-072 was declared the controlling target on 2026-07-28 and stayed declared
+through 2026-07-29 and 2026-07-31 while five lanes opened or advanced past it.
+Two independent cold-start assessments recorded the same drift and neither
+converted to a correction, because updating this file was an unenforced good
+intention rather than a gate. See
+`labtalk/ai_portal/AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md` (finding and
+its gate 4) and `docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md`
+(C3). The durable fix is the Tier-0 staleness warning proposed in that lane
+(6.1), which compares this file against HEAD automatically. **Until that exists,
+this section is hand-maintained and will drift again.**
+
+### In flight, newest first
+
+| Lane | State | Pick-up |
+| --- | --- | --- |
+| **AIF-082** onboarding cost and acceptance | M0 done; **M1 awaiting owner rulings** on 14 items | `docs/maintenance/AIF_082_M1_RULING_SHEET_V1_20260731.md` (7.3 KB; read this, not the charter) |
+| **AIF-081** output capture completeness | Findings recorded; F1 runtime-proven; **no source change landed** | `docs/maintenance/OUTPUT_CAPTURE_COMPLETENESS_LANE_V1.md` |
+| **AIF-080** index container/engine orthogonality | M1 landed (`df14d828e`) and source-evidenced; F3 message split deferred | `docs/maintenance/INDEX_BACKEND_ORTHOGONALITY_LANE_V1.md` |
+| **AIF-079** declared-capability validator | Lane `planned`; scanner (M1) **not written**; the engine slice that produced it is runtime-proven | `docs/maintenance/DECLARED_CAPABILITY_VALIDATOR_LANE_V1.md` |
+| **AIF-043 V6** routing boundary hardening | Milestone opened from the same investigation; R1-R6 recorded | `docs/maintenance/AIF_043_V6_ROUTING_BOUNDARY_HARDENING_V1_20260730.md` |
+
+### Retired as controlling, still available
+
+**AIF-072 Phase 7 Manual Web-Ascent** (`docflush-manual-web-ascent`,
+claimed 2026-07-28). The DOCFLUSH manual payload -- the manualgen
+command-reference lane (the five FoxPro string functions
+`STUFF`/`PADL`/`PADR`/`PADC`/`PROPER`, 236 registered command keys, 74 scalar
+functions) -- is accepted in `development` but not yet projected to
+x64base.com. Still a legitimate and fully specified next lane; it is a
+priority ruling, not an abandonment. Pick-up point:
+`docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md`.
+
+### Also owed, unrelated to the above
+
+- **AIF-070** remains unallocated and owed from AIF-078 (Grok virtual-workspaces
+  intake); claiming another agent's lane is a maintainer call.
+- **AIF-080 and AIF-081 have no Session Log rows**, leaving
+  `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` behind HEAD.
 
 ## Mandatory Repository Role Override - 2026-07-27
 

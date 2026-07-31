@@ -1,6 +1,18 @@
 # DotTalk++ (ccode) -- working notes for Claude
 
+**Start with `labtalk/ai_portal/AI_TIER1_SEED_V1.md`** -- the canonical Tier 1
+body: repo roles, mutation guard, git rules, house conventions, and a five-question
+stopping rule. This file is a Claude-specific shim over it and must not restate it
+(AIF-082, 6.8: two shims that restate will diverge, and have).
+
 Conventions and locations to remember when working in this repo. Keep terse; correct in place.
+
+**Maintenance rule for this file (AIF-082).** Auto-injection guarantees delivery,
+not accuracy: whatever is here reaches every session with full authority and no
+retrieval friction. So it carries only *invariants* and *pointers to maintained
+artifacts*. **No perishable literals** -- versions, counts, lane states, current
+targets. If an agent can cheaply measure it, say "measure it" instead of asserting
+it. Perishable state lives behind the pointer table in the Tier 1 seed.
 
 ## Running the CLI over the work directory
 
@@ -52,6 +64,33 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
 - Owner/maintainer: `member.derald`. Author docs as review-needed until committed; mirror `C:\x64base`
   and public repo are separate promotion steps.
 - No em-dashes in scripts or docs (maintainer preference); use `--` / `->`.
+
+## Sandbox agents: NO git, and you cannot build (AIF-082, 2026-07-31)
+
+If you are running in a mounted Linux sandbox rather than on the Windows host:
+
+- **Run NO git commands. None.** Even `git status` refreshes the index, takes
+  `.git/index.lock`, and cannot reliably unlink it across the mount. A killed or
+  timed-out git leaves a zero-byte lock that **blocks the maintainer's commits**.
+  This wedged `D:\code\ccode` on 2026-07-31. Read and write files freely with
+  file tools; prepare git as commands and hand them to the maintainer.
+  `claim-aif` shells out to `git grep`, so it is host-side too.
+- **Assume you cannot build or run the engine, and verify rather than trust this
+  line.** The sandbox has historically lagged the WSL host on glibc/GLIBCXX and
+  carried no cmake, ninja, or lmdb/sqlite3/nlohmann/sodium headers, so the staged
+  `dottalkpp/bin-wsl-lean/dottalkpp` will not execute and the ceiling is
+  `g++ -fsyntax-only` on single translation units. **Exact versions are
+  deliberately not recorded here** -- they are perishable, and you can measure
+  yours in one command (`ldd --version`, `command -v cmake ninja`). Measure, do
+  not cite this file. Builds and runs are maintainer-operated handoffs either
+  way. Host-vs-sandbox detail: `AI_README.md`, "A sandbox is not the WSL host".
+- **`repository_role_guard.py` and `prepush_gate.py` will false-block** in the
+  sandbox because they check the host path. That is expected, not a defect
+  (`AI_PORTAL.md`, "Sandbox / non-host agents"). Verify the slice by hand and
+  hand it over.
+
+Full WSL build/run detail and the host-vs-sandbox table: `AI_README.md`,
+"WSL working environment".
 
 ## Commit coordination + pre-push gate (AIF-050)
 

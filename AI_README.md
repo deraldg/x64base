@@ -279,6 +279,72 @@ Build:
 cmake --build build --config Release --target dottalkpp
 ```
 
+### WSL working environment (added 2026-07-31, AIF-082 / C8)
+
+MSVC is **not** required for engine work. The wsl presets carry
+`DOTTALK_INDEX_MODE: LMDB`, so LMDB paths are provable on Linux. A prior session
+lost most of its runtime evidence to the belief that MSVC was mandatory.
+
+```bash
+cd /mnt/d/code/ccode
+./wslbuild.sh                        # configure if needed, build, stage
+./wslbuild.sh dottalkpp -a           # build + REGRESSION ALL
+./wslbuild.sh dottalkpp -t IDXSTALE  # build + REGRESSION RUN <NAME>
+```
+
+Preset `wsl-lean` builds to `build-wsl-lean/`, staged to
+`dottalkpp/bin-wsl-lean/`. Run from the data root:
+
+```bash
+cd /mnt/d/code/ccode/dottalkpp/data
+printf '%s\n' 'CMD1' 'CMD2' | ../bin-wsl-lean/dottalkpp
+```
+
+Rules, each of which has already cost a session:
+
+- **Do NOT reintroduce the `vcpkg.json` / `vcpkg-wsl.json` swap.**
+  `VCPKG_MANIFEST_FEATURES=index` in the preset already excludes
+  tvision/wx/pybind11. An unswapped run under the old scheme destructively
+  reconciled the installed tree ("Removing 53/53 tvision:x64-linux"). The
+  reasoning is at the top of `wslbuild.sh`; read it before touching the build.
+- **`ninja: no work to do` is not proof your change is in the binary.** Two
+  differing build stamps in `ABOUT` is genuinely ambiguous. Compare object mtime
+  against source mtime, or grep the linked ELF for a string you just added. This
+  has already caught one false-green.
+- **Capture with `SET ALTERNATE`, never `DOTSCRIPT ... OUT`.** Measured
+  2026-07-31, same script and binary: 89 lines vs 42. ALTERNATE is a strict
+  superset; `DOTSCRIPT OUT` silently drops everything routed through
+  `cli::cmdout`, which is the entire user-facing command surface. The DOTSCRIPT
+  help text claims otherwise and is wrong (AIF-081, unfixed).
+- **`DOTTALK_INDEX_TRACE` and `DOTTALK_APPEND_TRACE` default ON**
+  (`index_manager.cpp:449-457`, `append_support.cpp:74-82`). They are opt-OUT.
+  Pin them explicitly for reproducible figures.
+
+### A sandbox is not the WSL host
+
+An AI partner running in a mounted Linux sandbox (for example Cowork) is **not**
+in the maintainer's WSL and generally cannot build or run:
+
+| | WSL host | Cowork sandbox, measured 2026-07-31 |
+| --- | --- | --- |
+| Distro | Ubuntu 24.04 | Ubuntu 22.04.5 |
+| glibc | 2.38 | 2.35 |
+| GLIBCXX | 3.4.32 | 3.4.30 |
+| cmake / ninja | present | **absent** |
+| lmdb / sqlite3 / nlohmann / sodium headers | present | **absent** |
+
+The staged `bin-wsl-lean` ELF is readable there but **will not execute** -- it
+needs glibc 2.38 and GLIBCXX 3.4.32. The practical ceiling in such a sandbox is
+per-translation-unit `g++ -fsyntax-only`. Builds and runs are therefore
+maintainer-operated handoffs: the agent prepares the exact command and the
+expected evidence.
+
+**A sandboxed agent must run NO git commands.** Even `git status` refreshes the
+index, takes `.git/index.lock`, and cannot reliably unlink it across the mount,
+which then blocks the maintainer's commits. This happened on 2026-07-31. Read
+files freely; run git only host-side. `claim-aif` shells out to `git grep`, so
+it is host-side too. See `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md`.
+
 Convenience launchers from the repo root:
 
 ```powershell
