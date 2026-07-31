@@ -125,7 +125,7 @@ measurement rather than a build, and the number stays useful either way.
 
 | Item | Ruling | Date | Note |
 | --- | --- | --- | --- |
-| 6.8a | | | |
+| 6.8a | **A** done | 2026-07-31T18:29Z | `AGENTS.md` rewritten as a shim over `AI_TIER1_SEED_V1.md`, matching `CLAUDE.md`. Verified first that the seed already asserts everything `AGENTS.md` did. Kept the role table verbatim -- the one fact the portal deliberately duplicates, per `AI_PORTAL.md:321-323`. Push-authorisation detail moved to the seed's "commit or push" trigger row, where it fires. Vendor onboarding depth is now equal by construction rather than by accident. |
 | 6.8b | | | |
 | 6.7 | | | |
 | 6.5a | | | |
