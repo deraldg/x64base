@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T19:02:00Z
-    baseline    : ee76b0a4f (development, pushed)
-    status      : 24 rows, 12 closed, 12 open
+    updated_utc : 2026-07-31T19:40:00Z
+    baseline    : 1b52869e1 (development, pushed)
+    status      : 24 rows, 14 closed, 10 open
 
 ---
 
@@ -147,8 +147,8 @@ measurement rather than a build, and the number stays useful either way.
 | 6.10 | | | |
 | 6.11 | **A** ratified | 2026-07-31T18:22Z | Maintenance contract binding on always-read surfaces: invariants and pointers only, no perishable literals, hard byte ceiling, demote once a hard-failing gate covers a rule. Already applied to the Tier 1 seed and to `CLAUDE.md`, whose hardcoded toolchain versions were removed as perishable. |
 | 6.12 | | | |
-| 6.13 | | | |
-| 6.14 | | | |
+| 6.13 | **A** partial | 2026-07-31T19:15Z | `tools/coordination/check_session_log_row.py` written and committed (`9b3977856`), standalone rather than wired into the gate. Running it surfaced a deeper defect: **76 of 83 closeouts name no lane in their title**, so the set is largely unattributable by machine. The three it can attribute and flags -- AIF-060, AIF-071, AIF-078 -- are genuinely missing rows. **Open:** a one-line convention in `SESSION_CLOSEOUT_TEMPLATE.md` (H1 carries `(AIF-NNN)`) is smaller than the checker and worth more; and whether the checker joins the gate. |
+| 6.14 | **A** done | 2026-07-31T19:40Z | `check_mandatory_tracked.py` written, widened to scripts after it missed the role guard, run host-side: **16 untracked** (10 documents, 6 scripts) including `REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md` and `repository_role_guard.py`. Owner ruled commit-and-publish; all 16 landed in `1b52869e1`, 1,956 insertions, all creates. Re-run reports **PASS**. Closes C8 by mechanism. **Open:** whether the check joins `prepush_gate.py`. |
 | X1 | **A** (retire) | 2026-07-31T12:45Z | AIF-072 retired as controlling target; stays claimed and pick-up-ready. `CURRENT_TARGET.md` top section rewritten to name the five in-flight lanes. Applied. |
 | X2 | **A** (done, published) | 2026-07-31T14:30Z | Four themed commits host-side: `1024a53d5` lane artifacts, `8a3dea347` tier 1 seed + portal surfaces, `71f9b850e` agents handoff + front-door files, `cf5ac99b8` record corrections. `prepush_gate.py` PASS on all. **Pushed** `0803f0f13..cf5ac99b8` to `origin/development`. Staging and `main` not reached, out of scope. |
 

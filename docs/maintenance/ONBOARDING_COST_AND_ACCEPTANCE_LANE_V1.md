@@ -371,6 +371,31 @@ the tree, with nothing anywhere recording that the citation is unreachable. That
 is the declared-capability class (AIF-079) applied to authority itself -- the
 reference exists, the referent does not.
 
+#### C8 CLOSED -- 2026-07-31T19:40Z, commit `1b52869e1`
+
+All 16 published. 1,956 insertions, every one a `create mode`. The check now
+reports:
+
+    mandatory-tracked: 45 document(s) and 10 script(s) checked
+    mandatory-tracked: PASS -- every declared file is tracked
+
+**Closed by mechanism, not by assertion.** The same command that found the defect
+proves the fix, and will keep proving it on every future run. That is the shape
+6.6 requires before a rule may demote: the gate becomes the memory, so the prose
+no longer has to be read at entry to do its job.
+
+Owner ruling was "commit and publish". Recorded with it: a publication sanity
+scan ran first (no credentials, keys, or user-profile paths in any of the 16),
+and the maintainer was told plainly that `origin/development` is on the public
+GitHub repository, so these became publicly readable on push rather than on
+later promotion to `main`.
+
+What this closes is larger than the finding as originally written. C8 was filed
+as "the best operational onboarding artifact was never put in the tree." It ends
+as: **the authority chain the portal rests on is now readable by anyone the
+portal holds to it** -- including the hosted partners the Outside-AI Delivery
+Rule admits, who were previously bound by a contract they could not open.
+
 **Method note against this lane's own tool.** The checker labels all six scripts
 "a gate that will not run downstream". That is right for
 `repository_role_guard.py` and `run_attribution_check.py` and overstated for the
