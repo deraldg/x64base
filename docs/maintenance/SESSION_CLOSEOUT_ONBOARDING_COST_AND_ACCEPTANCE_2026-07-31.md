@@ -629,3 +629,66 @@ the current stage is in "Published" above, which supersedes the
 - Doctrine: `AI_PORTAL.md` (AIF-006 closeout-updates-startup; AIF-024
   document-as-you-work; AIF-037 representative by design; falsifiable-target
   rule at `:339-341`)
+
+---
+
+## Addendum F -- 2026-07-31T22:40Z: M4 run 1, C8b, and the R27a tracking campaign
+
+Appended after the closeout's original filing. Three things happened that change
+the lane's state; charter sections 11 and 12 carry the detail.
+
+**1. M4 run 1 executed. NOT a pass, and the fault is the instrument.** A cold
+subagent, given a real owed task with no test tell, applied ten house conventions
+unprompted -- three of them authored the same day -- and found two live defects
+of mine. But it never produced the Minimal New-AI Checklist (neither did cold
+agent 1: two for two), and it spent 117 K tokens against a 10,324 B entry path
+with no read-log, so the causal claim is unavailable. **M9 is now a measured
+prerequisite of M4, not an argued one.** Rulings R25/R26 opened.
+
+**2. C8b: the `mandatory-tracked` gate has a self-drawn denominator.** It passed
+in every commit this session while roughly 1,100 untracked source files entered
+history, because its universe is derived from `AI_README.md` and `AI_PORTAL.md`
+(`check_mandatory_tracked.py:36`). Its output never changed: `45 document(s) and
+11 script(s)`, PASS, throughout. Ruling R27 opened, then split into R27a (track
+the pipeline) and R27b (invert the gate).
+
+**3. R27a executed and complete.** Commits `7a4d062ae` (fullstack_docs, 43),
+`358687b2f` (locale, 85), `4f3477608` (messaging, 869 / 111,400 insertions),
+`4acfa853d` (root scripts, 10), plus manualgen, datadict, tests, staging and the
+small helpers. The repo-to-site publication bridge
+(`stage_assembled_manual_to_site.py`) is now under version control at both ends.
+
+**Cross-lane finding, and the strongest argument for having done it.** The
+newly-tracked `tools/messaging` carries a confirmed, isolated **general DOTSCRIPT
+shutdown exit crash** with a fix plan held at gate `10DT`. AIF-083 M2's only
+delivery mechanism is a runtime transcript, and it now has two documented hazards
+from two lanes that did not know of each other -- AIF-081's `DOTSCRIPT ... OUT`
+discarding `cmdout`, and this crash truncating the run. **Both bias M2's evidence
+toward a false negative**, which is precisely the direction that would have had
+me score F1 and F2 as runtime-confirmed on absent output.
+
+### Honest ledger of my own errors this session
+
+Recorded because the lane's standard requires it and because the pattern is the
+finding, not the individual slips:
+
+| # | Error | Caught by |
+| --- | --- | --- |
+| 1 | `check_session_log_row.py` counted closeouts, not lanes | the cold subagent |
+| 2 | `recall.py` summed whole files, not sections (6x overstatement) | a falsification pass |
+| 3 | `check_mandatory_tracked.py` universe drawn from itself | a `git status` tail |
+| 4 | predicted a 60-file slice that was 43 (disk vs untracked) | the commit output |
+| 5 | derived datadict slice sizes by division; `catalog` was 145, not ~17 | the mass-change gate |
+| 6 | commit loop with no failure handling -- fused on first block | the mass-change gate |
+| 7 | `git status --short` given as a staged-only check twice | the maintainer running it |
+
+Six of seven are one error: **a denominator drawn from my own expectations rather
+than from the system being measured.** Error 5 is the sharpest because division
+feels like derivation, and error 6 followed three messages after I warned against
+the exact hazard it caused. Writing the warning did not prevent the behaviour.
+
+That is the lane's own thesis turned on its author, and it is worth more to the
+portal than a clean record would have been: the remedy for this class is never
+discipline, it is a gate whose denominator comes from outside. Every one of these
+was caught by an external check or another party. None was caught by me being
+careful.

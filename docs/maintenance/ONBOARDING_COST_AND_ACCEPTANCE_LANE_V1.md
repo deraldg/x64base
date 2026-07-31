@@ -1573,3 +1573,483 @@ every future M4 run will be as uninterpretable as this one. **M9 blocks M4.**
 This is a subagent under my own model, inheriting the auto-injected `CLAUDE.md`.
 It is weaker than a fresh session in a fresh project mounting only `D:\code\ccode`,
 and I do not report it as M4 passing. The strong run remains a maintainer action.
+
+---
+
+## 12. C8b -- my own mandatory-tracked gate has the wrong denominator (2026-07-31T22:10Z)
+
+Found in the `git status` tail the maintainer pasted immediately after commit
+`be8d1a12e`, in which every gate reported PASS, including this one:
+
+```text
+mandatory-tracked: 45 document(s) and 11 script(s) checked
+mandatory-tracked: PASS -- every declared file is tracked
+```
+
+That PASS is true and nearly worthless, and the reason is in my own source.
+`check_mandatory_tracked.py:36` derives its universe from two entry documents:
+
+```python
+ENTRY_DOCS = ("AI_README.md", "AI_PORTAL.md")
+```
+
+then regex-scans those files for script mentions. **A file the portal never names
+cannot fail the gate.** The gate does not ask "is everything that matters
+tracked"; it asks "is everything I already knew about tracked." Those differ by
+exactly the set C8 was opened to find.
+
+### 12.1 What the pasted status shows, in one directory
+
+`tools/staging/` holds 22 files. The maintainer's paste marks ten of them `??`:
+
+| Untracked | What it is |
+| --- | --- |
+| `README.md` | the directory's own explanation |
+| `create_public_baseline_escrow.py` | public-baseline escrow |
+| `execute_gate5_staging_rebuild.py` | Gate 5 staging rebuild |
+| `plan_gate5_staging_overlay.py` | Gate 5 overlay planning |
+| `preserve_staging_worktree.py` | staging worktree preservation |
+| `test_create_public_baseline_escrow.py` | its test |
+| `test_execute_gate5_staging_rebuild.py` | its test |
+| `test_plan_gate5_staging_overlay.py` | its test |
+| `test_preserve_staging_worktree.py` | its test |
+| `test_repository_role_guard.py` | **the test for the binding role guard** |
+
+The promotion pipeline and its entire test suite are not version-controlled,
+while `prepush_gate.py` and `repository_role_guard.py` beside them are. The last
+row is the sharpest: `repository_role_guard.py` is a **binding contract** that
+hard-blocks commits and printed PASS twice in this very transcript. Its test is
+untracked. Change the guard and nothing checks it, on any clone but this one.
+
+Untracked also spans `tools/manualgen/`, `tools/messaging/`, `tools/selfdoc/`,
+`tools/source_objects/`, `tools/teaching/`, and a long tail of `wsl*` and `*.ps1`
+scripts. Uncounted here on purpose -- I must not run git, so section 12.4 hands
+over the measurement rather than guessing at it.
+
+### 12.2 This is the third instance of one pattern, and I authored all three
+
+| Gate | Wrong denominator | Found by |
+| --- | --- | --- |
+| `check_session_log_row.py` | counted closeouts, not lanes -- reported OK while AIF-080/081 were missing | the cold subagent |
+| `recall.py` | summed whole FILES, not sections -- 217,471 B reported against a 127,704 B corpus | a falsification pass |
+| `check_mandatory_tracked.py` | counts files the portal already names | this `git status` tail |
+
+Same shape every time: **a gate whose universe is drawn from the thing it is
+supposed to audit.** It cannot fail, so it reports PASS, so it is trusted more
+than a gate that occasionally fails. I fixed the first, fixed the second, and
+then shipped the third while writing the section that names the pattern.
+
+The lane's own thesis about AIF-079 -- a declared capability whose enforcement is
+half-present -- turns out to describe my gates, not just the engine's permissions.
+Worth stating plainly because 6.6's demotion rule *depends on these gates being
+real*: it demotes a Tier 1 rule once a hard-failing gate covers it. A gate with a
+self-drawn denominator would license demoting a rule nothing actually enforces.
+**6.6 is now blocked on 12.3.**
+
+### 12.3 Remedy (not implemented; owner ruling first)
+
+Invert the question. Rather than "is every named file tracked," ask "is every
+file under a governed path tracked, or explicitly waived." Governed paths at
+minimum: `tools/staging/`, `tools/coordination/`, `labtalk/ai_portal/`,
+`docs/maintenance/`. Waivers explicit and in-repo, so an untracked file is either
+tracked or a deliberate, reviewable line in a waiver list -- never merely
+unmentioned.
+
+Cost is honest and should be stated: this converts a gate that always passes into
+one that will fail loudly on first run, against a backlog someone must triage.
+That is the point, and it is also why it is your call and not mine.
+
+### 12.4 Measurement owed, host-side
+
+```powershell
+cd D:\code\ccode
+git status --porcelain | Select-String '^\?\?' | Measure-Object   # total untracked
+git status --porcelain | Select-String '^\?\? tools/'             # governed-path subset
+```
+
+I deliberately do not estimate these. The pattern in 12.2 is three gates that
+reported numbers they had not earned; guessing here would be the fourth.
+
+### 12.5 Correction, same session: this is not a backlog, it is the pipeline
+
+12.3 called the untracked set "a backlog someone must triage." The maintainer
+corrected it in one line: *"valid curation tools for the full-stack documentation
+process of our system."* Recording the correction because the wrong framing would
+have set the wrong priority -- triage is optional and slow, single-point-of-failure
+is neither.
+
+Measured from the filesystem (no git run; sizes exclude `__pycache__`):
+
+| Path | Files | Bytes | What it is |
+| --- | ---: | ---: | --- |
+| `tools/messaging/` | 869 | 5,881,125 | 554 `.py` + 315 `.ps1`. All source; no data files |
+| `tools/manualgen/` | 55 | 595,936 | manual assembly, `manualgen_lib/` (~30 modules), gates 4/5 |
+| `tools/fullstack_docs/` | 60 | 529,421 | harvest, parity, refcheck, website feed, museum |
+| `tools/locale/` | 85 | 518,453 | 53 `.py` + 32 `.ps1` |
+| `tools/maintenance/` | 30 | 347,736 | |
+| `tools/gui_preview/` | 11 | 170,705 | |
+| `tools/selfdoc/` | 11 | 65,334 | |
+| `tools/help/` | 2 | 39,541 | |
+| `tools/source_objects/` | 8 | 26,193 | |
+| `tools/gui/` | 1 | 4,977 | |
+| `tools/staging/` | 10 of 21 | -- | Gate 5 + escrow + every test |
+| **Total** | **~1,142** | **~8.2 MB** | Python and PowerShell source |
+
+`tools/` is **not** in `.gitignore` (only `/.codex-tools/` matches), so these are
+untracked rather than deliberately excluded. And `tools/coordination/` and most of
+`tools/staging/` beside them ARE tracked. That is the hazardous state: not a
+policy of "tools are host-local," but no policy at all -- tracking by accident of
+which file someone happened to `git add`.
+
+**The sharpest consequence.** `tools/fullstack_docs/stage_assembled_manual_to_site.py`
+takes `--site-root` and writes into `<site>/public/downloads/current` (`:73`).
+That is `D:\dev\x64base-site` -- the other mounted folder. So the publication path
+**from** the repo **to** the public site is carried by untracked scripts. Both
+ends of the pipeline are under version control; the bridge between them exists on
+exactly one disk.
+
+Restating what this lane keeps finding, now at its largest scale: "huge
+documentation is our meat and potatoes" (maintainer, this session). The machinery
+that produces the meat and potatoes has no history, no diff, no bisect, no
+attribution, and no second copy but a backup. A backup restores a state; it
+cannot tell you which change broke the manual.
+
+**Priority change.** R27 was filed as a gate-design ruling. On this measurement it
+is not primarily about the gate. The gate is how we failed to notice; the exposure
+is the pipeline. Recommend splitting: R27a track the pipeline (act now, does not
+need the gate redesigned first), R27b invert the gate so the next such gap is
+noticed rather than measured after the fact.
+
+I do not recommend one `git add tools/` -- that is the fused-slice failure AIF-050
+exists to prevent, at 1,142 files. Directory-at-a-time slices, each one commit,
+with `git status --short` between add and commit. `tools/manualgen/` and
+`tools/fullstack_docs/` first: they are the smallest, the most clearly source, and
+they are the two the site publication path runs through.
+
+### 12.6 R27a pre-flight, and a causal claim tested rather than accepted
+
+The maintainer's jab -- *"maybe it wouldn't have been a problem if you'd clean up
+your git-locks, untidy"* -- deserves both halves of an answer. The lock was mine
+(5b), it blocked commits for hours, and it should not have happened. But the
+proposed causal link is testable, so it was tested rather than accepted:
+
+| Path | mtime range | modified 2026-07-31 |
+| --- | --- | ---: |
+| `tools/manualgen/` | 2026-05-27 .. 2026-07-27 | 0 / 55 |
+| `tools/fullstack_docs/` | 2026-07-16 .. 2026-07-29 | 0 / 60 |
+| `tools/messaging/` | 2026-06-03 .. 2026-06-10 | 0 / 869 |
+| `tools/locale/` | 2026-06-03 .. 2026-06-04 | 0 / 85 |
+
+Zero files touched today; the oldest predates the lock by two months. The wedge
+did not cause the untracked state and could not have -- a lock blocks `git add`
+for its duration, and this state accrued across May, June and July. Both things
+are true independently: I left a mess, and this is not that mess.
+
+Worth keeping because the lane's own standard requires it. An agent that accepts
+a plausible attribution from its maintainer without checking is doing the thing
+12.2 catalogues -- reporting a conclusion it has not earned -- only with the sign
+reversed, and agreeable errors are harder to catch than defensive ones.
+
+**Pre-flight on the two proposed slices (115 files, 107 `.py` / 4 `.ps1` /
+2 `.yaml` / 1 `.md` / 1 `.css`):**
+
+| Check | Result |
+| --- | --- |
+| `__pycache__` + `*.pyc` gitignored (`.gitignore:157-158`) | yes -- caches cannot fuse in |
+| BOM (prepush hard-block) | 0 files |
+| binaries / build artifacts (`.exe`, `.dll`, `.obj`, ...) | none |
+| hard-block prefixes (`build/`, `bin/`, `obj/`, `CMakeFiles/`) | none hit |
+| literal credentials | none found |
+| largest file | 65,033 B (`stack_audit_v1.py`) |
+| `MASS_CHANGE_THRESHOLD = 60` | `manualgen` 55 clean; `fullstack_docs` 60, and `60 > 60` is False -- **passes with zero headroom** |
+
+**Two findings the pre-flight surfaced, neither a blocker:**
+
+1. **13 files carry non-ASCII, 12 carry em-dashes** -- against the house
+   convention. `check_house_style.py` will NOT catch them: it inspects added
+   lines in `.md` only. That is R27b's case restated on a second gate.
+2. **Do not clean them in this commit.** 27 of the 35 em-dash lines are inside
+   emitted or asserted strings, not comments (`assemble_manual.py:149,358,376,384`
+   are markdown the assembler writes into the manual). Editing them here would
+   fuse a content change into a tracking commit and risk breaking output tests.
+   **Track as-is; clean as a separate reviewable commit.** History first.
+
+### 12.7 The fourth instance, committed three tool calls after I named the pattern
+
+Commit `7a4d062ae` staged `tools/fullstack_docs` and reported:
+
+```text
+43 files changed, 5993 insertions(+)
+```
+
+I predicted 60, and warned that 60 sat exactly on `MASS_CHANGE_THRESHOLD` with
+zero headroom. **Both wrong.** The real figure is 43, with comfortable headroom.
+
+The error is the same one 12.2 catalogues, and I should name it exactly: I
+measured **files on disk** and reported it as **files to be committed**. Those
+differ by the 17 files in that directory that were already tracked. Wrong
+denominator, fourth time today, and this one landed *after* I wrote in 12.4 that
+I would not estimate these numbers because "guessing here would be the fourth."
+It was the fourth. Writing the warning did not prevent the behaviour it warned
+against, which is the most useful thing this instance demonstrates.
+
+The 17/43 split also confirms 12.5's diagnosis independently: `tools/fullstack_docs`
+was **partially** tracked. Not a policy of exclusion, not an oversight of a whole
+directory -- tracking by accident of which file someone once happened to `git add`.
+Disk 60 = 43 newly created + 17 pre-existing, so the slice is complete and nothing
+was left behind.
+
+**Method correction for the remaining R27a slices.** Slice size must come from
+`git status --porcelain`, never from `find`. I cannot run git, so I must state
+sizes as unknown and let the maintainer's `git status --short` between add and
+commit be the count. That check was already in the procedure; I should have
+treated it as the source of the number rather than as confirmation of mine.
+
+### 12.8 Live pointer for AIF-083, from the same transcript
+
+The cross-authority normalization gate in that run reported:
+
+```text
+[WARN] HELP (3):  BBS  CANARY  NET
+```
+
+Two of the three are AIF-083's exact surface. The lane audited BBS/NET for the
+four agency legs and did not look at their HELP contract at all. Whether this is
+related or coincidental is unknown -- recorded as a pointer, not a finding, and
+owed a look when AIF-083 next moves.
+
+### 12.9 R27a remaining slices -- pre-flight, and the mass-change trap
+
+`manualgen` and `fullstack_docs` are in history (`7a4d062ae` and its predecessor).
+Pre-flight on the nine remaining directories, 1,017 files on disk:
+
+| Path | disk | BOM | binaries | >1MB | secrets | non-ASCII |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `tools/staging/` | 21 | 0 | 0 | 0 | 0 | 2 |
+| `tools/gui/` | 1 | 0 | 0 | 0 | 0 | 0 |
+| `tools/help/` | 2 | 0 | 0 | 0 | 0 | 0 |
+| `tools/source_objects/` | 8 | 0 | 0 | 0 | 0 | 0 |
+| `tools/selfdoc/` | 11 | 0 | 0 | 0 | 0 | 0 |
+| `tools/gui_preview/` | 11 | 0 | 0 | 0 | 0 | 0 |
+| `tools/maintenance/` | 30 | 0 | 0 | 0 | 0 | 0 |
+| `tools/locale/` | 85 | 0 | 0 | 0 | 0 | 33 |
+| `tools/messaging/` | 869 | 0 | 0 | 0 | 0 | 40 |
+
+Composition across the nine: 668 `.py`, 347 `.ps1`, 2 `.md`. No data, no binaries,
+nothing over 1 MB, no literal credentials.
+
+**Disk counts are NOT slice sizes** (12.7). They are recorded as an upper bound on
+what can be staged, nothing more. The real number must come from
+`git status --short` after the add.
+
+**The mass-change trap, verified in source rather than assumed.**
+`prepush_gate.py:391-398` sets `exit_code = 3` when a staged set exceeds
+`MASS_CHANGE_THRESHOLD = 60`, and the installed hook is:
+
+```sh
+python "$ROOT/tools/staging/prepush_gate.py" || exit 1
+```
+
+The hook passes no arguments and cannot pass `--allow-mass`, so **any slice over
+60 paths will be blocked by the commit hook**, not merely warned. `tools/messaging/`
+will certainly hit this; `tools/locale/` may.
+
+The safe recovery is NOT a bare `--no-verify`, which skips the BOM check, the
+hard-block check, the AIF collision gate and all four portal gates at once. It is:
+run the gate by hand WITH `--allow-mass` so every other check still executes,
+confirm PASS, and only then bypass the hook for that single commit.
+
+### 12.10 Scope was larger than tools/, and I should stop estimating the total
+
+The `git status` tail accompanying the blocked `locale` commit exposed untracked
+paths outside `tools/` entirely:
+
+| Path | disk files | Bytes | Note |
+| --- | ---: | ---: | --- |
+| `tools/datadict/` | 171 | 2,619,131 | 162 `.py` |
+| `tests/` | 157 | 1,667,175 | 67 `.txt`, 17 `.dts`, 15 `.cpp`, 7 `.dot`, 2 `.cmake` |
+| `tools/comments/` | 6 | 97,127 | |
+| `tools/diagram/` | 6 | 41,930 | |
+| `tools/contracts/` | 1 | 10,483 | |
+
+Plus loose repository-root scripts: `wsl_build_dottalkpp.sh`, `wslrun.sh`,
+`wx.run.ps1`, `x64base.com.ps1`, `verify_bible_sql.ps1`, `vcpkg-wsl.json`,
+`usrbinenv.bash`, `tk.run.sh` and others.
+
+`tests/` is the notable one: `.cpp` unit tests (`test_lmdb_backend`,
+`test_sql_where`, `test_where_cache_only`), engine probes (`xbase_64_probe`,
+`xbase_vfp_probe`) and `.dts` regression canaries
+(`x64_smartbrowse_manual_canary`, `x64_fallback_lookup_alias_canary`,
+`x64_browser_display_surface_auto_canary`). **Checked, and the good news is
+negative:** no `CMakeLists.txt` references them, so the build does not depend on
+files missing from history. They are standalone probes and canaries -- which is
+its own risk, since an ungoverned canary silently ceases to exist on any other
+clone.
+
+**Two gate facts confirmed for these slices, from source not assumption:**
+
+- `DATA_SUFFIXES` is DBF-family only (`.dbf`, `.dbt`, `.fpt`, `.cnx`, `.cdx`,
+  `.inx`, `.mdx`) and `DATA_DIR_SEGMENTS` are `/data/...` paths
+  (`prepush_gate.py:86-94`). So `tests/*.txt` classify as source/docs/config and
+  will **not** require `--allow-data`.
+- They will still trip `MASS_CHANGE_THRESHOLD` and be blocked by the hook.
+
+**Method admission.** I have now revised the R27a total three times -- 1,142, then
+higher, and it will move again -- because each estimate was built from whichever
+`git status` fragment the maintainer happened to paste. That is the 12.7 error
+recurring at the level of scope rather than slice size. **I am not going to
+publish a total.** The scope is unknown until one whole-repo
+`git status --porcelain | Select-String '^\?\?'` is run and captured, which is the
+measurement 12.4 asked for and has not yet been taken. Everything above is a
+lower bound drawn from partial views.
+
+### 12.11 The fifth denominator error, and a loop that degenerated into the thing it was written to prevent
+
+Whole-repo measurement finally taken: **1,098 untracked entries**. One precision
+note attached at the time and repeated here: `git status --porcelain` collapses a
+fully-untracked directory into a single entry, so `?? tools/messaging/` is one
+line covering 869 files. 1,098 is entries, not files.
+
+Then I handed the maintainer a PowerShell loop to commit `tools/datadict` in ten
+per-subdirectory slices, on this reasoning: *"datadict has ten subdirectories at
+~17 files each, so it can be committed in reviewable slices that never trip the
+threshold."* Measured after it failed:
+
+| subdir | files |
+| --- | ---: |
+| `catalog` | **145** |
+| `baseline` | 11 |
+| `disposition` | 3 |
+| `orchestrate`, `parsers`, `review` | 2 each |
+| `diff`, `extractors`, `reconcile`, `validate` | 1 each |
+
+I divided 171 by 10 and published the quotient as a per-slice size. Fifth wrong
+denominator, and the first one produced by arithmetic rather than by measuring
+the wrong thing -- which is worse, because division *feels* like derivation.
+
+**The failure mode is the instructive part.** The loop had no failure handling:
+
+```powershell
+foreach ($s in 'baseline','catalog',...) {
+    git add "tools/datadict/$s"
+    git commit -m "chore(tools): track datadict/$s"   # assumed to clear the index
+}
+```
+
+`baseline` (11) committed. `catalog` (145) was blocked at exit 3. **A blocked
+commit leaves the index staged**, so every later `git add` accumulated on top of
+it: 145, then 146, ... 158, and 160 after the trailing `git add tools/datadict`.
+
+The loop I wrote to keep slices small and reviewable degenerated, on first
+failure, into exactly the un-sliced mass add I had warned against three messages
+earlier -- and the mass-change gate was the only thing that stopped it. That gate
+earned its keep here. It is also the counter-example to 12.2: a gate whose
+denominator comes from outside itself (paths in the index, not paths it already
+knew about) caught an error its author was actively making.
+
+**Two rules earned, both mine to have known:**
+
+1. Never derive a slice size by division. Measure each slice.
+2. Any scripted commit loop must stop on first non-zero exit
+   (`if ($LASTEXITCODE -ne 0) { break }`), because git's failure mode is to
+   *retain* state, not discard it. A loop that assumes success silently fuses.
+
+Not a data-loss event: nothing was committed wrongly, `.gitattributes` is present
+(860 B) so the LF/CRLF warnings are configured behaviour, and the staged set is a
+single coherent directory rather than a cross-lane fusion. The AIF-050 hazard is
+several sessions' work fused into one commit; this is one directory in one
+commit, which is merely coarser than intended.
+
+### 12.12 R27a directory slices complete, and the exercise paid for itself
+
+`4f3477608` landed `tools/messaging`: 869 files, 111,400 insertions, gate PASS on
+all four portal checks. With `manualgen`, `fullstack_docs`, `locale`, `datadict`,
+`tests`, `staging` and the small helpers, the directory-level R27a work is done.
+What remains is the loose repository-root set, which needs per-file judgement
+rather than a slice.
+
+**The find that justifies the exercise.** Reading the newly-tracked `messaging`
+listing surfaced a lane this session did not know existed:
+
+```text
+..._10dm_runtime_exit_crash_triage.py
+..._10do_shutdown_crash_triage_decision.py
+..._10dq_shutdown_isolation_proof.py
+..._10ds_dotscript_shutdown_exit_crash_fix_plan.py
+```
+
+and inside the last one, the carried status token:
+
+```text
+PREV_STATUS_TOKEN = "...10DR_SHUTDOWN_ISOLATION_PROOF_REVIEW_GREEN_
+                     GENERAL_SHUTDOWN_EXIT_CRASH_CONFIRMED_SOURCE_HELD"
+NEXT_GATE         = "HOLD_OR_AUTHORIZE_PHASE22AE_6_5_10DT_..._FIX_PLAN_REVIEW"
+```
+
+**A general DOTSCRIPT shutdown exit crash is confirmed and isolated, with a fix
+plan staged and held pending authorization.**
+
+This lands directly on AIF-083 M2. That milestone owes three runtime answers, and
+its only delivery mechanism is a maintainer-run transcript. The transcript path
+now has two known hazards, from two different lanes neither of which knew about
+the other:
+
+1. **AIF-081** -- `DOTSCRIPT ... OUT` discards the `cmdout` surface, which is where
+   every message the three questions turn on is emitted. Use `SET ALTERNATE`.
+2. **This lane** -- DOTSCRIPT exits with a crash at shutdown. A transcript may be
+   truncated at exactly the point the run ends, and a naive reader would score
+   that as "the command produced no output."
+
+**Both hazards would corrupt M2's evidence in the same direction: toward a false
+negative.** Recorded in the charter rather than only in AIF-083 because the
+mechanism matters to this lane's thesis -- the messaging lane had confirmed this
+crash and the BBS lane could not have found it, because the finding lived in
+source that was not in the repository. Tracking it made a cross-lane hazard
+discoverable in one grep. That is retrieval (C6/C8) restated as an operational
+outcome rather than an argument.
+
+**Owed:** AIF-083 M2's handoff must cite both hazards before any transcript is
+attempted, and the `10DT` authorization gate is a maintainer decision this lane
+should not touch.
+
+### 12.13 R27a complete, and the gate never noticed
+
+`4acfa853d` landed the ten repository-root build and run scripts. R27a is done.
+
+The empirical case for R27b needs no further argument, because it is printed in
+every transcript above. Across roughly 1,100 files entering history in a single
+session -- `manualgen`, `fullstack_docs`, `locale`, `datadict`, `tests`,
+`staging`, `messaging`, the small helpers and the root scripts -- this line did
+not move once:
+
+```text
+mandatory-tracked: 45 document(s) and 11 script(s) checked
+mandatory-tracked: PASS -- every declared file is tracked
+```
+
+Same 45, same 11, same PASS, before and after. The gate was correct every single
+time and told us nothing on any of them, because its universe is the set of files
+the portal already names. It could not see the pipeline arriving any more than it
+could see it missing.
+
+**This is the cleanest statement of the lane's whole thesis.** A gate is not
+worth its output because it passes. It is worth its output because it *could have
+failed*. `mandatory-tracked` as built cannot fail on the thing it exists to
+catch, which makes its PASS indistinguishable from silence -- and silence that
+looks like a PASS is worse than no gate, because it is trusted.
+
+Two gates in this same session behaved the other way and both earned it. The
+mass-change check blocked my degenerate commit loop (12.11). The role guard and
+BOM check ran on every slice with a denominator drawn from the index rather than
+from their own expectations. Those are the shape R27b should copy.
+
+**Residual, owed to the maintainer:** re-run the untracked census to confirm what
+remains and whether the leftovers (`wsl_warnings.txt`, `useful_ref_links.txt`,
+`tools/find_cmakelists.txt`) belong in `.gitignore` rather than in history:
+
+```powershell
+git status --porcelain | Select-String '^\?\?' | Measure-Object
+```
+
+Baseline for comparison: **1,098 entries** before this session's slices, noting
+that entries collapse fully-untracked directories and so undercount files.

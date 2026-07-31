@@ -240,3 +240,40 @@ python labtalk\ai_portal\generate_tier0_state.py
 ```
 
 Groups B, C and D remain open: 16 rows. Group E adds 2. Total open: 18.
+
+**R27 -- invert `check_mandatory_tracked.py` to a governed-path gate (charter 12).**
+The gate PASSED in commit `be8d1a12e` while ten files in `tools/staging/` sat
+untracked, including `test_repository_role_guard.py` -- the test for the binding
+guard that hard-blocked and then passed twice in that same transcript. It passed
+because its universe is "files the portal already names," so an unmentioned file
+cannot fail it. Third gate this session with a self-drawn denominator, all mine.
+
+Proposed: govern by path (`tools/staging/`, `tools/coordination/`,
+`labtalk/ai_portal/`, `docs/maintenance/`), with explicit in-repo waivers.
+
+Your call because the cost lands on you: this turns an always-passing gate into
+one that fails loudly on first run against an untriaged backlog. **6.6's demotion
+rule is blocked until this is settled** -- 6.6 demotes a Tier 1 rule once a
+hard-failing gate covers it, and a gate with a self-drawn denominator would
+license demoting a rule that nothing actually enforces.
+
+Total open: 19.
+
+**R27 SPLIT after maintainer correction "valid curation tools for the full-stack
+documentation process of our system" (charter 12.5).** I had filed the untracked
+set as a triage backlog. It is the documentation production pipeline: ~1,142
+source files, ~8.2 MB of Python and PowerShell, `tools/` not in `.gitignore`.
+`stage_assembled_manual_to_site.py:73` writes into the x64base-site checkout, so
+the repo-to-site publication bridge is untracked at both the script level and the
+history level.
+
+- **R27a -- track the pipeline. Act now; does not wait on R27b.** Directory-at-a-time
+  commits, NEVER one `git add tools/` (that is AIF-050's fused slice at 1,142
+  files). Suggested order: `tools/manualgen/`, then `tools/fullstack_docs/` --
+  smallest, unambiguously source, and the two the site path runs through.
+- **R27b -- invert the gate to governed paths.** Unchanged from the original R27.
+  This is how we failed to notice, not the exposure itself.
+
+Sequencing note: 6.6's demotion rule stays blocked on **R27b**, not R27a.
+
+Total open: 20.
