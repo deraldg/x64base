@@ -89,7 +89,8 @@ def added_lines(root: Path, rng: str | None) -> list[tuple[str, int, str]]:
     args = ["diff", "--cached", "-U0"] if rng is None else ["diff", "-U0", rng]
     out = subprocess.run(
         ["git", *args, "--"] + [f"*{s}" for s in CHECKED_SUFFIXES],
-        cwd=root, capture_output=True, text=True, timeout=60, check=False,
+        cwd=root, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", timeout=60, check=False,
     )
     if out.returncode != 0:
         return []

@@ -292,6 +292,27 @@ def install_hook() -> int:
     ).returncode
 
 
+def _run_portal_check(rel: str, extra: list[str]) -> int:
+    """Run an AIF-082 portal check. A MISSING check is never fatal.
+
+    Deliberate: these four are newer than the gate and a clone or an older
+    worktree may not carry them yet. A gate that hard-fails because an optional
+    sub-check is absent would wedge exactly the people it exists to protect --
+    which is the failure `check_mandatory_tracked.py` was written to detect, and
+    it would be poor form to introduce it here.
+    """
+    root = run_git(["rev-parse", "--show-toplevel"]).strip()
+    script = os.path.join(root, *rel.split("/"))
+    if not os.path.exists(script):
+        print(f"  (skipped: {rel} not present)")
+        return 0
+    try:
+        return subprocess.run([sys.executable, script] + extra, cwd=root).returncode
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"  (skipped: {rel} could not run: {exc})")
+        return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="AI_PORTAL Pre-Push Gate enforcement.")
     ap.add_argument("--range", dest="range_spec", default=None,
@@ -310,6 +331,9 @@ def main() -> int:
                     help="skip the AI report-audit (portal report-hygiene) gate")
     ap.add_argument("--skip-norm", action="store_true",
                     help="skip the normalization (refcheck/normcheck) catalog-drift guards")
+    ap.add_argument("--skip-portal", action="store_true",
+                    help="skip the AIF-082 portal gates (house style, mandatory-tracked, "
+                         "stale index.lock, Session Log row)")
     ap.add_argument("--strict-norm", action="store_true",
                     help="promote normalization catalog drift to a hard failure (exit 2)")
     args = ap.parse_args()
@@ -417,6 +441,53 @@ def main() -> int:
                 print("\n  ADVISORY — catalog drift present (see above); NOT blocking. "
                       "Re-derive the lagging catalog (SYSCMD/SYSFUNC), or promote to a "
                       "hard block with --strict-norm / a lane's LANE_SEVERITY.")
+
+    # ---- AIF-082 portal gates ------------------------------------------------
+    # Four checks, each closing a rule that previously had no mechanism. 6.7
+    # measured what that absence costs: obligations with gates held at 83-94
+    # percent compliance, the one without held at 33. Severities differ on
+    # purpose and each is argued, not assumed.
+    if not args.skip_portal:
+        print("\n=== AIF-082 portal gates ===")
+
+        # 1. STALE INDEX LOCK -- hard, and first. A zero-byte .git/index.lock
+        # blocks every commit downstream with a message that does not say why.
+        # It cost an afternoon on 2026-07-31. Catching it here is the cheapest
+        # check in the file.
+        rc = _run_portal_check("tools/staging/check_sandbox_git_guard.py", ["--lock-only"])
+        if rc == 2:
+            print("\n  BLOCKED -- a stale .git/index.lock is present. Remove it "
+                  "(no git process running) before committing.", file=sys.stderr)
+            exit_code = 2
+
+        # 2. HOUSE STYLE -- hard, ADDED LINES ONLY. The 6,951-character backlog
+        # never blocks anyone; new violations become impossible. Falsification
+        # tested both directions 2026-07-31 before being wired in here.
+        rc = _run_portal_check("tools/staging/check_house_style.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- non-ASCII in added documentation lines. "
+                  "CLAUDE.md requires ASCII: use `--` and `->`. Only lines this "
+                  "change introduces are checked.", file=sys.stderr)
+            exit_code = 2
+
+        # 3. MANDATORY SET TRACKED -- hard. Found 16 portal-declared files
+        # untracked, including the repository-role contract every document
+        # defers to and the role guard this very gate invokes.
+        rc = _run_portal_check("labtalk/ai_portal/check_mandatory_tracked.py", [])
+        if rc == 2:
+            print("\n  BLOCKED -- a file the portal declares mandatory is not "
+                  "tracked, so a clone cannot read it. Commit it, or stop "
+                  "declaring it mandatory.", file=sys.stderr)
+            exit_code = 2
+
+        # 4. SESSION LOG ROW -- WARN, never block. A commit that adds a closeout
+        # is usually the right commit; refusing it would punish the sessions
+        # doing the most work. Visibility at the moment of omission is the goal.
+        rc = _run_portal_check("tools/coordination/check_session_log_row.py", [])
+        if rc == 3:
+            print("\n  ADVISORY -- a closeout is landing with no Session Log row "
+                  "in the dashboard (AIF-006). NOT blocking. Add the row, or say "
+                  "in the closeout why none is owed.")
 
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
