@@ -262,8 +262,48 @@ bool IndexManager::openCnx(const std::string& cnx_path,
         return false;
     }
 
+    // CAPACITY GATE (AIF-080 M1) -- the constraint that is actually real.
+    //
+    // CnxBackend::maxRecordNumber() is UINT32_MAX because RUN1 stores record
+    // numbers in 4 bytes. A table whose record count exceeds that cannot be
+    // addressed by a CNX index at all: the high bits would be silently
+    // truncated and the index would point at the wrong records.
+    //
+    // recordNumberFitsBackend()/backendMaxRecordNumber() have existed in
+    // index_manager.hpp since the recno64 work, carrying the comment "reject
+    // ... rather than truncate", with ZERO call sites anywhere in the tree.
+    // This is the first one. (AIF-079 D1: declared capability, no consumer.)
+    //
+    // Deliberately at the SEAM, not at a command surface. All four entry
+    // points -- SET INDEX, SET CNX, SET ORDER and load_for_table's
+    // auto-attach -- converge here, so one check covers what four scattered
+    // checks would otherwise have to agree about (and today do not: SET CNX
+    // has no flavor validation at all).
+    //
+    // This REFUSES rather than truncating, and refuses only above 2^32
+    // records. No existing fixture is near that, so nothing that works today
+    // stops working. It is a pure addition, not a widening: the format gates
+    // in cmd_setindex.cpp and cmd_setorder.cpp are untouched by this change.
     backend_ = std::move(b);
     container_path_ = cnx_path;
+
+    // recCount64(), NOT recCount(). recCount() returns int32_t (xbase.hpp:274,
+    // whose own comment defers to recCount64() as "the authoritative value"),
+    // so using it to detect a 32-bit overflow would truncate the very quantity
+    // being checked and the gate would never fire.
+    const std::uint64_t rec_count = area_.recCount64();
+
+    if (!recordNumberFitsBackend(static_cast<RecNo>(rec_count))) {
+        std::ostringstream oss;
+        oss << "openCnx: table has " << rec_count
+            << " records but this index format addresses at most "
+            << backendMaxRecordNumber()
+            << " (CNX stores record numbers in 32 bits); "
+               "use a CDX container for this table";
+        if (err) *err = oss.str();
+        close();
+        return false;
+    }
 
     if (!tag_upper.empty()) {
         if (!setTag(tag_upper, err)) return false;
