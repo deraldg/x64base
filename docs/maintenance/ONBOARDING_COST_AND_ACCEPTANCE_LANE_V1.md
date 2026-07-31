@@ -288,10 +288,30 @@ This is a third failure category, distinct from the two already recorded:
 | C7 | prior assessments were never given a lane number |
 | **C8** | **the best operational onboarding artifact was never put in the tree** |
 
-All three share one shape: **the knowledge existed and the retrieval path did
-not.** None of them is a content defect. That is now three independent
-instances, which is the Rule of Three threshold (`AI_PORTAL.md:258-262`) for
-treating it as structural rather than incidental.
+**C8 fourth instance, and the worst of them.** Found 2026-07-31T18:45Z, from the
+git output of the commit that rewrote it: `create mode 100644 AGENTS.md`. **The
+file had never been committed.** `CLAUDE.md` was tracked and published;
+`AGENTS.md`, the equivalent always-read shim for Codex-family agents, was not.
+
+This corrects a measurement recorded earlier in this same lane. 6.8a described
+the two shims as onboarding partners to unequal depth, 4,314 B against 1,496 B.
+That was wrong in the safe direction: from a clone, a Codex-family agent had
+**no shim at all**. The asymmetry was not depth, it was existence.
+
+It also explains a thing the lane observed and did not explain. Every failure in
+this taxonomy was found by a Claude session, and the corpus's scar tissue is
+almost entirely Claude-authored. A partner whose entry file was invisible to a
+clone would be systematically less able to report on the onboarding surface,
+because it never saw one. **The measurement instrument and the published entry
+path were the same vendor.**
+
+All four share one shape: **the knowledge existed and the retrieval path did
+not.** None is a content defect. That is well past the Rule of Three threshold
+(`AI_PORTAL.md:258-262`) for treating it as structural rather than incidental.
+
+Generalized check, cheap and worth running once: **every file the portal names as
+mandatory or auto-read should be verified present in `git ls-files`.** Four of
+the five instances above would have been caught by that one command.
 
 Proposed, added to the sheet as 6.5g: land the handoff in the tree as the seed of
 Tier 1, and make "leave a handoff in the tree" an explicit closeout obligation

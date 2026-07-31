@@ -53,27 +53,15 @@ post about virtual databases")? Do **not** grep the tree. Look it up by
 under `docs/maintenance/external_ai_intake/`; the index is kept current by
 `python labtalk/ai_portal/audit_trail.py --emit-index`.
 
-The older ordered list below is retained for continuity, but the table above is
-the canonical entry sequence.
+**Retired 2026-07-31 (AIF-082, 6.5b):** an eleven-item "Start Here" list used to
+sit here, marked superseded but still presented as a numbered reading order under
+a "Start Here" heading. A numbered list under that heading is an instruction
+regardless of the disclaimer above it, and a cold agent follows instructions. Git
+holds it; `git log -- AI_README.md` recovers it. The table above is the only
+entry sequence.
 
-## Start Here (legacy list — superseded by the table above)
-
-Read these files first, in order:
-
-1. `docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
-2. `docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
-3. `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`
-4. `docs/agents/AI_BABY_BOOTSTRAP_CARD.md`
-5. `docs/agents/CURRENT_TARGET.md`
-6. `DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md`
-7. `docs/contracts/README.md`
-8. `docs/contracts/CONTRACT_LIFECYCLE_V1.md`
-9. `labtalk/README.md`
-10. `labtalk/portal/README.md`
-11. `labtalk/ai_portal/README.md`
-
-If a file is missing, record that as drift and continue with the next available
-repo-local source.
+If a file named above is missing, record that as drift and continue with the next
+available repo-local source.
 
 ## AI Portal
 

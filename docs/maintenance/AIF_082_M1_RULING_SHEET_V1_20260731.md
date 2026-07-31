@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T18:41:00Z
-    baseline    : a1e5e228f (development, pushed)
-    status      : 22 rows, 9 closed (X1, X2, 6.2, 6.11, 6.5g, 6.5e, 6.8a, 6.1, 6.7), 13 open
+    updated_utc : 2026-07-31T18:54:00Z
+    baseline    : d98afb8b1 (development, pushed)
+    status      : 22 rows, 12 closed, 10 open
 
 ---
 
@@ -128,9 +128,9 @@ measurement rather than a build, and the number stays useful either way.
 | 6.8a | **A** done | 2026-07-31T18:29Z | `AGENTS.md` rewritten as a shim over `AI_TIER1_SEED_V1.md`, matching `CLAUDE.md`. Verified first that the seed already asserts everything `AGENTS.md` did. Kept the role table verbatim -- the one fact the portal deliberately duplicates, per `AI_PORTAL.md:321-323`. Push-authorisation detail moved to the seed's "commit or push" trigger row, where it fires. Vendor onboarding depth is now equal by construction rather than by accident. |
 | 6.8b | | | |
 | 6.7 | **A** done | 2026-07-31T18:40Z | Probe run over AIF-063..082. Governance cost is FLAT (3-5 artifacts per lane) and mildly INVERTED: doc-only lanes mean 4.09, source-changing 3.71. Second finding: the dashboard Session Log row is the only obligation with no gate and is present in 6 of 18 lanes (33%), against 83-94% for the four that have gates. Result in charter 6.7, 'M6 RESULT'.
-| 6.5a | | | |
-| 6.5b | | | |
-| 6.5c | | | |
+| 6.5a | **A** done | 2026-07-31T18:50Z | `CURRENT_TARGET.md` split: 26,282 B / 470 lines -> **1,9xx B pointer** + `CURRENT_TARGET_HISTORY.md` (23,919 B). Nothing deleted. Went further than proposed: the 'in flight' table was removed too, because it restated what `TIER0_STATE.md` now generates, which is the drift channel 6.11 forbids. The pointer now carries only the owner's declared priority plus decisions only he can settle. |
+| 6.5b | **A** done | 2026-07-31T18:52Z | Legacy 11-item 'Start Here' list removed from `AI_README.md`. A numbered list under that heading is an instruction regardless of the 'superseded' disclaimer above it, and a cold agent follows instructions. Replaced with a one-paragraph note recording the retirement and the `git log` recovery path. |
+| 6.5c | **A** done | 2026-07-31T18:54Z | Precedence stated in **both** documents. `SDLC_FAST_START_SEED_V1.md` 20-field block is the SUPERSET carried by packets and closeouts; `SCOPE_CALIBRATION_SEED_V1.md` 10-field block is the planning SUBSET, filled first, feeding the other. Seven fields shared; neither overrides the other, and a conflict is a finding to report rather than a choice to make. |
 | 6.5d | | | |
 | 6.5e | **A** accepted | 2026-07-31T18:22Z | `created_utc` / `updated_utc` ISO-8601 UTC in header blocks, matching the envelope convention. Applied to the 5 files authored this session. **Owed:** ~66 remaining files under `docs/maintenance/`, and a decision on whether the sweep is one slice or incremental-on-touch. Recommend incremental-on-touch, so the backlog never blocks work. |
 | 6.5f | | | |

@@ -31,6 +31,13 @@ turn design intent into runtime proof.
 
 ## Mandatory Task Fields
 
+**Precedence (AIF-082, 6.5c).** This block is the **superset**, and is what a
+task packet, change package, or closeout carries.
+`SCOPE_CALIBRATION_SEED_V1.md` holds a 10-field planning subset, seven of which
+are shared with this block. **Fill the planning subset first; it feeds this
+one.** Neither document overrides the other on a shared field -- they must agree,
+and a conflict is a finding to report, not a choice to make.
+
 Every AI task packet, outside-AI request, change package, and closeout must
 preserve:
 
