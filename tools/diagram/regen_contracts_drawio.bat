@@ -1,0 +1,2 @@
+@echo off
+python tools\diagram\generate_drawio_from_meta.py tools\diagram\diagram_seed_contracts_v0.meta VIEW_LIST_SMARTLIST_BROWSER_CONTRACTS tools\diagram\out\list_smartlist_browser_contracts.drawio

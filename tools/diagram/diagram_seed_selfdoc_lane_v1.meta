@@ -1,0 +1,64 @@
+[FORMAT]
+VERSION|1
+NAME|SELFDOC_CONTRACT_LANE_V1
+PURPOSE|Diagram facts for SelfDoc, contract lane intake, proof promotion, and publication paths
+
+[NODES]
+NODE_ID|LABEL|NODE_TYPE|SUBSYSTEM|STATUS|PROOF|NOTES
+LANE_CONTRACTS|Contract Lane|contract|docs/contracts|implemented|source-confirmed|Durable memory lane for rules that constrain future work
+LANE_SELFDOC|SelfDoc System|contract|selfdoc|implemented|source-confirmed|Inventory and publication governance for self-documenting artifacts
+LANE_LABTALK|LabTalk Local Level|contract|labtalk|implemented|source-confirmed|Local campus portal and registries for docs apps labs concepts and proofs
+LANE_WEBSITE|x64base Website|runtime_service|website|planned|design-intent|Public documentation surface after permissions clear
+
+SRC_CHAT_DECISIONS|Chat Decisions|contract|intake|implemented|source-confirmed|Decisions must land in repo before they are durable
+SRC_USAGE_BLOCKS|USAGE Blocks|contract|source|implemented|source-confirmed|Runtime command usage text can produce contract candidates
+SRC_ANNOTATIONS|@dottalk.contract|contract|source|implemented|source-confirmed|Source annotations feed the contract inventory
+SRC_HELP_EVIDENCE|HELP and CMDHELP|contract|help|implemented|source-confirmed|User-facing proof and drift comparison source
+SRC_METADATA|Metadata Imports|metadata_table|metadata|implemented|source-confirmed|SYSFUNC and SYSARGS candidate imports from metacollect
+
+PROC_INTAKE|Capture and Classify|contract|docs/contracts|implemented|source-confirmed|Capture classify owner evidence and review trigger
+PROC_REGISTER|Register and Cross-Link|contract|docs/contracts|implemented|source-confirmed|Registry row links docs source tests metadata reports and help
+PROC_PROVE|Prove and Promote|contract|verification|implemented|source-confirmed|Upgrade evidence through source tests runtime help and publication
+PROC_DRIFT|Check Drift|contract|verification|implemented|source-confirmed|Compare stronger and weaker authorities and keep evidence honest
+
+TOOL_METACOLLECT|metacollect|runtime_service|selfdoc/tooling|implemented|source-confirmed|Read-only metadata and source collector
+PIPE_METADATA|metadata_collection_v0|runtime_service|selfdoc/pipeline|implemented|source-confirmed|Report-only pipeline with non-mutation guards
+OUT_REPORTS|Generated Reports|contract|dottalkpp/docs/generated|implemented|source-confirmed|Reports inventories proposals captures and generated diagrams
+OUT_DRAWIO|Draw.io Diagrams|contract|diagrams|implemented|script-confirmed|Diagrams.net source artifacts generated from metadata
+OUT_MERMAID|Mermaid Diagrams|contract|diagrams|implemented|script-confirmed|Portable markdown-renderable graph for docs and website
+
+GUARD_NON_MUTATION|Non-Mutation Guard|boundary|selfdoc|boundary|source-confirmed|No DBF writes no help rebuild no CMDHELPCHK change no source repair no live metadata promotion
+GUARD_EVIDENCE|Evidence Honesty Guard|boundary|contracts|boundary|source-confirmed|Do not claim runtime proof without tests commands or reproducible reports
+
+[EDGES]
+EDGE_ID|FROM_NODE|TO_NODE|RELATION|STATUS|PROOF|NOTES
+E_CHAT_INTAKE|SRC_CHAT_DECISIONS|PROC_INTAKE|uses|implemented|source-confirmed|Chat decisions enter only when captured
+E_USAGE_INTAKE|SRC_USAGE_BLOCKS|PROC_INTAKE|uses|implemented|source-confirmed|Usage blocks are intake evidence
+E_ANNOT_INTAKE|SRC_ANNOTATIONS|PROC_INTAKE|uses|implemented|source-confirmed|Annotations are intake evidence
+E_HELP_INTAKE|SRC_HELP_EVIDENCE|PROC_INTAKE|uses|implemented|source-confirmed|Help evidence enters drift and promotion checks
+E_METADATA_INTAKE|SRC_METADATA|PROC_INTAKE|uses|implemented|source-confirmed|Metadata imports support selfdoc evidence
+
+E_INTAKE_REGISTER|PROC_INTAKE|PROC_REGISTER|delegates_to|implemented|source-confirmed|Classified candidates become registry rows and links
+E_REGISTER_PROVE|PROC_REGISTER|PROC_PROVE|delegates_to|implemented|source-confirmed|Registered contracts move through proof promotion
+E_PROVE_DRIFT|PROC_PROVE|PROC_DRIFT|delegates_to|implemented|source-confirmed|Proof claims are checked for drift
+E_DRIFT_REGISTER|PROC_DRIFT|PROC_REGISTER|delegates_to|implemented|source-confirmed|Drift findings update registry or supersede records
+
+E_CONTRACTS_INTAKE|LANE_CONTRACTS|PROC_INTAKE|owns|implemented|source-confirmed|Contract lane owns intake workflow
+E_CONTRACTS_REGISTER|LANE_CONTRACTS|PROC_REGISTER|owns|implemented|source-confirmed|Contract lane owns registry and cross-linking
+E_SELFDOC_TOOL|LANE_SELFDOC|TOOL_METACOLLECT|owns|implemented|source-confirmed|SelfDoc manifests record stable tooling
+E_SELFDOC_PIPE|LANE_SELFDOC|PIPE_METADATA|owns|implemented|source-confirmed|SelfDoc manifests record stable pipelines
+E_TOOL_PIPE|TOOL_METACOLLECT|PIPE_METADATA|activates|implemented|source-confirmed|Pipeline stages invoke metacollect in report-only mode
+E_PIPE_REPORTS|PIPE_METADATA|OUT_REPORTS|defines|implemented|source-confirmed|Pipeline writes report and import-candidate outputs
+
+E_REPORTS_DRAWIO|OUT_REPORTS|OUT_DRAWIO|defines|implemented|script-confirmed|Diagram seed facts become drawio artifacts
+E_REPORTS_MERMAID|OUT_REPORTS|OUT_MERMAID|defines|implemented|script-confirmed|Diagram seed facts become mermaid artifacts
+E_DRAWIO_LABTALK|OUT_DRAWIO|LANE_LABTALK|attaches|implemented|script-confirmed|Local LabTalk portal links diagram artifacts
+E_MERMAID_LABTALK|OUT_MERMAID|LANE_LABTALK|attaches|implemented|script-confirmed|Local LabTalk portal links mermaid artifacts
+E_LABTALK_WEBSITE|LANE_LABTALK|LANE_WEBSITE|delegates_to|planned|design-intent|Website matriculation follows after permissions clear
+
+E_GUARD_PIPE|PIPE_METADATA|GUARD_NON_MUTATION|must_not_depend_on|boundary|source-confirmed|Report-only pipeline must not mutate live state
+E_GUARD_PROVE|PROC_PROVE|GUARD_EVIDENCE|must_not_depend_on|boundary|source-confirmed|Evidence claims must not outrun proof
+
+[VIEWS]
+VIEW_ID|LABEL|INCLUDE_NODE_TYPES|INCLUDE_RELATIONS|LAYOUT|NOTES
+VIEW_SELFDOC_CONTRACT_LANE|SelfDoc and Contract Lane Flow|contract,runtime_service,metadata_table,boundary|uses,delegates_to,owns,activates,defines,attaches,must_not_depend_on|three_column_contracts|SelfDoc LANE extraction for LabTalk and website publication

@@ -1,0 +1,47 @@
+[FORMAT]
+VERSION|1
+NAME|LIST_SMARTLIST_BROWSER_CONTRACTS
+PURPOSE|Seed diagram facts for LIST, SMARTLIST, browsers, workspace boundary, and shared contracts
+
+[NODES]
+NODE_ID|LABEL|NODE_TYPE|SUBSYSTEM|STATUS|PROOF|NOTES
+CMD_LIST|LIST|command|cli/listing|implemented|source-confirmed|Developer quick-peek/listing tool and reporting voice source
+CMD_SMARTLIST|SMARTLIST|command|cli/listing|implemented|source-confirmed|Primary stronger query/listing surface
+CMD_SIMPLE_BROWSER|Simple Browser|command|cli/browser|implemented|source-confirmed|Single-table interactive browser/editor
+CMD_SMART_BROWSER|Smart Browser|command|cli/browser|implemented|source-confirmed|Tuple/relational read-only browser
+CMD_WORKSPACE|WORKSPACE|command|cli/workspace|implemented|source-confirmed|Workspace/session manager; not browser filtering logic
+
+SMARTLIST_QUERY_CONTRACT|QuerySpec / pass_all_filters|contract|cli/query|implemented|source-confirmed|Shared row-visibility/filtering contract
+SMARTLIST_OUTPUT_CONTRACT|smartlist_output|contract|cli/output|implemented|source-confirmed|Shared row/header rendering contract
+LIST_MESSAGING_CONTRACT|list_messaging|contract|cli/reporting|implemented|source-confirmed|Shared reporting/order/cursor/summary voice
+ORDER_ITERATION_CONTRACT|order_iterate_recnos|contract|cli/order|implemented|source-confirmed|Shared ordered traversal path
+WORKSPACE_SESSION_CONTRACT|workspace/session manager|contract|cli/workspace|implemented|source-confirmed|Open/close/save/load/path/index attach session behavior
+RELATION_BROWSER_CONTRACT|tuple relational browser|contract|cli/browser|implemented|source-confirmed|Relational tuple-stream browsing contract
+
+BOUNDARY_SB_NOT_WORKSPACE|Simple Browser / Workspace Boundary|boundary|cli/browser|boundary|session-confirmed|Simple Browser must not absorb workspace manager responsibilities
+
+[EDGES]
+EDGE_ID|FROM_NODE|TO_NODE|RELATION|STATUS|PROOF|NOTES
+E_LIST_QUERY|CMD_LIST|SMARTLIST_QUERY_CONTRACT|uses|implemented|source-confirmed|LIST adapts to shared row-visibility contract
+E_LIST_OUTPUT|CMD_LIST|SMARTLIST_OUTPUT_CONTRACT|renders_through|implemented|source-confirmed|LIST uses shared header/row rendering
+E_LIST_MSG|CMD_LIST|LIST_MESSAGING_CONTRACT|reports_through|implemented|source-confirmed|LIST establishes shared reporting voice
+E_LIST_ORDER|CMD_LIST|ORDER_ITERATION_CONTRACT|iterates_through|implemented|source-confirmed|LIST preserves ordered traversal behavior
+
+E_SMARTLIST_QUERY|CMD_SMARTLIST|SMARTLIST_QUERY_CONTRACT|uses|implemented|source-confirmed|SMARTLIST uses shared row-visibility contract
+E_SMARTLIST_OUTPUT|CMD_SMARTLIST|SMARTLIST_OUTPUT_CONTRACT|renders_through|implemented|source-confirmed|SMARTLIST uses shared rendering contract
+E_SMARTLIST_MSG|CMD_SMARTLIST|LIST_MESSAGING_CONTRACT|reports_through|implemented|source-confirmed|SMARTLIST gains reporting parity
+E_SMARTLIST_ORDER|CMD_SMARTLIST|ORDER_ITERATION_CONTRACT|iterates_through|implemented|source-confirmed|SMARTLIST preserves active order traversal
+
+E_SB_QUERY|CMD_SIMPLE_BROWSER|SMARTLIST_QUERY_CONTRACT|uses|implemented|source-confirmed|Simple Browser adapts row visibility/filtering contract
+E_SB_MSG|CMD_SIMPLE_BROWSER|LIST_MESSAGING_CONTRACT|reports_through|implemented|source-confirmed|Simple Browser uses shared browser summary/cursor reporting
+E_SB_BOUNDARY|CMD_SIMPLE_BROWSER|BOUNDARY_SB_NOT_WORKSPACE|must_not_depend_on|boundary|session-confirmed|Scope correction: browser filtering is not workspace management
+E_BOUNDARY_WORKSPACE|BOUNDARY_SB_NOT_WORKSPACE|CMD_WORKSPACE|must_not_depend_on|boundary|session-confirmed|Workspace remains session manager
+
+E_SMART_BROWSER_REL|CMD_SMART_BROWSER|RELATION_BROWSER_CONTRACT|owns|implemented|source-confirmed|Smart Browser owns tuple/relational browsing concern
+E_SMART_BROWSER_MSG|CMD_SMART_BROWSER|LIST_MESSAGING_CONTRACT|may_adapt_to|planned|design-intent|Later selective messaging integration only
+
+E_WORKSPACE_SESSION|CMD_WORKSPACE|WORKSPACE_SESSION_CONTRACT|owns|implemented|source-confirmed|Workspace owns session open/close/save/load behavior
+
+[VIEWS]
+VIEW_ID|LABEL|INCLUDE_NODE_TYPES|INCLUDE_RELATIONS|LAYOUT|NOTES
+VIEW_LIST_SMARTLIST_BROWSER_CONTRACTS|LIST / SMARTLIST / Browser Contracts|command,contract,boundary|uses,renders_through,reports_through,iterates_through,owns,must_not_depend_on,may_adapt_to|three_column_contracts|First generated architecture diagram from metadata
