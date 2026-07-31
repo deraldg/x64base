@@ -2053,3 +2053,77 @@ git status --porcelain | Select-String '^\?\?' | Measure-Object
 
 Baseline for comparison: **1,098 entries** before this session's slices, noting
 that entries collapse fully-untracked directories and so undercount files.
+
+### 12.14 Tier 0 regenerated, and R27a is not yet delivered
+
+Post-campaign Tier 0 (2,040 B, target 4,096; entry path with Tier 1 = 10,231 B):
+
+```text
+HEAD       : b279024f1
+upstream   : 1b60b728f
+unpushed   : 14 commit(s) ahead of upstream
+newest closeout : 0 commits behind HEAD
+```
+
+**The 14 unpushed commits are the live finding.** 12.5 argued the exposure was
+that the pipeline "exists on exactly one disk." Committing it did not fix that.
+It moved roughly 1,100 files from *untracked on one disk* to *tracked on one
+disk*. That is a real gain -- there is now history, diff, bisect and attribution
+where there were none -- but the durability claim R27a was opened to satisfy is
+satisfied by the push, not by the commit.
+
+Recorded because it is the same error class the lane keeps naming, in its mildest
+form: mistaking a completed step for a delivered outcome. The commit output says
+PASS and feels like completion; the upstream pointer is the measurement. This is
+also why the generated Tier 0 carries `unpushed` as a staleness warning rather
+than as a statistic -- whoever wrote that check had already learned this.
+
+Two smaller confirmations from the same pull: `newest closeout 0 commits behind
+HEAD` shows the document-now discipline held across the whole campaign, and
+AIF-068/AIF-070 still read as ABANDONED from HEAD, unchanged and still a
+maintainer call.
+
+### 12.15 Census after R27a, and what the number does and does not say
+
+```text
+before : 1,098 untracked entries
+after  : 1,041 untracked entries   (delta 57)
+```
+
+Roughly 1,100 files entered history for a 57-entry reduction, because a
+fully-untracked directory is ONE porcelain entry: `tools/messaging/` was 869 files
+behind a single `??`. The caveat attached in 12.10 before the campaign is what
+makes this number readable rather than alarming.
+
+**1,041 entries remain, and R27a does not cover them.** The campaign was scoped to
+`tools/` and `tests/` because that is what the pasted status fragments exposed.
+The repository-wide set was never characterised -- and the entries-vs-files
+collapse means the remaining file count is unknown and larger than 1,041. No
+estimate offered, per 12.7.
+
+**Tier 0 went stale inside four minutes.** It was regenerated at 22:16:36Z and
+still carries `Claim(s) with no intake row ... AIF-068, AIF-070`, because
+`218764f53` landed the intake rows afterwards. The generated artifact was correct
+when generated and wrong when read -- which is the precise failure mode 6.7 exists
+to bound, demonstrated on the same file for the second time today. It argues for
+6.7's stronger form: Tier 0 should be regenerated as a commit-hook side effect,
+not by a human remembering to run it.
+
+**Unpushed is now 15 commits.** The R27a durability claim (12.14) remains open
+until a push; every commit since only widens the gap between this disk and any
+clone.
+
+### 12.16 What R27a actually bought, stated without inflation
+
+- The documentation production pipeline, the engine test suite, the staging gates
+  and their tests, and the repo-to-site publication bridge now have history,
+  diff, bisect and attribution where they had none.
+- One cross-lane hazard became discoverable by grep (12.12, the DOTSCRIPT shutdown
+  crash bearing on AIF-083 M2) and was in fact discovered that way within minutes.
+- Two held lanes were registered and stopped reading as abandoned (AIF-068,
+  AIF-070), one of which corrected this session's memo conclusion from two lanes
+  to three.
+
+What it did NOT buy: durability (unpushed), completeness (1,041 entries remain),
+or a working `mandatory-tracked` gate (R27b still open, and the gate printed the
+same PASS through all of it).
