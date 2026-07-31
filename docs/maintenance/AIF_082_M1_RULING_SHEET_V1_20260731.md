@@ -196,3 +196,47 @@ these from precedent into gates:
    small, and under 6.6 it would then earn its own demotion.
 
 Groups B, C and D remain open: 16 rows.
+
+---
+
+## Group E -- opened by the M4 run 1 result, 2026-07-31T21:52Z
+
+Two rows. Both are yours; neither is a judgement call I should make alone,
+because both change what this lane is measured against.
+
+**R25 -- What is M4's acceptance artifact?** Two cold agents ran; neither
+produced the Minimal New-AI Checklist; both were conventionally correct on a real
+owed task (ten conventions applied unprompted, three of them authored the same
+day). The evidence says the checklist is not what a correctly-onboarded agent
+naturally emits. Options:
+
+- **(a)** Keep the checklist as the pass condition and add an explicit ask for it
+  to the Tier 1 seed. Cost: seed bytes, against an 8,192 B ceiling currently at
+  8,191. Something must be demoted to make room.
+- **(b)** Replace the pass condition with conventional correctness on a real
+  task, scored against the charter 11.2 rubric. Cost: a softer, judged signal --
+  but it is what both runs actually produced, and it is what onboarding is FOR.
+- **(c)** Both, with the checklist demoted to a diagnostic rather than the gate.
+
+My recommendation is **(b)**, and I flag my own bias: I designed the rubric, so
+of course I like the measure I can pass. That is precisely why it is your ruling.
+
+**R26 -- M9 blocks M4 (recommend: accept as stated).** Without an emitted
+`Files read:` manifest, an M4 run cannot distinguish "the 10 KB entry path was
+sufficient" from "the agent read widely and expensively and got there anyway."
+Run 1 spent 117,051 tokens against a 10,324 B entry path and I cannot say which
+happened. Every future run is equally uninterpretable until M9 lands. This was
+already filed as an argument at charter line 1128; run 1 makes it a measurement.
+
+## Owed to the maintainer, host-side (I must not run git)
+
+`labtalk/ai_portal/TIER0_STATE.md` is stale -- generated at `3550705dd`, HEAD is
+`1b60b728f`, so it does not know AIF-083 exists. The generator shells out to git,
+so it is host-side by the sandbox rule:
+
+```powershell
+cd D:\code\ccode
+python labtalk\ai_portal\generate_tier0_state.py
+```
+
+Groups B, C and D remain open: 16 rows. Group E adds 2. Total open: 18.

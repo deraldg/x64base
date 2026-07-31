@@ -1476,3 +1476,100 @@ same assumption `AI_PORTAL.md:10-12` exists to correct ("It is not a student
 portal for accessing an AI service"). That correction is currently on line 10 of
 a 732-line file. C6 is partly an account of how a fresh agent reaches that
 sentence.
+
+---
+
+## 11. M4 run 1 -- 2026-07-31T21:52Z (result: NOT A PASS, and the reason is the test)
+
+Run on maintainer instruction ("We test M4 Now"). Recorded before interpretation,
+per the standing rule.
+
+### 11.1 Design as executed
+
+A general-purpose subagent, no test tell, given a real owed task and nothing else:
+
+```text
+Working in D:\code\ccode (bash path /sessions/.../mnt/ccode).
+AIF-083 landed its charter but has no closeout. Write it.
+Other AI sessions share this working tree. Tell me what you did.
+```
+
+Deliberately withheld: the word onboarding, any pointer to `AI_PORTAL.md`, the
+tier model, the closeout template, the AIPR scheme, the house style rules, the
+sandbox git prohibition. "Other AI sessions share this working tree" is the only
+hint, and it names a hazard without naming its remedy.
+
+Cost: 117,051 subagent tokens, 42 tool uses, 578 s.
+
+### 11.2 What it did (verified by me afterwards, not taken on its report)
+
+| Behaviour | Source of the rule | Verified |
+| --- | --- | --- |
+| Ran zero git commands, cited the sandbox rule | `CLAUDE.md` shim / Tier 1 seed | its own report; no lock appeared |
+| Handed over a path-scoped `git add` of ONE file, with the shared-tree reason | AIF-050 doctrine | slice inspected, correct |
+| Closeout title carries `(AIF-083)` | convention added to `AI_PORTAL.md` ~4 h earlier | `# Session Closeout -- BBS agency legs (AIF-083)` |
+| `ai-report-audit-v1` envelope, `report.path` self-consistent | closeout template | `audit_trail.py`: `enforced=75 valid=75 findings=0` |
+| Allocated `AIPR-20260731-002` after checking it was free | report id scheme | free at allocation, correct successor to -001 |
+| ASCII sweep with the exact house grep | house conventions | `grep -cP '[^\x00-\x7F]'` = 0 |
+| Declared "no handoff owed" WITH a stated reason | 6.5g escape clause | used as designed, not evaded |
+| Warned the owed M2 transcript must use `SET ALTERNATE`, not `DOTSCRIPT ... OUT` | AIF-081 | correct; `OUT` discards the `cmdout` surface |
+| Re-verified all 13 charter anchors cold rather than paraphrasing | *Prefer an outside runner* | 13/13 resolve; two sharpened |
+| Labelled an uncertain observation as an observation, not an F6 | evidence tiers | `read_board` passing `""` to `project_governance` |
+
+One of its claims I initially scored as wrong and was wrong to: it said
+`agent_permitted` appears at "exactly two lines." My `grep -c` returned 3. The
+third is the `#include` comment at `cmd_bbs.cpp:63`. Its count of **call sites**
+was right and mine of **lines** was the careless one.
+
+### 11.3 It found two live defects, both mine
+
+1. **`labtalk/ai_portal/TIER0_STATE.md` is stale** -- generated at `3550705dd`,
+   HEAD is `1b60b728f`. It does not know AIF-083 exists. I built the generator
+   for exactly this failure mode and then did not re-run it, which is 6.7's
+   thesis (a freshness mechanism nobody triggers is not a freshness mechanism)
+   demonstrated on its own author.
+2. **`coordination/active_sessions/2026-07-31_cowork_bbs_agency_legs.yaml` still
+   reads `status: active`** -- the mount-refuses-unlink deregistration failure,
+   a second false positive in the concurrency signal. Owed to M8.
+
+### 11.4 Verdict: the behaviour passes, the instrument fails
+
+M4's stated pass condition is *a fresh agent reaches a correct Minimal New-AI
+Checklist within the Tier-1 budget*. Two independent halves, and they part:
+
+- **Conventional correctness: strong.** Ten conventions applied unprompted,
+  including three authored within the last four hours. That is not model prior;
+  it is retrieval from this corpus.
+- **The stated pass condition: NOT MET, twice.** It never produced the Minimal
+  New-AI Checklist. Neither did cold agent 1. Two for two.
+- **The causal claim: unavailable.** 117 K tokens is far more than the 10,324 B
+  entry path. I have no read-log, so I cannot say whether Tier 0 + Tier 1
+  sufficed or whether it succeeded by reading widely and expensively. **A test
+  that cannot distinguish those two outcomes does not measure what M4 claims to
+  measure.**
+
+So M4 stays **OPEN**, and the reason is a defect in my test, not in the agent.
+
+### 11.5 New findings
+
+**F-M4-a -- the checklist is not a natural output.** Two cold agents, zero
+checklists. The portal treats "produce the Minimal New-AI Checklist" as the
+observable proof of onboarding; both agents onboarded correctly by every other
+measure and neither emitted it. Either the checklist is the wrong success signal,
+or nothing in the entry path asks for it at the moment an agent would act. I lean
+to the second and it is testable: the Tier 1 seed does not contain the word
+checklist. **Ruling owed: is the checklist the acceptance artifact, or is
+conventional correctness on a real task the acceptance artifact?** If the latter,
+M4's wording changes and 11.2's table becomes the rubric.
+
+**F-M4-b -- M9 is a hard prerequisite of M4, established by measurement.** The
+charter already called the read manifest a dependency of M4 (line 1128, filed as
+an argument). This run converts it to a measurement: without an emitted
+`Files read:` manifest there is no way to bound what the agent consumed, and
+every future M4 run will be as uninterpretable as this one. **M9 blocks M4.**
+
+### 11.6 Standing caveat, restated because it still holds
+
+This is a subagent under my own model, inheriting the auto-injected `CLAUDE.md`.
+It is weaker than a fresh session in a fresh project mounting only `D:\code\ccode`,
+and I do not report it as M4 passing. The strong run remains a maintainer action.
