@@ -277,6 +277,43 @@ nodes:
     hard_fails: true
     tier: 2
 
+  # Demoted 2026-07-31 (6.3). Each described itself as a first read; five
+  # competing front doors is what the 127,704-byte entry path was made of. None
+  # deleted -- all are referenced, and the assimilation book is load-bearing
+  # doctrine. They are now reachable by trigger instead of by being listed as
+  # entry points.
+  - id: doc.assimilation_book
+    label: AI Assimilation Book -- the authority order
+    path: docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doc.assimilation_portal
+    label: AI Assimilation Portal (demoted, depth on demand)
+    path: docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doc.bootstrap_card
+    label: AI Baby Bootstrap Card (demoted)
+    path: docs/agents/AI_BABY_BOOTSTRAP_CARD.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doc.root_portal_ancestor
+    label: Root AI Portal Entry -- SUPERSEDED ancestor, forked 42 KB behind
+    path: labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+    class: episodic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: state.tier0
     label: Tier 0 generated state
     path: labtalk/ai_portal/TIER0_STATE.md
@@ -340,3 +377,15 @@ edges:
 
   - {from: seed.tier1, to: doctrine.operator_contract, type: requires}
   - {from: seed.tier1, to: doctrine.mandatory_start, type: supersedes}
+
+  # The demoted set. `supersedes` records what replaced them for ENTRY; the
+  # `fires_at` edges are how they stay reachable, which is the whole point of
+  # demoting rather than deleting (thesis 2.2 and 5.1 together: forget on
+  # purpose, but keep a path).
+  - {from: seed.tier1, to: doc.assimilation_portal, type: supersedes}
+  - {from: seed.tier1, to: doc.bootstrap_card, type: supersedes}
+  - {from: doctrine.authority_chain, to: doc.assimilation_book, type: requires}
+  - {from: trigger.understand_why, to: doc.assimilation_book, type: fires_at}
+  - {from: trigger.onboard, to: doc.bootstrap_card, type: fires_at}
+  - {from: trigger.understand_why, to: doc.assimilation_portal, type: fires_at}
+  - {from: doctrine.retrieval_failure, to: doc.root_portal_ancestor, type: evidenced_by}

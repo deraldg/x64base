@@ -1,6 +1,21 @@
 # AI Assimilation Portal v1
 
-Status: seed portal.
+    status        : DEMOTED from the entry path 2026-07-31 (AIF-082, 6.3)
+    superseded_by : labtalk/ai_portal/AI_TIER1_SEED_V1.md
+    tier          : 2 -- depth on demand
+    class         : semantic
+
+**Do not start here.** Its stated purpose -- "a durable entry point if prior AI
+chat history is unavailable" -- is now served by the Tier 1 seed, which is
+budgeted, tested against a stopping rule, and pointed at by both vendor shims.
+
+Retained as depth-on-demand. It remains referenced by five files and its content
+is not wrong; it is one of the five competing front doors whose overlap made the
+entry path cost 127,704 bytes.
+
+---
+
+Status: seed portal (historical; see above).
 Audience: any future AI agent, human maintainer, or second-opinion reviewer.
 Purpose: provide a durable entry point if prior AI chat history, OpenAI-hosted
 content, or model-specific memory is unavailable.

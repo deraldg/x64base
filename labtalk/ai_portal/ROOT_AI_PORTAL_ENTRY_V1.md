@@ -1,6 +1,27 @@
-# x64base AI Portal
+# x64base AI Portal -- SUPERSEDED ANCESTOR
 
-Status: **Alpha/Experimental**
+    status        : SUPERSEDED. Do not read this for current doctrine.
+    authoritative : AI_PORTAL.md (repository root)
+    superseded_utc: 2026-07-31T20:50:00Z
+    lane          : AIF-082 (6.3 consolidation)
+
+**This file forked from `AI_PORTAL.md` and is 42 KB behind it.** It declares
+itself the source of the root portal, and all six of its section headings still
+exist there -- but it is 4,861 bytes against 47,085, and seven sections against
+twenty-nine. The source froze while the published copy grew tenfold.
+
+That is `AI_PORTAL.md`'s own case study 2, *dual-authoring the staging tree*:
+"two copies of the truth, free to drift... the instant staging is edited as if it
+were a source, neither tree is authoritative." The doctrine's own remedy is a
+byte-diff against the source at promotion time. It was never run, on the portal's
+own entry document, for months.
+
+**`AI_PORTAL.md` is authoritative.** This file is retained as the episodic record
+of the fork, not as a reading path. Nothing should cite it for doctrine.
+
+---
+
+Status: **Alpha/Experimental** (historical)
 Audience: AI development partners and maintainers
 Published location: repository root as `AI_PORTAL.md`
 

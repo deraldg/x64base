@@ -186,14 +186,39 @@ def main() -> int:
             print(f"  {t['id'].replace('trigger.', ''):<18} {t.get('label', '')}")
         return 0
 
-    q = args.query.lower()
-    hits = [
-        t for t in g["triggers"]
-        if q in t["id"].lower() or q in str(t.get("label", "")).lower()
-    ]
-    if not hits:
-        print(f"recall: no trigger matches {args.query!r}. Run with no argument to list.", file=sys.stderr)
+    # Match on normalized text and token overlap. The first version compared the
+    # raw query against `trigger.understand_why`, so the natural-language phrasing
+    # the tool ASKS FOR ("understand why") missed the trigger named after it.
+    # A retrieval tool that fails on the phrasing it invites is a retrieval
+    # failure of its own kind.
+    def norm(s: str) -> str:
+        return re.sub(r"[^a-z0-9 ]+", " ", str(s).lower().replace("_", " ")).strip()
+
+    q = norm(args.query)
+    qt = set(q.split())
+
+    scored = []
+    for t in g["triggers"]:
+        hay = f"{norm(t['id'])} {norm(t.get('label', ''))}"
+        ht = set(hay.split())
+        if q and q in hay:
+            score = 100 + len(q)
+        else:
+            score = len(qt & ht) * 10
+        if score:
+            scored.append((score, t))
+
+    if not scored:
+        print(f"recall: no trigger matches {args.query!r}. Triggers:", file=sys.stderr)
+        for t in g["triggers"]:
+            print(f"  {t['id'].replace('trigger.', ''):<18} {t.get('label','')}", file=sys.stderr)
         return 3
+
+    scored.sort(key=lambda r: -r[0])
+    hits = [t for _, t in scored]
+    if len(scored) > 1 and scored[0][0] == scored[1][0]:
+        print(f"recall: ambiguous, using {hits[0]['id']}. Also matched: "
+              + ", ".join(t["id"].replace("trigger.", "") for t in hits[1:4]))
 
     trig = hits[0]
     print(f"=== recall: {trig['id']} -- {trig.get('label', '')}")

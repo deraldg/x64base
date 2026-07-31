@@ -1,6 +1,22 @@
 # AI Baby Bootstrap Card - DotTalk++
 
-Status: active first-read seed.
+    status        : DEMOTED from the entry path 2026-07-31 (AIF-082, 6.3)
+    superseded_by : labtalk/ai_portal/AI_TIER1_SEED_V1.md
+    tier          : 2 -- retrieved by trigger, not read at entry
+    class         : semantic
+
+**Do not start here.** This was one of five documents each describing itself as a
+first read, which is the overlap `AI_README.md` acknowledged in prose and nobody
+resolved. The measured cost of that overlap was a 127,704-byte entry path.
+
+The single entry body is now `labtalk/ai_portal/AI_TIER1_SEED_V1.md` (8 KB, with
+a five-question stopping test). This card is retained because its content is
+still true and still referenced; it is simply no longer an entry point. Reach it
+by trigger: `python labtalk/ai_portal/recall.py onboard`.
+
+---
+
+Status: first-read seed (historical; see above).
 Audience: ChatGPT, Codex, Grok, Claude, or any new/resuming AI agent.
 Project root: `D:\code\ccode`
 
