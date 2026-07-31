@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T18:54:00Z
-    baseline    : d98afb8b1 (development, pushed)
-    status      : 22 rows, 12 closed, 10 open
+    updated_utc : 2026-07-31T19:02:00Z
+    baseline    : ee76b0a4f (development, pushed)
+    status      : 24 rows, 12 closed, 12 open
 
 ---
 
@@ -65,6 +65,8 @@ If you rule only these three and defer the rest, the lane still advances.
 | **6.5a** | Split `CURRENT_TARGET.md`: keep lines 1-18 as the pointer, move 18 historical sections to `CURRENT_TARGET_HISTORY.md`. Nothing deleted. | small | yes | **accept** | ` ` |
 | **6.5b** | Retire the legacy "Start Here" 11-item list at `AI_README.md:56-73`. It is marked superseded but is still a numbered list under a "Start Here" heading. Git holds it. | tiny | yes | **accept** | ` ` |
 | **6.5c** | State precedence between the two overlapping mandatory field blocks (`SDLC_FAST_START_SEED_V1.md:32-57`, 20 fields vs `SCOPE_CALIBRATION_SEED_V1.md:11-24`, 10 fields, 7 shared). Or nest one in the other. | tiny | yes | **accept** | ` ` |
+| **6.13** | **Gate the dashboard Session Log row.** Measured 2026-07-31 (6.7 / M6): present in 6 of 18 lanes, 33%, against 83-94% for the four obligations that have gates. It is the only AIF-006 obligation with no mechanism behind it. Proposed: `prepush_gate.py` warns when a commit adds or edits a `SESSION_CLOSEOUT_*.md` without a matching Session Log row. Warn, not hard-block, so it never wedges a commit. | small | yes | **accept** | ` ` |
+| **6.14** | **Verify portal-mandatory files are tracked.** Two were found untracked on 2026-07-31 by accident, from `create mode` lines in unrelated commits: `AGENTS.md` (the always-read shim for Codex-family agents) and `SCOPE_CALIBRATION_SEED_V1.md` (step 5 of the Mandatory Start). Both were invisible to a clone. `labtalk/ai_portal/check_mandatory_tracked.py` is written and derives its list from the entry documents rather than hand-maintaining one -- 45 declared files. Needs a host run and a decision on whether it joins the pre-commit gate. | small | yes | **accept** | ` ` |
 | **6.5d** | Cap intake-queue row length; depth lives in the lane doc the row already points to. AIF-078 is 1,147 words in one table cell; the file is 142 KB over 126 lines. | small | yes | **accept** | ` ` |
 | **6.5h** | Enforce the house style rule that the portal itself breaks. `CLAUDE.md:54` says no em-dashes; measured 2026-07-31: **`AI_PORTAL.md` 88 em-dashes + 7 unicode arrows, `CURRENT_TARGET.md` 50 + 11, `AI_README.md` 7**. A declared rule with no gate is the AIF-079 class applied to prose. Proposed: `grep -P '[^\x00-\x7F]'` in the pre-commit gate for changed doc lines only, so the backlog does not block work while new violations become impossible. | small | yes | **accept** | ` ` |
 | **6.5g** | Land the AIF-081 session handoff in the tree as the **seed of Tier 1**, and make "leave a handoff" a closeout obligation alongside the session closeout. It is already the tier design executed by hand, and its section 8 contained the fix for this session's wedge (C8, 5b) while being unreachable from the corpus. A closeout records what happened; a handoff records how to work here. AIF-006 requires the first, not the second. | small | yes | **accept** | ` ` |
@@ -145,6 +147,8 @@ measurement rather than a build, and the number stays useful either way.
 | 6.10 | | | |
 | 6.11 | **A** ratified | 2026-07-31T18:22Z | Maintenance contract binding on always-read surfaces: invariants and pointers only, no perishable literals, hard byte ceiling, demote once a hard-failing gate covers a rule. Already applied to the Tier 1 seed and to `CLAUDE.md`, whose hardcoded toolchain versions were removed as perishable. |
 | 6.12 | | | |
+| 6.13 | | | |
+| 6.14 | | | |
 | X1 | **A** (retire) | 2026-07-31T12:45Z | AIF-072 retired as controlling target; stays claimed and pick-up-ready. `CURRENT_TARGET.md` top section rewritten to name the five in-flight lanes. Applied. |
 | X2 | **A** (done, published) | 2026-07-31T14:30Z | Four themed commits host-side: `1024a53d5` lane artifacts, `8a3dea347` tier 1 seed + portal surfaces, `71f9b850e` agents handoff + front-door files, `cf5ac99b8` record corrections. `prepush_gate.py` PASS on all. **Pushed** `0803f0f13..cf5ac99b8` to `origin/development`. Staging and `main` not reached, out of scope. |
 
