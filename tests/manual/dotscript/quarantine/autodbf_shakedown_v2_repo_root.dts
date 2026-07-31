@@ -1,0 +1,220 @@
+* AUTODBF shakedown script v2
+* Date: 2026-05-12
+* Purpose: exercise cmd_CREATE length guards and first AUTODBF command path.
+*
+* v2 corrections from first run:
+*   - Fixture paths point at dottalkpp/data/tests/autodbf_fixtures
+*   - STRUCT is used instead of LIST STRUCTURE.
+*   - Logical test uses "T" rather than .T. to avoid expression/literal ambiguity.
+*
+* SAFETY:
+*   Run only against disposable/scratch DBF and INDEX paths.
+*   This script creates, overwrites, imports, and erases tables whose names begin ADBF_.
+*
+* If this script cannot open fixtures, stop and fix the FROM path before reading later LIST output.
+
+SET ECHO ON
+SET PAGING OFF
+
+ECHO ============================================================
+ECHO AUTODBF SHAKEDOWN V2 START
+ECHO ============================================================
+ECHO Fixture CSV path prefix: dottalkpp/data/tests/autodbf_fixtures
+ECHO Expected failing sections are marked EXPECTED FAIL.
+ECHO ============================================================
+
+DOTSCRIPT x64
+WORKSPACE CLOSE
+SETPATH
+
+ECHO ============================================================
+ECHO PART A - cmd_CREATE length guard aside
+ECHO ============================================================
+
+ECHO A1 - normal CREATE still works
+ERASE adbf_cg_ok CONFIRM
+CREATE X64 adbf_cg_ok (ID N(6,0), NAME C(30), AMT N(10,2), ACTIVE L, BIRTH D)
+STRUCT
+APPEND
+REPLACE ID WITH 1
+REPLACE NAME WITH "ALPHA"
+REPLACE AMT WITH 12.34
+REPLACE ACTIVE WITH "T"
+REPLACE BIRTH WITH "20200102"
+LIST
+
+ECHO A2 - EXPECTED FAIL: overlarge character length must not wrap
+ERASE adbf_cg_c300 CONFIRM
+CREATE X64 adbf_cg_c300 (NAME C(300))
+
+ECHO A3 - EXPECTED FAIL: overlarge numeric width must not wrap
+ERASE adbf_cg_n300 CONFIRM
+CREATE X64 adbf_cg_n300 (AMT N(300,2))
+
+ECHO A4 - EXPECTED FAIL: overlarge decimal count must not wrap
+ERASE adbf_cg_d300 CONFIRM
+CREATE X64 adbf_cg_d300 (AMT N(10,300))
+
+ECHO A5 - EXPECTED FAIL: non-numeric tails must be rejected
+ERASE adbf_cg_badlen CONFIRM
+ERASE adbf_cg_badnum CONFIRM
+CREATE X64 adbf_cg_badlen (NAME C(20abc))
+CREATE X64 adbf_cg_badnum (AMT N(10x,2))
+
+ECHO ============================================================
+ECHO PART B - AUTODBF command registration
+ECHO ============================================================
+
+ECHO B1 - AUTODBF usage should appear
+AUTODBF USAGE
+
+ECHO B2 - lowercase command should resolve if shell commands are case-insensitive
+autodbf
+
+ECHO ============================================================
+ECHO PART C - Header CSV happy path
+ECHO ============================================================
+
+ERASE adbf_stuhdr CONFIRM
+AUTODBF X64 adbf_stuhdr FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_students.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART D - No-header CSV happy path
+ECHO ============================================================
+
+ERASE adbf_nohead CONFIRM
+AUTODBF X64 adbf_nohead FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_noheader.csv NOHEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART E - AUTO header detection
+ECHO ============================================================
+
+ECHO E1 - obvious header should choose HEADER
+ERASE adbf_auto_h CONFIRM
+AUTODBF X64 adbf_auto_h FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_students.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO E2 - obvious no-header should choose NOHEADER
+ERASE adbf_auto_n CONFIRM
+AUTODBF X64 adbf_auto_n FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_noheader.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO E3 - ambiguous header canary; decision should be reported
+ERASE adbf_ambig CONFIRM
+AUTODBF X64 adbf_ambig FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_ambiguous.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART F - TEXTONLY mode preserves code-like values
+ECHO ============================================================
+
+ERASE adbf_txtonly CONFIRM
+AUTODBF X64 adbf_txtonly FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_textonly.csv HEADER TEXTONLY OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART G - INFER mode and type boundaries
+ECHO ============================================================
+
+ERASE adbf_infer CONFIRM
+AUTODBF X64 adbf_infer FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_infer.csv HEADER INFER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART H - Field-name mangling and fallback descriptors
+ECHO ============================================================
+
+ERASE adbf_names CONFIRM
+AUTODBF X64 adbf_names FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_names.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART I - Existing DBF overwrite guard
+ECHO ============================================================
+
+ERASE adbf_owguard CONFIRM
+ECHO I1 - first create should succeed
+AUTODBF X64 adbf_owguard FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_students.csv HEADER
+STRUCT
+LIST
+
+ECHO I2 - EXPECTED FAIL: second create without OVERWRITE should be blocked
+AUTODBF X64 adbf_owguard FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_students.csv HEADER
+
+ECHO I3 - explicit OVERWRITE should succeed
+AUTODBF X64 adbf_owguard FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_students.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART J - Long text rejection, not silent truncation
+ECHO ============================================================
+
+ERASE adbf_longtxt CONFIRM
+ECHO J1 - EXPECTED FAIL: long fixed text should be rejected before import
+AUTODBF X64 adbf_longtxt FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_longtext.csv HEADER
+
+ECHO ============================================================
+ECHO PART K - Ragged rows
+ECHO ============================================================
+
+ERASE adbf_ragged CONFIRM
+ECHO K1 - EXPECTED FAIL: ragged rows should be rejected before create/import
+AUTODBF X64 adbf_ragged FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_ragged.csv HEADER
+
+ECHO ============================================================
+ECHO PART L - Empty values
+ECHO ============================================================
+
+ERASE adbf_blanks CONFIRM
+AUTODBF X64 adbf_blanks FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_blanks.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART M - Quoted CSV basics
+ECHO ============================================================
+
+ERASE adbf_quotes CONFIRM
+AUTODBF X64 adbf_quotes FROM dottalkpp/data/tests/autodbf_fixtures/autodbf_quotes.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO ============================================================
+ECHO PART N - Workspace/open-state behavior
+ECHO ============================================================
+
+WORKSPACE
+LIST
+WORKSPACE CLOSE
+WORKSPACE
+
+ECHO ============================================================
+ECHO PART O - Existing CREATE and IMPORT surfaces still work
+ECHO ============================================================
+
+ERASE adbf_stillok CONFIRM
+CREATE X64 adbf_stillok (ID N(6,0), NAME C(20))
+STRUCT
+APPEND
+REPLACE ID WITH 1
+REPLACE NAME WITH "OK"
+LIST
+IMPORT dottalkpp/data/tests/autodbf_fixtures/still_ok_import.csv
+LIST
+
+ECHO ============================================================
+ECHO AUTODBF SHAKEDOWN V2 END
+ECHO ============================================================
+ECHO Capture AUTODBF usage, adbf_stuhdr STRUCT/LIST,
+ECHO adbf_names STRUCT, adbf_longtxt failure, and adbf_ragged failure.

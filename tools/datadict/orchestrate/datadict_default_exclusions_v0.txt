@@ -1,0 +1,29 @@
+# DD-024 default exclusions v0
+# Prefixes are repo-relative and use forward slashes.
+.git/
+.venv/
+__pycache__/
+build/
+build-msvc/
+build-pro-md/
+build-wsl/
+build-tests/
+build_rdi/
+dist/
+target/
+vcpkg_installed/
+docs/datadict/reports/
+docs/datadict/manifests/
+docs/datadict/staging/
+docs/datadict/tmp/
+docs/datadict/cache/
+docs/manuals/developer/manualgen/backups/
+docs/manuals/developer/manualgen/generated/
+docs/manuals/developer/manualgen/logs/
+docs/manuals/developer/manualgen/published/
+dottalkpp/data/lmdb/
+dottalkpp/data/indexes/backups/
+dottalkpp/data/backup/
+dottalkpp/data/logs/
+dottalkpp/data/out/
+dottalkpp/data/tmp/

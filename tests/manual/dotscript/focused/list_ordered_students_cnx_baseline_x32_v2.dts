@@ -1,0 +1,382 @@
+* ============================================================
+* LIST_ORDERED_STUDENTS_CNX_BASELINE_X32_V2.DTS
+*
+* Purpose:
+*   Baseline regression for LIST behavior under active ordered
+*   traversal on X32 STUDENTS / STUDENTS_X32_IDXTEST.
+*
+* Scope:
+*   - CNX ordered traversal where available
+*   - SET ORDER TO TAG LNAME
+*   - SET ORDER TO TAG FNAME
+*   - ASCEND / DESCEND
+*   - TOP / BOTTOM / SKIP / GO
+*   - SEEK anchoring
+*   - duplicate-key zones
+*   - LIST / LIST TOP / LIST BOTTOM / LIST ALL
+*   - ordered + FOR
+*   - ordered + SET FILTER TO
+*   - return to physical order
+*
+* Notes:
+*   - Uses SELECT by table name, not stale area numbers.
+*   - If STUDENTS does not own LNAME/FNAME CNX tags in this build,
+*     this script will expose that immediately and should be run
+*     against STUDENTS_X32_IDXTEST instead.
+*   - LIST is still treated as a developer/report command.
+*   - Use AREA and STATUS after each important movement.
+* ============================================================
+
+SET ECHO OFF
+
+ECHO ============================================================
+ECHO LIST ORDERED STUDENTS CNX BASELINE X32 V2 START
+ECHO ============================================================
+
+COLOR DEFAULT
+VERSION
+
+DO X32
+WORKSPACE OPEN DBF
+WSREPORT ALL
+
+* ------------------------------------------------------------
+* SECTION 0: SELECT ORDER TEST TABLE
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 0: SELECT ORDER TEST TABLE
+ECHO ============================================================
+
+SELECT STUDENTS
+AREA
+FIELDS
+COUNT
+STATUS
+
+ECHO --- TRY LNAME ORDER ON STUDENTS ---
+SET ORDER TO TAG LNAME
+AREA
+STATUS
+
+* If the above fails in this build, manually switch this script to:
+*   SELECT STUDENTS_X32_IDXTEST
+* before accepting the ordered baseline.
+
+* ------------------------------------------------------------
+* SECTION 1: LNAME ASCENDING ORDER
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 1: LNAME ASCENDING ORDER
+ECHO ============================================================
+
+ASCEND
+TOP
+AREA
+LIST 5
+AREA
+
+ECHO --- REPEAT LIST 5 WITHOUT MOVING ---
+LIST 5
+AREA
+
+ECHO --- SKIP 5 THEN LIST 5 ---
+TOP
+SKIP 5
+AREA
+LIST 5
+AREA
+
+ECHO --- GO TOP / GO BOTTOM ---
+GO TOP
+AREA
+LIST 5
+AREA
+
+GO BOTTOM
+AREA
+LIST 5
+AREA
+
+ECHO --- LIST TOP ---
+LIST TOP
+AREA
+
+ECHO --- LIST BOTTOM ---
+LIST BOTTOM
+AREA
+
+ECHO --- LIST ALL ---
+GO TOP
+LIST ALL
+AREA
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 2: ORDERED SEEK ANCHORING / LNAME
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 2: ORDERED SEEK ANCHORING / LNAME
+ECHO ============================================================
+
+SET ORDER TO TAG LNAME
+ASCEND
+TOP
+AREA
+
+ECHO --- SEEK ANDERSON ---
+SEEK ANDERSON
+AREA
+LIST 5
+AREA
+
+ECHO --- SKIP 1 AFTER SEEK ---
+SKIP 1
+AREA
+LIST 5
+AREA
+
+ECHO --- SEEK BROWN ---
+SEEK BROWN
+AREA
+LIST 5
+AREA
+
+ECHO --- SEEK CLARK ---
+SEEK CLARK
+AREA
+LIST 5
+AREA
+
+ECHO --- SEEK DAVIS ---
+SEEK DAVIS
+AREA
+LIST 5
+AREA
+
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 3: DUPLICATE KEY ZONE / LNAME
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 3: DUPLICATE KEY ZONE / LNAME
+ECHO ============================================================
+
+SET ORDER TO TAG LNAME
+ASCEND
+SEEK ANDERSON
+AREA
+LIST 5
+AREA
+
+SKIP 1
+AREA
+LIST 5
+AREA
+
+SKIP 1
+AREA
+LIST 5
+AREA
+
+SKIP 1
+AREA
+LIST 5
+AREA
+
+SKIP 1
+AREA
+LIST 5
+AREA
+
+SKIP 1
+AREA
+LIST 5
+AREA
+
+TOP
+AREA
+LIST 5
+AREA
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 4: ORDERED + FOR / LNAME
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 4: ORDERED + FOR / LNAME
+ECHO ============================================================
+
+SET ORDER TO TAG LNAME
+ASCEND
+TOP
+AREA
+
+ECHO --- LIST FOR LNAME = "ANDERSON" ---
+LIST FOR LNAME = "ANDERSON"
+AREA
+
+ECHO --- LIST 10 FOR MAJOR = "CSCI" ---
+TOP
+LIST 10 FOR MAJOR = "CSCI"
+AREA
+
+ECHO --- LIST ALL FOR GENDER = "F" ---
+TOP
+LIST ALL FOR GENDER = "F"
+AREA
+
+ECHO --- SEEK CLARK THEN LIST FOR LNAME = "CLARK" ---
+SEEK CLARK
+AREA
+LIST FOR LNAME = "CLARK"
+AREA
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 5: ORDERED + SET FILTER TO / LNAME
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 5: ORDERED + SET FILTER TO / LNAME
+ECHO ============================================================
+
+SET ORDER TO TAG LNAME
+ASCEND
+SET FILTER TO LNAME = "CLARK"
+TOP
+AREA
+LIST 5
+AREA
+
+ECHO --- REPEAT LIST 5 UNDER FILTER ---
+LIST 5
+AREA
+
+ECHO --- SKIP 2 UNDER FILTER ---
+SKIP 2
+AREA
+LIST 5
+AREA
+
+COUNT
+
+ECHO --- CLEAR FILTER ---
+SET FILTER TO
+TOP
+AREA
+LIST 5
+AREA
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 6: FNAME ASCENDING ORDER
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 6: FNAME ASCENDING ORDER
+ECHO ============================================================
+
+SET ORDER TO TAG FNAME
+ASCEND
+TOP
+AREA
+LIST 5
+AREA
+
+ECHO --- SEEK ADRIEN ---
+SEEK ADRIEN
+AREA
+LIST 5
+AREA
+
+ECHO --- SKIP 5 AFTER FNAME SEEK/TOP ---
+SKIP 5
+AREA
+LIST 5
+AREA
+
+ECHO --- BOTTOM / LIST ---
+BOTTOM
+AREA
+LIST 5
+AREA
+
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 7: LNAME DESCENDING ORDER
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 7: LNAME DESCENDING ORDER
+ECHO ============================================================
+
+SET ORDER TO TAG LNAME
+DESCEND
+AREA
+STATUS
+
+TOP
+AREA
+LIST 5
+AREA
+
+SKIP 5
+AREA
+LIST 5
+AREA
+
+BOTTOM
+AREA
+LIST 5
+AREA
+
+LIST TOP
+AREA
+
+LIST BOTTOM
+AREA
+
+ASCEND
+SET ORDER TO TAG LNAME
+TOP
+AREA
+LIST
+AREA
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 8: ORDER RESET / PHYSICAL RETURN
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 8: ORDER RESET / PHYSICAL RETURN
+ECHO ============================================================
+
+SET ORDER TO 0
+TOP
+AREA
+LIST 5
+AREA
+
+SKIP 5
+AREA
+LIST 5
+AREA
+
+STATUS
+
+* ------------------------------------------------------------
+* SECTION 9: FINAL RESTORATION
+* ------------------------------------------------------------
+ECHO ============================================================
+ECHO SECTION 9: FINAL RESTORATION
+ECHO ============================================================
+
+SET FILTER TO
+SET ORDER TO 0
+TOP
+AREA
+STATUS
+WSREPORT
+
+ECHO ============================================================
+ECHO LIST ORDERED STUDENTS CNX BASELINE X32 V2 END
+ECHO ============================================================

@@ -1,0 +1,109 @@
+* ============================================================
+* Workspace Relation Save/Load Smoke Test - DTSHEMA 2 live path
+* ============================================================
+* Purpose:
+*   Verify WORKSPACE SAVE/LOAD restores live areas plus relation graph.
+*
+* Scope:
+*   Non-destructive.
+*   Uses WORKSPACE command path only.
+*   Uses MCC sandbox relationship chain.
+*
+* Expected:
+*   WORKSPACE OPEN DBF opens sandbox DBFs.
+*   REL ADD creates relation graph.
+*   REL LIST shows relations before save.
+*   WORKSPACE SAVE writes relation-aware workspace.
+*   WORKSPACE CLOSE clears relations.
+*   WORKSPACE LOAD restores areas and relation graph.
+*   REL LIST after load should match before save.
+* ============================================================
+
+ECHO ============================================================
+ECHO WORKSPACE RELATION SAVE/LOAD SMOKE
+ECHO ============================================================
+
+DO SANDBOX
+
+ECHO
+ECHO --- CLEAN START ---
+WORKSPACE CLOSE
+REL LIST
+
+ECHO
+ECHO --- OPEN CONFIGURED DBF SLOT ---
+WORKSPACE OPEN DBF
+WORKSPACE
+
+ECHO
+ECHO --- SELECT ROOT TABLE ---
+SELECT STUDENTS
+AREA
+RECNO
+
+ECHO
+ECHO --- ADD RELATION GRAPH ---
+REL CLEAR ALL
+REL ADD STUDENTS ENROLL ON SID
+REL ADD STUDENTS STUD_MAJ ON SID
+REL ADD STUDENTS MAJORS ON MAJOR
+REL ADD ENROLL CLASSES ON CLS_ID
+REL ADD CLASSES COURSES ON CID
+REL ADD CLASSES TERMS ON TERM
+REL ADD CLASSES ROOMS ON ROOM
+REL ADD CLASSES TEACHERS ON TID
+REL ADD CLASSES TASSIGN ON CLS_ID
+REL ADD COURSES DEPT ON DEPT_ID
+REL ADD ROOMS BUILDING ON BLDG
+REL ADD TEACHERS DEPT ON DEPT_ID
+REL ADD TASSIGN TEACHERS ON TID
+REL ADD STUD_MAJ MAJORS ON MAJOR
+REL ADD MAJORS DEPT ON DEPT_ID
+
+ECHO
+ECHO --- RELATIONS BEFORE SAVE ---
+REL LIST ALL
+
+ECHO
+ECHO --- REFRESH AND ENUM CHECK BEFORE SAVE ---
+SELECT STUDENTS
+GOTO 1
+REL REFRESH
+REL LIST
+REL ENUM LIMIT 10 ENROLL CLASSES COURSES TUPLE STUDENTS.SID,STUDENTS.LNAME,ENROLL.CLS_ID,CLASSES.CID,COURSES.TITLE
+
+ECHO
+ECHO --- SAVE RELATION WORKSPACE ---
+WORKSPACE SAVE workspace_rel_smoke.dtschema
+
+ECHO
+ECHO --- CLOSE WORKSPACE ---
+WORKSPACE CLOSE
+WORKSPACE
+REL LIST
+
+ECHO
+ECHO --- LOAD RELATION WORKSPACE ---
+WORKSPACE LOAD workspace_rel_smoke.dtshema
+WORKSPACE
+
+ECHO
+ECHO --- RELATIONS AFTER LOAD ---
+REL LIST ALL
+
+ECHO
+ECHO --- REFRESH AND ENUM CHECK AFTER LOAD ---
+SELECT STUDENTS
+GOTO 1
+REL REFRESH
+REL LIST
+REL ENUM LIMIT 10 ENROLL CLASSES COURSES TUPLE STUDENTS.SID,STUDENTS.LNAME,ENROLL.CLS_ID,CLASSES.CID,COURSES.TITLE
+
+ECHO
+ECHO --- LEGACY SHIM CHECK ---
+SCHEMAS
+
+ECHO
+ECHO ============================================================
+ECHO WORKSPACE RELATION SAVE/LOAD SMOKE DONE
+ECHO ============================================================

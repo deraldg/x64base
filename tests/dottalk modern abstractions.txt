@@ -1,0 +1,396 @@
+// ======================================================================
+//  dottalkpp_modern / core abstractions
+//  A conceptual modern C++20 re-imagining of selected DotTalk++ behavior
+// ======================================================================
+
+#include <algorithm>
+#include <charconv>
+#include <concepts>
+#include <expected>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <optional>
+#include <ranges>
+#include <span>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <variant>
+#include <vector>
+
+namespace fs = std::filesystem;
+using namespace std::literals;
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Result type used throughout (modern std::expected style)
+// ──────────────────────────────────────────────────────────────────────────
+
+template<typename T>
+using Result = std::expected<T, std::string>;
+
+inline auto Err(std::string msg) { return std::unexpected{std::move(msg)}; }
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Field types — very simplified subset of Xbase types
+// ──────────────────────────────────────────────────────────────────────────
+
+enum class FieldType : uint8_t {
+    Character,
+    Numeric,
+    Date,       // stored as YYYYMMDD string
+    Logical,
+};
+
+struct FieldDef {
+    std::string     name;
+    FieldType       type;
+    uint16_t        length   = 0;
+    uint8_t         decimals = 0;
+};
+
+using FieldValue = std::variant<
+    std::monostate,           // null-ish
+    std::string,              // C + D (dates as YYYYMMDD)
+    double,                   // N
+    bool                      // L
+>;
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Record — lightweight view + owned buffered changes
+// ──────────────────────────────────────────────────────────────────────────
+
+class RecordView {
+public:
+    explicit RecordView(const std::vector<FieldDef>& schema)
+        : schema_(schema), values_(schema.size()) {}
+
+    auto field_count() const -> size_t { return schema_.size(); }
+
+    auto get(size_t idx) const -> const FieldValue& {
+        return values_[idx];
+    }
+
+    void set(size_t idx, FieldValue v) {
+        values_[idx] = std::move(v);
+    }
+
+    // Quick string conversion for tuple output
+    auto to_string(size_t idx) const -> std::string {
+        return std::visit([](auto&& arg) -> std::string {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::same_as<T, std::string>)  return arg;
+            if constexpr (std::same_as<T, double>)       return std::format("{:.2f}", arg);
+            if constexpr (std::same_as<T, bool>)         return arg ? "T" : "F";
+            return "";
+        }, values_[idx]);
+    }
+
+private:
+    const std::vector<FieldDef>& schema_;
+    std::vector<FieldValue>      values_;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Table — simplified in-memory model with buffering support
+// ──────────────────────────────────────────────────────────────────────────
+
+class Table {
+public:
+    Table(std::string name, std::vector<FieldDef> schema, size_t rec_count)
+        : name_(std::move(name))
+        , schema_(std::move(schema))
+        , record_count_(rec_count)
+        , current_recno_(1)
+        , buffer_active_(false)
+    {}
+
+    auto name()           const -> std::string_view   { return name_; }
+    auto field_count()    const -> size_t             { return schema_.size(); }
+    auto record_count()   const -> size_t             { return record_count_; }
+    auto recno()          const -> size_t             { return current_recno_; }
+
+    auto schema()         const -> const auto&        { return schema_; }
+
+    bool is_buffered()    const { return buffer_active_; }
+    void set_buffered(bool on) { buffer_active_ = on; }
+
+    // ─── navigation ───────────────────────────────────────────────────────
+    void goto_rec(size_t n) {
+        if (n >= 1 && n <= record_count_) current_recno_ = n;
+    }
+
+    void top()    { current_recno_ = 1;          }
+    void bottom() { current_recno_ = record_count_; }
+
+    // ─── current record access ────────────────────────────────────────────
+    auto current_view() -> RecordView& {
+        if (!current_view_) {
+            current_view_.emplace(schema_);
+            // simulate load from disk / cache
+        }
+        return *current_view_;
+    }
+
+    // ─── buffered REPLACE ──────────────────────────────────────────────────
+    Result<void> replace(std::string_view field_name, std::string_view value_str) {
+        auto idx = find_field_index(field_name);
+        if (!idx) return Err(std::format("Field '{}' not found", field_name));
+
+        auto& view = current_view();
+        FieldValue val = parse_value(value_str, schema_[*idx].type);
+
+        if (buffer_active_) {
+            // stage change
+            buffered_changes_[current_recno_][*idx] = std::move(val);
+            return {};
+        }
+
+        // direct write
+        view.set(*idx, std::move(val));
+        return {};
+    }
+
+    // ─── COMMIT / ROLLBACK ─────────────────────────────────────────────────
+    Result<void> commit() {
+        if (!buffer_active_) return {};
+
+        for (auto&& [recno, changes] : buffered_changes_) {
+            // simulate disk write + reindex trigger
+            std::cout << std::format("COMMIT rec {} → {} field change(s)\n", recno, changes.size());
+        }
+
+        buffered_changes_.clear();
+        return {};
+    }
+
+    void rollback() {
+        buffered_changes_.clear();
+    }
+
+    // ─── tuple output ──────────────────────────────────────────────────────
+    void emit_tuple(std::span<const std::string> fields) const {
+        auto& view = const_cast<Table*>(this)->current_view(); // mutable laziness
+
+        std::vector<std::string> parts;
+        parts.reserve(fields.size());
+
+        for (auto& f : fields) {
+            auto idx = find_field_index(f);
+            if (idx) {
+                parts.push_back(view.to_string(*idx));
+            } else {
+                parts.emplace_back("?");
+            }
+        }
+
+        std::cout << std::format("{}\n", std::ranges::join_with_view(parts, " | "sv));
+    }
+
+private:
+    auto find_field_index(std::string_view name) const -> std::optional<size_t> {
+        for (size_t i = 0; i < schema_.size(); ++i) {
+            if (strieq(schema_[i].name, name)) return i;
+        }
+        return std::nullopt;
+    }
+
+    static bool strieq(std::string_view a, std::string_view b) {
+        return std::ranges::equal(a, b, [](char c1, char c2) {
+            return std::tolower(static_cast<unsigned char>(c1)) ==
+                   std::tolower(static_cast<unsigned char>(c2));
+        });
+    }
+
+    static FieldValue parse_value(std::string_view s, FieldType t) {
+        switch (t) {
+            case FieldType::Numeric: {
+                double d{};
+                auto [p, ec] = std::from_chars(s.data(), s.data()+s.size(), d);
+                return (ec == std::errc{}) ? d : 0.0;
+            }
+            case FieldType::Logical:
+                return s == "T"sv || s == "t"sv || s == ".T."sv;
+            case FieldType::Date:
+            case FieldType::Character:
+            default:
+                return std::string{s};
+        }
+    }
+
+    std::string name_;
+    std::vector<FieldDef> schema_;
+    size_t record_count_;
+    size_t current_recno_;
+
+    bool buffer_active_;
+    std::optional<RecordView> current_view_;
+
+    // recno → field index → new value
+    std::unordered_map<size_t, std::unordered_map<size_t, FieldValue>> buffered_changes_;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Very simplified session / work areas
+// ──────────────────────────────────────────────────────────────────────────
+
+class Session {
+public:
+    auto open_table(std::string name, std::vector<FieldDef> schema, size_t recs) -> Table& {
+        auto& tbl = tables_.emplace_back(std::move(name), std::move(schema), recs);
+        current_table_ = &tbl;
+        return tbl;
+    }
+
+    auto current() -> Table* { return current_table_; }
+    void select(size_t idx) {
+        if (idx < tables_.size()) current_table_ = &tables_[idx];
+    }
+
+private:
+    std::vector<Table> tables_;
+    Table* current_table_ = nullptr;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Minimal command dispatcher (just a proof-of-concept)
+// ──────────────────────────────────────────────────────────────────────────
+
+class CommandDispatcher {
+public:
+    using Handler = std::function<void(Session&, std::span<const std::string_view>)>;
+
+    void register_cmd(std::string name, Handler h) {
+        commands_[to_lower(name)] = std::move(h);
+    }
+
+    auto dispatch(Session& sess, std::string_view line) -> bool {
+        auto tokens = split_tokens(line);
+        if (tokens.empty()) return true;
+
+        std::string cmd = to_lower(tokens[0]);
+        auto it = commands_.find(cmd);
+        if (it == commands_.end()) {
+            std::cout << "Unknown command: " << cmd << "\n";
+            return false;
+        }
+
+        it->second(sess, std::span{tokens}.subspan(1));
+        return true;
+    }
+
+private:
+    static std::string to_lower(std::string_view s) {
+        std::string r(s);
+        std::ranges::transform(r, r.begin(), ::tolower);
+        return r;
+    }
+
+    static auto split_tokens(std::string_view s) -> std::vector<std::string> {
+        std::vector<std::string> out;
+        std::string tok;
+        bool in_quote = false;
+        for (char c : s) {
+            if (c == '"' ) { in_quote = !in_quote; continue; }
+            if (c == ' ' && !in_quote) {
+                if (!tok.empty()) out.push_back(std::move(tok));
+                tok.clear();
+            } else {
+                tok += c;
+            }
+        }
+        if (!tok.empty()) out.push_back(std::move(tok));
+        return out;
+    }
+
+    std::unordered_map<std::string, Handler> commands_;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Register some DotTalk-like commands
+// ──────────────────────────────────────────────────────────────────────────
+
+void register_core_commands(CommandDispatcher& disp) {
+    // USE <name>
+    disp.register_cmd("USE", [](Session& sess, auto args) {
+        if (args.empty()) return;
+        std::cout << "Using table: " << args[0] << "\n";
+        // dummy schema
+        sess.open_table(std::string(args[0]),
+            {
+                {"SID",     FieldType::Numeric,   8, 0},
+                {"LNAME",   FieldType::Character,20, 0},
+                {"FNAME",   FieldType::Character,15, 0},
+                {"GPA",     FieldType::Numeric,   4, 2},
+            },
+            203);
+    });
+
+    // REPLACE <field> WITH <value>
+    disp.register_cmd("REPLACE", [](Session& sess, auto args) {
+        if (args.size() < 3 || args[1] != "WITH") return;
+        auto tbl = sess.current();
+        if (!tbl) return;
+        tbl->replace(args[0], args[2]);
+    });
+
+    // COMMIT
+    disp.register_cmd("COMMIT", [](Session& sess, auto) {
+        if (auto tbl = sess.current()) {
+            if (tbl->is_buffered()) {
+                tbl->commit();
+                std::cout << "Committed.\n";
+            }
+        }
+    });
+
+    // TABLE ON / OFF
+    disp.register_cmd("TABLE", [](Session& sess, auto args) {
+        if (args.empty()) return;
+        if (auto tbl = sess.current()) {
+            tbl->set_buffered(args[0] == "ON");
+            std::cout << "Table buffering: " << (tbl->is_buffered() ? "ON" : "OFF") << "\n";
+        }
+    });
+
+    // TUPLE [field1,field2,...]
+    disp.register_cmd("TUPLE", [](Session& sess, auto args) {
+        if (auto tbl = sess.current()) {
+            if (args.empty()) {
+                // all fields
+                std::vector<std::string> names;
+                for (auto& f : tbl->schema()) names.push_back(f.name);
+                tbl->emit_tuple(names);
+            } else {
+                std::vector<std::string> fields(args.begin(), args.end());
+                tbl->emit_tuple(fields);
+            }
+        }
+    });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+//  main — smoke / demo
+// ──────────────────────────────────────────────────────────────────────────
+
+int main() {
+    Session sess;
+    CommandDispatcher disp;
+    register_core_commands(disp);
+
+    std::cout << "Modern DotTalk++ smoke / demo\n\n";
+
+    disp.dispatch(sess, "USE STUDENTS");
+    disp.dispatch(sess, "TABLE ON");
+    disp.dispatch(sess, R"(REPLACE FNAME WITH "DeraldNew")");
+    disp.dispatch(sess, "TUPLE SID,LNAME,FNAME,GPA");
+    disp.dispatch(sess, "COMMIT");
+    disp.dispatch(sess, "TUPLE SID,LNAME,FNAME,GPA");
+
+    return 0;
+}

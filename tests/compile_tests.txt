@@ -1,0 +1,6 @@
+g++ -std=c++20 -Wall -Wextra -Wpedantic \
+  -I/mnt/d/code/ccode/include \
+  -I/mnt/d/code/ccode/src \
+  -c /tmp/xbase_64_probe.cpp -o /tmp/xbase_64_probe.o 2>&1 | tee /tmp/xbase_probe.log
+
+cat /tmp/xbase_64_probe.log

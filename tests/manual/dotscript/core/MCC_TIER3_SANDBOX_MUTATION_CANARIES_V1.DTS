@@ -1,0 +1,212 @@
+* ============================================================
+* MCC_TIER3_SANDBOX_MUTATION_CANARIES_V1.DTS
+*
+* Purpose:
+*   Controlled mutation canaries for DotTalk++ MCC data.
+*
+* Tier:
+*   Tier-3 — sandbox mutation / controlled write testing.
+*
+* Scope:
+*   - COPY TO sandbox/temp target
+*   - Open copied table only
+*   - APPEND / REPLACE / DELETE / RECALL / PACK-style behavior only on sandbox copy
+*   - Table buffer / COMMIT behavior on sandbox copy
+*   - CDX/LMDB index mutation behavior may be observed only if sandbox index files are used
+*
+* Safety contract:
+*   - Do NOT run against canonical DBF/X32 or DBF/X64 tables directly.
+*   - Canonical source may be read only.
+*   - All mutation must occur under DBF/SANDBOX or TMP.
+*   - No ZAP.
+*   - No wildcard ERASE.
+*   - No PACK against canonical data.
+*
+* Important:
+*   - This script assumes DBF/SANDBOX exists.
+*   - It creates/overwrites temporary sandbox copies with explicit names.
+*   - Review output before promoting any result to Tier-1.
+*
+* Display contract:
+*   - SMARTLIST / TUPLE / RECNO are preferred.
+*   - LIST may be used only as an observation probe.
+* ============================================================
+
+SET ECHO OFF
+COLOR DEFAULT
+ECHO ===== MCC TIER-3 SANDBOX MUTATION CANARIES V1 START =====
+
+* ------------------------------------------------------------
+* PHASE 0 - CLEAN START
+* ------------------------------------------------------------
+ECHO ===== PHASE 0 CLEAN START =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET FILTER TO
+VERSION
+STATUS
+
+* ------------------------------------------------------------
+* PHASE 1 - CREATE SANDBOX COPY FROM CANONICAL V64 STUDENTS
+* ------------------------------------------------------------
+ECHO ===== PHASE 1 CREATE SANDBOX COPY =====
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+
+USE STUDENTS
+COUNT
+TOP
+TUPLE *
+
+ECHO [SANDBOX] Copying canonical STUDENTS to DBF/SANDBOX/T3_STUDENTS.
+ECHO [NOTE] If COPY refuses overwrite, delete/rename sandbox copy manually.
+COPY TO DBF/SANDBOX/T3_STUDENTS
+CLOSE
+
+* ------------------------------------------------------------
+* PHASE 2 - OPEN SANDBOX COPY ONLY
+* ------------------------------------------------------------
+ECHO ===== PHASE 2 OPEN SANDBOX COPY ONLY =====
+SETPATH DBF DBF/SANDBOX
+SETPATH INDEXES INDEXES/SANDBOX
+
+USE T3_STUDENTS
+AREA
+COUNT
+TOP
+RECNO
+TUPLE *
+
+* ------------------------------------------------------------
+* PHASE 3 - REVERSIBLE FIELD REPLACE WITHOUT BUFFER
+* ------------------------------------------------------------
+ECHO ===== PHASE 3 REVERSIBLE REPLACE DIRECT =====
+ECHO [OBSERVE] Direct REPLACE on sandbox copy only.
+
+LOCATE LNAME = "TAYLOR"
+RECNO
+TUPLE *
+
+ECHO [MUTATE] Change FNAME to Tier3Probe.
+REPLACE FNAME WITH "Tier3Probe"
+TUPLE *
+
+ECHO [RESTORE] Change FNAME back to Quinn.
+REPLACE FNAME WITH "Quinn"
+TUPLE *
+
+TOP
+RECNO
+TUPLE *
+
+* ------------------------------------------------------------
+* PHASE 4 - TABLE BUFFER / COMMIT ON SANDBOX COPY
+* ------------------------------------------------------------
+ECHO ===== PHASE 4 TABLE BUFFER COMMIT =====
+LOCATE LNAME = "TAYLOR"
+RECNO
+TUPLE *
+
+TABLE ON
+ECHO [BUFFER] Replace GPA + 0.01 under table buffer.
+REPLACE GPA WITH GPA + 0.01
+TUPLE GPA
+TABLE STALE
+
+ECHO [COMMIT] Commit buffered GPA increment.
+COMMIT
+TUPLE GPA
+
+ECHO [BUFFER] Restore GPA - 0.01 under table buffer.
+REPLACE GPA WITH GPA - 0.01
+TUPLE GPA
+COMMIT
+TUPLE GPA
+TABLE OFF
+
+* ------------------------------------------------------------
+* PHASE 5 - APPEND / DELETE / RECALL ON SANDBOX COPY
+* ------------------------------------------------------------
+ECHO ===== PHASE 5 APPEND DELETE RECALL SANDBOX =====
+COUNT
+BOTTOM
+RECNO
+TUPLE *
+
+ECHO [MUTATE] Append one sandbox-only probe record.
+APPEND
+REPLACE SID WITH 59999999
+REPLACE LNAME WITH "TierThree"
+REPLACE FNAME WITH "Probe"
+REPLACE DOB WITH 20000101
+REPLACE GENDER WITH "X"
+REPLACE MAJOR WITH "CSCI"
+REPLACE ENROLL_D WITH 20260430
+REPLACE GPA WITH 3.33
+REPLACE EMAIL WITH "tier3.probe@student.mcc.edu"
+
+ECHO [VERIFY] Locate appended probe.
+LOCATE LNAME = "TIERTHREE"
+RECNO
+TUPLE *
+COUNT
+
+ECHO [MUTATE] Delete appended probe.
+DELETE
+COUNT
+COUNT DELETED
+COUNT NOT DELETED
+TUPLE *
+
+ECHO [MUTATE] Recall appended probe.
+RECALL
+COUNT
+COUNT DELETED
+COUNT NOT DELETED
+TUPLE *
+
+ECHO [RESTORE] Delete appended probe again; leave sandbox copy visibly dirty by design.
+DELETE
+COUNT
+COUNT DELETED
+COUNT NOT DELETED
+
+* ------------------------------------------------------------
+* PHASE 6 - FILTER / AGGREGATE AFTER MUTATION
+* ------------------------------------------------------------
+ECHO ===== PHASE 6 FILTER AGGREGATE AFTER MUTATION =====
+SET FILTER TO LNAME = "TIERTHREE"
+COUNT
+SMARTLIST 10
+SET FILTER TO
+
+SET FILTER TO FNAME = "AVA"
+COUNT
+SUM GPA
+AVERAGE GPA
+SET FILTER TO
+
+* ------------------------------------------------------------
+* PHASE 7 - OPTIONAL PACK OBSERVATION ON SANDBOX ONLY
+* ------------------------------------------------------------
+ECHO ===== PHASE 7 PACK OBSERVATION SANDBOX ONLY =====
+ECHO [MANUAL] PACK is intentionally not run automatically here.
+ECHO [MANUAL] To test PACK safely, run:
+ECHO [MANUAL]   USE T3_STUDENTS
+ECHO [MANUAL]   PACK
+ECHO [MANUAL]   COUNT DELETED
+ECHO [MANUAL]   COUNT NOT DELETED
+
+* ------------------------------------------------------------
+* PHASE 8 - CLEAN SHUTDOWN
+* ------------------------------------------------------------
+ECHO ===== PHASE 8 CLEAN SHUTDOWN =====
+SET FILTER TO
+TABLE OFF
+REL CLEAR ALL
+CLOSE
+SCHEMAS CLOSE
+STATUS
+
+ECHO ===== MCC TIER-3 SANDBOX MUTATION CANARIES V1 END =====
+QUIT

@@ -1,0 +1,19 @@
+* ============================================================
+* DATADICT_SMOKE.DTS
+*
+* Purpose:
+*   Minimal readback smoke for the DDICT bridge surface.
+*
+* Safety:
+*   Read-only.
+* ============================================================
+
+SET ECHO ON
+DO metadata
+
+ECHO ===== DDICT FIELDS/TAGS SMOKE START =====
+DDICT FIELDS DDOBJECT
+DDICT FIELDS DATA_DICTIONARY_OBJECTS
+DDICT TAGS DDOBJECT
+DDICT TAGS DATA_DICTIONARY_OBJECTS
+ECHO ===== DDICT FIELDS/TAGS SMOKE END =====

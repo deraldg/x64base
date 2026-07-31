@@ -1,0 +1,254 @@
+* ============================================================
+* MCC_TIER2_OBSERVATION_CANARIES_V1.DTS
+*
+* Purpose:
+*   Observation/canary script for DotTalk++ MCC data.
+*
+* Tier:
+*   Tier-2 — diagnostic / observation only.
+*
+* Scope:
+*   - Known or suspected behavior mismatches
+*   - Parser/surface canaries
+*   - Relation visibility canaries
+*   - Filter/order interaction observations
+*   - FIND vs SEEK behavior under active CDX/LMDB order
+*
+* Safety contract:
+*   - No APPEND / REPLACE / DELETE / RECALL / PACK / ZAP
+*   - No CREATE / ERASE / IMPORT / EXPORT to canonical data
+*   - No REINDEX / BUILDLMDB
+*   - No intentional mutation of refreshed test data
+*
+* Interpretation:
+*   - This script is NOT a clean pass/fail regression.
+*   - Output should be reviewed.
+*   - Some sections intentionally expose known defects or unsettled behavior.
+*
+* Path contract:
+*   - Use explicit DBF/X64 root for index/order observations.
+*   - Use explicit DBF/X32 root for relation/non-index observations.
+*
+* Display contract:
+*   - LIST may appear only where cursor/order defects are being observed.
+*   - SMARTLIST / SL remains the preferred normal display surface.
+* ============================================================
+
+SET ECHO OFF
+COLOR DEFAULT
+ECHO ===== MCC TIER-2 OBSERVATION CANARIES V1 START =====
+
+* ------------------------------------------------------------
+* PHASE 0 - CLEAN START
+* ------------------------------------------------------------
+ECHO ===== PHASE 0 CLEAN START =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET FILTER TO
+
+VERSION
+STATUS
+
+* ------------------------------------------------------------
+* PHASE 1 - V64 CDX/LMDB FIND VS SEEK CANARY
+* ------------------------------------------------------------
+ECHO ===== PHASE 1 V64 FIND VS SEEK CANARY =====
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+AREA
+SHOW INDEX
+
+ECHO [OBSERVE] Ordered TOP should land on first LNAME key, usually ANDERSON.
+TOP
+RECNO
+SMARTLIST 10
+TUPLE *
+
+ECHO [OBSERVE] SEEK Taylor should find a Taylor key under active LNAME order.
+SEEK Taylor
+RECNO
+TUPLE *
+
+ECHO [OBSERVE] FIND White currently appears suspect under CDX/LMDB order.
+ECHO [EXPECTED-LATER] FIND White should land on a WHITE record if FIND honors active order.
+TOP
+FIND White
+RECNO
+TUPLE *
+
+ECHO [OBSERVE] Compare with SEEK White.
+TOP
+SEEK White
+RECNO
+TUPLE *
+
+ECHO [OBSERVE] LOCATE physical/predicate behavior under active order.
+TOP
+LOCATE LNAME = "WHITE"
+RECNO
+TUPLE *
+
+SET ORDER TO 0
+CLOSE
+
+* ------------------------------------------------------------
+* PHASE 2 - V64 ORDER ENTRY / TAG SWITCH CANARIES
+* ------------------------------------------------------------
+ECHO ===== PHASE 2 V64 ORDER ENTRY / TAG SWITCH CANARIES =====
+USE STUDENTS
+SET INDEX TO STUDENTS
+
+ECHO [OBSERVE] SET ORDER TO TAG LNAME should place order state cleanly.
+SET ORDER TO TAG LNAME
+AREA
+RECNO
+TOP
+RECNO
+SMARTLIST 5
+
+ECHO [OBSERVE] Switch to FNAME and verify TOP changes to first FNAME key.
+SET ORDER TO TAG FNAME
+AREA
+RECNO
+TOP
+RECNO
+SMARTLIST 5
+
+ECHO [OBSERVE] Missing DOB tag should report error and preserve prior active tag.
+SET ORDER TO TAG DOB
+AREA
+RECNO
+SMARTLIST 5
+
+ECHO [OBSERVE] SET ORDER TO 0 should return to physical order.
+SET ORDER TO 0
+AREA
+TOP
+RECNO
+SMARTLIST 5
+CLOSE
+
+* ------------------------------------------------------------
+* PHASE 3 - V64 FILTER UNDER ORDER OBSERVATIONS
+* ------------------------------------------------------------
+ECHO ===== PHASE 3 V64 FILTER UNDER ORDER OBSERVATIONS =====
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+TOP
+
+ECHO [OBSERVE] Filter under active order: LNAME = ANDERSON.
+SET FILTER TO LNAME = "ANDERSON"
+COUNT
+TOP
+RECNO
+SMARTLIST 20
+LIST 20
+SET FILTER TO
+TOP
+
+ECHO [OBSERVE] Filter under active order: FNAME = AVA while order is LNAME.
+SET FILTER TO FNAME = "AVA"
+COUNT
+TOP
+RECNO
+SMARTLIST 20
+LIST 20
+SET FILTER TO
+TOP
+
+SET ORDER TO 0
+CLOSE
+
+* ------------------------------------------------------------
+* PHASE 4 - V32 RELATION CANARIES
+* ------------------------------------------------------------
+ECHO ===== PHASE 4 V32 RELATION CANARIES =====
+SETPATH DBF DBF/X32
+SETPATH INDEXES INDEXES/X32
+
+SCHEMAS CLOSE
+REL CLEAR ALL
+
+ECHO [OBSERVE] Open schema set; this may include non-canonical files if DBF/X32 is not clean.
+SCHEMAS OPEN DBF/X32
+SCHEMAS
+
+SELECT STUDENTS
+TOP
+LOCATE LNAME = "TAYLOR"
+RECNO
+TUPLE *
+
+ECHO [OBSERVE] Basic relation chain.
+REL CLEAR ALL
+REL ADD STUDENTS ENROLL ON SID
+REL ADD ENROLL CLASSES ON CLS_ID
+REL LIST
+REL REFRESH
+REL_LIST
+REL_REFRESH
+
+ECHO [OBSERVE] FoxPro-ish SET RELATION surface if registered.
+SET RELATION OFF ALL
+SET RELATION TO SID INTO ENROLL
+REL LIST
+
+ECHO [OBSERVE] Additive relation surface if supported.
+SET RELATION ADDITIVE TO SID INTO STUD_MAJ
+REL LIST
+
+REL CLEAR ALL
+SCHEMAS CLOSE
+
+* ------------------------------------------------------------
+* PHASE 5 - DATE COMPARISON / ALGEBRA CANARIES
+* ------------------------------------------------------------
+ECHO ===== PHASE 5 DATE COMPARISON / ALGEBRA CANARIES =====
+ECHO [OBSERVE] Date arithmetic should behave as date math, not string/number accident.
+CALC DATE()
+CALC DATE() + 2
+CALC DATE() - 2
+CALC ((DATE() + 2) > DATE())
+CALC ((DATE() - 2) < DATE())
+CALC CTOD("2000-01-01")
+CALC CTOD("2000-01-01") + 1
+CALC (CTOD("2000-01-01") + 1 = CTOD("2000-01-02"))
+CALC (CTOD("2000-01-01") - 1 = CTOD("1999-12-31"))
+
+* ------------------------------------------------------------
+* PHASE 6 - SCRIPT CONTROL-FLOW OBSERVATIONS
+* ------------------------------------------------------------
+ECHO ===== PHASE 6 SCRIPT CONTROL-FLOW OBSERVATIONS =====
+ECHO [OBSERVE] False IF should run ELSE only.
+IF .F.
+    ECHO IF_BRANCH_RAN_UNEXPECTED
+ELSE
+    ECHO ELSE_BRANCH_RAN_OK
+ENDIF
+
+ECHO [OBSERVE] WHILE .F. body should not execute.
+WHILE .F.
+    ECHO WHILE_BODY_RAN_UNEXPECTED
+ENDWHILE
+
+ECHO [OBSERVE] UNTIL .T. body should not execute.
+UNTIL .T.
+    ECHO UNTIL_BODY_RAN_UNEXPECTED
+ENDUNTIL
+
+* ------------------------------------------------------------
+* PHASE 7 - CLEAN SHUTDOWN
+* ------------------------------------------------------------
+ECHO ===== PHASE 7 CLEAN SHUTDOWN =====
+SET FILTER TO
+REL CLEAR ALL
+SCHEMAS CLOSE
+STATUS
+
+ECHO ===== MCC TIER-2 OBSERVATION CANARIES V1 END =====
+QUIT

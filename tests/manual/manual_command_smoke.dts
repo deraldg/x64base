@@ -1,0 +1,10 @@
+* MDO-282 future native MANUAL smoke placeholder
+* Scope: read-only smoke after later command registration/build authorization.
+* Expected future commands:
+*   MANUAL CATALOG STATUS
+*   MANUAL CATALOG TABLES
+*   MANUAL CATALOG RESOLVE MANSECTION
+*   MANUAL CATALOG RESOLVE MANUAL_SECTIONS
+*
+* Final blank line intentionally preserved.
+
