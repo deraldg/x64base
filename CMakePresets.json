@@ -185,6 +185,28 @@
         "DOTTALK_PRODUCT": "DEVELOPMENT",
         "DOTTALK_WITH_TV": "OFF"
       }
+    },
+    {
+      "name": "wsl-lean",
+      "displayName": "WSL lean (Linux, Ninja, LMDB, no TV/WX)",
+      "description": "Fast in-loop Linux build. Uses the canonical vcpkg.json with VCPKG_MANIFEST_FEATURES=index, so vcpkg installs only the four base packages and never builds tvision or wxwidgets -- no vcpkg-wsl.json swap needed. Lean means lean DEPENDENCIES, not a lean command surface: PRODUCT=DEVELOPMENT and WITH_DEV=ON keep REGRESSION available. vcpkg_installed is per-build-dir, so this does not disturb build-wsl.",
+      "inherits": "core-base",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-wsl-lean",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_MANIFEST_FEATURES": "index",
+        "DOTTALK_PROFILE": "DEV",
+        "DOTTALK_INDEX_MODE": "LMDB",
+        "DOTTALK_PRODUCT": "DEVELOPMENT",
+        "DOTTALK_WITH_DEV": "ON",
+        "DOTTALK_WITH_TV": "OFF",
+        "DOTTALK_WITH_GUI": "OFF",
+        "DOTTALK_WITH_WX": "OFF",
+        "BUILD_PYDOTTALK": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -199,7 +221,8 @@
     { "name": "pro-md-Release", "configurePreset": "pro-md", "configuration": "Release" },
     { "name": "pro-md-labtalk-Release", "configurePreset": "pro-md-labtalk", "configuration": "Release" },
     { "name": "ansi-mt-Release", "configurePreset": "ansi-mt", "configuration": "Release" },
-    { "name": "wsl-Release", "configurePreset": "wsl", "configuration": "Release" }
+    { "name": "wsl-Release", "configurePreset": "wsl", "configuration": "Release" },
+    { "name": "wsl-lean", "configurePreset": "wsl-lean", "configuration": "Release" }
   ],
   "testPresets": [
     { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
