@@ -464,6 +464,21 @@ Rules that follow, and they are cheap:
   hand-counted; measured properly it was 65.
 - **Prefer an outside runner.** The author of an instrument is its worst tester,
   for the same reason a warm assessor cannot test a cold entry path.
+- **Measure more, and give every measurement a bound.** This project runs on
+  numbers and should: the entry-path byte count, the compliance percentage, the
+  working-set size and the Tier-1 ceiling each changed a decision this project
+  would otherwise have argued about. The failure mode is not *having* metrics,
+  it is **unbounded** ones. A pass/fail gate can be falsified and so invites
+  scrutiny; a tool that only prints a number cannot fail, so nobody looks.
+  Recorded after a fifth defect the same day: the recall resolver reported a
+  217,471-byte working set -- six times the true figure, and larger than the
+  127,704-byte corpus it exists to replace -- printed directly beneath the words
+  *read these, not the corpus*. **The number violated a bound stated in its own
+  sentence and survived, because numbers do not fail.** So bind each published
+  figure to something it must respect -- a ceiling, a known-answer case, or a
+  second independent derivation -- and make the bound a check. A bounded metric
+  is a gate; the Tier-1 seed's 8,192-byte ceiling caught its author three times
+  in one sitting, which an unbounded byte count would not have done once.
 
 This is the empirical companion to *Representative by Design*: that standard says
 source teaches, so source must be worth teaching from. This one says a **gate**

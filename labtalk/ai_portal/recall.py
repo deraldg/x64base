@@ -34,6 +34,11 @@ from pathlib import Path
 REGISTRY = Path("labtalk/registries/portal_recall_graph.yaml")
 MAX_DEPTH = 2  # bounded traversal; recall assembles enough to begin, not everything
 
+# The measured cost of the pre-Tier-0 mandatory start path, 2026-07-31: nine
+# files, 2,380 lines. Every working set is reported as a percentage of it and
+# WARNS if it is not smaller, which is the bound that lets this metric fail.
+ENTRY_PATH_BASELINE = 127704
+
 
 def repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -272,7 +277,21 @@ def main() -> int:
               f"({n.get('class','?')}, tier {n.get('tier','?')}, {size} B)")
         total += size
     print("")
-    print(f"working set: {len(rows)} node(s), {total} B to read.")
+    pct = round(100 * total / ENTRY_PATH_BASELINE)
+    print(f"working set: {len(rows)} node(s), {total} B to read "
+          f"({pct}% of the {ENTRY_PATH_BASELINE} B entry path this replaces).")
+
+    # The bound that makes this metric able to fail. An unbounded byte count is
+    # a claim nobody checks -- which is exactly how the first version published
+    # 217,471 B, six times the truth and larger than the corpus, on the line
+    # above the words "read these, not the corpus". See AI_PORTAL.md,
+    # "Build It to Prove It": measure more, and give every measurement a bound.
+    if total >= ENTRY_PATH_BASELINE:
+        print("")
+        print(f"  WARNING: this working set is not smaller than the corpus it")
+        print(f"  replaces ({total} B vs {ENTRY_PATH_BASELINE} B). Either the graph")
+        print(f"  is over-linking this trigger, or the metric is wrong again.")
+        return 2
     return 0
 
 
