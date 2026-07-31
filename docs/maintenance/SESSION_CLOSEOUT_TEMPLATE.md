@@ -25,7 +25,15 @@ ai_report_audit:
     kind: session_closeout
 ---
 
-# Session Closeout -- <topic>
+# Session Closeout -- <topic> (AIF-NNN)
+
+**The `(AIF-NNN)` in the title is required** (AIF-082, 6.13). It is the only
+machine-readable statement of which lane a closeout belongs to. Measured
+2026-07-31: 76 of 83 existing closeouts omit it, which makes the whole set
+unattributable and defeats every downstream check, including the AIF-006
+Session Log audit. If a session genuinely spans several lanes, name the owning
+one here and list the rest in the body. If it belongs to no lane, write
+`(no lane)` rather than leaving it blank.
 
 Date: <YYYY-MM-DD>.
 Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PLDC>.

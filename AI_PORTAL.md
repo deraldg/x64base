@@ -655,8 +655,18 @@ docs/maintenance/SESSION_CLOSEOUT_<topic>_<YYYY-MM-DD>.md
 Template: `docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md`.
 Worked example: `docs/maintenance/SESSION_CLOSEOUT_MCC_DATABUILD_2026-07-14.md`.
 
+**Name the lane in the H1 title (AIF-082, 6.13).** The heading carries
+`(AIF-NNN)`, or `(no lane)` if none applies. It is the only machine-readable
+statement of which lane a closeout closes. Measured 2026-07-31: 76 of 83
+existing closeouts omit it, so the set cannot be audited and every downstream
+check silently passes.
+
 Then add one row to the **Session Log** in
-`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`.
+`docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`. Measured the same day, this is
+the least-obeyed obligation in the closeout chain -- present in 6 of 18 recent
+lanes, against 83 to 94 percent for the four obligations that have gates behind
+them. `python tools/coordination/check_session_log_row.py` warns when a closeout
+lands without one.
 
 **Stamp the run (AIF-050).** A closeout also records *who did the work, in which run, reachable how*:
 its report-audit envelope carries a `run_id`, the `authored_by` / `planned_by` split (distinct from
