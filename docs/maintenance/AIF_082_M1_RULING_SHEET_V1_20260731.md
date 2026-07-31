@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T12:38:28Z
-    baseline    : 0803f0f135b399886591265412c56f1f506ba817 (development)
-    status      : awaiting rulings
+    updated_utc : 2026-07-31T18:04:08Z
+    baseline    : cf5ac99b8 (development, pushed)
+    status      : awaiting rulings -- 18 rows, X1 and X2 closed, 16 open
 
 ---
 
@@ -66,6 +66,7 @@ If you rule only these three and defer the rest, the lane still advances.
 | # | Proposal | Cost | Reversible | Recommend | Ruling |
 | --- | --- | --- | --- | --- | :---: |
 | **6.1** | Tier 0: generated state file under 4 KB. Branch, HEAD, open lanes, owed items, **plus a staleness warning** (declared target vs HEAD distance). Generated, never authored, so it cannot drift. | medium | yes | **accept** | ` ` |
+| **6.12** | **Website tree has no coordination protocol.** Two agents edited `D:\dev\x64base-site` concurrently on 2026-07-31; a collision on `config/nav.ts` was avoided only because one read the file before writing. `ccode` has claim-aif, the collision gate and the pre-push gate; the site repo has none of it, and Seed 4 governs authority but not concurrency. | small | yes | **accept** | ` ` |
 | **6.11** | **Maintenance contract for auto-injected and pointed-at surfaces.** Owner correction 2026-07-31: auto-injection guarantees delivery, not accuracy, so an unmaintained always-read file is worse than a rarely-read one. Rule: only *invariants* and *pointers to gated or generated artifacts*; **no perishable literals**; hard byte ceiling; a rule that gains a hard-failing gate demotes out. Already applied to `CLAUDE.md` (its hardcoded glibc/GLIBCXX figures were removed and replaced with "measure it") and written into the Tier 1 seed as its own gate. | small | yes | **accept** | ` ` |
 | **6.2** | Tier 1 under 8 KB: role table, mutation guard, local-access rules, house conventions, stopping rule. Mostly selection of existing text, not new authoring. | medium | yes | **accept** | ` ` |
 | **6.3** | Tier 2: index the rest of `AI_PORTAL.md` by trigger (about to push, about to change source, about to publish, about to open a lane, about to close out). **No text deleted.** | medium | yes | **accept** | ` ` |
@@ -132,8 +133,10 @@ measurement rather than a build, and the number stays useful either way.
 | 6.9 | | | |
 | 6.6 | | | |
 | 6.10 | | | |
+| 6.11 | | | |
+| 6.12 | | | |
 | X1 | **A** (retire) | 2026-07-31T12:45Z | AIF-072 retired as controlling target; stays claimed and pick-up-ready. `CURRENT_TARGET.md` top section rewritten to name the five in-flight lanes. Applied. |
-| X2 | **A** (done, dev stage) | 2026-07-31T14:05Z | Committed host-side as two themed slices: `1024a53d5` (lane artifacts) and `8a3dea347` (tier 1 seed + portal surfaces, +411/-12). `prepush_gate.py` PASS on both. **NOT pushed** -- `origin/development` still at `0803f0f13`. |
+| X2 | **A** (done, published) | 2026-07-31T14:30Z | Four themed commits host-side: `1024a53d5` lane artifacts, `8a3dea347` tier 1 seed + portal surfaces, `71f9b850e` agents handoff + front-door files, `cf5ac99b8` record corrections. `prepush_gate.py` PASS on all. **Pushed** `0803f0f13..cf5ac99b8` to `origin/development`. Staging and `main` not reached, out of scope. |
 
 M1 closes when every row above carries a ruling. Partial rulings are fine and
 unblock their own items; nothing waits on the sheet being complete.

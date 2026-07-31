@@ -216,7 +216,21 @@ Reported by stage. **Stage reached: Dev, committed. NOT pushed, NOT promoted.**
 | 1. Dev (`D:\code\ccode`) | **DONE.** Two commits on `development`, maintainer-operated 2026-07-31 |
 | 2. Promoted to staging (`C:\x64base`) | **NOT REACHED.** Staging is not mounted in this session |
 | 3. Validated in staging | **NOT REACHED** |
-| 4. Published (pushed) | **NOT REACHED.** `origin/development` is still at `0803f0f13` |
+| 4. Pushed to `origin/development` | **DONE.** `0803f0f13..cf5ac99b8`, four commits, 37 objects, 69.67 KiB |
+| 5. Published to `main` / public snapshot | **NOT REACHED**, and out of scope. Only the reviewed `C:\x64base` staging workflow may update `main` |
+
+A fifth commit `cf5ac99b8` carries the record corrections themselves.
+
+**A note on this table, and why Tier 0 must be generated (6.1).** This block has
+now falsified itself twice in one session: it said "no commit" while sitting
+inside a commit, and then said "not pushed" while being pushed. Both times the
+text was accurate when written. **A hand-authored state record is wrong the
+moment the next action succeeds**, and chasing each change with its own commit
+trades one defect for the governance cost 6.7 is about. That is the whole
+argument for generating state rather than writing it, made against this lane's
+own closeout rather than against `CURRENT_TARGET.md`. Corrections after this one
+ride along with the next commit that touches this file; they are not worth a
+commit each.
 
 Commits, themed rather than blobbed:
 
@@ -235,6 +249,48 @@ are `74 valid=74 findings=0`.
 
 **The steward did not commit.** All git was maintainer-operated from the host,
 per the sandbox rule this session learned the expensive way (5b).
+
+## Addendum 4 -- sixth sitting, 2026-07-31T18:04Z: a hyperlink, and the observability boundary
+
+The maintainer ran a parallel task on `D:\dev\x64base-site`: link two existing
+static report pages into the site nav. Two lines of config. It consumed most of
+an afternoon, and this steward caused the bulk of the overrun.
+
+**Root cause was a browser cache** holding a stale nav page. The build, the
+links, the file and the server were all correct well before the symptom cleared.
+
+**What the cost actually was.** Not investigation -- investigation on the wrong
+side of an observability boundary. The steward could read the filesystem and
+reasoned from it for a dozen turns (relative-link resolution, trailing slashes,
+stale builds, file locks, ACLs) while the two decisive facts lived in systems it
+could not see: whether anything was listening on port 3000, and what URL the
+browser actually requested. Each was one command. `Get-NetTCPConnection`
+eventually reported nothing listening at all, and the server's own request log
+settled the rest the moment it was consulted.
+
+Recorded in the charter at 6.7 as the second observed instance, with the
+generalization: **when a system is partly observable, spend the first move
+crossing the boundary, not reasoning inside it.** Evidence you can reach is not
+evidence about the thing that is failing, and a confident chain built on the
+reachable half is worse than silence because it looks like progress.
+
+**Third instance of one shape today, all by this steward:** the mount/git rule
+read during onboarding and then violated within the hour (5b); the `docs/agents`
+tracking split predicted and wrong (item 9 below); and this. None was a
+knowledge failure. All three were acting on the evidence at hand instead of the
+evidence that mattered.
+
+The maintainer's challenge is recorded verbatim because it is the fair test of
+this lane: *"its a frigging hyperlink, if you can't handle this what makes you
+think you can handle ai onboarding."* AIF-082 is worth something only if it makes
+that specific failure less likely. Today it did not make it less likely in its
+own author, and 6.4's self-test would not have caught it -- which is an argument
+for 10a's position that acceptance must be a worked task rather than a quiz.
+
+Also recorded: two agents were editing `D:\dev\x64base-site` concurrently, and
+this steward stopped short of writing `config/nav.ts` only because it read the
+file first and found the other session had already fixed it. The website tree
+has no equivalent of the ccode coordination protocol. Flagged, not solved.
 
 ## Recorded for the record -- first clean registration (positive finding)
 

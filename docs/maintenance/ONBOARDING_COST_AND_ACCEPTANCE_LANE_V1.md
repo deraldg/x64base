@@ -6,9 +6,11 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     opened_utc  : 2026-07-31T11:52:00Z (Cowork)
-    updated_utc : 2026-07-31T12:38:28Z
-    sittings    : 4 on 2026-07-31 (M0 author; recursion/decrement; automation/cadence; manifest/dogfood + M1 sheet)
-    baseline    : 0803f0f135b399886591265412c56f1f506ba817 (development)
+    updated_utc : 2026-07-31T18:04:08Z
+    sittings    : 6 on 2026-07-31 (M0 author; recursion/decrement; automation/cadence;
+                  manifest/dogfood + M1 sheet; commit/push + docs-agents measurement;
+                  the hyperlink and the observability boundary)
+    baseline    : cf5ac99b8 (development, pushed)
     parent      : project.labtalk.campus (lane `ai_portal`)
     status      : findings measured, NO source change landed, NO portal doc edited
     evidence    : C1 measured (byte/line probe, this tree, this commit)
@@ -648,6 +650,75 @@ Recorded as an estimate, not a measurement, per
 `COST_BENEFIT_GATE_DOCTRINE_V1.md`: estimates suggest, probes measure. The
 one-third figure above is this steward's impression of a single session and is
 not evidence. M6 is the probe.
+
+#### Observed instance, 2026-07-31T15:00Z -- effort is not calibrated either
+
+Maintainer, during a parallel website session: *"so far i'm paying a huge price
+for a simple operation."* Recorded immediately rather than deferred, on his
+correction that an undocumented finding did not happen.
+
+The task was to link two existing report pages into the site nav. Two lines of
+config. What it cost:
+
+| Phase | Verdict |
+| --- | --- |
+| Discovering `REPORTS_PUBLICATION_NOTE_V1.md` (AIF-060) and refusing to publish the auth-surface map | **Earned its cost.** The requested promotion would have published member keys, the permission matrix, protocol and port to a public GitHub Pages site. Worth the whole detour. |
+| Tracing `copyDir(outDir, deployDir)` to establish that `/portal` is unlisted, not access-controlled | **Earned it.** Real finding, adjacent but true. |
+| The two edits, typecheck, guard | Proportionate. |
+| Several minutes of forensics on an "artifact failed to load" warning | **Waste.** It was Cowork's file-card preview failing to render a `.tsx` (no `next` package, no `@/` alias in that sandbox). Not a code defect at all. |
+
+**The finding, distinct from the section above.** 6.7 as first written is about
+*governance artifacts per lane*. This is a second axis: **effort proportionality
+within a task.** `SCOPE_CALIBRATION_SEED_V1.md:11-24` classifies a change and
+selects PROOF gates from it. Nothing in the corpus tells an agent to size its
+INVESTIGATION and its RESPONSE to the same class. So a C0 nav edit and a C3
+engine change get the same investigative posture, and the agent that has just
+absorbed a large safety corpus is biased toward more caution, not calibrated
+caution.
+
+Note the asymmetry that makes this hard rather than merely sloppy: the expensive
+phase that **earned** its cost and the one that **wasted** it looked identical
+from the inside. Both were "investigate before acting." Only the outcome
+distinguishes them, and the outcome is not knowable in advance. A rule that says
+"do less" would have suppressed the AIF-060 catch too.
+
+Provisional shape of a remedy, for M6 to test rather than assume: calibrate the
+**stopping condition**, not the effort. An investigation continues while it is
+still changing what you would do, and stops when it is only changing what you
+would say. The AIF-060 discovery changed the action. The artifact-warning
+forensics changed nothing and should have ended at the first green typecheck.
+
+**The steward is not exempt.** This lane's own output ran to roughly 60 KB of
+charter for a C0 documentation finding, and the maintainer paid that in reading
+time. M6 should measure this session too, not only the cheap targets.
+
+#### Second instance, same afternoon -- the observability boundary
+
+A nav hyperlink to two static report pages took most of an afternoon. Root cause
+was a browser cache holding a stale nav page; the build, the links, the file and
+the server were all correct well before the symptom cleared.
+
+The cost was not investigation, it was **investigation on the wrong side of a
+boundary.** The steward could read the filesystem and reasoned from it for a
+dozen turns -- relative-link resolution, trailing slashes, stale builds, file
+locks -- while the two decisive facts lived in systems it could not see: whether
+anything was listening on the port, and what URL the browser actually requested.
+Each was one command. `Get-NetTCPConnection` eventually showed nothing was
+listening at all, and the server's own request log settled it immediately once
+consulted.
+
+Generalizes, and it is the sharper form of 10a: **when a system is partly
+observable, spend the first move crossing the boundary, not reasoning inside
+it.** Evidence you can reach is not evidence about the thing that is failing, and
+a confident chain built on the reachable half is worse than silence because it
+looks like progress. The maintainer's own rule applies to observability, not
+just to facts: measure rather than infer, and if you cannot measure, say so and
+ask for the one reading that would decide it.
+
+Third instance today of the same shape, all by this steward: the mount/git rule
+read and then violated (5b), the `docs/agents` tracking split predicted and
+wrong (closeout item 9), and this. None was a knowledge failure. All three were
+acting on the evidence at hand instead of the evidence that mattered.
 
 ### 6.8 Automation and refresh cadence -- state has a cadence, rules do not
 
