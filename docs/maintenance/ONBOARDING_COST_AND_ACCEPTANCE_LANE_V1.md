@@ -2270,3 +2270,34 @@ transition. The house answer is obvious and is already load-bearing elsewhere:
 the BBS reports read DBF, and the maintainer's standing instruction is that we
 dogfood our own database. Filed as the natural successor to this console, not
 built, because where ruling state lives is an owner decision.
+
+### 12.20 Pushed -- 12.14 closes
+
+```text
+1b60b728f..3df21616d  development -> development
+1,549 objects, 2.67 MiB
+```
+
+12.14 argued that committing was not delivering: R27a had moved ~1,100 files from
+*untracked on one disk* to *tracked on one disk*, and the durability claim the
+lane opened to satisfy was satisfied by the push, not the commit. It is satisfied
+now. Tier 0's `unpushed` staleness warning should read zero on the next
+regeneration, which is the measurement rather than this sentence.
+
+Two operational notes earned on the way out, both small and both real:
+
+**The push-range direction in the gate's usage string is backwards.**
+`prepush_gate.py:30` documents `--range HEAD..@{u}`. For a branch that is only
+ahead of upstream that set is EMPTY, so the gate would have inspected nothing and
+passed. `@{u}..HEAD` inspected the real change set and ran every check. **A gate
+that passes by inspecting nothing is the R27b shape appearing in a usage string**
+rather than in code -- the failure mode is identical and the fix is one line.
+Filed as R27b.3.
+
+**Exit 3 on the range was the mass-change threshold**, correctly. ~20 commits
+carrying ~1,100 files against `MASS_CHANGE_THRESHOLD = 60`; cleared with
+`--allow-mass` after the scope was confirmed, which is the control working as
+designed. That check has now caught a degenerate commit loop (12.11) and gated a
+legitimate large push in the same session, which is a fair argument that its
+denominator -- paths in the range, not paths its author anticipated -- is the
+right one.

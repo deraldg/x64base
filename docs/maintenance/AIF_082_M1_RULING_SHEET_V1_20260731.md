@@ -277,3 +277,10 @@ history level.
 Sequencing note: 6.6's demotion rule stays blocked on **R27b**, not R27a.
 
 Total open: 20.
+
+**R27b.3 -- fix the push-range usage string (trivial, no decision needed).**
+`tools/staging/prepush_gate.py:30` documents `--range HEAD..@{u}`. For a branch
+ahead of upstream that range is empty, so the gate inspects nothing and passes.
+Confirmed by evidence 2026-07-31: `@{u}..HEAD` inspected the real set and ran
+every check before the push of `1b60b728f..3df21616d`. Same self-passing shape as
+R27b, in documentation rather than code. Recommend: correct the usage string.
