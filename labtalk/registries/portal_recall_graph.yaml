@@ -1,0 +1,342 @@
+# AI Portal recall graph v1
+#
+# AIF-082, 6.3. Typed, directed edges between doctrine nodes, so that recall is
+# graph traversal from a trigger rather than a linear read of a 46 KB document.
+#
+# WHY A GRAPH AND NOT A TABLE. The memory thesis (section 5) makes reachability
+# the binding constraint: "a memory that cannot be reached is, functionally, a
+# memory that does not exist." This lane measured that failing four separate ways
+# (charter finding C8). A flat trigger table would fix lookup; typed edges fix
+# reachability, and cost roughly the same to author.
+#
+# THE EDGE THAT EARNS ITS KEEP is `enforced_by`. It makes the decay rule (6.6)
+# COMPUTABLE rather than a matter of opinion: a doctrine node with an
+# `enforced_by` edge to a HARD-FAILING gate may demote out of the entry path,
+# because the gate is now the memory. A node whose gate only warns, or has none,
+# may not. Measured 2026-07-31: obligations with gates held at 83-94 percent
+# compliance, the one without held at 33.
+#
+# NODE CLASSES follow the thesis taxonomy (section 3), and the class sets the
+# decay rule:
+#   procedural  -- applied, not consulted. Never decays. Tier 1.
+#   semantic    -- facts and settled conventions. Revised, not decayed. Tier 2.
+#   episodic    -- what happened and why. Decays slowly. NEVER traded away in
+#                  consolidation; section 3.4 names it the class naive designs
+#                  discard, and it is why this corpus persuades.
+#
+# Resolver: labtalk/ai_portal/recall.py
+
+schema: portal-recall-graph-v1
+lane: AIF-082
+owner: member.derald
+created_utc: 2026-07-31T20:30:00Z
+
+# ---------------------------------------------------------------- triggers
+# The entry points. An agent names what it is ABOUT TO DO; the resolver walks
+# outward from here. Recall is inverse triage (thesis 5.4): expand a query into
+# the smallest working set that restores competence, not everything relevant.
+triggers:
+  - id: trigger.onboard
+    label: starting cold, no context
+  - id: trigger.change_source
+    label: about to change source code
+  - id: trigger.write_dotscript
+    label: about to write DotScript
+  - id: trigger.open_lane
+    label: about to open a lane
+  - id: trigger.commit_or_push
+    label: about to commit or push
+  - id: trigger.publish
+    label: about to publish to the website or main
+  - id: trigger.close_out
+    label: about to close out a session
+  - id: trigger.plan_gates
+    label: choosing which gates a change owes
+  - id: trigger.use_devtools
+    label: about to use the runtime DEF family or EXAMPLE
+  - id: trigger.understand_why
+    label: asking why a rule exists
+
+# ---------------------------------------------------------------- nodes
+nodes:
+  - id: doctrine.repository_roles
+    label: "STOP: Repository Roles"
+    path: AI_PORTAL.md
+    anchor: "## STOP: Repository Roles"
+    class: procedural
+    enforced_by: tools/staging/repository_role_guard.py
+    hard_fails: true
+    tier: 1
+
+  - id: doctrine.mandatory_start
+    label: Mandatory Start
+    path: AI_PORTAL.md
+    anchor: "## Mandatory Start"
+    class: procedural
+    enforced_by: labtalk/ai_portal/check_mandatory_tracked.py
+    hard_fails: true
+    tier: 1
+
+  - id: doctrine.devtools_permission
+    label: AI-Friendly Dev-Tools, ask for limited permission first
+    path: AI_PORTAL.md
+    anchor: "## AI-Friendly Dev-Tools"
+    class: procedural
+    enforced_by: src/cli/ai_devtools_policy.cpp
+    hard_fails: false          # DORMANT by default; may not demote
+    tier: 2
+
+  - id: doctrine.authority_chain
+    label: Authority and the promotion chain
+    path: AI_PORTAL.md
+    anchor: "## Authority"
+    class: semantic
+    enforced_by: tools/staging/repository_role_guard.py
+    hard_fails: true
+    tier: 1
+
+  - id: doctrine.representative_by_design
+    label: Representative by Design (AIF-037)
+    path: AI_PORTAL.md
+    anchor: "## Representative by Design"
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.retrieval_failure
+    label: "Case study 3: a canonical copy nobody can reach"
+    path: AI_PORTAL.md
+    anchor: "**3. Retrieval failure"
+    class: episodic
+    enforced_by: labtalk/ai_portal/check_mandatory_tracked.py
+    hard_fails: true
+    tier: 2
+
+  - id: doctrine.prove_bottleneck
+    label: Prove the Bottleneck First, Phase-0 go/no-go
+    path: AI_PORTAL.md
+    anchor: "## Prove the Bottleneck First"
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.lanes_and_promotion
+    label: Projects, Lanes, and Promotion (AIF-040)
+    path: AI_PORTAL.md
+    anchor: "## Projects, Lanes, and Promotion"
+    class: semantic
+    enforced_by: tools/coordination/aif_collision_gate.py
+    hard_fails: true
+    tier: 2
+
+  - id: doctrine.ownership_authorship
+    label: Ownership and Authorship (AIF-050)
+    path: AI_PORTAL.md
+    anchor: "## Ownership and Authorship"
+    class: semantic
+    enforced_by: tools/fullstack_docs/run_attribution_check.py
+    hard_fails: false          # advisory checker
+    tier: 2
+
+  - id: doctrine.source_mutation
+    label: Source Mutation Rule
+    path: AI_PORTAL.md
+    anchor: "## Source Mutation Rule"
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
+  - id: doctrine.outside_ai_delivery
+    label: Outside-AI Delivery Rule
+    path: AI_PORTAL.md
+    anchor: "## Outside-AI Delivery Rule"
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.agent_sync
+    label: Staying Current, the live Agent Sync page
+    path: AI_PORTAL.md
+    anchor: "## Staying Current"
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.local_integration
+    label: Local Integration Rule
+    path: AI_PORTAL.md
+    anchor: "## Local Integration Rule"
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.required_closeout
+    label: Required Closeout, and closeout updates startup (AIF-006)
+    path: AI_PORTAL.md
+    anchor: "## Required Closeout"
+    class: procedural
+    enforced_by: tools/coordination/check_session_log_row.py
+    hard_fails: false          # WARNS by design; may not demote
+    tier: 1
+
+  - id: doctrine.leave_handoff
+    label: Leave a Handoff as well (AIF-082)
+    path: AI_PORTAL.md
+    anchor: "### Leave a Handoff as well"
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
+  - id: doctrine.operator_contract
+    label: AI Session Operator Contract
+    path: AI_PORTAL.md
+    anchor: "## AI Session Operator Contract"
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
+  - id: doctrine.local_access
+    label: Local-Access AI Rule
+    path: AI_PORTAL.md
+    anchor: "## Local-Access AI Rule"
+    class: procedural
+    enforced_by: tools/staging/check_sandbox_git_guard.py
+    hard_fails: true
+    tier: 1
+
+  - id: doctrine.prepush_gate
+    label: Pre-Push Gate
+    path: AI_PORTAL.md
+    anchor: "## Pre-Push Gate"
+    class: procedural
+    enforced_by: tools/staging/prepush_gate.py
+    hard_fails: true
+    tier: 1
+
+  - id: seed.tier1
+    label: AI Tier 1 Seed
+    path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
+  - id: seed.scope_calibration
+    label: Scope Calibration Seed
+    path: labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: seed.sdlc_fast_start
+    label: SDLC Fast-Start Seed
+    path: labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: seed.engineering_standards
+    label: AI Engineering Standards Seed, definition of done
+    path: labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: seed.mutation_gate
+    label: Source Mutation Contract Gate Seed
+    path: labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: seed.dotscript_readiness
+    label: DotTalk++ / DotScript Readiness Seeds
+    path: labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: seed.local_access_checklist
+    label: Local-Access AI Agent Checklist
+    path: labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md
+    class: episodic
+    enforced_by: tools/staging/check_sandbox_git_guard.py
+    hard_fails: true
+    tier: 2
+
+  - id: state.tier0
+    label: Tier 0 generated state
+    path: labtalk/ai_portal/TIER0_STATE.md
+    class: working
+    enforced_by: labtalk/ai_portal/generate_tier0_state.py
+    hard_fails: false
+    tier: 0
+
+# ---------------------------------------------------------------- edges
+# Types:
+#   fires_at     trigger -> doctrine. The retrieval edge.
+#   requires     doctrine -> doctrine. Read the target as well.
+#   evidenced_by doctrine -> the episodic record that produced it.
+#   supersedes   newer -> older.
+edges:
+  - {from: trigger.onboard, to: seed.tier1, type: fires_at}
+  - {from: trigger.onboard, to: state.tier0, type: fires_at}
+  - {from: trigger.onboard, to: doctrine.repository_roles, type: fires_at}
+
+  - {from: trigger.change_source, to: doctrine.source_mutation, type: fires_at}
+  - {from: trigger.change_source, to: seed.engineering_standards, type: fires_at}
+  - {from: trigger.change_source, to: seed.mutation_gate, type: fires_at}
+  - {from: doctrine.source_mutation, to: doctrine.representative_by_design, type: requires}
+
+  - {from: trigger.write_dotscript, to: seed.dotscript_readiness, type: fires_at}
+
+  - {from: trigger.open_lane, to: doctrine.lanes_and_promotion, type: fires_at}
+  - {from: trigger.open_lane, to: doctrine.ownership_authorship, type: fires_at}
+
+  - {from: trigger.commit_or_push, to: doctrine.prepush_gate, type: fires_at}
+  - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
+  - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
+  - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}
+
+  # doctrine.authority_chain was authored with no edges and was therefore
+  # unreachable -- caught by `recall.py --validate` on the graph's first run,
+  # 2026-07-31. Thesis 5.1 failing inside the artifact built to fix 5.1. Kept as
+  # a comment because the near-miss is the evidence that the validator earns its
+  # place.
+  - {from: trigger.publish, to: doctrine.authority_chain, type: fires_at}
+  - {from: doctrine.repository_roles, to: doctrine.authority_chain, type: requires}
+  - {from: trigger.publish, to: doctrine.local_integration, type: fires_at}
+  - {from: trigger.publish, to: doctrine.outside_ai_delivery, type: fires_at}
+  - {from: trigger.publish, to: doctrine.agent_sync, type: fires_at}
+  - {from: doctrine.outside_ai_delivery, to: doctrine.retrieval_failure, type: evidenced_by}
+
+  - {from: trigger.close_out, to: doctrine.required_closeout, type: fires_at}
+  - {from: trigger.close_out, to: doctrine.leave_handoff, type: fires_at}
+  - {from: doctrine.leave_handoff, to: doctrine.retrieval_failure, type: evidenced_by}
+
+  - {from: trigger.plan_gates, to: seed.scope_calibration, type: fires_at}
+  - {from: trigger.plan_gates, to: seed.sdlc_fast_start, type: fires_at}
+  - {from: seed.scope_calibration, to: seed.sdlc_fast_start, type: requires}
+  - {from: trigger.plan_gates, to: doctrine.prove_bottleneck, type: fires_at}
+
+  - {from: trigger.use_devtools, to: doctrine.devtools_permission, type: fires_at}
+
+  - {from: trigger.understand_why, to: doctrine.representative_by_design, type: fires_at}
+  - {from: trigger.understand_why, to: doctrine.retrieval_failure, type: fires_at}
+  - {from: trigger.understand_why, to: doctrine.prove_bottleneck, type: fires_at}
+
+  - {from: seed.tier1, to: doctrine.operator_contract, type: requires}
+  - {from: seed.tier1, to: doctrine.mandatory_start, type: supersedes}
