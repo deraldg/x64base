@@ -692,3 +692,114 @@ portal than a clean record would have been: the remedy for this class is never
 discipline, it is a gate whose denominator comes from outside. Every one of these
 was caught by an external check or another party. None was caught by me being
 careful.
+
+---
+
+## Addendum G -- 2026-07-31T23:10Z: campaign delivered, console built, state dogfooded
+
+Written because Tier 0 said to. Its regeneration after `19090fd35` emitted:
+
+```text
+- The newest closeout is 7 commit(s) behind HEAD. Work has landed that no
+  closeout describes; read `git log` as well.
+```
+
+That is 6.1's staleness warning working as designed, enforcing the owner's
+standing rule -- *if you don't document it now it didn't happen* -- against the
+steward who proposed the mechanism. Worth recording as the first time in this
+lane that a generated artifact, rather than a person, caught undocumented work.
+
+### G.1 R27a delivered
+
+`1b60b728f..3df21616d`, 1,549 objects, 2.67 MiB. Charter 12.14 argued that
+committing was not delivering; that gap is now closed. The documentation
+pipeline, the engine test suite, the staging gates and their tests, and the
+repo-to-site publication bridge exist on more than one disk for the first time.
+
+Census 1,098 -> 1,041 untracked ENTRIES, a 57-entry delta covering ~1,100 files,
+because a fully-untracked directory is one porcelain entry. The remaining count
+is real and R27a never claimed to cover it.
+
+### G.2 A generated rulings console, and two defects I authored inside it
+
+Owner asked whether the rulings view was dynamic or hard-coded. It was
+hard-coded. Replaced by `tools/reports/build_rulings_report.py`, wired into
+`build_reports.py` so one command builds the whole console, borrowing `CSS`,
+`BANDS` and `read_dbf()` at run time rather than copying them.
+
+It disagreed with the sheet on first run: hand-kept footer `Total open: 20`,
+derived count **17**.
+
+**Defect 1 -- publication leak.** The private-skip lives in `emit()`; the new
+generator wrote with `write_text()` and bypassed it, so `--public` emitted
+`AIF_RULINGS_REPORT.html` on the line below `SKIPPED (private):
+BBS_ACCESS_REPORT.html`. I had labelled that card *private -- never publish* in
+the same script that published it, having cited AIF-060 twice this session as
+grounds for keeping governance out of the site tree.
+
+**Defect 2 -- overcorrection.** The first fix gated on `PUBLIC or is_private(...)`,
+which blocked the leak and also suppressed the internal build, i.e. the report's
+only purpose. `private` means never PUBLISH, not never GENERATE.
+
+Both found by running both modes and reading the file list. Neither was findable
+by inspection. Fixed at both ends: `report.aif_rulings` registered
+`sensitivity: private` in `portal.yaml`, and the source gates on `PUBLIC` alone
+so it fails closed if the registry entry is ever removed.
+
+### G.3 Ruling state dogfooded to DBF
+
+Owner ruling, verbatim: *"heck yes we dogfood this."*
+`include/portal/ruling_schema.hpp` defines `SYSRULING` on `bbs_schema.hpp`'s
+`Table`/`FieldSpec` pattern. **Append-only** -- a status change is a new row with
+a later `DECIDEDAT`, never an update in place, so the table is a history rather
+than a snapshot. **State in the table, prose in the sheet**, deliberately: putting
+the argument in a `C(240)` field would make this a fourth claimant on the memo
+work behind AIF-070, AIF-082 6.10 and AIF-083 F5.
+
+Evidence class, stated precisely after an owner challenge: **`g++ -fsyntax-only`
+on the header, and nothing else.** No build, no table, no row, no runtime. An
+earlier draft said "authored and syntax-checked" in its status line, which
+invites the reading that the seeding path was checked too; corrected in place.
+**No `.dts` was written and none should be yet** -- no linter exists, the steward
+cannot run the engine, the syntax carries AIF-081 F5's open swallowing defect,
+and the house pattern for creating default tables is C++ bootstrap
+(`kDefaultBoards`, `identity_bootstrap.cpp`), not a script. Recipe and open
+questions: `docs/maintenance/RULING_STATE_DOGFOOD_V1.md`.
+
+### G.4 Two held lanes registered
+
+AIF-068 and AIF-070 stopped reading as ABANDONED (`218764f53`). Neither was
+abandoned. AIF-070's queue row had been prepared by `AIPR-20260728-001` on
+2026-07-28 and deliberately held unpasted, because pasting is an acceptance and
+acceptance is the owner's. Owner correction recorded verbatim: *"That may not be
+abandoned, it may be unclaimed, GROK did a test run to the ai portal."*
+This session drafted a substitute row and pasted it before reading the assessment
+in the same folder -- duplicating a prepared artifact and bypassing a gate a
+prior session had respected. Reverted to the prepared text on owner challenge.
+
+### G.5 Error ledger, updated
+
+Addendum F listed seven. Four more since, in the same class or adjacent:
+
+| # | Error | Caught by |
+| --- | --- | --- |
+| 8 | called eight LFS pointer files "binary archives" from the extension | `cat`, after uniform 129-byte sizes made it implausible |
+| 9 | publication leak: generator bypassed `emit()`'s private-skip | running `--public` and reading `ls` |
+| 10 | overcorrected the fix; suppressed the internal build too | running both modes |
+| 11 | pasted an improvised intake row over a prepared, deliberately-held one | owner challenge |
+
+Eleven total. **Nine are one error: a denominator or a conclusion drawn from my
+own expectations rather than from the system.** Not one was caught by care or by
+recall -- AIF-081's *never infer from a name* rule was in this corpus, authored
+by this steward, and did not prevent error 8. Every catch came from an external
+observation: `cat`, `ls`, a gate, or the owner.
+
+That is the case for R27b stated as evidence rather than argument, and it is the
+most useful thing this session produced about its own subject matter.
+
+### G.6 Owed
+
+Four rulings: R25, R26, R27b (with .2 archive suffixes and .3 the push-range
+usage string), and the three-way memo reconciliation. All rendered at
+`docs/reports/AIF_RULINGS_REPORT.html`, which is PRIVATE and must not reach
+x64base.com.
