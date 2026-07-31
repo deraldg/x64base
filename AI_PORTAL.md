@@ -672,6 +672,45 @@ session closeout" — it resumes from one file instead of re-deriving state from
 the whole tree. This is what turns the portal from a filing cabinet into a
 memory. The chat is never the record; the closeout is.
 
+### Leave a Handoff as well (AIF-082, ratified 2026-07-31)
+
+A closeout records **what happened**. A handoff records **how to work here**.
+They are different artifacts and the second was not previously required, which is
+why the best operational onboarding material in this project kept living outside
+the tree.
+
+A session that learned something durable about *working in this environment* --
+the toolchain, the traps, the shape of a task, how a surface actually behaves --
+leaves a handoff:
+
+```text
+docs/agents/HANDOFF_<AGENT>_<TOPIC>_<YYYY-MM-DD>.md
+```
+
+Worked examples: `docs/agents/HANDOFF_CLAUDE_WSL_DOTTALKPP_2026-07-31.md`
+(build, run, DotScript, capture) and
+`docs/agents/HANDOFF_CLAUDE_COWORK_ONBOARDING_2026-07-31.md` (portal, sandbox
+boundary, working with the maintainer).
+
+Rules, each earned:
+
+- **Commit it.** An uncommitted handoff is invisible to a clone and therefore to
+  the next agent. On 2026-07-31 a handoff containing the fix for that session's
+  own worst mistake sat unreachable from the corpus while the mistake was made.
+- **Aim at the next agent, not at the record.** State the trap, the measurement,
+  and the command. Cite `file:line`. Do not restate doctrine that already lives
+  in the seed.
+- **Do not assert perishable facts.** Versions, ports, counts and lane states go
+  stale; say "measure it" and name the command. Same rule as the Tier 1 seed.
+- **Roughly Tier-1 sized.** If it is much past 10 KB it has become a lane doc.
+
+Not every session owes one. A session that only read, or only repeated known
+work, has nothing to hand off and should say so in its closeout rather than
+manufacture a file.
+
+Origin: `docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md` (AIF-082),
+finding C8 and ruling 6.5g.
+
 ## AI Session Operator Contract
 
 Purpose: keep AI work aligned with the real promotion flow and avoid false risk

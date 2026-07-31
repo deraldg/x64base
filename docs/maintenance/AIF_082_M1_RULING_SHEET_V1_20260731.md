@@ -6,9 +6,9 @@
     owner       : member.derald
     steward     : member.ai.claude.cowork
     created_utc : 2026-07-31T12:35:00Z
-    updated_utc : 2026-07-31T18:04:08Z
+    updated_utc : 2026-07-31T18:22:15Z
     baseline    : cf5ac99b8 (development, pushed)
-    status      : awaiting rulings -- 18 rows, X1 and X2 closed, 16 open
+    status      : Group A ratified; 22 rows, 6 closed (X1, X2, 6.2, 6.11, 6.5g, 6.5e), 16 open
 
 ---
 
@@ -25,7 +25,17 @@ cost is correct closes the lane with a complete result.
 You can mark this file directly, or just say the letters in chat and the steward
 records them here.
 
-**Nothing below has been built.** Every item is a proposal.
+**Most of the sheet is proposal.** Four items were built during the session and
+were ratified 2026-07-31T18:22Z rather than authorised: **6.2** (Tier 1 seed),
+**6.11** (maintenance contract), **6.5g** (leave a handoff), **6.5e** (UTC
+headers). They are scattered across the tables below because they were added at
+different points; the Ruling record at the end is authoritative.
+
+**Label warning.** The section headings below ("Group A -- cheap, independent,
+reversible", etc.) are the sheet's own grouping and do **not** match the A/B/C/D
+grouping used in chat on 2026-07-31, which sorted by *already-built / cheap /
+build / blocked*. The chat "Group A" was the four ratified items above, not the
+eleven under "Group A" here. Quote item numbers, not group letters.
 
 ---
 
@@ -122,21 +132,63 @@ measurement rather than a build, and the number stays useful either way.
 | 6.5b | | | |
 | 6.5c | | | |
 | 6.5d | | | |
-| 6.5e | | | |
+| 6.5e | **A** accepted | 2026-07-31T18:22Z | `created_utc` / `updated_utc` ISO-8601 UTC in header blocks, matching the envelope convention. Applied to the 5 files authored this session. **Owed:** ~66 remaining files under `docs/maintenance/`, and a decision on whether the sweep is one slice or incremental-on-touch. Recommend incremental-on-touch, so the backlog never blocks work. |
 | 6.5f | | | |
-| 6.5g | | | |
+| 6.5g | **A** ratified | 2026-07-31T18:22Z | "Leave a handoff, not only a closeout" becomes a closeout obligation alongside AIF-006. Both handoffs landed: `HANDOFF_CLAUDE_WSL_DOTTALKPP_2026-07-31.md` (`71f9b850e`) and `HANDOFF_CLAUDE_COWORK_ONBOARDING_2026-07-31.md` (`554891db5`). **Owed:** add the obligation to `AI_PORTAL.md` "Closeout Updates Startup" and to `SESSION_CLOSEOUT_TEMPLATE.md` so it is a gate rather than a precedent. |
 | 6.5h | | | |
 | 6.1 | | | |
-| 6.2 | | | |
+| 6.2 | **A** ratified | 2026-07-31T18:22Z | Tier 1 seed accepted as the standard. `labtalk/ai_portal/AI_TIER1_SEED_V1.md`, 8,191 B against its 8,192 ceiling, committed `8a3dea347`. The 8 KB ceiling and its enforcement are ratified with it. |
 | 6.3 | | | |
 | 6.4 | | | |
 | 6.9 | | | |
 | 6.6 | | | |
 | 6.10 | | | |
-| 6.11 | | | |
+| 6.11 | **A** ratified | 2026-07-31T18:22Z | Maintenance contract binding on always-read surfaces: invariants and pointers only, no perishable literals, hard byte ceiling, demote once a hard-failing gate covers a rule. Already applied to the Tier 1 seed and to `CLAUDE.md`, whose hardcoded toolchain versions were removed as perishable. |
 | 6.12 | | | |
 | X1 | **A** (retire) | 2026-07-31T12:45Z | AIF-072 retired as controlling target; stays claimed and pick-up-ready. `CURRENT_TARGET.md` top section rewritten to name the five in-flight lanes. Applied. |
 | X2 | **A** (done, published) | 2026-07-31T14:30Z | Four themed commits host-side: `1024a53d5` lane artifacts, `8a3dea347` tier 1 seed + portal surfaces, `71f9b850e` agents handoff + front-door files, `cf5ac99b8` record corrections. `prepush_gate.py` PASS on all. **Pushed** `0803f0f13..cf5ac99b8` to `origin/development`. Staging and `main` not reached, out of scope. |
 
 M1 closes when every row above carries a ruling. Partial rulings are fine and
 unblock their own items; nothing waits on the sheet being complete.
+
+## Group A ratified -- 2026-07-31T18:22Z
+
+Owner ruled Group A accepted: **6.2, 6.11, 6.5g, 6.5e**. These were already built
+during the session; the ruling makes them the standard rather than one session's
+precedent.
+
+What that establishes:
+
+- **The Tier 1 seed is the canonical entry body**, under an enforced 8 KB
+  ceiling. Adding to it requires removing or demoting.
+- **Always-read surfaces carry invariants and pointers only.** No perishable
+  literals anywhere an agent reads without asking. This binds `CLAUDE.md`,
+  `AGENTS.md`, and the seed itself.
+- **A handoff is owed at closeout**, not only a session record.
+- **Header blocks carry UTC timestamps**, not bare dates.
+
+Three follow-ups are owed by the ruling and are not yet done. They are what turns
+these from precedent into gates:
+
+1. ~~Add the handoff obligation to `AI_PORTAL.md` and
+   `SESSION_CLOSEOUT_TEMPLATE.md`.~~ **DONE 2026-07-31T18:30Z.** `AI_PORTAL.md`
+   gains "Leave a Handoff as well" after "Leave a Session Closeout", with the
+   naming convention, two worked examples, four earned rules (commit it; aim at
+   the next agent; assert no perishable facts; keep it Tier-1 sized) and an
+   explicit escape -- a session with nothing durable to hand off says so rather
+   than manufacturing a file. `SESSION_CLOSEOUT_TEMPLATE.md` gains a matching
+   "Handoff left" section, so it is now a template field rather than a
+   remembered good intention.
+2. **`created_utc` sweep policy: incremental-on-touch, adopted 2026-07-31T18:30Z.**
+   A file gets its UTC header the next time a session edits it for any other
+   reason. No bulk pass. Rationale: a 66-file character sweep is its own scoped
+   slice, it would fuse with every session in flight, and the backlog harms
+   nobody -- only *new* drift matters, and touching a file is exactly when the
+   correct timestamp is known. Revisit only if a tool ever needs to sort the
+   whole corpus by time.
+3. Consider whether 6.11 deserves mechanical enforcement rather than prose. It is
+   currently a rule with no gate, which is the AIF-079 class this lane keeps
+   naming. A checker for perishable literals in the always-read set would be
+   small, and under 6.6 it would then earn its own demotion.
+
+Groups B, C and D remain open: 16 rows.

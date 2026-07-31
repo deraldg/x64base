@@ -67,6 +67,19 @@ updated, or "no lane state changed this session" with the reason.>
 <Staging promotion and GitHub commits, by stage. Name commits/branches. Or
 "not promoted" / "not published".>
 
+## Handoff left (AIF-082 gate, ratified 2026-07-31)
+
+<Path to the handoff this session left in `docs/agents/`, and one line on what it
+covers. A closeout records what happened; a handoff records how to work here.
+
+Or state "no handoff owed" with the reason -- a session that only read, or only
+repeated known work, has nothing durable to hand off and should say so rather
+than manufacture a file.
+
+Rules: commit it, aim it at the next agent, cite `file:line`, assert no
+perishable facts (say "measure it"), keep it roughly Tier-1 sized. See
+`AI_PORTAL.md` -> "Leave a Handoff as well".>
+
 ## Still open — for the next session
 
 <Bugs found but not fixed, deferred lanes, housekeeping, next gate. This is the
