@@ -2127,3 +2127,92 @@ clone.
 What it did NOT buy: durability (unpushed), completeness (1,041 entries remain),
 or a working `mandatory-tracked` gate (R27b still open, and the gate printed the
 same PASS through all of it).
+
+### 12.17 R27a was incomplete, and the gap exposed a hard-block list gap
+
+The campaign committed `tools/<subdir>` throughout and never the loose files at
+`tools/` top level: **47 of them**, still untracked. My own slicing plan produced
+this hole -- I enumerated subdirectories from pasted `git status` fragments and
+never asked what sat beside them.
+
+Unlike the subdirectories, this set must NOT be committed wholesale. It is three
+distinct populations:
+
+1. **Real tooling** -- `build.ps1`, `rebuild_ccode.ps1`, `export_ccode.ps1`,
+   `import_ccode.ps1`, `smoke_ccode.ps1`, the four `backup_*`/`*_backup_*`
+   scripts, `apply_cmdhelp_*.ps1`, `docs_drift_check.ps1`, `version_info.py`,
+   `app_paxon.hpp`, and the one-shot `fix-*` / `rename-cli-to-dli` migration
+   scripts (historical, but history is the point).
+2. **Eight `.zip` names that are NOT archives** -- see the correction in 12.18.
+3. **Scratch `.txt`** -- several with SPACES in the filename
+   (`Kill usual buildVS lockers.txt`, `ccode build warnings.txt`,
+   `current status sunday.txt`, `#include xbase.hpp.txt`).
+
+**GATE FINDING -- `HARD_BLOCK_SUFFIXES` has no archive extension.** It lists
+`.exe .dll .lib .pdb .obj .ilk .exp .pch .sln .vcxproj*` and stops. `.zip`, `.7z`,
+`.tar`, `.gz` are absent, so `git add tools/` would have staged eight binary
+archives and the gate would have classified them `source/docs/config` and passed.
+
+This is the same shape as C8b once more: an **enumerated deny list** is a
+denominator drawn from what its author thought of, and it cannot fail on the
+thing nobody listed. The gate's *mass-change* and *BOM* checks derive their
+denominator from the staged set and work; its *hard-block* check derives it from a
+literal tuple and has a hole. **Folded into R27b as R27b.2:** add archive suffixes
+now, and prefer a positive policy (allow known-source extensions, flag the rest)
+over extending a list of known-bad ones.
+
+Also still untracked and governance-relevant: `sync_dottalk_dev_to_stage.ps1` and
+`_v2.ps1`, which promote `D:\code\ccode` -> `C:\dottalkpp`. That is the staging
+mirror step, unversioned.
+
+Recommended for `.gitignore` rather than history: `tools/*.zip`, the space-named
+scratch `.txt`, `terminals/` (3 scratch files), `wsl_warnings.txt`,
+`useful_ref_links.txt`, `tools/find_cmakelists.txt`. Owner call:
+`students_norm.csv` / `.tsv`, which look like teaching fixtures.
+
+### 12.18 Correction: I read eight file types off their extensions
+
+12.17 called those eight `.zip` files "binary archives" and warned they would
+sail through the gate. **They are not archives.** Each is 129 bytes of ASCII:
+
+```text
+version https://git-lfs.github.com/spec/v1
+oid sha256:abe6a89326c1c79501a08b29b62db20d9c0c2fc49cb9338beac87f08ab33d91e
+size 1942
+```
+
+Eight distinct Git LFS pointer files. I inferred content from the extension and
+did not open one until the uniform 129-byte size made the claim implausible.
+
+**The corpus already contains the rule I broke.** AIF-081's method note, recorded
+by this same steward eight days ago: *"a facility's coverage is a property of
+WHERE IT TAPS THE STREAM, never inferred from its name or its documentation."*
+The general form is *never infer content from a label*, and a file extension is a
+label. Knowing the rule, having written the rule, did not prevent the instance --
+consistent with 12.11, where writing the warning did not prevent the behaviour it
+warned against. **This is now the strongest support in the lane for R27b's
+premise:** rules that live only as prose are not controls. The check that caught
+this was `cat`, an external observation, not recall.
+
+**What the gate finding reduces to.** The narrow claim survives: `.zip`, `.7z`,
+`.tar`, `.gz` are absent from `HARD_BLOCK_SUFFIXES`, so a genuine archive would
+pass classified as source/docs/config. That is still worth fixing (R27b.2). The
+illustration was wrong; the hole is real.
+
+**What was actually found, which is more interesting.** Orphaned LFS pointers:
+
+- `.gitattributes` carries NO `filter=lfs` rules, so committing these would store
+  129-byte stubs as literal text while the real content stayed unreferenced.
+- `.git/lfs/objects` DOES contain objects, so nothing is lost today -- but that
+  store is local, and the 15 unpushed commits mean it is a one-disk artifact like
+  everything else in 12.14.
+- The payloads are 1,113-4,141 B, **~18.8 KB in total**. LFS was never warranted
+  at this size.
+
+**Disposition, on the owner's hygiene ruling** (*"we can clean directories when
+needed for hygiene"*): these are stale build and debug drops, the oldest dated
+2025-08-23. Recommend DELETING the eight pointers rather than tracking them; the
+LFS objects remain in `.git/lfs/objects` if anything is ever wanted back. This is
+the first place in the campaign where the right answer is removal rather than
+registration, and it is worth naming as a category -- R27a assumed every untracked
+file wanted a home, and some want a bin.
