@@ -292,6 +292,35 @@ this steward stopped short of writing `config/nav.ts` only because it read the
 file first and found the other session had already fixed it. The website tree
 has no equivalent of the ccode coordination protocol. Flagged, not solved.
 
+## Addendum 5 -- handoff left in the tree, 2026-07-31T18:20Z
+
+`docs/agents/HANDOFF_CLAUDE_COWORK_ONBOARDING_2026-07-31.md`, written on owner
+instruction. This discharges the obligation C8 identified and 6.5g proposes: a
+session that learned how to work here leaves a handoff, not only a closeout.
+Companion to the maintainer's WSL handoff rather than a duplicate of it -- that
+one covers build, run, DotScript and capture; this one covers the portal, the
+sandbox boundary, and working with the maintainer.
+
+It carries one thing that belongs in a handoff and nowhere else, recorded on the
+owner's feedback: **his environment is authoritative, and a correction about it
+is not an invitation to analyse.** Twice today the steward was handed a fact
+about his own setup -- where the reports actually live, and that his server root
+needed no directory prefix -- and answered with a framework instead of an
+adjustment. The stated tell: if he states a fact and the reply begins by
+categorising it, the agent has stopped listening.
+
+The complementary half is recorded with equal weight, because he asked for it
+explicitly: **he wants pushback on substance.** The worked example is a parallel
+session refusing to publish `BBS_ACCESS_REPORT.html` against his own AIF-060
+publication note. Deference there would have put an auth-surface map on the
+public web. The distinction is between resisting a correction about his
+environment, which is never right, and resisting a step that would damage the
+record, which is the job.
+
+Also recorded there: shell and working directory belong at the top of every
+command block, two repositories are in play and are not interchangeable, and
+proportionality remains uncalibrated in the corpus.
+
 ## Recorded for the record -- first clean registration (positive finding)
 
 `1024a53d5` and `8a3dea347` are, as far as this session can determine, **the
