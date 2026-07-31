@@ -126,6 +126,74 @@ def parse_tier0() -> dict:
     return d
 
 
+# ------------------------------------------------- SYSRULING (dogfooded state)
+RULING_DBF = ROOT / 'dottalkpp' / 'data' / 'metadata' / 'portal' / 'SYSRULING.dbf'
+STATUS = {0: 'proposed', 1: 'ratified', 2: 'rejected', 3: 'superseded', 4: 'withdrawn'}
+
+
+def _borrow_read_dbf():
+    """Lift read_dbf() out of build_reports.py rather than copying it, for the
+    same reason the CSS is borrowed: one definition, no skew. Returns None if the
+    companion script is absent, which is not an error -- the markdown path still
+    works and this module must stay runnable on a host with no data directory."""
+    src = ROOT / 'tools' / 'reports' / 'build_reports.py'
+    if not src.is_file():
+        return None
+    t = src.read_text(encoding='utf-8', errors='replace')
+    m = re.search(r'^def read_dbf\(path\):\n(?:[ \t].*\n|\n)+', t, re.M)
+    if not m:
+        return None
+    ns: dict = {}
+    try:
+        exec('import struct\nfrom pathlib import Path\n' + m.group(0), ns)
+    except Exception:
+        return None
+    return ns.get('read_dbf')
+
+
+def parse_sysruling() -> dict | None:
+    """Current status per RULEID plus the full dated transition log.
+
+    APPEND-ONLY by design (ruling_schema.hpp): a status change is a new row with
+    a later DECIDEDAT, never an update in place, so the table IS the history.
+    Current status of a ruling is its row with the highest DECIDEDAT."""
+    if not RULING_DBF.is_file():
+        return None
+    rd = _borrow_read_dbf()
+    if rd is None:
+        return None
+    try:
+        _, rows = rd(RULING_DBF)
+    except Exception as ex:
+        print(f'SYSRULING present but unreadable ({type(ex).__name__}: {ex}) -- '
+              'falling back to the markdown sheets')
+        return None
+
+    def num(v):
+        try:
+            return int(str(v).strip() or 0)
+        except ValueError:
+            return 0
+
+    cur, log = {}, []
+    for r in rows:
+        rid = (r.get('RULEID') or '').strip()
+        if not rid:
+            continue
+        at = num(r.get('DECIDEDAT'))
+        st = num(r.get('STATUS'))
+        when = (datetime.datetime.utcfromtimestamp(at).strftime('%Y-%m-%dT%H:%MZ')
+                if at else '--')
+        log.append((when, f"{rid} -> {STATUS.get(st, f'status {st}')}"
+                          + (f" ({r.get('NOTE','').strip()})" if r.get('NOTE', '').strip() else '')))
+        if rid not in cur or at >= cur[rid]['_at']:
+            cur[rid] = dict(id=rid, group=(r.get('RULEGROUP') or '').strip() or '(ungrouped)',
+                            lane=(r.get('LANE') or '').strip(), status=STATUS.get(st, str(st)),
+                            settled=st in (1, 2, 3, 4), blocks=(r.get('BLOCKS') or '').strip(),
+                            text=(r.get('NOTE') or '').strip(), rec='', date=when, _at=at)
+    return dict(current=cur, log=sorted(set(log)), rows=len(rows))
+
+
 # ------------------------------------------------------------------- history
 def history(sheets: list[dict]) -> list[tuple[str, str]]:
     """Dated events the SHEETS actually record. Not invented: if a ruling has
@@ -147,6 +215,19 @@ def main() -> int:
     if not sheets:
         sys.exit(f'no ruling sheet matching {SHEET_GLOB} under {MAINT}')
     items = [i for s in sheets for i in s['items']]
+    sysr = parse_sysruling()
+    if sysr:
+        # SYSRULING is authoritative for STATUS where it has a row; the sheet
+        # still supplies the proposal text, which deliberately does not live in
+        # the table (ruling_schema.hpp -- state here, prose in the sheet).
+        for i in items:
+            r = sysr['current'].get(i['id'])
+            if r:
+                i['settled'], i['date'], i['status'] = r['settled'], r['date'], r['status']
+                i['blocks'] = r.get('blocks', '')
+        for rid, r in sysr['current'].items():
+            if not any(i['id'] == rid for i in items):
+                items.append(dict(r, text=r['text'] or '(row in SYSRULING with no sheet entry)'))
     openi = [i for i in items if not i['settled']]
     done = [i for i in items if i['settled']]
     t0 = parse_tier0()
@@ -194,18 +275,31 @@ def main() -> int:
 
     ev = history(sheets)
     b.append('<h2>Recorded history</h2>')
-    if ev:
+    if sysr:
+        b.append(f'<div class="note"><b>Source: <code>SYSRULING</code></b> &mdash; '
+                 f'{sysr["rows"]} append-only row(s) in the DBF store. A status change is a new '
+                 'row with a later <code>DECIDEDAT</code>, never an update in place, so the table '
+                 'IS the history. Current status of a ruling is its row with the highest '
+                 '<code>DECIDEDAT</code>.</div>')
+        b.append('<table><tr><th>when</th><th>transition</th></tr>' + ''.join(
+            f'<tr><td class="m small">{e(w)}</td><td class="small">{e(x)}</td></tr>'
+            for w, x in sysr['log']) + '</table>')
+    elif ev:
         b.append('<table><tr><th>when</th><th>event</th></tr>' + ''.join(
             f'<tr><td class="m small">{e(w)}</td><td class="small">{e(x)}</td></tr>'
             for w, x in ev) + '</table>')
-    b.append('<div class="note w"><b>History is thin, and that is a finding, not a bug.</b><br>'
-             'Only two kinds of dated event exist to render: a group ratification header and a '
-             'file mtime. Individual rulings carry no dated status transition, because the sheet '
-             'stores them as prose with an empty <code>Ruling</code> cell. A real history needs '
-             'ruling state in a structured store -- a registry row, or the DBF store the BBS '
-             'reports already read -- with <code>proposed / ratified / rejected / superseded</code> '
-             'and a UTC stamp per transition. Until then this section can only show what was '
-             'written down, and most of it was not.</div>')
+    if not sysr:
+        b.append('<div class="note w"><b>History is thin, and that is a finding, not a bug.</b><br>'
+                 'Only two kinds of dated event exist to render: a group ratification header and a '
+                 'file mtime. Individual rulings carry no dated status transition, because the sheet '
+                 'stores them as prose with an empty <code>Ruling</code> cell. '
+                 'The schema that fixes this is authored -- <code>include/portal/ruling_schema.hpp</code>, '
+                 '<code>SYSRULING</code>, append-only, <code>proposed / ratified / rejected / '
+                 'superseded / withdrawn</code> with a UTC stamp per transition -- but the table is '
+                 'not created or seeded yet, so this page is still deriving from markdown. '
+                 'Recipe: <code>docs/maintenance/RULING_STATE_DOGFOOD_V1.md</code>. '
+                 'Until it is seeded, this section can only show what was written down, and most of '
+                 'it was not.</div>')
 
     if t0:
         rows = ''.join(f'<tr><td class="dim small">{e(k)}</td><td class="m small">{e(v)}</td></tr>'
