@@ -40,7 +40,15 @@
 *   Standalone:  DOTSCRIPT scripts/cnx_realtime_buffer_proof.dts
 *   Capture:     SET ALTERNATE TO <file> / SET ALTERNATE ON  (never DOTSCRIPT OUT)
 *
-* Runtime status: NOT YET RUN. Authored 2026-08-01 against XIDX-TXN-02 M1.
+* Runtime status: RUN 2026-08-01, wsl-lean, both modes.
+*   INDEXTXN OFF: B2/B3 .F. (COMMIT rebuilt, then served a stale binding) and
+*                 B4b .T. -- which is finding F1.
+*   INDEXTXN ON : B2/B3/B4 .T. with no rebuild on the path, and B4b .F. --
+*                 which is finding F3. B4b ANSWERS A DIFFERENT QUESTION IN EACH
+*                 MODE and is not flapping; see the B4b block below and the
+*                 findings document before "fixing" it.
+*   Lane record: XIDX_TXN_02_PDLC_LANE_V1.md
+*   Findings   : OPEN_INDEX_API_XIDX_TXN_02_CAPABILITY_FINDINGS_V1_20260801.md
 * ============================================================================
 SET ECHO OFF
 STOP_ON_ERROR OFF
