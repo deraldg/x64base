@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -56,10 +57,60 @@ def normalized_path(path: str) -> str:
     return os.path.normcase(os.path.normpath(os.path.abspath(path)))
 
 
+def windows_form(path: str) -> str:
+    """Translate a WSL drive mount to its Windows spelling.
+
+    "/mnt/d/code/ccode" -> "D:\\code\\ccode". Anything that is not a
+    /mnt/<single-drive-letter> path is returned unchanged.
+
+    This RECOGNISES an existing root under a second spelling; it does NOT add
+    a new one. The permitted set is still exactly DEVELOPMENT_ROOT and
+    STAGING_ROOT -- "/mnt/d/code/other" translates to "D:\\code\\other" and is
+    still refused, and a native Linux path like "/home/x/ccode" does not
+    translate at all.
+    """
+    match = re.fullmatch(r"/mnt/([A-Za-z])(/.*)?", path)
+    if not match:
+        return path
+    drive = match.group(1).upper()
+    remainder = (match.group(2) or "").replace("/", "\\")
+    return f"{drive}:{remainder}"
+
+
+def windows_key(path: str) -> str:
+    """Comparison key for a WINDOWS-form path, usable from any OS.
+
+    Deliberately does NOT call os.path.abspath. That is what made the guard
+    unusable outside Windows: on POSIX, abspath("D:\\code\\ccode") resolves the
+    literal against the current directory and yields nonsense, so even
+    DEVELOPMENT_ROOT failed to compare equal to itself. Pure string
+    normalisation is correct here because both operands are already absolute
+    Windows paths by construction.
+    """
+    return path.replace("/", "\\").rstrip("\\").casefold()
+
+
 def detect_role(root: str) -> RepositoryRole | None:
+    """Identify the repository role of `root`, on Windows or under WSL.
+
+    Two comparisons, in order:
+      1. Native normalisation -- the original Windows behaviour, unchanged.
+      2. Windows-form comparison after translating a WSL /mnt/<drive> path,
+         so /mnt/d/code/ccode is recognised as D:\\code\\ccode.
+
+    Before this, a commit from WSL hard-failed with "repository root is not a
+    declared x64base development or staging root" -- not because the worktree
+    was wrong, but because it was spelled in POSIX. AI_README/CLAUDE.md
+    attributed that block to the sandbox; it is a path-FORM issue and WSL hit
+    it too.
+    """
     resolved = normalized_path(root)
+    root_windows = windows_key(windows_form(root))
+
     for role in (DEVELOPMENT_ROLE, STAGING_ROLE):
         if resolved == normalized_path(role.root):
+            return role
+        if root_windows == windows_key(role.root):
             return role
     return None
 
@@ -207,13 +258,29 @@ def install_hooks(root: str) -> None:
     pre_push_path = os.path.join(hook_dir, "pre-push")
     preserved_pre_push = pre_push_path + ".x64base-preserved"
     marker = "# Managed by tools/staging/repository_role_guard.py\n"
-    common = 'ROOT="$(git rev-parse --show-toplevel)"\n'
+    # Interpreter resolution, not a bare "python".
+    #
+    # The hook body is /bin/sh and runs from whatever shell invoked git. A bare
+    # "python" resolves on Windows but NOT on Debian-family WSL, which ships
+    # only "python3" -- so every WSL commit died at
+    # ".git/hooks/pre-commit: 4: python: not found" before the guard could even
+    # run. Hardcoding "python3" instead would break Windows, where python3 is
+    # an unreliable Store alias. Prefer python3, fall back to python, and fail
+    # with a legible message rather than a shell "not found".
+    common = (
+        'ROOT="$(git rev-parse --show-toplevel)"\n'
+        'PY="$(command -v python3 || command -v python)"\n'
+        'if [ -z "$PY" ]; then\n'
+        '  echo "x64base hooks: no python3 or python on PATH" >&2\n'
+        '  exit 1\n'
+        'fi\n'
+    )
     pre_commit = (
         "#!/bin/sh\n"
         + marker
         + common
-        + 'python "$ROOT/tools/staging/repository_role_guard.py" || exit 1\n'
-        + 'python "$ROOT/tools/staging/prepush_gate.py" || exit 1\n'
+        + '"$PY" "$ROOT/tools/staging/repository_role_guard.py" || exit 1\n'
+        + '"$PY" "$ROOT/tools/staging/prepush_gate.py" || exit 1\n'
     )
     pre_push = (
         "#!/bin/sh\n"
@@ -223,7 +290,7 @@ def install_hooks(root: str) -> None:
         + 'UPDATES="${TMPDIR:-/tmp}/x64base-pre-push-$$"\n'
         + 'trap \'rm -f "$UPDATES"\' EXIT HUP INT TERM\n'
         + 'cat > "$UPDATES" || exit 1\n'
-        + 'python "$ROOT/tools/staging/repository_role_guard.py" '
+        + '"$PY" "$ROOT/tools/staging/repository_role_guard.py" '
         + '--pre-push < "$UPDATES" || exit 1\n'
         + 'if [ -x "$HOOK_DIR/pre-push.x64base-preserved" ]; then\n'
         + '  "$HOOK_DIR/pre-push.x64base-preserved" "$@" '
