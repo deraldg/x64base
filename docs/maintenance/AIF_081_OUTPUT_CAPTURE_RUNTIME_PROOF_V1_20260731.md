@@ -163,6 +163,35 @@ Recorded so the tier is not read wider than it was earned.
 
 ---
 
+## 5a. CORRECTION 2026-07-31 -- the reproduction in section 3 was not repeatable
+
+`SET ALTERNATE TO` opens **append**, not truncate:
+
+    output_router.cpp:624
+    impl_->alt_file.open(trimmed, std::ios::out | std::ios::app | std::ios::binary);
+
+`DOTSCRIPT ... OUT` truncates (it prints `(write)`). So the two facilities
+compared in this document use OPPOSITE file modes, and section 3's commands are
+only correct on a FIRST run against a fresh filename. Re-running them appends,
+and the line counts in section 4 will not reproduce -- they will grow.
+
+The figures themselves stand: both files in the original measurement were fresh
+single-run captures. What failed is the reproduction path, which is the part a
+proof exists to provide. Found when a later session's transcript was discovered
+to hold three concatenated runs from three different binaries.
+
+**Corrected procedure: delete the target files first.**
+
+    rm -f tmp/idxstale_transcript.log tmp/alt_probe.log
+
+Then run section 3 unchanged.
+
+Adjacent finding, not fixed here: classic xBase and FoxPro spell this
+`SET ALTERNATE TO <file> [ADDITIVE]` -- truncate by default, append on request.
+DotTalk++ appends by default and exposes no ADDITIVE token. That is an inverted
+default against the lineage this project preserves deliberately, and it belongs
+to the messaging/usage lane as a ruling rather than to this proof.
+
 ## 6. Determinism note
 
 Both trace families default ON, so an unpinned rerun on a host exporting either
