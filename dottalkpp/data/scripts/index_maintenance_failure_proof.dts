@@ -10,16 +10,33 @@
 *   maintained. cmd_REPLACE then marks the field stale and warns:
 *     "record written, but index update failed...; REINDEX/REBUILD needed."
 *
-* WHY CNX AND NOT LMDB
+* SUBJECT CHANGED 2026-07-31 -- READ THIS BEFORE ASSUMING CNX
+*   This proof originally ran against CNX/v32, because CnxBackend::upsert/erase
+*   were no-ops that set stale_ and returned normally. XIDX-TXN-02 M1 gave CNX
+*   real realtime maintenance, so CNX STOPPED BEING A VALID SUBJECT: the
+*   warning correctly no longer fires there, and E_T2 inverted to .F.
+*
+*   The test itself was not the thing that broke -- its subject moved. So it is
+*   repointed rather than repurposed, at the backend that still cannot maintain
+*   incrementally: CdxNativeBackend::upsert/erase are STILL no-ops that set
+*   stale_ and return normally (cdx_native_backend.cpp:507-519). That is the
+*   native CDX-V64 path, which is what a RAM/vdisk x64 table uses when LMDB is
+*   not in play -- so this now covers the in-memory lane rather than the v32
+*   lane, and every marker means exactly what it meant before.
+*
+*   The realtime CNX behaviour that replaced the old subject has its own proof:
+*   cnx_realtime_index_proof.dts (regression CNXLIVE). The two are deliberately
+*   separate -- one asserts maintenance HAPPENS, one asserts that when it
+*   CANNOT happen the engine is honest about it. Both are contracts.
+*
+* WHY NOT LMDB
 *   The first attempt tried to force an LMDB MDB_MAP_FULL via BUILDLMDB
 *   MAPSIZE. That is unreachable: parse_mapsize_spec has an 8 MiB floor
 *   (cmd_buildlmdb.cpp:206), and a fixture small enough to author cannot fill
-*   8 MiB. It needed no forcing at all. CnxBackend::upsert/erase are no-ops
-*   that set stale_ = true and return normally (cnx_backend.cpp:521-533), so
-*   EVERY replace against a CNX order leaves the index stale. That is the
-*   routine case, not an edge case, and until wasStale() was wired into
-*   apply_replace_snapshot it was entirely silent -- the backend reported
-*   success while maintaining nothing.
+*   8 MiB. A stub backend needs no forcing at all -- it fails to maintain on
+*   EVERY replace. That is the routine case, not an edge case, and until
+*   wasStale() was wired into apply_replace_snapshot it was entirely silent:
+*   the backend reported success while maintaining nothing.
 *
 * MARKER DESIGN -- READ BEFORE EDITING
 *   The first version of this proof PASSED WHILE PROVING NOTHING. Its SEEKs
@@ -30,31 +47,37 @@
 *
 *   Two rules came out of that, and both are load-bearing:
 *     1. Park the cursor on a KNOWN DIFFERENT record before every SEEK, then
-*        assert RECNO() moved. A SEEK that silently no-ops now fails the
-*        guard instead of inheriting a passing position.
+*        assert the FIELD VALUE moved. A SEEK that silently no-ops now fails
+*        the guard instead of inheriting a passing position.
 *     2. Markers must be STRING comparisons. "? <str> + FOUND()" and
 *        "? <str> + (RECNO() = 1)" both render EMPTY, which reads as failure.
-*        ALLTRIM(STR(RECNO())) = "1" is a string compare and renders .T./.F.
-*        correctly -- that is what makes the position guard expressible.
+*        ALLTRIM(LNAME) = "X" is a string compare and renders .T./.F.
+*        correctly. Wrapping RECNO() in STR() does NOT rescue it -- the
+*        problem is RECNO(), not the comparison type.
 *
-* Self-contained: builds and erases its own throwaway v32 table; never
-* touches STUDENTS or any live fixture.
+* Self-contained: builds its own throwaway x64 table entirely in the RAM VFS;
+* never touches STUDENTS or any live fixture, and writes nothing to disk.
+* Teardown unmounts (which drops every RAM file) and restores the x64 env.
 *   Standalone:  DO index_maintenance_failure_proof
-*   Regression:  REGRESSION RUN IDXSTALE   (register only once proven)
+*   Regression:  REGRESSION RUN IDXSTALE
 *
-* Runtime status: NOT YET PROVEN. Authored 2026-07-31 alongside the
-* wasStale() wiring it exercises.
+* Runtime status: PROVEN 2026-07-31 on wsl-lean against CNX. Repointed to
+* native CDX-V64 the same day; re-prove before trusting the new subject.
 * ============================================================================
 SET ECHO OFF
 STOP_ON_ERROR OFF
 
-* x32 lane: CNX is the v32 indexing backend
-DO x32
+* in-memory lane: native CDX-V64 is the backend for a RAM x64 table.
+* DO mem mounts the RAM VFS and sets the DBF/INDEXES/LMDB slots; the
+* unmount/remount is a deterministic clean slate after an aborted run.
+DO mem
+VDISK UNMOUNT
+DO mem
 
 FORMULA "INDEX-STALE-REPORTING-PROOF-BEGIN"
 
-* --- throwaway v32 table (bare CREATE defaults to MSDOS/DBASE = v32) --------
-CREATE IDXSTALE (SID N(8), LNAME C(20))
+* --- throwaway x64 table, resident in RAM ------------------------------------
+CREATE X64 IDXSTALE (SID N(8), LNAME C(20))
 
 APPEND
 REPLACE SID WITH 1
@@ -69,23 +92,20 @@ APPEND
 REPLACE SID WITH 4
 REPLACE LNAME WITH "YOUNG"
 
-* --- CNX index on LNAME ------------------------------------------------------
-CNX CREATE
-CNX ADDTAG LNAME
-REBUILD
+* --- native CDX-V64 index on LNAME, built in RAM (RUN8, no LMDB) -------------
+CDX CREATE
+CDX ADDTAG LNAME
+REINDEX CDX
 SET ORDER TAG LNAME
+
+* --- residency checkpoint: table + index are RAM files, nothing on disk ------
+VDISK STATUS
 
 * --- G0: the ORDER IS LIVE ---------------------------------------------------
 * Guards everything below. Park on 4 (YOUNG), seek a key that lives on 1. The
 * guard is the FIELD VALUE at the cursor, not RECNO(): if the seek no-ops the
 * cursor stays on YOUNG and G0 reads .F., so a broken fixture can never be
 * mistaken for a proven contract.
-*
-* Field values, not RECNO(). Measured 2026-07-31: ALLTRIM(LNAME) = "X" renders
-* .T./.F. correctly, while ALLTRIM(STR(RECNO())) = "1" renders EMPTY -- same
-* family as FOUND(). Wrapping RECNO() in STR() does NOT make it usable; the
-* problem is RECNO(), not the comparison type. Parking on a record with a
-* known distinct field value gives the same guard without it.
 GO 4
 SEEK "MILLER"
 ? "E_G0_seek_works_before_mutation:" + (ALLTRIM(LNAME) = "MILLER")
@@ -100,13 +120,14 @@ GO TOP
 * Expect BOTH lines on the wired path:
 *   REPLACE: Replaced field #2 at rec 1.
 *   REPLACE: record written, but index update failed...; REINDEX/REBUILD needed.
-* Before the wasStale() wiring, only the first line appeared.
+* Before the wasStale() wiring, only the first line appeared. Trace should read
+* "staleBefore=no leftStale=yes" -- that transition IS the reporting contract.
 GO 1
 REPLACE LNAME WITH "AAAAA"
 
 * --- E_T1: the RECORD WRITE LANDED -------------------------------------------
 * The half that must never regress. An unmaintained index must not be
-* reported as a failed write; the record is on disk.
+* reported as a failed write; the record is stored.
 GO 1
 ? "E_T1_record_carries_new_value:" + (ALLTRIM(LNAME) = "AAAAA")
 
@@ -114,8 +135,8 @@ GO 1
 * THE OBSERVABLE IS THE ORDER, NOT THE KEY LOOKUP.
 *
 * Corrected 2026-07-31 against a real run. The first version asserted that the
-* OLD key still resolved and the NEW key did not. Both were wrong, because CNX
-* SEEK compares LIVE FIELD VALUES while walking a possibly-stale recno
+* OLD key still resolved and the NEW key did not. Both were wrong, because a
+* native SEEK compares LIVE FIELD VALUES while walking a possibly-stale recno
 * ordering. Measured after moving MILLER -> AAAAA on a stale index:
 *     SEEK "MILLER"  -> Not found.    (no record holds MILLER any more)
 *     SEEK "AAAAA"   -> Found at 1.   (record 1 does, and the walk reached it)
@@ -126,6 +147,10 @@ GO 1
 * slot MILLER sorted into (after ANDERSON), so an ordered walk still starts at
 * ANDERSON even though AAAAA now sorts first. That is directly observable and
 * is what a stale index means to a reader.
+*
+* If this ever reads .F., the backend under test has GAINED realtime
+* maintenance. That is good news, not a regression -- but it means this proof
+* needs repointing again, exactly as it was repointed off CNX.
 GO TOP
 ? "E_T2_stale_order_still_starts_at_ANDERSON:" + (ALLTRIM(LNAME) = "ANDERSON")
 
@@ -136,11 +161,11 @@ GO 4
 SEEK "AAAAA"
 ? "E_T3_seek_reaches_moved_record_despite_stale_order:" + (ALLTRIM(LNAME) = "AAAAA")
 
-* --- E_T4: REBUILD is the documented remedy, and it works --------------------
+* --- E_T4: REINDEX is the documented remedy, and it works --------------------
 * The warning tells the operator to REINDEX/REBUILD. Prove that advice is good
 * rather than merely well-phrased: after the rebuild the order is correct and
 * AAAAA sorts first, which is exactly what T2 showed it was not.
-REBUILD
+REINDEX CDX
 SET ORDER TAG LNAME
 GO TOP
 ? "E_T4_after_rebuild_top_is_AAAAA:" + (ALLTRIM(LNAME) = "AAAAA")
@@ -149,6 +174,8 @@ FORMULA "INDEX-STALE-REPORTING-PROOF-END"
 
 * --- teardown ----------------------------------------------------------------
 * No bare "SET ORDER TO" -- it reports "SET ORDER: missing target."
-* CLOSE drops the order with the table.
+* CLOSE drops the order with the table; UNMOUNT drops every RAM file, so no
+* ERASE is needed and nothing can be left behind on disk.
 CLOSE
-ERASE IDXSTALE CONFIRM
+VDISK UNMOUNT
+DO x64
