@@ -12,9 +12,21 @@
 * marking it stale. REPAIR now routes through DbArea::replaceFieldStored(),
 * which owns the record lock, the write, and the index replace snapshot.
 *
-* MUST run on x64/CDX, not x32/CNX. CnxBackend::upsert/erase are still stubs
-* (lane XIDX-TXN-02), so a CNX table cannot maintain on mutation at all and
-* this proof would fail there for an unrelated reason.
+* SCOPE: this proof runs on x64/CDX.
+*
+* It used to say "MUST run on x64/CDX, not x32/CNX, because CnxBackend::upsert
+* and erase are still stubs, so a CNX table cannot maintain on mutation at all
+* and this proof would fail there for an unrelated reason."
+*
+* THAT RESTRICTION LAPSED 2026-07-31, when XIDX-TXN-02 M1 gave CnxBackend
+* working upsert/erase. The sentence is kept above, quoted, because a reader who
+* remembers it needs to see that it was retired deliberately rather than wonder
+* whether it was forgotten.
+*
+* The CNX counterpart is validate_unique_repair_cnx_proof.dts, which also scores
+* ORDERED POSITION -- something this proof does not need, because a CDX tag
+* stores keys and a seek is a key lookup, but which is load-bearing on CNX where
+* SEEK and ORDER are answered by different machinery and can disagree.
 *
 * Self-contained: builds and erases its own throwaway table; never touches
 * students or any live fixture. Run standalone: DO validate_unique_repair_index_proof
