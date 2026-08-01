@@ -829,8 +829,34 @@ bool IndexManager::beginBulkWrite(std::string* err) {
     if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
         return cdx->beginBulk(err);
     }
-    if (err) *err = "bulk write not supported by active backend";
-    return false;
+    // NOTHING TO BEGIN IS SUCCESS, not failure.
+    //
+    // Corrected 2026-08-01. This used to return false with "bulk write not
+    // supported by active backend", while commitBulkWrite() below returns TRUE
+    // for the same backends ("nothing to commit for non-CDX backends") and
+    // abortBulkWrite() is a no-op. Two of the three already treated absence of
+    // transactions as a non-event; only begin treated it as an error.
+    //
+    // That asymmetry was invisible while the COMMIT gate read isCdx(), because
+    // no non-CDX backend could reach here. When the gate became a capability
+    // question (maintainsIncrementally) CNX qualified, reached this line, and
+    // COMMIT died with "failed during index finalization" -- runtime-proven
+    // 2026-08-01 by regression CNXBUF under DOTTALK_INDEX_TXN=1.
+    //
+    // Bulk write is a batching OPTIMISATION, not a correctness requirement: a
+    // backend without transactions simply applies each mutation as it comes,
+    // which is what CnxBackend::upsert/erase already do. Refusing to start a
+    // transaction that was never needed denies maintenance to a backend that
+    // can perform it.
+    //
+    // OPEN INDEX API follow-up, deliberately NOT done here: these three
+    // functions dynamic_cast on the concrete type, which is the same shape the
+    // capability work exists to remove. They should become virtuals on
+    // IIndexBackend with no-op-success defaults, so a backend declares its own
+    // batching support instead of being recognised by RTTI. Left as a separate
+    // change because one in-flight design change at a time is enough.
+    (void)err;
+    return true;
 }
 
 bool IndexManager::commitBulkWrite(std::string* err) {

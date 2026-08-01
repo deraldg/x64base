@@ -287,10 +287,11 @@ static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
 static bool auto_reindex_if_needed(xbase::DbArea& A,
                                    int area0,
                                    bool talk,
-                                   bool /*interactive_rebuild*/)
+                                   bool /*interactive_rebuild*/,
+                                   bool index_maintained)
 {
 #if !DOTTALK_HAS_XINDEX
-    (void)A; (void)area0; (void)talk;
+    (void)A; (void)area0; (void)talk; (void)index_maintained;
     return true;
 #else
     if (area0 < 0) return true;
@@ -304,6 +305,22 @@ static bool auto_reindex_if_needed(xbase::DbArea& A,
     if (!orderstate::hasOrder(A)) {
         if (talk) cli::cmdout::print_prefixed_message(
             "COMMIT", dottalk::helpdata::MessageId::CommitNoActiveOrderText);
+        return true;
+    }
+
+    // Was the index ALREADY maintained, record by record, during this commit?
+    // If so there is nothing to rebuild, and rebuilding would be redundant work
+    // on an index that is already correct.
+    //
+    // NOTE THE PRECISE CONDITION. This asks whether maintenance HAPPENED, not
+    // whether the backend COULD maintain. Those differ: in-COMMIT maintenance
+    // is gated behind SET INDEXTXN, which defaults OFF. Skipping the rebuild
+    // merely because a backend is capable would leave an INDEXTXN-off commit
+    // neither maintained NOR rebuilt -- silently stale, and strictly worse than
+    // the rebuild it replaced. Capability decides whether maintenance is
+    // attempted (see the INDEXTXN gate above); only the outcome decides whether
+    // the rebuild can be skipped.
+    if (index_maintained) {
         return true;
     }
 
@@ -374,13 +391,23 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     }
 
     // SET INDEXTXN gate: maintain the index in-COMMIT only when the flag is ON
-    // and the live backend is CDX/LMDB. Default OFF reproduces prior behavior.
+    // and the live backend can actually maintain itself. Default OFF reproduces
+    // prior behavior.
+    //
+    // OPEN INDEX API (2026-08-01): this asks the backend what it CAN DO, not
+    // what it IS. It previously read `im->isCdx()`, which had to be revisited
+    // every time a backend was added or gained a capability -- and was already
+    // wrong: CNX gained working upsert/erase in XIDX-TXN-02 M1 while this line
+    // still excluded it, so a buffered CNX edit was never maintained here and
+    // fell through to a full rebuild. Any backend that honestly reports
+    // maintainsIncrementally() now participates, including a future SIX/SNX,
+    // with no edit to this file.
     bool maintain_index = false;
 #if DOTTALK_HAS_XINDEX
     xindex::IndexManager* im = nullptr;
     if (cli::Settings::indexTxnOn()) {
         im = &xindex::ensure_manager(A);
-        maintain_index = im->isCdx();
+        maintain_index = im->maintainsIncrementally();
     }
     if (maintain_index) {
         std::string berr;
@@ -456,7 +483,7 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     // the already-applied record stage as clean, then restore dirty state if
     // the rebuild does not prove success by clearing stale state.
     dottalk::table::set_dirty(area0, false);
-    if (!auto_reindex_if_needed(A, area0, talk, interactive_rebuild)) {
+    if (!auto_reindex_if_needed(A, area0, talk, interactive_rebuild, maintain_index)) {
 #if DOTTALK_HAS_XINDEX
         if (maintain_index) { im->abortBulkWrite(); dottalk::table::set_stale(area0, true); }
 #endif

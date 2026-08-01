@@ -60,6 +60,34 @@ struct IIndexBackend {
     // beyond UINT32_MAX. Reporting only — not intense classic-32 support.
     virtual std::uint64_t maxRecordNumber() const { return UINT64_MAX; }
     bool supportsWideRecords() const { return maxRecordNumber() > UINT32_MAX; }
+
+    // MAINTENANCE capability report -- the second capability axis of the open
+    // index API, and a sibling of maxRecordNumber() above.
+    //
+    // Answers "can this backend keep itself CORRECT across a single record
+    // mutation, through upsert/erase, without a full rebuild?" It does NOT
+    // answer "which backend is this", and callers must not infer it from the
+    // concrete type. Deciding maintenance policy by asking `isCdx()` or
+    // `isCnx()` is what this replaces: that phrasing has to be revisited every
+    // time a backend is added or gains a capability, and it was already wrong
+    // once -- CNX gained working upsert/erase (XIDX-TXN-02 M1) while the commit
+    // seam still classed it as rebuild-only.
+    //
+    // THE DEFAULT IS FALSE, AND THAT IS DELIBERATE. False is the safe answer:
+    // a backend that does not override this gets a full rebuild, which is slow
+    // but correct. If the default were true, forgetting to override would leave
+    // a silently stale index that reports success -- the exact failure shape
+    // this codebase treats as its most common defect. Cost of the safe default
+    // is wasted work; cost of the unsafe default is wrong data.
+    //
+    // Returning true is a CLAIM, and it carries obligations:
+    //   - upsert() and erase() must actually maintain, not set a stale flag
+    //     and return normally.
+    //   - the maintained ordering must be identical to the ordering a
+    //     rebuild() would produce, or a REBUILD will silently change results.
+    //   - wasStale() must report honestly when maintenance could not happen.
+    // Prove those with a runtime regression before flipping this to true.
+    virtual bool maintainsIncrementally() const { return false; }
 };
 
 } // namespace xindex

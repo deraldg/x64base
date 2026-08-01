@@ -79,6 +79,17 @@ public:
     IIndexBackend* backend() noexcept { return backend_.get(); }
     const IIndexBackend* backend() const noexcept { return backend_.get(); }
 
+    // Capability passthrough -- see IIndexBackend::maintainsIncrementally.
+    // Ask THIS, not isCdx()/isCnx(), when deciding between incremental
+    // maintenance and a rebuild.
+    //
+    // No backend attached returns false: there is nothing to maintain, so a
+    // caller choosing a policy should take the legacy path rather than assume
+    // the index is being kept correct by someone else.
+    bool maintainsIncrementally() const noexcept {
+        return backend_ && backend_->maintainsIncrementally();
+    }
+
     // RECNO64 capability report. Largest record number the active backend can hold
     // without truncation (full 64-bit when no backend is attached). Callers indexing
     // a record beyond a legacy 32-bit backend's capacity should gate on
