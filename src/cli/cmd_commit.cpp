@@ -508,6 +508,29 @@ static CommitResult commit_one_area(xbase::DbArea& A,
             return {CommitStatus::FinalizeFailure, applied_ok, 1};
         }
     }
+
+    // DURABILITY (XIDX-TXN-02 M2). commitBulkWrite() closes the backend's own
+    // transaction; for a backend that maintains IN MEMORY -- CNX -- that is not
+    // yet a write to the container. saveIndex() is that write. It is a no-op
+    // success for backends that already wrote through (CDX/LMDB), so this costs
+    // nothing on the path that does not need it.
+    //
+    // BEFORE the journal commit marker, for the same reason the bulk commit is:
+    // the marker must not claim a commit whose index side has not landed.
+    // On failure the container keeps CNX_HDRF_DIRTY, so a later open rebuilds
+    // rather than trusting a half-written ordering, and the buffer is retained
+    // for retry exactly as the other finalize failures do.
+    if (maintain_index) {
+        std::string serr;
+        if (!im->saveIndex(&serr)) {
+            dottalk::table::set_stale(area0, true);
+            tb.changes = pending_before;
+            dottalk::table::set_dirty(area0, true);
+            cli::cmdout::print_prefixed_message(
+                "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
+            return {CommitStatus::FinalizeFailure, applied_ok, 1};
+        }
+    }
 #endif
 
     // Persistent TABLE BUFFER stub hook. A future implementation must return

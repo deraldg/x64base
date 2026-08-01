@@ -88,6 +88,33 @@ struct IIndexBackend {
     //   - wasStale() must report honestly when maintenance could not happen.
     // Prove those with a runtime regression before flipping this to true.
     virtual bool maintainsIncrementally() const { return false; }
+
+    // DURABILITY. Write any maintained-but-unpersisted state to the container.
+    //
+    // A THIRD, INDEPENDENT AXIS. maintainsIncrementally() says the index stays
+    // correct across a mutation; it says nothing about whether that correctness
+    // survives a close. CNX proves the two come apart: it maintained correctly
+    // from XIDX-TXN-02 M1 while its permutation lived only in memory, so the
+    // ordering was right all session and reverted on the next load. Callers
+    // asking "is this durable" must ask here, not there.
+    //
+    // DEFAULT IS NO-OP SUCCESS, and that asymmetry with maintainsIncrementally()
+    // is deliberate. There, silence means "cannot maintain" and the caller must
+    // do the work itself, so false is the safe answer. Here, a backend with
+    // nothing to persist -- one that writes through on every mutation, like
+    // CDX/LMDB -- has already met the obligation, and returning false would
+    // report a failure that did not happen. NOTHING TO SAVE IS SUCCESS. This is
+    // the same lesson beginBulkWrite() had to be taught the hard way: refusing
+    // an operation a backend does not need is not safety, it is a false alarm
+    // that denies the caller a path it was entitled to.
+    //
+    // Implementations must be idempotent: saving twice with no intervening
+    // mutation must be harmless, because close-time and commit-time saves can
+    // both fire for the same edit.
+    //
+    // On false, *err (when non-null) carries a reportable reason. The caller
+    // should treat the index as needing a rebuild.
+    virtual bool save(std::string* err = nullptr) { (void)err; return true; }
 };
 
 } // namespace xindex
