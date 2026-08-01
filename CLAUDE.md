@@ -84,10 +84,15 @@ If you are running in a mounted Linux sandbox rather than on the Windows host:
   yours in one command (`ldd --version`, `command -v cmake ninja`). Measure, do
   not cite this file. Builds and runs are maintainer-operated handoffs either
   way. Host-vs-sandbox detail: `AI_README.md`, "A sandbox is not the WSL host".
-- **`repository_role_guard.py` and `prepush_gate.py` will false-block** in the
-  sandbox because they check the host path. That is expected, not a defect
-  (`AI_PORTAL.md`, "Sandbox / non-host agents"). Verify the slice by hand and
-  hand it over.
+- **`repository_role_guard.py` will refuse a root it does not recognise.** In
+  the sandbox that is correct and expected -- the mount path is unrelated to
+  either declared root (`AI_PORTAL.md`, "Sandbox / non-host agents"). Verify the
+  slice by hand and hand it over.
+  Corrected 2026-07-31: this was previously described as a sandbox issue. It was
+  a path-FORM issue, and WSL hit it identically -- `/mnt/d/code/ccode` is the
+  development root spelled in POSIX, and the guard refused it. Fixed in
+  3dd3871ef. If a guard or gate blocks you, read its message before assuming
+  "sandbox"; that assumption sent one session looking in the wrong place.
 
 Full WSL build/run detail and the host-vs-sandbox table: `AI_README.md`,
 "WSL working environment".
