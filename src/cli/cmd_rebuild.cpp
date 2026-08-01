@@ -71,6 +71,8 @@
 
 #include "cnx/cnx.hpp"
 #include "cnx/cnx_backend.hpp"
+#include "xindex/index_manager.hpp"
+#include "xindex/attach.hpp"        // ensure_manager
 #include "cli/command_output.hpp"
 #include "cli/path_resolver.hpp"
 #include "cli/order_state.hpp"
@@ -84,6 +86,30 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+// Is the attached container the one REBUILD was asked to rebuild?
+//
+// PATH IDENTITY, NOT STRING IDENTITY. A container reached by two spellings of
+// the same path is one container, and this codebase has already been bitten:
+// IndexManager::openCnx's own already-open short-circuit compares raw strings
+// and misses for exactly that reason (finding F3). Compare normalised forms,
+// and fall back to a lexical compare rather than throwing if either path
+// cannot be resolved -- a wrong answer here means rebuilding through the wrong
+// object, so it fails toward "not the same container", which is the old
+// behaviour and is safe.
+static bool same_container_path_(const std::string& attached, const fs::path& target)
+{
+    if (attached.empty()) return false;
+
+    std::error_code ec_a;
+    std::error_code ec_b;
+    const fs::path a = fs::weakly_canonical(fs::path(attached), ec_a);
+    const fs::path b = fs::weakly_canonical(target, ec_b);
+
+    if (!ec_a && !ec_b) return a == b;
+
+    return fs::path(attached).lexically_normal() == target.lexically_normal();
+}
 
 extern "C" xbase::XBaseEngine* shell_engine(void);
 
@@ -239,15 +265,46 @@ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& in)
     cnxfile::close(h);
 
     try {
-        xindex::CnxBackend b(A, cnx_path.string(), orderstate::activeTag(A));
+        // XIDX-TXN-02 M2, finding F4. REBUILD used to ALWAYS construct a local
+        // throwaway CnxBackend and rebuild through that, leaving the area's
+        // ATTACHED backend holding a stale in-memory permutation and a
+        // non-empty dirty set. Harmless until M2 gave close() a save(): the
+        // next SET ORDER closed the attached backend, save() re-appended the
+        // stale permutation, and the correct rebuild was overwritten.
+        //
+        // Measured 2026-08-01 by the VUREPCNX proof:
+        //     [CNX REBUILD] tag=SID recs=4 root=4240   <- correct
+        //     [CNX SAVE]    tag=SID recs=4 root=4288   <- stale, over the top
+        //
+        // The remedy is the same one findings F1 and F3 want at their own
+        // seams: REBIND rather than build a second object. Rebuilding through
+        // the attached backend leaves ONE OWNER of the state -- rebuild()
+        // clears its own dirty set and reloads its own document, so there is
+        // nothing stale left to republish.
+        //
+        // Asked as a CAPABILITY question, not a type question. rebuild() is on
+        // IIndexBackend, so this needs no dynamic_cast and stays correct if
+        // this container ever gains a different backend. The local instance
+        // remains the fallback for the case it was written for: rebuilding a
+        // container that is not the one currently attached.
+        auto& im = xindex::ensure_manager(A);
 
-        if (!b.open(cnx_path.string())) {
-            cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildBackendOpenFailedText);
-            return;
+        const bool attached_owns_this_container =
+            im.hasBackend() && same_container_path_(im.containerPath(), cnx_path);
+
+        if (attached_owns_this_container) {
+            im.backend()->rebuild();
+        } else {
+            xindex::CnxBackend b(A, cnx_path.string(), orderstate::activeTag(A));
+
+            if (!b.open(cnx_path.string())) {
+                cli::cmdout::print_prefixed_message("REBUILD", dottalk::helpdata::MessageId::RebuildBackendOpenFailedText);
+                return;
+            }
+
+            b.rebuild();
+            b.close();
         }
-
-        b.rebuild();
-        b.close();
 
         // Report once per tag, but rebuild only happened once.
         for (const auto& t : tags) {
