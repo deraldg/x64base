@@ -1,0 +1,72 @@
+#pragma once
+// ============================================================================
+// UNUSED / FROZEN (2026-07-21). DefaultOrderProvider has no live callers
+// (makeDefaultOrderProvider is never invoked — see order_provider.hpp banner /
+// OBSERVATIONS_STEWARDSHIP O8). materializeCdx/materializeCnx return PHYSICAL
+// 1..N order (stubs), NOT index order. DO NOT wire without implementing real
+// CDX/CNX materialize on top of cli::order_collect_recnos_asc. RECNO64 widening
+// intentionally SKIPPED (dead code).
+// ============================================================================
+
+#include "cli/order_provider.hpp"
+
+namespace cli {
+
+class DefaultOrderProvider final : public IOrderProvider {
+public:
+    DefaultOrderProvider() = default;
+    ~DefaultOrderProvider() override = default;
+
+    std::unique_ptr<IOrderIterator> createIterator(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) override;
+
+    OrderDiagnostic materializeRecnos(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    ) override;
+
+    std::optional<uint32_t> firstRecno(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) override;
+
+    std::optional<uint32_t> lastRecno(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) override;
+
+private:
+    OrderDiagnostic materializePhysical(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    );
+
+    OrderDiagnostic materializeInx(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    );
+
+    OrderDiagnostic materializeCnx(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    );
+
+    OrderDiagnostic materializeCdx(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    );
+
+    static void reverseIfDescending(
+        const OrderSpec& spec,
+        std::vector<uint32_t>& recnos
+    );
+};
+
+} // namespace cli

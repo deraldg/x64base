@@ -1,0 +1,50 @@
+# SET INDEXTXN companion 2/2 — SET router branch
+# Baseline d8123d2a4. cmd_set.cpp was contract-fixed at this commit and grew, but the
+# insert anchor (end of the `SET DELETED` block, before `SET ERRORSTOP`) is intact.
+# Uses existing helpers: up_copy(), parse_on_off() (:356), print_line() (:501), S = Settings::instance().
+# Additive only; supersedes candidate_source/cmd_set.SET_INDEXTXN.patch (snapshot-anchored).
+--- a/src/cli/cmd_set.cpp
++++ b/src/cli/cmd_set.cpp
+@@
+         S.deleted_on.store(on);
+         cli::cmdout::print_message(
+             dottalk::helpdata::MessageId::SetDeletedStatusText,
+             {{"state", on ? "HIDE (ON)" : "SHOW (OFF)"}});
+         return;
+     }
+
++    // ─────────────────────────────────────────────────────────────
++    // SET INDEXTXN ON|OFF  (transactional in-COMMIT index maintenance)
++    // Default OFF: COMMIT keeps the legacy batch behavior (BUILDLMDB / REBUILD /
++    // REINDEX). ON enables incremental maintenance inside COMMIT for the active
++    // transactional (CDX/LMDB) backend. print_line keeps it message-catalog-free.
++    // ─────────────────────────────────────────────────────────────
++    if (opt == "INDEXTXN") {
++        std::string tok;
++        if (!(args >> tok)) {
++            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
++                (S.index_txn_on.load() ? "ON" : "OFF"));
++            return;
++        }
++        const std::string up = up_copy(tok);
++        if (up == "STATUS" || up == "CHECK") {
++            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
++                (S.index_txn_on.load() ? "ON" : "OFF"));
++            return;
++        }
++        if (up == "USAGE" || up == "HELP" || up == "?") {
++            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF   (default OFF = legacy batch rebuild)");
++            return;
++        }
++        bool on = S.index_txn_on.load();
++        if (!parse_on_off(tok, on)) {
++            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF");
++            return;
++        }
++        S.index_txn_on.store(on);
++        cli::cmdout::print_line(std::string("SET INDEXTXN: ") + (on ? "ON" : "OFF"));
++        return;
++    }
+
+     // ─────────────────────────────────────────────────────────────
+     // SET ERRORSTOP [TO] OFF|WARNING|ERROR

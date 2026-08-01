@@ -1,0 +1,36 @@
+#pragma once
+// ============================================================================
+// UNUSED / FROZEN (2026-07-21). MaterializedOrderIterator is referenced only by
+// the dead DefaultOrderProvider::createIterator() (the IOrderProvider subsystem
+// has no live callers — see order_provider.hpp banner / OBSERVATIONS_STEWARDSHIP O8).
+// The live browser/nav path (DbTupleStream) builds its OWN order_recnos_ vector;
+// it does NOT use this class. RECNO64 widening intentionally SKIPPED (dead code).
+// ============================================================================
+
+#include "cli/order_provider.hpp"
+
+#include <cstddef>
+#include <vector>
+
+namespace cli {
+
+class MaterializedOrderIterator final : public IOrderIterator {
+public:
+    MaterializedOrderIterator() = default;
+    explicit MaterializedOrderIterator(std::vector<uint32_t> recnos);
+
+    OrderDiagnostic top() override;
+    OrderDiagnostic bottom() override;
+    OrderDiagnostic next() override;
+    OrderDiagnostic prev() override;
+
+    OrderPosition current() const override;
+    bool valid() const override;
+
+private:
+    std::vector<uint32_t> recnos_;
+    std::size_t pos_ = 0;
+    bool valid_ = false;
+};
+
+} // namespace cli
