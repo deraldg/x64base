@@ -234,11 +234,48 @@ mechanism being production-grade. They were deliberately deferred, not missed.
         after M2 the reloaded file is correct, so the cost dropped from wrong
         data to a wasted read. Fix B (task #39) is now an optimisation.
 
-Full analysis: `OPEN_INDEX_API_XIDX_TXN_02_CAPABILITY_FINDINGS_V1_20260801.md`.
+    F4  REBUILD built on a DETACHED backend, so a later close-save republished
+        the stale permutation over it
+        introduced by M2, found and FIXED same day 2026-08-01 -- runtime-proven
+        cmd_rebuild.cpp:242 constructed a local throwaway CnxBackend, leaving the
+        ATTACHED backend holding a stale permutation and a non-empty dirty set.
+        Harmless until M2 gave close() a save(): the next SET ORDER then wrote
+        the stale ordering over the fresh rebuild. Measured as
+        "[CNX REBUILD] root=4240" followed by "[CNX SAVE] root=4288".
+        Fixed by rebuilding THROUGH the attached backend -- one owner of the
+        state. Proven by the ABSENCE of the [CNX SAVE] line on re-run.
 
-**Note the shape F1 and F3 share:** an expensive operation standing in for a
-cheap one, and losing correct state on the way. Two independent instances in one
-lane is a pattern, not a coincidence, and M3 should look for a third.
+    F5  BOTTOM disagrees with the active CNX order on a NUMERIC tag
+        runtime-observed 2026-08-01 -- NOT FIXED -- task #45
+        SMARTLIST under the order prints 1,2,4,3 (SID 10,20,30,31 ascending) and
+        a TOP+SKIP walk lands on record 3, but BOTTOM reports record 4. TOP is
+        correct. NOT simply "BOTTOM ignores the order": CNXBUF B4 and CNXPERSIST
+        P4 assert the same thing on a CHARACTER tag where ordered-last and
+        physical-last differ, and both PASS. Mechanism UNMEASURED.
+        Standing evidence: marker VURC_F1, which expects .F. until fixed.
+        Outside this lane -- it is a navigation defect, not an index one.
+
+    F6  CNX WALK cannot read a RUN1 block it just wrote
+        runtime-observed 2026-08-01 -- NOT FIXED -- task #46
+        "READ FAILED off=4192" at the offset [VERIFY WRITE] had just confirmed
+        readable and CnxDocument loads without trouble. Diagnostic only, but it
+        failed in the one situation where a diagnostic was the point.
+
+Full analysis of F1-F3: `OPEN_INDEX_API_XIDX_TXN_02_CAPABILITY_FINDINGS_V1_20260801.md`.
+
+**Note the shape F1, F3 and F4 share:** an expensive operation standing in for a
+rebind, losing correct state on the way. THREE independent instances in one
+lane. That is now a pattern with a name, and any new seam in this lane should be
+asked "does this rebuild what it could rebind?" before it is written -- F4 was
+predicted by this note one day before it was found, which is the only reason it
+was recognised on sight rather than debugged from scratch.
+
+**And a lesson about proofs, earned expensively.** F5 was mistaken for a
+maintenance failure THREE times: first as a SEEK/ORDER disagreement, then as an
+M2 save clobber, then as a broken rebuild sort. Each was a deduction from TOP and
+BOTTOM -- two samples of a sequence. Printing the whole sequence settled it in
+one run. A proof that samples an ordering at its ends is not proving the
+ordering, and this lane has the scar to show it.
 
 ---
 
@@ -246,18 +283,33 @@ lane is a pattern, not a coincidence, and M3 should look for a third.
 
     #30  extend CNX coverage: APPEND, multi-tag, DELETE/RECALL, duplicate keys
     #32  deleted-record parity between realtime CNX and REBUILD
-    #33  run VUREPAIR against x32/CNX (blocker lapsed at M1, never run)
     #38  F1 -- COMMIT rebind
     #39  F3 fix B -- SET ORDER rebind
     #40  virtualize the bulk-write trio (F2's second axis)
     #41  surface declared-but-unbuilt CDX tags outside the trace channel
-    ---  recover or declare lost the M0 findings document (section 2)
-    ---  register CNXPERSIST and CNXBUF in cmd_regression.cpp
-    ---  crash-recovery proof for CNX_HDRF_DIRTY
+    #42  recover or declare lost the M0 findings document (section 2)
+    #43  register CNXPERSIST, CNXBUF and VUREPCNX in cmd_regression.cpp
+    #44  crash-recovery proof for CNX_HDRF_DIRTY
+    #45  F5 -- BOTTOM vs the CNX order on a numeric tag (outside this lane)
+    #46  F6 -- CNX WALK on RUN1 (outside this lane)
 
-Two regressions are written, green, and UNREGISTERED. CNXBUF additionally needs
-a comment on marker B4b, which answers a different question depending on whether
-INDEXTXN is on and will otherwise read as a flapping test.
+    CLOSED 2026-08-01:
+    #31  CNX disk persistence -- M2, runtime-proven
+    #33  VUREPAIR against x32/CNX -- ANSWERED YES, see below
+
+**#33's answer, because it is the lane's best evidence that the mission works.**
+VALIDATE UNIQUE REPAIR maintains a CNX order, and it needed NO SOURCE CHANGE to
+do so. REPAIR routes through DbArea::replaceFieldStored, the replace snapshot is
+genuinely backend-agnostic, and CNX inherited the behaviour the moment M1 gave
+it working upsert/erase. That is what an open index API is supposed to buy: a
+capability lands once and every caller gets it without being told about the
+backend. The restriction VUREPAIR's header carried for two days was correctly
+lapsed; what made it look otherwise was a marker that sampled BOTTOM.
+
+Three regressions are written, green, and UNREGISTERED. CNXBUF additionally
+needs a comment on marker B4b, which answers a different question depending on
+whether INDEXTXN is on and will otherwise read as a flapping test. VUREPCNX
+carries VURC_F1, which is RED BY DESIGN and must not be "fixed" by deleting it.
 
 ---
 
@@ -266,6 +318,11 @@ INDEXTXN is on and will otherwise read as a flapping test.
     regressions   CNXLIVE     cnx_realtime_index_proof.dts    (registered)
                   CNXBUF      cnx_realtime_buffer_proof.dts   (not registered)
                   CNXPERSIST  cnx_persist_proof.dts           (not registered)
+                  VUREPCNX    validate_unique_repair_cnx_proof.dts
+                              (not registered; 9 green + VURC_F1 red by design)
+                  VUREPAIR    validate_unique_repair_index_proof.dts
+                              (the x64/CDX original; header corrected 2026-08-01
+                              because its x32 restriction had lapsed at M1)
                   IDXSTALE    index_maintenance_failure_proof.dts
                               (the negative counterpart; repointed at M1)
 
