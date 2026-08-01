@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-"""
+r"""
 Enforce the x64base development/staging repository-role contract.
+
+RAW DOCSTRING, DELIBERATELY. Before 2026-07-31 this was a plain triple-quoted
+string containing Windows paths, so Python read the backslash sequences as
+escapes: "\c" merely warned, but "\x64" is a VALID hex escape for "d", and the
+staging root below rendered at runtime as "C:dbase". The file that enforces the
+staging-root contract was misdocumenting that root, silently, to every reader --
+help(), pydoc, and any tool reading __doc__. The constants themselves were
+always correct because they are raw strings; only the documentation lied.
 
 Known roles:
   D:\code\ccode  -> development authoring worktree; may push development only.
