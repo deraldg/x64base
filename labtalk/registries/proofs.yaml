@@ -558,6 +558,42 @@ proofs:
   # Fifteen gated commits: a phantom SQL surface demoted, engine seams landed,
   # then the first working statement. Each proof cites its preserved transcript.
   # ---------------------------------------------------------------------------
+  - id: proof.aif078.slot_cost_measured_per_toolchain
+    label: MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different platforms
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_msvc.txt
+    item_id: src/tools/g0_slot_cost_probe.cpp
+    return_code: 0
+    related:
+      - D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_gcc.txt
+      - D:/code/ccode/config/build_vectors.cmake
+      - D:/code/ccode/include/xbase.hpp
+      - D:/code/ccode/src/xbase/dbf_file.cpp
+      - D:/code/ccode/src/cli/shell.cpp
+      - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
+    notes: >-
+      AIF-078 gate G0. MSVC (_MSC_VER=1944): DbArea 840, AreaState 144, fstream 280,
+      1016 B/slot. g++/libstdc++ x86-64: DbArea 1088, AreaState 176, fstream 528,
+      1296 B/slot. sizeof(XBaseEngine) is 4104 on both because it is only
+      MAX_AREA*8+8 -- a pointer array with no layout freedom. The divergence is almost
+      entirely std::fstream, which DbArea embeds by value.
+      THE RESULT THAT MATTERS: the two cost axes bind on DIFFERENT platforms. Memory
+      binds on Linux (1296 B/slot, 81 MB at cap 65536, 27% heavier than MSVC); stack
+      binds on Windows (1 MB default main thread vs 8 MB), where the 512 KB
+      XBaseEngine frame at 65536 is half the stack. The frame is identical on both
+      platforms; only the ceiling differs. A single-toolchain measurement would have
+      produced a confidently wrong cap ruling either way.
+      PREDICTION RECORDED AND WRONG: the lane predicted MSVC would have the LARGER
+      structures. It is 22% smaller. The reasoning generalised from std::string and
+      std::multimap, neither of which dominates DbArea. Kept in the record because it
+      is doctrine rule 2 (verify the constraint is real) applied to a portability
+      assumption rather than to a constant, and it is why the probe existed.
+      Cost is paid EAGERLY: dbf_file.cpp:409-411 constructs every slot at engine
+      construction, so the figures are resident with zero tables open. Probe is a
+      CMake target (-DDOTTALK_BUILD_SLOT_COST_PROBE=ON), deliberately NOT registered
+      with add_test: it is a measurement, and a test that can only pass is the defect
+      class recorded in the sibling row below.
+
   - id: proof.aif078.workspace_path_preserves_depth1
     label: DataAddress workspace scalar widened to a path with no depth-1 behavior change
     state: runtime_observed

@@ -124,26 +124,34 @@ The maintainer ruled that 512 is arbitrary and `max_areas` is a real vector. **C
 
 > **Framing corrected 2026-08-01 (maintainer): x64base is CROSS-PLATFORM. MSVC is not "the" toolchain and g++ is not a stand-in for it.** An earlier draft of this section called the libstdc++ figures "runtime-evidenced for the wrong compiler" and treated an MSVC number as the correction. That is wrong for a portable engine. The cap table is **per-toolchain**, both rows are real, and where they differ the difference is a finding rather than an error. The binding constraint is the **worst case across supported platforms** -- which for the stack column is Windows/MSVC (1 MB default main thread) and not Linux (8 MB), so the platform that limits the cap is not the platform with the largest structures.
 
-```
-sizeof(DbArea)       = 1088
-sizeof(AreaState)    =  176      (src/cli/table_state.cpp:79-82)
-sizeof(XBaseEngine)  = 4104      (= MAX_AREA*8 + 8)
-sizeof(std::fstream) =  528
-```
+**G0 CLOSED 2026-08-01. Both toolchains measured.**
 
-~ **1296 bytes/slot** all-in (`DbArea` + pointer + `AreaState` + `WorkArea` + pointer).
+| | g++ / libstdc++ x86-64 | MSVC `_MSC_VER=1944` |
+|---|---|---|
+| `sizeof(DbArea)` | 1088 | **840** |
+| `sizeof(AreaState)` (`table_state.cpp:79-82`) | 176 | **144** |
+| `sizeof(XBaseEngine)` | 4104 | 4104 |
+| `sizeof(std::fstream)` | 528 | **280** |
+| **bytes/slot** all-in | **1296** | **1016** |
 
-| Cap | Resident, idle, zero tables open | `XBaseEngine` stack frame | Relation inner-loop multiplier |
-|---|---|---|---|
-| 512 (today) | 0.63 MB | 4 KB | 1x |
-| 1024 | 1.27 MB | 8 KB | 2x |
-| **4096** | **5.06 MB** | **32 KB** | **8x** |
-| 16384 | 20.25 MB | 128 KB | 32x |
-| 65536 | 81.00 MB | 512 KB | 128x |
+`XBaseEngine` matches on both because it is only `MAX_AREA * 8 + 8` -- a pointer array, no layout freedom. The divergence is almost entirely `std::fstream` (528 vs 280), which `DbArea` embeds by value.
 
-The figures above are **g++/libstdc++ x86-64**. MSVC lays out `std::string`, `std::multimap` and `std::fstream` differently, so its per-slot cost will differ; **that is a second row of the same table, not a replacement for this one.** G0 measures both and records both. A cap ruling is made against the worst case, per platform, on each axis independently -- memory may bind on one and stack on the other.
+| Cap | resident, idle -- gcc | resident, idle -- MSVC | `XBaseEngine` stack frame | relation inner-loop |
+|---|---|---|---|---|
+| 512 (today) | 0.63 MB | 0.50 MB | 4 KB | 1x |
+| 1024 | 1.27 MB | 0.99 MB | 8 KB | 2x |
+| **4096** | **5.06 MB** | **3.97 MB** | **32 KB** | **8x** |
+| 16384 | 20.25 MB | 15.88 MB | 128 KB | 32x |
+| 65536 | 81.00 MB | 63.50 MB | 512 KB | 128x |
 
-**Probe:** `src/AIPortal/sessions/2026-07-30_cowork_workspace_qualifier/g0_size_probe.cpp`, buildable under either toolchain.
+**The two axes have different worst cases, and this is the point of measuring both:**
+
+- **Memory binds on Linux** (1296 B/slot, 81 MB at 65536) -- 27% heavier than MSVC.
+- **Stack binds on Windows** (1 MB default main thread vs 8 MB on Linux). The frame column is identical on both platforms; only the ceiling it is measured against differs.
+
+**Prediction recorded and WRONG.** Before measuring, this lane stated MSVC "will likely have larger structures" and framed Linux as the memory-comfortable side. The opposite holds: MSVC is **22% smaller per slot**. The reasoning was that MSVC's containers are generally fatter, which is true of `std::string` and `std::multimap` and irrelevant here, because the term that dominates `DbArea` is `std::fstream` -- and libstdc++'s is nearly twice MSVC's. Recorded rather than quietly corrected: it is a clean instance of doctrine rule 2 applied to a portability assumption instead of a constant, and of why the probe existed at all.
+
+**Probe:** `src/tools/g0_slot_cost_probe.cpp`, built through CMake on either platform (`-DDOTTALK_BUILD_SLOT_COST_PROBE=ON`, target `g0_slot_cost_probe`). Transcripts: `labtalk/proofs/runs/20260801_aif078_g0_slot_cost_msvc.txt` and `..._gcc.txt`.
 
 Cost is paid **eagerly and unconditionally** -- `src/xbase/dbf_file.cpp:409-411`:
 
@@ -188,7 +196,15 @@ Called from `ScopedEngineSelect`'s constructor (`:182-193`), constructed inside 
 
 ### 2e. Cap ruling (proposed)
 
-Raise `DOTTALK_MAX_AREAS` to **4096**. Add both missing guards. Do **not** exceed ~16384 until §5's P1 lands and `XBaseEngine` moves off the stack.
+Measured on both platforms as of G0, so this is priced rather than argued. Ladder per R23:
+
+| Cap | Memory (worst case: gcc) | Stack (worst case: MSVC, 1 MB default) | Relation loop | Verdict |
+|---|---|---|---|---|
+| **4096** | 5.06 MB | 32 KB = 3% of stack | 8x | **GOOD -- take it now.** No prerequisite. |
+| **16384** | 20.25 MB | 128 KB = 13% of stack | 32x | **BETTER.** Both axes comfortable; the 32x relation multiplier is the only real cost, and P1 removes it. |
+| 65536 | 81.00 MB | **512 KB = 50% of stack** | 128x | **NOT YET.** Needs `XBaseEngine` off the stack (`shell.cpp:527`; no `/STACK` override anywhere in the build) AND P1. |
+
+Recommendation: **4096 now**, with both missing guards from sec 2d. **16384 becomes the natural target the moment P1 lands**, since P1 is exactly what stops the multiplier mattering. 65536 stays gated on moving the engine off the stack -- 512 KB against a 1 MB default is not a margin, it is a coin flip on someone else's machine.
 
 ---
 
@@ -337,7 +353,7 @@ AIF-070 owns *what a workspace is* (named, concurrent, memo-resident, hydratable
 
 | Gate | Content | Exit condition |
 |---|---|---|
-| **G0** | Run `g0_size_probe.cpp` under **both** supported toolchains (MSVC and g++/libstdc++) | Both rows recorded in sec 2a; the cap ruling made against the worst case per axis. Partially closed 2026-08-01: MSVC compiles the lane's changes and the smoke passes (`labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt`); the size probe itself is still unrun on both |
+| **G0** | Run `g0_slot_cost_probe` under **both** supported toolchains | **CLOSED 2026-08-01.** Both rows in sec 2a; cap ladder in sec 2e priced against the worst case per axis. MSVC 1016 B/slot, gcc 1296 -- memory binds on Linux, stack binds on Windows. Transcripts `labtalk/proofs/runs/20260801_aif078_g0_slot_cost_{msvc,gcc}.txt`. Q7 separately proven under MSVC Release (`..._q7_workspace_path_msvc.txt`) |
 | **G1** | P1 -- slot stored in `DbArea` | `REGRESSION ALL` green; 19 scan sites removed or reduced to O(1); relation traversal timing captured before/after on a multi-row `REL ENUM` |
 | **G2** | P2 -- single ambiguity-detecting resolver | An ambiguous name errors with matching slots named; `SQLSEL_SELECT_V1` + `EXPORT_SDF` + REL regressions green |
 | **G3** | Cap raise to 4096 + both guards | `REGRESSION ALL` green; measured RSS delta within §2a; boot clean on MSVC |

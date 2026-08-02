@@ -700,6 +700,34 @@ if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET metacollect)
 
     target_link_libraries(metacollect PRIVATE dt_meta)
 endif()
+
+option(DOTTALK_BUILD_SCHEMA_INVENTORY "Build the read-only website schema inventory tool" OFF)
+if(DOTTALK_BUILD_SCHEMA_INVENTORY AND NOT TARGET schema_inventory)
+    add_executable(schema_inventory src/tools/schema_inventory_main.cpp)
+    target_compile_features(schema_inventory PRIVATE cxx_std_17)
+endif()
+
+# ---- AIF-078 gate G0: per-slot cost of MAX_AREA, measured per toolchain -----
+# x64base is cross-platform, so the cap table is PER-TOOLCHAIN: MSVC and
+# libstdc++ lay out std::string / std::multimap / std::fstream differently, and
+# the platforms also differ on default stack size (1 MB Windows vs 8 MB Linux).
+# Both rows are real; the cap ruling is made against the worst case per axis.
+# Built through CMake rather than a hand-rolled compiler invocation so it is
+# reproducible on any supported platform without a toolchain-specific shell.
+# Read-only: prints sizes, allocates nothing, opens nothing. Deliberately NOT
+# registered with add_test -- it is a MEASUREMENT, and a "test" that can only
+# pass is the defect class recorded in proof.aif078.workspace_path_preserves_depth1.
+option(DOTTALK_BUILD_SLOT_COST_PROBE "Build the AIF-078 G0 per-slot cost probe" OFF)
+if(DOTTALK_BUILD_SLOT_COST_PROBE AND NOT TARGET g0_slot_cost_probe)
+    add_executable(g0_slot_cost_probe src/tools/g0_slot_cost_probe.cpp)
+    target_compile_features(g0_slot_cost_probe PRIVATE cxx_std_20)
+    target_include_directories(g0_slot_cost_probe PRIVATE
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_BINARY_DIR}/generated")
+    if(TARGET xbase)
+        target_link_libraries(g0_slot_cost_probe PRIVATE xbase)
+    endif()
+endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
 
 if(TARGET dottalkpp)

@@ -1,0 +1,19 @@
+AIF-078 G0 -- per-slot cost, this toolchain
+  toolchain          = MSVC _MSC_VER=1944
+  sizeof(DbArea)     = 840
+  sizeof(AreaState)  = 144
+  sizeof(XBaseEngine)= 4104
+  sizeof(std::fstream)=280
+  MAX_AREA           = 512
+  approx bytes/slot  = 1016
+
+  cap        resident(idle)   engine stack frame
+     512         0.50 MB          4.0 KB
+    1024         0.99 MB          8.0 KB
+    4096         3.97 MB         32.0 KB
+   16384        15.88 MB        128.0 KB
+   65536        63.50 MB        512.0 KB
+
+  NOTE: the engine is a STACK LOCAL at src/cli/shell.cpp:527 and
+        no /STACK override exists in the build. Compare the frame
+        column against the 1 MB MSVC default before raising the cap.
