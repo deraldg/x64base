@@ -228,7 +228,7 @@ if (NOT DOTTALK_COMPONENT_LABTALK)
     "${CMAKE_SOURCE_DIR}/src/cli/app_erp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/app_paxon.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/case_catalog.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cli/cmd_codaysl.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_codasyl.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_drawio.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_erp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_idx.cpp"
