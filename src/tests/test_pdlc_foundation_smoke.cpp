@@ -2,8 +2,8 @@
 #include "reference/qualified_reference.hpp"
 #include "value/value.hpp"
 
-#include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <variant>
@@ -22,6 +22,29 @@ using dottalk::value::ExactDecimal;
 using dottalk::value::Value;
 using dottalk::value::ValueKind;
 
+// NDEBUG defuses assert(). This test is registered via add_test() and is run in
+// the Release configuration, so every assertion below was a NO-OP there --
+// "PDLC foundation smoke passed" printed unconditionally while nothing was
+// checked. Observed 2026-08-01 on MSVC Release and reproduced under
+// `g++ -DNDEBUG`, so it is the configuration, not the toolchain.
+//
+// Worse, three assertions WRAPPED A SIDE-EFFECTING CALL: ExactDecimal::parse()
+// writes its result through a reference, so under NDEBUG the parse never ran
+// and the test reported `decimal=0` -- the default-constructed value -- while
+// still claiming to pass.
+//
+// CHECK always evaluates its expression, in every configuration, and fails
+// loudly. AI_TIER1_SEED_V1.md sec 6: the most common defect here is a thing
+// that reports success without doing its job.
+#define CHECK(expr)                                                            \
+    do {                                                                       \
+        if (!(expr)) {                                                         \
+            std::cerr << "CHECK failed: " #expr "\n"                           \
+                      << "  at " << __FILE__ << ':' << __LINE__ << '\n';       \
+            std::abort();                                                      \
+        }                                                                      \
+    } while (false)
+
 namespace {
 
 void require_parse(const QualifiedReferenceParser& parser,
@@ -33,7 +56,7 @@ void require_parse(const QualifiedReferenceParser& parser,
                   << result.error << "\n";
         std::abort();
     }
-    assert(result.reference.canonical_syntax() == canonical);
+    CHECK(result.reference.canonical_syntax() == canonical);
 }
 
 void require_reject(const QualifiedReferenceParser& parser,
@@ -50,26 +73,26 @@ void require_reject(const QualifiedReferenceParser& parser,
 int main() {
     ExactDecimal amount;
     std::string error;
-    assert(ExactDecimal::parse("123.4500", amount, &error));
-    assert(amount.canonical_text() == "123.4500");
+    CHECK(ExactDecimal::parse("123.4500", amount, &error));
+    CHECK(amount.canonical_text() == "123.4500");
 
     ExactDecimal equivalent;
-    assert(ExactDecimal::parse("123.45", equivalent, &error));
-    assert(amount.equivalent(equivalent));
+    CHECK(ExactDecimal::parse("123.45", equivalent, &error));
+    CHECK(amount.equivalent(equivalent));
 
     ExactDecimal negative;
-    assert(ExactDecimal::parse("-0.2500", negative, &error));
-    assert(negative.canonical_text() == "-0.2500");
+    CHECK(ExactDecimal::parse("-0.2500", negative, &error));
+    CHECK(negative.canonical_text() == "-0.2500");
 
     constexpr std::uint64_t beyond_double_safe_integer = 9007199254740993ULL;
     const Value recno_value = Value::unsigned_integer(beyond_double_safe_integer);
-    assert(recno_value.kind() == ValueKind::UnsignedInteger);
-    assert(std::get<std::uint64_t>(recno_value.payload()) ==
+    CHECK(recno_value.kind() == ValueKind::UnsignedInteger);
+    CHECK(std::get<std::uint64_t>(recno_value.payload()) ==
            beyond_double_safe_integer);
 
     constexpr std::uint64_t recno64_max = 18446744073709551615ULL;
     const Value max_recno_value = Value::unsigned_integer(recno64_max);
-    assert(std::get<std::uint64_t>(max_recno_value.payload()) == recno64_max);
+    CHECK(std::get<std::uint64_t>(max_recno_value.payload()) == recno64_max);
 
     QualifiedReferenceParser parser;
     require_parse(parser, "LNAME", "LNAME");
@@ -81,8 +104,8 @@ int main() {
                   "$row[\"STUDENTS.LNAME\"]");
 
     const auto bare = parser.parse("LNAME");
-    assert(bare.ok);
-    assert(bare.reference.root_syntax() == RootSyntax::Bare);
+    CHECK(bare.ok);
+    CHECK(bare.reference.root_syntax() == RootSyntax::Bare);
 
     require_reject(parser, "STUDENTS.");
     require_reject(parser, ".STUDENTS");
@@ -123,9 +146,9 @@ int main() {
         RecordSelector::physical(13),
         field);
 
-    assert(normal.same_field_identity(another_record));
-    assert(normal.same_cell_identity(normal_copy));
-    assert(!normal.same_cell_identity(another_record));
+    CHECK(normal.same_field_identity(another_record));
+    CHECK(normal.same_cell_identity(normal_copy));
+    CHECK(!normal.same_cell_identity(another_record));
 
     const DataAddress recno64_boundary(
         workspace,
@@ -135,7 +158,7 @@ int main() {
         field);
 
     const std::string diagnostic = recno64_boundary.diagnostic_text();
-    assert(diagnostic.find("9007199254740993") != std::string::npos);
+    CHECK(diagnostic.find("9007199254740993") != std::string::npos);
 
     // ---- AIF-078 Q7: workspace scalar widened to a path -------------------
     //
@@ -144,14 +167,14 @@ int main() {
     // proven only to round-trip through the address; nothing resolves it.
 
     // 1. Depth 1 renders byte-identically to the pre-widening output.
-    assert(normal.diagnostic_text() ==
+    CHECK(normal.diagnostic_text() ==
            "MCC.#2.STUDENTS.RECNO(12).LNAME");
 
     // 2. The scalar ctor produces depth 1, and workspace() still answers with
     //    the same identity every pre-AIF-078 caller expects.
-    assert(normal.workspace_depth() == 1);
-    assert(normal.workspace().logical_name == "MCC");
-    assert(normal.workspace_path().size() == 1);
+    CHECK(normal.workspace_depth() == 1);
+    CHECK(normal.workspace().logical_name == "MCC");
+    CHECK(normal.workspace_path().size() == 1);
 
     // 3. An unspecified workspace still renders CURRENT_WORKSPACE.
     const DataAddress no_workspace(
@@ -160,10 +183,10 @@ int main() {
         table,
         RecordSelector::physical(12),
         field);
-    assert(no_workspace.diagnostic_text() ==
+    CHECK(no_workspace.diagnostic_text() ==
            "CURRENT_WORKSPACE.#2.STUDENTS.RECNO(12).LNAME");
-    assert(no_workspace.workspace_depth() == 0);
-    assert(no_workspace.workspace().unspecified());
+    CHECK(no_workspace.workspace_depth() == 0);
+    CHECK(no_workspace.workspace().unspecified());
 
     // 4. An EMPTY path and a path of one unspecified identity mean the same
     //    thing and must compare equal -- the behavior this widening is not
@@ -174,9 +197,9 @@ int main() {
         table,
         RecordSelector::physical(12),
         field);
-    assert(empty_path.diagnostic_text() == no_workspace.diagnostic_text());
-    assert(empty_path.same_cell_identity(no_workspace));
-    assert(no_workspace.same_cell_identity(empty_path));
+    CHECK(empty_path.diagnostic_text() == no_workspace.diagnostic_text());
+    CHECK(empty_path.same_cell_identity(no_workspace));
+    CHECK(no_workspace.same_cell_identity(empty_path));
 
     // 5. Depth > 1 round-trips: outermost first, dot-joined; workspace()
     //    answers with the INNERMOST; depth counts specified levels only.
@@ -188,14 +211,14 @@ int main() {
         table,
         RecordSelector::physical(12),
         field);
-    assert(nested.diagnostic_text() ==
+    CHECK(nested.diagnostic_text() ==
            "MCC.FALL2026.SEC3.#2.STUDENTS.RECNO(12).LNAME");
-    assert(nested.workspace_depth() == 3);
-    assert(nested.workspace().logical_name == "SEC3");
+    CHECK(nested.workspace_depth() == 3);
+    CHECK(nested.workspace().logical_name == "SEC3");
 
     // 6. Different depth is a different address, not an accidental match.
-    assert(!nested.same_field_identity(normal));
-    assert(!normal.same_field_identity(nested));
+    CHECK(!nested.same_field_identity(normal));
+    CHECK(!normal.same_field_identity(nested));
 
     // 7. The parser already accepts the nested surface form and round-trips
     //    it; only RESOLUTION is missing. This is the claim AIF-078 sec 5b

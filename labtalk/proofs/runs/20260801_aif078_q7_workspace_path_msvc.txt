@@ -1,0 +1,5 @@
+PDLC foundation smoke passed
+  decimal=123.4500
+  reference=#2.LNAME
+  address=MCC.#2.STUDENTS.RECNO(9007199254740993).LNAME
+  recno64_max=18446744073709551615

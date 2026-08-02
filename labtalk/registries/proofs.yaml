@@ -558,6 +558,61 @@ proofs:
   # Fifteen gated commits: a phantom SQL surface demoted, engine seams landed,
   # then the first working statement. Each proof cites its preserved transcript.
   # ---------------------------------------------------------------------------
+  - id: proof.aif078.workspace_path_preserves_depth1
+    label: DataAddress workspace scalar widened to a path with no depth-1 behavior change
+    state: runtime_observed
+    source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt
+    item_id: src/tests/test_pdlc_foundation_smoke.cpp
+    return_code: 0
+    related:
+      - D:/code/ccode/include/reference/data_address.hpp
+      - D:/code/ccode/src/reference/data_address.cpp
+      - D:/code/ccode/src/tests/test_pdlc_foundation_smoke.cpp
+      - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
+    notes: >-
+      AIF-078 Q7. WorkspaceIdentity workspace_ became WorkspacePath workspace_path_
+      (outermost first); the scalar constructor kept its signature, delegates, and
+      yields depth 1. Asserted rather than inspected: depth-1 renders exactly
+      "MCC.#2.STUDENTS.RECNO(12).LNAME", an unspecified workspace still renders
+      CURRENT_WORKSPACE, an empty path and a path of one unspecified identity compare
+      equal (or a default-constructed DataAddress would stop matching one built with a
+      default WorkspaceIdentity), depth 3 renders dot-joined with workspace() answering
+      the innermost, and require_parse accepts MCC.FALL2026.SEC3.STUDENTS.LNAME --
+      which turns the lane's central claim (the parser already accepts arbitrary depth;
+      only resolution is missing) into a test instead of prose.
+      HONESTY BOUND, and the reason this row exists at all: the FIRST MSVC Release run
+      printed "PDLC foundation smoke passed" with decimal=0 and proved NOTHING. The test
+      is registered via add_test and runs in Release, where NDEBUG defuses assert(), so
+      every assertion was a no-op -- and three of them wrapped ExactDecimal::parse(),
+      a side-effecting call, so the parse never ran. Reproduced under g++ -DNDEBUG, so
+      it was the configuration and not the toolchain. Fixed by a CHECK macro that always
+      evaluates (32 sites); falsifiability confirmed by deliberately breaking one
+      expectation and observing exit 134 with the failing expression named. The
+      transcript cited here is the post-fix run. AI_TIER1_SEED_V1.md sec 6.
+      SCOPE: this row covers MSVC Release. x64base is cross-platform; the same
+      assertions pass under g++/libstdc++ with and without NDEBUG, but that run is not
+      committed here. The g0_size_probe per-slot cap measurement is a SEPARATE gate (G0)
+      and is unrun on both toolchains.
+    related_defect: >-
+      MEASURED 2026-08-01, correcting a guessed list in the first draft of this row (the
+      draft named test_security_policy / test_field_codec / test_lmdb_backend, which
+      carry ZERO asserts, and missed three files that do). Bare-assert exposure across
+      src/tests/, by count: test_recno64_boundary 23, test_recno64_sparse_e2e 18,
+      test_sql_where 10, test_where_cache_only 10, test_x64_record_limit 3. All are
+      registered via add_test and therefore run under ctest in Release, where NDEBUG
+      makes every one a no-op; four then print an unconditional success banner
+      ("... PASS", "[OK] where cache tests passed").
+      SHARPEST CASE: test_recno64_sparse_e2e.cpp puts the WORK inside the assertions,
+      not just the checks -- sparse_write_at() at lines 120-122 and
+      a.gotoRec64(RA) && a.readCurrent() at 132/138. Under NDEBUG no records are
+      written, no positioning occurs, nothing is read, and the test prints
+      "64-bit on-disk positioning past 2^31 PROVEN. PASS". A headline capability claim
+      attached to a test that, in the shipped configuration, does nothing and announces
+      that it proved something.
+      Not fixed here and not this lane's. Recommend surveying under AIF-079
+      (declared-capability-validator), whose shape this matches, rather than opening a
+      new lane -- prior art first.
+
   - id: proof.sqlsel.select_statement_matches_sqlite
     label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
     state: runtime_observed

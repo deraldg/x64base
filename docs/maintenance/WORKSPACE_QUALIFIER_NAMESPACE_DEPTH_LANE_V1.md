@@ -120,7 +120,9 @@ The maintainer ruled that 512 is arbitrary and `max_areas` is a real vector. **C
 
 512 is a compatibility default under AIF-044, not an engineering limit. Bounds: `build_vectors.cmake:30-32` checks only `LESS 1`; there is **no upper bound at all**.
 
-### 2a. Measured cost (compiled probe, g++/libstdc++ x86-64, this tree's generated vectors)
+### 2a. Measured cost (compiled probe, this tree's generated vectors)
+
+> **Framing corrected 2026-08-01 (maintainer): x64base is CROSS-PLATFORM. MSVC is not "the" toolchain and g++ is not a stand-in for it.** An earlier draft of this section called the libstdc++ figures "runtime-evidenced for the wrong compiler" and treated an MSVC number as the correction. That is wrong for a portable engine. The cap table is **per-toolchain**, both rows are real, and where they differ the difference is a finding rather than an error. The binding constraint is the **worst case across supported platforms** -- which for the stack column is Windows/MSVC (1 MB default main thread) and not Linux (8 MB), so the platform that limits the cap is not the platform with the largest structures.
 
 ```
 sizeof(DbArea)       = 1088
@@ -139,7 +141,9 @@ sizeof(std::fstream) =  528
 | 16384 | 20.25 MB | 128 KB | 32x |
 | 65536 | 81.00 MB | 512 KB | 128x |
 
-> **MSVC unverified.** Its `std::string` / `std::multimap` / `std::fstream` layouts differ from libstdc++. Re-run the probe under MSVC before setting a number. The shape of the table will not change.
+The figures above are **g++/libstdc++ x86-64**. MSVC lays out `std::string`, `std::multimap` and `std::fstream` differently, so its per-slot cost will differ; **that is a second row of the same table, not a replacement for this one.** G0 measures both and records both. A cap ruling is made against the worst case, per platform, on each axis independently -- memory may bind on one and stack on the other.
+
+**Probe:** `src/AIPortal/sessions/2026-07-30_cowork_workspace_qualifier/g0_size_probe.cpp`, buildable under either toolchain.
 
 Cost is paid **eagerly and unconditionally** -- `src/xbase/dbf_file.cpp:409-411`:
 
@@ -333,7 +337,7 @@ AIF-070 owns *what a workspace is* (named, concurrent, memo-resident, hydratable
 
 | Gate | Content | Exit condition |
 |---|---|---|
-| **G0** | MSVC probe of `sizeof(DbArea)` / `sizeof(AreaState)` | Numbers recorded; §2a table re-derived for the shipping toolchain |
+| **G0** | Run `g0_size_probe.cpp` under **both** supported toolchains (MSVC and g++/libstdc++) | Both rows recorded in sec 2a; the cap ruling made against the worst case per axis. Partially closed 2026-08-01: MSVC compiles the lane's changes and the smoke passes (`labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt`); the size probe itself is still unrun on both |
 | **G1** | P1 -- slot stored in `DbArea` | `REGRESSION ALL` green; 19 scan sites removed or reduced to O(1); relation traversal timing captured before/after on a multi-row `REL ENUM` |
 | **G2** | P2 -- single ambiguity-detecting resolver | An ambiguous name errors with matching slots named; `SQLSEL_SELECT_V1` + `EXPORT_SDF` + REL regressions green |
 | **G3** | Cap raise to 4096 + both guards | `REGRESSION ALL` green; measured RSS delta within §2a; boot clean on MSVC |
