@@ -17,6 +17,7 @@ using dottalk::reference::RootSyntax;
 using dottalk::reference::StorageFlavor;
 using dottalk::reference::TableIdentity;
 using dottalk::reference::WorkspaceIdentity;
+using dottalk::reference::WorkspacePath;
 using dottalk::value::ExactDecimal;
 using dottalk::value::Value;
 using dottalk::value::ValueKind;
@@ -135,6 +136,73 @@ int main() {
 
     const std::string diagnostic = recno64_boundary.diagnostic_text();
     assert(diagnostic.find("9007199254740993") != std::string::npos);
+
+    // ---- AIF-078 Q7: workspace scalar widened to a path -------------------
+    //
+    // The no-regression condition for the widening is that depth <= 1 renders
+    // and compares EXACTLY as it did before. Depth > 1 is reserved and is
+    // proven only to round-trip through the address; nothing resolves it.
+
+    // 1. Depth 1 renders byte-identically to the pre-widening output.
+    assert(normal.diagnostic_text() ==
+           "MCC.#2.STUDENTS.RECNO(12).LNAME");
+
+    // 2. The scalar ctor produces depth 1, and workspace() still answers with
+    //    the same identity every pre-AIF-078 caller expects.
+    assert(normal.workspace_depth() == 1);
+    assert(normal.workspace().logical_name == "MCC");
+    assert(normal.workspace_path().size() == 1);
+
+    // 3. An unspecified workspace still renders CURRENT_WORKSPACE.
+    const DataAddress no_workspace(
+        WorkspaceIdentity{},
+        area,
+        table,
+        RecordSelector::physical(12),
+        field);
+    assert(no_workspace.diagnostic_text() ==
+           "CURRENT_WORKSPACE.#2.STUDENTS.RECNO(12).LNAME");
+    assert(no_workspace.workspace_depth() == 0);
+    assert(no_workspace.workspace().unspecified());
+
+    // 4. An EMPTY path and a path of one unspecified identity mean the same
+    //    thing and must compare equal -- the behavior this widening is not
+    //    allowed to change.
+    const DataAddress empty_path(
+        WorkspacePath{},
+        area,
+        table,
+        RecordSelector::physical(12),
+        field);
+    assert(empty_path.diagnostic_text() == no_workspace.diagnostic_text());
+    assert(empty_path.same_cell_identity(no_workspace));
+    assert(no_workspace.same_cell_identity(empty_path));
+
+    // 5. Depth > 1 round-trips: outermost first, dot-joined; workspace()
+    //    answers with the INNERMOST; depth counts specified levels only.
+    const DataAddress nested(
+        WorkspacePath{WorkspaceIdentity{"MCC", "mcc.workspace", 7},
+                      WorkspaceIdentity{"FALL2026", "", 0},
+                      WorkspaceIdentity{"SEC3", "", 0}},
+        area,
+        table,
+        RecordSelector::physical(12),
+        field);
+    assert(nested.diagnostic_text() ==
+           "MCC.FALL2026.SEC3.#2.STUDENTS.RECNO(12).LNAME");
+    assert(nested.workspace_depth() == 3);
+    assert(nested.workspace().logical_name == "SEC3");
+
+    // 6. Different depth is a different address, not an accidental match.
+    assert(!nested.same_field_identity(normal));
+    assert(!normal.same_field_identity(nested));
+
+    // 7. The parser already accepts the nested surface form and round-trips
+    //    it; only RESOLUTION is missing. This is the claim AIF-078 sec 5b
+    //    rests on, asserted here rather than left as prose.
+    require_parse(parser,
+                  "MCC.FALL2026.SEC3.STUDENTS.LNAME",
+                  "MCC.FALL2026.SEC3.STUDENTS.LNAME");
 
     std::cout
         << "PDLC foundation smoke passed\n"
