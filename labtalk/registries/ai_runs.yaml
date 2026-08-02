@@ -31,6 +31,29 @@ runs_registry:
 # from its closeout regardless (the closeout, not the chat, is the record).
 # ---------------------------------------------------------------------------
 runs:
+  - run_id: AIPR-20260730-001
+    member: member.ai.claude.cowork
+    product: Cowork                         # Anthropic / Cowork; model not_exposed
+    project: project.x64base.runtime
+    lanes: [AIF-078]                        # workspace qualifier namespace depth
+    role: analyst                           # design + decision lane; NO engine source committed
+    authored_by: member.ai.claude.cowork
+    planned_by: member.derald
+    owner: member.derald
+    committer: member.derald
+    git: { branch: development, baseline: 349227c18, head: b702b5a5d }
+    chat_handle: ""
+    handle_binding: MAINTAINER_ATTESTED
+    continues_run: null
+    started: 2026-07-30
+    closeouts:
+      - docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md
+    reports:
+      - AIPR-20260730-001                   # WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md (charter)
+      - AIPR-20260730-002                   # COST_BENEFIT_GATE_DOCTRINE_V1.md (doctrine)
+      - AIPR-20260730-003                   # the closeout above
+    status: active                          # G4 open: depth ruling not yet in the AIF-074 charter
+
   - run_id: AIPR-20260727-001
     member: member.ai.codex
     product: Codex                          # OpenAI / Codex; model not_exposed
@@ -155,6 +178,7 @@ runs:
 # lane docs and dashboard carry.
 # ---------------------------------------------------------------------------
 current_by_lane:
+  AIF-078: AIPR-20260730-001      # workspace qualifier namespace depth -- Cowork/Claude, active (G4 open)
   AIF-074: AIPR-20260729-001      # SQLSEL PLDC lane charter -- Cowork/Claude, active
   AIF-069: AIPR-20260727-001      # EXPORT SDF fixed-width output -- Codex, closed
   AIF-050: AIPR-20260725-001      # AI run traceability / @dottalk.file contract -- full-tree backfill 100%, Cowork/Claude

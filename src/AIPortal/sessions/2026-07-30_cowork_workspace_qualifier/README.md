@@ -17,9 +17,23 @@ The package in this folder is the **reference design only**, and is **superseded
 | File | Kind | Status |
 |---|---|---|
 | `AI_CHANGE_PACKAGE_MULTI_WORKSPACE_ADDRESSING_V1_20260730.md` | design proposal | `review-needed` -- **superseded in part** |
+| `AIF078_Q7_workspace_path.patch` | source patch, 3 files / 11 hunks | `review-needed` -- **apply after the foundation commit** |
 | `README.md` | curation index | this file |
 
-**No patch, no source change, no test artifact.** This session produced analysis and a lane charter; the engine was not touched. `git status` at close showed no modification under `src/` or `include/` attributable to this run.
+## The Q7 patch
+
+`AIF078_Q7_workspace_path.patch` implements lane doc **Q7 / sec 5b**: `DataAddress::workspace_` (a `WorkspaceIdentity` scalar) becomes `workspace_path_` (a `WorkspacePath`, outermost first). The scalar constructor keeps its exact signature and delegates, producing depth 1; `workspace()` still returns the innermost identity; depth > 1 renders dot-joined and resolves nowhere.
+
+Delivered as a patch rather than as working-tree edits because `role.ai_partner` holds `source.propose`, never `source.mutate` (`AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 5b). The steward delivers; `member.derald` applies and commits.
+
+**Verified** (g++/libstdc++ x86-64; **MSVC unverified, gate G0**):
+
+- the pre-patch tree compiles and the smoke passes -- this is the baseline the patch was diffed against
+- `patch -p1 --dry-run` clean on all three files
+- post-patch: compiles under `-Wall -Wextra` and under `-O2 -DNDEBUG`, smoke passes, rendered address byte-identical
+- seven new assertions cover depth 0 / 1 / >1, the empty-path equality normalization, and `require_parse("MCC.FALL2026.SEC3.STUDENTS.LNAME")` -- which turns sec 5b's central claim into a test rather than prose
+
+**Ordering matters.** Apply only AFTER the Phase-0 foundation is committed. Until then the patch targets files absent from `HEAD`, and a proof citing an untracked artifact is a note, not evidence (`AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 5c).
 
 ## Why the package is superseded in part
 
