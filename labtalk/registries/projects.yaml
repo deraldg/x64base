@@ -223,7 +223,7 @@ projects:
       - labtalk/registries/projects.yaml
     source_surfaces:
       - src/edu/edu_cobol.cpp
-      - src/cli/cmd_codaysl.cpp
+      - src/cli/cmd_codasyl.cpp
       - src/cli/cmd_sqlite.cpp
       - src/edu/edu_bibletalk.cpp
       - src/edu/edu_erp.cpp
