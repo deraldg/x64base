@@ -98,3 +98,28 @@ It does not publish the other dirty website work, promote the larger
 DOCFLUSH-20260722-001 manual/source candidate, alter `C:/x64base`, or prove
 educational outcomes. The private Sites mirror was not requested and was not
 attempted. Canonical public publication is GitHub Pages.
+
+## Follow-up closure: AI Reports remain local-only
+
+The separate AI Reports preview is classified **very early alpha / local-only**
+by maintainer ruling on 2026-08-03. It is not part of the approved 10-path
+academic publication and is not approved for public source or deployment.
+
+A follow-up boundary audit found that these static files were already present
+on the live `gh-pages` branch from an earlier publication history:
+
+- `reports/index.html`;
+- `reports/AI_PORTAL_REPORT.html`; and
+- `reports/BBS_BOARDS_REPORT.html`.
+
+They were removed from `gh-pages`, committed as `9c02dc9b`, and pushed. GitHub
+Pages reported the withdrawal build `built` with no error. Cache-bypassed live
+readback then returned 404 for `/reports/`, `/reports/index.html`,
+`/reports/AI_PORTAL_REPORT.html`, and `/reports/AI_PORTAL_REPORT/`.
+
+The local preview remains available at `http://localhost:3000/reports/` and the
+AI Portal report remains available through both its canonical `.html` URL and
+its compatibility route. All returned 200 in the final local readback. The
+local report files and `app/reports` compatibility routes remain uncommitted in
+the website source tree. A future public release requires a new, explicit
+maintainer authorization.

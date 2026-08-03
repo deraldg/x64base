@@ -22,6 +22,7 @@ ai_report_audit:
     website_baseline_commit: 66a15f7ec104eeaad5c9653187e6c268b8f4ab47
     website_source_commit: 561eef1e249b65aaf1994489e54de66b7cfeb4f8
     gh_pages_commit: 541740c3479090ed874c9718d5fa2c325d09cf81
+    gh_pages_report_withdrawal_commit: 9c02dc9bd7c808796cac46f1674f94fa02997e67
   authorization:
     requested_by: maintainer
     scope: close out, commit, push, publish, and verify the approved website credibility and academic-entry work
@@ -42,7 +43,9 @@ Proof state: build and git-verified live readback.
 
 Published a narrowly isolated 10-path site slice that lowers promotional tone,
 clarifies alpha/beta boundaries, and adds an academic evaluation path plus one
-proof-aware guided lesson.
+proof-aware guided lesson. A follow-up review classified the separate AI Reports
+preview as very early alpha and local-only, then removed its previously public
+static files from GitHub Pages while preserving localhost access.
 
 ## Changed
 
@@ -52,6 +55,8 @@ proof-aware guided lesson.
 | Website Lane record | `WEBSITE_ACADEMIC_CREDIBILITY_PUBLICATION_RESULT_V1.md` | Added under the existing AIF-048 `website_phase` |
 | AI-facing state | dashboard Session Log and AIF-048 intake row | Updated to distinguish this live slice from the still-open larger flush |
 | Public site | `gh-pages` | Committed and pushed as `541740c34` |
+| Local AI Reports preview | `D:/dev/x64base-site/public/reports` and compatibility routes under `app/reports` | Retained locally; intentionally uncommitted and excluded from public publication |
+| AI Reports public withdrawal | Three report files on `gh-pages` | Removed, committed, and pushed as `9c02dc9b` |
 
 ## Verified
 
@@ -63,6 +68,13 @@ proof-aware guided lesson.
 - Four cache-bypassed live URLs returned 200 and contained the expected new text.
 - `/artifacts/site-release.json` names source commit
   `561eef1e249b65aaf1994489e54de66b7cfeb4f8`.
+- Local readback returned 200 for `/reports/`, `/reports/index.html`,
+  `/reports/AI_PORTAL_REPORT.html`, and `/reports/AI_PORTAL_REPORT/`; the two
+  compatibility routes resolved to their canonical `.html` pages.
+- A boundary audit found the three static report files already present on the
+  live `gh-pages` branch from an earlier publication history. They were removed
+  in `9c02dc9b`; GitHub Pages completed the build with no error, and all four
+  public report URL forms then returned 404.
 
 ## AI-facing docs updated (AIF-006 gate)
 
@@ -82,6 +94,7 @@ proof-aware guided lesson.
   separate repository path.
 - Website source: commit `561eef1e2`, pushed.
 - GitHub Pages: commit `541740c34`, pushed and built.
+- GitHub Pages follow-up: report withdrawal commit `9c02dc9b`, pushed and built.
 - Live: verified on `https://x64base.com/` and three scoped LabTalk routes.
 - Private Sites mirror: not requested and not attempted.
 
@@ -97,6 +110,10 @@ line-ending trap, and live-verification sequence for the next publisher.
   separate and open; this slice does not advance all of its remaining gates.
 - Unrelated website Portal, diagram, Python, product, navigation, and generated
   work remains dirty and intentionally untouched.
+- The AI Reports preview is closed as a local-only, very early alpha slice. Its
+  local files and localhost routes remain available to the maintainer, but are
+  not approved for source commit, public build inclusion, or deployment. Any
+  future publication requires a new explicit maintainer decision.
 - The guided lesson remains a draft pending instructor, accessibility,
   prerequisite, and expected-output review.
 - The diagram checker has a Windows clean-clone LF/CRLF incompatibility for
