@@ -3,26 +3,21 @@ label: Workflow tooling ported to cross-platform Python, each tested
 state: runtime_observed
 source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md
 related:
-  - D:/code/ccode/tools/lanes/lane.py
-  - D:/code/ccode/tools/git/restore_lfs.py
-  - D:/code/ccode/tools/reports/stage_public.py
-  - D:/code/ccode/tools/registries/registry_fragments.py
-  - D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
-notes: >-
-  Rule adopted 2026-08-02 at maintainer direction: no PowerShell-only or bash-only
-  solutions; Python 3 + stdlib or DotScript, ASCII, shell only as a thin wrapper. The
-  project is cross-platform C++ on cross-compatible libraries and the tooling now matches.
-  Ported and EXERCISED, not merely written: lane.py (worktree lanes; refuses a taken lane
-  id, refuses to close a dirty worktree, refuses to merge into a dirty integration tree);
-  restore_lfs.py (verified against a purpose-built repo reproducing the real failure --
-  pointer blob with no filter=lfs attribute -- and idempotent on a second run);
-  stage_public.py (both guards proven by relaxing portal.yaml, watching the refusal, and
-  restoring); registry_fragments migrate (69 records round-tripped, zero lost or changed,
-  then a fragment deleted deliberately to confirm loss is visible at 47->46).
-  TESTING CAUGHT TWO REAL BUGS the untested originals carried: restore_lfs promised a clean
-  git status when the correct outcome is MODIFIED (committed blob is the pointer, file is
-  now real bytes); and migrate had a load() signature mismatch that would have crashed
-  during the VERIFY step, after writing. Recorded exception: afb-/bbsd-startup stay
-  PowerShell (Windows Scheduled Tasks, no cross-platform equivalent). Outstanding debt:
-  bbs_smoke.ps1 needs porting -- the standards seed names it the canonical socket
-  regression.
+- D:/code/ccode/tools/lanes/lane.py
+- D:/code/ccode/tools/git/restore_lfs.py
+- D:/code/ccode/tools/reports/stage_public.py
+- D:/code/ccode/tools/registries/registry_fragments.py
+- D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+notes: 'Rule adopted 2026-08-02 at maintainer direction: no PowerShell-only or bash-only solutions; Python
+  3 + stdlib or DotScript, ASCII, shell only as a thin wrapper. The project is cross-platform C++ on cross-compatible
+  libraries and the tooling now matches. Ported and EXERCISED, not merely written: lane.py (worktree lanes;
+  refuses a taken lane id, refuses to close a dirty worktree, refuses to merge into a dirty integration
+  tree); restore_lfs.py (verified against a purpose-built repo reproducing the real failure -- pointer
+  blob with no filter=lfs attribute -- and idempotent on a second run); stage_public.py (both guards proven
+  by relaxing portal.yaml, watching the refusal, and restoring); registry_fragments migrate (69 records
+  round-tripped, zero lost or changed, then a fragment deleted deliberately to confirm loss is visible
+  at 47->46). TESTING CAUGHT TWO REAL BUGS the untested originals carried: restore_lfs promised a clean
+  git status when the correct outcome is MODIFIED (committed blob is the pointer, file is now real bytes);
+  and migrate had a load() signature mismatch that would have crashed during the VERIFY step, after writing.
+  Recorded exception: afb-/bbsd-startup stay PowerShell (Windows Scheduled Tasks, no cross-platform equivalent).
+  Outstanding debt: bbs_smoke.ps1 needs porting -- the standards seed names it the canonical socket regression.'

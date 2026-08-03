@@ -338,6 +338,31 @@ def main() -> int:
                     help="promote normalization catalog drift to a hard failure (exit 2)")
     args = ap.parse_args()
 
+    # The two acknowledgement flags are also readable from the environment, following the
+    # X64BASE_ALLOW_STAGING_BRANCH precedent in repository_role_guard.py.
+    #
+    # Why this is needed: the pre-commit hook invokes this gate with NO arguments, so when
+    # the gate refuses and says "re-run with --allow-mass", there is no way to comply from
+    # a normal `git commit`. The only route left was --no-verify, which discards every
+    # other check in the gate -- the mass-change warning would end up disabling the
+    # hard-block, house-style, and mandatory-tracked checks along with itself. That is a
+    # strictly worse outcome than the thing being acknowledged.
+    #
+    # An env var keeps the acknowledgement NARROW (one flag), SCOPED (one command
+    # invocation), and LOUD (announced below). It is not a bypass: hard-blocks still fail.
+    #
+    #   Windows : set X64BASE_ALLOW_MASS=1  &&  git commit ...
+    #   POSIX   : X64BASE_ALLOW_MASS=1 git commit ...
+    if os.environ.get("X64BASE_ALLOW_MASS") == "1":
+        args.allow_mass = True
+    if os.environ.get("X64BASE_ALLOW_DATA") == "1":
+        args.allow_data = True
+    for name, on in (("X64BASE_ALLOW_MASS", args.allow_mass),
+                     ("X64BASE_ALLOW_DATA", args.allow_data)):
+        if on and os.environ.get(name) == "1":
+            print(f"prepush-gate: {name}=1 -- acknowledgement accepted from the "
+                  f"environment. Every other check still runs.")
+
     if args.install_hook:
         return install_hook()
 
