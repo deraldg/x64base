@@ -120,6 +120,8 @@ readback then returned 404 for `/reports/`, `/reports/index.html`,
 The local preview remains available at `http://localhost:3000/reports/` and the
 AI Portal report remains available through both its canonical `.html` URL and
 its compatibility route. All returned 200 in the final local readback. The
-local report files and `app/reports` compatibility routes remain uncommitted in
-the website source tree. A future public release requires a new, explicit
-maintainer authorization.
+three report files were removed from tracked website source and pushed in
+`a4c5b5228`, preventing a future clean build from restoring the public copies.
+Their physical localhost copies and the `app/reports` compatibility routes are
+retained under checkout-local Git exclude rules. A future public release
+requires a new, explicit maintainer authorization.

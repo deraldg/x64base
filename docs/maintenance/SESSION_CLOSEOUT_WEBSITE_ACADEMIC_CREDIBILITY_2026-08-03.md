@@ -21,6 +21,7 @@ ai_report_audit:
     website_branch: codex/lean-sites-publish
     website_baseline_commit: 66a15f7ec104eeaad5c9653187e6c268b8f4ab47
     website_source_commit: 561eef1e249b65aaf1994489e54de66b7cfeb4f8
+    website_report_source_withdrawal_commit: a4c5b52281e7c8e61e0d44f860ef9876e88fa759
     gh_pages_commit: 541740c3479090ed874c9718d5fa2c325d09cf81
     gh_pages_report_withdrawal_commit: 9c02dc9bd7c808796cac46f1674f94fa02997e67
   authorization:
@@ -55,7 +56,8 @@ static files from GitHub Pages while preserving localhost access.
 | Website Lane record | `WEBSITE_ACADEMIC_CREDIBILITY_PUBLICATION_RESULT_V1.md` | Added under the existing AIF-048 `website_phase` |
 | AI-facing state | dashboard Session Log and AIF-048 intake row | Updated to distinguish this live slice from the still-open larger flush |
 | Public site | `gh-pages` | Committed and pushed as `541740c34` |
-| Local AI Reports preview | `D:/dev/x64base-site/public/reports` and compatibility routes under `app/reports` | Retained locally; intentionally uncommitted and excluded from public publication |
+| Local AI Reports preview | `D:/dev/x64base-site/public/reports` and compatibility routes under `app/reports` | Retained locally and excluded by the checkout's local Git exclude rules |
+| AI Reports source withdrawal | Three formerly tracked files under `public/reports` | Removed from website source control in `a4c5b5228`, so clean builds cannot republish them |
 | AI Reports public withdrawal | Three report files on `gh-pages` | Removed, committed, and pushed as `9c02dc9b` |
 
 ## Verified
@@ -93,6 +95,7 @@ static files from GitHub Pages while preserving localhost access.
 - Staging (`C:/x64base`): not used and not changed; website publication is a
   separate repository path.
 - Website source: commit `561eef1e2`, pushed.
+- Website source follow-up: report withdrawal commit `a4c5b5228`, pushed.
 - GitHub Pages: commit `541740c34`, pushed and built.
 - GitHub Pages follow-up: report withdrawal commit `9c02dc9b`, pushed and built.
 - Live: verified on `https://x64base.com/` and three scoped LabTalk routes.
@@ -112,8 +115,10 @@ line-ending trap, and live-verification sequence for the next publisher.
   work remains dirty and intentionally untouched.
 - The AI Reports preview is closed as a local-only, very early alpha slice. Its
   local files and localhost routes remain available to the maintainer, but are
-  not approved for source commit, public build inclusion, or deployment. Any
-  future publication requires a new explicit maintainer decision.
+  excluded from local Git status and were removed from tracked website source
+  in `a4c5b5228`. They are not approved for source re-addition, public build
+  inclusion, or deployment. Any future publication requires a new explicit
+  maintainer decision.
 - The guided lesson remains a draft pending instructor, accessibility,
   prerequisite, and expected-output review.
 - The diagram checker has a Windows clean-clone LF/CRLF incompatibility for
