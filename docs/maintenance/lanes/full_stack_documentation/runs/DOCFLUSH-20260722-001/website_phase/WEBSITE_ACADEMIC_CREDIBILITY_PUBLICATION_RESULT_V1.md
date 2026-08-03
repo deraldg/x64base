@@ -125,3 +125,23 @@ three report files were removed from tracked website source and pushed in
 Their physical localhost copies and the `app/reports` compatibility routes are
 retained under checkout-local Git exclude rules. A future public release
 requires a new, explicit maintainer authorization.
+
+### Leak recurrence guard
+
+The checkout-local exclusion alone was insufficient: ignored files can still be
+copied by Next.js into `out/reports`, so a clean-looking working tree could
+republish them. Website source `6c9dc904d` closes that path at three levels:
+
+1. the production build removes local-only report directories before packaging;
+2. Sites packaging and GitHub Pages publication refuse to continue if a report
+   directory remains; and
+3. the public AI Portal page no longer links to `/reports/` or claims that the
+   snapshots are published.
+
+The exact source passed the diagram and public-content gates, TypeScript, a
+138-page production build, and Sites packaging in a disposable clean clone.
+Both `out/reports` and `dist/server/public/reports` were absent. GitHub Pages
+commit `f00b6ab4` built with no error. Cache-bypassed live verification found all
+four report URL forms at 404, found the local-only ruling on the public AI
+Portal page, found no `/reports/` link or publication claim, and confirmed
+release metadata source `6c9dc904da1151acd82767662ac82fb4677c9565`.

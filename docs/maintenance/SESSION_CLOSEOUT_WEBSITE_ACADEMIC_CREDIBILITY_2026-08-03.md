@@ -22,8 +22,10 @@ ai_report_audit:
     website_baseline_commit: 66a15f7ec104eeaad5c9653187e6c268b8f4ab47
     website_source_commit: 561eef1e249b65aaf1994489e54de66b7cfeb4f8
     website_report_source_withdrawal_commit: a4c5b52281e7c8e61e0d44f860ef9876e88fa759
+    website_report_leak_guard_commit: 6c9dc904da1151acd82767662ac82fb4677c9565
     gh_pages_commit: 541740c3479090ed874c9718d5fa2c325d09cf81
     gh_pages_report_withdrawal_commit: 9c02dc9bd7c808796cac46f1674f94fa02997e67
+    gh_pages_report_leak_guard_commit: f00b6ab409724f03a76cdb50cfd84d94b5eb4e64
   authorization:
     requested_by: maintainer
     scope: close out, commit, push, publish, and verify the approved website credibility and academic-entry work
@@ -58,6 +60,7 @@ static files from GitHub Pages while preserving localhost access.
 | Public site | `gh-pages` | Committed and pushed as `541740c34` |
 | Local AI Reports preview | `D:/dev/x64base-site/public/reports` and compatibility routes under `app/reports` | Retained locally and excluded by the checkout's local Git exclude rules |
 | AI Reports source withdrawal | Three formerly tracked files under `public/reports` | Removed from website source control in `a4c5b5228`, so clean builds cannot republish them |
+| AI Reports build guard | Build, Sites packaging, and Pages publication scripts | `6c9dc904d` strips local reports, rejects residual report output, and removes the public `/reports/` claim |
 | AI Reports public withdrawal | Three report files on `gh-pages` | Removed, committed, and pushed as `9c02dc9b` |
 
 ## Verified
@@ -77,6 +80,16 @@ static files from GitHub Pages while preserving localhost access.
   live `gh-pages` branch from an earlier publication history. They were removed
   in `9c02dc9b`; GitHub Pages completed the build with no error, and all four
   public report URL forms then returned 404.
+- A recurrence audit found that checkout-local excluded files could still enter
+  `out/reports` during a build. Source `6c9dc904d` now removes report output
+  before packaging, makes Sites packaging and Pages publication fail closed if
+  any report directory remains, and replaces the public reports link with the
+  local-only ruling.
+- Clean-clone production build passed 138 static pages. Neither `out/reports`
+  nor `dist/server/public/reports` existed afterward. Pages `f00b6ab4` built
+  successfully; the four public URL forms remained 404, the public AI Portal
+  carried the local-only text with no `/reports/` link or publication claim,
+  and release metadata named source `6c9dc904d`.
 
 ## AI-facing docs updated (AIF-006 gate)
 
@@ -96,8 +109,10 @@ static files from GitHub Pages while preserving localhost access.
   separate repository path.
 - Website source: commit `561eef1e2`, pushed.
 - Website source follow-up: report withdrawal commit `a4c5b5228`, pushed.
+- Website source leak guard: commit `6c9dc904d`, pushed.
 - GitHub Pages: commit `541740c34`, pushed and built.
 - GitHub Pages follow-up: report withdrawal commit `9c02dc9b`, pushed and built.
+- GitHub Pages guarded rebuild: commit `f00b6ab4`, pushed and built.
 - Live: verified on `https://x64base.com/` and three scoped LabTalk routes.
 - Private Sites mirror: not requested and not attempted.
 
@@ -116,9 +131,10 @@ line-ending trap, and live-verification sequence for the next publisher.
 - The AI Reports preview is closed as a local-only, very early alpha slice. Its
   local files and localhost routes remain available to the maintainer, but are
   excluded from local Git status and were removed from tracked website source
-  in `a4c5b5228`. They are not approved for source re-addition, public build
-  inclusion, or deployment. Any future publication requires a new explicit
-  maintainer decision.
+  in `a4c5b5228`. Build and publication paths additionally strip or reject local
+  report output under `6c9dc904d`. The files are not approved for source
+  re-addition, public build inclusion, or deployment. Any future publication
+  requires a new explicit maintainer decision.
 - The guided lesson remains a draft pending instructor, accessibility,
   prerequisite, and expected-output review.
 - The diagram checker has a Windows clean-clone LF/CRLF incompatibility for
