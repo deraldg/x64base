@@ -61,6 +61,29 @@ PLDC should not replace SDLC. PLDC answers: "What package are we delivering,
 to whom, and how will they use it?" SDLC answers: "What system behavior exists,
 how is it controlled, and what proof keeps it trustworthy?"
 
+## Teaching-Grade Congruence Rule
+
+Every SDLC must practice the process it teaches. Educational material is
+derived from the lifecycle's actual plans, gates, implementation, evidence,
+corrections, and maintenance record rather than from an idealized process the
+project itself did not follow.
+
+```text
+Perform the work -> preserve evidence -> evaluate the process -> improve the
+process -> document the improvement -> teach from the real example.
+```
+
+This rule applies to human and AI participants and to every named SDLC in the
+project. A gate cannot be taught as mandatory unless the project actually uses
+it. Temporary exceptions must be labeled, justified, and assigned a corrective
+gate. Mistakes and corrections remain visible as dated teaching evidence rather
+than being rewritten into a falsely perfect history.
+
+Each new SDLC must record what it inherited, what it changed, and what the
+change taught. Reusable improvements flow back into the shared lifecycle
+doctrine. The implementation is part of the curriculum: the project never asks
+students or contributors to ignore its practice and follow different advice.
+
 ## Scope and build-profile calibration
 
 The framework exposes the whole lifecycle for teaching, but material work must
