@@ -1,0 +1,25 @@
+id: proof.wal.dbf_record
+label: TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md
+related:
+- D:/code/ccode/docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
+- D:/code/ccode/src/cli/table_state.cpp
+- D:/code/ccode/include/cli/table_state.hpp
+- D:/code/ccode/labtalk/proofs/runs/wal_phaseA_proof_teed_20260719T080435Z.log
+- D:/code/ccode/labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log
+- D:/code/ccode/labtalk/proofs/runs/wal_phaseC_proof_teed_20260719T082345Z.log
+proof_logs:
+- wal_phaseA sha 938D4EC361EB34D8D7A3130E62ABDC06F8868DF3C75698C002F6FBE1A6292F60
+- wal_phaseB sha 16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A
+- wal_phaseC sha FBA1FC92FA1CC531B8B54094D8BC644B1FA51DD13B35053D02775511A257EE54
+notes: 'Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo
+  log with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the highest-priority
+  Edit3). Phase B: CRASH RECOVERY OBSERVED -- setup left an uncommitted `U 1 1 S 2:<hex "Recovered">`,
+  the runner appended `C 1`, reopening replayed it (NAME=Recovered) and removed the log. Phase C: buffered
+  DELETE journals a D record and defers the DBF mutation to COMMIT, discarded on ROLLBACK, replayed on
+  recovery; the buffer-off write-through DELETE path is unregressed. Format TBJ1; one durable fsync of
+  the C marker BEFORE the DBF apply. CLASSIFICATION HISTORY: first entered at source_defined on the belief
+  the crash window was untested. Wrong -- the evidence existed but was gitignored by a blanket `*.log`
+  rule, so a partner surveying the repo could not see it. Corrected to runtime_observed when the proof
+  transcripts were un-ignored and committed (AIF-062).'

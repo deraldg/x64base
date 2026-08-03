@@ -1,0 +1,33 @@
+id: lesson.student.cursor_versus_set
+title: Two Ways to Ask a Database a Question
+kind: lesson
+lane: student
+status: idea
+audience:
+- student
+- self-learner
+- instructor
+path: lessons/student/cursor_versus_set_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.database.record
+- concept.database.schema
+apps:
+- app.dottalkpp.runtime
+commands:
+- REL ADD
+- REL ENUM
+- SQLSEL
+- SQLITE
+- USE
+- GO
+proofs:
+- proof.sqlsel.select_statement_matches_sqlite
+- proof.engine.typed_equality_crosses_declared_types
+proof_state: runtime_observed
+next_gate: 'Write the side-by-side exercise. x64base is unusual in carrying BOTH methodologies over one
+  engine and one dataset: REL walks children from the record the cursor is sitting on (move the cursor,
+  the answer changes), while SQLSEL evaluates a statement that names its own table and leaves every cursor
+  untouched. Most students only ever meet the set model and never see the cursor machinery underneath
+  it. Same data, same keys, same equality rules, two answers with different shapes -- and a SQLite oracle
+  to check both against. Needs one runnable lab file before promotion to draft.'

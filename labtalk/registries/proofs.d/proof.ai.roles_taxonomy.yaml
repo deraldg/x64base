@@ -1,0 +1,8 @@
+id: proof.ai.roles_taxonomy
+label: AI roles taxonomy - agents vs Ollama vs GPTbase
+state: source_defined
+source: D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
+notes: Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source
+  + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR
+  (GPTbase, advisory not authority, cloud/not-isolated, snapshot goes stale). First artifact of the portal
+  capability inventory. Doc/boundary artifact; source_defined by nature.

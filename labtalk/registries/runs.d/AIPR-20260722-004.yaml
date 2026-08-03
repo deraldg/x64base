@@ -1,0 +1,18 @@
+run_id: AIPR-20260722-004
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.identity
+lanes:
+- AIF-045
+role: implementer
+authored_by: member.ai.claude.cowork
+planned_by: member.ai.chatgpt
+owner: member.derald
+committer: member.derald
+chat_handle: ''
+handle_binding: MAINTAINER_ATTESTED
+continues_run: AIPR-20260722-003
+started: 2026-07-22
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2C_AGENT_SECURITY_2026-07-22.md
+status: closed

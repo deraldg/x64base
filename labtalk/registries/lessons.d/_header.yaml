@@ -1,0 +1,9 @@
+# Header block for lessons.yaml -- static vocabulary/schema, not a record.
+schema:
+  id: Stable lesson identifier.
+  title: Display title.
+  lane: student | career | instructor | review
+  status: idea | draft | proof_linked | student_ready_pending | student_ready
+  path: Repo-local lesson document path, relative to the LabTalk root.
+  proof_state: Current evidence state from registries/proofs.yaml.
+  next_gate: The next review or proof step before promotion.

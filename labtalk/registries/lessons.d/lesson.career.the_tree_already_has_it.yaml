@@ -1,0 +1,27 @@
+id: lesson.career.the_tree_already_has_it
+title: Search Before You Build, and Trust the Enforcer Over the Spec
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- ai-collaborator
+path: lessons/career/the_tree_already_has_it_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.evidence.review
+- concept.selfdoc.validation
+proofs:
+- proof.codev.system_corrects_its_extender
+- proof.engine.key_metadata_survives_workspace_roundtrip
+proof_state: source_defined
+next_gate: 'Two rules, both learned the expensive way. FIRST: before designing a component, cite the search
+  that proved it absent -- every capability the lane "needed" already existed (locking, the tuple carrier,
+  table buffering, a unique-field registry whose own header requested the very phase being designed),
+  and construction was the right answer zero times out of seven. SECOND, a hierarchy of trust when authoring
+  anything the toolchain checks: a passing in-tree example beats the enforced policy registry, which beats
+  the specification document, which beats memory -- and an artifact you generated yourself but never ran
+  through the gate ranks below all of them. Learned by having a pre-commit gate reject the same closeout
+  envelope three times: the spec described a v2 schema the validator does not yet enforce. Add the worked
+  example and promote.'

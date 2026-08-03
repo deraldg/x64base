@@ -1,0 +1,110 @@
+id: lesson.career.discovery_by_documentation
+title: Discovery by Documentation
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- technical writer
+- ai_partner
+- student
+path: lessons/career/discovery_by_documentation_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.contract.usage
+- concept.selfdoc.validation
+- concept.evidence.review
+apps:
+- app.dottalkpp.runtime
+- app.dottalkpp.selfdoc
+commands:
+- SET
+- SET USAGE
+- AREA51
+- REL
+lane_doc: docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md
+aif: AIF-067
+proof_state: runtime_observed
+observed: 2026-07-27
+run: DOCFLUSH-20260722-001
+body: "DIRECT EVIDENCE FOR THE PROJECT THESIS -- \"documentation improves and proves the\ncode\" -- recorded\
+  \ because the thesis is otherwise only asserted.\n\nEIGHT defects in one session were found by the ACT\
+  \ OF WRITING DOCUMENTATION, none\nby a failing test, a user report, or a crash:\n\n  1. SET ERRORSTOP\
+  \ and SET INDEXTXN dispatch correctly and are undiscoverable\n     (found while contracting the 33-arm\
+  \ SET ladder)\n  2. SYSSUBCMD held 12 scratch rows; its harvest CSV carried a 10-field schema\n    \
+  \ against a 20-field table and could never have loaded\n  3. SetUsageText exists TWICE; only one copy\
+  \ was being generated\n  4. SET DEVDIAG claims relation diagnostics that do not exist -- 7 call sites,\n\
+  \     none in a refresh path\n  5. 9 commands registered twice, 2 with handlers DIFFERING on relation\n\
+  \     maintenance; the live one decided by static-init order, not by rule\n  6. SYSFUNC.dbf unreadable\
+  \ by the doc toolchain for its entire life\n  7. MEMO_LINES.dbf unreadable -- LINECONT is C(1024), classic\
+  \ width byte\n     clamps at 255\n  8. 8 registry keys are undispatchable dead code\n\nWHY DOCUMENTING\
+  \ FINDS WHAT TESTING CANNOT: a test asks \"does this behave as I\nexpect\", so it can only fail where\
+  \ someone already suspected something.\nDocumenting asks \"what IS this, and where is that written down\"\
+  \ -- a question with\nno expectation to satisfy, which therefore goes where nobody suspected. And it\n\
+  forces TWO DESCRIPTIONS OF ONE THING into the same field of view. Every defect\nabove has that shape:\
+  \ ladder vs usage text vs table; descriptor copy vs locale\ncopy; hub registration vs self-registration;\
+  \ classic width byte vs X64M width;\nregistry key vs what the dispatcher can produce. Each artifact\
+  \ was internally\nconsistent, which is exactly why nothing failed. The defect lived in the\nRELATIONSHIP,\
+  \ and only an activity obliged to reconcile both sides can see it.\n\nTHE COUNTER-EVIDENCE, WHICH MATTERS\
+  \ MORE. The same session propagated an error at\npipeline speed: a slightly wrong source comment on\
+  \ SET DEVDIAG was inherited into\na @dottalk.subusage summary and generated into SET USAGE and SYSSUBCMD\
+  \ within\nhours -- one inaccurate sentence became three inaccurate artifacts BECAUSE the\npipeline worked.\
+  \ Separately, the first generated SET USAGE silently dropped four\nSET LOCALE lines: generation removes\
+  \ drift but cannot preserve an intent that was\nnever written down.\n\nSO THE THESIS IS NARROWER THAN\
+  \ ITS SLOGAN: documentation authored against SOURCE\nproves code; documentation authored against neighbouring\
+  \ documentation propagates\nerror faster than review can catch it. Read the parser, not the comment\
+  \ above the\nparser. Read the bytes, not the field name.\n\nSTRONGEST SINGLE INSTANCE: the most productive\
+  \ question of the day was not an\naudit instruction but the maintainer asking \"what flavor of dbf?\"\
+  . Answering it\nrequired reading actual header bytes, and produced the X64M extended-header\nlayout,\
+  \ two format versions, the true-width and logical-name mechanism, the\nexplanation for LOCALIZE~1, and\
+  \ two canonical tables that had been unreadable by\nour own tooling without anyone knowing. The audit\
+  \ finds what it was built to look\nfor; the QUESTION finds what nobody had thought to look for.\n\n\
+  THE CONTRACT SETTLED A DESIGN QUESTION IT HAD ALREADY ANSWERED. The clearest\ninstance of the thesis\
+  \ in this run was not a defect found but a DESIGN decision\nresolved by reading a contract that had\
+  \ been correct all along. Should BUILDLMDB\nCLEAN archive the environment it replaces? Three rounds\
+  \ narrowed it: keep archives\nwith a retention policy; then discard by default with ARCHIVE opt-in;\
+  \ then the\nactual answer -- THE OPERATION HAS NOTHING TO PROTECT. That answer was already\nwritten\
+  \ in the command's own risk block: \"reads_cdx_container: yes /\nwrites_lmdb_environment: yes\". BUILDLMDB\
+  \ reads the declaration and writes the\nderived artifact, so a size change alters nothing declarative\
+  \ and no prior state is\nat risk. The contract had stated that relationship since it was authored; nobody\
+  \ had\nasked it the question.\n\nThis is documentation being GENERATIVE rather than descriptive -- not\
+  \ a summary of\nbehaviour written afterwards, but a statement of what the command IS, sufficient to\n\
+  decide what it SHOULD DO. Reading it replaced an argument.\n\nIT ALSO PRODUCED THE GENERAL RULE, which\
+  \ reasoning about storage would not have\nreached: archive the thing that CHANGES, at the command that\
+  \ CHANGES it; size is not\na reason to keep a copy, irrecoverability is. Applied, it inverts the subsystem\
+  \ --\nBUILDLMDB archived a 1 GiB regenerable environment while CDX CREATE and CDX ADDTAG,\nthe only\
+  \ operations that restructure the ~3 KB declaration that no other file can\nrebuild, archive nothing.\n\
+  \nTHE HABIT WORTH COPYING: each round was narrowed by the maintainer pushing on the\nPREMISE rather\
+  \ than the implementation -- \"we don't need to back up the .mdb files\",\nthen \"why archive the cdx\
+  \ when changing sizes\". The instinct to keep a copy survived\nthree rounds of the author's own analysis\
+  \ unexamined, because the question kept\nbeing HOW to retain safely rather than WHETHER anything was\
+  \ at risk. A review that\nonly interrogates the mechanism will refine a mechanism nobody needs; the\
+  \ premise is\ncheaper to attack, and the contract is where the premise is usually already written.\n\
+  \nWHERE THESE DEFECTS COME FROM (member.derald): \"these type of problems can occur\nfrom unremedied\
+  \ dev tests, or one AI clobbering another. Which is why we are building\nthe AI portal, a project derived\
+  \ from need.\" The catalogue above is SHAPES; this is\norigin, and it changes the remedy.\n\nCAUSE 1,\
+  \ THE UNREMEDIED DEV TEST -- a mechanism 90% built with a comment describing\nthe missing 10%. mapsize_explicit\
+  \ computed then (void)'d with \"available if you later\nwant to...\"; SOURCE_HASH written and never\
+  \ read; X64M displacement declared and never\nchecked; edu_missing_shims written for restricted builds\
+  \ and excluded from them;\nSYSSUBCMD left holding three identical batches of an import tested three\
+  \ times.\n\nCAUSE 2, ONE AI CLOBBERING ANOTHER -- multiple sessions on one branch and one working\n\
+  tree. The coordination protocol records the founding incident: four parallel sessions\ncollided on AIF-047->050\
+  \ in a single sitting on 2026-07-22, caught only by reading git\nlog. The signature is A PARALLEL IMPLEMENTATION\
+  \ INSTEAD OF AN EDIT: cmd_help.cpp +\ncmd_help_grouped.cpp both declaring HELP; cmd_struct.cpp + cmd_struct_basic.cpp\
+  \ both\ndeclaring STRUCT; cmd_pshell.cpp + cmd_pshell_help.cpp; nine commands registered in\nboth the\
+  \ hub and their own TU, two with handlers differing on relation maintenance;\norderstate:: and order_state::\
+  \ as two spellings of one namespace. Suffixes like\n_basic, _grouped and _help are what \"I'll add mine\
+  \ next to yours\" looks like in a\nfile listing.\n\nWHY THE PORTAL AND NOT MORE DOCUMENTATION: documentation\
+  \ is the right remedy for\ncause 1 -- a wire left unconnected is discoverable by describing the system,\
+  \ which\nthis lesson demonstrates eight times. It is the WRONG remedy for cause 2, and the\ncoordination\
+  \ protocol says so directly: \"Documentation cannot fix a coordination\nproblem; an allocator and a\
+  \ presence surface can.\" Two agents writing accurate\ndocumentation about incompatible changes produce\
+  \ two accurate documents and one\nbroken tree. Hence session_coordinator.py with atomic O_EXCL claims,\
+  \ the AIF\ncollision gate, the pre-push gate, the agency model, and the still-open git-lock\nlane (AIF-059).\n\
+  \nA defect's SHAPE tells you how to detect it; its CAUSE tells you what to build.\nDetecting well while\
+  \ never asking why leads to proposing more checks where an\nallocator was wanted.\n\nTHE RULE: when\
+  \ documenting, name the two artifacts that describe the same fact and\ncompare them -- if there is only\
+  \ one, ask why the other is not written down.\nAuthor from the primary artifact. When a description\
+  \ is derived, verify the\nderivation preserves INTENT and not merely content. And attribute discoveries\
+  \ to\nthe activity that produced them, because a thesis is only demonstrable if its\nevidence is recorded.\n"

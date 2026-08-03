@@ -1,0 +1,5 @@
+id: proof.bbs.m1_board
+label: AI-BBS M1 board tables + BBS command
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+notes: BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects SYSGRANT.

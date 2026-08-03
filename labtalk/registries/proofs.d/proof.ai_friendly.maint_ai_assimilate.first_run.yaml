@@ -1,0 +1,12 @@
+id: proof.ai_friendly.maint_ai_assimilate.first_run
+label: MAINT AI ASSIMILATE first portal/runtime transcript
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260705_182913_runtime_maint_ai_assimilate.txt
+item_id: runtime.maint_ai_assimilate
+return_code: 0
+related:
+- D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+- D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+- D:/code/ccode/src/cli/cmd_maint.cpp
+notes: Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the
+  onboarding readback.

@@ -1,0 +1,12 @@
+id: proof.ai_portal.sdlc_fast_start.v1
+label: AI Portal SDLC fast-start seed registered
+state: source_defined
+source: D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+item_id: seed.ai_portal.sdlc_fast_start.v1
+related:
+- D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+- D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+- D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+- D:/code/ccode/labtalk/registries/ai_portal.yaml
+notes: Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory
+  across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.

@@ -1,0 +1,17 @@
+id: proof.engine.key_metadata_survives_workspace_roundtrip
+label: PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_key_metadata_roundtrip.txt
+item_id: dottalkpp/data/scripts/key_metadata_regression.dts
+return_code: 0
+related:
+- D:/code/ccode/include/cli/unique_registry.hpp
+- D:/code/ccode/src/cli/unique_registry.cpp
+- D:/code/ccode/src/cli/cmd_setunique.cpp
+- D:/code/ccode/src/cli/cmd_workspace.cpp
+- D:/code/ccode/src/cli/cmd_validate_unique.cpp
+notes: 'Phase 2 of a registry whose own header asked for it ("Phase 1: session-scoped ... storage/backfill
+  policy belongs elsewhere"). The registry was emptied between SAVE and LOAD, so restoration is proven,
+  not assumed: LOAD echoed KEY KEYREGR.KID PRIMARY and KEY KEYREGR.KLBL UNIQUE and the listing matched
+  pre-save exactly. VALIDATE UNIQUE passes clean data and reports one duplicate with provenance. Green
+  on first run.'

@@ -1,0 +1,6 @@
+id: proof.bbs.m2_net_egress
+label: AI-BBS M2 NET EGRESS permissioned toggle
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+notes: AI member refused NET EGRESS OPEN ("no in-scope role permission"); owner STATUS = Block. host.network.egress
+  owner-only.

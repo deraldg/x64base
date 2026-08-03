@@ -1,0 +1,14 @@
+id: proof.engine.typed_equality_crosses_declared_types
+label: Relation equality compares numerically whenever both sides are numeric literals
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rdb_truth_typed_equality.txt
+item_id: dottalkpp/data/scripts/rdb_truth_proof_v2.dts
+return_code: 0
+related:
+- D:/code/ccode/src/cli/set_relations.cpp
+- D:/code/ccode/dottalkpp/data/scripts/rdb_truth_check_v1.py
+notes: AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a numerically
+  DECLARED child field got numeric comparison, so a character child holding "1" failed against a numeric
+  parent's "1.00" -- an asymmetry invisible to the user. Now both sides decide. Scorer verdict PASS, 11/11
+  markers, 4/4 derived checks; the marker itself was rewritten from DIVERGE_ to CONFORM_ because the engine
+  changed. RELJOIN 12/12 unchanged, so the fix altered exactly what it claimed and nothing else.

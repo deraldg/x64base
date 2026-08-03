@@ -1,0 +1,11 @@
+id: proof.ai_friendly.assimilation_docs_seed
+label: AI Friendly assimilation portal and book seeded
+state: source_defined
+source: D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+item_id: doc.ai_assimilation_portal
+related:
+- D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+- D:/code/ccode/docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+- D:/code/ccode/src/cli/cmd_maint.cpp
+notes: Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context
+  is unavailable.

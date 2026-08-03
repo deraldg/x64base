@@ -1,0 +1,31 @@
+id: lesson.student.database_history_trail
+title: Data Systems History Trail
+kind: lesson
+lane: student
+status: draft
+audience:
+- student
+- instructor
+path: lessons/student/data_systems_history_trail_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.case.history
+- concept.storage.fixed_record
+- concept.database.network
+- concept.database.xbase
+- concept.ai_literacy.explainability
+apps:
+- app.labtalk.case_library
+- app.labtalk.dataset_library
+labs:
+- lab.history.data_systems_trail
+commands:
+- CASE
+- COBOL
+- CODASYL
+- HELP
+evidence:
+- D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+- D:/code/ccode/labtalk/LABTALK_EDUCATION_MAP_v0.md
+proof_state: case_registered
+next_gate: Separate live runtime demonstrations from reviewed history and simulations.

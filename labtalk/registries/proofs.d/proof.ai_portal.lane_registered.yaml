@@ -1,0 +1,10 @@
+id: proof.ai_portal.lane_registered
+label: AI Portal Alpha/Experimental lane registered
+state: source_defined
+source: D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+item_id: plan.ai_portal.hardening.v1
+related:
+- D:/code/ccode/labtalk/registries/ai_portal.yaml
+- D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
+notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary,
+  and requirement that the portal not be presented as production autonomous memory.

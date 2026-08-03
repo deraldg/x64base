@@ -1,0 +1,25 @@
+id: lesson.career.a_wrong_answer_that_looks_right
+title: The Worst Failure Is the One That Returns a Number
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- educator
+path: lessons/career/a_wrong_answer_that_looks_right_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.evidence.review
+- concept.contract.usage
+proofs:
+- proof.engine.scan_limit_reports_truncation
+- proof.sqlsel.select_statement_matches_sqlite
+proof_state: runtime_observed
+next_gate: 'Three defects found in one lane shared a shape: a scan that stopped at its limit and reported
+  a partial result as complete; a SELECT statement the parser could not read, which scanned 200 records
+  and answered "0"; a boolean that stringified to nothing so a proof marker silently vanished. None raised
+  an error. Each returned something a reader would accept. A crash is a gift by comparison -- it tells
+  you where to look. The remedy is not more testing but a design rule: separate the error axis from the
+  value axis, so a FAILURE reports while a legitimate blank stays quiet. Add the before/after transcript
+  pair as the exhibit, then promote.'

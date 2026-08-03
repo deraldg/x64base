@@ -1,0 +1,20 @@
+id: proof.codev.system_corrects_its_extender
+label: The tree's own artifacts and gates corrected an outside AI extender, repeatedly
+state: source_defined
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
+item_id: docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+return_code: 0
+related:
+- D:/code/ccode/labtalk/registries/ai_report_audit.yaml
+- D:/code/ccode/AI_README.md
+- D:/code/ccode/docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md
+notes: 'Eleven recorded corrections in one lane. Owner redirects (five) converted construction proposals
+  into consumption of existing machinery -- locks, tuple carrier, buffering, unique registry -- with catch
+  latency falling to zero by the last one. The toolchain caught the rest without human involvement: the
+  pre-commit report-audit rejected a closeout envelope three times until it matched the ENFORCED registry
+  rather than the published spec; MSVC C4244 caught a legacy 32-bit gotoRec in new x64 code before it
+  shipped; the non-destructive smoke exposed a runtime usage text that had drifted from its own contract
+  minutes after commit. State is source_defined rather than runtime_observed because the evidence is a
+  document trail, not a transcript -- but the trail is complete and each instance is timestamped, quoted,
+  and retained unedited. Falsifiable going forward: the statement parser was the first need inward search
+  could not satisfy, which bounds the claim rather than breaking it.'

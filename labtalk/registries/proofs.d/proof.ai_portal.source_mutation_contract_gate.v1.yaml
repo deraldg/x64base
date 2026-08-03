@@ -1,0 +1,12 @@
+id: proof.ai_portal.source_mutation_contract_gate.v1
+label: Source mutation contract preflight registered
+state: source_defined
+source: D:/code/ccode/labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+item_id: seed.ai_portal.source_mutation_contract_preflight.v1
+related:
+- D:/code/ccode/docs/contracts/README.md
+- D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+- D:/code/ccode/docs/contracts/CONTRACT_LIFECYCLE_V1.md
+- D:/code/ccode/labtalk/registries/ai_portal.yaml
+notes: Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract,
+  and source-annotation review before a patch is applied. This record does not grant mutation authority.

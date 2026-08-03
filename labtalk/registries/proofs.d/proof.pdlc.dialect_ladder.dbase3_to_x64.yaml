@@ -1,0 +1,16 @@
+id: proof.pdlc.dialect_ladder.dbase3_to_x64
+label: dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_historical_dialect_ladder.txt
+item_id: tests/conversion/11_historical_dialect_ladder_v1.dts
+return_code: 0
+related:
+- D:/code/ccode/tests/conversion/11_historical_dialect_ladder_v1.dts
+- D:/code/ccode/src/cli/cmd_copy.cpp
+notes: 'The historical migration demonstration proper, walked inside one engine with no external tool,
+  from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records, 9 fields, every
+  field name at or under the classic 10-character cap. 200 rows and 9 fields at EVERY rung. GPA held N(4,2)
+  through all four conversions -- decimal loss is silent and fatal, and did not occur. DOB and ENROLL_D
+  held type D, with values byte-identical at the 1985 end and the modern end. Unlooked-for result: the
+  index estate migrates with the dialect, CNX/INX through FOX26 and VFP becoming CDX at x64. COPY converts
+  indexes, not just tables. Not asserted by the pass criteria; should be in v2.'

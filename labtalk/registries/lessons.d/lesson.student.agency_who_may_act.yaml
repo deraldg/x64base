@@ -1,0 +1,34 @@
+id: lesson.student.agency_who_may_act
+title: 'Agency: Who May Act, and Who Answers For It'
+kind: lesson
+lane: student
+status: draft
+audience:
+- student
+- self-learner
+- instructor
+- ai_partner
+path: lessons/student/agency_who_may_act_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.agency
+- concept.agency.identity
+- concept.agency.authority
+- concept.agency.authentication
+- concept.agency.accountability
+- concept.agency.capability_vs_agency
+- concept.agency.influence_vs_authority
+apps:
+- app.dottalkpp.runtime
+commands:
+- USER
+- ROLE
+- PERM
+- GRANT
+- NET
+- BBS
+- AUTH
+proof_state: runtime_observed
+next_gate: Turn the enumerate-your-agency and watch-a-boundary-hold steps into a runnable lab with a scripted
+  readback, so the student produces their own proof row. Needs a student-safe data slot and an issue/revoke
+  token flow for the exercise.

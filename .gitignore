@@ -333,3 +333,9 @@ docs/**/candidates/**/*.csv
 # indexes/ are left VISIBLE on purpose: mixed 36 tracked / 75 untracked -- a
 # per-file call for a later pass.
 dottalkpp/data/indexes/**/*.cdx.meta
+
+# --- Registry fragment migration backups (2026-08-02) ---
+# registry_fragments.py `migrate` copies the flat registries here before splitting, and
+# leaves them behind on a failed verify so the state can be inspected. Timestamped, one
+# per run, purely local safety copies -- never part of the history. Delete when satisfied.
+labtalk/registries/_pre_fragment_backup_*/

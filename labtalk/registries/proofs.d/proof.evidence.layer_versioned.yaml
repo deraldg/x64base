@@ -1,0 +1,19 @@
+id: proof.evidence.layer_versioned
+label: Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md
+notes: 'MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it
+  also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR EVIDENCE. 71
+  proof artifacts on disk, 0 tracked; 7 rows citing files absent from a clone; 57 untracked session closeouts
+  against 18 tracked -- roughly three quarters of the completed-work record outside version control. The
+  registry''s central claim, that runtime_observed means a transcript exists, was unverifiable by anyone
+  not at this machine. Surfaced when a partner reported x64base had no write-ahead log: the WAL was designed,
+  built, crash-proven in three teed phases and closed out on 2026-07-19, but design doc, closeout and
+  all three transcripts were untracked, so it was indistinguishable from unbuilt. Second-order cost: the
+  partner then recorded proof.wal.dbf_record at source_defined ("untested"), which was wrong in fact --
+  invisible evidence does not merely fail to help, it produces wrong records that propagate. FIX: targeted
+  negations (!labtalk/proofs/**, !labtalk/reports/**) immediately after the blanket rule, verified both
+  directions (proof logs no longer ignored; dottalk_exit_trace.log still is); 81 proof/report artifacts
+  + 57 closeouts + the WAL design doc committed; proof.wal.dbf_record corrected to runtime_observed citing
+  Phase A/B/C by SHA. Same failure as the @dottalk.file gap (AIF-050) one layer up: there source files
+  were invisible to the harvest, here proofs were invisible to a clone.'

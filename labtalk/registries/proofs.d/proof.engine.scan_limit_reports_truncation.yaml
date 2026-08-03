@@ -1,0 +1,15 @@
+id: proof.engine.scan_limit_reports_truncation
+label: Relation scans announce when the scan limit stopped them
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rel_scanlimit_honesty.txt
+item_id: dottalkpp/data/scripts/rel_scanlimit_honesty_regression.dts
+return_code: 0
+related:
+- D:/code/ccode/src/cli/set_relations.cpp
+- D:/code/ccode/src/cli/set_relations.hpp
+- D:/code/ccode/src/cli/cmd_rel.cpp
+notes: 'AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a plausible-looking
+  partial answer with no indication -- a wrong result indistinguishable from a right one. At limit 1 the
+  run reports "REL: scan limit (1) reached; results may be incomplete." exactly once per command; at the
+  restored default the same command is silent. REL SCANLIMIT also gives the limit CLI reach for the first
+  time, closing open question OQ-1.'

@@ -1,0 +1,22 @@
+run_id: AIPR-20260722-005
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.identity
+lanes:
+- AIF-045
+role: implementer
+authored_by: member.ai.claude.cowork
+planned_by: member.ai.chatgpt
+owner: member.derald
+committer: member.derald
+git:
+  branch: homegrown-cnx-20251112-branch
+  baseline: 969bd1582
+  head: bfa6bb0fd
+chat_handle: ''
+handle_binding: MAINTAINER_ATTESTED
+continues_run: AIPR-20260722-004
+started: 2026-07-22
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_IDENTITY_2D_SESSION_AUTH_2026-07-22.md
+status: closed

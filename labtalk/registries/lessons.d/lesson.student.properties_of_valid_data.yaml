@@ -1,0 +1,31 @@
+id: lesson.student.properties_of_valid_data
+title: The Properties of Valid Data
+kind: lesson
+lane: student
+status: idea
+audience:
+- student
+- self-learner
+- instructor
+path: lessons/student/properties_of_valid_data_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.database.table
+- concept.database.record
+- concept.database.field
+- concept.database.schema
+apps:
+- app.dottalkpp.runtime
+- app.dottalkpp.help
+labs:
+- lab.database_literacy.starter
+commands:
+- HELP
+- FIELDS
+- STRUCT
+- CREATE
+- APPEND BLANK
+- REPLACE
+proof_state: source_defined
+next_gate: Define one runnable student exercise showing why valid data depends on field shape, type, range,
+  and mutation rules before promoting this idea to a draft lesson.

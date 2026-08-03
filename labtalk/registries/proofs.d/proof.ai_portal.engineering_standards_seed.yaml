@@ -1,0 +1,14 @@
+id: proof.ai_portal.engineering_standards_seed
+label: AI Portal engineering-standards / definition-of-done seed on the mandatory path
+state: source_defined
+source: D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+related:
+- D:/code/ccode/AI_README.md
+- D:/code/ccode/AI_PORTAL.md
+- D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+- D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+notes: Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house
+  conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined
+  by nature; VERIFICATION is behavioral - a cold AI session reads the front door and applies the standards
+  (usage contract + regression + closeout) WITHOUT being prompted. Promote to runtime_observed after that
+  is witnessed.

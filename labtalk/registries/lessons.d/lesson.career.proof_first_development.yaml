@@ -1,0 +1,28 @@
+id: lesson.career.proof_first_development
+title: Proof-First Development Lessons
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- technical writer
+path: lessons/career/proof_first_development_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.evidence.review
+- concept.contract.usage
+- concept.selfdoc.validation
+apps:
+- app.dottalkpp.selfdoc
+- app.labtalk.case_library
+proofs:
+- proof.portal.truth_audit.latest
+- proof.ai_friendly.assimilation_docs_seed
+- proof.sqlsel.select_statement_matches_sqlite
+- proof.engine.scan_limit_reports_truncation
+proof_state: runtime_observed
+next_gate: 'The concrete before/after example this gate asked for now exists (AIF-074, 2026-07-29): SQLSEL
+  SELECT ... FROM STUDENTS emitting 200 debug lines and a false "0" BEFORE, and three oracle-verified
+  columns AFTER, on the same data and the same command. Both transcripts are preserved under labtalk/proofs/runs/.
+  Remaining gate: fold that pair and its dated build notes into the lesson document itself.'

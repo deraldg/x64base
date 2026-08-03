@@ -1,0 +1,26 @@
+run_id: AIPR-20260730-001
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.runtime
+lanes:
+- AIF-078
+role: analyst
+authored_by: member.ai.claude.cowork
+planned_by: member.derald
+owner: member.derald
+committer: member.derald
+git:
+  branch: development
+  baseline: 349227c18
+  head: b702b5a5d
+chat_handle: ''
+handle_binding: MAINTAINER_ATTESTED
+continues_run: null
+started: 2026-07-30
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_2026-07-30.md
+reports:
+- AIPR-20260730-001
+- AIPR-20260730-002
+- AIPR-20260730-003
+status: active

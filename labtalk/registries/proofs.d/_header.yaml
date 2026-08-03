@@ -1,0 +1,22 @@
+# Header block for proofs.yaml -- static vocabulary/schema, not a record.
+proof_states:
+- id: idea
+  meaning: Concept captured, not reviewed.
+- id: source_defined
+  meaning: Current source declares behavior or contract.
+- id: runtime_observed
+  meaning: Runtime transcript or smoke output exists.
+- id: help_documented
+  meaning: HELP or CMDHELP exposes the behavior.
+- id: validated
+  meaning: CMDHELPCHK, SelfDoc, or another validator checked it.
+- id: case_registered
+  meaning: Case registry knows the teaching context.
+- id: runtime_lab_candidate
+  meaning: Lab is identified but needs proof attachment.
+- id: student_ready
+  meaning: Reviewed for student-facing use.
+- id: simulated
+  meaning: Demonstration is intentionally simulated, not live runtime.
+- id: historical_review_needed
+  meaning: Historical claim needs source or fact review.

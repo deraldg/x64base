@@ -1,0 +1,6 @@
+id: proof.bbs.m6_daemon
+label: AI-BBS M6 standalone dottalk_bbsd daemon
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/AI_BBS_M6_STANDALONE_DAEMON_V1.md
+notes: Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across
+  restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.

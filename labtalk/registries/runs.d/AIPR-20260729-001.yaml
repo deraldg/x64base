@@ -1,0 +1,19 @@
+run_id: AIPR-20260729-001
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.runtime
+lanes:
+- AIF-074
+role: planner_steward
+authored_by: member.ai.claude.cowork
+planned_by: member.derald
+owner: member.derald
+committer: member.derald
+chat_handle: ''
+handle_binding: MAINTAINER_ATTESTED
+continues_run: null
+started: 2026-07-29
+closeouts:
+- docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+- docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
+status: active

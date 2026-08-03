@@ -1,787 +1,756 @@
-# LabTalk proof registry v0
+# GENERATED from proofs.d/ by tools/registries/registry_fragments.py -- do not hand-edit.
+# Add or change a record by editing its own file under proofs.d/, then re-run:
+#   python tools/registries/registry_fragments.py merge --write
+# One file per record means two sessions never touch the same file.
 
 proof_states:
-  - id: idea
-    meaning: Concept captured, not reviewed.
-  - id: source_defined
-    meaning: Current source declares behavior or contract.
-  - id: runtime_observed
-    meaning: Runtime transcript or smoke output exists.
-  - id: help_documented
-    meaning: HELP or CMDHELP exposes the behavior.
-  - id: validated
-    meaning: CMDHELPCHK, SelfDoc, or another validator checked it.
-  - id: case_registered
-    meaning: Case registry knows the teaching context.
-  - id: runtime_lab_candidate
-    meaning: Lab is identified but needs proof attachment.
-  - id: student_ready
-    meaning: Reviewed for student-facing use.
-  - id: simulated
-    meaning: Demonstration is intentionally simulated, not live runtime.
-  - id: historical_review_needed
-    meaning: Historical claim needs source or fact review.
-
+- id: idea
+  meaning: Concept captured, not reviewed.
+- id: source_defined
+  meaning: Current source declares behavior or contract.
+- id: runtime_observed
+  meaning: Runtime transcript or smoke output exists.
+- id: help_documented
+  meaning: HELP or CMDHELP exposes the behavior.
+- id: validated
+  meaning: CMDHELPCHK, SelfDoc, or another validator checked it.
+- id: case_registered
+  meaning: Case registry knows the teaching context.
+- id: runtime_lab_candidate
+  meaning: Lab is identified but needs proof attachment.
+- id: student_ready
+  meaning: Reviewed for student-facing use.
+- id: simulated
+  meaning: Demonstration is intentionally simulated, not live runtime.
+- id: historical_review_needed
+  meaning: Historical claim needs source or fact review.
 proofs:
-  - id: proof.export.sdf.fixed_width_export
-    label: EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260727_export_sdf_regression.txt
-    item_id: dottalkpp/data/scripts/export/export_sdf_regression.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/src/cli/cmd_export.cpp
-      - D:/code/ccode/include/cli/fixed_width_row.hpp
-      - D:/code/ccode/src/cli/cmd_tuptalk.cpp
-      - D:/code/ccode/src/cli/cmd_regression.cpp
-      - D:/code/ccode/src/help/helpdata_messages.cpp
-      - D:/code/ccode/include/dotref.hpp
-    notes: >-
-      AIF-069 closed as a runtime-observed development slice. Debug build passed
-      and REGRESSION RUN EXPORT_SDF exported two schema-width rows with no header:
-      "AB    7  12.3T" and "WXYZ123  -4.5F", each length 14. The generated temp
-      SDF file was inspected for row length and hex prefix, then removed.
-
-  # ---------------------------------------------------------------------------
-  # PDLC historical migration -- four hops, run COWORK-20260726-001, 2026-07-26.
-  # Engine v0.6, build Jul 26 2026 12:52:47. Each cites the preserved transcript,
-  # not the script: a script is a claim, a transcript is the evidence.
-  # ---------------------------------------------------------------------------
-  - id: proof.pdlc.csv_to_x64base.type_fidelity
-    label: CSV to x64base preserves types, NULLs and long names
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_csv_to_x64base_type_fidelity.txt
-    item_id: tests/conversion/02_csv_to_dbf_v2.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/tests/conversion/02_csv_to_dbf_v2.dts
-      - D:/code/ccode/tests/conversion/10_crosswalk_cascade_items_v1.dts
-    notes: >-
-      18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a
-      derivation taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N.
-      Two behaviours predicted from the code and confirmed by the engine -- LIST_PRICE classifies
-      DECIMAL (N) despite 14 of 18 cells being empty, because update_profile() returns on an empty
-      value before setting any category flag; and ACTIVE (1/0) classifies INTEGER not LOGICAL,
-      because is_integer_text() is tested first and returns, making the LOGICAL branch unreachable
-      for numeric literals. NULL fidelity held: LIST_PRICE renders empty, not 0. Long field names
-      survived with legacy 10-char descriptors carried alongside (STANDARD_COST + STANDARD_C).
-
-  - id: proof.pdlc.dbf_csv_dbf.roundtrip_lossless
-    label: DBF to CSV to DBF round trip is lossless
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_dbf_csv_dbf_roundtrip.txt
-    item_id: tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
-      - D:/code/ccode/tests/conversion/README_SUITE_REPAIR_V1.md
-    notes: >-
-      Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type
-      letters, same widths, same decimal counts. EXPORT rendered every value such that
-      re-inference reproduced the origin schema exactly, which is stronger than the test required.
-      Values identical field for field, including LIST_PRICE still empty rather than 0 on the
-      return leg. Supersedes tests/conversion/05_roundtrip_dbf_csv_dbf.dts, which the PDLC review
-      cited as evidence but which could not execute: four of its five lines used grammar the
-      engine does not implement, and all five wrote to a directory that does not exist.
-
-  - id: proof.pdlc.dialect_ladder.dbase3_to_x64
-    label: dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_historical_dialect_ladder.txt
-    item_id: tests/conversion/11_historical_dialect_ladder_v1.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/tests/conversion/11_historical_dialect_ladder_v1.dts
-      - D:/code/ccode/src/cli/cmd_copy.cpp
-      # NOT cited: docs/maintenance/HISTORICAL_XBASE_PRODUCT_FAMILY_TREE_V1.md.
-      # It is the natural companion, but it is untracked and belongs to another
-      # session -- citing it would put a dangling reference in the registry, the
-      # exact failure the AIF-062 audit was written to stop. Add it here once
-      # its owner commits it.
-    notes: >-
-      The historical migration demonstration proper, walked inside one engine with no external
-      tool, from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records,
-      9 fields, every field name at or under the classic 10-character cap. 200 rows and 9 fields
-      at EVERY rung. GPA held N(4,2) through all four conversions -- decimal loss is silent and
-      fatal, and did not occur. DOB and ENROLL_D held type D, with values byte-identical at the
-      1985 end and the modern end. Unlooked-for result: the index estate migrates with the
-      dialect, CNX/INX through FOX26 and VFP becoming CDX at x64. COPY converts indexes, not just
-      tables. Not asserted by the pass criteria; should be in v2.
-
-  - id: proof.pdlc.cobol_fixed_record.hop_closed
-    label: DBF to fixed-record to GnuCOBOL read, 200 records
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_cobol_fixed_record_hop.txt
-    item_id: tests/conversion/12_cobol_fixed_record_v1.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/tests/conversion/12_cobol_fixed_record_v1.dts
-      - D:/code/ccode/dottalkpp/data/projects/cobol/src/first_cobol_test.cob
-      - D:/code/ccode/src/edu/edu_cobol.cpp
-    notes: >-
-      COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division
-      is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so
-      a short write is invisible to anything that merely opens and reads. GnuCOBOL compiled
-      clean and the program ran: 200 student lines, RECORDS READ 0000200, exit 0. Record 1 read
-      by COBOL is identical to record 1 read by DotTalk++ from the dBASE III table, GPA decimals
-      included. THE COPYBOOK IS THE CROSSWALK: the FD sums to exactly 109 bytes, the dBASE III
-      record length, field for field; the file's 111 is 109 plus CRLF under LINE SEQUENTIAL.
-      Closing this hop required fixing two latent defects neither of which was visible to
-      reading -- a BUILD/RUN extension asymmetry in edu_cobol.cpp (BUILD appended .exe on
-      Windows, RUN had no fallback) and a stale ASSIGN path in the fixture naming a location
-      nothing had ever written to. The PDLC review's "runtime-capable, proof incomplete" was
-      right about the gap and wrong about the cause: the missing piece was never GnuCOBOL.
-
-  - id: proof.edref.topic_exists
-    label: EDREF topic exists
-    state: source_defined
-    source: D:/code/ccode/include/edref.hpp
-  - id: proof.case.registry_exists
-    label: Case registry exists
-    state: case_registered
-    source: D:/code/ccode/docs/cases/REGISTRY_CASES_v0.csv
-  - id: proof.help.cmdhelp_source_exists
-    label: CMDHELP source exists
-    state: source_defined
-    source: D:/code/ccode/src/cli/cmdhelp.cpp
-  - id: proof.selfdoc.comments_workflow_exists
-    label: Comments to HELP workflow exists
-    state: source_defined
-    source: D:/code/ccode/docs/maintenance/COMMENTS_HELP_PROOF_WORKFLOW_v1.md
-  - id: proof.lab.database_literacy_starter.first_run
-    label: Database Literacy Starter first portal/runtime transcript
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260702_155913_runtime_database_literacy_starter.txt
-    item_id: runtime.database_literacy_starter
-    return_code: 0
-    notes: Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.
-  - id: proof.lab.selfdoc.comments_to_contracts.first_run
-    label: SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run
-    state: validated
-    source: D:/code/ccode/labtalk/proofs/runs/20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt
-    item_id: runtime.selfdoc.comments_to_contracts.first_lab
-    return_code: 0
-    related:
-      - D:/code/ccode/labtalk/reports/selfdoc/lab_selfdoc_first_crosswalk_v0.md
-    notes: Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP and CMDHELPCHK.
-  - id: proof.product.manualgen.board_preserved
-    label: Manualgen product board and map preservation
-    state: validated
-    source: D:/code/ccode/labtalk/products/manualgen_product_preservation_v0.md
-    item_id: doc.manualgen_product_board
-    related:
-      - D:/code/ccode/labtalk/products/manualgen_product_board_v0.html
-      - D:/code/ccode/labtalk/products/manualgen_product_map_v0.md
-      - D:/code/ccode/tools/manualgen/README.md
-      - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_validate_summary_v1.csv
-      - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_build_dry_run_summary_v1.csv
-    notes: Preserves the first Manualgen product board and records initial hardening evidence using repo-local vcpkg Python 3.12.9.
-  - id: proof.portal.truth_audit.latest
-    label: Portal truth audit latest report
-    state: validated
-    source: D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.md
-    item_id: doc.portal_truth_audit
-    related:
-      - D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.json
-      - D:/dev/x64base-site/content/docs/labtalk/sdlc.mdx
-      - D:/dev/x64base-site/content/docs/labtalk/selfdoc-lane.mdx
-      - D:/dev/x64base-site/content/docs/dev/selfdoc-website-publication.mdx
-    notes: Captures the portal collection-of-truths audit across LabTalk registries, local proof records, and x64base.com SelfDoc/SDLC publication pages.
-  - id: proof.ai_friendly.assimilation_docs_seed
-    label: AI Friendly assimilation portal and book seeded
-    state: source_defined
-    source: D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
-    item_id: doc.ai_assimilation_portal
-    related:
-      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
-      - D:/code/ccode/docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
-      - D:/code/ccode/src/cli/cmd_maint.cpp
-    notes: Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context is unavailable.
-  - id: proof.ai_friendly.maint_ai_assimilate.first_run
-    label: MAINT AI ASSIMILATE first portal/runtime transcript
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260705_182913_runtime_maint_ai_assimilate.txt
-    item_id: runtime.maint_ai_assimilate
-    return_code: 0
-    related:
-      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
-      - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
-      - D:/code/ccode/src/cli/cmd_maint.cpp
-    notes: Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture the onboarding readback.
-  - id: proof.ai_portal.lane_registered
-    label: AI Portal Alpha/Experimental lane registered
-    state: source_defined
-    source: D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
-    item_id: plan.ai_portal.hardening.v1
-    related:
-      - D:/code/ccode/labtalk/registries/ai_portal.yaml
-      - D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
-    notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary, and requirement that the portal not be presented as production autonomous memory.
-  - id: proof.ai_portal.dotscript_startup_readiness.v1
-    label: DotTalk++ / DotScript startup readiness probe v1
-    state: runtime_observed
-    readiness_result: ORIENTED
-    source: D:/code/ccode/labtalk/proofs/runs/20260712_195729_probe_ai_portal_dotscript_startup_readiness_v1.txt
-    item_id: probe.ai_portal.dotscript_startup_readiness.v1
-    return_code: 0
-    related:
-      - D:/code/ccode/labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
-      - D:/code/ccode/labtalk/ai_portal/probes/dotscript_startup_readiness_v1.dts
-      - D:/code/ccode/src/cli/cmd_dotscript.cpp
-    observations:
-      - both readiness markers were present
-      - DOTSCRIPT usage was visible
-      - CMDHELP and DOTHELP resolved DOTSCRIPT
-      - no Unknown command appeared
-      - runtime process return code and portal acceptance return code were both zero
-      - portal output acceptance was accepted
-      - runtime initialization reported a separate missing optional BibleTalk SQLite seed
-    notes: Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that the portal's transcript acceptance gate accepts the green path. ORIENTED permits drafting and review only; it does not authorize a mutating DotScript or maintained-data target.
-  - id: proof.ai_portal.source_mutation_contract_gate.v1
-    label: Source mutation contract preflight registered
-    state: source_defined
-    source: D:/code/ccode/labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
-    item_id: seed.ai_portal.source_mutation_contract_preflight.v1
-    related:
-      - D:/code/ccode/docs/contracts/README.md
-      - D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
-      - D:/code/ccode/docs/contracts/CONTRACT_LIFECYCLE_V1.md
-      - D:/code/ccode/labtalk/registries/ai_portal.yaml
-    notes: Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle, subsystem-contract, and source-annotation review before a patch is applied. This record does not grant mutation authority.
-  - id: proof.ai_portal.seed_connection_prototype_direction.v1
-    label: AI fast-start seed connection prototype direction registered
-    state: design_intended
-    source: D:/code/ccode/labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md
-    item_id: concept.ai_portal.seed_connection_prototype.v1
-    related:
-      - D:/code/ccode/labtalk/ai_portal/README.md
-      - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
-      - D:/code/ccode/labtalk/registries/ai_portal.yaml
-    notes: Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.
-  - id: proof.ai_portal.root_entry_and_external_package.v1
-    label: Root AI Portal entry and external change-package contract defined
-    state: source_defined
-    source: D:/code/ccode/AI_PORTAL.md
-    item_id: doc.ai_portal_root_entry
-    related:
-      - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
-      - D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
-      - D:/code/ccode/labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
-      - D:/code/ccode/labtalk/registries/ai_portal.yaml
-    notes: Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted and verified in the public repository.
-  - id: proof.ai_portal.sdlc_fast_start.v1
-    label: AI Portal SDLC fast-start seed registered
-    state: source_defined
-    source: D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
-    item_id: seed.ai_portal.sdlc_fast_start.v1
-    related:
-      - D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
-      - D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
-      - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
-      - D:/code/ccode/labtalk/registries/ai_portal.yaml
-    notes: Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.
-
-  # --- AI-BBS / pseudo-chat agent-server lane (AIF-052..055), runtime-observed 2026-07-25 ---
-  - id: proof.bbs.m1_board
-    label: AI-BBS M1 board tables + BBS command
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
-    notes: BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects SYSGRANT.
-  - id: proof.bbs.m2_net_egress
-    label: AI-BBS M2 NET EGRESS permissioned toggle
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
-    notes: AI member refused NET EGRESS OPEN ("no in-scope role permission"); owner STATUS = Block. host.network.egress owner-only.
-  - id: proof.bbs.m3_argon2
-    label: AI-BBS M3 Argon2id token crypto (libsodium)
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
-    notes: USER TOKEN -> 43-char base64url CSPRNG; correct token logs in, wrong token rejected. Gates M4.
-  - id: proof.bbs.m4_serve
-    label: AI-BBS M4 BBS SERVE loopback listener + Ollama bridge
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
-    notes: 127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block; OK posted.
-  - id: proof.bbs.m6_daemon
-    label: AI-BBS M6 standalone dottalk_bbsd daemon
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/AI_BBS_M6_STANDALONE_DAEMON_V1.md
-    notes: Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.
-  - id: proof.bbs.guest
-    label: AI-BBS guest leave-a-message (member.guest + board.guestbook)
-    state: runtime_observed
-    source: D:/code/ccode/docs/ai-friendly/AI_BBS_LOUNGE_ROOM_V1.md
-    notes: As member.guest -> POST board.guestbook OK posted #5; POST board.lounge bbs.post denied; READ bbs.read denied (write-only). Per-board POSTPERM (bbs.guest); BBS writes take table FLOCK.
-
-  # --- AI Portal onboarding hardening (AIF-056) ---
-  - id: proof.ai_portal.engineering_standards_seed
-    label: AI Portal engineering-standards / definition-of-done seed on the mandatory path
-    state: source_defined
-    source: D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
-    related:
-      - D:/code/ccode/AI_README.md
-      - D:/code/ccode/AI_PORTAL.md
-      - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
-      - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
-    notes: Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout. Source_defined by nature; VERIFICATION is behavioral - a cold AI session reads the front door and applies the standards (usage contract + regression + closeout) WITHOUT being prompted. Promote to runtime_observed after that is witnessed.
-
-  # --- AI-BBS worklog/handoff simplex drop-point (AIF-057), small end built ---
-  - id: proof.bbs.worklog
-    label: AI-BBS worklog/handoff board + simplex cascade guard
-    state: runtime_observed
-    source: D:/code/ccode/docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md
-    notes: >-
-      2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK. Handoff-post convention (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff line (AI_README step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade guard (SO_RCVTIMEO idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary. Duplex switch remains design-intended (needs M4.1).
-
-  # --- AI roles taxonomy (AIF-058) ---
-  - id: proof.ai.roles_taxonomy
-    label: AI roles taxonomy - agents vs Ollama vs GPTbase
-    state: source_defined
-    source: D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
-    notes: Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED ADVISOR (GPTbase, advisory not authority, cloud/not-isolated, snapshot goes stale). First artifact of the portal capability inventory. Doc/boundary artifact; source_defined by nature.
-
-  # --- AIF-050 M2/M3 full-tree @dottalk.file backfill (2026-07-25) ---
-  - id: proof.contract.dottalk_file_fulltree
-    label: "@dottalk.file universal contract - full-tree backfill at 100% coverage"
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md
-    related:
-      - D:/code/ccode/tools/fullstack_docs/source_census.py
-      - D:/code/ccode/docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md
-    notes: >-
-      census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits 0
-      (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped
-      (duplicated git tracking; path: goes stale on rename), lane:/owner: added so a file self-identifies
-      AND resolves to its lane doc -> ai_runs.yaml run -> current_by_lane -> last agent. 12 pre-existing
-      dogfood blocks upgraded with hand-set layer:/owns: PRESERVED (glue/engine-core, DOT|BBS/DOT|NET),
-      verified file by file; 1022 written fresh with derived fields. Incident same session - a
-      directory-level `git add -- src include` swept ~111 untracked scratch files into 6f86c8aed;
-      repaired by reset + `git add -u` + force-push (3706da78c, 1035 files clean), the 111 restored to
-      disk, and the scratch categories gitignored. main never touched.
-
-  # --- Agency model (AIF-060) ---
-  - id: proof.agency.model
-    label: Agency model -- capacity to act plus accountability for having acted
-    state: source_defined
-    source: D:/code/ccode/docs/ai-friendly/AGENCY_MODEL_V1.md
-    related:
-      - D:/code/ccode/labtalk/lessons/student/agency_who_may_act_v0.md
-      - D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
-      - D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
-    notes: >-
-      Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop
-      reading as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority
-      (SYSMEMROLE->SYSROLEPERM->SYSPERM), authentication (Argon2id token / AUTH), accountability
-      (owner/committer in ai_runs.yaml). Exclusions carry the weight: capability is not agency
-      (Ollama produces work, has no member row -- its absence is correct, not an omission);
-      influence is not authority (ChatGPT planned the RBAC, member.derald committed it -- the
-      attribution block exists because git records one name where the truth had three); access is
-      not agency. Properties: bounded, enumerable, proven-not-claimed, delegated-never-surrendered,
-      serialized when shared, time-bounded, transferable by artifact not memory, asymmetric by
-      design (agents deliver, owner commits). Underlying leg-level behavior IS runtime_observed
-      (proof.bbs.m2_net_egress = boundary refusal; proof.bbs.guest = designed minimal agency); the
-      MODEL itself is source_defined. Declared gaps: no per-session identity, no token expiry, git
-      agency serialized by convention not mechanism (AIF-059), no durable Decision audit trail.
-
-  # --- WAL / memo atomicity (AIF-061) ---
-  - id: proof.wal.dbf_record
-    label: TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md
-    related:
-      - D:/code/ccode/docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
-      - D:/code/ccode/src/cli/table_state.cpp
-      - D:/code/ccode/include/cli/table_state.hpp
-      - D:/code/ccode/labtalk/proofs/runs/wal_phaseA_proof_teed_20260719T080435Z.log
-      - D:/code/ccode/labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log
-      - D:/code/ccode/labtalk/proofs/runs/wal_phaseC_proof_teed_20260719T082345Z.log
-    proof_logs:
-      - wal_phaseA sha 938D4EC361EB34D8D7A3130E62ABDC06F8868DF3C75698C002F6FBE1A6292F60
-      - wal_phaseB sha 16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A
-      - wal_phaseC sha FBA1FC92FA1CC531B8B54094D8BC644B1FA51DD13B35053D02775511A257EE54
-    notes: >-
-      Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo log
-      with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the
-      highest-priority Edit3). Phase B: CRASH RECOVERY OBSERVED -- setup left an uncommitted
-      `U 1 1 S 2:<hex "Recovered">`, the runner appended `C 1`, reopening replayed it (NAME=Recovered)
-      and removed the log. Phase C: buffered DELETE journals a D record and defers the DBF mutation to
-      COMMIT, discarded on ROLLBACK, replayed on recovery; the buffer-off write-through DELETE path is
-      unregressed. Format TBJ1; one durable fsync of the C marker BEFORE the DBF apply.
-      CLASSIFICATION HISTORY: first entered at source_defined on the belief the crash window was
-      untested. Wrong -- the evidence existed but was gitignored by a blanket `*.log` rule, so a
-      partner surveying the repo could not see it. Corrected to runtime_observed when the proof
-      transcripts were un-ignored and committed (AIF-062).
-  - id: proof.wal.memo_atomicity
-    label: Whole-row atomicity including the memo store
-    state: design-intended
-    source: D:/code/ccode/docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
-    notes: >-
-      GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field
-      holds the id, so the WAL journals the id and never the content. A crash between the durable WAL
-      commit and the memo store's own write leaves a recovered record referencing an object that may
-      be absent or partial -- silent inconsistency the log cannot detect, since from its view the
-      transaction committed cleanly. Fix is additive: an M <object-id> <len> <hex> record written
-      before the referencing U record, replayed memo-first, under a TBJ2 version bump that still
-      accepts TBJ1. cmd_replace already declares writes_memo / clears_memo_field, so the call sites to
-      instrument are pre-identified. Closing this retires the COMMIT contract's own disclaimer that it
-      "is not an atomic transaction across DBF, memo, and index storage."
-
-  # --- Evidence layer versioning (AIF-062) ---
-  - id: proof.evidence.layer_versioned
-    label: Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone
-    state: runtime_observed
-    source: D:/code/ccode/docs/maintenance/AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md
-    notes: >-
-      MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it
-      also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR
-      EVIDENCE. 71 proof artifacts on disk, 0 tracked; 7 rows citing files absent from a clone; 57
-      untracked session closeouts against 18 tracked -- roughly three quarters of the completed-work
-      record outside version control. The registry's central claim, that runtime_observed means a
-      transcript exists, was unverifiable by anyone not at this machine. Surfaced when a partner
-      reported x64base had no write-ahead log: the WAL was designed, built, crash-proven in three
-      teed phases and closed out on 2026-07-19, but design doc, closeout and all three transcripts
-      were untracked, so it was indistinguishable from unbuilt. Second-order cost: the partner then
-      recorded proof.wal.dbf_record at source_defined ("untested"), which was wrong in fact --
-      invisible evidence does not merely fail to help, it produces wrong records that propagate.
-      FIX: targeted negations (!labtalk/proofs/**, !labtalk/reports/**) immediately after the blanket
-      rule, verified both directions (proof logs no longer ignored; dottalk_exit_trace.log still is);
-      81 proof/report artifacts + 57 closeouts + the WAL design doc committed; proof.wal.dbf_record
-      corrected to runtime_observed citing Phase A/B/C by SHA. Same failure as the @dottalk.file gap
-      (AIF-050) one layer up: there source files were invisible to the harvest, here proofs were
-      invisible to a clone.
-
-  - id: proof.lmdb.mapsize_override_on_attach
-    label: LMDB env resizes 128 MiB -> 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_attach.txt
-    item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
-    return_code: 0
-    related:
-      - D:/code/ccode/src/xindex/cdx_backend.cpp
-      - D:/code/ccode/src/xindex/lmdb_backend.cpp
-      - D:/code/ccode/src/cli/cmd_buildlmdb.cpp
-    notes: >-
-      AIF-065 promoted from source_defined to runtime_observed. SYSSUBCMD.cdx.d/data.mdb
-      measured at 134,217,728 bytes immediately before the run and 1,073,741,824 bytes
-      immediately after -- exactly 8x, on a 31-ROW TABLE, from a single index attach. The
-      environment had been written by BUILDLMDB at 128 MiB earlier the same day and never
-      attached, making it a clean control; SYSCMD (203 rows, 1 GiB, attached) was the
-      opposite arm. This explains the bimodal distribution recorded in the lane doc: every
-      data.mdb holds either the size BUILDLMDB wrote or the 1 GiB asserted by
-      mdb_env_set_mapsize at cdx_backend.cpp:189 / lmdb_backend.cpp:80, and which one
-      depends solely on whether an index has ever been opened. TRIGGER CORRECTED BY THE
-      TRANSCRIPT -- the attach fires at USE ("Auto-attached order: SYSSUBCMD.cdx (tag:
-      SUB_ID)"), not at SET ORDER or SEEK as the protocol had predicted; it is caused by
-      the index being FINDABLE when the table opens, not by an index operation. METHOD
-      NOTE: two earlier probes returned an identical, plausible 134217728 -> 134217728 for
-      two unrelated reasons (a relative tee path that aborted the pipeline; a run that set
-      only SETPATH DBF so the CDX was not findable). A null probe and a negative result are
-      indistinguishable from the outside, so the protocol now names the transcript lines
-      that constitute success -- "Auto-attached order:" and "Found at N." -- rather than
-      only the bytes to measure. Consequence unblocked: the x64base-vs-SQLite storage
-      benchmark axis, which until now compared attach history rather than databases.
-
-  - id: proof.lmdb.mapsize_override_replication_sysfunc
-    label: LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_tiny_survives_attach.txt
-    item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
-    return_code: 0
-    related:
-      - D:/code/ccode/tools/proofs/run_proof.ps1
-      - D:/code/ccode/src/xindex/cdx_backend.cpp
-    notes: >-
-      Independent replication of proof.lmdb.mapsize_override_on_attach on a different
-      table. SYSFUNC.cdx.d/data.mdb measured 134,217,728 before and 1,073,741,824 after a
-      single index auto-attach at USE -- delta 939,524,096 on a 69-row table. Two tables,
-      two row counts, identical outcome: the attach path asserts 1 GiB regardless of what
-      BUILDLMDB wrote. FIRST USE OF tools/proofs/run_proof.ps1, which verified the expected
-      transcript markers ("Auto-attached order:", "Found at") before offering any verdict
-      on the measurements, and emitted this registry block. Its purpose is to prevent the
-      failure mode that cost two attempts during the original proof: a probe that dies in
-      the harness produces the same numbers as a mechanism that does not exist. This run is
-      also the PRE-FIX CONTROL for the same command with -ExpectNoChange, which becomes the
-      regression once mdb_env_set_mapsize(env_, 0) is applied.
-
-  - id: proof.lmdb.mapsize_ladder_honoured_after_fix
-    label: BUILDLMDB TINY survives an index attach -- the size ladder is honoured
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_tiny_survives_attach_postfix.txt
-    item_id: src/xindex/cdx_backend.cpp
-    return_code: 0
-    related:
-      - D:/code/ccode/src/xindex/lmdb_backend.cpp
-      - D:/code/ccode/tools/proofs/run_proof.ps1
-      - D:/code/ccode/docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
-    notes: >-
-      AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at
-      cdx_backend.cpp and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize
-      instead of asserting one. SYSARGS rebuilt with BUILDLMDB CLEAN TINY YES measured
-      33,554,432 bytes (exactly 32 MiB) and STILL measured 33,554,432 after an index
-      auto-attach -- delta 0. CONTROLLED COMPARISON, same table and same commands, only the
-      binary differing: pre-fix 33,554,432 -> 1,073,741,824; post-fix 33,554,432 ->
-      33,554,432. This is the first time the BUILDLMDB size ladder has been observed to hold
-      through use since it was written. Storage effect for this table 32x
-      (1,073,741,824 / 33,554,432). Preceded by three pre-fix observations of the defect
-      (SYSSUBCMD 31 rows, SYSFUNC 69 rows, SYSARGS 249 rows), all 128 or 32 MiB -> 1 GiB,
-      confirming the assertion was independent of data volume. Note the deletion originally
-      proposed for these two call sites would have been WRONG -- LMDB defaults to 10 MiB
-      when no mapsize is set -- and passing zero is the documented adopt-persisted form.
-      UNBLOCKS the x64base-vs-SQLite storage benchmark axis, which until now measured attach
-      history rather than databases.
-
-  - id: proof.ai_portal.discoverability_caught_its_own_author
-    label: The discoverability fix caught its own maker -- Phase 7 was the next dropped thread
-    state: source_defined
-    related:
-      - D:/code/ccode/labtalk/ai_portal/INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md
-      - D:/code/ccode/labtalk/registries/ai_report_index.yaml
-      - D:/code/ccode/docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md
-      - D:/code/ccode/docs/agents/CURRENT_TARGET.md
-    notes: >-
-      IRONY, RECORDED. On 2026-07-28 the AI Portal's external-intake discoverability gap
-      (AIF-071) was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted
-      chat, an assistant task list -- cannot be found later, so it was made a registered,
-      indexed lane with aliases. Within the SAME session the maintainer noticed that Phase 7
-      (the DOCFLUSH manual web-ascent) had no pick-up point: it lived ONLY in the assistant's
-      ephemeral task list, the exact failure the AIF-071 lane had just named. The remedy was
-      the same mechanism the fix prescribes -- register it (AIF-072): an intake row, a
-      CURRENT_TARGET NEXT-TARGET marker, and a self-contained pickup doc. So the fix proved
-      itself by catching its own author's dropped thread, in the same sitting it was built.
-      Same shape as AIF-065/066/067: the gap is found by the thing falling through it, not by
-      an audit -- and "we will remember to pick it up" is not a pick-up point. Evidence is two
-      commits: the fix (AIF-071) and its immediate self-application (AIF-072). A durable record
-      beats a good intention; an index beats a memory.
-
-  # ---------------------------------------------------------------------------
-  # AIF-074 SQLSEL lane -- run AIPR-20260729-001, 2026-07-29. Engine v0.6.
-  # Fifteen gated commits: a phantom SQL surface demoted, engine seams landed,
-  # then the first working statement. Each proof cites its preserved transcript.
-  # ---------------------------------------------------------------------------
-  - id: proof.aif078.slot_cost_measured_per_toolchain
-    label: MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different platforms
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_msvc.txt
-    item_id: src/tools/g0_slot_cost_probe.cpp
-    return_code: 0
-    related:
-      - D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_gcc.txt
-      - D:/code/ccode/config/build_vectors.cmake
-      - D:/code/ccode/include/xbase.hpp
-      - D:/code/ccode/src/xbase/dbf_file.cpp
-      - D:/code/ccode/src/cli/shell.cpp
-      - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
-    notes: >-
-      AIF-078 gate G0. MSVC (_MSC_VER=1944): DbArea 840, AreaState 144, fstream 280,
-      1016 B/slot. g++/libstdc++ x86-64: DbArea 1088, AreaState 176, fstream 528,
-      1296 B/slot. sizeof(XBaseEngine) is 4104 on both because it is only
-      MAX_AREA*8+8 -- a pointer array with no layout freedom. The divergence is almost
-      entirely std::fstream, which DbArea embeds by value.
-      THE RESULT THAT MATTERS: the two cost axes bind on DIFFERENT platforms. Memory
-      binds on Linux (1296 B/slot, 81 MB at cap 65536, 27% heavier than MSVC); stack
-      binds on Windows (1 MB default main thread vs 8 MB), where the 512 KB
-      XBaseEngine frame at 65536 is half the stack. The frame is identical on both
-      platforms; only the ceiling differs. A single-toolchain measurement would have
-      produced a confidently wrong cap ruling either way.
-      PREDICTION RECORDED AND WRONG: the lane predicted MSVC would have the LARGER
-      structures. It is 22% smaller. The reasoning generalised from std::string and
-      std::multimap, neither of which dominates DbArea. Kept in the record because it
-      is doctrine rule 2 (verify the constraint is real) applied to a portability
-      assumption rather than to a constant, and it is why the probe existed.
-      Cost is paid EAGERLY: dbf_file.cpp:409-411 constructs every slot at engine
-      construction, so the figures are resident with zero tables open. Probe is a
-      CMake target (-DDOTTALK_BUILD_SLOT_COST_PROBE=ON), deliberately NOT registered
-      with add_test: it is a measurement, and a test that can only pass is the defect
-      class recorded in the sibling row below.
-
-  - id: proof.aif078.workspace_path_preserves_depth1
-    label: DataAddress workspace scalar widened to a path with no depth-1 behavior change
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt
-    item_id: src/tests/test_pdlc_foundation_smoke.cpp
-    return_code: 0
-    related:
-      - D:/code/ccode/include/reference/data_address.hpp
-      - D:/code/ccode/src/reference/data_address.cpp
-      - D:/code/ccode/src/tests/test_pdlc_foundation_smoke.cpp
-      - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
-    notes: >-
-      AIF-078 Q7. WorkspaceIdentity workspace_ became WorkspacePath workspace_path_
-      (outermost first); the scalar constructor kept its signature, delegates, and
-      yields depth 1. Asserted rather than inspected: depth-1 renders exactly
-      "MCC.#2.STUDENTS.RECNO(12).LNAME", an unspecified workspace still renders
-      CURRENT_WORKSPACE, an empty path and a path of one unspecified identity compare
-      equal (or a default-constructed DataAddress would stop matching one built with a
-      default WorkspaceIdentity), depth 3 renders dot-joined with workspace() answering
-      the innermost, and require_parse accepts MCC.FALL2026.SEC3.STUDENTS.LNAME --
-      which turns the lane's central claim (the parser already accepts arbitrary depth;
-      only resolution is missing) into a test instead of prose.
-      HONESTY BOUND, and the reason this row exists at all: the FIRST MSVC Release run
-      printed "PDLC foundation smoke passed" with decimal=0 and proved NOTHING. The test
-      is registered via add_test and runs in Release, where NDEBUG defuses assert(), so
-      every assertion was a no-op -- and three of them wrapped ExactDecimal::parse(),
-      a side-effecting call, so the parse never ran. Reproduced under g++ -DNDEBUG, so
-      it was the configuration and not the toolchain. Fixed by a CHECK macro that always
-      evaluates (32 sites); falsifiability confirmed by deliberately breaking one
-      expectation and observing exit 134 with the failing expression named. The
-      transcript cited here is the post-fix run. AI_TIER1_SEED_V1.md sec 6.
-      SCOPE: this row covers MSVC Release. x64base is cross-platform; the same
-      assertions pass under g++/libstdc++ with and without NDEBUG, but that run is not
-      committed here. The g0_size_probe per-slot cap measurement is a SEPARATE gate (G0)
-      and is unrun on both toolchains.
-    related_defect: >-
-      MEASURED 2026-08-01, correcting a guessed list in the first draft of this row (the
-      draft named test_security_policy / test_field_codec / test_lmdb_backend, which
-      carry ZERO asserts, and missed three files that do). Bare-assert exposure across
-      src/tests/, by count: test_recno64_boundary 23, test_recno64_sparse_e2e 18,
-      test_sql_where 10, test_where_cache_only 10, test_x64_record_limit 3. All are
-      registered via add_test and therefore run under ctest in Release, where NDEBUG
-      makes every one a no-op; four then print an unconditional success banner
-      ("... PASS", "[OK] where cache tests passed").
-      SHARPEST CASE: test_recno64_sparse_e2e.cpp puts the WORK inside the assertions,
-      not just the checks -- sparse_write_at() at lines 120-122 and
-      a.gotoRec64(RA) && a.readCurrent() at 132/138. Under NDEBUG no records are
-      written, no positioning occurs, nothing is read, and the test prints
-      "64-bit on-disk positioning past 2^31 PROVEN. PASS". A headline capability claim
-      attached to a test that, in the shipped configuration, does nothing and announces
-      that it proved something.
-      Not fixed here and not this lane's. Recommend surveying under AIF-079
-      (declared-capability-validator), whose shape this matches, rather than opening a
-      new lane -- prior art first.
-
-  - id: proof.sqlsel.select_statement_matches_sqlite
-    label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_sqlsel_select_v1_oracle.txt
-    item_id: dottalkpp/data/scripts/sqlsel_select_v1_regression.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/src/cli/sqlsel_statement.cpp
-      - D:/code/ccode/src/cli/sqlsel_statement.hpp
-      - D:/code/ccode/src/cli/cmd_sql_select.cpp
-      - D:/code/ccode/src/cli/workarea_util.cpp
-      - D:/code/ccode/src/cli/tuple_builder.cpp
-    notes: >-
-      The lane's one genuinely new component. Projection, star, WHERE and LIMIT each
-      returned the same rows as the in-process SQLite oracle over identical data
-      (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI; WHERE MAJOR='CSCI' -> ADAMS + CARTER).
-      Cursor neutrality proven by data: the cursor was parked on record 2 (BAKER) before
-      four statements and still read BAKER after (S5A/S5B .T.), so a statement neither
-      reads nor disturbs session state. Corrective errors fired for an unopened table, an
-      expression select-item, and a bad LIMIT -- never a silent wrong answer. The BEFORE
-      state is the same command on the same data emitting 200 lines of debug and a false
-      "0" (evidence record Sec. 7): that pair is the teaching exhibit. Everything under
-      the parser was consumed, not built -- area resolution, predicate compile/eval,
-      tuple projection, cursor guards all pre-existed and were proven earlier the same day.
-
-  - id: proof.engine.typed_equality_crosses_declared_types
-    label: Relation equality compares numerically whenever both sides are numeric literals
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rdb_truth_typed_equality.txt
-    item_id: dottalkpp/data/scripts/rdb_truth_proof_v2.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/src/cli/set_relations.cpp
-      - D:/code/ccode/dottalkpp/data/scripts/rdb_truth_check_v1.py
-    notes: >-
-      AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a
-      numerically DECLARED child field got numeric comparison, so a character child holding
-      "1" failed against a numeric parent's "1.00" -- an asymmetry invisible to the user.
-      Now both sides decide. Scorer verdict PASS, 11/11 markers, 4/4 derived checks; the
-      marker itself was rewritten from DIVERGE_ to CONFORM_ because the engine changed.
-      RELJOIN 12/12 unchanged, so the fix altered exactly what it claimed and nothing else.
-
-  - id: proof.engine.scan_limit_reports_truncation
-    label: Relation scans announce when the scan limit stopped them
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rel_scanlimit_honesty.txt
-    item_id: dottalkpp/data/scripts/rel_scanlimit_honesty_regression.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/src/cli/set_relations.cpp
-      - D:/code/ccode/src/cli/set_relations.hpp
-      - D:/code/ccode/src/cli/cmd_rel.cpp
-    notes: >-
-      AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a
-      plausible-looking partial answer with no indication -- a wrong result indistinguishable
-      from a right one. At limit 1 the run reports "REL: scan limit (1) reached; results may
-      be incomplete." exactly once per command; at the restored default the same command is
-      silent. REL SCANLIMIT also gives the limit CLI reach for the first time, closing
-      open question OQ-1.
-
-  - id: proof.engine.key_metadata_survives_workspace_roundtrip
-    label: PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_key_metadata_roundtrip.txt
-    item_id: dottalkpp/data/scripts/key_metadata_regression.dts
-    return_code: 0
-    related:
-      - D:/code/ccode/include/cli/unique_registry.hpp
-      - D:/code/ccode/src/cli/unique_registry.cpp
-      - D:/code/ccode/src/cli/cmd_setunique.cpp
-      - D:/code/ccode/src/cli/cmd_workspace.cpp
-      - D:/code/ccode/src/cli/cmd_validate_unique.cpp
-    notes: >-
-      Phase 2 of a registry whose own header asked for it ("Phase 1: session-scoped ...
-      storage/backfill policy belongs elsewhere"). The registry was emptied between SAVE and
-      LOAD, so restoration is proven, not assumed: LOAD echoed KEY KEYREGR.KID PRIMARY and
-      KEY KEYREGR.KLBL UNIQUE and the listing matched pre-save exactly. VALIDATE UNIQUE
-      passes clean data and reports one duplicate with provenance. Green on first run.
-
-  - id: proof.engine.two_read_families_buffer_visibility
-    label: Two coherent read families; buffer-visibility defects occur only at the hybrid seam
-    state: runtime_observed
-    source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_smartbrowser_tuple_filter_interactive.txt
-    item_id: docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md
-    return_code: 0
-    related:
-      - D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe.txt
-      - D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe_v2.txt
-      - D:/code/ccode/src/cli/expr_tuple_glue.hpp
-      - D:/code/ccode/src/cli/db_tuple_stream.cpp
-      - D:/code/ccode/src/cli/smartlist_output.cpp
-      - D:/code/ccode/src/cli/sqlsel_statement.cpp
-    notes: >-
-      Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every
-      reader must choose a source. Three probes established that x64base has TWO
-      internally coherent families and that defects appear ONLY where they are mixed.
-      TUPLE-STREAM (SMARTBROWSER, TUPLE): filter and display both bind to TupleRow and
-      see buffered values -- proven interactively, both directions: with rec1 buffered
-      CSCI->MATH, FOR "MATH" matched it and FOR "CSCI" excluded it, so the filter reads
-      buffered AND genuinely excludes (the inclusion test alone was insufficient because
-      both fixture rows were MATH under buffering). CLASSIC (DISPLAY, COUNT FOR, EXPORT):
-      both filter and render read committed data; EXPORT wrote 1,CSCI to file. HYBRIDS,
-      exactly two: SQLSEL SELECT (classic predicate + tuple projection) contradicted
-      itself -- WHERE MAJOR="CSCI" returned a row printing MATH -- and was closed by R18
-      via TupleBuildOptions::overlay_table_buffer=false; SMARTLIST shows the identical
-      split and remains OPEN, which matters because HELP designates it the preferred
-      user-facing listing command. Remedy for SMARTLIST is definitional, not technical:
-      pull it classic (committed truth, matching DISPLAY/EXPORT and the R18 decision) or
-      push it tuple-stream (working view, matching SMARTBROWSER); either way its contract
-      must say which. Method lesson retained in the finding doc: a scripted probe of the
-      pager FAILED (stdin still carries the script, so SMARTBROWSER ate the remaining
-      lines as pager commands); the maintainer's interactive run is what produced proof.
-
-  - id: proof.codev.system_corrects_its_extender
-    label: The tree's own artifacts and gates corrected an outside AI extender, repeatedly
-    state: source_defined
-    source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
-    item_id: docs/maintenance/SQLSEL_PLDC_LANE_V1.md
-    return_code: 0
-    related:
-      - D:/code/ccode/labtalk/registries/ai_report_audit.yaml
-      - D:/code/ccode/AI_README.md
-      - D:/code/ccode/docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md
-    notes: >-
-      Eleven recorded corrections in one lane. Owner redirects (five) converted construction
-      proposals into consumption of existing machinery -- locks, tuple carrier, buffering,
-      unique registry -- with catch latency falling to zero by the last one. The toolchain
-      caught the rest without human involvement: the pre-commit report-audit rejected a
-      closeout envelope three times until it matched the ENFORCED registry rather than the
-      published spec; MSVC C4244 caught a legacy 32-bit gotoRec in new x64 code before it
-      shipped; the non-destructive smoke exposed a runtime usage text that had drifted from
-      its own contract minutes after commit. State is source_defined rather than
-      runtime_observed because the evidence is a document trail, not a transcript -- but the
-      trail is complete and each instance is timestamped, quoted, and retained unedited.
-      Falsifiable going forward: the statement parser was the first need inward search could
-      not satisfy, which bounds the claim rather than breaking it.
+- id: proof.agency.model
+  label: Agency model -- capacity to act plus accountability for having acted
+  state: source_defined
+  source: D:/code/ccode/docs/ai-friendly/AGENCY_MODEL_V1.md
+  related:
+  - D:/code/ccode/labtalk/lessons/student/agency_who_may_act_v0.md
+  - D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
+  - D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+  notes: 'Names a model the system had already IMPLEMENTED but never stated, so the mechanisms stop reading
+    as unrelated engineering choices. Four legs: identity (SYSMEMBER), authority (SYSMEMROLE->SYSROLEPERM->SYSPERM),
+    authentication (Argon2id token / AUTH), accountability (owner/committer in ai_runs.yaml). Exclusions
+    carry the weight: capability is not agency (Ollama produces work, has no member row -- its absence
+    is correct, not an omission); influence is not authority (ChatGPT planned the RBAC, member.derald
+    committed it -- the attribution block exists because git records one name where the truth had three);
+    access is not agency. Properties: bounded, enumerable, proven-not-claimed, delegated-never-surrendered,
+    serialized when shared, time-bounded, transferable by artifact not memory, asymmetric by design (agents
+    deliver, owner commits). Underlying leg-level behavior IS runtime_observed (proof.bbs.m2_net_egress
+    = boundary refusal; proof.bbs.guest = designed minimal agency); the MODEL itself is source_defined.
+    Declared gaps: no per-session identity, no token expiry, git agency serialized by convention not mechanism
+    (AIF-059), no durable Decision audit trail.'
+- id: proof.ai.roles_taxonomy
+  label: AI roles taxonomy - agents vs Ollama vs GPTbase
+  state: source_defined
+  source: D:/code/ccode/docs/ai-friendly/AI_ROLES_TAXONOMY_V1.md
+  notes: Names three non-interchangeable roles - DOERS (agent-members that authenticate + change source
+    + leave handoffs), LOCAL BRAIN (Ollama, isolated inference, not a member, needs a harness), HOSTED
+    ADVISOR (GPTbase, advisory not authority, cloud/not-isolated, snapshot goes stale). First artifact
+    of the portal capability inventory. Doc/boundary artifact; source_defined by nature.
+- id: proof.ai_friendly.assimilation_docs_seed
+  label: AI Friendly assimilation portal and book seeded
+  state: source_defined
+  source: D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+  item_id: doc.ai_assimilation_portal
+  related:
+  - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+  - D:/code/ccode/docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md
+  - D:/code/ccode/src/cli/cmd_maint.cpp
+  notes: Provides repo-local onboarding for future AI or second-opinion AI if hosted chat/provider context
+    is unavailable.
+- id: proof.ai_friendly.maint_ai_assimilate.first_run
+  label: MAINT AI ASSIMILATE first portal/runtime transcript
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260705_182913_runtime_maint_ai_assimilate.txt
+  item_id: runtime.maint_ai_assimilate
+  return_code: 0
+  related:
+  - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md
+  - D:/code/ccode/docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md
+  - D:/code/ccode/src/cli/cmd_maint.cpp
+  notes: Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture
+    the onboarding readback.
+- id: proof.ai_portal.discoverability_caught_its_own_author
+  label: The discoverability fix caught its own maker -- Phase 7 was the next dropped thread
+  state: source_defined
+  related:
+  - D:/code/ccode/labtalk/ai_portal/INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md
+  - D:/code/ccode/labtalk/registries/ai_report_index.yaml
+  - D:/code/ccode/docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md
+  - D:/code/ccode/docs/agents/CURRENT_TARGET.md
+  notes: 'IRONY, RECORDED. On 2026-07-28 the AI Portal''s external-intake discoverability gap (AIF-071)
+    was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted chat, an assistant task
+    list -- cannot be found later, so it was made a registered, indexed lane with aliases. Within the
+    SAME session the maintainer noticed that Phase 7 (the DOCFLUSH manual web-ascent) had no pick-up point:
+    it lived ONLY in the assistant''s ephemeral task list, the exact failure the AIF-071 lane had just
+    named. The remedy was the same mechanism the fix prescribes -- register it (AIF-072): an intake row,
+    a CURRENT_TARGET NEXT-TARGET marker, and a self-contained pickup doc. So the fix proved itself by
+    catching its own author''s dropped thread, in the same sitting it was built. Same shape as AIF-065/066/067:
+    the gap is found by the thing falling through it, not by an audit -- and "we will remember to pick
+    it up" is not a pick-up point. Evidence is two commits: the fix (AIF-071) and its immediate self-application
+    (AIF-072). A durable record beats a good intention; an index beats a memory.'
+- id: proof.ai_portal.dotscript_startup_readiness.v1
+  label: DotTalk++ / DotScript startup readiness probe v1
+  state: runtime_observed
+  readiness_result: ORIENTED
+  source: D:/code/ccode/labtalk/proofs/runs/20260712_195729_probe_ai_portal_dotscript_startup_readiness_v1.txt
+  item_id: probe.ai_portal.dotscript_startup_readiness.v1
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md
+  - D:/code/ccode/labtalk/ai_portal/probes/dotscript_startup_readiness_v1.dts
+  - D:/code/ccode/src/cli/cmd_dotscript.cpp
+  observations:
+  - both readiness markers were present
+  - DOTSCRIPT usage was visible
+  - CMDHELP and DOTHELP resolved DOTSCRIPT
+  - no Unknown command appeared
+  - runtime process return code and portal acceptance return code were both zero
+  - portal output acceptance was accepted
+  - runtime initialization reported a separate missing optional BibleTalk SQLite seed
+  notes: Proves the current compiled runtime exposes the mandatory read-only learning surfaces and that
+    the portal's transcript acceptance gate accepts the green path. ORIENTED permits drafting and review
+    only; it does not authorize a mutating DotScript or maintained-data target.
+- id: proof.ai_portal.engineering_standards_seed
+  label: AI Portal engineering-standards / definition-of-done seed on the mandatory path
+  state: source_defined
+  source: D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+  related:
+  - D:/code/ccode/AI_README.md
+  - D:/code/ccode/AI_PORTAL.md
+  - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+  - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+  notes: Front-loads @dottalk.usage contracts, regression doctrine, the lane close-out checklist, and
+    house conventions; wired into AI_README.md step 6 + AI_PORTAL.md + ROOT entry + fast-start closeout.
+    Source_defined by nature; VERIFICATION is behavioral - a cold AI session reads the front door and
+    applies the standards (usage contract + regression + closeout) WITHOUT being prompted. Promote to
+    runtime_observed after that is witnessed.
+- id: proof.ai_portal.lane_registered
+  label: AI Portal Alpha/Experimental lane registered
+  state: source_defined
+  source: D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+  item_id: plan.ai_portal.hardening.v1
+  related:
+  - D:/code/ccode/labtalk/registries/ai_portal.yaml
+  - D:/code/ccode/dottalkpp/docs/architecture/X64BASE_LABORATORY_CAMPUS_MISSION_VISION_V1.md
+  notes: Records the governed Alpha/Experimental status, APH-0 through APH-6 gates, authority boundary,
+    and requirement that the portal not be presented as production autonomous memory.
+- id: proof.ai_portal.root_entry_and_external_package.v1
+  label: Root AI Portal entry and external change-package contract defined
+  state: source_defined
+  source: D:/code/ccode/AI_PORTAL.md
+  item_id: doc.ai_portal_root_entry
+  related:
+  - D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+  - D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+  - D:/code/ccode/labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+  - D:/code/ccode/labtalk/registries/ai_portal.yaml
+  notes: Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and
+    a required patch-package format tied to an exact public baseline commit. Source-defined only until
+    promoted and verified in the public repository.
+- id: proof.ai_portal.sdlc_fast_start.v1
+  label: AI Portal SDLC fast-start seed registered
+  state: source_defined
+  source: D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+  item_id: seed.ai_portal.sdlc_fast_start.v1
+  related:
+  - D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
+  - D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+  - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+  - D:/code/ccode/labtalk/registries/ai_portal.yaml
+  notes: Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory
+    across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.
+- id: proof.ai_portal.seed_connection_prototype_direction.v1
+  label: AI fast-start seed connection prototype direction registered
+  state: design_intended
+  source: D:/code/ccode/labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md
+  item_id: concept.ai_portal.seed_connection_prototype.v1
+  related:
+  - D:/code/ccode/labtalk/ai_portal/README.md
+  - D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+  - D:/code/ccode/labtalk/registries/ai_portal.yaml
+  notes: Records that the AI Portal is a machine-facing fast-start system for AI development partners,
+    not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.
+- id: proof.ai_portal.source_mutation_contract_gate.v1
+  label: Source mutation contract preflight registered
+  state: source_defined
+  source: D:/code/ccode/labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md
+  item_id: seed.ai_portal.source_mutation_contract_preflight.v1
+  related:
+  - D:/code/ccode/docs/contracts/README.md
+  - D:/code/ccode/docs/contracts/CONTRACT_REGISTRY_V1.md
+  - D:/code/ccode/docs/contracts/CONTRACT_LIFECYCLE_V1.md
+  - D:/code/ccode/labtalk/registries/ai_portal.yaml
+  notes: Records the maintainer rule that AI source-code mutations require contract-shelf, lifecycle,
+    subsystem-contract, and source-annotation review before a patch is applied. This record does not grant
+    mutation authority.
+- id: proof.aif078.slot_cost_measured_per_toolchain
+  label: MAX_AREA per-slot cost measured on both supported toolchains; the two axes bind on different
+    platforms
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_msvc.txt
+  item_id: src/tools/g0_slot_cost_probe.cpp
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/proofs/runs/20260801_aif078_g0_slot_cost_gcc.txt
+  - D:/code/ccode/config/build_vectors.cmake
+  - D:/code/ccode/include/xbase.hpp
+  - D:/code/ccode/src/xbase/dbf_file.cpp
+  - D:/code/ccode/src/cli/shell.cpp
+  - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
+  notes: 'AIF-078 gate G0. MSVC (_MSC_VER=1944): DbArea 840, AreaState 144, fstream 280, 1016 B/slot.
+    g++/libstdc++ x86-64: DbArea 1088, AreaState 176, fstream 528, 1296 B/slot. sizeof(XBaseEngine) is
+    4104 on both because it is only MAX_AREA*8+8 -- a pointer array with no layout freedom. The divergence
+    is almost entirely std::fstream, which DbArea embeds by value. THE RESULT THAT MATTERS: the two cost
+    axes bind on DIFFERENT platforms. Memory binds on Linux (1296 B/slot, 81 MB at cap 65536, 27% heavier
+    than MSVC); stack binds on Windows (1 MB default main thread vs 8 MB), where the 512 KB XBaseEngine
+    frame at 65536 is half the stack. The frame is identical on both platforms; only the ceiling differs.
+    A single-toolchain measurement would have produced a confidently wrong cap ruling either way. PREDICTION
+    RECORDED AND WRONG: the lane predicted MSVC would have the LARGER structures. It is 22% smaller. The
+    reasoning generalised from std::string and std::multimap, neither of which dominates DbArea. Kept
+    in the record because it is doctrine rule 2 (verify the constraint is real) applied to a portability
+    assumption rather than to a constant, and it is why the probe existed. Cost is paid EAGERLY: dbf_file.cpp:409-411
+    constructs every slot at engine construction, so the figures are resident with zero tables open. Probe
+    is a CMake target (-DDOTTALK_BUILD_SLOT_COST_PROBE=ON), deliberately NOT registered with add_test:
+    it is a measurement, and a test that can only pass is the defect class recorded in the sibling row
+    below.'
+- id: proof.aif078.workspace_path_preserves_depth1
+  label: DataAddress workspace scalar widened to a path with no depth-1 behavior change
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt
+  item_id: src/tests/test_pdlc_foundation_smoke.cpp
+  return_code: 0
+  related:
+  - D:/code/ccode/include/reference/data_address.hpp
+  - D:/code/ccode/src/reference/data_address.cpp
+  - D:/code/ccode/src/tests/test_pdlc_foundation_smoke.cpp
+  - D:/code/ccode/docs/maintenance/WORKSPACE_QUALIFIER_NAMESPACE_DEPTH_LANE_V1.md
+  notes: 'AIF-078 Q7. WorkspaceIdentity workspace_ became WorkspacePath workspace_path_ (outermost first);
+    the scalar constructor kept its signature, delegates, and yields depth 1. Asserted rather than inspected:
+    depth-1 renders exactly "MCC.#2.STUDENTS.RECNO(12).LNAME", an unspecified workspace still renders
+    CURRENT_WORKSPACE, an empty path and a path of one unspecified identity compare equal (or a default-constructed
+    DataAddress would stop matching one built with a default WorkspaceIdentity), depth 3 renders dot-joined
+    with workspace() answering the innermost, and require_parse accepts MCC.FALL2026.SEC3.STUDENTS.LNAME
+    -- which turns the lane''s central claim (the parser already accepts arbitrary depth; only resolution
+    is missing) into a test instead of prose. HONESTY BOUND, and the reason this row exists at all: the
+    FIRST MSVC Release run printed "PDLC foundation smoke passed" with decimal=0 and proved NOTHING. The
+    test is registered via add_test and runs in Release, where NDEBUG defuses assert(), so every assertion
+    was a no-op -- and three of them wrapped ExactDecimal::parse(), a side-effecting call, so the parse
+    never ran. Reproduced under g++ -DNDEBUG, so it was the configuration and not the toolchain. Fixed
+    by a CHECK macro that always evaluates (32 sites); falsifiability confirmed by deliberately breaking
+    one expectation and observing exit 134 with the failing expression named. The transcript cited here
+    is the post-fix run. AI_TIER1_SEED_V1.md sec 6. SCOPE: this row covers MSVC Release. x64base is cross-platform;
+    the same assertions pass under g++/libstdc++ with and without NDEBUG, but that run is not committed
+    here. The g0_size_probe per-slot cap measurement is a SEPARATE gate (G0) and is unrun on both toolchains.'
+  related_defect: 'MEASURED 2026-08-01, correcting a guessed list in the first draft of this row (the
+    draft named test_security_policy / test_field_codec / test_lmdb_backend, which carry ZERO asserts,
+    and missed three files that do). Bare-assert exposure across src/tests/, by count: test_recno64_boundary
+    23, test_recno64_sparse_e2e 18, test_sql_where 10, test_where_cache_only 10, test_x64_record_limit
+    3. All are registered via add_test and therefore run under ctest in Release, where NDEBUG makes every
+    one a no-op; four then print an unconditional success banner ("... PASS", "[OK] where cache tests
+    passed"). SHARPEST CASE: test_recno64_sparse_e2e.cpp puts the WORK inside the assertions, not just
+    the checks -- sparse_write_at() at lines 120-122 and a.gotoRec64(RA) && a.readCurrent() at 132/138.
+    Under NDEBUG no records are written, no positioning occurs, nothing is read, and the test prints "64-bit
+    on-disk positioning past 2^31 PROVEN. PASS". A headline capability claim attached to a test that,
+    in the shipped configuration, does nothing and announces that it proved something. Not fixed here
+    and not this lane''s. Recommend surveying under AIF-079 (declared-capability-validator), whose shape
+    this matches, rather than opening a new lane -- prior art first.'
+- id: proof.bbs.guest
+  label: AI-BBS guest leave-a-message (member.guest + board.guestbook)
+  state: runtime_observed
+  source: D:/code/ccode/docs/ai-friendly/AI_BBS_LOUNGE_ROOM_V1.md
+  notes: As member.guest -> POST board.guestbook OK posted
+- id: proof.bbs.m1_board
+  label: AI-BBS M1 board tables + BBS command
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+  notes: BBS BOARDS created SYSBOARD/THREAD/POST.dbf; POST/READ round-trip; board.governance projects
+    SYSGRANT.
+- id: proof.bbs.m2_net_egress
+  label: AI-BBS M2 NET EGRESS permissioned toggle
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+  notes: AI member refused NET EGRESS OPEN ("no in-scope role permission"); owner STATUS = Block. host.network.egress
+    owner-only.
+- id: proof.bbs.m3_argon2
+  label: AI-BBS M3 Argon2id token crypto (libsodium)
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+  notes: USER TOKEN -> 43-char base64url CSPRNG; correct token logs in, wrong token rejected. Gates M4.
+- id: proof.bbs.m4_serve
+  label: AI-BBS M4 BBS SERVE loopback listener + Ollama bridge
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+  notes: 127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block;
+    OK posted.
+- id: proof.bbs.m6_daemon
+  label: AI-BBS M6 standalone dottalk_bbsd daemon
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/AI_BBS_M6_STANDALONE_DAEMON_V1.md
+  notes: Own binary; headless via DotTalkBBSD task (SYSTEM/session 0, no window); AUTH/CHAT/POST across
+    restarts; SO_EXCLUSIVEADDRUSE; SIGPIPE guard.
+- id: proof.bbs.worklog
+  label: AI-BBS worklog/handoff board + simplex cascade guard
+  state: runtime_observed
+  source: D:/code/ccode/docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md
+  notes: '2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as
+    member.ai.grok.xai, POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK.
+    Handoff-post convention (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff
+    line (AI_README step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade
+    guard (SO_RCVTIMEO idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary.
+    Duplex switch remains design-intended (needs M4.1).'
+- id: proof.case.registry_exists
+  label: Case registry exists
+  state: case_registered
+  source: D:/code/ccode/docs/cases/REGISTRY_CASES_v0.csv
+- id: proof.codev.system_corrects_its_extender
+  label: The tree's own artifacts and gates corrected an outside AI extender, repeatedly
+  state: source_defined
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
+  item_id: docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/registries/ai_report_audit.yaml
+  - D:/code/ccode/AI_README.md
+  - D:/code/ccode/docs/maintenance/AI_REPORT_AUDIT_V2_SPEC.md
+  notes: 'Eleven recorded corrections in one lane. Owner redirects (five) converted construction proposals
+    into consumption of existing machinery -- locks, tuple carrier, buffering, unique registry -- with
+    catch latency falling to zero by the last one. The toolchain caught the rest without human involvement:
+    the pre-commit report-audit rejected a closeout envelope three times until it matched the ENFORCED
+    registry rather than the published spec; MSVC C4244 caught a legacy 32-bit gotoRec in new x64 code
+    before it shipped; the non-destructive smoke exposed a runtime usage text that had drifted from its
+    own contract minutes after commit. State is source_defined rather than runtime_observed because the
+    evidence is a document trail, not a transcript -- but the trail is complete and each instance is timestamped,
+    quoted, and retained unedited. Falsifiable going forward: the statement parser was the first need
+    inward search could not satisfy, which bounds the claim rather than breaking it.'
+- id: proof.contract.dottalk_file_fulltree
+  label: '@dottalk.file universal contract - full-tree backfill at 100% coverage'
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md
+  related:
+  - D:/code/ccode/tools/fullstack_docs/source_census.py
+  - D:/code/ccode/docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md
+  notes: 'census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits
+    0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped
+    (duplicated git tracking; path: goes stale on rename), lane:/owner: added so a file self-identifies
+    AND resolves to its lane doc -> ai_runs.yaml run -> current_by_lane -> last agent. 12 pre-existing
+    dogfood blocks upgraded with hand-set layer:/owns: PRESERVED (glue/engine-core, DOT|BBS/DOT|NET),
+    verified file by file; 1022 written fresh with derived fields. Incident same session - a directory-level
+    `git add -- src include` swept ~111 untracked scratch files into 6f86c8aed; repaired by reset + `git
+    add -u` + force-push (3706da78c, 1035 files clean), the 111 restored to disk, and the scratch categories
+    gitignored. main never touched.'
+- id: proof.edref.topic_exists
+  label: EDREF topic exists
+  state: source_defined
+  source: D:/code/ccode/include/edref.hpp
+- id: proof.engine.key_metadata_survives_workspace_roundtrip
+  label: PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_key_metadata_roundtrip.txt
+  item_id: dottalkpp/data/scripts/key_metadata_regression.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/include/cli/unique_registry.hpp
+  - D:/code/ccode/src/cli/unique_registry.cpp
+  - D:/code/ccode/src/cli/cmd_setunique.cpp
+  - D:/code/ccode/src/cli/cmd_workspace.cpp
+  - D:/code/ccode/src/cli/cmd_validate_unique.cpp
+  notes: 'Phase 2 of a registry whose own header asked for it ("Phase 1: session-scoped ... storage/backfill
+    policy belongs elsewhere"). The registry was emptied between SAVE and LOAD, so restoration is proven,
+    not assumed: LOAD echoed KEY KEYREGR.KID PRIMARY and KEY KEYREGR.KLBL UNIQUE and the listing matched
+    pre-save exactly. VALIDATE UNIQUE passes clean data and reports one duplicate with provenance. Green
+    on first run.'
+- id: proof.engine.scan_limit_reports_truncation
+  label: Relation scans announce when the scan limit stopped them
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rel_scanlimit_honesty.txt
+  item_id: dottalkpp/data/scripts/rel_scanlimit_honesty_regression.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/src/cli/set_relations.cpp
+  - D:/code/ccode/src/cli/set_relations.hpp
+  - D:/code/ccode/src/cli/cmd_rel.cpp
+  notes: 'AIF-073 finding RDB-06 closed. A scan that stopped at the cap previously returned a plausible-looking
+    partial answer with no indication -- a wrong result indistinguishable from a right one. At limit 1
+    the run reports "REL: scan limit (1) reached; results may be incomplete." exactly once per command;
+    at the restored default the same command is silent. REL SCANLIMIT also gives the limit CLI reach for
+    the first time, closing open question OQ-1.'
+- id: proof.engine.two_read_families_buffer_visibility
+  label: Two coherent read families; buffer-visibility defects occur only at the hybrid seam
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_smartbrowser_tuple_filter_interactive.txt
+  item_id: docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe.txt
+  - D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe_v2.txt
+  - D:/code/ccode/src/cli/expr_tuple_glue.hpp
+  - D:/code/ccode/src/cli/db_tuple_stream.cpp
+  - D:/code/ccode/src/cli/smartlist_output.cpp
+  - D:/code/ccode/src/cli/sqlsel_statement.cpp
+  notes: 'Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every reader must choose
+    a source. Three probes established that x64base has TWO internally coherent families and that defects
+    appear ONLY where they are mixed. TUPLE-STREAM (SMARTBROWSER, TUPLE): filter and display both bind
+    to TupleRow and see buffered values -- proven interactively, both directions: with rec1 buffered CSCI->MATH,
+    FOR "MATH" matched it and FOR "CSCI" excluded it, so the filter reads buffered AND genuinely excludes
+    (the inclusion test alone was insufficient because both fixture rows were MATH under buffering). CLASSIC
+    (DISPLAY, COUNT FOR, EXPORT): both filter and render read committed data; EXPORT wrote 1,CSCI to file.
+    HYBRIDS, exactly two: SQLSEL SELECT (classic predicate + tuple projection) contradicted itself --
+    WHERE MAJOR="CSCI" returned a row printing MATH -- and was closed by R18 via TupleBuildOptions::overlay_table_buffer=false;
+    SMARTLIST shows the identical split and remains OPEN, which matters because HELP designates it the
+    preferred user-facing listing command. Remedy for SMARTLIST is definitional, not technical: pull it
+    classic (committed truth, matching DISPLAY/EXPORT and the R18 decision) or push it tuple-stream (working
+    view, matching SMARTBROWSER); either way its contract must say which. Method lesson retained in the
+    finding doc: a scripted probe of the pager FAILED (stdin still carries the script, so SMARTBROWSER
+    ate the remaining lines as pager commands); the maintainer''s interactive run is what produced proof.'
+- id: proof.engine.typed_equality_crosses_declared_types
+  label: Relation equality compares numerically whenever both sides are numeric literals
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_rdb_truth_typed_equality.txt
+  item_id: dottalkpp/data/scripts/rdb_truth_proof_v2.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/src/cli/set_relations.cpp
+  - D:/code/ccode/dottalkpp/data/scripts/rdb_truth_check_v1.py
+  notes: AIF-073 finding RDB-03 converted from divergence to conformance. Previously only a numerically
+    DECLARED child field got numeric comparison, so a character child holding "1" failed against a numeric
+    parent's "1.00" -- an asymmetry invisible to the user. Now both sides decide. Scorer verdict PASS,
+    11/11 markers, 4/4 derived checks; the marker itself was rewritten from DIVERGE_ to CONFORM_ because
+    the engine changed. RELJOIN 12/12 unchanged, so the fix altered exactly what it claimed and nothing
+    else.
+- id: proof.evidence.layer_versioned
+  label: Proof transcripts un-ignored and committed -- registry claims now verifiable from a clone
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/AI_EVIDENCE_LAYER_VERSIONING_LANE_V1.md
+  notes: 'MEASURED 2026-07-25: .gitignore line 36 carried a blanket *.log written for runtime noise; it
+    also swallowed labtalk/proofs/runs/*.log, the transcripts proofs.yaml rows cite AS THEIR EVIDENCE.
+    71 proof artifacts on disk, 0 tracked; 7 rows citing files absent from a clone; 57 untracked session
+    closeouts against 18 tracked -- roughly three quarters of the completed-work record outside version
+    control. The registry''s central claim, that runtime_observed means a transcript exists, was unverifiable
+    by anyone not at this machine. Surfaced when a partner reported x64base had no write-ahead log: the
+    WAL was designed, built, crash-proven in three teed phases and closed out on 2026-07-19, but design
+    doc, closeout and all three transcripts were untracked, so it was indistinguishable from unbuilt.
+    Second-order cost: the partner then recorded proof.wal.dbf_record at source_defined ("untested"),
+    which was wrong in fact -- invisible evidence does not merely fail to help, it produces wrong records
+    that propagate. FIX: targeted negations (!labtalk/proofs/**, !labtalk/reports/**) immediately after
+    the blanket rule, verified both directions (proof logs no longer ignored; dottalk_exit_trace.log still
+    is); 81 proof/report artifacts + 57 closeouts + the WAL design doc committed; proof.wal.dbf_record
+    corrected to runtime_observed citing Phase A/B/C by SHA. Same failure as the @dottalk.file gap (AIF-050)
+    one layer up: there source files were invisible to the harvest, here proofs were invisible to a clone.'
+- id: proof.export.sdf.fixed_width_export
+  label: EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260727_export_sdf_regression.txt
+  item_id: dottalkpp/data/scripts/export/export_sdf_regression.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/src/cli/cmd_export.cpp
+  - D:/code/ccode/include/cli/fixed_width_row.hpp
+  - D:/code/ccode/src/cli/cmd_tuptalk.cpp
+  - D:/code/ccode/src/cli/cmd_regression.cpp
+  - D:/code/ccode/src/help/helpdata_messages.cpp
+  - D:/code/ccode/include/dotref.hpp
+  notes: 'AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN
+    EXPORT_SDF exported two schema-width rows with no header: "AB    7  12.3T" and "WXYZ123  -4.5F", each
+    length 14. The generated temp SDF file was inspected for row length and hex prefix, then removed.'
+- id: proof.help.cmdhelp_source_exists
+  label: CMDHELP source exists
+  state: source_defined
+  source: D:/code/ccode/src/cli/cmdhelp.cpp
+- id: proof.lab.database_literacy_starter.first_run
+  label: Database Literacy Starter first portal/runtime transcript
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260702_155913_runtime_database_literacy_starter.txt
+  item_id: runtime.database_literacy_starter
+  return_code: 0
+  notes: Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.
+- id: proof.lab.selfdoc.comments_to_contracts.first_run
+  label: SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run
+  state: validated
+  source: D:/code/ccode/labtalk/proofs/runs/20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt
+  item_id: runtime.selfdoc.comments_to_contracts.first_lab
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/reports/selfdoc/lab_selfdoc_first_crosswalk_v0.md
+  notes: Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP
+    and CMDHELPCHK.
+- id: proof.lmdb.mapsize_ladder_honoured_after_fix
+  label: BUILDLMDB TINY survives an index attach -- the size ladder is honoured
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_tiny_survives_attach_postfix.txt
+  item_id: src/xindex/cdx_backend.cpp
+  return_code: 0
+  related:
+  - D:/code/ccode/src/xindex/lmdb_backend.cpp
+  - D:/code/ccode/tools/proofs/run_proof.ps1
+  - D:/code/ccode/docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+  notes: 'AIF-065 FIX VERIFIED. mdb_env_set_mapsize(env_, 0) replaces the hardcoded 1 GiB at cdx_backend.cpp
+    and lmdb_backend.cpp, so the attach path ADOPTS the persisted mapsize instead of asserting one. SYSARGS
+    rebuilt with BUILDLMDB CLEAN TINY YES measured 33,554,432 bytes (exactly 32 MiB) and STILL measured
+    33,554,432 after an index auto-attach -- delta 0. CONTROLLED COMPARISON, same table and same commands,
+    only the binary differing: pre-fix 33,554,432 -> 1,073,741,824; post-fix 33,554,432 -> 33,554,432.
+    This is the first time the BUILDLMDB size ladder has been observed to hold through use since it was
+    written. Storage effect for this table 32x (1,073,741,824 / 33,554,432). Preceded by three pre-fix
+    observations of the defect (SYSSUBCMD 31 rows, SYSFUNC 69 rows, SYSARGS 249 rows), all 128 or 32 MiB
+    -> 1 GiB, confirming the assertion was independent of data volume. Note the deletion originally proposed
+    for these two call sites would have been WRONG -- LMDB defaults to 10 MiB when no mapsize is set --
+    and passing zero is the documented adopt-persisted form. UNBLOCKS the x64base-vs-SQLite storage benchmark
+    axis, which until now measured attach history rather than databases.'
+- id: proof.lmdb.mapsize_override_on_attach
+  label: LMDB env resizes 128 MiB -> 1 GiB on index auto-attach, ignoring the BUILDLMDB ladder
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_attach.txt
+  item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+  return_code: 0
+  related:
+  - D:/code/ccode/src/xindex/cdx_backend.cpp
+  - D:/code/ccode/src/xindex/lmdb_backend.cpp
+  - D:/code/ccode/src/cli/cmd_buildlmdb.cpp
+  notes: 'AIF-065 promoted from source_defined to runtime_observed. SYSSUBCMD.cdx.d/data.mdb measured
+    at 134,217,728 bytes immediately before the run and 1,073,741,824 bytes immediately after -- exactly
+    8x, on a 31-ROW TABLE, from a single index attach. The environment had been written by BUILDLMDB at
+    128 MiB earlier the same day and never attached, making it a clean control; SYSCMD (203 rows, 1 GiB,
+    attached) was the opposite arm. This explains the bimodal distribution recorded in the lane doc: every
+    data.mdb holds either the size BUILDLMDB wrote or the 1 GiB asserted by mdb_env_set_mapsize at cdx_backend.cpp:189
+    / lmdb_backend.cpp:80, and which one depends solely on whether an index has ever been opened. TRIGGER
+    CORRECTED BY THE TRANSCRIPT -- the attach fires at USE ("Auto-attached order: SYSSUBCMD.cdx (tag:
+    SUB_ID)"), not at SET ORDER or SEEK as the protocol had predicted; it is caused by the index being
+    FINDABLE when the table opens, not by an index operation. METHOD NOTE: two earlier probes returned
+    an identical, plausible 134217728 -> 134217728 for two unrelated reasons (a relative tee path that
+    aborted the pipeline; a run that set only SETPATH DBF so the CDX was not findable). A null probe and
+    a negative result are indistinguishable from the outside, so the protocol now names the transcript
+    lines that constitute success -- "Auto-attached order:" and "Found at N." -- rather than only the
+    bytes to measure. Consequence unblocked: the x64base-vs-SQLite storage benchmark axis, which until
+    now compared attach history rather than databases.'
+- id: proof.lmdb.mapsize_override_replication_sysfunc
+  label: LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_tiny_survives_attach.txt
+  item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+  return_code: 0
+  related:
+  - D:/code/ccode/tools/proofs/run_proof.ps1
+  - D:/code/ccode/src/xindex/cdx_backend.cpp
+  notes: 'Independent replication of proof.lmdb.mapsize_override_on_attach on a different table. SYSFUNC.cdx.d/data.mdb
+    measured 134,217,728 before and 1,073,741,824 after a single index auto-attach at USE -- delta 939,524,096
+    on a 69-row table. Two tables, two row counts, identical outcome: the attach path asserts 1 GiB regardless
+    of what BUILDLMDB wrote. FIRST USE OF tools/proofs/run_proof.ps1, which verified the expected transcript
+    markers ("Auto-attached order:", "Found at") before offering any verdict on the measurements, and
+    emitted this registry block. Its purpose is to prevent the failure mode that cost two attempts during
+    the original proof: a probe that dies in the harness produces the same numbers as a mechanism that
+    does not exist. This run is also the PRE-FIX CONTROL for the same command with -ExpectNoChange, which
+    becomes the regression once mdb_env_set_mapsize(env_, 0) is applied.'
+- id: proof.pdlc.cobol_fixed_record.hop_closed
+  label: DBF to fixed-record to GnuCOBOL read, 200 records
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_cobol_fixed_record_hop.txt
+  item_id: tests/conversion/12_cobol_fixed_record_v1.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/tests/conversion/12_cobol_fixed_record_v1.dts
+  - D:/code/ccode/dottalkpp/data/projects/cobol/src/first_cobol_test.cob
+  - D:/code/ccode/src/edu/edu_cobol.cpp
+  notes: 'COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division
+    is the fidelity proof -- a fixed-record file carries no header count and no delimiters, so a short
+    write is invisible to anything that merely opens and reads. GnuCOBOL compiled clean and the program
+    ran: 200 student lines, RECORDS READ 0000200, exit 0. Record 1 read by COBOL is identical to record
+    1 read by DotTalk++ from the dBASE III table, GPA decimals included. THE COPYBOOK IS THE CROSSWALK:
+    the FD sums to exactly 109 bytes, the dBASE III record length, field for field; the file''s 111 is
+    109 plus CRLF under LINE SEQUENTIAL. Closing this hop required fixing two latent defects neither of
+    which was visible to reading -- a BUILD/RUN extension asymmetry in edu_cobol.cpp (BUILD appended .exe
+    on Windows, RUN had no fallback) and a stale ASSIGN path in the fixture naming a location nothing
+    had ever written to. The PDLC review''s "runtime-capable, proof incomplete" was right about the gap
+    and wrong about the cause: the missing piece was never GnuCOBOL.'
+- id: proof.pdlc.csv_to_x64base.type_fidelity
+  label: CSV to x64base preserves types, NULLs and long names
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_csv_to_x64base_type_fidelity.txt
+  item_id: tests/conversion/02_csv_to_dbf_v2.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/tests/conversion/02_csv_to_dbf_v2.dts
+  - D:/code/ccode/tests/conversion/10_crosswalk_cascade_items_v1.dts
+  notes: '18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a derivation
+    taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N. Two behaviours
+    predicted from the code and confirmed by the engine -- LIST_PRICE classifies DECIMAL (N) despite 14
+    of 18 cells being empty, because update_profile() returns on an empty value before setting any category
+    flag; and ACTIVE (1/0) classifies INTEGER not LOGICAL, because is_integer_text() is tested first and
+    returns, making the LOGICAL branch unreachable for numeric literals. NULL fidelity held: LIST_PRICE
+    renders empty, not 0. Long field names survived with legacy 10-char descriptors carried alongside
+    (STANDARD_COST + STANDARD_C).'
+- id: proof.pdlc.dbf_csv_dbf.roundtrip_lossless
+  label: DBF to CSV to DBF round trip is lossless
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_dbf_csv_dbf_roundtrip.txt
+  item_id: tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+  - D:/code/ccode/tests/conversion/README_SUITE_REPAIR_V1.md
+  notes: 'Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type letters,
+    same widths, same decimal counts. EXPORT rendered every value such that re-inference reproduced the
+    origin schema exactly, which is stronger than the test required. Values identical field for field,
+    including LIST_PRICE still empty rather than 0 on the return leg. Supersedes tests/conversion/05_roundtrip_dbf_csv_dbf.dts,
+    which the PDLC review cited as evidence but which could not execute: four of its five lines used grammar
+    the engine does not implement, and all five wrote to a directory that does not exist.'
+- id: proof.pdlc.dialect_ladder.dbase3_to_x64
+  label: dBASE III to FoxPro 2.6 to VFP to x64 to x64 VECTOR, lossless
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_historical_dialect_ladder.txt
+  item_id: tests/conversion/11_historical_dialect_ladder_v1.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/tests/conversion/11_historical_dialect_ladder_v1.dts
+  - D:/code/ccode/src/cli/cmd_copy.cpp
+  notes: 'The historical migration demonstration proper, walked inside one engine with no external tool,
+    from a genuine legacy artifact: dbf/og/STUDENTS.DBF, version byte 0x03, 200 records, 9 fields, every
+    field name at or under the classic 10-character cap. 200 rows and 9 fields at EVERY rung. GPA held
+    N(4,2) through all four conversions -- decimal loss is silent and fatal, and did not occur. DOB and
+    ENROLL_D held type D, with values byte-identical at the 1985 end and the modern end. Unlooked-for
+    result: the index estate migrates with the dialect, CNX/INX through FOX26 and VFP becoming CDX at
+    x64. COPY converts indexes, not just tables. Not asserted by the pass criteria; should be in v2.'
+- id: proof.portal.truth_audit.latest
+  label: Portal truth audit latest report
+  state: validated
+  source: D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.md
+  item_id: doc.portal_truth_audit
+  related:
+  - D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.json
+  - D:/dev/x64base-site/content/docs/labtalk/sdlc.mdx
+  - D:/dev/x64base-site/content/docs/labtalk/selfdoc-lane.mdx
+  - D:/dev/x64base-site/content/docs/dev/selfdoc-website-publication.mdx
+  notes: Captures the portal collection-of-truths audit across LabTalk registries, local proof records,
+    and x64base.com SelfDoc/SDLC publication pages.
+- id: proof.product.manualgen.board_preserved
+  label: Manualgen product board and map preservation
+  state: validated
+  source: D:/code/ccode/labtalk/products/manualgen_product_preservation_v0.md
+  item_id: doc.manualgen_product_board
+  related:
+  - D:/code/ccode/labtalk/products/manualgen_product_board_v0.html
+  - D:/code/ccode/labtalk/products/manualgen_product_map_v0.md
+  - D:/code/ccode/tools/manualgen/README.md
+  - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_validate_summary_v1.csv
+  - D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_build_dry_run_summary_v1.csv
+  notes: Preserves the first Manualgen product board and records initial hardening evidence using repo-local
+    vcpkg Python 3.12.9.
+- id: proof.selfdoc.comments_workflow_exists
+  label: Comments to HELP workflow exists
+  state: source_defined
+  source: D:/code/ccode/docs/maintenance/COMMENTS_HELP_PROOF_WORKFLOW_v1.md
+- id: proof.sqlsel.select_statement_matches_sqlite
+  label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_sqlsel_select_v1_oracle.txt
+  item_id: dottalkpp/data/scripts/sqlsel_select_v1_regression.dts
+  return_code: 0
+  related:
+  - D:/code/ccode/src/cli/sqlsel_statement.cpp
+  - D:/code/ccode/src/cli/sqlsel_statement.hpp
+  - D:/code/ccode/src/cli/cmd_sql_select.cpp
+  - D:/code/ccode/src/cli/workarea_util.cpp
+  - D:/code/ccode/src/cli/tuple_builder.cpp
+  notes: 'The lane''s one genuinely new component. Projection, star, WHERE and LIMIT each returned the
+    same rows as the in-process SQLite oracle over identical data (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI;
+    WHERE MAJOR=''CSCI'' -> ADAMS + CARTER). Cursor neutrality proven by data: the cursor was parked on
+    record 2 (BAKER) before four statements and still read BAKER after (S5A/S5B .T.), so a statement neither
+    reads nor disturbs session state. Corrective errors fired for an unopened table, an expression select-item,
+    and a bad LIMIT -- never a silent wrong answer. The BEFORE state is the same command on the same data
+    emitting 200 lines of debug and a false "0" (evidence record Sec. 7): that pair is the teaching exhibit.
+    Everything under the parser was consumed, not built -- area resolution, predicate compile/eval, tuple
+    projection, cursor guards all pre-existed and were proven earlier the same day.'
+- id: proof.tooling.cross_platform
+  label: Workflow tooling ported to cross-platform Python, each tested
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_CROSS_PLATFORM_TOOLING_2026-08-02.md
+  related:
+  - D:/code/ccode/tools/lanes/lane.py
+  - D:/code/ccode/tools/git/restore_lfs.py
+  - D:/code/ccode/tools/reports/stage_public.py
+  - D:/code/ccode/tools/registries/registry_fragments.py
+  - D:/code/ccode/labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md
+  notes: 'Rule adopted 2026-08-02 at maintainer direction: no PowerShell-only or bash-only solutions;
+    Python 3 + stdlib or DotScript, ASCII, shell only as a thin wrapper. The project is cross-platform
+    C++ on cross-compatible libraries and the tooling now matches. Ported and EXERCISED, not merely written:
+    lane.py (worktree lanes; refuses a taken lane id, refuses to close a dirty worktree, refuses to merge
+    into a dirty integration tree); restore_lfs.py (verified against a purpose-built repo reproducing
+    the real failure -- pointer blob with no filter=lfs attribute -- and idempotent on a second run);
+    stage_public.py (both guards proven by relaxing portal.yaml, watching the refusal, and restoring);
+    registry_fragments migrate (69 records round-tripped, zero lost or changed, then a fragment deleted
+    deliberately to confirm loss is visible at 47->46). TESTING CAUGHT TWO REAL BUGS the untested originals
+    carried: restore_lfs promised a clean git status when the correct outcome is MODIFIED (committed blob
+    is the pointer, file is now real bytes); and migrate had a load() signature mismatch that would have
+    crashed during the VERIFY step, after writing. Recorded exception: afb-/bbsd-startup stay PowerShell
+    (Windows Scheduled Tasks, no cross-platform equivalent). Outstanding debt: bbs_smoke.ps1 needs porting
+    -- the standards seed names it the canonical socket regression.'
+- id: proof.wal.dbf_record
+  label: TABLE BUFFER write-ahead log -- DBF record atomicity + crash recovery
+  state: runtime_observed
+  source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_TABLE_BUFFER_WAL_2026-07-19.md
+  related:
+  - D:/code/ccode/docs/maintenance/TABLE_BUFFER_WAL_DESIGN_2026-07-19.md
+  - D:/code/ccode/src/cli/table_state.cpp
+  - D:/code/ccode/include/cli/table_state.hpp
+  - D:/code/ccode/labtalk/proofs/runs/wal_phaseA_proof_teed_20260719T080435Z.log
+  - D:/code/ccode/labtalk/proofs/runs/wal_phaseB_verify_teed_20260719T081647Z.log
+  - D:/code/ccode/labtalk/proofs/runs/wal_phaseC_proof_teed_20260719T082345Z.log
+  proof_logs:
+  - wal_phaseA sha 938D4EC361EB34D8D7A3130E62ABDC06F8868DF3C75698C002F6FBE1A6292F60
+  - wal_phaseB sha 16B938E4A8DA362EFE54B15E022922210CAD9117232DCF6D227CDAC21D500C7A
+  - wal_phaseC sha FBA1FC92FA1CC531B8B54094D8BC644B1FA51DD13B35053D02775511A257EE54
+  notes: 'Built and PROVEN 2026-07-19 in three teed phases. Phase A: COMMIT/ROLLBACK over the .tbj redo
+    log with retained edits preserved (three edits to one field kept as seq 1/2/3, COMMIT landing the
+    highest-priority Edit3). Phase B: CRASH RECOVERY OBSERVED -- setup left an uncommitted `U 1 1 S 2:<hex
+    "Recovered">`, the runner appended `C 1`, reopening replayed it (NAME=Recovered) and removed the log.
+    Phase C: buffered DELETE journals a D record and defers the DBF mutation to COMMIT, discarded on ROLLBACK,
+    replayed on recovery; the buffer-off write-through DELETE path is unregressed. Format TBJ1; one durable
+    fsync of the C marker BEFORE the DBF apply. CLASSIFICATION HISTORY: first entered at source_defined
+    on the belief the crash window was untested. Wrong -- the evidence existed but was gitignored by a
+    blanket `*.log` rule, so a partner surveying the repo could not see it. Corrected to runtime_observed
+    when the proof transcripts were un-ignored and committed (AIF-062).'
+- id: proof.wal.memo_atomicity
+  label: Whole-row atomicity including the memo store
+  state: design-intended
+  source: D:/code/ccode/docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
+  notes: 'GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field
+    holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit
+    and the memo store''s own write leaves a recovered record referencing an object that may be absent
+    or partial -- silent inconsistency the log cannot detect, since from its view the transaction committed
+    cleanly. Fix is additive: an M <object-id> <len> <hex> record written before the referencing U record,
+    replayed memo-first, under a TBJ2 version bump that still accepts TBJ1. cmd_replace already declares
+    writes_memo / clears_memo_field, so the call sites to instrument are pre-identified. Closing this
+    retires the COMMIT contract''s own disclaimer that it "is not an atomic transaction across DBF, memo,
+    and index storage."'
+- id: proof.worktree.lane_isolation
+  label: Worktree-per-lane isolation -- sessions stop sharing one working tree
+  state: design-intended
+  source: D:/code/ccode/docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md
+  related:
+  - D:/code/ccode/docs/ai-friendly/AI_GITLOCK_HOT_POTATO_LANE_V1.md
+  notes: 'MEASURED 2026-08-02: a Cowork session worked several hours against development and found 191
+    commits had landed from parallel work while it held a stale picture; three of four queued operations
+    were already done by someone else, and its prepared scripts targeted a repository that no longer existed.
+    Nothing was lost only because guards failed closed -- one obsolete script was a keystroke from a redundant
+    546-file commit, and a broad git add would have recorded the deletion of 8 LFS files. Root cause is
+    structural: every session edits the same directory on the same branch. git worktree was ALREADY tried
+    and a naming convention chosen (D:\code\ccode.worktrees\); one of the two is LIVE and populated. A
+    first draft called both stale, reading `prunable` from the Cowork Linux sandbox, which cannot see
+    C: at all -- a vantage-point artifact, corrected. The gap is therefore not tooling and not abandonment,
+    but that using the isolated path is manual and optional, so most sessions still default to the shared
+    tree. Deliverables: new-lane.ps1 (refuse a taken lane number, add worktree on lane/AIF-###, drop a
+    LANE.md, print the finish command) and finish-lane.ps1 (refuse uncommitted work, optional merge, remove
+    + prune) -- the closing step matters as much as the opening one, since abandonment is exactly how
+    the previous attempt decayed. Narrows AIF-059: worktrees make the WORKING collision structurally impossible,
+    so the advisory lock only ever needed to cover the MERGE step. Does NOT solve flat append-only files
+    (the intake queue is still a hotspot) or lane-number reservation. PREREQUISITE: resolve the tools/*.zip
+    pointer-vs-attribute mismatch first (blobs are LFS pointers, .gitattributes says `binary` not `filter=lfs`,
+    so nothing smudges them) -- otherwise every new worktree inherits the same 8 phantom deletions. Promotion
+    to runtime_observed requires two live worktrees with independent status, a finish that refuses dirty
+    work, a refused duplicate lane number, and no prunable entries afterward; creating one worktree proves
+    nothing, as that already happened twice and still decayed.'

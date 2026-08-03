@@ -1,0 +1,28 @@
+id: lesson.student.selfdoc_comments_to_help
+title: Comments to Contracts to HELP
+kind: lesson
+lane: student
+status: proof_linked
+audience:
+- advanced student
+- developer
+- maintainer
+path: lessons/student/comments_to_contracts_to_help_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.source.comments
+- concept.contract.usage
+- concept.help.runtime
+- concept.selfdoc.validation
+apps:
+- app.dottalkpp.help
+- app.dottalkpp.selfdoc
+labs:
+- lab.selfdoc.comments_to_contracts
+commands:
+- CMDHELP
+- CMDHELPCHK
+proofs:
+- proof.lab.selfdoc.comments_to_contracts.first_run
+proof_state: validated
+next_gate: Convert the proof readback into step-by-step student questions and instructor notes.

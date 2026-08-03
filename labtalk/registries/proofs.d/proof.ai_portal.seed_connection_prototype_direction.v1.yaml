@@ -1,0 +1,11 @@
+id: proof.ai_portal.seed_connection_prototype_direction.v1
+label: AI fast-start seed connection prototype direction registered
+state: design_intended
+source: D:/code/ccode/labtalk/ai_portal/SEED_CONNECTION_PROTOTYPE_NOTE_V1.md
+item_id: concept.ai_portal.seed_connection_prototype.v1
+related:
+- D:/code/ccode/labtalk/ai_portal/README.md
+- D:/code/ccode/labtalk/ai_portal/AI_PORTAL_HARDENING_LANE_V1.md
+- D:/code/ccode/labtalk/registries/ai_portal.yaml
+notes: Records that the AI Portal is a machine-facing fast-start system for AI development partners, not
+  a student AI-access portal, and that the first connector prototype remains read-only and deterministic.

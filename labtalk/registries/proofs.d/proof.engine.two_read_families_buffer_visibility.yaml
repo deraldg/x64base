@@ -1,0 +1,28 @@
+id: proof.engine.two_read_families_buffer_visibility
+label: Two coherent read families; buffer-visibility defects occur only at the hybrid seam
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_smartbrowser_tuple_filter_interactive.txt
+item_id: docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md
+return_code: 0
+related:
+- D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe.txt
+- D:/code/ccode/labtalk/proofs/runs/20260729_aif074_buffer_visibility_probe_v2.txt
+- D:/code/ccode/src/cli/expr_tuple_glue.hpp
+- D:/code/ccode/src/cli/db_tuple_stream.cpp
+- D:/code/ccode/src/cli/smartlist_output.cpp
+- D:/code/ccode/src/cli/sqlsel_statement.cpp
+notes: 'Under TABLE BUFFER ON a REPLACE is buffered, not written to the DBF, so every reader must choose
+  a source. Three probes established that x64base has TWO internally coherent families and that defects
+  appear ONLY where they are mixed. TUPLE-STREAM (SMARTBROWSER, TUPLE): filter and display both bind to
+  TupleRow and see buffered values -- proven interactively, both directions: with rec1 buffered CSCI->MATH,
+  FOR "MATH" matched it and FOR "CSCI" excluded it, so the filter reads buffered AND genuinely excludes
+  (the inclusion test alone was insufficient because both fixture rows were MATH under buffering). CLASSIC
+  (DISPLAY, COUNT FOR, EXPORT): both filter and render read committed data; EXPORT wrote 1,CSCI to file.
+  HYBRIDS, exactly two: SQLSEL SELECT (classic predicate + tuple projection) contradicted itself -- WHERE
+  MAJOR="CSCI" returned a row printing MATH -- and was closed by R18 via TupleBuildOptions::overlay_table_buffer=false;
+  SMARTLIST shows the identical split and remains OPEN, which matters because HELP designates it the preferred
+  user-facing listing command. Remedy for SMARTLIST is definitional, not technical: pull it classic (committed
+  truth, matching DISPLAY/EXPORT and the R18 decision) or push it tuple-stream (working view, matching
+  SMARTBROWSER); either way its contract must say which. Method lesson retained in the finding doc: a
+  scripted probe of the pager FAILED (stdin still carries the script, so SMARTBROWSER ate the remaining
+  lines as pager commands); the maintainer''s interactive run is what produced proof.'

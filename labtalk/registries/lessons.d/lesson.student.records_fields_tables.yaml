@@ -1,0 +1,34 @@
+id: lesson.student.records_fields_tables
+title: Records, Fields, and Tables
+kind: lesson
+lane: student
+status: draft
+audience:
+- student
+- self-learner
+- instructor
+path: lessons/student/records_fields_tables_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.database.table
+- concept.database.record
+- concept.database.field
+- concept.runtime.state
+apps:
+- app.dottalkpp.runtime
+- app.dottalkpp.help
+labs:
+- lab.database_literacy.starter
+commands:
+- HELP
+- USE
+- FIELDS
+- STRUCT
+- LIST
+datasets:
+- dataset.students
+- dataset.teachers
+proofs:
+- proof.lab.database_literacy_starter.first_run
+proof_state: runtime_observed
+next_gate: Add a reviewed student worksheet with expected observations and HELP/CMDHELP readback.

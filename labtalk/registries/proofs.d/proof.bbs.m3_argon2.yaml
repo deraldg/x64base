@@ -1,0 +1,5 @@
+id: proof.bbs.m3_argon2
+label: AI-BBS M3 Argon2id token crypto (libsodium)
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+notes: USER TOKEN -> 43-char base64url CSPRNG; correct token logs in, wrong token rejected. Gates M4.

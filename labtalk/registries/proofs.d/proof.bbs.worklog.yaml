@@ -1,0 +1,10 @@
+id: proof.bbs.worklog
+label: AI-BBS worklog/handoff board + simplex cascade guard
+state: runtime_observed
+source: D:/code/ccode/docs/ai-friendly/AI_BBS_WORKLOG_HANDOFF_LANE_V1.md
+notes: '2026-07-25 built + observed. board.worklog listed by BBS BOARDS (kind=2, post=bbs.post); as member.ai.grok.xai,
+  POST board.worklog SESSION-20260725 :: RUN=... -> OK posted #6, READ back OK. Handoff-post convention
+  (RUN/STATE/DID/OPEN/NEXT-AGENT/RISK, RUNID ties to ai_runs.yaml); portal pickup/dropoff line (AI_README
+  step 0b); BBS_LANE regression extended with a worklog round-trip; simplex cascade guard (SO_RCVTIMEO
+  idle timeout, default 120s, DOTTALK_BBS_IDLE_TIMEOUT_SEC) in the running binary. Duplex switch remains
+  design-intended (needs M4.1).'

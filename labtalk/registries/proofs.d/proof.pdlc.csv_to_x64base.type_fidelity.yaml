@@ -1,0 +1,17 @@
+id: proof.pdlc.csv_to_x64base.type_fidelity
+label: CSV to x64base preserves types, NULLs and long names
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_csv_to_x64base_type_fidelity.txt
+item_id: tests/conversion/02_csv_to_dbf_v2.dts
+return_code: 0
+related:
+- D:/code/ccode/tests/conversion/02_csv_to_dbf_v2.dts
+- D:/code/ccode/tests/conversion/10_crosswalk_cascade_items_v1.dts
+notes: '18 rows, 13 fields from the sealed Cascade Items.csv. All 13 type letters matched a derivation
+  taken from src/import/import_profile.cpp BEFORE the run: N C C C C C N N N N N C N. Two behaviours predicted
+  from the code and confirmed by the engine -- LIST_PRICE classifies DECIMAL (N) despite 14 of 18 cells
+  being empty, because update_profile() returns on an empty value before setting any category flag; and
+  ACTIVE (1/0) classifies INTEGER not LOGICAL, because is_integer_text() is tested first and returns,
+  making the LOGICAL branch unreachable for numeric literals. NULL fidelity held: LIST_PRICE renders empty,
+  not 0. Long field names survived with legacy 10-char descriptors carried alongside (STANDARD_COST +
+  STANDARD_C).'

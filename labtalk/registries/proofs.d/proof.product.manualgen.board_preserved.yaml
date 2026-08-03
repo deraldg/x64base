@@ -1,0 +1,13 @@
+id: proof.product.manualgen.board_preserved
+label: Manualgen product board and map preservation
+state: validated
+source: D:/code/ccode/labtalk/products/manualgen_product_preservation_v0.md
+item_id: doc.manualgen_product_board
+related:
+- D:/code/ccode/labtalk/products/manualgen_product_board_v0.html
+- D:/code/ccode/labtalk/products/manualgen_product_map_v0.md
+- D:/code/ccode/tools/manualgen/README.md
+- D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_validate_summary_v1.csv
+- D:/code/ccode/docs/manuals/developer/manualgen/reports/mdo_226_build_dry_run_summary_v1.csv
+notes: Preserves the first Manualgen product board and records initial hardening evidence using repo-local
+  vcpkg Python 3.12.9.

@@ -1,4 +1,7 @@
-# LabTalk lesson registry v0
+# GENERATED from lessons.d/ by tools/registries/registry_fragments.py -- do not hand-edit.
+# Add or change a record by editing its own file under lessons.d/, then re-run:
+#   python tools/registries/registry_fragments.py merge --write
+# One file per record means two sessions never touch the same file.
 
 schema:
   id: Stable lesson identifier.
@@ -8,669 +11,745 @@ schema:
   path: Repo-local lesson document path, relative to the LabTalk root.
   proof_state: Current evidence state from registries/proofs.yaml.
   next_gate: The next review or proof step before promotion.
-
 lessons:
-  - id: lesson.student.properties_of_valid_data
-    title: The Properties of Valid Data
-    kind: lesson
-    lane: student
-    status: idea
-    audience: [student, self-learner, instructor]
-    path: lessons/student/properties_of_valid_data_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.database.table
-      - concept.database.record
-      - concept.database.field
-      - concept.database.schema
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.help
-    labs:
-      - lab.database_literacy.starter
-    commands: [HELP, FIELDS, STRUCT, CREATE, APPEND BLANK, REPLACE]
-    proof_state: source_defined
-    next_gate: Define one runnable student exercise showing why valid data depends on field shape, type, range, and mutation rules before promoting this idea to a draft lesson.
+- id: lesson.career.a_documented_option_is_not_an_honoured_option
+  title: A Documented Option Is Not an Honoured Option
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - technical writer
+  - ai_partner
+  path: lessons/career/a_documented_option_is_not_an_honoured_option_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.contract.usage
+  - concept.selfdoc.validation
+  - concept.evidence.review
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.selfdoc
+  commands:
+  - BUILDLMDB
+  - CDX
+  - SET ORDER
+  - REINDEX
+  lane_doc: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+  aif: AIF-065
+  proof_state: source_defined
+  observed: 2026-07-26
+  run: COWORK-20260726-001
+  next_gate: Run BUILDLMDB CLEAN TINY YES on a small table, stat data.mdb, force an index attach, stat
+    again. Preserve the transcript, register it in proofs.yaml, then promote this lesson's proof_state
+    from source_defined to runtime_observed and write the body.
+  notes: 'BUILDLMDB documents a six-step size ladder -- TINY 32M, SMALL 64M, MEDIUM 128M, LARGE 256M,
+    XL 512M, HUGE 1G -- plus an explicit MAPSIZE <n>[K|M|G] spec with an 8 MiB floor. Every part of that
+    works: the presets parse, the floor is enforced, the chosen value is echoed back to the operator,
+    and the environment is written at that size. The documentation is correct and the parser is correct.
 
-  - id: lesson.student.records_fields_tables
-    title: Records, Fields, and Tables
-    kind: lesson
-    lane: student
-    status: draft
-    audience: [student, self-learner, instructor]
-    path: lessons/student/records_fields_tables_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.database.table
-      - concept.database.record
-      - concept.database.field
-      - concept.runtime.state
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.help
-    labs:
-      - lab.database_literacy.starter
-    commands: [HELP, USE, FIELDS, STRUCT, LIST]
-    datasets: [dataset.students, dataset.teachers]
-    proofs:
-      - proof.lab.database_literacy_starter.first_run
-    proof_state: runtime_observed
-    next_gate: Add a reviewed student worksheet with expected observations and HELP/CMDHELP readback.
+    Two other call sites then override it. src/xindex/cdx_backend.cpp:189 and src/xindex/lmdb_backend.cpp:80
+    each hardcode mdb_env_set_mapsize(env_, 1 GiB), so an environment grows to 1 GiB the first time its
+    index is attached, whatever was asked for. BUILDLMDB TINY requests 32 MiB, prints 32 MiB, and yields
+    a 1 GiB file. The whole ladder is cosmetic and has been since it was written.
 
-  - id: lesson.student.selfdoc_comments_to_help
-    title: Comments to Contracts to HELP
-    kind: lesson
-    lane: student
-    status: proof_linked
-    audience: [advanced student, developer, maintainer]
-    path: lessons/student/comments_to_contracts_to_help_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.source.comments
-      - concept.contract.usage
-      - concept.help.runtime
-      - concept.selfdoc.validation
-    apps:
-      - app.dottalkpp.help
-      - app.dottalkpp.selfdoc
-    labs:
-      - lab.selfdoc.comments_to_contracts
-    commands: [CMDHELP, CMDHELPCHK]
-    proofs:
-      - proof.lab.selfdoc.comments_to_contracts.first_run
-    proof_state: validated
-    next_gate: Convert the proof readback into step-by-step student questions and instructor notes.
+    WHAT MADE IT INVISIBLE: every individual piece is correct in isolation. The usage contract matches
+    the writer. The writer matches its own output. The readers are internally consistent. Nothing is stale,
+    nothing is a typo, no test fails. Reading any one file leaves the impression of a working feature.
+    The defect exists only in the RELATIONSHIP between two paths over one artifact -- the same shape as
+    DOTSCRIPT_COMMENT_PREFIX_EXECUTION_PATH_DRIFT_V1, where DOTSCRIPT and --script disagreed about comment
+    prefixes and both returned exit 0.
 
-  - id: lesson.student.database_history_trail
-    title: Data Systems History Trail
-    kind: lesson
-    lane: student
-    status: draft
-    audience: [student, instructor]
-    path: lessons/student/data_systems_history_trail_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.case.history
-      - concept.storage.fixed_record
-      - concept.database.network
-      - concept.database.xbase
-      - concept.ai_literacy.explainability
-    apps:
-      - app.labtalk.case_library
-      - app.labtalk.dataset_library
-    labs:
-      - lab.history.data_systems_trail
-    commands: [CASE, COBOL, CODASYL, HELP]
-    evidence:
-      - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
-      - D:/code/ccode/labtalk/LABTALK_EDUCATION_MAP_v0.md
-    proof_state: case_registered
-    next_gate: Separate live runtime demonstrations from reviewed history and simulations.
+    HOW IT WAS ACTUALLY FOUND: a disk filled during an unrelated catalog reload. Not an audit, not a test,
+    not review. The confirming check took one command -- stat every data.mdb and count distinct sizes
+    -- and the answer named both offending constants before either file was opened: 71 live files at exactly
+    134,217,728 bytes, 41 at exactly 1,073,741,824, nothing in between. Two values, two constants. Bimodality
+    in a measurement that should be continuous is a signature of two writers disagreeing.
 
-  - id: lesson.career.proof_first_development
-    title: Proof-First Development Lessons
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, technical writer]
-    path: lessons/career/proof_first_development_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.evidence.review
-      - concept.contract.usage
-      - concept.selfdoc.validation
-    apps:
-      - app.dottalkpp.selfdoc
-      - app.labtalk.case_library
-    proofs:
-      - proof.portal.truth_audit.latest
-      - proof.ai_friendly.assimilation_docs_seed
-      - proof.sqlsel.select_statement_matches_sqlite
-      - proof.engine.scan_limit_reports_truncation
-    proof_state: runtime_observed
-    next_gate: >-
-      The concrete before/after example this gate asked for now exists (AIF-074, 2026-07-29):
-      SQLSEL SELECT ... FROM STUDENTS emitting 200 debug lines and a false "0" BEFORE, and
-      three oracle-verified columns AFTER, on the same data and the same command. Both
-      transcripts are preserved under labtalk/proofs/runs/. Remaining gate: fold that pair
-      and its dated build notes into the lesson document itself.
+    THE COST: roughly 8x storage inflation wherever an index has ever been attached, a 99 GB lmdb tree,
+    and a benchmark axis that cannot be used -- a 30,124-row table and a 9-row table both occupy 1,073,741,824
+    bytes, so any storage comparison would measure attach history rather than the database.
 
-  - id: lesson.career.legacy_systems_as_labs
-    title: Turning Legacy Systems into Learning Labs
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, educator, maintainer]
-    path: lessons/career/legacy_systems_as_labs_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.case.history
-      - concept.database.xbase
-      - concept.evidence.review
-      - concept.ai_literacy.explainability
-    apps:
-      - app.dottalkpp.runtime
-      - app.labtalk.case_library
-      - app.labtalk.dataset_library
-    proofs:
-      - proof.case.registry_exists
-      - proof.lab.database_literacy_starter.first_run
-    evidence:
-      - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
-    proof_state: case_registered
-    next_gate: Add career-source notes, source memory boundaries, and reviewed public wording.
+    THE RULE: a documented option is a claim about behaviour, and claims need evidence like any other.
+    Verifying an option means observing its EFFECT, not confirming that the parser accepted it and echoed
+    it back. Ask what should differ on disk, in memory or in output between the option set and unset,
+    then measure both.
 
-  - id: lesson.student.agency_who_may_act
-    title: "Agency: Who May Act, and Who Answers For It"
-    kind: lesson
-    lane: student
-    status: draft
-    audience: [student, self-learner, instructor, ai_partner]
-    path: lessons/student/agency_who_may_act_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.agency
-      - concept.agency.identity
-      - concept.agency.authority
-      - concept.agency.authentication
-      - concept.agency.accountability
-      - concept.agency.capability_vs_agency
-      - concept.agency.influence_vs_authority
-    apps:
-      - app.dottalkpp.runtime
-    commands: [USER, ROLE, PERM, GRANT, NET, BBS, AUTH]
-    proof_state: runtime_observed
-    next_gate: >-
-      Turn the enumerate-your-agency and watch-a-boundary-hold steps into a runnable lab with a
-      scripted readback, so the student produces their own proof row. Needs a student-safe data
-      slot and an issue/revoke token flow for the exercise.
+    GAP THIS EXPOSES IN OUR OWN TOOLING: stack_audit_v1 compares documentation against tables, and the
+    census compares source against contracts. Neither compares a documented option against its observable
+    effect. Every option in every @dottalk.usage block is currently an unverified claim.'
+- id: lesson.career.a_script_never_run_is_not_evidence
+  title: A Script That Has Never Been Run Is Not Evidence
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - technical writer
+  - ai_partner
+  path: lessons/career/a_script_never_run_is_not_evidence_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.evidence.review
+  - concept.contract.usage
+  - concept.selfdoc.validation
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.selfdoc
+  commands:
+  - COBOL
+  - COPY
+  - AUTODBF
+  - EXPORT
+  - IMPORT
+  - DDL
+  - SETPATH
+  - DOTSCRIPT
+  proof_state: runtime_observed
+  observed: 2026-07-26
+  run: COWORK-20260726-001
+  next_gate: Write the lesson body from the 2026-07-26 evidence below, then cite the four transcripts
+    from proofs.yaml once they are registered.
+  notes: 'MEASURED 2026-07-26 across one session. Nearly every defect found that day was found by EXECUTING
+    something that had only ever been WRITTEN, and none of them were visible to reading.
 
-  - id: lesson.career.a_script_never_run_is_not_evidence
-    title: A Script That Has Never Been Run Is Not Evidence
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, technical writer, ai_partner]
-    path: lessons/career/a_script_never_run_is_not_evidence_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.evidence.review
-      - concept.contract.usage
-      - concept.selfdoc.validation
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.selfdoc
-    commands: [COBOL, COPY, AUTODBF, EXPORT, IMPORT, DDL, SETPATH, DOTSCRIPT]
-    proof_state: runtime_observed
-    observed: 2026-07-26
-    run: COWORK-20260726-001
-    next_gate: >-
-      Write the lesson body from the 2026-07-26 evidence below, then cite the four transcripts
-      from proofs.yaml once they are registered.
-    notes: >-
-      MEASURED 2026-07-26 across one session. Nearly every defect found that day was found by
-      EXECUTING something that had only ever been WRITTEN, and none of them were visible to
-      reading.
+    The tests/conversion suite was cited by the PDLC maturity review as evidence that "DBF/xBase and CSV
+    conversion" was empirically demonstrated. All five scripts were unrunnable: EXPORT ... DELIMITER/QUOTES,
+    IMPORT ... SCHEMA/REJECTS, SQLITE QUERY ... INTO DBF and BEGIN are not implemented grammar; #FIELD
+    substitution has no implementation; and every script wrote to _drops/, a directory that does not exist.
+    They were not stale, they were ASPIRATIONAL -- written against the syntax someone wished for. Reading
+    them looked like evidence. Running them produced usage errors on line 2.
 
-      The tests/conversion suite was cited by the PDLC maturity review as evidence that
-      "DBF/xBase and CSV conversion" was empirically demonstrated. All five scripts were
-      unrunnable: EXPORT ... DELIMITER/QUOTES, IMPORT ... SCHEMA/REJECTS, SQLITE QUERY ... INTO
-      DBF and BEGIN are not implemented grammar; #FIELD substitution has no implementation; and
-      every script wrote to _drops/, a directory that does not exist. They were not stale, they
-      were ASPIRATIONAL -- written against the syntax someone wished for. Reading them looked
-      like evidence. Running them produced usage errors on line 2.
+    The COBOL hop was graded "runtime-capable, proof incomplete", attributed to a missing GnuCOBOL transcript.
+    GnuCOBOL was installed. Running the hop exposed the real blockers: (1) COBOL BUILD appends .exe on
+    Windows while COBOL RUN did a bare fs::exists() with no fallback, so the documented BUILD-then-RUN
+    sequence could not work immediately after a successful BUILD; (2) the sample program''s ASSIGN named
+    a path nothing had ever written to, so OPEN INPUT failed with libcob status 35 right after a successful
+    export. Two latent defects, invisible for as long as nobody ran the thing.
 
-      The COBOL hop was graded "runtime-capable, proof incomplete", attributed to a missing
-      GnuCOBOL transcript. GnuCOBOL was installed. Running the hop exposed the real blockers:
-      (1) COBOL BUILD appends .exe on Windows while COBOL RUN did a bare fs::exists() with no
-      fallback, so the documented BUILD-then-RUN sequence could not work immediately after a
-      successful BUILD; (2) the sample program's ASSIGN named a path nothing had ever written
-      to, so OPEN INPUT failed with libcob status 35 right after a successful export. Two latent
-      defects, invisible for as long as nobody ran the thing.
+    The same shape recurred at every layer. A coverage generator read a 40-row CSV snapshot and reported
+    14.9% while the canonical table held 203 rows (true figure 78.4%) -- acting on that number would have
+    ERASED 15 live rows that were deliberate maintainer decisions. Gate 4 was recorded PASS at 191 pages
+    / 26 parts / 14,542 lines while its own preserved assembly report says 183 / 23 / 13,879. The published
+    PDF predates by 3h35m the assembly it is evidence for. Two divergent shadow HELP sets sit where a
+    tool given the wrong root consumes months-old data and reports success.
 
-      The same shape recurred at every layer. A coverage generator read a 40-row CSV snapshot
-      and reported 14.9% while the canonical table held 203 rows (true figure 78.4%) -- acting
-      on that number would have ERASED 15 live rows that were deliberate maintainer decisions.
-      Gate 4 was recorded PASS at 191 pages / 26 parts / 14,542 lines while its own preserved
-      assembly report says 183 / 23 / 13,879. The published PDF predates by 3h35m the assembly
-      it is evidence for. Two divergent shadow HELP sets sit where a tool given the wrong root
-      consumes months-old data and reports success.
+    COROLLARY, learned the same day: the agent writing the proof is not exempt. Expected values were invented
+    rather than derived (a NULL count and a cost sum that would have made a CORRECT conversion appear
+    to fail); a record length was asserted as unrelated to the DBF when it was that length plus CRLF;
+    fixed-format comments were added to a free-format COBOL source after the -free compile flag had already
+    been read, turning a clean build into ~60 syntax errors. Every one of those was caught by running,
+    not by re-reading.
 
-      COROLLARY, learned the same day: the agent writing the proof is not exempt. Expected
-      values were invented rather than derived (a NULL count and a cost sum that would have made
-      a CORRECT conversion appear to fail); a record length was asserted as unrelated to the DBF
-      when it was that length plus CRLF; fixed-format comments were added to a free-format COBOL
-      source after the -free compile flag had already been read, turning a clean build into ~60
-      syntax errors. Every one of those was caught by running, not by re-reading.
+    THE RULE: a claim is evidence only if a transcript exists. Expected values must be DERIVED from the
+    code or from sealed data, never written because they look plausible. And running the proof is not
+    the last step of documenting a capability -- it is the step that finds out whether the capability
+    is real.
 
-      THE RULE: a claim is evidence only if a transcript exists. Expected values must be DERIVED
-      from the code or from sealed data, never written because they look plausible. And running
-      the proof is not the last step of documenting a capability -- it is the step that finds
-      out whether the capability is real.
+    Companion to the AIF-062 proofs.yaml finding one layer down: there, real evidence was invisible to
+    a clone; here, absent evidence looked real. Both produce wrong records that propagate.'
+- id: lesson.career.a_wrong_answer_that_looks_right
+  title: The Worst Failure Is the One That Returns a Number
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - educator
+  path: lessons/career/a_wrong_answer_that_looks_right_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.evidence.review
+  - concept.contract.usage
+  proofs:
+  - proof.engine.scan_limit_reports_truncation
+  - proof.sqlsel.select_statement_matches_sqlite
+  proof_state: runtime_observed
+  next_gate: 'Three defects found in one lane shared a shape: a scan that stopped at its limit and reported
+    a partial result as complete; a SELECT statement the parser could not read, which scanned 200 records
+    and answered "0"; a boolean that stringified to nothing so a proof marker silently vanished. None
+    raised an error. Each returned something a reader would accept. A crash is a gift by comparison --
+    it tells you where to look. The remedy is not more testing but a design rule: separate the error axis
+    from the value axis, so a FAILURE reports while a legitimate blank stays quiet. Add the before/after
+    transcript pair as the exhibit, then promote.'
+- id: lesson.career.discovery_by_documentation
+  title: Discovery by Documentation
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - technical writer
+  - ai_partner
+  - student
+  path: lessons/career/discovery_by_documentation_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.contract.usage
+  - concept.selfdoc.validation
+  - concept.evidence.review
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.selfdoc
+  commands:
+  - SET
+  - SET USAGE
+  - AREA51
+  - REL
+  lane_doc: docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md
+  aif: AIF-067
+  proof_state: runtime_observed
+  observed: 2026-07-27
+  run: DOCFLUSH-20260722-001
+  body: "DIRECT EVIDENCE FOR THE PROJECT THESIS -- \"documentation improves and proves the\ncode\" --\
+    \ recorded because the thesis is otherwise only asserted.\n\nEIGHT defects in one session were found\
+    \ by the ACT OF WRITING DOCUMENTATION, none\nby a failing test, a user report, or a crash:\n\n  1.\
+    \ SET ERRORSTOP and SET INDEXTXN dispatch correctly and are undiscoverable\n     (found while contracting\
+    \ the 33-arm SET ladder)\n  2. SYSSUBCMD held 12 scratch rows; its harvest CSV carried a 10-field\
+    \ schema\n     against a 20-field table and could never have loaded\n  3. SetUsageText exists TWICE;\
+    \ only one copy was being generated\n  4. SET DEVDIAG claims relation diagnostics that do not exist\
+    \ -- 7 call sites,\n     none in a refresh path\n  5. 9 commands registered twice, 2 with handlers\
+    \ DIFFERING on relation\n     maintenance; the live one decided by static-init order, not by rule\n\
+    \  6. SYSFUNC.dbf unreadable by the doc toolchain for its entire life\n  7. MEMO_LINES.dbf unreadable\
+    \ -- LINECONT is C(1024), classic width byte\n     clamps at 255\n  8. 8 registry keys are undispatchable\
+    \ dead code\n\nWHY DOCUMENTING FINDS WHAT TESTING CANNOT: a test asks \"does this behave as I\nexpect\"\
+    , so it can only fail where someone already suspected something.\nDocumenting asks \"what IS this,\
+    \ and where is that written down\" -- a question with\nno expectation to satisfy, which therefore\
+    \ goes where nobody suspected. And it\nforces TWO DESCRIPTIONS OF ONE THING into the same field of\
+    \ view. Every defect\nabove has that shape: ladder vs usage text vs table; descriptor copy vs locale\n\
+    copy; hub registration vs self-registration; classic width byte vs X64M width;\nregistry key vs what\
+    \ the dispatcher can produce. Each artifact was internally\nconsistent, which is exactly why nothing\
+    \ failed. The defect lived in the\nRELATIONSHIP, and only an activity obliged to reconcile both sides\
+    \ can see it.\n\nTHE COUNTER-EVIDENCE, WHICH MATTERS MORE. The same session propagated an error at\n\
+    pipeline speed: a slightly wrong source comment on SET DEVDIAG was inherited into\na @dottalk.subusage\
+    \ summary and generated into SET USAGE and SYSSUBCMD within\nhours -- one inaccurate sentence became\
+    \ three inaccurate artifacts BECAUSE the\npipeline worked. Separately, the first generated SET USAGE\
+    \ silently dropped four\nSET LOCALE lines: generation removes drift but cannot preserve an intent\
+    \ that was\nnever written down.\n\nSO THE THESIS IS NARROWER THAN ITS SLOGAN: documentation authored\
+    \ against SOURCE\nproves code; documentation authored against neighbouring documentation propagates\n\
+    error faster than review can catch it. Read the parser, not the comment above the\nparser. Read the\
+    \ bytes, not the field name.\n\nSTRONGEST SINGLE INSTANCE: the most productive question of the day\
+    \ was not an\naudit instruction but the maintainer asking \"what flavor of dbf?\". Answering it\n\
+    required reading actual header bytes, and produced the X64M extended-header\nlayout, two format versions,\
+    \ the true-width and logical-name mechanism, the\nexplanation for LOCALIZE~1, and two canonical tables\
+    \ that had been unreadable by\nour own tooling without anyone knowing. The audit finds what it was\
+    \ built to look\nfor; the QUESTION finds what nobody had thought to look for.\n\nTHE CONTRACT SETTLED\
+    \ A DESIGN QUESTION IT HAD ALREADY ANSWERED. The clearest\ninstance of the thesis in this run was\
+    \ not a defect found but a DESIGN decision\nresolved by reading a contract that had been correct all\
+    \ along. Should BUILDLMDB\nCLEAN archive the environment it replaces? Three rounds narrowed it: keep\
+    \ archives\nwith a retention policy; then discard by default with ARCHIVE opt-in; then the\nactual\
+    \ answer -- THE OPERATION HAS NOTHING TO PROTECT. That answer was already\nwritten in the command's\
+    \ own risk block: \"reads_cdx_container: yes /\nwrites_lmdb_environment: yes\". BUILDLMDB reads the\
+    \ declaration and writes the\nderived artifact, so a size change alters nothing declarative and no\
+    \ prior state is\nat risk. The contract had stated that relationship since it was authored; nobody\
+    \ had\nasked it the question.\n\nThis is documentation being GENERATIVE rather than descriptive --\
+    \ not a summary of\nbehaviour written afterwards, but a statement of what the command IS, sufficient\
+    \ to\ndecide what it SHOULD DO. Reading it replaced an argument.\n\nIT ALSO PRODUCED THE GENERAL RULE,\
+    \ which reasoning about storage would not have\nreached: archive the thing that CHANGES, at the command\
+    \ that CHANGES it; size is not\na reason to keep a copy, irrecoverability is. Applied, it inverts\
+    \ the subsystem --\nBUILDLMDB archived a 1 GiB regenerable environment while CDX CREATE and CDX ADDTAG,\n\
+    the only operations that restructure the ~3 KB declaration that no other file can\nrebuild, archive\
+    \ nothing.\n\nTHE HABIT WORTH COPYING: each round was narrowed by the maintainer pushing on the\n\
+    PREMISE rather than the implementation -- \"we don't need to back up the .mdb files\",\nthen \"why\
+    \ archive the cdx when changing sizes\". The instinct to keep a copy survived\nthree rounds of the\
+    \ author's own analysis unexamined, because the question kept\nbeing HOW to retain safely rather than\
+    \ WHETHER anything was at risk. A review that\nonly interrogates the mechanism will refine a mechanism\
+    \ nobody needs; the premise is\ncheaper to attack, and the contract is where the premise is usually\
+    \ already written.\n\nWHERE THESE DEFECTS COME FROM (member.derald): \"these type of problems can\
+    \ occur\nfrom unremedied dev tests, or one AI clobbering another. Which is why we are building\nthe\
+    \ AI portal, a project derived from need.\" The catalogue above is SHAPES; this is\norigin, and it\
+    \ changes the remedy.\n\nCAUSE 1, THE UNREMEDIED DEV TEST -- a mechanism 90% built with a comment\
+    \ describing\nthe missing 10%. mapsize_explicit computed then (void)'d with \"available if you later\n\
+    want to...\"; SOURCE_HASH written and never read; X64M displacement declared and never\nchecked; edu_missing_shims\
+    \ written for restricted builds and excluded from them;\nSYSSUBCMD left holding three identical batches\
+    \ of an import tested three times.\n\nCAUSE 2, ONE AI CLOBBERING ANOTHER -- multiple sessions on one\
+    \ branch and one working\ntree. The coordination protocol records the founding incident: four parallel\
+    \ sessions\ncollided on AIF-047->050 in a single sitting on 2026-07-22, caught only by reading git\n\
+    log. The signature is A PARALLEL IMPLEMENTATION INSTEAD OF AN EDIT: cmd_help.cpp +\ncmd_help_grouped.cpp\
+    \ both declaring HELP; cmd_struct.cpp + cmd_struct_basic.cpp both\ndeclaring STRUCT; cmd_pshell.cpp\
+    \ + cmd_pshell_help.cpp; nine commands registered in\nboth the hub and their own TU, two with handlers\
+    \ differing on relation maintenance;\norderstate:: and order_state:: as two spellings of one namespace.\
+    \ Suffixes like\n_basic, _grouped and _help are what \"I'll add mine next to yours\" looks like in\
+    \ a\nfile listing.\n\nWHY THE PORTAL AND NOT MORE DOCUMENTATION: documentation is the right remedy\
+    \ for\ncause 1 -- a wire left unconnected is discoverable by describing the system, which\nthis lesson\
+    \ demonstrates eight times. It is the WRONG remedy for cause 2, and the\ncoordination protocol says\
+    \ so directly: \"Documentation cannot fix a coordination\nproblem; an allocator and a presence surface\
+    \ can.\" Two agents writing accurate\ndocumentation about incompatible changes produce two accurate\
+    \ documents and one\nbroken tree. Hence session_coordinator.py with atomic O_EXCL claims, the AIF\n\
+    collision gate, the pre-push gate, the agency model, and the still-open git-lock\nlane (AIF-059).\n\
+    \nA defect's SHAPE tells you how to detect it; its CAUSE tells you what to build.\nDetecting well\
+    \ while never asking why leads to proposing more checks where an\nallocator was wanted.\n\nTHE RULE:\
+    \ when documenting, name the two artifacts that describe the same fact and\ncompare them -- if there\
+    \ is only one, ask why the other is not written down.\nAuthor from the primary artifact. When a description\
+    \ is derived, verify the\nderivation preserves INTENT and not merely content. And attribute discoveries\
+    \ to\nthe activity that produced them, because a thesis is only demonstrable if its\nevidence is recorded.\n"
+- id: lesson.career.entities_and_the_bridge
+  title: 'Entities and the Bridge: Build Up Solid, Build Down Empirical'
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - architect
+  - ai_partner
+  - student
+  path: lessons/career/entities_and_the_bridge_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.contract.usage
+  - concept.selfdoc.validation
+  - concept.evidence.review
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.selfdoc
+  commands: []
+  lane_doc: docs/ai-friendly/ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md
+  aif: AIF-067
+  proof_state: source_defined
+  observed: 2026-07-27
+  run: DOCFLUSH-20260722-001
+  body: 'DECLARING IS THE FIRST ACT OF BUILDING, not paperwork that precedes it.
 
-      Companion to the AIF-062 proofs.yaml finding one layer down: there, real evidence was
-      invisible to a clone; here, absent evidence looked real. Both produce wrong records that
-      propagate.
+    member.derald: "declaring something is the first step to making it real by defining
 
-  - id: lesson.career.a_documented_option_is_not_an_honoured_option
-    title: A Documented Option Is Not an Honoured Option
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, technical writer, ai_partner]
-    path: lessons/career/a_documented_option_is_not_an_honoured_option_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.contract.usage
-      - concept.selfdoc.validation
-      - concept.evidence.review
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.selfdoc
-    commands: [BUILDLMDB, CDX, SET ORDER, REINDEX]
-    lane_doc: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
-    aif: AIF-065
-    proof_state: source_defined
-    observed: 2026-07-26
-    run: COWORK-20260726-001
-    next_gate: >-
-      Run BUILDLMDB CLEAN TINY YES on a small table, stat data.mdb, force an index attach,
-      stat again. Preserve the transcript, register it in proofs.yaml, then promote this
-      lesson's proof_state from source_defined to runtime_observed and write the body.
-    notes: >-
-      BUILDLMDB documents a six-step size ladder -- TINY 32M, SMALL 64M, MEDIUM 128M,
-      LARGE 256M, XL 512M, HUGE 1G -- plus an explicit MAPSIZE <n>[K|M|G] spec with an
-      8 MiB floor. Every part of that works: the presets parse, the floor is enforced, the
-      chosen value is echoed back to the operator, and the environment is written at that
-      size. The documentation is correct and the parser is correct.
+    it and then building it, testing it, proofing it and release etc." The chain is
 
-      Two other call sites then override it. src/xindex/cdx_backend.cpp:189 and
-      src/xindex/lmdb_backend.cpp:80 each hardcode mdb_env_set_mapsize(env_, 1 GiB), so an
-      environment grows to 1 GiB the first time its index is attached, whatever was asked
-      for. BUILDLMDB TINY requests 32 MiB, prints 32 MiB, and yields a 1 GiB file. The
-      whole ladder is cosmetic and has been since it was written.
+    declare -> define -> build -> test -> proof -> release, and DECLARATION IS
 
-      WHAT MADE IT INVISIBLE: every individual piece is correct in isolation. The usage
-      contract matches the writer. The writer matches its own output. The readers are
-      internally consistent. Nothing is stale, nothing is a typo, no test fails. Reading
-      any one file leaves the impression of a working feature. The defect exists only in
-      the RELATIONSHIP between two paths over one artifact -- the same shape as
-      DOTSCRIPT_COMMENT_PREFIX_EXECUTION_PATH_DRIFT_V1, where DOTSCRIPT and --script
-      disagreed about comment prefixes and both returned exit 0.
+    GENERATIVE: naming the entity brings it into the system, and everything after is
 
-      HOW IT WAS ACTUALLY FOUND: a disk filled during an unrelated catalog reload. Not an
-      audit, not a test, not review. The confirming check took one command -- stat every
-      data.mdb and count distinct sizes -- and the answer named both offending constants
-      before either file was opened: 71 live files at exactly 134,217,728 bytes, 41 at
-      exactly 1,073,741,824, nothing in between. Two values, two constants. Bimodality in
-      a measurement that should be continuous is a signature of two writers disagreeing.
+    elaboration of something that already exists.
 
-      THE COST: roughly 8x storage inflation wherever an index has ever been attached, a
-      99 GB lmdb tree, and a benchmark axis that cannot be used -- a 30,124-row table and
-      a 9-row table both occupy 1,073,741,824 bytes, so any storage comparison would
-      measure attach history rather than the database.
 
-      THE RULE: a documented option is a claim about behaviour, and claims need evidence
-      like any other. Verifying an option means observing its EFFECT, not confirming that
-      the parser accepted it and echoed it back. Ask what should differ on disk, in memory
-      or in output between the option set and unset, then measure both.
+    THIS GIVES THE THESIS ITS SECOND READING, AND THE TWO ARE EQUALLY IMPORTANT
 
-      GAP THIS EXPOSES IN OUR OWN TOOLING: stack_audit_v1 compares documentation against
-      tables, and the census compares source against contracts. Neither compares a
-      documented option against its observable effect. Every option in every @dottalk.usage
-      block is currently an unverified claim.
+    (member.derald). Declaration-is-generative is documentation UPSTREAM -- building up,
 
-  - id: lesson.career.discovery_by_documentation
-    title: Discovery by Documentation
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, technical writer, ai_partner, student]
-    path: lessons/career/discovery_by_documentation_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.contract.usage
-      - concept.selfdoc.validation
-      - concept.evidence.review
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.selfdoc
-    commands: [SET, SET USAGE, AREA51, REL]
-    lane_doc: docs/maintenance/SUBCOMMAND_IDENTITY_CONTRACT_LANE_V1.md
-    aif: AIF-067
-    proof_state: runtime_observed
-    observed: 2026-07-27
-    run: DOCFLUSH-20260722-001
-    body: |
-      DIRECT EVIDENCE FOR THE PROJECT THESIS -- "documentation improves and proves the
-      code" -- recorded because the thesis is otherwise only asserted.
+    solid and deductive, answering "what is this supposed to be". Documentation-verifies
 
-      EIGHT defects in one session were found by the ACT OF WRITING DOCUMENTATION, none
-      by a failing test, a user report, or a crash:
+    is documentation DOWNSTREAM -- building down, empirical and inductive, answering
 
-        1. SET ERRORSTOP and SET INDEXTXN dispatch correctly and are undiscoverable
-           (found while contracting the 33-arm SET ladder)
-        2. SYSSUBCMD held 12 scratch rows; its harvest CSV carried a 10-field schema
-           against a 20-field table and could never have loaded
-        3. SetUsageText exists TWICE; only one copy was being generated
-        4. SET DEVDIAG claims relation diagnostics that do not exist -- 7 call sites,
-           none in a refresh path
-        5. 9 commands registered twice, 2 with handlers DIFFERING on relation
-           maintenance; the live one decided by static-init order, not by rule
-        6. SYSFUNC.dbf unreadable by the doc toolchain for its entire life
-        7. MEMO_LINES.dbf unreadable -- LINECONT is C(1024), classic width byte
-           clamps at 255
-        8. 8 registry keys are undispatchable dead code
+    "does it actually do that". Neither subsumes the other: upstream alone is an elegant
 
-      WHY DOCUMENTING FINDS WHAT TESTING CANNOT: a test asks "does this behave as I
-      expect", so it can only fail where someone already suspected something.
-      Documenting asks "what IS this, and where is that written down" -- a question with
-      no expectation to satisfy, which therefore goes where nobody suspected. And it
-      forces TWO DESCRIPTIONS OF ONE THING into the same field of view. Every defect
-      above has that shape: ladder vs usage text vs table; descriptor copy vs locale
-      copy; hub registration vs self-registration; classic width byte vs X64M width;
-      registry key vs what the dispatcher can produce. Each artifact was internally
-      consistent, which is exactly why nothing failed. The defect lived in the
-      RELATIONSHIP, and only an activity obliged to reconcile both sides can see it.
+    declaration nothing satisfies, downstream alone is a pile of true observations about
 
-      THE COUNTER-EVIDENCE, WHICH MATTERS MORE. The same session propagated an error at
-      pipeline speed: a slightly wrong source comment on SET DEVDIAG was inherited into
-      a @dottalk.subusage summary and generated into SET USAGE and SYSSUBCMD within
-      hours -- one inaccurate sentence became three inaccurate artifacts BECAUSE the
-      pipeline worked. Separately, the first generated SET USAGE silently dropped four
-      SET LOCALE lines: generation removes drift but cannot preserve an intent that was
-      never written down.
+    whatever happened to get built. A first draft of this lesson called the upstream
 
-      SO THE THESIS IS NARROWER THAN ITS SLOGAN: documentation authored against SOURCE
-      proves code; documentation authored against neighbouring documentation propagates
-      error faster than review can catch it. Read the parser, not the comment above the
-      parser. Read the bytes, not the field name.
+    reading "the strongest form", which was wrong, and wrong in a way this lesson should
 
-      STRONGEST SINGLE INSTANCE: the most productive question of the day was not an
-      audit instruction but the maintainer asking "what flavor of dbf?". Answering it
-      required reading actual header bytes, and produced the X64M extended-header
-      layout, two format versions, the true-width and logical-name mechanism, the
-      explanation for LOCALIZE~1, and two canonical tables that had been unreadable by
-      our own tooling without anyone knowing. The audit finds what it was built to look
-      for; the QUESTION finds what nobody had thought to look for.
+    have caught -- it makes a hierarchy of the two directions that are supposed to meet.
 
-      THE CONTRACT SETTLED A DESIGN QUESTION IT HAD ALREADY ANSWERED. The clearest
-      instance of the thesis in this run was not a defect found but a DESIGN decision
-      resolved by reading a contract that had been correct all along. Should BUILDLMDB
-      CLEAN archive the environment it replaces? Three rounds narrowed it: keep archives
-      with a retention policy; then discard by default with ARCHIVE opt-in; then the
-      actual answer -- THE OPERATION HAS NOTHING TO PROTECT. That answer was already
-      written in the command's own risk block: "reads_cdx_container: yes /
-      writes_lmdb_environment: yes". BUILDLMDB reads the declaration and writes the
-      derived artifact, so a size change alters nothing declarative and no prior state is
-      at risk. The contract had stated that relationship since it was authored; nobody had
-      asked it the question.
+    THE THESIS IS THE SPAN: documentation improves and proves the code because it both
 
-      This is documentation being GENERATIVE rather than descriptive -- not a summary of
-      behaviour written afterwards, but a statement of what the command IS, sufficient to
-      decide what it SHOULD DO. Reading it replaced an argument.
+    ORIGINATES the entity and later MEASURES it, and the gap between those two acts is
 
-      IT ALSO PRODUCED THE GENERAL RULE, which reasoning about storage would not have
-      reached: archive the thing that CHANGES, at the command that CHANGES it; size is not
-      a reason to keep a copy, irrecoverability is. Applied, it inverts the subsystem --
-      BUILDLMDB archived a 1 GiB regenerable environment while CDX CREATE and CDX ADDTAG,
-      the only operations that restructure the ~3 KB declaration that no other file can
-      rebuild, archive nothing.
+    where every recorded defect actually lives.
 
-      THE HABIT WORTH COPYING: each round was narrowed by the maintainer pushing on the
-      PREMISE rather than the implementation -- "we don't need to back up the .mdb files",
-      then "why archive the cdx when changing sizes". The instinct to keep a copy survived
-      three rounds of the author's own analysis unexamined, because the question kept
-      being HOW to retain safely rather than WHETHER anything was at risk. A review that
-      only interrogates the mechanism will refine a mechanism nobody needs; the premise is
-      cheaper to attack, and the contract is where the premise is usually already written.
 
-      WHERE THESE DEFECTS COME FROM (member.derald): "these type of problems can occur
-      from unremedied dev tests, or one AI clobbering another. Which is why we are building
-      the AI portal, a project derived from need." The catalogue above is SHAPES; this is
-      origin, and it changes the remedy.
+    Skip the declaration and later stages have nothing to be measured against -- you
 
-      CAUSE 1, THE UNREMEDIED DEV TEST -- a mechanism 90% built with a comment describing
-      the missing 10%. mapsize_explicit computed then (void)'d with "available if you later
-      want to..."; SOURCE_HASH written and never read; X64M displacement declared and never
-      checked; edu_missing_shims written for restricted builds and excluded from them;
-      SYSSUBCMD left holding three identical batches of an import tested three times.
+    cannot detect drift from a specification never written.
 
-      CAUSE 2, ONE AI CLOBBERING ANOTHER -- multiple sessions on one branch and one working
-      tree. The coordination protocol records the founding incident: four parallel sessions
-      collided on AIF-047->050 in a single sitting on 2026-07-22, caught only by reading git
-      log. The signature is A PARALLEL IMPLEMENTATION INSTEAD OF AN EDIT: cmd_help.cpp +
-      cmd_help_grouped.cpp both declaring HELP; cmd_struct.cpp + cmd_struct_basic.cpp both
-      declaring STRUCT; cmd_pshell.cpp + cmd_pshell_help.cpp; nine commands registered in
-      both the hub and their own TU, two with handlers differing on relation maintenance;
-      orderstate:: and order_state:: as two spellings of one namespace. Suffixes like
-      _basic, _grouped and _help are what "I'll add mine next to yours" looks like in a
-      file listing.
 
-      WHY THE PORTAL AND NOT MORE DOCUMENTATION: documentation is the right remedy for
-      cause 1 -- a wire left unconnected is discoverable by describing the system, which
-      this lesson demonstrates eight times. It is the WRONG remedy for cause 2, and the
-      coordination protocol says so directly: "Documentation cannot fix a coordination
-      problem; an allocator and a presence surface can." Two agents writing accurate
-      documentation about incompatible changes produce two accurate documents and one
-      broken tree. Hence session_coordinator.py with atomic O_EXCL claims, the AIF
-      collision gate, the pre-push gate, the agency model, and the still-open git-lock
-      lane (AIF-059).
+    THE UNIT OF TRACKING IS THE ENTITY, NOT THE TASK. A named thing the design has
 
-      A defect's SHAPE tells you how to detect it; its CAUSE tells you what to build.
-      Detecting well while never asking why leads to proposing more checks where an
-      allocator was wanted.
+    decided should exist is an entity from the moment it has a file, even a zero-byte
 
-      THE RULE: when documenting, name the two artifacts that describe the same fact and
-      compare them -- if there is only one, ask why the other is not written down.
-      Author from the primary artifact. When a description is derived, verify the
-      derivation preserves INTENT and not merely content. And attribute discoveries to
-      the activity that produced them, because a thesis is only demonstrable if its
-      evidence is recorded.
+    one. member.derald: "0 byte commands, plugs, and prototypes help define the top
 
-  - id: lesson.career.entities_and_the_bridge
-    title: "Entities and the Bridge: Build Up Solid, Build Down Empirical"
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, architect, ai_partner, student]
-    path: lessons/career/entities_and_the_bridge_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.contract.usage
-      - concept.selfdoc.validation
-      - concept.evidence.review
-    apps:
-      - app.dottalkpp.runtime
-      - app.dottalkpp.selfdoc
-    commands: []
-    lane_doc: docs/ai-friendly/ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md
-    aif: AIF-067
-    proof_state: source_defined
-    observed: 2026-07-27
-    run: DOCFLUSH-20260722-001
-    body: |
-      DECLARING IS THE FIRST ACT OF BUILDING, not paperwork that precedes it.
-      member.derald: "declaring something is the first step to making it real by defining
-      it and then building it, testing it, proofing it and release etc." The chain is
-      declare -> define -> build -> test -> proof -> release, and DECLARATION IS
-      GENERATIVE: naming the entity brings it into the system, and everything after is
-      elaboration of something that already exists.
+    level layer of our systems design" and "even unfinished, they are entities and can
 
-      THIS GIVES THE THESIS ITS SECOND READING, AND THE TWO ARE EQUALLY IMPORTANT
-      (member.derald). Declaration-is-generative is documentation UPSTREAM -- building up,
-      solid and deductive, answering "what is this supposed to be". Documentation-verifies
-      is documentation DOWNSTREAM -- building down, empirical and inductive, answering
-      "does it actually do that". Neither subsumes the other: upstream alone is an elegant
-      declaration nothing satisfies, downstream alone is a pile of true observations about
-      whatever happened to get built. A first draft of this lesson called the upstream
-      reading "the strongest form", which was wrong, and wrong in a way this lesson should
-      have caught -- it makes a hierarchy of the two directions that are supposed to meet.
-      THE THESIS IS THE SPAN: documentation improves and proves the code because it both
-      ORIGINATES the entity and later MEASURES it, and the gap between those two acts is
-      where every recorded defect actually lives.
+    be tracked in the SDLC as they are onboarded into the system, and we just track
 
-      Skip the declaration and later stages have nothing to be measured against -- you
-      cannot detect drift from a specification never written.
+    their progression through our documentation process."
 
-      THE UNIT OF TRACKING IS THE ENTITY, NOT THE TASK. A named thing the design has
-      decided should exist is an entity from the moment it has a file, even a zero-byte
-      one. member.derald: "0 byte commands, plugs, and prototypes help define the top
-      level layer of our systems design" and "even unfinished, they are entities and can
-      be tracked in the SDLC as they are onboarded into the system, and we just track
-      their progression through our documentation process."
 
-      A zero-byte translation unit outperforms a TODO or a backlog item on three axes:
-      it survives refactors, it appears in the census, and removing it is a deliberate
-      act with an author. The names are not arbitrary either -- app_army, app_alcoa and
-      app_paxon match CASE_HIST_020, CASE_HIST_030 and CASE_HIST_060 exactly. The empty
-      files and the historical case studies are one list expressed twice.
+    A zero-byte translation unit outperforms a TODO or a backlog item on three axes:
 
-      DOCUMENTATION IS THE TRACKER. An entity's position in the documentation chain IS
-      its lifecycle stage: named -> described (@dottalk.file) -> contracted
-      (@dottalk.usage) -> catalogued (SYSCMD row) -> surfaced (HELP topic) -> proven
-      (runtime_observed). There is no second system to keep in sync, which matters in a
-      project whose recurring defect is two systems that never compare themselves. The
-      proof_state vocabulary is not metadata about documents; it is lifecycle state.
+    it survives refactors, it appears in the census, and removing it is a deliberate
 
-      THE ONE RULE: an entity may sit at any stage, but may not CLAIM a later stage than
-      it occupies. A zero-byte file may say "I am a reserved slot"; it may not say "I am
-      the ARMY command", because SYSCMD, HELP, dotref and the census all read a usage
-      contract as a real command surface and count it.
+    act with an author. The names are not arbitrary either -- app_army, app_alcoa and
 
-      BUILD UP, BUILD DOWN, BUILD THE SPAN. Two directions, two kinds of work. Building
-      UP is solid and deductive -- structure, reserved names, contracts, schemas; it says
-      what the system IS and can precede any running code. Building DOWN is empirical and
-      inductive -- runtime proofs, measured sizes, actual header bytes, real command
-      output; it says what the system DOES. Neither reaches the far bank alone. The SPAN
-      is the reconciliation, and every defect this project has recorded lives exactly
-      there: a documented LMDB size ladder against two observed file sizes (AIF-065); a
-      SOURCE_HASH written and never read (AIF-066); 33 ladder arms against 30 listed
-      options, a 20-field table against a 10-field CSV, a registry key the dispatcher
-      cannot produce (AIF-067). Nothing in those pairs is individually wrong, which is
-      why no test failed -- a test checks one end of a bridge.
+    app_paxon match CASE_HIST_020, CASE_HIST_030 and CASE_HIST_060 exactly. The empty
 
-      CONSEQUENCE FOR TOOLING: stack_audit_v1 is span inspection. Its WARN count is not
-      a quality score, it is the measured distance between what has been declared and
-      what has been observed. A finding closes when the two ends meet, not when someone
-      silences it.
+    files and the historical case studies are one list expressed twice.
 
-      CONSEQUENCE FOR CONTRIBUTORS, HUMAN OR AI: do not "clean up" entities -- check
-      docs/cases and the registries before deleting anything empty. Do not let an entity
-      claim a stage it has not reached. Say which direction you are working in, because
-      "I read the source" and "I ran it and observed X" are different evidence and earn
-      different proof_state values. When the ends do not meet, RECORD the gap; a
-      documented gap is span work scheduled, an undocumented one is a bridge that looks
-      finished.
 
-  # ---------------------------------------------------------------------------
-  # AIF-074 SQLSEL lane, 2026-07-29. Three lessons the lane earned in one day.
-  # ---------------------------------------------------------------------------
-  - id: lesson.student.cursor_versus_set
-    title: Two Ways to Ask a Database a Question
-    kind: lesson
-    lane: student
-    status: idea
-    audience: [student, self-learner, instructor]
-    path: lessons/student/cursor_versus_set_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.database.record
-      - concept.database.schema
-    apps:
-      - app.dottalkpp.runtime
-    commands: [REL ADD, REL ENUM, SQLSEL, SQLITE, USE, GO]
-    proofs:
-      - proof.sqlsel.select_statement_matches_sqlite
-      - proof.engine.typed_equality_crosses_declared_types
-    proof_state: runtime_observed
-    next_gate: >-
-      Write the side-by-side exercise. x64base is unusual in carrying BOTH methodologies
-      over one engine and one dataset: REL walks children from the record the cursor is
-      sitting on (move the cursor, the answer changes), while SQLSEL evaluates a statement
-      that names its own table and leaves every cursor untouched. Most students only ever
-      meet the set model and never see the cursor machinery underneath it. Same data, same
-      keys, same equality rules, two answers with different shapes -- and a SQLite oracle
-      to check both against. Needs one runnable lab file before promotion to draft.
+    DOCUMENTATION IS THE TRACKER. An entity''s position in the documentation chain IS
 
-  - id: lesson.career.a_wrong_answer_that_looks_right
-    title: The Worst Failure Is the One That Returns a Number
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, educator]
-    path: lessons/career/a_wrong_answer_that_looks_right_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.evidence.review
-      - concept.contract.usage
-    proofs:
-      - proof.engine.scan_limit_reports_truncation
-      - proof.sqlsel.select_statement_matches_sqlite
-    proof_state: runtime_observed
-    next_gate: >-
-      Three defects found in one lane shared a shape: a scan that stopped at its limit and
-      reported a partial result as complete; a SELECT statement the parser could not read,
-      which scanned 200 records and answered "0"; a boolean that stringified to nothing so
-      a proof marker silently vanished. None raised an error. Each returned something a
-      reader would accept. A crash is a gift by comparison -- it tells you where to look.
-      The remedy is not more testing but a design rule: separate the error axis from the
-      value axis, so a FAILURE reports while a legitimate blank stays quiet. Add the
-      before/after transcript pair as the exhibit, then promote.
+    its lifecycle stage: named -> described (@dottalk.file) -> contracted
 
-  - id: lesson.career.the_tree_already_has_it
-    title: Search Before You Build, and Trust the Enforcer Over the Spec
-    kind: lesson
-    lane: career
-    status: draft
-    audience: [developer, maintainer, ai-collaborator]
-    path: lessons/career/the_tree_already_has_it_v0.md
-    website_path: /docs/labtalk/career-lessons
-    concepts:
-      - concept.evidence.review
-      - concept.selfdoc.validation
-    proofs:
-      - proof.codev.system_corrects_its_extender
-      - proof.engine.key_metadata_survives_workspace_roundtrip
-    proof_state: source_defined
-    next_gate: >-
-      Two rules, both learned the expensive way. FIRST: before designing a component, cite
-      the search that proved it absent -- every capability the lane "needed" already
-      existed (locking, the tuple carrier, table buffering, a unique-field registry whose
-      own header requested the very phase being designed), and construction was the right
-      answer zero times out of seven. SECOND, a hierarchy of trust when authoring anything
-      the toolchain checks: a passing in-tree example beats the enforced policy registry,
-      which beats the specification document, which beats memory -- and an artifact you
-      generated yourself but never ran through the gate ranks below all of them. Learned by
-      having a pre-commit gate reject the same closeout envelope three times: the spec
-      described a v2 schema the validator does not yet enforce. Add the worked example and
-      promote.
+    (@dottalk.usage) -> catalogued (SYSCMD row) -> surfaced (HELP topic) -> proven
 
-  - id: lesson.student.three_things_called_a_set
-    title: Three Things Called a Set
-    kind: lesson
-    lane: student
-    status: idea
-    audience: [student, self-learner, instructor]
-    path: lessons/student/three_things_called_a_set_v0.md
-    website_path: /docs/labtalk/student-lessons
-    concepts:
-      - concept.database.network
-      - concept.database.xbase
-    commands: [CODASYL, SET, WORKSPACE]
-    proof_state: source_defined
-    next_gate: >-
-      Teaches students to read past vocabulary: x64base spells "set" three ways and they
-      share nothing but the letters -- SET as a configuration VERB (SET ORDER / RELATION /
-      FILTER), a CODASYL SET as an owner-to-member RELATIONSHIP between record types, and a
-      workspace GROUP as a flat COLLECTION that may overlap. The sharp discriminator is
-      overlap: a member record cannot belong to two occurrences of one CODASYL set type,
-      while a workspace can sit in two groups at once, so one is an EDGE and the other is a
-      BAG. Resist the memorable simplification "workspace groups are just CODASYL sets" --
-      it is wrong, and the lesson exists because it is wrong. HELD AT `idea` DELIBERATELY:
-      the CODASYL half runs today (`cmd_codasyl.cpp`, supported, category education) but
-      the workspace-group half describes a manager that does not exist yet (AIF-078, design
-      stage), so Student Path steps 4 and 5 cannot be performed. Promote to `draft` when a
-      student can actually place one workspace in two groups and observe the difference;
-      marking it runnable now would be the documented-not-honoured defect the campus
-      records elsewhere.
+    (runtime_observed). There is no second system to keep in sync, which matters in a
+
+    project whose recurring defect is two systems that never compare themselves. The
+
+    proof_state vocabulary is not metadata about documents; it is lifecycle state.
+
+
+    THE ONE RULE: an entity may sit at any stage, but may not CLAIM a later stage than
+
+    it occupies. A zero-byte file may say "I am a reserved slot"; it may not say "I am
+
+    the ARMY command", because SYSCMD, HELP, dotref and the census all read a usage
+
+    contract as a real command surface and count it.
+
+
+    BUILD UP, BUILD DOWN, BUILD THE SPAN. Two directions, two kinds of work. Building
+
+    UP is solid and deductive -- structure, reserved names, contracts, schemas; it says
+
+    what the system IS and can precede any running code. Building DOWN is empirical and
+
+    inductive -- runtime proofs, measured sizes, actual header bytes, real command
+
+    output; it says what the system DOES. Neither reaches the far bank alone. The SPAN
+
+    is the reconciliation, and every defect this project has recorded lives exactly
+
+    there: a documented LMDB size ladder against two observed file sizes (AIF-065); a
+
+    SOURCE_HASH written and never read (AIF-066); 33 ladder arms against 30 listed
+
+    options, a 20-field table against a 10-field CSV, a registry key the dispatcher
+
+    cannot produce (AIF-067). Nothing in those pairs is individually wrong, which is
+
+    why no test failed -- a test checks one end of a bridge.
+
+
+    CONSEQUENCE FOR TOOLING: stack_audit_v1 is span inspection. Its WARN count is not
+
+    a quality score, it is the measured distance between what has been declared and
+
+    what has been observed. A finding closes when the two ends meet, not when someone
+
+    silences it.
+
+
+    CONSEQUENCE FOR CONTRIBUTORS, HUMAN OR AI: do not "clean up" entities -- check
+
+    docs/cases and the registries before deleting anything empty. Do not let an entity
+
+    claim a stage it has not reached. Say which direction you are working in, because
+
+    "I read the source" and "I ran it and observed X" are different evidence and earn
+
+    different proof_state values. When the ends do not meet, RECORD the gap; a
+
+    documented gap is span work scheduled, an undocumented one is a bridge that looks
+
+    finished.
+
+    '
+- id: lesson.career.legacy_systems_as_labs
+  title: Turning Legacy Systems into Learning Labs
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - educator
+  - maintainer
+  path: lessons/career/legacy_systems_as_labs_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.case.history
+  - concept.database.xbase
+  - concept.evidence.review
+  - concept.ai_literacy.explainability
+  apps:
+  - app.dottalkpp.runtime
+  - app.labtalk.case_library
+  - app.labtalk.dataset_library
+  proofs:
+  - proof.case.registry_exists
+  - proof.lab.database_literacy_starter.first_run
+  evidence:
+  - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+  proof_state: case_registered
+  next_gate: Add career-source notes, source memory boundaries, and reviewed public wording.
+- id: lesson.career.proof_first_development
+  title: Proof-First Development Lessons
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - technical writer
+  path: lessons/career/proof_first_development_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.evidence.review
+  - concept.contract.usage
+  - concept.selfdoc.validation
+  apps:
+  - app.dottalkpp.selfdoc
+  - app.labtalk.case_library
+  proofs:
+  - proof.portal.truth_audit.latest
+  - proof.ai_friendly.assimilation_docs_seed
+  - proof.sqlsel.select_statement_matches_sqlite
+  - proof.engine.scan_limit_reports_truncation
+  proof_state: runtime_observed
+  next_gate: 'The concrete before/after example this gate asked for now exists (AIF-074, 2026-07-29):
+    SQLSEL SELECT ... FROM STUDENTS emitting 200 debug lines and a false "0" BEFORE, and three oracle-verified
+    columns AFTER, on the same data and the same command. Both transcripts are preserved under labtalk/proofs/runs/.
+    Remaining gate: fold that pair and its dated build notes into the lesson document itself.'
+- id: lesson.career.the_tree_already_has_it
+  title: Search Before You Build, and Trust the Enforcer Over the Spec
+  kind: lesson
+  lane: career
+  status: draft
+  audience:
+  - developer
+  - maintainer
+  - ai-collaborator
+  path: lessons/career/the_tree_already_has_it_v0.md
+  website_path: /docs/labtalk/career-lessons
+  concepts:
+  - concept.evidence.review
+  - concept.selfdoc.validation
+  proofs:
+  - proof.codev.system_corrects_its_extender
+  - proof.engine.key_metadata_survives_workspace_roundtrip
+  proof_state: source_defined
+  next_gate: 'Two rules, both learned the expensive way. FIRST: before designing a component, cite the
+    search that proved it absent -- every capability the lane "needed" already existed (locking, the tuple
+    carrier, table buffering, a unique-field registry whose own header requested the very phase being
+    designed), and construction was the right answer zero times out of seven. SECOND, a hierarchy of trust
+    when authoring anything the toolchain checks: a passing in-tree example beats the enforced policy
+    registry, which beats the specification document, which beats memory -- and an artifact you generated
+    yourself but never ran through the gate ranks below all of them. Learned by having a pre-commit gate
+    reject the same closeout envelope three times: the spec described a v2 schema the validator does not
+    yet enforce. Add the worked example and promote.'
+- id: lesson.student.agency_who_may_act
+  title: 'Agency: Who May Act, and Who Answers For It'
+  kind: lesson
+  lane: student
+  status: draft
+  audience:
+  - student
+  - self-learner
+  - instructor
+  - ai_partner
+  path: lessons/student/agency_who_may_act_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.agency
+  - concept.agency.identity
+  - concept.agency.authority
+  - concept.agency.authentication
+  - concept.agency.accountability
+  - concept.agency.capability_vs_agency
+  - concept.agency.influence_vs_authority
+  apps:
+  - app.dottalkpp.runtime
+  commands:
+  - USER
+  - ROLE
+  - PERM
+  - GRANT
+  - NET
+  - BBS
+  - AUTH
+  proof_state: runtime_observed
+  next_gate: Turn the enumerate-your-agency and watch-a-boundary-hold steps into a runnable lab with a
+    scripted readback, so the student produces their own proof row. Needs a student-safe data slot and
+    an issue/revoke token flow for the exercise.
+- id: lesson.student.cursor_versus_set
+  title: Two Ways to Ask a Database a Question
+  kind: lesson
+  lane: student
+  status: idea
+  audience:
+  - student
+  - self-learner
+  - instructor
+  path: lessons/student/cursor_versus_set_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.database.record
+  - concept.database.schema
+  apps:
+  - app.dottalkpp.runtime
+  commands:
+  - REL ADD
+  - REL ENUM
+  - SQLSEL
+  - SQLITE
+  - USE
+  - GO
+  proofs:
+  - proof.sqlsel.select_statement_matches_sqlite
+  - proof.engine.typed_equality_crosses_declared_types
+  proof_state: runtime_observed
+  next_gate: 'Write the side-by-side exercise. x64base is unusual in carrying BOTH methodologies over
+    one engine and one dataset: REL walks children from the record the cursor is sitting on (move the
+    cursor, the answer changes), while SQLSEL evaluates a statement that names its own table and leaves
+    every cursor untouched. Most students only ever meet the set model and never see the cursor machinery
+    underneath it. Same data, same keys, same equality rules, two answers with different shapes -- and
+    a SQLite oracle to check both against. Needs one runnable lab file before promotion to draft.'
+- id: lesson.student.database_history_trail
+  title: Data Systems History Trail
+  kind: lesson
+  lane: student
+  status: draft
+  audience:
+  - student
+  - instructor
+  path: lessons/student/data_systems_history_trail_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.case.history
+  - concept.storage.fixed_record
+  - concept.database.network
+  - concept.database.xbase
+  - concept.ai_literacy.explainability
+  apps:
+  - app.labtalk.case_library
+  - app.labtalk.dataset_library
+  labs:
+  - lab.history.data_systems_trail
+  commands:
+  - CASE
+  - COBOL
+  - CODASYL
+  - HELP
+  evidence:
+  - D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+  - D:/code/ccode/labtalk/LABTALK_EDUCATION_MAP_v0.md
+  proof_state: case_registered
+  next_gate: Separate live runtime demonstrations from reviewed history and simulations.
+- id: lesson.student.properties_of_valid_data
+  title: The Properties of Valid Data
+  kind: lesson
+  lane: student
+  status: idea
+  audience:
+  - student
+  - self-learner
+  - instructor
+  path: lessons/student/properties_of_valid_data_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.database.table
+  - concept.database.record
+  - concept.database.field
+  - concept.database.schema
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.help
+  labs:
+  - lab.database_literacy.starter
+  commands:
+  - HELP
+  - FIELDS
+  - STRUCT
+  - CREATE
+  - APPEND BLANK
+  - REPLACE
+  proof_state: source_defined
+  next_gate: Define one runnable student exercise showing why valid data depends on field shape, type,
+    range, and mutation rules before promoting this idea to a draft lesson.
+- id: lesson.student.records_fields_tables
+  title: Records, Fields, and Tables
+  kind: lesson
+  lane: student
+  status: draft
+  audience:
+  - student
+  - self-learner
+  - instructor
+  path: lessons/student/records_fields_tables_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.database.table
+  - concept.database.record
+  - concept.database.field
+  - concept.runtime.state
+  apps:
+  - app.dottalkpp.runtime
+  - app.dottalkpp.help
+  labs:
+  - lab.database_literacy.starter
+  commands:
+  - HELP
+  - USE
+  - FIELDS
+  - STRUCT
+  - LIST
+  datasets:
+  - dataset.students
+  - dataset.teachers
+  proofs:
+  - proof.lab.database_literacy_starter.first_run
+  proof_state: runtime_observed
+  next_gate: Add a reviewed student worksheet with expected observations and HELP/CMDHELP readback.
+- id: lesson.student.selfdoc_comments_to_help
+  title: Comments to Contracts to HELP
+  kind: lesson
+  lane: student
+  status: proof_linked
+  audience:
+  - advanced student
+  - developer
+  - maintainer
+  path: lessons/student/comments_to_contracts_to_help_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.source.comments
+  - concept.contract.usage
+  - concept.help.runtime
+  - concept.selfdoc.validation
+  apps:
+  - app.dottalkpp.help
+  - app.dottalkpp.selfdoc
+  labs:
+  - lab.selfdoc.comments_to_contracts
+  commands:
+  - CMDHELP
+  - CMDHELPCHK
+  proofs:
+  - proof.lab.selfdoc.comments_to_contracts.first_run
+  proof_state: validated
+  next_gate: Convert the proof readback into step-by-step student questions and instructor notes.
+- id: lesson.student.three_things_called_a_set
+  title: Three Things Called a Set
+  kind: lesson
+  lane: student
+  status: idea
+  audience:
+  - student
+  - self-learner
+  - instructor
+  path: lessons/student/three_things_called_a_set_v0.md
+  website_path: /docs/labtalk/student-lessons
+  concepts:
+  - concept.database.network
+  - concept.database.xbase
+  commands:
+  - CODASYL
+  - SET
+  - WORKSPACE
+  proof_state: source_defined
+  next_gate: 'Teaches students to read past vocabulary: x64base spells "set" three ways and they share
+    nothing but the letters -- SET as a configuration VERB (SET ORDER / RELATION / FILTER), a CODASYL
+    SET as an owner-to-member RELATIONSHIP between record types, and a workspace GROUP as a flat COLLECTION
+    that may overlap. The sharp discriminator is overlap: a member record cannot belong to two occurrences
+    of one CODASYL set type, while a workspace can sit in two groups at once, so one is an EDGE and the
+    other is a BAG. Resist the memorable simplification "workspace groups are just CODASYL sets" -- it
+    is wrong, and the lesson exists because it is wrong. HELD AT `idea` DELIBERATELY: the CODASYL half
+    runs today (`cmd_codasyl.cpp`, supported, category education) but the workspace-group half describes
+    a manager that does not exist yet (AIF-078, design stage), so Student Path steps 4 and 5 cannot be
+    performed. Promote to `draft` when a student can actually place one workspace in two groups and observe
+    the difference; marking it runnable now would be the documented-not-honoured defect the campus records
+    elsewhere.'

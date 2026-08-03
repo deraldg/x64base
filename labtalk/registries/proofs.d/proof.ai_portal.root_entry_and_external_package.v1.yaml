@@ -1,0 +1,13 @@
+id: proof.ai_portal.root_entry_and_external_package.v1
+label: Root AI Portal entry and external change-package contract defined
+state: source_defined
+source: D:/code/ccode/AI_PORTAL.md
+item_id: doc.ai_portal_root_entry
+related:
+- D:/code/ccode/labtalk/ai_portal/ROOT_AI_PORTAL_ENTRY_V1.md
+- D:/code/ccode/labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md
+- D:/code/ccode/labtalk/ai_portal/EXTERNAL_AI_CHANGE_PACKAGE_V1.md
+- D:/code/ccode/labtalk/registries/ai_portal.yaml
+notes: Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and
+  a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted
+  and verified in the public repository.

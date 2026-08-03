@@ -1,0 +1,21 @@
+id: proof.pdlc.cobol_fixed_record.hop_closed
+label: DBF to fixed-record to GnuCOBOL read, 200 records
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_cobol_fixed_record_hop.txt
+item_id: tests/conversion/12_cobol_fixed_record_v1.dts
+return_code: 0
+related:
+- D:/code/ccode/tests/conversion/12_cobol_fixed_record_v1.dts
+- D:/code/ccode/dottalkpp/data/projects/cobol/src/first_cobol_test.cob
+- D:/code/ccode/src/edu/edu_cobol.cpp
+notes: 'COBOL EXPORT wrote 200 records; the file is 22,200 bytes = 200 x 111 EXACTLY. That division is
+  the fidelity proof -- a fixed-record file carries no header count and no delimiters, so a short write
+  is invisible to anything that merely opens and reads. GnuCOBOL compiled clean and the program ran: 200
+  student lines, RECORDS READ 0000200, exit 0. Record 1 read by COBOL is identical to record 1 read by
+  DotTalk++ from the dBASE III table, GPA decimals included. THE COPYBOOK IS THE CROSSWALK: the FD sums
+  to exactly 109 bytes, the dBASE III record length, field for field; the file''s 111 is 109 plus CRLF
+  under LINE SEQUENTIAL. Closing this hop required fixing two latent defects neither of which was visible
+  to reading -- a BUILD/RUN extension asymmetry in edu_cobol.cpp (BUILD appended .exe on Windows, RUN
+  had no fallback) and a stale ASSIGN path in the fixture naming a location nothing had ever written to.
+  The PDLC review''s "runtime-capable, proof incomplete" was right about the gap and wrong about the cause:
+  the missing piece was never GnuCOBOL.'

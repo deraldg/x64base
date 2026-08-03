@@ -1,0 +1,6 @@
+id: proof.bbs.m4_serve
+label: AI-BBS M4 BBS SERVE loopback listener + Ollama bridge
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AI_BBS_LANE_BUILD_GREEN_2026-07-25.md
+notes: 127.0.0.1:8765 LISTENING (loopback only); AUTH OK; CHAT haiku from isolated Ollama while egress=Block;
+  OK posted.

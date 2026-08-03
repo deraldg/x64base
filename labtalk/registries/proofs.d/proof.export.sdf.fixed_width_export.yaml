@@ -1,0 +1,16 @@
+id: proof.export.sdf.fixed_width_export
+label: EXPORT SDF writes fixed-width records using the shared TUPTALK row formatter
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260727_export_sdf_regression.txt
+item_id: dottalkpp/data/scripts/export/export_sdf_regression.dts
+return_code: 0
+related:
+- D:/code/ccode/src/cli/cmd_export.cpp
+- D:/code/ccode/include/cli/fixed_width_row.hpp
+- D:/code/ccode/src/cli/cmd_tuptalk.cpp
+- D:/code/ccode/src/cli/cmd_regression.cpp
+- D:/code/ccode/src/help/helpdata_messages.cpp
+- D:/code/ccode/include/dotref.hpp
+notes: 'AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN
+  EXPORT_SDF exported two schema-width rows with no header: "AB    7  12.3T" and "WXYZ123  -4.5F", each
+  length 14. The generated temp SDF file was inspected for row length and hex prefix, then removed.'

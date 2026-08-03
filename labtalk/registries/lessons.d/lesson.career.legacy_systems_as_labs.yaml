@@ -1,0 +1,27 @@
+id: lesson.career.legacy_systems_as_labs
+title: Turning Legacy Systems into Learning Labs
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- educator
+- maintainer
+path: lessons/career/legacy_systems_as_labs_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.case.history
+- concept.database.xbase
+- concept.evidence.review
+- concept.ai_literacy.explainability
+apps:
+- app.dottalkpp.runtime
+- app.labtalk.case_library
+- app.labtalk.dataset_library
+proofs:
+- proof.case.registry_exists
+- proof.lab.database_literacy_starter.first_run
+evidence:
+- D:/code/ccode/docs/media/LabTalk_DotTalkpp_Systems_Storyboard_Deck.pptx
+proof_state: case_registered
+next_gate: Add career-source notes, source memory boundaries, and reviewed public wording.

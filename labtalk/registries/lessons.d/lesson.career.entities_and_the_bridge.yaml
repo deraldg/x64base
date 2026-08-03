@@ -1,0 +1,162 @@
+id: lesson.career.entities_and_the_bridge
+title: 'Entities and the Bridge: Build Up Solid, Build Down Empirical'
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- architect
+- ai_partner
+- student
+path: lessons/career/entities_and_the_bridge_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.contract.usage
+- concept.selfdoc.validation
+- concept.evidence.review
+apps:
+- app.dottalkpp.runtime
+- app.dottalkpp.selfdoc
+commands: []
+lane_doc: docs/ai-friendly/ENTITY_LIFECYCLE_AND_THE_BRIDGE_V1.md
+aif: AIF-067
+proof_state: source_defined
+observed: 2026-07-27
+run: DOCFLUSH-20260722-001
+body: 'DECLARING IS THE FIRST ACT OF BUILDING, not paperwork that precedes it.
+
+  member.derald: "declaring something is the first step to making it real by defining
+
+  it and then building it, testing it, proofing it and release etc." The chain is
+
+  declare -> define -> build -> test -> proof -> release, and DECLARATION IS
+
+  GENERATIVE: naming the entity brings it into the system, and everything after is
+
+  elaboration of something that already exists.
+
+
+  THIS GIVES THE THESIS ITS SECOND READING, AND THE TWO ARE EQUALLY IMPORTANT
+
+  (member.derald). Declaration-is-generative is documentation UPSTREAM -- building up,
+
+  solid and deductive, answering "what is this supposed to be". Documentation-verifies
+
+  is documentation DOWNSTREAM -- building down, empirical and inductive, answering
+
+  "does it actually do that". Neither subsumes the other: upstream alone is an elegant
+
+  declaration nothing satisfies, downstream alone is a pile of true observations about
+
+  whatever happened to get built. A first draft of this lesson called the upstream
+
+  reading "the strongest form", which was wrong, and wrong in a way this lesson should
+
+  have caught -- it makes a hierarchy of the two directions that are supposed to meet.
+
+  THE THESIS IS THE SPAN: documentation improves and proves the code because it both
+
+  ORIGINATES the entity and later MEASURES it, and the gap between those two acts is
+
+  where every recorded defect actually lives.
+
+
+  Skip the declaration and later stages have nothing to be measured against -- you
+
+  cannot detect drift from a specification never written.
+
+
+  THE UNIT OF TRACKING IS THE ENTITY, NOT THE TASK. A named thing the design has
+
+  decided should exist is an entity from the moment it has a file, even a zero-byte
+
+  one. member.derald: "0 byte commands, plugs, and prototypes help define the top
+
+  level layer of our systems design" and "even unfinished, they are entities and can
+
+  be tracked in the SDLC as they are onboarded into the system, and we just track
+
+  their progression through our documentation process."
+
+
+  A zero-byte translation unit outperforms a TODO or a backlog item on three axes:
+
+  it survives refactors, it appears in the census, and removing it is a deliberate
+
+  act with an author. The names are not arbitrary either -- app_army, app_alcoa and
+
+  app_paxon match CASE_HIST_020, CASE_HIST_030 and CASE_HIST_060 exactly. The empty
+
+  files and the historical case studies are one list expressed twice.
+
+
+  DOCUMENTATION IS THE TRACKER. An entity''s position in the documentation chain IS
+
+  its lifecycle stage: named -> described (@dottalk.file) -> contracted
+
+  (@dottalk.usage) -> catalogued (SYSCMD row) -> surfaced (HELP topic) -> proven
+
+  (runtime_observed). There is no second system to keep in sync, which matters in a
+
+  project whose recurring defect is two systems that never compare themselves. The
+
+  proof_state vocabulary is not metadata about documents; it is lifecycle state.
+
+
+  THE ONE RULE: an entity may sit at any stage, but may not CLAIM a later stage than
+
+  it occupies. A zero-byte file may say "I am a reserved slot"; it may not say "I am
+
+  the ARMY command", because SYSCMD, HELP, dotref and the census all read a usage
+
+  contract as a real command surface and count it.
+
+
+  BUILD UP, BUILD DOWN, BUILD THE SPAN. Two directions, two kinds of work. Building
+
+  UP is solid and deductive -- structure, reserved names, contracts, schemas; it says
+
+  what the system IS and can precede any running code. Building DOWN is empirical and
+
+  inductive -- runtime proofs, measured sizes, actual header bytes, real command
+
+  output; it says what the system DOES. Neither reaches the far bank alone. The SPAN
+
+  is the reconciliation, and every defect this project has recorded lives exactly
+
+  there: a documented LMDB size ladder against two observed file sizes (AIF-065); a
+
+  SOURCE_HASH written and never read (AIF-066); 33 ladder arms against 30 listed
+
+  options, a 20-field table against a 10-field CSV, a registry key the dispatcher
+
+  cannot produce (AIF-067). Nothing in those pairs is individually wrong, which is
+
+  why no test failed -- a test checks one end of a bridge.
+
+
+  CONSEQUENCE FOR TOOLING: stack_audit_v1 is span inspection. Its WARN count is not
+
+  a quality score, it is the measured distance between what has been declared and
+
+  what has been observed. A finding closes when the two ends meet, not when someone
+
+  silences it.
+
+
+  CONSEQUENCE FOR CONTRIBUTORS, HUMAN OR AI: do not "clean up" entities -- check
+
+  docs/cases and the registries before deleting anything empty. Do not let an entity
+
+  claim a stage it has not reached. Say which direction you are working in, because
+
+  "I read the source" and "I ran it and observed X" are different evidence and earn
+
+  different proof_state values. When the ends do not meet, RECORD the gap; a
+
+  documented gap is span work scheduled, an undocumented one is a bridge that looks
+
+  finished.
+
+  '

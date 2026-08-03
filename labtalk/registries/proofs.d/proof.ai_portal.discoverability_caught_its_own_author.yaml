@@ -1,0 +1,19 @@
+id: proof.ai_portal.discoverability_caught_its_own_author
+label: The discoverability fix caught its own maker -- Phase 7 was the next dropped thread
+state: source_defined
+related:
+- D:/code/ccode/labtalk/ai_portal/INTAKE_DISCOVERABILITY_GAP_AND_FIX_V1.md
+- D:/code/ccode/labtalk/registries/ai_report_index.yaml
+- D:/code/ccode/docs/maintenance/PHASE7_MANUAL_WEB_ASCENT_PICKUP_V1.md
+- D:/code/ccode/docs/agents/CURRENT_TARGET.md
+notes: 'IRONY, RECORDED. On 2026-07-28 the AI Portal''s external-intake discoverability gap (AIF-071)
+  was diagnosed and fixed: work that lives only in ephemeral memory -- a hosted chat, an assistant task
+  list -- cannot be found later, so it was made a registered, indexed lane with aliases. Within the SAME
+  session the maintainer noticed that Phase 7 (the DOCFLUSH manual web-ascent) had no pick-up point: it
+  lived ONLY in the assistant''s ephemeral task list, the exact failure the AIF-071 lane had just named.
+  The remedy was the same mechanism the fix prescribes -- register it (AIF-072): an intake row, a CURRENT_TARGET
+  NEXT-TARGET marker, and a self-contained pickup doc. So the fix proved itself by catching its own author''s
+  dropped thread, in the same sitting it was built. Same shape as AIF-065/066/067: the gap is found by
+  the thing falling through it, not by an audit -- and "we will remember to pick it up" is not a pick-up
+  point. Evidence is two commits: the fix (AIF-071) and its immediate self-application (AIF-072). A durable
+  record beats a good intention; an index beats a memory.'

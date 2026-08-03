@@ -1,0 +1,4 @@
+id: proof.help.cmdhelp_source_exists
+label: CMDHELP source exists
+state: source_defined
+source: D:/code/ccode/src/cli/cmdhelp.cpp

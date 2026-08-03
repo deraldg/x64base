@@ -1,0 +1,5 @@
+id: proof.bbs.guest
+label: AI-BBS guest leave-a-message (member.guest + board.guestbook)
+state: runtime_observed
+source: D:/code/ccode/docs/ai-friendly/AI_BBS_LOUNGE_ROOM_V1.md
+notes: As member.guest -> POST board.guestbook OK posted

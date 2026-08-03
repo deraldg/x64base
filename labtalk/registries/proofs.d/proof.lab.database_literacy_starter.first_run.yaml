@@ -1,0 +1,7 @@
+id: proof.lab.database_literacy_starter.first_run
+label: Database Literacy Starter first portal/runtime transcript
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260702_155913_runtime_database_literacy_starter.txt
+item_id: runtime.database_literacy_starter
+return_code: 0
+notes: Proves LabTalk portal registry item can run a DotTalk++ DTS script and capture EDREF output.

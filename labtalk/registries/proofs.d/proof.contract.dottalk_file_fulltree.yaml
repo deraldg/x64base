@@ -1,0 +1,16 @@
+id: proof.contract.dottalk_file_fulltree
+label: '@dottalk.file universal contract - full-tree backfill at 100% coverage'
+state: runtime_observed
+source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_AIF050_FULLTREE_BACKFILL_2026-07-25.md
+related:
+- D:/code/ccode/tools/fullstack_docs/source_census.py
+- D:/code/ccode/docs/maintenance/AI_RUN_TRACEABILITY_LANE_V1.md
+notes: 'census 1034/1034 (100.0%) observed from source_census.py after the sweep; M3 --strict now exits
+  0 (gate passable, promotion is a maintainer decision). Schema v1 revised: path:/provenance: dropped
+  (duplicated git tracking; path: goes stale on rename), lane:/owner: added so a file self-identifies
+  AND resolves to its lane doc -> ai_runs.yaml run -> current_by_lane -> last agent. 12 pre-existing dogfood
+  blocks upgraded with hand-set layer:/owns: PRESERVED (glue/engine-core, DOT|BBS/DOT|NET), verified file
+  by file; 1022 written fresh with derived fields. Incident same session - a directory-level `git add
+  -- src include` swept ~111 untracked scratch files into 6f86c8aed; repaired by reset + `git add -u`
+  + force-push (3706da78c, 1035 files clean), the 111 restored to disk, and the scratch categories gitignored.
+  main never touched.'

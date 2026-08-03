@@ -1,0 +1,23 @@
+run_id: AIPR-20260722-007
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.runtime
+lanes:
+- AIF-046
+- AIF-050
+role: steward
+authored_by: member.ai.claude.cowork
+planned_by: null
+owner: member.derald
+committer: member.derald
+git:
+  branch: homegrown-cnx-20251112-branch
+  baseline: 3231ae0c9
+  head: 0f06d1060
+chat_handle: ''
+handle_binding: MAINTAINER_ATTESTED
+continues_run: null
+started: 2026-07-22
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_SCAN_EVALUATOR_LANE_2026-07-22.md
+status: active

@@ -1,0 +1,69 @@
+id: lesson.career.a_script_never_run_is_not_evidence
+title: A Script That Has Never Been Run Is Not Evidence
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- technical writer
+- ai_partner
+path: lessons/career/a_script_never_run_is_not_evidence_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.evidence.review
+- concept.contract.usage
+- concept.selfdoc.validation
+apps:
+- app.dottalkpp.runtime
+- app.dottalkpp.selfdoc
+commands:
+- COBOL
+- COPY
+- AUTODBF
+- EXPORT
+- IMPORT
+- DDL
+- SETPATH
+- DOTSCRIPT
+proof_state: runtime_observed
+observed: 2026-07-26
+run: COWORK-20260726-001
+next_gate: Write the lesson body from the 2026-07-26 evidence below, then cite the four transcripts from
+  proofs.yaml once they are registered.
+notes: 'MEASURED 2026-07-26 across one session. Nearly every defect found that day was found by EXECUTING
+  something that had only ever been WRITTEN, and none of them were visible to reading.
+
+  The tests/conversion suite was cited by the PDLC maturity review as evidence that "DBF/xBase and CSV
+  conversion" was empirically demonstrated. All five scripts were unrunnable: EXPORT ... DELIMITER/QUOTES,
+  IMPORT ... SCHEMA/REJECTS, SQLITE QUERY ... INTO DBF and BEGIN are not implemented grammar; #FIELD substitution
+  has no implementation; and every script wrote to _drops/, a directory that does not exist. They were
+  not stale, they were ASPIRATIONAL -- written against the syntax someone wished for. Reading them looked
+  like evidence. Running them produced usage errors on line 2.
+
+  The COBOL hop was graded "runtime-capable, proof incomplete", attributed to a missing GnuCOBOL transcript.
+  GnuCOBOL was installed. Running the hop exposed the real blockers: (1) COBOL BUILD appends .exe on Windows
+  while COBOL RUN did a bare fs::exists() with no fallback, so the documented BUILD-then-RUN sequence
+  could not work immediately after a successful BUILD; (2) the sample program''s ASSIGN named a path nothing
+  had ever written to, so OPEN INPUT failed with libcob status 35 right after a successful export. Two
+  latent defects, invisible for as long as nobody ran the thing.
+
+  The same shape recurred at every layer. A coverage generator read a 40-row CSV snapshot and reported
+  14.9% while the canonical table held 203 rows (true figure 78.4%) -- acting on that number would have
+  ERASED 15 live rows that were deliberate maintainer decisions. Gate 4 was recorded PASS at 191 pages
+  / 26 parts / 14,542 lines while its own preserved assembly report says 183 / 23 / 13,879. The published
+  PDF predates by 3h35m the assembly it is evidence for. Two divergent shadow HELP sets sit where a tool
+  given the wrong root consumes months-old data and reports success.
+
+  COROLLARY, learned the same day: the agent writing the proof is not exempt. Expected values were invented
+  rather than derived (a NULL count and a cost sum that would have made a CORRECT conversion appear to
+  fail); a record length was asserted as unrelated to the DBF when it was that length plus CRLF; fixed-format
+  comments were added to a free-format COBOL source after the -free compile flag had already been read,
+  turning a clean build into ~60 syntax errors. Every one of those was caught by running, not by re-reading.
+
+  THE RULE: a claim is evidence only if a transcript exists. Expected values must be DERIVED from the
+  code or from sealed data, never written because they look plausible. And running the proof is not the
+  last step of documenting a capability -- it is the step that finds out whether the capability is real.
+
+  Companion to the AIF-062 proofs.yaml finding one layer down: there, real evidence was invisible to a
+  clone; here, absent evidence looked real. Both produce wrong records that propagate.'

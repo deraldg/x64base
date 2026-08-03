@@ -1,0 +1,30 @@
+id: lesson.student.three_things_called_a_set
+title: Three Things Called a Set
+kind: lesson
+lane: student
+status: idea
+audience:
+- student
+- self-learner
+- instructor
+path: lessons/student/three_things_called_a_set_v0.md
+website_path: /docs/labtalk/student-lessons
+concepts:
+- concept.database.network
+- concept.database.xbase
+commands:
+- CODASYL
+- SET
+- WORKSPACE
+proof_state: source_defined
+next_gate: 'Teaches students to read past vocabulary: x64base spells "set" three ways and they share nothing
+  but the letters -- SET as a configuration VERB (SET ORDER / RELATION / FILTER), a CODASYL SET as an
+  owner-to-member RELATIONSHIP between record types, and a workspace GROUP as a flat COLLECTION that may
+  overlap. The sharp discriminator is overlap: a member record cannot belong to two occurrences of one
+  CODASYL set type, while a workspace can sit in two groups at once, so one is an EDGE and the other is
+  a BAG. Resist the memorable simplification "workspace groups are just CODASYL sets" -- it is wrong,
+  and the lesson exists because it is wrong. HELD AT `idea` DELIBERATELY: the CODASYL half runs today
+  (`cmd_codasyl.cpp`, supported, category education) but the workspace-group half describes a manager
+  that does not exist yet (AIF-078, design stage), so Student Path steps 4 and 5 cannot be performed.
+  Promote to `draft` when a student can actually place one workspace in two groups and observe the difference;
+  marking it runnable now would be the documented-not-honoured defect the campus records elsewhere.'

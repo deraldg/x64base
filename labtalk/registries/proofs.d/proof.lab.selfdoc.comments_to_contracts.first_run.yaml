@@ -1,0 +1,10 @@
+id: proof.lab.selfdoc.comments_to_contracts.first_run
+label: SelfDoc comments-to-contracts first CMDHELP/CMDHELPCHK run
+state: validated
+source: D:/code/ccode/labtalk/proofs/runs/20260704_075057_runtime_selfdoc_comments_to_contracts_first_lab.txt
+item_id: runtime.selfdoc.comments_to_contracts.first_lab
+return_code: 0
+related:
+- D:/code/ccode/labtalk/reports/selfdoc/lab_selfdoc_first_crosswalk_v0.md
+notes: Captures CMDHELP/CMDHELPCHK runtime output plus read-only comments/contracts crosswalk for CMDHELP
+  and CMDHELPCHK.

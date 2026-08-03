@@ -1,0 +1,4 @@
+id: proof.case.registry_exists
+label: Case registry exists
+state: case_registered
+source: D:/code/ccode/docs/cases/REGISTRY_CASES_v0.csv

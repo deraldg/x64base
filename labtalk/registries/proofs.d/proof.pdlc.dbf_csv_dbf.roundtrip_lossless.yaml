@@ -1,0 +1,15 @@
+id: proof.pdlc.dbf_csv_dbf.roundtrip_lossless
+label: DBF to CSV to DBF round trip is lossless
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260726T233000Z_pdlc_dbf_csv_dbf_roundtrip.txt
+item_id: tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+return_code: 0
+related:
+- D:/code/ccode/tests/conversion/05_roundtrip_dbf_csv_dbf_v2.dts
+- D:/code/ccode/tests/conversion/README_SUITE_REPAIR_V1.md
+notes: 'Origin and return legs both 18 rows / 13 fields, with IDENTICAL structure -- same type letters,
+  same widths, same decimal counts. EXPORT rendered every value such that re-inference reproduced the
+  origin schema exactly, which is stronger than the test required. Values identical field for field, including
+  LIST_PRICE still empty rather than 0 on the return leg. Supersedes tests/conversion/05_roundtrip_dbf_csv_dbf.dts,
+  which the PDLC review cited as evidence but which could not execute: four of its five lines used grammar
+  the engine does not implement, and all five wrote to a directory that does not exist.'

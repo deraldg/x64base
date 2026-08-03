@@ -1,0 +1,4 @@
+id: proof.edref.topic_exists
+label: EDREF topic exists
+state: source_defined
+source: D:/code/ccode/include/edref.hpp

@@ -1,0 +1,18 @@
+id: proof.lmdb.mapsize_override_replication_sysfunc
+label: LMDB mapsize override replicates on a second table (SYSFUNC, 69 rows)
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260727_aif065_mapsize_tiny_survives_attach.txt
+item_id: docs/maintenance/LMDB_MAPSIZE_OVERRIDE_LANE_V1.md
+return_code: 0
+related:
+- D:/code/ccode/tools/proofs/run_proof.ps1
+- D:/code/ccode/src/xindex/cdx_backend.cpp
+notes: 'Independent replication of proof.lmdb.mapsize_override_on_attach on a different table. SYSFUNC.cdx.d/data.mdb
+  measured 134,217,728 before and 1,073,741,824 after a single index auto-attach at USE -- delta 939,524,096
+  on a 69-row table. Two tables, two row counts, identical outcome: the attach path asserts 1 GiB regardless
+  of what BUILDLMDB wrote. FIRST USE OF tools/proofs/run_proof.ps1, which verified the expected transcript
+  markers ("Auto-attached order:", "Found at") before offering any verdict on the measurements, and emitted
+  this registry block. Its purpose is to prevent the failure mode that cost two attempts during the original
+  proof: a probe that dies in the harness produces the same numbers as a mechanism that does not exist.
+  This run is also the PRE-FIX CONTROL for the same command with -ExpectNoChange, which becomes the regression
+  once mdb_env_set_mapsize(env_, 0) is applied.'

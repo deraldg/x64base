@@ -1,0 +1,21 @@
+id: proof.sqlsel.select_statement_matches_sqlite
+label: SQLSEL SELECT ... FROM returns row sets equal to SQLite over the same data
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260729_aif074_sqlsel_select_v1_oracle.txt
+item_id: dottalkpp/data/scripts/sqlsel_select_v1_regression.dts
+return_code: 0
+related:
+- D:/code/ccode/src/cli/sqlsel_statement.cpp
+- D:/code/ccode/src/cli/sqlsel_statement.hpp
+- D:/code/ccode/src/cli/cmd_sql_select.cpp
+- D:/code/ccode/src/cli/workarea_util.cpp
+- D:/code/ccode/src/cli/tuple_builder.cpp
+notes: 'The lane''s one genuinely new component. Projection, star, WHERE and LIMIT each returned the same
+  rows as the in-process SQLite oracle over identical data (1|ADAMS|CSCI, 2|BAKER|MATH, 3|CARTER|CSCI;
+  WHERE MAJOR=''CSCI'' -> ADAMS + CARTER). Cursor neutrality proven by data: the cursor was parked on
+  record 2 (BAKER) before four statements and still read BAKER after (S5A/S5B .T.), so a statement neither
+  reads nor disturbs session state. Corrective errors fired for an unopened table, an expression select-item,
+  and a bad LIMIT -- never a silent wrong answer. The BEFORE state is the same command on the same data
+  emitting 200 lines of debug and a false "0" (evidence record Sec. 7): that pair is the teaching exhibit.
+  Everything under the parser was consumed, not built -- area resolution, predicate compile/eval, tuple
+  projection, cursor guards all pre-existed and were proven earlier the same day.'
