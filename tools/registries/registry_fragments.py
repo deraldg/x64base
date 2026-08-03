@@ -224,7 +224,7 @@ def do_check(root):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('command', choices=['split', 'merge', 'check', 'migrate'])
+    ap.add_argument('command', choices=['split', 'merge', 'check', 'migrate', 'status'])
     ap.add_argument('--root', default=str(Path(__file__).resolve().parents[2]))
     ap.add_argument('--write', action='store_true',
                     help='actually write (default is a dry run for split/merge)')
@@ -236,6 +236,38 @@ def main():
     if a.command == 'check':
         print("=== registry round-trip check (read-only) ===")
         return 0 if do_check(root) else 1
+
+    if a.command == 'status':
+        # "Is the migration done?" answered HERE rather than by the caller, because the
+        # answer needs SPECS -- which list key holds the records, which field is the id.
+        # A caller that pattern-matches `id:` lines gets it wrong: proofs.yaml carries a
+        # second list whose records also have `id:`, so a naive scan over-counts and
+        # reports a mismatch that does not exist. Exit 0 = consistent, 1 = work to do.
+        print("=== registry status: fragments vs flat (read-only) ===")
+        consistent = True
+        for n, s in specs.items():
+            flat = root / 'labtalk' / 'registries' / n
+            frag_dir = root / 'labtalk' / 'registries' / s['dir']
+            if not frag_dir.is_dir():
+                print("  TODO %-16s %s/ does not exist -- not migrated" % (n, s['dir']))
+                consistent = False
+                continue
+            doc = load(flat) if flat.is_file() else {}
+            flat_ids = {r[s['idf']] for r in (doc.get(s['key']) or []) if r.get(s['idf'])}
+            _, frags = read_fragments(root, s)
+            frag_ids = {r[s['idf']] for r in (frags or []) if r.get(s['idf'])}
+            if flat_ids == frag_ids and frag_ids:
+                print("  OK   %-16s %d record(s) in both" % (n, len(flat_ids)))
+                continue
+            consistent = False
+            print("  TODO %-16s flat=%d fragments=%d" % (n, len(flat_ids), len(frag_ids)))
+            for k in sorted(flat_ids - frag_ids)[:5]:
+                print("         flat only     %s" % k)
+            for k in sorted(frag_ids - flat_ids)[:5]:
+                print("         fragment only %s" % k)
+        print("\n%s" % ("consistent -- nothing to migrate." if consistent
+                        else "NOT consistent -- run: registry_fragments.py migrate --write"))
+        return 0 if consistent else 1
 
     if a.command == 'migrate':
         # One-shot: check -> backup -> split -> merge -> VERIFY AGAINST THE BACKUP.
@@ -256,6 +288,52 @@ def main():
             return 0
 
         reg = root / 'labtalk' / 'registries'
+
+        # FOLD EXTRA FRAGMENTS INTO THE FLAT FILE FIRST, before anything is backed up.
+        #
+        # Why this exists: the first live migrate FAILED verify with gained=2 on
+        # proofs.yaml. That was not corruption. Two proofs had been authored this session
+        # directly as .d fragments -- the new convention, written just before the migration
+        # that establishes it -- and were never appended to the flat file. Merge correctly
+        # picked them up, so the regenerated file held 49 where the backup held 47.
+        #
+        # Both obvious fixes are wrong. Loosening verify to tolerate `gained` discards the
+        # one check that makes this migration safe to run at all. Deleting the two
+        # fragments discards real records. Instead, fold any fragment-only record into the
+        # flat file BEFORE the backup is taken. The migration then has to be an exact
+        # identity -- lost=0 gained=0 changed=0 -- and verify keeps its full strength.
+        #
+        # This is also why fold runs before the backup rather than after: the backup must
+        # be the thing the result is required to equal.
+        folded_total = 0
+        for n, s in specs.items():
+            flat_path = reg / n
+            if not flat_path.is_file():
+                continue
+            _, frags = read_fragments(root, s)
+            if not frags:
+                continue
+            doc = load(flat_path) or {}
+            recs = list(doc.get(s['key']) or [])
+            have = {r[s['idf']] for r in recs if r.get(s['idf'])}
+            extras = [r for r in frags if r.get(s['idf']) and r[s['idf']] not in have]
+            if not extras:
+                continue
+            for r in extras:
+                print("  fold  %-16s <- %s  (fragment-only record)" % (n, r[s['idf']]))
+            recs.extend(extras)
+            doc[s['key']] = recs
+            if 'current_by_lane' in s['computed']:
+                by_lane, by_proj = compute_indexes(recs)
+                doc['current_by_lane'] = by_lane
+                doc['current_by_project'] = by_proj
+            flat_path.write_text(BANNER.format(d=s['dir']) + "\n" + dump(doc), encoding='utf-8')
+            folded_total += len(extras)
+        if folded_total:
+            print("  folded %d fragment-only record(s) into the flat files; they are now"
+                  % folded_total)
+            print("  part of the baseline the migration must reproduce exactly.")
+
         backup = reg / ('_pre_fragment_backup_' + datetime.now().strftime('%Y%m%d_%H%M%S'))
         backup.mkdir(parents=True, exist_ok=True)
         for n in specs:
@@ -283,15 +361,19 @@ def main():
             db = {r[s['idf']]: r for r in (after.get(s['key']) or []) if r.get(s['idf'])}
             lost, gained = set(da) - set(db), set(db) - set(da)
             changed = [k for k in set(da) & set(db) if da[k] != db[k]]
+            # Strict by design: fragment-only records were folded into the baseline above,
+            # so the migration must now be an exact identity. Nothing is tolerated here.
             ok = not (lost or gained or changed)
             print("  %s %-16s %d -> %d  lost=%d gained=%d changed=%d"
                   % ('PASS' if ok else 'FAIL', n, len(da), len(db),
                      len(lost), len(gained), len(changed)))
             if not ok:
                 bad += 1
-                for k in list(lost)[:5]:
+                for k in sorted(lost)[:5]:
                     print("        LOST    %s" % k)
-                for k in changed[:5]:
+                for k in sorted(gained)[:5]:
+                    print("        GAINED  %s" % k)
+                for k in sorted(changed)[:5]:
                     print("        CHANGED %s" % k)
         if bad:
             print("\nVERIFY FAILED -- restoring flat files from the backup.", file=sys.stderr)
