@@ -1,0 +1,38 @@
+Proof: EXPORT SDF fixed-width output
+Date: 2026-07-27
+Workspace: D:\code\ccode
+Branch: development
+Baseline/head before docs closeout: 099cb70ce
+State: runtime_observed
+
+Build command:
+  cmake --build D:\code\ccode\build --target dottalkpp --config Debug
+
+Build result:
+  completed successfully after sandbox escalation for build-tree/vcpkg access.
+
+Runtime command:
+  .\datarun.ps1 -CommandLines "REGRESSION RUN EXPORT_SDF"
+
+Runtime markers observed:
+  REGRESSION: running EXPORT_SDF
+  Created ... EXPSDF.dbf [X64]
+  Exported 2 records to tmp\export_sdf_regression.sdf
+  EXPORT_SDF_EXPECT_FILE:tmp/export_sdf_regression.sdf
+  EXPORT_SDF_EXPECT_ROW1:AB    7  12.3T
+  EXPORT_SDF_EXPECT_ROW2:WXYZ123  -4.5F
+
+External file inspection:
+  [AB    7  12.3T] len=14
+  [WXYZ123  -4.5F] len=14
+
+Hex prefix observed:
+  41 42 20 20 20 20 37 20 20 31 32 2E 33 54 0A 57
+
+Cleanup:
+  D:\code\ccode\dottalkpp\data\tmp\export_sdf_regression.sdf removed after inspection.
+
+Interpretation:
+  EXPORT SDF uses the shared fixed-width row formatter and produced two
+  schema-width rows. This proves the narrow export slice only; SDF import and
+  external interoperability remain separate gates.
