@@ -85,6 +85,26 @@ def _report_sensitivity():
     return sens
 SENS = _report_sensitivity()
 def is_private(fname): return SENS.get(fname, '') == 'private'
+
+def _redacted_boards():
+    """Boards to omit from a --public build, read from portal.yaml:
+
+        - id: portal.reports
+          redacted_boards: [board.example]
+
+    Empty by default. board.worklog is deliberately NOT redacted -- see the note at
+    the REDACTED_BOARDS assignment."""
+    try:
+        import yaml
+        data = yaml.safe_load(
+            (ROOT/'labtalk'/'registries'/'portal.yaml').read_text(
+                encoding='utf-8', errors='replace'))
+        for s in (data or {}).get('sections', []) or []:
+            if s.get('id') == 'portal.reports':
+                return [str(x) for x in (s.get('redacted_boards') or [])]
+    except Exception:
+        pass
+    return []
 def emit(fname, htmltext):
     if PUBLIC and is_private(fname):
         print(f"SKIPPED (private per portal.yaml): {fname}"); return False
@@ -199,6 +219,33 @@ def page(title, sub, body, sensitivity='internal'):
 # =====================================================================
 # REPORT 1 -- BBS BOARDS (the rooms and what is in them)
 # =====================================================================
+# PUBLIC mode: content-level redaction, complementing the file-level skip that
+# emit()/is_private() already do from portal.yaml.
+#
+# DEFAULT IS EMPTY -- nothing is redacted, including board.worklog.
+#
+# An earlier pass hardcoded board.worklog out of the public build, reasoning that agent
+# handoffs are internal coordination. The maintainer overruled it, and correctly: this is
+# an ALPHA open-source project, the worklog is not secret, and the agent-handoff surface
+# (AIF-057) is one of the more interesting things the BBS lane has to show. Redacting it
+# left the online BBS presence with nothing distinctive in it. Visibility widens at beta.
+#
+# Redaction is opt-in and registry-driven, like sensitivity itself: set
+#   redacted_boards: [board.x, board.y]
+# under the portal.reports section of labtalk/registries/portal.yaml. Keeping the
+# mechanism (it cost little and a genuinely sensitive board may appear later) without
+# keeping the judgement call baked into the tool.
+REDACTED_BOARDS = set(_redacted_boards()) if PUBLIC else set()
+if REDACTED_BOARDS:
+    _drop = {b['ID'] for b in B['SYSBOARD'] if b['BKEY'] in REDACTED_BOARDS}
+    B['SYSBOARD'] = [b  for b  in B['SYSBOARD']  if b['ID']      not in _drop]
+    B['SYSPOST']  = [p  for p  in B['SYSPOST']   if p['BOARDID'] not in _drop]
+    B['SYSTHREAD']= [t_ for t_ in B['SYSTHREAD'] if t_['BOARDID'] not in _drop]
+    brd = {b['ID']: b   for b  in B['SYSBOARD']}
+    thr = {t_['ID']: t_ for t_ in B['SYSTHREAD']}
+    print(f"  redacted {len(_drop)} board(s) from the public build: "
+          + ", ".join(sorted(REDACTED_BOARDS)))
+
 posts_by_board={}
 for p in B['SYSPOST']: posts_by_board.setdefault(p['BOARDID'],[]).append(p)
 

@@ -85,6 +85,19 @@ A worked instance of the full checklist: the AI-BBS lane (`docs/ai-friendly/AI_B
 
 ## 4. House conventions
 
+- **TOOLING IS CROSS-PLATFORM. No PowerShell-only or bash-only solutions.** This project is
+  cross-platform C++ built on deliberately cross-compatible libraries; its tooling holds the
+  same line. Write **Python 3 + stdlib** (the existing `tools/**` convention) or DotScript.
+  Plain ASCII output -- no box-drawing, no colour codes, no shell pipelines. Where a platform
+  difference is genuinely unavoidable, isolate it in one small helper rather than spreading
+  `if os` through the file; prefer straight cross-platform code to branching.
+  A `.ps1` or `.sh` is acceptable only as a thin convenience wrapper around a cross-platform
+  tool -- never as the place logic lives. (Adopted 2026-08-02 after a session produced a dozen
+  Windows-only workflow scripts that had to be ported.)
+- **Test the tool, do not just write it.** The ported `restore_lfs.py` was exercised against a
+  purpose-built throwaway repo that reproduced the real failure. That test caught a wrong claim
+  the untested original made -- it promised `git status` would be clean afterward, when the
+  correct outcome is *modified*. Untested tooling ships confident errors.
 - **Comments:** DotTalk++ inline comment marker is `&&` (not `#`); full-line `*`. `&&` is for
   single-token command lines; free-text commands (`BBS POST`, `CHAT`, `USER REQUEST` -- read to EOL)
   must be comment-free.

@@ -362,6 +362,19 @@ HELP
 
 ## Coding Standards, Conventions, And Rules
 
+**Tooling is cross-platform. This is not negotiable.** x64base is cross-platform C++ on
+deliberately cross-compatible libraries, and its tooling holds the same line. Write
+**Python 3 + stdlib** (the `tools/**` convention) or DotScript. ASCII output. A `.ps1` or
+`.sh` is acceptable only as a thin wrapper around a cross-platform tool, never as the place
+logic lives. Recorded exception: the `afb-`/`bbsd-startup` scripts register Windows
+Scheduled Tasks and have no cross-platform equivalent.
+
+**Test the tool; do not merely write it.** Two shipped-looking tools carried confident,
+wrong claims until they were exercised against purpose-built throwaway fixtures. Untested
+tooling does not fail loudly -- it succeeds while being wrong.
+
+Full rules: `labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md` section 4.
+
 Start with pointers instead of inventing a new style guide:
 
 - `.editorconfig` for charset, indentation, final newline, whitespace, and line
@@ -426,7 +439,15 @@ Mutation risk:
 Smallest safe action:
 Proof/test:
 Residual risk:
+Already built?      (grep src/ before asserting absence -- the repo UNDER-reports itself)
+Vantage point:      (are you reading state your machine can actually see?)
 ```
+
+**Those last two are not filler.** Both cost this project real time: a partner reported a
+crash-proven write-ahead log as missing because a stale header comment said "stubs" and the
+proofs were untracked; and three separate claims about repository state turned out to be
+artifacts of an agent sandbox that could not see the maintainer's drives. Absence of
+evidence *from where you are standing* is not evidence of absence.
 
 ## Closeout Shape
 

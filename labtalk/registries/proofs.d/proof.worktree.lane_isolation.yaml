@@ -1,0 +1,31 @@
+id: proof.worktree.lane_isolation
+label: Worktree-per-lane isolation -- sessions stop sharing one working tree
+state: design-intended
+source: D:/code/ccode/docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md
+related:
+  - D:/code/ccode/docs/ai-friendly/AI_GITLOCK_HOT_POTATO_LANE_V1.md
+notes: >-
+  MEASURED 2026-08-02: a Cowork session worked several hours against development and found
+  191 commits had landed from parallel work while it held a stale picture; three of four
+  queued operations were already done by someone else, and its prepared scripts targeted a
+  repository that no longer existed. Nothing was lost only because guards failed closed --
+  one obsolete script was a keystroke from a redundant 546-file commit, and a broad git add
+  would have recorded the deletion of 8 LFS files. Root cause is structural: every session
+  edits the same directory on the same branch. git worktree was ALREADY tried and a naming
+  convention chosen (D:\code\ccode.worktrees\); one of the two is LIVE and populated. A first
+  draft called both stale, reading `prunable` from the Cowork Linux sandbox, which cannot see
+  C: at all -- a vantage-point artifact, corrected. The gap is therefore not tooling and not
+  abandonment, but that using the isolated path is manual and optional, so most sessions still
+  default to the shared tree. Deliverables: new-lane.ps1 (refuse a taken lane number, add worktree on
+  lane/AIF-###, drop a LANE.md, print the finish command) and finish-lane.ps1 (refuse
+  uncommitted work, optional merge, remove + prune) -- the closing step matters as much as
+  the opening one, since abandonment is exactly how the previous attempt decayed. Narrows
+  AIF-059: worktrees make the WORKING collision structurally impossible, so the advisory
+  lock only ever needed to cover the MERGE step. Does NOT solve flat append-only files (the
+  intake queue is still a hotspot) or lane-number reservation. PREREQUISITE: resolve the tools/*.zip
+  pointer-vs-attribute mismatch first (blobs are LFS pointers, .gitattributes says `binary`
+  not `filter=lfs`, so nothing smudges them) -- otherwise every new worktree inherits the
+  same 8 phantom deletions. Promotion to
+  runtime_observed requires two live worktrees with independent status, a finish that
+  refuses dirty work, a refused duplicate lane number, and no prunable entries afterward;
+  creating one worktree proves nothing, as that already happened twice and still decayed.
