@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: AIPortal
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // AIF-078 gate G0 -- measure the per-slot cost on the SHIPPING toolchain.
 //
 // Not a build target and not registered: this is a one-off measurement artifact
