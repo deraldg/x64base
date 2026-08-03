@@ -27,6 +27,11 @@ export function buildSitesDist({
   if (!fs.existsSync(outDir)) {
     throw new Error("Expected ./out to exist. Run next build first.");
   }
+  if (fs.existsSync(path.join(outDir, "reports"))) {
+    throw new Error(
+      "Refusing to package local-only reports. Run strip-local-only-output first.",
+    );
+  }
 
   fs.rmSync(distDir, { recursive: true, force: true });
   fs.mkdirSync(serverDir, { recursive: true });

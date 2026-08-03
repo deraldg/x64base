@@ -109,6 +109,15 @@ function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
   );
 }
 
+function assertLocalOnlyReportsAbsent() {
+  const reportsDir = path.join(outDir, "reports");
+  if (fs.existsSync(reportsDir)) {
+    throw new Error(
+      `Refusing to publish local-only reports found at ${reportsDir}`,
+    );
+  }
+}
+
 function commitAndPush() {
   run("git", ["add", "-A"], { cwd: deployDir });
   const status = output("git", ["status", "--short"], { cwd: deployDir });
@@ -145,6 +154,7 @@ run(npmCommand, ["run", "build"], {
 if (!fs.existsSync(outDir)) {
   throw new Error("Expected ./out after build.");
 }
+assertLocalOnlyReportsAbsent();
 
 writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion });
 
