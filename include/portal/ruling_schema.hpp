@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: portal
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ruling_schema.hpp -- DBF schema for AI-portal ruling state (AIF-082).
 //
 // WHY THIS TABLE EXISTS

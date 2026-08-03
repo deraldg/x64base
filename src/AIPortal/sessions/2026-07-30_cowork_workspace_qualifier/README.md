@@ -17,8 +17,10 @@ The package in this folder is the **reference design only**, and is **superseded
 | File | Kind | Status |
 |---|---|---|
 | `AI_CHANGE_PACKAGE_MULTI_WORKSPACE_ADDRESSING_V1_20260730.md` | design proposal | `review-needed` -- **superseded in part** |
-| `AIF078_Q7_workspace_path.patch` | source patch, 3 files / 11 hunks | `review-needed` -- **apply after the foundation commit** |
+| `AIF078_Q7_workspace_path.patch` | source patch, 3 files / 11 hunks | **APPLIED and committed 2026-08-01.** Kept as the reviewable form of the change |
 | `README.md` | curation index | this file |
+
+The **G0 per-slot cost probe** moved out of this package to `src/tools/g0_slot_cost_probe.cpp` and is built through CMake (`-DDOTTALK_BUILD_SLOT_COST_PROBE=ON`, target `g0_slot_cost_probe`). It lived here briefly with a hand-rolled `cl` invocation, which was a mistake: `cmake --build` sets the compiler environment up itself, which is why this repo has never needed a developer shell. A measurement that has to be reproducible on both supported toolchains belongs in the build system, not in a session package.
 
 ## The Q7 patch
 
@@ -26,14 +28,18 @@ The package in this folder is the **reference design only**, and is **superseded
 
 Delivered as a patch rather than as working-tree edits because `role.ai_partner` holds `source.propose`, never `source.mutate` (`AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 5b). The steward delivers; `member.derald` applies and commits.
 
-**Verified** (g++/libstdc++ x86-64; **MSVC unverified, gate G0**):
+**Verified** (updated 2026-08-01 -- both supported toolchains; x64base is cross-platform, so neither row corrects the other):
 
 - the pre-patch tree compiles and the smoke passes -- this is the baseline the patch was diffed against
 - `patch -p1 --dry-run` clean on all three files
 - post-patch: compiles under `-Wall -Wextra` and under `-O2 -DNDEBUG`, smoke passes, rendered address byte-identical
 - seven new assertions cover depth 0 / 1 / >1, the empty-path equality normalization, and `require_parse("MCC.FALL2026.SEC3.STUDENTS.LNAME")` -- which turns sec 5b's central claim into a test rather than prose
 
-**Ordering matters.** Apply only AFTER the Phase-0 foundation is committed. Until then the patch targets files absent from `HEAD`, and a proof citing an untracked artifact is a note, not evidence (`AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 5c).
+- **MSVC Release:** builds and the smoke passes -- `labtalk/proofs/runs/20260801_aif078_q7_workspace_path_msvc.txt`, cited by `proof.aif078.workspace_path_preserves_depth1`
+
+**Ordering mattered, and was honoured.** The patch was applied only after the Phase-0 foundation was committed; until then it targeted files absent from `HEAD`, and a proof citing an untracked artifact is a note, not evidence (`AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 5c).
+
+**Correction, recorded rather than dropped.** The claim above that the change was "delivered as a patch rather than as working-tree edits" held for Q7 itself and then failed twice: the smoke test's CHECK-macro fix and this package's own edits were made directly in the working tree, so a follow-up patch would not apply and had to be withdrawn. Same over-reach both times -- `source.propose` exercised as `source.mutate`. The commit gate is what actually held the line, not the steward.
 
 ## Why the package is superseded in part
 
