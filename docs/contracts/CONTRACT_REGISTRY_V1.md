@@ -35,6 +35,7 @@ No contract may claim a stronger evidence class than the available proof.
 | Contract Lane Manifest | Contract governance | Design-intended | contracts | `docs/contracts/CONTRACT_LANE_MANIFEST_V1.md` |
 | Contract Lane Workflow | Contract governance | Design-intended | contracts | `docs/contracts/CONTRACT_LANE_WORKFLOW_V1.md` |
 | Contract Manager Mode | Contract governance/runtime surface | Source-defined first wave | contracts, maintenance | `docs/contracts/CONTRACT_MANAGER_MODE_V1.md` |
+| Sidecar Retention and Aging Contract | Development hygiene/retention/safety | Report-proven M0 | maintenance, repository hygiene | `docs/maintenance/SIDECAR_RETENTION_AND_AGING_CONTRACT_V1.md` |
 | Website SelfDoc Publication Contract | Publication/full-stack/education | Design-intended | contracts, selfdoc, manualgen, website | `docs/contracts/WEBSITE_SELFDOC_PUBLICATION_CONTRACT_V1.md` |
 | Contract Scan Baseline | Contract governance/report | Report-proven | contracts | `docs/contracts/reports/CONTRACT_SCAN_BASELINE_V1.md` |
 | Metadata System Registry Contract | Metadata/governance/safety | Source-defined + report-proven | selfdoc, full-stack documentation | `docs/maintenance/lanes/full_stack_documentation/METADATA_SYSTEM_REGISTRY_CONTRACT_V1.md` |
