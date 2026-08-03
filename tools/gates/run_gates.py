@@ -15,14 +15,32 @@ Gates:
             every artifact proofs.yaml / ai_runs.yaml / lessons.yaml CITES exists and
             is tracked by git. AIF-062; a citation nobody can follow is not evidence.
 
-Advisory by default: runs everything, reports, exits 0. --strict makes any failing gate
-fail the run (exit 1) -- promote once the tree is clean and you want regressions caught.
+STRICT BY DEFAULT since 2026-08-02. A failing gate fails the run (exit 1).
 
-  python tools/gates/run_gates.py [--strict] [--only census,registry] [--root <repo>]
+  python tools/gates/run_gates.py [--advisory] [--only census,registry] [--root <repo>]
 
-Exit: 0 all gates pass (or advisory), 1 a gate failed under --strict, 2 runner error.
+PROMOTED 2026-08-02, on a measured clean tree, not on intent:
 
-Owner: member.derald . steward: member.ai.claude.cowork . lane: AIF-062 . status: candidate
+  census    1046/1046 tracked source files carry @dottalk.file  (100.0%, uncovered 0)
+  registry  185 citations verifiable, 0 missing, 0 untracked, 0 external
+
+Why the flip. Coverage reached 100% on 2026-07-25 and had decayed to 99.4% by
+2026-08-02 -- six files, none malicious, just new work that nobody re-ran the
+gate against. An advisory gate reports drift to whoever happens to look. This
+project already measured what that is worth: check_session_log_row.py records
+33 percent compliance for the one closeout obligation that had no mechanism,
+against 83-94 percent for the four that did. A rule with no gate is obeyed a
+third of the time.
+
+--advisory restores the old behaviour: run everything, report, exit 0. It is
+for surveying a tree you already know is dirty (a mid-migration lane, a fresh
+clone being triaged) -- NOT for getting a red run to go away. If a gate fails
+on work you intend to land, fix the tree or say in the closeout why the finding
+is accepted.
+
+Exit: 0 all gates pass, 1 a gate failed (or --advisory runner error), 2 runner error.
+
+Owner: member.derald . steward: member.ai.claude.cowork . lane: AIF-062 . status: supported
 """
 import argparse
 import subprocess
@@ -42,19 +60,26 @@ GATES = [
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=str(Path(__file__).resolve().parents[2]))
+    ap.add_argument("--advisory", action="store_true",
+                    help="report failures without failing the run (exit 0)")
     ap.add_argument("--strict", action="store_true",
-                    help="a failing gate fails the run (exit 1)")
+                    help="accepted and ignored -- strict is the default since 2026-08-02. "
+                         "Kept so existing scripts and docs that pass it keep working.")
     ap.add_argument("--only", metavar="NAMES",
                     help="comma-separated subset, e.g. --only census")
     args = ap.parse_args()
     root = Path(args.root).resolve()
+    # Strict is the default; --advisory is the only way out. --strict is a no-op kept for
+    # compatibility: several docs, the standards seed and finish_session.py all spell the
+    # old invocation, and silently rejecting it would break them for no gain.
+    strict = not args.advisory
 
     wanted = ([s.strip() for s in args.only.split(",")] if args.only
               else [g[0] for g in GATES])
 
     print("=" * 68)
     print(f"x64base static drift gates   root: {root}")
-    print(f"mode: {'STRICT (failures fail the run)' if args.strict else 'advisory'}")
+    print(f"mode: {'STRICT (failures fail the run)' if strict else 'ADVISORY (--advisory: failures reported, run still passes)'}")
     print("=" * 68)
 
     results = []
@@ -86,11 +111,12 @@ def main() -> int:
     if not failed:
         print("All gates pass.")
         return 0
-    if args.strict:
+    if strict:
         print(f"STRICT: {len(failed)} gate(s) failed -> FAIL", file=sys.stderr)
+        print("Fix the tree, or re-run with --advisory if you are deliberately surveying "
+              "a dirty tree.", file=sys.stderr)
         return 1
-    print(f"advisory: {len(failed)} gate(s) failing (not a failure yet). "
-          f"Re-run with --strict once the tree is clean.")
+    print(f"advisory: {len(failed)} gate(s) failing, not failing the run (--advisory).")
     return 0
 
 
