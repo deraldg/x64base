@@ -47,6 +47,7 @@ Recommended split:
 |---|---|---|
 | DotTalk++ SDLC | Runtime, source, build, commands, storage, indexing, HELP, metadata, tests, maintenance. | Keep the engine and professional runtime correct, buildable, testable, and safe. |
 | LabTalk SDLC | Laboratory Campus docs, labs, cases, datasets, portal, proof registry, student-facing claims. | Keep the campus truthful, reviewable, and proof-backed. |
+| AI Systems Integration SDLC | Relationships among AI Portal, onboarding, memory, reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and publication projections. | Keep the combined AI system understandable, scoped, non-duplicative, and maintainable while incorporated lanes retain their owners. |
 | PLDC | Products, labs, lessons, case-study packages, dashboards, public pages, class/workshop offerings. | Move a usable learning/product package from concept to delivery and support. |
 
 Decision:
@@ -54,6 +55,7 @@ Decision:
 ```text
 DotTalk++ is large enough to deserve its own SDLC.
 LabTalk uses its own campus SDLC.
+AI Systems Integration uses its own cross-system SDLC.
 PLDC sits above both as the product/lab delivery cycle.
 ```
 

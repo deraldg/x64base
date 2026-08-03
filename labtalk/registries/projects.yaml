@@ -128,6 +128,62 @@ projects:
       not implemented. GPTbase self-assigned as maintainer; corrected to steward,
       human ownership retained.
 
+  - id: project.ai_systems.integration
+    name: AI Systems Integration SDLC
+    kind: sdlc_project
+    status: active_seed
+    root: D:/code/ccode
+    owner: member.derald
+    initial_steward: member.ai.codex.local
+    owning_lifecycle: ai_systems_integration_sdlc
+    incorporating_lifecycle: ai_systems_integration_sdlc
+    sdlc_lane: design
+    lanes: [AIF-086]
+    phases:
+      - M0_analyze
+      - M1_requirements
+      - M2_architecture
+      - M3_design
+      - M4_implementation
+      - M5_agency_enforcement
+      - M6_publication
+      - M7_maintenance_and_teaching
+    incorporates:
+      - AIF-006
+      - AIF-020
+      - AIF-021
+      - AIF-024
+      - AIF-045
+      - AIF-050
+      - AIF-052
+      - AIF-054
+      - AIF-055
+      - AIF-056
+      - AIF-057
+      - AIF-058
+      - AIF-060
+      - AIF-062
+      - AIF-071
+      - AIF-073
+      - AIF-075
+      - AIF-076
+      - AIF-082
+      - AIF-083
+      - AIF-084
+      - AIF-085
+    docs:
+      - docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md
+      - docs/maintenance/AI_SYSTEMS_CROSSWALK_V1.md
+      - docs/contracts/TRESPASS_AND_DELEGATED_AUTHORIZATION_CONTRACT_V1.md
+      - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md
+      - labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
+    notes: >-
+      Cross-system SDLC for integrating the AI Portal, onboarding, memory,
+      reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and
+      public projections. Incorporated lanes retain their original owners and
+      lifecycles. M0 is documentation and registration only; no runtime
+      delegation, report publication, or public-site mutation is claimed.
+
   - id: project.pycrud
     name: pycrud Companion
     kind: companion_app_project
