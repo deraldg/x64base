@@ -1,0 +1,2273 @@
+   7  ENROLL_D      D        8     0
+   8  GPA           N        4     2
+   9  EMAIL         C       40     0
+Dbfile      : /mnt/d/code/ccode/dottalkpp/data/DBF/x64/STUDENTS.DBF  (STUDENTS.DBF)
+Index file  : (none)
+Tags        : (none)
+Active tag  : (none)
+200
+Record 1
+  SID = 50000000
+  LNAME = Taylor
+  FNAME = Quinn
+  DOB = 19921225
+  GENDER = X
+  MAJOR = CSCI
+  ENROLL_D = 20250220
+  GPA = 2.97
+  EMAIL = quinn.taylor0@student.mcc.edu
+      SID      LNAME                FNAME           DOB      GENDER MAJOR ENROLL_D GPA  EMAIL          
+     1 50000000 Taylor               Quinn           19921225 X      CSCI  20250220 2.97 quinn.taylor0@student.mcc.edu
+     2 50000001 Martin               Mason           20050925 M      CSCI  20250710 3.59 mason.martin1@student.mcc.edu
+     3 50000002 Ramirez              Skyler          19890329 X      HIST  20240722 2.58 skyler.ramirez2@student.mcc.edu
+     4 50000003 Davis                Sophia          19970808 M      PHYS  20250519 3.81 sophia.davis3@student.mcc.edu
+     5 50000004 Rodriguez            Evan            19891127 F      ARTS  20240907 2.37 evan.rodriguez4@student.mcc.edu
+5 record(s) listed (limit 5). Use LIST ALL to show more.
+Cursor: Area 8 of 0 ... 511  Physical Recno 5, Logical Row 5
+      SID      LNAME                FNAME           DOB      GENDER MAJOR ENROLL_D GPA  EMAIL          
+     1 50000000 Taylor               Quinn           19921225 X      CSCI  20250220 2.97 quinn.taylor0@student.mcc.edu
+     2 50000001 Martin               Mason           20050925 M      CSCI  20250710 3.59 mason.martin1@student.mcc.edu
+     3 50000002 Ramirez              Skyler          19890329 X      HIST  20240722 2.58 skyler.ramirez2@student.mcc.edu
+     4 50000003 Davis                Sophia          19970808 M      PHYS  20250519 3.81 sophia.davis3@student.mcc.edu
+     5 50000004 Rodriguez            Evan            19891127 F      ARTS  20240907 2.37 evan.rodriguez4@student.mcc.edu
+5 record(s) listed (limit 5). Use SMARTLIST ALL to show more.
+1
+Cursor: Area 8 of {0..11} ... Table STUDENTS ... Physical Recno 1, Logical Row 1
+Area 8: /mnt/d/code/ccode/dottalkpp/data/DBF/x64/STUDENTS.DBF  (STUDENTS.DBF) [current]
+Workspace : {0..11}
+  DBF Flavor   : v64
+Order       : NATURAL
+Index file  : (none)
+Active tag  :
+Sort        :
+  Tags        : (none)
+  Records     : 200
+  LMDB        : (closed)
+;
+; --- 09. Cursor movement smoke test ---
+1
+Record 1
+  SID = 50000000
+  LNAME = Taylor
+  FNAME = Quinn
+  DOB = 19921225
+  GENDER = X
+  MAJOR = CSCI
+  ENROLL_D = 20250220
+  GPA = 2.97
+  EMAIL = quinn.taylor0@student.mcc.edu
+2
+Record 2
+  SID = 50000001
+  LNAME = Martin
+  FNAME = Mason
+  DOB = 20050925
+  GENDER = M
+  MAJOR = CSCI
+  ENROLL_D = 20250710
+  GPA = 3.59
+  EMAIL = mason.martin1@student.mcc.edu
+1
+200
+Record 200
+  SID = 50000199
+  LNAME = Davis
+  FNAME = Avery
+  DOB = 19890925
+  GENDER = M
+  MAJOR = ACCT
+  ENROLL_D = 20250505
+  GPA = 2.11
+  EMAIL = avery.davis99@student.mcc.edu
+1
+1
+1
+1
+2
+1
+200
+1
+;
+; --- 10. Locate / continue / seek/find smoke test ---
+Usage:
+  LOCATE USAGE
+  LOCATE FOR <expr>
+  LOCATE <field> <op> <value>
+Examples:
+  LOCATE FOR LNAME = Smith
+  LOCATE LNAME = Smith
+  LOCATE FOR BALANCE > 100
+Notes:
+  - LOCATE requires an open table except for LOCATE USAGE.
+  - LOCATE positions on the first matching record and updates CONTINUE state.
+CONTINUE: no active locate.
+Usage:
+  FIND USAGE
+  FIND <text>
+  FIND <field> <text>
+  FIND <text> IN <field>
+Notes:
+  - FIND requires an open table except for FIND USAGE.
+  - FIND delegates to SEEK when the active order can satisfy the request.
+  - Otherwise FIND scans the requested field and positions on the found record.
+Usage:
+  SEEK USAGE
+  SEEK <value> IN <field> [TRACE ON|OFF]
+  SEEK <field> = <value> [TRACE ON|OFF]
+  SEEK <field> <value>   [TRACE ON|OFF]
+  SEEK <value>           (uses active order/tag when set)
+  SEEK TRACE ON|OFF
+Notes:
+  SEEK requires an open table except for SEEK USAGE.
+  SEEK <value> uses the active order/tag when one is set.
+INDEXSEEK(): 0
+;
+; --- 11. Aggregate observers ---
+Aggregate verbs owned by AGGS
+
+Usage:
+  AGGS USAGE
+
+  AGGS SUM USAGE
+  AGGS SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+
+  AGGS AVG USAGE
+  AGGS AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+
+  AGGS MIN USAGE
+  AGGS MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+
+  AGGS MAX USAGE
+  AGGS MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+
+Direct aggregate verbs:
+  SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+
+Examples:
+  AGGS SUM GPA
+  AGGS AVG GPA FOR GPA >= 3.0
+  AGGS MIN GPA WHERE MAJOR = "CSCI"
+  AGGS MAX GPA NOT DELETED
+
+  SUM GPA
+  AVG GPA FOR GPA >= 3.0
+  MIN GPA WHERE MAJOR = "CSCI"
+  MAX GPA NOT DELETED
+
+Notes:
+  - AGGS owns the usage/help contract for these aggregate verbs.
+  - Direct SUM, AVG, MIN, and MAX are command aliases for normal use.
+  - FOR and WHERE are both accepted predicate introducers.
+  - DELETED limits the aggregate to deleted records.
+  - NOT DELETED and !DELETED limit the aggregate to visible/non-deleted records.
+  - Aggregate scans restore the cursor best-effort.
+  - Aggregates report values; they do not mutate table data.
+SUM usage:
+ SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+AVG usage:
+ AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+AVG usage:
+ AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+MIN usage:
+ MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+MAX usage:
+ MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+;
+; --- 12. Filter / relation observer surface ---
+Usage:
+  SET FILTER USAGE
+  SET FILTER TO <expr>
+  SET FILTER TO
+  SETFILTER USAGE
+  SETFILTER TO <expr>
+  SETFILTER TO
+Refreshed STUDENTS64 (200 records).
+REL syntax
+  REL LIST [ALL]
+  REL REFRESH
+  REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL SAVE [path] | REL SAVE AS <dataset>
+  REL LOAD [path] | REL LOAD AS <dataset>
+  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation
+  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation
+  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR
+  REL SCANLIMIT [<n>]                      # report or set the relation scan limit
+Relations for parent: STUDENTS64
+  (none)
+OK
+REL syntax
+  REL LIST [ALL]
+  REL REFRESH
+  REL JOIN [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL ENUM [LIMIT <n>] [<child1> <child2> ...] TUPLE <expr>
+  REL SAVE [path] | REL SAVE AS <dataset>
+  REL LOAD [path] | REL LOAD AS <dataset>
+  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation
+  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation
+  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR
+  REL SCANLIMIT [<n>]                      # report or set the relation scan limit
+50000000 | Taylor | Quinn | 19921225 | X | CSCI | 20250220 | 2.97 | quinn.taylor0@student.mcc.edu
+Usage:
+  TUPTALK
+  TUPTALK USAGE
+  TUPTALK RESET
+  TUPTALK ADD <type> <len> [<dec>] <raw...>
+      type: C|N|D|L (case-insensitive)
+      len : integer > 0
+      dec : required for N (>=0), omitted for C/D/L
+      raw : rest of the line, stored as-typed (quotes allowed)
+  TUPTALK LIST
+  TUPTALK NORMALIZE
+  TUPTALK DUMP
+  TUPTALK EXPORT CSV|TSV [<path>]
+      Export: index,type,len,dec,raw,norm (CSV quoted / TSV sanitized)
+  TUPTALK PUSH <fieldName|#>
+      Add one entry using the current record value and field type/len/dec
+      Matching: exact(case-insensitive), unique prefix, then unique substring
+  TUPTALK PUSH ALL [FILTER <mask>]
+      Add entries for all fields; optional <mask> like CND to restrict types
+  TUPTALK PUSH FILTER <mask>
+      Alias for: PUSH ALL FILTER <mask>
+  TUPTALK PUSH ROW
+      Add one entry that is the entire fixed-width padded row (schema-aligned)
+  TUPTALK HELP
+Examples:
+  TUPTALK PUSH LASTNAME
+  TUPTALK PUSH 3
+  TUPTALK PUSH ALL
+  TUPTALK PUSH ALL FILTER CND
+  TUPTALK PUSH ROW
+TUPTALK: (empty)
+Usage:
+  TUPLEDELTA USAGE
+  TUPLEDELTA <baseline-stream> <current-stream>
+Notes:
+  - Tuple stream loading is not implemented in this skeleton.
+;
+; --- 13. Index/order observer and light navigation surface ---
+SET INDEX: missing filename.
+Usage:
+  SET INDEX USAGE
+  SET INDEX TO
+  SET INDEX TO <container>
+  SET INDEX TO <container> TAG <tag>
+  SET INDEX TO <container> <tag>
+  SETINDEX USAGE
+  SETINDEX TO
+  SETINDEX TO <container>
+  SETINDEX TO <container> TAG <tag>
+  SETINDEX TO <container> <tag>
+SET CNX: file not found: /mnt/d/code/ccode/dottalkpp/data/INDEXES/x64/STUDENTS64.cnx
+SET CDX: file not found: /mnt/d/code/ccode/dottalkpp/data/INDEXES/x64/STUDENTS64.cdx
+SET LMDB: none (physical order).
+SET ORDER: none (physical order).
+No active index.
+      SID      LNAME                FNAME           DOB      GENDER MAJOR ENROLL_D GPA  EMAIL          
+     1 50000000 Taylor               Quinn           19921225 X      CSCI  20250220 2.97 quinn.taylor0@student.mcc.edu
+     2 50000001 Martin               Mason           20050925 M      CSCI  20250710 3.59 mason.martin1@student.mcc.edu
+     3 50000002 Ramirez              Skyler          19890329 X      HIST  20240722 2.58 skyler.ramirez2@student.mcc.edu
+     4 50000003 Davis                Sophia          19970808 M      PHYS  20250519 3.81 sophia.davis3@student.mcc.edu
+     5 50000004 Rodriguez            Evan            19891127 F      ARTS  20240907 2.37 evan.rodriguez4@student.mcc.edu
+5 record(s) listed (limit 5). Use SMARTLIST ALL to show more.
+No active index.
+      SID      LNAME                FNAME           DOB      GENDER MAJOR ENROLL_D GPA  EMAIL          
+     1 50000000 Taylor               Quinn           19921225 X      CSCI  20250220 2.97 quinn.taylor0@student.mcc.edu
+     2 50000001 Martin               Mason           20050925 M      CSCI  20250710 3.59 mason.martin1@student.mcc.edu
+     3 50000002 Ramirez              Skyler          19890329 X      HIST  20240722 2.58 skyler.ramirez2@student.mcc.edu
+     4 50000003 Davis                Sophia          19970808 M      PHYS  20250519 3.81 sophia.davis3@student.mcc.edu
+     5 50000004 Rodriguez            Evan            19891127 F      ARTS  20240907 2.37 evan.rodriguez4@student.mcc.edu
+5 record(s) listed (limit 5). Use SMARTLIST ALL to show more.
+Current area: 8
+  File: STUDENTS64  Recs: 200  Recno: 1
+  Order: ASCEND
+  Index file  : (none)
+  Active tag  : (none)
+Usage:
+  LMDB USAGE
+  LMDB INFO
+  LMDB OPEN <container.cdx>
+  LMDB OPEN <envdir.cdx.d>
+  LMDB OPEN <stem>
+  LMDB USE <tag>
+  LMDB SEEK <key>
+  LMDB DUMP
+  LMDB DUMP <max>
+  LMDB SCAN <low> <high>
+  LMDB CLOSE
+Notes:
+  - LMDB is per-area and uses the current DbArea IndexManager/CDX backend.
+  - Bare stems resolve through the INDEXES path slot.
+  - LMDB_UTIL is deprecated and disabled.
+Missing <env_path>
+Usage:
+  LMDBDUMP USAGE
+  LMDBDUMP <env_path>
+      [--db <name>] [-db <name>]
+      [--grep <ASCII>] [-grep <ASCII>]
+      [--trydb]
+      [--limit <N>]
+      [--start <key>]
+      [--starthex <hex...>]
+
+Notes:
+  --start treats <key> as ASCII unless it begins with 0x (hex).
+  --starthex accepts bytes as hex, spaces allowed.
+
+Examples:
+  LMDBDUMP indexes\students.cdx.d
+  LMDBDUMP indexes\students.cdx.d --trydb
+  LMDBDUMP indexes\students.cdx.d --grep MILLER --limit 50
+  LMDBDUMP indexes\students.cdx.d --db lname --start M --limit 200
+  LMDBDUMP indexes\students.cdx.d --starthex 4d 49 4c 4c 45 52
+LMDB_UTIL is deprecated and disabled.
+Use: LMDB (per-area)
+Usage:
+  LMDB_UTIL
+  LMDB_UTIL USAGE
+Related:
+  LMDB INFO
+  LMDB OPEN <container.cdx>
+  LMDB USE <tag>
+  LMDB SEEK <key>
+  LMDB DUMP
+  LMDB SCAN <low> <high>
+  LMDB CLOSE
+Usage:
+  CNX USAGE
+  CNX INFO [<path.cnx>]
+  CNX TAGS [<path.cnx>]
+  CNX CREATE [<path.cnx>]
+  CNX ADDTAG <name> [<path.cnx>]
+  CNX DROPTAG <name> [<path.cnx>]
+  CNX WALK <tag> [<path.cnx>]
+  CNX TRACE <tag> [<path.cnx>]
+Notes:
+  - CNX with no arguments shows usage.
+  - CREATE refuses to overwrite an existing CNX file.
+  - INFO/TAGS/WALK/TRACE inspect metadata; ADDTAG/DROPTAG mutate tag metadata.
+Usage:
+  CDX USAGE
+  CDX INFO [<path.cdx>]
+  CDX TAGS [<path.cdx>]
+  CDX CREATE [<path.cdx>]
+  CDX ADDTAG <name> [<path.cdx>]
+  CDX DROPTAG <name> [<path.cdx>]
+Notes:
+  - CDX with no arguments shows usage.
+  - CREATE refuses to overwrite an existing CDX file.
+  - INFO/TAGS inspect metadata; ADDTAG/DROPTAG mutate tag metadata.
+Usage: INDEX ON <field> TAG <name> [ASC|DESC] [1INX|2INX]
+   Field-number tokens are also accepted by the parser.
+Defaults: ASC, 2INX
+Examples:
+  INDEX ON LNAME TAG students
+  INDEX ON LNAME TAG students DESC
+  INDEX ON LNAME TAG students DESC 2INX
+Notes:
+  - INDEX requires an open table except for INDEX USAGE.
+  - Deleted records are excluded.
+  - TAG resolves through the INDEXES path and must name an .inx target.
+;
+; --- 14. Memo / lock / output helpers ---
+Usage:
+  MEMO USAGE
+  MEMO STATUS [ALL]
+  MEMO VERIFY [ALL]
+  MEMO GC [ALL] [CONFIRM]
+Notes:
+  - MEMO GC without CONFIRM is a dry run.
+  - MEMO GC with CONFIRM may remove orphan memo objects.
+LOCK: record 1 locked.
+UNLOCK: record 1 unlocked.
+  50000000 | Taylor | Quinn | 19921225 | X | CSCI | 20250220 | 2.97 | quinn.taylor0@student.mcc.edu
+  50000001 | Martin | Mason | 20050925 | M | CSCI | 20250710 | 3.59 | mason.martin1@student.mcc.edu
+  50000002 | Ramirez | Skyler | 19890329 | X | HIST | 20240722 | 2.58 | skyler.ramirez2@student.mcc.edu
+  50000003 | Davis | Sophia | 19970808 | M | PHYS | 20250519 | 3.81 | sophia.davis3@student.mcc.edu
+  50000004 | Rodriguez | Evan | 19891127 | F | ARTS | 20240907 | 2.37 | evan.rodriguez4@student.mcc.edu
+  50000005 | Rodriguez | Alex | 19900617 | M | BUSN | 20231223 | 2.88 | alex.rodriguez5@student.mcc.edu
+  50000006 | Garcia | Mia | 20011225 | M | BIOL | 20230313 | 3.55 | mia.garcia6@student.mcc.edu
+  50000007 | Ramirez | Jordan | 19910926 | M | PHYS | 20231113 | 2.57 | jordan.ramirez7@student.mcc.edu
+  50000008 | Lopez | Ethan | 20000429 | F | CSCI | 20240926 | 3.77 | ethan.lopez8@student.mcc.edu
+  50000009 | Martin | Ava | 19931206 | F | BIOL | 20250216 | 2.47 | ava.martin9@student.mcc.edu
+  50000010 | Clark | Parker | 20021115 | F | BIOL | 20230228 | 3.58 | parker.clark10@student.mcc.edu
+  50000011 | White | Ava | 19971017 | M | MATH | 20241104 | 2.45 | ava.white11@student.mcc.edu
+  50000012 | Lewis | Parker | 20061030 | F | ENGL | 20231011 | 3.10 | parker.lewis12@student.mcc.edu
+  50000013 | Smith | Isabella | 19900215 | X | ACCT | 20240912 | 3.58 | isabella.smith13@student.mcc.edu
+  50000014 | Jackson | Taylor | 19980910 | X | BUSN | 20231108 | 2.17 | taylor.jackson14@student.mcc.edu
+  50000015 | Martin | Adrien | 20040722 | M | BIOL | 20230509 | 3.72 | adrien.martin15@student.mcc.edu
+  50000016 | Brown | Logan | 20070209 | X | COMM | 20230712 | 3.39 | logan.brown16@student.mcc.edu
+  50000017 | Williams | Sophia | 19960603 | M | BIOL | 20240507 | 2.48 | sophia.williams17@student.mcc.edu
+  50000018 | Harris | Drew | 19900913 | X | ARTS | 20241028 | 2.52 | drew.harris18@student.mcc.edu
+  50000019 | Martinez | Harper | 19910711 | X | HIST | 20240630 | 3.78 | harper.martinez19@student.mcc.edu
+  50000020 | Anderson | Taylor | 20050612 | M | ENGL | 20240519 | 2.74 | taylor.anderson20@student.mcc.edu
+  50000021 | Lopez | Reese | 19970705 | F | BUSN | 20250305 | 3.33 | reese.lopez21@student.mcc.edu
+  50000022 | Davis | Isabella | 20020130 | M | ARTS | 20250730 | 3.51 | isabella.davis22@student.mcc.edu
+  50000023 | Thompson | Morgan | 20060718 | M | PSYC | 20250201 | 3.51 | morgan.thompson23@student.mcc.edu
+  50000024 | Taylor | Mason | 19850907 | F | HIST | 20231203 | 2.88 | mason.taylor24@student.mcc.edu
+  50000025 | Gonzalez | Evan | 19900910 | M | HIST | 20250508 | 2.35 | evan.gonzalez25@student.mcc.edu
+  50000026 | Miller | Rowan | 19940905 | F | PSYC | 20231226 | 2.83 | rowan.miller26@student.mcc.edu
+  50000027 | Robinson | Olivia | 19940625 | F | ENGL | 20250105 | 2.58 | olivia.robinson27@student.mcc.edu
+  50000028 | Ramirez | Parker | 20040530 | M | CHEM | 20241208 | 3.30 | parker.ramirez28@student.mcc.edu
+  50000029 | Williams | Noah | 19921009 | X | COMM | 20240817 | 2.53 | noah.williams29@student.mcc.edu
+  50000030 | Garcia | Noah | 20001222 | F | COMM | 20240129 | 2.03 | noah.garcia30@student.mcc.edu
+  50000031 | Lee | Harper | 19941012 | X | MATH | 20230124 | 2.32 | harper.lee31@student.mcc.edu
+  50000032 | Sanchez | Morgan | 20020513 | M | ARTS | 20240711 | 3.11 | morgan.sanchez32@student.mcc.edu
+  50000033 | Taylor | Liam | 20070209 | X | CHEM | 20241212 | 3.08 | liam.taylor33@student.mcc.edu
+  50000034 | Robinson | Taylor | 20041108 | M | BUSN | 20240810 | 2.76 | taylor.robinson34@student.mcc.edu
+  50000035 | Davis | Alex | 20070924 | F | MATH | 20230816 | 3.72 | alex.davis35@student.mcc.edu
+  50000036 | Harris | Drew | 19850910 | M | COMM | 20231110 | 3.02 | drew.harris36@student.mcc.edu
+  50000037 | Harris | Jamie | 20040909 | F | ENGL | 20230104 | 2.31 | jamie.harris37@student.mcc.edu
+  50000038 | Hernandez | Emma | 19871107 | F | HIST | 20250219 | 2.56 | emma.hernandez38@student.mcc.edu
+  50000039 | Lopez | Ava | 19991205 | M | PHYS | 20240604 | 2.40 | ava.lopez39@student.mcc.edu
+  50000040 | Martinez | Skyler | 19921108 | F | CHEM | 20250430 | 2.68 | skyler.martinez40@student.mcc.edu
+  50000041 | Williams | Alex | 19951005 | F | CSCI | 20241211 | 3.39 | alex.williams41@student.mcc.edu
+  50000042 | Miller | Harper | 19900204 | M | PSYC | 20240315 | 2.86 | harper.miller42@student.mcc.edu
+  50000043 | Lopez | Cameron | 19881029 | F | CSCI | 20231002 | 2.34 | cameron.lopez43@student.mcc.edu
+  50000044 | Clark | Taylor | 19981013 | F | ACCT | 20250406 | 2.88 | taylor.clark44@student.mcc.edu
+  50000045 | Smith | Taylor | 20000203 | F | MATH | 20240103 | 2.59 | taylor.smith45@student.mcc.edu
+  50000046 | Anderson | Avery | 20030827 | F | HIST | 20250507 | 3.27 | avery.anderson46@student.mcc.edu
+  50000047 | Moore | Jamie | 20020923 | F | BUSN | 20241109 | 2.24 | jamie.moore47@student.mcc.edu
+  50000048 | Martin | Quinn | 20010706 | X | CHEM | 20230112 | 3.21 | quinn.martin48@student.mcc.edu
+  50000049 | Johnson | Logan | 19981022 | F | ARTS | 20250720 | 3.69 | logan.johnson49@student.mcc.edu
+  50000050 | Martinez | Sophia | 20070523 | M | HIST | 20250317 | 3.81 | sophia.martinez50@student.mcc.edu
+  50000051 | Harris | Mia | 20040724 | F | PHYS | 20240926 | 2.25 | mia.harris51@student.mcc.edu
+  50000052 | Robinson | Ava | 19980514 | X | BIOL | 20240109 | 2.27 | ava.robinson52@student.mcc.edu
+  50000053 | Davis | Taylor | 19910827 | X | COMM | 20250101 | 2.23 | taylor.davis53@student.mcc.edu
+  50000054 | White | Alex | 20030607 | X | CSCI | 20240829 | 3.27 | alex.white54@student.mcc.edu
+  50000055 | Harris | Skyler | 19971220 | X | CHEM | 20250308 | 2.36 | skyler.harris55@student.mcc.edu
+  50000056 | Sanchez | Adrien | 19850320 | F | CSCI | 20230116 | 2.34 | adrien.sanchez56@student.mcc.edu
+  50000057 | Garcia | Mia | 19960714 | M | ACCT | 20240808 | 3.71 | mia.garcia57@student.mcc.edu
+  50000058 | Harris | Skyler | 19910907 | M | ARTS | 20231012 | 2.48 | skyler.harris58@student.mcc.edu
+  50000059 | Ramirez | Sam | 20070801 | M | CSCI | 20250524 | 2.98 | sam.ramirez59@student.mcc.edu
+  50000060 | Taylor | Liam | 19970720 | F | BIOL | 20250722 | 2.93 | liam.taylor60@student.mcc.edu
+  50000061 | Moore | Mason | 20010426 | X | MATH | 20231128 | 3.42 | mason.moore61@student.mcc.edu
+  50000062 | Jackson | Sophia | 19910226 | F | PSYC | 20230614 | 2.70 | sophia.jackson62@student.mcc.edu
+  50000063 | Martinez | Adrien | 20000212 | F | CSCI | 20240830 | 3.42 | adrien.martinez63@student.mcc.edu
+  50000064 | Thompson | Alex | 19900215 | M | PHYS | 20230820 | 2.26 | alex.thompson64@student.mcc.edu
+  50000065 | Thomas | Mason | 19940818 | M | PHYS | 20240511 | 2.30 | mason.thomas65@student.mcc.edu
+  50000066 | Perez | Parker | 20050625 | X | PSYC | 20230828 | 3.45 | parker.perez66@student.mcc.edu
+  50000067 | Martinez | Taylor | 19900113 | X | ACCT | 20230714 | 3.23 | taylor.martinez67@student.mcc.edu
+  50000068 | Clark | Mason | 19980930 | X | ENGL | 20250626 | 3.24 | mason.clark68@student.mcc.edu
+  50000069 | Johnson | Alex | 19900925 | M | CSCI | 20241114 | 2.04 | alex.johnson69@student.mcc.edu
+  50000070 | Martin | Harper | 20000331 | F | HIST | 20241104 | 2.32 | harper.martin70@student.mcc.edu
+  50000071 | Martin | Skyler | 19860721 | M | PSYC | 20250611 | 2.88 | skyler.martin71@student.mcc.edu
+  50000072 | Lewis | Taylor | 19960903 | M | ACCT | 20230417 | 3.90 | taylor.lewis72@student.mcc.edu
+  50000073 | Hernandez | Mason | 20031101 | M | COMM | 20230302 | 2.61 | mason.hernandez73@student.mcc.edu
+  50000074 | Sanchez | Rowan | 19890405 | X | PSYC | 20230115 | 3.49 | rowan.sanchez74@student.mcc.edu
+  50000075 | Wilson | Sophia | 20020225 | M | CSCI | 20230223 | 3.74 | sophia.wilson75@student.mcc.edu
+  50000076 | Brown | Logan | 19950607 | M | CHEM | 20230604 | 2.31 | logan.brown76@student.mcc.edu
+  50000077 | Taylor | Olivia | 20040825 | F | HIST | 20250611 | 2.00 | olivia.taylor77@student.mcc.edu
+  50000078 | Anderson | Noah | 20031112 | F | ENGL | 20240101 | 2.99 | noah.anderson78@student.mcc.edu
+  50000079 | Thomas | Harper | 19920331 | F | ENGL | 20240322 | 3.50 | harper.thomas79@student.mcc.edu
+  50000080 | Johnson | Harper | 20070117 | M | ENGL | 20230423 | 2.56 | harper.johnson80@student.mcc.edu
+  50000081 | Sanchez | Quinn | 19850919 | X | MATH | 20250818 | 3.00 | quinn.sanchez81@student.mcc.edu
+  50000082 | Williams | Logan | 19871226 | F | ARTS | 20240203 | 3.40 | logan.williams82@student.mcc.edu
+  50000083 | Anderson | Alex | 20021231 | X | HIST | 20250306 | 3.95 | alex.anderson83@student.mcc.edu
+  50000084 | Rodriguez | Liam | 19941124 | F | HIST | 20250610 | 3.79 | liam.rodriguez84@student.mcc.edu
+  50000085 | Anderson | Olivia | 20060729 | X | MATH | 20240929 | 3.23 | olivia.anderson85@student.mcc.edu
+  50000086 | Ramirez | Emma | 19850520 | F | HIST | 20240109 | 3.77 | emma.ramirez86@student.mcc.edu
+  50000087 | Harris | Sophia | 19891230 | X | ACCT | 20230429 | 3.59 | sophia.harris87@student.mcc.edu
+  50000088 | Miller | Mia | 19860721 | F | CSCI | 20240630 | 3.50 | mia.miller88@student.mcc.edu
+  50000089 | Clark | Jamie | 19920810 | F | PHYS | 20230617 | 2.45 | jamie.clark89@student.mcc.edu
+  50000090 | Jackson | Riley | 20070326 | M | HIST | 20250802 | 2.04 | riley.jackson90@student.mcc.edu
+  50000091 | Smith | Logan | 20010830 | X | HIST | 20230705 | 3.26 | logan.smith91@student.mcc.edu
+  50000092 | Jackson | Parker | 20011101 | X | CSCI | 20230406 | 3.99 | parker.jackson92@student.mcc.edu
+  50000093 | White | Reese | 19970615 | F | CSCI | 20250513 | 2.61 | reese.white93@student.mcc.edu
+  50000094 | Martin | Noah | 20011106 | F | HIST | 20240524 | 3.88 | noah.martin94@student.mcc.edu
+  50000095 | Garcia | Taylor | 19890906 | M | CSCI | 20231013 | 2.60 | taylor.garcia95@student.mcc.edu
+  50000096 | Miller | Cameron | 19930104 | M | ARTS | 20241002 | 3.42 | cameron.miller96@student.mcc.edu
+  50000097 | Lee | Avery | 19970210 | M | MATH | 20240922 | 3.63 | avery.lee97@student.mcc.edu
+  50000098 | Sanchez | Alex | 19961112 | F | HIST | 20231121 | 3.08 | alex.sanchez98@student.mcc.edu
+  50000099 | Lee | Ethan | 19970916 | F | COMM | 20230429 | 2.31 | ethan.lee99@student.mcc.edu
+  50000100 | White | Mia | 19850815 | X | BIOL | 20241029 | 2.33 | mia.white0@student.mcc.edu
+  50000101 | Lewis | Olivia | 19900627 | X | MATH | 20240620 | 3.56 | olivia.lewis1@student.mcc.edu
+  50000102 | Williams | Adrien | 19950807 | F | HIST | 20250515 | 3.73 | adrien.williams2@student.mcc.edu
+  50000103 | Moore | Evan | 19930806 | X | ACCT | 20250117 | 3.94 | evan.moore3@student.mcc.edu
+  50000104 | Rodriguez | Cameron | 19940423 | F | PSYC | 20230217 | 2.01 | cameron.rodriguez4@student.mcc.edu
+  50000105 | Lopez | Avery | 20000627 | M | CHEM | 20250707 | 3.60 | avery.lopez5@student.mcc.edu
+  50000106 | Sanchez | Jordan | 19960915 | M | ARTS | 20231127 | 3.55 | jordan.sanchez6@student.mcc.edu
+  50000107 | Wilson | Liam | 19910226 | F | ENGL | 20240730 | 3.34 | liam.wilson7@student.mcc.edu
+  50000108 | Gonzalez | Riley | 19880703 | M | ENGL | 20240229 | 2.74 | riley.gonzalez8@student.mcc.edu
+  50000109 | Miller | Emma | 19981008 | F | PHYS | 20250412 | 3.15 | emma.miller9@student.mcc.edu
+  50000110 | Garcia | Taylor | 20020315 | M | BIOL | 20230623 | 3.99 | taylor.garcia10@student.mcc.edu
+  50000111 | Ramirez | Evan | 19850613 | X | ARTS | 20230728 | 3.02 | evan.ramirez11@student.mcc.edu
+  50000112 | Anderson | Reese | 20040514 | X | CSCI | 20240623 | 2.82 | reese.anderson12@student.mcc.edu
+  50000113 | Clark | Adrien | 19861117 | F | ACCT | 20230422 | 2.04 | adrien.clark13@student.mcc.edu
+  50000114 | Sanchez | Rowan | 20030218 | X | BIOL | 20230222 | 2.54 | rowan.sanchez14@student.mcc.edu
+  50000115 | Rodriguez | Morgan | 19900313 | F | ARTS | 20230105 | 2.12 | morgan.rodriguez15@student.mcc.edu
+  50000116 | White | Quinn | 19930520 | X | BIOL | 20241023 | 2.55 | quinn.white16@student.mcc.edu
+  50000117 | Martin | Alex | 19970122 | M | MATH | 20240928 | 2.87 | alex.martin17@student.mcc.edu
+  50000118 | Gonzalez | Noah | 19870101 | M | HIST | 20230907 | 3.41 | noah.gonzalez18@student.mcc.edu
+  50000119 | Robinson | Noah | 19920915 | M | ENGL | 20240429 | 2.40 | noah.robinson19@student.mcc.edu
+  50000120 | Taylor | Riley | 19890301 | F | BIOL | 20241129 | 3.22 | riley.taylor20@student.mcc.edu
+  50000121 | Miller | Quinn | 19921011 | M | BUSN | 20250720 | 2.61 | quinn.miller21@student.mcc.edu
+  50000122 | Miller | Riley | 20040829 | X | HIST | 20240726 | 2.12 | riley.miller22@student.mcc.edu
+  50000123 | Johnson | Quinn | 19890221 | X | CHEM | 20230511 | 2.07 | quinn.johnson23@student.mcc.edu
+  50000124 | Jackson | Evan | 20010414 | M | ACCT | 20231123 | 3.69 | evan.jackson24@student.mcc.edu
+  50000125 | Rodriguez | Rowan | 20070816 | F | PHYS | 20240302 | 3.41 | rowan.rodriguez25@student.mcc.edu
+  50000126 | Miller | Mason | 20060527 | F | ACCT | 20250721 | 3.36 | mason.miller26@student.mcc.edu
+  50000127 | Robinson | Cameron | 20010710 | M | ENGL | 20240729 | 2.30 | cameron.robinson27@student.mcc.edu
+  50000128 | Wilson | Skyler | 19901027 | X | COMM | 20250606 | 2.91 | skyler.wilson28@student.mcc.edu
+  50000129 | Robinson | Jamie | 19870102 | X | ACCT | 20241107 | 2.72 | jamie.robinson29@student.mcc.edu
+  50000130 | Perez | Riley | 19910612 | M | PHYS | 20230723 | 2.61 | riley.perez30@student.mcc.edu
+  50000131 | Brown | Quinn | 19920317 | F | ARTS | 20250815 | 2.68 | quinn.brown31@student.mcc.edu
+  50000132 | Wilson | Drew | 20000629 | X | CHEM | 20230607 | 2.40 | drew.wilson32@student.mcc.edu
+  50000133 | Johnson | Isabella | 20020506 | F | HIST | 20230731 | 3.00 | isabella.johnson33@student.mcc.edu
+  50000134 | Robinson | Olivia | 19911204 | X | CSCI | 20240803 | 2.40 | olivia.robinson34@student.mcc.edu
+  50000135 | Brown | Harper | 19930830 | M | CHEM | 20230417 | 3.18 | harper.brown35@student.mcc.edu
+  50000136 | Anderson | Casey | 20020418 | M | ARTS | 20250708 | 2.83 | casey.anderson36@student.mcc.edu
+  50000137 | Thompson | Logan | 19920219 | M | ENGL | 20230804 | 2.84 | logan.thompson37@student.mcc.edu
+  50000138 | Williams | Jordan | 20010112 | F | COMM | 20241204 | 2.74 | jordan.williams38@student.mcc.edu
+  50000139 | Taylor | Sophia | 19911205 | F | ENGL | 20240404 | 3.87 | sophia.taylor39@student.mcc.edu
+  50000140 | Rodriguez | Liam | 20001124 | X | ACCT | 20250217 | 3.30 | liam.rodriguez40@student.mcc.edu
+  50000141 | Clark | Ethan | 19851219 | M | CHEM | 20240518 | 2.85 | ethan.clark41@student.mcc.edu
+  50000142 | Martinez | Evan | 19920301 | X | BUSN | 20230901 | 2.53 | evan.martinez42@student.mcc.edu
+  50000143 | Gonzalez | Skyler | 20011002 | M | ACCT | 20250111 | 2.64 | skyler.gonzalez43@student.mcc.edu
+  50000144 | Miller | Mason | 19911127 | M | CHEM | 20240924 | 3.07 | mason.miller44@student.mcc.edu
+  50000145 | Miller | Drew | 19921109 | X | ENGL | 20230722 | 3.81 | drew.miller45@student.mcc.edu
+  50000146 | Rodriguez | Mason | 20041108 | X | PHYS | 20231214 | 3.49 | mason.rodriguez46@student.mcc.edu
+  50000147 | Jones | Mason | 19990609 | X | HIST | 20240219 | 2.26 | mason.jones47@student.mcc.edu
+  50000148 | White | Evan | 20011120 | F | BUSN | 20240625 | 2.53 | evan.white48@student.mcc.edu
+  50000149 | Smith | Riley | 19900717 | M | ACCT | 20230723 | 2.18 | riley.smith49@student.mcc.edu
+  50000150 | Rodriguez | Skyler | 20020527 | X | CHEM | 20250417 | 3.68 | skyler.rodriguez50@student.mcc.edu
+  50000151 | Lee | Olivia | 19900119 | X | BUSN | 20231225 | 3.01 | olivia.lee51@student.mcc.edu
+  50000152 | Jackson | Emma | 19930727 | X | ARTS | 20240718 | 2.34 | emma.jackson52@student.mcc.edu
+  50000153 | Ramirez | Noah | 19940310 | M | ACCT | 20240606 | 3.75 | noah.ramirez53@student.mcc.edu
+  50000154 | Clark | Jordan | 20041004 | X | ARTS | 20250819 | 2.27 | jordan.clark54@student.mcc.edu
+  50000155 | Moore | Casey | 19930920 | M | CSCI | 20250708 | 3.41 | casey.moore55@student.mcc.edu
+  50000156 | Wilson | Quinn | 19970409 | F | PSYC | 20230317 | 3.47 | quinn.wilson56@student.mcc.edu
+  50000157 | Thompson | Morgan | 20000606 | F | CHEM | 20240812 | 2.39 | morgan.thompson57@student.mcc.edu
+  50000158 | Harris | Mason | 20030211 | F | CSCI | 20250626 | 2.55 | mason.harris58@student.mcc.edu
+  50000159 | Hernandez | Quinn | 20000307 | F | ENGL | 20240218 | 2.38 | quinn.hernandez59@student.mcc.edu
+  50000160 | Thompson | Mia | 19990131 | M | COMM | 20250211 | 3.03 | mia.thompson60@student.mcc.edu
+  50000161 | Harris | Rowan | 19920122 | X | ACCT | 20230813 | 2.61 | rowan.harris61@student.mcc.edu
+  50000162 | Anderson | Avery | 19980818 | X | MATH | 20230807 | 2.00 | avery.anderson62@student.mcc.edu
+  50000163 | Smith | Taylor | 20001119 | F | PSYC | 20250304 | 3.70 | taylor.smith63@student.mcc.edu
+  50000164 | Robinson | Drew | 20071219 | M | COMM | 20230821 | 3.28 | drew.robinson64@student.mcc.edu
+  50000165 | Moore | Jamie | 19900415 | F | BUSN | 20241116 | 3.02 | jamie.moore65@student.mcc.edu
+  50000166 | Lewis | Ava | 19980725 | M | BIOL | 20231211 | 2.56 | ava.lewis66@student.mcc.edu
+  50000167 | White | Ethan | 20031024 | F | ARTS | 20250205 | 2.01 | ethan.white67@student.mcc.edu
+  50000168 | Martinez | Sam | 19910331 | F | BUSN | 20240729 | 2.89 | sam.martinez68@student.mcc.edu
+  50000169 | Lewis | Emma | 19990113 | M | HIST | 20240911 | 3.61 | emma.lewis69@student.mcc.edu
+  50000170 | Davis | Emma | 19990306 | M | PSYC | 20240701 | 2.66 | emma.davis70@student.mcc.edu
+  50000171 | Jones | Mason | 19890401 | X | BUSN | 20230705 | 2.81 | mason.jones71@student.mcc.edu
+  50000172 | Martin | Avery | 20051207 | F | ENGL | 20240302 | 2.42 | avery.martin72@student.mcc.edu
+  50000173 | Miller | Evan | 20060615 | M | PHYS | 20240424 | 2.86 | evan.miller73@student.mcc.edu
+  50000174 | Sanchez | Jamie | 19961204 | M | BIOL | 20230813 | 2.32 | jamie.sanchez74@student.mcc.edu
+  50000175 | Jones | Cameron | 20060331 | F | ACCT | 20240827 | 2.18 | cameron.jones75@student.mcc.edu
+  50000176 | Sanchez | Liam | 20030208 | F | PSYC | 20250404 | 3.22 | liam.sanchez76@student.mcc.edu
+  50000177 | Ramirez | Riley | 19870312 | X | ACCT | 20230606 | 2.60 | riley.ramirez77@student.mcc.edu
+  50000178 | Williams | Skyler | 20060125 | X | HIST | 20241202 | 3.54 | skyler.williams78@student.mcc.edu
+  50000179 | Anderson | Rowan | 20060929 | F | BIOL | 20231009 | 2.21 | rowan.anderson79@student.mcc.edu
+  50000180 | Rodriguez | Alex | 19870709 | M | HIST | 20240402 | 2.06 | alex.rodriguez80@student.mcc.edu
+  50000181 | Jones | Olivia | 19970220 | M | PHYS | 20250119 | 2.18 | olivia.jones81@student.mcc.edu
+  50000182 | Thompson | Mason | 20040527 | F | HIST | 20231001 | 2.79 | mason.thompson82@student.mcc.edu
+  50000183 | Martin | Olivia | 19930807 | M | ACCT | 20230514 | 2.91 | olivia.martin83@student.mcc.edu
+  50000184 | Williams | Taylor | 19900510 | X | HIST | 20250120 | 3.85 | taylor.williams84@student.mcc.edu
+  50000185 | Clark | Sam | 20050925 | F | ENGL | 20250809 | 2.84 | sam.clark85@student.mcc.edu
+  50000186 | Lee | Taylor | 20010614 | M | CSCI | 20240405 | 3.07 | taylor.lee86@student.mcc.edu
+  50000187 | Gonzalez | Liam | 19880928 | X | COMM | 20250129 | 2.55 | liam.gonzalez87@student.mcc.edu
+  50000188 | Harris | Sophia | 19900505 | M | COMM | 20240919 | 2.63 | sophia.harris88@student.mcc.edu
+  50000189 | Martinez | Parker | 20060913 | F | ENGL | 20230319 | 3.30 | parker.martinez89@student.mcc.edu
+  50000190 | Harris | Cameron | 19941124 | M | ACCT | 20250411 | 3.85 | cameron.harris90@student.mcc.edu
+  50000191 | Robinson | Liam | 20030918 | M | BIOL | 20241112 | 2.47 | liam.robinson91@student.mcc.edu
+  50000192 | Johnson | Avery | 20011008 | F | ARTS | 20240501 | 3.19 | avery.johnson92@student.mcc.edu
+  50000193 | Jackson | Mason | 20071004 | F | COMM | 20230430 | 2.63 | mason.jackson93@student.mcc.edu
+  50000194 | Rodriguez | Liam | 20001106 | M | MATH | 20241031 | 3.89 | liam.rodriguez94@student.mcc.edu
+  50000195 | Miller | Parker | 20000824 | X | CSCI | 20230330 | 3.86 | parker.miller95@student.mcc.edu
+  50000196 | Perez | Parker | 20010207 | F | BIOL | 20230501 | 2.69 | parker.perez96@student.mcc.edu
+  50000197 | Perez | Ava | 19980222 | X | ACCT | 20240517 | 3.97 | ava.perez97@student.mcc.edu
+  50000198 | Rodriguez | Evan | 19880818 | M | BIOL | 20230307 | 3.95 | evan.rodriguez98@student.mcc.edu
+  50000199 | Davis | Avery | 19890925 | M | ACCT | 20250505 | 2.11 | avery.davis99@student.mcc.edu
+PRN: CONSOLE
+  Alternate  : OFF
+  Paging     : OFF
+;
+; --- 15. Variables and script utilities ---
+Usage:
+  VAR USAGE
+  VAR <name> = <expression>
+Examples:
+  VAR threshold = 3.0
+  VAR label = UPPER(LNAME)
+  VAR today = DATE()
+Usage:
+  DOTSCRIPT USAGE
+  DOTSCRIPT <file>
+  DOTSCRIPT @<file>
+  DOTSCRIPT TRACE
+  DOTSCRIPT TRACE ON|OFF
+  DOTSCRIPT TRACE <file>
+  DOTSCRIPT TRACE @<file>
+  DOTSCRIPT TRACE ON|OFF <file>
+  DOTSCRIPT TRACE ON|OFF @<file>
+Notes:
+  - Bare names resolve as typed, .dts, scripts/, then tests/.
+  - Lines beginning with *, //, &&, or ; after trimming are skipped.
+  - DOTSCRIPT executes commands; side effects depend on script contents.
+  - OUT/OUTPUT tees full command output to a transcript file.
+  - Nesting is limited to main script plus one subscript.
+Usage:
+  ZIP USAGE
+  ZIP LIST <archive.zip>
+  ZIP CREATE <archive.zip> <path>
+  ZIP EXTRACT <archive.zip> [target_dir]
+Examples:
+  ZIP LIST backups.zip
+  ZIP CREATE source_bundle.zip src
+  ZIP EXTRACT source_bundle.zip tmp\source_bundle
+Notes:
+  - ZIP USAGE does not touch archive files.
+  - ZIP LIST reads an archive and prints entries.
+  - ZIP CREATE writes an archive and adds .zip when needed.
+  - ZIP EXTRACT writes files under the target directory or current directory.
+; Script echo check
+;
+; --- 16. Close lifecycle smoke test ---
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 12 area(s) closed.
+WORKSPACE: Listing open work areas...
+WORKSPACE: 0 area(s) open.
+Current area: 0 of {}
+  (no file open in Area)
+Area 0:   () [current]
+Workspace : {}
+  DBF Flavor   : unknown
+Order       : PHYSICAL
+  Tags        : (none)
+  Records     : 0
+  LMDB        : (closed)
+; ============================================================
+; NON-DESTRUCTIVE COMMAND SMOKE TEST COMPLETE
+; ============================================================
+REGRESSION: running INDEX_X32
+  Script: index_x32_inx_cnx_smoke.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/index_x32_inx_cnx_smoke.dts
+; ============================================================
+; INDEX X32 INX/CNX SMOKE v2
+; ============================================================
+SETPATH: DBF = /mnt/d/code/ccode/dottalkpp/data/DBF/x32
+SETPATH: INDEXES = /mnt/d/code/ccode/dottalkpp/data/INDEXES/x32
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+ERASE: Table not found: students_x32_idxtest.dbf
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+WORKSPACE OPEN: scanning directory: /mnt/d/code/ccode/dottalkpp/data/DBF/x32 [AUTO INDEX]
+[CNX READ RUN1] tag=BLDG entries=8
+[CNX READ RUN1] tag=CLS_ID entries=200
+[CNX READ RUN1] tag=TERM entries=200
+[CNX READ RUN1] tag=CID entries=200
+[CNX READ RUN1] tag=ROOM entries=200
+[CNX READ RUN1] tag=TID entries=200
+[CNX READ RUN1] tag=CID entries=100
+[CNX READ RUN1] tag=DEPT_ID entries=100
+[CNX READ RUN1] tag=DEPT_ID entries=10
+[CNX READ RUN1] tag=SID entries=686
+[CNX READ RUN1] tag=CLS_ID entries=686
+[CNX READ RUN1] tag=MAJOR entries=12
+[CNX READ RUN1] tag=DEPT_ID entries=12
+[CNX READ RUN1] tag=ROOM entries=30
+[CNX READ RUN1] tag=BLDG entries=30
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=LNAME entries=200
+[CNX READ RUN1] tag=FNAME entries=200
+[CNX READ RUN1] tag=DOB entries=200
+[CNX READ RUN1] tag=GPA entries=200
+[CNX READ RUN1] tag=CLS_ID entries=200
+[CNX READ RUN1] tag=TID entries=200
+[CNX READ RUN1] tag=TID entries=20
+[CNX READ RUN1] tag=DEPT_ID entries=20
+[CNX READ RUN1] tag=LNAME entries=20
+[CNX READ RUN1] tag=FNAME entries=20
+[CNX READ RUN1] tag=TERM entries=3
+  Area 0: opened 'BUILDING.dbf'  [index: BUILDING.cnx, attached]
+  Area 1: opened 'CLASSES.dbf'  [index: CLASSES.cnx, attached]
+  Area 2: opened 'COURSES.dbf'  [index: COURSES.cnx, attached]
+  Area 3: opened 'DEPT.dbf'  [index: DEPT.cnx, attached]
+  Area 4: opened 'ENROLL.dbf'  [index: ENROLL.cnx, attached]
+  Area 5: opened 'MAJORS.dbf'  [index: MAJORS.cnx, attached]
+  Area 6: opened 'ROOMS.dbf'  [index: ROOMS.cnx, attached]
+  Area 7: opened 'STUD_MAJ.dbf'  [index: STUD_MAJ.cnx, attached]
+  Area 8: opened 'STUDENTS.dbf'  [index: STUDENTS.cnx, attached]
+  Area 9: opened 'STUDENTS64.dbf'
+  Area 10: opened 'TASSIGN.dbf'  [index: TASSIGN.cnx, attached]
+  Area 11: opened 'TEACHERS.dbf'  [index: TEACHERS.cnx, attached]
+  Area 12: opened 'TERMS.dbf'  [index: TERMS.cnx, attached]
+WORKSPACE: 13 table(s) opened into area(s) 0..12.
+;
+; --- SELECT STUDENTS X32 ---
+Selected area 8.
+Current area: 8
+  File: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf  Recs: 200  Recno: 1
+Current area: 8 of {0..12}
+  File: STUDENTS  Recs: 200  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : STUDENTS
+  Legacy name()       : STUDENTS
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/indexes/x32/STUDENTS.cnx (SID)
+  Active tag  : SID
+200
+50000000 | Taylor | Quinn | 19921225 | CSCI | 2.97
+;
+; --- PHYSICAL ORDER BASELINE ---
+SET ORDER: cleared (physical order).
+50000000 | Taylor | Quinn | 19921225 | CSCI | 2.97
+50000001 | Martin | Mason | 20050925 | CSCI | 3.59
+50000199 | Davis | Avery | 19890925 | ACCT | 2.11
+;
+; --- CNX ORDER LNAME ---
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=LNAME entries=200
+[CNX READ RUN1] tag=FNAME entries=200
+[CNX READ RUN1] tag=DOB entries=200
+[CNX READ RUN1] tag=GPA entries=200
+SET ORDER: CNX TAG 'LNAME' (ASC)
+Current area: 8 of {0..12}
+  File: STUDENTS  Recs: 200  Recno: 21
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : STUDENTS
+  Legacy name()       : STUDENTS
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/x32/students.cnx (LNAME)
+  Active tag  : LNAME
+50000020 | Anderson | Taylor | 20050612 | ENGL | 2.74
+RECNO LNAME                FNAME           SID
+
+ 21 Anderson             Taylor          50000020
+ 47 Anderson             Avery           50000046
+ 79 Anderson             Noah            50000078
+ 84 Anderson             Alex            50000083
+ 86 Anderson             Olivia          50000085
+113 Anderson             Reese           50000112
+137 Anderson             Casey           50000136
+163 Anderson             Avery           50000162
+180 Anderson             Rowan           50000179
+ 17 Brown                Logan           50000016
+10 record(s) listed (limit 10). Use SMARTLIST ALL to show more.
+Found at 12.
+50000011 | White | Ava | 19971017 | MATH | 2.45
+Found at 2.
+50000001 | Martin | Mason | 20050925 | CSCI | 3.59
+;
+; --- CNX ORDER MAJOR ---
+[CNX READ RUN1] tag=SID entries=200
+[CNX READ RUN1] tag=MAJOR entries=200
+[CNX READ RUN1] tag=LNAME entries=200
+[CNX READ RUN1] tag=FNAME entries=200
+[CNX READ RUN1] tag=DOB entries=200
+[CNX READ RUN1] tag=GPA entries=200
+SET ORDER: CNX TAG 'MAJOR' (ASC)
+Current area: 8 of {0..12}
+  File: STUDENTS  Recs: 200  Recno: 14
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : STUDENTS
+  Legacy name()       : STUDENTS
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/x32/students.cnx (MAJOR)
+  Active tag  : MAJOR
+50000013 | Smith | Isabella | 19900215 | ACCT | 3.58
+RECNO MAJOR    LNAME                FNAME           SID
+
+ 14 ACCT     Smith                Isabella        50000013
+ 45 ACCT     Clark                Taylor          50000044
+ 58 ACCT     Garcia               Mia             50000057
+ 68 ACCT     Martinez             Taylor          50000067
+ 73 ACCT     Lewis                Taylor          50000072
+ 88 ACCT     Harris               Sophia          50000087
+104 ACCT     Moore                Evan            50000103
+114 ACCT     Clark                Adrien          50000113
+125 ACCT     Jackson              Evan            50000124
+127 ACCT     Miller               Mason           50000126
+10 record(s) listed (limit 10). Use SMARTLIST ALL to show more.
+;
+; --- MAKE DISPOSABLE X32 COPY ---
+Selected area 8.
+Current area: 8
+  File: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/STUDENTS.dbf  Recs: 200  Recno: 14
+Copied DBF to /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+COPY SIDECARS: none found.
+Closed.
+Opened students_x32_idxtest (v32) : Record count 200
+Valid Index/Indices   : CNX, INX
+Current area: 8 of {0..12}
+  File: students_x32_idxtest  Recs: 200  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : students_x32_idxtest
+  Legacy name()       : students_x32_idxtest
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  Order: NATURAL
+200
+50000000 | Taylor | Quinn | 19921225 | CSCI | 2.97
+;
+; --- CREATE/REINDEX INX ON LNAME ---
+INDEX: written: students_x32_idxtest_lname.inx (2INX, expr: LNAME, ASC)
+REINDEX INX
+  Index file   : /mnt/d/code/ccode/dottalkpp/data/INDEXES/x32/students_x32_idxtest_lname.inx
+  Tag expr     : LNAME
+REINDEX: wrote students_x32_idxtest_lname.inx  (2INX v2, expr: LNAME, ASC)
+Note: INX file was regenerated from its stored tag expression.
+SET INDEX: INX attached
+  students_x32_idxtest_lname.inx
+Current area: 8 of {0..12}
+  File: students_x32_idxtest  Recs: 200  Recno: 200
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : students_x32_idxtest
+  Legacy name()       : students_x32_idxtest
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/x32/students_x32_idxtest_lname.inx (LNAME)
+  Active tag  : (none)
+50000020 | Anderson | Taylor | 20050612 | ENGL | 2.74
+50000076 | Brown | Logan | 19950607 | CHEM | 2.31
+;
+; --- ASC/DESC UNDER ACTIVE INX ---
+Order: ASCENDING.
+50000020 | Anderson | Taylor | 20050612 | ENGL | 2.74
+Order: DESCENDING.
+50000156 | Wilson | Quinn | 19970409 | PSYC | 3.47
+;
+; --- CLEAR ORDER ---
+SET ORDER: cleared (physical order).
+Current area: 8 of {0..12}
+  File: students_x32_idxtest  Recs: 200  Recno: 157
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  DBF Flavor          : v32
+  Runtime kind        : v32
+  Logical name        : students_x32_idxtest
+  Legacy name()       : students_x32_idxtest
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/x32/students_x32_idxtest.dbf
+  Order: NATURAL
+50000000 | Taylor | Quinn | 19921225 | CSCI | 2.97
+;
+; --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
+Closed.
+ERASE: deleting 2 file(s) for table: students_x32_idxtest
+  Deleted: students_x32_idxtest.dbf
+  Deleted: students_x32_idxtest_lname.inx
+ERASE complete. Deleted: 2, Failed: 0
+; Suggested manual cleanup if needed:
+; ERASE students_x32_idxtest.dbf and students_x32_idxtest_lname.inx from X32 paths.
+; ============================================================
+; INDEX X32 INX/CNX SMOKE v2 DONE
+; ============================================================
+REGRESSION: running INDEX_X64
+  Script: index_v64_cdx_lmdb_smoke.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/index_v64_cdx_lmdb_smoke.dts
+; ============================================================
+; INDEX V64 CDX/LMDB SMOKE v2
+; ============================================================
+SETPATH: DBF = /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX
+SETPATH: INDEXES = /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX
+SETPATH: LMDB = /mnt/d/code/ccode/dottalkpp/data/LMDB/SANDBOX
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 12 area(s) closed.
+ERASE: Table not found: students_cdx_smoke.dbf
+;
+; --- OPEN ORIGINAL STUDENTS AND CONFIRM V64/CDX ---
+Opened students (v64) : Record count 215
+Valid Index/Indices   : CDX
+Auto-attached order: students.cdx (tag: SID)
+Current area: 0 of {0}
+  File: students  Recs: 215  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students
+  Legacy name()       : students
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students.cdx (SID)
+  Active tag  : SID
+# Name Type Len Dec
+- ---- ---- --- ---
+1 SID      N      8   0
+2 LNAME    C     20   0
+3 FNAME    C     15   0
+4 DOB      D      8   0
+5 GENDER   C      1   0
+6 MAJOR    C      4   0
+7 ENROLL_D D      8   0
+8 GPA      N      4   2
+9 EMAIL    C     40   0
+215
+50000000 | GRIMWOOD | Derald | 19921225 | CSCI | 3
+;
+; --- ATTACH CDX AND ORDER BY LNAME ---
+SET INDEX: CDX attached
+  Container: students.cdx
+  LMDB env : /mnt/d/code/ccode/dottalkpp/data/LMDB/SANDBOX/students.cdx.d
+Use SET ORDER TO TAG <tag>
+SET ORDER: CDX TAG 'LNAME' (ASC)
+Current area: 0 of {0}
+  File: students  Recs: 215  Recno: 21
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students
+  Legacy name()       : students
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students.cdx (LNAME)
+  Active tag  : LNAME
+50000021 | Lopez | Reese | 19970705 | BUSN | 3.33
+RECNO LNAME                FNAME           SID
+
+ 21 Lopez                Reese           50000021
+ 47 Moore                Jamie           50000047
+ 79 Thomas               Harper          50000079
+ 84 Rodriguez            Liam            50000084
+ 86 Ramirez              Emma            50000086
+113 Clark                Adrien          50000113
+137 Thompson             Logan           50000137
+163 Smith                Taylor          50000163
+180 Rodriguez            Alex            50000180
+ 17 Brown                Logan           50000016
+10 record(s) listed (limit 10). Use SMARTLIST ALL to show more.
+;
+; --- SEEK / FIND / LOCATE UNDER CDX ORDER ---
+Found at 12.
+50000011 | White | Ava | 19971017 | MATH | 2.45
+Found at 2.
+50000001 | Martin | Mason | 20050925 | CSCI | 3.59
+Located.
+50000113 | Clark | Adrien | 19861117 | ACCT | 2.04
+;
+; --- SWITCH ORDER TO SID ---
+SET ORDER: CDX TAG 'SID' (ASC)
+Current area: 0 of {0}
+  File: students  Recs: 215  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students
+  Legacy name()       : students
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students.cdx (SID)
+  Active tag  : SID
+50000000 | GRIMWOOD | Derald | 19921225 | CSCI | 3
+Found at 17.
+50000016 | Brown | Logan | 20070209 | COMM | 3.39
+;
+; --- MAKE DISPOSABLE COPY ---
+USE: 'students.dbf' is already open in current area 0.
+Copied DBF to /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+COPY SIDECARS: none found.
+Closed.
+Opened students_cdx_smoke (v64) : Record count 215
+Valid Index/Indices   : CDX
+Current area: 0 of {0}
+  File: students_cdx_smoke  Recs: 215  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students_cdx_smoke
+  Legacy name()       : students_cdx_smoke
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  Order: NATURAL
+215
+50000000 | GRIMWOOD | Derald | 19921225 | CSCI | 3
+;
+; --- BUILD/ATTACH CDX FOR DISPOSABLE COPY ---
+CDX: created: "/mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students_cdx_smoke.cdx"
+CDX ADDTAG: added 'SID'.
+CDX ADDTAG: added 'LNAME'.
+BUILDLMDB: target container /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students_cdx_smoke.cdx
+BUILDLMDB: LMDB env        /mnt/d/code/ccode/dottalkpp/data/LMDB/SANDBOX/students_cdx_smoke.cdx.d
+BUILDLMDB: mapsize         134217728 bytes (128 MiB)
+ [1] SID : OK
+ [2] LNAME : OK
+BUILDLMDB: done OK=2 tags rebuilt.
+CDX container   : /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students_cdx_smoke.cdx
+LMDB environment: /mnt/d/code/ccode/dottalkpp/data/LMDB/SANDBOX/students_cdx_smoke.cdx.d
+Mapsize         : 134217728 bytes (128 MiB)
+SET INDEX: CDX attached
+  Container: students_cdx_smoke.cdx
+  LMDB env : /mnt/d/code/ccode/dottalkpp/data/LMDB/SANDBOX/students_cdx_smoke.cdx.d
+Use SET ORDER TO TAG <tag>
+SET ORDER: CDX TAG 'LNAME' (ASC)
+Current area: 0 of {0}
+  File: students_cdx_smoke  Recs: 215  Recno: 205
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students_cdx_smoke
+  Legacy name()       : students_cdx_smoke
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  Order: ASCEND
+  Index file  : /mnt/d/code/ccode/dottalkpp/data/INDEXES/SANDBOX/students_cdx_smoke.cdx (LNAME)
+  Active tag  : LNAME
+RECNO LNAME                FNAME           SID
+
+205                                      50010004
+206                                      50010005
+211                                      50010008
+212                                      50010009
+213                                      50010010
+214                                      50010011
+215                                      50010012
+ 78 Anderson             Noah            50000078
+ 83 Anderson             Alex            50000083
+ 85 Anderson             Olivia          50000085
+10 record(s) listed (limit 10). Use SMARTLIST ALL to show more.
+;
+; --- MUTATE INDEXED FIELD AND VERIFY SEEK ---
+50010004 | "" | "" | "" | "" | ""
+50010004 | ZZZ_CDX_SMOKE | "" | "" | "" | ""
+;
+; --- SEEK MUTATED VALUE ---
+SET ORDER: CDX TAG 'LNAME' (ASC)
+Found at 205.
+50010004 | ZZZ_CDX_SMOKE | "" | "" | "" | ""
+;
+; --- RESTORE MUTATED FIELD ---
+50010004 | GRIMWOOD | "" | "" | "" | ""
+Found at 1.
+50000000 | GRIMWOOD | Derald | 19921225 | CSCI | 3
+;
+; --- CLEAR ORDER / PHYSICAL CHECK ---
+SET ORDER: cleared (physical order).
+Current area: 0 of {0}
+  File: students_cdx_smoke  Recs: 215  Recno: 1
+  DBF (abs)           : /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  DBF Flavor          : v64
+  Runtime kind        : v64
+  Logical name        : students_cdx_smoke
+  Legacy name()       : students_cdx_smoke
+  Path: /mnt/d/code/ccode/dottalkpp/data/DBF/SANDBOX/students_cdx_smoke.dbf
+  Order: NATURAL
+50000000 | GRIMWOOD | Derald | 19921225 | CSCI | 3
+50010012 | "" | "" | "" | "" | ""
+;
+; --- CLOSE; CLEANUP MAY NEED MANUAL FILE ERASE IF ERASE TABLE DOES NOT FIND COPY ---
+Closed.
+ERASE: deleting 3 file(s) for table: students_cdx_smoke
+  Deleted: students_cdx_smoke.dbf
+  Deleted: students_cdx_smoke.cdx
+  Deleted: students_cdx_smoke.cdx.d  (3 entries)
+ERASE complete. Deleted: 3, Failed: 0
+; Suggested manual cleanup if needed:
+; ERASE students_cdx_smoke.dbf and students_cdx_smoke.cdx / LMDB sidecars from SANDBOX paths.
+; ============================================================
+; INDEX V64 CDX/LMDB SMOKE v2 DONE
+; ============================================================
+REGRESSION: running X64_METRICS
+  Script: canaries\x64_matrix_metrics_boundary_canary.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\x64_matrix_metrics_boundary_canary.dts
+DOTSCRIPT: script not found.
+  - /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\x64_matrix_metrics_boundary_canary.dts -> /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\x64_matrix_metrics_boundary_canary.dts
+REGRESSION: running LANGUAGE
+  Script: canaries\language_shakedown_canary.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\language_shakedown_canary.dts
+DOTSCRIPT: script not found.
+  - /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\language_shakedown_canary.dts -> /mnt/d/code/ccode/dottalkpp/data/scripts/canaries\language_shakedown_canary.dts
+REGRESSION: running DOTSCRIPT_EXPR
+  Script: dotscript\dotscript_expr_regression.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\dotscript_expr_regression.dts
+DOTSCRIPT: script not found.
+  - /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\dotscript_expr_regression.dts -> /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\dotscript_expr_regression.dts
+REGRESSION: running DOTSCRIPT_PARITY
+  Script: dotscript\predicate_memvar_parity_regression.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\predicate_memvar_parity_regression.dts
+DOTSCRIPT: script not found.
+  - /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\predicate_memvar_parity_regression.dts -> /mnt/d/code/ccode/dottalkpp/data/scripts/dotscript\predicate_memvar_parity_regression.dts
+REGRESSION: running LEXING
+  Script: lexing\comment_handling_regression.dts
+  Resolved: /mnt/d/code/ccode/dottalkpp/data/scripts/lexing\comment_handling_regression.dts
+DOTSCRIPT: script not found.
+  - /mnt/d/code/ccode/dottalkpp/data/scripts/lexing\comment_handling_regression.dts -> /mnt/d/code/ccode/dottalkpp/data/scripts/lexing\comment_handling_regression.dts
+. quit
+SHUTDOWN: processing /mnt/d/code/ccode/dottalkpp/bin/shutdown.ini
+derald@Grimwood:/mnt/d/code/ccode$ ./wsl_build_dottalkpp.sh
+-- Running vcpkg install
+Detecting compiler hash for triplet x64-linux...
+Compiler found: /usr/bin/c++
+The following packages will be built and installed:
+  * at-spi2-atk:x64-linux@2.38.0#1
+  * at-spi2-core:x64-linux@2.44.1#3
+  * atk:x64-linux@2.38.0#10
+  * brotli:x64-linux@1.1.0#1
+  * bzip2[core,tool]:x64-linux@1.0.8#6
+  * cairo[core,fontconfig,freetype,gobject,x11]:x64-linux@1.18.4
+  * curl[core,non-http,openssl,ssl]:x64-linux@8.16.0
+  * dbus[core,systemd]:x64-linux@1.16.2#2
+  * dirent:x64-linux@1.26
+  * egl-registry:x64-linux@2024-01-25
+  * expat:x64-linux@2.7.2
+  * fontconfig:x64-linux@2.15.0#4
+  * freetype[brotli,bzip2,core,png,zlib]:x64-linux@2.13.3
+  * fribidi:x64-linux@1.0.16
+  * gdk-pixbuf[core,jpeg,png,tiff]:x64-linux@2.42.12#4
+  * gettext[core,tools]:x64-linux@0.22.5#2
+  * gettext-libintl:x64-linux@0.22.5#3
+  * glib:x64-linux@2.84.2#2
+  * gperf:x64-linux@3.3
+  * gtk3:x64-linux@3.24.43#1
+  * harfbuzz[core,freetype]:x64-linux@11.3.3
+  * libcap:x64-linux@2.73#1
+  * libepoxy:x64-linux@1.5.10#2
+  * libffi:x64-linux@3.5.2
+  * libiconv:x64-linux@1.18#1
+  * libjpeg-turbo:x64-linux@3.1.1
+  * liblzma:x64-linux@5.8.1
+  * libmount:x64-linux@2.40
+  * libpng:x64-linux@1.6.50
+    libsodium:x64-linux@1.0.20#3
+  * libsystemd:x64-linux@257.8
+  * libuuid:x64-linux@1.0.3#15
+  * libwebp[core,libwebpmux,nearlossless,simd]:x64-linux@1.6.0#1
+  * libxcrypt:x64-linux@4.4.38#1
+  * libxml2[core,iconv,zlib]:x64-linux@2.14.6
+    lmdb:x64-linux@0.9.33
+  * lz4:x64-linux@1.10.0
+  * nanosvg:x64-linux@2023-12-29
+    nlohmann-json:x64-linux@3.12.0#1
+  * opengl:x64-linux@2022-12-04#3
+  * opengl-registry:x64-linux@2024-02-10#1
+  * openssl:x64-linux@3.5.3
+  * pango:x64-linux@1.56.1#2
+  * pcre2[core,jit,platform-default-features]:x64-linux@10.46
+  * pixman:x64-linux@0.44.2
+  * pthread:x64-linux@3.0.0#2
+  * pthreads:x64-linux@3.0.0#14
+  * sdl2[core,dbus,ibus,wayland,x11]:x64-linux@2.32.10
+    sqlite3[core,json1]:x64-linux@3.50.4
+  * tiff[core,jpeg,lzma,zip]:x64-linux@4.7.0
+    tvision:x64-linux@2024-05-22
+  * vcpkg-cmake:x64-linux@2024-04-23
+  * vcpkg-cmake-config:x64-linux@2024-05-23
+  * vcpkg-cmake-get-vars:x64-linux@2025-05-29
+  * vcpkg-make:x64-linux@2025-09-14
+  * vcpkg-tool-meson:x64-linux@1.9.0
+    wxwidgets[core,debug-support,sound]:x64-linux@3.3.1
+  * zlib:x64-linux@1.3.1
+  * zstd:x64-linux@1.5.7
+Additional packages (*) will be modified to complete this operation.
+Restored 59 package(s) from /home/derald/.cache/vcpkg/archives in 17 s. Use --debug to see more details.
+Installing 1/59 libsodium:x64-linux@1.0.20#3...
+Elapsed time to handle libsodium:x64-linux: 1.3 s
+libsodium:x64-linux package ABI: 59dce99f872c03c638934b703c7a17eed5979e30bfa9ea390169b016a27e8d5d
+Installing 2/59 vcpkg-cmake-config:x64-linux@2024-05-23...
+Elapsed time to handle vcpkg-cmake-config:x64-linux: 156 ms
+vcpkg-cmake-config:x64-linux package ABI: f9515a518735fbe48dc88498939479edf59482128808a60b47beb9eb169f0ab7
+Installing 3/59 vcpkg-cmake:x64-linux@2024-04-23...
+Elapsed time to handle vcpkg-cmake:x64-linux: 182 ms
+vcpkg-cmake:x64-linux package ABI: 123f04ca1e7689f16692037225749673fa3205cc92ddcf29a6b38b04b648459f
+Installing 4/59 lmdb:x64-linux@0.9.33...
+Elapsed time to handle lmdb:x64-linux: 309 ms
+lmdb:x64-linux package ABI: 98329bfa266c2d97fd40dd056ced300cb179c05accb7db43a99ceb42a07adf7f
+Installing 5/59 nlohmann-json:x64-linux@3.12.0#1...
+Elapsed time to handle nlohmann-json:x64-linux: 1.1 s
+nlohmann-json:x64-linux package ABI: 4edee74115c699cb1381e17a5ada64952e62acc4bc7069a6977d3d6b827fca51
+Installing 6/59 sqlite3[core,json1]:x64-linux@3.50.4...
+Elapsed time to handle sqlite3:x64-linux: 439 ms
+sqlite3:x64-linux package ABI: 2329dd847997b649d7ef92acaa8adb3ac276092d74b264611e2c404c0d9cc4e0
+Installing 7/59 tvision:x64-linux@2024-05-22...
+Elapsed time to handle tvision:x64-linux: 1.8 s
+tvision:x64-linux package ABI: e9a65a906dcf751e93865540b222b36ca9ed08ed2b6ee319d64f92a8aaa70733
+Installing 8/59 zstd:x64-linux@1.5.7...
+Elapsed time to handle zstd:x64-linux: 439 ms
+zstd:x64-linux package ABI: 8f95140625a5b522d0abb7939a549c19480bfd98e98d864bf44627ca090816c0
+Installing 9/59 vcpkg-cmake-get-vars:x64-linux@2025-05-29...
+Elapsed time to handle vcpkg-cmake-get-vars:x64-linux: 209 ms
+vcpkg-cmake-get-vars:x64-linux package ABI: c00d8b60cae3fc89354ca37b6473d083852cf60a96b55f3684634fc925560f1a
+Installing 10/59 vcpkg-tool-meson:x64-linux@1.9.0...
+Elapsed time to handle vcpkg-tool-meson:x64-linux: 296 ms
+vcpkg-tool-meson:x64-linux package ABI: 75d426dd5f27ad69a5a27ae0b4f4505b5eaed5c206dd59556b46893699a0f6e6
+Installing 11/59 lz4:x64-linux@1.10.0...
+Elapsed time to handle lz4:x64-linux: 472 ms
+lz4:x64-linux package ABI: 72c3d5da2a6da77f092624395b21059ee152542dc4388b1ffe446420240cea2e
+Installing 12/59 vcpkg-make:x64-linux@2025-09-14...
+Elapsed time to handle vcpkg-make:x64-linux: 354 ms
+vcpkg-make:x64-linux package ABI: 382dc4226960c6fe545556cf2b607c75be78be54d68cb5d675204d7279212b7d
+Installing 13/59 libxcrypt:x64-linux@4.4.38#1...
+Elapsed time to handle libxcrypt:x64-linux: 497 ms
+libxcrypt:x64-linux package ABI: 7a5482d9595a7a66b36cee7680fd4ca8b7841b3f475681f640d2b2b46c4b0e12
+Installing 14/59 libmount:x64-linux@2.40...
+Elapsed time to handle libmount:x64-linux: 436 ms
+libmount:x64-linux package ABI: 258a01d8f2f13b28677a0733920fde3a0e17eaa016aa9acdcd1c1f5131ec0f8f
+Installing 15/59 liblzma:x64-linux@5.8.1...
+Elapsed time to handle liblzma:x64-linux: 1.1 s
+liblzma:x64-linux package ABI: aa70acd066cd727ad23c15a6cb806b75169046271c6ae8ad570f553b5f9855da
+Installing 16/59 libcap:x64-linux@2.73#1...
+Elapsed time to handle libcap:x64-linux: 450 ms
+libcap:x64-linux package ABI: 29c58971bafce2599f6cfde48f8f708ab19105dd37605fe432a30a487b3a3971
+Installing 17/59 gperf:x64-linux@3.3...
+Elapsed time to handle gperf:x64-linux: 283 ms
+gperf:x64-linux package ABI: 7b9dcc949c45c0fd084f20e152c2e1c645ef25f9405f201f0cd6f191f636f09b
+Installing 18/59 libsystemd:x64-linux@257.8...
+Elapsed time to handle libsystemd:x64-linux: 696 ms
+libsystemd:x64-linux package ABI: a99f1550c76eb4a9fd14cb0414b766ecbf8decec1dc44d7b9d8a0f000c1fb0e3
+Installing 19/59 expat:x64-linux@2.7.2...
+Elapsed time to handle expat:x64-linux: 448 ms
+expat:x64-linux package ABI: 9795606d581ad8e3ffbf4bad43c4911b73d10be3605a2cac9529df448e3681cc
+Installing 20/59 dbus[core,systemd]:x64-linux@1.16.2#2...
+Elapsed time to handle dbus:x64-linux: 1.4 s
+dbus:x64-linux package ABI: 9c97167f81910eb1d49d21800ae39ccb7575d8366b78b8514cfeeb3a96a89c6f
+Installing 21/59 sdl2[core,dbus,ibus,wayland,x11]:x64-linux@2.32.10...
+Elapsed time to handle sdl2:x64-linux: 2 s
+sdl2:x64-linux package ABI: 4edc724f2d39661b754a7c70a2625758cd09ee372cb11d1c53983e93861b6c0d
+Installing 22/59 zlib:x64-linux@1.3.1...
+Elapsed time to handle zlib:x64-linux: 446 ms
+zlib:x64-linux package ABI: a0e1e1d1f6101ebf5b676c6cb54b711c3d412fb117aa481462497e95201e6f32
+Installing 23/59 libjpeg-turbo:x64-linux@3.1.1...
+Elapsed time to handle libjpeg-turbo:x64-linux: 673 ms
+libjpeg-turbo:x64-linux package ABI: c135f413bd2039964ff0d2a7be23e12695a9ce0be8fe5baed0d576a03f836e75
+Installing 24/59 tiff[core,jpeg,lzma,zip]:x64-linux@4.7.0...
+Elapsed time to handle tiff:x64-linux: 509 ms
+tiff:x64-linux package ABI: af0b1629ac05d6a3eea95abbd2af61800b282c1b18fcad28173634df5e56492b
+Installing 25/59 pcre2[core,jit,platform-default-features]:x64-linux@10.46...
+Elapsed time to handle pcre2:x64-linux: 2.5 s
+pcre2:x64-linux package ABI: 0425c83705d8bc18ca9b0ace1ba9e2f0fd78341181da553bff5c2d10c79a9ac8
+Installing 26/59 egl-registry:x64-linux@2024-01-25...
+Elapsed time to handle egl-registry:x64-linux: 306 ms
+egl-registry:x64-linux package ABI: eda5d78c65ef8c50e35ca3097c4822014f964014fc9dd5f1ae75ea0f4e9eb5b8
+Installing 27/59 opengl-registry:x64-linux@2024-02-10#1...
+Elapsed time to handle opengl-registry:x64-linux: 764 ms
+opengl-registry:x64-linux package ABI: feefcdc32c96909af39fb354c20d2097cf236c3c47366f274a4c0521e0adca57
+Installing 28/59 opengl:x64-linux@2022-12-04#3...
+Elapsed time to handle opengl:x64-linux: 245 ms
+opengl:x64-linux package ABI: ea8fa1f08b27000a31aa54aa4071c297d116ac24f9b60a24b71f86d907f61f3c
+Installing 29/59 nanosvg:x64-linux@2023-12-29...
+Elapsed time to handle nanosvg:x64-linux: 448 ms
+nanosvg:x64-linux package ABI: ef9e4620c4205862763d948c128c92166a252deb7e9e7df728b0b28060ed22eb
+Installing 30/59 libwebp[core,libwebpmux,nearlossless,simd]:x64-linux@1.6.0#1...
+Elapsed time to handle libwebp:x64-linux: 901 ms
+libwebp:x64-linux package ABI: ad1d8a2dceb575ca7e01e78bd9fcd28b79474f0dfea2e2e4b8fde0ce3913085a
+Installing 31/59 libpng:x64-linux@1.6.50...
+Elapsed time to handle libpng:x64-linux: 660 ms
+libpng:x64-linux package ABI: 93315906d312168df9919999dc93a0eaa31a9841d4a66f08ef1da1950605e524
+Installing 32/59 libiconv:x64-linux@1.18#1...
+Elapsed time to handle libiconv:x64-linux: 248 ms
+libiconv:x64-linux package ABI: b129c7bf85fe3411ffbe1d7334ae850436a7d1e7cdbd340482764578db925f91
+Installing 33/59 bzip2[core,tool]:x64-linux@1.0.8#6...
+Elapsed time to handle bzip2:x64-linux: 463 ms
+bzip2:x64-linux package ABI: e6a464a00500f0a52dda3ac67a7bba4f995bd423f9e92f799bb7b34139ad3bfa
+Installing 34/59 brotli:x64-linux@1.1.0#1...
+Elapsed time to handle brotli:x64-linux: 728 ms
+brotli:x64-linux package ABI: cd178872905e9ace03c665285c810399e8e3af3b8b07941864b5a70c7b054124
+Installing 35/59 freetype[brotli,bzip2,core,png,zlib]:x64-linux@2.13.3...
+Elapsed time to handle freetype:x64-linux: 1.5 s
+freetype:x64-linux package ABI: 31ae08cdf2b787426a05200d97d61041e05345c7bfa99835c65980bb23206ffe
+Installing 36/59 harfbuzz[core,freetype]:x64-linux@11.3.3...
+Elapsed time to handle harfbuzz:x64-linux: 2.3 s
+harfbuzz:x64-linux package ABI: 6471bcda5d3e1dadb9511353c02a5d76ac6503d8d9b17dcd36614affe41c3be4
+Installing 37/59 libffi:x64-linux@3.5.2...
+Elapsed time to handle libffi:x64-linux: 513 ms
+libffi:x64-linux package ABI: a2d9538e9052e5436b0a7284564fca61cb750f82f098590ad05309eaf1bb838a
+Installing 38/59 gettext-libintl:x64-linux@0.22.5#3...
+Elapsed time to handle gettext-libintl:x64-linux: 268 ms
+gettext-libintl:x64-linux package ABI: 5b29e1c7883a2f40f7cae7433ca3a39b353f0d92f8311dd5a5865caeac8d1472
+Installing 39/59 gettext[core,tools]:x64-linux@0.22.5#2...
+Elapsed time to handle gettext:x64-linux: 3 s
+gettext:x64-linux package ABI: a22a239200c68d0038b008fd34867439654a5b79359953fcd1f6f3e7ca7abd49
+Installing 40/59 dirent:x64-linux@1.26...
+Elapsed time to handle dirent:x64-linux: 218 ms
+dirent:x64-linux package ABI: 227ebfa4bb1dc3a5511b18528c664ec5300daa76dde71970fa26453e20145402
+Installing 41/59 glib:x64-linux@2.84.2#2...
+Elapsed time to handle glib:x64-linux: 9.5 s
+glib:x64-linux package ABI: 9fa451323d7cef3c2868f08a431cb8cdd03f8aab2ee2e1912c57a510d8c4e0b4
+Installing 42/59 fribidi:x64-linux@1.0.16...
+Elapsed time to handle fribidi:x64-linux: 840 ms
+fribidi:x64-linux package ABI: 98696217db931003924f07bdcaae7a3d9d548cc6a5cd77ac5a6dad969c9a0950
+Installing 43/59 pthreads:x64-linux@3.0.0#14...
+Elapsed time to handle pthreads:x64-linux: 274 ms
+pthreads:x64-linux package ABI: 751c39fed0f941752d45d5587ecb127b208db90c1a9c77d583e3a0fa65b719ca
+Installing 44/59 pthread:x64-linux@3.0.0#2...
+Elapsed time to handle pthread:x64-linux: 260 ms
+pthread:x64-linux package ABI: bb22c76fff8b74db42794b872e618c4f93da7f536110e24b10cfd4d593baba36
+Installing 45/59 libuuid:x64-linux@1.0.3#15...
+Elapsed time to handle libuuid:x64-linux: 382 ms
+libuuid:x64-linux package ABI: 239e3defac04bfbd6dda0182b2f9dd7f6e5ed3d54fd77bb11bc271c04f869b7f
+Installing 46/59 fontconfig:x64-linux@2.15.0#4...
+Elapsed time to handle fontconfig:x64-linux: 1.4 s
+fontconfig:x64-linux package ABI: 8ee3ad1fb7734214894b465cfc2dfd4f2041312619a89676bb505762a52bad7b
+Installing 47/59 pixman:x64-linux@0.44.2...
+Elapsed time to handle pixman:x64-linux: 473 ms
+pixman:x64-linux package ABI: 8bb8fa841b425ecaff3670f0ccb9c38e2161ef0563115ae1f08431246632544f
+Installing 48/59 cairo[core,fontconfig,freetype,gobject,x11]:x64-linux@1.18.4...
+Elapsed time to handle cairo:x64-linux: 1.2 s
+cairo:x64-linux package ABI: b294ed3ddfb76b2edf1946285f380c2bbcbc8d1e1ba8220f5d382362b4404a44
+Installing 49/59 pango:x64-linux@1.56.1#2...
+Elapsed time to handle pango:x64-linux: 1.1 s
+pango:x64-linux package ABI: 511b1570f6172248bfff661f71dd5d9ac3ef537f4ff1682c42a694ba57cdba40
+Installing 50/59 libepoxy:x64-linux@1.5.10#2...
+Elapsed time to handle libepoxy:x64-linux: 445 ms
+libepoxy:x64-linux package ABI: 08818bc38cbeeb9915ac36b38532ee051d882a43b53f9a5fca5b9da114595fcd
+Installing 51/59 gdk-pixbuf[core,jpeg,png,tiff]:x64-linux@2.42.12#4...
+Elapsed time to handle gdk-pixbuf:x64-linux: 4.6 s
+gdk-pixbuf:x64-linux package ABI: b7005e3d5beb04fb81a7da94e80d0280f7a645b6fcd0a5ad57d65a2c6bccdc63
+Installing 52/59 atk:x64-linux@2.38.0#10...
+Elapsed time to handle atk:x64-linux: 5.3 s
+atk:x64-linux package ABI: 40f9c41a057845de49ec702b525e9179abc2ab0447f5d4697aa720c2f3ac8085
+Installing 53/59 libxml2[core,iconv,zlib]:x64-linux@2.14.6...
+Elapsed time to handle libxml2:x64-linux: 1.6 s
+libxml2:x64-linux package ABI: 9328fcbb06bb8eeafa3969c876aff591176897bf90bd804206663ae7f8b62d29
+Installing 54/59 at-spi2-core:x64-linux@2.44.1#3...
+Elapsed time to handle at-spi2-core:x64-linux: 1.8 s
+at-spi2-core:x64-linux package ABI: feec680fed56d82545d17660b19724ded42b17d58434782399d9551a7e4deeaa
+Installing 55/59 at-spi2-atk:x64-linux@2.38.0#1...
+Elapsed time to handle at-spi2-atk:x64-linux: 741 ms
+at-spi2-atk:x64-linux package ABI: dd8db94654b1d176a8c437a71f2df437d3e901e2a1f926af8fd38184d744182b
+Installing 56/59 gtk3:x64-linux@3.24.43#1...
+Elapsed time to handle gtk3:x64-linux: 30 s
+gtk3:x64-linux package ABI: 052eb0ea24aca2e372eca0fb9dd83d5562e104ab883a1ef8ba0973e9ae8622e9
+Installing 57/59 openssl:x64-linux@3.5.3...
+Elapsed time to handle openssl:x64-linux: 3.3 s
+openssl:x64-linux package ABI: 4d46423a743d7500aa53e21e8c1a0e17ad21cdb30b7704a9e016db88c25376a6
+Installing 58/59 curl[core,non-http,openssl,ssl]:x64-linux@8.16.0...
+Elapsed time to handle curl:x64-linux: 929 ms
+curl:x64-linux package ABI: ab63d5f6435141e1cace6d744dfb9c4a3c0f33f2730d4729deda92e0da7d8094
+Installing 59/59 wxwidgets[core,debug-support,sound]:x64-linux@3.3.1...
+Elapsed time to handle wxwidgets:x64-linux: 22 s
+wxwidgets:x64-linux package ABI: 5529cc620d3506da6a34862b263ddf6b4632fe3f07d763565cde4f9477fce7b5
+Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.
+Packages installed in this vcpkg installation declare the following licenses:
+(AFL-2.1 OR GPL-2.0-or-later)
+(BSD-3-Clause OR GPL-2.0-only)
+(FTL OR GPL-2.0-or-later)
+(LGPL-2.1-only OR MPL-1.1)
+Apache-2.0
+BSD-2-Clause
+BSD-3-Clause
+GPL-3.0-only
+GPL-3.0-or-later
+ISC
+LGPL-2.0-or-later
+LGPL-2.0-or-later WITH WxWindows-exception-3.1
+LGPL-2.1-or-later
+MIT
+MIT-Modern-Variant
+OLDAP-2.8
+Zlib
+blessing
+bzip2-1.0.6
+curl
+libpng-2.0
+libtiff
+libsodium provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(unofficial-sodium CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE unofficial-sodium::sodium)
+
+libsodium provides pkg-config modules:
+
+  # A modern and easy-to-use crypto library
+  libsodium
+
+lmdb provides CMake targets:
+
+  find_package(unofficial-lmdb CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE unofficial::lmdb::lmdb)
+
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+sqlite3 provides pkgconfig bindings.
+sqlite3 provides CMake targets:
+
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
+tvision provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(tvision CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE tvision::tvision)
+
+The package wxwidgets provides CMake targets:
+
+    find_package(wxWidgets CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE wx::core wx::base)
+
+All requested installations completed successfully in: 2 min
+-- Running vcpkg install - done
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- == Build vectors (AIF-044) ==
+--    areas=512 fields=256 rows=9223372036854775807 index_slots=5
+--    x64 record hard=16777216 advisory=65536
+--    x64 names default=128/128 max=256/256 table-buffer changes=10000 prompt='.'
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- dottalkpp: DOTTALK_WITH_DEV = ON
+-- dottalkpp: DOTTALK_WITH_TV  = ON
+-- dottalkpp: DOTTALK_WITH_GUI = OFF
+-- dottalkpp: DOTTALK_WITH_WX  = OFF
+-- Found nlohmann_json: /mnt/d/code/ccode/build-wsl/vcpkg_installed/x64-linux/share/nlohmann_json/nlohmann_jsonConfig.cmake (found version "3.12.0")
+-- Turbo Vision ENABLED for 'dottalkpp' via config-package.
+-- Index engine LMDB ENABLED for 'dottalkpp'.
+-- Developer tools ENABLED for 'dottalkpp'.
+-- Relations ENABLED for 'dottalkpp'.
+-- dottalk_bbsd (standalone BBS daemon) ENABLED.
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter
+-- Product package: DEVELOPMENT: 193 tracked files, 64569207 bytes
+-- ==== DotTalk++ / Build summary ====
+--   CMAKE_BUILD_TYPE      : Release
+--   DOTTALK_PROFILE       : DEV
+--   DOTTALK_MAX_AREA      : 256 (legacy/inert; engine uses build-vector areas=512)
+--   DOTTALK_WITH_DEV      : ON
+--   DOTTALK_EXTRA_DIAGN.  : ON
+--   DOTTALK_WITH_INDEX    : ON
+--   DOTTALK_INDEX_MODE    : LMDB
+--   DOTTALK_HAS_XINDEX    : ON
+--   DOTTALK_PRODUCT       : DEVELOPMENT
+--   DOTTALK_WITH_RELATIONS: ON
+--   DOTTALK_WITH_EDUCATION: ON
+--   xexpr found           : ON
+--   DOTTALK_WITH_TV       : ON
+--   DOTTALK_WITH_GUI      : OFF
+--   DOTTALK_WITH_WX       : OFF
+--   DOTTALK_TV_TESTS      : ON
+--   BUILD_PYDOTTALK       : OFF
+--   BUILD_TESTING         : ON
+--   version metadata      : v0.6 2026-07-30 b702b5a5 dirty=1
+--   TVISION_ROOT          : /mnt/d/code/ccode/../tvision
+--   VCPKG_ROOT            : /home/derald/vcpkg
+--   sqlite found          : ON
+--   sqlite origin         : official
+--   tvision found         : ON
+--   tvision origin        : config-package
+-- ===================================
+-- Configuring done (388.5s)
+-- Generating done (5.9s)
+-- Build files have been written to: /mnt/d/code/ccode/build-wsl
+[0/2] Re-checking globbed directories...
+[16/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cdx/cdx_file.cpp.o
+/mnt/d/code/ccode/src/cdx/cdx_file.cpp: In function ‘cdxfile::TagDirEntry cdxfile::to_entry(const TagInfo&)’:
+/mnt/d/code/ccode/src/cdx/cdx_file.cpp:221:16: warning: ‘void* memset(void*, int, size_t)’ clearing an object of non-trivial type ‘struct cdxfile::TagDirEntry’; use assignment or value-initialization instead [-Wclass-memaccess]
+  221 |     std::memset(&e, 0, sizeof(e));
+      |     ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+In file included from /mnt/d/code/ccode/src/cdx/cdx_file.cpp:11:
+/mnt/d/code/ccode/include/cdx/cdx.hpp:51:8: note: ‘struct cdxfile::TagDirEntry’ declared here
+   51 | struct TagDirEntry {
+      |        ^~~~~~~~~~~
+[23/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/area_banner.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/area_banner.hpp:19,
+                 from /mnt/d/code/ccode/src/cli/area_banner.cpp:13:
+/mnt/d/code/ccode/include/order_path_resolver.hpp: In function ‘std::string dottalk::order::slashify(std::string)’:
+/mnt/d/code/ccode/include/order_path_resolver.hpp:63:5: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+   63 |     for (auto& c: s) if (c=='\\') c='/'; return s;
+      |     ^~~
+/mnt/d/code/ccode/include/order_path_resolver.hpp:63:42: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+   63 |     for (auto& c: s) if (c=='\\') c='/'; return s;
+      |                                          ^~~~~~
+[28/555] Building CXX object src/CMakeFiles/dottalkpp.dir/bbs/bbs_store.cpp.o
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp: In function ‘bool dottalk::bbs::list_boards(const std::string&, std::vector<Board>&, std::string&)’:
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp:227:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  227 |         if (!a.gotoRec64(i)) continue; RowR r{a};
+      |         ^~
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp:227:40: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  227 |         if (!a.gotoRec64(i)) continue; RowR r{a};
+      |                                        ^~~~
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp: In function ‘bool dottalk::bbs::reply_to(const std::string&, uint64_t, const std::string&, uint64_t, int, uint64_t&, std::string&)’:
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp:333:45: warning: unused variable ‘w’ [-Wunused-variable]
+  333 |           if (rec) { a.gotoRec64(rec); RowW w{a, err};
+      |                                             ^
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp: In function ‘bool dottalk::bbs::project_governance(const std::string&, std::vector<Post>&, std::string&)’:
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp:369:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  369 |         if (!a.gotoRec64(i)) continue; RowR r{a};
+      |         ^~
+/mnt/d/code/ccode/src/bbs/bbs_store.cpp:369:40: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  369 |         if (!a.gotoRec64(i)) continue; RowR r{a};
+      |                                        ^~~~
+[40/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/app_smart_browser.cpp.o
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp: In lambda function:
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:182:9: warning: this ‘while’ clause does not guard... [-Wmisleading-indentation]
+  182 |         while(!s.empty()&&sp((unsigned char)s.back())) s.pop_back(); return s; };
+      |         ^~~~~
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:182:70: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘while’
+  182 |         while(!s.empty()&&sp((unsigned char)s.back())) s.pop_back(); return s; };
+      |                                                                      ^~~~~~
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp: In function ‘{anonymous}::PromptResult {anonymous}::dispatch(dottalk::DbTupleStream&, PagerState&, std::vector<StreamCtx>&, StreamCtx&)’:
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:246:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  246 |         if (limit < 1) limit = 1; if (limit > 100) limit = 100;
+      |         ^~
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:246:35: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  246 |         if (limit < 1) limit = 1; if (limit > 100) limit = 100;
+      |                                   ^~
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp: In function ‘void {anonymous}::run_smart_browser(std::istringstream&)’:
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:294:5: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  294 |     if (page_size <= 0) page_size = 20; if (page_size > 200) page_size = 200;
+      |     ^~
+/mnt/d/code/ccode/src/cli/app_smart_browser.cpp:294:41: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  294 |     if (page_size <= 0) page_size = 20; if (page_size > 200) page_size = 200;
+      |                                         ^~
+[58/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/app_simple_browser.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/app_simple_browser.cpp:120:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /usr/include/c++/13/stdexcept:39,
+                 from /usr/include/c++/13/system_error:43,
+                 from /usr/include/c++/13/bits/fs_fwd.h:35,
+                 from /usr/include/c++/13/filesystem:48,
+                 from /mnt/d/code/ccode/src/cli/app_simple_browser.cpp:99:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[59/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/browse/browse_filters.cpp.o
+/mnt/d/code/ccode/src/cli/browse/browse_filters.cpp: In function ‘dottalk::browse::filters::ForProgram dottalk::browse::filters::compile_for(const std::string&)’:
+/mnt/d/code/ccode/src/cli/browse/browse_filters.cpp:18:48: warning: missing initializer for member ‘dottalk::browse::filters::ForProgram::original_expr’ [-Wmissing-field-initializers]
+   18 |     if (expr.empty()) return ForProgram{nullptr};
+      |                                                ^
+/mnt/d/code/ccode/src/cli/browse/browse_filters.cpp:21:25: warning: missing initializer for member ‘dottalk::browse::filters::ForProgram::original_expr’ [-Wmissing-field-initializers]
+   21 |     return ForProgram{ce};
+      |                         ^
+[61/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_bang.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_bang.cpp: In function ‘void cmd_BANG(xbase::DbArea&, std::istringstream&)’:
+/mnt/d/code/ccode/src/cli/cmd_bang.cpp:131:20: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  131 |         std::system("/bin/sh");
+      |         ~~~~~~~~~~~^~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_bang.cpp:134:20: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  134 |         std::system(cmd.c_str());
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~
+[74/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_browsetui.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_browsetui.cpp: In function ‘void cmd_BROWSETUI(xbase::DbArea&, std::istringstream&)’:
+/mnt/d/code/ccode/src/cli/cmd_browsetui.cpp:666:24: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  666 |             std::system("cls");
+      |             ~~~~~~~~~~~^~~~~~~
+[83/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_calcwrite.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp: In function ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:393:38: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  393 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                      ^~~~
+In function ‘std::string {anonymous}::today_yyyymmdd()’,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:403:29:
+/mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:393:37: note: directive argument in the range [-2147481748, 2147483647]
+  393 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                     ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:393:37: note: directive argument in the range [-2147483647, 2147483647]
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /usr/include/c++/13/bits/locale_classes.h:40,
+                 from /usr/include/c++/13/bits/ios_base.h:41,
+                 from /usr/include/c++/13/iomanip:42,
+                 from /mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:67:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::string {anonymous}::today_yyyymmdd()’ at /mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:393:18,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_calcwrite.cpp:403:29:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 34 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[93/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_ddict.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_ddict.cpp:208:6: warning: ‘void {anonymous}::print_pending(const std::string&)’ defined but not used [-Wunused-function]
+  208 | void print_pending(const std::string& sub) {
+      |      ^~~~~~~~~~~~~
+[137/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_ersatz.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_ersatz.cpp: In function ‘std::filesystem::__cxx11::path {anonymous}::resolve_workspace_target(const std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_ersatz.cpp:591:32: warning: loop variable ‘ext’ creates a copy from type ‘const std::string’ {aka ‘const std::__cxx11::basic_string<char>’} [-Wrange-loop-construct]
+  591 |         for (const std::string ext : {std::string(".dtschema"), std::string(".dtschemas")})
+      |                                ^~~
+/mnt/d/code/ccode/src/cli/cmd_ersatz.cpp:591:32: note: use reference type to prevent copying
+  591 |         for (const std::string ext : {std::string(".dtschema"), std::string(".dtschemas")})
+      |                                ^~~
+      |                                &
+[141/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_lmdb_dump.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_lmdb_dump.cpp:314:19: warning: ‘void {anonymous}::throw_with_tip_named_db_not_found(const std::string&)’ defined but not used [-Wunused-function]
+  314 | [[noreturn]] void throw_with_tip_named_db_not_found(const std::string& name) {
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[171/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_replace_multi.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp: In function ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:351:38: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  351 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                      ^~~~
+In function ‘std::string {anonymous}::today_yyyymmdd()’,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:363:29:
+/mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:351:37: note: directive argument in the range [-2147481748, 2147483647]
+  351 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                     ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:351:37: note: directive argument in the range [-2147483647, 2147483647]
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:97:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::string {anonymous}::today_yyyymmdd()’ at /mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:351:18,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace_multi.cpp:363:29:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 34 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[173/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_relations.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_relations.cpp: In function ‘bool {anonymous}::ensure_dir_for(const std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_relations.cpp:250:13: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  250 |     ::system((std::string("mkdir -p \"") + dir + "\"").c_str());
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[182/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_replace.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/cmd_replace.cpp:111:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+/mnt/d/code/ccode/src/cli/cmd_replace.cpp: In function ‘bool {anonymous}::validate_field_value_for_store.constprop(const xbase::DbArea&, int, std::string&, std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_replace.cpp:366:38: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  366 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                      ^~~~
+In function ‘std::string {anonymous}::today_yyyymmdd()’,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace.cpp:384:29,
+    inlined from ‘bool {anonymous}::validate_field_value_for_store.constprop(const xbase::DbArea&, int, std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace.cpp:516:38:
+/mnt/d/code/ccode/src/cli/cmd_replace.cpp:366:37: note: directive argument in the range [-2147481748, 2147483647]
+  366 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d",
+      |                                     ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_replace.cpp:366:37: note: directive argument in the range [-2147483647, 2147483647]
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /mnt/d/code/ccode/src/cli/cmd_replace.cpp:88:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::string {anonymous}::today_yyyymmdd()’ at /mnt/d/code/ccode/src/cli/cmd_replace.cpp:366:18,
+    inlined from ‘bool {anonymous}::normalize_date_value(const std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace.cpp:384:29,
+    inlined from ‘bool {anonymous}::validate_field_value_for_store.constprop(const xbase::DbArea&, int, std::string&, std::string&)’ at /mnt/d/code/ccode/src/cli/cmd_replace.cpp:516:38:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 34 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[187/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_setpath_command.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:186:60: warning: multi-character character constant [-Wmultichar]
+  186 |     while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+      |                                                            ^~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:58: warning: multi-character character constant [-Wmultichar]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                                          ^~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:79: warning: multi-character character constant [-Wmultichar]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                                                               ^~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:100: warning: multi-character character constant [-Wmultichar]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                                                                                    ^~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:190:64: warning: multi-character character constant [-Wmultichar]
+  190 |         while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+      |                                                                ^~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp: In function ‘bool {anonymous}::is_setpath_usage_request(const std::string&)’:
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:186:57: warning: comparison is always false due to limited range of data type [-Wtype-limits]
+  186 |     while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+      |                                               ~~~~~~~~~~^~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:55: warning: comparison is always false due to limited range of data type [-Wtype-limits]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                              ~~~~~~~~~^~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:76: warning: comparison is always false due to limited range of data type [-Wtype-limits]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                                                   ~~~~~~~~~^~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:187:97: warning: comparison is always false due to limited range of data type [-Wtype-limits]
+  187 |     while (!t.empty() && (t.back() == ' ' || t.back() == '\\t' || t.back() == '\\r' || t.back() == '\\n')) t.pop_back();
+      |                                                                                        ~~~~~~~~~^~~~~~~~
+/mnt/d/code/ccode/src/cli/cmd_setpath_command.cpp:190:61: warning: comparison is always false due to limited range of data type [-Wtype-limits]
+  190 |         while (!t.empty() && (t.front() == ' ' || t.front() == '\\t')) t.erase(t.begin());
+      |                                                   ~~~~~~~~~~^~~~~~~~
+[229/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_tuptalk.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_tuptalk.cpp: In function ‘void {anonymous}::handle_export(std::istringstream&)’:
+/mnt/d/code/ccode/src/cli/cmd_tuptalk.cpp:335:26: warning: variable ‘as_tsv’ set but not used [-Wunused-but-set-variable]
+  335 |     bool as_csv = false, as_tsv = false;
+      |                          ^~~~~~
+In file included from /mnt/d/code/ccode/src/cli/cmd_tuptalk.cpp:108:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /usr/include/c++/13/bits/locale_classes.h:40,
+                 from /usr/include/c++/13/bits/ios_base.h:41,
+                 from /usr/include/c++/13/ios:44,
+                 from /usr/include/c++/13/istream:40,
+                 from /usr/include/c++/13/sstream:40,
+                 from /mnt/d/code/ccode/src/cli/cmd_tuptalk.hpp:12,
+                 from /mnt/d/code/ccode/src/cli/cmd_tuptalk.cpp:94:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[246/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/console_posix.cpp.o
+/mnt/d/code/ccode/src/cli/console_posix.cpp:22:20: warning: ‘kHeaderStyle’ defined but not used [-Wunused-variable]
+   22 | static const char* kHeaderStyle  = "\x1b[1;32m";    // bold green (for callers)
+      |                    ^~~~~~~~~~~~
+[248/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_wsreport.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_wsreport.cpp: In function ‘void {anonymous}::print_table_buffer_block(std::ostream&)’:
+/mnt/d/code/ccode/src/cli/cmd_wsreport.cpp:252:16: warning: type qualifiers ignored on cast result type [-Wignored-qualifiers]
+  252 |     if (slot > static_cast<decltype(slot)>(std::numeric_limits<int>::max())) {
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[255/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/cmd_where.cpp.o
+/mnt/d/code/ccode/src/cli/cmd_where.cpp:162:18: warning: ‘const {anonymous}::WhereInfo* where_active_for(const xbase::DbArea*)’ defined but not used [-Wunused-function]
+  162 | const WhereInfo* where_active_for(const xbase::DbArea* area)
+      |                  ^~~~~~~~~~~~~~~~
+[258/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/date/date_arith.cpp.o
+/mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp: In function ‘dottalk::date::Date8 dottalk::date::add_days(const Date8&, int)’:
+/mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:30:46: warning: ‘%02d’ directive output may be truncated writing between 2 and 10 bytes into a region of size between 0 and 3 [-Wformat-truncation=]
+   30 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d", y, m, d);
+      |                                              ^~~~
+In function ‘dottalk::date::Date8 dottalk::date::make_date8(int, int, int)’,
+    inlined from ‘dottalk::date::Date8 dottalk::date::add_days(const Date8&, int)’ at /mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:77:30:
+/mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:30:37: note: directive argument in the range [1, 2147483647]
+   30 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d", y, m, d);
+      |                                     ^~~~~~~~~~~~~~
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/src/cli/expr/date/date_arith.hpp:13,
+                 from /mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:11:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘dottalk::date::Date8 dottalk::date::make_date8(int, int, int)’ at /mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:30:18,
+    inlined from ‘dottalk::date::Date8 dottalk::date::add_days(const Date8&, int)’ at /mnt/d/code/ccode/src/cli/expr/date/date_arith.cpp:77:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 24 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[261/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/fn_custom.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/expr/fn_custom.cpp:19:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[270/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/fn_numeric.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/expr/fn_numeric.cpp:42:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[273/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/fn_string.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/expr/fn_string.cpp:18:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[277/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/fn_date.cpp.o
+In file included from /mnt/d/code/ccode/include/cli/expr/fn_date.hpp:28,
+                 from /mnt/d/code/ccode/src/cli/expr/fn_date.cpp:13:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[286/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/glue_xbase.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/expr/glue_xbase.cpp:22:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/include/cli/expr/glue_xbase.hpp:14,
+                 from /mnt/d/code/ccode/src/cli/expr/glue_xbase.cpp:11:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[292/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/fn_autoreg.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/fn_autoreg.cpp:22:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[303/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/rhs_eval.cpp.o
+In file included from /mnt/d/code/ccode/include/cli/expr/fn_date.hpp:28,
+                 from /mnt/d/code/ccode/src/cli/expr/rhs_eval.cpp:38:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[310/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/expr/value_eval.cpp.o
+In file included from /mnt/d/code/ccode/include/cli/expr/fn_date.hpp:28,
+                 from /mnt/d/code/ccode/src/cli/expr/value_eval.cpp:29:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[338/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/predicate_chain.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/predicate_chain.cpp:13:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/src/cli/predicate_chain.hpp:13,
+                 from /mnt/d/code/ccode/src/cli/predicate_chain.cpp:12:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[342/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/reference_collection.cpp.o
+In file included from /mnt/d/code/ccode/src/cli/reference_collection.cpp:22:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[352/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/relations_boot.cpp.o
+/mnt/d/code/ccode/src/cli/relations_boot.cpp: In function ‘void {anonymous}::save_default()’:
+/mnt/d/code/ccode/src/cli/relations_boot.cpp:218:13: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  218 |     ::system("mkdir -p .relations");
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+[363/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/xbase_error_codes.cpp.o
+/mnt/d/code/ccode/src/cli/xbase_error_codes.cpp:10:9: warning: #pragma once in main file
+   10 | #pragma once
+      |         ^~~~
+[373/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/shell.cpp.o
+/mnt/d/code/ccode/src/cli/shell.cpp:334:25: warning: ‘g_rel_refresh_suppress’ defined but not used [-Wunused-variable]
+  334 | static thread_local int g_rel_refresh_suppress = 0;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/shell.cpp:246:6: warning: ‘bool {anonymous}::read_command_multiline(std::istream&, std::string&)’ defined but not used [-Wunused-function]
+  246 | bool read_command_multiline(std::istream& in, std::string& out) {
+      |      ^~~~~~~~~~~~~~~~~~~~~~
+[383/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cli/zip_backend_win.cpp.o
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp: In function ‘dottalk::zip::Result dottalk::zip::detail::win_list_archive(const std::filesystem::__cxx11::path&, dottalk::zip::Listing*)’:
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp:165:64: warning: unused parameter ‘listing’ [-Wunused-parameter]
+  165 | Result win_list_archive(const fs::path& archive_path, Listing* listing)
+      |                                                       ~~~~~~~~~^~~~~~~
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp: At global scope:
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp:106:33: warning: ‘std::vector<std::__cxx11::basic_string<char> > dottalk::zip::detail::{anonymous}::split_lines_nonempty(const std::string&)’ defined but not used [-Wunused-function]
+  106 | static std::vector<std::string> split_lines_nonempty(const std::string& text)
+      |                                 ^~~~~~~~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp:101:20: warning: ‘std::string dottalk::zip::detail::{anonymous}::build_ps_command(const std::string&)’ defined but not used [-Wunused-function]
+  101 | static std::string build_ps_command(const std::string& ps_script)
+      |                    ^~~~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp:75:13: warning: ‘bool dottalk::zip::detail::{anonymous}::powershell_exists()’ defined but not used [-Wunused-function]
+   75 | static bool powershell_exists()
+      |             ^~~~~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/cli/zip_backend_win.cpp:47:19: warning: ‘dottalk::zip::detail::{anonymous}::ExecResult dottalk::zip::detail::{anonymous}::run_capture(const std::string&)’ defined but not used [-Wunused-function]
+   47 | static ExecResult run_capture(const std::string& cmd)
+      |                   ^~~~~~~~~~~
+[394/555] Building CXX object src/CMakeFiles/dottalkpp.dir/dli/browsetui_integration.cpp.o
+In file included from /mnt/d/code/ccode/src/dli/browsetui_integration.cpp:10:
+/mnt/d/code/ccode/include/dli/browsetui_integration.hpp: In constructor ‘dli::BrowsePaint::BrowsePaint(std::vector<int>, int, int, bool)’:
+/mnt/d/code/ccode/include/dli/browsetui_integration.hpp:51:10: warning: ‘dli::BrowsePaint::m_vt’ will be initialized after [-Wreorder]
+   51 |     bool m_vt = false;
+      |          ^~~~
+/mnt/d/code/ccode/include/dli/browsetui_integration.hpp:50:9: warning:   ‘int dli::BrowsePaint::mStatusY’ [-Wreorder]
+   50 |     int mStatusY = 0;
+      |         ^~~~~~~~
+/mnt/d/code/ccode/src/dli/browsetui_integration.cpp:16:1: warning:   when initialized here [-Wreorder]
+   16 | BrowsePaint::BrowsePaint(std::vector<int> cellXs, int width, int height, bool vt_capable)
+      | ^~~~~~~~~~~
+[402/555] Building CXX object src/CMakeFiles/dottalkpp.dir/cnx/cnx_file.cpp.o
+/mnt/d/code/ccode/src/cnx/cnx_file.cpp: In function ‘bool cnxfile::read_table_bind(CNXHandle*, TableBind&)’:
+/mnt/d/code/ccode/src/cnx/cnx_file.cpp:300:16: warning: ‘void* memset(void*, int, size_t)’ clearing an object of non-trivial type ‘struct cnxfile::TableBind’; use assignment or value-initialization instead [-Wclass-memaccess]
+  300 |     std::memset(&out, 0, sizeof(out));
+      |     ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+In file included from /mnt/d/code/ccode/src/cnx/cnx_file.cpp:20:
+/mnt/d/code/ccode/include/cnx/cnx.hpp:71:8: note: ‘struct cnxfile::TableBind’ declared here
+   71 | struct TableBind {
+      |        ^~~~~~~~~
+[411/555] Building CXX object src/CMakeFiles/dottalkpp.dir/dt/predicate/predicate_engine.cpp.o
+In file included from /mnt/d/code/ccode/src/dt/predicate/predicate_engine.cpp:21:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/include/dt/predicate/predicate_engine.hpp:12,
+                 from /mnt/d/code/ccode/src/dt/predicate/predicate_engine.cpp:19:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[415/555] Building CXX object src/CMakeFiles/dottalkpp.dir/dt/predicate/value_convert.cpp.o
+In file included from /mnt/d/code/ccode/src/dt/predicate/value_convert.cpp:17:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/include/dt/predicate/value_convert.hpp:12,
+                 from /mnt/d/code/ccode/src/dt/predicate/value_convert.cpp:15:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[416/555] Building CXX object src/CMakeFiles/dottalkpp.dir/edu/edu_ascii_table.cpp.o
+/mnt/d/code/ccode/src/edu/edu_ascii_table.cpp:77:13: warning: ‘std::string {anonymous}::upper_copy(std::string)’ defined but not used [-Wunused-function]
+   77 | std::string upper_copy(std::string s) {
+      |             ^~~~~~~~~~
+[425/555] Building CXX object src/CMakeFiles/dottalkpp.dir/ext/fn/fn_student_text_autoreg.cpp.o
+In file included from /mnt/d/code/ccode/src/ext/fn/fn_student_text_autoreg.cpp:15:
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:63:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   63 |         struct { int minArgs; int maxArgs; };
+      |                ^
+/mnt/d/code/ccode/include/cli/expr/fn_string.hpp:64:16: warning: ISO C++ prohibits anonymous structs [-Wpedantic]
+   64 |         struct { int min_args; int max_args; };
+      |                ^
+[427/555] Building CXX object src/CMakeFiles/dottalkpp.dir/edu/edu_normalize.cpp.o
+In file included from /mnt/d/code/ccode/src/edu/edu_normalize.cpp:67:
+/mnt/d/code/ccode/include/value_normalize.hpp: In function ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’:
+/mnt/d/code/ccode/include/value_normalize.hpp:138:50: warning: ‘%04d’ directive output may be truncated writing between 4 and 11 bytes into a region of size 9 [-Wformat-truncation=]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                  ^~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [-2147481648, 2147483647]
+  138 |                 std::snprintf(buf, sizeof(buf), "%04d%02d%02d", year, m, day);
+      |                                                 ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: directive argument in the range [1, 12]
+/mnt/d/code/ccode/include/value_normalize.hpp:138:49: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /usr/include/c++/13/bits/locale_classes.h:40,
+                 from /usr/include/c++/13/bits/ios_base.h:41,
+                 from /usr/include/c++/13/ios:44,
+                 from /usr/include/c++/13/istream:40,
+                 from /usr/include/c++/13/sstream:40,
+                 from /mnt/d/code/ccode/src/edu/edu_normalize.cpp:58:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::optional<std::__cxx11::basic_string<char> > util::normalize_date(std::string)’ at /mnt/d/code/ccode/include/value_normalize.hpp:138:30:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 25 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[468/555] Building CXX object src/CMakeFiles/dottalkpp.dir/identity/identity_dbf_store.cpp.o
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:160:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  160 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:160:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  160 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:175:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  175 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:175:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  175 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:186:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  186 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:186:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  186 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:199:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  199 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:199:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  199 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:208:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  208 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:208:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  208 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:218:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  218 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:218:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  218 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:229:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  229 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:229:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  229 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:244:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  244 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:244:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  244 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp: In lambda function:
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:259:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  259 |             if (!w.ok) return false; a.writeCurrent();
+      |             ^~
+/mnt/d/code/ccode/src/identity/identity_dbf_store.cpp:259:38: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  259 |             if (!w.ok) return false; a.writeCurrent();
+      |                                      ^
+[476/555] Building CXX object src/xbase/CMakeFiles/xbase.dir/field_codec.cpp.o
+/mnt/d/code/ccode/src/xbase/field_codec.cpp: In function ‘std::string xbase::fieldcodec::{anonymous}::dt_decode(const char*, std::size_t, const xbase::FieldDef&)’:
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:42: warning: ‘%02d’ directive output may be truncated writing between 2 and 10 bytes into a region of size between 7 and 12 [-Wformat-truncation=]
+  285 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d%02d%02d%02d", y, m, d, hh, mi, ss);
+      |                                          ^~~~
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:37: note: directive argument in the range [-617571504, 617571507]
+  285 |     std::snprintf(buf, sizeof(buf), "%04d%02d%02d%02d%02d%02d", y, m, d, hh, mi, ss);
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:37: note: using the range [-2147483648, 2147483647] for directive argument
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:37: note: directive argument in the range [0, 596]
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:37: note: directive argument in the range [0, 59]
+/mnt/d/code/ccode/src/xbase/field_codec.cpp:285:37: note: directive argument in the range [0, 59]
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/include/xbase/field_codec.hpp:24,
+                 from /mnt/d/code/ccode/src/xbase/field_codec.cpp:17:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::string xbase::fieldcodec::{anonymous}::dt_decode(const char*, std::size_t, const xbase::FieldDef&)’ at /mnt/d/code/ccode/src/xbase/field_codec.cpp:285:18:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 15 and 38 bytes into a destination of size 16
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[481/555] Building CXX object src/xindex/CMakeFiles/xindex.dir/bpt_backend.cpp.o
+In file included from /usr/include/c++/13/vector:62,
+                 from /mnt/d/code/ccode/include/xindex/key_common.hpp:12,
+                 from /mnt/d/code/ccode/include/xindex/bpt_backend.hpp:11,
+                 from /mnt/d/code/ccode/src/xindex/bpt_backend.cpp:10:
+In function ‘constexpr decltype (__comp((* __first1), (* __first2))) std::lexicographical_compare_three_way(_InputIter1, _InputIter1, _InputIter2, _InputIter2, _Comp) [with _InputIter1 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _InputIter2 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _Comp = __detail::_Synth3way]’,
+    inlined from ‘constexpr std::__detail::__synth3way_t<_T1> std::operator<=>(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&) [with _Tp = unsigned char; _Alloc = allocator<unsigned char>]’ at /usr/include/c++/13/bits/stl_vector.h:2061:52,
+    inlined from ‘bool xindex::KeyLess::operator()(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/include/xindex/key_common.hpp:22:18,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_upper_bound(_Const_Link_type, _Const_Base_ptr, const _Key&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:2000:28,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:1283:30,
+    inlined from ‘std::multimap<_Key, _Tp, _Compare, _Alloc>::const_iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Tp = long unsigned int; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_multimap.h:1000:32,
+    inlined from ‘virtual std::unique_ptr<xindex::Cursor> xindex::BptMemBackend::seek(const xindex::Key&) const’ at /mnt/d/code/ccode/src/xindex/bpt_backend.cpp:51:31:
+/usr/include/c++/13/bits/stl_algobase.h:1848:39: warning: ‘int __builtin_memcmp(const void*, const void*, long unsigned int)’ specified bound [9223372036854775808, 18446744073709551615] exceeds maximum object size 9223372036854775807 [-Wstringop-overread]
+ 1848 |                     = __builtin_memcmp(&*__first1, &*__first2, __blen) <=> 0;
+      |                       ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘constexpr decltype (__comp((* __first1), (* __first2))) std::lexicographical_compare_three_way(_InputIter1, _InputIter1, _InputIter2, _InputIter2, _Comp) [with _InputIter1 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _InputIter2 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _Comp = __detail::_Synth3way]’,
+    inlined from ‘constexpr std::__detail::__synth3way_t<_T1> std::operator<=>(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&) [with _Tp = unsigned char; _Alloc = allocator<unsigned char>]’ at /usr/include/c++/13/bits/stl_vector.h:2061:52,
+    inlined from ‘bool xindex::KeyLess::operator()(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/include/xindex/key_common.hpp:22:18,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_upper_bound(_Const_Link_type, _Const_Base_ptr, const _Key&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:2000:28,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:1283:30,
+    inlined from ‘std::multimap<_Key, _Tp, _Compare, _Alloc>::const_iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Tp = long unsigned int; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_multimap.h:1000:32,
+    inlined from ‘virtual std::unique_ptr<xindex::Cursor> xindex::BptMemBackend::scan(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/src/xindex/bpt_backend.cpp:57:31:
+/usr/include/c++/13/bits/stl_algobase.h:1848:39: warning: ‘int __builtin_memcmp(const void*, const void*, long unsigned int)’ specified bound [9223372036854775808, 18446744073709551615] exceeds maximum object size 9223372036854775807 [-Wstringop-overread]
+ 1848 |                     = __builtin_memcmp(&*__first1, &*__first2, __blen) <=> 0;
+      |                       ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[485/555] Building CXX object src/xindex/CMakeFiles/xindex.dir/bptree_backend.cpp.o
+In file included from /usr/include/c++/13/vector:62,
+                 from /mnt/d/code/ccode/include/xindex/key_common.hpp:12,
+                 from /mnt/d/code/ccode/include/xindex/bptree_backend.hpp:11,
+                 from /mnt/d/code/ccode/src/xindex/bptree_backend.cpp:10:
+In function ‘constexpr decltype (__comp((* __first1), (* __first2))) std::lexicographical_compare_three_way(_InputIter1, _InputIter1, _InputIter2, _InputIter2, _Comp) [with _InputIter1 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _InputIter2 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _Comp = __detail::_Synth3way]’,
+    inlined from ‘constexpr std::__detail::__synth3way_t<_T1> std::operator<=>(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&) [with _Tp = unsigned char; _Alloc = allocator<unsigned char>]’ at /usr/include/c++/13/bits/stl_vector.h:2061:52,
+    inlined from ‘bool xindex::KeyLess::operator()(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/include/xindex/key_common.hpp:22:18,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_upper_bound(_Const_Link_type, _Const_Base_ptr, const _Key&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:2000:28,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:1283:30,
+    inlined from ‘std::multimap<_Key, _Tp, _Compare, _Alloc>::const_iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Tp = long unsigned int; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_multimap.h:1000:32,
+    inlined from ‘virtual std::unique_ptr<xindex::Cursor> xindex::BPlusTreeBackend::seek(const xindex::Key&) const’ at /mnt/d/code/ccode/src/xindex/bptree_backend.cpp:110:31:
+/usr/include/c++/13/bits/stl_algobase.h:1848:39: warning: ‘int __builtin_memcmp(const void*, const void*, long unsigned int)’ specified bound [9223372036854775808, 18446744073709551615] exceeds maximum object size 9223372036854775807 [-Wstringop-overread]
+ 1848 |                     = __builtin_memcmp(&*__first1, &*__first2, __blen) <=> 0;
+      |                       ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘constexpr decltype (__comp((* __first1), (* __first2))) std::lexicographical_compare_three_way(_InputIter1, _InputIter1, _InputIter2, _InputIter2, _Comp) [with _InputIter1 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _InputIter2 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _Comp = __detail::_Synth3way]’,
+    inlined from ‘constexpr std::__detail::__synth3way_t<_T1> std::operator<=>(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&) [with _Tp = unsigned char; _Alloc = allocator<unsigned char>]’ at /usr/include/c++/13/bits/stl_vector.h:2061:52,
+    inlined from ‘bool xindex::KeyLess::operator()(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/include/xindex/key_common.hpp:22:18,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_upper_bound(_Const_Link_type, _Const_Base_ptr, const _Key&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:2000:28,
+    inlined from ‘std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::const_iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:1283:30,
+    inlined from ‘std::multimap<_Key, _Tp, _Compare, _Alloc>::const_iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::upper_bound(const key_type&) const [with _Key = std::vector<unsigned char>; _Tp = long unsigned int; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_multimap.h:1000:32,
+    inlined from ‘virtual std::unique_ptr<xindex::Cursor> xindex::BPlusTreeBackend::scan(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/src/xindex/bptree_backend.cpp:116:31:
+/usr/include/c++/13/bits/stl_algobase.h:1848:39: warning: ‘int __builtin_memcmp(const void*, const void*, long unsigned int)’ specified bound [9223372036854775808, 18446744073709551615] exceeds maximum object size 9223372036854775807 [-Wstringop-overread]
+ 1848 |                     = __builtin_memcmp(&*__first1, &*__first2, __blen) <=> 0;
+      |                       ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In function ‘constexpr decltype (__comp((* __first1), (* __first2))) std::lexicographical_compare_three_way(_InputIter1, _InputIter1, _InputIter2, _InputIter2, _Comp) [with _InputIter1 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _InputIter2 = __gnu_cxx::__normal_iterator<const unsigned char*, vector<unsigned char> >; _Comp = __detail::_Synth3way]’,
+    inlined from ‘constexpr std::__detail::__synth3way_t<_T1> std::operator<=>(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&) [with _Tp = unsigned char; _Alloc = allocator<unsigned char>]’ at /usr/include/c++/13/bits/stl_vector.h:2061:52,
+    inlined from ‘bool xindex::KeyLess::operator()(const xindex::Key&, const xindex::Key&) const’ at /mnt/d/code/ccode/include/xindex/key_common.hpp:22:18,
+    inlined from ‘std::pair<std::_Rb_tree_node_base*, std::_Rb_tree_node_base*> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_get_insert_equal_pos(const key_type&) [with _Key = std::vector<unsigned char>; _Val = std::pair<const std::vector<unsigned char>, long unsigned int>; _KeyOfValue = std::_Select1st<std::pair<const std::vector<unsigned char>, long unsigned int> >; _Compare = xindex::KeyLess; _Alloc = std::allocator<std::pair<const std::vector<unsigned char>, long unsigned int> >]’ at /usr/include/c++/13/bits/stl_tree.h:2149:32:
+/usr/include/c++/13/bits/stl_algobase.h:1848:39: warning: ‘int __builtin_memcmp(const void*, const void*, long unsigned int)’ specified bound [9223372036854775808, 18446744073709551615] exceeds maximum object size 9223372036854775807 [-Wstringop-overread]
+ 1848 |                     = __builtin_memcmp(&*__first1, &*__first2, __blen) <=> 0;
+      |                       ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[506/555] Building CXX object src/xindex/CMakeFiles/xindex.dir/__/cnx/cnx_file.cpp.o
+/mnt/d/code/ccode/src/cnx/cnx_file.cpp: In function ‘bool cnxfile::read_table_bind(CNXHandle*, TableBind&)’:
+/mnt/d/code/ccode/src/cnx/cnx_file.cpp:300:16: warning: ‘void* memset(void*, int, size_t)’ clearing an object of non-trivial type ‘struct cnxfile::TableBind’; use assignment or value-initialization instead [-Wclass-memaccess]
+  300 |     std::memset(&out, 0, sizeof(out));
+      |     ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+In file included from /mnt/d/code/ccode/src/cnx/cnx_file.cpp:20:
+/mnt/d/code/ccode/include/cnx/cnx.hpp:71:8: note: ‘struct cnxfile::TableBind’ declared here
+   71 | struct TableBind {
+      |        ^~~~~~~~~
+[543/555] Building CXX object src/tv/CMakeFiles/dottalk_tvui.dir/cmd_browsetui.cpp.o
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp: In function ‘void cmd_BROWSETUI(xbase::DbArea&, std::istringstream&)’:
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:725:24: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  725 |             std::system("cls");
+      |             ~~~~~~~~~~~^~~~~~~
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp: In function ‘bool prompt_value_for_field(Console&, int, int, xbase::DbArea&, int, const std::string&, char, int, int, std::string&)’:
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:291:46: warning: ‘%04d’ directive output may be truncated writing between 4 and 10 bytes into a region of size 9 [-Wformat-truncation=]
+  291 |             std::snprintf(buf, sizeof(buf), "%04d%02d%02d", y, m, d);
+      |                                              ^~~~
+In function ‘std::string normalize_date_YYYYMMDD(const std::string&)’,
+    inlined from ‘bool prompt_value_for_field(Console&, int, int, xbase::DbArea&, int, const std::string&, char, int, int, std::string&)’ at /mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:413:71:
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:291:45: note: directive argument in the range [1, 2147483647]
+  291 |             std::snprintf(buf, sizeof(buf), "%04d%02d%02d", y, m, d);
+      |                                             ^~~~~~~~~~~~~~
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:291:45: note: using the range [-2147483648, 2147483647] for directive argument
+/mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:291:45: note: using the range [-2147483648, 2147483647] for directive argument
+In file included from /usr/include/stdio.h:980,
+                 from /usr/include/c++/13/cstdio:42,
+                 from /usr/include/c++/13/ext/string_conversions.h:45,
+                 from /usr/include/c++/13/bits/basic_string.h:4109,
+                 from /usr/include/c++/13/string:54,
+                 from /mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:32:
+In function ‘int snprintf(char*, size_t, const char*, ...)’,
+    inlined from ‘std::string normalize_date_YYYYMMDD(const std::string&)’ at /mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:291:26,
+    inlined from ‘bool prompt_value_for_field(Console&, int, int, xbase::DbArea&, int, const std::string&, char, int, int, std::string&)’ at /mnt/d/code/ccode/src/tv/cmd_browsetui.cpp:413:71:
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:54:35: note: ‘__builtin___snprintf_chk’ output between 9 and 33 bytes into a destination of size 9
+   54 |   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 |                                    __glibc_objsize (__s), __fmt,
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   56 |                                    __va_arg_pack ());
+      |                                    ~~~~~~~~~~~~~~~~~
+[555/555] Linking CXX executable src/dottalkpp
+Built WSL binary and copied to:
+  /mnt/d/code/ccode/dottalkpp/bin-wsl/dottalkpp
+derald@Grimwood:/mnt/d/code/ccode$

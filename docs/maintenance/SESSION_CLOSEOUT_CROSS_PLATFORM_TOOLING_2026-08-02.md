@@ -193,15 +193,32 @@ Redaction is now opt-in and registry-driven via `redacted_boards:`, default empt
 
 ## 5. Still open
 
+Six items were open when this closeout was first written. Four closed later the same
+evening; the table records both states rather than being quietly overwritten, because
+what closed and what did not is the useful signal.
+
 | Item | State |
 |---|---|
-| `.gitattributes` -- LFS-manage the zips or drop LFS | maintainer decision; restore first |
-| Registry migration | tool ready and verified; not run on the live tree |
-| M3 `--strict` gate promotion | gates pass; promotion is a decision |
-| AIF-061 memo WAL | proposal filed; needs build + fault injection **against baseline first** |
-| `bbs_smoke.ps1` port | blocks PowerShell cleanup |
-| Site repo `.mdx` edits | separate repo, uncommitted |
-| Registries as DBF tables | raised, not decided -- see below |
+| `.gitattributes` -- LFS-manage the zips or drop LFS | **CLOSED** -- dropped LFS. Restored from `.git/lfs/objects` and committed as ordinary blobs. At 1-4 KB each LFS bought nothing, and pointer-without-attribute is what produced the phantom deletions. |
+| Registry migration | **CLOSED** -- run on the live tree. 71 records, zero lost/gained/changed, verified against a backup before acceptance. |
+| M3 `--strict` gate promotion | **CLOSED** -- `run_gates.py` is strict by default as of 2026-08-02, promoted on a measured clean tree (census 1046/1046; registry 185 citations, zero findings). `--advisory` remains for surveying a knowingly dirty tree. |
+| Evidence layer citations | **CLOSED** -- 6 unverifiable citations taken to 0: 3 cited-but-untracked artifacts added, 3 cross-repo site citations dropped (scope preserved as prose), 3 declared-but-missing lesson bodies written. |
+| AIF-061 memo WAL | open -- proposal filed; needs build + fault injection **against baseline first** |
+| `bbs_smoke.ps1` port | open -- blocks PowerShell cleanup |
+| Site repo `.mdx` edits | open -- separate repo, uncommitted |
+| Registries as DBF tables | open -- raised, not decided; see below |
+
+**What the four closures cost, and what they revealed.** None of them was the work
+originally estimated. The registry migration failed its own verify on the first live run
+(`gained=2`) and was right to -- two proofs had been authored as `.d` fragments before the
+migration that establishes the convention, so `merge` legitimately produced more records
+than the flat file held. The fix was to fold fragment-only records into the baseline
+*before* the backup, keeping verify at full strength rather than relaxing it.
+
+The `--strict` promotion is the one worth remembering. Coverage hit 100% on 2026-07-25 and
+had decayed to 99.4% by 2026-08-02 -- six files, no fault, just new work nobody re-ran the
+gate against. That decay curve, measured over eight days, is the argument for the
+promotion and it is the same argument `check_session_log_row.py` makes with its 33 percent.
 
 **The open architectural question.** The registry tooling is doing database work in Python
 against YAML: `registry_fragments` merges records, `dev_status` joins and reports,

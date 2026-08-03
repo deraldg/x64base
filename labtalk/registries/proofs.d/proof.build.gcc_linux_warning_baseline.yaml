@@ -1,0 +1,42 @@
+id: proof.build.gcc_linux_warning_baseline
+label: GCC/Linux build of x64base under WSL -- warning baseline
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/runs/20260730_wsl_gcc_build_warnings.txt
+item_id: labtalk/proofs/runs/20260730_wsl_gcc_build_warnings.txt
+return_code: 0
+related:
+- D:/code/ccode/src/cnx/cnx_file.cpp
+- D:/code/ccode/src/identity/identity_dbf_store.cpp
+- D:/code/ccode/include/value_normalize.hpp
+- D:/code/ccode/src/xbase/field_codec.cpp
+- D:/code/ccode/include/cli/expr/fn_string.hpp
+notes: >-
+  Captured 2026-07-30 building the tree under WSL with GCC 13. 94 warning lines across 16
+  classes, of which MSVC reports none -- so this is the only non-MSVC build evidence the
+  repository holds, for a project whose stated position is cross-platform C++ on
+  deliberately cross-compatible libraries.
+
+  Counts by class: pedantic 20, misleading-indentation 15, format-truncation 13,
+  unused-function 9, unused-result 6, type-limits 5, stringop-overread 5, multichar 5,
+  unused-variable 3, reorder 3, class-memaccess 3, missing-field-initializers 2, and one
+  each of unused-parameter, unused-but-set-variable, range-loop-construct,
+  ignored-qualifiers.
+
+  STATE IS runtime_observed BECAUSE THE COMPILER RAN AND THE TRANSCRIPT IS RETAINED. It
+  is emphatically NOT a claim that 94 defects exist. Two were spot-checked against
+  current source on 2026-08-02 and they landed on opposite sides: the
+  misleading-indentation hits in identity_dbf_store.cpp are COSMETIC -- an early-return
+  idiom written as `if (!w.ok) return false; a.writeCurrent();` on one line, whose
+  behaviour is correct and which GCC flags on formatting alone. The class-memaccess hit at
+  cnx_file.cpp:300 (memset over a TableBind) needs a real look, because cnx.hpp's
+  TableBind is plain POD and would be fine, while the warning names cnxfile::TableBind,
+  which may be a different type. Neither was resolved here.
+
+  WHAT THIS ARTIFACT IS FOR: a triage list nobody has worked, and a baseline. Re-running
+  the same build later and diffing the counts is the cheap way to see whether Linux
+  warnings are being added faster than they are being cleared. The file sat untracked at
+  the repository root until 2026-08-02, which is the AIF-062 failure mode exactly -- real
+  evidence present on disk and invisible to a clone.
+
+  Parked here rather than deleted at the maintainer's direction to clear the repo root.
+  Its former name was wsl_warnings.txt.
