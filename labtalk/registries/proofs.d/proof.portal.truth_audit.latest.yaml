@@ -5,8 +5,22 @@ source: D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.md
 item_id: doc.portal_truth_audit
 related:
 - D:/code/ccode/labtalk/reports/portal/portal_truth_audit_latest.json
-- D:/dev/x64base-site/content/docs/labtalk/sdlc.mdx
-- D:/dev/x64base-site/content/docs/labtalk/selfdoc-lane.mdx
-- D:/dev/x64base-site/content/docs/dev/selfdoc-website-publication.mdx
-notes: Captures the portal collection-of-truths audit across LabTalk registries, local proof records,
-  and x64base.com SelfDoc/SDLC publication pages.
+notes: >-
+  Captures the portal collection-of-truths audit across LabTalk registries, local proof
+  records, and x64base.com SelfDoc/SDLC publication pages.
+
+  AUDIT SCOPE INCLUDED THREE SITE PAGES, cited here until 2026-08-02:
+  content/docs/labtalk/sdlc.mdx, content/docs/labtalk/selfdoc-lane.mdx, and
+  content/docs/dev/selfdoc-website-publication.mdx -- all in the x64base-site repository.
+  They were dropped from `related:` because x64base-site has its OWN git, so those paths
+  can never resolve from a ccode clone. The validator was right to flag them and no work
+  in this repo could ever clear the finding. Recorded here as prose so the audit's scope
+  is not lost: the audit did cover the published site, and a reader who needs those pages
+  should look in the site repository, not for a missing file here.
+
+  The dropped entries also carried absolute D:/dev/... paths, which are machine-specific
+  and are the same shape stage_public.py refuses to publish.
+
+  If cross-repo citation is ever wanted as a first-class thing, the shape to reach for is
+  a `repo:` field (repo + relative path, optionally a pinned commit) rather than restoring
+  absolute paths.
