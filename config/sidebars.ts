@@ -69,6 +69,7 @@ export const docsSidebar: SidebarGroup[] = [
   {
     label: "Laboratory Campus",
     items: [
+      { label: "Academic Start Here", href: "/docs/labtalk/academic-start" },
       { label: "Overview", href: "/docs/labtalk/overview" },
       { label: "AI Portal — Alpha/Experimental", href: "/docs/labtalk/ai-portal" },
       { label: "AI Agent Sync — Live State", href: "/docs/labtalk/agent-sync" },
@@ -79,6 +80,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Lesson Platform", href: "/docs/labtalk/lessons" },
       { label: "LMS Communications Lane", href: "/docs/labtalk/lms-integration-lane" },
       { label: "Student Lessons", href: "/docs/labtalk/student-lessons" },
+      { label: "Guided Lesson: Records, Fields, Tables", href: "/docs/labtalk/lesson-records-fields-tables" },
       { label: "Career Lessons", href: "/docs/labtalk/career-lessons" },
       { label: "Suggest a Lesson", href: "/docs/labtalk/suggest-a-lesson" },
       { label: "Runtime Evidence Gallery", href: "/docs/labtalk/runtime-evidence" },

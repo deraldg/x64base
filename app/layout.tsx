@@ -56,9 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen">
         <div className="border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted">
-          This site is <span className="text-fg">AI-generated</span> from the x64base project
+          <span className="font-mono text-brand">WEBSITE ALPHA</span>
           {" · "}
-          <span className="font-mono text-brand">ALPHA</span>
+          <span className="text-fg">AI-assisted, source-reviewed documentation</span>
           {" · "}
           Updated {currentWork.as_of_date}
         </div>

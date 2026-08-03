@@ -1,0 +1,144 @@
+---
+title: "Guided Lesson: Records, Fields, and Tables"
+description: "A read-only introductory database lesson connecting DotTalk++ educational reference output to the STUDENTS table and explicit evidence boundaries."
+---
+
+**Status:** Guided draft with a runtime-observed conceptual foundation.
+
+**Audience:** Beginning database students, self-learners, and instructors.
+
+**Estimated time:** 30 to 45 minutes after the runtime and sample data are
+available.
+
+This lesson teaches the difference between a table, a record, a field, table
+structure, and current row state. It is the first public exemplar of the
+Laboratory Campus proof-aware lesson pattern.
+
+## Evidence Boundary
+
+The educational reference section was captured successfully by the registered
+proof `proof.lab.database_literacy_starter.first_run`.
+
+The table-backed section below is a documented, read-only extension based on
+the public Quickstart and command catalog. It was not part of that original
+registered first-run transcript. The lesson therefore remains a guided draft,
+not `student_ready`.
+
+## Learning Objectives
+
+By the end of the lesson, a learner should be able to:
+
+1. define table, record, and field in their own words;
+2. distinguish table structure from the values in a particular row;
+3. identify what `FIELDS`, `STRUCT`, and `LIST` reveal;
+4. explain why visible runtime output is evidence that must be interpreted;
+5. identify which part of the lesson is runtime-observed and which part is a
+   documented extension.
+
+## Prerequisites
+
+- Complete the public [Installation](/docs/getting-started/installation) and
+  [Quickstart](/docs/getting-started/quickstart).
+- Build the sample databases before opening `STUDENTS`.
+- Use a disposable copy for any later mutation exercise. This lesson itself is
+  read-only.
+
+## Part A: Establish the Vocabulary
+
+Start DotTalk++ and run:
+
+```text
+HELP /ED MODEL
+HELP /ED TABLE_RECORD_FIELD
+```
+
+Record the definitions returned by the runtime. The registered first-run proof
+observed the following relationships:
+
+- a table is a collection of records with a defined structure;
+- a record is one row in a table;
+- a field is one named value inside a record;
+- `STUDENTS` is a table, the current student is a record, and `SID`, `LNAME`,
+  `FNAME`, and `GPA` are example fields.
+
+## Part B: Inspect a Real Table
+
+Select the x64 sample-data lane before opening the table:
+
+```text
+DO X64
+USE STUDENTS
+FIELDS
+STRUCT
+LIST NEXT 5 FNAME, LNAME, MAJOR, GPA
+```
+
+These commands are read-only in this lesson:
+
+| Command | Observation target |
+| --- | --- |
+| `USE STUDENTS` | Establishes `STUDENTS` as the current work area. |
+| `FIELDS` | Lists field names, types, lengths, and decimal information for the current work area. |
+| `STRUCT` | Reports the table structure and available index/container information. |
+| `LIST NEXT 5 ...` | Displays values from five records using a selected field projection. |
+
+If the table cannot be found, confirm that the sample databases were built and
+that `DO X64` ran before `USE STUDENTS`.
+
+## Observation Worksheet
+
+Complete this table from the runtime output:
+
+| Question | Learner observation |
+| --- | --- |
+| What is the current table? | |
+| Name four fields and record their types. | |
+| What does `STRUCT` reveal that `LIST` does not? | |
+| What does `LIST` reveal that `FIELDS` does not? | |
+| Which output describes the table as a whole? | |
+| Which output shows values from individual records? | |
+
+## Assessment Questions
+
+1. Explain the difference between a table and a record without using the words
+   "file" or "row".
+2. If every record contains a `GPA` field, does that mean every record contains
+   the same GPA value? Explain.
+3. Why can table structure be inspected before choosing one record to discuss?
+4. Which command would you cite as evidence for a field's type and length?
+5. Which claims in this lesson are backed by the registered first-run proof,
+   and which rely on the documented table-backed extension?
+
+## Completion Evidence
+
+A completed learner record should include:
+
+- the two educational reference definitions;
+- the filled observation worksheet;
+- a short explanation of structure versus row values;
+- the DotTalk++ build or version used;
+- the selected data lane;
+- any unexpected output or setup failure.
+
+## Instructor Notes
+
+- Do not treat a successful screen display as evidence of learning by itself.
+- Ask learners to cite the command output supporting each answer.
+- Preserve unexpected results rather than coaching students to erase them.
+- Keep this lesson read-only. Mutation commands belong in a separate exercise
+  using disposable data and explicit reset instructions.
+- Compare observations across runtime versions only when the version and data
+  lane were recorded.
+
+## Provenance and Next Gate
+
+- Lesson registry ID: `lesson.student.records_fields_tables`
+- Lab ID: `lab.database_literacy.starter`
+- Registered proof: `proof.lab.database_literacy_starter.first_run`
+- Command evidence: [Command Catalog](/docs/dottalk/command-catalog)
+- Setup evidence: [Quickstart](/docs/getting-started/quickstart)
+- Visual evidence: [Runtime Evidence Gallery](/docs/labtalk/runtime-evidence)
+
+The next promotion gate is instructor review of the worksheet, expected output,
+accessibility, prerequisites, and HELP/CMDHELP readback. Until that review is
+recorded, this page remains a guided draft.

@@ -72,7 +72,7 @@ const quickLinks = [
   { title: "Developer handbook", href: "/docs/dev/developer-handbook" }
 ];
 
-const siteNoticeVersion = "Active beta — proof-gated SDLC";
+const siteNoticeVersion = "x64base engine: active beta / proof-gated SDLC";
 
 const openArchitectureLanes = [
   {
