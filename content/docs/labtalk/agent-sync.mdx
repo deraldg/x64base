@@ -18,7 +18,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-08-04c — reconciled with the current project/task registries
+> **Freshness:** 2026-08-04d — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -29,6 +29,8 @@ channel by which your answers are logged back onto this page.
 > logged the hosted-partner **Triggers PDLC v2** package return in the Pseudo-Chat log.
 > *Changed since 2026-08-04a:* logged a GitHub Copilot **return-lane PROTOCOL-TEST**
 > (branch-baseline rule validated on the Copilot surface; a test, not work).
+> *Changed since 2026-08-04c:* handed the **Triggers Phase-1 spike** to Grok as a
+> named-file PATCH-PACKAGE (proposal only, `src/**` NO-GO until maintainer build).
 
 ## Current tasks and projects
 
@@ -143,7 +145,7 @@ return lane below.
 | Q2 | Is workspace addressable in reference-surface syntax (`MCC.…`), or identity only? | Open — maintainer to settle. |
 | Q3 | Final namespace / location of the canonical value module | Open. |
 | Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
-| Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — hosted-partner docs package v2 delivered and compliant; awaiting maintainer sign-off + `claim-aif`. Phase-1 source is NO-GO until then. See Pseudo-Chat log. |
+| Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — Phase-0 SIGNED (A1 B1 C4 D2 E1 F3 G1), AIF-087 claimed; Phase-1 spike PATCH-PACKAGE handed off to Grok (named-file scope, proposal only). Stays Open until the spike builds and the C++ smoke passes. See Pseudo-Chat log. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -181,6 +183,29 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-04 -- TO Grok (xAI), RE: Q5 Triggers Phase-1 spike -- GO to draft the
+  PATCH-PACKAGE.** Phase-0 stays signed (A1 B1 C4 D2 E1 F3 G1); you are cleared to
+  draft the spike as a PROPOSAL only. **Re-baseline first:** run
+  `git ls-remote --heads https://github.com/deraldg/x64base.git`, baseline on the
+  current `development` tip, and cite that exact commit -- do NOT reuse `2948d0b45`
+  or `09bcaeb2`; the branch has advanced. **Build (spike scope):** fire the trigger
+  AFTER a successful `index_hooks::apply_replace` inside `replaceFieldStored`,
+  through a NEW dedicated per-`DbArea` trigger hook (D2) -- never `cursor_hook`
+  (single global slot, shell/TUI owned). Handler is a C++ callback only (C4); no
+  DotScript bodies. Do NOT fire on buffered edits (E1). Do NOT touch `SET POLLING`
+  / `pre_poll` / `post_poll`; POLLING stays diagnostics-only (F3). Prove it with a
+  C++ unit smoke (G1). **Named-file scope (only these):**
+  `include/xbase/trigger_hooks.hpp` (new), `src/xbase/trigger_hooks.cpp` (new),
+  `src/xbase/dbarea.cpp` (call site only -- fire after `apply_replace`),
+  `src/tests/<trigger smoke>`. **Do NOT touch:** `cursor_hook.*`,
+  `cmd_polling` / `SET POLLING`, `pre_poll` / `post_poll`, `cmd_trigger.cpp` (its
+  marker fix and the user-facing `TRIGGER` command are a separate maintainer-side
+  lane). **Deliver as:** a PATCH-PACKAGE of unified diffs against your cited
+  baseline (proposal, NO tree write), `access_mode: hosted_proposal`, its own
+  `report_id`, `AIF-087` (replace `AIF-NEXT`), ASCII only (`--` / `->`, no
+  em-dashes or smart quotes). **On return:** the maintainer reviews and cold-clone
+  builds before anything lands; `src/**` is NO-GO until then. Q5 stays Open until
+  the spike builds and the smoke passes.
 - **2026-08-04 -- TO Grok (xAI), RE: Q5 (Triggers PDLC).** Phase-0 is SIGNED and
   recorded on the maintainer tree. **Claimed AIF: AIF-087** (member.derald, run
   COWORK-20260804-001, lane triggers-pdlc). **Decisions: A1 B1 C4 D2 E1 F3 G1** --
