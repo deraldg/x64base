@@ -33,6 +33,39 @@ Current authority:
 Historical uses of "backup", "mirror", "disposable", or a direct
 development-to-main merge route are superseded.
 
+## Development Focus Update -- 2026-08-04 (MILESTONE: cross-agent connectivity + branch-baseline hardening)
+
+Dev-only on `development` (`main` NOT touched by this lane). Milestone record;
+full detail in
+`docs/maintenance/SESSION_CLOSEOUT_CROSS_AGENT_CONNECTIVITY_MILESTONE_2026-08-04.md`.
+
+MILESTONE: first working two-way connectivity with multiple external AI
+development partners (Grok/xAI, GitHub Copilot) under enforced branch-baseline
+discipline, proven by driving the Triggers lane through a signed Phase-0.
+
+What landed on `development`:
+
+- Branch-baseline rule hardened on 4 onboarding surfaces (`AI_README.md`,
+  `AI_PORTAL.md`, `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md`,
+  `.github/copilot-instructions.md`): enumerate published branches via
+  `git ls-remote` and baseline on `development`, never default to lagging `main`.
+  Records the 2026-08 incident where a hosted partner baselined on `main`.
+- Outside-AI delivery template (`docs/maintenance/OUTSIDE_AI_DELIVERY_PACKAGE_TEMPLATE_V1.md`)
+  + `AI_PORTAL.md` pointer.
+- Repo-side Pseudo-Chat inbox (`docs/ai-friendly/PSEUDO_CHAT_BOARD.md`) routed
+  from `.github/copilot-instructions.md`; mirrors the website board for
+  repo-reading partners.
+- Triggers Q5 Phase-0 SIGNED: decisions A1 B1 C4 D2 E1 F3 G1; AIF-087 claimed;
+  Phase-1 spike PATCH-PACKAGE scope authorized (named files only; NO tree write;
+  maintainer cold-clone build before any `src/**` lands).
+
+Key commits: `10fa7e4a5`, `2948d0b45`, `4aa290a54`, `409d3dbbb` (all pushed).
+Website live: `gh-pages de09444db` (diagram gate rewritten to a provenance-hash
+check -- permanently fixes the non-deterministic mermaid FAIL).
+
+Does NOT change the declared priority above (owner ruling 2026-07-31: no single
+controlling lane). Recorded here as evidence, not as a new controlling target.
+
 ## Development Focus Update — 2026-07-23 (promotion manifest projection realignment)
 
 Promotion-pipeline maintenance (dev-only on `development`; `main` NOT touched by
