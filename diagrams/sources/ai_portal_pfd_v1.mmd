@@ -1,0 +1,30 @@
+flowchart TD
+  start([AI session starts]):::term --> onboard[Onboard: read CLAUDE.md, git pull]
+  onboard --> claim[Claim AIF lane]
+  claim --> authp[Authenticate: token / AUTH<br/>acting member set]
+  authp --> work[Do work<br/>reasoning = short-term memory]
+  work --> writeq{Write to durable store?}
+
+  writeq -->|no, keep exploring| work
+  writeq -->|yes| rbacq{RBAC allows?<br/>agent_permitted + attribution}
+  rbacq -->|denied| work
+  rbacq -->|allowed| propose[Triage: agent PROPOSES<br/>worthy normalized slice]
+
+  propose --> confirmq{Owner confirms?<br/>hybrid promotion}
+  confirmq -->|no| work
+  confirmq -->|yes| normalize[Normalize on collect<br/>atomic, deduped, typed-linked]
+
+  normalize --> commit[Scoped per-path commit<br/>attributed to acting member]
+  commit --> gate{Pre-push gate<br/>role guard + AIF collision + normalization}
+  gate -->|block| fix[Fix / re-scope]
+  fix --> commit
+  gate -->|pass| publish[Publish: git push to development]
+  publish --> intake[File intake row<br/>rule-conforming, evidence-anchored]
+
+  intake --> more{More work this session?}
+  more -->|yes| work
+  more -->|no| endc([Session ends]):::term
+  endc --> decay[Unpromoted working memory decays;<br/>durable store persists human-side]
+  decay --> gfs[[Later: grandfather rollups<br/>session to weekly to quarter]]
+
+  classDef term fill:#eff6ff,stroke:#3b82f6;

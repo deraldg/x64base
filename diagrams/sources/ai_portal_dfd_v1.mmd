@@ -1,0 +1,47 @@
+flowchart LR
+  owner([Human Owner<br/>member.derald]):::ext
+  agent([AI Agents<br/>Claude / Codex / Grok]):::ext
+  model([Ollama model<br/>127.0.0.1:11434]):::ext
+
+  subgraph PORTAL[AI Portal processes]
+    auth[[1 Authenticate<br/>login / token AUTH]]
+    rbac[[2 RBAC resolve<br/>agent_permitted]]
+    bbs[[3 BBS read / post<br/>attributed, RBAC-gated]]
+    chat[[4 CHAT bridge<br/>agent to model]]
+    triage[[5 Triage / consolidate<br/>agent proposes, owner confirms]]
+    coord[[6 Coordination<br/>claim AIF + pre-push gate]]
+  end
+
+  idb[(Identity DBF store<br/>SYSMEMBER ROLE PERM GRANT)]:::store
+  bbsdb[(BBS DBF store<br/>boards threads posts)]:::store
+  git[(Git repo<br/>source + docs)]:::store
+  ledger[(AIF ledger + Intake queue)]:::store
+  mem[(Human-side memory<br/>docs / memory files)]:::store
+
+  owner -->|credentials| auth
+  agent -->|member + token| auth
+  auth -->|acting member| rbac
+  rbac <-->|roles / perms / grants| idb
+
+  agent -->|POST or READ| bbs
+  bbs -->|permission check| rbac
+  bbs -->|attributed post / read| bbsdb
+  bbs -->|governance view| idb
+
+  agent -->|prompt| chat
+  chat <-->|completion| model
+
+  agent -->|working memory| triage
+  bbs -.->|durable posts| triage
+  chat -.->|model exchange| triage
+  triage -->|confirm promotion| owner
+  triage -->|normalized, attributed| bbsdb
+  triage -->|curated docs| mem
+  triage -->|source / commits| git
+
+  agent -->|claim lane| coord
+  coord -->|claim + intake row| ledger
+  coord -->|scoped commit| git
+
+  classDef ext fill:#eff6ff,stroke:#3b82f6,color:#0f172a;
+  classDef store fill:#f0fdf4,stroke:#22c55e,color:#0f172a;

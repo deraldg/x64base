@@ -9,7 +9,7 @@
   "generator": "@mermaid-js/mermaid-cli@11.16.0",
   "generator_config": "diagrams/mermaid-config.json",
   "source_sha256": "a4599352974991e1e315fb9461934376f62483f27b328367b602cdf26defb9b1",
-  "output_sha256": "de9022f21dbee9ac3b12300f9a49bc34dd1a07487e8529af17fdd236d09e69f8",
+  "output_sha256": "3d6d7af51b03b10f0435e2a51b13cd68e06980cb8dc868d2128123784ba3b9ec",
   "truth_status": "source-derived",
   "review_status": "review-needed"
 }

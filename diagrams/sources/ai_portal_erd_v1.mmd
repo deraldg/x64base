@@ -1,0 +1,164 @@
+erDiagram
+  USER ||--o{ TEAM_MEMBER : "account for"
+  ROLE ||--o{ TEAM_MEMBER : "default role of"
+  ROLE ||--o{ ROLE_PERMISSION : grants
+  PERMISSION ||--o{ ROLE_PERMISSION : "included in"
+  TEAM_MEMBER ||--o{ MEMBER_ROLE : holds
+  ROLE ||--o{ MEMBER_ROLE : "assigned as"
+  TEAM_MEMBER ||--o{ MEMBER_PERM_OVERRIDE : has
+  PERMISSION ||--o{ MEMBER_PERM_OVERRIDE : "on"
+  TEAM_MEMBER ||--o{ TEAM_ASSIGNMENT : "assigned via"
+  ORG_UNIT ||--o{ TEAM_ASSIGNMENT : "in org"
+  WORK_NODE ||--o{ TEAM_ASSIGNMENT : "on work"
+  ROLE ||--o{ TEAM_ASSIGNMENT : "as role"
+  TEAM_ASSIGNMENT ||--o{ TEAM_ASSIGNMENT : reports_to
+  ORG_UNIT ||--o{ ORG_UNIT : parent
+  WORK_NODE ||--o{ WORK_NODE : parent
+  TEAM_MEMBER ||--o{ AUTH_GRANT : granted_to
+  TEAM_MEMBER ||--o{ AUTH_GRANT : requested_by
+  WORK_NODE ||--o{ AUTH_GRANT : scopes
+  REPORT ||--o{ AUTH_GRANT : source_report
+  BOARD ||--o{ THREAD : contains
+  THREAD ||--o{ POST : contains
+  BOARD ||--o{ POST : "posted on"
+  TEAM_MEMBER ||--o{ POST : authored
+  TEAM_MEMBER ||--o{ THREAD : opened
+  AUTH_GRANT ||--o{ POST : "ref_grant governance"
+  WORK_NODE ||--o| AIF_CLAIM : "lane claimed as"
+  TEAM_MEMBER ||--o{ AIF_CLAIM : claims
+  AIF_CLAIM ||--o| INTAKE_ROW : "recorded as"
+
+  USER {
+    UserId id PK
+    string key
+    string login_name
+    AuthKind auth_kind
+    string credential_ref
+    string profile_home_key
+    EntityStatus status
+  }
+  TEAM_MEMBER {
+    TeamMemberId id PK
+    UserId user_id FK
+    string key
+    MemberKind kind
+    RoleId default_role FK
+    EntityStatus status
+  }
+  ROLE {
+    RoleId id PK
+    string key
+    string name
+    string description
+  }
+  PERMISSION {
+    PermissionId id PK
+    string key
+    string resource_class
+    string action
+    RiskClass risk
+    bool requires_approval
+  }
+  ROLE_PERMISSION {
+    RoleId role FK
+    PermissionId permission FK
+  }
+  MEMBER_ROLE {
+    TeamMemberId member FK
+    RoleId role FK
+    OrgUnitId org_scope FK
+    WorkNodeId work_scope FK
+  }
+  MEMBER_PERM_OVERRIDE {
+    TeamMemberId member FK
+    PermissionId permission FK
+    OverrideEffect effect
+    OrgUnitId org_scope FK
+    WorkNodeId work_scope FK
+  }
+  ORG_UNIT {
+    OrgUnitId id PK
+    OrgUnitId parent FK
+    OrgUnitType type
+    string key
+    string name
+  }
+  WORK_NODE {
+    WorkNodeId id PK
+    WorkNodeId parent FK
+    WorkNodeType type
+    string project_key
+    string title
+    string status
+    string next_gate
+    string proof_state
+  }
+  TEAM_ASSIGNMENT {
+    AssignmentId id PK
+    TeamMemberId member FK
+    OrgUnitId org_unit FK
+    WorkNodeId work FK
+    RoleId role FK
+    AssignmentId reports_to FK
+    string assignment_kind
+  }
+  AUTH_GRANT {
+    AuthorizationId id PK
+    TeamMemberId requested_by FK
+    TeamMemberId granted_to FK
+    WorkNodeId work FK
+    string action_scope
+    GrantStatus status
+    uint64 granted_at
+    uint64 expires_at
+    string reason
+    string source_report_id
+  }
+  BOARD {
+    uint64 id PK
+    string bkey
+    string name
+    int kind
+    string postperm
+    int status
+  }
+  THREAD {
+    uint64 id PK
+    uint64 board_id FK
+    string subject
+    uint64 opened_by FK
+    int state
+    uint64 last_post
+  }
+  POST {
+    uint64 id PK
+    uint64 board_id FK
+    uint64 thread_id FK
+    uint64 author_id FK
+    int author_kind
+    string body
+    uint64 ref_grant FK
+    string run_id
+    uint64 post_at
+  }
+  AIF_CLAIM {
+    string aif PK
+    string run_id
+    string member
+    string lane
+    string claimed_utc
+  }
+  INTAKE_ROW {
+    string aif PK
+    string title
+    string tags
+    string anchors
+    string destinations
+    string status
+    string distilled_body
+  }
+  REPORT {
+    string report_id PK
+    string provider
+    string concept_alias
+  }

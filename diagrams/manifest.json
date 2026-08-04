@@ -93,6 +93,30 @@
       "upstream_authority": "ccode:labtalk/diagrams/important_documents_evidence_spine_v2.mmd",
       "truth_status": "governance-derived",
       "review_status": "reviewed"
+    },
+    {
+      "id": "ai-portal-erd-v1",
+      "source": "diagrams/sources/ai_portal_erd_v1.mmd",
+      "output": "public/images/portal/ai-portal-erd-v1.svg",
+      "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
+      "truth_status": "source-derived",
+      "review_status": "review-needed"
+    },
+    {
+      "id": "ai-portal-dfd-v1",
+      "source": "diagrams/sources/ai_portal_dfd_v1.mmd",
+      "output": "public/images/portal/ai-portal-dfd-v1.svg",
+      "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
+      "truth_status": "source-derived",
+      "review_status": "review-needed"
+    },
+    {
+      "id": "ai-portal-pfd-v1",
+      "source": "diagrams/sources/ai_portal_pfd_v1.mmd",
+      "output": "public/images/portal/ai-portal-pfd-v1.svg",
+      "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
+      "truth_status": "source-derived",
+      "review_status": "review-needed"
     }
   ]
 }
