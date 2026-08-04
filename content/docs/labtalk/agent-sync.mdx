@@ -18,16 +18,15 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-07-23a — reconciled with the current project/task registries
+> **Freshness:** 2026-08-04a — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
 >
-> *Changed since 2026-07-22a:* added the governed Current Tasks & Projects projection;
-> reconciled the full-stack documentation push, METACOLLECT mission, BETA-1,
-> script-contract, scan-I/O, ArcticTalk, and identity lanes. `USERS` and
-> `TEAM_MEMBER` are recorded as implemented parts of the active identity stack.
-> The palette-stub return remains held for correction.
+> *Changed since 2026-07-23a:* added the **remote-agent branch-baseline rule** to the
+> working agreement (baseline on `development`, not the `main` snapshot) after a partner
+> baselined trigger work on `main`; opened the **Triggers PDLC Phase-0** question (Q5);
+> logged the hosted-partner **Triggers PDLC v2** package return in the Pseudo-Chat log.
 
 ## Current tasks and projects
 
@@ -54,6 +53,14 @@ Current highlights:
   provisional-decisions list, and a hard stop before engine integration.
 - **Prove before you claim.** Status is PLANNED → PARTIAL → SUPPORTED only on runtime
   proof. Runtime proves, source defines, HELP explains.
+- **Baseline on `development`, not `main`.** Before choosing a baseline, enumerate the
+  published branches (`git ls-remote --heads https://github.com/deraldg/x64base.git`).
+  `main` is a lagging public snapshot; `development` is the richer, current integration
+  branch — baseline all feature, source, and prior-art work there and record its exact
+  commit. Do not default to `main` because it is the default branch. (Hardened 2026-08
+  after a partner baselined trigger work on the `main` snapshot and missed the richer
+  `development` surface.) Return packages with `access_mode: hosted_proposal` and a
+  proposed (not self-assigned) AIF number.
 
 ## Doctrine to honor
 
@@ -134,6 +141,7 @@ return lane below.
 | Q2 | Is workspace addressable in reference-surface syntax (`MCC.…`), or identity only? | Open — maintainer to settle. |
 | Q3 | Final namespace / location of the canonical value module | Open. |
 | Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
+| Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — hosted-partner docs package v2 delivered and compliant; awaiting maintainer sign-off + `claim-aif`. Phase-1 source is NO-GO until then. See Pseudo-Chat log. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -171,6 +179,18 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-04 — RE: Q5 (Triggers PDLC lane).** **Return:** hosted-partner docs
+  package **v2** (`report_id AIPR-20260804-001`, `access_mode: hosted_proposal`)
+  baselined on `development @ 09bcaeb2…`, `AIF-NEXT` (unclaimed), ASCII-clean.
+  **Phase-0 verdict (measured against the tree):** GO for docs intake + decisioning;
+  **NO-GO for Phase-1 source** until Decisions A–G are signed and the AIF is claimed.
+  **Findings:** `cmd_trigger.cpp` is a design stub with no handler; `SET POLLING` is the
+  live surface with `pre_poll`/`post_poll` print-only; `replaceFieldStored` wires
+  `index_hooks` but does not notify a `cursor_hook` (the trigger seam). **Assumptions:**
+  verified against `development @ 09bcaeb2…`; not build-run by the partner. **Disposition:**
+  docs package received; held pending the maintainer's gate run (prepush / house-style /
+  report-audit), `claim-aif`, and Phase-0 sign-off. Supersedes the non-compliant v1
+  (stale baseline, self-assigned AIF number, `access_mode: remote`), which is not final.
 - **2026-07-22 — RE: `task.build.palette_stub_parking.v1`.** **Decision:** returned
   for correction and held at intake; do not implement or promote the proposed parked
   fallback source. **Authoritative findings:** the configure-time generated palette stub
