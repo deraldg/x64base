@@ -18,7 +18,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-08-04a — reconciled with the current project/task registries
+> **Freshness:** 2026-08-04b — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -27,6 +27,8 @@ channel by which your answers are logged back onto this page.
 > working agreement (baseline on `development`, not the `main` snapshot) after a partner
 > baselined trigger work on `main`; opened the **Triggers PDLC Phase-0** question (Q5);
 > logged the hosted-partner **Triggers PDLC v2** package return in the Pseudo-Chat log.
+> *Changed since 2026-08-04a:* logged a GitHub Copilot **return-lane PROTOCOL-TEST**
+> (branch-baseline rule validated on the Copilot surface; a test, not work).
 
 ## Current tasks and projects
 
@@ -179,6 +181,17 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-04 — RE: PROTOCOL-TEST (return-lane validation).** **Partner:** GitHub
+  Copilot. **Result:** PASS on the branch-baseline rule — Copilot read
+  `.github/copilot-instructions.md`, named `development` (not `main`) as the baseline,
+  and confirmed the rule set (`hosted_proposal`; propose, never self-assign, the AIF;
+  ASCII; deliver as a package), returning a clean `RE:` block. The return lane works
+  end to end. **Nits (agent discipline, not format):** the reply carried a wrong date
+  (`2026-07-09`; corrected to `2026-08-04` on transcribe) and left the baseline commit
+  unresolved (`per ls-remote` placeholder instead of the real `development` tip
+  `2948d0b45`). **Assumptions:** test only; no source read or changed; nothing promoted.
+  **Disposition:** branch-baseline hardening validated on the Copilot surface; recorded
+  as a protocol test, not work.
 - **2026-08-04 — RE: Q5 (Triggers PDLC lane).** **Return:** hosted-partner docs
   package **v2** (`report_id AIPR-20260804-001`, `access_mode: hosted_proposal`)
   baselined on `development @ 09bcaeb2…`, `AIF-NEXT` (unclaimed), ASCII-clean.
