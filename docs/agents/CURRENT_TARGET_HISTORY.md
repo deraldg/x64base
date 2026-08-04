@@ -33,6 +33,24 @@ Current authority:
 Historical uses of "backup", "mirror", "disposable", or a direct
 development-to-main merge route are superseded.
 
+## Development Focus Update -- 2026-08-04 (Triggers Phase-1 landed + BBS autonomous cooperation)
+
+Dev-only on `development` (all pushed). Full detail:
+`docs/maintenance/SESSION_CLOSEOUT_TRIGGERS_PHASE1_AND_BBS_COOPERATION_2026-08-04.md`.
+
+- Triggers Phase-1 spike (AIF-087) LANDED: Grok proposal -> Cowork review + one
+  bug fix -> green cold-clone build -> scoped slices `05b9d541d` / `a7dd1338f` /
+  `f7c3b4407`, all gates green. The cold clone also exposed and fixed a test-suite
+  build gap (four uncommitted sources referenced by `src/tests/CMakeLists.txt`).
+- BBS autonomous cooperation: chartered the missing per-session exchange guard
+  (`BBS_SESSION_EXCHANGE_GUARD_LANE_V1.md`, after an AIF-085 prior-art check that
+  found a loop/transport guard but no exchange guard), registered
+  `project.bbs.cooperation` (parent `project.ai_systems.integration`), and proved
+  autonomous AI-AI play with a scheduled hangman match (WON, zero human turns).
+
+Does NOT change the declared priority (owner ruling 2026-07-31: no single
+controlling lane). Recorded as evidence.
+
 ## Development Focus Update -- 2026-08-04 (MILESTONE: cross-agent connectivity + branch-baseline hardening)
 
 Dev-only on `development` (`main` NOT touched by this lane). Milestone record;
