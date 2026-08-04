@@ -131,7 +131,7 @@ projects:
   - id: project.ai_systems.integration
     name: AI Systems Integration SDLC
     kind: sdlc_project
-    status: active_seed
+    status: m1_owner_review_pending_with_visibility_prototype
     root: D:/code/ccode
     owner: member.derald
     initial_steward: member.ai.codex.local
@@ -174,15 +174,63 @@ projects:
     docs:
       - docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md
       - docs/maintenance/AI_SYSTEMS_CROSSWALK_V1.md
+      - docs/maintenance/AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md
+      - docs/maintenance/AI_SYSTEMS_INTEGRATION_REQUIREMENTS_V1.md
       - docs/contracts/TRESPASS_AND_DELEGATED_AUTHORIZATION_CONTRACT_V1.md
       - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M0_2026-08-03.md
+      - docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_M1_2026-08-03.md
       - labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
     notes: >-
       Cross-system SDLC for integrating the AI Portal, onboarding, memory,
       reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and
       public projections. Incorporated lanes retain their original owners and
-      lifecycles. M0 is documentation and registration only; no runtime
+      lifecycles. M0 was owner-accepted on 2026-08-03. M1 requirements and
+      discovery are owner-review pending. A read-only dynamic localhost report
+      prototype is runtime-observed by explicit owner promotion; no runtime
       delegation, report publication, or public-site mutation is claimed.
+
+  - id: project.bbs.cooperation
+    name: BBS Cooperation Medium (participant-agnostic)
+    kind: integration_project
+    status: charter_with_autonomous_poc
+    root: D:/code/ccode
+    owner: member.derald
+    initial_steward: member.ai.claude.cowork
+    parent: project.ai_systems.integration
+    owning_lifecycle: ai_systems_integration_sdlc
+    sdlc_lane: design
+    lanes: [cooperation_medium, session_exchange_guard, autonomous_match, member_connectors]
+    related_aifs: [AIF-083, AIF-086]
+    pending_aif: session-exchange-guard (claim before any daemon source)
+    docs:
+      - docs/maintenance/BBS_SESSION_EXCHANGE_GUARD_LANE_V1.md
+      - docs/maintenance/BBS_AGENCY_LEGS_LANE_V1.md
+      - docs/ai-friendly/AGENCY_MODEL_V1.md
+      - docs/ai-friendly/PSEUDO_CHAT_BOARD.md
+    proofs:
+      - >-
+        Autonomous hangman match "hangman-auto-01": WON (word DATABASE, 4
+        exchanges, 1 wrong, ZERO human turns) via two Cowork scheduled tasks
+        (host + guesser) over a shared board file with an exchange_cap guard --
+        runtime-observed 2026-08-04. First proof of autonomous AI-AI cooperation
+        over the board.
+    notes: >-
+      One participant-agnostic cooperation medium over the AI-BBS / Pseudo-Chat
+      board: the same post/reply/attribution protocol serves AI-AI, AI-Human, and
+      Human-Human cooperation. SYSMEMBER.KIND already models Human/AI/Service/
+      External as peers, so the protocol is done; what differs per member is the
+      CONNECTOR (UI, loopback-direct via dottalk_bbsd, or human relay), an
+      attention/turn signal, and a per-session exchange guard. Prior-art check
+      (AIF-085 "already built?") found a runaway guard exists only for DotScript
+      loops (src/cli/cmd_loop.cpp clamp) and connection transport
+      (src/bbs/bbs_server.cpp idle/size/simplex guards), NOT for conversation
+      exchanges -- that missing primitive is chartered in
+      BBS_SESSION_EXCHANGE_GUARD_LANE_V1.md (map the session onto SYSTHREAD; reuse
+      the clamp-with-message + idle-timeout idioms). Recurring orchestration is a
+      daily "dealer" task that deals a word and arms the two player tasks, which
+      disarm themselves on game over -- the match-runner pattern. Daemon-side
+      source (bbs_server CHAT lane) is NO-GO until an AIF is claimed and Phase-0
+      is signed; core file, protected-adjacent.
 
   - id: project.pycrud
     name: pycrud Companion
