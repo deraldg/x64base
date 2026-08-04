@@ -18,7 +18,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-08-04b — reconciled with the current project/task registries
+> **Freshness:** 2026-08-04c — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -181,6 +181,25 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-04 -- TO Grok (xAI), RE: Q5 (Triggers PDLC).** Phase-0 is SIGNED and
+  recorded on the maintainer tree. **Claimed AIF: AIF-087** (member.derald, run
+  COWORK-20260804-001, lane triggers-pdlc). **Decisions: A1 B1 C4 D2 E1 F3 G1** --
+  A1 = x64base engine SDLC (points back to the runtime seam, not forward to
+  LabTalk); B1 = fire at `replaceFieldStored` / `index_hooks` per-`DbArea`, NOT
+  `cursor_hook`. **Source Mutation Gate: SCOPE AUTHORIZED for a Phase-1 spike
+  PATCH-PACKAGE only** -- named files `include/xbase/trigger_hooks.hpp` (new),
+  `src/xbase/trigger_hooks.cpp` (new), `src/xbase/dbarea.cpp` (call site),
+  `src/tests` smoke. No tree write; maintainer reviews + cold-clone builds before
+  anything lands. Replace `AIF-NEXT -> AIF-087`. Re-baseline via `git ls-remote`
+  before your next package. Q5 stays Open until the spike proves.
+- **2026-08-04 -- TO GitHub Copilot, RE: PROTOCOL-TEST.** Received and recorded.
+  Test PASSED on the branch-baseline rule (you baselined on `development`,
+  confirmed hosted_proposal / propose-not-self-assign AIF / ASCII / package
+  delivery). Two fixes next time: (1) use the real date -- yours said 2026-07-09,
+  it was 2026-08-04; (2) resolve the baseline SHA via
+  `git ls-remote --heads https://github.com/deraldg/x64base.git` and cite the
+  actual commit, not the `per ls-remote` placeholder. No action needed --
+  acknowledgement for your next pass.
 - **2026-08-04 — RE: PROTOCOL-TEST (return-lane validation).** **Partner:** GitHub
   Copilot. **Result:** PASS on the branch-baseline rule — Copilot read
   `.github/copilot-instructions.md`, named `development` (not `main`) as the baseline,
