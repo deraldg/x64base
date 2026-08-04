@@ -27,9 +27,9 @@ ai_report_audit:
 
 # Triggers Phase-0 -- Decisions A-G sign-off sheet (v1)
 
-Maintainer sign-off structure for the Triggers PDLC lane (Q5 on the Agent Sync
-page). This is a SKELETON: the hosted partner's Decisions A-G options memo slots
-into the "Options" column; the maintainer fills "Decision" and "Signed".
+Maintainer sign-off for the Triggers PDLC lane (Q5 on the Agent Sync page).
+Status: **SIGNED 2026-08-04** (AIF-087). A-G below carry the maintainer's chosen
+options and rationale; the Phase-1 spike scope is authorized (patch-package only).
 
 ## Hard gate
 
@@ -47,19 +47,19 @@ Phase-0 doctrine: prove/settle before building.
 
 ## Decisions
 
-Fill "Options" from the partner memo; maintainer sets "Decision" + "Signed".
-(A-G are placeholders until the partner memo lands; rename each to its real
-question. Do not invent decisions here.)
+SIGNED by member.derald, 2026-08-04, against the hosted partner (Grok/xAI)
+options memo (report AIPR-20260804-003/004), baseline development @ 2948d0b45.
+AIF-087 claimed (member.derald, run COWORK-20260804-001, lane triggers-pdlc).
 
-| # | Question (to be named from the partner memo) | Options (partner memo) | Decision (maintainer) | Signed (date) | Seam impact |
+| # | Question | Chosen | Decision (maintainer) | Signed | Seam impact |
 |---|---|---|---|---|---|
-| A |  |  |  |  |  |
-| B |  |  |  |  |  |
-| C |  |  |  |  |  |
-| D |  |  |  |  |  |
-| E |  |  |  |  |  |
-| F |  |  |  |  |  |
-| G |  |  |  |  |  |
+| A | Owning lifecycle | **A1** | DotTalk++/x64base engine SDLC primary. Triggers point back to the x64base runtime seam, not forward to LabTalk. Correct the stub `owning-lifecycle: labtalk_pdlc` -> x64base engine lifecycle (it already declares `project.x64base.runtime`). LabTalk teaching packaging is a deferred follow-on lane. | 2026-08-04 | none (ownership/lifecycle only) |
+| B | Fire-point attachment | **B1** | Immediate `replaceFieldStored` path only for Phase-1. | 2026-08-04 | fire after a successful `index_hooks::apply_replace` in `replaceFieldStored`, via a dedicated per-area trigger hook -- NOT `cursor_hook` (single global slot owned by shell/TUI). |
+| C | Body model | **C4** | C++ callback only in Phase-1; DotScript bodies deferred. | 2026-08-04 | handler is a C++ callback registered on the per-area hook. |
+| D | Scope unit | **D2** | Per `DbArea`. | 2026-08-04 | matches `index_hooks::capture(*this)` per-area model; avoids the global-single `cursor_hook`. |
+| E | TABLE BUFFER / ROLLBACK | **E1** | No fire on buffered edits yet (deferred). | 2026-08-04 | keeps `TABLE BUFFER`/COMMIT/ROLLBACK out of the seam; `dbarea.cpp` already excludes buffering from this direct-write path. |
+| F | POLLING relationship | **F3** | POLLING stays diagnostics-only; TRIGGERS are a separate data-mutation mechanism. | 2026-08-04 | `pre_poll`/`post_poll` are command-boundary print stubs (`shell.cpp` dispatch), a different layer from the xbase mutation seam. Do not overload `SET POLLING`. |
+| G | Proof shape | **G1** | C++ unit smoke for the spike. | 2026-08-04 | isolated smoke over the trigger hook at the `dbarea`/`index_hooks` level. |
 
 ## Candidate question areas (prompts, not decisions)
 
@@ -79,8 +79,21 @@ kinds of question a trigger feature must settle before code:
 
 ## Sign-off record
 
-- All A-G signed: [ ]  date: ______
-- AIF claimed: [ ]  assigned: AIF-____  (replaces AIF-NEXT in the partner package)
-- Phase-1 source unblocked: [ ]  date: ______
+- All A-G signed: [x]  date: 2026-08-04
+- AIF claimed: [x]  assigned: AIF-087  (replaces AIF-NEXT in the partner package)
+- Phase-1 source unblocked: [ ]  SCOPE authorized for a spike PATCH-PACKAGE only;
+  tree `src/**` stays NO-GO until the maintainer reviews + cold-clone-builds and applies.
 
-Until all three boxes are checked, the lane stays docs-only.
+## Phase-1 spike -- authorized named-file scope (Source Mutation Gate)
+
+Authorized for the hosted partner to draft as a PATCH-PACKAGE (proposal only; no
+tree write; maintainer reviews + cold-clone builds before anything lands):
+
+- `include/xbase/trigger_hooks.hpp`  (new) -- dedicated per-`DbArea` trigger hook
+- `src/xbase/trigger_hooks.cpp`       (new)
+- `src/xbase/dbarea.cpp`              (call site only: fire after successful `apply_replace`)
+- `src/tests/<trigger smoke>`         (G1 C++ smoke)
+
+Do NOT touch: `cursor_hook.*`, `cmd_polling` / `SET POLLING`, `pre_poll`/`post_poll`,
+`cmd_trigger.cpp` (its `owning-lifecycle` marker fix and the user-facing `TRIGGER`
+command are maintainer-side / a separate lane, per Decision A and the stub gate).
