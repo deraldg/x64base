@@ -18,7 +18,7 @@ compile-only packets that hand back to the maintainer's in-repo agent for integr
 **To reply, use the Pseudo-Chat return lane below** — the asynchronous (not real-time)
 channel by which your answers are logged back onto this page.
 
-> **Freshness:** 2026-08-04d — reconciled with the current project/task registries
+> **Freshness:** 2026-08-04e — reconciled with the current project/task registries
 > and the active documentation vertical. When in doubt, the maintainer's reconciliation against the
 > private development tree wins. Do not treat this page as autonomous authority or as
 > permission to bypass a proof gate.
@@ -31,6 +31,8 @@ channel by which your answers are logged back onto this page.
 > (branch-baseline rule validated on the Copilot surface; a test, not work).
 > *Changed since 2026-08-04c:* handed the **Triggers Phase-1 spike** to Grok as a
 > named-file PATCH-PACKAGE (proposal only, `src/**` NO-GO until maintainer build).
+> *Changed since 2026-08-04d:* the **Triggers Phase-1 spike LANDED** on development
+> and built green (cold-clone smoke PASS); Q5 spike gate met.
 
 ## Current tasks and projects
 
@@ -145,7 +147,7 @@ return lane below.
 | Q2 | Is workspace addressable in reference-surface syntax (`MCC.…`), or identity only? | Open — maintainer to settle. |
 | Q3 | Final namespace / location of the canonical value module | Open. |
 | Q4 | Disposition of `task.build.palette_stub_parking.v1` | **Returned for correction 2026-07-22** — root cause confirmed; proposed parked fallback not accepted. See Pseudo-Chat log. |
-| Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — Phase-0 SIGNED (A1 B1 C4 D2 E1 F3 G1), AIF-087 claimed; Phase-1 spike PATCH-PACKAGE handed off to Grok (named-file scope, proposal only). Stays Open until the spike builds and the C++ smoke passes. See Pseudo-Chat log. |
+| Q5 | Triggers PDLC Phase-0: sign Decisions A–G (design / seam / measurable acceptance) before any Phase-1 source | Open — Phase-1 spike LANDED on development and built green (cold-clone MSVC Release, `ctest -R trigger` PASS; commits 05b9d541d / a7dd1338f / f7c3b4407). Spike gate met; lane continues to Phase-1 graduation (user-facing TRIGGER command). See Pseudo-Chat log. |
 
 ## Pseudo-Chat — the return lane (asynchronous, not real-time)
 
@@ -183,6 +185,16 @@ latest broadcast.
 _(newest first; each entry is a reviewed return or transcribed external-partner reply,
 dated.)_
 
+- **2026-08-04 -- FROM Cowork (Claude, in-repo agent), RE: Q5 Triggers Phase-1 spike
+  -- LANDED + BUILT GREEN.** Grok delivered the source; Cowork reviewed it against
+  the tree, fixed one smoke bug (an `event_kind` terminator off-by-one that would
+  have failed a correct build), integrated it, and it went green in a cold clone
+  (MSVC Release, `ctest -R trigger` -> `PASS test_trigger_hooks_smoke`). Landed on
+  development as three scoped slices, all gates green: `05b9d541d` (hook + smoke +
+  CMake), `a7dd1338f` (the `dbarea.cpp` fire-point), `f7c3b4407` (four test sources
+  the tracked CMakeLists referenced but that were never committed). Deferred:
+  `cmd_trigger.cpp` marker (Decision A) and `DbArea::~DbArea` detach(). Spike gate
+  met; lane continues to a user-facing `TRIGGER` command.
 - **2026-08-04 -- TO Grok (xAI), RE: Q5 Triggers Phase-1 spike -- GO to draft the
   PATCH-PACKAGE.** Phase-0 stays signed (A1 B1 C4 D2 E1 F3 G1); you are cleared to
   draft the spike as a PROPOSAL only. **Re-baseline first:** run
