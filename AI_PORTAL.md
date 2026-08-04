@@ -178,10 +178,15 @@ github.com/deraldg/x64base
 
 GitHub is the public baseline, not authority over unpublished development work.
 An outside AI must identify the exact public commit on which its proposal is
-based. On origin, `main` is the stable public branch and `development` is the
-named integration branch (renamed on GitHub from the earlier dated
-`homegrown-cnx-20251112-branch`); confirm the checked-out branch locally before
-any Git decision. See `AI_README.md` for the authoritative remote/branch pointers.
+based. On origin, BOTH `main` and `development` are published: `main` is the
+lagging stable snapshot; `development` (renamed on GitHub from the earlier dated
+`homegrown-cnx-20251112-branch`) is the richer, current integration branch and
+the baseline for feature/source/prior-art work. A remote agent MUST enumerate
+branches (`git ls-remote --heads origin`) and baseline on `development` unless
+the maintainer names another branch -- do NOT default to `main` merely because it
+is the repository's default branch. Locally, also confirm the checked-out branch
+before any Git decision. See `AI_README.md` for the authoritative remote/branch
+pointers.
 
 ### External toolchain paths (agents stumble here)
 
@@ -566,6 +571,27 @@ conflict. Do not rewrite the contract merely to make a patch convenient.
 
 ## Outside-AI Delivery Rule
 
+### Baseline branch -- enumerate first, do NOT default to `main`
+
+Before reading source or writing any package, a hosted/remote agent MUST
+enumerate the published branches and baseline on the richer one:
+
+```
+git ls-remote --heads https://github.com/deraldg/x64base.git
+```
+
+`main` is a LAGGING public snapshot. `development` is ALSO published on GitHub
+and is the current, richer integration branch -- it is the authority baseline for
+feature, source, and prior-art work. Baseline on `development`, record its exact
+commit, and use `main` only if the maintainer names it for the task. "Confirm
+the branch; do not hard-code a transient name" means DISCOVER the branch, not
+assume `main`. Building a package against `main` without enumerating branches is
+a hard onboarding failure -- observed 2026-08: a hosted agent baselined trigger
+work on the `main` snapshot (`4c2b82bbd`) and missed the richer `development`
+surface (`@dottalk.pdlc` on `cmd_trigger.cpp`, `SET POLLING` notes, order/index
+hooks). If you cannot reconcile against `development`, say so explicitly and mark
+the package provisional; do not claim `main` == authority.
+
 Hosted AI systems do not modify `D:\code\ccode` directly. Return a reviewable
 change package tied to the stated commit. The package must contain:
 
@@ -887,6 +913,14 @@ the change-set list against the staged index (or a commit range). It hard-blocks
 build trees and binaries (exit 2), warns-and-requires-acknowledgement on
 data/fixture churn and oversized change sets (exit 3, cleared with
 `--allow-data` / `--allow-mass`), and passes on a clean source/docs/config slice.
+
+It also **delegates to eight further checks** -- AIF-number collision, portal
+report-hygiene, refcheck/normcheck catalog drift, and four AIF-082 portal gates
+-- two of which run only when the change set touches their surface, so the
+sections printed vary by commit. Order, severities, triggers, exit codes and
+known defects: **`docs/maintenance/PREPUSH_GATE_REFERENCE_V1.md`**. The gate
+inspects the **staged index**, never the working tree, and excludes deletions;
+a green gate says nothing about unstaged work.
 
 ```text
 python tools/staging/repository_role_guard.py        # check root and branch

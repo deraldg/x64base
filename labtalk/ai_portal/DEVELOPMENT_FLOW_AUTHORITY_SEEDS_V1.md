@@ -43,12 +43,13 @@ github.com/deraldg/x64base
   public projection / snapshot
 ```
 
-`C:\x64base` is **disposable staging, not a second authority.** It is
-regenerated from `D:\code\ccode` + `PROMOTE.manifest` by
-`tools/staging/rebuild-staging.ps1`, so an AI wiping it costs nothing. The
-mechanics of this — the allow-list manifest, the two-filter separation from
-`.gitignore`, and why development must keep its own git history — are in
-`PROMOTION_MODEL_SEED_V1.md`. Read it before changing how promotion works.
+`C:\x64base` is **sterilized publication staging, not a second authority.**
+It is rebuilt through the governed staging process from a verified public
+baseline plus reviewed promotion material. Rebuildable does not mean an AI may
+wipe, reset, clean, or repurpose it. The mechanics of the allow-list projection,
+source-promotion lane, preservation requirements, and why development keeps its
+own history are in `PROMOTION_MODEL_SEED_V1.md`. Read it before changing how
+promotion works.
 
 `C:\x64base` is not a competing development source. It receives the clean,
 relevant subset promoted from `D:\code\ccode`. Before committing, compare the
@@ -64,6 +65,30 @@ required source with `git ls-files` or the equivalent committed-blob check.
 
 The GitHub `main` branch is canonical for the current **public snapshot** only.
 It is not the authority over active development in `D:\code\ccode`.
+
+**Remote/hosted agents -- baseline on `development`, not `main`.** `development`
+is pushed to `origin` and is the richer, current branch; `main` lags it. A
+hosted AI that sees only GitHub MUST enumerate branches
+(`git ls-remote --heads origin`) and baseline feature/source/prior-art work on
+`development`, recording its exact commit. Do not treat `main` as authority
+merely because it is the default branch or the only branch checked. If you
+cannot reconcile against `development`, say so and mark the work provisional --
+do not claim `main` == authority. (Observed 2026-08: a hosted agent based
+trigger work on the `main` snapshot and missed the richer `development` surface.)
+
+Repository and branch roles are binding:
+
+- `D:\code\ccode` is the `development` authoring worktree and may push only
+  `development`.
+- `C:\x64base` is the sterilized `main` staging worktree and is the only local
+  workflow permitted to update GitHub `main`.
+- Never push `development:main` and never merge the `development` branch into
+  `main`. A reviewed source-promotion branch is created from `main` in staging;
+  it is not the development branch.
+- Run `python tools\staging\repository_role_guard.py` before commit or push.
+
+The durable rule is
+`docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`.
 
 ## Seed 3 — Public-Only Work Is Not Integrated Work
 

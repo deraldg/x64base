@@ -113,6 +113,27 @@ git branch --show-current
 git status --short
 ```
 
+### Remote / hosted agents -- MANDATORY branch enumeration
+
+If you cannot read `D:\code\ccode` (you are a hosted/remote AI seeing only GitHub
+and the website), you MUST enumerate the published branches before choosing a
+baseline. Do NOT default to `main`:
+
+```
+git ls-remote --heads https://github.com/deraldg/x64base.git
+```
+
+- `main` is a **lagging public snapshot**, not the authority for active work.
+- `development` is **also published on GitHub** and is the **richer, current**
+  integration branch -- the baseline for feature, source, and prior-art work.
+
+Baseline on `development` and record its exact commit; use `main` only if the
+maintainer names it for the task. "Confirm the branch; do not hard-code a
+transient name" means **discover** the branch, not assume `main`. Skipping
+enumeration and building against `main` is a hard onboarding failure (observed
+2026-08). If you cannot reconcile against `development`, say so explicitly and
+mark the work provisional -- never claim `main` == authority.
+
 Repository boundary pointers:
 
 - `docs/governance/README.md`
