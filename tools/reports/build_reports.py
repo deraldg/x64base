@@ -471,7 +471,7 @@ for l in qtxt.splitlines():
     if re.match(r'^\|\s*AIF-\d+', l):
         c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)>=6:
-            lane_rows[c[0]]={'title':c[1],'tags':c[2],'evidence':c[5] if len(c)>5 else '','notes':c[-1]}
+            lane_rows[c[0]]={'title':c[1],'tags':c[2],'anchor':c[4] if len(c)>4 else '','evidence':c[5] if len(c)>5 else '','notes':c[-1]}
 
 EV={'runtime-observed':'ok','runtime_observed':'ok','source-defined':'acc','source_defined':'acc',
     'design-intended':'warn','design-intended -- not started':'warn','draft':'warn','chat-intended':''}
@@ -514,6 +514,37 @@ for lane in sorted(by_lane, key=lambda x:(len(x),x)):
 lane_tbl=f"""<table><tr><th>Lane</th><th>What it is</th><th>Evidence</th>
 <th>Newest run (return here)</th></tr>{lrows}</table>"""
 
+# --- closed / documented-only lanes (owner request 2026-08-04): every intake-queue
+#     AIF NOT in current_by_lane, surfaced COLLAPSED and linked to its record, so
+#     nothing is hidden just because it is closed out. Additive; the active-lane
+#     table above is unchanged.
+_docpat=re.compile(r'([\w./-]+\.(?:md|csv|json|yaml|html|cpp|hpp|py))')
+_ghblob='https://github.com/deraldg/x64base/blob/development/'
+_inactive=[a for a in sorted(lane_rows, key=lambda x:(len(x),x)) if a not in by_lane]
+_crows=''
+for _a in _inactive:
+    _info=lane_rows[_a]
+    _title=re.sub(r',\s*(Cowork|Claude|Codex|Grok|ChatGPT)[^,]*$','',_info.get('title',''))
+    _m=_docpat.search(_info.get('anchor','')) or _docpat.search(_info.get('notes',''))
+    _claim=f'coordination/aif/{_a}.claim'
+    if _m and (ROOT/_m.group(1)).exists():
+        _rec=f'<a href="{_ghblob}{e(_m.group(1))}">{e(_m.group(1))}</a>'
+    elif _m:
+        _rec=f'<span class="pill warn">doc missing</span> <code>{e(_m.group(1))}</code>'
+        if (ROOT/_claim).exists(): _rec+=f' &middot; <a href="{_ghblob}{e(_claim)}">claim</a>'
+    elif (ROOT/_claim).exists():
+        _rec=f'<a href="{_ghblob}{e(_claim)}">{e(_claim)}</a>'
+    else:
+        _rec='<span class="pill warn">no record on disk</span>'
+    _crows+=f"""<tr><td><code>{e(_a)}</code></td>
+<td class="small">{e(_title) or '<span class="dim">--</span>'}</td>
+<td class="small">{_rec}</td></tr>"""
+closed_block=(f"""<details style="margin-top:10px"><summary style="cursor:pointer">
+<b>Closed / documented-only lanes ({len(_inactive)})</b> -- every AIF in the intake
+queue with no current run, linked to its record. Click to expand.</summary>
+<table style="margin-top:8px"><tr><th>Lane</th><th>What it is</th><th>Record</th></tr>
+{_crows}</table></details>""" if _inactive else '')
+
 # --- proofs
 prows=''
 for p in proofs:
@@ -555,7 +586,7 @@ r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
 <div class="kpi"><div class="n">{nsrc}</div><div class="l">Source-defined proofs</div></div>
 </div>"""
         + portal_map
-        + "<h2>Lanes -- and the newest run on each</h2>" + lane_tbl + howret
+        + "<h2>Lanes -- and the newest run on each</h2>" + lane_tbl + closed_block + howret
         + "<h2>Runs</h2>" + runcards
         + "<h2>Proof ledger</h2>" + proof_tbl)
 emit('AI_PORTAL_REPORT.html', r3)
