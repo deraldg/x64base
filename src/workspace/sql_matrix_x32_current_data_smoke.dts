@@ -1,0 +1,115 @@
+* ============================================================
+* SQL MATRIX X32 CURRENT-DATA SMOKE
+* ============================================================
+* Purpose:
+*   Concrete the decision that SQL/index shakedown scripts must use
+*   current generated MCC data, not old Grimwood/Derald test rows.
+*
+* Scope:
+*   Non-destructive.
+*   X32 data only.
+*   Uses current known TEACHERS and STUDENTS rows.
+*
+* Confirms:
+*   - WORKSPACE OPEN DBF uses configured X32 DBF slot.
+*   - SQL predicates work against current data.
+*   - CNX order activation does not break SQL scans.
+*   - Grimwood is only used as a negative-control test.
+*
+* Notes:
+*   Do not paste transcript output into this file.
+*   Do not include prompt dots.
+*   Do not end with RETURN.
+* ============================================================
+
+ECHO ============================================================
+ECHO SQL MATRIX X32 CURRENT-DATA SMOKE
+ECHO ============================================================
+
+ECHO
+ECHO --- SET X32 PATHS AND CLEAN WORKSPACE ---
+DO X32
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF
+WORKSPACE
+
+ECHO
+ECHO ============================================================
+ECHO TEACHERS CURRENT-DATA TESTS
+ECHO ============================================================
+
+SELECT TEACHERS
+AREA
+LIST 20
+
+ECHO
+ECHO --- TEACHERS / NATURAL ORDER ---
+TOP
+SQL FOR LNAME = Wilson
+SQL FOR LNAME = Wilson AND FNAME = Sam
+SQL FOR LNAME = White
+SQL FOR DEPT_ID = HIST
+SQL FOR TENURED = T
+
+ECHO
+ECHO --- TEACHERS / NEGATIVE CONTROL ---
+SQL FOR LNAME = Grimwood
+SQL FOR LNAME = Grimwood AND FNAME = Derald
+
+ECHO
+ECHO --- TEACHERS / CNX ORDER LNAME ---
+SETORDER teachers.cnx lname
+AREA
+TOP
+SQL FOR LNAME = Wilson
+SQL FOR LNAME = White
+SQL FOR DEPT_ID = HIST
+SQL FOR TENURED = T
+
+ECHO
+ECHO ============================================================
+ECHO STUDENTS CURRENT-DATA TESTS
+ECHO ============================================================
+
+SELECT STUDENTS
+AREA
+LIST 20
+
+ECHO
+ECHO --- STUDENTS / NATURAL OR CURRENT ORDER ---
+TOP
+SQL FOR LNAME = Taylor
+SQL FOR LNAME = Taylor AND FNAME = Quinn
+SQL FOR LNAME = Martin
+SQL FOR MAJOR = CSCI
+SQL FOR GPA >= 3.5
+SQL FOR GPA < 2.5
+
+ECHO
+ECHO --- STUDENTS / NEGATIVE CONTROL ---
+SQL FOR LNAME = Grimwood
+SQL FOR LNAME = Grimwood AND FNAME = Derald
+
+ECHO
+ECHO --- STUDENTS / CNX ORDER LNAME ---
+SETORDER students.cnx lname
+AREA
+TOP
+SQL FOR LNAME = Taylor
+SQL FOR LNAME = Martin
+SQL FOR MAJOR = CSCI
+SQL FOR GPA >= 3.5
+
+ECHO
+ECHO --- STUDENTS / CNX ORDER MAJOR ---
+SETORDER students.cnx major
+AREA
+TOP
+SQL FOR MAJOR = CSCI
+SQL FOR MAJOR = HIST
+SQL FOR GPA >= 3.5
+
+ECHO
+ECHO ============================================================
+ECHO SQL MATRIX X32 CURRENT-DATA SMOKE DONE
+ECHO ============================================================
