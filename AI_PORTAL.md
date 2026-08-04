@@ -610,6 +610,12 @@ the underlying DotTalk++, maintenance, or LabTalk SDLC gate.
 Do not include binaries, build directories, generated runtime data, unrelated
 formatting, cleanup, or branch operations.
 
+Use the fill-in template `docs/maintenance/OUTSIDE_AI_DELIVERY_PACKAGE_TEMPLATE_V1.md`.
+It pre-wires the `ai_report_audit` envelope (`access_mode: hosted_proposal`,
+required `git.branch` / `baseline_commit`), the ASCII rule (`--`, `->`), a
+proposed-AIF placeholder (no ledger collision), the Phase-0 go/no-go, the
+source-mutation preflight, and a self-verify return checklist.
+
 ## Staying Current — the Live Agent Sync Page (doc-only portal)
 
 Outside AI systems read GitHub, and this `AI_PORTAL.md` moves only on full engine
