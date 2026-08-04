@@ -112,3 +112,13 @@ if(TARGET xbase)
   target_include_directories(dottalkpp_trigger_hooks_smoke PRIVATE ${CMAKE_SOURCE_DIR}/include)
   add_test(NAME dottalkpp_trigger_hooks_smoke COMMAND dottalkpp_trigger_hooks_smoke)
 endif()
+
+# ---- Tracking schema-lint smoke (AIF-086 M1: DBF-native tracking layer) --------
+# Header-only lint over portal/tracking_schema.hpp (SYSLANE/SYSRUN/SYSRUNLANE/
+# SYSPROOF/SYSTASK): asserts physical names <=10, no duplicate fields, and every
+# 64-bit id/epoch field is N(20). No engine or DBF -- needs only the include path.
+add_executable(dottalkpp_tracking_schema_test
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_tracking_schema.cpp
+)
+target_include_directories(dottalkpp_tracking_schema_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME dottalkpp_tracking_schema_test COMMAND dottalkpp_tracking_schema_test)
