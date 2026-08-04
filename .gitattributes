@@ -23,6 +23,9 @@ scripts/** text=auto eol=lf
 *.ico   binary
 *.webp  binary
 *.svg   text eol=lf
+# Diagram provenance sidecars are generated JSON; pin to LF so they do not
+# CRLF-churn (which leaves a perpetually-dirty worktree and blocks publish).
+*.svg.provenance.json text eol=lf
 *.woff  binary
 *.woff2 binary
 *.ttf   binary
