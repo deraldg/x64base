@@ -288,6 +288,8 @@ zz_*
 /src/**/*.txt
 !/src/**/CMakeLists.txt
 !/src/AIPortal/**
+# src/url is a deliberate curated-URL home, not disposable prose -- track its .txt
+!/src/url/**
 /include/*.txt
 # pre-edit sidecars only -- NOT .patch or .dts, which are deliverables
 /src/**/*.before_image_web_defaults

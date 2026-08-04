@@ -1,0 +1,5 @@
+http://grimwood.family/x64base-site/
+https://app.diagrams.net/?src=about/
+https://uo-cs-oer.github.io/cs120-text
+https://www.oxfordreference.com/display/10.1093/oi/authority.20110803095621304?d=%2F10.1093%2Foi%2Fauthority.20110803095621304&p=emailAE9nCytNQuxx6&print
+https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview
