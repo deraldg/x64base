@@ -18,19 +18,26 @@
 // cannot.
 //
 // DESIGN RULE (carried from ruling_schema.hpp): TABLE = STATE, MARKDOWN = ARGUMENT.
-// Only short, machine-answerable fields live here (keys, ids, status, timestamps,
-// one-line pointers). The long prose -- the intake Notes cell, a proof's evidence
-// essay -- stays in the markdown it is good at, so these tables take NO dependency
-// on the deferred 64-bit memo work (AIF-070 / 082 6.10 / 083 F5).
+// Only short, machine-answerable fields live here; the long prose stays in the
+// markdown it is good at. So these tables take NO dependency on the deferred 64-bit
+// memo work (AIF-070 / 082 6.10 / 083 F5).
+//
+// KEY-FK DECISION (v1): attribution and cross-refs use NATURAL KEYS (member.mkey,
+// lane LKEY, run RKEY) as string FKs, NOT numeric SYSMEMBER/SYSLANE ids. Reason:
+// these tables are seeded from EXTERNAL authored data that has no engine ids, so a
+// key column loads 1:1 from CSV (IMPORT maps by column name) with no untestable
+// key->id resolution step. Keys are stable and classic-browsable; reports resolve
+// member details by joining SYSMEMBER on MKEY at read time. Numeric *ID columns are
+// a later enrichment once seeding is proven.
 //
 // Conventions mirror identity/bbs/ruling schema: physical names <= 10 chars; 64-bit
 // ids/epochs N(20,0) decimal text with 0 = unset; enums small N; bools L. Namespace
 // dottalk::portal::schema (alongside SYSRULING); stored under data/metadata/portal/.
 //
 // STATUS on the M ladder: schema authored + source-evidenced. NOT built, NOT
-// seeded, NO runtime -- a maintainer handoff (the steward's sandbox cannot run the
-// engine). Append-only where history matters (SYSRUN and status transitions):
-// current state = highest timestamp per key, same as SYSPOST / SYSRULING.
+// seeded, NO runtime -- a maintainer handoff (the steward's sandbox glibc cannot
+// run the engine; measured 2026-08-04). Append-only where history matters (SYSRUN
+// and status transitions): current state = highest ID/timestamp per key.
 #pragma once
 
 #include <cstdint>
@@ -58,7 +65,7 @@ inline constexpr std::uint32_t CLS  = 24;   // sdlc lane / state class / channel
 inline Table syslane() {
     return {"SYSLANE", {
         N("ID", w::ID), C("LKEY", tw::LKEY), C("TITLE", w::SUBJ),
-        N("OWNERID", w::ID), N("STEWARDID", w::ID), C("PROJECT", w::NAME),
+        C("OWNERKEY", w::KEY), C("STEWARDKEY", w::KEY), C("PROJECT", w::NAME),
         C("SDLCLANE", tw::CLS), N("STATUS", 2), L("CLAIMED"), C("ANCHOR", w::SUBJ),
         N("OPENAT", w::ID), N("CLOSEAT", w::ID), N("ROWVER", w::ID),
     }};
@@ -68,8 +75,8 @@ inline Table syslane() {
 // REPORT holds the ai_report_audit report_id string (e.g. AIPR-20260804-004).
 inline Table sysrun() {
     return {"SYSRUN", {
-        N("ID", w::ID), C("RKEY", w::NAME), N("MEMBERID", w::ID), C("ROLE", tw::CLS),
-        N("OWNERID", w::ID), N("COMMITID", w::ID), N("AUTHORID", w::ID), N("PLANID", w::ID),
+        N("ID", w::ID), C("RKEY", w::NAME), C("MEMBERKEY", w::KEY), C("ROLE", tw::CLS),
+        C("OWNERKEY", w::KEY), C("COMMITKEY", w::KEY), C("AUTHORKEY", w::KEY), C("PLANKEY", w::KEY),
         C("PROJECT", w::NAME), N("STATUS", 2), N("STARTAT", w::ID),
         C("BRANCH", w::NAME), C("HANDLE", w::NAME), C("REPORT", w::NAME), N("ROWVER", w::ID),
     }};
@@ -79,7 +86,7 @@ inline Table sysrun() {
 // current_by_lane becomes a derived query: newest SYSRUN per SYSLANE via this table.
 inline Table sysrunlane() {
     return {"SYSRUNLANE", {
-        N("RUNID", w::ID), N("LANEID", w::ID),
+        C("RUNKEY", w::NAME), C("LANEKEY", tw::LKEY),
     }};
 }
 
@@ -88,7 +95,7 @@ inline Table sysrunlane() {
 inline Table sysproof() {
     return {"SYSPROOF", {
         N("ID", w::ID), C("PKEY", w::KEY), C("LABEL", w::SUBJ), C("STATE", tw::CLS),
-        N("LANEID", w::ID), C("SOURCE", w::SUBJ), N("OBSAT", w::ID), N("ROWVER", w::ID),
+        C("LANEKEY", tw::LKEY), C("SOURCE", w::SUBJ), N("OBSAT", w::ID), N("ROWVER", w::ID),
     }};
 }
 
@@ -96,8 +103,8 @@ inline Table sysproof() {
 // STATUS: 0 open 1 in_progress 2 done 3 returned 4 parked.
 inline Table systask() {
     return {"SYSTASK", {
-        N("ID", w::ID), C("TKEY", w::NAME), C("TITLE", w::SUBJ), N("ASSIGNID", w::ID),
-        N("STATUS", 2), C("CHANNEL", tw::CLS), N("LANEID", w::ID),
+        N("ID", w::ID), C("TKEY", w::NAME), C("TITLE", w::SUBJ), C("ASSIGNKEY", w::KEY),
+        N("STATUS", 2), C("CHANNEL", tw::CLS), C("LANEKEY", tw::LKEY),
         N("DUEAT", w::ID), N("DONEAT", w::ID), N("ROWVER", w::ID),
     }};
 }

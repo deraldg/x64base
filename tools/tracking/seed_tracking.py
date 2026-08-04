@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""Extract the authored tracking registries into schema-aligned, key-based CSVs.
+"""Extract the authored tracking registries into schema-aligned CSVs for IMPORT.
 
-This is the EXTRACT + NORMALIZE half of the tracking-state dogfood seeder
-(TRACKING_STATE_DOGFOOD_LANE_V1.md, AIF-086 M1). It reads the authored registries
+The EXTRACT + NORMALIZE half of the tracking-state dogfood seeder
+(TRACKING_STATE_DOGFOOD_LANE_V1.md, AIF-086 M1). Reads the authored registries
 that drift -- the AIF intake queue, ai_runs.yaml, proofs.yaml -- and writes one CSV
 per portal tracking table (portal/tracking_schema.hpp): SYSLANE, SYSRUN,
-SYSRUNLANE, SYSPROOF.
+SYSRUNLANE, SYSPROOF. (SYSTASK is deferred: its source registry is a nested
+doc-flush structure, not a flat task list -- second-ring work per decision C.)
 
-The CSVs are KEY-BASED intermediates: member references are natural keys
-(member.derald), not numeric SYSMEMBER ids, because ids do not exist until the
-engine loads the identity catalog. The LOAD half (create the DBF tables and resolve
-key -> SYSMEMBER.ID while inserting) is a maintainer/engine step -- the same
-handoff shape as SYSRULING seeding. This half is pure Python and fully testable.
+CSV columns are the exact DBF FIELD NAMES (case-insensitive header mapping is how
+`IMPORT` binds columns to fields), and FKs are NATURAL KEYS (member.mkey, LKEY,
+RKEY) per the schema's key-FK decision -- so the load is a clean CREATE X64 +
+IMPORT with no key->id resolution. A synthetic monotonic ID is assigned per row;
+epochs default to 0 when the authored source has no date; ROWVER starts at 1.
 
-Idempotent: the CSVs are rewritten each run; upsert-by-key is the loader's job.
+The LOAD half (CREATE the tables + IMPORT the CSVs on the engine) is
+load_tracking_tables.dts -- a maintainer step (the steward's sandbox glibc cannot
+run the engine; measured 2026-08-04).
 
-Design rule (from the schema): TABLE = STATE. The long prose (intake Notes, a
-proof's evidence essay) is deliberately NOT extracted; it stays in the markdown/
-YAML. STATUS mapping is coarse/first-pass and is a documented Phase-0 refinement.
+Idempotent: the CSVs are rewritten each run (a full snapshot re-seed).
 
 Usage:
-  python tools/tracking/seed_tracking.py                 # -> data/metadata/portal/seed/
+  python tools/tracking/seed_tracking.py                 # -> dottalkpp/data/metadata/portal/seed/
   python tools/tracking/seed_tracking.py --out /tmp/seed
 """
 from __future__ import annotations
@@ -35,21 +36,31 @@ import yaml
 
 
 REPO = Path(__file__).resolve().parents[2]
+DEFAULT_OUT = REPO / "dottalkpp" / "data" / "metadata" / "portal" / "seed"
 DOCPAT = re.compile(r"([\w./-]+\.(?:md|csv|json|yaml|html|cpp|hpp|py))")
 MEMBERPAT = re.compile(r"(member\.[A-Za-z0-9_.]+)")
 PROJPAT = re.compile(r"(project\.[A-Za-z0-9_.]+)")
 
+COLUMNS = {
+    "SYSLANE": ["ID", "LKEY", "TITLE", "OWNERKEY", "STEWARDKEY", "PROJECT", "SDLCLANE",
+                "STATUS", "CLAIMED", "ANCHOR", "OPENAT", "CLOSEAT", "ROWVER"],
+    "SYSRUN": ["ID", "RKEY", "MEMBERKEY", "ROLE", "OWNERKEY", "COMMITKEY", "AUTHORKEY",
+               "PLANKEY", "PROJECT", "STATUS", "STARTAT", "BRANCH", "HANDLE", "REPORT", "ROWVER"],
+    "SYSRUNLANE": ["RUNKEY", "LANEKEY"],
+    "SYSPROOF": ["ID", "PKEY", "LABEL", "STATE", "LANEKEY", "SOURCE", "OBSAT", "ROWVER"],
+}
+
 
 def _epoch(datestr: str) -> int:
-    """YYYY-MM-DD -> unix epoch seconds; 0 if unparseable."""
     try:
-        return int(dt.datetime.strptime(str(datestr)[:10], "%Y-%m-%d").replace(tzinfo=dt.timezone.utc).timestamp())
+        return int(dt.datetime.strptime(str(datestr)[:10], "%Y-%m-%d")
+                   .replace(tzinfo=dt.timezone.utc).timestamp())
     except (ValueError, TypeError):
         return 0
 
 
 def _lane_status(text: str) -> int:
-    """Coarse first-pass status code (see schema STATUS ladder). Refinement pending."""
+    """Coarse first-pass status code (schema STATUS ladder). Refinement pending."""
     t = (text or "").lower()
     if "retired" in t:
         return 5
@@ -61,7 +72,7 @@ def _lane_status(text: str) -> int:
         return 2
     if "proposed" in t or "design-intended" in t or "findings recorded" in t or "registered" in t:
         return 0
-    return 1  # active by default
+    return 1
 
 
 def extract_lanes(root: Path) -> list[dict]:
@@ -75,25 +86,17 @@ def extract_lanes(root: Path) -> list[dict]:
             continue
         lkey = c[0]
         title = re.sub(r",\s*(Cowork|Claude|Codex|Grok|ChatGPT)[^,]*$", "", c[1])
-        anchor_src = c[4] if len(c) > 4 else ""
         notes = c[-1]
-        m_doc = DOCPAT.search(anchor_src) or DOCPAT.search(notes)
-        members = MEMBERPAT.findall(notes)
-        owner = "member.derald"
-        steward = ""
-        # "steward member.X" wins for STEWARDKEY; first non-owner member is the fallback
+        m_doc = DOCPAT.search(c[4] if len(c) > 4 else "") or DOCPAT.search(notes)
         ms = re.search(r"steward[^\n]{0,20}?(member\.[A-Za-z0-9_.]+)", notes)
-        if ms:
-            steward = ms.group(1)
-        elif members:
-            steward = next((m for m in members if m != owner), "")
+        steward = ms.group(1) if ms else next((m for m in MEMBERPAT.findall(notes) if m != "member.derald"), "")
         proj = PROJPAT.search(c[3] if len(c) > 3 else "") or PROJPAT.search(notes)
-        claim = (root / "coordination" / "aif" / f"{lkey}.claim").exists()
         rows.append({
-            "LKEY": lkey, "TITLE": title, "OWNERKEY": owner, "STEWARDKEY": steward,
+            "LKEY": lkey, "TITLE": title, "OWNERKEY": "member.derald", "STEWARDKEY": steward,
             "PROJECT": proj.group(1) if proj else "project.x64base.runtime",
             "SDLCLANE": "", "STATUS": _lane_status(c[5] if len(c) > 5 else ""),
-            "CLAIMED": 1 if claim else 0, "ANCHOR": m_doc.group(1) if m_doc else "",
+            "CLAIMED": 1 if (root / "coordination" / "aif" / f"{lkey}.claim").exists() else 0,
+            "ANCHOR": m_doc.group(1) if m_doc else "", "OPENAT": 0, "CLOSEAT": 0, "ROWVER": 1,
         })
     return rows
 
@@ -110,7 +113,7 @@ def extract_runs(root: Path) -> tuple[list[dict], list[dict]]:
             "AUTHORKEY": r.get("authored_by", ""), "PLANKEY": r.get("planned_by", ""),
             "PROJECT": r.get("project", ""), "STATUS": 1 if r.get("status") == "closed" else 0,
             "STARTAT": _epoch(r.get("started", "")), "BRANCH": git.get("branch", ""),
-            "HANDLE": r.get("handle_binding", ""), "REPORT": rkey,
+            "HANDLE": r.get("handle_binding", ""), "REPORT": rkey, "ROWVER": 1,
         })
         for lane in (r.get("lanes") or []):
             runlane.append({"RUNKEY": rkey, "LANEKEY": lane})
@@ -119,42 +122,43 @@ def extract_runs(root: Path) -> tuple[list[dict], list[dict]]:
 
 def extract_proofs(root: Path) -> list[dict]:
     d = yaml.safe_load((root / "labtalk/registries/proofs.yaml").read_text(encoding="utf-8", errors="replace"))
-    rows = []
-    for p in d.get("proofs", []):
-        rows.append({
-            "PKEY": p.get("id", ""), "LABEL": p.get("label", ""), "STATE": p.get("state", ""),
-            "LANEKEY": "", "SOURCE": str(p.get("source", "")),
-        })
+    return [{
+        "PKEY": p.get("id", ""), "LABEL": p.get("label", ""), "STATE": p.get("state", ""),
+        "LANEKEY": "", "SOURCE": str(p.get("source", "")), "OBSAT": 0, "ROWVER": 1,
+    } for p in d.get("proofs", [])]
+
+
+def _assign_ids(rows: list[dict]) -> list[dict]:
+    for i, r in enumerate(rows, 1):
+        r["ID"] = i
     return rows
 
 
 def _write_csv(path: Path, rows: list[dict], columns: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:
-        wtr = csv.DictWriter(fh, fieldnames=columns)
+        wtr = csv.DictWriter(fh, fieldnames=columns, extrasaction="ignore")
         wtr.writeheader()
         for row in rows:
-            wtr.writerow(row)
+            wtr.writerow({k: row.get(k, "") for k in columns})
 
 
 def seed(root: Path, out: Path) -> dict:
-    lanes = extract_lanes(root)
+    lanes = _assign_ids(extract_lanes(root))
     runs, runlane = extract_runs(root)
-    proofs = extract_proofs(root)
-    _write_csv(out / "SYSLANE.csv", lanes,
-               ["LKEY", "TITLE", "OWNERKEY", "STEWARDKEY", "PROJECT", "SDLCLANE", "STATUS", "CLAIMED", "ANCHOR"])
-    _write_csv(out / "SYSRUN.csv", runs,
-               ["RKEY", "MEMBERKEY", "ROLE", "OWNERKEY", "COMMITKEY", "AUTHORKEY", "PLANKEY",
-                "PROJECT", "STATUS", "STARTAT", "BRANCH", "HANDLE", "REPORT"])
-    _write_csv(out / "SYSRUNLANE.csv", runlane, ["RUNKEY", "LANEKEY"])
-    _write_csv(out / "SYSPROOF.csv", proofs, ["PKEY", "LABEL", "STATE", "LANEKEY", "SOURCE"])
+    runs = _assign_ids(runs)
+    proofs = _assign_ids(extract_proofs(root))
+    _write_csv(out / "SYSLANE.csv", lanes, COLUMNS["SYSLANE"])
+    _write_csv(out / "SYSRUN.csv", runs, COLUMNS["SYSRUN"])
+    _write_csv(out / "SYSRUNLANE.csv", runlane, COLUMNS["SYSRUNLANE"])
+    _write_csv(out / "SYSPROOF.csv", proofs, COLUMNS["SYSPROOF"])
     return {"SYSLANE": len(lanes), "SYSRUN": len(runs), "SYSRUNLANE": len(runlane), "SYSPROOF": len(proofs)}
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Extract tracking registries to schema-aligned CSVs.")
     ap.add_argument("--root", default=str(REPO))
-    ap.add_argument("--out", default=str(REPO / "data" / "metadata" / "portal" / "seed"))
+    ap.add_argument("--out", default=str(DEFAULT_OUT))
     args = ap.parse_args(argv)
     counts = seed(Path(args.root), Path(args.out))
     print("seed_tracking: wrote " + ", ".join(f"{k}={v}" for k, v in counts.items()) + f"  -> {args.out}")
