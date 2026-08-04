@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "ai-portal-pfd-v1",
+  "path": "public/images/portal/ai-portal-pfd-v1.svg",
+  "derived_from": [
+    "diagrams/sources/ai_portal_pfd_v1.mmd"
+  ],
+  "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "ee5dd8cd12ac7e045641e553111a440247bc34c552818cb314f5277e8855ebdc",
+  "output_sha256": "1fa8f477ab2f1ac9990bb6bbbd742d4256e2ac5fe3f37d0f09e6b1e46146e2d9",
+  "truth_status": "source-derived",
+  "review_status": "review-needed"
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "ai-portal-erd-v1",
+  "path": "public/images/portal/ai-portal-erd-v1.svg",
+  "derived_from": [
+    "diagrams/sources/ai_portal_erd_v1.mmd"
+  ],
+  "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "a4599352974991e1e315fb9461934376f62483f27b328367b602cdf26defb9b1",
+  "output_sha256": "de9022f21dbee9ac3b12300f9a49bc34dd1a07487e8529af17fdd236d09e69f8",
+  "truth_status": "source-derived",
+  "review_status": "review-needed"
+}
