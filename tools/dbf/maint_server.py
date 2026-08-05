@@ -58,8 +58,9 @@ def _table_payload(name: str, include_deleted: bool) -> dict:
     }
 
 
-def _do_op(body: dict) -> dict:
-    """Dispatch a write. mode: 'execute' | 'dts' | 'ram'."""
+def _do_op(body: dict, write_enabled: bool = True) -> dict:
+    """Dispatch a write. mode: 'execute' | 'dts' | 'ram'.
+    write_enabled=False (the shared gateway default) refuses Execute -- read + emit only."""
     cmd = body.get("op")
     table = body.get("table", "")
     spec = reg.get(table)
@@ -77,6 +78,10 @@ def _do_op(body: dict) -> dict:
         lines = fn(cmd, spec, values, key, where, purge, bool(body.get("indexed")))
         return {"ok": True, "mode": mode, "dotscript": "\n".join(lines)}
 
+    if not write_enabled:
+        raise crud.CrudError("Execute is disabled on this surface (read + emit only). "
+                             "Use Emit DotScript / Emit fsram here, or run the standalone "
+                             "maint_server.py for live writes.")
     # EXECUTE via pydottalk. Refuse a write that cannot land BEFORE opening the engine
     # (bbs guard / append-only update), so we never spin up the lock-less writer for it.
     crud._require_writable(spec)
@@ -119,7 +124,7 @@ class Handler(BaseHTTPRequestHandler):
             from urllib.parse import urlparse, parse_qs
             u = urlparse(self.path)
             if u.path in ("/", "/index.html"):
-                return self._send(200, html=PAGE)
+                return self._send(200, html=render_page("/api", True))
             if u.path == "/api/tables":
                 return self._send(200, _tables_payload())
             if u.path.startswith("/api/table/"):
@@ -201,16 +206,18 @@ font-size:11.5px;white-space:pre-wrap;color:var(--ok);max-height:40vh;overflow:a
 <script>
 let cur=null, spec=null, editRow=null;
 const $=s=>document.querySelector(s);
+const API="__API_BASE__";      // base path for the JSON API (e.g. /api or /AI/console/api)
+const WRITE=(__WRITE__);        // false on the shared gateway: read + emit only
 async function jget(u){const r=await fetch(u);const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);return j}
 async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return await r.json()}
-async function loadTables(){const j=await jget('/api/tables');const box=$('#tables');box.innerHTML='';
+async function loadTables(){const j=await jget(API+'/tables');const box=$('#tables');box.innerHTML='';
  j.tables.forEach(t=>{const b=document.createElement('button');b.className='tbtn';
   b.innerHTML=`${t.name} <span class="${t.writable?'rw':'ro'}">${t.writable?'rw':'RO'}</span>`;
   b.onclick=()=>selTable(t.name,b);box.appendChild(b)})}
 async function selTable(name,btn){document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('on'));
  if(btn)btn.classList.add('on');cur=name;await load()}
 async function load(){if(!cur)return;const inc=$('#del').checked?'?deleted=1':'';
- const j=await jget('/api/table/'+cur+inc);spec=j;
+ const j=await jget(API+'/table/'+cur+inc);spec=j;
  $('#ttl').textContent=cur;
  $('#meta').innerHTML=`<span class="pill">${j.subdir}</span> <span class="pill ${j.writable?'ok':'warn'}">${j.writable?'writable':'read-only'}</span> <span class="pill">close: ${j.close}</span>${j.append_only?' <span class="pill warn">append-only</span>':''} <span class="pill">${j.live}/${j.count} live</span>`;
  $('#new').style.display=j.writable?'':'none';
@@ -241,15 +248,23 @@ $('#save').onclick=async()=>{if(!editRow)return;const m=$('#mode').value;const r
  else if(editRow.mode==='update'){body.op='update';sel();body.set=collect(r)}
  else if(editRow.mode==='close'){body.op='delete';sel()}
  else if(editRow.mode==='purge'){body.op='delete';body.purge=true;sel()}
- const j=await jpost('/api/op',body);
+ const j=await jpost(API+'/op',body);
  if(j.dotscript){$('#pout').style.display='';$('#pout').textContent=j.dotscript;$('#pmsg').textContent='Emitted (feed via datarun).'}
  else if(j.ok){$('#pmsg').textContent='OK: '+JSON.stringify(j.result);await load();setTimeout(closePanel,700)}
  else{$('#pmsg').innerHTML='<span class="err">'+esc(j.error)+'</span>'}}
 function collect(orig){const o={};spec.columns.forEach(c=>{const el=$('#f_'+c);if(!el)return;
  const v=el.value;if(orig){if(v!==String(orig[c]||''))o[c]=v}else if(v!=='')o[c]=v});return o}
 $('#refresh').onclick=load;$('#del').onchange=load;$('#new').onclick=newRow;
+if(!WRITE){const ms=$('#mode');const ex=ms.querySelector('[value=execute]');if(ex)ex.remove();ms.value='dts';}
 loadTables();
 </script></body></html>"""
+
+
+def render_page(api_base: str = "/api", write_enabled: bool = True) -> str:
+    """The console HTML with its API base path and write flag injected. Lets the same
+    page serve standalone (/api, write) or mounted on the gateway (/AI/console/api, emit)."""
+    return (PAGE.replace("__API_BASE__", api_base)
+                .replace("__WRITE__", "true" if write_enabled else "false"))
 
 
 def main(argv=None) -> int:

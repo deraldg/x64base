@@ -763,6 +763,12 @@ The access-and-identity report -- the authentication-surface map -- is kept inte
 published here.</div>"""
 else:
     idx_body = _idx_kpi + """
+<div class="card"><h3 style="margin-top:0"><a href="console">Tracking Maintenance Console</a></h3>
+<div class="dim small">Interactive CRUD over the DBF tracking tables -- lanes, runs, proofs, tasks.
+On this shared gateway it is read + emit (edits show the DotScript to run); live writes go through the
+standalone console. Answers: <i>edit the tracking state directly.</i></div>
+<div style="margin-top:8px"><span class="pill acc">interactive -- via the local gateway</span></div></div>
+
 <div class="card"><h3 style="margin-top:0"><a href="AI_PORTAL_REPORT.html">AI Portal -- Lanes, Runs and Proofs</a></h3>
 <div class="dim small">The front door in reading order, every tracked lane with its evidence class,
 each recorded run with its owner/committer/author split, and the full proof ledger.

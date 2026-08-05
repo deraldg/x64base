@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import http.server
+import json
 import subprocess
 import sys
 import tempfile
@@ -28,6 +29,15 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+# The maintenance console (tools/dbf/maint_server.py) is mounted under /AI/console.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "dbf"))
+import maint_server  # noqa: E402
+
+# /AI is the new name for the local report/console surface; /reports is kept as a
+# transitional alias so existing links and the site do not break during the rename.
+REPORT_PREFIXES = ("/AI", "/reports")
+CONSOLE_PREFIXES = ("/AI/console", "/reports/console")
 
 
 REPORT_ALIASES = {
@@ -72,25 +82,39 @@ def decorate_live_html(body: bytes, observed: str) -> bytes:
     return text.encode("utf-8")
 
 
+def console_prefix_for_path(raw_path: str) -> str | None:
+    """Return the console prefix (/AI/console or /reports/console) this path is under."""
+    path = urllib.parse.urlsplit(raw_path).path
+    for pre in CONSOLE_PREFIXES:
+        if path == pre or path.startswith(pre + "/"):
+            return pre
+    return None
+
+
 def report_name_for_path(raw_path: str) -> str | None:
     path = urllib.parse.urlsplit(raw_path).path
-    if path in {"/reports", "/reports/"}:
-        return "index.html"
-    if not path.startswith("/reports/"):
-        return None
-    relative = urllib.parse.unquote(path[len("/reports/") :]).strip("/")
-    return REPORT_ALIASES.get(relative)
+    for pre in REPORT_PREFIXES:
+        if path in {pre, pre + "/"}:
+            return "index.html"
+        if path.startswith(pre + "/"):
+            relative = urllib.parse.unquote(path[len(pre) + 1 :]).strip("/")
+            if relative.startswith("console"):
+                return None  # console is handled by the console routes, not a report
+            return REPORT_ALIASES.get(relative)
+    return None
 
 
 class DynamicReportServer(http.server.ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, address, handler, *, repo_root: Path, upstream: str):
+    def __init__(self, address, handler, *, repo_root: Path, upstream: str,
+                 write_enabled: bool = False):
         super().__init__(address, handler)
         self.repo_root = repo_root
         self.upstream = upstream.rstrip("/")
         self.render_lock = threading.Lock()
+        self.write_enabled = write_enabled  # console Execute on the shared surface
 
     def render_report(self, name: str) -> tuple[bytes, str]:
         builder = self.repo_root / "tools" / "reports" / "build_reports.py"
@@ -134,15 +158,84 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_HEAD(self):
         self._dispatch(include_body=False)
 
+    def do_POST(self):
+        cpre = console_prefix_for_path(self.path)
+        path = urllib.parse.urlsplit(self.path).path
+        if cpre is not None and path == cpre + "/api/op":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(n) or b"{}")
+                res = maint_server._do_op(body, write_enabled=self.server.write_enabled)
+                self._send_json(200, res)
+            except (maint_server.crud.CrudError, KeyError) as exc:
+                self._send_json(400, {"ok": False, "error": str(exc)})
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(500, {"ok": False, "error": f"{type(exc).__name__}: {exc}"})
+            return
+        self.send_error(404, "Unknown endpoint")
+
     def _dispatch(self, *, include_body: bool):
+        cpre = console_prefix_for_path(self.path)
+        if cpre is not None:
+            self._serve_console(cpre, include_body=include_body)
+            return
         name = report_name_for_path(self.path)
         if name is not None:
             self._serve_report(name, include_body=include_body)
             return
-        if urllib.parse.urlsplit(self.path).path.startswith("/reports/"):
+        path = urllib.parse.urlsplit(self.path).path
+        if any(path.startswith(pre + "/") for pre in REPORT_PREFIXES):
             self.send_error(404, "Unknown local report")
             return
         self._proxy(include_body=include_body)
+
+    def _serve_console(self, cpre: str, *, include_body: bool):
+        path = urllib.parse.urlsplit(self.path).path
+        api_prefix = cpre + "/api"
+        if path in (cpre, cpre + "/", cpre + "/index.html"):
+            html = maint_server.render_page(api_prefix, self.server.write_enabled)
+            self._send_html(200, html, include_body=include_body)
+            return
+        if path == api_prefix or path.startswith(api_prefix + "/"):
+            sub = urllib.parse.unquote(path[len(api_prefix):]).strip("/")
+            try:
+                if sub == "tables":
+                    self._send_json(200, maint_server._tables_payload(), include_body=include_body)
+                elif sub.startswith("table/"):
+                    tname = sub[len("table/"):]
+                    deleted = urllib.parse.parse_qs(
+                        urllib.parse.urlsplit(self.path).query).get("deleted", ["0"])[0] == "1"
+                    self._send_json(200, maint_server._table_payload(tname, deleted),
+                                    include_body=include_body)
+                else:
+                    self.send_error(404, "Unknown console API")
+            except (maint_server.crud.CrudError, KeyError) as exc:
+                self._send_json(400, {"error": str(exc)}, include_body=include_body)
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(500, {"error": f"{type(exc).__name__}: {exc}"},
+                                include_body=include_body)
+            return
+        self.send_error(404, "Unknown console path")
+
+    def _send_json(self, code, obj, *, include_body: bool = True):
+        body = json.dumps(obj).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if include_body:
+            self.wfile.write(body)
+
+    def _send_html(self, code, html, *, include_body: bool = True):
+        body = html.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if include_body:
+            self.wfile.write(body)
 
     def _serve_report(self, name: str, *, include_body: bool):
         try:
@@ -226,6 +319,9 @@ def parse_args(argv=None):
     parser.add_argument("--bind", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=3000)
     parser.add_argument("--upstream", default="http://127.0.0.1:3002")
+    parser.add_argument("--enable-write", action="store_true",
+                        help="allow the mounted /AI/console to EXECUTE writes (mutate the "
+                             "store). Off by default: the shared surface is read + emit only.")
     return parser.parse_args(argv)
 
 
@@ -241,11 +337,14 @@ def main(argv=None) -> int:
         Handler,
         repo_root=root,
         upstream=args.upstream,
+        write_enabled=args.enable_write,
     )
+    mode = "READ + EMIT + EXECUTE" if args.enable_write else "READ + EMIT (execute disabled)"
     print(
-        f"Dynamic local reports: http://{args.bind}:{args.port}/reports/\n"
-        f"Website upstream:      {args.upstream}\n"
-        "Report responses are rebuilt from current local state and are never cached."
+        f"Dynamic local AI views:  http://{args.bind}:{args.port}/AI/   (alias: /reports/)\n"
+        f"Maintenance console:     http://{args.bind}:{args.port}/AI/console   [{mode}]\n"
+        f"Website upstream:        {args.upstream}\n"
+        "Reports rebuild from current local state and are never cached."
     )
     try:
         server.serve_forever()
