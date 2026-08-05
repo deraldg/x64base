@@ -312,6 +312,16 @@ lanes. Phase 8 re-instantiates the proven 9-gate
 `FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`. A flush is not
 "full" until both consumers are refreshed from the producer and proven live.
 
+### Phase 9: consumer refinement and owner signoff (reiterative)
+
+The manual and the website are two separate-but-equal consumer tasks, and at the UI
+level they are co-consumers (the web uses and cites manual parts; the manual cites
+the web and may use web-owned artifacts under the matrix exception). Phase 9 is the
+reiterative review -> refine -> owner-signoff loop over each, governed by the
+website Direction Gates. A flush is not done until both consumers carry a current
+owner signoff. Detail:
+`FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md` (Phase 9 section).
+
 ## Workflow Improvements Required by the First Run
 
 The first run should produce evidence for these improvements:

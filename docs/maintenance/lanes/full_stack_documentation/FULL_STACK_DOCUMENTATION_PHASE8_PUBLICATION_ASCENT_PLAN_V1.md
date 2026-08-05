@@ -246,6 +246,106 @@ public blob. Distinct mutation; distinct owner go.
 Until automated, these stay in this plan's manual ladder and in the cookbook so no
 run re-derives them.
 
+## Phase 9: consumer refinement and owner signoff (reiterative)
+
+Phase 8 builds the consumer content from the producer. Phase 9 is the reiterative
+human loop that refines each consumer and captures owner signoff. The manual and
+the website are **two separate-but-equal consumer tasks** -- neither is subordinate;
+each has its own review/refine/signoff cycle and can be signed off independently.
+
+### Two parallel tracks (separate but equal)
+
+| Track | Refine (at SOURCE, then regenerate) | Owner gate |
+| --- | --- | --- |
+| Manual | assembled candidate; edits go to harvest/registry/manual source, not the generated manual | owner reviews the reader artifact; signs off a named revision |
+| Website | pages by maintenance class; edit `generated`/`derived` at source + regenerate, hand-edit only `static`/`maintained` | owner reviews the rendered site; signs off ("I like it") |
+
+Reiterative: each track loops review -> refine -> owner review -> signoff; it is not
+one-shot. A track is done only when the owner signs off, and any later change
+reopens it.
+
+### Co-consumers -- the two reference each other at the UI level
+
+The manual and website cite and reuse each other. Reuse is allowed only in the
+sanctioned direction, per the website matrix Direction Gates, with proof labels and
+provenance. Neither becomes a system of record; both derive from the producer.
+
+```
+        producer (engine: contracts, HELP, references, registries)
+               |                                     |
+               v                                     v
+         [ MANUAL ]  <---- talk-about / link ---->  [ WEBSITE ]
+               |                                     ^
+   manual   -->|  manual -> web: DUPLEX REVIEWED     |  web uses
+   sections    |  (proof labels + source anchors)    |  manual parts
+   feed web    +-------------------------------------+
+   summaries   |  web -> manual: BLOCKED by default;  |
+   web-owned   |  EXCEPTION only for website-owned    |
+   artifacts   |  artifacts not derivable elsewhere   |
+               +-------------------------------------+
+```
+
+- **Web uses manual parts:** `manual -> web` is DUPLEX REVIEWED -- reviewed manual
+  sections may feed website summaries when proof labels and source anchors are
+  preserved (e.g. the command-reference landing page).
+- **Web talks about the manual, manual talks about the web:** plain cross-links and
+  prose references -- always allowed.
+- **Manual consumes web parts?** `web -> manual` is BLOCKED by default. EXCEPTION
+  (matrix): curated screenshots, public-only media, branding, hosted-download
+  metadata, contact/nav artifacts -- web-owned things not derivable elsewhere,
+  carried with provenance. So yes, but only under the exception, and never web
+  prose as technical authority.
+
+### Signoff record
+
+Each track produces a signoff: owner, date, the reviewed revision (manual reader
+hash / site commit), and any Direction-Gate exceptions used. Signoff is per
+consumer -- the manual can be signed off while the website still iterates, and vice
+versa. Phase 9 (and the whole flush) is not "done" until both consumers carry a
+current owner signoff.
+
+## First-attempt lessons: integration and normalization (2026-08-05)
+
+Recorded as a teaching case, not a fault report. The first time this run touched
+the website consumer, the "Updated" date was stale (2026-07-28) on **every page**.
+Diagnosing that one wrong date exposed a chain of integration/normalization debt --
+which is exactly what pushing the whole stack is meant to surface. We will run
+Phase 8 again and improve the integration each time.
+
+What actually went wrong (all the same disease at different levels):
+
+1. **Governance not consulted first.** Site pages were edited before reading
+   `content/docs/dev/website-documentation-matrix.mdx` (page maintenance classes)
+   and the sitemap/nav (`app/sitemap.ts`, `config/nav.ts`, `config/sidebars.ts`).
+   Rule: classify every page -- `static` / `maintained` / `maintained_current` /
+   `derived` / `generated` / `reported` -- BEFORE editing.
+2. **Hand-edited generated output.** `current-work.mdx` and
+   `public/artifacts/current-work-v1.json` were edited directly. Both are
+   `generated`/`maintained_current`, produced by `build_current_work_feed.py` from
+   the registry. Rule: never hand-edit a generated/derived region; fix the SOURCE
+   (registry) and regenerate.
+3. **The fact was not normalized.** The same fact -- `as_of_date` -- lived in the
+   registry, the generated JSON, the generated mdx, and (as prose) the hero. With
+   no single authority derived everywhere, one stale source became a site-wide lie.
+4. **The pipeline step was missing.** The flush did not advance the registry
+   `as_of_date` on reconciliation, nor run the generator. Both are manual steps
+   that were skipped, so July output froze across the site.
+5. **Stored, not derived.** HELP counts (topics/lines) are STORED in the registry
+   flush block and hand-updated, instead of DERIVED from the HELP store. A number
+   that can be measured should never be typed.
+
+Normalization target (what "integrated" looks like):
+
+- One authority per fact. `as_of_date` = the reconciliation date, advanced in the
+  registry only at reconciliation. HELP counts measured from the HELP store. Page
+  content produced by the generator.
+- The full-stack flush MUST, as its website-feed step: advance the registry
+  `as_of_date`, reconcile the flush block (ideally from measured HELP), then run
+  `build_current_work_feed.py` (current-work) and `command_catalog_sync` (catalog).
+  Until that runs, the site is stale by construction.
+- Consult the website matrix before ANY site edit; edit source and regenerate;
+  hand-edit only `static`/`maintained` pages (home framing, news, brand, licensing).
+
 ## Definition of done (Phase 8)
 
 Both reader surfaces are refreshed and PROVEN live: the published developer manual
