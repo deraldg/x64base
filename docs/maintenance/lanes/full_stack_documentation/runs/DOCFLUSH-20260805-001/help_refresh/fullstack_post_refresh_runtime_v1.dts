@@ -1,0 +1,31 @@
+* DOCFLUSH-20260805-001 post-refresh runtime capture (full-stack doc flush v4)
+* Mirrors fullstack_pre_refresh_runtime_v1.dts so the two transcripts diff cleanly.
+* Report-only. No BUILD/IMPORT/CREATE/REPLACE here -- the authorized build ran
+* before this capture (see HELP_REFRESH_PACKAGE_V1.md).
+
+ABOUT
+CMDHELP
+CMDHELP USAGE
+CMDHELPCHK
+CMDHELPCHK ARTIFACTS . 20
+CMDHELPCHK . 20
+DOTHELP
+FOXHELP
+HELP
+HELP GAINT
+HELP GIANT
+MANUAL STATUS
+MANUAL COUNTS
+
+* --- targeted topic checks: commands added/changed in flush v4 ---
+CMDHELP BBS
+CMDHELP NET
+CMDHELP CANARY
+CMDHELP CMDREL
+CMDHELP FORMULA
+CMDHELP EDIT
+CMDHELP DDICT
+CMDHELP EVALDIFF
+CMDHELP BUILDVECTORS
+
+QUIT

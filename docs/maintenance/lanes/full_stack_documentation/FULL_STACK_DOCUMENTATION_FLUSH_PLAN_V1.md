@@ -431,6 +431,14 @@ Retired footguns / streamlining for the next run:
 - Last catalog fallback is DDICT: its contract uses the `/* */` `surface:`/`forms:`
   schema the website extractor does not read. Normalize the block to the standard
   `// @dottalk.usage` form, or add extractor support for that schema.
+- Runtime capture invocation (Phase 2 + Phase 4): `datarun.ps1` has NO `-Script`
+  parameter, and the exe's `--script` flag does NOT survive datarun's arg
+  pass-through -- it lands on stdin and the exe reports `Unknown command: --SCRIPT`.
+  Proven way to replay an existing `.dts`: source its lines into `-CommandLines`,
+  which datarun stages into its own temp `.dts`:
+  `./datarun.ps1 -CommandLines (Get-Content "<ABSOLUTE>.dts")`. Use ABSOLUTE paths
+  everywhere -- datarun pushes cwd to the data root. Same absolute-path rule applies
+  to `CMDHELP BUILD . <src>` (use `D:\code\ccode\src`, not a relative `./src`).
 
 ## Definition of Done
 
