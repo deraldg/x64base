@@ -793,6 +793,8 @@ Notes:
         {"DIR", "DIR [<mask>|<path>]", "List directory or file entries through the DotTalk++ shell surface.", true},
         {"ECHO", "ECHO <text...>", "Echo text to the current DotTalk++ output route.", true},
         {"ERASE", "ERASE <target>", "Erase a file or supported target through the DotTalk++ shell surface.", true},
+
+        {"EDIT", "EDIT [USAGE] <file>", "Launch the configured external editor for a file path; OS-sensitive (spawns the editor as a child process, editor.mode Off disables it). See the @dottalk.external contract in src/edu/edu_edit.cpp.", true},
         {"FIND", "FIND <text> [IN <field>]", "Find text or values using the active order when possible, with scan fallback when needed.", true},
         {"GOTO", "GOTO <recno>|TOP|BOTTOM", "Move the current work area to a specific record or boundary position.", true},
         {"LIST", "LIST [ALL] [FIELDS <list>] [FOR <expr>]", "List records from the current table using DotTalk++ command semantics.", true},
