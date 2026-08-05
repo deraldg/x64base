@@ -73,14 +73,47 @@ tree.
 | E2 | HELP DATA current + reflection PASS | Gate 4 record; `CMDHELPCHK` structural PASS |
 | E3 | Source contracts complete | `source_census` 100 percent; `command_catalog_sync check` fallback 0 |
 | E4 | Reference guards clean | `refcheck_v1.py` PASS; `normcheck_v1.py` PASS |
-| E5 | Manual harvest reflects current HELP | HELP/META harvest re-exported AFTER the Phase-4 build (else the manual will omit new commands) |
+| E5 | Manual harvest reflects current HELP | HELP/META harvest re-exported AFTER the Phase-4 build (else the manual omits new commands). SEE "Known gap" below -- no exporter exists yet. |
 | E6 | Website catalog source current | `command-catalog.mdx` regenerated, fallback 0 |
 | E7 | Backups + rollback ready | HELP store backup exists; promotion rollback path named |
 | E8 | Owner authorization for mutation | manual acceptance, source staging, and website publish are distinct mutations; each needs its own owner go |
 
 Fail-closed: if any row is unproven, Phase 8 stops and the dev-tree lane reopens
-the relevant phase. E5 is the one this run currently fails (harvest predates the
-Phase-4 rebuild); it is the first thing Phase 8 fixes.
+the relevant phase. E5 is the one this run currently fails, and it is worse than a
+stale file -- see below.
+
+### Known gap: E5 has no producer (build it first)
+
+The harvest is the hand-across artifact at the producer/consumer seam, but **no
+code produces it.** Confirmed 2026-08-05:
+
+- The 14 required `harvested/*.csv` are a hand-made snapshot dated 2026-05-25;
+  HELP DATA is current as of 2026-08-05.
+- `HELP_META_EXPORT_MANIFEST_v0.csv` lists every table as `current_status =
+  PENDING_EXPORT` with a blank `export_method` -- it is a plan, never executed.
+- `tools/manualgen/manualgen_lib/harvest.py` only SELECTS and VALIDATES an existing
+  harvest ("Select HELP/META evidence without copying or promoting it"). It does
+  not write `harvested/`. Nothing else does either.
+- The engine's nearest export, `export_helpdata_v2_dbfs`, emits DBFs, not these CSVs.
+
+Consequence: E5 cannot be satisfied by anyone today. The **first Phase 8 work item
+is to build the harvest exporter** -- a defined HELP/META -> `harvested/*.csv`
+producer (the 14 files in `harvest.py`), executed from current HELP DATA, that
+flips the manifest from `PENDING_EXPORT` to a recorded method. Only then can the
+manual be made current. This is a source/tooling task in the dev tree, not a
+publication step; it is the true blocker the Phase-6 dry-run masked (it ran green
+on the May snapshot).
+
+**Placement (producer/consumer -- do not blur):** the exporter is PRODUCER-side.
+It dumps the HELP tables (`data/help/*.dbf`) and META `SYS*` tables
+(`data/metadata/SYS*.dbf`) that this documentation system produces. It does NOT
+belong on the `MANUAL` command -- `MANUAL` is a read-only CONSUMER of the accepted
+manual catalog (`mutates: none`), and adding a writing exporter there would make a
+consumer also a producer. Native home: a `CMDHELP` / HELP-META export verb (CMDHELP
+already produces HELP DATA and exports helpdata to DBFs via
+`export_helpdata_v2_dbfs`; a harvest CSV export sits beside it). A Python
+`dbfread`-based dump is interim scaffolding only; the permanent producer is native
+C++ per the maintenance-app doctrine.
 
 ## Data flow to the UI
 
@@ -135,7 +168,9 @@ build is not live proof -- Gate 9 reads what is actually served.
 The owner assists here. RECORD every required step so it is not forgotten before
 it is automated. Each `apply-*` is a MUTATION and needs its own owner go.
 
-1. **Re-harvest** HELP/META from current HELP DATA (fixes entry check E5).
+1. **Re-harvest** (fixes E5): run the producer-side HELP/META -> `harvested/*.csv`
+   exporter -- which must be BUILT first (native CMDHELP/HELP-META side, NOT the
+   MANUAL consumer). Then the manual pipeline sees the current command set.
 2. `manualgen build-reference-candidate` -> `build-curation-candidate` ->
    `build-disposition-candidate` -> `build-structural-reconciliation` ->
    `build-section-delta-candidates` -> `build-prose-review-batch` ->
@@ -176,7 +211,7 @@ public blob. Distinct mutation; distinct owner go.
 
 | Step | Today | Automate to |
 | --- | --- | --- |
-| Re-harvest (E5) | manual host build | a `harvest` target chained after `CMDHELP BUILD` |
+| Re-harvest (E5) | **NO PRODUCER EXISTS** (hand-made May snapshot; manifest `PENDING_EXPORT`) | build a HELP/META -> `harvested/*.csv` exporter, then chain it after `CMDHELP BUILD` |
 | Manual candidate chain | many manualgen subcommands | one reviewed `manualgen ascend` driver |
 | Website feed + integration | packet + manual apply | one `website-ascend` driver over `website_content_manifest.yaml` |
 | Live verification | manual HTTP checks | a route-manifest verifier that reads deployed content |
