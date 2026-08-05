@@ -83,6 +83,18 @@ the auto-injected context) -- the failure was skipped assimilation. The
    consult `x64base-site` `website-documentation-matrix.mdx` before editing; never
    hand-edit `generated`/`derived`/`maintained_current` regions.
 
+## Applied 2026-08-05 (not just recorded)
+
+- Fix 2 and Fix 4 are **done**: `AI_TIER1_SEED_V1.md` "Going deeper" now carries
+  three task-triggered rows -- read/write DBF+memo+index (x64 != x32; memo is
+  MemoManager/x64-sidecar, not `.dbt`; use `cmd_use.cpp`, not a v32 reader),
+  reference-authority family (dotref/foxref/edref/pshell_ref/sql_ref/devref +
+  SYSFUNC), and edit-the-website page-class rule. The next session retrieves them
+  by what it is about to do.
+- Fix 5 (website page-class) is also in the flush cookbook as standing rule 11.
+- Still open: Fix 1 (behavioral -- enforce session-start assimilation) and Fix 3
+  (track dev-08/09/10 and close their MemoManager documentation gap from source).
+
 ## Teaching note
 
 This is the same lesson as the flush lane's north star, one level up: a truth that

@@ -109,6 +109,9 @@ owns it.
 | About to | Read |
 | --- | --- |
 | change source | `AI_ENGINEERING_STANDARDS_SEED_V1.md`, `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
+| read or write DBF, memos, or indexes | x64 is not x32. x64 memo text is a MemoManager/x64-sidecar concern, NOT classic `.dbt`; CDX/CNX/LMDB are the index/memo family. Use the native x64 path (`src/cli/cmd_use.cpp`), never a v32 reader. `docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md` (+ dev-09/10) |
+| use a reference authority or catalog | authorities are dotref, foxref, edref, pshell_ref, sql_ref, devref (each owns its namespace) plus SYSFUNC for functions; verify with `tools/fullstack_docs/refcheck_v1.py` / `normcheck_v1.py` |
+| edit the website | classify the page first: `x64base-site` `content/docs/dev/website-documentation-matrix.mdx`. Never hand-edit `generated`/`derived`/`maintained_current` -- fix source and regenerate; hand-edit only `static`/`maintained` |
 | write DotScript | `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`, `dottalkpp/data/scripts/README.txt` |
 | plan gates for a change | `SCOPE_CALIBRATION_SEED_V1.md`, `SDLC_FAST_START_SEED_V1.md` |
 | open a lane | prior art first, then `claim-aif`, then register **before or with** the work. `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
