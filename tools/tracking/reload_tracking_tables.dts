@@ -1,0 +1,51 @@
+* reload_tracking_tables.dts -- full refresh of the portal tracking tables from the
+* current seed CSVs (AIF-086 / AIF-088). MAINTAINER-RUN via datarun.ps1.
+*
+* Use when the authored registries changed (new lane / run / proof / task) and the
+* live DBF tables need to match. ERASE + CREATE + IMPORT is a clean rebuild: these
+* tables are DERIVED from the registries, so dropping and reseeding loses nothing.
+*
+* PRECONDITION -- run the extractor first:
+*   python tools\tracking\seed_tracking.py
+*
+* Then, from D:\code\ccode:
+*   .\datarun.ps1 -CommandLines (Get-Content tools\tracking\reload_tracking_tables.dts)
+* or interactively:  .\datarun.ps1   then   . DO tools\tracking\reload_tracking_tables.dts
+*
+* ERASE ... CONFIRM prints "Table not found" harmlessly if a table is absent.
+
+SET ECHO OFF
+ECHO ===== TRACKING TABLES RELOAD START =====
+SET PATH DBF metadata/portal
+
+SELECT 0
+ERASE SYSLANE CONFIRM
+CREATE X64 SYSLANE (ID N(20,0), LKEY C(16), TITLE C(160), OWNERKEY C(64), STEWARDKEY C(64), PROJECT C(48), SDLCLANE C(24), STATUS N(2,0), CLAIMED L, ANCHOR C(160), OPENAT N(20,0), CLOSEAT N(20,0), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSLANE.csv
+ECHO SYSLANE reloaded.
+
+SELECT 1
+ERASE SYSRUN CONFIRM
+CREATE X64 SYSRUN (ID N(20,0), RKEY C(48), MEMBERKEY C(64), ROLE C(24), OWNERKEY C(64), COMMITKEY C(64), AUTHORKEY C(64), PLANKEY C(64), PROJECT C(48), STATUS N(2,0), STARTAT N(20,0), BRANCH C(48), HANDLE C(48), REPORT C(48), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSRUN.csv
+ECHO SYSRUN reloaded.
+
+SELECT 2
+ERASE SYSRUNLANE CONFIRM
+CREATE X64 SYSRUNLANE (RUNKEY C(48), LANEKEY C(16))
+IMPORT metadata/portal/seed/SYSRUNLANE.csv
+ECHO SYSRUNLANE reloaded.
+
+SELECT 3
+ERASE SYSPROOF CONFIRM
+CREATE X64 SYSPROOF (ID N(20,0), PKEY C(64), LABEL C(160), STATE C(24), LANEKEY C(16), SOURCE C(160), OBSAT N(20,0), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSPROOF.csv
+ECHO SYSPROOF reloaded.
+
+SELECT 4
+ERASE SYSTASK CONFIRM
+CREATE X64 SYSTASK (ID N(20,0), TKEY C(48), TITLE C(160), ASSIGNKEY C(64), STATUS N(2,0), CHANNEL C(24), LANEKEY C(16), DUEAT N(20,0), DONEAT N(20,0), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSTASK.csv
+ECHO SYSTASK reloaded.
+
+ECHO ===== TRACKING TABLES RELOAD DONE (87/9/21/51/14 expected) =====
