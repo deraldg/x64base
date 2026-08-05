@@ -58,6 +58,19 @@ Observed drift (registered findings):
   `labtalk/proofs/runs/20260804_append_blank_catalog_drift_ram.txt`; proof
   `proof.engine.append_blank_catalog_drift` (runtime_observed, build 64a0136d).
 
+- R-USE-IN-CLOBBER (missing feature + silent-token hazard, not catalog drift). `USE`
+  does not implement the FoxPro work-area target form `USE <table> IN <n>`, and worse
+  it SILENTLY IGNORES the unrecognized trailing tokens and opens into the CURRENT area.
+  So `USE A IN 1` / `USE B IN 2` / ... clobber each table onto the same area, leaving
+  only the LAST one open -- with no error. Caught 2026-08-04 by browse_tracking.dts:
+  five `USE ... IN <n>` opens collapsed to one (SYSRUN), so every later `SELECT <name>`
+  and `REL ADD` failed. Repair options: (a) implement `USE <table> IN <n>` (open into
+  work area n, FoxPro-compatible); or (b) at minimum reject unrecognized trailing
+  tokens so `USE` errors instead of silently clobbering. Safe pattern today: `SELECT
+  <n>` then `USE <table>` per area. The catalog's USE usage does NOT advertise the IN
+  form, so this is a missing-feature + silent-ignore hazard rather than a doc drift,
+  filed here as a command-surface sibling of R-APPEND-BLANK.
+
 ## PDLC Scope
 
 ### Analyze

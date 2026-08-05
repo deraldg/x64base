@@ -1,0 +1,85 @@
+* browse_tracking.dts -- relational schema reader over the tracking tables (AIF-086).
+* MAINTAINER-RUN + VERIFY. Built-in REL (cmd_rel.cpp) + WORKSPACE (cmd_workspace.cpp)
+* + ERSATZ (cmd_ersatz.cpp). NOT SQLSEL (under dev).
+*
+* Opens the whole portal dir at once with WORKSPACE OPEN DBF (registers each table's
+* alias, so SELECT <name> works) -- NOT USE <table> IN <n>, which this engine's USE
+* does not support (it reuses the current area and closes the prior open).
+*
+* Relation map (SYSLANE hub; children keyed on LANEKEY; second hop to the run):
+*   SYSLANE.LKEY  -> SYSTASK.LANEKEY / SYSPROOF.LANEKEY / SYSRUNLANE.LANEKEY
+*   SYSRUNLANE.RUNKEY -> SYSRUN.RKEY
+* x64 => CDX; each child's active order IS its relation key. Index idiom:
+* CDX CREATE, then all CDX ADDTAG, then ONE BUILDLMDB (YES auto-confirms a rebuild).
+* Inspect/repair with CDX INFO / CDX DROPTAG. (x32 tables would use CNX CREATE instead.)
+*
+* Run in ONE interactive session:
+*   .\datarun.ps1
+*   . DO D:\code\ccode\tools\tracking\browse_tracking.dts
+* Reopen later without rebuilding:
+*   .\datarun.ps1   then   . WORKSPACE LOAD tracking   then   . SELECT SYSLANE   then   . ERSATZ
+
+SET ECHO OFF
+SETPATH DBF metadata\portal
+SETPATH INDEXES metadata\portal
+SETPATH LMDB metadata\portal
+
+* --- open each table into its OWN area: SELECT <n> then USE <table> ---
+* (USE reuses the current area, so pick the area first. USE <table> IN <n> is NOT
+*  supported and silently clobbers -- logged as R-USE-IN-CLOBBER, AIF-088.)
+SELECT 0
+USE SYSLANE ALIAS SYSLANE
+SELECT 1
+USE SYSTASK ALIAS SYSTASK
+SELECT 2
+USE SYSPROOF ALIAS SYSPROOF
+SELECT 3
+USE SYSRUNLANE ALIAS SYSRUNLANE
+SELECT 4
+USE SYSRUN ALIAS SYSRUN
+* sanity: all five should be open with these aliases
+DBAREAS
+
+* --- CDX tag on each child's relation key; active order = that key ---
+SELECT SYSTASK
+CDX CREATE
+CDX ADDTAG LANEKEY
+BUILDLMDB CLEAN YES
+SET ORDER TO TAG LANEKEY
+
+SELECT SYSPROOF
+CDX CREATE
+CDX ADDTAG LANEKEY
+BUILDLMDB CLEAN YES
+SET ORDER TO TAG LANEKEY
+
+SELECT SYSRUNLANE
+CDX CREATE
+CDX ADDTAG LANEKEY
+BUILDLMDB CLEAN YES
+SET ORDER TO TAG LANEKEY
+
+SELECT SYSRUN
+CDX CREATE
+CDX ADDTAG RKEY
+BUILDLMDB CLEAN YES
+SET ORDER TO TAG RKEY
+
+* --- relations via the built-in REL (asymmetric parent-key -> child-key) ---
+SELECT SYSLANE
+REL ADD SYSLANE SYSTASK    ON LKEY TO LANEKEY
+REL ADD SYSLANE SYSPROOF   ON LKEY TO LANEKEY
+REL ADD SYSLANE SYSRUNLANE ON LKEY TO LANEKEY
+REL ADD SYSRUNLANE SYSRUN  ON RUNKEY TO RKEY
+REL LIST ALL
+
+* --- persist the workspace (AREA + RELATION lines) ---
+WORKSPACE SAVE tracking
+
+* --- ERSATZ relational browser rooted at the lane; drill lane -> run-links -> runs ---
+SELECT SYSLANE
+ERSATZ ROOT SYSLANE
+ERSATZ LIMIT 10
+ERSATZ OPEN SYSRUNLANE
+ERSATZ OPEN SYSRUN
+ERSATZ

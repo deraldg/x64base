@@ -40,6 +40,7 @@ DEFAULT_OUT = REPO / "dottalkpp" / "data" / "metadata" / "portal" / "seed"
 DOCPAT = re.compile(r"([\w./-]+\.(?:md|csv|json|yaml|html|cpp|hpp|py))")
 MEMBERPAT = re.compile(r"(member\.[A-Za-z0-9_.]+)")
 PROJPAT = re.compile(r"(project\.[A-Za-z0-9_.]+)")
+AIFPAT = re.compile(r"AIF-(\d{3})")
 
 COLUMNS = {
     "SYSLANE": ["ID", "LKEY", "TITLE", "OWNERKEY", "STEWARDKEY", "PROJECT", "SDLCLANE",
@@ -137,11 +138,20 @@ def extract_runs(root: Path) -> tuple[list[dict], list[dict]]:
     return runs, runlane
 
 
+def _proof_lane(p: dict) -> str:
+    """First AIF-NNN mentioned in the proof's text fields -> its lane, or '' if none.
+    Proofs carry no explicit lane field, so derive it from id/label/notes/source/related."""
+    blob = " ".join(str(p.get(k, "")) for k in ("id", "label", "notes", "source", "item_id"))
+    blob += " " + " ".join(str(x) for x in (p.get("related") or []))
+    m = AIFPAT.search(blob)
+    return f"AIF-{m.group(1)}" if m else ""
+
+
 def extract_proofs(root: Path) -> list[dict]:
     d = yaml.safe_load((root / "labtalk/registries/proofs.yaml").read_text(encoding="utf-8", errors="replace"))
     return [{
         "PKEY": p.get("id", ""), "LABEL": p.get("label", ""), "STATE": p.get("state", ""),
-        "LANEKEY": "", "SOURCE": str(p.get("source", "")), "OBSAT": 0, "ROWVER": 1,
+        "LANEKEY": _proof_lane(p), "SOURCE": str(p.get("source", "")), "OBSAT": 0, "ROWVER": 1,
     } for p in d.get("proofs", [])]
 
 

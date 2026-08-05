@@ -1,0 +1,9 @@
+* tracking.dts
+* AI-Portal tracking workspace environment (AIF-086), same shape as metadata.dts.
+* Tracking DBFs live under DATA\METADATA\PORTAL. CDX/LMDB are co-located there for a
+* self-contained workspace (move to INDEXES\METADATA\PORTAL / LMDB\METADATA\PORTAL to
+* match the metadata-lane convention if you prefer separate index trees).
+* Paths resolve relative to the runtime DATA root.
+SETPATH DBF metadata\portal
+SETPATH INDEXES metadata\portal
+SETPATH LMDB metadata\portal
