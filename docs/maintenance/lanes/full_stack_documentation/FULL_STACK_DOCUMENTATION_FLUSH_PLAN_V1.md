@@ -6,6 +6,10 @@ Created: 2026-07-16
 Initial scope: `include/*ref.hpp` through `CMDHELP`, `CMDHELPCHK`, SelfDoc,
 manualgen, and reviewed publication pointers
 
+Companion recipe book (operational how-to -- exact commands per phase and the
+standing footguns): `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`. This plan is
+doctrine and gates; the cookbook is the run-it-now commands and is refined every run.
+
 ## Outcome
 
 Produce a traceable documentation refresh in which every promoted manual or
