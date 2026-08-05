@@ -386,6 +386,31 @@ proofs:
   label: EDREF topic exists
   state: source_defined
   source: D:/code/ccode/include/edref.hpp
+- id: proof.engine.append_blank_catalog_drift
+  label: Runtime APPEND rejects the BLANK token the command catalog documents (silent clobber)
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/20260804_append_blank_catalog_drift_ram.txt
+  item_id: tools/dbf/crud.py
+  return_code: 0
+  related:
+  - D:/code/ccode/docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md
+  - D:/code/ccode/docs/maintenance/PYDOTTALK_CAPABILITY_REVIEW_AND_CRUD_READINESS_V1.md
+  - D:/code/ccode/src/cli/cmd_append.cpp
+  - D:/code/ccode/src/cli/cmd_append_blank.cpp
+  - D:/code/ccode/dottalkpp/data/scripts/mem_proof.dts
+  notes: 'AIF-086, repair R-APPEND-BLANK. The command catalog (src/cli/shell_commands.cpp -> content/docs/dottalk/command-catalog.mdx)
+    documents APPEND_BLANK with syntax "APPEND BLANK", but the runtime APPEND parser rejects the BLANK
+    token and prints usage. THE HAZARD is not the error, it is the silence after it: with the cursor on
+    the last row, the caller''s subsequent REPLACEs mutate THAT record instead of a new one -- a clobber
+    indistinguishable from success to anything that does not re-count rows. Observed 2026-08-04 on build
+    64a0136d through the CRUD --emit --ram fsram dry run: run 1 (APPEND BLANK) printed APPEND usage and
+    left recno at 13 with row 13 overwritten; run 2 (bare APPEND, the form mem_proof.dts uses) appended
+    row 14 with all 13 originals intact. This is the authored-catalog-vs-executed-engine drift the dogfood
+    thesis predicts: the engine''s own self-description disagreed with the engine, and executing the engine
+    caught it. Caught on a RAM table that evaporated on unmount, so the on-disk store was never at risk.
+    Repair options: (a) accept BLANK as a no-op alias for bare APPEND in the parser; or (b) correct the
+    catalog/HELP so APPEND BLANK is not shown as runtime syntax. crud.py emits bare APPEND. The pydottalk
+    binding append_blank() works at the C++ level, so the drift is REPL-surface only.'
 - id: proof.engine.key_metadata_survives_workspace_roundtrip
   label: PRIMARY/UNIQUE key declarations persist through WORKSPACE SAVE and LOAD
   state: runtime_observed

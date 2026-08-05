@@ -1,0 +1,47 @@
+APPEND-BLANK catalog-vs-runtime drift -- fsram (RAM VFS) dry-run evidence
+build: dottalk++ v0.6 (2026-08-04, 64a0136d)  Aug 04 2026 17:53:41
+harness: python tools/dbf/crud.py <op> --emit --ram  |  datarun.ps1 -CommandLines (...)
+lane: AIF-086 (tracking-state dogfood). repair: R-APPEND-BLANK.
+
+The command catalog (content/docs/dottalk/command-catalog.mdx, from src/cli/shell_commands.cpp)
+documents APPEND_BLANK with syntax "APPEND BLANK". The runtime APPEND parser REJECTS the
+BLANK token and prints usage; because the cursor sat on the last imported row, the follow-up
+REPLACEs then landed on THAT record -- a silent clobber, not an error.
+
+===== RUN 1: emitted "APPEND BLANK" (the buggy form) =====
+. Created D:\code\ccode\dottalkpp\data\ram\SYSTASK.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\ram\SYSTASK.dbf with 0 records.
+. Imported 13 records from metadata/portal/seed/SYSTASK.csv
+. Usage:
+  APPEND USAGE
+  APPEND
+  APPEND <count>
+  APPEND MANY <count>
+  APPEND RAW
+  APPEND RAW MANY <count>
+Notes:
+  - APPEND with no arguments appends one blank record through the shared smart append path.
+. (REPLACEs then ran on the CURRENT record, recno 13, overwriting the last imported row)
+    13 14  task.demo.crud  CRUD demo  member.derald  1  ai_portal  AIF-086  0  0  1
+1 record(s) listed (limit 20)
+Cursor: Physical Recno 13, Logical Row 13     <- appended NOTHING; clobbered row 13
+
+===== RUN 2: emitted bare "APPEND" (the proven form; mem_proof.dts uses it) =====
+. Created D:\code\ccode\dottalkpp\data\ram\SYSTASK.dbf [X64]
+. Imported 13 records from metadata/portal/seed/SYSTASK.csv
+. (APPEND added a blank row; REPLACEs filled it; DISPLAY shows the NEW record)
+Record 14
+  ID = 14
+  TKEY = task.demo.crud
+  TITLE = CRUD demo
+  STATUS = 1
+  CHANNEL = ai_portal
+  LANEKEY = AIF-086
+  ROWVER = 1
+    14 14  task.demo.crud  CRUD demo  member.derald  1  ai_portal  AIF-086  0  0  1
+14 record(s) listed (limit 20)
+Cursor: Physical Recno 14, Logical Row 14     <- row 14 appended, all 13 originals intact
+
+CONCLUSION: bare APPEND is correct; "APPEND BLANK" is rejected by the runtime. The RAM dry
+run touched no disk file (VDISK UNMOUNT dropped it), so the real on-disk SYSTASK (13 rows)
+was never at risk. crud.py now emits bare APPEND.
