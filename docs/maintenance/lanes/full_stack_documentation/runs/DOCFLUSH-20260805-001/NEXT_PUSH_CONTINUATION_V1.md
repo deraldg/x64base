@@ -5,7 +5,7 @@ Lane: `full_stack_documentation`
 Recorded: 2026-08-05
 Steward: `member.ai.claude.cowork`
 Owner: `member.derald`
-Status: **Phases 0.5 -> 4 + catalog derivative COMPLETE and committed; paused for the next push.**
+Status: **Phases 0.5 -> 6 COMPLETE (through the manual candidate); deferred cleanup items remain for the next push.**
 
 ## Done this push (clone-verifiable on `development`)
 
@@ -29,14 +29,23 @@ Status: **Phases 0.5 -> 4 + catalog derivative COMPLETE and committed; paused fo
   artifact texts 0; artifact_orphan_cmdkey_rows 978.
 - Runtime identity at capture: `dottalk++ v0.6 (2026-08-05, 5928e2eb dirty)`.
 
+## Done since (this session, committed)
+
+- Phase 5 (Metadata): metacollect candidates 226/74/959 + Gate 5 record
+  (`metacollect_phase/GATE5_METADATA_CANDIDATE_RECORD_V1.md`). Candidate-only, no
+  live import. metacollect now has an `@dottalk.external` contract + runbook.
+- Phase 6 (Manual candidate): manualgen inventory/validate/export-manifest/
+  build-dry-run + Gate 6 record (`manualgen_phase/GATE6_MANUAL_CANDIDATE_RECORD_V1.md`).
+  Dry-run assembled; boundary clean; the only validation FAIL was PYTHON_312
+  (ran on the 3.10 sandbox; passes on host 3.12).
+
 ## Resume here (next push)
 
-1. **Phase 5 Metadata (candidate-only)**: run `metacollect`; store SYSFUNC/SYSARGS
-   compare + candidate CSVs as candidates; update SelfDoc provenance. Do NOT import
-   candidates into live metadata without a separate reviewed gate.
-2. **Phase 6 Manual candidate**: `tools/manualgen/manualgen.py --manual developer`
-   inventory -> validate -> export-manifest -> build-dry-run (candidate only).
-3. **AIF-088 (deferred cleanup lane)**: source-comment ASCII sweep (em-dash -> `--`;
+1. **Re-harvest for a complete manual**: the manualgen harvest predates the Phase-4
+   HELP rebuild, so the manual candidate does not yet include BBS/NET/CANARY/CMDREL/
+   FORMULA/EDIT. Re-export the HELP/META harvest from current HELP DATA, then re-run
+   `build-reference-candidate` before a real assembly.
+2. **AIF-088 (deferred cleanup lane)**: source-comment ASCII sweep (em-dash -> `--`;
    the `cmd_buildvectors.cpp:21` mojibake proven in the Phase 2/4 HELP output),
    EXAMPLE + SQLHELP duplicate registrations, PSHELL duplicate contract, and the
    crosswalk registry-scan comment-strip fix.
