@@ -1,0 +1,23 @@
+* load_systask.dts -- create + import ONLY SYSTASK, leaving the other four tracking
+* tables untouched (they already exist). AIF-086 M1 follow-on. MAINTAINER-RUN via
+* datarun.ps1 (the steward sandbox cannot run the engine).
+*
+* PRECONDITION -- run the extractor first (writes SYSTASK.csv):
+*   python tools\tracking\seed_tracking.py
+*
+* Then, from D:\code\ccode:
+*   .\datarun.ps1
+*   . DO tools\tracking\load_systask.dts
+*
+* If SYSTASK already exists and a reload is authorized, uncomment the ERASE line.
+
+SET ECHO OFF
+ECHO ===== SYSTASK CREATE + IMPORT START =====
+SET PATH DBF metadata/portal
+
+* ERASE SYSTASK CONFIRM
+SELECT 0
+CREATE X64 SYSTASK (ID N(20,0), TKEY C(48), TITLE C(160), ASSIGNKEY C(64), STATUS N(2,0), CHANNEL C(24), LANEKEY C(16), DUEAT N(20,0), DONEAT N(20,0), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSTASK.csv
+ECHO SYSTASK loaded.
+ECHO ===== SYSTASK CREATE + IMPORT DONE =====

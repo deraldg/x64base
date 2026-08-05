@@ -48,7 +48,24 @@ COLUMNS = {
                "PLANKEY", "PROJECT", "STATUS", "STARTAT", "BRANCH", "HANDLE", "REPORT", "ROWVER"],
     "SYSRUNLANE": ["RUNKEY", "LANEKEY"],
     "SYSPROOF": ["ID", "PKEY", "LABEL", "STATE", "LANEKEY", "SOURCE", "OBSAT", "ROWVER"],
+    "SYSTASK": ["ID", "TKEY", "TITLE", "ASSIGNKEY", "STATUS", "CHANNEL", "LANEKEY",
+                "DUEAT", "DONEAT", "ROWVER"],
 }
+
+# ai_portal_tasks.yaml uses lifecycle-phrase statuses; fold them onto the SYSTASK
+# ladder (0 open, 1 in_progress, 2 done, 3 returned, 4 parked). Unknown -> 0 open.
+_TASK_STATUS = {
+    "open": 0, "proposed": 0, "backlog": 0, "staged": 0, "review_needed": 0,
+    "gate6_scope_pending": 0,
+    "active": 1, "active_seed": 1, "active_prototype": 1, "in_progress": 1,
+    "closed_runtime_observed": 2, "closed_development_slice": 2, "closed": 2, "done": 2,
+    "returned_for_correction": 3, "returned": 3,
+    "parked": 4,
+}
+
+
+def _task_status(s: str) -> int:
+    return _TASK_STATUS.get((s or "").strip().lower(), 0)
 
 
 def _epoch(datestr: str) -> int:
@@ -128,6 +145,23 @@ def extract_proofs(root: Path) -> list[dict]:
     } for p in d.get("proofs", [])]
 
 
+def extract_tasks(root: Path) -> list[dict]:
+    d = yaml.safe_load((root / "labtalk/registries/ai_portal_tasks.yaml")
+                       .read_text(encoding="utf-8", errors="replace"))
+    rows = []
+    for t in d.get("tasks", []):
+        owner = str(t.get("owner", "")).strip()
+        assign = owner if owner.startswith("member.") else (f"member.{owner.lower()}" if owner else "")
+        rows.append({
+            # TKEY is C(48); a couple of ids run longer and IMPORT truncates. The id
+            # stays the natural key; widen the field only if a collision appears.
+            "TKEY": t.get("id", ""), "TITLE": t.get("title", ""), "ASSIGNKEY": assign,
+            "STATUS": _task_status(t.get("status", "")), "CHANNEL": t.get("channel", ""),
+            "LANEKEY": t.get("ticket", ""), "DUEAT": 0, "DONEAT": 0, "ROWVER": 1,
+        })
+    return rows
+
+
 def _assign_ids(rows: list[dict]) -> list[dict]:
     for i, r in enumerate(rows, 1):
         r["ID"] = i
@@ -148,11 +182,14 @@ def seed(root: Path, out: Path) -> dict:
     runs, runlane = extract_runs(root)
     runs = _assign_ids(runs)
     proofs = _assign_ids(extract_proofs(root))
+    tasks = _assign_ids(extract_tasks(root))
     _write_csv(out / "SYSLANE.csv", lanes, COLUMNS["SYSLANE"])
     _write_csv(out / "SYSRUN.csv", runs, COLUMNS["SYSRUN"])
     _write_csv(out / "SYSRUNLANE.csv", runlane, COLUMNS["SYSRUNLANE"])
     _write_csv(out / "SYSPROOF.csv", proofs, COLUMNS["SYSPROOF"])
-    return {"SYSLANE": len(lanes), "SYSRUN": len(runs), "SYSRUNLANE": len(runlane), "SYSPROOF": len(proofs)}
+    _write_csv(out / "SYSTASK.csv", tasks, COLUMNS["SYSTASK"])
+    return {"SYSLANE": len(lanes), "SYSRUN": len(runs), "SYSRUNLANE": len(runlane),
+            "SYSPROOF": len(proofs), "SYSTASK": len(tasks)}
 
 
 def main(argv=None) -> int:

@@ -13,7 +13,7 @@
 *      (dottalkpp\data = datarun.ps1 cwd). Switch to absolute paths if your run cwd differs.
 *
 * Full re-seed snapshot. If a table already exists and re-seeding is authorized, uncomment
-* its ERASE line. SYSTASK is intentionally absent (deferred: its source needs its own mapping).
+* its ERASE line. SYSTASK is seeded from ai_portal_tasks.yaml (AIF-086 M1 follow-on).
 * Grammar verified against cmd_create.cpp and tested regression scripts (buffer_visibility_*,
 * canaries/*, comments/SOURCE_COMMENT_IMPORT_ONLY.dts).
 
@@ -44,5 +44,11 @@ SELECT 3
 CREATE X64 SYSPROOF (ID N(20,0), PKEY C(64), LABEL C(160), STATE C(24), LANEKEY C(16), SOURCE C(160), OBSAT N(20,0), ROWVER N(20,0))
 IMPORT metadata/portal/seed/SYSPROOF.csv
 ECHO SYSPROOF loaded.
+
+* ERASE SYSTASK CONFIRM
+SELECT 4
+CREATE X64 SYSTASK (ID N(20,0), TKEY C(48), TITLE C(160), ASSIGNKEY C(64), STATUS N(2,0), CHANNEL C(24), LANEKEY C(16), DUEAT N(20,0), DONEAT N(20,0), ROWVER N(20,0))
+IMPORT metadata/portal/seed/SYSTASK.csv
+ECHO SYSTASK loaded.
 
 ECHO ===== TRACKING TABLES CREATE + IMPORT DONE =====
