@@ -380,3 +380,24 @@ tasks:
       - docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260805-001/runtime_baseline/RUNTIME_BASELINE_REVIEW_V1.md
     website_paths:
       - /docs/dev/current-lanes
+
+  - id: task.ai_systems_crosswalk
+    title: AI systems cross-walk -- inventory + integration seams for the AI-facing subsystems
+    ticket: AIF-089
+    ticket_state: proposed_needs_host_claim
+    kind: prior_art_scan
+    owning_lifecycle: labtalk_pdlc
+    sdlc_lane: ai_systems_integration
+    project_ids: [project.labtalk.pdlc, project.x64base.runtime]
+    channel: ai_portal
+    status: proposed
+    owner: Derald
+    updated_on: "2026-08-05"
+    truth_state: source_observed
+    proof_state: "Read-only scan 2026-08-05: inventoried AI Portal, AI-BBS/pseudo-chat (AIF-075), onboarding/assimilate (MAINT AI ASSIMILATE), external-AI intake, coordination/AIF (AIF-050), provenance/runs, CHAT/Ollama + NET egress, roles/agency. Mapped 7 integration seams. Origin: maintainer note 'we have a weak naming' (2026-08-03)."
+    next_gate: "Optional follow-on lanes, each separately authorized: (1) machine-readable subsystems index mirroring ai_report_index.yaml; (2) wire MAINT AI VISIBILITY to read the registries; (3) land audit_trail external_intake_glob (Part C); (4) collapse the reports->AI naming."
+    summary: "Single map of the AI-facing subsystems and their integration seams. Reuses the Phase-1 reference/authority crosswalk method. Read-only scan; the build steps are separate gated lanes."
+    docs:
+      - docs/AI-Friendly/AI_SYSTEMS_CROSSWALK_V1.md
+    website_paths:
+      - /docs/dev/current-lanes
