@@ -745,6 +745,16 @@ Notes:
 
         {"AREA51", "AREA51", "Developer sandbox / experimental command.", true},
 
+        // AI system -- the engine-side window into the AI-BBS substrate (AIF-075/076).
+        {"BBS", "BBS [USAGE|BOARDS|READ <board.key> [THREAD <id>] [LAST <n>]|POST <board.key> SUBJECT <s> BODY <t>|REPLY <post.id> BODY <t>|CLOSE <thread.id>]",
+                 "AI-BBS persistence substrate: durable boards, threads and posts as x64base DBF under data/metadata/bbs/, with RBAC and attributed authorship; board.governance projects the SYSGRANT request/approve loop (AIF-075).", true},
+
+        {"NET", "NET [USAGE|EGRESS STATUS|EGRESS OPEN [MINUTES <n>] [reason]|EGRESS CLOSE]",
+                 "NET EGRESS: read and toggle the WSL/AFB outbound egress isolation as a permissioned, audited capability (host.network.egress; Windows/mirrored-mode). Verified revocable egress isolation, not an air-gap.", true},
+
+        {"CANARY", "CANARY [USAGE]",
+                 "Dev canary for the metadata catalog reader adapter: reads the already-open SYSCMD area and reports adapter row/distribution counts (handler cmd_CATALOGCANARY).", true},
+
         {"EVALDIFF", "EVALDIFF FOR <predicate>",
                  "Compare classic DbArea and TupleRow predicate-evaluator outcomes over the same physical records without changing either evaluator.", true},
 
