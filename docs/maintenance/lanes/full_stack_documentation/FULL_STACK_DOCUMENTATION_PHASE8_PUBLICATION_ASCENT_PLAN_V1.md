@@ -115,6 +115,19 @@ already produces HELP DATA and exports helpdata to DBFs via
 `dbfread`-based dump is interim scaffolding only; the permanent producer is native
 C++ per the maintenance-app doctrine.
 
+**Status 2026-08-05:** an interim producer now exists --
+`tools/fullstack_docs/export_help_meta_harvest.py` -- and satisfies E5 in effect:
+it dumps the 14 HELP/META tables to a candidate harvest, includes this pass's new
+commands (BBS/NET/CANARY/CMDREL/FORMULA/EDIT), resolves the manual prose
+(`HELP_LINE` has no memo fields), and manualgen selects it 14/14 with only the
+`PYTHON_312` self-check failing. Limitation: it uses the v32-era `dbfread`, which
+does not follow x64 memo blocks, so the memo columns (`COMMANDS.USAGE/VERBOSE`,
+`CMD_ARGS.USAGE/VERBOSE`, `HELP_ARTIFACTS.TEXT/DETAIL/EVIDENCE`, `SYSFUNC.NOTES`)
+are blanked rather than resolved. The permanent native `CMDHELP` harvest verb must
+resolve memo TEXT properly by reusing the x64 open/memo logic already in
+`src/cli/cmd_use.cpp` (USE auto-attaches memo storage). Candidate harvest lives at
+`runs/DOCFLUSH-20260805-001/manualgen_phase/harvest_candidate_v1/` (gitignored CSVs).
+
 ## Data flow to the UI
 
 ```text
@@ -211,7 +224,7 @@ public blob. Distinct mutation; distinct owner go.
 
 | Step | Today | Automate to |
 | --- | --- | --- |
-| Re-harvest (E5) | **NO PRODUCER EXISTS** (hand-made May snapshot; manifest `PENDING_EXPORT`) | build a HELP/META -> `harvested/*.csv` exporter, then chain it after `CMDHELP BUILD` |
+| Re-harvest (E5) | INTERIM Python producer now exists (`tools/fullstack_docs/export_help_meta_harvest.py`); current harvest, manualgen-accepted, prose resolved, but x64 memo TEXT blanked (v32 reader) | native `CMDHELP` harvest verb that resolves memo TEXT by reusing the USE/memo-open logic in `cmd_use.cpp`, chained after `CMDHELP BUILD` |
 | Manual candidate chain | many manualgen subcommands | one reviewed `manualgen ascend` driver |
 | Website feed + integration | packet + manual apply | one `website-ascend` driver over `website_content_manifest.yaml` |
 | Live verification | manual HTTP checks | a route-manifest verifier that reads deployed content |
