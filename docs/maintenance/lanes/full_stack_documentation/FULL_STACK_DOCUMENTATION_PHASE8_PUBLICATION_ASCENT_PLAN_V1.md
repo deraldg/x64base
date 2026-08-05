@@ -78,9 +78,23 @@ tree.
 | E7 | Backups + rollback ready | HELP store backup exists; promotion rollback path named |
 | E8 | Owner authorization for mutation | manual acceptance, source staging, and website publish are distinct mutations; each needs its own owner go |
 
+Status as of 2026-08-05 (DOCFLUSH-20260805-001):
+
+- E1 done -- Gate 7 closeout says CLOSED.
+- E2 done -- Gate 4: reflection PASS, 525 topics.
+- E3 done -- source_census 100 percent; catalog fallback 0.
+- E4 done -- `refcheck_v1.py` PASS (0 guarded phantoms across dotref/foxref/edref/
+  pshell_ref/sql_ref/devref); `normcheck_v1.py` PASS (0 findings in the IDENTITY
+  and FN_IDENTITY fail-lanes).
+- E5 interim-satisfied -- `export_help_meta_harvest.py` produced a current,
+  manualgen-accepted candidate harvest (memo TEXT deferred to the native verb).
+- E6 done -- `command-catalog.mdx` regenerated, fallback 0.
+- E7 pending -- take a fresh HELP-store backup before any Phase 8 mutation.
+- E8 pending -- owner authorization per mutation (manual accept, source stage,
+  website publish).
+
 Fail-closed: if any row is unproven, Phase 8 stops and the dev-tree lane reopens
-the relevant phase. E5 is the one this run currently fails, and it is worse than a
-stale file -- see below.
+the relevant phase. E5 was the deep one -- worse than a stale file -- see below.
 
 ### Known gap: E5 has no producer (build it first)
 
