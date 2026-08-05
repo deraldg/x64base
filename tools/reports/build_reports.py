@@ -50,6 +50,11 @@ _ap = argparse.ArgumentParser(description=__doc__)
 _ap.add_argument('--root', default=str(Path(__file__).resolve().parents[2]),
                  help='repo root (default: two levels up from this script)')
 _ap.add_argument('--out', default=None, help='output dir (default: <root>/docs/reports)')
+_ap.add_argument('--source', choices=['yaml', 'dbf'], default='yaml',
+                 help='AI Portal lane/run/proof source: authored YAML registries (default) '
+                      'or the DERIVED DBF tracking tables via tools/dbf/crud.read '
+                      '(SYSLANE/SYSRUN/SYSRUNLANE/SYSPROOF). dbf dogfoods the tracking layer: '
+                      'a landed lane IS a row, so it cannot be missing from the view.')
 _ap.add_argument('--public', action='store_true',
                  help='emit only publishable reports for x64base.com: skip any report marked '
                       'sensitivity: private in portal.yaml, and apply the documented public omissions '
@@ -459,19 +464,63 @@ RG = ROOT/'labtalk'/'registries'
 rd = lambda n: yaml.safe_load((RG/n).read_text(encoding='utf-8',errors='replace'))
 runs_y   = rd('ai_runs.yaml')
 proofs_y = rd('proofs.yaml')
-runs   = runs_y.get('runs',[])
-by_lane= runs_y.get('current_by_lane',{})
-by_proj= runs_y.get('current_by_project',{})
-proofs = proofs_y.get('proofs',[])
 
-# lane rows from the intake queue table
-lane_rows={}
-qtxt=(ROOT/'docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md').read_text(encoding='utf-8',errors='replace')
-for l in qtxt.splitlines():
-    if re.match(r'^\|\s*AIF-\d+', l):
-        c=[x.strip() for x in l.strip().strip('|').split('|')]
-        if len(c)>=6:
-            lane_rows[c[0]]={'title':c[1],'tags':c[2],'anchor':c[4] if len(c)>4 else '','evidence':c[5] if len(c)>5 else '','notes':c[-1]}
+def _load_from_dbf():
+    """Derive (runs, by_lane, by_proj, proofs, lane_rows) from the tracking DBFs via
+    tools/dbf/crud.read -- the same shapes the YAML path yields, so the HTML below is
+    unchanged. This is the dogfood: the view is DERIVED from the engine's own store,
+    so a landed lane (a row) cannot be missing from it (the AIF-087 drift dies here).
+    Pure-Python read (no engine), so it stays runnable anywhere the report does."""
+    sys.path.insert(0, str(ROOT/'tools'/'dbf'))
+    import crud
+    lanes_r  = crud.read_rows('SYSLANE')
+    runs_r   = crud.read_rows('SYSRUN')
+    links    = crud.read_rows('SYSRUNLANE')
+    proofs_r = crud.read_rows('SYSPROOF')
+    lanes_by_run = {}
+    for lk in links:
+        lanes_by_run.setdefault(lk['RUNKEY'], []).append(lk['LANEKEY'])
+    def _si(v):
+        try: return int(v or '0')
+        except ValueError: return 0
+    runs_o = [{
+        'run_id': r['RKEY'], 'member': r['MEMBERKEY'], 'role': r['ROLE'],
+        'owner': r['OWNERKEY'], 'committer': r['COMMITKEY'], 'authored_by': r['AUTHORKEY'],
+        'planned_by': r['PLANKEY'], 'product': '', 'project': r['PROJECT'],
+        'status': 'active' if r['STATUS'] in ('0', '') else 'closed',
+        'started': ts(r['STARTAT']), 'git': {'branch': r['BRANCH']},
+        'handle_binding': r['HANDLE'], 'lanes': lanes_by_run.get(r['RKEY'], []),
+        'closeouts': [r['REPORT']] if r.get('REPORT') else [],
+    } for r in runs_r]
+    by_lane_o, best = {}, {}
+    for r in runs_r:                       # newest run (max STARTAT) per lane
+        for lane in lanes_by_run.get(r['RKEY'], []):
+            s = _si(r.get('STARTAT'))
+            if lane not in best or s >= best[lane]:
+                best[lane] = s; by_lane_o[lane] = r['RKEY']
+    proofs_o = [{'id': p['PKEY'], 'label': p['LABEL'], 'state': p['STATE'],
+                 'notes': p['SOURCE']} for p in proofs_r]
+    lane_rows_o = {ln['LKEY']: {'title': ln['TITLE'], 'tags': '', 'anchor': ln['ANCHOR'],
+                                'evidence': '', 'notes': ln['ANCHOR']} for ln in lanes_r}
+    return runs_o, by_lane_o, {}, proofs_o, lane_rows_o
+
+if _args.source == 'dbf':
+    runs, by_lane, by_proj, proofs, lane_rows = _load_from_dbf()
+    print(f"AI Portal source: DBF tracking tables "
+          f"({len(lane_rows)} lanes, {len(runs)} runs, {len(proofs)} proofs)")
+else:
+    runs   = runs_y.get('runs',[])
+    by_lane= runs_y.get('current_by_lane',{})
+    by_proj= runs_y.get('current_by_project',{})
+    proofs = proofs_y.get('proofs',[])
+    # lane rows from the intake queue table
+    lane_rows={}
+    qtxt=(ROOT/'docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md').read_text(encoding='utf-8',errors='replace')
+    for l in qtxt.splitlines():
+        if re.match(r'^\|\s*AIF-\d+', l):
+            c=[x.strip() for x in l.strip().strip('|').split('|')]
+            if len(c)>=6:
+                lane_rows[c[0]]={'title':c[1],'tags':c[2],'anchor':c[4] if len(c)>4 else '','evidence':c[5] if len(c)>5 else '','notes':c[-1]}
 
 EV={'runtime-observed':'ok','runtime_observed':'ok','source-defined':'acc','source_defined':'acc',
     'design-intended':'warn','design-intended -- not started':'warn','draft':'warn','chat-intended':''}
@@ -558,6 +607,42 @@ proof_tbl=f"""<table><tr><th>Proof</th><th>State</th><th>Evidence note</th></tr>
 nobs=len([p for p in proofs if p.get('state')=='runtime_observed'])
 nsrc=len([p for p in proofs if p.get('state')=='source_defined'])
 
+# --- tasks (SYSTASK) via tools/dbf/crud.read; graceful if not loaded yet -------
+def _task_rows():
+    try:
+        sys.path.insert(0, str(ROOT/'tools'/'dbf'))
+        import crud
+        return crud.read_rows('SYSTASK')
+    except Exception:
+        return []
+TASK_ST={'0':('open',''),'1':('in progress','ok'),'2':('done','acc'),
+         '3':('returned','warn'),'4':('parked','')}
+_tasks=_task_rows()
+if _tasks:
+    _trows=''
+    for t in sorted(_tasks, key=lambda r:(r.get('STATUS','9'), r.get('TKEY',''))):
+        lbl,cls=TASK_ST.get(t.get('STATUS',''),(t.get('STATUS',''),''))
+        _trows+=f"""<tr><td><code>{e(t.get('TKEY',''))}</code><br>
+<span class="small">{e(t.get('TITLE',''))}</span></td>
+<td><code>{e(t.get('LANEKEY','') or '--')}</code></td>
+<td class="small dim">{e(t.get('CHANNEL',''))}</td>
+<td><span class="pill {cls}">{e(lbl)}</span></td>
+<td class="small"><code>{e(t.get('ASSIGNKEY','') or '--')}</code></td></tr>"""
+    _open=len([t for t in _tasks if t.get('STATUS','')=='0'])
+    _prog=len([t for t in _tasks if t.get('STATUS','')=='1'])
+    tasks_block=(f"""<h2>Tasks <span class="pill acc">source: SYSTASK</span></h2>
+<div class="grid">
+<div class="kpi"><div class="n">{len(_tasks)}</div><div class="l">Tasks tracked</div></div>
+<div class="kpi"><div class="n">{_open}</div><div class="l">Open</div></div>
+<div class="kpi"><div class="n">{_prog}</div><div class="l">In progress</div></div></div>
+<table><tr><th>Task</th><th>Lane</th><th>Channel</th><th>Status</th><th>Assignee</th></tr>
+{_trows}</table>""")
+else:
+    tasks_block=('<h2>Tasks</h2><div class="note w">SYSTASK is not loaded yet. Seed it '
+                 '(<code>python tools/tracking/seed_tracking.py</code>) and load it '
+                 '(<code>DO tools\\tracking\\load_tracking_tables.dts</code> via datarun), '
+                 'then regenerate with <code>--source dbf</code>.</div>')
+
 portal_map="""<div class="note"><b>The portal front door, in order</b>
 <ol style="margin:7px 0 0">
 <li><code>AI_README.md</code> -- entry point; step 0b says check <code>board.worklog</code> first.</li>
@@ -577,8 +662,11 @@ Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the sess
 <i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
 That is by design -- the record lives in the repo, not in a vendor's session store.</div>"""
 
+_sub3=("Who worked what, what is proven, and where to pick the thread back up."
+       + (' <span class="pill acc">source: DBF tracking tables</span>'
+          if _args.source=='dbf' else ''))
 r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
-        "Who worked what, what is proven, and where to pick the thread back up.",
+        _sub3,
         f"""<div class="grid">
 <div class="kpi"><div class="n">{len(by_lane)}</div><div class="l">Tracked lanes</div></div>
 <div class="kpi"><div class="n">{len(runs)}</div><div class="l">Recorded runs</div></div>
@@ -588,6 +676,7 @@ r3=page("DotTalk++ AI Portal -- Lanes, Runs and Proofs",
         + portal_map
         + "<h2>Lanes -- and the newest run on each</h2>" + lane_tbl + closed_block + howret
         + "<h2>Runs</h2>" + runcards
+        + tasks_block
         + "<h2>Proof ledger</h2>" + proof_tbl)
 emit('AI_PORTAL_REPORT.html', r3)
 
