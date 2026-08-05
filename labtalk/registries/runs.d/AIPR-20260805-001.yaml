@@ -1,0 +1,23 @@
+run_id: AIPR-20260805-001
+member: member.ai.claude.cowork
+product: Cowork
+project: project.ai_systems.integration
+lanes:
+- AIF-086
+role: integration_steward
+authored_by: member.ai.claude.cowork
+planned_by: member.derald
+owner: member.derald
+committer: member.derald
+git:
+  branch: development
+  baseline: 45136e0ff
+chat_handle: ''
+handle_binding: SELF_REPORTED
+continues_run: AIPR-20260803-004
+started: 2026-08-05
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_AI_SYSTEMS_INTEGRATION_SDLC_2026-08-05_CLAUDE_STEWARD_M2.md
+reports:
+- AIPR-20260805-001
+status: open
