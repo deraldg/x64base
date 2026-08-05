@@ -48,6 +48,10 @@ SNAPSHOT_RE = re.compile(
     r"and `(?P<parsed>\d+)` parsed usage contract blocks\."
 )
 REGISTRY_ADD_RE = re.compile(r'registry\(\)\.add\("([^"]+)"')
+# Full registration incl. the lambda body, so an alias key (a second registry key
+# that dispatches to the same handler as an owning command) can be resolved to that
+# owner's usage block instead of falling back.
+REG_HANDLER_RE = re.compile(r'registry\(\)\.add\(\s*"([^"]+)"\s*,\s*\[\][^{]*\{([^{}]*)\}')
 ROW_RE = re.compile(r"^\| `(?P<cmd>[^`]+)` \|")
 FALLBACK_TEXT = (
     "Registered in the central shell command registry; no parsed "
@@ -74,6 +78,19 @@ def registry_keys(source_root: Path) -> list[str]:
         encoding="utf-8", errors="replace"
     )
     return sorted(set(REGISTRY_ADD_RE.findall(text)))
+
+
+def registry_handler_map(source_root: Path) -> dict[str, str]:
+    """KEY -> handler base name (`cmd_XXX` -> `XXX`), for alias resolution."""
+    text = (source_root / "src/cli/shell_commands.cpp").read_text(
+        encoding="utf-8", errors="replace"
+    )
+    out: dict[str, str] = {}
+    for m in REG_HANDLER_RE.finditer(text):
+        h = re.search(r"cmd_([A-Za-z0-9_]+)\s*\(", m.group(2))
+        if h:
+            out[m.group(1)] = h.group(1)
+    return out
 
 
 def _norm(name: str) -> str:
@@ -127,6 +144,44 @@ def usage_blocks(source_root: Path) -> dict[str, dict[str, str]]:
     return out
 
 
+def subusage_blocks(source_root: Path) -> dict[str, dict[str, str]]:
+    """Ladder arms documented via `@dottalk.subusage` (e.g. SET CASE, SET ORDER).
+
+    These live indented inside a parent command's handler and name themselves with
+    `parent:` + `sub:` rather than `command:`. Keyed by _norm("PARENT SUB") so a
+    registry key like `SETCASE`/`SET CASE` resolves to it.
+    """
+    out: dict[str, dict[str, str]] = {}
+    src = source_root / "src"
+    for path in sorted(src.rglob("*.cpp")) + sorted(src.rglob("*.hpp")):
+        text = path.read_text(encoding="utf-8-sig", errors="replace").replace(
+            "\r\n", "\n"
+        ).replace("\r", "\n")
+        for block in re.finditer(
+            r"(?ms)^\s*// @dottalk\.subusage.*?"
+            r"(?=^\s*// @dottalk\.subusage|^\s*(?!\s*//)\S|\Z)",
+            text,
+        ):
+            b = block.group(0)
+            parent = _field(b, "parent")
+            sub = _field(b, "sub")
+            if not (parent and sub):
+                continue
+            category = _field(b, "category")
+            status = _field(b, "status")
+            summary = _summary(b)
+            if not (category and status and summary):
+                continue
+            rel = path.relative_to(source_root).as_posix().replace("/", "\\")
+            out.setdefault(_norm(f"{parent} {sub}"), {
+                "category": category,
+                "status": status,
+                "summary": summary,
+                "source": rel,
+            })
+    return out
+
+
 def syscmd_commands(path: Path) -> tuple[set[str], dict[str, str]]:
     """Parse a SYSCMD DBF export (CMD_ID,CAN_NAME,TYPE,VIS,HANDLER,ACTIVE).
 
@@ -152,7 +207,9 @@ def syscmd_commands(path: Path) -> tuple[set[str], dict[str, str]]:
 
 
 def _field(block: str, key: str) -> str:
-    m = re.search(rf"(?m)^// {key}:\s*(.+?)\s*$", block)
+    # `^\s*//` (not `^//`) so indented blocks -- e.g. @dottalk.subusage inside a
+    # function body -- parse the same as file-level blocks.
+    m = re.search(rf"(?m)^\s*// {key}:\s*(.+?)\s*$", block)
     return m.group(1).strip() if m else ""
 
 
@@ -164,15 +221,15 @@ def _summary(block: str) -> str:
     parts: list[str] = []
     for ln in lines:
         if not grab:
-            head = re.match(r"^// summary:\s*(.*?)\s*$", ln)
+            head = re.match(r"^\s*// summary:\s*(.*?)\s*$", ln)
             if head:
                 grab = True
                 if head.group(1):
                     parts.append(head.group(1))
             continue
-        if re.match(r"^//\s*$", ln) or re.match(r"^// [a-z-]+:", ln):
+        if re.match(r"^\s*//\s*$", ln) or re.match(r"^\s*// [a-z-]+:", ln):
             break
-        parts.append(re.sub(r"^//\s+", "", ln).rstrip())
+        parts.append(re.sub(r"^\s*//\s+", "", ln).rstrip())
     return " ".join(p for p in parts if p).strip()
 
 
@@ -337,15 +394,34 @@ def emit(
 ) -> int:
     keys = registry_keys(source_root)
     blocks = usage_blocks(source_root)
+    # Ladder arms (subusage) fill gaps but never override a direct usage block.
+    for name, blk in subusage_blocks(source_root).items():
+        blocks.setdefault(name, blk)
+    # Alias resolution: a registry key with no block of its own inherits the block
+    # of the owning command it shares a handler with (e.g. UNDELETE -> RECALL).
+    handler_of = registry_handler_map(source_root)
+    canon: dict[str, tuple[str, dict[str, str]]] = {}
+    for k in sorted(keys):
+        bk = blocks.get(_norm(k))
+        if bk:
+            h = handler_of.get(k)
+            if h and h not in canon:
+                canon[h] = (k, bk)
     rows: list[str] = []
     parsed = 0
     for key in sorted(keys):
         b = blocks.get(_norm(key))
+        alias_of = None
+        if not b:
+            h = handler_of.get(key)
+            if h and h in canon and canon[h][0] != key:
+                alias_of, b = canon[h]
         if b:
             parsed += 1
+            summary = b["summary"] + (f" (alias of {alias_of})" if alias_of else "")
             rows.append(
                 f"| `{key}` | {_md_cell(b['category'])} | {_md_cell(b['status'])} | "
-                f"{_md_cell(b['summary'])} | `{b['source']}` |"
+                f"{_md_cell(summary)} | `{b['source']}` |"
             )
         else:
             rows.append(
