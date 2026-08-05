@@ -41,7 +41,15 @@ Status: **Phases 0.5 -> 6 COMPLETE (through the manual candidate); deferred clea
 
 ## Resume here (next push)
 
-1. **Re-harvest for a complete manual**: the manualgen harvest predates the Phase-4
+1. **Phase 7 / Gate 7 -- review and promote narrowly (NOT done)**: review the five
+   states for pointer consistency (candidate workspace, accepted/canonical manifest,
+   active reader artifact, publication manifest, website projection); produce a
+   promotion manifest (source/dest paths, hashes, rollback, post-checks); confirm
+   agreement; and CLOSE the development-tree run. Public promotion
+   (`ccode -> C:\x64base -> github`) + website publish are handed to their own
+   publication lane (the historical 9-gate ladder: source staging -> website feed
+   -> integration -> publication -> live verification), NOT this plan.
+2. **Re-harvest for a complete manual**: the manualgen harvest predates the Phase-4
    HELP rebuild, so the manual candidate does not yet include BBS/NET/CANARY/CMDREL/
    FORMULA/EDIT. Re-export the HELP/META harvest from current HELP DATA, then re-run
    `build-reference-candidate` before a real assembly.
