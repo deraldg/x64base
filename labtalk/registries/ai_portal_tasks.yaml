@@ -319,3 +319,64 @@ tasks:
       - docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md
     website_paths:
       - /docs/dev/current-lanes
+
+  - id: task.dotref.automation
+    title: dotref automation -- derive the native reference from registry + contracts
+    ticket: AIF-067
+    kind: reference_automation
+    owning_lifecycle: labtalk_pdlc
+    sdlc_lane: dotref_automation_ref_reconciliation
+    project_ids: [project.x64base.runtime, project.labtalk.pdlc]
+    channel: ai_portal
+    status: proposed
+    owner: Derald
+    updated_on: "2026-08-05"
+    truth_state: source_defined_report_only
+    proof_state: "tools/fullstack_docs/dotref_autogen.py (milestone 1, report-only) runs on Python 3.10: 235 registry commands, 216 usage contracts, dotref complete for native commands (0 candidates missing). The tree is in a fully-contracted state to generate from. Introduced in full-stack doc flush v4 (2026-08-05)."
+    next_gate: "M2: diff curated wording -- flag dotref summaries that drifted from their @dottalk.usage. M3: emit a full candidate dotref.hpp, diff against the curated file to preserve preferred public wording, and gate promotion on refcheck_v1 (no phantoms). The prefix->authority map (cmd/edu/app -> dotref; expression functions -> SYSFUNC; external calls tagged) is the classifier."
+    summary: "Make include/dotref.hpp a derived-not-authored artifact: generate native-command entries from the central registry + @dottalk.usage contracts via a generate -> review -> promote pipeline, keep dotref's curated public wording, and let refcheck_v1 guard the result. Retires the manual add-command-to-dotref + rebuild loop."
+    docs:
+      - docs/maintenance/lanes/full_stack_documentation/DOTREF_AUTOMATION_AND_REF_RECONCILIATION_SCOPE_V1.md
+      - tools/fullstack_docs/dotref_autogen.py
+    website_paths:
+      - /docs/dev/current-lanes
+
+  - id: task.reference.phase1_source_followups
+    title: Phase 1 Gate-1 source follow-ups -- duplicate registrations + PSHELL contract + crosswalk comment-scan
+    ticket: AIF-088
+    kind: reference_reconciliation
+    owning_lifecycle: labtalk_pdlc
+    sdlc_lane: reference_identity_reconciliation
+    project_ids: [project.x64base.runtime, project.labtalk.pdlc]
+    channel: ai_portal
+    status: proposed
+    owner: Derald
+    updated_on: "2026-08-05"
+    truth_state: review_recorded
+    proof_state: "Phase 1 Gate-1 crosswalk + reference_disposition_recommend.py surfaced two duplicate registrations and one duplicate contract. Recorded in PHASE1_GATE1_REFERENCE_DISPOSITION_RECORD_V1.md (flush v4, 2026-08-05). Not perfection-blocking; deferred so Phase 2 can proceed."
+    next_gate: "Source preflight (own contract + build + regression) for: (1) EXAMPLE registered twice in src/cli/shell_commands.cpp (L475, L564) -- remove one; (2) SQLHELP double-registered via dli::registry().add in src/cli/cmd_sql_help.cpp:209 + shell_commands.cpp:424 -- confirm dli:: is a distinct intentional registry, else remove the redundant add; (3) PSHELL duplicate // command: PSHELL block (cmd_pshell.cpp + cmd_pshell_help.cpp) -- reclassify the help block as command: PSHELL HELP. Process fix: strip // line comments before the crosswalk registry scan (the BBS/NET false positives)."
+    summary: "Deferred Phase 1 Gate-1 items for the next pass: two real duplicate registrations (EXAMPLE, SQLHELP), one duplicate contract (PSHELL), and a crosswalk scan-tightening (ignore registry().add inside comments)."
+    docs:
+      - docs/maintenance/lanes/full_stack_documentation/PHASE1_GATE1_REFERENCE_DISPOSITION_RECORD_V1.md
+    website_paths:
+      - /docs/dev/current-lanes
+
+  - id: task.source_comment_ascii_sweep
+    title: Source-comment ASCII sweep -- non-ASCII in contracts surfaces as HELP mojibake
+    ticket: AIF-088
+    kind: house_style_cleanup
+    owning_lifecycle: labtalk_pdlc
+    sdlc_lane: source_comment_hygiene
+    project_ids: [project.x64base.runtime, project.labtalk.pdlc]
+    channel: ai_portal
+    status: proposed
+    owner: Derald
+    updated_on: "2026-08-05"
+    truth_state: runtime_observed
+    proof_state: "DOCFLUSH-20260805-001 Phase 2 baseline surfaced HELP mojibake: cmd_buildvectors.cpp:21 SUMMARY carries a U+2014 em-dash rendering as mojibake in HELP output. Sweep found ~20+ src/cli files with non-ASCII in comments/contracts."
+    next_gate: "Dedicated ASCII sweep of source comments/@dottalk contracts (em-dash -> --, arrows -> ->), so HELP DATA and the website catalog stay ASCII. The house-style gate only checks added lines, so this backlog needs a one-time sweep and an optional whole-file gate on @dottalk contract blocks."
+    summary: "Non-ASCII (em-dashes) in source comments and @dottalk contracts flows into HELP DATA and the website command catalog as mojibake. Deferred from flush v4 (not perfection-blocking) to a dedicated cleanup pass."
+    docs:
+      - docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260805-001/runtime_baseline/RUNTIME_BASELINE_REVIEW_V1.md
+    website_paths:
+      - /docs/dev/current-lanes
