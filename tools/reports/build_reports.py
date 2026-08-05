@@ -791,5 +791,5 @@ and the connection recipe. Answers: <i>who can do what, and how do I get in?</i>
 <div class="small dim" style="margin-top:7px">Reads the DBF tables and YAML registries directly. Read-only --
 it never writes to the store, so it is safe to run while the daemon is up.</div></div>"""
 
-idx = page("DotTalk++ Reports", "Human-readable views over live project state.", idx_body)
+idx = page("DotTalk++ AI", "Human-readable views over live project state.", idx_body)
 emit('index.html', idx)

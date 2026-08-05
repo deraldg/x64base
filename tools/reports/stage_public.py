@@ -60,7 +60,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--root', default=None, help='repo root (default: auto-detect)')
     ap.add_argument('--site', default=None,
-                    help='site public/reports dir (default: <repo>/../../dev/x64base-site/public/reports)')
+                    help='site public/AI dir (default: <repo>/../../dev/x64base-site/public/AI). '
+                         'The published views were renamed reports -> AI; pass --site to override.')
     ap.add_argument('--write', action='store_true', help='actually stage (default: dry run)')
     a = ap.parse_args()
 
@@ -70,7 +71,7 @@ def main():
         sys.exit("error: %s not found" % builder)
 
     site = Path(a.site).resolve() if a.site else \
-        (root.parent.parent / 'dev' / 'x64base-site' / 'public' / 'reports')
+        (root.parent.parent / 'dev' / 'x64base-site' / 'public' / 'AI')
     if not site.parent.exists():
         sys.exit("error: site public/ not found: %s\n       pass --site <path>" % site.parent)
 
@@ -131,8 +132,8 @@ def main():
     print("\nstaged %d file(s) to %s" % (len(produced), site))
     print("""
 LOCAL PREVIEW CAVEAT
-  next.config.mjs sets trailingSlash:true, so `next dev` redirects /reports/index.html
-  to /reports/index.html/ and 404s. That is DEV ONLY -- Apache and GitHub Pages serve
+  next.config.mjs sets trailingSlash:true, so `next dev` redirects /AI/index.html
+  to /AI/index.html/ and 404s. That is DEV ONLY -- Apache and GitHub Pages serve
   the file and honour DirectoryIndex. To view locally, open the file directly:
     %s
 
