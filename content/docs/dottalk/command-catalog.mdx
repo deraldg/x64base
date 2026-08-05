@@ -16,7 +16,7 @@ Diagram attachment: `DIAG-CMDAUTH-004`
 Canonical source:
 `docs/manuals/assets/diagrams/command_reference_harvest_v1.svg`
 
-Source extraction snapshot: `236` registered command keys and `215` parsed usage contract blocks.
+Source extraction snapshot: `237` registered command keys and `216` parsed usage contract blocks.
 
 ## Source-Derived Commands
 
@@ -37,7 +37,7 @@ Source extraction snapshot: `236` registered command keys and `215` parsed usage
 | `AVG` | aggregate | supported | Average a numeric expression over the visible record set. | `src\cli\cmd_aggs.cpp` |
 | `BANG` | shell | supported | Launch the host operating-system shell or execute a host shell command. | `src\cli\cmd_bang.cpp` |
 | `BBOX` | education | experimental | Teach and inspect the Blackbox model: data enters a processing system and information comes out. | `src\cli\cmd_bbox.cpp` |
-| `BBS` | diagnostics | supported | AI-BBS / pseudo-chat board (M1): boards, threads, and posts persisted as x64base DBF tables under data/metadata/bbs/. The read-only board.governance projects the identity SYSGRANT request/approve loop (the agent&lt;-&gt;owner "pseudo chat") as posts. | `src\cli\cmd_bbs.cpp` |
+| `BBS` | diagnostics | supported | AI-BBS persistence substrate (Lane 1): durable boards, threads, and posts persisted as x64base DBF tables under data/metadata/bbs/, with RBAC + attributed authorship (AIF-075). The read-only board.governance projects the identity SYSGRANT request/approve loop as posts. | `src\cli\cmd_bbs.cpp` |
 | `BELL` | ui | supported | Ring the bell when enabled, or turn the shell bell setting on or off. | `src\cli\cmd_bell.cpp` |
 | `BETA` | help | supported | List, inspect, and update beta tracking items and runtime beta-status overrides. | `src\cli\cmd_beta.cpp` |
 | `BIBLETALK` | education-database-demo | supported | Educational BibleTalk/KJV SQLite database wrapper for status, schema, table inspection, verse lookup, search, and random scripture output. | `src\edu\edu_bibletalk.cpp` |
@@ -65,7 +65,7 @@ Source extraction snapshot: `236` registered command keys and `215` parsed usage
 | `CMDREL` | help-diagnostic | supported | Print the recipe for relating HELP COMMANDS to CMD_ARGS. | `src\cli\command_relations.cpp` |
 | `CNX` | index | supported | Manage CNX index container metadata: create containers, inspect header/tag directories, add/drop tags, and walk/trace RUN1 tag structures. | `src\cli\cmd_cnx.cpp` |
 | `COBOL` | education-toolchain | supported | Export STUDENTS data for COBOL exercises and build/run/test COBOL programs. | `src\edu\edu_cobol.cpp` |
-| `CODASYL` | education | supported | Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, simulating owner/member set traversal without a second storage engine. | `src\cli\cmd_codaysl.cpp` |
+| `CODASYL` | education | supported | Provide a thin CODASYL teaching veneer over already-open DotTalk++ work areas, simulating owner/member set traversal without a second storage engine. | `src\cli\cmd_codasyl.cpp` |
 | `COLOR` | ui | supported | Report or set the console color theme and tree-color behavior. | `src\cli\cmd_color.cpp` |
 | `COMMANDSHELP` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
 | `COMMIT` | data | supported | Apply buffered TABLE changes to the current area or all open buffered areas, locking records at commit time and reporting persistence-stage failures. | `src\cli\cmd_commit.cpp` |
@@ -105,6 +105,7 @@ Source extraction snapshot: `236` registered command keys and `215` parsed usage
 | `ERROR_STATUS` | diagnostics | supported | Display the last xBase_64 error in a structured, HRESULT-style diagnostic format. | `src\cli\cmd_error_status.cpp` |
 | `ERROR_TEST` | diagnostics | supported | Run the xBase_64 error subsystem self-test and update last-error state on failure. | `src\cli\cmd_error_test.cpp` |
 | `ERSATZ` | relational-browser | supported | Relational browser and tuple-stream helper for current workspace/session, with navigation, tree/grid rendering, workspace handoff, and delta baselines. | `src\cli\cmd_ersatz.cpp` |
+| `EVALDIFF` | diagnostics | experimental | Compare the classic DbArea predicate evaluator with the TupleRow-bound evaluator over every physical record in the current table. | `src\cli\cmd_evaldiff.cpp` |
 | `EVALUATE` | education-expression | supported | Evaluate a boolean predicate expression through xexpr and print .T. or .F. | `src\edu\edu_evaluate.cpp` |
 | `EXAMPLE` | diagnostics | supported | Minimal example/test command used to verify token parsing and command routing. | `src\cli\cmd_example.cpp` |
 | `EXIT` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
