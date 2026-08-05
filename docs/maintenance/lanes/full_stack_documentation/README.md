@@ -5,6 +5,8 @@ Created: 2026-07-16
 Authority root: `D:\code\ccode`
 
 Start here each run:
+- The point (read first): `FULL_STACK_DOCUMENTATION_NORTH_STAR_V1.md` -- two towers,
+  one bridge, normalize across the span.
 - Doctrine + gates: `FULL_STACK_DOCUMENTATION_FLUSH_PLAN_V1.md`
 - Recipe book (run-it-now commands per phase, refined every run):
   `FULL_STACK_DOCUMENTATION_FLUSH_COOKBOOK_V1.md`
