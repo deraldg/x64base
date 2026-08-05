@@ -1,6 +1,6 @@
 # AI Systems Integration SDLC -- steward assignment and M1 continuation
 
-Status: **owner steward ruling recorded; M1 discovery re-entry candidate; owner review still gates M1 exit**
+Status: **owner steward ruling recorded; M1 exit APPROVED by owner 2026-08-05; M2 unlocked, entry bounded and pending owner go-ahead**
 Project: `project.ai_systems.integration`
 AIF lane: `AIF-086`
 Run: `AIPR-20260805-001` (candidate; needs registration in `labtalk/registries/ai_runs.yaml`)
@@ -110,3 +110,45 @@ Notes and requirement traces:
   into the crosswalk as a scoped edit (no fusing).
 - Prepare the M2 bounding note (canonical component/edge model) strictly from
   accepted M1 requirement IDs, only after the owner closes M1.
+
+## 7. M1 exit ruling (2026-08-05)
+
+The owner (`member.derald`) confirmed on 2026-08-05: "I already approved M1."
+This is the M1 exit gate ruling. **AIF-086 exits M1 Requirements.**
+
+Per A-06 this supersedes -- it does not erase -- the prior state recorded in
+section 2 above and in `SESSION_CLOSEOUT_..._M1_2026-08-03.md` ("M1 exit gate:
+pending owner review"). Those remain as the earlier record.
+
+Evidence gap to close (F-04, clone-verifiable evidence must resolve to a tracked
+artifact): the M1 requirements, needs-assessment, and M1 closeout are currently
+**untracked**, and the charter + crosswalk carry **uncommitted** edits. The
+approved requirement set is therefore not yet clone-verifiable. Required steward
+follow-through, as codex's own scoped slice (attributed `member.ai.codex.local`),
+not fused by me:
+
+- commit `AI_SYSTEMS_INTEGRATION_REQUIREMENTS_V1.md`,
+  `AI_SYSTEMS_INTEGRATION_DISCOVERY_AND_NEEDS_ASSESSMENT_M1_V1.md`, and
+  `SESSION_CLOSEOUT_..._M1_2026-08-03.md`;
+- commit the charter + crosswalk edits;
+- update the status lines to "M1 accepted 2026-08-05 (member.derald)" and the
+  charter Phase decision record row "M1 exit -> passed 2026-08-05".
+
+## 8. M2 readiness (bounded)
+
+With M1 accepted, M2 Architecture is unlocked (charter phase table; requirements
+section 9). M2 required result: a canonical component/edge model and a
+source-of-record matrix. M2 exit gate: every projection resolves to a canonical
+record and no duplicate system of record exists.
+
+Bounded first M2 step I propose, on owner go-ahead (documentation-only; selects
+no runtime schema or generator -- that is M3):
+
+1. Nodes = the crosswalk's components plus `ai.capability.egress`.
+2. Edge types = owns, projects, transports, authorizes, teaches, derives-from.
+3. Each node assigned exactly one canonical source-of-record (A-01, A-03).
+4. Each node and edge traced to M1 requirement IDs (F-05).
+5. The two open identity debts stay blocked: AIF-064 dual meaning (D8) and the
+   SDLC_FAST_START field-count mismatch (D9) are carried, not silently resolved.
+
+M2 does not implement generators or validators (M3) and changes no runtime.
