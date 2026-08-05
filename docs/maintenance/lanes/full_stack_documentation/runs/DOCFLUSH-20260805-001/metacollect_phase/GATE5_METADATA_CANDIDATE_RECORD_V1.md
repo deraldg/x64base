@@ -31,6 +31,14 @@ represented; `--sysargs-include-keywords` widened SYSARGS.
 
 `metacollect_stderr_v1.txt` records the three export row counts (226 / 74 / 959).
 
+Tracking note: the candidate CSVs are intentionally gitignored
+(`.gitignore` rule `docs/maintenance/lanes/**/runs/**/*.csv`); only this record
+and `metacollect_stderr_v1.txt` are tracked. The CSVs are regenerable artifacts,
+not a system of record -- reproduce them per `../../METACOLLECT_RUNBOOK_V1.md`
+(same source + exe yields the same rows). The SHA-256 prefixes above are
+point-in-time reproducibility evidence, satisfying F-04 by regeneration rather
+than by tracking a generated CSV.
+
 ## Gate 5 acceptance
 
 - Candidate and live data are visibly distinct: outputs live under this run's
