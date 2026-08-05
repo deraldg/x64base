@@ -418,7 +418,7 @@ Notes:
         OPTIONS / SUBCOMMANDS
             FOR <expr>           Apply a filter expression (tuple/expr aware).
             CLEAR FOR            Clear active filter.
-            ORDER PHYSICAL|INX|CNX|<tag>   Change controlling order/tag.
+            ORDER PHYSICAL|INX|CNX|CDX|<tag>   Change controlling order/tag.
             SHOW CHILDREN [LIMIT n]        Browse related child rows from current record.
             SHOW|HIDE SCHEMA|JSON          Toggle schema/JSON debug overlays.
             STATUS VERBOSE|COMPACT         Toggle status verbosity.
@@ -526,6 +526,8 @@ Notes:
         {"COMMANDSHELP", "COMMANDSHELP", "Command help (alias of CMDHELP).", true},
 
         {"CMDHELPCHK",   "CMDHELPCHK", "Validate HELP catalogs vs the command registry.", true},
+
+        {"CMDREL", "CMDREL", "Print the recipe for relating HELP COMMANDS to CMD_ARGS (help-build diagnostic).", true},
 
         {"EXITS", "EXITS [LIST|SHOW <id>|VALIDATE|WHERE]",
          "Inspect and validate the reviewed extension-exit manifest without executing extension code.", true},
@@ -723,7 +725,7 @@ Notes:
             SQLITE SELECT * FROM t
 
         Notes:
-            Used for regression testing and DBF↔SQL bridging experiments.)", true},
+            Used for regression testing and DBF<->SQL bridging experiments.)", true},
 
         {"SQLVER", "SQLVER", "Report SQLite availability and version.", true},
 
@@ -907,6 +909,9 @@ Notes:
 
         {"BOOLEAN", "BOOLEAN [USAGE|<expr>]",
                  "Demonstrate or evaluate boolean/logical expression behavior in the DotTalk++ expression layer.", true},
+
+        {"FORMULA", "FORMULA [USAGE|<expr>]",
+                 "Evaluate a scalar expression through the xexpr engine and print the formatted value (education eval command; its FoxPro ? / ?? print form is carried in foxref).", true},
 
         {"CASE", "CASE [USAGE|ON|OFF|STATUS]",
                  "Inspect or control case-sensitivity behavior for comparisons and expression/predicate evaluation.", true},
