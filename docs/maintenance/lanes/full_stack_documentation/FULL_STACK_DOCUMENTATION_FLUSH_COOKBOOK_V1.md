@@ -186,6 +186,34 @@ closeout that separates dev-refresh / candidate / promotion / staging / commit /
 push. Gate 7: the development-tree run closes; public promotion and website publish
 go to their own lane. Do NOT claim a public push from here.
 
+### Phase 7 -> 8 entry check (run before any publication)
+
+Closing the dev-tree run is necessary but not sufficient to publish. Prove all 8
+fail-closed conditions before Phase 8 starts (details:
+`FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`):
+
+- E1 dev-tree run closed at Gate 7 (closeout says CLOSED)
+- E2 HELP current + `CMDHELPCHK` reflection PASS
+- E3 contracts 100 percent; catalog `fallback 0`
+- E4 `refcheck_v1.py` + `normcheck_v1.py` PASS
+- E5 HELP/META harvest re-exported AFTER the Phase-4 build (else the manual omits
+  new commands) -- the one runs usually fail first
+- E6 `command-catalog.mdx` regenerated, fallback 0
+- E7 HELP store backup exists; rollback path named
+- E8 owner authorization for each distinct mutation (manual accept, source stage,
+  website publish)
+
+If any row is unproven, Phase 8 does not start; reopen the relevant dev-tree phase.
+
+### Phase 8 -- publication ascent (consumers; separate lanes)
+
+The manual and website are CONSUMERS of this system. Phase 8 is the entry gate
+plus the pull seam to the two reader surfaces; the consumers' internal steps live
+in the manual-assembly and website-ascent lanes. Reuse the proven 9-gate
+`DOCUMENTATION_TO_X64BASE_COM_ASCENT_V1.md`; recipes and the manual ladder are in
+`FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`. A flush is not
+full until both consumers are live and verified.
+
 ## 3. Tool index
 
 - Coverage/preflight: `docpush_preflight.py`, `command_catalog_sync.py`.

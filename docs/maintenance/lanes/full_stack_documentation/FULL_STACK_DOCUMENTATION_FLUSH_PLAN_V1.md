@@ -292,6 +292,26 @@ Gate 7 acceptance:
 - website/publication work is handed to its own lane;
 - the development-tree run closes before any public push is claimed.
 
+### Phase 7 -> 8 entry check (gates the publication ascent)
+
+Phase 7 closing the dev-tree run is necessary but NOT sufficient to start Phase 8.
+Before the publication ascent begins, the **Gate 7 -> 8 entry check** must pass
+(8 fail-closed conditions: run closed, HELP current + reflection PASS, contracts
+100 percent, reference guards clean, manual harvest re-exported after the build,
+website catalog current, backups ready, owner authorization). Full definition and
+the data-flow-to-UI are in `FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`.
+
+### Phase 8: publication ascent (consumers -- separate lifecycles)
+
+The developer manual and the website are **consumers** of this documentation
+system, not part of it. Phase 8 is the entry gate plus the pull seam that carries
+the proven producer to the two reader surfaces (published manual; `x64base.com`).
+The consumers' internal work belongs to the manual-assembly and website-ascent
+lanes. Phase 8 re-instantiates the proven 9-gate
+`DOCUMENTATION_TO_X64BASE_COM_ASCENT_V1.md` vertical. See
+`FULL_STACK_DOCUMENTATION_PHASE8_PUBLICATION_ASCENT_PLAN_V1.md`. A flush is not
+"full" until both consumers are refreshed from the producer and proven live.
+
 ## Workflow Improvements Required by the First Run
 
 The first run should produce evidence for these improvements:

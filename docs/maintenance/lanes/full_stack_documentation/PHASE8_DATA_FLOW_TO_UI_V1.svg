@@ -1,0 +1,65 @@
+<svg viewBox="0 0 480 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+<title id="t">Phase 8 publication data flow to the UI</title>
+<desc id="d">Source of truth passes a Gate 7 to 8 entry check, then flows through HELP build and harvest, manual acceptance, source staging, website feed and build, publish and live verification, ending at two reader surfaces: the published manual and x64base.com. The producer (documentation system) ends at the harvest and catalog; the manual and website are consumers.</desc>
+<style>
+  :root{
+    --ink:#1f2937; --sub:#6b7280; --box:#f4f4f5; --edge:#d4d4d8;
+    --acc-box:#e0e7ff; --acc-edge:#4338ca; --acc-ink:#312e81; --line:#9ca3af;
+  }
+  .b{fill:var(--box);stroke:var(--edge);stroke-width:1.5;}
+  .a{fill:var(--acc-box);stroke:var(--acc-edge);stroke-width:2;}
+  .h{font:600 14px system-ui,sans-serif;fill:var(--ink);}
+  .ah{font:600 14px system-ui,sans-serif;fill:var(--acc-ink);}
+  .s{font:11px system-ui,sans-serif;fill:var(--sub);}
+  .as{font:11px system-ui,sans-serif;fill:var(--acc-ink);opacity:.8;}
+  .g{font:600 10px system-ui,sans-serif;fill:var(--acc-ink);letter-spacing:.5px;}
+</style>
+<defs>
+  <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+    <path d="M0,0 L7,3 L0,6 Z" fill="var(--line)"/>
+  </marker>
+</defs>
+<g stroke="var(--line)" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+  <line x1="240" y1="60"  x2="240" y2="84"/>
+  <line x1="240" y1="140" x2="240" y2="164"/>
+  <line x1="240" y1="220" x2="240" y2="244"/>
+  <line x1="240" y1="300" x2="240" y2="324"/>
+  <line x1="240" y1="380" x2="240" y2="404"/>
+  <line x1="240" y1="460" x2="240" y2="484"/>
+  <line x1="240" y1="540" x2="240" y2="564"/>
+  <line x1="240" y1="620" x2="150" y2="656"/>
+  <line x1="240" y1="620" x2="330" y2="656"/>
+</g>
+<rect class="b" x="90" y="16" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="35" text-anchor="middle">Source of truth (dev tree)</text>
+<text class="s" x="240" y="51" text-anchor="middle">refs, contracts, registry, HELP</text>
+<rect class="a" x="70" y="84" width="340" height="56" rx="9"/>
+<text class="g" x="240" y="103" text-anchor="middle">GATE 7 -&gt; 8 ENTRY CHECK</text>
+<text class="ah" x="240" y="120" text-anchor="middle">8 conditions, fail-closed</text>
+<text class="as" x="240" y="134" text-anchor="middle">no publish on an unready dev tree</text>
+<rect class="b" x="90" y="164" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="183" text-anchor="middle">HELP build + HELP/META harvest</text>
+<text class="s" x="240" y="199" text-anchor="middle">producer output (E5 re-export)</text>
+<rect class="b" x="90" y="244" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="263" text-anchor="middle">Manual acceptance [consumer]</text>
+<text class="s" x="240" y="279" text-anchor="middle">gates 1-4, owner-authorized</text>
+<rect class="b" x="90" y="324" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="343" text-anchor="middle">Source staging</text>
+<text class="s" x="240" y="359" text-anchor="middle">gate 5: ccode -&gt; x64base -&gt; github</text>
+<rect class="b" x="90" y="404" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="423" text-anchor="middle">Website feed + build [consumer]</text>
+<text class="s" x="240" y="439" text-anchor="middle">gates 6-7: packet, Next.js static</text>
+<rect class="b" x="90" y="484" width="300" height="44" rx="9"/>
+<text class="h" x="240" y="503" text-anchor="middle">Publish + live verify</text>
+<text class="s" x="240" y="519" text-anchor="middle">gates 8-9: Pages deploy, HTTP proof</text>
+<rect class="b" x="140" y="564" width="200" height="40" rx="9"/>
+<text class="h" x="240" y="589" text-anchor="middle">Reader surfaces</text>
+<rect class="a" x="30" y="660" width="220" height="52" rx="9"/>
+<text class="ah" x="140" y="682" text-anchor="middle">Published manual</text>
+<text class="as" x="140" y="698" text-anchor="middle">reflects current HELP</text>
+<rect class="a" x="262" y="660" width="188" height="52" rx="9"/>
+<text class="ah" x="356" y="682" text-anchor="middle">x64base.com</text>
+<text class="as" x="356" y="698" text-anchor="middle">verified live routes</text>
+<rect x="30" y="726" width="12" height="12" rx="3" fill="var(--acc-box)" stroke="var(--acc-edge)"/>
+<text class="s" x="48" y="736">gate / reader-facing goal</text>
+</svg>
