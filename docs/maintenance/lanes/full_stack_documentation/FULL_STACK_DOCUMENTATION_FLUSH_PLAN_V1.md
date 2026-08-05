@@ -384,6 +384,54 @@ without duplicate logical keys or legacy-id collisions. The legacy argument id
 format remains a projection with an explicit future collision gate; no schema
 or live metadata change was made.
 
+### Iteration findings and retired footguns (2026-08-05)
+
+This pass reached a clean Phase 0.5 (`@dottalk.file` 100% = 1055/1055; command
+catalog `check` PASS). Recording what it converted from unknown to fixed, so the
+next run starts from these rather than rediscovering them.
+
+Gaps closed:
+- EVALDIFF and ~33 changed usage contracts were absent from the live catalog
+  page (the sync last ran before they landed). Regenerated: snapshot 236/215 ->
+  237/236.
+- 17 uncontracted C/C++ files in `tests/` and `tools/` (outside the src/include
+  backfill 3706da78c) now carry `@dottalk.file`.
+- `cmd_transaction.cpp` (empty stub) and `src/tools/schema_inventory_main.cpp`
+  were untracked and uncontracted; seeded with their contracts.
+
+Program errors fixed:
+- `command_catalog_sync.py` did not resolve alias registry keys or read
+  `@dottalk.subusage`, producing 21 false fallbacks. Patched -> 1 (DDICT only).
+  Aliases now inherit the owning command's block; SET arms read their subusage.
+- `run_reports.py` reuses whatever already listens on the gateway port, so a
+  stale `next dev` on :3000 is adopted AS the gateway and `/AI` 404s. Workaround
+  landed: `start-ai.ps1` frees the ports first.
+- `stage_public.py` wholesale-replace (`shutil.rmtree`) cannot run on the mounted
+  sandbox filesystem (unlink not permitted); it is a host-only step.
+- `command_catalog_sync.py` `MIN_PYTHON=(3,12)` is a cosmetic guard -- the module
+  has no 3.12-only code -- and needlessly blocks a 3.10 host.
+
+Semantic errors fixed:
+- `cmd_order.cpp` was `layer: command` while owning no command. The AIF-067
+  decision to make it `layer: helper` was recorded in its own comment but the
+  field was never updated. Corrected.
+- The "21 missing contracts" figure was 15 tooling gaps + 5 aliases + 1 format
+  issue and zero genuinely missing. Measure fallbacks by resolution class, not
+  raw count.
+
+Retired footguns / streamlining for the next run:
+- The extractor now auto-resolves aliases + subusage, so that drift class will
+  not recur.
+- Run the preflight `tools/fullstack_docs/docpush_preflight.py` BEFORE Phase 1:
+  it runs `source_census` + `command_catalog_sync check` (+ an ASCII scan of this
+  plan) so Phase 0/0.5 gaps surface immediately instead of at commit time.
+- Add a layer-consistency check: a `layer: command` file must own a matching
+  `@dottalk.usage`; a file that owns no command must be `layer: helper`. This
+  catches the `cmd_order` class automatically.
+- Last catalog fallback is DDICT: its contract uses the `/* */` `surface:`/`forms:`
+  schema the website extractor does not read. Normalize the block to the standard
+  `// @dottalk.usage` form, or add extractor support for that schema.
+
 ## Definition of Done
 
 A full-stack documentation flush is complete only when:
