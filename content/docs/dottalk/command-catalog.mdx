@@ -16,7 +16,7 @@ Diagram attachment: `DIAG-CMDAUTH-004`
 Canonical source:
 `docs/manuals/assets/diagrams/command_reference_harvest_v1.svg`
 
-Source extraction snapshot: `237` registered command keys and `236` parsed usage contract blocks.
+Source extraction snapshot: `237` registered command keys and `237` parsed usage contract blocks.
 
 ## Source-Derived Commands
 
@@ -76,7 +76,7 @@ Source extraction snapshot: `237` registered command keys and `236` parsed usage
 | `CREATE` | schema | supported | Create a DBF table in the configured DBF path slot using the requested xBase/DBF flavor and field specification. | `src\cli\cmd_create.cpp` |
 | `DBAREA` | workspace | supported | Report the current DbArea/work-area state, including file identity, logical name, record counts, current record, active order/index status, and field structure. | `src\cli\cmd_dbarea.cpp` |
 | `DBAREAS` | workspace | supported | Report current, selected, or all open DbArea/work-area state. | `src\cli\cmd_dbareas.cpp` |
-| `DDICT` | registered | registered | Registered in the central shell command registry; no parsed @dottalk.usage block was matched by this website extraction pass. | `src/cli/shell_commands.cpp` |
+| `DDICT` | data-dictionary | supported | Read-only Data Dictionary inspection command for active catalog metadata. | `src\cli\cmd_ddict.cpp` |
 | `DDL` | schema | supported | Fetch schema files, validate schema files, and create DBF tables from JSON schema definitions with optional seed rows and sidecar metadata. | `src\cli\cmd_ddl.cpp` |
 | `DEFCMD` | diagnostics | experimental | Define an ephemeral, session-only scratch command at runtime, without a rebuild or source edit. Intended as an AI/developer testbed for verifying token parsing and command routing. | `src\cli\cmd_defcmd.cpp` |
 | `DEFFN` | diagnostics | experimental | Define an ephemeral, session-only expression function at runtime, without a rebuild or source edit. The function resolves inside ? / CALC / WHERE via the fn_custom seam. Part of the RUNTIME_DEF_FAMILY lane (sibling to DEFCMD). | `src\cli\cmd_deffn.cpp` |
