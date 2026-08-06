@@ -188,6 +188,7 @@ font-size:11.5px;white-space:pre-wrap;color:var(--ok);max-height:40vh;overflow:a
 .close{float:right;cursor:pointer;color:var(--dim)}
 </style></head><body>
 <div id="side"><h1>Tracking tables</h1><div id="tables"></div>
+<div class="note"><a href="/AI/PROCESS_DIAGRAMS.html" style="color:var(--acc)">Process &amp; data-flow diagrams &rarr;</a></div>
 <div class="note">read = pure DBF (no engine)<br>write = pydottalk / emit</div></div>
 <div id="main"><div class="bar"><h2 id="ttl">Select a table</h2>
 <span id="meta"></span>

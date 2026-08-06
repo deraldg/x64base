@@ -758,6 +758,10 @@ Answers: <i>what has been worked, what is actually proven, and where do I pick i
 <div class="dim small">The local bulletin-board structure, post permissions, and public traffic,
 including the agent handoff worklog. Answers: <i>what is on the board right now?</i></div></div>
 
+<div class="card"><h3 style="margin-top:0"><a href="PROCESS_DIAGRAMS.html">AI-BBS -- Process &amp; Data-Flow Diagrams</a></h3>
+<div class="dim small">ERD + DFD + PFDs: how identity/RBAC, the boards, and the submission-to-curation
+ledger connect. Answers: <i>how does the AI-BBS actually work?</i></div></div>
+
 <div class="note">Read-only snapshots that run entirely locally (the BBS listener is loopback-only).
 The access-and-identity report -- the authentication-surface map -- is kept internal by design and is not
 published here.</div>"""
@@ -793,3 +797,10 @@ it never writes to the store, so it is safe to run while the daemon is up.</div>
 
 idx = page("DotTalk++ AI", "Human-readable views over live project state.", idx_body)
 emit('index.html', idx)
+
+# Static passthrough: the process/data-flow diagram gallery (conceptual, not
+# data-driven). Emitting it here keeps it in the governed set, so stage_public's
+# wholesale replace does not drop it. Source of truth: labtalk/diagrams/*.mmd.
+_diag = ROOT/'tools'/'reports'/'static'/'PROCESS_DIAGRAMS.html'
+if _diag.exists():
+    emit('PROCESS_DIAGRAMS.html', _diag.read_text(encoding='utf-8'))
