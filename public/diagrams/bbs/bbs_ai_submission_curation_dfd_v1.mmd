@@ -1,0 +1,18 @@
+%% DFD -- external-AI submission -> harvest -> curate (data flow) v1
+%% class: maintained (conceptual; hand-authored, review-gate)
+flowchart LR
+  EXT["External AI<br/>(Grok / hosted advisor)"]
+  EXT -->|"live BBS post"| GATE{{"authenticate<br/>+ RBAC gate"}}
+  EXT -->|"document intake"| INTAKE[("external_ai_intake/<br/>MANIFEST + envelope")]
+  GATE --> POST[("SYSPOST<br/>board post")]
+  POST --> HARVEST["harvest"]
+  INTAKE --> HARVEST
+  HARVEST --> RUN[("ai_runs.yaml<br/>AIPR-*")]
+  HARVEST --> ENV[("audit envelope<br/>ai_report_audit")]
+  HARVEST --> IDX[("ai_report_index.yaml")]
+  RUN --> CURATE{"curate"}
+  ENV --> CURATE
+  IDX --> CURATE
+  CURATE --> AIF[("AIF claim +<br/>intake row")]
+  CURATE -. "completeness gate (proposed)" .-> CHK{{"known submission<br/>has all records?"}}
+  CHK -. "absent -> flag" .-> HARVEST
