@@ -11,6 +11,23 @@ npm run dev
 
 Open http://localhost:3000
 
+## Before you edit -- read the matrix first (website maintenance onboarding)
+
+The first step for any website-maintenance work (human or AI) is the **Website
+Documentation Matrix**: `content/docs/dev/website-documentation-matrix.mdx`.
+
+1. **Classify the page you are about to touch** -- `static`, `maintained`,
+   `maintained_current`, `derived`, `generated`, or `reported`. The class decides
+   whether you may hand-edit it.
+2. **Never hand-edit a `generated` or `derived` region.** Fix the source and
+   regenerate (see "Pre-publish drift checks" below and the fullstack push). This is
+   how harvest-derived numbers, the Command/Function Catalog pages, and data-carrying
+   diagrams stay correct.
+3. **Honor the Direction Gates** (source -> website is the default; website -> manual
+   is blocked).
+4. **Keep the matrix current.** It is itself `maintained_current`: update it on every
+   website pass so it never lags the site, and record the last-audited date.
+
 ## Content editing
 
 Most content is in `content/**.mdx`.
