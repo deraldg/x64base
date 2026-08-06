@@ -1,0 +1,50 @@
+"# terminal 1 -- your website on the.txt"
+"Start-Transcript -Path Dcodeccode.ps1"
+"refresh portal seeds.txt"
+"we have a weak naming  the reports.txt"
+AUDIT_REPORT.txt
+MANIFEST.txt
+MANIFEST_v0.json
+Monitor_2_29626.ico
+SyncToy_6c3c4ab6-29d1-4cf1-aeb9-987fca5bf1ea.dat
+claim_aif_no.txt
+clean_dottalkpp_staging.ps1
+clean_dottalkpp_staging_v2.ps1
+clean_dottalkpp_staging_v3.ps1
+derald_full_stack.txt
+development_desktop.ico
+find_repo_string.ps1
+gen_keywords.py
+homegrown_ccode.ps1
+homegrown_ccode_corrected.ps1
+homegrown_ccode_safe.ps1
+homegrown_ccode_staging_harvester.ps1
+homegrown_ccode_v2_catalog.ps1
+homegrown_ccode_v2_catalog_corrected.ps1
+httplocalhost3000reportsAI_PORTAL_R.txt
+inspect_lmdb.py
+keymeta_transcript.txt
+keymeta_transcript2.txt
+localhost_clipboard.ps1
+metacollect_compare.csv
+metacollect_facts.csv
+move_to_sidecar_first_pass.ps1
+package_manifest.json
+package_manifest_all_in_one.json
+quarantine_files.txt
+rdb_truth_report.json
+rdb_truth_report_v2.json
+rdb_truth_report_v3.json
+rdb_truth_transcript.txt
+rdb_truth_transcript_v2.txt
+rdb_truth_transcript_v3.txt
+relscan_transcript.txt
+sidecar_dts_uncited.txt
+sidecar_oneoff_ps1.txt
+sidecar_step3_dupes.txt
+sort_source_by_size.ps1
+source_comment_escrow_baseline_closeout_v1.ps1
+source_comment_escrow_preserve_and_gate_v1.ps1
+sqlsel_supported_check.txt
+students_norm.csv
+students_norm.tsv
