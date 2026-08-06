@@ -18,6 +18,11 @@ It owns or exposes:
 - metadata validation, data dictionary work, and generated reports.
 - TUI, wxWidgets, and Python/Tk GUI lanes over the same runtime concepts.
 
+The optional native `pydottalk` module binds selected x64base engine objects for
+Python use; it does not expose the full DotTalk++ command shell. The separate
+`pydottalk_api` and pycrud prototypes belong to the Laboratory Campus GUI and
+API teaching lane. See [Python Integration](/docs/engine/python-integration).
+
 ## DotScript relationship
 
 DotTalk++ is the interactive shell and canonical command runtime. DotScript is the productized script language built from the same command surface. DotScript covers command files, variables, comments, line continuation, `IF` / `ELSE` / `ENDIF`, `LOOP` / `ENDLOOP`, `WHILE` / `ENDWHILE`, `UNTIL` / `ENDUNTIL`, `SCAN` / `ENDSCAN`, one-level subscript nesting, CSV import/export workflows, and repeatable automation.
@@ -43,6 +48,7 @@ See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
 - [Current Project Truth](/docs/dev/project-truth)
 - [Language Guide](/docs/dottalk/language-guide)
 - [Runtime Footprint](/docs/engine/runtime-footprint)
+- [Python Integration](/docs/engine/python-integration)
 - [DotTalk++ SDLC](/docs/dottalk/sdlc)
 - [Syntax](/docs/dottalk/syntax)
 - [REPL](/docs/dottalk/repl)

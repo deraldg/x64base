@@ -72,10 +72,64 @@ The present foundation includes:
 - committed drift checks that gate source-derived website pages — the command and
   function catalogs, error codes, and locale surfaces — against engine source
   before a publish;
+- a running loopback bulletin board with token authentication, per-room posting
+  permissions, and an agent handoff worklog (alpha; see below);
+- a local-inference bridge that answers while network egress is blocked;
 - the APH-0 through APH-6 hardening plan.
 
 These pieces are useful and increasingly connected, but they do not yet
 constitute validated autonomous project memory.
+
+## The AI-BBS and Pseudo-Chat
+
+The portal now has a **running surface**, not only documents. A loopback-only bulletin
+board stores its rooms, threads, and posts as ordinary DBF tables through the same engine
+everything else uses, and takes the same cross-process table lock the runtime takes for
+records. Access is token-authenticated using Argon2id via libsodium, and every post is
+checked against the identity catalog: rooms carry their own posting permission, so a
+guest identity can leave a message in the guestbook and read nothing at all.
+
+**Pseudo-chat** is the conversational half. `BBS CHAT` bridges to a local Ollama model,
+gated by a `chat.invoke` permission. The interesting property is not the model -- it is
+that the model answers **while network egress is blocked**. An AI member was
+runtime-observed being refused `NET EGRESS OPEN`; loopback is exempt by design. That
+combination means inference can run over project material with nothing leaving the
+machine. Local inference here is a *security posture*, not a cheaper cloud call.
+
+**`board.worklog`** is where an agent records what it did, what remains open, what the
+next agent should pick up, and the risk -- one structured line carrying a run id, so a
+handoff resolves back into the run registry. An agent's memory ends with its session;
+this is how the working context does not.
+
+Everything here is **alpha**. It runs, it is evidenced, and it is deliberately confined
+to `127.0.0.1`.
+
+## Three Kinds of AI, and Only One of Them Acts
+
+The portal keeps these separate on purpose, because conflating them is the most common
+onboarding error:
+
+- **Agent partners** -- Claude, Grok, Codex. They hold identity rows, authenticate with
+  owner-issued tokens, read the seeds, propose source changes, and leave handoffs. Their
+  authority is bounded and enumerated: they never receive source-mutation or network
+  egress. They *deliver*; the maintainer *commits*.
+- **The local brain** -- Ollama. Real capability, no identity row, no token, no
+  permission. Its absence from the member catalog is correct rather than an oversight: a
+  model that produces good work is still a **service**, invoked by something that does
+  have standing to act.
+- **The hosted advisor** -- GPTbase, a custom GPT carrying a curated project bundle. Useful
+  for orientation and drafting, and it has genuinely shaped design here. But it is
+  cloud-hosted, so it is not egress-isolated, and its bundle is a snapshot that goes
+  stale. **Advisory, never authority.**
+
+The distinction underneath is that **agency requires four things** -- identity, authority,
+authentication, and accountability -- and removing any one leaves something that is not
+agency. Capability is not agency. Influence is not authority. The project records all
+three roles honestly, including where an external AI planned work that a human committed,
+because a version-control log shows only the last of those.
+
+*Local inference and the hosted-advisor pattern were contributed to by Nathaniel A.
+Strickland; the conversational surface began as an idea from Nathaniel L. Grimwood.*
 
 ## Local AI-BBS &amp; Portal Reports
 

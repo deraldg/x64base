@@ -167,8 +167,9 @@ export default function HomePage() {
           <div className="mt-5 rounded-lg border border-border bg-card/55 p-4 text-sm leading-6 text-muted">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">{siteNoticeVersion}</p>
             <p className="mt-2">
-              The 2026-07-18 documentation vertical passed all nine publication gates. New benchmark,
-              comments-audit, and metadata work remains labeled until its source evidence is promoted.
+              The 2026-07-18 documentation vertical passed all nine publication gates and is live. A
+              newer dev-tree refresh (2026-08-05) is complete through Gate 7 -- new commands, reconciled
+              references, and rebuilt HELP -- with its publication ascent still pending.
             </p>
           </div>
           <Link

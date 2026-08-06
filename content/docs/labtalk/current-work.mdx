@@ -3,7 +3,7 @@ title: "Current Tasks & Projects"
 description: "Maintained current-state view of AI Portal tasks, project lanes, tickets, Pseudo-Chat returns, evidence state, and next gates."
 ---
 
-> **As of 2026-07-28 · maintenance class `maintained_current`.**
+> **As of 2026-08-05 · maintenance class `maintained_current`.**
 > This is a permanent route with a replaceable present-state region. Event history
 > remains in the linked intake, proof, and closeout records.
 
@@ -21,14 +21,14 @@ promote a local proof into public runtime truth.
 
 | Field | Current value |
 | --- | --- |
-| Run | `DOCFLUSH-20260722-001` / `AIF-048` |
-| State | `gate6_scope_pending` |
+| Run | `DOCFLUSH-20260805-001` / `full-stack-documentation-flush-v4` |
+| State | `dev_tree_closed_gate7_publication_pending` |
 | Publication | `local-preview-not-deployed` |
 | Source contracts | 243 |
-| HELP | 575 topics / 29,197 lines |
+| HELP | 525 topics / 28,368 lines |
 | Command reference | 191 pages / 4,604 lineage rows |
 | Assembled manual | 26 parts / 14,542 lines / 298 PDF pages |
-| Next gate | Prepare and review an exact selective source-promotion scope; then regenerate the website against the resulting source commit. |
+| Next gate | Phase 8 publication ascent: Gate 7 -> 8 entry check E1-E6 green; E7 (fresh backup) and E8 (owner authorization) pending; manual re-harvest required to include new commands (help_topics/lines above reflect the rebuilt HELP; manual page/part counts still describe the prior assembled manual, not re-assembled this run). |
 
 [Inspect the complete vertical](/docs/dev/full-stack-documentation-push) ·
 [Open documentation progress](/docs/dev/documentation-progress) ·
@@ -53,7 +53,7 @@ The five FoxPro string functions were accepted into the dev-tree command referen
 
 ## Current tickets and tasks
 
-**13 tracked tasks.** Status distribution: `active` 2, `active_prototype` 1, `active_seed` 2, `backlog` 1, `closed_runtime_observed` 1, `gate6_scope_pending` 1, `proposed` 2, `returned_for_correction` 1, `review_needed` 1, `staged` 1.
+**17 tracked tasks.** Status distribution: `active` 2, `active_prototype` 1, `active_seed` 2, `backlog` 1, `closed_runtime_observed` 1, `gate6_scope_pending` 1, `proposed` 6, `returned_for_correction` 1, `review_needed` 1, `staged` 1.
 
 | Ticket | Task | Status | Owner | Project(s) | Next gate | Review |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -70,6 +70,10 @@ The five FoxPro string functions were accepted into the dev-tree command referen
 | AIF-064 | Retro VM/emulator launchpad lane | `review_needed` | Derald | x64base / DotTalk++ Runtime, AI Friendly Lane | Owner review: decide whether to keep public RETRO screens while adding private launcher subcommands, then implement X64BASE_ENABLE_RETRO default-OFF lane and prove E1 isolation before any launch behavior. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
 | AIF-068 | x32 traditional xBase support feasibility lane | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), Historical Database Migration Laboratory, AI Friendly Lane | M0 feasibility: inventory real legacy fixtures and decide whether this remains documentation doctrine, read-only preservation/import, or a broader traditional index/memo compatibility project. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
 | AIF-069 | EXPORT SDF fixed-width output | `closed_runtime_observed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), AI Friendly Lane | Optional future gate: SDF import/readback or an in-engine exact-byte file assertion if SDF becomes a round-trip contract. | [open](/docs/dev/current-lanes) · [open](/docs/labtalk/current-work) |
+| AIF-088 | Command catalog vs runtime drift reconciliation (R-APPEND-BLANK) | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model), AI Friendly Lane | Owner picks FIX RUNTIME (dispatch: route APPEND BLANK to cmd_APPEND_BLANK, or cmd_APPEND skips a leading BLANK token -- the seam is shell_commands.cpp, not the handler) vs FIX DOC; land the choice with a regression. Then run the drift canary over REPLACE/DELETE/RECALL/PACK/INSERT for R2..Rn. | [open](/docs/dev/current-lanes) |
+| AIF-067 | dotref automation -- derive the native reference from registry + contracts | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model) | M2: diff curated wording -- flag dotref summaries that drifted from their @dottalk.usage. M3: emit a full candidate dotref.hpp, diff against the curated file to preserve preferred public wording, and gate promotion on refcheck_v1 (no phantoms). The prefix->authority map (cmd/edu/app -> dotref; expression functions -> SYSFUNC; external calls tagged) is the classifier. | [open](/docs/dev/current-lanes) |
+| AIF-088 | Phase 1 Gate-1 source follow-ups -- duplicate registrations + PSHELL contract + crosswalk comment-scan | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model) | Source preflight (own contract + build + regression) for: (1) EXAMPLE registered twice in src/cli/shell_commands.cpp (L475, L564) -- remove one; (2) SQLHELP double-registered via dli::registry().add in src/cli/cmd_sql_help.cpp:209 + shell_commands.cpp:424 -- confirm dli:: is a distinct intentional registry, else remove the redundant add; (3) PSHELL duplicate // command: PSHELL block (cmd_pshell.cpp + cmd_pshell_help.cpp) -- reclassify the help block as command: PSHELL HELP. Process fix: strip // line comments before the crosswalk registry scan (the BBS/NET false positives). | [open](/docs/dev/current-lanes) |
+| AIF-088 | Source-comment ASCII sweep -- non-ASCII in contracts surfaces as HELP mojibake | `proposed` | Derald | x64base / DotTalk++ Runtime, PDLC - Programming Development Life Cycle (Student/Working Model) | Dedicated ASCII sweep of source comments/@dottalk contracts (em-dash -> --, arrows -> ->), so HELP DATA and the website catalog stay ASCII. The house-style gate only checks added lines, so this backlog needs a one-time sweep and an optional whole-file gate on @dottalk contract blocks. | [open](/docs/dev/current-lanes) |
 
 ## Pseudo-Chat return inbox
 
@@ -95,6 +99,9 @@ These are project-level containers, not claims that every child lane is complete
 | LabTalk Above-Runtime Staging | `seed` | staging_project |
 | x64base.com Website Publication | `downstream_publication_truth` | publication_project |
 | AI Friendly Lane | `seed` | knowledge_project |
+| External Agent Memory & Continuity | `design_intended` | knowledge_project |
+| AI Systems Integration SDLC | `m1_owner_review_pending_with_visibility_prototype` | sdlc_project |
+| BBS Cooperation Medium (participant-agnostic) | `charter_with_autonomous_poc` | integration_project |
 | pycrud Companion | `prototype` | companion_app_project |
 | DB_Converter | `prototype` | migration_project |
 | DotTalk Web UI Prototypes | `local_prototype` | web_ui_project |

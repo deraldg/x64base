@@ -57,6 +57,24 @@ Expected service groups:
 
 This boundary allows wxWidgets, Python/Tk, Turbo Vision/TUI, and future frontends to share the same runtime contract.
 
+## Python API boundary
+
+The current optional native binding is `pydottalk`, a pybind11 module over a
+selected part of the x64base `DbArea` object model. It exposes table lifecycle,
+record navigation and inspection, field access, memo readback, and bounded
+physical CRUD operations. Read-only and disposable-copy CRUD smoke paths exist.
+
+This is not a frozen Python ABI and it is not the DotTalk++ command shell.
+Workspace, relation, complete index/order semantics, memo mutation, and general
+command execution must not be assumed unless their Python contracts and proof
+are added.
+
+The separate `pydottalk_api` prototype is a local FastAPI/SQLAlchemy bridge used
+by pycrud. It does not currently expose the native binding over HTTP. See
+[Python Integration: pydottalk, pydottalk_api, and
+pycrud](/docs/engine/python-integration) for the current boundary and possible
+development path.
+
 ## Custom field type API
 
 In addition to student code hooks, x64base supports custom field types through a
@@ -95,7 +113,8 @@ The memo API should reflect the object-oriented memo model:
 ## Integration
 
 - DotScript command files.
-- Python bindings.
+- native Python binding through the bounded `pydottalk` surface.
+- local API and GUI experiments through `pydottalk_api` and pycrud.
 - C-compatible boundary candidates.
 - GUI-neutral service bridge.
 - generated documentation and SelfDoc extraction.

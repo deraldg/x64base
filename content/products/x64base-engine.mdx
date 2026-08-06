@@ -16,12 +16,23 @@ The current engine reality includes:
 - INX, CNX, CDX, and LMDB-backed index work.
 - data dictionary and metadata catalog readers.
 - command-shell integration through DotTalk++.
+- optional native Python access through a bounded `pydottalk` binding.
 
 ## What is proven versus active
 
 Use "runtime-proven" only when a smoke path or command surface has current evidence. Use "active", "partial", "experimental", or "canary" where the local project says the feature is still being integrated.
 
 Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.
+
+## Python integration
+
+The optional `pydottalk` pybind11 module exposes a selected native `DbArea`
+surface to Python. Current smoke paths cover DBF readback and physical CRUD on a
+disposable copy. It is distinct from both the DotTalk++ command shell and the
+Laboratory Campus `pydottalk_api` / pycrud prototypes.
+
+See [Python Integration: pydottalk, pydottalk_api, and
+pycrud](/docs/engine/python-integration).
 
 ## Runtime payload
 
@@ -46,3 +57,4 @@ See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
 - [Indexing Rules](/docs/engine/indexing-rules)
 - [Error Codes](/docs/engine/error-codes)
 - [API Reference](/docs/engine/api-reference)
+- [Python Integration](/docs/engine/python-integration)

@@ -56,6 +56,8 @@ Status language:
 | Feature | Status | Evidence summary |
 | --- | --- | --- |
 | Open Index API and index backends | runtime-evidenced | `INDEX`, `REINDEX`, `SET INDEX`, `SET ORDER`, `SEEK`, `CDX`, `CNX`, `LMDB`, `BUILDLMDB`; V32 defaults to `.cnx`, V64 defaults to `.cdx` |
+| Native Python engine access | bounded runtime evidence | Optional `pydottalk` pybind11 module; DBF read-only and disposable-copy physical CRUD smoke paths; broader command, workspace, relation, memo-write, and index semantics are not implied |
+| Python API and GUI teaching tools | prototype | `pydottalk_api` local FastAPI/SQLAlchemy bridge plus pycrud Python/Tk CRUD, relational, import/export, and metadata lab; these are companion surfaces rather than the core engine |
 | SQL bridge, CSV import/export, DBF copy, and tuple export | runtime-evidenced | `SQL`, `SQLITE`, `IMPORT`, `EXPORT`, `IMPORTSQL`, `EXPORTSQL`, `COPY`, `TUPEXPORT`, `AUTODBF`; `IMPORT` reads CSV into an open DBF and `EXPORT` writes CSV by default |
 | External app, shell, image, web, URL, SFTP, and archive boundaries | runtime-evidenced | `EDIT`, `TEXT`, `IMAGE`, `WEB`, `SFTP`, `PSHELL`, `BANG`, `ZIP`; external app/network/filesystem risks are separate from DBF mutation |
 | Remote and system integration surfaces | runtime-evidenced | `SFTP`, `PSHELL`, `WEB`, `ZIP`; platform zip backends |

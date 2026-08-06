@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type Section = "about" | "products" | "docs" | "licensing" | "brand" | "news";
+export type Section = "about" | "products" | "docs" | "licensing" | "brand" | "news" | "portal";
 
 export function contentDir(...parts: string[]) {
   return path.join(process.cwd(), "content", ...parts);

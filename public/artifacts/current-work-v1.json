@@ -1,6 +1,6 @@
 {
   "schema": "x64base.current_work.v1",
-  "as_of_date": "2026-07-28",
+  "as_of_date": "2026-08-05",
   "maintenance_class": "maintained_current",
   "publication_state": "local-preview-not-deployed",
   "authority": {
@@ -9,21 +9,21 @@
     "publication_rule": "website reports reviewed state; it does not promote source, releases, or deployments"
   },
   "current_documentation_flush": {
-    "run_id": "DOCFLUSH-20260722-001",
-    "ticket": "AIF-048",
-    "state": "gate6_scope_pending",
+    "run_id": "DOCFLUSH-20260805-001",
+    "ticket": "full-stack-documentation-flush-v4",
+    "state": "dev_tree_closed_gate7_publication_pending",
     "publication_state": "local-preview-not-deployed",
     "maintenance_class": "maintained_current",
     "source_contracts": 243,
-    "help_topics": 575,
-    "help_lines": 29197,
+    "help_topics": 525,
+    "help_lines": 28368,
     "command_reference_pages": 191,
     "command_lineage_rows": 4604,
     "manual_parts": 26,
     "manual_lines": 14542,
     "manual_pdf_pages": 298,
     "website_static_pages": 132,
-    "next_gate": "Prepare and review an exact selective source-promotion scope; then regenerate the website against the resulting source commit.",
+    "next_gate": "Phase 8 publication ascent: Gate 7 -> 8 entry check E1-E6 green; E7 (fresh backup) and E8 (owner authorization) pending; manual re-harvest required to include new commands (help_topics/lines above reflect the rebuilt HELP; manual page/part counts still describe the prior assembled manual, not re-assembled this run).",
     "manualgen_command_reference_lane": {
       "label": "Manualgen command-reference lane -- a distinct pipeline stage from the assembled-manual headline above; do not compare the two counts directly.",
       "run_id": "DOCFLUSH-20260722-001",
@@ -45,8 +45,8 @@
     }
   },
   "summary": {
-    "projects": 16,
-    "tasks": 13,
+    "projects": 19,
+    "tasks": 17,
     "task_statuses": {
       "active": 2,
       "active_prototype": 1,
@@ -54,7 +54,7 @@
       "backlog": 1,
       "closed_runtime_observed": 1,
       "gate6_scope_pending": 1,
-      "proposed": 2,
+      "proposed": 6,
       "returned_for_correction": 1,
       "review_needed": 1,
       "staged": 1
@@ -103,6 +103,24 @@
       "name": "AI Friendly Lane",
       "kind": "knowledge_project",
       "status": "seed"
+    },
+    {
+      "id": "project.ai_friendly.agent_memory",
+      "name": "External Agent Memory & Continuity",
+      "kind": "knowledge_project",
+      "status": "design_intended"
+    },
+    {
+      "id": "project.ai_systems.integration",
+      "name": "AI Systems Integration SDLC",
+      "kind": "sdlc_project",
+      "status": "m1_owner_review_pending_with_visibility_prototype"
+    },
+    {
+      "id": "project.bbs.cooperation",
+      "name": "BBS Cooperation Medium (participant-agnostic)",
+      "kind": "integration_project",
+      "status": "charter_with_autonomous_poc"
     },
     {
       "id": "project.pycrud",
@@ -447,6 +465,91 @@
       "website_paths": [
         "/docs/dev/current-lanes",
         "/docs/labtalk/current-work"
+      ]
+    },
+    {
+      "id": "task.command_catalog.append_blank_drift",
+      "title": "Command catalog vs runtime drift reconciliation (R-APPEND-BLANK)",
+      "ticket": "AIF-088",
+      "kind": "command_surface_repair",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc",
+        "project.ai_friendly"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-08-04",
+      "truth_state": "drift_runtime_observed_repair_open",
+      "proof_state": "proof.engine.append_blank_catalog_drift (runtime_observed, build 64a0136d): the catalog documents APPEND BLANK but runtime APPEND rejects the token and follow-up REPLACEs silently clobber the current record. Caught by tools/dbf/crud.py --emit --ram fsram dry run.",
+      "next_gate": "Owner picks FIX RUNTIME (dispatch: route APPEND BLANK to cmd_APPEND_BLANK, or cmd_APPEND skips a leading BLANK token -- the seam is shell_commands.cpp, not the handler) vs FIX DOC; land the choice with a regression. Then run the drift canary over REPLACE/DELETE/RECALL/PACK/INSERT for R2..Rn.",
+      "summary": "PDLC lane reconciling the source-derived command catalog/HELP against runtime behavior one command family at a time; R-APPEND-BLANK is R1. Prior art: untracked tools/fix-append-blank.ps1 (2025) added a cmd_APPEND_BLANK handler but never fixed the dispatch route, so the drift stayed live.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.dotref.automation",
+      "title": "dotref automation -- derive the native reference from registry + contracts",
+      "ticket": "AIF-067",
+      "kind": "reference_automation",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-08-05",
+      "truth_state": "source_defined_report_only",
+      "proof_state": "tools/fullstack_docs/dotref_autogen.py (milestone 1, report-only) runs on Python 3.10: 235 registry commands, 216 usage contracts, dotref complete for native commands (0 candidates missing). The tree is in a fully-contracted state to generate from. Introduced in full-stack doc flush v4 (2026-08-05).",
+      "next_gate": "M2: diff curated wording -- flag dotref summaries that drifted from their @dottalk.usage. M3: emit a full candidate dotref.hpp, diff against the curated file to preserve preferred public wording, and gate promotion on refcheck_v1 (no phantoms). The prefix->authority map (cmd/edu/app -> dotref; expression functions -> SYSFUNC; external calls tagged) is the classifier.",
+      "summary": "Make include/dotref.hpp a derived-not-authored artifact: generate native-command entries from the central registry + @dottalk.usage contracts via a generate -> review -> promote pipeline, keep dotref's curated public wording, and let refcheck_v1 guard the result. Retires the manual add-command-to-dotref + rebuild loop.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.reference.phase1_source_followups",
+      "title": "Phase 1 Gate-1 source follow-ups -- duplicate registrations + PSHELL contract + crosswalk comment-scan",
+      "ticket": "AIF-088",
+      "kind": "reference_reconciliation",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-08-05",
+      "truth_state": "review_recorded",
+      "proof_state": "Phase 1 Gate-1 crosswalk + reference_disposition_recommend.py surfaced two duplicate registrations and one duplicate contract. Recorded in PHASE1_GATE1_REFERENCE_DISPOSITION_RECORD_V1.md (flush v4, 2026-08-05). Not perfection-blocking; deferred so Phase 2 can proceed.",
+      "next_gate": "Source preflight (own contract + build + regression) for: (1) EXAMPLE registered twice in src/cli/shell_commands.cpp (L475, L564) -- remove one; (2) SQLHELP double-registered via dli::registry().add in src/cli/cmd_sql_help.cpp:209 + shell_commands.cpp:424 -- confirm dli:: is a distinct intentional registry, else remove the redundant add; (3) PSHELL duplicate // command: PSHELL block (cmd_pshell.cpp + cmd_pshell_help.cpp) -- reclassify the help block as command: PSHELL HELP. Process fix: strip // line comments before the crosswalk registry scan (the BBS/NET false positives).",
+      "summary": "Deferred Phase 1 Gate-1 items for the next pass: two real duplicate registrations (EXAMPLE, SQLHELP), one duplicate contract (PSHELL), and a crosswalk scan-tightening (ignore registry().add inside comments).",
+      "website_paths": [
+        "/docs/dev/current-lanes"
+      ]
+    },
+    {
+      "id": "task.source_comment_ascii_sweep",
+      "title": "Source-comment ASCII sweep -- non-ASCII in contracts surfaces as HELP mojibake",
+      "ticket": "AIF-088",
+      "kind": "house_style_cleanup",
+      "project_ids": [
+        "project.x64base.runtime",
+        "project.labtalk.pdlc"
+      ],
+      "channel": "ai_portal",
+      "status": "proposed",
+      "owner": "Derald",
+      "updated_on": "2026-08-05",
+      "truth_state": "runtime_observed",
+      "proof_state": "DOCFLUSH-20260805-001 Phase 2 baseline surfaced HELP mojibake: cmd_buildvectors.cpp:21 SUMMARY carries a U+2014 em-dash rendering as mojibake in HELP output. Sweep found ~20+ src/cli files with non-ASCII in comments/contracts.",
+      "next_gate": "Dedicated ASCII sweep of source comments/@dottalk contracts (em-dash -> --, arrows -> ->), so HELP DATA and the website catalog stay ASCII. The house-style gate only checks added lines, so this backlog needs a one-time sweep and an optional whole-file gate on @dottalk contract blocks.",
+      "summary": "Non-ASCII (em-dashes) in source comments and @dottalk contracts flows into HELP DATA and the website command catalog as mojibake. Deferred from flush v4 (not perfection-blocking) to a dedicated cleanup pass.",
+      "website_paths": [
+        "/docs/dev/current-lanes"
       ]
     }
   ]
