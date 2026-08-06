@@ -49,6 +49,11 @@ Documentation cannot fix a coordination problem; an allocator and a presence sur
   visible so work does not silently overlap.
 - **This coordinates, it does not authorize**: coordination sits *beside* the identity/RBAC gates
   (AIF-045) and the promotion gates — it prevents collisions, it does not confer authority.
+- **Be a good neighbor coworker**: when your work touches or affects a lane you do not own -- a
+  promotion, a gate change, an audit that restates its numbers, a design that bears on it -- leave the
+  owner a pointer (in your handoff or the intake row) so they are not surprised. Flag the cross-lane
+  impact; do not silently edit another owner's records. Owners update their own ledgers. Surfacing
+  impact is courtesy that prevents the *quiet* collision -- the one the number-claim gate cannot see.
 
 ## Enforcement (the claim is not optional -- the commit chokepoint proves it)
 

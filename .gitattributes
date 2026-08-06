@@ -1,7 +1,22 @@
-# Normalize line endings per INI (auto), keep cross-platform files LF where needed
-*           text=auto
+# Line-ending policy.
+#
+# Windows-native tooling stays CRLF (PowerShell, MSVC project files). Source,
+# docs, and cross-platform text are pinned to LF so they are deterministic and do
+# not depend on core.autocrlf -- that is what ends the CRLF<->LF churn. Retained
+# proof transcripts stay binary so their SHA-256 (bound by proof ledgers) never
+# drifts.
+#
+# To end existing churn, run ONCE on a CLEAN tree:
+#   git config core.autocrlf false
+#   git add --renormalize .
+#   git commit -m "normalize line endings; end CRLF/LF churn"
+# NOTE: .dts / .csv / .txt are left as text=auto (not force-flipped) because some
+# are checksum-bound or Windows-authored data; verify none are SHA-pinned before a
+# full renormalize, and add a `-text` guard here for any that are.
 
-# Windows scripts & MSVC project files -> CRLF
+* text=auto
+
+# Windows scripts & MSVC project files -> CRLF (native tooling expects it)
 *.ps1       text eol=crlf
 *.bat       text eol=crlf
 *.cmd       text eol=crlf
@@ -9,19 +24,39 @@
 *.vcxproj   text eol=crlf
 *.props     text eol=crlf
 
-# Unixy files -> LF (to avoid CI/tooling issues)
-*.sh        text eol=lf
-*.yml       text eol=lf
-*.yaml      text eol=lf
+# Source and cross-platform text -> LF (deterministic; independent of autocrlf)
+*.cpp   text eol=lf
+*.cxx   text eol=lf
+*.cc    text eol=lf
+*.c     text eol=lf
+*.hpp   text eol=lf
+*.hxx   text eol=lf
+*.h     text eol=lf
+*.ipp   text eol=lf
+*.inl   text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sh    text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
 
-# Binary files
-*.zip       binary
-*.exe       binary
-*.dll       binary
-*.lib       binary
-*.pdb       binary
-*.dbf       binary
-*.inx       binary
+# Binary files (never normalize)
+*.zip   binary
+*.exe   binary
+*.dll   binary
+*.lib   binary
+*.pdb   binary
+*.obj   binary
+*.pyd   binary
+*.dbf   binary
+*.dbt   binary
+*.cdx   binary
+*.fpt   binary
+*.inx   binary
+*.mdb   binary
 
 # Retained raw runner transcripts (e.g. teed console captures, possibly UTF-16
 # with ANSI codes). Treat as binary so no CRLF/encoding normalization can drift
