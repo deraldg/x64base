@@ -117,6 +117,14 @@
       "upstream_authority": "frontal_mem:AI_Portal_diagrams.md",
       "truth_status": "source-derived",
       "review_status": "review-needed"
+    },
+    {
+      "id": "selfdoc-full-stack-docpush-dfd-v1",
+      "source": "diagrams/sources/selfdoc_full_stack_docpush_dfd_v1.mmd",
+      "output": "public/images/sdlc/selfdoc-full-stack-docpush-dfd-v1.svg",
+      "upstream_authority": "ccode:labtalk/diagrams/selfdoc_full_stack_docpush_dfd_v1.mmd",
+      "truth_status": "source-derived-draft",
+      "review_status": "review-needed"
     }
   ]
 }

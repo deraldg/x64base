@@ -1,0 +1,41 @@
+%% Full-stack documentation push -- start-to-finish data-flow (pass 4)
+%% Upstream authority for site diagram id: selfdoc-full-stack-docpush-dfd-v1
+%% Conceptual/architectural; concepts unchanged, cadence evolved to the 4th push.
+flowchart LR
+  subgraph P["Producer -- implementation checkout"]
+    SRC[("engine source<br/>+ registration")]
+    HELP[("HELP text")]
+    META[("metadata")]
+    CON[("inline contracts<br/>+ canaries")]
+  end
+  subgraph H["Validate + harvest"]
+    SELF["SelfDoc / CMDHELPCHK<br/>validation"]
+    MC["metacollect<br/>harvest exporter"]
+    MG["manualgen / MDO<br/>+ diagram attach"]
+  end
+  subgraph G["Candidates + gates"]
+    CAND[("doc candidates")]
+    PCG{{"public-content guard"}}
+    DCG{{"diagram integrity<br/>check:diagrams"}}
+  end
+  subgraph C["Consumers"]
+    MAN[("manual")]
+    WEB[("website<br/>x64base.com")]
+    GPT[("GPTbase bundle")]
+  end
+  SIGN{"Phase 9<br/>owner signoff"}
+
+  SRC --> SELF
+  HELP --> SELF
+  CON --> SELF
+  META --> MC
+  SELF --> MC
+  MC --> MG
+  MG --> CAND
+  CAND --> PCG
+  CAND --> DCG
+  PCG --> SIGN
+  DCG --> SIGN
+  SIGN --> MAN
+  SIGN --> WEB
+  SIGN --> GPT

@@ -13,6 +13,29 @@ The site should present reviewed, provenance-aware derivatives of the runtime,
 contracts, HELP, metadata, manuals, and diagrams. It should not invent
 technical truth on its own.
 
+## Full-stack documentation push (pass 4)
+
+The concepts on this page are unchanged. What has evolved is the cadence: a
+documentation change now travels the whole stack end to end, and we are on the
+fourth full-stack documentation push (pass 4). The data-flow below is the
+start-to-finish path a change follows, from implementation evidence to the
+public consumers.
+
+[![Start-to-finish data-flow of the full-stack documentation push: engine source and registration, HELP, metadata, and inline contracts through SelfDoc/CMDHELPCHK validation, the metacollect harvest exporter, and manualgen/MDO, into doc candidates gated by the public-content guard and the diagram-integrity check, then Phase 9 owner signoff into the manual, the website, and the GPTbase consumers](/images/sdlc/selfdoc-full-stack-docpush-dfd-v1.svg)](/images/sdlc/selfdoc-full-stack-docpush-dfd-v1.svg)
+
+<details>
+<summary>The pass in detail (steps collapsed to reduce clutter)</summary>
+
+1. Produce -- in the implementation checkout: command/function registration, HELP text, metadata, inline contracts, comments, and canaries.
+2. Validate -- SelfDoc / CMDHELPCHK confirm HELP, metadata, and contracts agree with the runtime.
+3. Harvest -- metacollect and the harvest exporter pull reviewed evidence out of the tree.
+4. Generate -- manualgen / MDO assemble manual sections and attach reviewed diagrams.
+5. Gate -- doc candidates must clear the public-content guard and the diagram-integrity check (`check:diagrams`) before promotion.
+6. Sign off -- Phase 9 owner review: stale-copy audit and generated-page integrity across the site.
+7. Publish -- consumers receive the reviewed derivative: the manual, the website (x64base.com), and the GPTbase bundle.
+
+</details>
+
 ## Public source
 
 - Public GitHub repo: [deraldg/x64base](https://github.com/deraldg/x64base)
