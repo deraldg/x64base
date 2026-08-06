@@ -22,7 +22,7 @@ duplicated work.
 | 2026-07-25 | **live BBS socket** | Grok posted to `board.afb.chat` ("hello from grok over the socket"), `board.lounge` ("first post in The Lounge"), and a structured `board.worklog` handoff (`RUN=AIPR-20260725-001`, AI-BBS M1-M6). | Run is in `ai_runs.yaml` (AIF-050/052-059). **NOT in `ai_report_index.yaml`.** |
 | 2026-07-28 | document intake | Grok "Virtual Workspaces & Memo-Resident Mini-Databases" whitepaper (`AIPR-20260728-GROK-002`, AIF-070). | Indexed in `ai_report_index.yaml`; audit envelope present (tidied 2026-08-06). |
 | 2026-07-30 | document intake | `evaldiff_eof_probe_2026-07-30`. | **NOT indexed; no MANIFEST audit envelope** -- the audit scan cannot see it. |
-| 2026-08-04 | hosted_proposal | Grok "Triggers PDLC" (`AIPR-20260804-003/004`, AIF-087). Phase-0 signed A-G, Phase-1 spike landed green. | In the AIF-087 lane; index coverage not confirmed (seed lists only the 07-28 cluster). |
+| 2026-08-04 | hosted_proposal | Grok "Triggers PDLC" (`AIPR-20260804-003/004`, AIF-087). Phase-0 signed A-G, Phase-1 spike landed green. | In the AIF-087 lane; **NOT in the report index** (confirmed 2026-08-06). |
 
 ## What already exists (do NOT rebuild it) -- AIF-071, closed
 
@@ -40,6 +40,12 @@ So the **document channel** has a real monitor/harvest path. The lane below is a
 completing it, not starting over.
 
 ## The gap (measured 2026-08-06) -- coverage stopped at the triggering case
+
+**Net: 1 of 4 external submissions is indexed.** `ai_report_index.yaml` holds
+exactly three `report_id`s -- all the 07-28 cluster. The three *missing* include
+AIF-087 Triggers, the only submission that landed source (a green Phase-1 spike).
+So the index -- built precisely to answer "what has provider X submitted?" --
+returns the one Grok proposal that did not ship and omits the one that did.
 
 - `ai_report_index.yaml` was seeded `manual_seed (AIPR-20260728-002)` and contains
   **only** the 07-28 cluster. The index that AIF-071 built to make submissions
