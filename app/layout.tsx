@@ -51,6 +51,9 @@ export const metadata: Metadata = {
   }
 };
 
+const siteVersion = process.env.NEXT_PUBLIC_SITE_VERSION ?? "local-preview";
+const isLocalPreview = siteVersion === "local-preview";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
@@ -61,6 +64,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="text-fg">AI-assisted, source-reviewed documentation</span>
           {" · "}
           Updated {currentWork.as_of_date}
+          {isLocalPreview ? (
+            <>
+              {" · "}
+              <span className="font-mono text-brand">LOCAL PREVIEW</span>
+              {" · "}
+              <a
+                href="https://x64base.com"
+                className="font-semibold text-brand underline underline-offset-4 hover:text-fg"
+              >
+                Go to the live site &rarr;
+              </a>
+            </>
+          ) : null}
         </div>
         <Navbar />
         <main className="mx-auto w-full max-w-6xl px-4 py-10">{children}</main>
