@@ -22,10 +22,14 @@ source `@dottalk` contracts, HELP DATA, the reference headers (dotref/foxref/
 edref), and the command-catalog source. Phases 0.5 -> 7 make that producer current
 and prove it.
 
-The **developer manual** and the **website** are **consumers**. They read the
-producer's reviewed evidence and present it to humans. They are not part of the
-documentation system; they have their own lifecycles (manual assembly lane; website
-publication/ascent lane) and are documented in their own right, not here.
+The **developer manual**, the **website**, and the **GPTbase advisor knowledge
+bundle** are **consumers**. They read the producer's reviewed evidence and present
+it (to humans, or to a hosted advisor). They are not part of the documentation
+system; they have their own lifecycles and are documented in their own right, not
+here. The GPTbase bundle is now derived like the others -- generator
+`tools/fullstack_docs/build_gptbase_bundle.py`, manifest
+`docs/ai-friendly/GPTBASE_BUNDLE_MANIFEST_V1.md`, public-safe, run as a website-feed
+step -- so all three consumers derive the same `as_of_date` from the registry.
 
 The diff matters for three reasons:
 

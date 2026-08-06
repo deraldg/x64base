@@ -55,6 +55,19 @@ add it here so the next run does not re-derive it (that is the whole point).
    and lane were created because the scan looked only in the AI-portal folders.)
 10. **Public promotion is its own lane.** The dev-tree run closes at Gate 7; source
     promotion (`ccode -> C:\x64base -> github`) and website publish are handed off.
+11. **Website: source, don't hand-edit output; normalize the fact.** Consult
+    `x64base-site` `content/docs/dev/website-documentation-matrix.mdx` (page classes)
+    and `config/nav.ts` BEFORE editing any page. Never hand-edit a `generated` /
+    `derived` / `maintained_current` region (e.g. `current-work.mdx`,
+    `current-work-v1.json`, command catalog) -- fix the registry/source and run its
+    generator. Hand-edit only `static`/`maintained` pages (home framing, news,
+    brand, licensing). As a website-feed step every flush: advance the registry
+    `as_of_date`, reconcile the flush block, then run `build_current_work_feed.py`,
+    `command_catalog_sync`, and `build_gptbase_bundle.py` (the three consumers:
+    current-work, website catalog, GPTbase advisor bundle -- all derive the same
+    `as_of_date` from the registry). A stored fact that can be measured (date, HELP
+    counts) is a normalization bug -- derive it. (See the Phase 8 first-attempt
+    lessons in the ascent plan.)
 
 ## 2. Phase recipes
 
