@@ -1,11 +1,10 @@
 "# terminal 1 -- your website on the.txt"
-"Start-Transcript -Path Dcodeccode.ps1"
-"refresh portal seeds.txt"
-"we have a weak naming  the reports.txt"
 AUDIT_REPORT.txt
 MANIFEST.txt
 MANIFEST_v0.json
+MDO-255_PACKAGE_MANIFEST.txt
 Monitor_2_29626.ico
+"Start-Transcript -Path Dcodeccode.ps1"
 SyncToy_6c3c4ab6-29d1-4cf1-aeb9-987fca5bf1ea.dat
 claim_aif_no.txt
 clean_dottalkpp_staging.ps1
@@ -21,6 +20,7 @@ homegrown_ccode_safe.ps1
 homegrown_ccode_staging_harvester.ps1
 homegrown_ccode_v2_catalog.ps1
 homegrown_ccode_v2_catalog_corrected.ps1
+homegrown_sync.ps1
 httplocalhost3000reportsAI_PORTAL_R.txt
 inspect_lmdb.py
 keymeta_transcript.txt
@@ -38,6 +38,7 @@ rdb_truth_report_v3.json
 rdb_truth_transcript.txt
 rdb_truth_transcript_v2.txt
 rdb_truth_transcript_v3.txt
+"refresh portal seeds.txt"
 relscan_transcript.txt
 sidecar_dts_uncited.txt
 sidecar_oneoff_ps1.txt
@@ -48,3 +49,4 @@ source_comment_escrow_preserve_and_gate_v1.ps1
 sqlsel_supported_check.txt
 students_norm.csv
 students_norm.tsv
+"we have a weak naming  the reports.txt"
