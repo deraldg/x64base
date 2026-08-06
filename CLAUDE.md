@@ -69,12 +69,16 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
 
 If you are running in a mounted Linux sandbox rather than on the Windows host:
 
-- **Run NO git commands. None.** Even `git status` refreshes the index, takes
-  `.git/index.lock`, and cannot reliably unlink it across the mount. A killed or
-  timed-out git leaves a zero-byte lock that **blocks the maintainer's commits**.
-  This wedged `D:\code\ccode` on 2026-07-31. Read and write files freely with
-  file tools; prepare git as commands and hand them to the maintainer.
-  `claim-aif` shells out to `git grep`, so it is host-side too.
+- **No git that can take `.git/index.lock`.** No `add`/`commit`/mutate, and NOT
+  plain `git status` -- it refreshes the index and takes the lock, which cannot
+  reliably unlink across the mount; a killed git leaves a zero-byte lock that
+  **blocks the maintainer's commits**. This wedged `D:\code\ccode` on 2026-07-31.
+  **Read-only IS allowed and does not take the lock** (verified 2026-08-05, git
+  2.34.1: no `index.lock` created): `git --no-optional-locks status`
+  (equivalently `GIT_OPTIONAL_LOCKS=0`) for status, and the read-only plumbing
+  `git log` / `ls-files` / `check-ignore` / `cat-file`. Use these to inspect the
+  tree; still hand every mutating git to the maintainer. `claim-aif` shells out to
+  `git grep`, so it stays host-side too.
 - **Assume you cannot build or run the engine, and verify rather than trust this
   line.** The sandbox has historically lagged the WSL host on glibc/GLIBCXX and
   carried no cmake, ninja, or lmdb/sqlite3/nlohmann/sodium headers, so the staged

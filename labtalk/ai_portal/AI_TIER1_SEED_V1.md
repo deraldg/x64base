@@ -3,7 +3,7 @@
     status      : seed, awaiting M1 ruling 6.2 / 6.5g (lane AIF-082)
     owner       : member.derald   steward: member.ai.claude.cowork
     created_utc : 2026-07-31T13:25:00Z
-    updated_utc : 2026-07-31T13:40:00Z
+    updated_utc : 2026-08-05T00:00:00Z
     budget      : 8192 B hard ceiling (see "Maintenance contract")
 
 The smallest set that makes you **safe to act**. It does not make you
@@ -50,10 +50,10 @@ modified and hundreds of untracked files belonging to other sessions.
 - **NEVER `git add -A` or `git add .`.** Name exact paths. Always.
 - `git status --short` between add and commit; verify only your paths are staged.
 - Commit one coherent theme at a time. A push is a scoped slice, never a sweep.
-- **In a mounted Linux sandbox, run NO git commands at all** -- not even
-  `git status`. It takes `.git/index.lock` and cannot reliably unlink it across
-  the mount; a killed git leaves a zero-byte lock that **blocks the maintainer's
-  commits**. This wedged the repo once. Hand git over as prepared commands.
+- **In a mounted sandbox, no git that takes `.git/index.lock`**: no mutate, and
+  NOT plain `git status` (it takes the lock; wedged the repo once). Read-only IS
+  lock-free and allowed: `git --no-optional-locks status`, `log`, `ls-files`,
+  `check-ignore`. Every mutating git goes to the maintainer. (Why: `CLAUDE.md`.)
 - Claim lane numbers atomically, never by grep. Grep is not an allocator.
 
 ## 4. House conventions (invariant)
