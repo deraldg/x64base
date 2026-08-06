@@ -33,6 +33,7 @@ becomes one room of the board (`board.governance`); the rest is net-new.
 | M4 | `BBS SERVE` loopback listener + token auth + Ollama bridge, per-request RBAC | 127.0.0.1-only bind + non-leaking auth deny | **runtime-observed** |
 | M5 | Duplex doc wiring: runtime event recorder -> proofs/runs; auto-publish via metacollect | events recorded; commands harvested when `supported` | authored |
 | M6 | **Standalone `dottalk_bbsd` daemon** for everyday use: own binary, boot-managed, cross-platform-clean | binds/serves independent of the CLI; boot task | **runtime-observed** |
+| M7 | **Claude-to-Codex instruction handoff** with `127.0.0.1:8765` as the localhost pseudo-chat return path | addressed role-bounded packet consumed by Codex; daemon connection reaches mandatory `AUTH`; owner-provided guest-mode authentication is the first exchange gate | **instruction handoff + transport boundary runtime-observed 2026-07-30; guest gate pending** |
 
 **Dependency edges:** M3 **gates** M4 (no network listener on placeholder crypto). M4 uses M1's
 store. M5 records M2/M4 events. M6 reuses the M1-M4 code as a second binary. M2/M3 are independent.
@@ -108,6 +109,16 @@ linked). Gates observed:
   task (SYSTEM / session 0, so no console window can exist); fresh client sessions AUTH/CHAT/POST
   across process restarts. Cross-platform: Winsock/BSD sockets behind a common `socket_t`; SIGPIPE
   ignored process-wide on POSIX + `MSG_NOSIGNAL` on Linux sends; `ws2_32` linked only under `if(WIN32)`.
+- **M7:** Claude left a named, role-bounded instruction packet for Codex under
+  `docs/maintenance/external_ai_intake/evaldiff_eof_probe_2026-07-30/REQUEST_V1.md`; Codex consumed
+  it, registered concurrently with Claude on AIF-074, ran only the requested probes, and returned
+  the transcript at `labtalk/proofs/runs/20260730_evaldiff_eof_probe.txt`. A direct client connection
+  to `127.0.0.1:8765` reached the live daemon and received `ERR AUTH <member> <token> required first`.
+  The required auth code exists but had not been provided to Codex. No credential was guessed,
+  minted, or recorded, so this proves the pseudo-chat transport and authentication boundary, not
+  an authenticated BBS payload exchange. The first exchange gate is guest mode using an auth code
+  supplied out of band by the owner. See
+  `docs/maintenance/MILESTONE_CLAUDE_CODEX_LOCALHOST_PSEUDO_CHAT_2026-07-30.md`.
 - **Guest / leave-a-message:** as `member.guest`, `AUTH` -> `OK`; `POST board.guestbook … :: …` ->
   `OK posted`; `POST board.lounge …` -> **`bbs.post denied`**; `READ board.guestbook` ->
   **`bbs.read denied`**. Guest is write-only to the guestbook and scoped by per-board POSTPERM
@@ -123,7 +134,13 @@ Full transcripts + the went-green record: `docs/maintenance/SESSION_CLOSEOUT_AI_
   the `ai_runs.yaml` RUN row. See `REGISTRY_ADDITIONS_AI_BBS_2026-07-25.md`.
 - **Commit** the lane + M6 target + SIGPIPE patch to `development` with an accurate message; mirror
   `C:\x64base` untouched; not pushed public.
-- **Concurrency (M4.1):** per-session identity so the accept loop can serve more than one connection.
+- **Concurrency (M4.1) + Ollama-as-agent (M4.2):** designed and spec'd 2026-08-05.
+  Read in order for a build session: `AI_BBS_M4X_BUILD_RUNSHEET_V1.md` (the ordered
+  do-this-then-that), then `AI_BBS_M4_1_PER_SESSION_IDENTITY_DESIGN_V1.md` +
+  `AI_BBS_M4_1_PATCH_V1.md` (thread_local identity, bounded-worker accept loop),
+  then `AI_BBS_M4_2_OLLAMA_AGENT_HARNESS_DESIGN_V1.md` + `AI_BBS_M4_2_PATCH_V1.md`
+  (`member.ai.ollama.local` + harness). Design-only; a host build+prove and two
+  rulings (harness home; owner-poked vs board-polled) are the remaining work.
 - **Boot-port hygiene:** disable Windows Ollama autostart so the WSL service wins `11434` (the CHAT
   path depends on the isolated one).
 
