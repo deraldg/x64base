@@ -268,6 +268,27 @@ Reiterative: each track loops review -> refine -> owner review -> signoff; it is
 one-shot. A track is done only when the owner signs off, and any later change
 reopens it.
 
+### Diagram collection -- a maintained consumer artifact (Phase 9 step, added 2026-08-06)
+
+The BBS/AI process diagrams (ERD + submission DFD + BBS-post and M4.x PFDs) are a
+`maintained` consumer artifact per the website matrix: conceptual/architectural,
+hand-authored, review-gate -- NOT auto-generated from data. They render on both
+consumers, so keeping them current is a Phase 9 step, not a one-off.
+
+- **Source of truth:** `labtalk/diagrams/*.mmd`. Both consumers derive from it:
+  manual media (`docs/manuals/assets/diagrams/*.mmd` -> generated `.svg`), and the
+  website `/AI/` gallery (`tools/reports/static/PROCESS_DIAGRAMS.html`, emitted into
+  the governed `/AI/` set by `build_reports.py` so `stage_public` keeps it).
+- **When a process changes** (identity/RBAC, boards, the submission/harvest/curate
+  ledger, M4.x): edit the `.mmd` source, then regenerate the manual SVG and let the
+  `/AI/` gallery re-emit. Never hand-edit a rendered SVG or the gallery HTML copy --
+  fix the `.mmd` and regenerate (the AIF-032 rule for data-carrying diagrams applies
+  here to conceptual ones too, by class discipline).
+- **Class boundary:** these stay `maintained` (hand-authored, review-gate). Data-
+  carrying diagrams whose numbers come from the harvest stay `generated` (AIF-032).
+- **Signoff check:** before a consumer signoff, verify the diagram collection still
+  matches the current process; a drifted diagram reopens the track.
+
 ### Co-consumers -- the two reference each other at the UI level
 
 The manual and website cite and reuse each other. Reuse is allowed only in the
