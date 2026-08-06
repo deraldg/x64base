@@ -55,6 +55,35 @@ carry the detail; this ties them together.
 6. **Concurrent site work:** `codex/lean-sites-publish` has another session's
    in-flight `.mdx` edits + generated-artifact drift; not mine, left untouched.
 
+## Milestone -- onboarding-surface fixes (from the dottalkpp cold-onboarding critique)
+
+A peer Cowork agent, put in charge of dottalkpp.com, cold-onboarded through the AI
+Portal and filed a critique (Google Doc, report_id AIPR-20260806-001). Its checkable
+findings were **verified accurate** against the tree (F-1/F-2/F-3/F-5). Its central
+finding is this session's recurring theme one level up: *a correct artifact that
+nothing routes an agent to* ("baked in is not reached"). Acting on the fixes that
+land on the shared onboarding surface (AIF-082, the lane I steward):
+
+- **F-3 DONE:** `AI_README.md` order table now starts (step 0) with
+  `AI_TIER1_SEED_V1.md` -- invariants before perishable state; also resolves F-6.
+  The front door previously listed the seed zero times while `CLAUDE.md` line 3
+  mandated it (the two front doors had diverged).
+- **F-4 DONE (two pointers to the AI README):** a top-of-file "AI agents start here
+  -> `AI_README.md`" block in the ccode root `README.md` (in-repo), and a
+  **permission-free** `x64base-site/public/llms.txt` (served at `x64base.com/llms.txt`)
+  that a fetch-only agent reads before any mount and that points at the front door.
+  Public-safe: no local paths.
+- **F-2 HANDED OFF (host-side):** `TIER0_STATE.md` is stale -- generated 2026-07-31
+  against `3550705dd`, HEAD now `6fed9a2ec`, so its "cannot drift because generated"
+  guarantee is not in force. Fix: `python labtalk\ai_portal\generate_tier0_state.py
+  --write` to regenerate, then wire it into the pre-commit hook (or hard-warn at read
+  time when its stamped HEAD != current HEAD) so it self-regenerates.
+
+Left to the dottalkpp.com owner/steward (not mine to touch): F-1 (open a
+`project.dottalkpp.website` lane; resolve `D:\dev\derald-site.save` vs the empty
+`D:\dev\dottalkpp-site` decoy), and whether the critique record is placed in-tree
+under an AIF claim.
+
 ## Neighbor notes -- AIFs I affected (even where I do not own the lane)
 
 Good-neighbor rule: flag cross-lane impact so owners are not surprised. Owners

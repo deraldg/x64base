@@ -1,5 +1,10 @@
 # DotTalk++ / x64base
 
+> **AI agents / coworkers: start at [`AI_README.md`](AI_README.md)** -- the one
+> onboarding front door. It routes you (step 0) to the 8 KB Tier 1 seed that makes
+> you safe to act. Do not read the rest of this file first; it is the human project
+> overview.
+
 **An educational-first, object-oriented hybrid xBase/DBF runtime and documentation system built in modern C++.**
 
 DotTalk++ / x64base is a working beta research and teaching system for DBF-style database ideas: tables, records, fields, work areas, indexes, memos, relations, metadata, HELP, scripts, browsers, and GUI/TUI experiments.
