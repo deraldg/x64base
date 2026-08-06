@@ -1,0 +1,52 @@
+```mermaid
+flowchart LR
+  chat["Chat Decisions"]
+  usage["USAGE Blocks"]
+  annotations["@dottalk.contract"]
+  help["HELP / CMDHELP"]
+  metadata["Metadata Imports"]
+
+  contracts["Contract Lane"]
+  selfdoc["SelfDoc System"]
+  intake["Capture and Classify"]
+  register["Register and Cross-Link"]
+  prove["Prove and Promote"]
+  drift["Check Drift"]
+
+  metacollect["metacollect"]
+  pipeline["metadata_collection_v0"]
+  reports["Generated Reports"]
+  drawio["Draw.io Diagrams"]
+  mermaid["Mermaid Diagrams"]
+  labtalk["LabTalk Local Level"]
+  website["x64base Website"]
+
+  nonmutation["Non-Mutation Guard"]
+  evidence["Evidence Honesty Guard"]
+
+  chat --> intake
+  usage --> intake
+  annotations --> intake
+  help --> intake
+  metadata --> intake
+
+  contracts --> intake
+  contracts --> register
+  intake --> register
+  register --> prove
+  prove --> drift
+  drift --> register
+
+  selfdoc --> metacollect
+  selfdoc --> pipeline
+  metacollect --> pipeline
+  pipeline --> reports
+  reports --> drawio
+  reports --> mermaid
+  drawio --> labtalk
+  mermaid --> labtalk
+  labtalk -. permissions gate .-> website
+
+  pipeline -. must not mutate .-> nonmutation
+  prove -. must not overclaim .-> evidence
+```

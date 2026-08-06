@@ -758,7 +758,7 @@ Answers: <i>what has been worked, what is actually proven, and where do I pick i
 <div class="dim small">The local bulletin-board structure, post permissions, and public traffic,
 including the agent handoff worklog. Answers: <i>what is on the board right now?</i></div></div>
 
-<div class="card"><h3 style="margin-top:0"><a href="PROCESS_DIAGRAMS.html">AI-BBS -- Process &amp; Data-Flow Diagrams</a></h3>
+<div class="card"><h3 style="margin-top:0"><a href="diagrams">AI-BBS -- Process &amp; Data-Flow Diagrams</a></h3>
 <div class="dim small">ERD + DFD + PFDs: how identity/RBAC, the boards, and the submission-to-curation
 ledger connect. Answers: <i>how does the AI-BBS actually work?</i></div></div>
 
