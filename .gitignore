@@ -331,6 +331,9 @@ mcc/*.DBF
 docs/manuals/developer/manualgen/**/*.csv
 docs/maintenance/lanes/**/runs/**/*.csv
 docs/**/candidates/**/*.csv
+# Regenerable GPTbase bundle output (derive it, do not save it). The manifest and
+# the generator are tracked; the produced bundle is not. See GPTBASE_BUNDLE_MANIFEST_V1.md.
+docs/ai-friendly/gptbase_bundle_v1/
 # Regenerable CDX metadata sidecars (0 tracked). The .cdx/.cnx binaries under
 # indexes/ are left VISIBLE on purpose: mixed 36 tracked / 75 untracked -- a
 # per-file call for a later pass.
