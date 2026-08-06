@@ -35,7 +35,8 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Error Codes", href: "/docs/engine/error-codes" },
       { label: "Messaging & Localization", href: "/docs/engine/messaging-and-localization" },
       { label: "Identity, Authentication & RBAC", href: "/docs/engine/identity-security" },
-      { label: "API Reference", href: "/docs/engine/api-reference" }
+      { label: "API Reference", href: "/docs/engine/api-reference" },
+      { label: "Python Integration", href: "/docs/engine/python-integration" }
     ]
   },
   {
