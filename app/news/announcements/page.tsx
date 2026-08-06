@@ -1,5 +1,12 @@
 import Link from "@/components/StaticLink";
 import { getNewsPostsByCategory } from "@/lib/news";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Announcements",
+  description:
+    "New features, curriculum updates, and community events for x64base and DotTalk++."
+};
 
 export default function AnnouncementsPage() {
   const posts = getNewsPostsByCategory("announcements");

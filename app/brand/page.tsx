@@ -1,5 +1,12 @@
 import Image from "next/image";
 import { Card } from "@/components/Card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Project Identity",
+  description:
+    "Supporting notes for naming, visual consistency, and attribution across x64base and DotTalk++."
+};
 
 const items = [
   { href: "/brand/visual-identity", title: "Visual Identity", description: "Palette, type, and iconography." },

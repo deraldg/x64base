@@ -18,6 +18,13 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/Card";
 import { docsSidebar } from "@/config/sidebars";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Documentation",
+  description:
+    "Guides and reference for the x64base engine and DotTalk++ shell: getting started, architecture, commands, indexing and memos, and the evidence model."
+};
 
 const quickLinks = [
   {

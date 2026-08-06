@@ -1,4 +1,11 @@
 import { Card } from "@/components/Card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Products",
+  description:
+    "The major workflows in the local DotTalk++ and x64base runtime: engine, shell, DotScript, tuple and relation views, SQLsel, and the Laboratory Campus."
+};
 
 const products = [
   { slug: "x64base-engine", title: "x64base Engine", description: "DBF runtime, x64-family tables, indexes, memos, work areas." },

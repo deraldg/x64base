@@ -1,5 +1,12 @@
 import Link from "@/components/StaticLink";
 import { getNewsPostsByCategory } from "@/lib/news";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Press Releases",
+  description:
+    "Release notes for x64base and DotTalk++. Each release is listed here after manual review."
+};
 
 export default function PressReleasesPage() {
   const posts = getNewsPostsByCategory("press-releases");
@@ -8,7 +15,7 @@ export default function PressReleasesPage() {
     <div className="space-y-8">
       <header className="max-w-2xl space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">Press Releases</h1>
-        <p className="text-muted">Launch announcement, version updates, educational partnerships.</p>
+        <p className="text-muted">Release notes for x64base and DotTalk++. Each release is listed here after manual review.</p>
       </header>
 
       <div className="grid gap-3">

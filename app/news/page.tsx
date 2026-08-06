@@ -1,6 +1,13 @@
 import Link from "@/components/StaticLink";
 import { Card } from "@/components/Card";
 import { getAllNewsPosts } from "@/lib/news";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "News",
+  description:
+    "Press releases, announcements, and milestone updates across x64base, DotTalk++, LabTalk, and the Arctic workbench lanes."
+};
 
 export default function NewsPage() {
   const allPosts = getAllNewsPosts().sort((a, b) => (b.frontmatter.date ?? "").localeCompare(a.frontmatter.date ?? ""));
