@@ -13,6 +13,10 @@ cd "$REPO"
 moved=0; missing=0
 while IFS= read -r rel; do
   [ -z "$rel" ] && continue
+  # git status --porcelain QUOTES names with spaces/specials; strip surrounding
+  # double-quotes so the path matches the real (unquoted) file. Without this, the
+  # 4 quoted scratch names silently never moved and falsely reported "gone".
+  rel="${rel%\"}"; rel="${rel#\"}"
   if [ ! -e "$rel" ]; then missing=$((missing+1)); continue; fi
   dst="$SIDECAR/$rel"
   if [ "$EXECUTE" = 1 ]; then
