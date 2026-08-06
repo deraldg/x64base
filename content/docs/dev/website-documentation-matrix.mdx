@@ -57,6 +57,53 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 | website -> manual | Blocked default | The manual should not consume from the website unless the website artifact is not derivable elsewhere and is maintained separately. |
 | website-owned artifact -> manual | Exception | Allowed for curated screenshots, public-only media, branding, hosted-download metadata, or contact/navigation artifacts with provenance. |
 
+## Matrix Authority: Website Design and Retention
+
+This matrix is not only a page-classification table. It is the authority of record
+for two website policies: **design** (how pages are structured and what each must
+carry) and **retention** (what must be preserved and how). A design or retention
+decision that is not reflected here is not yet policy. Both route through the same
+entry/closeout gate as any other website change: read the matrix before the pass,
+re-audit it at signoff.
+
+### Design authority
+
+- **Page structure follows maintenance class.** The class decides how a page may be
+  edited and what it must expose: `maintained_current` carries a present-state
+  region with `as_of_date`, evidence state, and next gate; `generated` / `derived`
+  regions are produced by their authority and never hand-shaped.
+- **Evidence before ornament.** Every page must answer the Proofed Site Checklist
+  below. Design may frame and organize evidence; it must not manufacture technical
+  truth or hide the proof level.
+- **Diagrams.** Conceptual/architectural diagrams are hand-authored `maintained` and
+  kept in sync; data-carrying diagrams are `generated` from the harvest (AIF-032).
+  Source and generated image are kept together.
+- **Naming and routes.** Visible titles, nav labels, and prose use `DotTalk++`;
+  short route buckets may stay stable for continuity but are not the public brand.
+- New page types, hero/diagram placement conventions, and nav/section changes are
+  design decisions and must be classified and recorded here when adopted.
+
+### Retention authority
+
+The website preserves history rather than overwriting it. The retention rule for a
+page or artifact is set by its class and by these gates:
+
+- **`maintained_current` -- preserve event history.** The present-state region is
+  replaceable, but prior events and dates are retained, not erased.
+- **`reported` -- append-only.** Measurements and checkpoints are appended with
+  pinned provenance; a new run adds evidence, it does not replace the baseline.
+- **README / orientation artifacts -- versioned.** Preserve the prior version before
+  replacing it; README history is project provenance.
+- **Historical source lineage -- byte-preserved.** SHA-256-bound, read-only, private
+  roots omitted; checksums and truth-level labels retained.
+- **Diagram sources retained with images.** Never discard the `.mmd` / `.drawio`
+  source when publishing a generated image.
+- **Publication checkpoints -- pinned.** Accepted manual/reference snapshots and the
+  commits that served them are recorded and kept recoverable.
+
+Retention is enforced at closeout: the matrix re-audit confirms that nothing which
+should have been preserved was overwritten during the pass.
+
 ## Website Section Matrix
 
 | Website Area | Public Pages | Primary Feed Lanes | Proof / Data-Mining Inputs | Current Publication State |
