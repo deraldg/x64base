@@ -73,6 +73,7 @@ tree.
 
 | # | Entry condition | How to prove |
 | ---: | --- | --- |
+| E0 | Website matrix read first | `content/docs/dev/website-documentation-matrix.mdx` consulted BEFORE any site edit; every page to be touched is classified (static / maintained / maintained_current / derived / generated / reported) and its Direction Gates noted. This is the entry half of the matrix gate; the closeout half (update + re-audit) is in the signoff section below. |
 | E1 | Dev-tree run closed at Gate 7 | `GATE7_REVIEW_AND_RUN_CLOSEOUT_V1.md` exists and says CLOSED |
 | E2 | HELP DATA current + reflection PASS | Gate 4 record; `CMDHELPCHK` structural PASS |
 | E3 | Source contracts complete | `source_census` 100 percent; `command_catalog_sync check` fallback 0 |
@@ -84,6 +85,8 @@ tree.
 
 Status as of 2026-08-05 (DOCFLUSH-20260805-001):
 
+- E0 standing -- read the website matrix and classify every target page before
+  editing (entry discipline; pairs with the closeout re-audit below).
 - E1 done -- Gate 7 closeout says CLOSED.
 - E2 done -- Gate 4: reflection PASS, 525 topics.
 - E3 done -- source_census 100 percent; catalog fallback 0.
@@ -268,6 +271,14 @@ Reiterative: each track loops review -> refine -> owner review -> signoff; it is
 one-shot. A track is done only when the owner signs off, and any later change
 reopens it.
 
+**Website closeout gate (required, fail-closed).** The website track cannot be
+signed off -- and the run cannot close -- until
+`content/docs/dev/website-documentation-matrix.mdx` is updated and re-audited to
+match the signed-off site commit: advance its `Last audited` stamp, reclassify any
+pages whose maintenance class changed, and record any new diagrams or feeds this
+pass added. The matrix is itself `maintained_current`, so a stale matrix is a lie
+on the site; leaving it behind blocks the website signoff by construction.
+
 ### Diagram collection -- a maintained consumer artifact (Phase 9 step, added 2026-08-06)
 
 The BBS/AI process diagrams (ERD + submission DFD + BBS-post and M4.x PFDs) are a
@@ -375,5 +386,7 @@ Normalization target (what "integrated" looks like):
 
 Both reader surfaces are refreshed and PROVEN live: the published developer manual
 reflects current HELP (including this pass's new commands), and `x64base.com`
-serves the updated routes under cache-bypassed verification. Only then is the
-full-stack flush actually full.
+serves the updated routes under cache-bypassed verification. The website matrix
+(`content/docs/dev/website-documentation-matrix.mdx`) is updated and re-audited to
+the served commit -- a stale matrix blocks closeout. Only then is the full-stack
+flush actually full.

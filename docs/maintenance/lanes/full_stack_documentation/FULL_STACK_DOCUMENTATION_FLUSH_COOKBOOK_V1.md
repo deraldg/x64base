@@ -66,8 +66,11 @@ add it here so the next run does not re-derive it (that is the whole point).
     `command_catalog_sync`, and `build_gptbase_bundle.py` (the three consumers:
     current-work, website catalog, GPTbase advisor bundle -- all derive the same
     `as_of_date` from the registry). A stored fact that can be measured (date, HELP
-    counts) is a normalization bug -- derive it. (See the Phase 8 first-attempt
-    lessons in the ascent plan.)
+    counts) is a normalization bug -- derive it. **Closeout: once the website is
+    approved, update and re-audit `content/docs/dev/website-documentation-matrix.mdx`
+    (advance `Last audited`, reclassify changed pages, record new diagrams/feeds) --
+    the run does not close on a stale matrix (fail-closed website signoff gate).**
+    (See the Phase 8 first-attempt lessons in the ascent plan.)
 
 ## 2. Phase recipes
 
