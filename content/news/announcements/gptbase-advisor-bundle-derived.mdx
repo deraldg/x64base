@@ -1,0 +1,21 @@
+---
+title: "GPTbase advisor bundle becomes a derived, public-safe consumer"
+description: "The hosted advisor's knowledge bundle is now generated from already-public project sources instead of a hand-curated snapshot, so it can be refreshed instead of going stale."
+date: "2026-08-05"
+---
+
+The GPTbase hosted advisor -- the "ask the project expert" Custom GPT -- previously
+ran on a hand-curated knowledge snapshot that drifted out of date. It is now a
+**derived consumer** of the documentation system.
+
+How the bundle is built:
+
+- assembled only from content already cleared for the public website, plus a short
+  list of explicitly public-safe orientation docs;
+- default-deny: local paths and any sensitivity finding fail the build closed;
+- regenerated as a step of each documentation flush, with a start-here pointer index
+  that routes questions by intent.
+
+The advisor is orientation, not authority. It carries influence, not standing
+permission, and its answers should still be verified against current source. The
+only manual step is the owner re-uploading the generated bundle.

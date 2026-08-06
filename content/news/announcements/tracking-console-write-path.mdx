@@ -1,0 +1,18 @@
+---
+title: "Tracking maintenance console gains a verified write path"
+description: "The local DBF tracking console can now write through the engine after the Python binding was rebuilt with the xbase core; reads were never affected."
+date: "2026-08-06"
+---
+
+The local tracking maintenance console (mounted under the AI views) can now save
+edits and add rows through the engine, not just read.
+
+The console reads with a pure-DBF path, so viewing always worked. Writing needs the
+engine's table layer, which requires the `pydottalk` Python binding to be built
+with the `xbase` core present. A binding built from a lean subset silently lacked
+it. Rebuilding the binding from the full development tree restored the write path,
+confirmed by `HAVE_XBASE` reporting true and a save landing through the table area.
+
+This is a local maintenance tool for the project's tracking tables, not a public
+runtime feature. It also hardened the pre-publish gate so a database index file
+that must never be committed is now hard-blocked by rule rather than by habit.

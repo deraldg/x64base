@@ -1,0 +1,22 @@
+---
+title: "Website local preview navigation fixed; section titles added"
+description: "Local preview now serves every section instead of only the home page, each section carries its own page title, and preview mode links back to the live site."
+date: "2026-08-06"
+---
+
+The website's local preview had a navigation defect: every section except the home
+page returned "page not found."
+
+The site is exported with a trailing-slash layout, where each section lives at
+`/section/`. Internal links were being generated without the trailing slash, so
+they could not resolve to the exported page. Normalizing link generation to add the
+trailing slash fixed every internal link at once, in both local preview and the
+published build.
+
+Two smaller improvements went in alongside:
+
+- each section now sets its own page title (for example "Products", "Documentation",
+  "News"), so browser tabs and shared links read accurately instead of repeating the
+  generic site title;
+- local preview shows a "go to the live site" link, so you are not relying on the
+  browser back button to leave it.
