@@ -216,6 +216,12 @@ __pycache__/
 # ---------------------------------------------------------------------------
 /dottalkpp/data/lmdb/
 **/*.cdx.d/
+# .mdb (LMDB env files) anywhere, not just under data/lmdb/. All OTHER valid
+# dottalkpp file types (.dbf/.cdx/.dtx/.fpt/.dbt/.meta/...) are let THROUGH -- they
+# may be tracked as fixtures/source tables. Only .mdb is excluded, because it is
+# regenerable from the CDX container (SETLMDB) and can be huge. Matches the
+# prepush-gate hard block on .mdb (member.derald ruling 2026-08-05).
+**/*.mdb
 
 # ---------------------------------------------------------------------------
 # Probe and scratch index/table artifacts (2026-07-14)
