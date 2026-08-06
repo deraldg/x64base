@@ -74,6 +74,13 @@ HARD_BLOCK_SUFFIXES = (
     ".exe", ".dll", ".lib", ".pdb", ".obj", ".ilk", ".exp", ".pch",
     ".sln", ".vcxproj", ".vcxproj.filters", ".vcxproj.user",
     ".recipe", ".tlog", ".lastbuildstate",
+    # LMDB environments (data.mdb / lock.mdb). DERIVED index backend, measured at
+    # 53 GB in dottalkpp/data/lmdb on 2026-07-14; it must NEVER reach C:\x64base or
+    # GitHub -- publish the CDX and regenerate LMDB locally. The .gitignore ignores
+    # /data/lmdb/ and DATA_DIR_SEGMENTS only WARNS on that path, so a stray .mdb
+    # written elsewhere would slip the gate. A hard suffix block makes "never .mdb"
+    # enforced by mechanism regardless of location (the gate is the memory).
+    ".mdb",
 )
 HARD_BLOCK_BASENAMES = (
     "CMakeCache.txt",

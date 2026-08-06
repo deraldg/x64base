@@ -198,6 +198,10 @@ __pycache__/
 # Backup lanes - working copies, never publishable
 /dottalkpp/data/backup/
 **/backup/
+# Dated pre-edit backups of tracked dirs (e.g. help.bak-YYYYMMDD-HHMMSS/). The
+# source dir is versioned; the timestamped snapshot is disposable scratch.
+**/*.bak-[0-9]*/
+**/*.bak-[0-9]*
 
 # ---------------------------------------------------------------------------
 # LMDB index environments (2026-07-14)
