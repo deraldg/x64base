@@ -1,0 +1,27 @@
+# x64base / DotTalk++
+
+x64base is an educational C++20 DBF-family database runtime with the DotTalk++
+command shell. This site (x64base.com) is the public documentation surface -- a
+downstream projection, not the source of truth.
+
+## AI agents and coworkers: start here (permission-free)
+
+If you are an AI coworker assigned to this project, this file is your first
+pointer -- reachable with no mount and no permissions, so read it before
+requesting access.
+
+- The authoritative source of truth is the development tree, not this website.
+- The one onboarding front door is `AI_README.md` at the root of that dev tree.
+  It routes you at step 0 to the ~8 KB Tier 1 seed that makes you safe to act
+  (where you are, what you may do, git safety, and a five-question stopping rule).
+- Treat website prose -- including this file's descriptions -- as orientation,
+  never as technical truth. Verify against source.
+
+If you have local access to the development tree: open `AI_README.md` first.
+If you do not: this site is orientation only; request access, then start there.
+
+## Public documentation
+- /docs       documentation (engine, DotTalk++, DotScript, LabTalk)
+- /products   the product family
+- /about      history and purpose
+- /downloads  the current developer manual and command reference
