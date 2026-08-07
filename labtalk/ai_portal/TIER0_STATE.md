@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T22:17:19Z
+    generated_utc : 2026-08-07T22:31:51Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : bbf21cbd8  (2026-08-07)
-    upstream      : bbf21cbd8
+    HEAD          : f08b8f137  (2026-08-07)
+    upstream      : f08b8f137
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,11 +23,11 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md
-    commits behind HEAD : 17
+    commits behind HEAD : 18
 
 ## Staleness warnings
 
-- The newest closeout is 17 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 18 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
@@ -46,6 +46,27 @@ cannot drift, because nothing here is written by hand.
 | AIF-083 | bbs-agency-legs | member.ai.claude.cowork | yes |
 | AIF-082 | onboarding-cost-and-acceptance | member.ai.claude.cowork | yes |
 | ... | 17 older claims omitted | | |
+
+## Sessions, lineage, asides
+
+    live   : 2026-07-31_cowork_bbs_agency_legs  (member.ai.claude.cowork)  [stale, reapable]
+    live   : AIPR-20260729-001  (member.ai.claude.cowork)  [stale, reapable]
+    live   : DECLARED-CAPABILITY-VALIDATOR-20260730  (member.ai.claude.cowork)  [stale, reapable]
+
+Aside chains -- a run's claims in order (its horizontal structure);
+parent + born_utc from the durable lineage ledger, '-' until a run wakes.
+
+| run | member | parent | born_utc | asides |
+| --- | --- | --- | --- | --- |
+| COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
+| COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
+| COWORK-20260807-003 | member.ai.claude.cowork | - | - | AIF-092 -> AIF-093 |
+| COWORK-20260807-002 | member.ai.claude.cowork | - | - | AIF-091 |
+| COWORK-20260806-001 | member.ai.claude.cowork | - | - | AIF-090 |
+| COWORK-20260804-002 | member.derald | - | - | AIF-088 |
+| COWORK-20260804-001 | member.derald | - | - | AIF-087 |
+| AIPR-20260803-003 | member.ai.codex.local | - | - | AIF-086 |
+| ... | | | | 17 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

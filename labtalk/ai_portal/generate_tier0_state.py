@@ -4,6 +4,15 @@
 Tier 0 answers "where are we" without prose. It is GENERATED, never authored,
 so it cannot drift the way a hand-maintained pointer does.
 
+Sections: tree state, declared target, newest closeout, staleness warnings,
+claimed lanes, and -- added AIF-096 -- "Sessions, lineage, asides": live
+check-ins (heartbeat older than STALE_MIN is marked reapable, so an abandoned
+straggler is never shown plainly 'live'), plus each run's aside chain (its
+ordered claims -- the horizontal structure of a session) with parent + born_utc
+from the durable lineage ledger. This is the coordination identity model rising
+into the generated middle tier: it is automatic, so it rises by REGENERATION,
+never by hand -- the atomic doctrine over it rises to the Tier 1 seed instead.
+
 Design constraints, from the lane charter:
 
   * Output must stay small (target under 4 KB).
@@ -128,8 +137,87 @@ def declared_target(root: Path) -> tuple[str, str]:
     return (heading.group(1) if heading else "unknown", updated)
 
 
+STALE_MIN = 240  # heartbeat older than this (minutes) is reapable, per the coordinator
+
+
+def _age_min(stamp: str, now_dt: datetime) -> float | None:
+    """Minutes since an ISO '...Z' heartbeat, or None if it will not parse."""
+    try:
+        t = datetime.strptime(stamp.strip(), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (ValueError, AttributeError):
+        return None
+    return (now_dt - t).total_seconds() / 60.0
+
+
+def active_sessions(root: Path, now_dt: datetime) -> list[tuple[str, str, bool]]:
+    """(run, member, stale) for each non-closed presence file. stale = heartbeat older
+    than STALE_MIN (reapable) or unparseable; marking an abandoned straggler plainly
+    'live' would be the false-liveness Tier 0 exists to prevent. Transient: this is
+    empty between sessions -- correct, not a gap."""
+    out: list[tuple[str, str, bool]] = []
+    folder = root / "coordination" / "active_sessions"
+    if not folder.is_dir():
+        return out
+    for path in sorted(folder.glob("*.yaml")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "status: closed" in text:
+            continue
+        fields = dict(re.findall(r"^(\w+)\s*:\s*(.+?)\s*$", text, flags=re.MULTILINE))
+        age = _age_min(fields.get("heartbeat_utc", ""), now_dt)
+        stale = age is None or age > STALE_MIN
+        out.append((fields.get("run_id", path.stem), fields.get("member", "?"), stale))
+    return out
+
+
+def lineage_records(root: Path) -> dict[str, dict[str, str]]:
+    """run -> {parent, born_utc, member} from the DURABLE lineage ledger (AIF-096).
+    Unlike presence this survives checkout, so a closed run's origin + parent remain
+    answerable from HEAD."""
+    out: dict[str, dict[str, str]] = {}
+    folder = root / "coordination" / "lineage"
+    if not folder.is_dir():
+        return out
+    for path in folder.glob("*.yaml"):
+        fields = dict(
+            re.findall(r"^(\w+)\s*:\s*(.+?)\s*$",
+                       path.read_text(encoding="utf-8", errors="replace"),
+                       flags=re.MULTILINE)
+        )
+        run = fields.get("run_id", path.stem)
+        out[run] = {
+            "parent": fields.get("parent", "none"),
+            "born_utc": fields.get("born_utc", "unknown"),
+            "member": fields.get("member", "?"),
+        }
+    return out
+
+
+def run_asides(root: Path) -> list[tuple[str, str, list[str]]]:
+    """(run, member, [AIF-nnn ascending]) newest-run-first. A run's aside chain is the
+    ordered sequence of lane numbers it claimed -- the horizontal structure of a session,
+    read straight off the durable claim ledger."""
+    by_run: dict[str, list[str]] = {}
+    member_of: dict[str, str] = {}
+    claim_dir = root / "coordination" / "aif"
+    if not claim_dir.is_dir():
+        return []
+    for path in sorted(claim_dir.glob("AIF-*.claim")):
+        fields = dict(
+            re.findall(r"^(\w+)\s*:\s*(.+?)\s*$",
+                       path.read_text(encoding="utf-8", errors="replace"),
+                       flags=re.MULTILINE)
+        )
+        run = fields.get("run_id", "?")
+        member_of[run] = fields.get("member", "?")
+        by_run.setdefault(run, []).append(fields.get("aif", path.stem))
+    chains = [(run, member_of.get(run, "?"), sorted(aifs)) for run, aifs in by_run.items()]
+    chains.sort(key=lambda rc: max(rc[2]) if rc[2] else "", reverse=True)
+    return chains
+
+
 def render(root: Path) -> str:
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_dt = datetime.now(timezone.utc)
+    now = now_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     branch = git(root, "rev-parse", "--abbrev-ref", "HEAD") or "unknown"
     head = git(root, "rev-parse", "--short", "HEAD") or "unknown"
     head_date = git(root, "log", "-1", "--format=%ad", "--date=short") or "unknown"
@@ -220,6 +308,34 @@ def render(root: Path) -> str:
     if len(claims) > 12:
         add(f"| ... | {len(claims) - 12} older claims omitted | | |")
     add("")
+
+    add("## Sessions, lineage, asides")
+    add("")
+    live = active_sessions(root, now_dt)
+    if live:
+        for run, member, stale in live:
+            tag = "  [stale, reapable]" if stale else ""
+            add(f"    live   : {run}  ({member}){tag}")
+    else:
+        add("    live   : none checked in")
+    add("")
+    lin = lineage_records(root)
+    asides = run_asides(root)
+    add("Aside chains -- a run's claims in order (its horizontal structure);")
+    add("parent + born_utc from the durable lineage ledger, '-' until a run wakes.")
+    add("")
+    add("| run | member | parent | born_utc | asides |")
+    add("| --- | --- | --- | --- | --- |")
+    for run, member, chain in asides[:8]:
+        rec = lin.get(run, {})
+        parent = rec.get("parent", "-")
+        born = rec.get("born_utc", "-")
+        chain_str = " -> ".join(chain[:6]) + (" ..." if len(chain) > 6 else "")
+        add(f"| {run} | {member} | {parent} | {born} | {chain_str} |")
+    if len(asides) > 8:
+        add(f"| ... | | | | {len(asides) - 8} older run(s) omitted |")
+    add("")
+
     add("Perishable detail lives in the artifacts these point at. Do not")
     add("restate anything above; regenerate it.")
     add("")
