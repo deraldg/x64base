@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T03:33:52Z
+    generated_utc : 2026-08-07T03:46:12Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 9dce6eb37  (2026-08-06)
+    HEAD          : d4ad1b2ee  (2026-08-06)
     upstream      : b482028db
-    unpushed      : 1 commit(s) ahead of upstream
+    unpushed      : 2 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_TRIGGERS_PHASE1_AND_BBS_COOPERATION_2026-08-04.md
-    commits behind HEAD : 98
+    commits behind HEAD : 99
 
 ## Staleness warnings
 
-- The newest closeout is 98 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 1 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 99 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 2 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-090 | x64base-agent-skill | member.ai.claude.cowork | yes |
 | AIF-088 | command_catalog_runtime_drift | member.derald | yes |
 | AIF-087 | triggers-pdlc | member.derald | yes |
 | AIF-086 | ai-systems-integration-sdlc | member.ai.codex.local | yes |
@@ -45,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-078 | workspace-qualifier-namespace-depth | member.ai.claude.cowork | yes |
 | AIF-077 | codex-wip | member.ai.claude.cowork | yes |
 | AIF-076 | pseudochat-defuse | member.ai.claude.cowork | yes |
-| AIF-075 | bbs-shell-attrib | member.ai.claude.cowork | yes |
-| ... | 10 older claims omitted | | |
+| ... | 11 older claims omitted | | |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
