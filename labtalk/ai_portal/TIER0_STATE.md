@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T21:27:50Z
+    generated_utc : 2026-08-07T21:55:01Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 036e311f1  (2026-08-07)
-    upstream      : 036e311f1
+    HEAD          : 5259463ef  (2026-08-07)
+    upstream      : 5259463ef
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md
-    commits behind HEAD : 14
+    commits behind HEAD : 15
 
 ## Staleness warnings
 
-- The newest closeout is 14 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 15 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
 | AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
 | AIF-093 | dottalkpp-text-extension | member.ai.claude.cowork | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-086 | ai-systems-integration-sdlc | member.ai.codex.local | yes |
 | AIF-083 | bbs-agency-legs | member.ai.claude.cowork | yes |
 | AIF-082 | onboarding-cost-and-acceptance | member.ai.claude.cowork | yes |
-| AIF-081 | output-capture-completeness | member.ai.claude.cowork | yes |
-| ... | 16 older claims omitted | | |
+| ... | 17 older claims omitted | | |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
