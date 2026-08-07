@@ -3,6 +3,9 @@
 **Status:** candidate (dev-only; not promoted) · **Filed:** 2026-07-22
 · **Owner:** member.derald · **Steward/author:** member.ai.claude.cowork · **Lane:** AIF-050.
 · **Tool:** `tools/coordination/session_coordinator.py` · **State:** `coordination/`.
+**Model:** the two-atom frame under this protocol (chat/project; wake-first; lineage +
+asides) is `COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md` (AIF-096); operator + developer usage
+are the two `COORDINATION_*_MANUAL_V1.md`.
 
 ## Why (the proven failure)
 

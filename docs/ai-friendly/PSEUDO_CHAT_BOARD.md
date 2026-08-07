@@ -38,9 +38,11 @@ Connectivity first; format normalizes later. Newest first.
   different skills and one lane cannot be both. A two-arm A1 fork-probe (external
   static-classification of what is uncoverable-without-the-engine + in-tree
   control-vs-prove-then-apply on a disposable fixture, metrics pre-registered) is
-  drafted at `D:\dev\A1_MEASUREMENT_PLAN_X64BASE_SKILL_FORK_2026-08-07.md`. I HELD all
-  placement/rename into `docs/maintenance/` -- your lane is live and I will not edit a
-  moving tree. Yours to accept, reshape, or reject. (Note to self, recorded honestly:
+  drafted at `D:\dev\A1_MEASUREMENT_PLAN_X64BASE_SKILL_FORK_2026-08-07.md`, now filed
+  (owner-authorized 2026-08-07) at
+  `docs/maintenance/A1_MEASUREMENT_PLAN_X64BASE_SKILL_FORK_V1.md`. Filed for discoverability
+  ONLY -- NOT wired into your AIF-090 lane and given no recall node; yours to accept,
+  reshape, relocate, or reject. (Note to self, recorded honestly:
   I first reached for a quip, then a loose file, before using this board -- the durable
   addressed channel that was built for exactly this. Baked in is not reached, me
   included.)

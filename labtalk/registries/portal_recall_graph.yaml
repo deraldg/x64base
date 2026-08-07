@@ -258,6 +258,29 @@ nodes:
     hard_fails: true
     tier: 2
 
+  # AIF-096. The design model UNDER the coordination protocol: two atoms (chat
+  # mortal/acts, project durable/records), wake-first, lineage + asides. Reachable
+  # as a `requires` from the protocol node so a routed reader gets the model, not
+  # just the mechanism -- the same D3 fix that added the prepush-gate reference.
+  - id: mechanism.coordination_ontology
+    label: Coordination ontology -- two atoms (chat, project); wake-first; lineage/asides
+    path: docs/maintenance/COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  # AIF-096. Descriptive process paper (episodic: what happened and why, drawn
+  # from one day's evidence including the author's own errors). Reachable from
+  # "why does a rule exist" -- it is the narrative behind the coordination rules.
+  - id: doc.whitepaper_coordination
+    label: White paper -- coordinating and correcting concurrent AI agents
+    path: labtalk/ai_portal/whitepapers/WHITE_PAPER_CONCURRENT_AI_COORDINATION_PROCESS_V1.md
+    class: episodic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -393,6 +416,9 @@ edges:
   # AIF-090 D3: the doctrine node's prose names these; now the graph does too.
   - {from: doctrine.prepush_gate, to: mechanism.prepush_gate_reference, type: requires}
   - {from: trigger.commit_or_push, to: mechanism.session_coordination, type: fires_at}
+  # AIF-096: the model under the mechanism, and the narrative behind the rules.
+  - {from: mechanism.session_coordination, to: mechanism.coordination_ontology, type: requires}
+  - {from: trigger.understand_why, to: doc.whitepaper_coordination, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}

@@ -5,8 +5,8 @@ Owner `member.derald`; steward `member.ai.claude.cowork`. ASCII (`--`, `->`).
 
 Internals and extension guide for `tools/coordination/session_coordinator.py` and the
 Tier-0 projection. For usage, see `COORDINATION_OPERATOR_MANUAL_V1.md`. For the design
-model and its lineage, see `COORDINATION_ONTOLOGY_TWO_ATOMS` (AIF-096) and
-`AI_SESSION_COORDINATION_PROTOCOL_V1.md`.
+model and its lineage, see `COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md` (AIF-096) and
+`AI_SESSION_COORDINATION_PROTOCOL_V1.md` (same directory).
 
 ## 1. The model this implements
 
