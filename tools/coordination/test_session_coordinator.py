@@ -49,6 +49,33 @@ def test_quip_direct_and_broadcast_and_ack():
         assert sc.quip_send(root, "RUN-B", "all", "anyone?") == 1
 
 
+def test_quip_ack_is_honest_when_unlink_fails():
+    # The bug this guards: on a mount that refuses unlink, --ack must NOT claim
+    # success. The old test only ran where unlink works, so it never saw this.
+    import io, contextlib
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        sc.checkin(root, "m.a", "RUN-A", "", "")
+        sc.quip_send(root, "RUN-A", "RUN-A", "self note")
+        assert _inbox_count(root, "RUN-A") == 1
+
+        orig_unlink = Path.unlink
+        def refuse(self, *a, **k):
+            raise OSError("simulated mount that refuses unlink")
+        Path.unlink = refuse
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                sc.quip_read(root, "RUN-A", ack=True)
+            out = buf.getvalue()
+        finally:
+            Path.unlink = orig_unlink
+
+        assert "acked 0 of 1" in out, out          # honest count, not "acked 1"
+        assert "NOT acked" in out, out             # the failure is surfaced
+        assert _inbox_count(root, "RUN-A") == 1    # file genuinely still present
+
+
 def test_claim_is_atomic_and_unique():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -61,5 +88,6 @@ def test_claim_is_atomic_and_unique():
 
 if __name__ == "__main__":
     test_quip_direct_and_broadcast_and_ack()
+    test_quip_ack_is_honest_when_unlink_fails()
     test_claim_is_atomic_and_unique()
     print("OK -- session_coordinator quip + claim tests passed")

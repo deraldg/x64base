@@ -288,16 +288,23 @@ def quip_read(root: Path, run, since=None, ack=False):
             if line.startswith(key + ":"):
                 return line.split(":", 1)[1].strip()
         return "?"
+    acked = 0
     for f in files:
         body = f.read_text(errors="ignore")
         print(f"  [{field(body, 'sent_utc')}] {field(body, 'from')}: {field(body, 'msg')}")
         if ack:
+            # Report what was DELETED, not what was read. Some mounts (the sandbox
+            # coordination/ mount) refuse unlink; swallowing that and printing
+            # len(files) claims success on every un-acked quip. Same defect fixed in
+            # checkout() 2026-07-26; it was left here in quip_read (added 2026-08-07)
+            # and caught by the AIF-090 co-session. Surface the failure, count the truth.
             try:
                 f.unlink()
-            except OSError:
-                pass
+                acked += 1
+            except OSError as exc:
+                print(f"  NOT acked ({type(exc).__name__}): {f.name}")
     if ack:
-        print(f"(acked {len(files)} quip(s))")
+        print(f"(acked {acked} of {len(files)} quip(s))")
     return 0
 
 
