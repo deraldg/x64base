@@ -57,3 +57,26 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
 }
+.prose img[title="Glass Engine origin figure"] {
+  display: block;
+  width: auto;
+  max-width: 480px;
+  height: auto;
+  margin: 1.5rem auto 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.prose img[title="Arctic fox mascot"] {
+  float: right;
+  width: 180px;
+  max-width: 40%;
+  height: auto;
+  margin: 0.25rem 0 1rem 1.5rem;
+}
+@media (max-width: 640px) {
+  .prose img[title="Arctic fox mascot"] {
+    float: none;
+    display: block;
+    margin: 1rem auto;
+  }
+}
