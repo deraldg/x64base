@@ -20,10 +20,15 @@ keeping a handoff short and pointer-shaped.
 **Probe C ran later the same day and G0 is now AUDIENCE-SPECIFIC.** NO-GO stands
 for the repo-partner skill. It does NOT stand for outside agencies -- whose
 problem is not retrieval friction but that `main` does not publish the
-governance they will be judged against. `CONTRIBUTING.md` @ `main` says base on
-`main`; `AI_README.md` @ `development` calls that "a hard onboarding failure".
-The correction is only readable from the branch outsiders are told to discover
-locally. Lane section 9a.
+governance they will be judged against. `AI_README.md` @ `main` says "public
+branch: main" and that `development` "must be discovered locally" -- when
+`development` is published on GitHub; `AI_README.md` @ `development` calls
+baselining on `main` "a hard onboarding failure". The correction is only readable
+from the branch outsiders are told to discover locally. Lane section 9a.
+
+(`CONTRIBUTING.md` is **silent** on baselining, not contradictory. An earlier
+revision of this handoff said otherwise; corrected same day. The load-bearing
+defect is one sentence in `AI_README.md` @ `main`.)
 
 **The cheapest fix is not a skill and not a bundle.** Publish the
 branch-enumeration rule and the roles table on `main`. That is a promotion

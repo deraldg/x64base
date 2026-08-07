@@ -253,7 +253,7 @@ Verified directly against `raw.githubusercontent.com`, no probe required:
 
 | Question an outside contributor must answer | From `main` | From `development` |
 | --- | --- | --- |
-| Which branch do I baseline on? | `main` -- `CONTRIBUTING.md`: "the canonical collaboration and release branch" | `development`; baselining on `main` is "a hard onboarding failure (observed 2026-08)" |
+| Which branch do I baseline on? | **nothing on `main` answers this.** `CONTRIBUTING.md` is silent on baselining; it says `main` is "the canonical collaboration and release branch", which is a statement about where a claim becomes current. The reader falls back on `AI_README.md` @ `main`, below. | `development`; baselining on `main` is "a hard onboarding failure (observed 2026-08)" |
 | Is `development` published? | "must be discovered locally" | yes, on GitHub, and richer |
 | What is `C:\x64base`? | "clean staging mirror" | NOT a mirror; that wording is declared stale drift |
 | Repository roles table | absent | first thing in the file |
@@ -268,6 +268,28 @@ branch it was told it cannot reach.** The probe navigated it anyway, but two of
 its five branch-enumeration calls returned empty bodies and it said plainly that
 had they kept failing it "would have been left with `main` by default and no
 signal that it was a choice at all".
+
+**CORRECTION, 2026-08-06, same day: this section originally overstated its
+evidence.** It quoted `CONTRIBUTING.md`'s "canonical collaboration and release
+branch" in a table row headed "which branch do I baseline on", attributing to
+that file an answer it does not give. `CONTRIBUTING.md` is **silent** on
+baselining; its sentence is about where a public claim becomes current, and its
+"Before opening a change" list says "build from a clean checkout" without naming
+a branch. The probe itself flagged this in its own guess list -- "No document I
+read says in one place 'outside contributors, base on `main`'" -- and the
+overstatement was written anyway.
+
+The corrected finding is narrower and sharper. The defect is **silence plus one
+wrong sentence**, and the wrong sentence is in `AI_README.md` @ `main`: "public
+branch: main" and "The development branch is current workspace state and must be
+discovered locally", when `development` is in fact published on GitHub. That one
+file is the load-bearing defect, not `CONTRIBUTING.md`.
+
+A second tension is real and separate: `AI_README.md` @ `development` says
+baseline on `development`, while `AGENTS.md` says never merge `development` to
+`main`. `PROMOTION_PROCESS.md` resolves it ("open PRs against `main`") and is
+also `development`-only, so an outside contributor sees neither the instruction
+nor its resolution.
 
 **Ruling consequence.** G0 stands as NO-GO for the repo-partner audience: an
 agent inside the tree with an injected shim reaches Tier 1 unaided, measured

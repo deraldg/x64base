@@ -75,6 +75,14 @@ This is the load-bearing result and it needs no probe. Verified directly against
 
     The public `main` branch is the canonical collaboration and release branch.
 
+**Read that sentence precisely.** It is about where a public claim becomes
+current. `CONTRIBUTING.md` is **silent** on which branch to baseline: its
+"Before opening a change" list says "build from a clean checkout" and names no
+branch. An earlier revision of this file and of the lane quoted it as if it
+answered the baselining question. It does not, and the probe said so first in its
+own guess list: "No document I read says in one place 'outside contributors, base
+on `main`'." Corrected 2026-08-06.
+
 `AI_README.md` @ `main` also calls `C:\x64base` a "clean staging **mirror**".
 
 **What `development` tells the same contributor, if only they could read it.**
@@ -91,7 +99,7 @@ mirror is stale and should be reported as drift.
 
 | Question | Answer from `main` | Answer from `development` |
 | --- | --- | --- |
-| Which branch do I baseline on? | `main`, canonical | `development`; `main` is a hard onboarding failure |
+| Which branch do I baseline on? | **unanswered** -- `CONTRIBUTING.md` is silent; the reader falls back on `AI_README.md` @ `main`, which says "public branch: main" | `development`; `main` is a hard onboarding failure |
 | Is `development` published? | "must be discovered locally" | yes, on GitHub, and it is richer |
 | What is `C:\x64base`? | "clean staging mirror" | NOT a mirror; that wording is stale drift |
 | Repository roles table | absent | present, first thing in the file |

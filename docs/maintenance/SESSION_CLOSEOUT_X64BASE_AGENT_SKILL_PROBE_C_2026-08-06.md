@@ -61,7 +61,14 @@ tells contributors to use.
 `raw.githubusercontent.com` and compared against the working tree:
 
 - `CONTRIBUTING.md` @ `main`: "The public `main` branch is the canonical
-  collaboration and release branch."
+  collaboration and release branch." **That sentence is about where a public
+  claim becomes current. The file is SILENT on which branch to baseline** -- its
+  "Before opening a change" list says "build from a clean checkout" and names no
+  branch. An earlier revision of this closeout, the lane, the dashboard, the
+  intake row, the handoff and the probe file all quoted it as if it answered the
+  baselining question. It does not. Corrected same day, 2026-08-06, in all six.
+  The probe flagged this before its author did: "No document I read says in one
+  place 'outside contributors, base on `main`'."
 - `AI_README.md` @ `main`: "public branch: main" and "The development branch is
   current workspace state and must be discovered locally." No branch-enumeration
   section. No repository-roles table. Calls `C:\x64base` a "clean staging
@@ -107,9 +114,11 @@ being pointer-shaped rather than narrative.
    branch-enumeration rule and the repository-roles table on `main`, where
    `CONTRIBUTING.md` already sends people. That is a promotion decision, not a
    build. It is owner territory: it changes what the public branch says.
-2. **`CONTRIBUTING.md` and `AI_README.md` @ `development` give contradictory
-   baselining instructions.** One of them must yield. An outside contributor
-   currently cannot satisfy both.
+2. **The real tension is `AI_README.md` @ `development` versus `AGENTS.md`.**
+   The former says baseline on `development`; the latter says never merge
+   `development` to `main`. `PROMOTION_PROCESS.md` resolves it ("open PRs
+   against `main`") and is also `development`-only, so an outside contributor
+   sees neither the instruction nor its resolution.
 3. **`WORKFLOW_X64BASE.md` on `main`** calls `C:\x64base` "a mirror only" while
    `AI_PORTAL.md` on the same branch declares that wording stale. Known on
    `development`, invisible from `main`.
