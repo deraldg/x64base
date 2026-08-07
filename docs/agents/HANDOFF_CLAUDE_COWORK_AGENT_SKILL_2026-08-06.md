@@ -10,16 +10,30 @@ what happened.
 
 ---
 
-## 1. Do not start at P1
+## 1. P0 is DONE and it said NO. Do not build the projector.
 
-`P0` is a go/no-go and it is first for a reason. The lane's premise is that cold
-agents do not reliably reach Tier 1 on their own. That premise is **argued, not
-measured**. If it turns out they do, this lane is packaging polish and should
-defer behind whatever the owner names instead.
+**Superseded 2026-08-06, same day this file was written.** When authored, this
+section said "do not start at P1, P0 is unmeasured". P0 was then measured in the
+same session. Result: **the lane's premise is falsified.**
 
-Measure before spending: bytes read before first correct action, whether
-`recall.py` ran unprompted, whether a sandboxed agent took a lock-taking git.
-Charter section 4, G0.
+Two cold outside runners both reached Tier 1 and answered the seed's five
+questions. The control was never told the seed existed and found it anyway,
+because `CLAUDE.md` is auto-injected and points there. Both arms read ~48 KB;
+the skill stub bought no material saving.
+
+**G0 is NO-GO RECOMMENDED, awaiting the owner's ruling.** Do not build the
+projector, the bundle, or the shim collapse. Evidence and the four defects that
+outlive the lane: `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`;
+summary in charter section 9.
+
+If the owner converts this to the recommended repair lane, the order is D2
+(stale denominator, the only one that makes a live metric unsafe to quote), D4
+(seed ceiling unenforced), D1 (`recall.py` unreachable), D3 (graph gaps).
+
+**The one thing P0 did NOT test** and which may still justify a bundle: a hosted
+agent with no tree and no auto-injected shim. Both probes received `CLAUDE.md`
+automatically, which is precisely why the control succeeded. If you pick that up,
+it is a new measurement, not an assumption.
 
 ## 2. The one rule that kills this lane if you break it
 
