@@ -54,6 +54,7 @@ Documentation cannot fix a coordination problem; an allocator and a presence sur
   owner a pointer (in your handoff or the intake row) so they are not surprised. Flag the cross-lane
   impact; do not silently edit another owner's records. Owners update their own ledgers. Surfacing
   impact is courtesy that prevents the *quiet* collision -- the one the number-claim gate cannot see.
+  Fuller how-to (triggers, note format, non-goals, examples): `GOOD_NEIGHBOR_POLICY_V1.md`.
 
 ## Enforcement (the claim is not optional -- the commit chokepoint proves it)
 
