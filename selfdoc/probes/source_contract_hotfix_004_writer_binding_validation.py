@@ -1,0 +1,288 @@
+#!/usr/bin/env python3
+"""
+source_contract_hotfix_004_writer_binding_validation.py
+
+REPORT_ONLY validation for hotfix 004 writer-binding.
+
+Run after:
+  python selfdoc\probes\source_contract_inventory_probe_v1_1.py
+  python selfdoc\probes\source_contract_inventory_v1_1_classifier_gap_review.py
+  python selfdoc\probes\source_contract_capture_hotfix_002_evidence_lanes.py
+
+Reads:
+  dottalkpp\docs\generated\reports\source_contracts_inventory_v1_1.csv
+  dottalkpp\docs\generated\reports\source_contracts_inventory_v1_1.json
+  dottalkpp\docs\generated\reports\source_contract_capture_hotfix_002_evidence_lanes.csv
+
+Writes:
+  dottalkpp\docs\generated\reports\source_contract_hotfix_004_writer_binding_validation.md
+  dottalkpp\docs\generated\reports\source_contract_hotfix_004_writer_binding_validation.csv
+  dottalkpp\docs\generated\reports\source_contract_hotfix_004_writer_binding_validation.json
+
+Safety:
+  No DotTalk++ source edits.
+  No DBF writes.
+  No HELP DATA rebuild.
+  No CMDHELPCHK changes.
+  No source repairs.
+  No v1.1 default promotion.
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+from collections import Counter
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+REPORT_DIR = Path("dottalkpp") / "docs" / "generated" / "reports"
+INV_CSV = REPORT_DIR / "source_contracts_inventory_v1_1.csv"
+INV_JSON = REPORT_DIR / "source_contracts_inventory_v1_1.json"
+LANES_CSV = REPORT_DIR / "source_contract_capture_hotfix_002_evidence_lanes.csv"
+
+OUT_MD = REPORT_DIR / "source_contract_hotfix_004_writer_binding_validation.md"
+OUT_CSV = REPORT_DIR / "source_contract_hotfix_004_writer_binding_validation.csv"
+OUT_JSON = REPORT_DIR / "source_contract_hotfix_004_writer_binding_validation.json"
+
+BATCH0_NINE = [
+    "src/cli/cmd_area.cpp",
+    "src/cli/cmd_calcwrite.cpp",
+    "src/cli/cmd_close.cpp",
+    "src/cli/cmd_color.cpp",
+    "src/cli/cmd_commit.cpp",
+    "src/cli/cmd_copy.cpp",
+    "src/cli/cmd_dir.cpp",
+    "src/cli/cmd_foxhelp.cpp",
+    "src/cli/cmd_list_lmdb.cpp",
+]
+CMD_HELP = "src/cli/cmd_help.cpp"
+
+
+@dataclass
+class ValidationRow:
+    path: str
+    row_present: bool
+    malformed: bool
+    action_class: str
+    status: str
+    evidence_lane: str
+    secondary_lane: str
+    source_repair_recommended: bool
+    notes: str
+    expected_state_met: bool
+    validation_lane: str
+    recommended_next_action: str
+
+
+def b(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"true", "1", "yes", "y"}
+
+
+def read_csv_rows(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        return [dict(row) for row in csv.DictReader(f)]
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"_read_error": f"{type(exc).__name__}: {exc}"}
+
+
+def index_by_path(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    return {row.get("path", "").replace("\\", "/"): row for row in rows if row.get("path", "")}
+
+
+def md_escape(value: object) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def get_any(row: dict[str, str], lane_row: dict[str, str], key: str, default: str = "") -> str:
+    return row.get(key, lane_row.get(key, default))
+
+
+def validate_path(path: str, inv: dict[str, str], lanes: dict[str, str]) -> ValidationRow:
+    malformed = b(inv.get("malformed", False))
+    action_class = inv.get("action_class", "")
+    status = inv.get("status", "")
+    evidence_lane = get_any(inv, lanes, "evidence_lane")
+    secondary_lane = get_any(inv, lanes, "secondary_lane")
+    repair = b(get_any(inv, lanes, "source_repair_recommended", "False"))
+    notes = inv.get("notes", "")
+
+    if path in BATCH0_NINE:
+        expected = (
+            bool(inv)
+            and not malformed
+            and action_class == "accepted_existing_command_contract"
+            and status in {"accepted", "accepted_existing_command_contract", "ok"}
+            and evidence_lane in {"CONFIRMED", "accepted", "accepted_existing_command_contract", ""}
+            and secondary_lane in {"DO_NOT_REPAIR", ""}
+            and not repair
+        )
+        lane = "CONFIRMED" if expected else "WRITER_BINDING_REVIEW"
+        next_action = "continue promotion review; no source repair" if expected else "writer binding still did not affect final emitted row"
+    elif path == CMD_HELP:
+        expected = (
+            bool(inv)
+            and evidence_lane == "STALE_EVIDENCE"
+            and secondary_lane == "DO_NOT_REPAIR"
+            and not repair
+        )
+        lane = "STALE_EVIDENCE" if expected else "WRITER_BINDING_REVIEW"
+        next_action = "keep stale-evidence/do-not-repair lane" if expected else "restore cmd_help stale-evidence/do-not-repair lane"
+    else:
+        expected = False
+        lane = "REVIEW"
+        next_action = "not a target path"
+
+    return ValidationRow(
+        path=path,
+        row_present=bool(inv),
+        malformed=malformed,
+        action_class=action_class,
+        status=status,
+        evidence_lane=evidence_lane,
+        secondary_lane=secondary_lane,
+        source_repair_recommended=repair,
+        notes=notes,
+        expected_state_met=expected,
+        validation_lane=lane,
+        recommended_next_action=next_action,
+    )
+
+
+def main() -> int:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+    inv_rows = index_by_path(read_csv_rows(INV_CSV))
+    lane_rows = index_by_path(read_csv_rows(LANES_CSV))
+    inv_json = read_json(INV_JSON)
+    inv_summary = inv_json.get("summary", {}) if isinstance(inv_json.get("summary", {}), dict) else {}
+    probe_version = inv_summary.get("probe_version", "")
+
+    rows = [validate_path(path, inv_rows.get(path, {}), lane_rows.get(path, {})) for path in BATCH0_NINE + [CMD_HELP]]
+
+    counts = Counter(row.validation_lane for row in rows)
+    expected_met = sum(1 for row in rows if row.expected_state_met)
+    batch_expected = sum(1 for row in rows if row.path in BATCH0_NINE and row.expected_state_met)
+    cmd_help_ok = any(row.path == CMD_HELP and row.expected_state_met for row in rows)
+    repair_count = sum(1 for row in rows if row.source_repair_recommended)
+
+    if batch_expected == len(BATCH0_NINE) and cmd_help_ok and repair_count == 0 and probe_version == "v1.1-hotfix_004_writer_binding":
+        validation_status = "PASSED"
+        next_action = "Hotfix 004 writer binding validated. Continue v1.1 promotion review; do not repair source."
+    elif probe_version != "v1.1-hotfix_004_writer_binding":
+        validation_status = "NOT_PASSED_STALE_OR_WRONG_PROBE_VERSION"
+        next_action = "Inventory report is not from v1.1-hotfix_004_writer_binding. Reapply/rerun before further diagnosis."
+    else:
+        validation_status = "NOT_PASSED_WRITER_BINDING_REVIEW_REQUIRED"
+        next_action = "Writer binding still did not affect target rows; inspect emitted row shape and writer function names."
+
+    summary = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "REPORT_ONLY_GENERATED",
+        "validation_status": validation_status,
+        "inventory_probe_version": probe_version,
+        "rows_reviewed": len(rows),
+        "expected_state_met": expected_met,
+        "batch0_expected_state_met": batch_expected,
+        "cmd_help_stale_evidence_do_not_repair": cmd_help_ok,
+        "source_repair_recommended": repair_count,
+        "validation_lane_counts": dict(counts.most_common()),
+        "recommended_next_overall_action": next_action,
+        "non_mutation_guards": [
+            "did_not_edit_dottalkpp_src_or_include",
+            "did_not_write_dbfs",
+            "did_not_modify_cmdhelpchk",
+            "did_not_rebuild_help_data",
+            "did_not_repair_source_headers",
+            "did_not_promote_v1_1_to_default",
+            "did_not_move_or_delete_project_files",
+        ],
+    }
+
+    with OUT_CSV.open("w", encoding="utf-8", newline="") as f:
+        fieldnames = list(asdict(rows[0]).keys()) if rows else []
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(asdict(row))
+
+    OUT_JSON.write_text(json.dumps({"summary": summary, "rows": [asdict(r) for r in rows]}, indent=2), encoding="utf-8")
+
+    lines = [
+        "# Source Contract Hotfix 004 Writer Binding Validation",
+        "",
+        f"Generated UTC: `{summary['generated_at_utc']}`",
+        "",
+        "Safety class: `REPORT_ONLY validation`",
+        "",
+        "## Verdict",
+        "",
+        "```text",
+        f"validation status: {validation_status}",
+        f"inventory_probe_version: {probe_version}",
+        f"batch0_expected_state_met: {batch_expected}/{len(BATCH0_NINE)}",
+        f"cmd_help_stale_evidence_do_not_repair: {cmd_help_ok}",
+        f"source_repair_recommended: {repair_count}",
+        "source repairs: NOT AUTHORIZED",
+        "DBF writes: NOT AUTHORIZED",
+        "CMDHELPCHK changes: NOT AUTHORIZED",
+        "HELP DATA rebuild: NOT AUTHORIZED",
+        "v1.1 default promotion: NOT AUTHORIZED",
+        "```",
+        "",
+        "## Rows",
+        "",
+        "| Path | Malformed | Action class | Status | Lane | Secondary | Expected | Next action |",
+        "|---|---:|---|---|---|---|---:|---|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| `{md_escape(row.path)}` | {row.malformed} | `{md_escape(row.action_class)}` | "
+            f"`{md_escape(row.status)}` | `{md_escape(row.evidence_lane)}` | "
+            f"`{md_escape(row.secondary_lane)}` | {row.expected_state_met} | {md_escape(row.recommended_next_action)} |"
+        )
+    lines += [
+        "",
+        "## Recommended next action",
+        "",
+        next_action,
+        "",
+        "## Non-mutation confirmation",
+        "",
+    ]
+    for guard in summary["non_mutation_guards"]:
+        lines.append(f"- `{guard}`")
+    OUT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    print("SelfDoc hotfix 004 writer-binding validation complete.")
+    print(f"Validation status: {validation_status}")
+    print(f"Inventory probe version: {probe_version}")
+    print(f"Batch 0 expected state: {batch_expected}/{len(BATCH0_NINE)}")
+    print(f"cmd_help stale evidence / do not repair: {cmd_help_ok}")
+    print(f"Source repair recommended: {repair_count}")
+    print(f"Wrote: {OUT_MD}")
+    print(f"Wrote: {OUT_CSV}")
+    print(f"Wrote: {OUT_JSON}")
+    print("No DotTalk++ src/include files were edited.")
+    print("No DBFs were written.")
+    print("CMDHELPCHK was not modified.")
+    print("HELP DATA was not rebuilt.")
+    return 0 if validation_status == "PASSED" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

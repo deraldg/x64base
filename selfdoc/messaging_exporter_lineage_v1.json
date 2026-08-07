@@ -1,0 +1,24 @@
+{
+  "schema_version": "messaging_exporter_lineage_v1",
+  "kind": "tool_lineage_registry",
+  "status": "ACTIVE_DESCRIPTIVE_LINEAGE",
+  "run_id": "DOCFLUSH-20260716-001",
+  "canonical_exporter": {
+    "path": "dottalkpp/tools/help/generate_runtime_message_catalog_seed_v1.py",
+    "sha256": "5886C5719BDC9558FC7E18C43B43834FCFAA59AFEE8BE0F3928D25202AA60D4B",
+    "lifecycle": "ACTIVE",
+    "role": "Generate reviewed SYSTEM_MESSAGES and SYSTEM_MESSAGE_TEXT import candidates from compiled runtime registries",
+    "direct_protected_store_mutation": false
+  },
+  "historical_exporter": {
+    "path": "tools/messaging/export_message_catalog_phase6.py",
+    "sha256": "BEABF791AA914E06BC578F148061BE614B7FFC933BEBC12FCE0299A663B45EF4",
+    "lifecycle": "HISTORICAL",
+    "role": "Report-only review exporter for the earlier Phase 6 source layout",
+    "execution_default_allowed": false,
+    "disposition": "PRESERVE_AS_HISTORICAL_EVIDENCE_NOT_FOR_NEW_SEED_EXPORTS"
+  },
+  "authority_rule": "Compiled runtime message registries are source authority; generated CSVs remain import candidates until separately reviewed and loaded.",
+  "mutation_authorized": false,
+  "promotion_authorized": false
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "reference_identity_authority_v1",
+  "kind": "reference_identity_authority_map",
+  "status": "ACTIVE_DESCRIPTIVE_CONTRACT",
+  "contract": "docs/maintenance/lanes/full_stack_documentation/REFERENCE_IDENTITY_AUTHORITY_CONTRACT_V1.md",
+  "mutation_authorized": false,
+  "promotion_authorized": false,
+  "entity_types": [
+    {"entity_type": "COMMAND", "identity_template": "CMD:{canonical_name}", "identity_fields": ["canonical_name"], "normalization": ["trim", "uppercase", "collapse_internal_ascii_whitespace"], "legacy_projection": "command/catalog name"},
+    {"entity_type": "SUBCOMMAND", "identity_template": "SUBCMD:{parent_command}::{name}", "identity_fields": ["parent_command", "name"], "normalization": ["trim", "uppercase", "collapse_internal_ascii_whitespace"], "legacy_projection": "qualified_name"},
+    {"entity_type": "FUNCTION", "identity_template": "FN:{canonical_name}", "identity_fields": ["canonical_name"], "normalization": ["trim", "uppercase", "collapse_internal_ascii_whitespace"], "legacy_projection": "FUNC_ID=FN_<sanitized canonical_name>"},
+    {"entity_type": "ARGUMENT", "identity_template": "ARG:{owner_kind}:{owner_name}:{kind}:{arg_name}", "identity_fields": ["owner_kind", "owner_name", "kind", "arg_name"], "normalization": ["trim", "uppercase", "collapse_internal_ascii_whitespace"], "legacy_projection": "ARG_ID=ARG_<owner_name>_<arg_name>; collision check required"},
+    {"entity_type": "ENTRY_VARIANT", "identity_template": "ENTRY:{kind}:{token}->{canonical_command}", "identity_fields": ["kind", "token", "canonical_command"], "normalization": ["trim", "uppercase", "collapse_internal_ascii_whitespace"], "legacy_projection": "alias/shortcut/reexpression relationship"}
+  ],
+  "authority_sources": [
+    {"authority_id": "AUTH-RUNTIME-REFLECTION", "authority_role": "PROOF", "system_ids": ["META-007"], "paths": ["src/cli/reference_collection.cpp"]},
+    {"authority_id": "AUTH-SOURCE-COMMAND-REGISTRY", "authority_role": "DEFINITION", "system_ids": ["META-007", "META-008"], "paths": ["src/cli/shell_commands.cpp", "src/cli/command_catalog.cpp"]},
+    {"authority_id": "AUTH-SOURCE-REF-CATALOGS", "authority_role": "DEFINITION_AND_COMPATIBILITY", "system_ids": ["META-008"], "paths": ["include/dotref.hpp", "include/foxref.hpp", "include/edref.hpp"]},
+    {"authority_id": "AUTH-SOURCE-USAGE-CONTRACT", "authority_role": "DOCUMENTARY_DEFINITION", "system_ids": ["META-003", "META-008"], "paths": ["src/cli/cmd_*.cpp"]},
+    {"authority_id": "AUTH-SOURCE-FUNCTION-CATALOG", "authority_role": "DEFINITION", "system_ids": ["META-001", "META-007"], "paths": ["src/cli/expr/function_catalog.cpp"]},
+    {"authority_id": "AUTH-RUNTIME-BUILTIN-SPECS", "authority_role": "PROOF", "system_ids": ["META-001", "META-007"], "paths": ["src/cli/expr/fn_*.cpp"]},
+    {"authority_id": "AUTH-HELP-DATA", "authority_role": "EXPLANATION", "system_ids": ["META-008"], "paths": ["dottalkpp/data/help"]},
+    {"authority_id": "AUTH-METACOLLECT", "authority_role": "ORGANIZATION", "system_ids": ["META-001"], "paths": ["src/meta/metacollect.cpp"]},
+    {"authority_id": "AUTH-IDENTITY-JOIN", "authority_role": "EVIDENCE_JOIN", "system_ids": ["META-006"], "paths": ["tools/fullstack_docs/build_reference_identity_inventory.py"]},
+    {"authority_id": "AUTH-CMDHELPCHK", "authority_role": "VALIDATION", "system_ids": ["META-009", "META-010"], "paths": ["src/cli/command_helpchk.cpp", "dottalkpp/tools/help/cmdhelpchk_v2_scan.py"]}
+  ],
+  "field_rules": [
+    {"field_group": "canonical_command_name", "applies_to": ["COMMAND"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-RUNTIME-REFLECTION", "AUTH-CMDHELPCHK"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "canonical_function_name", "applies_to": ["FUNCTION"], "authority_order": ["AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-RUNTIME-BUILTIN-SPECS", "AUTH-RUNTIME-REFLECTION"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "parent_and_qualified_name", "applies_to": ["SUBCOMMAND"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-RUNTIME-REFLECTION"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "accepted_token_and_variant_kind", "applies_to": ["ENTRY_VARIANT", "COMMAND"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-RUNTIME-REFLECTION"], "conflict_disposition": "REVIEW_ALIAS_OR_REEXPRESSION"},
+    {"field_group": "handler_and_source_file", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-RUNTIME-REFLECTION"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "implemented_and_dispatch_reachable", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION", "ENTRY_VARIANT"], "authority_order": ["AUTH-RUNTIME-REFLECTION", "AUTH-CMDHELPCHK"], "conflict_disposition": "RUNTIME_PROOF_REQUIRED"},
+    {"field_group": "family_category_and_status", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-SOURCE-USAGE-CONTRACT"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "summary_syntax_examples_notes_warnings", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION", "ARGUMENT"], "authority_order": ["AUTH-SOURCE-USAGE-CONTRACT", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-SOURCE-REF-CATALOGS", "AUTH-HELP-DATA"], "conflict_disposition": "PRESERVE_PROVENANCE_AND_REVIEW"},
+    {"field_group": "function_min_args_max_args", "applies_to": ["FUNCTION"], "authority_order": ["AUTH-RUNTIME-BUILTIN-SPECS", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-CMDHELPCHK"], "conflict_disposition": "REVIEW_ARITY_MISMATCH"},
+    {"field_group": "argument_owner_and_name", "applies_to": ["ARGUMENT"], "authority_order": ["AUTH-SOURCE-USAGE-CONTRACT", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-METACOLLECT"], "conflict_disposition": "REVIEW_AUTHORITY_CONFLICT"},
+    {"field_group": "argument_kind_shape_required_repeatable", "applies_to": ["ARGUMENT"], "authority_order": ["AUTH-SOURCE-USAGE-CONTRACT", "AUTH-RUNTIME-BUILTIN-SPECS", "AUTH-METACOLLECT", "AUTH-CMDHELPCHK"], "conflict_disposition": "REVIEW_ARGUMENT_SEMANTICS"},
+    {"field_group": "public_surface", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION"], "authority_order": ["AUTH-SOURCE-COMMAND-REGISTRY", "AUTH-SOURCE-FUNCTION-CATALOG", "AUTH-RUNTIME-REFLECTION"], "conflict_disposition": "REVIEW_PUBLIC_SURFACE"},
+    {"field_group": "display_name_locale_region", "applies_to": ["COMMAND", "FUNCTION", "ARGUMENT"], "authority_order": ["AUTH-METACOLLECT", "AUTH-HELP-DATA"], "conflict_disposition": "PROJECTION_REVIEW"},
+    {"field_group": "generated_metadata_id", "applies_to": ["FUNCTION", "ARGUMENT"], "authority_order": ["AUTH-METACOLLECT"], "conflict_disposition": "REVIEW_ID_COLLISION"},
+    {"field_group": "help_topic_and_text", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION"], "authority_order": ["AUTH-HELP-DATA", "AUTH-CMDHELPCHK"], "conflict_disposition": "HELP_DRIFT_REVIEW"},
+    {"field_group": "cross_layer_presence", "applies_to": ["COMMAND", "SUBCOMMAND", "FUNCTION", "ARGUMENT", "ENTRY_VARIANT"], "authority_order": ["AUTH-IDENTITY-JOIN", "AUTH-CMDHELPCHK"], "conflict_disposition": "PRESENCE_GAP_REVIEW"}
+  ],
+  "evidence_inputs": [
+    {"evidence_id": "joined_reference_inventory", "path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/reference_inventory/fullstack_reference_identity_inventory_v1.csv", "sha256": "177D10FEEBEC6C42D201E7195AFEFA38226A4A76E75197AF44BB68CCC25880F3"},
+    {"evidence_id": "sysfunc_candidate", "path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/metacollect_phase/candidate_v1/SYSFUNC_IMPORT_candidate_v1.csv", "sha256": "A59CD87B4675AF7D59A7E9FF4DC182C6C216AA82F3EAA2E1674C96D14A945135"},
+    {"evidence_id": "sysargs_candidate", "path": "docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260716-001/metacollect_phase/candidate_v1/SYSARGS_IMPORT_candidate_v1.csv", "sha256": "3716E7AC7A46A5BF9713A4745BBA2B24F4E26DAF67EE219A8FB48D37EB1DA12C"}
+  ],
+  "conflict_policy": {"merge_strategy": "NO_LAST_WRITER_WINS", "retain_all_authorities": true, "require_evidence_path": true, "default_disposition": "REVIEW_AUTHORITY_CONFLICT"}
+}

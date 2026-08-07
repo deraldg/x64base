@@ -1,0 +1,12 @@
+{
+  "schema_version": "cmdhelpchk_v2_lineage_v1",
+  "status": "ACTIVE_CANONICAL_PATH",
+  "canonical": "dottalkpp/tools/help/cmdhelpchk_v2_scan.py",
+  "compatibility_launcher": "tools/help/cmdhelpchk_v2_scan.py",
+  "historical_snapshot": "tools/help/attic/cmdhelpchk_v2_scan_precanonical_20260716.py",
+  "historical_pre_disposition_sha256": "52DAF8D4531498A961EFDB759B7A8CD3A3E162B7C8A483F074FA3224C6251BAD",
+  "canonical_sha256": "F5CBB709AA659E12B858E39039C66432868CD9D119A349F570DD281B5D38FB3A",
+  "contract": "docs/maintenance/lanes/full_stack_documentation/CMDHELPCHK_V2_CANONICAL_PATH_CONTRACT_V1.md",
+  "mutation_authorized": false,
+  "promotion_authorized": false
+}

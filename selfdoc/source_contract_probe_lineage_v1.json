@@ -1,0 +1,22 @@
+{
+  "schema_version": "source_contract_probe_lineage_v1",
+  "kind": "tool_lineage_registry",
+  "status": "ACTIVE_DESCRIPTIVE_LINEAGE",
+  "run_id": "DOCFLUSH-20260716-001",
+  "historical_probe": {
+    "path": "selfdoc/probes/source_contract_inventory_probe_v1_1.py",
+    "sha256": "98848CE534CF8CFB8E866F15F6AF0310D0D5D1DAD69A3F900627061DB0BF7CDD",
+    "lifecycle": "HISTORICAL",
+    "execution_default_allowed": false,
+    "disposition": "VOCABULARY_PRESERVED_PROBE_RETIRED_FROM_DEFAULT_EXECUTION"
+  },
+  "preserved_vocabulary": "selfdoc/source_contract_vocabulary_v1.json",
+  "current_role_split": {
+    "snapshot": "dottalkpp/docs/tools/source_comment_escrow_v2_2.ps1",
+    "drift_audit": "tools/comments/audit_source_comment_escrow.py",
+    "candidate_reharvest": "tools/comments/reharvest_source_comment_catalog.py",
+    "contract_scan": "tools/contracts/contract_scan.py"
+  },
+  "mutation_authorized": false,
+  "promotion_authorized": false
+}
