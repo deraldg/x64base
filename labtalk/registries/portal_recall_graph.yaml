@@ -35,6 +35,22 @@ created_utc: 2026-07-31T20:30:00Z
 # The entry points. An agent names what it is ABOUT TO DO; the resolver walks
 # outward from here. Recall is inverse triage (thesis 5.4): expand a query into
 # the smallest working set that restores competence, not everything relevant.
+# ------------------------------------------------------------- entry path
+# AIF-090 D2. The onboarding path actually in force: invariants, then state.
+# Declared here as DATA so `recall.py` can MEASURE it instead of carrying a
+# hardcoded byte count. It replaced `ENTRY_PATH_BASELINE = 127704`, a literal
+# frozen on 2026-07-31 that went stale the moment Tier 0 shrank the path -- and
+# whose staleness silently disabled the bound that existed to catch exactly that.
+#
+# This is reported as a SCALE figure, never as the headline denominator. Recall
+# does not replace onboarding; it replaces reading the corpus afterwards.
+# Conflating the two is what let "21% of the entry path" be printed about a
+# working set 2.5x larger than the entry path.
+entry_path:
+  - path: labtalk/ai_portal/TIER0_STATE.md
+  - path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
+
+# ---------------------------------------------------------------- triggers
 triggers:
   - id: trigger.onboard
     label: starting cold, no context
@@ -221,6 +237,27 @@ nodes:
     hard_fails: true
     tier: 1
 
+  # AIF-090 D3. Both nodes below were POINTED AT by prose inside nodes the graph
+  # already returned, but were not IN the graph -- so a routed reader was handed
+  # a pointer whose target the resolver could not assemble, and had to fall back
+  # to reading the corpus linearly. That is the exact behaviour the resolver
+  # exists to remove. Found by a cold outside runner, 2026-08-06.
+  - id: mechanism.prepush_gate_reference
+    label: Pre-push gate mechanism -- order, severities, exit codes, known defects
+    path: docs/maintenance/PREPUSH_GATE_REFERENCE_V1.md
+    class: semantic
+    enforced_by: tools/staging/prepush_gate.py
+    hard_fails: true
+    tier: 2
+
+  - id: mechanism.session_coordination
+    label: Session coordination protocol -- per-path slices, claims, locks
+    path: docs/maintenance/AI_SESSION_COORDINATION_PROTOCOL_V1.md
+    class: procedural
+    enforced_by: tools/coordination/aif_collision_gate.py
+    hard_fails: true
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -353,6 +390,9 @@ edges:
   - {from: trigger.open_lane, to: doctrine.ownership_authorship, type: fires_at}
 
   - {from: trigger.commit_or_push, to: doctrine.prepush_gate, type: fires_at}
+  # AIF-090 D3: the doctrine node's prose names these; now the graph does too.
+  - {from: doctrine.prepush_gate, to: mechanism.prepush_gate_reference, type: requires}
+  - {from: trigger.commit_or_push, to: mechanism.session_coordination, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}

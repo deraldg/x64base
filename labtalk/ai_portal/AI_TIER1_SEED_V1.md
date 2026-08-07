@@ -106,6 +106,9 @@ owns it.
 
 ## Going deeper -- retrieve by what you are about to do
 
+Prefer the resolver: `python labtalk/ai_portal/recall.py <trigger>` returns the
+smallest working set, measured. Table below is the fallback.
+
 | About to | Read |
 | --- | --- |
 | change source | `AI_ENGINEERING_STANDARDS_SEED_V1.md`, `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
@@ -140,23 +143,6 @@ working** -- the rest loads by trigger.
 
 ## Maintenance contract (this file's own gate)
 
-Always-read surfaces amplify whatever they contain, correct or stale, with no
-retrieval friction to slow a bad fact down. **Delivery is not accuracy.**
-
-- **Two admissible content classes only:** *invariants* (change only by
-  deliberate decision, break work if wrong) and *pointers* to generated or gated
-  artifacts.
-- **No perishable literal.** No versions, counts, dates, lane states, or
-  measurements. If an agent can cheaply measure it, say "measure it".
-- **8 KB hard ceiling.** Adding requires removing or demoting to the trigger
-  index -- and demoting means *moving*, not restating. Without the ceiling this
-  becomes the corpus it was extracted from.
-- **A rule that gains a hard-failing gate demotes out.** The gate is the memory.
-- Vendor shims (`CLAUDE.md`, `AGENTS.md`) **point here**, never restate. Two
-  shims that restate will diverge, and have.
-
-Rationale: a cold session measured the entry path at roughly 128 KB, then found
-the fix for its own worst mistake in a handoff never put in the tree. Content
-quality was never the problem; rules arrived when they were not actionable and
-were absent when they were. Lane:
-`docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md` (AIF-082).
+Invariants and pointers only; no perishable literal; the header's ceiling is
+enforced by `tools/staging/check_seed_budget.py`. Adding requires demoting, and
+demoting means moving. Contract: `TIER1_MAINTENANCE_CONTRACT_V1.md`.

@@ -34,10 +34,25 @@ from pathlib import Path
 REGISTRY = Path("labtalk/registries/portal_recall_graph.yaml")
 MAX_DEPTH = 2  # bounded traversal; recall assembles enough to begin, not everything
 
-# The measured cost of the pre-Tier-0 mandatory start path, 2026-07-31: nine
-# files, 2,380 lines. Every working set is reported as a percentage of it and
-# WARNS if it is not smaller, which is the bound that lets this metric fail.
-ENTRY_PATH_BASELINE = 127704
+# NO HARDCODED DENOMINATOR. Both comparison figures are MEASURED at run time.
+#
+# AIF-090 D2, 2026-08-06. This module used to carry
+# `ENTRY_PATH_BASELINE = 127704`, measured 2026-07-31 against the pre-Tier-0
+# mandatory start path. Two problems, both found by a cold outside runner:
+#
+#   1. It is a perishable literal frozen in code, which is precisely what
+#      AI_TIER1_SEED_V1.md's maintenance contract forbids ("If an agent can
+#      cheaply measure it, say 'measure it'").
+#   2. Tier 0 arrived and the entry path in force shrank to ~11 KB. So a 27,384 B
+#      working set was 2.5x LARGER than the path it claimed to replace, and was
+#      printed as "21%". The bound below, added specifically so this metric could
+#      fail after the 217,471 B incident, was anchored to the stale constant and
+#      therefore COULD NOT FIRE. Same file, same defect shape, second occurrence.
+#
+# The fix is not a fresher number; a fresher number goes stale too. The
+# denominator is now DERIVED from the graph itself -- the corpus a reader would
+# otherwise face is exactly the set of nodes this graph indexes -- so it tracks
+# the graph automatically and there is nothing left to update by hand.
 
 
 def repo_root() -> Path:
@@ -64,6 +79,11 @@ def load(root: Path) -> dict:
     triggers: list[dict] = []
     nodes: list[dict] = []
     edges: list[dict] = []
+    entry_path: list[dict] = []
+    # Section name -> bucket. Anything unrecognised falls through to `nodes`,
+    # which is the pre-AIF-090 behaviour and keeps an unknown section from
+    # silently vanishing.
+    buckets = {"triggers": triggers, "nodes": nodes, "entry_path": entry_path}
     section = None
     current: dict | None = None
 
@@ -87,13 +107,51 @@ def load(root: Path) -> dict:
             continue
         if stripped.startswith("- "):
             current = {}
-            (triggers if section == "triggers" else nodes).append(current)
+            buckets.get(section, nodes).append(current)
             stripped = stripped[2:]
         if current is not None and ":" in stripped:
             k, v = stripped.split(":", 1)
             v = v.strip().strip('"')
             current[k.strip()] = None if v == "null" else v
-    return {"triggers": triggers, "nodes": nodes, "edges": edges}
+    return {"triggers": triggers, "nodes": nodes, "edges": edges,
+            "entry_path": entry_path}
+
+
+def corpus_size(root: Path, g: dict) -> tuple[int, int]:
+    """Bytes of every DISTINCT node this graph indexes, measured now.
+
+    This is the honest denominator for a working set: the alternative to a
+    routed read is reading what the graph covers. Deduplicated by (path,
+    anchor) because several nodes share AI_PORTAL.md and must not be counted
+    twice -- the double-count is how the 217,471 B figure happened.
+    """
+    seen: set[tuple] = set()
+    total = 0
+    for n in g["nodes"]:
+        key = (n.get("path"), n.get("anchor"))
+        if key in seen:
+            continue
+        seen.add(key)
+        total += section_size(root, n)
+    return total, len(seen)
+
+
+def entry_path_size(root: Path, g: dict) -> tuple[int, int]:
+    """Bytes of the onboarding entry path currently in force, measured now.
+
+    Membership is declared in the registry (`entry_path:`), not here, so the
+    set is data and the size is measured. Reported as a SECOND figure, never as
+    the headline: recall does not replace onboarding, it replaces reading the
+    corpus after onboarding. Conflating the two is what made "21%" misleading.
+    """
+    total = 0
+    n = 0
+    for item in g.get("entry_path", []):
+        p = root / item["path"] if item.get("path") else None
+        if p and p.is_file():
+            total += p.stat().st_size
+            n += 1
+    return total, n
 
 
 def validate(g: dict) -> int:
@@ -277,20 +335,32 @@ def main() -> int:
               f"({n.get('class','?')}, tier {n.get('tier','?')}, {size} B)")
         total += size
     print("")
-    pct = round(100 * total / ENTRY_PATH_BASELINE)
-    print(f"working set: {len(rows)} node(s), {total} B to read "
-          f"({pct}% of the {ENTRY_PATH_BASELINE} B entry path this replaces).")
+    corpus, corpus_n = corpus_size(root, g)
+    entry, entry_n = entry_path_size(root, g)
 
-    # The bound that makes this metric able to fail. An unbounded byte count is
-    # a claim nobody checks -- which is exactly how the first version published
-    # 217,471 B, six times the truth and larger than the corpus, on the line
-    # above the words "read these, not the corpus". See AI_PORTAL.md,
-    # "Build It to Prove It": measure more, and give every measurement a bound.
-    if total >= ENTRY_PATH_BASELINE:
+    pct = round(100 * total / corpus) if corpus else 0
+    print(f"working set: {len(rows)} node(s), {total} B to read "
+          f"({pct}% of the {corpus} B corpus this graph indexes, {corpus_n} nodes).")
+    if entry:
+        ratio = total / entry
+        note = "smaller" if ratio < 1 else f"{ratio:.1f}x LARGER"
+        print(f"  for scale: the onboarding entry path in force is {entry} B "
+              f"({entry_n} files); this working set is {note}.")
+        print(f"  recall does NOT replace onboarding -- it replaces reading the "
+              f"corpus afterwards.")
+
+    # The bound that makes this metric able to fail, now anchored to something
+    # that moves with the graph. An unbounded byte count is a claim nobody
+    # checks -- which is how the first version published 217,471 B, six times
+    # the truth, on the line above the words "read these, not the corpus"; and
+    # how the second version compared against a frozen 127,704 B constant that
+    # no longer gated anyone, so it could never fire (AIF-090 D2). See
+    # AI_PORTAL.md, "Build It to Prove It".
+    if corpus and total >= corpus:
         print("")
         print(f"  WARNING: this working set is not smaller than the corpus it")
-        print(f"  replaces ({total} B vs {ENTRY_PATH_BASELINE} B). Either the graph")
-        print(f"  is over-linking this trigger, or the metric is wrong again.")
+        print(f"  replaces ({total} B vs {corpus} B). Either the graph is")
+        print(f"  over-linking this trigger, or the metric is wrong again.")
         return 2
     return 0
 

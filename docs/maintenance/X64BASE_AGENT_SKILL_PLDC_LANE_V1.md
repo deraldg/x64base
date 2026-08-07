@@ -31,9 +31,10 @@ ai_report_audit:
 
 # x64base Agent Skill -- PLDC Charter and Plan of Record V1
 
-**Status:** `P0 measured -- G0 NO-GO RECOMMENDED, awaiting owner ruling.` No code
-written, no bundle built. The premise did not survive measurement; see section 10
-and `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`.
+**Status:** `CONVERTED to a repair lane by owner ruling R7 (2026-08-06). D1-D4
+IMPLEMENTED and runtime-proven.` The skill programme (projector, bundle, shim
+collapse) is retired unbuilt: P0 falsified its premise. What P0 found instead is
+fixed. See sections 9 and 10.
 **Intake:** AIF-090 - **Claim:** `coordination/aif/AIF-090.claim` - **Run:** `COWORK-20260806-001`
 **Owner:** member.derald
 **Steward/author:** member.ai.claude.cowork, until reassigned by the owner.
@@ -89,6 +90,7 @@ three tiers already have.
 | R4 | 2026-08-06 | **Drift gate runs advisory for one cycle**, then promotes to hard-fail. |
 | R5 | 2026-08-06 | **`.claude/skills/` is an accepted vendor target in `development`.** |
 | R6 | 2026-08-06 | **Audience is repo-partner onboarding.** Engine/DotScript-operator and website-maintenance skills are deferred, not cancelled (section 8). |
+| R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded by section 11. |
 
 ## 3. Standing disciplines (adopted, enforced per phase)
 
@@ -233,7 +235,33 @@ point at the seed).
 agent with no tree and no auto-injected shim. Both probes received `CLAUDE.md`
 automatically, which is precisely why the control succeeded.
 
-## 10. Maintenance rule for this file
+## 10. Repair phase -- D1-D4 implemented (2026-08-06, owner ruling R7)
+
+Evidence tier: **runtime-proven.** Every claim below was produced by running the
+thing, and every gate was seen to FAIL on a known-bad input before its green was
+trusted (`AI_PORTAL.md`, "a checker is unproven until you have seen it FAIL").
+
+| # | Fix | Evidence |
+| --- | --- | --- |
+| **D2** | `ENTRY_PATH_BASELINE = 127704` **deleted**. The denominator is now DERIVED at run time from the graph itself -- the corpus a reader would otherwise face is exactly the node set the graph indexes -- so it tracks the graph and there is nothing left to update by hand. The entry path in force is declared as DATA in `portal_recall_graph.yaml` (`entry_path:`) and measured, reported as a second scale figure, never the headline. | Bound proven able to fire: a fixture graph whose single trigger reaches every node produced `100% of corpus`, the WARNING, and **exit 2**. On the real graph `commit_or_push` now prints "29% of the 150907 B corpus this graph indexes" plus "the entry path in force is 10060 B; this working set is 4.4x LARGER" -- the fact the old wording hid. |
+| **D4** | New gate `tools/staging/check_seed_budget.py`. It **hardcodes no number**: it parses the `budget` line from the document's own header, so the rule travels with the document and any future budgeted file is covered without a code change. Measures **bytes, not characters**, because a byte budget measured in characters silently grants extra room -- a denominator error, the failure class recorded three times in AIF-082. | 5/5 fixtures: FAILs the real seed at 8,990 B (exit 2); `--warn` never blocks; PASSes an under-budget file; SKIPs a file declaring no budget; refuses to let multi-byte content buy headroom. |
+| **D1** | `recall.py` is now reachable from the seed -- the one document every entry path leads to. Paying for it required demoting the **maintenance contract** out of the seed into `labtalk/ai_portal/TIER1_MAINTENANCE_CONTRACT_V1.md`, MOVED verbatim, not restated, which is the contract's own prescribed procedure applied to itself. | Seed **8,990 -> 8,148 B**, 44 B headroom, `check_seed_budget.py` PASS. Five questions, repository-role table, git rules and comment marker all verified intact. |
+| **D3** | `PREPUSH_GATE_REFERENCE_V1.md` and `AI_SESSION_COORDINATION_PROTOCOL_V1.md` added as nodes with edges. Both were named in prose *inside nodes the graph already returned*, so a routed reader got a pointer the resolver could not assemble and fell back to linear reading -- the exact behaviour the resolver exists to remove. | Graph 31 -> 33 nodes, 44 -> 46 edges, `--validate` PASS, no dangling edges, every node reachable. `commit_or_push` now returns the mechanism doc. |
+
+**An honest consequence worth recording.** Fixing D3 made the reported working
+set *larger* (27,384 -> 44,260 B). The old number was smaller because the graph
+was incomplete, and the old percentage was flattering because its denominator
+was frozen. Both numbers moved toward the truth and the truth is less impressive
+than the claim it replaced. `onboard` now reports 3.7x the entry path and
+`commit_or_push` 4.4x -- so the graph really is over-linking, which is what the
+repaired bound is for. That is the next measurement, not a regression.
+
+**What was retired unbuilt:** the projector (`emit_skill.py`), the distributable
+bundle, `labtalk/skills/`, `skills.yaml`, and the shim collapse. R2 and R3 remain
+sound design and are recorded for whoever revisits the distributable case, which
+P0 never tested.
+
+## 11. Maintenance rule for this file
 
 This file carries **phase state, rulings, and pointers**. It must not restate
 what a pointed-to document says. A milestone entry changes only when its
