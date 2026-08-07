@@ -111,7 +111,7 @@ definition of done, house conventions, git hygiene.</li>
 <td class="small">AI Systems Integration SDLC, Codex 2026-08-03</td>
 <td><span class="pill ">M0 accepted; M1 owner-review candidate; local visibility prototype runtime-observed; no publication</span></td>
 <td class="small"><code>AIPR-20260803-003</code></td></tr></table><details style="margin-top:10px"><summary style="cursor:pointer">
-<b>Closed / documented-only lanes (69)</b> -- every AIF in the intake
+<b>Closed / documented-only lanes (73)</b> -- every AIF in the intake
 queue with no current run, linked to its record. Click to expand.</summary>
 <table style="margin-top:8px"><tr><th>Lane</th><th>What it is</th><th>Record</th></tr>
 <tr><td><code>AIF-001</code></td>
@@ -252,7 +252,15 @@ queue with no current run, linked to its record. Click to expand.</summary>
 <td class="small">Triggers PDLC feature; hosted partner Grok/xAI (remote, hosted_proposal)</td>
 <td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/TRIGGERS_PHASE0_DECISIONS_SIGNOFF_V1.md">docs/maintenance/TRIGGERS_PHASE0_DECISIONS_SIGNOFF_V1.md</a></td></tr><tr><td><code>AIF-088</code></td>
 <td class="small">Command catalog/runtime drift (R-APPEND-BLANK), caught by CRUD `--emit --ram` fsram dry run; Cowork 2026-08-04</td>
-<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md">docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md</a></td></tr></table></details><div class="note w"><b>How to return to the last agent on a lane</b><br>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md">docs/maintenance/COMMAND_CATALOG_RUNTIME_DRIFT_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-090</code></td>
+<td class="small">x64base agent skill as a distributable package; Cowork 2026-08-06, owner-assigned project</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md">docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-091</code></td>
+<td class="small">VFP field-type support deficiency; Cowork 2026-08-07, found comparing MS-DOS/VFP flavors against the dBASE 7 spec</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_ENGINE_VFP_TYPE_SUPPORT_DEFICIENCY_DESIGN_V1.md">docs/ai-friendly/AI_ENGINE_VFP_TYPE_SUPPORT_DEFICIENCY_DESIGN_V1.md</a></td></tr><tr><td><code>AIF-092</code></td>
+<td class="small">Publication surface recovery; Cowork 2026-08-07, discovered by the AIF-090 probe C finding</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md">docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md</a></td></tr><tr><td><code>AIF-093</code></td>
+<td class="small">`.text` supported extension; Cowork 2026-08-07, owner-requested</td>
+<td class="small"><a href="https://github.com/deraldg/x64base/blob/development/docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md">docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md</a></td></tr></table></details><div class="note w"><b>How to return to the last agent on a lane</b><br>
 <code>current_by_lane[LANE]</code> -&gt; <code>runs[run_id]</code> -&gt; <code>chat_handle</code>.
 Every run here is <code>MAINTAINER_ATTESTED</code>: the platform stamps the session id
 <i>not_exposed</i>, so the <b>closeout is the recovery path</b>, not the chat link.
@@ -322,7 +330,7 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 
 &middot; started 2026-07-29
 &middot; handle <span class="pill warn">MAINTAINER_ATTESTED</span></div>
-<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SQLSEL_PLDC_LANE_V1.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md</span></div></div><div class="card"><b><code>AIPR-20260730-001</code></b>
+<div style="margin-top:7px" class="small">closeouts:<br><span class="small dim">docs/maintenance/SQLSEL_PDLC_LANE_V1.md</span><br><span class="small dim">docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md</span></div></div><div class="card"><b><code>AIPR-20260730-001</code></b>
 <span class="pill ok">active</span>
 <span class="pill">Cowork</span>
 <div class="small dim" style="margin:5px 0">member.ai.claude.cowork as <b>analyst</b>
@@ -450,7 +458,7 @@ That is by design -- the record lives in the repo, not in a vendor's session sto
 <td class="small dim">Provides one repository-root fast-start link for outside AI engines, mandatory SDLC entry, and a required patch-package format tied to an exact public baseline commit. Source-defined only until promoted and verified in the public ...</td></tr><tr><td><code>proof.ai_portal.sdlc_fast_start.v1</code><br>
 <span class="small">AI Portal SDLC fast-start seed registered</span></td>
 <td><span class="pill acc">source_defined</span></td>
-<td class="small dim">Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PLDC and publication cannot bypass underlying SDLC evidence.</td></tr><tr><td><code>proof.ai_portal.seed_connection_prototype_direction.v1</code><br>
+<td class="small dim">Makes owning lifecycle, SDLC lane, truth state, proof state, risk, next gate, and closeout mandatory across AI Portal tasks and packages. PDLC and publication cannot bypass underlying SDLC evidence.</td></tr><tr><td><code>proof.ai_portal.seed_connection_prototype_direction.v1</code><br>
 <span class="small">AI fast-start seed connection prototype direction registered</span></td>
 <td><span class="pill ">design_intended</span></td>
 <td class="small dim">Records that the AI Portal is a machine-facing fast-start system for AI development partners, not a student AI-access portal, and that the first connector prototype remains read-only and deterministic.</td></tr><tr><td><code>proof.ai_portal.source_mutation_contract_gate.v1</code><br>
@@ -575,5 +583,5 @@ AUDIT SCOPE INCLUDED THREE SITE PAGES, cited here until 2026-08-02: content/docs
 <span class="small">Worktree-per-lane isolation -- sessions stop sharing one working tree</span></td>
 <td><span class="pill warn">design-intended</span></td>
 <td class="small dim">MEASURED 2026-08-02: a Cowork session worked several hours against development and found 191 commits had landed from parallel work while it held a stale picture; three of four queued operations were already done by someone else, a...</td></tr></table>
-<div class="foot">Generated 2026-08-05 04:15 UTC from live DotTalk++ state. Read-only snapshot &middot; x64base.com</div>
+<div class="foot">Generated 2026-08-07 17:39 UTC from live DotTalk++ state. Read-only snapshot &middot; x64base.com</div>
 </div></body></html>
