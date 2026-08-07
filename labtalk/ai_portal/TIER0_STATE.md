@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T16:07:37Z
+    generated_utc : 2026-08-07T16:23:24Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 356f92fed  (2026-08-07)
-    upstream      : 356f92fed
+    HEAD          : 49a0d50dc  (2026-08-07)
+    upstream      : 49a0d50dc
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md
-    commits behind HEAD : 0
+    commits behind HEAD : 1
 
 ## Staleness warnings
 
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-091. Same shape as AIF-062/078/080.
+- The newest closeout is 1 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-091, AIF-093. Same shape as AIF-062/078/080.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-093 | dottalkpp-text-extension | member.ai.claude.cowork | **MISSING** |
 | AIF-092 | publication-surface-recovery | member.ai.claude.cowork | yes |
 | AIF-091 | dbf-vfp-type-support | member.ai.claude.cowork | **MISSING** |
 | AIF-090 | x64base-agent-skill | member.ai.claude.cowork | yes |
@@ -44,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-081 | output-capture-completeness | member.ai.claude.cowork | yes |
 | AIF-080 | index-backend-orthogonality | member.ai.claude.cowork | yes |
 | AIF-079 | declared-capability-validator | member.ai.claude.cowork | yes |
-| AIF-078 | workspace-qualifier-namespace-depth | member.ai.claude.cowork | yes |
-| ... | 13 older claims omitted | | |
+| ... | 14 older claims omitted | | |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
