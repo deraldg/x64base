@@ -74,6 +74,47 @@ any session bothered to run the coordinator.
 
 Proven: clean tree PASS; synthetic and full-root double-`AIF-048` FAIL (exit 1 -> block).
 
+## Quips (the lightest rung -- ephemeral co-session notes)
+
+A **quip** is a brief, ephemeral message between **co-sessions** (two or more AI
+sessions running concurrently in the same GPT / Cowork application instance) to
+coordinate in-flight. It is the lightest rung of the coordination ladder:
+
+| Mechanism | Scope | Persistence | Purpose |
+| --- | --- | --- | --- |
+| **quip** | co-sessions, same app | ephemeral (no ledger) | quick heads-up / hand-off between concurrent sessions |
+| `checkin` / `checkout` | any session | ledgered (`coordination/active_sessions/`) | declare presence + claimed lanes/files |
+| `claim-aif` | any session | durable (`coordination/aif/*.claim`) | atomically own a lane number |
+| BBS `SYSPOST` | cross-agent, cross-process | durable, DBF-backed, RBAC | attributable posts to boards/threads |
+
+A BBS post is a letter and an AIF claim is a deed; a quip is a sticky note between
+two sessions sharing one desk -- e.g. "taking AIF-092, you take 093" or "about to
+touch PROMOTE.manifest, hold 2 min." It is the note that prevents the collisions this
+protocol exists for (two sessions racing to next-free AIF; both editing one file)
+without the ceremony of a claim or a board post.
+
+Defining properties: **brief** (a line or two), **peer-to-peer** (session to session,
+not to a board or the owner of record), **ephemeral** (no ledger, no attribution
+requirement, discarded when the moment passes), and **coordination-only** -- a
+decision that must survive the session was the wrong primitive and belongs in a
+checkin note, an AIF claim, or a BBS post.
+
+### Sketch -- a `session_coordinator.py quip` subcommand (future, not yet built)
+
+Filesystem-atomic, same medium as the rest of the protocol; no daemon, no DBF.
+
+- **Storage:** `coordination/quips/<to-run>/<utc>-<from-run>.quip`, one file per quip
+  (`O_CREAT` create; each quip is its own file so writers never contend and no lock is
+  needed). The `quips/` directory is TRANSIENT and gitignored, like `active_sessions/`
+  and `locks/`.
+- `quip send --to <run> --msg "..."` -- drop one quip in the recipient's inbox.
+  `--to all` broadcasts to every currently-checked-in run.
+- `quip read --run <me> [--since <utc>] [--ack]` -- print my inbox oldest-to-newest;
+  `--ack` deletes read quips (ephemeral by default).
+- `status` gains a "unread quips: N" line so a session notices without polling.
+- No RBAC, no history. This records the shape so the first implementer does not
+  redesign it.
+
 ## Limits / honest reach
 
 - Coordinates **local concurrent sessions on one machine/working tree** — the actual scenario. It is
