@@ -1,0 +1,6 @@
+sqlalchemy>=2.0
+pandas>=2.2
+tk>=0.1.0 ; platform_system != "Windows"  # no-op on Windows; Tk ships with Python
+pillow>=10.0
+pymysql>=1.1 ; extra == "mysql"
+pyodbc>=5.1 ; extra == "mssql"

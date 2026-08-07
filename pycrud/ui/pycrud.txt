@@ -1,0 +1,112 @@
+ere's a drop-in doc you can paste into your README. it focuses on the different ways to launch the app and backend (including the venv gotchas you just hit).
+
+Quickstart: run pycrud + pydottalk_api
+layout
+ccode/
+  pycrud/            # GUI app
+    .venv/           # virtualenv created by setup.ps1
+    main.py
+    ...
+  pydottalk_api/     # FastAPI backend
+    .venv/
+    app/
+    ...
+
+first-time setup (windows)
+
+unblock the downloaded scripts (one time), and set a sane policy:
+
+cd C:\Users\<you>\code\ccode
+Get-ChildItem -Recurse -Filter *.ps1 | Unblock-File
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+run the GUI (pycrud)
+option A -- VS Code (easiest)
+
+open folder: ccode/pycrud
+
+run task once: Terminal -> Run Task -> "Setup venv & Install"
+
+press F5 (or "Run -> Start Debugging")
+
+option B -- use the venv's python directly (no activation)
+cd C:\Users\<you>\code\ccode\pycrud
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python .\main.py
+
+option C -- activate venv in PowerShell, then run
+cd C:\Users\<you>\code\ccode\pycrud
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python .\main.py
+
+
+if activation is blocked, either use option B or run the unblock commands above.
+
+option D -- activate from CMD, then run
+cd C:\Users\<you>\code\ccode\pycrud
+.\.venv\Scripts\activate.bat && python -m pip install -r requirements.txt && python .\main.py
+
+verify you're using the right interpreter (optional)
+cd C:\Users\<you>\code\ccode\pycrud
+.\.venv\Scripts\python -c "import sys, sqlalchemy as s; print(sys.executable); print(s.__version__)"
+
+
+expect a path under ...\pycrud\.venv\... and a SQLAlchemy version.
+
+run the backend (pydottalk_api)
+option A -- VS Code
+
+open folder: ccode/pydottalk_api
+
+run task: Setup venv & Install
+
+press F5 (launches uvicorn)
+
+option B -- direct venv python
+cd C:\Users\<you>\code\ccode\pydottalk_api
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+cd C:\Users\<you>\code\ccode\pydottalk_api
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+
+backend should be on: http://127.0.0.1:8000
+
+connect GUI to backend
+
+in pycrud: DotTalk++ -> Settings...
+
+Backend base URL: http://127.0.0.1:8000
+
+[x] Prefer backend header metadata in exports -> OK
+
+one-click dual run (optional)
+
+save this as ccode/run_dev.ps1 if you want:
+
+Start-Process pwsh -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','cd ".\pydottalk_api"; .\.venv\Scripts\python -m uvicorn app.main:app --reload'
+Start-Process pwsh -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command','cd ".\pycrud"; .\.venv\Scripts\python .\main.py'
+
+env knobs (optional)
+
+DB_URL (backend): e.g. mysql+pymysql://user:pass@localhost:3306/school
+
+DOT_TALK_URL (GUI): set via DotTalk++ -> Settings...
+
+common fixes
+
+ModuleNotFoundError: sqlalchemy -> you ran system Python. Use the venv python (.\.venv\Scripts\python ...) or activate the venv first.
+
+.ps1 not digitally signed / cannot be loaded -> run the unblock and/or set execution policy commands above, or use the direct-venv methods (no activation).
+
+Port already in use -> change the port in your uvicorn command: --port 8001.
+
+Tkinter missing (Linux) -> install system Tk (e.g., sudo apt install python3-tk).
+
+that's it -- pick any launch style you like (VS Code, direct venv, or activation).
+
+ChatGPT can make mistakes. C

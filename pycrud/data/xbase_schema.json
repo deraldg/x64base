@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "dialect": "xbase-ish",
+  "tables": {
+    "teachers": {
+      "fields": [
+        {
+          "name": "id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "pk": true
+        },
+        {
+          "name": "last_name",
+          "type": "C",
+          "length": 40,
+          "decimals": 0
+        },
+        {
+          "name": "first_name",
+          "type": "C",
+          "length": 40,
+          "decimals": 0
+        },
+        {
+          "name": "city",
+          "type": "C",
+          "length": 60,
+          "decimals": 0,
+          "nullable": true
+        },
+        {
+          "name": "active",
+          "type": "L",
+          "length": 1,
+          "decimals": 0,
+          "default": true
+        }
+      ]
+    },
+    "students": {
+      "fields": [
+        {
+          "name": "id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "pk": true
+        },
+        {
+          "name": "last_name",
+          "type": "C",
+          "length": 40,
+          "decimals": 0
+        },
+        {
+          "name": "first_name",
+          "type": "C",
+          "length": 40,
+          "decimals": 0
+        },
+        {
+          "name": "city",
+          "type": "C",
+          "length": 60,
+          "decimals": 0,
+          "nullable": true
+        },
+        {
+          "name": "birthdate",
+          "type": "D",
+          "length": 8,
+          "decimals": 0,
+          "nullable": true
+        },
+        {
+          "name": "gpa",
+          "type": "N",
+          "length": 6,
+          "decimals": 2,
+          "nullable": true
+        },
+        {
+          "name": "active",
+          "type": "L",
+          "length": 1,
+          "decimals": 0,
+          "default": true
+        }
+      ]
+    },
+    "courses": {
+      "fields": [
+        {
+          "name": "id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "pk": true
+        },
+        {
+          "name": "code",
+          "type": "C",
+          "length": 16,
+          "decimals": 0,
+          "unique": true
+        },
+        {
+          "name": "title",
+          "type": "C",
+          "length": 100,
+          "decimals": 0
+        },
+        {
+          "name": "credits",
+          "type": "N",
+          "length": 3,
+          "decimals": 0,
+          "default": 3
+        },
+        {
+          "name": "teacher_id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "nullable": true,
+          "fk": {
+            "table": "teachers",
+            "field": "id"
+          }
+        }
+      ]
+    },
+    "enrollments": {
+      "fields": [
+        {
+          "name": "id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "pk": true
+        },
+        {
+          "name": "student_id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "fk": {
+            "table": "students",
+            "field": "id"
+          }
+        },
+        {
+          "name": "course_id",
+          "type": "N",
+          "length": 10,
+          "decimals": 0,
+          "fk": {
+            "table": "courses",
+            "field": "id"
+          }
+        },
+        {
+          "name": "grade",
+          "type": "C",
+          "length": 2,
+          "decimals": 0,
+          "nullable": true
+        }
+      ],
+      "unique": [
+        [
+          "student_id",
+          "course_id"
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "field_name": "LAST_NAME",
+  "field_type": "C",
+  "field_data_address": 0,
+  "field_length": 20,
+  "decimal_places": 0,
+  "reserved": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

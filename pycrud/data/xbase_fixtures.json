@@ -1,0 +1,83 @@
+{
+  "teachers": [
+    {
+      "id": 1,
+      "last_name": "Smith",
+      "first_name": "Alice",
+      "city": "Portland",
+      "active": true
+    },
+    {
+      "id": 2,
+      "last_name": "Johnson",
+      "first_name": "Marco",
+      "city": "Eugene",
+      "active": true
+    }
+  ],
+  "students": [
+    {
+      "id": 1,
+      "last_name": "Nguyen",
+      "first_name": "Linh",
+      "city": "Bend",
+      "birthdate": "20040105",
+      "gpa": 3.33,
+      "active": true
+    },
+    {
+      "id": 2,
+      "last_name": "Brown",
+      "first_name": "Diana",
+      "city": "Corvallis",
+      "birthdate": "20030530",
+      "gpa": 3.12,
+      "active": false
+    },
+    {
+      "id": 3,
+      "last_name": "Garcia",
+      "first_name": "Eve",
+      "city": "Ashland",
+      "birthdate": "20021119",
+      "gpa": 4.0,
+      "active": true
+    }
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "code": "CS101",
+      "title": "Intro to CS",
+      "credits": 3,
+      "teacher_id": 1
+    },
+    {
+      "id": 2,
+      "code": "MATH201",
+      "title": "Discrete Math",
+      "credits": 4,
+      "teacher_id": 2
+    }
+  ],
+  "enrollments": [
+    {
+      "id": 1,
+      "student_id": 1,
+      "course_id": 1,
+      "grade": "A"
+    },
+    {
+      "id": 2,
+      "student_id": 2,
+      "course_id": 2,
+      "grade": "B"
+    },
+    {
+      "id": 3,
+      "student_id": 3,
+      "course_id": 1,
+      "grade": "A"
+    }
+  ]
+}

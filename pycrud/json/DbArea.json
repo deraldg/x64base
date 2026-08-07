@@ -1,0 +1,50 @@
+{
+  "db_name": "STUDENTS",
+  "filename": "students.dbf",
+  "recLength": 64,
+  "recCount": 0,
+  "fields": [
+    {
+      "name": "ID",
+      "type": "N",
+      "length": 8,
+      "decimals": 0
+    },
+    {
+      "name": "LAST_NAME",
+      "type": "C",
+      "length": 20,
+      "decimals": 0
+    },
+    {
+      "name": "FIRST_NAME",
+      "type": "C",
+      "length": 20,
+      "decimals": 0
+    },
+    {
+      "name": "CITY",
+      "type": "C",
+      "length": 20,
+      "decimals": 0
+    },
+    {
+      "name": "BIRTHDATE",
+      "type": "D",
+      "length": 8,
+      "decimals": 0
+    },
+    {
+      "name": "GPA",
+      "type": "N",
+      "length": 4,
+      "decimals": 2
+    },
+    {
+      "name": "ACTIVE",
+      "type": "L",
+      "length": 1,
+      "decimals": 0
+    }
+  ]
+}
