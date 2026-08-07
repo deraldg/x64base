@@ -1,0 +1,51 @@
+# LabTalk LMS integration registry v0
+
+lms_interfaces:
+  - id: lms.lane.overview
+    name: LMS Work Lane Overview
+    kind: markdown
+    status: reserved_local_only
+    path: lms/README.md
+    provider_candidate: moodle
+    notes: Architecture, safety boundary, CLI usage, and future Moodle gates.
+
+  - id: lms.message.contract
+    name: LMS Message Envelope v1
+    kind: json_schema
+    status: active_local_contract
+    path: lms/contracts/lms_message_v1.schema.json
+    schema_version: labtalk.lms.message.v1
+    notes: Provider-neutral envelope for queued LabTalk/LMS operations.
+
+  - id: lms.outbox
+    name: Reserved LMS Outbox
+    kind: directory
+    status: local_queue
+    path: lms/queue/outbox
+    live_delivery: false
+    notes: Queued JSON is local integration intent, not proof of LMS delivery.
+
+  - id: lms.pipe.status
+    name: Check LMS Pipe Status
+    kind: python_tool
+    status: runnable_local_only
+    script: ../src/labtalk/lms/cli.py
+    arguments:
+      - --queue
+      - lms/queue/outbox
+      - --provider
+      - moodle
+      - status
+    proof_output_dir: proofs/runs
+    timeout_seconds: 30
+    live_delivery: false
+
+  - id: lms.moodle.transport
+    name: Moodle Web-Service Transport
+    kind: reserved_integration
+    status: future
+    provider: moodle
+    interface: external_web_services
+    authentication: token_outside_source_control
+    live_delivery: false
+    notes: No endpoint, credential, or Moodle function mapping is configured.

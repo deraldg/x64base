@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://labtalk.local/schemas/lms_message_v1.schema.json",
+  "title": "LabTalk LMS Message v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation",
+    "subject",
+    "payload",
+    "provider",
+    "direction",
+    "message_id",
+    "created_at",
+    "schema_version"
+  ],
+  "properties": {
+    "operation": {"type": "string", "minLength": 1},
+    "subject": {"type": "object"},
+    "payload": {"type": "object"},
+    "provider": {"type": "string", "minLength": 1},
+    "direction": {"enum": ["outbound", "inbound"]},
+    "correlation_id": {"type": ["string", "null"]},
+    "message_id": {"type": "string", "format": "uuid"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "schema_version": {"const": "labtalk.lms.message.v1"}
+  }
+}
