@@ -1,0 +1,48 @@
+x64base -- public snapshot manifest
+==============================================================
+
+GENERATED FILE. Do not edit by hand; your edit will be overwritten.
+Regenerate from the development tree with:
+
+    python tools/staging/generate_public_manifest.py --write
+
+Every figure below is measured from the tree and from the engine's own
+metadata tables at generation time. None is hand-maintained.
+
+Provenance
+--------------------------------------------------------------
+  promoted from branch : development
+  source commit        : b0b6af251c7a713e02aa066cd782a972e264abda
+  short commit         : b0b6af251
+  generated (UTC)      : 2026-08-07T15:36:31Z
+
+  This snapshot is a PROJECTION of the development tree at the commit
+  above, filtered through PROMOTE.manifest. It is not the whole tree.
+  The `development` branch is also published on GitHub and moves ahead
+  of this snapshot; see CONTRIBUTING.md for which branch to baseline on.
+
+Published inventory
+--------------------------------------------------------------
+  allow-list patterns  : 80
+  files matched on disk: 828
+  patterns matching 0  : 0
+  manifest commentary  : 118 lines
+
+  A pattern matching zero files means the allow-list promises something
+  the development tree does not have. That is a defect, not a rounding
+  error, and it is shown here so it cannot hide.
+
+Command and metadata surface
+--------------------------------------------------------------
+  SYSCMD          212  commands registered
+  SYSFUNC          74  functions registered
+  SYSARGS         249  documented arguments
+  SYSHELP           8  help text entries
+  SYSENTVAR        12  entity variables
+  SYSFLDDIC        16  field dictionary rows
+
+  Read live from dottalkpp/data/metadata/*.dbf. These are registration
+  counts, not proof of behavior: a registered command is source-evidenced
+  until a runtime proof exists for it. See CONTRIBUTING.md, Reporting
+  evidence.
+
