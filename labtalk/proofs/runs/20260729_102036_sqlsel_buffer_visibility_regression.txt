@@ -1,0 +1,110 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, 390e1004 dirty)  (Jul 29 2026 10:20:17)
+DotTalk++ build Jul 29 2026 10:20:17
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  1 Samuel 20:1
+  And David fled from Naioth in Ramah, and came and said before Jonathan, What have I done? what is mine iniquity? and what is my sin before thy father, that he seeketh my life?
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. REGRESSION: running SQLSEL_BUFFER_VIS
+  Script: sqlsel_buffer_visibility_regression.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\sqlsel_buffer_visibility_regression.dts
+Echo is OFF
+STOP_ON_ERROR: threshold set to OFF
+SETPATH: DATA = D:\code\ccode\dottalkpp\data
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\data\dbf\sandbox
+warning: path does not exist
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\data\indexes\sandbox
+warning: path does not exist
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\data\lmdb\sandbox
+warning: path does not exist
+SQLSEL-BUFVIS-BEGIN
+ERASE: Table not found: SQLBUFVIS.dbf
+Created D:\code\ccode\dottalkpp\data\data\dbf\sandbox\SQLBUFVIS.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\data\dbf\sandbox\SQLBUFVIS.dbf with 0 records.
+Usage:
+  APPEND USAGE
+  APPEND
+  APPEND <count>
+  APPEND MANY <count>
+  APPEND RAW
+  APPEND RAW MANY <count>
+Notes:
+  - APPEND with no arguments appends one blank record through the shared smart append path.
+  - APPEND MANY uses the smart batch append path.
+  - APPEND RAW uses the raw append path without inline index update.
+REPLACE: no current record.
+REPLACE: no current record.
+Usage:
+  APPEND USAGE
+  APPEND
+  APPEND <count>
+  APPEND MANY <count>
+  APPEND RAW
+  APPEND RAW MANY <count>
+Notes:
+  - APPEND with no arguments appends one blank record through the shared smart append path.
+  - APPEND MANY uses the smart batch append path.
+  - APPEND RAW uses the raw append path without inline index update.
+REPLACE: no current record.
+REPLACE: no current record.
+Closed.
+Selected area 1.
+Current area: 1
+Opened SQLBUFVIS (v64) : Record count 0
+Valid Index/Indices   : CDX
+TABLE BUFFER: 1 area(s) updated.
+GO: failed.
+REPLACE: no current record.
+SQLSEL-BUFVIS-TUPLE-PREVIEW
+"" | ""
+SQLSEL-BUFVIS-COMMITTED-SELECT
+0 row(s) selected.
+0 row(s) selected.
+COUNT(*)
+0
+1 row(s) selected.
+ROLLBACK: discarded 0 change(s).
+TABLE BUFFER: 1 area(s) updated.
+Closed.
+ERASE: deleting 1 file(s) for table: SQLBUFVIS
+  Deleted: SQLBUFVIS.dbf
+ERASE complete. Deleted: 1, Failed: 0
+SQLSEL-BUFVIS-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

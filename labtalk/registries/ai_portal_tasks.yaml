@@ -1,27 +1,27 @@
 # AI Portal task registry v1.
 # Human-readable public projection: /docs/labtalk/current-work
 schema: labtalk.ai_portal.tasks.v1
-as_of_date: "2026-07-28"
+as_of_date: "2026-08-05"
 authority:
   system_of_record: "AI Portal intake queue plus named lane and proof records"
   pseudo_chat_role: "asynchronous return and correction channel; not a system of record"
   publication_rule: "website reports reviewed state; it does not promote source, releases, or deployments"
 current_documentation_flush:
-  run_id: DOCFLUSH-20260722-001
-  ticket: AIF-048
-  state: gate6_scope_pending
+  run_id: DOCFLUSH-20260805-001
+  ticket: full-stack-documentation-flush-v4
+  state: dev_tree_closed_gate7_publication_pending
   publication_state: local-preview-not-deployed
   maintenance_class: maintained_current
   source_contracts: 243
-  help_topics: 575
-  help_lines: 29197
+  help_topics: 525
+  help_lines: 28368
   command_reference_pages: 191
   command_lineage_rows: 4604
   manual_parts: 26
   manual_lines: 14542
   manual_pdf_pages: 298
   website_static_pages: 132
-  next_gate: "Prepare and review an exact selective source-promotion scope; then regenerate the website against the resulting source commit."
+  next_gate: "Phase 8 publication ascent: Gate 7 -> 8 entry check E1-E6 green; E7 (fresh backup) and E8 (owner authorization) pending; manual re-harvest required to include new commands (help_topics/lines above reflect the rebuilt HELP; manual page/part counts still describe the prior assembled manual, not re-assembled this run)."
   manualgen_command_reference_lane:
     label: "Manualgen command-reference lane -- a distinct pipeline stage from the assembled-manual headline above; do not compare the two counts directly."
     run_id: DOCFLUSH-20260722-001

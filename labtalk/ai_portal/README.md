@@ -55,6 +55,16 @@ current task needs their additional depth.
 15. `../docs/co-development/recursive_coproject_model_v1.md`
 16. `../registries/ai_portal.yaml`
 
+## Onboarding Assessments
+
+These dated reports test whether the Portal can re-orient an AI development
+partner without relying on prior chat memory. They are reviewed observations,
+not replacements for current source, runtime proof, contracts, registries, or
+session closeouts.
+
+- `AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md` - Codex cold-start
+  re-onboarding, live read-only audit results, and synchronization findings.
+
 ## Delivery Posture
 
 The lane is organized around usable increments rather than one long portal

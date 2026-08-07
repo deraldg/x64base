@@ -1,0 +1,126 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-30, 54461c92 dirty)  (Jul 30 2026 10:30:31)
+DotTalk++ build Jul 30 2026 10:30:31
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  1 Corinthians 7:15
+  But if the unbelieving depart, let him depart. A brother or a sister is not under bondage in such cases: but God hath called us to peace.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . EVALDIFF-P4.0A-BEGIN
+. . ERASE: Table not found: EVALDIFF.dbf
+. Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\EVALDIFF.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\EVALDIFF.dbf with 0 records.
+. . . . . . . . . . . . . . . . . . . . . 1 deleted
+. . . EVALDIFF-CURSOR-BEFORE
+. .T.
+. . EVALDIFF-EOF-PROBES-AB-BEGIN
+. EVALDIFF VERDICT-PARITY rows=4 verdict_agreements=4 failure_parities=0 divergences=0 classic[T/F/E]=1/3/0 tuple[T/F/E]=1/3/0 predicate="NVAL = 12.5 GARBAGE"
+. EVALDIFF PARITY-ON-FAILURE rows=4 verdict_agreements=0 failure_parities=4 divergences=0 classic[T/F/E]=0/0/4 tuple[T/F/E]=0/0/4 predicate="NVAL = 12.5 AND"
+. EVALDIFF-EOF-PROBES-AB-END
+. EVALDIFF-CURSOR-AFTER
+. .T.
+. . EVALDIFF FOR <predicate>
+EVALDIFF <predicate>
+EVALDIFF USAGE
+  Compare classic DbArea and TupleRow evaluator outcomes over every
+  physical record, including deleted records. The original cursor is
+  restored. This command reports differences; it changes no semantics.
+. . Closed.
+. ERASE: deleting 1 file(s) for table: EVALDIFF
+  Deleted: EVALDIFF.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . EVALDIFF-P4.0A-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-30, 54461c92 dirty)  (Jul 30 2026 10:30:31)
+DotTalk++ build Jul 30 2026 10:30:31
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Ezekiel 20:20
+  And hallow my sabbaths; and they shall be a sign between me and you, that ye may know that I am the LORD your God.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\x64
+. Selected area 8.
+Current area: 8
+. Opened STUDENTS (v64) : Record count 200
+Valid Index/Indices   : CDX
+. EVALDIFF VERDICT-PARITY rows=200 verdict_agreements=200 failure_parities=0 divergences=0 classic[T/F/E]=21/179/0 tuple[T/F/E]=21/179/0 predicate="MAJOR = \"CSCI\""
+. EVALDIFF VERDICT-PARITY rows=200 verdict_agreements=200 failure_parities=0 divergences=0 classic[T/F/E]=200/0/0 tuple[T/F/E]=200/0/0 predicate="8.MAJOR = \"CSCI\""
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

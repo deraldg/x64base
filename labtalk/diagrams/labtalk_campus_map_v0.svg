@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">LabTalk Laboratory Campus</title>
+  <desc id="desc">A campus map showing LabTalk as a collection of labs, libraries, cases, datasets, proof tools, and portal access.</desc>
+  <rect width="1280" height="760" fill="#f7f7f4"/>
+  <rect x="58" y="54" width="1164" height="652" rx="18" fill="#ffffff" stroke="#222" stroke-width="3"/>
+  <text x="640" y="112" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="700" fill="#1d1d1f">LabTalk Laboratory Campus</text>
+  <text x="640" y="152" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#4b5563">A collection of apps, labs, cases, datasets, runtimes, GUIs, help systems, and proof tools</text>
+
+  <rect x="485" y="210" width="310" height="110" rx="14" fill="#17324d"/>
+  <text x="640" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#fff">Campus Portal</text>
+  <text x="640" y="286" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#dbeafe">registry-driven local entry point</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="112" y="390" width="300" height="106" rx="12" fill="#e8f3ef" stroke="#1f6f52" stroke-width="2"/>
+    <text x="262" y="426" text-anchor="middle" font-size="22" font-weight="700" fill="#143f30">Runtime Systems Lab</text>
+    <text x="262" y="458" text-anchor="middle" font-size="15" fill="#1f2937">DotTalk++, commands, scripts, state</text>
+
+    <rect x="490" y="390" width="300" height="106" rx="12" fill="#fff1df" stroke="#aa5b00" stroke-width="2"/>
+    <text x="640" y="426" text-anchor="middle" font-size="22" font-weight="700" fill="#6f3b00">Historical Data Systems Lab</text>
+    <text x="640" y="458" text-anchor="middle" font-size="15" fill="#1f2937">COBOL, CODASYL, xBase, SQL, ERP</text>
+
+    <rect x="868" y="390" width="300" height="106" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="1018" y="426" text-anchor="middle" font-size="22" font-weight="700" fill="#312e81">Self-Documenting Lab</text>
+    <text x="1018" y="458" text-anchor="middle" font-size="15" fill="#1f2937">comments, contracts, HELP, proof</text>
+
+    <rect x="112" y="548" width="300" height="106" rx="12" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
+    <text x="262" y="584" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">Dataset Library</text>
+    <text x="262" y="616" text-anchor="middle" font-size="15" fill="#1f2937">DBF, CSV, fixed records, SQL</text>
+
+    <rect x="490" y="548" width="300" height="106" rx="12" fill="#fdf2f8" stroke="#be185d" stroke-width="2"/>
+    <text x="640" y="584" text-anchor="middle" font-size="22" font-weight="700" fill="#831843">Case Library</text>
+    <text x="640" y="616" text-anchor="middle" font-size="15" fill="#1f2937">engineering and historical stories</text>
+
+    <rect x="868" y="548" width="300" height="106" rx="12" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
+    <text x="1018" y="584" text-anchor="middle" font-size="22" font-weight="700" fill="#164e63">GUI and Portal Lab</text>
+    <text x="1018" y="616" text-anchor="middle" font-size="15" fill="#1f2937">launchers, dashboards, workbenches</text>
+  </g>
+
+  <g stroke="#6b7280" stroke-width="3" fill="none">
+    <path d="M640 320 L262 390"/>
+    <path d="M640 320 L640 390"/>
+    <path d="M640 320 L1018 390"/>
+    <path d="M640 320 L262 548"/>
+    <path d="M640 320 L640 548"/>
+    <path d="M640 320 L1018 548"/>
+  </g>
+</svg>

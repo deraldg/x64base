@@ -319,6 +319,18 @@ readiness_probes:
       - command remains read-only and does not launch the portal
 
 work_items:
+  - id: report.ai_portal.reonboarding_assessment.2026_07_29
+    label: AI Portal Re-Onboarding Assessment - 2026-07-29
+    kind: onboarding_assessment
+    status: reviewed_observation
+    path: ai_portal/AI_PORTAL_REONBOARDING_ASSESSMENT_2026-07-29.md
+    owner: member.derald
+    recorded_by: member.ai.codex.local
+    recorded: 2026-07-29
+    evidence_posture: source_registry_and_runtime_observation
+    objective: Preserve the cold-start re-orientation test, observed portal strengths, and synchronization findings as durable AI Portal documentation.
+    authority_boundary: Assessment only; current source, runtime proof, contracts, registries, targets, and reviewed closeouts remain authoritative.
+
   - id: lane.ai_portal.hardening
     label: AI Portal Hardening Lane
     kind: work_lane

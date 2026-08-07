@@ -1,0 +1,13 @@
+{
+  "id": "diagram.selfdoc_contract_lane_v1",
+  "label": "Selfdoc Contract Lane V1",
+  "kind": "diagram",
+  "path": "labtalk/diagrams/selfdoc_contract_lane_v1.mmd",
+  "status": "generated",
+  "generator": "tools/diagram/generate_drawio_from_meta.py",
+  "generated_at": "2026-07-12T00:41:26+00:00",
+  "truth_status": "derived_view",
+  "derived_from": [
+    "tools/diagram/diagram_seed_selfdoc_lane_v1.meta"
+  ]
+}

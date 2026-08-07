@@ -213,11 +213,13 @@ sections:
     registry: registries/proofs.yaml
 
   - id: portal.reports
-    label: Reports
+    label: AI Operations
     description: >-
-      Human-readable HTML views generated from LIVE state (BBS DBF tables + the
-      ai_runs/proofs registries). Read-only and lock-free; regenerate any time with
-      tools/reports/build_reports.py. Start at the index.
+      Human-readable local views over current BBS DBF tables and AI registries.
+      The normal localhost surface is generated for each request by
+      tools/reports/serve_dynamic_reports.py and is read-only, local-only, and
+      non-authoritative. docs/reports HTML files are dated static exports, not the
+      normal live view. Start at http://localhost:3000/reports/.
     items:
       - id: report.index
         label: Reports Index (start here)
@@ -255,6 +257,7 @@ sections:
                                        # a published position. Internal only.
         generator: ../tools/reports/build_rulings_report.py
         source: docs/maintenance/AIF_*RULING_SHEET*.md + labtalk/ai_portal/TIER0_STATE.md
+    local_server: ../tools/reports/serve_dynamic_reports.py
     generator: ../tools/reports/build_reports.py
     publication_note: >-
       Sensitivity is per item, not per section. `private` items must never reach

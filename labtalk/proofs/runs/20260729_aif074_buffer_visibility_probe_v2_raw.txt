@@ -1,0 +1,159 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, 390e1004 dirty)  (Jul 29 2026 10:20:17)
+DotTalk++ build Jul 29 2026 10:20:17
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Proverbs 20:11
+  Even a child is known by his doings, whether his work be pure, and whether it be right.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . BUFVIS2-PROBE-BEGIN
+. . ERASE: Table not found: BUFVIS2.dbf
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\BUFVIS2.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\BUFVIS2.dbf with 0 records.
+. . . . . . . . . . Closed.
+. . Selected area 1.
+Current area: 1
+. Opened BUFVIS2 (v64) : Record count 3
+Valid Index/Indices   : CDX
+. . BUFVIS2-BASELINE-BEGIN
+. Usage:
+  SMARTLIST
+  SMARTLIST USAGE
+  SMARTLIST <fields>
+  SMARTLIST ALL
+  SMARTLIST <limit>
+  SMARTLIST NEXT <n>
+  SMARTLIST FIRST <n>
+  SMARTLIST DELETED
+  SMARTLIST DEBUG
+  SMARTLIST TUPLES
+  SMARTLIST FOR <pred>
+      SID    MAJOR 
+     1 1      CSCI  
+     2 2      MATH  
+     3 3      HIST  
+3 record(s) listed (limit 20). Use SMARTLIST ALL to show more.
+. BUFVIS2-BASELINE-END
+. . . TABLE BUFFER: 1 area(s) updated.
+. . . . 1 deleted
+. . BUFVIS2-STATUS-BEGIN
+. Area 1 buffer:
+  mode: RAM
+  empty: no
+  changes: 2
+  unique recnos: 2
+  next_seq: 0
+. BUFVIS2-STATUS-END
+. . . BUFVIS2-A-SMARTLIST-BEGIN
+. Usage:
+  SMARTLIST
+  SMARTLIST USAGE
+  SMARTLIST <fields>
+  SMARTLIST ALL
+  SMARTLIST <limit>
+  SMARTLIST NEXT <n>
+  SMARTLIST FIRST <n>
+  SMARTLIST DELETED
+  SMARTLIST DEBUG
+  SMARTLIST TUPLES
+  SMARTLIST FOR <pred>
+      SID    MAJOR 
+     1 1      MATH  
+     2 2      MATH  
+     3 3      HIST  
+3 record(s) listed (limit 20). Use SMARTLIST ALL to show more.
+. BUFVIS2-A-SMARTLIST-END
+. . . BUFVIS2-B-DISPLAY-BEGIN
+. . Record 1
+  SID = 1
+  MAJOR = CSCI
+. BUFVIS2-B-DISPLAY-END
+. . . . BUFVIS2-C-SMARTLIST-PREDICATE-BEGIN
+.       SID    MAJOR 
+     2 2      MATH  
+1 record(s) listed (limit 20). Use SMARTLIST ALL to show more.
+.       SID    MAJOR 
+     1 1      MATH  
+1 record(s) listed (limit 20). Use SMARTLIST ALL to show more.
+. BUFVIS2-C-SMARTLIST-PREDICATE-END
+. . . BUFVIS2-D-SQLSEL-BEGIN
+. SID | MAJOR
+1 | CSCI
+2 | MATH
+3 | HIST
+3 row(s) selected.
+. SID | MAJOR
+1 | CSCI
+1 row(s) selected.
+. BUFVIS2-D-SQLSEL-END
+. . . BUFVIS2-E-EXPORT-BEGIN
+. Exported 3 records to bufvis2_probe.csv
+. BUFVIS2-E-EXPORT-END
+. . . ROLLBACK: discarded 2 change(s).
+. TABLE BUFFER: 1 area(s) updated.
+. . BUFVIS2-AFTER-ROLLBACK-BEGIN
+. Usage:
+  SMARTLIST
+  SMARTLIST USAGE
+  SMARTLIST <fields>
+  SMARTLIST ALL
+  SMARTLIST <limit>
+  SMARTLIST NEXT <n>
+  SMARTLIST FIRST <n>
+  SMARTLIST DELETED
+  SMARTLIST DEBUG
+  SMARTLIST TUPLES
+  SMARTLIST FOR <pred>
+      SID    MAJOR 
+     1 1      CSCI  
+     2 2      MATH  
+     3 3      HIST  
+3 record(s) listed (limit 20). Use SMARTLIST ALL to show more.
+. BUFVIS2-AFTER-ROLLBACK-END
+. . Closed.
+. ERASE: deleting 1 file(s) for table: BUFVIS2
+  Deleted: BUFVIS2.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . BUFVIS2-PROBE-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

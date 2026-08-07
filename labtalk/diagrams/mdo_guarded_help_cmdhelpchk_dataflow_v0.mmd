@@ -1,0 +1,31 @@
+```mermaid
+flowchart LR
+  m334["MDO-334\nMAINT lane closure\nreport-only smoke lane accounting"]
+  m335["MDO-335\nguarded apply plan\nexecution not authorized"]
+  gate["Explicit authorization gate\naccepted manifest\nbackup and hashes\nrollback path"]
+  m336["MDO-336\nguarded execution packet"]
+  smoke["runtime smoke DTS\nCMDHELPCHK\nCMDHELP MAINT\nDOTHELP MAINT\nHELP /DOT MAINT\nMAINT USAGE\nBBOX USAGE"]
+  result["execution result\nGREEN no direct mutation required"]
+  savepoint["savepoint readiness"]
+
+  protected["Protected targets\nHELP DATA\nCMDHELPCHK\nDOTREF\ncommand registry\nsource\nDBF/CDX/LMDB\nruntime data\npublication"]
+  reports["Reports and packets\nstatus summaries\nboundary checks\ncandidate manifests\ntranscripts"]
+
+  m334 --> m335
+  m335 --> gate
+  gate --> m336
+  m336 --> smoke
+  smoke --> result
+  result --> savepoint
+
+  m334 --> reports
+  m335 --> reports
+  m336 --> reports
+  smoke --> reports
+
+  gate -. "blocks mutation unless complete" .-> protected
+  m334 -. "no mutation" .-> protected
+  m335 -. "no mutation" .-> protected
+  m336 -. "default path did not mutate" .-> protected
+  protected -. "rollback required if future apply mutates" .-> gate
+```

@@ -1,0 +1,191 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, 390e1004 dirty)  (Jul 29 2026 09:44:43)
+DotTalk++ build Jul 29 2026 09:44:43
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  2 Kings 25:9
+  And he burnt the house of the LORD, and the kingΓÇÖs house, and all the houses of Jerusalem, and every great manΓÇÖs house burnt he with fire.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . SQLSEL-G3-BEGIN
+. . ERASE: Table not found: SQLSTU.dbf
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\SQLSTU.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\SQLSTU.dbf with 0 records.
+. . . . . . . . . . . . . Closed.
+. . Selected area 1.
+Current area: 1
+. Opened SQLSTU (v64) : Record count 3
+Valid Index/Indices   : CDX
+. . . . . . S5A_cursor_parked_before:.T.
+. . . SQLSEL-S1-BEGIN
+. SID | LNAME | MAJOR
+1 | ADAMS | CSCI
+2 | BAKER | MATH
+3 | CARTER | CSCI
+3 row(s) selected.
+. SQLSEL-S1-END
+. . . SQLSEL-S2-BEGIN
+. SID | LNAME | MAJOR
+1 | ADAMS | CSCI
+2 | BAKER | MATH
+3 | CARTER | CSCI
+3 row(s) selected.
+. SQLSEL-S2-END
+. . . SQLSEL-S3-BEGIN
+. SID | LNAME
+1 | ADAMS
+3 | CARTER
+2 row(s) selected.
+. SQLSEL-S3-END
+. . . SQLSEL-S4-BEGIN
+. SID | LNAME
+1 | ADAMS
+2 | BAKER
+2 row(s) selected.
+SQLSEL: LIMIT reached; 1 more row(s) available.
+. SQLSEL-S4-END
+. . . S5B_cursor_unmoved_after:.T.
+. . . SQLSEL-S6-BEGIN
+. SQLSEL: table 'NOSUCHTABLE' is not open.
+        Open it first (USE NOSUCHTABLE) -- SQLSEL reads open work areas.
+. SQLSEL: 'ALLTRIM(LNAME)' is not a bare column name.
+        v1 projects bare columns only; expression projection
+        is not yet supported (it would report empty values).
+. SQLSEL: LIMIT expects a non-negative integer (got 'abc').
+. SQLSEL-S6-END
+. . . . . SQLSEL-S8-BEGIN
+. SID | LNAME
+1 | ADAMS
+2 | BAKER
+3 | CARTER
+3 row(s) selected.
+SQLSEL: ORDER BY LNAME ASC -- materialized sort over 3 matching row(s).
+. SID | LNAME
+3 | CARTER
+2 | BAKER
+1 | ADAMS
+3 row(s) selected.
+SQLSEL: ORDER BY LNAME DESC -- materialized sort over 3 matching row(s).
+. SQLSEL-S8-END
+. . . . SQLSEL-S9-BEGIN
+. SID | LNAME
+3 | CARTER
+2 | BAKER
+2 row(s) selected.
+SQLSEL: LIMIT reached; 1 more row(s) available.
+SQLSEL: ORDER BY LNAME DESC -- materialized sort over 3 matching row(s).
+. SQLSEL-S9-END
+. . . SQLSEL-S10-BEGIN
+. COUNT(*)
+3
+1 row(s) selected.
+. COUNT(*)
+2
+1 row(s) selected.
+. SQLSEL-S10-END
+. . . SQLSEL-S11-BEGIN
+. SQLSEL: ORDER BY field 'NOSUCHFIELD' is not in SQLSTU.
+. SQLSEL: ORDER BY direction must be ASC or DESC (got 'SIDEWAYS').
+. SQLSEL: ORDER BY does not apply to COUNT(*).
+. SQLSEL-S11-END
+. . . S12_cursor_unmoved_after_slice2:.T.
+. . . SQLSEL-S7-BEGIN
+. Usage:
+  SQLSEL USAGE
+  SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [LIMIT <n>]
+  SQLSEL SELECT * FROM <table>
+  SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
+Examples:
+  SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
+  SQLSEL SELECT * FROM STUDENTS LIMIT 5
+  SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
+  SQLSEL COUNT
+  SQLSEL COUNT FOR GPA >= 3.0
+  SQLSEL LNAME = "SMITH"
+Notes:
+  - SQLSEL USAGE does not require an open table.
+  - A SELECT statement names its own table in FROM; that table must be OPEN.
+  - A SELECT statement does not change the current area or any record pointer.
+  - SELECT projects bare column names; expression projection is not yet supported.
+  - LIMIT reports when rows remain rather than truncating silently.
+  - ORDER BY and COUNT(*) are not yet implemented in the statement form.
+  - SQLSEL scans records and does not mutate table data.
+. SQLSEL-S7-END
+. . . SQLSEL-ORACLE-BEGIN
+. SQLITE: opened :memory:
+. OK
+. OK
+. OK
+. OK
+. SID | LNAME  | MAJOR
+----+--------+------
+1   | ADAMS  | CSCI 
+2   | BAKER  | MATH 
+3   | CARTER | CSCI 
+. SID | LNAME 
+----+-------
+1   | ADAMS 
+3   | CARTER
+. TOTAL_ROWS
+----------
+3         
+. SID | LNAME 
+----+-------
+3   | CARTER
+2   | BAKER 
+1   | ADAMS 
+. SID | LNAME 
+----+-------
+3   | CARTER
+2   | BAKER 
+. CSCI_ROWS
+---------
+2        
+. SQLITE: closed
+. SQLSEL-ORACLE-END
+. . . Closed.
+. ERASE: deleting 1 file(s) for table: SQLSTU
+  Deleted: SQLSTU.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . SQLSEL-G3-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

@@ -1,0 +1,60 @@
+```mermaid
+flowchart LR
+  subgraph Inputs["Existing Evidence"]
+    source["Source and headers\nsrc/ include/ bindings/"]
+    liveMeta["Existing metadata DBFs\ndottalkpp/data/metadata/"]
+    catalogs["Runtime and catalog evidence\ncommand/function surfaces"]
+  end
+
+  subgraph Collector["metacollect Report-Only Helper"]
+    facts["facts scan"]
+    compare["compare scan"]
+    sysfunc["SYSFUNC candidate export"]
+    sysargs["SYSARGS candidate export"]
+    diag["optional diagnostic export\ninclude dev commands and keywords"]
+  end
+
+  subgraph CandidateOutputs["Candidate Outputs"]
+    factsCsv["metacollect_facts.csv"]
+    compareCsv["metacollect_compare.csv"]
+    sysfuncCsv["SYSFUNC_IMPORT_v1.csv"]
+    sysargsCsv["SYSARGS_IMPORT_v1.csv"]
+    proposals["native create/import proposals"]
+  end
+
+  subgraph Promotion["Separate Reviewed Promotion"]
+    review["human review"]
+    importScripts["DotScript/native import scripts"]
+    liveDbf["live metadata DBFs"]
+    indexes["CDX / LMDB rebuilds when authorized"]
+  end
+
+  source --> facts
+  source --> compare
+  liveMeta --> compare
+  catalogs --> sysfunc
+  catalogs --> sysargs
+  source --> sysfunc
+  source --> sysargs
+  source --> diag
+
+  facts --> factsCsv
+  compare --> compareCsv
+  sysfunc --> sysfuncCsv
+  sysargs --> sysargsCsv
+  sysfunc --> proposals
+  sysargs --> proposals
+
+  factsCsv --> review
+  compareCsv --> review
+  sysfuncCsv --> review
+  sysargsCsv --> review
+  proposals --> review
+  review --> importScripts
+  importScripts --> liveDbf
+  importScripts --> indexes
+
+  noAuthority["Boundary\nmetacollect does not write DBFs\ndoes not rebuild HELP\ndoes not replace CMDHELPCHK\ndoes not publish manuals"]
+  Collector -. "classified by SelfDoc manifest" .-> noAuthority
+  noAuthority -. "promotion requires separate gate" .-> review
+```

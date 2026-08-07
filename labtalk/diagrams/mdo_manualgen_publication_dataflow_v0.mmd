@@ -1,0 +1,56 @@
+```mermaid
+flowchart TB
+  subgraph Evidence["Evidence Inputs"]
+    help["HELP / CMDHELP harvested output"]
+    metadata["metadata candidates and live catalogs"]
+    selfdoc["SelfDoc manifests policies provenance"]
+    runtime["runtime smoke transcripts"]
+    source["source review and usage contracts"]
+  end
+
+  subgraph MDO["MDO Work Order Spine"]
+    select["select target"]
+    draft["prose draft"]
+    evidenceReview["evidence review"]
+    candidate["reviewed candidate"]
+    human["human review decision"]
+    promote["promote to manual draft"]
+    coherence["coherence and pippet checks"]
+  end
+
+  subgraph Artifacts["Manualgen Outputs"]
+    workOrders["work_orders/MDO-*"]
+    reports["reports/*.csv and *.md"]
+    reviewPackets["review_packets/MDO-*"]
+    draftWorkspace["generated manual draft workspace"]
+    published["published manual reader"]
+  end
+
+  help --> select
+  metadata --> select
+  selfdoc --> select
+  runtime --> evidenceReview
+  source --> evidenceReview
+  help --> evidenceReview
+  metadata --> evidenceReview
+  selfdoc --> evidenceReview
+
+  select --> draft
+  draft --> evidenceReview
+  evidenceReview --> candidate
+  candidate --> human
+  human --> promote
+  promote --> draftWorkspace
+  draftWorkspace --> coherence
+  coherence --> published
+
+  select --> workOrders
+  evidenceReview --> reports
+  human --> reviewPackets
+  promote --> workOrders
+  coherence --> reports
+
+  boundary["Manualgen boundary\nreports and draft workspaces only unless explicitly authorized\nno HELP/META/CMDHELPCHK/source/runtime mutation"]
+  MDO -. "must obey" .-> boundary
+  boundary -. "publication needs review-backed promotion" .-> published
+```

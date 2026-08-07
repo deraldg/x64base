@@ -1,0 +1,123 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-07-29, 390e1004 dirty)  (Jul 29 2026 10:20:17)
+DotTalk++ build Jul 29 2026 10:20:17
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Isaiah 44:5
+  One shall say, I am the LORD’s; and another shall call himself by the name of Jacob; and another shall subscribe with his hand unto the LORD, and surname himself by the name of Israel.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\SANDBOX
+. SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\SANDBOX
+. SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\SANDBOX
+. . BUFVIS-PROBE-BEGIN
+. . ERASE: Table not found: BUFVIS.dbf
+. . Created D:\code\ccode\dottalkpp\data\DBF\SANDBOX\BUFVIS.dbf [X64]
+Opened D:\code\ccode\dottalkpp\data\dbf\sandbox\BUFVIS.dbf with 0 records.
+. . . . . . . Closed.
+. . Selected area 1.
+Current area: 1
+. Opened BUFVIS (v64) : Record count 2
+Valid Index/Indices   : CDX
+. . BUFVIS-BASELINE-BEGIN
+.       SID    MAJOR 
+     1 1      CSCI  
+     2 2      MATH  
+2 record(s) listed (limit 20). Use LIST ALL to show more.
+Cursor: Area 1 of 0 ... 511  Physical Recno 2, Logical Row 2
+. SID | MAJOR
+1 | CSCI
+2 | MATH
+2 row(s) selected.
+. BUFVIS-BASELINE-END
+. . . TABLE BUFFER: 1 area(s) updated.
+. . . . BUFVIS-STATUS-BEGIN
+. Area 1 buffer:
+  mode: RAM
+  empty: no
+  changes: 1
+  unique recnos: 1
+  next_seq: 0
+. BUFVIS-STATUS-END
+. . . BUFVIS-A-CLASSIC-DISPLAY-BEGIN
+. . Record 1
+  SID = 1
+  MAJOR = CSCI
+.       SID    MAJOR 
+     1 1      MATH  
+     2 2      MATH  
+2 record(s) listed (limit 20). Use LIST ALL to show more.
+Cursor: Area 1 of 0 ... 511  Physical Recno 2, Logical Row 2
+. BUFVIS-A-CLASSIC-DISPLAY-END
+. . . BUFVIS-B-TUPLE-PROJECTION-BEGIN
+. . 1 | MATH
+. BUFVIS-B-TUPLE-PROJECTION-END
+. . . BUFVIS-C-CLASSIC-PREDICATE-BEGIN
+. 1
+. 1
+. BUFVIS-C-CLASSIC-PREDICATE-END
+. . . . . BUFVIS-D-SQLSEL-SELFCONSISTENCY-BEGIN
+. SID | MAJOR
+1 | CSCI
+1 row(s) selected.
+. SID | MAJOR
+2 | MATH
+1 row(s) selected.
+. COUNT(*)
+1
+1 row(s) selected.
+. BUFVIS-D-SQLSEL-SELFCONSISTENCY-END
+. . . ROLLBACK: discarded 1 change(s).
+. TABLE BUFFER: 1 area(s) updated.
+. . BUFVIS-AFTER-ROLLBACK-BEGIN
+. . Record 1
+  SID = 1
+  MAJOR = CSCI
+. SID | MAJOR
+1 | CSCI
+2 | MATH
+2 row(s) selected.
+. BUFVIS-AFTER-ROLLBACK-END
+. . Closed.
+. ERASE: deleting 1 file(s) for table: BUFVIS
+  Deleted: BUFVIS.dbf
+ERASE complete. Deleted: 1, Failed: 0
+. . BUFVIS-PROBE-END
+. SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini
