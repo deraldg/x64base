@@ -201,8 +201,20 @@ def main() -> int:
     print("")
     print("`CLAUDE.md` requires ASCII in scripts and docs: use `--` and `->`.")
     print("Only ADDED lines are checked, so the historical backlog is not your")
-    print("problem -- these are lines this change introduces. Fix them, or run")
-    print("`git commit --no-verify` if you are deliberately importing text.")
+    print("problem -- these are lines this change introduces.")
+    print("")
+    print("There is a fixer (AIF-090). It carries an explicit mapping table and")
+    print("REFUSES to write a file containing a codepoint it does not know, so")
+    print("it cannot silently mangle anything:")
+    print("")
+    print("    python tools/staging/ascii_normalize.py FILE...          # dry run")
+    print("    python tools/staging/ascii_normalize.py --apply FILE...  # rewrite")
+    print("    python tools/staging/ascii_normalize.py --table          # mapping")
+    print("")
+    print("Note: staging a previously UNTRACKED file makes every one of its")
+    print("lines an added line, so the whole file must be clean, not just your")
+    print("edit. Or `git commit --no-verify` if you are deliberately importing")
+    print("text.")
     return 2
 
 

@@ -521,6 +521,24 @@ def main() -> int:
                   "in the dashboard (AIF-006). NOT blocking. Add the row, or say "
                   "in the closeout why none is owed.")
 
+        # 5. SELF-DECLARED BYTE BUDGETS -- ADVISORY for one cycle, then hard
+        # (AIF-090 R4). The Tier 1 seed declares an 8,192 B ceiling about itself
+        # and AI_PORTAL.md cites that ceiling as the project's exemplar of a
+        # BOUNDED metric. Measured 2026-08-06 by a cold probe: the seed was
+        # 8,990 B, over by 798, and nothing had noticed -- because the ceiling
+        # was enforced by whoever happened to be watching. This is that rule
+        # becoming a gate, which is the seed's own fourth bullet: a rule that
+        # gains a hard-failing gate may then demote out of the entry path.
+        #
+        # Run with --warn so the adoption cycle cannot block anyone; flip to the
+        # bare invocation (and treat rc == 2 as blocking) after one clean cycle.
+        rc = _run_portal_check("tools/staging/check_seed_budget.py", ["--warn"])
+        if rc == 2:
+            print("\n  ADVISORY -- a document is over the byte budget it "
+                  "declares about itself. NOT blocking during the adoption "
+                  "cycle. Adding requires demoting, and demoting means moving, "
+                  "not restating.")
+
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
               "(or acknowledged), no embedded BOM, no AIF-number collision.")

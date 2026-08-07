@@ -261,6 +261,33 @@ bundle, `labtalk/skills/`, `skills.yaml`, and the shim collapse. R2 and R3 remai
 sound design and are recorded for whoever revisits the distributable case, which
 P0 never tested.
 
+### Gate wiring (2026-08-06) -- and a correction to my own plan
+
+`check_seed_budget.py` is wired into `prepush_gate.py` as check 5, invoked with
+`--warn` so the adoption cycle cannot block anyone (R4).
+
+**FLIP CONDITION, so the advisory cycle is not forgotten:** after one clean cycle
+in which no commit trips the advisory, drop the `--warn` argument and treat
+`rc == 2` as `exit_code = 2`, matching checks 1-3. Both halves are proven:
+advisory returns 0 on a deliberately over-budget seed (8,350 B), and the same
+run in hard mode returns 2. Until the flip, D4's own lesson applies to D4 -- an
+unenforced obligation is a wish.
+
+**`ascii_normalize.py` was NOT wired, and should not be.** I had planned to, and
+that plan was wrong: it is a FIXER, not a checker. In dry-run it returns 0
+whether or not a file carries non-ASCII, failing only on an *unmapped* codepoint,
+so wiring it as a gate would add a check that passes on exactly the condition the
+gate exists to catch -- a thing that reports success without doing its job, which
+is the defect class this whole lane is about. The gate for non-ASCII already
+exists and already blocks: `check_house_style.py`.
+
+What was actually missing is that the gate said a file FAILS without saying a
+fixer exists. `check_house_style.py`'s failure message now names it, shows the
+three invocations, and warns about the trap that made this matter -- staging a
+previously untracked file makes every line an added line, so the whole file must
+be clean, not just the edit. Proven by forcing the FAIL branch: exit 2, message
+names the fixer, `--apply`, and the untracked trap.
+
 ## 11. Maintenance rule for this file
 
 This file carries **phase state, rulings, and pointers**. It must not restate
