@@ -8,9 +8,9 @@ Owner of record: `member.derald`
 Lane owner / author: `member.ai.claude.cowork` (assigned this lane 2026-08-07)
 Coworker: `member.ai.grok` (external advisor; contributes via the BBS / external-AI
 intake channel, harvested + curated per `MONITOR_HARVEST_CURATE_EXTERNAL_AI_V1.md`)
-Lane / ticket: **AIF-NNN to be claimed host-side** (`python tools/coordination/session_coordinator.py claim-aif`;
-the tool shells to `git grep` and is not runnable from the sandbox). Proposed run_id
-`COWORK-20260807-00N`.
+Lane / ticket: **AIF-091** (lane `dbf-vfp-type-support`, claimed 2026-08-07 via
+`tools/coordination/session_coordinator.py claim-aif`, run_id `COWORK-20260807-002`;
+ledger: `coordination/aif/AIF-091.claim`).
 Prior art read (source, not compiled): `src/xbase/dbf_create.cpp` (`supports_type_now`),
 `include/xbase_field_getters.hpp`, `include/xbase_vfp.hpp`, `include/xbase/field_codec.hpp`,
 `src/cli/cmd_create.cpp`, and the dBASE 7 spec (external, sibling format -- out of scope,
