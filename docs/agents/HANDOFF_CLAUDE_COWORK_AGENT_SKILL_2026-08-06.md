@@ -10,6 +10,19 @@ what happened.
 
 ---
 
+## 0. Current state, 2026-08-06 (read this first)
+
+**Owner ruled R7: CONVERT.** The skill programme is retired unbuilt. D1-D4 are
+**implemented and runtime-proven** (`79888dfaa`); see charter section 10. This
+file has now been correct-then-stale twice in one day, which is the argument for
+keeping a handoff short and pointer-shaped.
+
+What is actually left: the graph over-links and now reports it (`onboard` 3.7x
+the entry path, `commit_or_push` 4.4x) -- trimming it is the next measurement;
+`check_seed_budget.py` and `ascii_normalize.py` are both unwired from
+`prepush_gate.py`; and the seed has 44 B of headroom, so the next addition forces
+a demotion. Sections 1-6 below are retained as the reasoning that got here.
+
 ## 1. P0 is DONE and it said NO. Do not build the projector.
 
 **Superseded 2026-08-06, same day this file was written.** When authored, this
