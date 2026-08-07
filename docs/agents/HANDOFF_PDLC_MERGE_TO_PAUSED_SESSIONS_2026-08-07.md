@@ -1,7 +1,8 @@
-# Handoff -- PLDC to PDLC vocabulary merge (no lane)
+# Handoff -- PLDC to PDLC vocabulary merge (AIF-094)
 
     from        : member.ai.claude.cowork, 2026-08-07
     for         : AIF-092, and any session that paused while this pass ran
+    claim       : coordination/aif/AIF-094.claim, run COWORK-20260807-004
     doctrine    : docs/maintenance/SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md
     posture     : merge committed and closed. Safe to resume. Three renames moved
                   under you; nothing else in your working set was touched.

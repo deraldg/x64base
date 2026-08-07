@@ -25,7 +25,7 @@ ai_report_audit:
     kind: session_closeout
 ---
 
-# Session Closeout -- PLDC to PDLC vocabulary merge (no lane)
+# Session Closeout -- PLDC to PDLC vocabulary merge (AIF-094)
 
 Date: 2026-08-07.
 Owning lifecycle: maintenance.
@@ -33,10 +33,10 @@ SDLC lane: maintenance.
 Truth state: observed.
 Proof state: git-verified.
 
-`(no lane)` is accurate, not lazy: this pass never claimed an AIF number.
-`claim-aif` shells out to `git grep` and is host-operated, and the work was a
-tree-wide vocabulary change rather than a lane. If it should carry a number
-retroactively, `project.labtalk.pdlc` is its owning project.
+AIF-094 was claimed retroactively, after this closeout was first committed as
+`(no lane)` and `session-log-check` correctly reported it as unattributable.
+Claim: `coordination/aif/AIF-094.claim`, run `COWORK-20260807-004`, lane
+`pdlc-vocabulary-merge`. Owning project: `project.labtalk.pdlc`.
 
 ## One-line summary
 

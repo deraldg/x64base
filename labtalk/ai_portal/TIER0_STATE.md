@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T18:18:54Z
+    generated_utc : 2026-08-07T18:22:18Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 03282baaa  (2026-08-07)
+    HEAD          : 9d24ded21  (2026-08-07)
     upstream      : 4fc15e091
-    unpushed      : 1 commit(s) ahead of upstream
+    unpushed      : 2 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,19 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md
-    commits behind HEAD : 7
+    commits behind HEAD : 8
 
 ## Staleness warnings
 
-- The newest closeout is 7 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 1 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 8 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-094. Same shape as AIF-062/078/080.
+- 2 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | **MISSING** |
 | AIF-093 | dottalkpp-text-extension | member.ai.claude.cowork | yes |
 | AIF-092 | publication-surface-recovery | member.ai.claude.cowork | yes |
 | AIF-091 | dbf-vfp-type-support | member.ai.claude.cowork | yes |
@@ -45,8 +47,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-082 | onboarding-cost-and-acceptance | member.ai.claude.cowork | yes |
 | AIF-081 | output-capture-completeness | member.ai.claude.cowork | yes |
 | AIF-080 | index-backend-orthogonality | member.ai.claude.cowork | yes |
-| AIF-079 | declared-capability-validator | member.ai.claude.cowork | yes |
-| ... | 14 older claims omitted | | |
+| ... | 15 older claims omitted | | |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
