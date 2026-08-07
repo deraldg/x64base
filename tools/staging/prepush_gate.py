@@ -564,6 +564,31 @@ def main() -> int:
                   "Editing an existing row is not affected.", file=sys.stderr)
             exit_code = 2
 
+        # 7. PUBLICATION RECEIPT IS FRESH -- hard, but ONLY when the receipt is
+        # itself being committed (AIF-092 O-3).
+        #
+        # WHY NOT EVERY COMMIT. MANIFEST.txt reports 828 allow-listed files, and
+        # that figure moves whenever any one of them is added or removed. A gate
+        # comparing it on every commit would be red most days, and a permanently
+        # red gate is switched off -- the same trap that made the seed-budget
+        # ceiling drift and that this session hit twice more (the receipt's own
+        # provenance line, and the legacy-intake-row false positive).
+        #
+        # The receipt is a PROMOTION-time artifact. Between promotions it is
+        # EXPECTED to trail the tree; that lag is information, not drift. So the
+        # only question worth blocking on is the narrow one: if you are
+        # committing the receipt, is it freshly derived rather than stale or
+        # hand-edited? Regenerating at promotion time is a separate step (O-4).
+        if any(p.replace("\\", "/") == "MANIFEST.txt" for p in paths):
+            rc = _run_portal_check("tools/staging/generate_public_manifest.py",
+                                   ["--check"])
+            if rc == 2:
+                print("\n  BLOCKED -- MANIFEST.txt is staged but does not match "
+                      "the tree it describes. It is GENERATED: run "
+                      "`python tools/staging/generate_public_manifest.py --write`, "
+                      "do not hand-edit it.", file=sys.stderr)
+                exit_code = 2
+
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
               "(or acknowledged), no embedded BOM, no AIF-number collision.")
