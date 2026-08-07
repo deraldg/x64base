@@ -231,9 +231,61 @@ distributable no-tree bundle (R3's design is sound but untested by this
 measurement) and the vendor-shim asymmetry (`copilot-instructions.md` does not
 point at the seed).
 
-**Not tested, and the one place the original argument may still hold:** a hosted
-agent with no tree and no auto-injected shim. Both probes received `CLAUDE.md`
-automatically, which is precisely why the control succeeded.
+**Not tested at the time, and the one place the original argument may still
+hold:** a hosted agent with no tree and no auto-injected shim. Both probes
+received `CLAUDE.md` automatically, which is precisely why the control
+succeeded. **This was tested later the same day -- see section 9a, and the answer
+changes the ruling for that audience.**
+
+## 9a. Probe C, the no-tree case -- G0 is audience-specific (2026-08-06)
+
+Evidence: `docs/maintenance/external_ai_intake/aif090_cold_probes_2026-08-06/PROBE_C_NO_TREE.md`.
+
+**Method limit, recorded first because it bounds everything else.** The harness
+auto-injects `CLAUDE.md` into every subagent. The probe detected this itself and
+disclosed it unprompted, refusing to claim a clean-room result. So a clean
+no-tree probe **cannot be run in this harness**, and the bundle-carrying arm was
+designed and deliberately NOT run rather than publish a comparison that could not
+mean anything.
+
+**The finding that survives, because it is structural rather than behavioural.**
+Verified directly against `raw.githubusercontent.com`, no probe required:
+
+| Question an outside contributor must answer | From `main` | From `development` |
+| --- | --- | --- |
+| Which branch do I baseline on? | `main` -- `CONTRIBUTING.md`: "the canonical collaboration and release branch" | `development`; baselining on `main` is "a hard onboarding failure (observed 2026-08)" |
+| Is `development` published? | "must be discovered locally" | yes, on GitHub, and richer |
+| What is `C:\x64base`? | "clean staging mirror" | NOT a mirror; that wording is declared stale drift |
+| Repository roles table | absent | first thing in the file |
+
+`AI_PORTAL.md` is 24,693 B on `main` against 53,350 B on `development`;
+`AGENTS.md`, `CLAUDE.md`, `PROMOTION_PROCESS.md`, `rules/` and `coordination/`
+are absent from `main` entirely.
+
+**An outside agent that follows the only instructions it can see commits the
+failure this project records as hard, and the correction lives exclusively on the
+branch it was told it cannot reach.** The probe navigated it anyway, but two of
+its five branch-enumeration calls returned empty bodies and it said plainly that
+had they kept failing it "would have been left with `main` by default and no
+signal that it was a choice at all".
+
+**Ruling consequence.** G0 stands as NO-GO for the repo-partner audience: an
+agent inside the tree with an injected shim reaches Tier 1 unaided, measured
+twice. G0 does NOT stand for the audience the project brief actually named --
+external AI agencies -- whose problem is not retrieval friction but that the
+governance they will be judged against is unpublished where they can read it.
+
+**And the cheapest fix is not a skill.** It is publishing the branch-enumeration
+rule and the repository-roles table on `main`, where `CONTRIBUTING.md` already
+sends people. A distributable bundle is the second step, not the first. Recorded
+here so the next session does not reach for the bigger tool because this lane was
+once about one.
+
+**Second, smaller finding:** `WORKFLOW_X64BASE.md` on `main` calls `C:\x64base`
+"a mirror only" while `AI_PORTAL.md`, same branch same commit, declares that
+wording stale. The public branch ships two contradictory statements of
+repository roles. Known on `development` (`PROMOTION_PROCESS.md` lists retiring
+it as an open item); invisible from `main`.
 
 ## 10. Repair phase -- D1-D4 implemented (2026-08-06, owner ruling R7)
 

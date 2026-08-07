@@ -28,6 +28,13 @@ The maintainer asked the right question -- "what is my evidence of a deliverable
 | --- | --- |
 | `PROBE_A_CONTROL.md` | Control arm. Realistic task, no mention of the portal, the seed, or `recall.py`. |
 | `PROBE_B_TREATMENT.md` | Treatment arm. Same task, preceded by a ~1.5 KB skill stub. |
+| `PROBE_C_NO_TREE.md` | No-tree arm, added later the same day. Outside agency, public GitHub only. **Contaminated -- read its section 1.** Its structural findings survive the contamination; its behavioural ones do not. |
+
+A fourth arm (no tree, WITH a bundle) was designed and **deliberately not run**.
+The harness auto-injects `CLAUDE.md` into every subagent, so both arms would
+have carried the bundle's contents by injection and the comparison could not
+have meant anything. Publishing that number would have been an instance of the
+defect class this lane exists to close.
 
 ## 3. Provenance, stated plainly
 

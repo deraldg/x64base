@@ -17,11 +17,39 @@ what happened.
 file has now been correct-then-stale twice in one day, which is the argument for
 keeping a handoff short and pointer-shaped.
 
-What is actually left: the graph over-links and now reports it (`onboard` 3.7x
-the entry path, `commit_or_push` 4.4x) -- trimming it is the next measurement;
-`check_seed_budget.py` and `ascii_normalize.py` are both unwired from
-`prepush_gate.py`; and the seed has 44 B of headroom, so the next addition forces
-a demotion. Sections 1-6 below are retained as the reasoning that got here.
+**Probe C ran later the same day and G0 is now AUDIENCE-SPECIFIC.** NO-GO stands
+for the repo-partner skill. It does NOT stand for outside agencies -- whose
+problem is not retrieval friction but that `main` does not publish the
+governance they will be judged against. `CONTRIBUTING.md` @ `main` says base on
+`main`; `AI_README.md` @ `development` calls that "a hard onboarding failure".
+The correction is only readable from the branch outsiders are told to discover
+locally. Lane section 9a.
+
+**The cheapest fix is not a skill and not a bundle.** Publish the
+branch-enumeration rule and the roles table on `main`. That is a promotion
+decision and it is the owner's. Do not reach for the bigger tool because this
+lane was once about one.
+
+What is actually left:
+
+1. **Flip the seed-budget gate to hard.** `check_seed_budget.py` is wired into
+   `prepush_gate.py` as check 5 with `--warn` (R4 adoption cycle), and had its
+   first clean run in `658fa5904`. After one clean cycle: drop `--warn` and treat
+   `rc == 2` as `exit_code = 2`, matching checks 1-3. Both halves are already
+   proven -- advisory returns 0 on a deliberately over-budget seed, hard mode
+   returns 2. Charter section 10, "Gate wiring".
+2. **The graph over-links and now says so** -- `onboard` 3.7x the entry path,
+   `commit_or_push` 4.4x. Trimming it, probably by keeping tier-2 leaves out of a
+   depth-1 result, is the next measurement. This is the repaired bound doing its
+   job, not a regression.
+3. **The seed has 44 B of headroom.** The next addition forces a demotion. That
+   is the contract working as designed and it will still surprise you.
+
+`ascii_normalize.py` is deliberately NOT wired and should stay that way -- it is
+a fixer, not a checker, and as a gate it would pass on the very condition it
+exists to fix. `check_house_style.py` names it in its failure message instead.
+
+Sections 1-6 below are retained as the reasoning that got here.
 
 ## 1. P0 is DONE and it said NO. Do not build the projector.
 
