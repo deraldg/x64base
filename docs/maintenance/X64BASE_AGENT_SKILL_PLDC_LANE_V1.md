@@ -303,6 +303,70 @@ sends people. A distributable bundle is the second step, not the first. Recorded
 here so the next session does not reach for the bigger tool because this lane was
 once about one.
 
+### The fix, authored 2026-08-06 -- and why it went to `CONTRIBUTING.md`
+
+**Stage: dev changed. NOT promoted. NOT published.** Outside contributors still
+see the old file on `main` until a promotion runs from `C:\x64base`. This entry
+does not claim otherwise.
+
+The obvious target was `AI_README.md`, and it is the wrong one.
+`PROMOTE.manifest:190` lists `AI_PORTAL.md` and `AI_README.md` under **NOT
+PUBLISHED -- stays in development**, with the instruction: *"If any are
+currently tracked in main, purge them (`git rm --cached`) -- they came from
+history, not from this list."* Their copies on `main` are orphans of history
+that the promotion path deliberately excludes, so they can never be updated
+from `development`. **Correcting the false sentence in the `development` copy
+would have changed nothing an outsider can see.** That is why the defect
+persisted: the file carrying it is unreachable by the mechanism that would fix
+it.
+
+`CONTRIBUTING.md` is at `PROMOTE.manifest:59` -- allow-listed, already
+promoting, and the file GitHub surfaces to every contributor. It also **had no
+source in `development` at all**: it existed only on `main`, authored nowhere,
+maintainable by no one. Same failure class as `WORKFLOW_X64BASE.md` (present in
+staging, no dev counterpart, classified GONE by `PROMOTION_PROCESS.md`).
+
+So the fix was to give it a source of truth. Every sentence of main's copy was
+preserved verbatim and verified string by string; what was added is what an
+outsider previously could not learn: enumerate branches with
+`git ls-remote --heads`; `main` is the lagging snapshot; **read from
+`development`, open the PR against `main`**, and never propose merging one into
+the other; the repository-roles table; and the AI-contributor expectations
+(report-only default, exact-path staging, evidence tiers, ASCII, the `&&`
+marker).
+
+It also carries a tiebreaker clause, which is a deliberate authority claim and
+should be reviewed as one:
+
+> Where any document on `main` disagrees with this file about branches, roles,
+> or process, **this file is current**.
+
+That resolves the stale `AI_README.md` and `WORKFLOW_X64BASE.md` on `main`
+without either file being touched -- which matters, because neither can be.
+
+**How this reaches `main`, and what NOT to do.** `CONTRIBUTING.md` is
+manifest-matched, so it needs no special handling: the next staging rebuild
+carries it. `tools/staging/rebuild-staging.ps1` regenerates `C:\x64base` from a
+clean clone of `github/main` at a verified baseline, overlays every
+`PROMOTE.manifest` match with `.gitignore` as a hard deny guard, and then the
+maintainer reviews the diff, commits, and pushes.
+
+**Staging is a build output and is never hand-edited.** It is a source of truth
+in exactly one window: freshly synchronized from `development` and staged for
+commit and push. Regenerating rather than editing is what keeps it free of dirty
+trees. An earlier revision of this section advised running
+`git rm --cached AI_PORTAL.md AI_README.md` there by hand; that was wrong --
+it is authoring in staging, it manufactures the dirty state the rebuild design
+exists to prevent, and the maintainer corrected it (2026-08-06).
+
+**Open, and the owner's alone:** `AI_PORTAL.md` and `AI_README.md` are present
+on `main` from history and are NOT manifest-matched, so a rebuild neither
+updates nor removes them -- they survive from the baseline clone. Whether to
+reconcile that history is a publication decision, taken inside the
+rebuild-review-commit window, not by a hand-run command and not by an agent.
+Until it is taken, `CONTRIBUTING.md`'s tiebreaker clause is what keeps them from
+misleading an outside contributor.
+
 **Second, smaller finding:** `WORKFLOW_X64BASE.md` on `main` calls `C:\x64base`
 "a mirror only" while `AI_PORTAL.md`, same branch same commit, declares that
 wording stale. The public branch ships two contradictory statements of
