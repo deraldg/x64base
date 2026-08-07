@@ -12,9 +12,9 @@ metadata tables at generation time. None is hand-maintained.
 Provenance
 --------------------------------------------------------------
   promoted from branch : development
-  source commit        : 4d09532ad7d61828d674e3132575ec63dc254d8c
-  short commit         : 4d09532ad
-  generated (UTC)      : 2026-08-07T15:59:45Z
+  source commit        : 549cdb7e3b5ba4d4687b8251b9c14cd178a937bb
+  short commit         : 549cdb7e3
+  generated (UTC)      : 2026-08-07T19:03:18Z
 
   This snapshot is a PROJECTION of the development tree at the commit
   above, filtered through PROMOTE.manifest. It is not the whole tree.
@@ -23,10 +23,10 @@ Provenance
 
 Published inventory
 --------------------------------------------------------------
-  allow-list patterns  : 80
-  files matched on disk: 828
+  allow-list patterns  : 81
+  files matched on disk: 829
   patterns matching 0  : 0
-  manifest commentary  : 118 lines
+  manifest commentary  : 122 lines
 
   A pattern matching zero files means the allow-list promises something
   the development tree does not have. That is a defect, not a rounding
