@@ -1,0 +1,27 @@
+x64base / dottalkpp -- the .text extension convention
+======================================================
+
+.text is a supported, transportable, deliberately-rare text extension. It is an
+opt-in marker meaning "this text was chosen to travel": it belongs in the curated
+GitHub tree, not just the development working tree.
+
+Rules
+-----
+- .text is additive. .txt is UNCHANGED -- not excluded, gated, or renamed.
+- Any .text file, anywhere in the tree, publishes to the public repo
+  (PROMOTE.manifest pattern **/*.text).
+- .text is never ignored (an explicit !**/*.text guard in .gitignore).
+- Reach for .text only when the belongs-in-GitHub intent should be explicit and
+  greppable. It is rare by design; most text stays .txt.
+
+Why
+---
+.txt is overloaded across a large development tree (real docs next to transcripts,
+dumps, and scratch), so extension alone cannot tell curated text from clutter.
+.text gives a positive, one-line suffix signal instead of per-file judgment, which
+makes filtering "text that belongs in GitHub vs the dirty tree" trivial.
+
+This file is the first .text in the tree -- it dogfoods the convention it describes.
+
+Lane: AIF-093 (dottalkpp-text-extension).
+Design: docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md

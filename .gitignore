@@ -354,3 +354,7 @@ dottalkpp/data/indexes/**/*.cdx.meta
 # leaves them behind on a failed verify so the state can be inspected. Timestamped, one
 # per run, purely local safety copies -- never part of the history. Delete when satisfied.
 labtalk/registries/_pre_fragment_backup_*/
+
+# AIF-093: `.text` is the curated "chosen to travel" marker -- never ignore it.
+# No rule above matches `.text`; this is an explicit durability guard (R1).
+!**/*.text

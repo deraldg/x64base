@@ -59,9 +59,9 @@ Write-Host ""
 
 # --- What may be promoted ---------------------------------------------------
 $include = @(
-    @{ Rel = "dottalkpp\data\dbf";        Filter = @("*.DBF","*.dbf","*.txt","*.ini") }
+    @{ Rel = "dottalkpp\data\dbf";        Filter = @("*.DBF","*.dbf","*.txt","*.text","*.ini") }
     @{ Rel = "dottalkpp\data\indexes";    Filter = @("*.cdx","*.cnx","*.inx") }
-    @{ Rel = "dottalkpp\data\schemas";    Filter = @("*.txt","*.dtschema") }
+    @{ Rel = "dottalkpp\data\schemas";    Filter = @("*.txt","*.text","*.dtschema") }
     @{ Rel = "dottalkpp\data\scripts\mcc";Filter = @("*.dts","*.md") }
 )
 

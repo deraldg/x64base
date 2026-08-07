@@ -18,11 +18,13 @@
 # WHAT IT DOES NOT GOVERN (per labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md):
 # engine SOURCE and BUILD CONFIG -- src/, include/, bindings/, CMakeLists.txt,
 # CMakePresets.json, vcpkg*.json, cmake/ -- are NOT carried here. They reach
-# main coherently through git (a branch off main, cold-clone build to certify,
-# then merge), never through a working-tree overlay. Overlaying dev's messy
-# working-tree source would push half-finished engine code to main; the git
-# path keeps it build-coherent. Source and this projection can fall out of
-# step -- ground published docs against main, proven by a cold clone.
+# main through a reviewed branch created FROM main in sterilized C:\x64base
+# staging. Only the reviewed source slice is applied, cold-clone certified, and
+# merged into staging main. NEVER merge or push the development branch to main.
+# Overlaying dev's mixed working-tree source would push half-finished engine
+# code to main; the main-based source lane keeps it build-coherent. Source and
+# this projection can fall out of step -- ground published docs against main,
+# proven by a cold clone.
 #
 # SCOPE NOTE: this projection is scoped lean for a product-facing main --
 # metalevel docs, portal seeds, and doc-engine tools that the promotion model
@@ -57,6 +59,12 @@ RELEASE_NOTES.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
+
+# --- curated transportable text (AIF-093) ----------------------------------
+# `.text` is the opt-in "chosen to travel" marker: any `.text` file, anywhere,
+# publishes. Additive -- `.txt` is UNCHANGED and stays governed by its own
+# per-path patterns. `**/*.text` globs files (pathlib), not the `dir/**` case.
+**/*.text
 
 # --- product launchers -----------------------------------------------------
 dottalkpp/bin/*.bat
@@ -166,8 +174,9 @@ DOTTALKPP_COMMAND_REFERENCE*.md
 # ###########################################################################
 # NOT IN THIS MANIFEST BUT LEGITIMATELY ON main -- reaches main via git
 # ###########################################################################
-# Engine source + build config are git-managed (branch off main -> cold-clone
-# build to certify -> merge), NOT overlaid from dev's working tree. They are
+# Engine source + build config are git-managed (a reviewed branch created from
+# main in C:\x64base staging -> cold-clone build -> merge to staging main), NOT
+# overlaid from dev's working tree and NEVER merged from development. They are
 # correctly present on main and MUST NOT be purged by a projection audit:
 #     src/**   include/**   bindings/**   (bindings = pydottalk C++ server source)
 #     CMakeLists.txt   CMakePresets.json   src/**/CMakeLists.txt   cmake/**

@@ -22,6 +22,14 @@ Applied: `.gitignore` now carries `**/*.mdb` (ignore `.mdb` anywhere, matching t
 prepush-gate hard block). The "Ignore set" section below is therefore **retracted**
 -- do NOT add the `docs/**/*.dbf` block. The clatter is managed by NOT promoting
 these to GitHub (`PROMOTE.manifest`), not by ignoring them in development.
+
+**`.text` -- the curated-transport marker (AIF-093, 2026-08-07).** Additive and
+opt-in: naming a text file `.text` (rather than `.txt`) marks it "chosen to travel"
+-- always promotable via `PROMOTE.manifest` (`**/*.text`) and never ignored (explicit
+`!**/*.text` gitignore guard). `.txt` is UNCHANGED: not excluded, gated, or renamed.
+Reach for `.text` only when the belongs-in-GitHub intent should be explicit and
+greppable; it is rare by design. Lane:
+`docs/ai-friendly/AI_DOTTALKPP_TEXT_EXTENSION_DESIGN_V1.md`.
 Everything else in this doc (the authored keep-set, the scratch-to-sidecar) stands.
 
 ## The number, and why it is not one job
