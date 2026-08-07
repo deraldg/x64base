@@ -1,0 +1,120 @@
+---
+title: "Python Integration: pydottalk, pydottalk_api, and pycrud"
+description: "Current Python integration layers, proven capabilities, boundaries, and development possibilities around x64base and the Laboratory Campus."
+---
+
+Python work in the x64base ecosystem is not one product. It currently has three
+related but distinct layers:
+
+| Surface | Current role | Status |
+| --- | --- | --- |
+| `pydottalk` | Optional native Python binding over selected x64base `DbArea`, record, field, memo-read, and physical CRUD operations | Active integration; read and disposable-copy CRUD smoke paths exist |
+| `pydottalk_api` | Local FastAPI bridge used by pycrud for schema, fixtures, header metadata, table readback, and CRUD requests | Prototype; currently backed by SQLAlchemy and SQLite by default |
+| `pycrud` | Python/Tk CRUD, relational, import/export, and metadata teaching surface launched from the Laboratory Campus portal | Prototype campus companion app |
+
+These layers should be discussed together because they form a useful path from
+native engine access to API experiments and visible teaching tools. They should
+not be collapsed into one implementation.
+
+## pydottalk: native engine access
+
+The optional pybind11 module is built with `BUILD_PYDOTTALK`. Current source
+identifies the module as `pydottalk 0.4.0`; that is a source version, not a claim
+that a public wheel or stable ABI has been released.
+
+The binding currently exposes selected `DbArea` behavior:
+
+- open and close a table.
+- inspect open state, filename, logical name, DBF directory, version byte, table
+  flags, area kind, record length, field count, and field definitions.
+- navigate with top, bottom, goto, and skip while inspecting BOF, EOF, record
+  number, and record count.
+- read the current record, scan records, and address fields by index or name.
+- append a blank record, set fields, write the current record, and mark a record
+  deleted.
+- inspect memo metadata and read memo text where supported.
+
+Current tests cover a read-only DBF path and physical CRUD against a disposable
+copy. Python access to every DotTalk++ command, workspace operation, relation
+service, index semantic, or memo mutation is not implied.
+
+## pydottalk_api: local HTTP bridge
+
+`pydottalk_api` gives pycrud a small local FastAPI boundary. Its current
+implementation uses SQLAlchemy with SQLite as the default store. It exposes
+status, schema, fixtures, xBase-flavored header metadata, table display and
+seek, session lifecycle, and bounded replace, append, and delete operations.
+
+Despite the similar name, this bridge does not currently put the native
+`pydottalk` module behind HTTP. Converging those two surfaces is a development
+possibility, not current architecture.
+
+## pycrud: visible database literacy
+
+pycrud is an independent companion application, not the DotTalk++ engine. Its
+Python/Tk interface makes several database ideas inspectable:
+
+- CRUD forms and table grids.
+- SQLite by default, with optional MySQL and SQL Server connections.
+- SQL console and relational select, project, and join exercises.
+- CSV import, text/CSV preview, and JSON or xBase-flavored metadata export.
+- a constrained formula evaluator.
+- optional communication with the local `pydottalk_api` bridge.
+
+This makes pycrud useful in the Laboratory Campus as a comparison and literacy
+lab: learners can see GUI, SQL, metadata, and record-oriented views without
+misidentifying the app as the engine itself.
+
+## Possibilities opened by these surfaces
+
+The existing pieces support several credible development directions:
+
+- **Python notebooks and repeatable labs** - inspect real DBF structures and
+  records, capture outputs, and connect experiments to SelfDoc evidence.
+- **Disposable mutation laboratories** - teach append, replace, delete, stale
+  state, validation, and recovery against controlled table copies.
+- **Model comparison** - place SQL tables, xBase work areas, records, cursors,
+  and metadata side by side in one lesson.
+- **Schema and header visualization** - turn field definitions, DBF headers,
+  memo references, and table flags into inspectable diagrams and GUI panels.
+- **API-driven frontends and tests** - use a bounded local service for browser,
+  GUI, automation, and contract-testing experiments.
+- **Conversion and migration tools** - reuse native table inspection in
+  DB_Converter-style import, validation, and readback workflows.
+- **Shared GUI services** - gradually move pycrud and other frontends toward
+  the Open GUI API instead of duplicating table behavior.
+- **Cross-platform Python packaging** - create ABI-matched build profiles and,
+  after repeatable verification, platform-specific wheels.
+- **Deeper engine exposure** - add index/order/seek, relation traversal,
+  workspace, memo-write, and diagnostic services only as their contracts and
+  proof become ready.
+
+These are possibilities, not blanket completion claims. The strongest near-term
+opportunity is a clean teaching chain:
+
+```text
+x64base engine
+    -> pydottalk native binding
+        -> Python inspection, tests, conversion, and notebooks
+
+pycrud teaching app
+    -> pydottalk_api local bridge
+        -> SQLAlchemy / SQLite prototype data services
+
+future reviewed bridge
+    -> shared engine and GUI contracts
+```
+
+## Boundaries that protect accuracy
+
+- `pydottalk` is not the DotTalk++ command shell.
+- `pydottalk_api` is not currently the native binding exposed as HTTP.
+- pycrud is a Laboratory Campus companion tool, not x64base itself.
+- a source module and local smoke tests do not establish a public package,
+  stable ABI, or support guarantee.
+- Python capabilities should be promoted only when their source, ABI, tests,
+  and representative runtime evidence agree.
+
+See [x64base Engine](/products/x64base-engine), [Open Engine API
+Reference](/docs/engine/api-reference), [Laboratory Campus](/products/labtalk),
+and [Regression and Proof Testing](/docs/engine/regression-and-proof-testing).
