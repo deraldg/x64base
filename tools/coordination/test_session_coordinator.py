@@ -76,6 +76,32 @@ def test_quip_ack_is_honest_when_unlink_fails():
         assert _inbox_count(root, "RUN-A") == 1    # file genuinely still present
 
 
+def test_quip_direct_warns_but_delivers_when_target_absent():
+    # warn-and-deliver (AIF-096): a direct quip to a run that is NOT checked in must
+    # still land (the run may return to this tree) but WARN and point to the durable
+    # board. The old direct path dropped silently -- the misfire that put a quip in an
+    # empty room. Control: a direct quip to a LIVE peer must NOT warn.
+    import io, contextlib
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        sc.checkin(root, "m.a", "RUN-A", "", "")
+
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            rc = sc.quip_send(root, "RUN-A", "RUN-GHOST", "you there?")
+        err = buf.getvalue()
+        assert rc == 0                               # delivered, not refused
+        assert _inbox_count(root, "RUN-GHOST") == 1  # the drop really happened
+        assert "not checked in" in err, err          # liveness warning fired
+        assert "pseudo-chat board" in err, err       # points up the ladder
+
+        sc.checkin(root, "m.b", "RUN-B", "", "")
+        buf2 = io.StringIO()
+        with contextlib.redirect_stderr(buf2):
+            sc.quip_send(root, "RUN-A", "RUN-B", "hi")
+        assert "not checked in" not in buf2.getvalue()  # live peer -> no warning
+
+
 def test_claim_is_atomic_and_unique():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -89,5 +115,6 @@ def test_claim_is_atomic_and_unique():
 if __name__ == "__main__":
     test_quip_direct_and_broadcast_and_ack()
     test_quip_ack_is_honest_when_unlink_fails()
+    test_quip_direct_warns_but_delivers_when_target_absent()
     test_claim_is_atomic_and_unique()
     print("OK -- session_coordinator quip + claim tests passed")

@@ -243,15 +243,28 @@ def active_runs(root: Path):
 def quip_send(root: Path, frm, to, msg):
     """Drop an ephemeral note in a co-session's inbox. One file per quip (O_EXCL
     create, so concurrent senders never contend and no lock is needed). `--to all`
-    broadcasts to every other currently-checked-in run."""
+    broadcasts to every other currently-checked-in run.
+
+    Liveness (warn-and-deliver, AIF-096): a quip is a chat->chat edge and a chat is
+    mortal, so a DIRECT quip to a run that is NOT checked in lands in a local,
+    gitignored inbox that a fresh clone never sees. We still deliver it -- the run may
+    return to this same tree and read its inbox -- but WARN and point up the ladder to
+    the durable pseudo-chat board, so the sender chooses the rung knowingly instead of
+    dropping in silence. `--to all` was already liveness-aware (it refuses when no peer
+    is live); this gives the direct path the same awareness. The warning is advisory:
+    delivery still succeeds, so the exit code stays 0."""
     ensure_dirs(root)
+    live = set(active_runs(root))
+    absent = None
     if to == "all":
-        targets = [r for r in active_runs(root) if r != frm]
+        targets = [r for r in live if r != frm]
         if not targets:
             print("(no other checked-in sessions to quip)", file=sys.stderr)
             return 1
     else:
         targets = [to]
+        if to not in live:
+            absent = to
     for t in targets:
         inbox = root / QUIP_DIR / t
         inbox.mkdir(parents=True, exist_ok=True)
@@ -268,6 +281,11 @@ def quip_send(root: Path, frm, to, msg):
         with os.fdopen(fd, "w") as fh:
             fh.write(f"from: {frm}\nto: {t}\nsent_utc: {now()}\nmsg: {msg}\n")
     print(f"QUIP {frm} -> {', '.join(targets)}: {msg}")
+    if absent is not None:
+        print(f"WARNING: {absent} is not checked in -- this quip waits in a local, "
+              f"gitignored inbox and will NOT reach a fresh clone. For durable delivery "
+              f"to an absent agent, post to the pseudo-chat board "
+              f"(docs/ai-friendly/PSEUDO_CHAT_BOARD.md).", file=sys.stderr)
     return 0
 
 
