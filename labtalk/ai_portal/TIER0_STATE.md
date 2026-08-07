@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-07T20:31:42Z
+    generated_utc : 2026-08-07T21:27:50Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 92d99c2d7  (2026-08-07)
-    upstream      : 92d99c2d7
+    HEAD          : 036e311f1  (2026-08-07)
+    upstream      : 036e311f1
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PUBLICATION_SURFACE_RECOVERY_2026-08-07.md
-    commits behind HEAD : 13
+    commits behind HEAD : 14
 
 ## Staleness warnings
 
-- The newest closeout is 13 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 14 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-095 | dottalkpp-site | member.derald | yes |
 | AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
 | AIF-093 | dottalkpp-text-extension | member.ai.claude.cowork | yes |
 | AIF-092 | publication-surface-recovery | member.ai.claude.cowork | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-083 | bbs-agency-legs | member.ai.claude.cowork | yes |
 | AIF-082 | onboarding-cost-and-acceptance | member.ai.claude.cowork | yes |
 | AIF-081 | output-capture-completeness | member.ai.claude.cowork | yes |
-| AIF-080 | index-backend-orthogonality | member.ai.claude.cowork | yes |
-| ... | 15 older claims omitted | | |
+| ... | 16 older claims omitted | | |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
