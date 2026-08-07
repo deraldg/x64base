@@ -13,8 +13,10 @@ Three primitives, all over the filesystem (the only medium concurrent local sess
               not a hope. Durable claim files under coordination/aif/ are the allocation ledger.
   checkin     Register this session's presence (member, run, lanes, files) so others can SEE it.
   lock/unlock Advisory (cooperative) file lock for a contested shared doc; check before you edit.
-  status      Show active sessions, held locks, and claimed AIF numbers.
+  status      Show active sessions, held locks, claimed AIF numbers, and unread quips.
   checkout    Deregister this session.
+  quip        Ephemeral co-session note (the lightest rung -- no ledger, no history):
+              `quip send --from <run> --to <run|all> --msg "..."`, `quip read --run <me> [--ack]`.
 
 Owner: member.derald · steward: member.ai.claude.cowork · lane: AIF-050 · status: candidate
 """
@@ -31,6 +33,7 @@ COORD = "coordination"
 AIF_DIR = f"{COORD}/aif"
 SESS_DIR = f"{COORD}/active_sessions"
 LOCK_DIR = f"{COORD}/locks"
+QUIP_DIR = f"{COORD}/quips"
 AIF_LO, AIF_HI = 6, 999          # scan AIF-006 .. AIF-999
 STALE_MIN = 240                  # presence/lock older than this (min) is reapable
 INTAKE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
@@ -45,7 +48,7 @@ def now():
 
 
 def ensure_dirs(root: Path):
-    for d in (AIF_DIR, SESS_DIR, LOCK_DIR):
+    for d in (AIF_DIR, SESS_DIR, LOCK_DIR, QUIP_DIR):
         (root / d).mkdir(parents=True, exist_ok=True)
 
 
@@ -222,6 +225,82 @@ def _age_min(p: Path):
         return 0.0
 
 
+def _quip_stamp():
+    # Filesystem-safe (no colons -- Windows), sortable, and unique to the
+    # microsecond so two quips in the same second from one sender do not collide.
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S_%fZ")
+
+
+def active_runs(root: Path):
+    """Runs currently checked in (presence file present and not marked closed)."""
+    out = []
+    for f in (root / SESS_DIR).glob("*.yaml"):
+        if "status: closed" not in f.read_text(errors="ignore"):
+            out.append(f.stem)
+    return out
+
+
+def quip_send(root: Path, frm, to, msg):
+    """Drop an ephemeral note in a co-session's inbox. One file per quip (O_EXCL
+    create, so concurrent senders never contend and no lock is needed). `--to all`
+    broadcasts to every other currently-checked-in run."""
+    ensure_dirs(root)
+    if to == "all":
+        targets = [r for r in active_runs(root) if r != frm]
+        if not targets:
+            print("(no other checked-in sessions to quip)", file=sys.stderr)
+            return 1
+    else:
+        targets = [to]
+    for t in targets:
+        inbox = root / QUIP_DIR / t
+        inbox.mkdir(parents=True, exist_ok=True)
+        for _ in range(8):  # retry the rare same-microsecond name collision
+            p = inbox / f"{_quip_stamp()}-{frm}.quip"
+            try:
+                fd = os.open(str(p), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                break
+            except FileExistsError:
+                continue
+        else:
+            print(f"could not write a quip to {t} (name collisions)", file=sys.stderr)
+            return 1
+        with os.fdopen(fd, "w") as fh:
+            fh.write(f"from: {frm}\nto: {t}\nsent_utc: {now()}\nmsg: {msg}\n")
+    print(f"QUIP {frm} -> {', '.join(targets)}: {msg}")
+    return 0
+
+
+def quip_read(root: Path, run, since=None, ack=False):
+    """Print my inbox oldest-to-newest. --since <stamp> filters by the filename
+    stamp; --ack deletes the quips it printed (they are ephemeral by default)."""
+    ensure_dirs(root)
+    inbox = root / QUIP_DIR / run
+    files = sorted(inbox.glob("*.quip")) if inbox.exists() else []
+    if since:
+        files = [f for f in files if f.name >= since]
+    if not files:
+        print(f"(no quips for {run})")
+        return 0
+    print(f"=== quips for {run} ({len(files)}) ===")
+    def field(body, key):
+        for line in body.splitlines():
+            if line.startswith(key + ":"):
+                return line.split(":", 1)[1].strip()
+        return "?"
+    for f in files:
+        body = f.read_text(errors="ignore")
+        print(f"  [{field(body, 'sent_utc')}] {field(body, 'from')}: {field(body, 'msg')}")
+        if ack:
+            try:
+                f.unlink()
+            except OSError:
+                pass
+    if ack:
+        print(f"(acked {len(files)} quip(s))")
+    return 0
+
+
 def status(root: Path):
     ensure_dirs(root)
     print("=== session coordinator status ===")
@@ -259,7 +338,18 @@ def status(root: Path):
         print("\nclosed but not removed (checkout could not unlink):")
         for f, age in closed:
             print(f"  {f.stem}  ({age:.0f} min ago) [CLOSED]")
-    print("locks:")
+    qroot = root / QUIP_DIR
+    inboxes = sorted(d for d in qroot.glob("*") if d.is_dir()) if qroot.exists() else []
+    counts = [(d.name, len(list(d.glob("*.quip")))) for d in inboxes]
+    counts = [(name, n) for name, n in counts if n]
+    print("\nquips (unread by inbox):")
+    if counts:
+        for name, n in counts:
+            print(f"  {name}: {n} unread")
+    else:
+        print("  (none)")
+
+    print("\nlocks:")
     for f in sorted((root / LOCK_DIR).glob("*.lock")):
         stale = " [STALE]" if _age_min(f) > STALE_MIN else ""
         print(f"  {f.read_text(errors='ignore').splitlines()[0]}  ({_age_min(f):.0f} min){stale}")
@@ -276,6 +366,9 @@ def main() -> int:
     lk = sub.add_parser("lock"); lk.add_argument("target"); lk.add_argument("--run", required=True)
     ul = sub.add_parser("unlock"); ul.add_argument("target"); ul.add_argument("--run", required=True)
     sub.add_parser("status")
+    q = sub.add_parser("quip"); qs = q.add_subparsers(dest="qcmd", required=True)
+    qsend = qs.add_parser("send"); qsend.add_argument("--from", dest="frm", required=True); qsend.add_argument("--to", required=True); qsend.add_argument("--msg", required=True)
+    qread = qs.add_parser("read"); qread.add_argument("--run", required=True); qread.add_argument("--since", default=None); qread.add_argument("--ack", action="store_true")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     if a.cmd == "claim-aif":
@@ -292,6 +385,12 @@ def main() -> int:
         unlock(root, a.target, a.run); return 0
     if a.cmd == "status":
         status(root); return 0
+    if a.cmd == "quip":
+        if a.qcmd == "send":
+            return quip_send(root, a.frm, a.to, a.msg)
+        if a.qcmd == "read":
+            return quip_read(root, a.run, a.since, a.ack)
+        return 2
     return 2
 
 

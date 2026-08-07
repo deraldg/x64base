@@ -99,21 +99,24 @@ requirement, discarded when the moment passes), and **coordination-only** -- a
 decision that must survive the session was the wrong primitive and belongs in a
 checkin note, an AIF claim, or a BBS post.
 
-### Sketch -- a `session_coordinator.py quip` subcommand (future, not yet built)
+### The `session_coordinator.py quip` subcommand (implemented 2026-08-07)
 
 Filesystem-atomic, same medium as the rest of the protocol; no daemon, no DBF.
 
-- **Storage:** `coordination/quips/<to-run>/<utc>-<from-run>.quip`, one file per quip
-  (`O_CREAT` create; each quip is its own file so writers never contend and no lock is
-  needed). The `quips/` directory is TRANSIENT and gitignored, like `active_sessions/`
-  and `locks/`.
-- `quip send --to <run> --msg "..."` -- drop one quip in the recipient's inbox.
-  `--to all` broadcasts to every currently-checked-in run.
-- `quip read --run <me> [--since <utc>] [--ack]` -- print my inbox oldest-to-newest;
-  `--ack` deletes read quips (ephemeral by default).
-- `status` gains a "unread quips: N" line so a session notices without polling.
-- No RBAC, no history. This records the shape so the first implementer does not
-  redesign it.
+- **Storage:** `coordination/quips/<to-run>/<stamp>-<from-run>.quip`, one file per quip
+  (`O_CREAT|O_EXCL` create; each quip is its own file so senders never contend and no
+  lock is needed). `<stamp>` is a colon-free microsecond UTC stamp (sortable, unique;
+  Windows-safe filename). The `quips/` directory is TRANSIENT and gitignored, like
+  `active_sessions/` and `locks/`.
+- `quip send --from <run> --to <run|all> --msg "..."` -- drop one quip in the
+  recipient's inbox; `--to all` broadcasts to every OTHER currently-checked-in run
+  (exit 1 if there are none).
+- `quip read --run <me> [--since <stamp>] [--ack]` -- print my inbox oldest-to-newest;
+  `--ack` deletes the quips it printed (ephemeral by default).
+- `status` shows an "unread quips: N by inbox" section so a session notices without
+  polling.
+- No RBAC, no history. A quip that must survive the session was the wrong primitive
+  and belongs in a checkin note, an AIF claim, or a BBS post.
 
 ## Limits / honest reach
 

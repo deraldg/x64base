@@ -4,6 +4,7 @@
 # across machines/time and would just churn the tree):
 active_sessions/
 locks/
+quips/
 #
 # Durable — the AIF-number claim ledger IS tracked and committed. Each aif/AIF-NNN.claim
 # is the authoritative record of who allocated that lane number and when. The atomic
