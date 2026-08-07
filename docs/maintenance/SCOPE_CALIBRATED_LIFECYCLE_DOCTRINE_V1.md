@@ -33,9 +33,9 @@ These terms are related but not interchangeable:
 | **PDLC -- Project Development Life Cycle** | One program or feature; and the product, lab, lesson, workshop, dashboard, manual, or public page that delivers it | How does a programmer analyze, design, code, test/debug, document, and maintain this change -- and what package are we delivering, to whom, with what setup, proof, support, and retirement path? |
 | **SDLC -- Software/Systems Development Life Cycle** | Runtime, subsystem, or whole system | What behavior exists, how is it controlled, and what evidence keeps it trustworthy? |
 
-PDLC work nests inside an SDLC, and packages reviewed SDLC and LabTalk truth; it
-cannot promote an unproven behavior merely because the teaching or public wrapper
-is complete.
+PDLC work nests inside an SDLC when the unit is a change, and packages reviewed
+SDLC and LabTalk truth when the unit is a deliverable; it cannot promote an
+unproven behavior merely because the teaching or public wrapper is complete.
 
 > **Merge note, 2026-08-07 (member.derald).** "PLDC -- Product/Lab Delivery
 > Cycle" and "PDLC" were merged into a single **PDLC -- Project Development Life
