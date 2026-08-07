@@ -69,6 +69,32 @@ HOP_BY_HOP_HEADERS = {
 }
 
 
+NAV_BAR = (
+    '<div style="position:sticky;top:0;z-index:9999;background:#0f172a;'
+    'padding:8px 14px;border-bottom:1px solid #334155;'
+    'font-family:system-ui,-apple-system,sans-serif;font-size:14px">'
+    '<a href="/AI/" style="color:#93c5fd;text-decoration:none;margin-right:16px">'
+    '&#8962; Home</a>'
+    '<a href="#" onclick="history.back();return false" '
+    'style="color:#93c5fd;text-decoration:none">&#8592; Back</a>'
+    '</div>'
+)
+
+
+def inject_nav(text: str) -> str:
+    """Insert a Home (/AI/) + Back bar right after <body>. Both the reports and the
+    mounted /AI/console had no way home once opened -- reported 2026-08-07. Works on any
+    page with a <body> tag, so it covers report HTML and the console alike."""
+    lower = text.lower()
+    i = lower.find("<body")
+    if i == -1:
+        return text
+    j = text.find(">", i)
+    if j == -1:
+        return text
+    return text[: j + 1] + NAV_BAR + text[j + 1 :]
+
+
 def decorate_live_html(body: bytes, observed: str) -> bytes:
     """Make request-time status visible without altering static export files."""
     text = body.decode("utf-8", "replace")
@@ -82,7 +108,7 @@ def decorate_live_html(body: bytes, observed: str) -> bytes:
     )
     if marker in text:
         text = text.replace(marker, banner, 1)
-    return text.encode("utf-8")
+    return inject_nav(text).encode("utf-8")
 
 
 def console_prefix_for_path(raw_path: str) -> str | None:
@@ -196,7 +222,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlsplit(self.path).path
         api_prefix = cpre + "/api"
         if path in (cpre, cpre + "/", cpre + "/index.html"):
-            html = maint_server.render_page(api_prefix, self.server.write_enabled)
+            html = inject_nav(maint_server.render_page(api_prefix, self.server.write_enabled))
             self._send_html(200, html, include_body=include_body)
             return
         if path == api_prefix or path.startswith(api_prefix + "/"):
