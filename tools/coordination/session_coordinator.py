@@ -34,6 +34,7 @@ AIF_DIR = f"{COORD}/aif"
 SESS_DIR = f"{COORD}/active_sessions"
 LOCK_DIR = f"{COORD}/locks"
 QUIP_DIR = f"{COORD}/quips"
+LINEAGE_DIR = f"{COORD}/lineage"
 AIF_LO, AIF_HI = 6, 999          # scan AIF-006 .. AIF-999
 STALE_MIN = 240                  # presence/lock older than this (min) is reapable
 INTAKE = "docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md"
@@ -240,6 +241,66 @@ def active_runs(root: Path):
     return out
 
 
+def record_birth(root: Path, member, run, parent):
+    """Write this run's DURABLE birth record once -- run, member, parent, born_utc.
+
+    Unlike presence (active_sessions/, deleted at checkout), this lineage record is
+    TRACKED and permanent: it is the project remembering a chat's origin and parentage,
+    so a checked-out or resumed session can still answer "when was I born / who am I
+    continued from" from the ledger instead of from a memory it does not have. This is
+    the parent edge the two-atom ontology named but did not yet track (AIF-096); it also
+    closes the origin-time gap a checked-out session otherwise cannot recover. Write-once
+    via O_EXCL: a resumed session KEEPS its original birth and parent -- re-waking never
+    rewrites them. Returns the born_utc that stands (the existing one if already born)."""
+    (root / LINEAGE_DIR).mkdir(parents=True, exist_ok=True)
+    p = root / LINEAGE_DIR / f"{run}.yaml"
+    born = now()
+    try:
+        fd = os.open(str(p), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        for line in p.read_text(errors="ignore").splitlines():
+            if line.startswith("born_utc:"):
+                return line.split(":", 1)[1].strip()
+        return born
+    with os.fdopen(fd, "w") as fh:
+        fh.write(f"run_id: {run}\nmember: {member}\nparent: {parent or 'none'}\nborn_utc: {born}\n")
+    return born
+
+
+def holds(root: Path, run):
+    """AIF numbers whose durable claim file cites this run (what the session owns)."""
+    out = []
+    for f in sorted((root / AIF_DIR).glob("*.claim")):
+        body = f.read_text(errors="ignore")
+        if f"run_id: {run}" in body:
+            m = re.search(r"AIF-([0-9]{3})", body)
+            out.append("AIF-" + m.group(1) if m else f.stem)
+    return out
+
+
+def wake(root: Path, member, run, parent=None):
+    """A session's documented FIRST move: adopt identity, record durable birth+parent,
+    refresh presence, read the inbox, and print who you are FROM THE RECORD. This is the
+    chat->project read the two-atom model requires -- awareness is a chat reading its own
+    record off the durable atom, not the chat knowing itself (AIF-096). Idempotent: birth
+    and parent are write-once, so re-waking a resumed run reprints the same lineage."""
+    born = record_birth(root, member, run, parent)
+    checkin(root, member, run, "", "")
+    held = holds(root, run)
+    inbox = root / QUIP_DIR / run
+    unread = len(list(inbox.glob("*.quip"))) if inbox.exists() else 0
+    par = "none"
+    for line in (root / LINEAGE_DIR / f"{run}.yaml").read_text(errors="ignore").splitlines():
+        if line.startswith("parent:"):
+            par = line.split(":", 1)[1].strip()
+    print(f"you are {run}  (member {member})")
+    print(f"  born:   {born}")
+    print(f"  parent: {par}")
+    print(f"  holds:  {', '.join(held) if held else '(no claims)'}")
+    print(f"  inbox:  {unread} unread quip(s)")
+    return 0
+
+
 def quip_send(root: Path, frm, to, msg):
     """Drop an ephemeral note in a co-session's inbox. One file per quip (O_EXCL
     create, so concurrent senders never contend and no lock is needed). `--to all`
@@ -388,6 +449,7 @@ def main() -> int:
     r = sub.add_parser("release-aif"); r.add_argument("--number", type=int, required=True); r.add_argument("--run", required=True); r.add_argument("--force", action="store_true")
     ci = sub.add_parser("checkin"); ci.add_argument("--member", required=True); ci.add_argument("--run", required=True); ci.add_argument("--lanes", default=""); ci.add_argument("--files", default="")
     co = sub.add_parser("checkout"); co.add_argument("--run", required=True)
+    wk = sub.add_parser("wake"); wk.add_argument("--member", required=True); wk.add_argument("--run", required=True); wk.add_argument("--parent", default=None)
     lk = sub.add_parser("lock"); lk.add_argument("target"); lk.add_argument("--run", required=True)
     ul = sub.add_parser("unlock"); ul.add_argument("target"); ul.add_argument("--run", required=True)
     sub.add_parser("status")
@@ -404,6 +466,8 @@ def main() -> int:
         checkin(root, a.member, a.run, a.lanes, a.files); return 0
     if a.cmd == "checkout":
         return checkout(root, a.run)
+    if a.cmd == "wake":
+        return wake(root, a.member, a.run, a.parent)
     if a.cmd == "lock":
         return lock(root, a.target, a.run)
     if a.cmd == "unlock":

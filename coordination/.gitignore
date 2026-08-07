@@ -12,3 +12,9 @@ quips/
 # makes the allocation durable and shareable across sessions.
 !aif/
 !aif/*.claim
+#
+# Durable -- lineage/ is the birth + parent ledger (AIF-096). A run's origin time and the
+# run it was continued from must SURVIVE checkout and be shareable across clones, unlike
+# presence; the two-atom model puts memory on the project, so lineage is tracked.
+!lineage/
+!lineage/*.yaml

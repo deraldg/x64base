@@ -102,6 +102,46 @@ def test_quip_direct_warns_but_delivers_when_target_absent():
         assert "not checked in" not in buf2.getvalue()  # live peer -> no warning
 
 
+def test_wake_records_durable_lineage_and_survives_checkout():
+    # The gap this closes (AIF-096): a checked-out session could not recover its own
+    # birth time or parent, because presence is deleted at checkout and a chat has no
+    # self-memory. Lineage is a TRACKED, write-once record -- it must survive checkout
+    # and must NOT be rewritten when a resumed run wakes again.
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        assert sc.wake(root, "m.a", "RUN-CHILD", parent="RUN-PARENT") == 0
+        rec = root / sc.LINEAGE_DIR / "RUN-CHILD.yaml"
+        assert rec.exists()
+        body = rec.read_text()
+        assert "parent: RUN-PARENT" in body
+        born1 = [l for l in body.splitlines() if l.startswith("born_utc:")][0]
+
+        # checkout deletes PRESENCE but not lineage (the durability point)
+        sc.checkout(root, "RUN-CHILD")
+        assert not (root / sc.SESS_DIR / "RUN-CHILD.yaml").exists()
+        assert rec.exists()
+
+        # re-wake (resumed run): birth + parent are write-once, unchanged
+        sc.wake(root, "m.a", "RUN-CHILD", parent="SOMEONE-ELSE")
+        body2 = rec.read_text()
+        assert "parent: RUN-PARENT" in body2                  # not overwritten
+        born2 = [l for l in body2.splitlines() if l.startswith("born_utc:")][0]
+        assert born1 == born2                                 # birth preserved
+
+
+def test_wake_whoami_reads_identity_from_the_record():
+    import io, contextlib
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        n = sc.claim_aif(root, "m.a", "RUN-X", "lane-x")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sc.wake(root, "m.a", "RUN-X")            # no parent given
+        out = buf.getvalue()
+        assert f"AIF-{n:03d}" in out                 # whoami lists what the run holds
+        assert "parent: none" in out                 # absent parent -> none, honestly
+
+
 def test_claim_is_atomic_and_unique():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -116,5 +156,7 @@ if __name__ == "__main__":
     test_quip_direct_and_broadcast_and_ack()
     test_quip_ack_is_honest_when_unlink_fails()
     test_quip_direct_warns_but_delivers_when_target_absent()
+    test_wake_records_durable_lineage_and_survives_checkout()
+    test_wake_whoami_reads_identity_from_the_record()
     test_claim_is_atomic_and_unique()
     print("OK -- session_coordinator quip + claim tests passed")
