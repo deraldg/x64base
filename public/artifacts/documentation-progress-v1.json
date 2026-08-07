@@ -1,9 +1,9 @@
 {
   "schema": "x64base.documentation.progress.v1",
-  "as_of_date": "2026-07-23",
+  "as_of_date": "2026-08-06",
   "maintenance_class": "maintained_current",
   "current_work_route": "/docs/labtalk/current-work",
-  "publication_state": "local-preview-not-yet-deployed",
+  "publication_state": "pass-4-approved-publishing-live-readback-pending",
   "published_checkpoint": {
     "website_source_commit": "43f120a42d0ccd08d877c6468a705e3ba6d01619",
     "pages_commit": "0ef77ea953313fde639d2ba71c7de99f4a79b84a",

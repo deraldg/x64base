@@ -141,6 +141,21 @@ EXPORT TO students_out.csv CSV
 
 `IMPORT` reads CSV into the current open DBF by matching CSV headers to field names case-insensitively. `EXPORT` writes the current table, or a named open work area, to CSV by default.
 
+### AUTODBF: create a DBF from a CSV
+
+`AUTODBF` builds a new X64 DBF from a CSV and imports its rows in one step, for when there is no table to `IMPORT` into yet:
+
+```text
+AUTODBF students FROM students.csv           && AUTO header, INFER types, X64, comma
+AUTODBF students FROM students.csv HEADER     && force first row = field names
+AUTODBF grades   FROM grades.csv NOHEADER     && generate deterministic FIELDnnn names
+AUTODBF students FROM students.csv OVERWRITE  && replace an existing table
+```
+
+Defaults are the X64 flavor, `AUTO` header detection, `INFER` types, and comma-separated records (records are parsed as records, so quoted fields may span lines). With a header, CSV column names become field names normalized to command-safe x64 logical names and uniquified; with no header, deterministic `FIELDnnn` names are generated. Flags: `HEADER` / `NOHEADER` / `AUTO`, `INFER` / `TEXTONLY`, and `OVERWRITE`. Current limit: long text is not auto-promoted to a memo (`M`) field yet, so values must fit the current fixed-field widths.
+
+Proof label: active beta (experimental command). Generated field inference and mutation safety still warrant review before use on non-disposable data; source is `src/cli/cmd_autodbf.cpp`.
+
 ## Workspaces
 
 DotScript must document workspace behavior explicitly. A workspace is a wrapper over active areas. Each area is a `DbArea`-style runtime object with table state, cursor state, indexes, relations, and metadata. Scripted workspace save/load should therefore be documented as object state management, not just a file convenience.

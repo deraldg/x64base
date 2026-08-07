@@ -3,9 +3,12 @@ title: "Full-stack Documentation Push"
 description: "Complete maintained record of the current source-to-comments-to-HELP-to-reference-to-manual-to-website documentation vertical."
 ---
 
-> **Current as of 2026-07-23 · `maintained_current` · local review only.**
-> Run `DOCFLUSH-20260722-001` is source-through-local-site green. It has not been
-> committed, pushed, versioned, deployed, or verified on the public site.
+> **Current as of 2026-08-06 · `maintained_current` · pass 4 owner-approved.**
+> Pass 4 is owner-approved and is being committed and pushed to the live site;
+> public live-readback (Gate 9) is the remaining gate. The next scheduled run is
+> **Document FullStack push v5**. Earlier local-only runs (`DOCFLUSH-20260722-001`,
+> `DOCFLUSH-20260805-001`) are preserved in the history below; their event dates are
+> not rewritten.
 
 ## Why this vertical exists
 
@@ -101,6 +104,26 @@ manual landing, and AI Agent Sync are permanent but not static. They use the
 
 Reported products such as benchmark rows and sealed publication checkpoints remain
 append-only. Static brand/history pages change only by deliberate human review.
+
+## Additional maintained steps (added in pass 4)
+
+Pass 4 added standing steps to the vertical; **Document FullStack push v5** runs them
+by default:
+
+1. **Website matrix gate.** Read and classify against the
+   [Website Documentation Matrix](/docs/dev/website-documentation-matrix) at the start
+   of the website phase; update and re-audit it at closeout. A stale matrix is a
+   fail-closed condition on the website signoff.
+2. **Conceptual diagram collection.** The BBS/AI process diagrams and the
+   start-to-finish documentation-push DFD are maintained from source `.mmd`;
+   regenerate the SVGs from source and never hand-edit a rendered SVG.
+3. **AutoSSL trigger.** When the certificate validates, flip the artifact/manual-room
+   links to HTTPS and drop the "while SSL is settling" caveats.
+4. **Count reconciliation (AIF-032).** Reconcile the command count in source and
+   regenerate the data-carrying harvest diagram and command catalog; do not hand-type
+   harvest-derived numbers.
+5. **Interchange coverage.** New import/export surfaces (such as `AUTODBF`, CSV-to-DBF)
+   land in the DotScript CSV/DBF import-export section with a proof label.
 
 ## Separate missions and open boundaries
 

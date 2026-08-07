@@ -21,8 +21,8 @@ Table inspection and browsing are a family, not one command:
 | Surface | Current role |
 | --- | --- |
 | `SMARTLIST` / `SL` | Filter-aware, order-aware table listing with projections, tuple output, deleted-record modes, and predicate filtering. |
-| `SMARTBROWSE` / `SM` / `SMART` | Smart browser surface over table/tuple/workspace data. |
-| `SIMPLEBROWSE` / `SB` | Simple browser surface; current shortcut resolver maps `SB` to `SIMPLEBROWSE`. |
+| `SMARTBROWSER` / `SM` / `SMART` | Smart browser surface over table/tuple/workspace data. The shortcut resolver maps `SM` and `SMART` to `SMARTBROWSER`. |
+| `SIMPLEBROWSER` / `SB` | Simple browser surface. The shortcut resolver maps `SB` to `SIMPLEBROWSER`. |
 | `BROWSE` | Legacy/global browse entrypoint forwarded to the refactored browse module. |
 | `BROWSER` | Minimal interactive browser with list, display, goto, edit, help, and quit actions. |
 | `BROWSETUI` / `BT` | Text-mode browser UI that delegates table operations to command handlers. |
@@ -30,7 +30,7 @@ Table inspection and browsing are a family, not one command:
 | `RBROWSE` / `ERSATZ` | Relation-aware browsing. |
 | `TABLE`, `TABLE_BUFFER`, `TABLEMETA` | Table buffering, stale/dirty state, and metadata diagnostics. |
 
-Use `SMARTBROWSE`, `SM`, `SMART`, `SIMPLEBROWSE`, `SB`, and `SMARTLIST` for the current smart/list/browser surfaces.
+Use `SMARTLIST` / `SL`, `SMARTBROWSER` / `SM` / `SMART`, and `SIMPLEBROWSER` / `SB` for the current smart/list/browser surfaces.
 
 ## Data Mutators
 
