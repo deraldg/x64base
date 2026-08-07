@@ -16,19 +16,18 @@ Prior art read: `tools/staging/prepush_gate.py` (suffix classifier), `PROMOTE.ma
 ## 1. What `.text` is, and why
 
 Add `.text` as a first-class, **supported** file extension across x64base/dottalkpp:
-a plain, transportable text file that is **deliberately rare**, used as a curation
-marker. The payoff is a clean filter:
+a plain, transportable text file that is **deliberately rare**, used as a positive
+curation marker. This is **purely additive**:
 
-- **`.text` = curated, transportable, belongs-in-GitHub text.** Reviewed, promotable.
-- **`.txt` = the common default -- treated as potentially dirty-tree scratch.**
+- **`.text` = a new, opt-in marker for curated, transportable, belongs-in-GitHub text.**
+- **`.txt` = UNCHANGED.** It stays a fully valid, common text extension. Nothing about
+  `.txt` is excluded, gated, demoted, or renamed by this lane.
 
-Today `.txt` is overloaded: it is both real documentation AND transcripts, dumps, and
-one-off scratch (the untracked-tree disposition put ~130 root `.txt`/one-offs in the
-"scratch, sidecar age-out" bucket). Because `.txt` means both things, the promotion
-tooling cannot tell curated text from clutter by extension alone. A rarely-used
-`.text` extension gives an unambiguous, greppable signal: "this text was chosen to
-travel." It makes the GitHub-vs-dirty-tree filter a one-line suffix test instead of a
-per-file judgment.
+The value is the POSITIVE marker, not a demotion. Naming a file `.text` is a
+deliberate, greppable signal that it was chosen to travel; the promotion tooling can
+allow `.text` through as a one-line suffix test, while `.txt` keeps meaning exactly
+what it always did. You reach for `.text` only when you want that "this belongs"
+intent to be explicit -- which is why it is rare by design.
 
 ## 2. Seams this touches (source-verified locations)
 
@@ -97,6 +96,52 @@ existing `.txt` files (a later, separate curation pass may promote chosen `.txt`
   proof that check-ignore reports it as never-ignored.
 - **R2 -- engine recognition scope creep.** Keep `.text` a pure text alias; do not wire
   it into script execution or data import unless a later milestone asks. Additive only.
-- **R3 -- convention drift.** The `.text`=curated / `.txt`=scratch split is only useful
-  if recorded where sessions read it (doctrine single-source) AND, ideally, later given
-  a gate. Prose alone drifts (AIF-082); P4 records it, and a future gate is a candidate.
+- **R3 -- convention drift.** The `.text` = "chosen to travel" convention is only useful
+  if recorded where sessions read it (doctrine single-source). Prose alone drifts
+  (AIF-082); P4 records it, and a future promote-gate that treats `.text` as
+  always-allow is a candidate. `.txt` needs no rule change -- it is untouched.
+
+## 8. P1 discovery result -- dottalkpp runtime scan (2026-08-07)
+
+Scanned `D:\code\ccode\dottalkpp` for text files. Measured: **93 `.txt`, 0 `.text`.**
+The "home"/curated text separates cleanly from scratch by location + name, which
+confirms the marker is worth having (and that authoring future curated text as `.text`
+is low-friction):
+
+- **Home / curated (natural `.text`, ~25):** help packs (`help/INDEXING_HELP_PACK.txt`,
+  `SET_ORDER_HELP.txt`, `dbarea.txt`, `predicate_help.txt`); READMEs
+  (`docs/*README.txt`, `data/dbf/{og,x32}/README.txt`, `data/help/DATA_INDEX_README.txt`,
+  `data/scripts/README.txt`); schema docs (`data/dbf/*_schema.txt`); localized
+  message-seed text (`data/scripts/messaging_priority_a_seed_v1/*.txt`, en/de/es/fr/it);
+  project manifests (`data/projects/*/manifest.txt`).
+- **Scratch (correctly stays `.txt`, no change):** proof transcripts
+  (`data/metadata/bbs/proofs/*.txt`), superseded/correction/proposal dumps
+  (`*.SUPERSEDED_*.txt`, `*.CORRECTION_*.txt`, `*.proposal.txt`), output/url dumps,
+  and the pre-excluded generated/tmp/bak/logs.
+- **Mis-suffixed oddities (separate cleanup, not this lane):**
+  `LIST_CURSOR_SHAKEDOWN.DTS.txt`, `mcc_x64.dtschema.txt`.
+
+Reminder (owner, 2026-08-07): this lane does NOT rename or gate any `.txt`. The list
+above only shows that a curated set EXISTS and is greppable; adopting `.text` is opt-in
+going forward, and any rename of an existing curated file is a separate owner call.
+
+## 9. P2 plan -- the additive wiring (concrete change-list)
+
+1. **`PROMOTE.manifest`:** add an allow pattern `**/*.text` (with a comment) so any
+   `.text` file publishes to the public repo. This is the core "special" wiring -- the
+   one-line filter. Does not touch any `.txt` pattern.
+2. **Tooling recognition:** add `"*.text"` alongside `"*.txt"` wherever supported text
+   types are enumerated for promotion/fixtures (e.g. `tools/staging/promote_data_fixtures.ps1`
+   schema filter). Additive.
+3. **Prepush gate:** `.text` already classifies as `source/docs/config` (not
+   `HARD_BLOCK`, not `DATA_SUFFIXES`), so it passes today. Optional refinement: include
+   `.text` in the house-style ASCII coverage so it is held to the same bar as `.md`.
+   No BOM check needed (BOM is C/C++ only).
+4. **`.gitignore`:** verified no generic `*text*` rule exists (only specific paths like
+   `/dottalkpp/data/logfile.txt`), so `.text` is safe from capture (R1 low). Optional
+   durability guard: an explicit `!**/*.text` never-ignore line.
+5. **Engine recognition:** confirm whether any CLI verb needs to OPEN `.text` as text
+   (P1 open item); if not, `.text` is a pure marker + text alias and needs no C++
+   change. Keep additive (R2).
+6. **Doctrine:** record the `.text` = "chosen to travel" convention in `AI_PORTAL.md`
+   and the disposition ruling; publish the user-facing note at the next full-stack push.
