@@ -539,6 +539,22 @@ def main() -> int:
                   "cycle. Adding requires demoting, and demoting means moving, "
                   "not restating.")
 
+        # 6. NEW INTAKE ROWS CITE A CLAIMED AIF -- ADVISORY for one cycle, then
+        # hard (AIF-092). The anti-collision loop had an allocator with no teeth
+        # and a detector that only fires AFTER two lanes have collided: nothing
+        # forced a lane through `claim-aif`, so a number chosen by eye satisfied
+        # the duplicate check right up until someone else chose the same one.
+        # Measured 2026-08-07: 25 claim files against 89 intake rows.
+        #
+        # ADDED ROWS ONLY, for the same reason `check_house_style.py` checks
+        # added lines: 65 rows predate coordination, and a gate that fails on
+        # those would be switched off within a day.
+        rc = _run_portal_check("tools/coordination/check_aif_claimed.py", ["--warn"])
+        if rc == 2:
+            print("\n  ADVISORY -- a new intake row names an AIF number with no "
+                  "claim file. NOT blocking during the adoption cycle. Claim it "
+                  "atomically; grep is not an allocator.")
+
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
               "(or acknowledged), no embedded BOM, no AIF-number collision.")
