@@ -12,9 +12,9 @@ metadata tables at generation time. None is hand-maintained.
 Provenance
 --------------------------------------------------------------
   promoted from branch : development
-  source commit        : b0b6af251c7a713e02aa066cd782a972e264abda
-  short commit         : b0b6af251
-  generated (UTC)      : 2026-08-07T15:36:31Z
+  source commit        : 4d09532ad7d61828d674e3132575ec63dc254d8c
+  short commit         : 4d09532ad
+  generated (UTC)      : 2026-08-07T15:59:45Z
 
   This snapshot is a PROJECTION of the development tree at the commit
   above, filtered through PROMOTE.manifest. It is not the whole tree.

@@ -257,6 +257,7 @@ def main() -> int:
         have_cmp = _strip_stamp(have)
         if have_cmp == _strip_stamp(fresh):
             print("generate-public-manifest: PASS -- MANIFEST.txt matches the tree")
+            _report_lag(root, have)
             return 0
         print("generate-public-manifest: FAIL -- MANIFEST.txt does not match the "
               "tree it describes. Regenerate with --write.", file=sys.stderr)
@@ -271,10 +272,59 @@ def main() -> int:
     return 0
 
 
+# Lines that carry WHEN and FROM WHERE the receipt was cut. `--check` must not
+# compare these.
+#
+# WHY. The receipt is regenerated at PROMOTION time, not on every commit, so its
+# provenance is expected to trail HEAD between promotions -- that lag is the
+# information it exists to publish. Comparing it would turn this gate red on
+# every single commit, and a permanently red gate is switched off within a day.
+# `--check` therefore asks one question only: DO THE MEASURED FIGURES STILL
+# DESCRIBE THE TREE. Staleness of provenance is reported, never failed.
+#
+# Caught 2026-08-07, the first time the gate ran after an unrelated commit: the
+# inventory was identical (80/828/0) and it failed anyway.
+PROVENANCE_PREFIXES = (
+    "generated (UTC)",
+    "source commit",
+    "short commit",
+    "promoted from branch",
+)
+
+
+def _report_lag(root: Path, have: str) -> None:
+    """Say how far the receipt's provenance trails HEAD. Informational only.
+
+    This is the number an outside reader most wants and cannot otherwise get:
+    a cold agent measured exactly this gap on 2026-08-06 and had to guess.
+    """
+    stamped = ""
+    for line in have.splitlines():
+        s = line.strip()
+        if s.startswith("source commit"):
+            stamped = s.split(":", 1)[1].strip()
+            break
+    head = git(root, "rev-parse", "HEAD")
+    if not stamped or head == "not_determined":
+        return
+    if stamped == head:
+        print("  provenance: current with HEAD")
+        return
+    behind = git(root, "rev-list", "--count", f"{stamped}..{head}")
+    n = behind if behind.isdigit() else "an unknown number of"
+    print(f"  provenance: cut at {stamped[:9]}, HEAD is {head[:9]} "
+          f"({n} commit(s) ahead)")
+    print("  This lag is EXPECTED between promotions and is not a failure. "
+          "Regenerate at promotion time so the published receipt names the "
+          "commit actually being published.")
+
+
 def _strip_stamp(text: str) -> str:
-    """Drop the generation timestamp line so --check compares substance."""
-    return "\n".join(l for l in text.splitlines()
-                     if not l.strip().startswith("generated (UTC)"))
+    """Drop provenance lines so --check compares substance only."""
+    return "\n".join(
+        l for l in text.splitlines()
+        if not l.strip().startswith(PROVENANCE_PREFIXES)
+    )
 
 
 if __name__ == "__main__":

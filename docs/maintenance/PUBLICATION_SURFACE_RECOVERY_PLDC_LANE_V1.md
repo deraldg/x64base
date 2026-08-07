@@ -12,7 +12,7 @@ ai_report_audit:
     id: not_exposed
     chat_reference: claude-cowork:not_exposed
   project:
-    id: project.x64base.public_staging
+    id: project.x64base.runtime
     root: D:/code/ccode
   authorization:
     requested_by: maintainer
@@ -34,7 +34,10 @@ ai_report_audit:
 **Intake:** AIF-092 - **Claim:** `coordination/aif/AIF-092.claim` - **Run:** `COWORK-20260807-003`
 **Owner:** member.derald
 **Steward/author:** member.ai.claude.cowork, until reassigned by the owner.
-**Parent projects:** `project.x64base.public_staging`, `project.x64base.runtime`
+**Parent projects:** `project.x64base.public_staging` (the SUBJECT -- the surface
+this lane is about), `project.x64base.runtime` (the WORKSPACE -- where every
+change is authored). The envelope's `project.root` must name the **workspace**,
+never the subject; see section 6b.
 **Baseline:** `development` @ `d083e6ea4`
 **Origin:** discovered by AIF-090 probe C; that lane is about agent onboarding
 and closed NO-GO. This is about the public face of the repository, which is what
@@ -175,6 +178,31 @@ AIF-092 row was unstaged, so `diff --cached` had seen nothing. A pass that means
 twice. Re-tested against `e9d2033d3~1..e9d2033d3`, the commit that really did add
 the AIF-090 row: it detected the row and named it. Also verified that a passing
 prose mention of an AIF number is not mistaken for a row.
+
+## 6b. SUBJECT is not WORKSPACE (2026-08-07, caught by the gate)
+
+The first closeout for this lane was **BLOCKED** by the report-audit:
+
+    ai_report_audit.project.root: does not match project registry root: C:/x64base
+
+The envelope declared `project.x64base.public_staging` -- registered root
+`C:/x64base` -- while stating `root: D:/code/ccode`. The lane is *about* the
+publication surface, so naming that project felt right; but
+`ai_report_audit.project` records **where the work was authored**, not what it
+concerns. Every change in this lane was made in `D:/code/ccode`, which is
+`project.x64base.runtime`.
+
+Corrected in both the closeout and this charter. `enforced=91 valid=91
+findings=0` after the fix.
+
+**Worth keeping because the confusion is structural, not careless.** A lane whose
+subject is one tree and whose workspace is another invites exactly this slip, and
+the slip is indistinguishable from the far more dangerous claim that work was
+done in staging. The registry caught it because roots are declared data rather
+than prose -- the same reason the AIF ledger catches number collisions.
+
+The rule, stated once: **subject may be any project; `project.root` is always the
+tree your hands were in.**
 
 ## 7. Not claimed
 
