@@ -51,7 +51,7 @@ working inside the tree and by an outside agency that has never cloned it.
 
 | Concern | Lifecycle |
 | --- | --- |
-| Package identity, audience, setup, support, retirement, distribution | **PDLC** -- Project Development Life Cycle |
+| Package identity, audience, setup, support, retirement, distribution | **PDLC** -- Programming Development Life Cycle, delivery scope |
 | The projector program and registry inside each phase | **PDLC** run in full: analyze -> design -> code -> test/debug -> document -> maintain |
 | The doctrine and gates the package projects | **DotTalk++ SDLC** and **maintenance SDLC** -- already proven, not re-opened here |
 
@@ -91,7 +91,7 @@ three tiers already have.
 | R5 | 2026-08-06 | **`.claude/skills/` is an accepted vendor target in `development`.** |
 | R6 | 2026-08-06 | **Audience is repo-partner onboarding.** Engine/DotScript-operator and website-maintenance skills are deferred, not cancelled (section 8). |
 | R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded by section 11. |
-| R8 | 2026-08-07 | **PLDC is merged into PDLC and retired.** "PLDC -- Product/Lab Delivery Cycle" and PDLC are one lifecycle: **PDLC -- Project Development Life Cycle**. This reverses R1, which had ruled the opposite. Doctrine of record: `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`, "Lifecycle vocabulary". Lane file renamed `X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` -> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`. |
+| R8 | 2026-08-07 | **PLDC is merged into PDLC and retired.** "PLDC -- Product/Lab Delivery Cycle" and PDLC are one lifecycle. PDLC's SCOPE widens to span both the change and the deliverable; its NAME does not change -- it remains the **Programming** Development Life Cycle (`PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`, `projects.yaml` `project.labtalk.pdlc`). This reverses R1, which had ruled the opposite. Doctrine of record: `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`, "Lifecycle vocabulary". Lane file renamed `X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` -> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`. |
 
 ## 3. Standing disciplines (adopted, enforced per phase)
 

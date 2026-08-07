@@ -39,9 +39,18 @@ is yours, it is waiting for you.
 
 ## 2. What the merge decided, so you do not relitigate it
 
-PLDC ("Product/Lab Delivery Cycle") is retired. PDLC now means **Project
-Development Life Cycle** and spans both former scopes. The prior expansion in the
-doctrine was "Programming"; it is gone.
+PLDC ("Product/Lab Delivery Cycle") is retired and folded into PDLC. What changed
+is PDLC's **scope**, which now spans both the change and the deliverable. What
+did NOT change is its **name**: PDLC remains the **Programming** Development Life
+Cycle.
+
+That distinction was decided the hard way. An intermediate revision of this merge
+renamed it "Project" and was reverted the same day, because
+`PDLC_STUDENT_WORKING_MODEL_LANE_V1.md:27` teaches PDLC-at-the-desk against
+SDLC-at-the-org, and "Programming" is load-bearing in that contrast. Commit
+messages from `c0d3069c5` and `018bd0c9f` still say "Project Development Life
+Cycle" and are wrong on that point; the doctrine file is authoritative, not the
+commit subject.
 
 This **reverses** ruling R1 in the agent-skill lane, which had ruled that PLDC
 was canonical and PDLC the typo. R1 is struck through in place and superseded by

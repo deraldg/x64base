@@ -30,7 +30,7 @@ These terms are related but not interchangeable:
 
 | Lifecycle | Scale | Governing question |
 | --- | --- | --- |
-| **PDLC -- Project Development Life Cycle** | One program or feature; and the product, lab, lesson, workshop, dashboard, manual, or public page that delivers it | How does a programmer analyze, design, code, test/debug, document, and maintain this change -- and what package are we delivering, to whom, with what setup, proof, support, and retirement path? |
+| **PDLC -- Programming Development Life Cycle** | One program or feature; and the product, lab, lesson, workshop, dashboard, manual, or public page that delivers it | How does a programmer analyze, design, code, test/debug, document, and maintain this change -- and what package are we delivering, to whom, with what setup, proof, support, and retirement path? |
 | **SDLC -- Software/Systems Development Life Cycle** | Runtime, subsystem, or whole system | What behavior exists, how is it controlled, and what evidence keeps it trustworthy? |
 
 PDLC work nests inside an SDLC when the unit is a change, and packages reviewed
@@ -38,9 +38,11 @@ SDLC and LabTalk truth when the unit is a deliverable; it cannot promote an
 unproven behavior merely because the teaching or public wrapper is complete.
 
 > **Merge note, 2026-08-07 (member.derald).** "PLDC -- Product/Lab Delivery
-> Cycle" and "PDLC" were merged into a single **PDLC -- Project Development Life
-> Cycle**. The former PLDC row's scale and governing question were folded into
-> the PDLC row above. Supersedes ruling R1 in
+> Cycle" was retired and merged into **PDLC**. The former PLDC row's scale and
+> governing question were folded into the PDLC row above, so PDLC's SCOPE now
+> spans both the change and the deliverable. Its NAME is unchanged: PDLC remains
+> the **Programming** Development Life Cycle, the craft-scale cycle taught in
+> `PDLC_STUDENT_WORKING_MODEL_LANE_V1.md`. Supersedes ruling R1 in
 > `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`.
 
 ## Operating modes
