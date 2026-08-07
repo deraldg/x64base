@@ -118,3 +118,53 @@ should update their own records; these are pointers, not edits to their lanes.
 
 No runtime, identity, BBS, DBF, or publication mutation from the sandbox. All builds,
 proofs, and git mutations were prepared as commands and handed to the maintainer.
+
+## Session 2 (afternoon/evening) -- pass 4 published live + backlog recovery
+
+**Website matrix hardened into a real gate.** The matrix
+(`x64base-site/content/docs/dev/website-documentation-matrix.mdx`) is now a
+fail-closed **entry gate** (E0: read + classify before the website phase) and
+**closeout gate** (update + re-audit before the run closes), wired into the ascent
+plan + flush cookbook. It also gained explicit **design + retention authority**.
+Companion: `docs/maintenance/lanes/full_stack_documentation/WEBSITE_MATRIX_WALK_2026-08-06.md`.
+
+**Pass 4 authored, published, and verified LIVE.** Added the start-to-finish
+doc-push DFD hero (`selfdoc-website-publication`), AUTODBF import/export coverage,
+the additional maintained fullstack steps, and the v5 marker. Advanced
+documentation-progress + regenerated the current-work feed. Site published via
+`npm run publish:github-pages` -> gh-pages `6a924099c` (source `61665a6d`), Gate 9
+live-readback confirmed on x64base.com (AI nav, fox, resized origin figure, updated
+dates all serving).
+
+**Picture pass.** Arctic fox placed + float-right (plain-HTML img; JSX `style={{}}`
+does not render on this MDX surface -- known trap). Origin glass-engine figure
+resized (distinct `title` escapes the shared `width:100%` rule) and the
+numbered-legend interpretation removed. Alias prose corrected to source truth
+(`shortcut_resolver.hpp`): `SMARTLIST/SL`, `SMARTBROWSER/SM/SMART`, `SIMPLEBROWSER/SB`.
+
+**Interpreter rule codified** (`$py12 = .venv312` python; NOT `py -3.12`, NOT the
+minimal vcpkg python) in `CLAUDE.md` + the flush cookbook. The gh-pages publish
+mechanism is now recorded in ascent-plan Gate 8.
+
+**Untracked authored-lane recovery.** Triggered by "can't find the LMS/Moodle work"
+-- it was half-untracked. Recovered + pushed to `development`: LMS (`222bdd6be`),
+selfdoc (`5618eb11c`), pycrud (`9812a8e01`), labtalk (`366f4ae7f`). The remaining
+~6,890-file bulk (`docs/`, `dottalkpp/`) is deferred with a full recipe in
+`docs/maintenance/UNTRACKED_AUTHORED_COMMIT_PASS_2026-08-06.md`.
+
+### Session 2 open follow-ups
+
+1. **Image retouch for v5** (logged in the matrix): fox stock-watermark verify/replace,
+   and glass-engine number-plaque removal -- both need Photoshop/Firefly (the
+   in-environment image tools cannot do object removal).
+2. **Site portal half-landed:** `/portal` index publishes but its sub-pages 404
+   (`content/portal/*` untracked); `content/docs/engine/python-integration.mdx`
+   untracked though the sidebar links it. Decide commit vs pull.
+3. **Deferred untracked bulk** (`docs/` + `dottalkpp/`) per the recipe note.
+4. **`pycrud/_bundles/` should be gitignored** (source-archive zips).
+   `labtalk/ai_portal/publication/ai-portal.mdx` is fixture-flagged -- decide.
+5. **Site `main` is ~123 commits behind** `codex/lean-sites-publish` (publish builds
+   from the working tree, so this did not block go-live; reconcile as source-of-record).
+6. Site working tree: `next-env.d.ts` shows modified (auto-generated; discard).
+7. **AIF-032 count reconciliation** now also blocks a clean site close (carried from
+   Session 1 open item #2).
