@@ -238,6 +238,20 @@ public blob. Distinct mutation; distinct owner go.
    `validate_website_integration_plan.py`, then the Next.js build (static pages).
    Steward can run the packet + local build in the site repo.
 8. **Publication**: site commit/push + GitHub Pages deploy. Host/network + owner.
+   Concrete mechanism (so no session re-derives it): x64base.com is served by
+   GitHub Pages from the **`gh-pages`** branch (custom domain `x64base.com`), and
+   `gh-pages` is a BUILT ARTIFACT -- it only updates when the owner runs, from
+   `D:\dev\x64base-site`, `npm run publish:github-pages`. That script builds the
+   static Next export from the CURRENT WORKING TREE (whatever is checked out, e.g.
+   `codex/lean-sites-publish`), writes it into the `.gh-pages-deploy` worktree, and
+   commits+pushes `gh-pages`. Key consequences: (a) pushing your source branch to
+   GitHub does NOT publish -- only `publish:github-pages` does; (b) you do NOT need
+   to merge to `main` first (it builds from the working tree, not `main`), though
+   `main` should eventually be reconciled as source-of-record; (c) the script
+   REFUSES if the source tree has uncommitted changes, so commit or discard first
+   (e.g. `git checkout -- public/images/portal/` for `generate:diagrams` byte-drift);
+   (d) live in ~1-3 min after the push, plus CDN/browser cache -- hard-refresh to
+   confirm. Full procedure: `x64base-site/README.md` "Publish cycle".
 9. **Live verification**: cache-bypassed HTTP over the deployed routes; record the
    content actually served. Host/network.
 
