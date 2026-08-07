@@ -31,7 +31,9 @@ ai_report_audit:
 
 # x64base Agent Skill -- PLDC Charter and Plan of Record V1
 
-**Status:** `charter_opened` -- no code written, no bundle built.
+**Status:** `P0 measured -- G0 NO-GO RECOMMENDED, awaiting owner ruling.` No code
+written, no bundle built. The premise did not survive measurement; see section 10
+and `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`.
 **Intake:** AIF-090 - **Claim:** `coordination/aif/AIF-090.claim` - **Run:** `COWORK-20260806-001`
 **Owner:** member.derald
 **Steward/author:** member.ai.claude.cowork, until reassigned by the owner.
@@ -135,7 +137,7 @@ three tiers already have.
 
 | Phase | Content | Gate |
 | --- | --- | --- |
-| **P0** | Prove the bottleneck. Measure cold-start behaviour across vendors with and without a skill stub: bytes read before first correct action; whether `recall.py` ran unprompted; whether a sandboxed agent ran a lock-taking git. | **G0** go/no-go. If cold agents already reach Tier 1 reliably, this lane is packaging polish and defers. |
+| **P0** | **DONE 2026-08-06.** Two outside-runner cold probes, control vs skill stub, plus static reachability measurement. Evidence: `X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`. | **G0 NO-GO RECOMMENDED.** Both arms reached Tier 1 and answered 5/5; both read ~48 KB; no material saving. Premise falsified. Owner ruling required -- no self-approval by the author. |
 | **P1** | Registry substrate. Author `labtalk/registries/skills.yaml` on the `labs.yaml` / `proofs.yaml` shape. Define the skill asset class and its fields. | **G1** registry validates; `recall.py --validate` still PASSes. |
 | **P2** | Projector. `tools/ai_portal/emit_skill.py` with `emit` / `install` / `check`. Derives trigger table, pointer table and stopping rule verbatim from the registry and seed. | **G2** fixture suite passes, including the must-fail cases: dangling edge, seed over budget, hand-edited `SKILL.md`, non-ASCII byte. |
 | **P3** | Canonical skill. `labtalk/skills/x64base/` authored; `SKILL.md` + references emitted. | **G3** ASCII clean; no perishable literal; body within budget; a cold agent can answer the seed's five questions from it alone. |
@@ -199,7 +201,39 @@ searched-and-absent: any `.claude/skills/` directory in this tree
 - **Plugin bundle.** Packaging step once two or three skills share a projector,
   not a design step.
 
-## 9. Maintenance rule for this file
+## 9. P0 result -- the premise did not survive (2026-08-06)
+
+Evidence tier: **runtime-observed** (two cold probes run; every figure re-derived
+independently from the tree). Full report:
+`docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`.
+
+The charter argued that cold agents do not reach Tier 1 without a skill. Two
+cold outside runners both reached it and both answered the seed's five
+questions; the control was never told the seed existed and found it anyway,
+because `CLAUDE.md` is auto-injected and points there. Neither arm read less
+than the other (~48 KB each).
+
+Four defects were exposed and they outlive the lane:
+
+| # | Defect | Evidence |
+| --- | --- | --- |
+| D1 | `recall.py` is cited by **zero** entry-path documents. The control probe searched for orientation tooling, found six other tools, and missed this one. | `grep -c` = 0 across all nine entry-path files |
+| D2 | `ENTRY_PATH_BASELINE = 127704` (`recall.py:40`) is a stale hardcoded denominator. The path actually in force is Tier 0 + Tier 1 = 10,909 B, so a 27,384 B working set is **2.51x LARGER** than what it claims to replace, printed as "21%". The bound at `:289` that exists so the metric can fail therefore **cannot fire**. | measured; second occurrence of the same defect shape in the same file |
+| D3 | The graph returns `## Pre-Push Gate`, whose prose points at `PREPUSH_GATE_REFERENCE_V1.md` -- which is not in the graph. Nor is `AI_SESSION_COORDINATION_PROTOCOL_V1.md`. Pointer without target. | `grep -c` = 0 for both |
+| D4 | `AI_TIER1_SEED_V1.md` is **8,990 B against its own declared 8,192 B hard ceiling**, and no gate enforces it. `AI_PORTAL.md` cites this ceiling as its exemplar of a bounded metric. | measured; only `8192` hits in `tools/` are read buffers |
+
+**Recommended conversion:** retire the projector/bundle/shim-collapse programme
+as premature and open a small repair lane for D1-D4, cheapest first (D2, D4, D1,
+D3). What genuinely survives and must be re-argued rather than assumed: the
+distributable no-tree bundle (R3's design is sound but untested by this
+measurement) and the vendor-shim asymmetry (`copilot-instructions.md` does not
+point at the seed).
+
+**Not tested, and the one place the original argument may still hold:** a hosted
+agent with no tree and no auto-injected shim. Both probes received `CLAUDE.md`
+automatically, which is precisely why the control succeeded.
+
+## 10. Maintenance rule for this file
 
 This file carries **phase state, rulings, and pointers**. It must not restate
 what a pointed-to document says. A milestone entry changes only when its
