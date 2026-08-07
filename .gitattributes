@@ -42,6 +42,14 @@
 *.sh    text eol=lf
 *.cmake text eol=lf
 CMakeLists.txt text eol=lf
+# MANIFEST.txt is GENERATED (tools/staging/generate_public_manifest.py, AIF-092)
+# and the generator writes LF. Left at `text=auto` it materializes as CRLF on a
+# Windows checkout, so every regeneration would flip it back and the file would
+# read as perpetually modified. Pinned per-file, not by class: the `.txt` note
+# above deliberately leaves the class alone because some are checksum-bound or
+# Windows-authored. Verified 2026-08-07 that this one is neither -- it is
+# referenced by nothing but its own generator and is rewritten wholesale.
+MANIFEST.txt text eol=lf
 
 # Binary files (never normalize)
 *.zip   binary
