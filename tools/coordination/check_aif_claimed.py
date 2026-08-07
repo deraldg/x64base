@@ -57,26 +57,53 @@ def repo_root() -> Path:
     raise SystemExit(1)
 
 
-def added_rows(root: Path, rng: str | None) -> list[tuple[int, str]]:
-    """(aif_number, text) for every ADDED intake-queue row.
-
-    Read-only git. `diff` does not take .git/index.lock, and this must never
-    wedge a tree the way a lock-taking command once did.
-    """
-    args = ["diff", "--cached", "-U0"] if rng is None else ["diff", "-U0", rng]
+def _git(root: Path, *args: str) -> str:
+    """Read-only git. Never takes .git/index.lock."""
     out = subprocess.run(
-        ["git", "--no-optional-locks", *args, "--", INTAKE],
+        ["git", "--no-optional-locks", *args],
         cwd=root, capture_output=True, text=True,
         encoding="utf-8", errors="replace", timeout=60, check=False,
     )
-    if out.returncode != 0:
+    return out.stdout if out.returncode == 0 else ""
+
+
+def _numbers_in(text: str) -> set[int]:
+    return {int(m.group(1)) for m in
+            (ROW_RE.match(l) for l in text.splitlines()) if m}
+
+
+def added_rows(root: Path, rng: str | None) -> list[tuple[int, str]]:
+    """(aif_number, text) for rows whose NUMBER is NEW to the queue.
+
+    A DIFF MARKER IS NOT A NEW ROW. Editing an existing row -- fixing a typo,
+    updating a status, appending evidence -- surfaces in `git diff` as a `+`
+    line exactly like a brand-new row. Sixty-five legacy rows have no claim
+    file, so trusting the marker meant routine maintenance on any of them would
+    be blocked. Measured 2026-08-07 before the advisory-to-hard flip: editing
+    the AIF-041 row returned exit 2.
+
+    So the question is not "is this line added" but "is this NUMBER new to the
+    file". The pre-image answers it: HEAD for a staged check, the range base
+    otherwise.
+    """
+    args = ["diff", "--cached", "-U0"] if rng is None else ["diff", "-U0", rng]
+    diff = _git(root, *args, "--", INTAKE)
+    if not diff:
         return []
-    rows = []
-    for raw in out.stdout.splitlines():
+
+    base = "HEAD" if rng is None else rng.split("..", 1)[0]
+    already = _numbers_in(_git(root, "show", f"{base}:{INTAKE}"))
+
+    rows, seen = [], set()
+    for raw in diff.splitlines():
         if raw.startswith("+") and not raw.startswith("+++"):
             m = ROW_RE.match(raw[1:])
             if m:
-                rows.append((int(m.group(1)), raw[1:]))
+                n = int(m.group(1))
+                if n in already or n in seen:
+                    continue  # edited in place, not newly introduced
+                seen.add(n)
+                rows.append((n, raw[1:]))
     return rows
 
 

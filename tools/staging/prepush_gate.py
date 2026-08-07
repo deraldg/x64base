@@ -530,14 +530,16 @@ def main() -> int:
         # becoming a gate, which is the seed's own fourth bullet: a rule that
         # gains a hard-failing gate may then demote out of the entry path.
         #
-        # Run with --warn so the adoption cycle cannot block anyone; flip to the
-        # bare invocation (and treat rc == 2 as blocking) after one clean cycle.
-        rc = _run_portal_check("tools/staging/check_seed_budget.py", ["--warn"])
+        # FLIPPED TO HARD 2026-08-07 after 12 clean commits (AIF-090 R4). The
+        # ceiling was the project's cited exemplar of a bounded metric and had
+        # still drifted 798 B unnoticed, because it was enforced by whoever
+        # happened to be watching. Now it is enforced by this.
+        rc = _run_portal_check("tools/staging/check_seed_budget.py", [])
         if rc == 2:
-            print("\n  ADVISORY -- a document is over the byte budget it "
-                  "declares about itself. NOT blocking during the adoption "
-                  "cycle. Adding requires demoting, and demoting means moving, "
-                  "not restating.")
+            print("\n  BLOCKED -- a document is over the byte budget it declares "
+                  "about itself. Adding requires REMOVING or DEMOTING, and "
+                  "demoting means moving, not restating.", file=sys.stderr)
+            exit_code = 2
 
         # 6. NEW INTAKE ROWS CITE A CLAIMED AIF -- ADVISORY for one cycle, then
         # hard (AIF-092). The anti-collision loop had an allocator with no teeth
@@ -549,11 +551,18 @@ def main() -> int:
         # ADDED ROWS ONLY, for the same reason `check_house_style.py` checks
         # added lines: 65 rows predate coordination, and a gate that fails on
         # those would be switched off within a day.
-        rc = _run_portal_check("tools/coordination/check_aif_claimed.py", ["--warn"])
+        # FLIPPED TO HARD 2026-08-07. The advisory cycle was short (2 commits)
+        # but it surfaced the defect that mattered: a MODIFIED legacy row shows
+        # in the diff as an added line, so trusting the marker would have
+        # blocked routine maintenance on any of the 65 pre-coordination rows.
+        # The check now compares against the pre-image and fires only on a
+        # number NEW to the queue. Verified both directions before arming.
+        rc = _run_portal_check("tools/coordination/check_aif_claimed.py", [])
         if rc == 2:
-            print("\n  ADVISORY -- a new intake row names an AIF number with no "
-                  "claim file. NOT blocking during the adoption cycle. Claim it "
-                  "atomically; grep is not an allocator.")
+            print("\n  BLOCKED -- a new intake row names an AIF number with no "
+                  "claim file. Claim it atomically; grep is not an allocator. "
+                  "Editing an existing row is not affected.", file=sys.stderr)
+            exit_code = 2
 
     if exit_code == 0:
         print("\nprepush-gate: PASS — change set is source/docs/config only "
