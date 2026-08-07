@@ -31,7 +31,7 @@ ai_report_audit:
 # Session Closeout -- AIF-090 P0 prove-the-bottleneck, G0 no-go (AIF-090)
 
 Date: 2026-08-06.
-Owning lifecycle: PLDC.
+Owning lifecycle: PDLC.
 SDLC lane: intake.
 Truth state: mixed (runtime-observed probes; static measurement re-derived).
 Proof state: report + git-verified.
@@ -52,7 +52,7 @@ surfaced four defects that are worth more than the lane was.
 | Area | Files | Note |
 | --- | --- | --- |
 | Evidence | `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md` | new; the P0 report and G0 evidence (`bc08afd1d`) |
-| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` | status line, P0 row, new section 9 recording D1-D4 (`bc08afd1d`) |
+| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` | status line, P0 row, new section 9 recording D1-D4 (`bc08afd1d`) |
 | Continuity | `docs/agents/HANDOFF_CLAUDE_COWORK_AGENT_SKILL_2026-08-06.md` | section 1 superseded in place -- it said "do not start at P1, P0 unmeasured"; P0 is done and said no |
 | Registry | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` | AIF-090 row status and P0 result |
 | Registry | `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` | prior row corrected, new Session Log row |
@@ -146,7 +146,7 @@ the next agent to run a gate that has already run is worse than no handoff.
 ## Provenance pointers
 
 - Measurement: `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`
-- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` section 9
+- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` section 9
 - Method rule: `AI_PORTAL.md`, "Build It to Prove It" and "Prove the Bottleneck
   First"
 - Prior closeout superseded on P0 status:

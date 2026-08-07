@@ -6,7 +6,7 @@ AIF lane: `AIF-086`
 Run: `AIPR-20260803-004`
 Owning lifecycle: **AI Systems Integration SDLC**
 Incorporating lifecycle: **AI Systems Integration SDLC**
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PLDC**
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PDLC**
 SDLC lane: `design` (M1 requirements and needs assessment)
 Truth state: empirical filesystem and Git census plus source-defined prior-art review
 Proof state: report; no runtime behavior is newly claimed

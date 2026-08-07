@@ -6,7 +6,7 @@ AIF lane: `AIF-086`
 Run: `AIPR-20260803-004`
 Owning lifecycle: **AI Systems Integration SDLC**
 Incorporating lifecycle: **AI Systems Integration SDLC**
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PLDC**
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PDLC**
 SDLC lane: `design` (M1 requirements)
 Operating mode: `maintenance`
 Change class: `C3`
@@ -72,7 +72,7 @@ not self-approve these requirements or authorize disposition or M2 entry.
 | `N-03` | **Reports** MUST be reserved for reviewed public-interest reports, whitepapers, and reviewed educational cases. Raw operational projections and audit records MUST NOT enter Reports merely because their filenames contain `REPORT`. |
 | `N-04` | `AIF_RULINGS_REPORT.html` MUST be presented to people as **AIF Open Rulings** and MUST identify its ruling-sheet sources and incomplete coverage. The filename MAY remain for compatibility until migration is designed. |
 | `N-05` | **Pseudo-Chat** MUST remain an umbrella interaction pattern, never a system-of-record name. Records and interfaces MUST name the actual component that carried the interaction. |
-| `N-06` | Documents discussing a lifecycle MUST use its explicit name: AI Systems Integration SDLC, DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC, or PLDC. A bare "the SDLC" is insufficient when scope could be ambiguous. |
+| `N-06` | Documents discussing a lifecycle MUST use its explicit name: AI Systems Integration SDLC, DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC, or PDLC. A bare "the SDLC" is insufficient when scope could be ambiguous. |
 
 ## 4. Document-class requirements
 

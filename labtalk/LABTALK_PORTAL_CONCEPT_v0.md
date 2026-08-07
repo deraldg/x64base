@@ -245,7 +245,7 @@ The portal can later have multiple frontends over the same registries:
 | Local web app | Rich navigation and dashboards. |
 | DotTalk++ command | Runtime-native access, e.g. `LABTALK`. |
 | Jupyter notebooks | Interactive lessons. |
-| GUI workbench | PLDC demonstrations and richer student labs. |
+| GUI workbench | PDLC demonstrations and richer student labs. |
 
 The registry model should outlive any one portal frontend.
 

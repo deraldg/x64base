@@ -2,7 +2,7 @@
 
 Status: **implemented; core build, runtime, and package matrix proven**  
 Created: 2026-07-14  
-Authority: DotTalk++ SDLC for runtime/build work; PLDC for product editions  
+Authority: DotTalk++ SDLC for runtime/build work; PDLC for product editions  
 Companions:
 
 - `docs/maintenance/XBASE_OPTIONAL_INDEX_ARCHITECTURE_DECISION_V1.md`

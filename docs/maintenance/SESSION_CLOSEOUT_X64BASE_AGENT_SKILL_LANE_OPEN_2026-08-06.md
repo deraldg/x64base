@@ -33,7 +33,7 @@ ai_report_audit:
 # Session Closeout -- x64base agent skill lane opened (AIF-090)
 
 Date: 2026-08-06.
-Owning lifecycle: PLDC.
+Owning lifecycle: PDLC.
 SDLC lane: intake.
 Truth state: mixed (observed + source-defined; no engine build or run).
 Proof state: git-verified + report.
@@ -53,7 +53,7 @@ be committed.
 | Lifecycle doctrine | `docs/maintenance/SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md` | 3 em-dashes -> `--` in the vocabulary table; file was also **untracked** and is now tracked (`6a9ce0ea5`) |
 | Dangling authority | 16 cited lane/preflight docs | tracked, no content change (`9dce6eb37`) |
 | Dangling authority | 19 cited lane docs | ASCII-normalized and tracked (`d4ad1b2ee`) |
-| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` | PLDC charter, rulings R1-R6, P0-P9 / G0-G9 (`e9d2033d3`) |
+| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` | PDLC charter, rulings R1-R6, P0-P9 / G0-G9 (`e9d2033d3`) |
 | Lane | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` | AIF-090 row (`e9d2033d3`) |
 | Lane | `coordination/aif/AIF-090.claim` | atomic claim, run `COWORK-20260806-001` (`e9d2033d3`) |
 | Tooling | `tools/staging/ascii_normalize.py` | new; companion to `check_house_style.py` -- that gate says a file fails, this says how to fix it |
@@ -142,11 +142,11 @@ than rebuilt; and the practical traps that cost this session time.
 
 ## Provenance pointers
 
-- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md`
+- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`
 - Claim: `coordination/aif/AIF-090.claim`
 - Handoff: `docs/agents/HANDOFF_CLAUDE_COWORK_AGENT_SKILL_2026-08-06.md`
 - Doctrine consulted: `AI_TIER1_SEED_V1.md`, `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`,
-  `DOTTALKPP_SDLC_CHARTER_v0.md`, `SQLSEL_PLDC_LANE_V1.md` (charter genre),
+  `DOTTALKPP_SDLC_CHARTER_v0.md`, `SQLSEL_PDLC_LANE_V1.md` (charter genre),
   `SESSION_CLOSEOUT_TEMPLATE.md` (this envelope)
 - Gates exercised: `prepush_gate.py`, `aif_collision_gate.py`,
   `check_house_style.py`, `check_mandatory_tracked.py`,

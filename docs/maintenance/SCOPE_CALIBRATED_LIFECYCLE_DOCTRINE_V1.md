@@ -2,7 +2,7 @@
 
 Status: **accepted maintainer doctrine; development documentation**  
 Recorded: 2026-07-22  
-Applies to: PDLC, DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC, PLDC,
+Applies to: PDLC, DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC,
 AI-assisted work, and publication
 
 ## Decision
@@ -30,13 +30,18 @@ These terms are related but not interchangeable:
 
 | Lifecycle | Scale | Governing question |
 | --- | --- | --- |
-| **PDLC -- Programming Development Life Cycle** | One program or feature | How does a programmer analyze, design, code, test/debug, document, and maintain this change? |
+| **PDLC -- Project Development Life Cycle** | One program or feature; and the product, lab, lesson, workshop, dashboard, manual, or public page that delivers it | How does a programmer analyze, design, code, test/debug, document, and maintain this change -- and what package are we delivering, to whom, with what setup, proof, support, and retirement path? |
 | **SDLC -- Software/Systems Development Life Cycle** | Runtime, subsystem, or whole system | What behavior exists, how is it controlled, and what evidence keeps it trustworthy? |
-| **PLDC -- Product/Lab Delivery Cycle** | Product, lab, lesson, workshop, dashboard, manual, or public page | What package are we delivering, to whom, with what setup, proof, support, and retirement path? |
 
-PDLC work nests inside an SDLC. PLDC packages reviewed SDLC and LabTalk truth; it
+PDLC work nests inside an SDLC, and packages reviewed SDLC and LabTalk truth; it
 cannot promote an unproven behavior merely because the teaching or public wrapper
 is complete.
+
+> **Merge note, 2026-08-07 (member.derald).** "PLDC -- Product/Lab Delivery
+> Cycle" and "PDLC" were merged into a single **PDLC -- Project Development Life
+> Cycle**. The former PLDC row's scale and governing question were folded into
+> the PDLC row above. Supersedes ruling R1 in
+> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`.
 
 ## Operating modes
 

@@ -47,7 +47,7 @@ ai_report_audit:
 
 Asked directly whether this effort had a PDLC and whether it was being
 maintained, the honest answer was **no to both**. Other lanes carry one
-(`DDL_SCHEMA_PDLC_LANE_V1.md`, `SQLSEL_PLDC_LANE_V1.md`,
+(`DDL_SCHEMA_PDLC_LANE_V1.md`, `SQLSEL_PDLC_LANE_V1.md`,
 `EXPORT_SDF_PDLC_CLOSEOUT_V1.md`, `docs/maintenance/tuple_pdlc/`), so this is not
 a gap in house practice. It is a gap in this lane.
 

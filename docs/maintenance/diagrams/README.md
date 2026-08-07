@@ -6,5 +6,5 @@ governance.
 Current entries:
 
 - `DOTTALKPP_SDLC_DIAGRAMS_v0.md` - DotTalk++ SDLC, subsystem status, proof
-  gates, maintenance lanes, release profiles, and PLDC boundaries.
+  gates, maintenance lanes, release profiles, and PDLC boundaries.
 

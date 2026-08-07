@@ -6,7 +6,7 @@ AIF lane: `AIF-086`
 Run: `AIPR-20260805-001` (candidate; needs registration in `labtalk/registries/ai_runs.yaml`)
 Owning lifecycle: **AI Systems Integration SDLC**
 Incorporating lifecycle: **AI Systems Integration SDLC**
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, **PLDC**
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, **PDLC**
 SDLC lane: `design` (M1 requirements) -- discovery re-entry
 Operating mode: `maintenance`
 Change class: `C3`

@@ -5,7 +5,7 @@ Local diagram shelf for LabTalk and DotTalk++ documentation artifacts.
 ## LabTalk Campus and SDLC
 
 - `LABTALK_VISUALS_v0.md` - campus, proof path, learning chain, and boundary model
-- `LABTALK_SDLC_DIAGRAMS_v0.md` - SDLC/PLDC, real/dev/plugged/planned state maps, case-study lifecycle, and tool lifecycle
+- `LABTALK_SDLC_DIAGRAMS_v0.md` - SDLC/PDLC, real/dev/plugged/planned state maps, case-study lifecycle, and tool lifecycle
 
 DotTalk++ runtime SDLC diagrams are maintained under:
 

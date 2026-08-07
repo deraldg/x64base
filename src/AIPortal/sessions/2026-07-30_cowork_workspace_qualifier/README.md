@@ -43,7 +43,7 @@ Delivered as a patch rather than as working-tree edits because `role.ai_partner`
 
 ## Why the package is superseded in part
 
-It was written before the investigation reached `docs/maintenance/SQLSEL_PLDC_LANE_V1.md:112`, which shows AIF-074 phase **P4.1** already owns table-reference qualification (*"Adds table ALIASES (`FROM STUDENTS S`) and QUALIFIED column names (`S.LNAME`), which every later slice needs"*).
+It was written before the investigation reached `docs/maintenance/SQLSEL_PDLC_LANE_V1.md:112`, which shows AIF-074 phase **P4.1** already owns table-reference qualification (*"Adds table ALIASES (`FROM STUDENTS S`) and QUALIFIED column names (`S.LNAME`), which every later slice needs"*).
 
 That reframes the whole question. The package proposes a **standalone multi-workspace feature lane**; the lane charter concludes the live decision is far narrower -- the **namespace depth of a qualifier AIF-074 is about to author anyway** -- and recommends buying the option rather than the feature.
 

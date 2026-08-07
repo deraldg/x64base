@@ -604,7 +604,7 @@ change package tied to the stated commit. The package must contain:
 7. unresolved questions, drift, or conflicts.
 
 The manifest must preserve the owning lifecycle, SDLC lane, truth state, proof
-state, risk class, next gate, and status. PLDC or publication work cannot bypass
+state, risk class, next gate, and status. PDLC or publication work cannot bypass
 the underlying DotTalk++, maintenance, or LabTalk SDLC gate.
 
 Do not include binaries, build directories, generated runtime data, unrelated

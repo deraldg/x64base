@@ -27,7 +27,7 @@ Current starting points:
 - `ai_portal/AI_PORTAL_HARDENING_LANE_V1.md`
 - `D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md`
 - `D:/code/ccode/docs/maintenance/diagrams/DOTTALKPP_SDLC_DIAGRAMS_v0.md`
-- `D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md`
+- `D:/code/ccode/docs/planning/SDLC_PDLC_PLANNING_ADOPTION_v0.md`
 - `registries/apps.yaml`
 - `registries/ai_portal.yaml`
 - `registries/labs.yaml`

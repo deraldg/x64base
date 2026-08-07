@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 exact development plan
 
 Date: 2026-07-18.  
-Owning lifecycle: maintenance SDLC plus PLDC publication lane.  
+Owning lifecycle: maintenance SDLC plus PDLC publication lane.  
 SDLC lane: review -> exact development promotion plan.  
 Truth state: Gate 5 source package disposition accepted for planning.  
 Promotion state: development apply and `C:\x64base` remain held.

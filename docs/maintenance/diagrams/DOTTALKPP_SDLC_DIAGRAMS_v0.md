@@ -2,7 +2,7 @@
 
 Status: draft diagram pack
 Created: 2026-07-04
-Purpose: visual view of DotTalk++ SDLC, subsystem status, proof gates, maintenance lanes, and PLDC boundaries
+Purpose: visual view of DotTalk++ SDLC, subsystem status, proof gates, maintenance lanes, and PDLC boundaries
 
 ## Status Legend
 
@@ -38,7 +38,7 @@ flowchart TB
     cli["Command runtime<br/>shell, registry, commands, scripts"]
     help["HELP / CMDHELP / CMDHELPCHK<br/>docs follow behavior"]
     maint["MAINT / maintenance SDLC<br/>SelfDoc, contracts, manualgen, datadict, messaging"]
-    gui["GUI / TUI / browser fronts<br/>runtime contract plus PLDC delivery"]
+    gui["GUI / TUI / browser fronts<br/>runtime contract plus PDLC delivery"]
     tests["Build, smoke, canaries, proof transcripts"]
 
     sdlc --> engine
@@ -218,19 +218,19 @@ flowchart LR
     maintenance -. "governs, does not replace" .-> professional
 ```
 
-## DotTalk++ / LabTalk / PLDC Boundary
+## DotTalk++ / LabTalk / PDLC Boundary
 
 ```mermaid
 flowchart TB
     dot["DotTalk++ SDLC<br/>owns runtime behavior"]
     lab["LabTalk SDLC<br/>owns learning truth state"]
-    pldc["PLDC<br/>owns delivered packages"]
+    pdlc["PDLC<br/>owns delivered packages"]
 
     dot -->|"runtime proof"| lab
-    dot -->|"runtime capability"| pldc
-    lab -->|"labs, cases, proof paths"| pldc
+    dot -->|"runtime capability"| pdlc
+    lab -->|"labs, cases, proof paths"| pdlc
 
-    pldc -. "cannot promote behavior past evidence" .-> dot
+    pdlc -. "cannot promote behavior past evidence" .-> dot
     lab -. "cannot claim unproven runtime behavior" .-> dot
 ```
 

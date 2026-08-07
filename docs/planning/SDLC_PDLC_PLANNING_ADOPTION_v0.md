@@ -1,4 +1,4 @@
-# SDLC / PLDC Planning Adoption v0
+# SDLC / PDLC Planning Adoption v0
 
 Status: maintained planning scaffold
 Created: 2026-07-04
@@ -6,7 +6,7 @@ Scope: LabTalk Laboratory Campus, DotTalk++ SDLC, and future Planner/MS Project/
 
 ## Purpose
 
-This document defines how the maintained SDLC and PLDC diagrams should later
+This document defines how the maintained SDLC and PDLC diagrams should later
 become task plans, boards, schedules, and exportable planning artifacts.
 
 The diagrams are source-controlled doctrine and planning maps. Planning software
@@ -54,7 +54,7 @@ For Microsoft Project or OpenProject:
 1. LabTalk Campus SDLC
 2. DotTalk++ Runtime SDLC
 3. Maintenance SDLC
-4. PLDC Product/Lab Packages
+4. PDLC Product/Lab Packages
 5. Publication and Website
 ```
 
@@ -98,7 +98,7 @@ source/runtime proof
 |---|---|---|---|
 | PLAN-001 | Add LabTalk SDLC diagrams to maintained repo shelf | LabTalk SDLC | Promotion |
 | PLAN-002 | Add DotTalk++ SDLC diagrams to maintenance diagram shelf | DotTalk++ SDLC | Promotion |
-| PLAN-003 | Publish public SDLC summary pages to local x64base website | PLDC | Publication |
+| PLAN-003 | Publish public SDLC summary pages to local x64base website | PDLC | Publication |
 | PLAN-004 | Create case-study promotion matrix from `docs/cases/REGISTRY_CASES_v0.md` | LabTalk SDLC | Design |
 | PLAN-005 | Create tools registry for portal/report/proof/publication tools | LabTalk SDLC | Design |
 | PLAN-006 | Create DotTalk++ SDLC status report | DotTalk++ SDLC | Proof |

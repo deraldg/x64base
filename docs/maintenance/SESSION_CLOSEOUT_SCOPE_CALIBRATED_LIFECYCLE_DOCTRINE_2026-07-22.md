@@ -42,7 +42,7 @@ Promotion state: development only; not staged, committed, pushed, or published.
 The project now distinguishes educational completeness from empirical scope
 discipline without treating either as an exception to best practice.
 
-- The Laboratory Campus may traverse the complete PDLC/SDLC/PLDC because the
+- The Laboratory Campus may traverse the complete PDLC/SDLC because the
   traversal itself is an instructional product.
 - Production and maintenance work use the smallest sufficient gates for the
   change's consequences, risk, consumers, and delivery exposure.

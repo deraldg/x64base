@@ -4,7 +4,7 @@
     To:     the record
     Date:   2026-08-06
     Status: primary observation, committed after the fact -- read section 3 first
-    Lane:   docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md
+    Lane:   docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md
     Report: docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md
 
 ## 1. Why this package exists

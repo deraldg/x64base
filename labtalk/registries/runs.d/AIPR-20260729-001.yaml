@@ -14,6 +14,6 @@ handle_binding: MAINTAINER_ATTESTED
 continues_run: null
 started: 2026-07-29
 closeouts:
-- docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+- docs/maintenance/SQLSEL_PDLC_LANE_V1.md
 - docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
 status: active

@@ -36,7 +36,7 @@ one here and list the rest in the body. If it belongs to no lane, write
 `(no lane)` rather than leaving it blank.
 
 Date: <YYYY-MM-DD>.
-Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PLDC>.
+Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PDLC>.
 SDLC lane: <intake | design | implementation | proof | review | promotion | maintenance | publication>.
 Truth state: <observed | source-defined | runtime-proven | mixed>.
 Proof state: <none | report | transcript | build | git-verified>.

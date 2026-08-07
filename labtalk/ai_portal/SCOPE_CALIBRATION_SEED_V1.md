@@ -24,7 +24,7 @@ equivalent in the superset and are the reason this block exists separately.
 
 ## Rule
 
-The AI Portal exposes the complete PDLC/SDLC/PLDC, but the existence of the full
+The AI Portal exposes the complete PDLC/SDLC, but the existence of the full
 pipeline is not standing instruction to run every gate for every change.
 
 Before planning, classify:
@@ -76,11 +76,11 @@ or the stated teaching objective requires it.
 
 ## Relationship to the lifecycle stack
 
-- **PDLC** teaches the programmer's six-step craft cycle.
+- **PDLC** teaches the programmer's six-step craft cycle, and packages labs,
+  lessons, products, manuals, and public views.
 - **SDLC** owns system behavior and proof.
-- **PLDC** packages labs, lessons, products, manuals, and public views.
 
-PLDC cannot outrun SDLC evidence. Educational depth can exceed the production
+PDLC cannot outrun SDLC evidence. Educational depth can exceed the production
 minimum, but it must be recorded as educational depth.
 
 ## Expected AI behavior

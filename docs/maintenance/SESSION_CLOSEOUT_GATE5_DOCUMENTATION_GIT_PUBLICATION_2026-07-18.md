@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 documentation Git publication
 
 Date: 2026-07-18.  
-Owning lifecycle: full-stack documentation flush / PLDC Gate 5.  
+Owning lifecycle: full-stack documentation flush / PDLC Gate 5.  
 Truth state: authoritative development projected through recovery-bound source
 staging and published as an exact reviewed Git commit.  
 Promotion state: Gate 5 published; website Gates 6-9 remain open.

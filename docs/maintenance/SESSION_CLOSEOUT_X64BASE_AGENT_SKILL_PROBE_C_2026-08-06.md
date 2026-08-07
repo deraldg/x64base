@@ -32,7 +32,7 @@ ai_report_audit:
 # Session Closeout -- AIF-090 probe C, G0 made audience-specific (AIF-090)
 
 Date: 2026-08-06.
-Owning lifecycle: PLDC.
+Owning lifecycle: PDLC.
 SDLC lane: intake.
 Truth state: mixed -- structural findings verified directly; behavioural findings contaminated.
 Proof state: report + web-verified.
@@ -50,7 +50,7 @@ tells contributors to use.
 | --- | --- | --- |
 | Evidence | `.../aif090_cold_probes_2026-08-06/PROBE_C_NO_TREE.md` | new; no-tree arm, contamination disclosed in its section 1 |
 | Evidence | `.../aif090_cold_probes_2026-08-06/MANIFEST.md` | records the fourth arm that was designed and deliberately NOT run |
-| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` | new section 9a; G0 is now audience-specific |
+| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` | new section 9a; G0 is now audience-specific |
 | Continuity | `docs/agents/HANDOFF_CLAUDE_COWORK_AGENT_SKILL_2026-08-06.md` | section 0 |
 | Registry | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` | AIF-090 row |
 | Registry | `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` | Session Log row |
@@ -144,5 +144,5 @@ not a tool.
 ## Provenance pointers
 
 - Probe package: `docs/maintenance/external_ai_intake/aif090_cold_probes_2026-08-06/`
-- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` sections 9, 9a, 10
+- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` sections 9, 9a, 10
 - Prior closeouts this day: `..._LANE_OPEN_...`, `..._P0_...`, `..._D1_D4_...`

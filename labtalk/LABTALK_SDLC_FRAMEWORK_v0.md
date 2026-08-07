@@ -37,9 +37,9 @@ notes.
 These labels complement the existing proof states in
 `D:/code/ccode/labtalk/registries/proofs.yaml`.
 
-## SDLC / PLDC Decision
+## SDLC / PDLC Decision
 
-LabTalk should use both SDLC and PLDC, but they should not mean the same thing.
+LabTalk should use both SDLC and PDLC, but they should not mean the same thing.
 
 Recommended split:
 
@@ -48,7 +48,7 @@ Recommended split:
 | DotTalk++ SDLC | Runtime, source, build, commands, storage, indexing, HELP, metadata, tests, maintenance. | Keep the engine and professional runtime correct, buildable, testable, and safe. |
 | LabTalk SDLC | Laboratory Campus docs, labs, cases, datasets, portal, proof registry, student-facing claims. | Keep the campus truthful, reviewable, and proof-backed. |
 | AI Systems Integration SDLC | Relationships among AI Portal, onboarding, memory, reports, coordination, Pseudo-Chat, AI-BBS, authorization, evidence, and publication projections. | Keep the combined AI system understandable, scoped, non-duplicative, and maintainable while incorporated lanes retain their owners. |
-| PLDC | Products, labs, lessons, case-study packages, dashboards, public pages, class/workshop offerings. | Move a usable learning/product package from concept to delivery and support. |
+| PDLC | Products, labs, lessons, case-study packages, dashboards, public pages, class/workshop offerings. | Move a usable learning/product package from concept to delivery and support. |
 
 Decision:
 
@@ -56,10 +56,10 @@ Decision:
 DotTalk++ is large enough to deserve its own SDLC.
 LabTalk uses its own campus SDLC.
 AI Systems Integration uses its own cross-system SDLC.
-PLDC sits above both as the product/lab delivery cycle.
+PDLC sits above both as the product/lab delivery cycle.
 ```
 
-PLDC should not replace SDLC. PLDC answers: "What package are we delivering,
+PDLC should not replace SDLC. PDLC answers: "What package are we delivering,
 to whom, and how will they use it?" SDLC answers: "What system behavior exists,
 how is it controlled, and what proof keeps it trustworthy?"
 
@@ -116,7 +116,7 @@ The Laboratory Campus is a stack of related but separate lifecycles.
 | Runtime | DotTalk++ SDLC | Commands, shell, HELP, SQL, relations, scripts, MAINT. | Source review, command proof, HELP/CMDHELPCHK, smoke tests. |
 | Maintenance | Maintenance SDLC | SelfDoc, contracts, manualgen, datadict, messaging, reports. | Report-only default, explicit mutation gate. |
 | Campus | LabTalk SDLC | Labs, cases, datasets, proof registry, portal, diagrams. | Truth-state label, proof link, review state. |
-| Product/lab | PLDC | Database Literacy Starter, SelfDoc First Lab, case-study modules, public pages. | Audience, package boundary, support/cleanup, release notes. |
+| Product/lab | PDLC | Database Literacy Starter, SelfDoc First Lab, case-study modules, public pages. | Audience, package boundary, support/cleanup, release notes. |
 
 Use the lowest applicable lifecycle as authority. For example, a LabTalk lesson
 can present `SEEK`, but DotTalk++ SDLC owns whether `SEEK` actually behaves
@@ -148,12 +148,12 @@ as a folder named `labtalk`.
 |---|---|---|---|
 | Campus doctrine | `labtalk/*.md` | LabTalk SDLC | Architecture, education map, portal concept, SDLC framework, developer profile. |
 | Registries | `labtalk/registries` | LabTalk SDLC | Apps, labs, concepts, proofs, portal. Add datasets/cases/tools registries as needed. |
-| Labs | `labtalk/labs` | LabTalk SDLC + PLDC | A lab is a deliverable package; it needs setup, run path, proof, review, cleanup. |
+| Labs | `labtalk/labs` | LabTalk SDLC + PDLC | A lab is a deliverable package; it needs setup, run path, proof, review, cleanup. |
 | Case studies | `docs/cases`, `labtalk/reports`, source DOCX evidence | LabTalk SDLC + case review | CASE_*.md files are runtime-readable derivatives, not source truth by themselves. |
 | Proofs | `labtalk/proofs`, `docs/cases/runtime_proofs` | Proof lane | Proof must be reproducible or explicitly classified as historical/manual review. |
 | Tools | `tools`, `labtalk/portal`, `scripts`, `src/maintenance` | Owning SDLC by behavior | Report-only tools stay lower risk; mutating tools require explicit gates. |
-| Diagrams/media | `labtalk/diagrams`, `docs/media`, case media registries | PLDC + review | Useful for teaching, but diagrams do not replace source/runtime proof. |
-| Public pages | website/content exports outside this repo | PLDC + publication review | Publication is downstream from proof and review, not a source of truth. |
+| Diagrams/media | `labtalk/diagrams`, `docs/media`, case media registries | PDLC + review | Useful for teaching, but diagrams do not replace source/runtime proof. |
+| Public pages | website/content exports outside this repo | PDLC + publication review | Publication is downstream from proof and review, not a source of truth. |
 
 ## Case Study Lifecycle
 
@@ -204,8 +204,8 @@ teaching aids, some are report generators, and some can mutate data or source.
 | Proof runner | DTS scripts, lab PowerShell wrappers | `dev` until transcript exists | Must capture command, path, return code, and output location. |
 | Fixture mutator | write labs, import/export repair tools | `planned` or `dev` | Must use disposable fixtures and rollback notes. |
 | Runtime command | DotTalk++ C++ command handlers | DotTalk++ SDLC | Owned by DotTalk++ SDLC, not LabTalk docs. |
-| GUI/workbench | Tkinter, wxWidgets, TUI, browser views | PLDC + owning SDLC | Must declare whether it is preview, dev, or maintained. |
-| Publication generator | manualgen, static campus HTML | PLDC + maintenance SDLC | Publication does not replace source/runtime authority. |
+| GUI/workbench | Tkinter, wxWidgets, TUI, browser views | PDLC + owning SDLC | Must declare whether it is preview, dev, or maintained. |
+| Publication generator | manualgen, static campus HTML | PDLC + maintenance SDLC | Publication does not replace source/runtime authority. |
 
 Tool record fields to add when a tools registry is created:
 
@@ -214,7 +214,7 @@ id:
 name:
 class:
 path:
-owning_lifecycle: dottalkpp_sdlc | labtalk_sdlc | maintenance_sdlc | pldc
+owning_lifecycle: dottalkpp_sdlc | labtalk_sdlc | maintenance_sdlc | pdlc
 truth_state:
 risk_class:
 inputs:
@@ -451,6 +451,6 @@ Use this checklist before calling any LabTalk item `student_ready` or
 - Do not mutate DotTalk++ runtime behavior from LabTalk docs or portal actions
   unless the change has its own implementation and proof lane.
 - Prefer demotion over ambiguity when evidence is stale.
-- Do not use PLDC to bypass SDLC gates.
+- Do not use PDLC to bypass SDLC gates.
 - Do not let LabTalk claim ownership over runtime behavior that belongs to
   DotTalk++ SDLC.

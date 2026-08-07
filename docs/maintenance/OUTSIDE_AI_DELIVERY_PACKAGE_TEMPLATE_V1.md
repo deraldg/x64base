@@ -46,7 +46,7 @@ Delete guidance lines before returning. Report only states actually reached.
 - Proposed AIF: `AIF-NEXT (proposed -- maintainer assigns)`.
   Do NOT hard-code a number. You cannot see the live claim ledger; the maintainer
   claims via `python tools/coordination/session_coordinator.py claim-aif`.
-- Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PLDC>.
+- Owning lifecycle: <DotTalk++ SDLC | LabTalk SDLC | maintenance | PDLC>.
 - SDLC lane: <intake | design | implementation | proof | review | promotion>.
 - Truth state: <observed | source-defined | runtime-proven | mixed>.
 - Proof state: <none | report | transcript | build | git-verified>.

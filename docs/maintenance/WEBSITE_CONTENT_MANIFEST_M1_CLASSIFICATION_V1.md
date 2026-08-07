@@ -52,7 +52,7 @@ push-driven, drift-gated set and leaving the ~82 human pages clearly labeled.
 | docs/engine/cdx-lmdb-indexing | index backend source | source-evidenced |
 | docs/engine/api-reference | runtime/GUI/codec API surface | source-evidenced |
 | docs/engine/sqlsel-and-sql-conformance | `include/sql_ref.hpp` x64 conformance field + `@dottalk.usage` contracts for SQLSEL/SQL/SQLITE + `REGRESSION SQLSEL_SELECT_V1` (SQLite oracle) | runtime-evidenced |
-| products/sqlsel | SQLSEL statement contract + `docs/maintenance/SQLSEL_PLDC_LANE_V1.md` (R19 names the product, R20 publishes it) | source-evidenced |
+| products/sqlsel | SQLSEL statement contract + `docs/maintenance/SQLSEL_PDLC_LANE_V1.md` (R19 names the product, R20 publishes it) | source-evidenced |
 | docs/talk-family/sqlsel | SQLSEL contract + lane doc + `docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md` (RelTalk/SQLsel distinction) | runtime-evidenced |
 | docs/dottalk/data-mutators | REPLACE/CALC/COMMIT/buffer source | source-evidenced |
 | docs/dottalk/dotscript-language-guide | DotScript command/HELP source | source-evidenced |

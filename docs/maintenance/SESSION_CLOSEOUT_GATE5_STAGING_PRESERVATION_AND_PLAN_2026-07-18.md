@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 staging preservation and selective plan
 
 Date: 2026-07-18.  
-Owning lifecycle: maintenance SDLC plus PLDC publication lane.  
+Owning lifecycle: maintenance SDLC plus PDLC publication lane.  
 SDLC lane: source-staging preservation and exact overlay planning.  
 Truth state: development documentation accepted and publication-ready.  
 Promotion state: source-staging execution still unauthorized.

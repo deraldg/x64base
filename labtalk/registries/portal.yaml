@@ -29,10 +29,10 @@ sections:
         label: DotTalk++ SDLC Charter
         kind: markdown
         path: ../docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
-      - id: doc.sdlc_pldc_planning
-        label: SDLC / PLDC Planning Adoption
+      - id: doc.sdlc_pdlc_planning
+        label: SDLC / PDLC Planning Adoption
         kind: markdown
-        path: ../docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+        path: ../docs/planning/SDLC_PDLC_PLANNING_ADOPTION_v0.md
       - id: doc.developer_profile
         label: Developer Profile
         kind: markdown

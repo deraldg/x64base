@@ -31,7 +31,7 @@ ai_report_audit:
 # Session Closeout -- AIF-090 D1-D4 repair implemented (AIF-090)
 
 Date: 2026-08-06.
-Owning lifecycle: PLDC (converted from packaging to repair by ruling R7).
+Owning lifecycle: PDLC (converted from packaging to repair by ruling R7).
 SDLC lane: implementation.
 Truth state: runtime-proven.
 Proof state: transcript + git-verified.
@@ -51,7 +51,7 @@ telling a smaller, truer story than the one it replaced.
 | Gate | `tools/staging/check_seed_budget.py` | D4: new; parses the ceiling from the document's own header |
 | Seed | `labtalk/ai_portal/AI_TIER1_SEED_V1.md` | D1 resolver pointer added; maintenance contract demoted out to pay for it |
 | Doctrine | `labtalk/ai_portal/TIER1_MAINTENANCE_CONTRACT_V1.md` | new; the demoted contract, moved verbatim |
-| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` | R7, status, section 10 |
+| Lane | `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` | R7, status, section 10 |
 
 Commit `79888dfaa`, 7 files, +358 / -47.
 
@@ -138,7 +138,7 @@ a number could fail, and which could not.
 
 ## Provenance pointers
 
-- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` sections 9 and 10
+- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md` sections 9 and 10
 - P0 evidence: `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`
 - Demoted contract: `labtalk/ai_portal/TIER1_MAINTENANCE_CONTRACT_V1.md`
 - Method rule: `AI_PORTAL.md`, "Build It to Prove It" -- a checker is unproven

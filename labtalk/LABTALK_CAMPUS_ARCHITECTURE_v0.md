@@ -35,7 +35,7 @@ concept -> app -> dataset -> command -> proof -> case -> lesson
 This is the central campus pattern. A lesson should not be disconnected prose.
 It should be backed by live or reviewed evidence.
 
-The campus should first reveal the complete PDLC/SDLC/PLDC so students can see
+The campus should first reveal the complete PDLC/SDLC so students can see
 the hidden dependencies, then teach proportional application: classify the
 change, name the actual build target and product/index profile, and run the
 smallest sufficient proof and documentation set. The target may be the compiled
@@ -68,7 +68,7 @@ a folder of notes.
 | Self-Documenting Systems Lab | Teach comments, contracts, HELP, CMDHELP, CMDHELPCHK, SelfDoc, metadata. | DotTalk++ commands plus Python reports. |
 | Dataset Library | Store and describe sample DBFs, fixed records, CSVs, SQL files, artifacts. | YAML registry plus filesystem assets. |
 | Case Library | Normalize historical and engineering cases. | Existing `docs/cases` registry plus LabTalk index. |
-| GUI Design Lab | Demonstrate GUI PLDC and multiple UI approaches over the same engine. | Web, Python/Tk, wxWidgets, or other GUI prototypes. |
+| GUI Design Lab | Demonstrate GUI PDLC and multiple UI approaches over the same engine. | Web, Python/Tk, wxWidgets, or other GUI prototypes. |
 | AI-Assisted Development Lab | Study coding contracts, AI branch flow, review, and proof. | Markdown contracts, source scans, transcript/proof reports. |
 | Proof Dashboard | Show what is source-defined, runtime-proven, HELP-documented, reviewed. | Static report first, later local web dashboard. |
 

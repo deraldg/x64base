@@ -1,4 +1,4 @@
-# SQLSEL Product Lane -- PLDC Charter and Official Plan of Record
+# SQLSEL Product Lane -- PDLC Charter and Official Plan of Record
 
 **Status:** `active_development`
 **Owner:** `member.derald` - **Steward/author:** `member.ai.claude.cowork`
@@ -21,7 +21,7 @@ Lifecycle placement per `SDLC_FAST_START_SEED_V1.md`:
 | Layer | Owning lifecycle |
 |---|---|
 | Engine seams, mode, statement surface, DML (phases P0-P5) | **DotTalk++ SDLC**, each phase run as a full **PDLC** (analyze -> design -> code -> test/debug -> document -> maintain) |
-| Product packaging: library identity, own manual family, HELP, website claims, LabTalk lessons (phase P6) | **PLDC**, gated on the SDLC evidence beneath it -- PLDC cannot outrun SDLC proof |
+| Product packaging: library identity, own manual family, HELP, website claims, LabTalk lessons (phase P6) | **PDLC**, gated on the SDLC evidence beneath it -- PDLC cannot outrun SDLC proof |
 
 ## 2. Rulings ledger (owner rulings binding on this lane)
 
@@ -119,7 +119,7 @@ projection, never a hand-authored sibling authority.
 | P3 | **DONE 2026-07-29.** Single-table `SELECT` (projection/WHERE/ORDER BY/LIMIT/COUNT(*)) | **G3 CLOSED** (SQLite oracle, registered `SQLSEL_SELECT_V1`) |
 | P4 | Relational algebra (roll-up of P4.0a-P4.7, R26): join family, set operations, grouping/aggregation, subqueries. Ad-hoc ON matching per R21 -- NO declared relation required (R27); chain nested-loop; index-nested-loop where a tag exists; minimal EXPLAIN | G4 (oracle + cross-algorithm identity) |
 | P5 | DML + transactions as assembly: buffer/WAL, FLOCK, delta-based affected-rows, BEGIN/COMMIT/ROLLBACK verbs; `DELETE` alias (R9) | G5 (crash regression + oracle) |
-| P6 | PLDC ascent: manual family, HELP, website promotion (closes OQ-9), LabTalk lessons, evidence gallery | G6 (nine-gate checkpoint) |
+| P6 | PDLC ascent: manual family, HELP, website promotion (closes OQ-9), LabTalk lessons, evidence gallery | G6 (nine-gate checkpoint) |
 
 Out of scope, each returning as its own lane: window functions, common table
 expressions, recursive queries, x32 support, any second SQL dialect surface.

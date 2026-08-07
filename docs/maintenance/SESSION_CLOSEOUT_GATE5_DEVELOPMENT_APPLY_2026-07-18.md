@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 development documentation apply
 
 Date: 2026-07-18.  
-Owning lifecycle: maintenance SDLC plus PLDC publication lane.  
+Owning lifecycle: maintenance SDLC plus PDLC publication lane.  
 SDLC lane: authorized development documentation promotion.  
 Truth state: 183-page command reference accepted in development.  
 Promotion state: source staging, Git, and website remain held.

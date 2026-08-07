@@ -361,8 +361,8 @@
       "derived_from": []
     },
     {
-      "id": "doc.sdlc_pldc_planning",
-      "label": "SDLC / PLDC Planning Adoption",
+      "id": "doc.sdlc_pdlc_planning",
+      "label": "SDLC / PDLC Planning Adoption",
       "section": "portal.docs",
       "kind": "markdown",
       "status": "",
@@ -372,7 +372,7 @@
         {
           "field": "path",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PDLC_PLANNING_ADOPTION_v0.md"
         }
       ],
       "runnable": false,
@@ -1069,7 +1069,7 @@
         {
           "field": "evidence",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PDLC_PLANNING_ADOPTION_v0.md"
         }
       ],
       "runnable": false,
@@ -3552,7 +3552,7 @@
         {
           "field": "related",
           "state": "ok",
-          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PLDC_PLANNING_ADOPTION_v0.md"
+          "path": "D:\\code\\ccode\\docs\\planning\\SDLC_PDLC_PLANNING_ADOPTION_v0.md"
         },
         {
           "field": "related",

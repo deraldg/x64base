@@ -3,7 +3,7 @@
     status      : demoted out of AI_TIER1_SEED_V1.md, 2026-08-06 (AIF-090 D4)
     owns        : labtalk/ai_portal/AI_TIER1_SEED_V1.md
     gate        : tools/staging/check_seed_budget.py
-    lane        : docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md
+    lane        : docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md
 
 This is the governance for the Tier 1 seed. It was demoted out of the seed
 itself because it is instruction for the seed's MAINTAINER, not an invariant an

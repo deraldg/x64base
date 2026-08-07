@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 6 website feed/export packet
 
 Date: 2026-07-18.  
-Owning lifecycle: full-stack documentation flush / PLDC Gate 6.  
+Owning lifecycle: full-stack documentation flush / PDLC Gate 6.  
 Truth state: public manual evidence has a validated, route-specific website
 handoff; the maintained website remains unchanged.  
 Promotion state: Gate 6 passed; Gate 7 integration planning requires separate

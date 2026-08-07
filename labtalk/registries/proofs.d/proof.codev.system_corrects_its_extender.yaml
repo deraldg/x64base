@@ -2,7 +2,7 @@ id: proof.codev.system_corrects_its_extender
 label: The tree's own artifacts and gates corrected an outside AI extender, repeatedly
 state: source_defined
 source: D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_SQLSEL_P0_P1_2026-07-29.md
-item_id: docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+item_id: docs/maintenance/SQLSEL_PDLC_LANE_V1.md
 return_code: 0
 related:
 - D:/code/ccode/labtalk/registries/ai_report_audit.yaml

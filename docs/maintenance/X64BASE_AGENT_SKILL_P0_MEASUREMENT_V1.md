@@ -30,7 +30,7 @@ ai_report_audit:
 
 # AIF-090 P0 -- Prove the Bottleneck: measurement and G0 evidence
 
-    lane        : AIF-090, docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md
+    lane        : AIF-090, docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md
     date        : 2026-08-06
     method      : two outside-runner cold probes plus static reachability
                   measurement; every probe figure re-derived independently
@@ -223,7 +223,7 @@ which P0 measured but did not probe.
 
 ## 7. Provenance
 
-- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md`
+- Lane: `docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`
 - Method rule: `AI_PORTAL.md`, "Build It to Prove It -- Why Review Does Not Find
   These (AIF-082)" and "Prove the Bottleneck First"
 - Probe transcripts: not committed; the reported figures were re-derived from the

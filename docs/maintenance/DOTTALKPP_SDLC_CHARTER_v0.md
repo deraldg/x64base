@@ -19,10 +19,10 @@ Use this split:
 ```text
 DotTalk++ SDLC: engine/runtime/system correctness.
 LabTalk SDLC: laboratory campus truth and learning material.
-PLDC: product/lab/package delivery over both.
+PDLC: product/lab/package delivery over both.
 ```
 
-PLDC is useful, but it should not replace SDLC. A product or lab package can be
+PDLC is useful, but it should not replace SDLC. A product or lab package can be
 well-designed and still depend on unproven runtime behavior. The SDLC gate must
 win when those disagree.
 
@@ -58,9 +58,9 @@ matrix is `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`.
 | DotScript and runtime scripts | DotTalk++ SDLC for behavior; LabTalk for lesson packaging |
 | HELP, CMDHELP, CMDHELPCHK | DotTalk++ SDLC and maintenance SDLC |
 | MAINT, BBOX, DDICT, MANUAL | DotTalk++ SDLC and lane-specific maintenance SDLC |
-| GUI/TUI/browser frontends | DotTalk++ SDLC for runtime contract; PLDC for product delivery |
+| GUI/TUI/browser frontends | DotTalk++ SDLC for runtime contract; PDLC for product delivery |
 | LabTalk labs, cases, portal, proof registry | LabTalk SDLC |
-| Case-study publication and public pages | LabTalk SDLC plus PLDC publication gate |
+| Case-study publication and public pages | LabTalk SDLC plus PDLC publication gate |
 
 ## SDLC Lanes
 
@@ -141,7 +141,7 @@ Promotion levels:
 LabTalk may only package a DotTalk++ behavior as `real` after DotTalk++ SDLC has
 at least `runtime_observed` proof, and preferably `validated` for student use.
 
-## DotTalk++ vs PLDC
+## DotTalk++ vs PDLC
 
 Use DotTalk++ SDLC when the question is:
 
@@ -151,7 +151,7 @@ Use DotTalk++ SDLC when the question is:
 - Are indexes, buffers, filters, relations, and metadata correct?
 - Do HELP and validation agree with runtime behavior?
 
-Use PLDC when the question is:
+Use PDLC when the question is:
 
 - What product, lab, class, workshop, board, dashboard, or release package are
   we giving a user?
@@ -180,4 +180,4 @@ Use PLDC when the question is:
 - A case study is not runtime proof.
 - A successful command listing is not behavioral proof.
 - Publication is not authority.
-- PLDC cannot promote a behavior past its SDLC evidence.
+- PDLC cannot promote a behavior past its SDLC evidence.

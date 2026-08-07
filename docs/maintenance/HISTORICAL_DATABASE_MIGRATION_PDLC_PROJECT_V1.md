@@ -2,7 +2,7 @@
 
 Status: **active seed / design lane**  
 Project: `project.labtalk.historical_database_migration`  
-Owning lifecycle: LabTalk SDLC + PLDC  
+Owning lifecycle: LabTalk SDLC + PDLC  
 Upstream runtime authority: `project.x64base.runtime`  
 Publication consumer: `project.x64base.website`
 
@@ -135,7 +135,7 @@ projections rather than silently replacing them.
 
 ```text
 runtime/source evidence -> LabTalk case/dataset/proof records
-                         -> PDLC/PLDC package review
+                         -> PDLC package review
                          -> website/manual publication
 ```
 

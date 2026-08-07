@@ -2,7 +2,7 @@
 
     from        : member.ai.claude.cowork, 2026-08-06
     for         : whoever picks up AIF-090
-    lane        : docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md
+    lane        : docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md
     posture     : charter opened, nothing built. The next gate is a GO/NO-GO.
 
 This records **how to work in this lane**, not what happened. The closeout has

@@ -25,11 +25,11 @@ ai_report_audit:
       2026-08-06). Charter authoring is that initiation. Rulings R1-R3 recorded
       below were given by the owner in the same session.
   report:
-    path: docs/maintenance/X64BASE_AGENT_SKILL_PLDC_LANE_V1.md
+    path: docs/maintenance/X64BASE_AGENT_SKILL_PDLC_LANE_V1.md
     kind: lane_charter
 ---
 
-# x64base Agent Skill -- PLDC Charter and Plan of Record V1
+# x64base Agent Skill -- PDLC Charter and Plan of Record V1
 
 **Status:** `CONVERTED to a repair lane by owner ruling R7 (2026-08-06). D1-D4
 IMPLEMENTED and runtime-proven.` The skill programme (projector, bundle, shim
@@ -51,11 +51,11 @@ working inside the tree and by an outside agency that has never cloned it.
 
 | Concern | Lifecycle |
 | --- | --- |
-| Package identity, audience, setup, support, retirement, distribution | **PLDC** -- Product/Lab Delivery Cycle |
+| Package identity, audience, setup, support, retirement, distribution | **PDLC** -- Project Development Life Cycle |
 | The projector program and registry inside each phase | **PDLC** run in full: analyze -> design -> code -> test/debug -> document -> maintain |
 | The doctrine and gates the package projects | **DotTalk++ SDLC** and **maintenance SDLC** -- already proven, not re-opened here |
 
-PLDC is gated on the SDLC evidence beneath it and **cannot outrun SDLC proof**
+PDLC is gated on the SDLC evidence beneath it and **cannot outrun SDLC proof**
 (`DOTTALKPP_SDLC_CHARTER_v0.md:183`). This lane adds no doctrine. It packages
 doctrine that already exists and already has gates.
 
@@ -84,13 +84,14 @@ three tiers already have.
 
 | # | Date | Ruling |
 | --- | --- | --- |
-| R1 | 2026-08-06 | **Lifecycle is PLDC.** The earlier "PDLC" was an owner typo; canonical usage governs. Engine-adjacent work inside a phase runs as a full PDLC, gated on SDLC evidence beneath it. |
+| R1 | 2026-08-06 | ~~**Lifecycle is PLDC.** The earlier "PDLC" was an owner typo; canonical usage governs.~~ **Superseded by R8 (2026-08-07).** Engine-adjacent work inside a phase runs as a full PDLC, gated on SDLC evidence beneath it. |
 | R2 | 2026-08-06 | **Skills are a first-class LabTalk asset class.** `labtalk/skills/<name>/`, registered in `labtalk/registries/skills.yaml` beside `labs.yaml` / `proofs.yaml` / `apps.yaml`. NOT `src/` -- that tree is compiled runtime truth under `file(GLOB_RECURSE ...)` (`src/CMakeLists.txt:82,368`), and governance places portal/teaching material under LabTalk identity. |
 | R3 | 2026-08-06 | **Bundle and tree are orthogonal, on the `dottalkpp` / `dottalk_bbsd` model.** Independently runnable; no runtime coupling in either direction; coordination only through the shared registry substrate. "Separate, but not far." |
 | R4 | 2026-08-06 | **Drift gate runs advisory for one cycle**, then promotes to hard-fail. |
 | R5 | 2026-08-06 | **`.claude/skills/` is an accepted vendor target in `development`.** |
 | R6 | 2026-08-06 | **Audience is repo-partner onboarding.** Engine/DotScript-operator and website-maintenance skills are deferred, not cancelled (section 8). |
 | R7 | 2026-08-06 | **G0 ruled: CONVERT.** "develop and document, it is our thesis". The skill programme is retired unbuilt; the lane becomes the D1-D4 repair lane, developed and documented as one act. P1-P9 below are superseded by section 11. |
+| R8 | 2026-08-07 | **PLDC is merged into PDLC and retired.** "PLDC -- Product/Lab Delivery Cycle" and PDLC are one lifecycle: **PDLC -- Project Development Life Cycle**. This reverses R1, which had ruled the opposite. Doctrine of record: `SCOPE_CALIBRATED_LIFECYCLE_DOCTRINE_V1.md`, "Lifecycle vocabulary". Lane file renamed `X64BASE_AGENT_SKILL_PLDC_LANE_V1.md` -> `X64BASE_AGENT_SKILL_PDLC_LANE_V1.md`. |
 
 ## 3. Standing disciplines (adopted, enforced per phase)
 
@@ -148,7 +149,7 @@ three tiers already have.
 | **P6** | Gate wiring (R4). `emit_skill.py check` into `prepush_gate.py`, advisory for one cycle. `SKILL.md` added to `check_mandatory_tracked.py`. `recall.py --validate` asserts every trigger appears in the projection. | **G6** advisory cycle observed, then promoted to hard-fail. |
 | **P7** | Trigger-description evals. 15-25 prompts spanning true positives and true negatives; measure trigger rate; iterate the description only. Use the `skill-creator` eval path. | **G7** trigger rate RECORDED AS A NUMBER, not an impression. A skill that fires 60 percent of the time is a 60 percent skill. |
 | **P8** | Shim collapse. `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md` become generated projections of one canonical body. | **G8** all three regenerate identically from `emit_skill.py install`; hand-edit fails. |
-| **P9** | PLDC ascent. Audience documentation, setup, support path, retirement policy, LabTalk registration, website promotion. | **G9** package delivery checklist; SDLC evidence beneath every claim. |
+| **P9** | PDLC ascent. Audience documentation, setup, support path, retirement policy, LabTalk registration, website promotion. | **G9** package delivery checklist; SDLC evidence beneath every claim. |
 
 ## 5. Open rulings, placed where they block
 

@@ -1,7 +1,7 @@
 # AI Portal SDLC Fast-Start Seed v1
 
 Status: **Mandatory for every AI Portal task**
-Authority: maintained DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC, and PLDC doctrine
+Authority: maintained DotTalk++ SDLC, LabTalk SDLC, maintenance SDLC, and PDLC doctrine
 
 ## Rule
 
@@ -13,7 +13,7 @@ needed for the task:
 
 1. `D:\code\ccode\docs\maintenance\DOTTALKPP_SDLC_CHARTER_v0.md`
 2. `D:\code\ccode\labtalk\LABTALK_SDLC_FRAMEWORK_v0.md`
-3. `D:\code\ccode\docs\planning\SDLC_PLDC_PLANNING_ADOPTION_v0.md`
+3. `D:\code\ccode\docs\planning\SDLC_PDLC_PLANNING_ADOPTION_v0.md`
 4. `D:\code\ccode\labtalk\ai_portal\SCOPE_CALIBRATION_SEED_V1.md`
 5. the owning maintenance, product, proof, or publication lane documents
 
@@ -24,9 +24,9 @@ needed for the task:
 | Engine, runtime, storage, command, DotScript behavior, HELP, build, test | DotTalk++ SDLC |
 | Contracts, SelfDoc, MDO/manualgen, metadata, guarded tools | Owning maintenance SDLC plus DotTalk++ SDLC when runtime is affected |
 | LabTalk portal, registries, labs, cases, campus truth | LabTalk SDLC |
-| Product, lab, workshop, release package, or public page | PLDC plus the underlying owning SDLC |
+| Product, lab, workshop, release package, or public page | PDLC plus the underlying owning SDLC |
 
-PLDC cannot promote behavior beyond its SDLC evidence. Publication does not
+PDLC cannot promote behavior beyond its SDLC evidence. Publication does not
 turn design intent into runtime proof.
 
 ## Mandatory Task Fields

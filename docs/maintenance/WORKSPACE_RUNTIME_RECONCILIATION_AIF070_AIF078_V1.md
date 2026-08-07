@@ -70,7 +70,7 @@ The local assessment recorded this at intake time ("whitepaper `.docx` not yet d
 
 **Consequence, stated plainly: a full reconciliation cannot be completed from the tree.** What follows reconciles against the *summarised* design in the MANIFEST, which is real evidence but is an abstract, not a specification. Anything in the whitepaper that contradicts sec 3 below will win, and this note must then be revised.
 
-This is the same shape as the AIF-074 plan-of-record gap (`SQLSEL_PLDC_LANE_V1.md:8` cites a plan absent from the tree) and as AIF-062. **Owed: obtain the whitepaper, or accept that AIF-070's design authority is the MANIFEST abstract and nothing more.**
+This is the same shape as the AIF-074 plan-of-record gap (`SQLSEL_PDLC_LANE_V1.md:8` cites a plan absent from the tree) and as AIF-062. **Owed: obtain the whitepaper, or accept that AIF-070's design authority is the MANIFEST abstract and nothing more.**
 
 ---
 

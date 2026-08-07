@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 source-staging preflight
 
 Date: 2026-07-18.  
-Owning lifecycle: maintenance SDLC plus PLDC publication lane.  
+Owning lifecycle: maintenance SDLC plus PDLC publication lane.  
 SDLC lane: review -> promotion preflight.  
 Truth state: Gate 4 publication-ready; Gate 5 candidate passes.  
 Promotion state: `C:\x64base` unchanged and execution held.

@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 7 website integration plan
 
 Date: 2026-07-18.  
-Owning lifecycle: full-stack documentation flush / PLDC Gate 7 planning.  
+Owning lifecycle: full-stack documentation flush / PDLC Gate 7 planning.  
 Truth state: the 11-path website transaction is exact, machine-checkable, and
 preflight-valid against the maintained site checkout.  
 Promotion state: plan ready; website mutation and local build remain held for

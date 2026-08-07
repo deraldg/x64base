@@ -36,7 +36,7 @@ ai_report_audit:
 Date: 2026-08-03.
 Owning lifecycle: **AI Systems Integration SDLC**.
 Incorporating lifecycle: **AI Systems Integration SDLC**.
-Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PLDC**.
+Related lifecycles: **DotTalk++ SDLC**, **LabTalk SDLC**, **maintenance SDLC**, and **PDLC**.
 SDLC lane: `design` (M1 requirements).
 Project: `project.ai_systems.integration`.
 Truth state: `dev` requirements candidate.

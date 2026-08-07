@@ -100,15 +100,15 @@ context_seeds:
     kind: mandatory_context_seed
     status: active_mandatory_for_all_tasks
     path: ai_portal/SDLC_FAST_START_SEED_V1.md
-    authority: maintained_sdlc_and_pldc_doctrine
+    authority: maintained_sdlc_and_pdlc_doctrine
     packet_priority: first
     applies_to: [all_ai_portal_tasks]
     evidence:
       - D:/code/ccode/docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
       - D:/code/ccode/labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
-      - D:/code/ccode/docs/planning/SDLC_PLDC_PLANNING_ADOPTION_v0.md
+      - D:/code/ccode/docs/planning/SDLC_PDLC_PLANNING_ADOPTION_v0.md
     required_fields: [id, title, area, owning_lifecycle, sdlc_lane, operating_mode, change_class, build_target, product_profile, index_profile, scope_reason, truth_state, proof_state, risk_class, source_path, website_path, next_gate, owner, status]
-    rule: Every AI task, package, proof, promotion, and publication must enter the owning SDLC, preserve its state fields, and leave the next gate explicit; PLDC cannot bypass SDLC evidence.
+    rule: Every AI task, package, proof, promotion, and publication must enter the owning SDLC, preserve its state fields, and leave the next gate explicit; PDLC cannot bypass SDLC evidence.
 
   - id: seed.ai_portal.scope_calibration.v1
     label: AI Portal Scope Calibration Seed v1

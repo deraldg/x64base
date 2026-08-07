@@ -153,7 +153,7 @@ the browsers, `RBROWSE`, and the TUI grid.
 
 ## 4b. Disposition -- ruled and implemented
 
-`R18` (charter `docs/maintenance/SQLSEL_PLDC_LANE_V1.md`): TUP/TUPLE are preview
+`R18` (charter `docs/maintenance/SQLSEL_PDLC_LANE_V1.md`): TUP/TUPLE are preview
 surfaces and may overlay uncommitted edits; `SQLSEL SELECT` is statement-scoped
 and reads committed table truth until SQLSEL DML is promoted; projection and
 WHERE within one statement must observe the same committed source. This is
@@ -220,7 +220,7 @@ never `git add -A` -- one working tree, several sessions.
 
 ## 9. Lane context you may want
 
-- Charter and rulings (R1-R17): `docs/maintenance/SQLSEL_PLDC_LANE_V1.md`.
+- Charter and rulings (R1-R17): `docs/maintenance/SQLSEL_PDLC_LANE_V1.md`.
   R16 (orthogonality) and R16b (statements ignore session state) are the most
   relevant -- note the tension: a table buffer is arguably session state, which
   is an argument for option 2.

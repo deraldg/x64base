@@ -1,7 +1,7 @@
 # Session Closeout -- x64base Engine and Edition Separation Research
 
 Date: 2026-07-14  
-Lane: DotTalk++ SDLC design + PLDC product boundary  
+Lane: DotTalk++ SDLC design + PDLC product boundary  
 Mutation class: historical research record; implementation completed later  
 Runtime/source implementation: see the implementation closeout dated 2026-07-14
 
@@ -125,7 +125,7 @@ this research pass.
 - read current CMake target/source/install rules;
 - counted current source families and install-rule payloads;
 - inspected command registry and HELP model fields;
-- read DD-004, DD-002, DD-001, extension, SDLC, PLDC, AI Portal, and promotion
+- read DD-004, DD-002, DD-001, extension, SDLC, PDLC, AI Portal, and promotion
   authorities;
 - inspected local vcpkg copyright files and resolved-package status;
 - Project licensing: To be determined.

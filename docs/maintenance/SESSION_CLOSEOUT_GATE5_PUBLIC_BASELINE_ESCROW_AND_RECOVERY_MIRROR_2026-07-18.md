@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 5 public-baseline escrow and recovery mirror
 
 Date: 2026-07-18.  
-Owning lifecycle: maintenance SDLC plus PLDC publication lane.  
+Owning lifecycle: maintenance SDLC plus PDLC publication lane.  
 Truth state: staging is a recoverable projection, not a second authority and
 not blindly disposable.  
 Promotion state: recovery ready; destructive reset remains unauthorized.

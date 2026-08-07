@@ -459,7 +459,7 @@ noticed because the only build anyone runs is configuration Y.
 
 ## 9e. TURNED OVER: DDICT contract repair is a PDLC lane, not an inline fix
 
-Decided 2026-07-27 (member.derald): *"we turn over ddict for pldc repair."*
+Decided 2026-07-27 (member.derald): *"we turn over ddict for pdlc repair."*
 
 `src/cli/cmd_ddict.cpp` is the sole `CONTRACT_QA/NON_CANONICAL_DIALECT` finding
 and the reason `DDICT` cannot be generated into `SYSCMD`. It uses a block-comment

@@ -35,7 +35,7 @@ ai_report_audit:
 **Status:** `review-needed` -- decision analysis; **no engine source changed; zero runtime evidence**
 **Owner:** `member.derald` · **Steward:** `member.ai.claude.cowork`
 **Claim:** `coordination/aif/AIF-078.claim` (run `WORKSPACE-QUALIFIER-20260730`)
-**Bears on:** `AIF-074` (sqlsel-pldc, `active_development`), phase **P4.1**
+**Bears on:** `AIF-074` (sqlsel-pdlc, `active_development`), phase **P4.1**
 **Companions:** `docs/maintenance/COST_BENEFIT_GATE_DOCTRINE_V1.md`; reference design at `src/AIPortal/sessions/2026-07-30_cowork_workspace_qualifier/`
 
 ---
@@ -46,7 +46,7 @@ The maintainer asked whether a lane was open for multiple workspaces, and if not
 
 **No such lane was open in the claim ledger** -- but see §0a: prior art exists, stranded. And the investigation found the question was mis-scoped, in the maintainer's favour.
 
-`docs/maintenance/SQLSEL_PLDC_LANE_V1.md:112`, phase **P4.1**, verbatim:
+`docs/maintenance/SQLSEL_PDLC_LANE_V1.md:112`, phase **P4.1**, verbatim:
 
 > "INNER JOIN, two tables, one equi-key. **Adds table ALIASES (`FROM STUDENTS S`) and QUALIFIED column names (`S.LNAME`), which every later slice needs.** Nested loop, inner side SCANNED -- correctness before speed | G4a (SQLite oracle, incl. row multiplication)"
 
@@ -230,7 +230,7 @@ SQLSEL: unexpected token 'S' after the table name.
 
 The grammar seat for a qualifier is **empty and explicitly reserved**. It will not stay that way past P4.1.
 
-**Planned** (documentation-tier, `SQLSEL_PLDC_LANE_V1.md:105-122`): P4.0a harness (implemented, **parity RED**), P4.0b evaluator seam (**blocked** on ED-01/ED-02), P4.1 INNER JOIN, P4.2 index-assisted inner, P4.3 LEFT, P4.4 RIGHT/FULL/CROSS, P4.5 DISTINCT + UNION/INTERSECT/EXCEPT, P4.6 GROUP BY/HAVING, P4.7 subqueries, P5 DML + transactions, P6 PLDC ascent. Ruling **R26** (`:48`): full modern relational algebra in scope, owner-accepted as *"ROUGHLY DOUBLES the lane."*
+**Planned** (documentation-tier, `SQLSEL_PDLC_LANE_V1.md:105-122`): P4.0a harness (implemented, **parity RED**), P4.0b evaluator seam (**blocked** on ED-01/ED-02), P4.1 INNER JOIN, P4.2 index-assisted inner, P4.3 LEFT, P4.4 RIGHT/FULL/CROSS, P4.5 DISTINCT + UNION/INTERSECT/EXCEPT, P4.6 GROUP BY/HAVING, P4.7 subqueries, P5 DML + transactions, P6 PDLC ascent. Ruling **R26** (`:48`): full modern relational algebra in scope, owner-accepted as *"ROUGHLY DOUBLES the lane."*
 
 ---
 
@@ -253,7 +253,7 @@ The qualifier is consumed by: table aliases and qualified columns (P4.1), join `
 
 ### 4c. The R27 wrinkle -- the sharpest argument
 
-Ruling **R27** (`SQLSEL_PLDC_LANE_V1.md:49`):
+Ruling **R27** (`SQLSEL_PDLC_LANE_V1.md:49`):
 
 > "Declared relations are an OPTIMIZATION HINT, never a precondition... **any two OPEN tables** join on any comparable columns with no prior `SET RELATION` and no registry lookup."
 
@@ -357,7 +357,7 @@ AIF-070 owns *what a workspace is* (named, concurrent, memo-resident, hydratable
 | **G1** | P1 -- slot stored in `DbArea` | `REGRESSION ALL` green; 19 scan sites removed or reduced to O(1); relation traversal timing captured before/after on a multi-row `REL ENUM` |
 | **G2** | P2 -- single ambiguity-detecting resolver | An ambiguous name errors with matching slots named; `SQLSEL_SELECT_V1` + `EXPORT_SDF` + REL regressions green |
 | **G3** | Cap raise to 4096 + both guards | `REGRESSION ALL` green; measured RSS delta within §2a; boot clean on MSVC |
-| **G4** | R27 scope clause + P4.1 two-level qualifier design accepted | Written into `SQLSEL_PLDC_LANE_V1.md` before P4.1 implementation opens |
+| **G4** | R27 scope clause + P4.1 two-level qualifier design accepted | Written into `SQLSEL_PDLC_LANE_V1.md` before P4.1 implementation opens |
 
 **This lane closes at G4.** Building the workspace runtime is explicitly *out of scope* and requires a separate lane and a demand case.
 
@@ -381,7 +381,7 @@ AIF-070 owns *what a workspace is* (named, concurrent, memo-resident, hydratable
 
 - **Measured:** all §2a sizes, from a compiled probe against this tree's headers and generated build vectors (g++/libstdc++ x86-64). **MSVC unverified -- G0 exists to close that.**
 - **Source-evidenced:** §1, §2b--§2d, §3, §4c, §4d. File and line verified against `D:\code\ccode` at baseline `349227c18` on 2026-07-30.
-- **Documentation-tier:** the P2 and P4.1--P6 phase register and rulings R20--R28 -- the AIF-074 charter's own statements of intent, not runtime evidence. §0's reframing rests on `SQLSEL_PLDC_LANE_V1.md:112`; if that line's intent is not current, §4's asymmetry must be re-derived.
+- **Documentation-tier:** the P2 and P4.1--P6 phase register and rulings R20--R28 -- the AIF-074 charter's own statements of intent, not runtime evidence. sec. 0's reframing rests on `SQLSEL_PDLC_LANE_V1.md:112`; if that line's intent is not current, sec. 4's asymmetry must be re-derived.
 - **Chat/AI output (lowest tier):** §5, §5a, §7. No code compiled beyond the `sizeof` probe, no test run, no gate exercised.
 
 ---

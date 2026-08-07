@@ -32,7 +32,7 @@ ai_report_audit:
 # Session Closeout -- publication surface recovery and allocator hardening (AIF-092)
 
 Date: 2026-08-07.
-Owning lifecycle: PLDC.
+Owning lifecycle: PDLC.
 SDLC lane: implementation.
 Truth state: source-evidenced (docs and tooling; no engine behavior touched).
 Proof state: fixtures + git-verified.
@@ -51,7 +51,7 @@ required to use.
 | Public docs | `CONTRIBUTING.md` (new D: source + branch guidance) | `c686f0219` |
 | Public docs | `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `RELEASE_NOTES.md` | with the above |
 | Tooling | `tools/staging/generate_public_manifest.py`, `MANIFEST.txt` | `d083e6ea4` |
-| Lane | `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PLDC_LANE_V1.md` | `daa266e0d` |
+| Lane | `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md` | `daa266e0d` |
 | Coordination | `tools/coordination/check_aif_claimed.py` | `daa266e0d` |
 | Gate | `tools/staging/prepush_gate.py` (check 6, advisory) | `daa266e0d` |
 | Registry | `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` (AIF-092 row) | `daa266e0d` |
@@ -158,7 +158,7 @@ measures it.
 
 ## Provenance pointers
 
-- Lane: `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PLDC_LANE_V1.md`
+- Lane: `docs/maintenance/PUBLICATION_SURFACE_RECOVERY_PDLC_LANE_V1.md`
 - Origin finding: `docs/maintenance/X64BASE_AGENT_SKILL_P0_MEASUREMENT_V1.md`
   and `docs/maintenance/external_ai_intake/aif090_cold_probes_2026-08-06/`
 - Doctrine executed: `PROMOTION_PROCESS.md` sections 6 and 8

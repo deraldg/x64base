@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Gate 7 website integration apply
 
 Date: 2026-07-18.  
-Owning lifecycle: full-stack documentation flush / PLDC Gate 7.  
+Owning lifecycle: full-stack documentation flush / PDLC Gate 7.  
 Truth state: the reviewed documentation feed is integrated into the maintained
 website working tree and passes the local production build.  
 Promotion state: Gate 7 passed; Gate 8 commit/push/GitHub Pages publication

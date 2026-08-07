@@ -28,7 +28,7 @@ ai_report_audit:
 # Session Closeout — Documentation to x64base.com publication
 
 Date: 2026-07-18.  
-Owning lifecycle: full-stack documentation flush / PLDC Gates 8-9.  
+Owning lifecycle: full-stack documentation flush / PDLC Gates 8-9.  
 Truth state: the accepted developer manual and documentation projection are
 published and verified on x64base.com.  
 Promotion state: `DOCFLUSH-20260716-001` gates 1-9/9 PASS; vertical complete.

@@ -14,7 +14,7 @@ projects:
       - docs/governance/REPO_BOUNDARIES_RUNTIME_GUI_LABTALK_v1.md
       - docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md
       - docs/maintenance/DDL_SCHEMA_PDLC_LANE_V1.md
-      - docs/maintenance/SQLSEL_PLDC_LANE_V1.md
+      - docs/maintenance/SQLSEL_PDLC_LANE_V1.md
       - docs/maintenance/BUFFER_VISIBILITY_TWO_FAMILIES_V1.md
       - docs/maintenance/EVALUATOR_DIFFERENTIAL_HARNESS_SCOPE_V1.md
       - docs/maintenance/EXPORT_SDF_PDLC_CLOSEOUT_V1.md
@@ -338,7 +338,7 @@ projects:
       - project.labtalk.campus
       - project.x64base.website
     notes: >-
-      PDLC/PLDC teaching project for carrying a stable business dataset through
+      PDLC teaching project for carrying a stable business dataset through
       COBOL fixed-length records, xBase/DBF, CODASYL-style relationships, JSON,
       CSV, spreadsheets, SQLite/SQL, and x64base comparison. Existing runtime
       starters and sample packages are assembled first; historical cases remain

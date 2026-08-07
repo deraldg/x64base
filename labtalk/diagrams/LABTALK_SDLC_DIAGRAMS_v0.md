@@ -109,24 +109,24 @@ flowchart LR
     class student,publish ready
 ```
 
-## SDLC, PLDC, and Ownership Split
+## SDLC, PDLC, and Ownership Split
 
 ```mermaid
 flowchart TB
     dot["DotTalk++ SDLC<br/>runtime, source, commands, storage, HELP, tests"]
     maint["Maintenance SDLC<br/>SelfDoc, contracts, manualgen, datadict, messaging"]
     lab["LabTalk SDLC<br/>labs, cases, datasets, portal, proof registry"]
-    pldc["PLDC<br/>product, lab, lesson, dashboard, public package delivery"]
+    pdlc["PDLC<br/>product, lab, lesson, dashboard, public package delivery"]
 
     dot -->|"proves behavior"| lab
     maint -->|"governs evidence and reports"| lab
-    dot -->|"runtime capability"| pldc
-    lab -->|"learning package content"| pldc
-    maint -->|"publication and validation gates"| pldc
+    dot -->|"runtime capability"| pdlc
+    lab -->|"learning package content"| pdlc
+    maint -->|"publication and validation gates"| pdlc
 
-    pldc -. "cannot bypass" .-> dot
-    pldc -. "cannot bypass" .-> maint
-    pldc -. "cannot bypass" .-> lab
+    pdlc -. "cannot bypass" .-> dot
+    pdlc -. "cannot bypass" .-> maint
+    pdlc -. "cannot bypass" .-> lab
 ```
 
 ## Case Study Lifecycle
@@ -196,8 +196,8 @@ flowchart TB
     runner["Proof runner<br/>dev until transcript exists"]
     mutator["Fixture mutator<br/>planned/dev with disposable fixtures"]
     runtimecmd["Runtime command<br/>owned by DotTalk++ SDLC"]
-    gui["GUI/workbench<br/>PLDC plus owning SDLC"]
-    publisher["Publication generator<br/>PLDC plus maintenance SDLC"]
+    gui["GUI/workbench<br/>PDLC plus owning SDLC"]
+    publisher["Publication generator<br/>PDLC plus maintenance SDLC"]
 
     tool --> portal
     tool --> scanner
