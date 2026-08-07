@@ -5,8 +5,8 @@ source, external format claims cited below. Build + proof are maintainer handoff
 
 Owner: `member.ai.claude.cowork`   Coworker: `member.ai.grok`   Owner of record: `member.derald`
 Parent: `AI_ENGINE_VFP_TYPE_SUPPORT_DEFICIENCY_DESIGN_V1.md` (AIF-NNN), milestone M1.
-External format sources: hackfox "Hacker's Guide to VFP" s1c2; go-foxpro-dbf issue #9
-(varchar), tdbf `_NullFlags` discussion, VFP9 "New Data and Index Types" ch.9.
+The `_NullFlags` / varlength format facts in section 2 are NOT from the x64base source
+tree; they are drawn from the external references credited in section 9.
 
 ## 1. What M1 delivers
 
@@ -104,3 +104,33 @@ First concrete external-AI ask, harvested into the AIF: **confirm the `_NullFlag
 bit-assignment order (R1) against real VFP `0x30`/`0x31`/`0x32` tables** and return the
 observed per-field bit map. Route via the BBS/external-AI intake; harvest to
 RUN + ENVELOPE + INDEX_ENTRY; curate the finding into the M1 decode function.
+
+## 9. Sources (external format references -- credited)
+
+**Publish plan:** these credits stay here in the dev docs while the lane is in
+progress. They publish to the website `third-party-acknowledgements` page as part of
+this feature's full-stack push -- NOT as a real-time site edit -- so the public credit
+ships when the feature does and the site never drifts ahead of the source.
+
+The `_NullFlags` and varchar/varbinary length mechanics in section 2 are derived from
+these public references, not from the x64base source tree. They are third-party
+community documentation of Microsoft's Visual FoxPro on-disk format; credit to their
+authors, and any conflict between them is resolved by the real-fixture proof (section 6):
+
+- Whil Hentzen et al., "The Hacker's Guide to Visual FoxPro" (hackfox), section 1
+  chapter 2 "DBF, FPT, CDX, DBC -- Hike!": https://hackfox.github.io/section1/s1c2.html
+- go-foxpro-dbf (Sebastiaan Klippert), issue #9 "Support VFP Varchar field" -- the
+  `_NullFlags` varlength-bit + last-byte length behavior:
+  https://github.com/SebastiaanKlippert/go-foxpro-dbf/issues/9
+- tDBF (Delphi/BCB) open-discussion thread "_NullFlags Field on Visual FoxPro":
+  https://sourceforge.net/p/tdbf/discussion/107245/thread/86bf22be/
+- Microsoft, "What's New in Visual FoxPro 9.0", chapter 9 "New Data and Index Types":
+  http://foxcentral.net/microsoft/WhatsNewInVFP9_Chapter09.htm
+- dbfread, "Field Types" (type-code reference incl. `0`/`_NullFlags`):
+  https://dbfread.readthedocs.io/en/latest/field_types.html
+
+For the dBASE-7 history + the branch split (parent charter, section 3 non-goals):
+dBASE (Wikipedia) https://en.wikipedia.org/wiki/DBase ; WinWorld dBASE 5.x
+https://winworldpc.com/product/dbase/v ; .dbf format https://en.wikipedia.org/wiki/.dbf ;
+and the dBASE 7 table spec examined this session:
+https://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm
