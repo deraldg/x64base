@@ -64,6 +64,10 @@ WSL builds also exist (`build-wsl`, etc.); `.exe` cross-platform via guarded cod
 - Owner/maintainer: `member.derald`. Author docs as review-needed until committed; mirror `C:\x64base`
   and public repo are separate promotion steps.
 - No em-dashes in scripts or docs (maintainer preference); use `--` / `->`.
+- **Python 3.12 host tools** (`tools/fullstack_docs/**`, anything importing yaml) run under the
+  repo venv `.venv312` via `$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"`. NOT `py -3.12`
+  (not installed) and NOT the vcpkg python (minimal, no PyYAML -> `ModuleNotFoundError: yaml`).
+  Recipes + the vcpkg-vs-venv rationale: the full-stack flush cookbook interpreters note.
 
 ## Sandbox agents: NO git, and you cannot build (AIF-082, 2026-07-31)
 

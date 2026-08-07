@@ -20,9 +20,14 @@ add it here so the next run does not re-derive it (that is the whole point).
   refreshes HELP and commits the flush).
 - Runtime data root: `dottalkpp\data`. HELP store: `dottalkpp\data\help`.
 - Website tree (separate repo): `D:\dev\x64base-site`.
-- Interpreters: Python 3.12 is the repository standard
-  (`C:\Users\deral\vcpkg\installed\x64-windows\tools\python3\python.exe`, recorded in
-  `.python-version`). Some tools hard-check it.
+- Interpreters: define `$py12` once per shell and use it for every tool below:
+  `$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"`. That `.venv312` is the
+  working Python 3.12 and it carries the third-party deps (PyYAML) the doc tools
+  import. Do NOT use `py -3.12` (not installed here -- "No suitable Python runtime
+  found") and do NOT use the vcpkg python
+  (`C:\Users\deral\vcpkg\installed\x64-windows\tools\python3\python.exe`) for a tool
+  that imports yaml: it is minimal and raises `ModuleNotFoundError: No module named
+  'yaml'`. The vcpkg python is the hard-check standard only. Pin: `.python-version`.
 - A mounted Linux sandbox agent can read/write files and run Python 3.10, but it
   CANNOT build the engine and MUST run no git. It prepares host commands.
 
@@ -44,7 +49,7 @@ add it here so the next run does not re-derive it (that is the whole point).
 6. **Scoped commits only.** Never `git add -A` on this shared worktree; add exact
    paths and check `git status --short` between add and commit.
 7. **Python 3.12 tools** (`command_catalog_sync.py`, `manualgen.py`) run with
-   `py -3.12` on the host. In the 3.10 sandbox: `command_catalog_sync` runs if you
+   `$py12` (the `.venv312` python; see the interpreters note above) on the host. In the 3.10 sandbox: `command_catalog_sync` runs if you
    set `m.MIN_PYTHON=(3,10)` after import; `manualgen` runs directly (only its
    `PYTHON_312` self-check fails, harmlessly).
 8. **A dotref.hpp change means a LEGACY build.** foxref feeds the LEGACY store, so
@@ -87,8 +92,9 @@ Every source file: `@dottalk.file`. Command files: add `@dottalk.usage`. Externa
 apps/commands: `@dottalk.external`. Then prove coverage:
 
 ```powershell
-py -3.12 .\tools\fullstack_docs\docpush_preflight.py            # source_census + catalog check + ASCII scan
-py -3.12 .\tools\fullstack_docs\command_catalog_sync.py check `
+$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"           # working 3.12 (has PyYAML); NOT py -3.12, NOT vcpkg python
+& $py12 .\tools\fullstack_docs\docpush_preflight.py            # source_census + catalog check + ASCII scan
+& $py12 .\tools\fullstack_docs\command_catalog_sync.py check `
     --source-root D:\code\ccode `
     --catalog D:\dev\x64base-site\content\docs\dottalk\command-catalog.mdx
 ```
@@ -102,11 +108,11 @@ extractor cannot read (the classic `DDICT` case) must be normalized to
 Use the lane's own tools; do not hand-roll a crosswalk.
 
 ```powershell
-py -3.12 .\tools\fullstack_docs\build_reference_identity_inventory.py    # ref/registry/usage/HELP/metadata identities
-py -3.12 .\tools\fullstack_docs\build_reference_authority_crosswalk.py   # cross-walk; stops at review rows (no silent replace)
-py -3.12 .\tools\fullstack_docs\reference_disposition_recommend.py       # report-only disposition per review row
-py -3.12 .\tools\fullstack_docs\refcheck_v1.py                           # dotref/foxref phantom guard
-py -3.12 .\tools\fullstack_docs\normcheck_v1.py                          # cross-authority identity gate
+& $py12 .\tools\fullstack_docs\build_reference_identity_inventory.py    # ref/registry/usage/HELP/metadata identities
+& $py12 .\tools\fullstack_docs\build_reference_authority_crosswalk.py   # cross-walk; stops at review rows (no silent replace)
+& $py12 .\tools\fullstack_docs\reference_disposition_recommend.py       # report-only disposition per review row
+& $py12 .\tools\fullstack_docs\refcheck_v1.py                           # dotref/foxref phantom guard
+& $py12 .\tools\fullstack_docs\normcheck_v1.py                          # cross-authority identity gate
 ```
 
 Record dispositions in a `PHASE1_GATE1_REFERENCE_DISPOSITION_RECORD`. Deliberate
@@ -158,7 +164,7 @@ LEGACY delta visible (foxref changes); primary store often idempotent. Diff with
 ### Website catalog derivative (downstream of Phase 4)
 
 ```powershell
-py -3.12 .\tools\fullstack_docs\command_catalog_sync.py emit `
+& $py12 .\tools\fullstack_docs\command_catalog_sync.py emit `
     --source-root D:\code\ccode `
     --out D:\dev\x64base-site\content\docs\dottalk\command-catalog.mdx
 ```
