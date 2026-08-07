@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "selfdoc-full-stack-docpush-dfd-v1",
+  "path": "public/images/sdlc/selfdoc-full-stack-docpush-dfd-v1.svg",
+  "derived_from": [
+    "diagrams/sources/selfdoc_full_stack_docpush_dfd_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/diagrams/selfdoc_full_stack_docpush_dfd_v1.mmd",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "02c7f7fd21bf0a80ac76aa7af0ba670775d21c1212a6a31e4a580388744f83ff",
+  "output_sha256": "5094938523c2dc4caf5004d9d117a1422049888c0aaf3b4fbd6111f495b2e9c4",
+  "truth_status": "source-derived-draft",
+  "review_status": "review-needed"
+}

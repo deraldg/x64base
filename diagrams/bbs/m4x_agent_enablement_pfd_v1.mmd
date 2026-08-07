@@ -1,0 +1,13 @@
+%% PFD -- M4.x agent enablement (process flow) v1
+%% class: maintained (conceptual; hand-authored, review-gate). Design-only until built.
+flowchart LR
+  subgraph M41["M4.1 -- per-session identity (design)"]
+    T["thread_local principal/acting"] --> W["bounded worker per connection"]
+  end
+  subgraph M42["M4.2 -- Ollama as agent (design)"]
+    S["seed member.ai.ollama.local<br/>role.ai_partner only"] --> HN["harness: AUTH -> READ -> CHAT -> POST"]
+  end
+  W --> UNLOCK{"concurrent<br/>distinct authors"}
+  UNLOCK --> M42
+  HN --> OUT[("Ollama posts as itself<br/>egress-blocked; loopback exempt")]
+  OUT -. "bounded: never source.mutate / egress" .-> BND{{"agent_permitted<br/>denies out-of-scope"}}

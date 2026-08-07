@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/26iol1er0ez9i.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/3cw_r6e2nznxf.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:T1617,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:T1721,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>The <strong>Laboratory Campus</strong> is the learning and collaboration layer for x64base
 and DotTalk++. LabTalk remains the project mark and legacy name; Laboratory
 Campus is the public-facing name.</p>
@@ -49,7 +49,9 @@ suggestions from educators, students, technical writers, and collaborators.</p>
 tool. pycrud is a small Python/Tk CRUD and relational teaching surface with a
 local FastAPI bridge (<code>pydottalk_api</code>) for schema, fixtures, header metadata,
 and table readback. It belongs in LabTalk as a practical GUI/database literacy
-lab, not as the DotTalk++ engine itself.</p>
+lab, not as the DotTalk++ engine itself. The native <code>pydottalk</code> engine binding,
+the prototype API bridge, and the teaching app are documented separately in
+<a href="/docs/engine/python-integration">Python Integration</a>.</p>
 <h2 id="ai-portal--alphaexperimental"><a class="no-underline" href="#ai-portal--alphaexperimental">AI Portal — Alpha/Experimental</a></h2>
 <p>The <a href="/docs/labtalk/ai-portal">AI Portal</a> is the proposed AI-facing campus
 entrance. It aims to prepare an AI for a series of tasks through curated, typed
@@ -75,11 +77,12 @@ direction and collaboration frame, not yet a finished packaged distribution.</p>
 <li><a href="/docs/labtalk/lessons">Lesson Platform</a></li>
 <li><a href="/docs/labtalk/suggest-a-lesson">Suggest a Lesson</a></li>
 <li><a href="/docs/labtalk/runtime-evidence">Runtime Evidence Gallery</a></li>
+<li><a href="/docs/engine/python-integration">Python Integration</a></li>
 <li><a href="/docs/dottalk/command-catalog">Command Catalog</a></li>
 <li><a href="/docs/dottalk/function-catalog">Function Catalog</a></li>
 <li><a href="/docs/labtalk/non-profit-guide">Non-profit guide</a></li>
 <li><a href="/docs/labtalk/examples">Examples</a></li>
 <li><a href="/licensing">Project notice</a></li>
-</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=9283ec3ee197","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products?v=9283ec3ee197","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/labtalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/labtalk?v=9283ec3ee197","children":"Laboratory Campus"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Laboratory Campus"}],["$","p",null,{"className":"mt-2 text-muted","children":"An alpha collaboration campus for planning, in-development labs, and existing x64base/DotTalk++ learning evidence."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"6ogaxJRDE1IQa0BMtFMhu"}
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=61665a6db983","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=61665a6db983","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/labtalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/labtalk/?v=61665a6db983","children":"Laboratory Campus"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Laboratory Campus"}],["$","p",null,{"className":"mt-2 text-muted","children":"An alpha collaboration campus for planning, in-development labs, and existing x64base/DotTalk++ learning evidence."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"sVL98xprP-tsqmNuzQ3bG"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null

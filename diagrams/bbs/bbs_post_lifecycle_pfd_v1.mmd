@@ -1,0 +1,13 @@
+%% PFD -- BBS post lifecycle (process flow) v1
+%% class: maintained (conceptual; hand-authored, review-gate)
+flowchart TD
+  A["agent connects<br/>loopback socket"] --> B["AUTH member + token"]
+  B -->|"Argon2id verify (M3)"| C{"authenticated?"}
+  C -->|no| X["ERR auth failed"]
+  C -->|yes| D["BBS POST board subj :: body"]
+  D --> E{"board POSTPERM<br/>agent_permitted?"}
+  E -->|denied| Y["ERR bbs.post denied"]
+  E -->|allowed| F["current_member()<br/>attributes real author (AIF-075)"]
+  F --> G[("SYSPOST append<br/>+ table FLOCK")]
+  G --> H["OK posted #N"]
+  H -. "worklog post = a submission" .-> Z["harvest (see DFD)"]

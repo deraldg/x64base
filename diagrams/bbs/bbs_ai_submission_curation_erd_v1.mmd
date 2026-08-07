@@ -1,0 +1,72 @@
+%% BBS / AI submission-curation ERD v1
+%% Source of truth for the manual SVG + the /AI/ diagram gallery.
+%% class: maintained (conceptual/architectural; review-gate, hand-authored)
+erDiagram
+  USER ||--o| MEMBER : "credential home"
+  MEMBER ||--o{ MEMBER_ROLE : "assigned"
+  ROLE ||--o{ MEMBER_ROLE : "in"
+  ROLE ||--o{ ROLE_PERM : "holds"
+  PERMISSION ||--o{ ROLE_PERM : "via"
+  MEMBER ||--o{ GRANT : "granted"
+  PERMISSION ||--o{ BOARD : "POSTPERM gates"
+  BOARD ||--o{ THREAD : "contains"
+  THREAD ||--o{ POST : "contains"
+  MEMBER ||--o{ POST : "authors (current_member)"
+  MEMBER ||--o{ SUBMISSION : "produces"
+  SUBMISSION ||--o| POST : "live-BBS channel"
+  SUBMISSION ||--o| INTAKE : "document channel"
+  SUBMISSION ||--|| RUN : "recorded as (AIPR)"
+  SUBMISSION ||--o| ENVELOPE : "carries audit"
+  SUBMISSION ||--o| INDEX_ENTRY : "indexed by (GAP)"
+  SUBMISSION ||--o| AIF : "curated into"
+  MEMBER ||--o{ AIF : "owns / stewards"
+
+  USER { string key PK
+    string credential_ref
+    string auth_kind "Token or LocalTrusted" }
+  MEMBER { string key PK
+    string kind "Human AI External"
+    string user_id FK
+    string default_role FK }
+  ROLE { string key PK }
+  PERMISSION { string key PK
+    string resource_action
+    string risk
+    bool requires_approval }
+  MEMBER_ROLE { string member_id FK
+    string role_id FK }
+  ROLE_PERM { string role_id FK
+    string perm_id FK }
+  GRANT { string granted_to FK
+    string scope
+    string status }
+  BOARD { string key PK
+    string kind
+    string postperm FK "to PERMISSION" }
+  THREAD { string id PK
+    string board_key FK }
+  POST { string id PK
+    string thread_id FK
+    string author_id FK
+    string kind
+    string body }
+  SUBMISSION { string channel "live_BBS or document"
+    string provider "xAI Anthropic"
+    string received_utc }
+  RUN { string run_id PK "AIPR-YYYYMMDD-NNN"
+    string member
+    string state }
+  ENVELOPE { string report_id
+    string access_mode
+    string git_branch
+    string baseline_commit }
+  INDEX_ENTRY { string report_id PK
+    string provider
+    string kind
+    string aliases }
+  INTAKE { string path PK "external_ai_intake/"
+    string manifest }
+  AIF { string number PK "AIF-NNN"
+    string owner
+    string steward
+    string status }

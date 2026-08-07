@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-4:I[97367,["/_next/static/chunks/26iol1er0ez9i.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+4:I[97367,["/_next/static/chunks/3cw_r6e2nznxf.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 5:"$Sreact.suspense"
-2:Tcee,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
+2:Te9b,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
 <p>DotTalk++ is not just an educational scripting language. In the local project it is the canonical runtime surface for x64base work.</p>
 <p>It owns or exposes:</p>
 <ul>
@@ -14,6 +14,10 @@
 <li>metadata validation, data dictionary work, and generated reports.</li>
 <li>TUI, wxWidgets, and Python/Tk GUI lanes over the same runtime concepts.</li>
 </ul>
+<p>The optional native <code>pydottalk</code> module binds selected x64base engine objects for
+Python use; it does not expose the full DotTalk++ command shell. The separate
+<code>pydottalk_api</code> and pycrud prototypes belong to the Laboratory Campus GUI and
+API teaching lane. See <a href="/docs/engine/python-integration">Python Integration</a>.</p>
 <h2 id="dotscript-relationship"><a class="no-underline" href="#dotscript-relationship">DotScript relationship</a></h2>
 <p>DotTalk++ is the interactive shell and canonical command runtime. DotScript is the productized script language built from the same command surface. DotScript covers command files, variables, comments, line continuation, <code>IF</code> / <code>ELSE</code> / <code>ENDIF</code>, <code>LOOP</code> / <code>ENDLOOP</code>, <code>WHILE</code> / <code>ENDWHILE</code>, <code>UNTIL</code> / <code>ENDUNTIL</code>, <code>SCAN</code> / <code>ENDSCAN</code>, one-level subscript nesting, CSV import/export workflows, and repeatable automation.</p>
 <p>See <a href="/products/dotscript">DotScript</a> and <a href="/docs/dottalk/dotscript-language-guide">DotScript Language Guide</a>.</p>
@@ -31,12 +35,13 @@ executable.</p>
 <li><a href="/docs/dev/project-truth">Current Project Truth</a></li>
 <li><a href="/docs/dottalk/language-guide">Language Guide</a></li>
 <li><a href="/docs/engine/runtime-footprint">Runtime Footprint</a></li>
+<li><a href="/docs/engine/python-integration">Python Integration</a></li>
 <li><a href="/docs/dottalk/sdlc">DotTalk++ SDLC</a></li>
 <li><a href="/docs/dottalk/syntax">Syntax</a></li>
 <li><a href="/docs/dottalk/repl">REPL</a></li>
 <li><a href="/docs/dottalk/examples">Examples</a></li>
 <li><a href="/docs/dottalk/curriculum">Curriculum</a></li>
 <li><a href="https://github.com/deraldg/x64base">Public GitHub repo: deraldg/x64base</a></li>
-</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=9283ec3ee197","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products?v=9283ec3ee197","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/dottalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/dottalk?v=9283ec3ee197","children":"DotTalk++"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotTalk++"}],["$","p",null,{"className":"mt-2 text-muted","children":"The canonical command shell, scripting surface, and teaching runtime for x64base."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"6ogaxJRDE1IQa0BMtFMhu"}
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=61665a6db983","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=61665a6db983","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/dottalk",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/dottalk/?v=61665a6db983","children":"DotTalk++"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"DotTalk++"}],["$","p",null,{"className":"mt-2 text-muted","children":"The canonical command shell, scripting surface, and teaching runtime for x64base."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"sVL98xprP-tsqmNuzQ3bG"}
 3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
 6:null
