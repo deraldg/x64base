@@ -1,0 +1,47 @@
+id: lesson.career.a_gitignored_path_is_invisible_to_your_sweep
+title: A Gitignored Path Is Invisible to Your Sweep
+kind: lesson
+lane: career
+status: draft
+audience:
+- developer
+- maintainer
+- technical writer
+- ai_partner
+path: lessons/career/a_gitignored_path_is_invisible_to_your_sweep_v0.md
+website_path: /docs/labtalk/career-lessons
+concepts:
+- concept.evidence.review
+- concept.selfdoc.validation
+proof_state: observed
+observed: 2026-08-07
+next_gate: Ratify or amend the four-part rule in the lesson body, then decide whether the sweep-scope
+  requirement belongs in a gate rather than a lesson.
+notes: 'OBSERVED 2026-08-07 during the PLDC -> PDLC vocabulary merge (commits c0d3069c5, 018bd0c9f).
+
+  A tree-wide acronym merge reported "zero PLDC remains" several times, with counts. Every report was
+  measured and every report was scoped to a subset, without saying so. Ripgrep honors .gitignore by
+  default; .gitignore:346 hides docs/ai-friendly/gptbase_bundle_v1/ and .gitignore:323 hides docs/**/backups/.
+  Both were invisible to every sweep the session ran. Verify with: git check-ignore -v <path>, and compare
+  rg --no-ignore <term> against rg <term>.
+
+  An independent session (AIF-092), asked by the maintainer to verify rather than accept the report,
+  found the live miss: docs/ai-friendly/gptbase_bundle_v1/05_process_and_roles.md carried a dangling
+  path to the renamed SDLC_PDLC_PLANNING_ADOPTION_v0.md at :29, a second one at :101 that the verifier
+  did not list, and a whole "## PLDC Boundary" section at :71-76 built on the retired distinction.
+
+  ROOT CAUSE, and the part worth keeping: the edit and the verification used the same tool. A verification
+  sharing a search path with the change it checks cannot detect a scope error in that path. It confirms,
+  correctly and repeatedly, that the region it can see is clean. Confidence rose with every pass while
+  coverage never moved. The number of times a check passes says nothing about what the check can see.
+
+  COROLLARY: gitignored does not mean unimportant. gptbase_bundle_v1/ is packaged FOR AN OUTSIDE MODEL
+  -- an agent with no repository, no history, and no way to ask what the retired acronym meant. The highest-stakes
+  reader sat in the lowest-visibility directory.
+
+  COUNTER-RULE, so the next pass is not tempted: 23 files under docs/manuals/developer/manualgen/backups/**
+  still contain PLDC and were left alone. They are dated escrow snapshots; rewriting a preservation record
+  to match current vocabulary falsifies it. Widening the search does not license widening the edit.
+
+  Sibling to lesson.career.a_script_never_run_is_not_evidence (2026-07-26): there absent evidence looked
+  real, here absent scope looked complete.'
