@@ -116,6 +116,10 @@ Anti-collision loop (prevents two sessions claiming the same AIF-NNN lane number
 - **Claim/release numbers:** `python tools/coordination/session_coordinator.py claim-aif`
   (atomic `O_EXCL`); the ledger lives at `coordination/aif/AIF-NNN.claim` (tracked).
   `coordination/active_sessions/` and `coordination/locks/` are transient (gitignored).
+- **Quip a co-session:** `session_coordinator.py quip send --from <run> --to <run|all> --msg "..."`
+  and `quip read --run <me> [--ack]` -- an ephemeral heads-up between concurrent sessions (the
+  lightest coordination rung; `coordination/quips/` is transient). Guarded by
+  `tools/coordination/test_session_coordinator.py`. Full policy: `AI_SESSION_COORDINATION_PROTOCOL_V1.md`.
 - **Detection:** `tools/coordination/aif_collision_gate.py` hard-fails (exit 1) a duplicate
   AIF number in the intake queue.
 - **Enforcement:** `tools/staging/prepush_gate.py` runs that gate by default and HARD-blocks
