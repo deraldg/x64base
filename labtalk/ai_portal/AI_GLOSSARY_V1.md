@@ -83,6 +83,11 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   identity acting); not atoms themselves. Home: coordination protocol.
 - **handoff** -- a session's consolidated close-out to the next session; must be placed where a
   clone can see it (versioned), not in an untracked dir.
+- **aside** -- a side trip taken during a task in progress to correct or check out a side issue,
+  then return to the main task. **Rule (standing, owner 2026-08-08): an aside does not need its
+  own PDLC or AIF unless it is promoted** into standing work; a promoted aside graduates to a
+  claimed lane like anything else. This keeps the main task moving without ceremony for every
+  small detour, while still catching the ones that turn out to matter.
 - **pseudo-chat** -- the short-term-to-long-term consolidation channel; a live exchange
   consolidates into an attributed BBS post through the value gate. Home:
   `docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md`.

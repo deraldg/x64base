@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-08T23:38:04Z
+    generated_utc : 2026-08-08T23:52:14Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : cadadba2f  (2026-08-08)
+    HEAD          : 3d8244b08  (2026-08-08)
     upstream      : f9008d736
-    unpushed      : 8 commit(s) ahead of upstream
+    unpushed      : 9 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,17 +23,19 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PORTAL_MEMORY_SYNAPSE_2026-08-08.md
-    commits behind HEAD : 6
+    commits behind HEAD : 7
 
 ## Staleness warnings
 
-- The newest closeout is 6 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- 8 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 7 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-097. Same shape as AIF-062/078/080.
+- 9 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-097 | private-site auth + search | member.derald | **MISSING** |
 | AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
 | AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
@@ -45,8 +47,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-087 | triggers-pdlc | member.derald | yes |
 | AIF-086 | ai-systems-integration-sdlc | member.ai.codex.local | yes |
 | AIF-083 | bbs-agency-legs | member.ai.claude.cowork | yes |
-| AIF-082 | onboarding-cost-and-acceptance | member.ai.claude.cowork | yes |
-| ... | 17 older claims omitted | | |
+| ... | 18 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -59,6 +60,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260808-001 | member.derald | - | - | AIF-097 |
 | COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
 | COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
 | COWORK-20260807-003 | member.ai.claude.cowork | - | - | AIF-092 -> AIF-093 |
@@ -66,8 +68,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260806-001 | member.ai.claude.cowork | - | - | AIF-090 |
 | COWORK-20260804-002 | member.derald | - | - | AIF-088 |
 | COWORK-20260804-001 | member.derald | - | - | AIF-087 |
-| AIPR-20260803-003 | member.ai.codex.local | - | - | AIF-086 |
-| ... | | | | 17 older run(s) omitted |
+| ... | | | | 18 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

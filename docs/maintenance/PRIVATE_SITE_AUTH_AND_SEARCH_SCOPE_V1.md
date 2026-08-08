@@ -118,11 +118,14 @@ as a standing public endpoint. That is a legitimate BEST-for-now, not a failure.
 
 ## Registration
 
-- **This is a new lane that needs a fresh AIF claim** (owner ruling, 2026-08-08): the search
-  interface combined with security is ONE claimable AIF with its own lifecycle -- the phase
-  register (M0-M5 above) IS that lifecycle. Do NOT reuse AIF-052. Claim (maintainer, host-side):
-  `python tools/coordination/session_coordinator.py claim-aif --member member.derald --run <run> --lane "private-site auth + search"`,
-  then add the intake row and stamp the AIF number into this charter.
+- **Claimed: AIF-097** (run COWORK-20260808-001, member.derald, 2026-08-08). The search
+  interface combined with security is ONE AIF with its own lifecycle -- the phase register
+  (M0-M5 above) IS that lifecycle. Do NOT reuse AIF-052. It was claimed with (host-side;
+  use the repo venv `$py12`, and a real run id with NO angle brackets -- PowerShell treats `<` as
+  a reserved operator):
+  `$py12 = "D:\code\ccode\.venv312\Scripts\python.exe"` then
+  `& $py12 tools\coordination\session_coordinator.py claim-aif --member member.derald --run RUNID --lane "private-site auth + search"`
+  (replace RUNID). Then add the intake row and stamp the AIF number into this charter.
 - Parent projects: `project.x64base.website` (Part A search) and `project.bbs.cooperation` /
   identity (Part B auth). Steward assigns per milestone.
 - Extends the existing gateway (`tools/reports/serve_dynamic_reports.py`) and the identity system
