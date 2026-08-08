@@ -9,9 +9,10 @@ it is reached by trigger.
 **Root project.** These terms serve **Frontal_Mem** -- Derald's persistent-memory thesis: the
 model is stateless, so long-term memory lives human-side in the owner-controlled store (git,
 DBF, curated docs), and a session's job is to consolidate the worthy, attributed, normalized
-fraction into that store before it decays. The full thesis lives in the Frontal_Mem Cowork
-project (`thesis_persistent_memory.md`, not in this repo); its in-repo faces are the ontology,
-the seed-rise plan, and the recall graph named below.
+fraction into that store before it decays. The full thesis lives in the **Frontal_Mem** project
+folder (standalone, outside the ccode repo: `thesis_persistent_memory.md`,
+`thesis_memory_architecture.svg`, the two-lane design, the pseudo-chat plan); its in-repo faces
+are the ontology, the seed-rise plan, and the recall graph named below.
 
 ## A note on "atom" (two senses -- do not conflate)
 
@@ -41,8 +42,9 @@ the seed-rise plan, and the recall graph named below.
 
 ## Recall / memory mechanism
 
-- **synapse** -- a routed recall entry point (trigger->node edge) that fires a memory when
-  relevant; the fix for "filed but not reachable." Home: `SYNAPSE_CONCEPT_V1.md`.
+- **synapse** -- a typed, directed, strength-weighted link between two memories; the unit of the
+  recall graph (Frontal_Mem thesis, Appendix A). In the portal, the typed recall-graph edge;
+  triggers are the entry stimuli. Home: `SYNAPSE_CONCEPT_V1.md`.
 - **recall graph** -- the portal's synapse network: typed nodes + edges + triggers. This is the
   in-repo realization of Frontal_Mem's "recall graph (typed links, decay-and-reinforce)," which
   the thesis still lists as design-only. Home: `labtalk/registries/portal_recall_graph.yaml`,

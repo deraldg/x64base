@@ -6,15 +6,19 @@ legal or build advice. Registered as recall node `doctrine.synapse`; reached fro
 
 ## Definition
 
-A **synapse** is a routed connection in the recall graph -- a trigger-to-node or node-to-node
-edge -- that makes a memory **fire at the moment it is relevant**. The recall graph
-(`labtalk/registries/portal_recall_graph.yaml`, resolver `labtalk/ai_portal/recall.py`) is the
-portal's synapse network: nodes are memories, edges are synapses, triggers are the stimuli that
-fire them.
+Canonical (Frontal_Mem thesis, Appendix A): **a synapse is a typed, directed,
+strength-weighted link between two memories -- the unit of the recall graph.** It decays with
+disuse and reinforces on recall (thesis 5.3), so frequently walked paths harden into highways
+and unused links fade.
 
-A memory with no synapse is **dark**: it exists on disk, it is correct, and no one reaches it
-when they need it. Filing is storage. A synapse is *retrieval at the right moment*. They are
-not the same act, and doing the first without the second is the failure this concept names.
+In the portal, that graph is `labtalk/registries/portal_recall_graph.yaml` (resolver
+`labtalk/ai_portal/recall.py`): nodes are memories, **edges are the synapses** (typed
+`fires_at` / `requires` / `evidenced_by` / `supersedes`), and **triggers** are the entry
+stimuli that fire the synapses hung off an intent. A memory with no synapse is **dark**: it is
+on disk, it is correct, and no one reaches it when they need it -- thesis 5.1, "a memory that
+cannot be reached is, functionally, a memory that does not exist." Filing is storage; a synapse
+is retrieval at the right moment. Doing the first without the second is the failure this
+concept names.
 
 ## Why it exists (the founding incident)
 

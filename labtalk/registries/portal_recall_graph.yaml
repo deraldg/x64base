@@ -74,6 +74,8 @@ triggers:
     label: asking why a rule exists
   - id: trigger.release_or_license
     label: cutting a release, defining an edition, or deciding licensing
+  - id: trigger.persistent_memory
+    label: working on AI memory, consolidation, recall, or the root Frontal_Mem project
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -343,6 +345,14 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: root.frontal_mem
+    label: Frontal_Mem -- persistent-memory thesis (root project); this repo's memory work serves it
+    path: labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -491,6 +501,11 @@ edges:
   - {from: trigger.understand_why, to: doctrine.synapse, type: fires_at}
   - {from: trigger.onboard, to: doc.ai_glossary, type: fires_at}
   - {from: doctrine.synapse, to: doc.ai_glossary, type: requires}
+  # Portal synapse (2026-08-08): the root project (Frontal_Mem) reachable in one hop.
+  - {from: trigger.persistent_memory, to: root.frontal_mem, type: fires_at}
+  - {from: trigger.onboard, to: root.frontal_mem, type: fires_at}
+  - {from: root.frontal_mem, to: doctrine.synapse, type: requires}
+  - {from: root.frontal_mem, to: doc.ai_glossary, type: requires}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}
