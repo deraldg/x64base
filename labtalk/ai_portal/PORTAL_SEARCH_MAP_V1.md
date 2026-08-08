@@ -36,6 +36,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 | Consolidation / triage value function | `tools/memory/README.md`, `consolidate.py`, `promote.py` | `FRONTAL_MEM_POINTER_V1.md` |
 | Root persistent-memory thesis | `labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md` (`trigger.persistent_memory`) | Frontal_Mem folder (`thesis_persistent_memory.md`) |
 | Pre-push gate / portal gates | `tools/staging/prepush_gate.py` | `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
+| Grok coworker lane (Lane 1 write adapter) | `docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md`; spec `LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` | `tools/memory/promote.py`; `assign_grok_pseudochat.dts` |
 
 ## How to use instead of grep
 

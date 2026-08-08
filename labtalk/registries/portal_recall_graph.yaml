@@ -371,6 +371,14 @@ nodes:
     hard_fails: false
     tier: 1
 
+  - id: doc.grok_push
+    label: Grok push -- Lane 1 write adapter (M2) coworker brief; engine-bound half
+    path: docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md
+    class: episodic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -530,6 +538,9 @@ edges:
   # Portal synapse (2026-08-08): the search map -- reach targets by pointer, not by scan.
   - {from: trigger.where_is, to: doc.search_map, type: fires_at}
   - {from: trigger.onboard, to: doc.search_map, type: fires_at}
+  # Portal synapse (2026-08-08): the Grok coworker handoff, reachable via the memory lane.
+  - {from: trigger.persistent_memory, to: doc.grok_push, type: fires_at}
+  - {from: doc.grok_push, to: mechanism.consolidation_service, type: requires}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}
