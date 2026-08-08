@@ -60,7 +60,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
-          <span>© 1993–2026 Derald R Grimwood Jr. All rights reserved.</span>
+          <span>© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a <a href="/licensing" className="hover:text-fg hover:underline">commercial license</a>.</span>
           <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
         </div>
       </div>
