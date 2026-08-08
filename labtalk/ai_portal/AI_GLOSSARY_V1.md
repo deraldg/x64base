@@ -92,6 +92,38 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   chat-only); capability is a property of the deployment, not the brand. Home:
   `labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md`.
 
+## The team model (AI agencies as coworkers -- reinforced 2026-08-08)
+
+Each AI agency (Claude, Grok, Codex, Ollama) is accepted as a **team-member entity**: a
+first-class member in the identity system, not a tool. An agency holds an AI/service login token
+(`USER TOKEN`), acts under real attribution (`current_member()`, AIF-075) exactly as a human
+member does, and is assigned lanes as a coworker (see the Grok Lane 1 assignment). Human and AI
+members are the same kind of entity in the store; only `author_kind` differs. This is the
+lightweight member layer -- the store's answer to "manage the users," an attributed identity
+sitting under the BBS.
+
+- **team-member entity / coworker** -- an AI agency holding a member identity + service token.
+  Home: `src/cli/cmd_user.cpp` (`USER LOGIN`/`AS`/`TOKEN`), `src/identity/identity_admin.cpp`
+  (`current_member`, `login`); conduct rule: `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`.
+- **the four communication axes** -- every exchange is one of ai<->ai, human<->human,
+  ai<->human, human<->ai, and all four ride the same attributed substrate (BBS Lane 1) plus the
+  pseudo-chat lanes. Worked examples this session: the owner posted an assignment to the board
+  (human->ai) and Claude assigned Grok on `board.afb.chat` (ai->ai) -- both attributed, both
+  durable, same channel.
+
+### Joining a lane (acceptance workflow)
+
+An AI member joins a lane by: (1) **accepting the assignment** (the coworker takes the lane),
+then (2) **picking up the project frontal memory** -- the always-loaded entry context for that
+project, retrieved by its recall trigger (e.g. `trigger.persistent_memory` returns the
+Frontal_Mem working set). General onboarding (`trigger.onboard`) may run **before or after** that
+pickup, whichever is more efficient: a coworker already onboarded to the repo goes straight to
+the project frontal memory; a cold agency onboards first. The order is an efficiency choice, not
+a fixed gate.
+
+- **project frontal memory** -- the per-project always-loaded entry context: its pointer plus the
+  recall working set its trigger returns. The project-scoped analog of the Tier-1 seed.
+
 ## Reached by
 
 `trigger.onboard -> doc.ai_glossary`; `doctrine.synapse -> doc.ai_glossary` (requires). Add a

@@ -37,6 +37,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 | Root persistent-memory thesis | `labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md` (`trigger.persistent_memory`) | Frontal_Mem folder (`thesis_persistent_memory.md`) |
 | Pre-push gate / portal gates | `tools/staging/prepush_gate.py` | `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
 | Grok coworker lane (Lane 1 write adapter) | `docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md`; spec `LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` | `tools/memory/promote.py`; `assign_grok_pseudochat.dts` |
+| Identity / members / agent login token (the lightweight member layer) | `src/cli/cmd_user.cpp` -- `USER LOGIN`/`AS`/`TOKEN`; `src/identity/identity_admin.cpp` -- `current_member`, `login` | AIF-075 attribution; `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`; team model in `AI_GLOSSARY_V1.md` |
 
 ## How to use instead of grep
 

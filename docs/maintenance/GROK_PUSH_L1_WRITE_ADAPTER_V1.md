@@ -59,5 +59,8 @@ the `DotTalkBBSD` task before rebuilding the daemon (it locks the exe).
 
 ## First move
 
-`git pull`, read the spec, `claim-aif`, then run `promote.py`'s `.dts` against the store and
-verify attribution.
+`git pull`, then **accept the lane and pick up this project's frontal memory** --
+`python3 labtalk/ai_portal/recall.py trigger.persistent_memory` returns the Frontal_Mem working
+set (this push, the consolidation tool, the root pointer). Run general onboarding
+(`trigger.onboard`) before or after that pickup, whichever is cheaper for you. Then read the
+spec, `claim-aif`, run `promote.py`'s `.dts` against the store, and verify attribution.
