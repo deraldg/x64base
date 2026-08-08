@@ -4,7 +4,7 @@ export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/portal", "/portal/"] }],
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/portal", "/portal/", "/memory", "/memory/"] }],
     sitemap: "https://x64base.com/sitemap.xml",
     host: "https://x64base.com"
   };

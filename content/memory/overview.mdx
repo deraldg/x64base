@@ -1,0 +1,115 @@
+---
+title: "Frontal Memory -- the thesis and the architecture"
+description: "Persistent memory for artificial minds: hold experience briefly, triage it by value, promote the valuable, let the rest decay, and recall through associative links."
+---
+
+## The problem: the amnesiac collaborator
+
+Every conversation with a capable AI ends in erasure. The system that reasoned with you an hour
+ago retains nothing of it; the next session begins from zero, re-reading and re-deriving what was
+already known. The loss is not a limit of intelligence. Retention is orthogonal to reasoning: a
+larger model reasons better over the context it is given, but between sessions it does not
+remember, it re-reads. The gap is closed not by a better model but by a missing layer of
+infrastructure.
+
+The claim of this project is deliberately modest and therefore achievable: **persistent knowledge
+between AI sessions is achievable now, without advancing the underlying intelligence, by building
+a memory-consolidation pipeline modeled on human memory** -- hold experience briefly, triage it by
+value, promote the valuable, let the rest decay, and recall through associative links. The
+load-bearing word is consolidation. Capture is easy and nearly worthless; the intelligence of the
+system lives in the selection.
+
+## The memory is human-side
+
+The long-term memory does not live in the AI. The model is stateless across sessions; it carries
+nothing forward on its own. Durability is gained on the human side, by storing the AI's working
+state in a substrate the human owns and controls: the board store, the durable tables, the curated
+documents. Long-term memory is therefore a property of the owner-controlled store, not a faculty
+the AI possesses. The AI contributes reasoning and fast, volatile short-term memory; the human
+side contributes the slow, durable long-term store. Neither has continuity alone; together they
+have a memory that persists.
+
+## The architecture
+
+![Frontal Memory architecture: consolidation pipeline, recall graph, and BBS substrate](/images/memory/frontal-mem-architecture-v1.svg)
+
+Three layers. A **consolidation pipeline** moves a live session left to right toward permanence:
+a raw buffer feeds a deferred triage step ("sleep"), which promotes a small valuable fraction into
+a permanent store and discards the rest. An associative **recall graph** of typed,
+strength-weighted links ("synapses") makes the kept knowledge reachable: a new session wakes with
+a working set assembled by traversing the graph. And a **substrate** -- the AI-BBS board store,
+the durable tables, cross-process locking -- already exists on the platform; the consolidation
+layer sits on top of it.
+
+## A taxonomy of memory classes
+
+The design turns on distinguishing kinds of memory that differ in what they hold, how long they
+live, and how they earn permanence.
+
+| Class | Contents | Lifespan | Decays? | Promotion trigger |
+| --- | --- | --- | --- | --- |
+| Sensory / buffer | Raw transcript | Seconds to minutes | Discarded | input to triage |
+| Short-term / working | Session reasoning, open threads | Session to days | Yes, on a clock | passes the triage value test |
+| Semantic | Facts, conventions, decisions | Indefinite | No; revised | promoted and de-timed |
+| Episodic | What happened and why | Indefinite | Slowly | promoted with provenance |
+| Procedural | How-to, protocols, prohibitions | Indefinite | No | repetition or explicit rule |
+
+Forgetting is a feature, not a defect to tolerate. A store that keeps everything drowns its own
+signal; generalization requires discarding detail. The aim is selective forgetting with reliable
+recall of what mattered, not total memory.
+
+## Triage: the value function
+
+This is the heart of it. At the end of a session most of what was produced should disappear and a
+little of it should last forever; deciding which is which is the whole game. No single signal
+suffices, so the value function is a weighted combination of several, each a proxy for "this will
+matter later":
+
+- **Acted upon.** Did the memory change a decision or produce an artifact?
+- **Costly to learn.** A lesson that took an hour to learn is worth keeping even if it is small,
+  because its value is the cost of rediscovering it.
+- **Re-referenced.** A memory recalled again has demonstrated its own utility.
+- **Contradiction.** A claim that conflicts with the store forces an update rather than an
+  addition -- high value, because it is where the store learns.
+- **Novelty.** Content that diverges from what the store would have predicted carries more
+  information than content that merely confirms it.
+
+Triage runs deferred and offline, the system's equivalent of sleep, so it does not slow the live
+interaction and can count signals that only appear in hindsight. Its two errors are not symmetric:
+in a small, trusted store, over-promotion (bloating the store, diluting the signal) is the graver
+sin, so the promotion threshold is tuned to that asymmetry. And the same gate runs on the agent's
+own work: to defer a task without a reason is to score it low -- deferral is demotion.
+
+This value function is built and running as `tools/memory/consolidate.py` in the engine repo: it
+scores a session's working set, applies the threshold, and emits a hybrid promotion proposal --
+the agent proposes, the owner confirms.
+
+## Synapses: the associative recall graph
+
+A memory that cannot be reached is, functionally, a memory that does not exist. Storage is the
+easy half; retrieval is the binding constraint. Every memory carries directed, typed edges to
+related memories -- this decision supersedes that one, this mistake arose from that convention,
+this fact supports that conclusion -- and recall traverses these edges rather than scanning the
+whole store. Edges carry a strength that decays with disuse and reinforces on recall, so
+frequently walked paths harden into highways and unused links fade. Recall is the inverse of
+triage: where triage compresses a session down to a few durable memories, recall expands a query
+back up into the smallest working set that restores competence.
+
+## The substrate: the AI-BBS
+
+The architecture is not hypothetical. The platform's BBS already provides most of what a shared
+memory needs: memories are posts on boards, sessions are members, and the board is where one
+session's consolidated knowledge is left for the next to find. The durable declarative store,
+cross-process locking, and an in-memory catalog for the working set already exist. Because many
+sessions may write memory at once, every memory is stamped with its origin -- which session
+produced it, when, and with what confidence -- so a later reader can weigh it, trust it, or
+question it.
+
+## Where this stands
+
+The substrate, the value function, and the recall graph exist. The remaining work -- the durable
+write adapter, the strength decay-and-reinforce, the aging rollups, and the instrumentation that
+measures whether retention actually cuts time-to-context and mistake rate -- is chartered as an
+optimization project (see the roadmap). The goal, which runs against the instinct that started the
+project, is not total memory. It is a system that forgets almost all of a day and never forgets
+the one thing from it that counts.

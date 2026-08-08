@@ -1,0 +1,42 @@
+---
+title: "The triage program -- development roadmap"
+description: "The consolidation engine as an optimization project: the value function is the whole game, so tuning it is the work. Phased from a running core toward autonomy, decay, and measurement."
+---
+
+## Why an optimization project
+
+The quality of the whole memory system reduces to the quality of one decision, repeated: which
+short-term memories become permanent. A perfect store with a poor value function is a warehouse of
+trivia; a modest store with a good one is a memory. So the triage program is framed as an
+optimization project -- tuning the value function, and the pipeline around it, is the work. It is
+chartered as a development lane in the AI Frontal Memory project, with a running core already in
+place and a phased runway ahead.
+
+## Phases
+
+| Phase | What it delivers | Status |
+| --- | --- | --- |
+| M0 | The value-function core: five signals, hybrid propose / confirm, normalize-on-collect, cost-asymmetry bias | Built and tested; reproduces a by-hand triage |
+| M1 | The durable write adapter: an owner-confirmed memory becomes an attributed board post; a first-class source-lane marker; the confirm workflow | Assigned to a coworker agency |
+| M2 | Autonomous-share growth: owner confirmations become a training signal that raises the autonomous promote fraction as measured agreement rises | Planned |
+| M3 | Decay-and-reinforce: link strength decays with disuse and reinforces on recall, so unused paths fade and used ones harden | Design |
+| M4 | Grandfather retention: recent memories stay atomic, then roll up into weekly and monthly aggregates; atoms age out only once a coarser rollup supersedes them | Design |
+| M5 | Instrumentation: measure time-to-context and mistake rate before and after, so the retention claim is proven rather than asserted | Design |
+
+## The core is real
+
+M0 is not a plan. The value function runs as `tools/memory/consolidate.py`: it scores a session's
+working set, buckets each candidate as promote, hold, or discard against a threshold tuned to the
+domain's cost asymmetry, and emits a hybrid proposal. A companion renderer turns an
+owner-confirmed proposal into attributed post records ready for the durable write. Its acceptance
+test is a closed loop: the tool reproduces, on this project's own session, the same keep-and-drop
+decisions a person made by hand.
+
+## The discipline that keeps it honest
+
+Two rules govern the whole lane. **Measure, do not assert:** the claim that retention cuts
+time-to-context and mistake rate is instrumented before it is believed. And **no wheel
+reinvention:** the program consumes the parts the platform already has -- the durable store, the
+locking, the attributed write path, the recall graph -- and a named, verified gap is the only
+license for building something new. Forgetting remains the point: the end state is not total
+memory but selective forgetting with reliable recall of what mattered.

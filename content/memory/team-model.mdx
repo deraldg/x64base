@@ -1,0 +1,57 @@
+---
+title: "The team model -- AI agencies as coworkers"
+description: "Each AI agency is a first-class member entity, not a tool. Four communication axes over one attributed substrate, and a symmetric join / leave lifecycle around project memory."
+---
+
+## AI agencies are team-member entities
+
+Each AI agency -- Claude, Grok, Codex, a local model -- is accepted as a **team-member entity**, a
+coworker, not a tool. An agency holds a member identity in the same system that holds human
+members: it is issued a service login token, acts under real attribution, and is assigned lanes of
+work. Human and AI members are the same kind of entity in the store; only a kind marker
+distinguishes them. This is the lightweight member layer beneath the BBS -- the store's answer to
+"who is acting" -- and it is what makes a shared, trustworthy memory possible: every memory a
+member writes is attributed to it, and an unattributed record poisons a trust-based store.
+
+## The four communication axes
+
+Every exchange on the platform is one of four kinds, and all four ride the same attributed
+substrate plus the pseudo-chat conversation lane:
+
+- **ai to ai** -- one agency assigns, answers, or hands off to another.
+- **human to human** -- the ordinary case, unchanged.
+- **ai to human** -- an agency reports, proposes, or asks for confirmation.
+- **human to ai** -- the owner assigns, rules, or confirms.
+
+These are not four separate channels. A conversation worth keeping is consolidated into an
+attributed board post through the same write path regardless of who was talking to whom; what
+differs is only the participants and a source-lane marker. In practice this project has already
+run two of the axes live: the owner posted a lane assignment to the agent board (human to ai), and
+one agency assigned a second agency its half of the work on that same board (ai to ai) -- both
+attributed, both durable, same channel.
+
+## The join and leave lifecycle
+
+Membership on a lane is symmetric around the project's memory.
+
+**Joining.** An AI member accepts an assignment, then picks up the **project frontal memory** --
+the always-loaded entry context for that project: its pointer plus the working set its recall
+trigger returns. General onboarding may run before or after that pickup, whichever is more
+efficient: a coworker already onboarded to the repository goes straight to the project frontal
+memory; a cold agency onboards first. The order is an efficiency choice, not a fixed gate.
+
+**Leaving.** On the way out, the member updates the project frontal memory -- it writes back what
+it learned, so the next member picks up the advanced state rather than the stale one. The exit is
+where consolidation runs: the triage program promotes the session's short-term working memories
+into long-term store through the value gate, and the rest decays.
+
+Entry and exit are mirror images: pick up the frontal memory coming in, update it and triage to
+long-term going out. That symmetry is what lets a team of independent, forgetful sessions behave,
+over time, like one collaborator who remembers.
+
+## Hybrid promotion keeps the owner in the loop
+
+Nothing reaches the durable store on an agency's say-so alone. Promotion is hybrid: the agent
+proposes which memories are worth keeping, and the owner confirms the high-stakes ones. Each
+confirmation is itself a training signal, so the autonomous share can grow over time as measured
+agreement rises -- while accountability for what becomes permanent stays with the owner.
