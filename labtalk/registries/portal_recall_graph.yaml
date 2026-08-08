@@ -76,6 +76,8 @@ triggers:
     label: cutting a release, defining an edition, or deciding licensing
   - id: trigger.persistent_memory
     label: working on AI memory, consolidation, recall, or the root Frontal_Mem project
+  - id: trigger.where_is
+    label: about to grep/find for a code or registry target -- check the search map first
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -361,6 +363,14 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: doc.search_map
+    label: Portal search map -- go straight to code/registry targets, do not scan the tree
+    path: labtalk/ai_portal/PORTAL_SEARCH_MAP_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 1
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -517,6 +527,9 @@ edges:
   # Portal synapse (2026-08-08): the triage value function, now built (M1).
   - {from: trigger.persistent_memory, to: mechanism.consolidation_service, type: fires_at}
   - {from: root.frontal_mem, to: mechanism.consolidation_service, type: evidenced_by}
+  # Portal synapse (2026-08-08): the search map -- reach targets by pointer, not by scan.
+  - {from: trigger.where_is, to: doc.search_map, type: fires_at}
+  - {from: trigger.onboard, to: doc.search_map, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}
