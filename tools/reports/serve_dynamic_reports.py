@@ -33,6 +33,8 @@ from pathlib import Path
 # The maintenance console (tools/dbf/maint_server.py) is mounted under /AI/console.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "dbf"))
 import maint_server  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import regression_index  # noqa: E402  (same dir; the live regression list surface)
 
 # /AI is the new name for the local report/console surface; /reports is kept as a
 # transitional alias so existing links and the site do not break during the rename.
@@ -76,7 +78,9 @@ NAV_BAR = (
     '<a href="/AI/" style="color:#93c5fd;text-decoration:none;margin-right:16px">'
     '&#8962; Home</a>'
     '<a href="#" onclick="history.back();return false" '
-    'style="color:#93c5fd;text-decoration:none">&#8592; Back</a>'
+    'style="color:#93c5fd;text-decoration:none;margin-right:16px">&#8592; Back</a>'
+    '<a href="/AI/regression" style="color:#93c5fd;text-decoration:none">'
+    '&#9635; Regression tests</a>'
     '</div>'
 )
 
@@ -204,6 +208,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_error(404, "Unknown endpoint")
 
     def _dispatch(self, *, include_body: bool):
+        path = urllib.parse.urlsplit(self.path).path
+        if path.rstrip("/") in ("/AI/regression", "/reports/regression"):
+            self._serve_regression(include_body=include_body)
+            return
+        if path.startswith("/AI/script/") or path.startswith("/reports/script/"):
+            self._serve_script(path, include_body=include_body)
+            return
         cpre = console_prefix_for_path(self.path)
         if cpre is not None:
             self._serve_console(cpre, include_body=include_body)
@@ -290,6 +301,54 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-DotTalk-Report-Mode", "dynamic")
         self.send_header("X-DotTalk-Report-Observed-At", observed)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if include_body:
+            self.wfile.write(body)
+
+    def _serve_regression(self, *, include_body: bool):
+        """Live regression list, generated from the engine registry at request time."""
+        try:
+            sha = regression_index._default_sha(self.server.repo_root)
+            frag = regression_index.render_html(
+                self.server.repo_root, sha,
+                script_href=lambda rel: "/AI/script/" + rel)
+        except (OSError, RuntimeError) as exc:
+            self.send_error(503, f"regression index failed: {exc}")
+            return
+        page = (
+            '<!doctype html><html><head><meta charset="utf-8">'
+            '<title>Regression tests -- REGRESSION LIST</title><style>'
+            'body{font-family:system-ui,-apple-system,sans-serif;max-width:64rem;'
+            'margin:0 auto;padding:0 1rem 3rem}code{background:#f1f5f9;padding:0 3px;'
+            'border-radius:3px}details{margin:.4rem 0}summary{cursor:pointer;padding:2px 0}'
+            'li{margin:.35rem 0}</style></head><body>' + frag + '</body></html>'
+        )
+        self._send_html(200, inject_nav(page), include_body=include_body)
+
+    def _serve_script(self, path: str, *, include_body: bool):
+        """Serve a real regression script read-only from dottalkpp/data/scripts, so the
+        list links open the actual on-disk file (untracked canaries included). Path
+        traversal outside the script root is rejected."""
+        rel = ""
+        for pre in ("/AI/script/", "/reports/script/"):
+            if path.startswith(pre):
+                rel = urllib.parse.unquote(path[len(pre):])
+                break
+        base = (self.server.repo_root / "dottalkpp" / "data" / "scripts").resolve()
+        target = (base / rel).resolve()
+        try:
+            target.relative_to(base)
+        except ValueError:
+            self.send_error(403, "outside the script root")
+            return
+        if not target.is_file():
+            self.send_error(404, "no such script")
+            return
+        body = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
