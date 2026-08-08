@@ -43,6 +43,16 @@ def _unescape(s: str) -> str:
     return s.replace('\\\\', '\\').replace('\\"', '"')
 
 
+_WINPATH = re.compile(r'[A-Za-z]:\\[^\s)]+')
+
+
+def _clean_paths(s: str) -> str:
+    """Strip local machine paths (e.g. `D:\\code\\bbs_smoke.ps1`) down to a bare filename.
+    The site's public-content guard rejects drive-letter paths in published content, and
+    they are machine-specific noise in a public list anyway."""
+    return _WINPATH.sub(lambda m: m.group(0).replace('\\', '/').rsplit('/', 1)[-1], s)
+
+
 def parse_specs(root: Path) -> list[dict]:
     """Parse kRegressionSpecs from cmd_regression.cpp into ordered dicts."""
     text = (root / REG_CPP).read_text(encoding="utf-8", errors="replace")
@@ -56,7 +66,7 @@ def parse_specs(root: Path) -> list[dict]:
             "name": _unescape(name),
             "rel": rel,                                   # under dottalkpp/data/scripts
             "path": f"{SCRIPT_ROOT}/{rel}",
-            "summary": _unescape(summary),
+            "summary": _clean_paths(_unescape(summary)),
             "default": default == "true",
             "category": cat,                              # domain, from the script folder
         })
