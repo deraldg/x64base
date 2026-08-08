@@ -35,6 +35,15 @@ export default function MemoryIndex() {
           </Link>
         </li>
       </ul>
+
+      <h2 className="mt-10 text-xl font-semibold tracking-tight">Related private references</h2>
+      <ul className="mt-4 flex flex-col gap-2">
+        <li>
+          <Link href="/portal" className="text-muted hover:text-fg">
+            AI Portal -- architecture, schemas, and generated AI views -&gt;
+          </Link>
+        </li>
+      </ul>
     </div>
   );
 }

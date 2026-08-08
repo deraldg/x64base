@@ -27,6 +27,15 @@ export default function PortalIndex() {
         </li>
       </ul>
 
+      <h2 className="mt-10 text-xl font-semibold tracking-tight">Related private references</h2>
+      <ul className="mt-4 flex flex-col gap-2">
+        <li>
+          <Link href="/memory" className="text-muted hover:text-fg">
+            Frontal Memory -- persistent-memory architecture and coordination model -&gt;
+          </Link>
+        </li>
+      </ul>
+
       <h2 className="mt-10 text-xl font-semibold tracking-tight">Generated AI views</h2>
       <p className="mt-2 text-muted">
         Read-only snapshots over live DotTalk++ state. These two are public — they are also
