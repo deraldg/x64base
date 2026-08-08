@@ -411,7 +411,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="rounded-lg border border-border bg-bg/35 p-4">
-            <div className="font-mono text-xs uppercase text-muted">thesis</div>
+            <div className="font-mono text-xs uppercase text-muted">approach</div>
             <p className="mt-3 text-sm leading-6 text-fg">
               x64base uses its own metadata and documentation infrastructure to describe,
               validate, and increasingly prove itself.
