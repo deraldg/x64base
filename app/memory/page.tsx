@@ -43,6 +43,11 @@ export default function MemoryIndex() {
             AI Portal -- architecture, schemas, and generated AI views -&gt;
           </Link>
         </li>
+        <li>
+          <Link href="/AI/" className="text-muted hover:text-fg">
+            AI views -- live reports, console, and portal snapshots -&gt;
+          </Link>
+        </li>
       </ul>
     </div>
   );
