@@ -94,3 +94,40 @@ enforce, so it is the least-preferred path.
   owner action gated by `check_seed_budget.py` and the maintenance contract.
 - Do not state the law as a perishable fact or inline any run id / count; the seed forbids
   perishable literals. It rises as an invariant plus a pointer, or not at all.
+
+## Budget source (added 2026-08-08): the 6.6 decay report, read with a safety caveat
+
+`recall.py --demotable` names five entry-path doctrines whose hard-failing gate is now the
+memory, so they MAY demote out of the always-read path:
+
+| Doctrine | AI_PORTAL anchor | Gate (hard-fails) |
+| --- | --- | --- |
+| repository_roles | `## STOP: Repository Roles` | `repository_role_guard.py` |
+| mandatory_start | `## Mandatory Start` | `check_mandatory_tracked.py` |
+| authority_chain | `## Authority` | `repository_role_guard.py` |
+| local_access | `## Local-Access AI Rule` | `check_sandbox_git_guard.py` |
+| prepush_gate | `## Pre-Push Gate` | `prepush_gate.py` |
+
+**The caveat the raw report does not carry: the seed is a PRE-action read; most of these
+gates fire POST-action (at push).** So "a gate enforces it" is not sufficient to pull the
+rule from the *seed* -- only from the AI_PORTAL prose entry (which the recall node already
+makes reachable by trigger). Split them:
+
+- **Prose-demotable now (free reading load, not seed bytes):** all five may shrink in
+  `AI_PORTAL.md` to a tight statement + their gate name, since the recall nodes already
+  route a reader to the detail. This slims the 46 KB doc without touching the seed.
+- **Seed bytes -- demote only where the gate prevents the harm before it happens:**
+  `prepush_gate` and `mandatory_start` qualify (the push/tracked check blocks the bad
+  outcome regardless of what the seed said). `repository_roles`, `authority_chain`, and
+  `local_access` should STAY in the seed: their harms (authoring in `C:\x64base`, pushing
+  `development` toward `main`, a sandbox git taking `.git/index.lock`) happen *before* any
+  gate runs, and the seed is the only pre-action guard. Demoting them trades a read-and-
+  obeyed rule for a caught-too-late one -- exactly the 33%-vs-83% risk 6.7 measured.
+
+**Net for the two-atom rise:** the ~109 B the rise needs (section 3) should come from the
+plan's named trims (the proof-capture row -49 B, a health-note trim) plus, if needed, a
+few bytes from tightening the `prepush_gate`/`mandatory_start` restatement toward their
+pointers -- NOT from the three pre-action safety invariants. This keeps the seed's "safe to
+act without reading further" property intact while freeing room for `wake` to rise.
+
+Owner call. Nothing in this section is applied; it is the reviewable basis for the seed edit.

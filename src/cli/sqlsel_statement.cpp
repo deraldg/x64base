@@ -129,11 +129,14 @@ namespace sqlsel {
 void print_statement_usage() {
     std::cout
         << "SQLSEL statement usage:\n"
-        << "  SQLSEL SELECT <col>[,<col>...] FROM <table>\n"
+        << "  SQLSEL <col>[,<col>...] FROM <table>\n"
         << "         [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]\n"
-        << "  SQLSEL SELECT * FROM <table>\n"
-        << "  SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]\n"
+        << "  SQLSEL * FROM <table>\n"
+        << "  SQLSEL COUNT(*) FROM <table> [WHERE <predicate>]\n"
         << "Notes:\n"
+        << "  SQLSEL is itself the select verb; the SELECT keyword is OPTIONAL\n"
+        << "  (SQLSEL SELECT ... still parses). Not to be confused with xBase\n"
+        << "  SELECT <area>, which switches the active work area.\n"
         << "  The table must be OPEN (USE <table>) -- SQLSEL reads open work areas.\n"
         << "  v1 accepts bare column names; expression projection is not yet supported.\n"
         << "  A statement does not change the current area or any record pointer.\n";
@@ -143,24 +146,23 @@ bool try_execute_select(const std::string& tail_in) {
     const std::string tail = trim(tail_in);
     if (tail.empty()) return false;
 
-    // Dispatch on the leading keyword; anything else belongs to the legacy path.
-    {
-        std::istringstream first(tail);
-        std::string tok;
-        if (!(first >> tok) || up(tok) != "SELECT") return false;
-    }
+    // OQ-14 (owner ruling, 2026-08-08): the inner SELECT is OPTIONAL. SQLSEL is itself the
+    // select verb -- `SQLSEL <list> FROM ...` is canonical; `SQLSEL SELECT <list> FROM ...`
+    // still parses. A SQL select is identified by a top-level FROM; a LEADING SELECT is
+    // consumed if present. No FROM with a leading SELECT is a malformed select (reported);
+    // no FROM and no SELECT is not our statement, so the caller keeps its legacy scan path.
+    const bool had_select = (find_kw(tail, "SELECT") == 0);
+    const std::size_t list_start = had_select ? 6 : 0;   // skip a leading "SELECT" (6 chars)
 
-    const std::size_t sel_pos = find_kw(tail, "SELECT");
-    if (sel_pos == std::string::npos) return false;
-
-    const std::size_t from_pos = find_kw(tail, "FROM", sel_pos + 6);
+    const std::size_t from_pos = find_kw(tail, "FROM", list_start);
     if (from_pos == std::string::npos) {
+        if (!had_select) return false;   // no SELECT, no FROM -> legacy predicate-scan path
         std::cout << "SQLSEL: expected FROM after the select list.\n";
         print_statement_usage();
         return true;
     }
 
-    const std::string select_list = trim(tail.substr(sel_pos + 6, from_pos - (sel_pos + 6)));
+    const std::string select_list = trim(tail.substr(list_start, from_pos - list_start));
     if (select_list.empty()) {
         std::cout << "SQLSEL: the select list is empty.\n";
         print_statement_usage();

@@ -1,6 +1,8 @@
 # SQLSEL verb redundancy -- design note (AIF-074)
 
-**Status:** open design question (owner ruling requested).
+**Status:** RULED (owner, 2026-08-08) -- **SELECT is optional** (the soft-landing path).
+Implemented in `src/cli/sqlsel_statement.cpp` (identify by top-level FROM; consume a leading
+SELECT if present). Build + regression owed (maintainer; sandbox cannot build).
 **Lane:** AIF-074 (`SQLSEL_PDLC_LANE_V1.md`). **Owner:** member.derald.
 **Steward/author:** member.ai.claude.cowork. **Date:** 2026-08-07. ASCII (`--`, `->`).
 
