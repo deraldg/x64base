@@ -39,6 +39,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 | Pre-push gate / portal gates | `tools/staging/prepush_gate.py` | `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
 | Grok coworker lane (Lane 1 write adapter) | `docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md`; spec `LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` | `tools/memory/promote.py`; `assign_grok_pseudochat.dts` |
 | Identity / members / agent login token (the lightweight member layer) | `src/cli/cmd_user.cpp` -- `USER LOGIN`/`AS`/`TOKEN`; `src/identity/identity_admin.cpp` -- `current_member`, `login` | AIF-075 attribution; `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`; team model in `AI_GLOSSARY_V1.md` |
+| Site auth gateway / private-area + search design | `docs/maintenance/PRIVATE_SITE_AUTH_AND_SEARCH_SCOPE_V1.md` | gateway `tools/reports/serve_dynamic_reports.py`; auth `src/bbs/bbs_server.cpp`, `src/identity/identity_admin.cpp` |
 
 ## How to use instead of grep
 
