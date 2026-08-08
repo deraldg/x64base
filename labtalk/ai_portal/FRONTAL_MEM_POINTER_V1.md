@@ -44,12 +44,16 @@ reachable.
 - Substrate: the AI-BBS (durable store), AIF-075 provenance (trust layer), the pseudo-chat lane
   (short-term-to-long-term consolidation channel).
 
-## Open thesis work (not started here)
+## Thesis work status
 
-The consolidation / triage service (the value function: acted-on, costly-to-learn,
-re-referenced, contradiction, novelty; hybrid promotion; grandfather rollups) is SPECIFIED, not
-built. The recall graph's decay-and-reinforce is design-only. These are the genuinely new work;
-storage, locking, and the bus already exist.
+- Consolidation / triage value function: **BUILT (M1)** as `tools/memory/consolidate.py` --
+  scores the five signals (acted-on, costly-to-learn, re-referenced, contradiction, novelty),
+  hybrid propose/confirm, normalize-on-collect, cost-asymmetry bias, dependency-free, tested
+  (reproduces this session's hand-triage). Node `mechanism.consolidation_service`. Remaining
+  seam: the Lane 1 write adapter (attributed BBS/DBF post, AIF-075 path) and the
+  grandfather-father-son rollups (M3).
+- Recall graph decay-and-reinforce (thesis 5.3): still design-only.
+- Storage, locking, and the bus already exist.
 
 ## Reached by
 

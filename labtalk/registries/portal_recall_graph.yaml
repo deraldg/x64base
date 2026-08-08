@@ -353,6 +353,14 @@ nodes:
     hard_fails: false
     tier: 1
 
+  - id: mechanism.consolidation_service
+    label: Consolidation triage value function (Frontal_Mem M2 core) -- tools/memory/consolidate.py
+    path: tools/memory/README.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -506,6 +514,9 @@ edges:
   - {from: trigger.onboard, to: root.frontal_mem, type: fires_at}
   - {from: root.frontal_mem, to: doctrine.synapse, type: requires}
   - {from: root.frontal_mem, to: doc.ai_glossary, type: requires}
+  # Portal synapse (2026-08-08): the triage value function, now built (M1).
+  - {from: trigger.persistent_memory, to: mechanism.consolidation_service, type: fires_at}
+  - {from: root.frontal_mem, to: mechanism.consolidation_service, type: evidenced_by}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}

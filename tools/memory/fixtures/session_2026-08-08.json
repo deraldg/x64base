@@ -1,0 +1,54 @@
+{
+  "session": {
+    "id": "COWORK-20260807-005",
+    "agent": "Claude (Cowork)",
+    "date": "2026-08-08",
+    "project": "project.ai_friendly.agent_memory",
+    "source_lane": "session"
+  },
+  "candidates": [
+    {
+      "id": "editions_ground_truth",
+      "class": "semantic",
+      "summary": "Editions/build/licensing ground truth (DOTTALK_PRODUCT, manifests, engine SDK)",
+      "signals": {"acted_on": true, "cost_to_learn_min": 60, "references": 1, "contradicts": null, "novelty": 0.9}
+    },
+    {
+      "id": "synapse_doctrine",
+      "class": "procedural",
+      "summary": "synapse as portal doctrine",
+      "signals": {"acted_on": true, "cost_to_learn_min": 10, "references": 1, "contradicts": "thesis_appendix_a", "novelty": 0.8}
+    },
+    {
+      "id": "ai_glossary",
+      "class": "semantic",
+      "summary": "AI glossary of coined terms",
+      "signals": {"acted_on": true, "cost_to_learn_min": 0, "references": 3, "contradicts": null, "novelty": 0.8}
+    },
+    {
+      "id": "frontal_mem_pointer",
+      "class": "semantic",
+      "summary": "Frontal_Mem in-repo pointer (root was dark)",
+      "signals": {"acted_on": true, "cost_to_learn_min": 30, "references": 2, "contradicts": null, "novelty": 0.5}
+    },
+    {
+      "id": "frontal_memory_finding",
+      "class": "semantic",
+      "summary": "frontal memory points, does not host (invariant)",
+      "signals": {"acted_on": true, "cost_to_learn_min": 30, "references": 1, "contradicts": null, "novelty": 0.6}
+    },
+    {
+      "id": "session_scaffolding",
+      "class": "episodic",
+      "summary": "interrupts, tool loads, 6-vs-5 file check, quip mechanics",
+      "signals": {"acted_on": false, "cost_to_learn_min": 0, "references": 0, "contradicts": null, "novelty": 0.05}
+    },
+    {
+      "id": "narrow_synapse_def",
+      "class": "procedural",
+      "summary": "first, narrower trigger-only synapse definition",
+      "superseded_by": "synapse_doctrine",
+      "signals": {"acted_on": false, "cost_to_learn_min": 0, "references": 0, "contradicts": null, "novelty": 0.2}
+    }
+  ]
+}
