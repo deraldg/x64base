@@ -59,22 +59,31 @@ DotTalk++ / x64base runtime." They are **workflows and marks, not separate deliv
 - **C -- AI work** -> Proposal 4 (proprietary).
 - **D -- the marks** -> trademark layer, separate from every code/content license.
 
-## 4. The hinge: the engine library (idle)
+## 4. The hinge: the engine as an installable SDK
 
-Proposal 1 (Apache-2.0 for an embeddable engine) assumes a **separately buildable engine
-library**. With that AIF idle, no such artifact currently ships -- the engine only exists
-*inside* `dottalkpp.exe`. So Proposal 1 is aspirational until the library is revived. The
-fork:
+Proposal 1 (Apache engine) needs a **separately shippable engine library**. Prior-art check
+(full detail + citations: `EDITIONS_LICENSING_GROUND_TRUTH_V1.md`) shows this is far closer
+than "idle from scratch." x64base already has a CMake **edition system**
+(`DOTTALK_PRODUCT = LEAN|PROFESSIONAL|EDUCATIONAL|DEVELOPMENT`) with a real education strip
+and per-edition `config/package/*.manifest` files, the engine is already factored into
+standalone static libs (`xbase`/`xindex`/`memo`/`xexpr`), and `bindings/pydottalk` already
+links them with **no shell and no education** -- a working education-free embed today.
 
-- **Revive the library** -> the engine becomes a real deliverable and takes its own
-  permissive license (Apache-2.0); the app (Unit A) sits on top under PolyForm-NC. This is
-  the two-unit split Proposals 1 + 2 imagined.
-- **Leave it idle** -> there is one deliverable (the binary), it takes one license (Unit A,
-  PolyForm-NC). The engine's permissive license waits until a library exists to carry it.
-  Apache Proposal 1 is parked, not adopted.
+So the fork is **not** "refactor vs park." What is missing is *packaging*, not architecture:
+an `install(EXPORT)` of the libs + public headers, one composed engine target, and two seams
+the `X64BASE_ENGINE_EDITION_SEPARATION_PLAN_V1.md` already scopes (Passes 2-5). The real fork:
 
-**Nothing else in the license structure changes based on this decision** -- only whether the
-engine is its own unit or folded into A.
+- **Finish the SDK packaging** (bounded, plan-scoped) -> the engine becomes a real Apache-2.0
+  deliverable (the LEAN edition / `x64base-lean-table`); the app sits on top. Best fit for the
+  adoption priority.
+- **Ship the binary edition(s) now** (PROFESSIONAL/DEVELOPMENT) under the app license, finish
+  the SDK later -> one licensed deliverable today; Apache engine follows when packaged.
+
+Either way, the deliverable boundaries are **already defined as `DOTTALK_PRODUCT` editions
+with `config/package/*.manifest` files** -- you are licensing editions that exist, not
+inventing units. And note: `BUILDING.md` already says the editions are blocked pending the
+license decision, so this licensing work unblocks a build system that is already built.
+**Nothing else in the license structure changes based on this call.**
 
 ## 5. Consequences and cleanups
 

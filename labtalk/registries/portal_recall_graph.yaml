@@ -72,6 +72,8 @@ triggers:
     label: about to use the runtime DEF family or EXAMPLE
   - id: trigger.understand_why
     label: asking why a rule exists
+  - id: trigger.release_or_license
+    label: cutting a release, defining an edition, or deciding licensing
 
 # ---------------------------------------------------------------- nodes
 nodes:
@@ -281,6 +283,66 @@ nodes:
     hard_fails: false
     tier: 2
 
+  # Portal orphan repair (crawl 2026-08-08). Three load-bearing docs were reachable by
+  # neither the graph nor entry-doc prose. Routed to the trigger where each actually bites.
+  - id: mechanism.report_audit_contract
+    label: AI Report Audit Contract -- the closeout / change-package envelope
+    path: labtalk/ai_portal/AI_REPORT_AUDIT_CONTRACT_V1.md
+    class: procedural
+    enforced_by: tools/staging/prepush_gate.py
+    hard_fails: true
+    tier: 2
+
+  - id: seed.promotion_model
+    label: Promotion Model Seed -- dev is authority, staging is recoverable
+    path: labtalk/ai_portal/PROMOTION_MODEL_SEED_V1.md
+    class: procedural
+    enforced_by: tools/staging/repository_role_guard.py
+    hard_fails: true
+    tier: 2
+
+  - id: mechanism.external_call_contract
+    label: External Call Contract -- @dottalk.external (candidate, AIF-088)
+    path: labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  # Portal synapse (2026-08-08): the editions/build/licensing ground truth -- added because
+  # it took an hour to rediscover (it had no entry point). See doctrine.synapse.
+  - id: mechanism.editions_licensing
+    label: Editions, builds, licensing ground truth (DOTTALK_PRODUCT, package manifests, engine SDK)
+    path: docs/maintenance/licensing/EDITIONS_LICENSING_GROUND_TRUTH_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doc.license_map
+    label: Products vs deliverables vs license units (the license map)
+    path: docs/maintenance/licensing/PRODUCT_DELIVERABLE_LICENSE_MAP_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doctrine.synapse
+    label: Synapse -- a routed recall entry point; the fix for "filed but not reachable"
+    path: labtalk/ai_portal/SYNAPSE_CONCEPT_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
+  - id: doc.ai_glossary
+    label: AI Glossary -- coined terms (atoms, quip, wake, lineage, aside, synapse, Class A/B, ...)
+    path: labtalk/ai_portal/AI_GLOSSARY_V1.md
+    class: semantic
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -419,6 +481,16 @@ edges:
   # AIF-096: the model under the mechanism, and the narrative behind the rules.
   - {from: mechanism.session_coordination, to: mechanism.coordination_ontology, type: requires}
   - {from: trigger.understand_why, to: doc.whitepaper_coordination, type: fires_at}
+  # Portal orphan repair (crawl 2026-08-08): route the three load-bearing orphans.
+  - {from: trigger.close_out, to: mechanism.report_audit_contract, type: fires_at}
+  - {from: trigger.publish, to: seed.promotion_model, type: fires_at}
+  - {from: trigger.use_devtools, to: mechanism.external_call_contract, type: fires_at}
+  # Portal synapse (2026-08-08): editions/licensing ground truth, the synapse concept, glossary.
+  - {from: trigger.release_or_license, to: mechanism.editions_licensing, type: fires_at}
+  - {from: mechanism.editions_licensing, to: doc.license_map, type: requires}
+  - {from: trigger.understand_why, to: doctrine.synapse, type: fires_at}
+  - {from: trigger.onboard, to: doc.ai_glossary, type: fires_at}
+  - {from: doctrine.synapse, to: doc.ai_glossary, type: requires}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}
