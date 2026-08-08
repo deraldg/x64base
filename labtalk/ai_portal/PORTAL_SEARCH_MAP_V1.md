@@ -34,6 +34,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 | Editions / build / licensing | `docs/maintenance/licensing/EDITIONS_LICENSING_GROUND_TRUTH_V1.md` | `CMakeLists.txt` `DOTTALK_PRODUCT` (~L139-166); `config/package/*.manifest` |
 | Two-atom ontology, coined terms | `docs/maintenance/COORDINATION_ONTOLOGY_TWO_ATOMS_V1.md`; `AI_GLOSSARY_V1.md` | `SEED_RISE_PLAN_TWO_ATOM_V1.md` |
 | Consolidation / triage value function | `tools/memory/README.md`, `consolidate.py`, `promote.py` | `FRONTAL_MEM_POINTER_V1.md` |
+| Triage program dev lane (optimization PDLC) | `docs/maintenance/TRIAGE_OPTIMIZATION_PDLC_LANE_V1.md` | parent `project.ai_friendly.agent_memory`; M0 = `tools/memory/consolidate.py` |
 | Root persistent-memory thesis | `labtalk/ai_portal/FRONTAL_MEM_POINTER_V1.md` (`trigger.persistent_memory`) | Frontal_Mem folder (`thesis_persistent_memory.md`) |
 | Pre-push gate / portal gates | `tools/staging/prepush_gate.py` | `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |
 | Grok coworker lane (Lane 1 write adapter) | `docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md`; spec `LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` | `tools/memory/promote.py`; `assign_grok_pseudochat.dts` |

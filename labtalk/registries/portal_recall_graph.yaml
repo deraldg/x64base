@@ -379,6 +379,14 @@ nodes:
     hard_fails: false
     tier: 2
 
+  - id: mechanism.triage_optimization
+    label: Triage program PDLC lane (optimization project, AI Frontal Memory Project)
+    path: docs/maintenance/TRIAGE_OPTIMIZATION_PDLC_LANE_V1.md
+    class: procedural
+    enforced_by: null
+    hard_fails: false
+    tier: 2
+
   - id: seed.tier1
     label: AI Tier 1 Seed
     path: labtalk/ai_portal/AI_TIER1_SEED_V1.md
@@ -541,6 +549,9 @@ edges:
   # Portal synapse (2026-08-08): the Grok coworker handoff, reachable via the memory lane.
   - {from: trigger.persistent_memory, to: doc.grok_push, type: fires_at}
   - {from: doc.grok_push, to: mechanism.consolidation_service, type: requires}
+  # Portal synapse (2026-08-08): the triage-program PDLC lane (optimization project).
+  - {from: trigger.persistent_memory, to: mechanism.triage_optimization, type: fires_at}
+  - {from: mechanism.triage_optimization, to: mechanism.consolidation_service, type: requires}
   - {from: trigger.commit_or_push, to: doctrine.repository_roles, type: fires_at}
   - {from: trigger.commit_or_push, to: doctrine.local_access, type: fires_at}
   - {from: doctrine.local_access, to: seed.local_access_checklist, type: evidenced_by}

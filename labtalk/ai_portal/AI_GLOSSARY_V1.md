@@ -124,6 +124,16 @@ a fixed gate.
 - **project frontal memory** -- the per-project always-loaded entry context: its pointer plus the
   recall working set its trigger returns. The project-scoped analog of the Tier-1 seed.
 
+### Leaving a lane (exit workflow) -- the symmetric other half
+
+On the way out (session end / checkout) the member **updates the project frontal memory**: it
+writes back what it learned so the next member picks up the advanced state, not the stale one.
+The exit is where consolidation runs -- a triage program promotes the session's short-term
+working memories into long-term store (semantic / episodic) through the value gate, and the rest
+decays. Entry and exit are symmetric: **pick up** the frontal memory coming in, **update and
+triage to long-term** going out. Triage engine: `tools/memory/consolidate.py` (score + hybrid
+propose/confirm) -> `promote.py` (attributed write). See `mechanism.consolidation_service`.
+
 ## Reached by
 
 `trigger.onboard -> doc.ai_glossary`; `doctrine.synapse -> doc.ai_glossary` (requires). Add a
