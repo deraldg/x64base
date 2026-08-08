@@ -216,6 +216,7 @@ def page(title, sub, body, sensitivity='internal'):
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{e(title)}</title>
 <style>{CSS}</style></head><body><div class="wrap">
 {band}
+<div class="small" style="margin-bottom:10px"><a href="/">&larr; x64base main site</a></div>
 <h1>{e(title)}</h1><div class="sub">{sub}</div>
 {body}
 {foot}
@@ -788,6 +789,12 @@ with handoff posts pretty-printed. Answers: <i>what is on the board right now?</
 <div class="dim small">Members, roles, the full permission matrix, who may post to which room,
 and the connection recipe. Answers: <i>who can do what, and how do I get in?</i></div>
 <div style="margin-top:8px"><span class="pill bad">private -- never publish</span></div></div>
+
+<div class="card"><h3 style="margin-top:0"><a href="/memory">Frontal Memory -- persistent-memory architecture</a></h3>
+<div class="dim small">The private site section for the persistent-memory system: the thesis and
+architecture, the AI coordination team model, and the triage optimization roadmap. Answers:
+<i>how does cross-session memory work here?</i></div>
+<div style="margin-top:8px"><span class="pill acc">private -- unlisted site section</span></div></div>
 """ + _rulings_card + """
 
 <div class="note"><b>Regenerate</b><br>
