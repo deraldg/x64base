@@ -137,6 +137,7 @@ The algebra itself is IN scope in full (R26).
 | SET FILTER stance for SQL statements | P3 gate | statements ignore session filter; stated in contract |
 | Bare `SQL` command disposition | P2.4 | retire after P0 demotion |
 | Product name (SQLTalk?) | P6 | owner's call |
+| OQ-14 verb redundancy: why `SQLSEL SELECT`? | grammar surface + docs-wide | **Drop the redundant inner `SELECT`.** `SQLSEL` IS the select verb (the home SQL brand); `SQLSEL SELECT <list> FROM` starts a statement with two select verbs. We never write `foxpro select` or `sqlite select` -- a dialect names its verb once -- so `sqlsel select` is redundant and half-undoes the confusion SQLSEL was coined to remove. Canonical becomes `SQLSEL <select-list> FROM <table> [WHERE][ORDER BY][LIMIT]`. Source: `src/cli/sqlsel_statement.cpp:150` requires the inner `SELECT`, USAGE at `:132-135` documents it. Owner leans clean break (no live scripts depend on it) vs a one-release optional-keyword soft landing. Doc-wide consequence: everywhere, differentiate xBase `SELECT <area>` (`cmd_select.cpp`, work-area switch) from `SQLSEL` (SQL query). Full note: `SQLSEL_VERB_REDUNDANCY_DESIGN_NOTE_V1.md` |
 
 ## 6. Registration state
 
