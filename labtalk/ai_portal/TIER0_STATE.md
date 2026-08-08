@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-08T23:52:14Z
+    generated_utc : 2026-08-08T23:55:15Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 3d8244b08  (2026-08-08)
+    HEAD          : 549e40ea9  (2026-08-08)
     upstream      : f9008d736
-    unpushed      : 9 commit(s) ahead of upstream
+    unpushed      : 10 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,19 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PORTAL_MEMORY_SYNAPSE_2026-08-08.md
-    commits behind HEAD : 7
+    commits behind HEAD : 8
 
 ## Staleness warnings
 
-- The newest closeout is 7 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-097. Same shape as AIF-062/078/080.
-- 9 commit(s) are unpushed and invisible to a clone.
+- The newest closeout is 8 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 10 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-097 | private-site auth + search | member.derald | **MISSING** |
+| AIF-097 | private-site auth + search | member.derald | yes |
 | AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
 | AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
