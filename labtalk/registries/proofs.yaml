@@ -568,6 +568,37 @@ proofs:
     -- test what you can, assert only that, hand off the rest. Same pattern as proof.aside.rule_caught_its_own_author
     and proof.ai_portal.discoverability_caught_its_own_author: the doctrine demonstrated by its own author
     falling through it.'
+- id: proof.grok_lane1_coworker_kind_collision
+  label: First ai-ai coworker lane delivery (Grok) landed clean AND its one engine error was caught by
+    ground-truthing before apply
+  state: source_defined
+  related:
+  - D:/code/ccode/docs/maintenance/LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md
+  - D:/code/ccode/docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md
+  - D:/code/ccode/include/bbs/bbs_schema.hpp
+  - D:/code/ccode/tools/memory/promote.py
+  notes: 'THE TEAM MODEL, EXERCISED -- both halves recorded on purpose. On 2026-08-08 Grok, assigned as
+    a coworker to the Frontal_Mem M2 Lane 1 write adapter (the engine-bound half Claude cannot build in
+    the sandbox), returned a clean review-needed package. SUCCESS: Grok accepted the lane, picked up the
+    project frontal memory (FRONTAL_MEM_POINTER_V1 + the two briefs) off the public development branch,
+    consumed promote.py verbatim without re-opening the judgment, held the attribution non-negotiable
+    (current_member() only, author never 0, AIF-075), chose an auditable confirm-UX (board.governance
+    / SYSGRANT loop), mutated no tree (it has no write access to ccode), and delivered a MANIFEST + verification
+    procedure + proposed diff. The first ai<->ai lane handoff under the coworker team model worked end
+    to end. FAILURE, CAUGHT: Grok proposed a first-class source-lane marker as KIND=3=consolidated_from_chat.
+    Ground-truthing against include/bbs/bbs_schema.hpp showed KIND is already fully enumerated -- 0=post
+    1=reply 2=agent_prompt 3=agent_reply 4=system -- so KIND=3 collides with agent_reply and, if applied,
+    would reclassify every existing agent reply and corrupt recall. The next free value is 5. Grok also
+    proposed stashing the lane in RUNID, but the schema defines RUNID as an ai_runs ref, not a free-text
+    tag -- a semantic overload; a dedicated SYSPOST field (SRCLANE) is the correct seam. And Grok proposed
+    a literal AIF-089, which defeats the atomic O_EXCL claim-aif allocator (089 is a suspicious lone gap
+    below the 092-097 band). None of these reached the store: the package was verified against source
+    BEFORE apply, and the corrections (KIND=5, dedicated SRCLANE field, let claim-aif allocate) were sent
+    back to Grok. RULE: a coworker agency package is data, not a merge -- ground-truth every engine-facing
+    claim against the real schema/source before applying it, exactly as with your own host-only changes.
+    Same doctrine as proof.golden_rule_verify_before_assert, now applied across the ai<->ai seam: trust
+    the measurement (the schema header), not the proposal. Evidence: the schema enumeration at bbs_schema.hpp
+    lines 71-72; the paste-back correction issued the same day.'
 - id: proof.help.cmdhelp_source_exists
   label: CMDHELP source exists
   state: source_defined
