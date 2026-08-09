@@ -74,8 +74,27 @@ lines in only 4 commits (batch-drop style); W30 delivered 20x the commits at far
 lines-per-commit (scoped slices, the gate era). Confound C2 runs INVERTED from the charter's
 guess: commits UNDERCOUNT the early takeoff rather than inflating the late one. Sequence as now
 measured: doctrine lands W29 AND output takes off W29 in the old delivery style; the delivery
-process itself transforms W30, where Claude arrives. Caveat: numstat without rename detection
-counts moved files as adds; a rename-aware pass (`-M`) is the remaining M0 refinement.
+process itself transforms W30, where Claude arrives. Caveat CLOSED 2026-08-09: the rename-aware pass (`-M`) reproduces both spikes to the line
+(W29 eng 179,009 = 179,009; W31 tool 224,010 = 224,010) -- no moved-file inflation. **M0 is
+complete**: every series value is regenerable, bounded, provenance-checked, rename-verified.
+
+## M2 seed -- per-metric knees and the honesty ledger (2026-08-09)
+
+| Metric | Knee week | Character |
+|---|---|---|
+| eng_code lines | **W29** | one massive batch integration (4 commits, 180K C++) |
+| doc lines + new docs + closeouts | **W29 onset, W30 surge** | doctrine lands W29, applied at scale W30 |
+| commits (granularity) | **W30** | delivery style transforms to scoped slices |
+| tool_code lines | **W31** | operational automation (phase machinery) |
+| proofs + aifclaims | **W31** | the registries/allocator era |
+| steady state | **W32** | most commits, least code -- small proven slices |
+
+Sequential specialization: engine -> doctrine -> process -> tooling -> steady state, one week
+per layer. What CANNOT be concluded (M2's standing honesty ledger): F1 vs F3 cannot be ordered
+from git alone (Claude's arrival and its model generation are one event in this record -- the
+owner's financial audit is the only independent clock); C1 (owner fluency) is unmeasurable
+in-repo and is assumed nonzero; correlation language only, throughout. Remaining M2 input: the
+financial audit dates. Then M3 writes the report.
 
 ## M1 seed -- agent-adoption timeline (first evidence in the record, extracted 2026-08-09)
 
