@@ -83,3 +83,44 @@ other owner's ledger/charter was rewritten.
 
 Departure quip sent to co-sessions pointing here. No AIF held by my run (AIF-097 was claimed by
 the owner's host-side run). No locks held; tree not wedged; all my work committed.
+
+## Continuation (same session, after the close above)
+
+The session continued. Landed on `development` / the site branch:
+
+- **Part A -- Pagefind public site search (AIF-097).** Build step (`pagefind --site out`) +
+  `/search` page + `SearchClient.tsx` + nav item; layout `<main data-pagefind-body>` scopes the
+  index to page content; privates excluded (`/memory`, `/portal` via `data-pagefind-ignore`;
+  `/AI` and other non-Next pages by opt-in mode). Site commits `6003a7054`, `6a42468e7`. Verified
+  in a BUILT site (144 pages indexed; private-only terms return nothing). NOT available under
+  `next dev`.
+- **start-ai.ps1 -- `-Built` mode + fixes.** Added a `-Built` switch (build + `serve out` so
+  search works) and pre-flight checks. Commits `edafecb22`, `a4b465d9b`, `05641a888`.
+- **Defect pattern, recorded (honesty).** I broke two things with confident, host-untestable
+  changes and mis-diagnosed before getting ground truth:
+  1. A `data-pagefind-ignore` on the `/AI` `<body>` broke the gateway's LIVE-banner injection
+     (`decorate_live_html` matches `<body><div class="wrap">` exactly). Reverted (`6537aba0d`);
+     opt-in mode already excluded `/AI`, so the ignore was never needed.
+  2. A `cmd /k "python" ...` quoting change mangled the gateway launch (cmd strips the first+last
+     quote -> "filename/directory/volume syntax incorrect" -> :3000 refused). I blamed the
+     interpreter (venv) twice before running the gateway in the foreground, which proved the
+     gateway fine and the spawn the bug. Fixed by unquoting (`05641a888`). Lesson: for host-only
+     changes I cannot test in the sandbox, get ground truth first; do not assert "done."
+
+## Good-neighbor notes (continuation)
+
+- **Reports gateway (`tools/reports/build_reports.py`).** Touched twice more (the `/AI` body
+  ignore, then its revert). Net vs the earlier commit: only the `/memory` card + main-site link
+  remain. Regenerate to refresh the served HTML: `python tools\reports\build_reports.py`.
+- **start-ai.ps1** (tracked local launcher): gateway now defaults to system `python`, has a
+  `-Built` mode, and the spawn is unquoted. It runs the console `--enable-write` by design.
+
+## Security finding (open, feeds AIF-097 Part B)
+
+The local `/AI/console` write endpoint (`POST /AI/console/api/op`, straight to pydottalk;
+tombstone is irreversible) has NO auth, NO Origin/Referer, and NO Host-header check. Loopback
+bind protects the network but NOT the browser: DNS-rebinding and CSRF can reach the mutate
+endpoint. Mitigations, cheapest first: (1) make `--enable-write` opt-in via a `-Write` switch on
+the launcher; (2) a Host-header allowlist in the gateway (kills DNS rebinding); (3) auth-gate the
+write POST by relaying `AUTH <member> <token>` to loopback `bbsd` -- the AIF-097 Part B dogfood.
+Part B (the auth-relay core) was resumed after this note.

@@ -109,7 +109,7 @@ as a standing public endpoint. That is a legitimate BEST-for-now, not a failure.
 
 | Phase | Delivers | Gate |
 |---|---|---|
-| M0 | Auth-relay proof: gateway validates a login by relaying `AUTH` to loopback `bbsd`; correct accept/deny, no-leak preserved | local canary: good token in, bad token out |
+| M0 | **CORE BUILT + TESTED (2026-08-08).** Auth-relay logic `tools/reports/bbs_auth_relay.py` (+ 9 unit tests): `build_auth_line` / `parse_response` / `authenticate`, no-leak (bad member and bad token indistinguishable), injection rejection (whitespace/control chars never hit the wire), grounded in `bbs_server.cpp`. REMAINING: the live socket path against a running `bbsd` (host canary: `python tools/reports/bbs_auth_relay.py --member <m> --token <t>`), then wire it into the gateway to gate `POST /AI/console/api/op`. | good token -> OK, bad -> FAIL, unreachable -> FAIL; live canary against bbsd |
 | M1 | Session cookies + gated static serving, all on loopback | authed session sees private build; anon gets `/login` |
 | M2 | Internet exposure via tunnel + subdomain + TLS; `bbsd` still loopback | `private.x64base.com` serves login over TLS |
 | M3 | Hardening: rate-limit, lockout, rotation, CSRF, audit, size caps | adversarial pass; documented review points cleared |
