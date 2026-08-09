@@ -274,6 +274,18 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
     }
 
     if (is_x64_cdx_area(A)) {
+        if (ext == ".cnx") {
+            // CNX-on-x64 (owner ruling 2026-08-09): CNX was re-enacted to x64
+            // standards for ramfs/vdisk in-RAM indexing (XIDX-TXN-02 M1 realtime
+            // maintenance), so a blanket refusal is stale policy. An EXPLICIT
+            // .cnx request is honored with an advisory; LMDB-backed CDX remains
+            // the preferred and default index for non-RAM x64 use. Bare tokens
+            // (no extension) still resolve to .cdx -- the default is unchanged.
+            cli::cmdout::print_line(
+                "SET INDEX: advisory -- LMDB-backed CDX is the preferred index for x64 tables;"
+                " attaching CNX as explicitly requested.");
+            return true;
+        }
         if (ext != ".cdx") {
             err = msg(MessageId::SetIndexV64RequiresCdxText);
             return false;

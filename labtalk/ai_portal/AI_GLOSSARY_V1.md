@@ -79,6 +79,12 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   verification off explicitly; do NOT assert done. The sharpened form of "trust the measurement,
   not the success message," earned 2026-08-08 when three host-only changes were each asserted
   working and each broke. Evidence: `proof.golden_rule_verify_before_assert`.
+- **final tests promote to regressions (owner rule, 2026-08-09)** -- the ad-hoc "final test"
+  that proves a task done is not throwaway: when the task closes, promote it (when possible)
+  into a registered regression so the proof keeps running. A fix without a regression silently
+  rots; the close-out question is "where did the final test go?" First application:
+  `INDEX_X64_CNX` (the CNX-on-x64 policy proof, registered in `cmd_regression.cpp`). The
+  companion of the golden rule: verify before you assert, then KEEP verifying after you close.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.

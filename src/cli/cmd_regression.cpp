@@ -91,7 +91,7 @@ struct RegressionSpec {
 // compile error ("too many initializers"), which is the safe failure -- but it
 // is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
 // Bump it when you add a regression.
-constexpr std::array<RegressionSpec, 34> kRegressionSpecs{{
+constexpr std::array<RegressionSpec, 35> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -109,6 +109,12 @@ constexpr std::array<RegressionSpec, 34> kRegressionSpecs{{
         "index_v64_cdx_lmdb_smoke.dts",
         "v64 CDX/LMDB order and attachment smoke",
         true
+    },
+    {
+        "INDEX_X64_CNX",
+        "index_x64_cnx_smoke.dts",
+        "CNX-on-x64 policy proof (owner ruling 2026-08-09): explicit .cnx attaches on a v64 table with an advisory instead of the old hard refusal; SET ORDER honors the .cnx both as an explicit container and via the bare-tag fallback when no .cdx exists; bare REINDEX routes to the CNX engine when the active order is CNX; and the CDX/LMDB default is proven UNCHANGED when no .cnx is requested. Self-bootstrapping disposable copy in SANDBOX (students_cnx64_smoke), self-erasing. This is the lane's final test promoted to a regression per the promote-final-tests rule. Explicit-run until soaked, then promote to the default suite.",
+        false
     },
     {
         "X64_METRICS",

@@ -1,9 +1,12 @@
 # Ticket: CNX on x64 -- warn, do not refuse; + WORKSPACE OPEN index-source conveniences
 
-**Status:** ticket (review-needed, owner will recurse). Owner: member.derald. Steward: member.ai.claude.cowork.
-Date 2026-08-08. **AIF: unclaimed** -- claim a fresh number with `claim-aif` on pickup (do NOT reuse
-AIF-052/097). This is a scoping ticket, not a build; the owner said "create a ticket and we will
-recurse back."
+**Status:** BUILT + PROVEN (2026-08-09). Owner: member.derald. Steward: member.ai.claude.cowork.
+**AIF-099** (claimed 2026-08-09, run COWORK-20260809-001, lane "cnx-on-x64 warn-not-refuse").
+Scopes A/C/REINDEX-routing/D landed and proven by `REGRESSION RUN INDEX_X64_CNX` on the host
+(all five expectations PASS, adjudicated by Claude/Cowork from the datarun transcript; REBUILD
+proven to populate a CNX on an x64 table, OK=2 FAIL=0). Scope B (WORKSPACE OPEN DBF [CDX|CNX])
+remains the open follow-up of this lane. Cosmetic follow-up: the USE banner still prints
+"Valid Index/Indices: CDX" for v64; could read "CDX, CNX" now.
 
 `RECURSED IN <- session close-out (Grok Lane 1 wrap + ./datarun CNX-on-x64 check) @ the SET INDEX
 refusal, 2026-08-08.` See `RECURSION_MARKERS_V1.md`. This ticket is a parked frame; the origin
@@ -122,6 +125,35 @@ silently reverts it. The repo already has the matrix cells `INDEX_X32` (CNX smok
   note it in their descriptions.
 - Engine-touching -> host build + `./datarun.ps1` proof; the sandbox cannot run it (see the golden
   rule -- assert only what was actually run).
+
+## BUILD STATUS (2026-08-09) -- Scopes A, C, D AUTHORED; Scope B deferred
+
+`RECURSED BACK <- owner pickup ("clear the CNX block")`. Source authored by Claude (Cowork,
+sandbox -- NOT compiled, NOT run; golden rule applies). Changes:
+
+- **Scope A** (`src/cli/cmd_setindex.cpp`, `validate_explicit_ext_for_flavor`): explicit `.cnx`
+  on an x64 area prints an advisory and attaches; `.inx` still refused; bare tokens still
+  default to `.cdx`. The attach dispatch below the guard was verified extension-based and
+  CNX-ready -- the guard was the only blocker.
+- **Scope C1** (`src/cli/cmd_setorder.cpp`, `validate_explicit_container_for_flavor`): mirror
+  of A for the explicit container+tag form.
+- **Scope C2** (`cmd_setorder.cpp`, `default_container_for_flavor`): bare-tag fallback prefers
+  an existing `.cdx`, else uses an existing `.cnx` (advisory), else preserves the original
+  `.cdx` not-found message.
+- **REINDEX routing** (`src/cli/cmd_reindex.cpp`, was the "related symptom"): active CNX order
+  now routes bare `REINDEX` and `REINDEX ALL` to the CNX rebuild engine (`+ order_state.hpp`
+  include). Flavor defaults unchanged when no CNX order is active. **REBUILD itself needed no
+  change** -- verified flavor-guard-free.
+- **Scope D** (`src/cli/cmd_regression.cpp` + `dottalkpp/data/scripts/index_x64_cnx_smoke.dts`):
+  `INDEX_X64_CNX` registered (explicit-run until soaked). Covers A, C1, C2, the REINDEX
+  routing, and the CDX-default-unchanged guard. First application of the promote-final-tests
+  rule (glossary).
+- **Scope B** (`WORKSPACE OPEN DBF [CDX|CNX]`) is DEFERRED to a follow-up slice -- convenience,
+  not part of the block.
+
+**Host actions owed:** `claim-aif` + stamp here; build (`cmake --build build --target dottalkpp
+--config Release`); `./datarun.ps1 -CommandLines 'REGRESSION RUN INDEX_X64_CNX'`; paste output
+for adjudication; then the scoped commit.
 
 ## Registration (on pickup, host-side)
 

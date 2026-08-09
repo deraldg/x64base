@@ -429,7 +429,21 @@ static std::string default_container_for_flavor(const xbase::DbArea& area) {
         return resolve_index_path(area, "", ".cnx").string();
     }
     if (is_x64_cdx_area(area)) {
-        return resolve_index_path(area, "", ".cdx").string();
+        // CNX-on-x64 (owner ruling 2026-08-09): CDX stays the preferred x64
+        // default, but when no .cdx exists and a .cnx does, honor the CNX the
+        // user built instead of failing on a missing .cdx. When neither
+        // exists, fall through to the .cdx path so the original not-found
+        // message (naming the preferred container) is preserved.
+        const std::string cdx = resolve_index_path(area, "", ".cdx").string();
+        if (container_exists(cdx)) return cdx;
+        const std::string cnx = resolve_index_path(area, "", ".cnx").string();
+        if (container_exists(cnx)) {
+            cli::cmdout::print_line(
+                "SET ORDER: advisory -- no .cdx container found; using existing CNX"
+                " (LMDB-backed CDX is the preferred x64 index).");
+            return cnx;
+        }
+        return cdx;
     }
     return resolve_index_path(area, "", ".cdx").string();
 }
@@ -459,6 +473,15 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
     }
 
     if (is_x64_cdx_area(area)) {
+        if (isCnx) {
+            // CNX-on-x64 (owner ruling 2026-08-09): explicit .cnx is honored
+            // with an advisory; CDX/LMDB stays the preferred x64 default.
+            // Mirrors the SET INDEX guard in cmd_setindex.cpp.
+            cli::cmdout::print_line(
+                "SET ORDER: advisory -- LMDB-backed CDX is the preferred index for x64 tables;"
+                " using CNX as explicitly requested.");
+            return true;
+        }
         if (!isCdx) {
             err = msg(MessageId::SetOrderV64RequiresCdxText);
             return false;
