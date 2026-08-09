@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PortalIndex() {
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 flex-1" data-pagefind-ignore="all">
       <h1 className="text-3xl font-semibold tracking-tight">AI Portal — private reference</h1>
       <p className="mt-2 text-muted">
         Unlisted and not indexed. Not yet promoted to public navigation.

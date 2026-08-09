@@ -8,7 +8,8 @@
     "generate:diagrams": "node scripts/generate-diagrams.mjs",
     "check:diagrams": "node scripts/check-diagrams.mjs",
     "check:public-content": "node scripts/check-public-content.mjs",
-    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/strip-local-only-output.mjs && node scripts/build-sites-dist.mjs",
+    "build": "node scripts/check-diagrams.mjs && node scripts/check-public-content.mjs && node scripts/clean-build-output.mjs && next build && node scripts/strip-local-only-output.mjs && pagefind --site out && node scripts/build-sites-dist.mjs",
+    "index:search": "pagefind --site out",
     "start": "next start",
     "lint": "next lint",
     "build:apache": "node scripts/build-apache-static.mjs",
@@ -41,6 +42,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^10.6.0",
     "eslint-config-next": "^16.2.10",
+    "pagefind": "^1.1.1",
     "postcss": "^8.5.16",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4"

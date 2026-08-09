@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function MemoryIndex() {
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 flex-1" data-pagefind-ignore="all">
       <h1 className="text-3xl font-semibold tracking-tight">Frontal Memory -- private reference</h1>
       <p className="mt-2 text-muted">
         Persistent memory for artificial minds: how a session&apos;s short-term working state is

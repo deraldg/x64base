@@ -29,7 +29,7 @@ export default async function MemoryPage({ params }: { params: Promise<{ slug: s
   const href = `/memory/${slug.join("/")}`;
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 flex-1" data-pagefind-ignore="all">
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },

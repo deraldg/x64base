@@ -14,5 +14,6 @@ export const topNav: NavItem[] = [
   // is not in front.
   { label: "AI", href: "/AI/index.html" },
   { label: "News", href: "/news" },
-  { label: "Contact", href: "/contact" }
+  { label: "Contact", href: "/contact" },
+  { label: "Search", href: "/search" }
 ];

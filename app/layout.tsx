@@ -79,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           ) : null}
         </div>
         <Navbar />
-        <main className="mx-auto w-full max-w-6xl px-4 py-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-10" data-pagefind-body>{children}</main>
         <Footer />
       </body>
     </html>
