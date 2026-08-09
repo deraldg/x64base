@@ -61,6 +61,22 @@ Candidate factors (owner's three + confounds that must be priced):
 | M2 | **Attribution analysis.** Knee location vs factor dates; per-metric knees compared (do docs metrics lead source metrics?); honest confound accounting; explicitly correlational language. | findings state what CANNOT be concluded as clearly as what can |
 | M3 | **Report + publication candidate.** A findings doc; optionally a site page/whitepaper (the Frontal_Mem thesis validation angle: "documented from month eleven onward" meets "the eleventh month is when it went vertical"). Publication rides the matrix + flush pipeline, not a hand-page. | owner review; matrix row if published |
 
+## M0 finding 2 -- the outliers are CODE, and the two knees disagree by a week (2026-08-09)
+
+The suspected `src_add` artifacts (W29 182K, W31 241K) were provenance-checked and the
+"vendored/generated" hypothesis was FALSIFIED: ~99% of both spikes are code-extension lines.
+W29 is real engine C++ (`fox_standard_catalog.cpp`, `cmdhelp.cpp`, `cmd_workspace.cpp`, ...);
+W31 is dozens of ~600-line Python OPERATIONAL scripts (the phase22 message-catalog machinery) --
+a category M2 should name separately: single-use operational code vs durable engine code.
+
+The corrected reading: **the LINE knee is W29; the COMMIT knee is W30.** W29 delivered 183K
+lines in only 4 commits (batch-drop style); W30 delivered 20x the commits at far lower
+lines-per-commit (scoped slices, the gate era). Confound C2 runs INVERTED from the charter's
+guess: commits UNDERCOUNT the early takeoff rather than inflating the late one. Sequence as now
+measured: doctrine lands W29 AND output takes off W29 in the old delivery style; the delivery
+process itself transforms W30, where Claude arrives. Caveat: numstat without rename detection
+counts moved files as adds; a rename-aware pass (`-M`) is the remaining M0 refinement.
+
 ## M1 seed -- agent-adoption timeline (first evidence in the record, extracted 2026-08-09)
 
 First-mention / first-file-add dates from `git log` (adoption PROXIES -- lower bounds; the

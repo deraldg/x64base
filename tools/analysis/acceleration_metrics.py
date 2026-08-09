@@ -77,8 +77,14 @@ def main() -> int:
         if a == "-":
             continue  # binary
         n = int(a)
-        if path.startswith(SRC_PREFIXES):
-            weeks[cur]["src_add"] += n
+        # Code vs data split (M0 finding 2: the W29/W31 "outliers" were verified
+        # ~99% code-extension lines, so the split is reported, not assumed).
+        ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+        is_code = ext in ("cpp", "hpp", "h", "c", "py", "ps1", "cmake", "mjs", "js", "ts")
+        if path.startswith(("src/", "include/", "bindings/")):
+            weeks[cur]["eng_code" if is_code else "data_add"] += n
+        elif path.startswith("tools/"):
+            weeks[cur]["tool_code" if is_code else "data_add"] += n
         elif path.startswith(DOC_PREFIXES) or (path.endswith(".md") and "/" not in path):
             weeks[cur]["doc_add"] += n
 
@@ -102,12 +108,12 @@ def main() -> int:
             weeks[cur]["regress"] += 1
 
     this_week = f"{dt.date.today().isocalendar()[0]}-W{dt.date.today().isocalendar()[1]:02d}"
-    cols = ["commits", "src_add", "doc_add", "newdoc", "closeout", "proofs", "aifclaim", "regress"]
-    print(f"{'week':<10}" + "".join(f"{c:>9}" for c in cols) + "  note")
+    cols = ["commits", "eng_code", "tool_code", "data_add", "doc_add", "newdoc", "closeout", "proofs", "aifclaim", "regress"]
+    print(f"{'week':<10}" + "".join(f"{c:>10}" for c in cols) + "  note")
     for wk in sorted(weeks):
         row = weeks[wk]
         note = "<- partial (current week)" if wk == this_week else ""
-        print(f"{wk:<10}" + "".join(f"{row.get(c, 0):>9}" for c in cols) + f"  {note}")
+        print(f"{wk:<10}" + "".join(f"{row.get(c, 0):>10}" for c in cols) + f"  {note}")
     print("\nsource: git log --since={} on the current branch; author dates; binaries skipped.".format(args.since))
     print("No single column is the finding (charter C2): read them together.")
     return 0
