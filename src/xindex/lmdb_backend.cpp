@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xindex/lmdb_backend.cpp
 #include "xindex/lmdb_backend.hpp"
 
@@ -67,8 +76,24 @@ bool LmdbBackend::open(const std::string& path) {
     int rc = mdb_env_create(reinterpret_cast<MDB_env**>(&env_));
     if (rc != MDB_SUCCESS || !env_) return false;
 
-    // Reasonable defaults; adjust later via config if desired.
-    (void)mdb_env_set_mapsize(env_, 1024ULL * 1024ULL * 1024ULL); // 1 GiB
+    // ADOPT THE PERSISTED MAPSIZE -- do not assert one here. (AIF-065)
+    //
+    // Was:
+    //     // Reasonable defaults; adjust later via config if desired.
+    //     mdb_env_set_mapsize(env_, 1024ULL * 1024ULL * 1024ULL); // 1 GiB
+    //
+    // That comment is the whole defect in one line. It was written as a
+    // placeholder, "later" never came, and meanwhile BUILDLMDB grew a six-rung
+    // size ladder that this placeholder silently overrode on every attach.
+    // Five of the six rungs were lies; HUGE appeared to work only because it
+    // happens to equal the constant asserted here.
+    //
+    // Zero is the documented "adopt the persisted size" argument. Deleting the
+    // call instead would fall back to LMDB's 10 MiB default and break every
+    // index in the tree -- see the fuller note at the sibling site in
+    // src/xindex/cdx_backend.cpp, which is the primary path because CDX builds
+    // the index containers.
+    (void)mdb_env_set_mapsize(env_, 0);
     (void)mdb_env_set_maxdbs(env_, 128);
 
     // On Windows/MSVC shells that reuse threads, MDB_NOTLS prevents reader slot reuse issues.

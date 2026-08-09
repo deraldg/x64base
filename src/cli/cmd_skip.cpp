@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: DOT|SKIP
 // command: SKIP
@@ -133,8 +142,8 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
         ? cli::navsel::Step::Next
         : cli::navsel::Step::Prior;
 
-    int32_t current = A.recno();
-    int32_t rn = 0;
+    std::int64_t current = static_cast<std::int64_t>(A.recno64());
+    std::int64_t rn = 0;
     bool moved = false;
 
     while (steps-- > 0) {
@@ -156,7 +165,7 @@ void cmd_SKIP(xbase::DbArea& A, std::istringstream& in)
         moved = true;
     }
 
-    if (!moved || !A.gotoRec(current) || !A.readCurrent()) {
+    if (!moved || !A.gotoRec64(static_cast<std::uint64_t>(current)) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message("SKIP", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }

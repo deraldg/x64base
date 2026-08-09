@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 /* src/xindex/cli_wrappers.cpp
    Bridge wrappers using only public APIs + IndexManager.
    NO record_view usage; NO private DbArea members. */

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/expr/date/date_utils.hpp
 #pragma once
 
@@ -18,8 +27,18 @@ struct ClockSnapshot {
     std::string datetime14; // "YYYYMMDDHHMMSS"
 };
 
-// Get current local date/time as strings
+// Get current local date/time as strings.
+// This is the xBase default: DATE(), TIME(), NOW() and DATETIME() all render
+// local wall-clock, matching dBASE/FoxPro behaviour. Unchanged.
 ClockSnapshot now_local();
+
+// Get current UTC date/time in the identical format (added 2026-07-26).
+// Use this for any timestamp that leaves the process -- evidence transcripts,
+// run identifiers, catalog rows, anything a different host or session will
+// compare later. A naive local timestamp compared against UTC lies silently,
+// and in a plausible direction; see the note on now_utc() in date_utils.cpp
+// for the two live defects that motivated adding it.
+ClockSnapshot now_utc();
 
 // Validate year-month-day (handles leap years)
 bool is_valid_ymd(int year, int month, int day);

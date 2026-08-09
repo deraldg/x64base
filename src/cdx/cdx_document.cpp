@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cdx
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "cdx/cdx_document.hpp"
 #include "cdx/cdx.hpp"
 

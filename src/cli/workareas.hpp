@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/workareas.hpp
 // Purpose: Lightweight wrappers around engine-owned work areas for shell and
 //          runtime access.

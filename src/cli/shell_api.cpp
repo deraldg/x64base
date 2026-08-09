@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/shell_api.cpp
 // Purpose: Shell-facing adapters that bridge command dispatch, expression
 //          evaluation, script resolution, and console I/O helpers.
@@ -5,6 +14,7 @@
 //           text in command units; this layer is shared shell glue.
 
 #include "shell_api.hpp"
+#include "cli/dotscript_lexing.hpp"
 
 #include <sstream>
 #include <string>
@@ -50,11 +60,7 @@ namespace {
     }
 
     static bool begins_with_comment(const std::string& raw) {
-        const std::string s = trim(raw);
-        if (s.empty()) return false;
-        if (s[0] == '#') return true;
-        if (s.size() >= 2 && s[0] == '/' && s[1] == '/') return true;
-        return false;
+        return dottalk::lexing::is_comment_line(raw);
     }
 
     static std::string expand_shortcut_lead(const std::string& s) {

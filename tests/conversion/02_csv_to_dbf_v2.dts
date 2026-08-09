@@ -1,0 +1,61 @@
+* ============================================================================
+* 02_csv_to_dbf_v2.dts   --  CSV -> DBF with type inference, runnable
+*
+* Replaces 02_csv_to_dbf_students.dts, which could not execute:
+*   IMPORT CSV <f> SCHEMA <json> REJECTS <csv>
+*     -> IMPORT grammar is IMPORT <csvfile> only. No SCHEMA or REJECTS options.
+*   USE students_import
+*     -> IMPORT APPENDS INTO THE ALREADY-OPEN TABLE. It never creates a table,
+*        so students_import would never exist. Creating a table from a CSV is
+*        AUTODBF's job, not IMPORT's. This is the substantive correction: the
+*        original conflated two different commands.
+*   _drops/ -> does not exist; TMP does.
+*
+* This test proves the CSV -> x64base direction INCLUDING type inference, which
+* is the part that actually matters. A row count alone would pass even if every
+* column collapsed to character.
+* ============================================================================
+
+SET TALK ON
+ECHO CONV02 BEGIN csv-to-dbf
+
+ECHO CONV02 LOAD
+AUTODBF X64 CONVERSION_CSV_TO_DBF_ITEMS_V1 FROM cascade_precision_erp/data/Items.csv HEADER INFER OVERWRITE
+
+ECHO CONV02 VERIFY
+USE CONVERSION_CSV_TO_DBF_ITEMS_V1
+COUNT
+STRUCT
+
+* -- the two behaviours worth asserting explicitly -----------------------------
+* Both were derived from src/import/import_profile.cpp and confirmed by run on
+* 2026-07-26. They are the tripwires: if either changes, the inference ladder or
+* its ordering changed underneath the migration story.
+ECHO CONV02 TRIPWIRE list-price-must-be-N-despite-14-empties
+ECHO CONV02 TRIPWIRE active-must-be-N-not-L
+ECHO CONV02 NULLCHECK
+LOCATE FOR SKU = "RAW-SHAFT-4140"
+DISPLAY
+
+ECHO CONV02 END
+
+* ============================================================================
+* PASS CRITERIA  (derived, not estimated -- see 10_crosswalk_cascade_items_v1.dts)
+*   COUNT       = 18
+*   field count = 13
+*   type letters, in order:  N C C C C C N N N N N C N
+*     ITEM_ID N . SKU C . DESCRIPTION C . UOM C . ITEM_TYPE C . COST_METHOD C
+*     STANDARD_COST N . LIST_PRICE N . REORDER_POINT N . REORDER_QTY N
+*     LEAD_DAYS N . CATEGORY C . ACTIVE N
+*
+*   LIST_PRICE  = N   even though 14 of 18 cells are empty.
+*                     update_profile() returns on empty before setting any
+*                     category flag, so empties cannot force MIXED.
+*   ACTIVE      = N   NOT L. is_logical_text() accepts "1"/"0", but
+*                     update_profile() tests is_integer_text() FIRST and returns,
+*                     making the LOGICAL branch unreachable for numeric literals.
+*   NULLCHECK   LIST_PRICE renders EMPTY, not 0.
+*
+* FAIL means any type letter differs, or LIST_PRICE shows 0 instead of blank.
+* A matching row count is NOT sufficient.
+* ============================================================================

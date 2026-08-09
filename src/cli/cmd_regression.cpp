@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_regression.cpp
 // @dottalk.usage v1
 // owner: DOT|REGRESSION
@@ -78,7 +87,11 @@ struct RegressionSpec {
     bool in_default_suite;
 };
 
-constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
+// SIZE IS HAND-MAINTAINED. Adding a row without bumping this count is a hard
+// compile error ("too many initializers"), which is the safe failure -- but it
+// is a recurring papercut: it happened when CNXLIVE was added on 2026-07-31.
+// Bump it when you add a regression.
+constexpr std::array<RegressionSpec, 35> kRegressionSpecs{{
     {
         "NONDESTRUCTIVE",
         "dottalkpp_non_destructive_smoke.dts",
@@ -96,6 +109,12 @@ constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
         "index_v64_cdx_lmdb_smoke.dts",
         "v64 CDX/LMDB order and attachment smoke",
         true
+    },
+    {
+        "INDEX_X64_CNX",
+        "index_x64_cnx_smoke.dts",
+        "CNX-on-x64 policy proof (owner ruling 2026-08-09): explicit .cnx attaches on a v64 table with an advisory instead of the old hard refusal; SET ORDER honors the .cnx both as an explicit container and via the bare-tag fallback when no .cdx exists; bare REINDEX routes to the CNX engine when the active order is CNX; and the CDX/LMDB default is proven UNCHANGED when no .cnx is requested. Self-bootstrapping disposable copy in SANDBOX (students_cnx64_smoke), self-erasing. This is the lane's final test promoted to a regression per the promote-final-tests rule. Explicit-run until soaked, then promote to the default suite.",
+        false
     },
     {
         "X64_METRICS",
@@ -142,7 +161,7 @@ constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
     {
         "DOTSCRIPT_PARITY",
         "dotscript\\predicate_memvar_parity_regression.dts",
-        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE — now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
+        "Predicate parity target: $name/$a[n] in IF/WHILE/WHERE -- now GREEN via the shared house-evaluator bridge (AIF-041, landed 2026-07-21). Fixture-free, self-asserting; safe for the default suite",
         true
     },
     {
@@ -196,6 +215,96 @@ constexpr std::array<RegressionSpec, 19> kRegressionSpecs{{
         "mem_proof.dts",
         "AIF-043 in-memory indexed table end-to-end proof: DO mem mounts the in-process RAM VFS (xbase::ramfs), then an x64 table AND its native CDX-V64 index are built, indexed, and traversed entirely in RAM (RUN8, no LMDB, zero files on disk). Self-contained (leads with DO mem, clean-slate remount) and self-asserting: ordered read-back must yield ADAMS/MILLER/ZEBRA (MEM_T1/T2/T3 = .T.); teardown unmounts and restores the x64 disk env. Mutates the RAM VFS only (no disk table), but kept out of the default suite (explicit run) until soaked. (AIF-043)",
         false
+    },
+    {
+        "BUILD_VECTORS",
+        "dotscript\\build_vectors_regression.dts",
+        "Build-vector runtime report (AIF-044 M4): BUILDVECTORS prints the compiled capacity authority; GATE #1 proof (areas=512, fields=256, rows=int64max). Read-only, no fixture/mutation. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "IDENTITY_PERSIST",
+        "dotscript\\identity_persistence_regression.dts",
+        "Identity/RBAC DBF persistence round-trip (AIF-045 2b-ii, APH-5): USER SAVE writes the nine SYS* identity tables, USER VERIFY reloads and confirms counts, user id/key/profile, and every member x permission authorize() verdict are preserved. Writes DBF under data/metadata/identity only; no fixture mutation. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "PHASE0_DECODE_COST",
+        "pinocchio\\ticketb_phase0_decode_cost.dts",
+        "Scan-evaluator baseline benchmark (scan-evaluator optimization lane M0): self-times SUM GPA / COUNT FOR (1 term) / COUNT FOR (3 terms) over the 1,000,000-row pinocchio STUDENTS fixture via SET TIMER (now script-aware) cross-checked by fractional SECONDS(). Read-only, no mutation. Baseline floor (Alienware m16 R2 / Core Ultra 9 185H): SUM ~19.5s, DEC1 ~38.5s, DEC3 ~70.5s. NOT a pass/fail regression and long-running (~2+ min); requires the 1M-row pinocchio fixture. EXEMPT from REGRESSION ALL by design -- explicit run only, as the M1-M4 speedup floor. (scan-evaluator lane, origin AIF-043 Ticket B Phase-0 KILL)",
+        false
+    },
+    {
+        "IDENTITY_ACCEPT",
+        "dotscript\\identity_accept_regression.dts",
+        "AI-agent local-security accept cycle (AIF-045 2c): admits a throwaway AI member, proves the resolver DENIES git.commit, owner USER GRANT flips it to ALLOW, USER UNGRANT flips it back to DENY, then USER DELETE removes it. Repeatable + self-cleaning (deletes any leftover up front and at the end). Mutates only data/metadata/identity (adds+removes a throwaway member); seeded rows intact. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "HELP_DIDYOUMEAN",
+        "dotscript\\help_didyoumean_regression.dts",
+        "HELP unknown-topic feedback + did-you-mean (AIF-047 M1-M3): HELP GAINT -> 'No help found for: GAINT' + 'Did you mean: GIANT, ...' (soundex phonetic), HELP SELCT -> SELECT, HELP GIANT <unknown> shares the not-found terminal, and SOUNDEX(\"GIANT\") still returns G530 after sharing its implementation with the suggester. Read-only, no mutation. Explicit-run until proven, then promote.",
+        false
+    },
+    {
+        "BBS_LANE",
+        "bbs\\bbs_lane_regression.dts",
+        "AI-BBS command-surface smoke (AIF-052/054/055): BBS BOARDS tops up + lists the seeded rooms (governance/afb.chat/notice/lounge/guestbook), BBS READ board.governance renders the SYSGRANT projection, and a POST/READ round-trip on board.afb.chat self-asserts. Read-mostly (first BBS BOARDS tops up the board store, idempotent after; no fixture touched). The guest-scoping SECURITY regression lives in the socket smoke D:\\code\\bbs_smoke.ps1 (server-side permission denial needs the listener). Out of the default suite (explicit run).",
+        false
+    },
+    {
+        "DDL_SCHEMA",
+        "ddl\\ddl_schema_flavor_regression.dts",
+        "DDL schema flavor smoke (AIF-063): creates classic MSDOS/DBASE and X64 throwaway tables from JSON schema fixtures, writes seed blanks through the DBF backend, reopens them from TMP, and self-asserts classic fields plus X64 long logical names. Emits sidecars and documents index declarations as metadata-only in this milestone. Mutates TMP only, so it stays out of the default suite (explicit run).",
+        false
+    },
+    {
+        "SQLSEL_BUFFER_VIS",
+        "sqlsel_buffer_visibility_regression.dts",
+        "SQLSEL/TUPLE TABLE BUFFER visibility split (AIF-074 follow-up): TUPLE remains buffer-preview, while SQLSEL SELECT projects the same committed table truth its WHERE predicate scans. Self-bootstrapping throwaway SQLBUFVIS table in SANDBOX; explicit-run because it mutates the filesystem.",
+        false
+    },
+    {
+        "SQLSEL_SELECT_V1",
+        "sqlsel_select_v1_regression.dts",
+        "SQLSEL statement surface, gate G3 (AIF-074 P3): SELECT <cols|*> FROM <table> with WHERE, ORDER BY [ASC|DESC], LIMIT and COUNT(*), each row set compared against an in-process SQLite oracle over identical data in the same run. Asserts cursor neutrality by data (the cursor is parked on a known record before and after), corrective errors for an unopened table / expression select-item / bad LIMIT / unknown ORDER BY field / ORDER BY on COUNT(*), and that ORDER BY sorts the full match set BEFORE LIMIT applies. Legacy predicate form preserved. Self-bootstrapping throwaway SQLSTU table in SANDBOX; explicit-run because it mutates the filesystem.",
+        false
+    },
+    {
+        "EVALDIFF",
+        "evaldiff_regression.dts",
+        "SQLSEL evaluator differential harness (AIF-074 P4.0a): self-bootstraps a mixed-type X64 fixture in SANDBOX, compares classic DbArea and TupleRow-bound predicate outcomes over the same physical records, reports verdict/failure parity and known differences, restores the cursor, and self-erases. Observer only; explicit-run while findings are being classified.",
+        false
+    },
+    {
+        "EXPORT_SDF",
+        "export\\export_sdf_regression.dts",
+        "EXPORT SDF smoke: creates a throwaway table in SANDBOX and exports fixed-width, space-padded records with TUPTALK PUSH ROW-compatible alignment. Explicit-run because it writes an output text file.",
+        false
+    },
+    {
+        "IDXDIFF",
+        "index_replace_diff_bench.dts",
+        "Index replace-diff benchmark (item A, session 2026-07-30): apply_replace_snapshot now emits only the tags whose (tag,key) actually moved instead of deleting and re-inserting every tag, turning a single-field REPLACE on an N-tag table from 2N committed LMDB write transactions into 2. Builds a throwaway 4-tag x64 table, replaces one indexed field then one non-indexed field, and carries two correctness markers (moved key reachable, skipped tag intact). MEASUREMENT is external: run with DOTTALK_INDEX_TRACE=1 and read the '[INDEX TRACE] apply_replace ... emitted_del/emitted_ins/skipped' lines; a .dts cannot count engine trace output. Expect 1/1 skipped=3 for the indexed edit and 0/0 skipped=4 for the unindexed one. Explicit-run: benchmark, not a pass/fail gate.",
+        false
+    },
+    {
+        "VUREPAIR",
+        "validate_unique_repair_index_proof.dts",
+        "VALIDATE UNIQUE ... REPAIR maintains the active index (item C1, session 2026-07-30): builds a throwaway x64 table with a duplicated key, indexes the uniqueness-candidate field via CDX, repairs the duplicate, then asserts the repaired record is reachable at its NEW key with NO REINDEX between (VUR_T2) and that the surviving legitimate duplicate is still correct (VUR_T3). Runtime-proven 2026-07-30 on the wsl-lean build. REPAIR previously used set()+writeCurrent(), which carry no index hook, and left the tag pointing at the old value with nothing marked stale. Proven on x64/CDX. It was ALSO restricted to x64/CDX because CnxBackend upsert/erase were stubs, so x32/CNX would have failed for an unrelated reason -- that restriction LAPSED 2026-07-31 when XIDX-TXN-02 M1 gave CNX realtime maintenance (see CNXLIVE). Whether VUREPAIR now passes on x32/CNX is UNMEASURED; the blocker is gone, the run has not been done. Self-bootstrapping and self-erasing; explicit-run until proven green.",
+        false
+    },
+    {
+        "IDXSTALE",
+        "index_maintenance_failure_proof.dts",
+        "Index-staleness REPORTING on a backend that cannot maintain incrementally (item E, session 2026-07-31): apply_replace_snapshot compares wasStale() across the apply and reports a false->true transition, so such a backend is no longer silent; wasStale() had seven overrides and ZERO call sites (AIF-079 instance 1). SUBJECT REPOINTED 2026-07-31: this ran against CNX/v32 until XIDX-TXN-02 M1 gave CNX realtime maintenance, at which point CNX stopped qualifying and E_T2 correctly inverted to .F. The test was not wrong -- its subject moved -- so it now targets native CDX-V64, whose upsert/erase are STILL no-op stubs that set stale_ and return normally (cdx_native_backend.cpp:507-519). That is the RAM/vdisk x64 path, so this now covers the in-memory lane; the realtime CNX behaviour that replaced it is proven separately by CNXLIVE. Scored on ORDER, not key lookup -- a native SEEK compares LIVE field values through a stale recno ordering, so a key probe proves nothing either way (measured on CNX: after moving MILLER->AAAAA, SEEK MILLER misses and SEEK AAAAA still hits). E_G0/E_G1 guard the fixture, E_T2 shows the stale order still starting at ANDERSON, E_T4 shows REINDEX fixing it. If E_T2 ever reads .F. the backend has GAINED realtime maintenance and this proof needs repointing again. Every marker is a FIELD comparison: RECNO() and FOUND() render EMPTY in a '?' marker and STR() does not rescue them. Builds a throwaway x64 table entirely in the RAM VFS and unmounts on teardown, so it writes nothing to disk; explicit-run until re-proven against the new subject.",
+        false
+    },
+    {
+        "CNXLIVE",
+        "cnx_realtime_index_proof.dts",
+        "Realtime CNX index maintenance (XIDX-TXN-02 M1, session 2026-07-31): a REPLACE that moves an indexed value re-places that record in the CNX ordering IMMEDIATELY, with no REBUILD between the edit and the ordered read, and the staleness warning is correctly ABSENT (trace 'staleBefore=no leftStale=no'). The positive counterpart to IDXSTALE, which asserts the opposite contract for a backend that cannot maintain; the two are kept separate so the inversion that happened when M1 landed reads as a deliberate split rather than a silently retuned regression. A CNX RUN1 payload stores 4 bytes per recno and NO keys (cnx_document.cpp:81 -> InxEntry{\"\", rn}), so upsert cannot binary-search stored keys: it searches the PERMUTATION, comparing the edited record's live field value against the live value at each probe (~log2 n record reads). The table is the ordering authority, the same authority REBUILD uses, and both share derive_sort_entry_/sort_entry_less_ so they cannot drift -- L_T6 asserts exactly that by re-checking the order after a REBUILD that must be a no-op. L_G0/L_G1 guard the fixture, L_T2 is the marker that inverted (top is AAAAA with no rebuild), L_T3/L_T4 catch an insert that appends instead of placing, L_T5 confirms lookup and order agree. Markers are FIELD comparisons for the same reason as IDXSTALE. Self-bootstrapping v32 table, self-erasing; explicit-run until soaked.",
+        false
     }
 }};
 
@@ -228,11 +337,37 @@ const RegressionSpec* find_regression_spec(const std::string& token)
     return nullptr;
 }
 
+// Normalize a spec's script path separators for the host filesystem.
+//
+// kRegressionSpecs stores subdirectory paths with Windows backslashes
+// ("canaries\\x64_matrix_metrics_boundary_canary.dts"). On Windows that is a
+// path separator; on Linux it is an ordinary filename character, so the whole
+// string is treated as one impossible filename and the script is never found.
+//
+// Measured 2026-07-30 on WSL: 22 of 32 specs carry backslash paths, including
+// 5 of the 8 DEFAULT-suite entries. REGRESSION ALL therefore ran 3 of 8 default
+// suites and reported the rest as "script not found" WITHOUT failing the run --
+// a green-looking Linux regression pass missing five eighths of its default
+// coverage. The engine is cross-platform; the harness quietly was not.
+//
+// Fixing it here rather than editing 22 string literals keeps the specs readable
+// in their authored form and makes any future backslash entry work too. '/' is
+// accepted on Windows as well, so this is safe in both directions.
+static std::string normalize_script_separators(const std::string& raw)
+{
+    std::string out = raw;
+    for (char& c : out) {
+        if (c == '\\') c = '/';
+    }
+    return out;
+}
+
 std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
 {
     namespace fs = std::filesystem;
 
-    const fs::path raw(spec.script);
+    const std::string script = normalize_script_separators(spec.script);
+    const fs::path raw(script);
     if (raw.is_absolute()) return raw.lexically_normal();
 
     try {
@@ -247,7 +382,7 @@ std::filesystem::path resolve_regression_script_path(const RegressionSpec& spec)
     } catch (...) {
     }
 
-    return shell_resolve_script_path(spec.script);
+    return shell_resolve_script_path(script);
 }
 
 void print_regression_usage()

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/expr/date/date_utils.cpp
 #include "date_utils.hpp"
 
@@ -8,15 +17,11 @@
 namespace dottalk {
 namespace date {
 
-ClockSnapshot now_local() {
-    std::time_t t = std::time(nullptr);
-    std::tm tm{};
-#if defined(_WIN32)
-    localtime_s(&tm, &t);
-#else
-    localtime_r(&t, &tm);
-#endif
+namespace {
 
+// Shared formatter. Both now_local() and now_utc() render through this, so the
+// two clocks can never drift in format -- only in which std::tm they are given.
+ClockSnapshot format_snapshot(const std::tm& tm) {
     ClockSnapshot cs;
     std::ostringstream d, ti, dt;
 
@@ -37,6 +42,45 @@ ClockSnapshot now_local() {
     cs.datetime14 = dt.str();
 
     return cs;
+}
+
+} // namespace
+
+ClockSnapshot now_local() {
+    std::time_t t = std::time(nullptr);
+    std::tm tm{};
+#if defined(_WIN32)
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif
+    return format_snapshot(tm);
+}
+
+// ADDED 2026-07-26. There was no UTC clock anywhere in the engine: every
+// timestamp a DotScript author could produce was naive local wall-clock with
+// no zone attached. That is correct and expected for xBase DATE()/TIME()/NOW()
+// -- and wrong for anything written into evidence that another process, host
+// or session will later compare.
+//
+// Two defects on one day made the case. tools/coordination/session_coordinator
+// compared a naive UTC value against local, inflating every session age by the
+// UTC offset (420 min here) so [STALE] could never fire. tools/fullstack_docs/
+// manual_guard_v1 compared a naive local file mtime against a UTC build stamp
+// and reported a PDF provenance violation THAT DID NOT EXIST -- the PDF was
+// 3h24m45s AFTER the assembly, not before it.
+//
+// now_local() is unchanged and remains the default for every existing
+// function. This is strictly additive.
+ClockSnapshot now_utc() {
+    std::time_t t = std::time(nullptr);
+    std::tm tm{};
+#if defined(_WIN32)
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
+    return format_snapshot(tm);
 }
 
 bool is_valid_ymd(int y, int m, int d) {

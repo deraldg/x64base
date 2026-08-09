@@ -1,0 +1,120 @@
+#pragma once
+// ============================================================================
+// UNUSED / FROZEN (2026-07-21) — DO NOT WIRE WITHOUT READING THIS.
+// The IOrderProvider subsystem (this file, order_provider_default.*,
+// order_iterator_materialized.*, MaterializedOrderIterator, OrderPosition,
+// makeDefaultOrderProvider, buildActiveOrderSpec) has NO live callers:
+//   - makeDefaultOrderProvider / buildActiveOrderSpec: definition + declaration only.
+//   - MaterializedOrderIterator: referenced only by the dead createIterator().
+// The live order surface uses the free functions in cli/order_iterator.hpp
+//   (order_collect_recnos_asc / order_iterate_recnos / order_stream_display /
+//    order_step_cdx) plus cli/order_nav.hpp and db_tuple_stream.
+// WARNING: DefaultOrderProvider::materializeCdx/materializeCnx currently return
+// PHYSICAL 1..N order (stubs), NOT index order — wiring this without implementing
+// real CDX/CNX materialize is a correctness trap. See OBSERVATIONS_STEWARDSHIP O8.
+// Frozen (not deleted) per owner decision 2026-07-21. RECNO64 widening was
+// intentionally SKIPPED here because the subsystem is dead.
+// ============================================================================
+// include/cli/order_iterator.hpp
+//
+// Single-point order traversal provider for CLI commands.
+// Goal: keep LIST/SMARTLIST/BROWSE/SCAN from re-implementing index walking.
+//
+// Policy:
+// - If no order: NATURAL (1..recCount64)
+// - INX: use INX loader
+// - CNX: use CNX loader (or stopgap DB-derived order if that is your current rule)
+// - CDX: use CDX family semantics, with execution mode selected per area
+//        (Fallback or Lmdb)
+//
+// This file does not print. It only yields recnos.
+
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <vector>
+
+namespace xbase { class DbArea; }
+
+namespace cli {
+
+enum class OrderContainerKind {
+    None,   // physical DBF order
+    Inx,    // legacy single-order index
+    Cnx,    // CNX multi-tag container
+    Cdx     // CDX / LMDB-backed compound index
+};
+
+enum class OrderDirection {
+    Ascending,
+    Descending
+};
+
+struct OrderSpec {
+    OrderContainerKind kind = OrderContainerKind::None;
+    std::string container_path;   // .inx / .cnx / .cdx path, or empty for physical
+    std::string tag_name;         // optional for CNX/CDX
+    OrderDirection direction = OrderDirection::Ascending;
+    bool active = false;
+};
+
+struct OrderPosition {
+    uint32_t recno = 0;
+    bool eof = true;
+};
+
+struct OrderDiagnostic {
+    bool ok = true;
+    std::string message;
+};
+
+class IOrderIterator {
+public:
+    virtual ~IOrderIterator() = default;
+
+    virtual OrderDiagnostic top() = 0;
+    virtual OrderDiagnostic bottom() = 0;
+    virtual OrderDiagnostic next() = 0;
+    virtual OrderDiagnostic prev() = 0;
+
+    virtual OrderPosition current() const = 0;
+    virtual bool valid() const = 0;
+};
+
+class IOrderProvider {
+public:
+    virtual ~IOrderProvider() = default;
+
+    // Create an iterator over the supplied order specification.
+    virtual std::unique_ptr<IOrderIterator> createIterator(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) = 0;
+
+    // Materialize recnos in logical traversal order.
+    // This is the easiest compatibility bridge for LIST / SMARTLIST / browser work.
+    virtual OrderDiagnostic materializeRecnos(
+        xbase::DbArea& area,
+        const OrderSpec& spec,
+        std::vector<uint32_t>& out_recnos
+    ) = 0;
+
+    // Convenience helpers for callers that just want a boundary record.
+    virtual std::optional<uint32_t> firstRecno(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) = 0;
+
+    virtual std::optional<uint32_t> lastRecno(
+        xbase::DbArea& area,
+        const OrderSpec& spec
+    ) = 0;
+};
+
+// Factory for the default DotTalk++ implementation.
+std::unique_ptr<IOrderProvider> makeDefaultOrderProvider();
+
+// Builds an OrderSpec from the current workspace / orderstate for this area.
+OrderSpec buildActiveOrderSpec(xbase::DbArea& area);
+
+} // namespace cli

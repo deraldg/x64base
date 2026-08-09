@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "cli/init_script_runner.hpp"
 #include "cli/script_reader.hpp"
 
@@ -8,6 +17,9 @@
 #include <exception>
 
 #include "cli/command_output.hpp"
+#include "xbase_error_context.hpp"
+
+#include <cstdint>
 
 #if defined(_WIN32)
 #  include <windows.h>
@@ -89,6 +101,7 @@ void run_script_file(xbase::DbArea& current, const fs::path& file_path) {
             continue;
         }
 
+        const std::uint64_t err_gen0 = xbase::error::error_generation();
         try {
             (void)shell_execute_line(current, line);
         } catch (const std::exception& ex) {
@@ -103,6 +116,18 @@ void run_script_file(xbase::DbArea& current, const fs::path& file_path) {
                 {{"file", file_path.filename().string()},
                  {"line", std::to_string(line_no)},
                  {"detail", "unknown error"}});
+        }
+
+        // stop_on_error[severity]: abort the run if this line recorded a new
+        // error at or above the configured threshold.
+        if (xbase::error::errorstop_tripped(err_gen0)) {
+            cli::cmdout::print_prefixed_message(
+                "SCRIPT", dottalk::helpdata::MessageId::ScriptLineErrorText,
+                {{"file", file_path.filename().string()},
+                 {"line", std::to_string(line_no)},
+                 {"detail", std::string("stopped (STOP_ON_ERROR ") +
+                            xbase::error::errorstop_level_name(xbase::error::get_errorstop()) + ")"}});
+            break;
         }
     }
 }

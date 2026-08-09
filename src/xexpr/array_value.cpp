@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xexpr
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xexpr/array_value.cpp
 // DotScript array runtime core. See array_value.hpp. Single source of truth for
 // array graph mechanics (DOTSCRIPT-ARRAYS lane, AIF-038, M1a). Unit-proven.

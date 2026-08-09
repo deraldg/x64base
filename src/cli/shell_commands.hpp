@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 
 #include <sstream>
@@ -32,6 +41,7 @@ void edu_CHRISTMAS(DbArea&, std::istringstream&);
 void edu_HANUKKAH(DbArea&, std::istringstream&);
 
 // TABLES
+void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_USE(DbArea&, std::istringstream&);
 void cmd_SELECT(DbArea&, std::istringstream&);
 void cmd_CLOSE(DbArea&, std::istringstream&);
@@ -59,7 +69,6 @@ void cmd_STRUCT(DbArea&, std::istringstream&);
 void cmd_SCHEMAS(DbArea&, std::istringstream&);
 void cmd_WORKSPACE(DbArea&, std::istringstream&);
 void cmd_WSREPORT(DbArea&, std::istringstream&);
-void cmd_VDISK(DbArea&, std::istringstream&);   // AIF-043 in-memory RAM disk
 void cmd_CATALOGCANARY(xbase::DbArea& area, std::istringstream&);
 
 //   METADATA RECORDS
@@ -109,8 +118,8 @@ void cmd_CONTINUE(DbArea&, std::istringstream&);
 //   REPORTING
 
 //   RELATIONAL BROWSING
-void cmd_SMART_BROWSER(DbArea&, std::istringstream&);
-void cmd_SIMPLE_BROWSER(DbArea&, std::istringstream&);
+void app_SMART_BROWSER(DbArea&, std::istringstream&);
+void app_SIMPLE_BROWSER(DbArea&, std::istringstream&);
 void cmd_ERSATZ(DbArea&, std::istringstream&);
 void cmd_RBROWSE(DbArea&, std::istringstream&);
 
@@ -124,6 +133,8 @@ void browse_bind_invoke(void (*fn)(DbArea&, const std::string&));
 
 //   RUNTIME REPORTS
 void cmd_AREA(DbArea&, std::istringstream&);
+void cmd_AREA51(DbArea&, std::istringstream&);   // src/cli/cmd_area51.cpp -- diagnostics, not AREA family
+void cmd_EVALDIFF(DbArea&, std::istringstream&); // AIF-074 P4.0a evaluator observer
 void cmd_WAMREPORT(DbArea&, std::istringstream&);
 void cmd_DBAREA(DbArea&, std::istringstream&);
 void cmd_DBAREAS(DbArea&, std::istringstream&);
@@ -229,6 +240,7 @@ void cmd_SECURITY(DbArea&, std::istringstream&);
 void cmd_ERROR_CLEAR(DbArea&, std::istringstream&);
 void cmd_ERROR_STATUS(DbArea&, std::istringstream&);
 void cmd_ERROR_TEST(DbArea&, std::istringstream&);
+void cmd_STOP_ON_ERROR(DbArea&, std::istringstream&);
 void cmd_BELL(DbArea&, std::istringstream&);
 void cmd_CLEAR(DbArea&, std::istringstream&);
 void cmd_PRN(DbArea&, std::istringstream&);
@@ -237,6 +249,15 @@ void cmd_ZIP(DbArea&, std::istringstream&);
 void cmd_DIR(DbArea&, std::istringstream&);
 void cmd_BANG(DbArea&, std::istringstream&);
 void cmd_TEST(DbArea&, std::istringstream&);
+void cmd_EXAMPLE(DbArea&, std::istringstream&);
+void cmd_DEFCMD(DbArea&, std::istringstream&);
+void cmd_UNDEFCMD(DbArea&, std::istringstream&);
+void cmd_DEFFN(DbArea&, std::istringstream&);
+void cmd_UNDEFFN(DbArea&, std::istringstream&);
+void cmd_BUILDVECTORS(DbArea&, std::istringstream&);
+void cmd_USER(DbArea&, std::istringstream&);
+void cmd_BBS(DbArea&, std::istringstream&);   // AI-BBS board + agent server (M1/M4)
+void cmd_NET(DbArea&, std::istringstream&);   // NET EGRESS permissioned toggle (M2)
 
 // MSSQL, PostgreSQL et al
 void cmd_IMPORTSQL(DbArea&, std::istringstream&);

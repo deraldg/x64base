@@ -1,0 +1,158 @@
+* ============================================================
+* INDEX TXN LMDB MAINTENANCE  (lane XIDX-TXN-01 M2 proof)
+* ============================================================
+* Purpose:
+*   Prove LMDB index key maintenance happens INSIDE COMMIT on the
+*   buffered (TABLE ON) path, with NO BUILDLMDB / REBUILD between the
+*   mutation and the SEEK.
+*
+* Contrast with INDEX_X64 (index_v64_cdx_lmdb_smoke.dts):
+*   that smoke mutates in immediate mode (TABLE OFF), which already works
+*   today via the replaceFieldStored index hook. This script exercises the
+*   TABLE ON -> REPLACE -> COMMIT path, which is the actual gap.
+*
+* Freshness is proven by SEEK (index-driven), NOT COUNT FOR (which scans
+* the DBF and would pass even with a stale index).
+*
+* Falsifiable:
+*   PRE-M1  : STEP 2 SEEK-new MISSES / SEEK-old still hits ; STEP 4 SEEK-deleted still hits.
+*   POST-M1 : STEP 2 SEEK-new hits / SEEK-old misses ; STEP 4 SEEK-deleted misses.
+*
+* Non-destructive: operates on a disposable SANDBOX copy.
+* ============================================================
+
+SET TALK ON
+ECHO ============================================================
+ECHO INDEX TXN LMDB MAINTENANCE  (XIDX-TXN-01 M2)
+ECHO ============================================================
+
+* --- Self-bootstrap (mirror INDEX_X64 smoke) ---
+SET PATH DBF DBF/SANDBOX
+SET PATH INDEXES INDEXES/SANDBOX
+SET PATH LMDB LMDB/SANDBOX
+WORKSPACE CLOSE
+ERASE students_txn_smoke CONFIRM
+
+ECHO
+ECHO --- MAKE DISPOSABLE COPY OF STUDENTS ---
+USE students
+COPY TO students_txn_smoke WITH SIDECARS OVERWRITE
+CLOSE
+USE students_txn_smoke
+AREA
+COUNT
+
+ECHO
+ECHO --- BUILD CDX + LMDB FOR THE COPY ---
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG LNAME
+BUILDLMDB CLEAN YES
+SET INDEX TO students_txn_smoke
+SET ORDER TO TAG LNAME
+
+* Enable transactional (in-COMMIT) index maintenance for this proof.
+* Default is OFF (legacy batch rebuild); the gate steps below require it ON.
+SET INDEXTXN ON
+
+* ============================================================
+ECHO
+ECHO STEP 1 : baseline SEEK on a known key must hit
+SEEK WHITE
+TUP
+ECHO EXPECT: SEEK WHITE found (landed row LNAME = WHITE)
+ECHO ------------------------------------------------------------
+
+* ============================================================
+ECHO
+ECHO STEP 2 (GATE) : BUFFERED REPLACE + COMMIT, then SEEK, NO rebuild
+SEEK WHITE
+TUP
+TABLE ON
+REPLACE LNAME WITH "ZZ_TXN_BUFFERED"
+COMMIT
+ECHO -- committed buffered key change; index must reflect it with no BUILDLMDB --
+SEEK ZZ_TXN_BUFFERED
+TUP
+ECHO PRIMARY GATE -- unambiguous (unique sentinel key):
+ECHO   EXPECT PASS (post-M1): SEEK ZZ_TXN_BUFFERED found, landed row LNAME = ZZ_TXN_BUFFERED
+ECHO   EXPECT FAIL (pre-M1) : SEEK ZZ_TXN_BUFFERED Not found (index stale)
+ECHO DUPLICATE-KEY PROOF (dup keys are allowed by design; composite base||recno8
+ECHO keeps each row's entry distinct). Only rec 12 left the WHITE dup-set:
+SEEK WHITE
+TUP
+ECHO   EXPECT (post-M1): SEEK WHITE still finds a *different* White row (e.g. rec 54),
+ECHO   proving the incremental erase touched ONLY rec 12, not the other duplicates.
+ECHO ------------------------------------------------------------
+
+* ============================================================
+ECHO
+ECHO STEP 2b : ORDERED-MATERIALIZATION (browser / relation / join path)
+ECHO Ordered nav (ERSATZ, SMARTBROWSE, REL ENUM/JOIN) materializes a recno vector
+ECHO from the index. Under LNAME order the sentinel "ZZ_..." sorts LAST, so ordered
+ECHO BOTTOM must land on it once the index is maintained (and after COMMIT called
+ECHO reconcile_after_mutation to drop stale nav caches).
+SET ORDER TO TAG LNAME
+BOTTOM
+TUP
+ECHO EXPECT PASS (post-M1): ordered BOTTOM row LNAME = ZZ_TXN_BUFFERED (in index order)
+ECHO EXPECT FAIL (pre-M1) : ordered BOTTOM = a real last name (sentinel absent from order)
+ECHO ------------------------------------------------------------
+
+* ============================================================
+ECHO
+ECHO STEP 3 : ROLLBACK leaves index (and DBF) untouched
+SEEK MARTIN
+TABLE ON
+REPLACE LNAME WITH "ZZ_TXN_ROLLBACK"
+ROLLBACK
+SEEK ZZ_TXN_ROLLBACK
+TUP
+ECHO EXPECT PASS: SEEK ZZ_TXN_ROLLBACK NOT found (rolled back)
+SEEK MARTIN
+TUP
+ECHO EXPECT PASS: SEEK MARTIN still found (unchanged)
+ECHO ------------------------------------------------------------
+
+* ============================================================
+ECHO
+ECHO STEP 4 (GATE) : BUFFERED DELETE + COMMIT removes key from index
+ECHO Delete the STEP-2 sentinel record (rec 12) by recno, so the key is unique.
+GOTO 12
+TUP
+SEEK ZZ_TXN_BUFFERED
+TUP
+ECHO   (post-M1: SEEK above should land on rec 12 = ZZ_TXN_BUFFERED)
+GOTO 12
+TABLE ON
+DELETE
+COMMIT
+ECHO -- record deleted; CDX excludes deleted rows, so its key must leave the index --
+SEEK ZZ_TXN_BUFFERED
+TUP
+ECHO EXPECT PASS (post-M1): SEEK ZZ_TXN_BUFFERED NOT found (deleted key erased)
+ECHO (pre-M1: sentinel was never indexed, so this is Not found either way -
+ECHO  STEP 2 is the discriminating gate; STEP 4 proves erase-on-delete post-M1.)
+ECHO ------------------------------------------------------------
+
+* ============================================================
+ECHO
+ECHO STEP 5 : negative control -- native CNX path is unchanged
+ECHO (CNX still rebuilds at COMMIT; see INDEX_X32 / index_x32_inx_cnx_smoke.dts)
+ECHO ------------------------------------------------------------
+
+* --- Cleanup (mirror INDEX_X64 smoke) ---
+ECHO
+ECHO --- CLOSE + CLEANUP ---
+* Restore ambient: this test flips the global SET INDEXTXN. Leave it OFF so it never
+* leaves the ambient dirty for the next test (regression doctrine — sets/restores its
+* own environment). This is also why INDEX_TXN stays out of the default suite.
+SET INDEXTXN OFF
+CLOSE
+ERASE students_txn_smoke CONFIRM
+ECHO Suggested manual cleanup if needed:
+ECHO ERASE students_txn_smoke.dbf and students_txn_smoke.cdx / LMDB sidecars from SANDBOX paths.
+
+ECHO ============================================================
+ECHO INDEX TXN LMDB MAINTENANCE DONE  (score STEP 2 + STEP 4)
+ECHO ============================================================

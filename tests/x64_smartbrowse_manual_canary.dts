@@ -1,0 +1,41 @@
+* ============================================================
+* X64_SMARTBROWSE_MANUAL_CANARY.DTS
+*
+* Purpose:
+*   Manual SMARTBROWSE probe. SMARTBROWSE is pager/interactive.
+*
+* Instruction:
+*   When SMARTBROWSE prints its "-- More --" prompt, enter:
+*
+*     Q
+*
+* Expected:
+*   It should show authoritative column names and values, then quit.
+*   It should not mutate data.
+* ============================================================
+
+SET ECHO OFF
+ECHO ===== X64 SMARTBROWSE MANUAL CANARY START =====
+
+DO X64
+ERASE VECSMBROW CONFIRM
+
+CREATE X64 VECSMBROW (ABCDEFGHIJK C(10), ABCDEFGHIJL C(10), ABCDEFGHIJM C(10), NORMAL C(10))
+APPEND
+REPLACE ABCDEFGHIJK WITH "ONE"
+REPLACE ABCDEFGHIJL WITH "TWO"
+REPLACE ABCDEFGHIJM WITH "THREE"
+REPLACE NORMAL WITH "OK"
+
+ECHO ===== SMARTBROWSE MANUAL: TYPE Q AT PROMPT =====
+SMARTBROWSE * PAGESIZE 5
+
+ECHO ===== VERIFY TABLE STILL OPEN AND DATA INTACT =====
+TUPLE ABCDEFGHIJK,ABCDEFGHIJL,ABCDEFGHIJM,NORMAL
+TUPLE ABCDEFGHIJ,ABCDEFGH~1,ABCDEFGH~2,NORMAL
+
+ECHO ===== CLEANUP =====
+CLOSE
+ERASE VECSMBROW CONFIRM
+
+ECHO ===== X64 SMARTBROWSE MANUAL CANARY END =====

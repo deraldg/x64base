@@ -1,4 +1,13 @@
-// src/cli/cmd_sql.cpp
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+// src/cli/cmd_sql_select.cpp
 // @dottalk.usage v1
 // owner: DOT|SQLSEL
 // command: SQLSEL
@@ -9,21 +18,39 @@
 // mutates: cursor-temporary
 // usage-access: SQLSEL USAGE
 // summary:
-//   Evaluate SQL-like selection predicates over the current DBF work area.
+//   Set-oriented SELECT statement over an open work area, plus the legacy
+//   predicate-scan form over the current area.
 //
 // usage:
 //   SQLSEL USAGE
+//   SQLSEL SELECT <col>[,<col>...] FROM <table> [WHERE <predicate>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
+//   SQLSEL SELECT * FROM <table>
+//   SQLSEL SELECT COUNT(*) FROM <table> [WHERE <predicate>]
 //   SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]
 //
 // examples:
+//   SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
+//   SQLSEL SELECT * FROM STUDENTS LIMIT 5
+//   SQLSEL SELECT SID,LNAME FROM STUDENTS WHERE MAJOR = "CSCI"
+//   SQLSEL SELECT SID,LNAME FROM STUDENTS ORDER BY LNAME DESC LIMIT 10
+//   SQLSEL SELECT COUNT(*) FROM STUDENTS WHERE GPA >= 3.0
 //   SQLSEL COUNT
-//   SQLSEL COUNT ALL
 //   SQLSEL COUNT FOR GPA >= 3.0
 //   SQLSEL LNAME = "SMITH"
 //
 // notes:
 //   SQLSEL USAGE prints usage before open-table checks.
-//   SQLSEL reads records and may temporarily move the cursor.
+//   A SELECT statement names its own table in FROM; the table must be OPEN.
+//   A SELECT statement does not read or disturb session state -- not the
+//   current area, not the record pointer, not SET FILTER, not SET RELATION.
+//   A SELECT statement reads committed table data; uncommitted TABLE BUFFER
+//   preview overlays remain TUP/TUPLE-facing until SQLSEL DML is promoted.
+//   SELECT projects bare column names; expression projection is not yet
+//   supported and reports rather than emitting empty values.
+//   ORDER BY sorts the full match set before LIMIT applies, and reports its
+//   access path; joins and GROUP BY are not yet implemented.
+//   LIMIT reports how many rows remain rather than truncating silently.
+//   The legacy predicate form reads records and may temporarily move the cursor.
 //   SQLSEL does not mutate table data.
 //
 // risk:
@@ -79,6 +106,7 @@ static inline bool ieq(std::string a, std::string b) {
 
 // SQL normalizer
 #include "expr/sql_normalize.hpp"
+#include "sqlsel_statement.hpp"   // AIF-074 P3: SELECT ... FROM statement surface
 
 // External ? provided by DotTalk expr
 dottalk::expr::CompileResult compile_where(const std::string& text);
@@ -391,18 +419,23 @@ static bool eval_chain(const std::vector<Clause>& cs, const std::vector<STok>& o
 
 static void print_sqlsel_usage_contract()
 {
+    // AIF-074 P3: the statement grammar has exactly ONE runtime description,
+    // owned by sqlsel_statement.cpp. Do not restate it here -- a second copy is
+    // how help text drifts from code (this file grew three copies once; the
+    // regression caught it twice in one day).
+    sqlsel::print_statement_usage();
     std::cout
-        << "Usage:\n"
+        << "Legacy predicate form:\n"
         << "  SQLSEL USAGE\n"
         << "  SQLSEL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>]\n"
         << "Examples:\n"
         << "  SQLSEL COUNT\n"
-        << "  SQLSEL COUNT ALL\n"
         << "  SQLSEL COUNT FOR GPA >= 3.0\n"
         << "  SQLSEL LNAME = \"SMITH\"\n"
         << "Notes:\n"
         << "  - SQLSEL USAGE does not require an open table.\n"
-        << "  - SQLSEL scans records and does not mutate table data.\n";
+        << "  - The legacy form scans the CURRENT area and may temporarily move its cursor.\n"
+        << "  - SQLSEL does not mutate table data.\n";
 }
 
 static bool sqlsel_usage_contract(std::string tok)
@@ -432,6 +465,25 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
                 iss.seekg(usage_pos);
             }
         }
+    }
+
+    // AIF-074 P3: statement path. If the tail begins with SELECT, this is a
+    // set-oriented SQL statement -- it names its own table in FROM and does not
+    // require (or disturb) a current area. Anything else falls through to the
+    // legacy predicate-scan behavior below. Dispatch by keyword, never by guess.
+    {
+        const std::streampos stmt_pos = iss.tellg();
+        std::string stmt_tail;
+        {
+            std::ostringstream rest;
+            rest << iss.rdbuf();
+            stmt_tail = rest.str();
+        }
+        iss.clear();
+        if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
+        if (sqlsel::try_execute_select(stmt_tail)) return;
+        iss.clear();
+        if (stmt_pos != std::streampos(-1)) iss.seekg(stmt_pos);
     }
 
     if (!A.isOpen()) { std::cout << "No file open\n"; return; }
@@ -541,7 +593,6 @@ void cmd_SQL_SELECT(xbase::DbArea& A, std::istringstream& iss) {
     std::cout << "SQL DEBUG ? scanned: " << scanned << "  matched: " << cnt << "\n";
     std::cout << cnt << "\n";
 }
-
 
 
 

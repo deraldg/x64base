@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: help
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/help/helpdata_source_miner.hpp
 // Purpose: Heuristic source-code mining for HELP DATA v2 candidate artifacts.

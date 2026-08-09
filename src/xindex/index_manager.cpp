@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xindex/index_manager.cpp
 #include <algorithm>
 #include <cctype>
@@ -253,8 +262,48 @@ bool IndexManager::openCnx(const std::string& cnx_path,
         return false;
     }
 
+    // CAPACITY GATE (AIF-080 M1) -- the constraint that is actually real.
+    //
+    // CnxBackend::maxRecordNumber() is UINT32_MAX because RUN1 stores record
+    // numbers in 4 bytes. A table whose record count exceeds that cannot be
+    // addressed by a CNX index at all: the high bits would be silently
+    // truncated and the index would point at the wrong records.
+    //
+    // recordNumberFitsBackend()/backendMaxRecordNumber() have existed in
+    // index_manager.hpp since the recno64 work, carrying the comment "reject
+    // ... rather than truncate", with ZERO call sites anywhere in the tree.
+    // This is the first one. (AIF-079 D1: declared capability, no consumer.)
+    //
+    // Deliberately at the SEAM, not at a command surface. All four entry
+    // points -- SET INDEX, SET CNX, SET ORDER and load_for_table's
+    // auto-attach -- converge here, so one check covers what four scattered
+    // checks would otherwise have to agree about (and today do not: SET CNX
+    // has no flavor validation at all).
+    //
+    // This REFUSES rather than truncating, and refuses only above 2^32
+    // records. No existing fixture is near that, so nothing that works today
+    // stops working. It is a pure addition, not a widening: the format gates
+    // in cmd_setindex.cpp and cmd_setorder.cpp are untouched by this change.
     backend_ = std::move(b);
     container_path_ = cnx_path;
+
+    // recCount64(), NOT recCount(). recCount() returns int32_t (xbase.hpp:274,
+    // whose own comment defers to recCount64() as "the authoritative value"),
+    // so using it to detect a 32-bit overflow would truncate the very quantity
+    // being checked and the gate would never fire.
+    const std::uint64_t rec_count = area_.recCount64();
+
+    if (!recordNumberFitsBackend(static_cast<RecNo>(rec_count))) {
+        std::ostringstream oss;
+        oss << "openCnx: table has " << rec_count
+            << " records but this index format addresses at most "
+            << backendMaxRecordNumber()
+            << " (CNX stores record numbers in 32 bits); "
+               "use a CDX container for this table";
+        if (err) *err = oss.str();
+        close();
+        return false;
+    }
 
     if (!tag_upper.empty()) {
         if (!setTag(tag_upper, err)) return false;
@@ -273,7 +322,32 @@ bool IndexManager::setTag(const std::string& tag_upper, std::string* err) {
         return false;
     }
     const auto up = to_upper_copy_ascii_(tag_upper);
-    tb->setTag(up);
+
+    // Selecting a tag that does not exist is a clean failure, not an exception
+    // and not a silent success.
+    //
+    // This used to call tb->setTag(up) and unconditionally return true, because
+    // setTag returns void. Nothing validated the name against the container, so
+    // any string was accepted -- and CdxBackend::setTag then created an LMDB
+    // sub-database for it on demand. capture_delete_snapshot_for_current_record
+    // enumerates FIELDS, so every mutated field silently became a tag DB.
+    //
+    // CdxBackend::setTag now throws for an unknown tag. Converting that to false
+    // here matters: with_tag_switched_ calls this OUTSIDE its own try block, so
+    // an escaping exception would unwind through apply_replace_snapshot and be
+    // reported by replaceFieldStored as "index update failed" on every edit of
+    // an untagged field. A clean false makes capture simply skip the field,
+    // which is the correct outcome -- an untagged field has no index work.
+    try {
+        tb->setTag(up);
+    } catch (const std::exception& ex) {
+        if (err) *err = ex.what();
+        return false;
+    } catch (...) {
+        if (err) *err = "setTag: unknown failure for tag " + up;
+        return false;
+    }
+
     tag_upper_ = up;
     return true;
 }
@@ -535,37 +609,158 @@ bool IndexManager::apply_delete_snapshot(const DeleteSnapshot& snap, RecNo rec)
     return any;
 }
 
+// Emit only the tags whose key actually changed.
+//
+// The snapshots carry one entry per field-backed tag (see
+// capture_delete_snapshot_for_current_record), so a single-field REPLACE on an
+// N-tag table used to issue N deletes and N inserts -- 2N committed LMDB write
+// transactions -- when at most one tag's key had moved. The old==new guard on
+// on_replace() was never reachable from here, because this path calls
+// on_delete()/on_append() directly rather than going through it.
+//
+// Diffing on the (tag, key) pair restores that guard for every caller of this
+// function at once: REPLACE/CALCWRITE (via index_hooks), REPLACE_MULTI, and the
+// buffered COMMIT apply all funnel here.
+//
+// Behavior deliberately given up: the old delete-all/insert-all was accidentally
+// self-repairing, because on_append() is an upsert. A record whose index entry
+// had gone missing got silently re-inserted by the next unrelated REPLACE. That
+// no longer happens -- an unchanged tag is skipped, so a missing entry stays
+// missing until REINDEX/REBUILD. This is a deliberate trade: paying 2N index
+// writes on every record edit is an unacceptable price for an undocumented
+// repair that also hid the failure it was repairing. The failure is now
+// reported instead (see DbArea::replaceFieldStored).
+//
+// Return-value contract (load-bearing -- do not "simplify" to `any`):
+// callers treat false as an index-maintenance failure and mark fields stale
+// (see cmd_replace_multi.cpp). A record edit that touches no indexed field is a
+// legitimate no-op, not a failure, and must report success. `any` alone cannot
+// distinguish "nothing needed doing" from "everything failed", so success is
+// tracked as "no attempted operation failed".
 bool IndexManager::apply_replace_snapshot(const DeleteSnapshot& before,
                                           const DeleteSnapshot& after,
                                           RecNo rec)
 {
-    if (!backend_) return false;
+    // No backend means there is no index to maintain, so the index is
+    // vacuously consistent -- that is success, not failure.
+    //
+    // This must be true, not false. A manager is created by ensure_manager()
+    // and stays in the registry for the life of the area; close() clears the
+    // backend but leaves the manager attached. So an area that merely ran
+    // LOCATE/FIND/SEEK once, or had SET ORDER TO issued, has an attached
+    // manager with a null backend for the rest of the session. Returning false
+    // there made every later REPLACE/CALCWRITE report "index update failed" on
+    // a table with no index open.
+    if (!backend_) return true;
 
-    bool any = false;
+    // wasStale() TRANSITION, not a bare read.
+    //
+    // A backend that cannot maintain incrementally does not fail: CnxBackend
+    // and CdxNativeBackend upsert/erase are no-ops that set stale_ = true and
+    // return normally (cnx_backend.cpp:521-533). So every loop below reports
+    // ok, all_ok stays true, and the caller is told the index was maintained
+    // when it was not. That silent path is the COMMON case for CNX/native CDX
+    // -- the exceptional LMDB throw is the rare one.
+    //
+    // Reading wasStale() bare would be wrong: stale_ is also set when a load
+    // FAILS (cnx_backend.cpp:396), so a table whose index never opened would
+    // warn on every REPLACE forever. Only a false -> true transition ACROSS
+    // this apply means "this operation left the index stale".
+    const bool stale_before = backend_->wasStale();
 
-    // Remove old keys first.
+    auto usable = [](const DeleteSnapshotEntry& e) {
+        return !e.tag_upper.empty() && !e.key.empty();
+    };
+
+    auto same_entry = [](const DeleteSnapshotEntry& a,
+                         const DeleteSnapshotEntry& b) {
+        return a.tag_upper == b.tag_upper && a.key == b.key;
+    };
+
+    auto present_in = [&](const DeleteSnapshot& snap,
+                          const DeleteSnapshotEntry& e) {
+        for (const auto& other : snap) {
+            if (usable(other) && same_entry(other, e)) return true;
+        }
+        return false;
+    };
+
+    bool all_ok = true;
+    std::size_t emitted_del = 0;
+    std::size_t emitted_ins = 0;
+    std::size_t skipped = 0;
+    std::string emitted_tags;   // trace only: which tags actually moved
+
+    auto note_tag = [&emitted_tags](const std::string& tag, const char* op) {
+        if (!emitted_tags.empty()) emitted_tags += ",";
+        emitted_tags += op;
+        emitted_tags += tag;
+    };
+
+    // Remove old keys that the after-image no longer carries.
     for (const auto& e : before) {
-        if (e.tag_upper.empty() || e.key.empty()) continue;
+        if (!usable(e)) continue;
+        if (present_in(after, e)) { ++skipped; continue; }  // unchanged tag
 
+        ++emitted_del;
         const bool ok = with_tag_switched_(*this, e.tag_upper, [&]() {
             on_delete(e.key, rec);
         });
 
-        if (ok) any = true;
+        if (index_trace_enabled_()) note_tag(e.tag_upper, ok ? "-" : "-FAIL:");
+        if (!ok) all_ok = false;
     }
 
-    // Insert new keys.
+    // Insert new keys the before-image did not already carry.
     for (const auto& e : after) {
-        if (e.tag_upper.empty() || e.key.empty()) continue;
+        if (!usable(e)) continue;
+        if (present_in(before, e)) { ++skipped; continue; }  // already correct
 
+        ++emitted_ins;
         const bool ok = with_tag_switched_(*this, e.tag_upper, [&]() {
             on_append(e.key, rec);
         });
 
-        if (ok) any = true;
+        if (index_trace_enabled_()) note_tag(e.tag_upper, ok ? "+" : "+FAIL:");
+        if (!ok) all_ok = false;
     }
 
-    return any;
+    // Makes the diff measurable instead of inferred. Under the old delete-all/
+    // insert-all this line would have read emitted_del=N emitted_ins=N skipped=0
+    // for any N-tag table; the win is visible as skipped rising while emitted
+    // stays at the number of tags whose key actually moved.
+    // Did this apply leave the index stale? Only counts if the backend was NOT
+    // already stale on entry -- see the note at stale_before.
+    //
+    // Reported through the SAME false return the exceptional path uses, so
+    // replaceFieldStored sets err and REPLACE/CALCWRITE warn
+    // "record written, but index update failed...; REINDEX/REBUILD needed."
+    // That wording is accurate here rather than merely reused: the index was
+    // not updated, and REINDEX/REBUILD is exactly the remedy for a backend
+    // that only maintains by rebuilding.
+    //
+    // Note on volume: this fires on EVERY replace against a CNX or native-CDX
+    // order, because every one of them genuinely leaves the index stale. That
+    // is honest but repetitive. If it proves too noisy in practice the fix is
+    // to throttle the MESSAGE (once per area per order), not to re-silence the
+    // condition -- the silence is what this change exists to end.
+    const bool left_stale = (!stale_before && backend_->wasStale());
+
+    if (index_trace_enabled_()) {
+        std::cout << "[INDEX TRACE] apply_replace rec=" << rec
+                  << " before=" << before.size()
+                  << " after=" << after.size()
+                  << " emitted_del=" << emitted_del
+                  << " emitted_ins=" << emitted_ins
+                  << " skipped=" << skipped
+                  << " ok=" << (all_ok ? "yes" : "no")
+                  << " staleBefore=" << (stale_before ? "yes" : "no")
+                  << " leftStale=" << (left_stale ? "yes" : "no")
+                  << " tags=[" << emitted_tags << "]"
+                  << "\n";
+    }
+
+    return all_ok && !left_stale;
 }
 
 bool IndexManager::apply_insert_snapshot(const DeleteSnapshot& snap,
@@ -634,8 +829,34 @@ bool IndexManager::beginBulkWrite(std::string* err) {
     if (auto* cdx = dynamic_cast<CdxBackend*>(backend_.get())) {
         return cdx->beginBulk(err);
     }
-    if (err) *err = "bulk write not supported by active backend";
-    return false;
+    // NOTHING TO BEGIN IS SUCCESS, not failure.
+    //
+    // Corrected 2026-08-01. This used to return false with "bulk write not
+    // supported by active backend", while commitBulkWrite() below returns TRUE
+    // for the same backends ("nothing to commit for non-CDX backends") and
+    // abortBulkWrite() is a no-op. Two of the three already treated absence of
+    // transactions as a non-event; only begin treated it as an error.
+    //
+    // That asymmetry was invisible while the COMMIT gate read isCdx(), because
+    // no non-CDX backend could reach here. When the gate became a capability
+    // question (maintainsIncrementally) CNX qualified, reached this line, and
+    // COMMIT died with "failed during index finalization" -- runtime-proven
+    // 2026-08-01 by regression CNXBUF under DOTTALK_INDEX_TXN=1.
+    //
+    // Bulk write is a batching OPTIMISATION, not a correctness requirement: a
+    // backend without transactions simply applies each mutation as it comes,
+    // which is what CnxBackend::upsert/erase already do. Refusing to start a
+    // transaction that was never needed denies maintenance to a backend that
+    // can perform it.
+    //
+    // OPEN INDEX API follow-up, deliberately NOT done here: these three
+    // functions dynamic_cast on the concrete type, which is the same shape the
+    // capability work exists to remove. They should become virtuals on
+    // IIndexBackend with no-op-success defaults, so a backend declares its own
+    // batching support instead of being recognised by RTTI. Left as a separate
+    // change because one in-flight design change at a time is enough.
+    (void)err;
+    return true;
 }
 
 bool IndexManager::commitBulkWrite(std::string* err) {

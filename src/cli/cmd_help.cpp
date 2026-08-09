@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // 
 
 // src/cli/cmd_help.cpp
@@ -48,6 +57,9 @@
 //   HELP GIANT TOPICS/KIND/SOURCE expose organized report slices.
 //   HELP GIANT <topic> renders the assembled topic through current HELP DATA.
 //   HELP GIANT respects normal shell paging via SET PAGING ON|OFF.
+//   Unknown topics use one unified not-found response and may offer ranked
+//   did-you-mean suggestions from the reflected command/help catalogs.
+//   Suggestions are advisory only; HELP does not execute the suggested command.
 //   HELP is read-only for table data and path state.
 //
 // risk:
@@ -61,6 +73,13 @@
 //   FOXHELP
 //   PREDHELP
 //
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-HELP
+// home: src/cli
+// canonical-path: src/cli/cmd_help.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "cmd_help.hpp"
 #include "help_router.hpp"
@@ -68,6 +87,7 @@
 #include "foxref.hpp"
 #include "dotref.hpp"
 #include "edref.hpp"
+#include "cli/text_match.hpp"
 #include "cli/command_catalog.hpp"
 #include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
@@ -287,13 +307,15 @@ inline void print_help_giant_usage()
         << "HELP GIANT\n"
         << "  Full HELP DATA console report.\n\n"
         << "Usage:\n"
-        << "  HELP GIANT\n"
+        << "  HELP GIANT              (index: stats + preview of the corpus)\n"
+        << "  HELP GIANT ALL          (exhaustive: every topic, full text)\n"
         << "  HELP GIANT USAGE\n"
         << "  HELP GIANT TOPICS\n"
         << "  HELP GIANT KIND\n"
         << "  HELP GIANT SOURCE\n"
         << "  HELP GIANT <topic>\n"
         << "  HELP /GIANT\n"
+        << "  HELP /GIANT ALL\n"
         << "  HELP /GIANT USAGE\n"
         << "  HELP /GIANT TOPICS\n"
         << "  HELP /GIANT KIND\n"
@@ -301,6 +323,10 @@ inline void print_help_giant_usage()
         << "  HELP /GIANT <topic>\n\n"
         << "Notes:\n"
         << "  HELP GIANT is the readable front door over CMDHELP report surfaces.\n"
+        << "  HELP GIANT (bare) is the fast index: corpus stats + a short preview.\n"
+        << "  HELP GIANT ALL is the exhaustive recollection: every topic with full,\n"
+        << "    untruncated text grouped by topic (the same corpus the manual is built\n"
+        << "    from). Long output -- use SET PAGING ON. Bare HELP GIANT stays the index.\n"
         << "  HELP /GIANT is an alias for the same surface.\n"
         << "  HELP GIANT TOPICS lists current topic keys.\n"
         << "  HELP GIANT KIND groups help rows by KIND and shows topic membership.\n"
@@ -544,6 +570,52 @@ inline bool show_reflected_function_topic(const std::string& term_up)
 
 } // anonymous namespace
 
+// --- AIF-047: unified not-found + did-you-mean --------------------------------
+
+inline std::vector<std::string> gather_help_candidates()
+{
+    std::vector<std::string> names;
+    for (const auto& it : dotref::catalog()) if (it.name)  names.emplace_back(it.name);
+    for (const auto& it : foxref::catalog()) if (it.name)  names.emplace_back(it.name);
+    for (const auto& it : edref::catalog())  if (it.topic) names.emplace_back(it.topic);
+    for (const auto* fd : dottalk::expr::all_function_docs()) if (fd) names.push_back(fd->name);
+    // Reflected (authoritative) command names — covers dev/newer commands not in the catalogs.
+    { const refsys::ReferenceCollection rc = refsys::build_reference_collection();
+      for (const auto& c : rc.commands) names.push_back(c.canonical_name); }
+    // HELP's own router keywords (not commands, so absent from the reference catalogs) —
+    // so e.g. HELP GAINT can suggest GIANT.
+    for (const char* kw : {"GIANT", "BETA", "FUNCTIONS", "FUNCTION", "PREDICATES",
+                           "PS", "SQL", "USAGE", "TOPICS", "SOURCE", "KIND"})
+        names.emplace_back(kw);
+    return names;
+}
+
+// Exact (case-insensitive) membership of a topic head across the candidate set.
+inline bool is_known_help_topic(const std::string& term)
+{
+    const std::string t = uptrim(term);
+    if (t.empty()) return false;
+    for (const auto& n : gather_help_candidates())
+        if (uptrim(n) == t) return true;
+    return false;
+}
+
+// HELP owns its miss: the general not-found message + soundex/edit-distance suggestions
+// drawn from the reference/function catalogs (reuses the SOUNDEX helper). Replaces the old
+// silent delegation to FOXHELP's fox-scoped fallback.
+inline void help_not_found(const std::string& term)
+{
+    cli::cmdout::print_message(
+        dottalk::helpdata::MessageId::HelpNoTopicFound, {{"command", term}});
+
+    const auto sugg = dottalk::text::rank_suggestions(term, gather_help_candidates(), 5);
+    if (!sugg.empty()) {
+        out() << "  Did you mean: ";
+        for (std::size_t i = 0; i < sugg.size(); ++i) out() << (i ? ", " : "") << sugg[i];
+        out() << "?\n";
+    }
+}
+
 void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
 {
     using namespace dottalk::help;
@@ -573,12 +645,20 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
             return;
         }
 
-        if (giant_up == "TOPICS" || giant_up == "KIND" || giant_up == "SOURCE") {
+        if (giant_up == "TOPICS" || giant_up == "KIND" || giant_up == "SOURCE"
+            || giant_up == "ALL" || giant_up == "FULL") {
             std::istringstream giant(std::string("REPORT ") + giant_up);
             cmd_CMDHELP(area, giant);
             return;
         }
 
+        // AIF-047 M3: an unknown GIANT topic shares the unified not-found + did-you-mean,
+        // instead of CMDHELP's quiet miss. Gate on the topic head (so "SET ORDER" etc. pass).
+        {
+            const std::size_t sp = giant_up.find(' ');
+            const std::string head = (sp == std::string::npos) ? giant_up : giant_up.substr(0, sp);
+            if (!is_known_help_topic(head)) { help_not_found(giant_rest); return; }
+        }
         std::istringstream giant(giant_rest);
         cmd_CMDHELP(area, giant);
         return;
@@ -715,19 +795,17 @@ void cmd_HELP(xbase::DbArea& area, std::istringstream& args)
         if (term_effective == term_original_up) {
             if (show_dot_topic(opts.term)) return;
             if (show_ed_topic(opts.term)) return;
-            // MSG-022S1_3 BEGIN HELP_HINT_COMMAND active provider route before fox local fallback
-            if (show_active_help_hint_command(opts.term)) return;
-            // MSG-022S1_3 END HELP_HINT_COMMAND active provider route before fox local fallback
-
             if (show_fox_topic_local(opts.term)) return;
 
-            show_fox(area, opts.term);
+            // AIF-047: HELP owns the miss with a unified not-found + did-you-mean.
+            // (The old HELP_HINT_COMMAND route printed a self-referential "Type HELP <x>
+            //  for more information" for every unknown term — the reported "circle" — and
+            //  short-circuited this; removed from the unknown-term fallback.)
+            help_not_found(opts.term);
             return;
         }
 
-        cli::cmdout::print_message(
-            dottalk::helpdata::MessageId::HelpNoTopicFound,
-            {{"command", opts.term}});
+        help_not_found(opts.term);
         return;
     }
 

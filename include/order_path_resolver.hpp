@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/order_path_resolver.hpp
 // DotTalk++ — Order/Path Resolver (CNX/INX) — header-only
 // Drop-in utility for consistent path resolution and status strings.

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: ext
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/ext/fn/fn_student_text_autoreg.cpp
 //
 // Student function extension (self-registering)

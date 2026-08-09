@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: include/csv.hpp
 // Purpose: Small CSV helpers shared by import/export and script-facing data paths.
 // Boundary: Keep this header dependency-light and format-focused; command syntax,

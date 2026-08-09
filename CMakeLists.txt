@@ -263,6 +263,23 @@ endif()
 
 include(CTest)
 
+# ============================================================
+# Build Vectors — generated capacity authority (AIF-044)
+# ============================================================
+# CMake owns selectable build inputs; configure_file emits the one compiled authority
+# (generated/dottalk/build_vectors.hpp). include_directories() here (before any target)
+# makes it findable by every subdirectory target that includes xbase.hpp.
+include("${CMAKE_SOURCE_DIR}/config/build_vectors.cmake")
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/build_vectors.hpp.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.hpp"
+    @ONLY)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/config/build_vectors.json.in"
+    "${CMAKE_BINARY_DIR}/generated/dottalk/build_vectors.json"
+    @ONLY)
+include_directories("${CMAKE_BINARY_DIR}/generated")
+
 add_subdirectory(src)
 
 # Add Python binding helper after code targets exist.
@@ -320,6 +337,9 @@ endif()
 
 # JSON is used by the DDL/schema command surface and is a core dependency.
 find_package(nlohmann_json CONFIG REQUIRED)
+
+# libsodium: gold-standard identity crypto (Argon2id + CSPRNG) for the AI-BBS lane (M3).
+find_package(unofficial-sodium CONFIG REQUIRED)
 
 # ============================================================
 # Target Helper
@@ -413,6 +433,13 @@ endfunction()
 if (TARGET dottalkpp)
     dottalk_apply_common_settings(dottalkpp)
 
+    # AI-BBS lane: Argon2id/CSPRNG (M3) + Winsock for BBS SERVE (M4). Linked here where
+    # find_package(unofficial-sodium) is in scope.
+    target_link_libraries(dottalkpp PRIVATE unofficial-sodium::sodium)
+    if (WIN32)
+        target_link_libraries(dottalkpp PRIVATE ws2_32)
+    endif()
+
     if (_tvision_found)
         message(STATUS "Turbo Vision ENABLED for 'dottalkpp' via ${_tvision_origin}.")
     elseif (DOTTALK_WITH_TV)
@@ -438,6 +465,40 @@ if (TARGET dottalkpp)
     else()
         message(STATUS "Relations DISABLED for 'dottalkpp'.")
     endif()
+endif()
+
+# ============================================================
+# M6: standalone BBS agent-server daemon (dottalk_bbsd)
+# A long-lived process that runs dottalk::bbs::serve() independent of the interactive CLI,
+# reusing the identity + bbs + security sources (compiled here) and the shared static libs.
+# ============================================================
+option(DOTTALK_BUILD_BBSD "Build the standalone BBS agent-server daemon (dottalk_bbsd)" ON)
+if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
+    file(GLOB _bbsd_identity CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/identity/*.cpp")
+    file(GLOB _bbsd_bbs      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/bbs/*.cpp")
+    file(GLOB _bbsd_sec      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/security/*.cpp")
+    file(GLOB _bbsd_self     CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/selfdoc/*.cpp")
+    # CDX impl: xbase.lib -> xindex.lib references CdxDocument::/cdxfile:: whose bodies live in
+    # src/cdx (un-libraried). Pull them in so the transitive index refs resolve. (Test dive.)
+    file(GLOB _bbsd_cdx      CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/cdx/*.cpp")
+    add_executable(dottalk_bbsd
+        "${CMAKE_SOURCE_DIR}/src/tools/bbsd_main.cpp"
+        ${_bbsd_identity} ${_bbsd_bbs} ${_bbsd_sec} ${_bbsd_self} ${_bbsd_cdx}
+        "${CMAKE_SOURCE_DIR}/src/common/path_state.cpp"
+        "${CMAKE_SOURCE_DIR}/src/common/path_resolver.cpp"
+        "${CMAKE_SOURCE_DIR}/src/core/fields_mgr.cpp"   # fields::findFieldCI (free fn)
+    )
+    target_include_directories(dottalk_bbsd PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_compile_features(dottalk_bbsd PRIVATE cxx_std_20)
+    # Only what the identity/board DBF paths need — NOT xindex/xexpr (CDX + expr engines pull
+    # un-libraried src/ symbols; the daemon does no indexed/expression work).
+    target_link_libraries(dottalk_bbsd PRIVATE
+        xbase memo
+        nlohmann_json::nlohmann_json unofficial-sodium::sodium)
+    if (WIN32)
+        target_link_libraries(dottalk_bbsd PRIVATE ws2_32)
+    endif()
+    message(STATUS "dottalk_bbsd (standalone BBS daemon) ENABLED.")
 endif()
 
 foreach(_dottalk_gui_target IN ITEMS dottalk_wx dottalk_wx_next)
@@ -579,7 +640,7 @@ endif()
 message(STATUS "==== DotTalk++ / Build summary ====")
 message(STATUS "  CMAKE_BUILD_TYPE      : ${CMAKE_BUILD_TYPE}")
 message(STATUS "  DOTTALK_PROFILE       : ${DOTTALK_PROFILE}")
-message(STATUS "  DOTTALK_MAX_AREA      : ${DOTTALK_MAX_AREA}")
+message(STATUS "  DOTTALK_MAX_AREA      : ${DOTTALK_MAX_AREA} (legacy/inert; engine uses build-vector areas=${DOTTALK_MAX_AREAS})")
 message(STATUS "  DOTTALK_WITH_DEV      : ${DOTTALK_WITH_DEV}")
 message(STATUS "  DOTTALK_EXTRA_DIAGN.  : ${DOTTALK_EXTRA_DIAGNOSTICS}")
 message(STATUS "  DOTTALK_WITH_INDEX    : ${DOTTALK_WITH_INDEX}")
@@ -638,6 +699,34 @@ if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET metacollect)
     )
 
     target_link_libraries(metacollect PRIVATE dt_meta)
+endif()
+
+option(DOTTALK_BUILD_SCHEMA_INVENTORY "Build the read-only website schema inventory tool" OFF)
+if(DOTTALK_BUILD_SCHEMA_INVENTORY AND NOT TARGET schema_inventory)
+    add_executable(schema_inventory src/tools/schema_inventory_main.cpp)
+    target_compile_features(schema_inventory PRIVATE cxx_std_17)
+endif()
+
+# ---- AIF-078 gate G0: per-slot cost of MAX_AREA, measured per toolchain -----
+# x64base is cross-platform, so the cap table is PER-TOOLCHAIN: MSVC and
+# libstdc++ lay out std::string / std::multimap / std::fstream differently, and
+# the platforms also differ on default stack size (1 MB Windows vs 8 MB Linux).
+# Both rows are real; the cap ruling is made against the worst case per axis.
+# Built through CMake rather than a hand-rolled compiler invocation so it is
+# reproducible on any supported platform without a toolchain-specific shell.
+# Read-only: prints sizes, allocates nothing, opens nothing. Deliberately NOT
+# registered with add_test -- it is a MEASUREMENT, and a "test" that can only
+# pass is the defect class recorded in proof.aif078.workspace_path_preserves_depth1.
+option(DOTTALK_BUILD_SLOT_COST_PROBE "Build the AIF-078 G0 per-slot cost probe" OFF)
+if(DOTTALK_BUILD_SLOT_COST_PROBE AND NOT TARGET g0_slot_cost_probe)
+    add_executable(g0_slot_cost_probe src/tools/g0_slot_cost_probe.cpp)
+    target_compile_features(g0_slot_cost_probe PRIVATE cxx_std_20)
+    target_include_directories(g0_slot_cost_probe PRIVATE
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_BINARY_DIR}/generated")
+    if(TARGET xbase)
+        target_link_libraries(g0_slot_cost_probe PRIVATE xbase)
+    endif()
 endif()
 # END DOTARCH METACOLLECT CMAKE BUILDWIRE OPTION B V1
 

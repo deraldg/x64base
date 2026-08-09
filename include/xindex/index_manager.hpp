@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 /**
  * @file index_manager.hpp
@@ -69,6 +78,30 @@ public:
 
     IIndexBackend* backend() noexcept { return backend_.get(); }
     const IIndexBackend* backend() const noexcept { return backend_.get(); }
+
+    // Capability passthrough -- see IIndexBackend::maintainsIncrementally.
+    // Ask THIS, not isCdx()/isCnx(), when deciding between incremental
+    // maintenance and a rebuild.
+    //
+    // No backend attached returns false: there is nothing to maintain, so a
+    // caller choosing a policy should take the legacy path rather than assume
+    // the index is being kept correct by someone else.
+    bool maintainsIncrementally() const noexcept {
+        return backend_ && backend_->maintainsIncrementally();
+    }
+
+    // Durability passthrough -- see IIndexBackend::save. Separate question from
+    // maintainsIncrementally() above: that one asks whether the index stays
+    // correct across a mutation, this one asks whether that correctness has
+    // been written down.
+    //
+    // No backend attached returns TRUE, and the asymmetry with
+    // maintainsIncrementally() (which returns false) is intended: there, the
+    // caller must be told to do the work itself; here, there is genuinely
+    // nothing to persist, and reporting a failure would be a false alarm.
+    bool saveIndex(std::string* err = nullptr) {
+        return backend_ ? backend_->save(err) : true;
+    }
 
     // RECNO64 capability report. Largest record number the active backend can hold
     // without truncation (full 64-bit when no backend is attached). Callers indexing

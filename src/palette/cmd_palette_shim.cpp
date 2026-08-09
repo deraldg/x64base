@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: palette
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
       #include <sstream>
       namespace xbase { class DbArea; }
       void cmd_FOX_PALETTE(xbase::DbArea&, std::istringstream&);

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/fn_autoreg.cpp
 // Auto-register FoxPro-style string builtins as CLI commands.
 // Supports implicit parentheses:

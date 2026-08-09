@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // dli/demo_main.cpp ? optional minimal demo (build only if DLI_DEMO_MAIN defined)
 // Shows windowed vs full-screen toggle with F6. No DBF access?just fake fields.
 #ifdef DLI_DEMO_MAIN

@@ -1,52 +1,71 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+// @dottalk.usage v1
+// owner: DOT|DDICT
+// command: DDICT
+// category: data-dictionary
+// status: supported
+// noargs: report
+// effect: report
+// mutates: none
+// read-mode: READ_ONLY
+// profiles: ENGINE, PROFESSIONAL
+// usage-access: DDICT USAGE
+// summary:
+//   Read-only Data Dictionary inspection command for active catalog metadata.
+//
+// usage:
+//   DDICT
+//   DDICT HELP
+//   DDICT STATUS
+//   DDICT TABLES
+//   DDICT FIELDS <table-or-alias>
+//   DDICT TAGS <table-or-alias>
+//   DDICT REL <object> [IN|OUT|BOTH]
+//   DDICT EVIDENCE <object>
+//
+// notes:
+//   Bare DDICT reports STATUS, so the command behaves like a status-first inspector.
+//   Alias bridge -- legacy DD* spellings preserved as compatibility names, resolved
+//     to the authoritative x64 catalog names:
+//       DDOBJECT -> DATA_DICTIONARY_OBJECTS
+//       DDATTR   -> DATA_DICTIONARY_OBJECT_ATTRIBUTES
+//       DDEDGE   -> DATA_DICTIONARY_RELATION_EDGES
+//       DDEVID   -> DATA_DICTIONARY_EVIDENCE_RECORDS
+//       DDGATE   -> DATA_DICTIONARY_GATE_RECORDS
+//       DDRUN    -> DATA_DICTIONARY_RUNS
+//   Active roots: DBF dottalkpp/data/datadict; CDX dottalkpp/data/indexes/datadict;
+//     LMDB dottalkpp/data/lmdb/datadict.
+//   FIELDS keeps DDICT FIELDS DDOBJECT working while bridging DATA_DICTIONARY_OBJECTS.
+//   TAGS distinguishes catalog tag rows from physical CDX/LMDB artifacts; if physical
+//     tag artifacts exist but catalog tag rows are absent, it reports an honest
+//     physical-artifact status instead of a plain NO_CATALOG_TAGS_FOUND.
+//   Evidence lane: DD096Z-D2ZS reviewed source patch lane.
+// risk:
+//   mutates_table_data: no
+//   mutates_dbf: no (no append/replace/delete/pack/zap/create/load)
+//   rebuilds_index: no (no active CDX/LMDB rebuild)
+//   mutates_help_meta_or_ddict_catalog: no
+//   runtime_surface: read-only inspection
+// related:
+//   DDL
+//   MANUAL
+// @dottalk.end
+
 /*
-@dottalk.usage v1
-owner: DDICT
-surface: DDICT
-summary: Read-only Data Dictionary inspection command for active catalog metadata.
-status: source_contract_review_candidate
-profiles: ENGINE, PROFESSIONAL
-read_mode: READ_ONLY
-mutates: none
-
-forms:
-  DDICT
-  DDICT HELP
-  DDICT STATUS
-  DDICT TABLES
-  DDICT FIELDS <table-or-alias>
-  DDICT TAGS <table-or-alias>
-  DDICT REL <object> [IN|OUT|BOTH]
-  DDICT EVIDENCE <object>
-
-alias_bridge:
-  DDOBJECT -> DATA_DICTIONARY_OBJECTS
-  DDATTR   -> DATA_DICTIONARY_OBJECT_ATTRIBUTES
-  DDEDGE   -> DATA_DICTIONARY_RELATION_EDGES
-  DDEVID   -> DATA_DICTIONARY_EVIDENCE_RECORDS
-  DDGATE   -> DATA_DICTIONARY_GATE_RECORDS
-  DDRUN    -> DATA_DICTIONARY_RUNS
-
-active_roots:
-  DBF  : dottalkpp/data/datadict
-  CDX  : dottalkpp/data/indexes/datadict
-  LMDB : dottalkpp/data/lmdb/datadict
-
-contract_notes:
-  - Preserve legacy DD* spellings as compatibility names.
-  - Resolve DATA_DICTIONARY_* spellings as authoritative x64 catalog names.
-  - FIELDS must keep DDICT FIELDS DDOBJECT working while bridging DATA_DICTIONARY_OBJECTS.
-  - TAGS must distinguish catalog tag rows from physical CDX/LMDB artifacts.
-  - If physical tag artifacts exist but catalog tag rows are absent, report an honest physical-artifact status instead of plain NO_CATALOG_TAGS_FOUND.
-
-safety:
-  - No DBF append, replace, delete, pack, zap, create, or load.
-  - No active CDX/LMDB rebuild.
-  - No HELP, CMDHELPCHK, manual publication, metadata catalog, or Data Dictionary catalog mutation.
-  - Runtime surface remains read-only inspection.
-  - Bare DDICT reports STATUS so the command behaves like a status-first inspector.
-
-evidence_lane:
-  DD096Z-D2ZS reviewed source patch lane
+@dottalk.location v1
+id: DOTSRC-DOTTALKPP-CLI-CMD-DDICT
+home: src/cli
+canonical-path: src/cli/cmd_ddict.cpp
+project: dottalkpp
+role: command-implementation
 @dottalk.end
 */
 

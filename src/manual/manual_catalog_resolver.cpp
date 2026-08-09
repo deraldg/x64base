@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: manual
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.contract v1
 // component: manual_catalog_resolver
 // role: resolve compact and long-form MAN* catalog identities for the MANUAL command

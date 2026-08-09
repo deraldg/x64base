@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: runtime
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 
 // Header-only UTF-8 / VT init for DotTalk++

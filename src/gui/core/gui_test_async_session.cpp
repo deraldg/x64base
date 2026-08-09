@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: gui
+// layer: test
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "gui/core/async_session.hpp"
 #include "gui/core/localization.hpp"
 #include "gui/core/session.hpp"

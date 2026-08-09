@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // path: src/cli/loop_state.hpp
 // purpose: Shared loop-capture state for LOOP / WHILE / UNTIL (header-only)

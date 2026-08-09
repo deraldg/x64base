@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_setorder.cpp
 // FoxPro-style SET ORDER command with CNX/CDX-aware activation.
 //
@@ -29,9 +38,13 @@
 // - LMDB backend resolves under LMDB.
 // - This command validates both paths before attempting backend activation.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET ORDER
-// command: SET ORDER
+// documents: SET ORDER
 // category: index
 // status: supported
 // noargs: report
@@ -406,7 +419,14 @@ static std::string preferred_attached_container_for_flavor(const xbase::DbArea& 
     const bool isCnx = orderstate::isCnx(area);
 
     if (is_classic_tag_area(area) && isCnx) return name;
-    if (is_x64_cdx_area(area) && isCdx) return name;
+    // Scope F (AIF-099, owner-caught 2026-08-09): an ATTACHED container wins,
+    // whichever legal family it is. Previously only a flavor-DEFAULT attachment
+    // (x64+CDX) was honored, so with a CNX deliberately attached on an x64
+    // table, bare REINDEX rebuilt the CNX while bare SET ORDER TO TAG silently
+    // hopped to the .cdx -- two commands disagreeing about which index is
+    // active. CNX is legal on x64 (warn-not-refuse ruling); the user attached
+    // it, so tag resolution stays on it.
+    if (is_x64_cdx_area(area) && (isCdx || isCnx)) return name;
 
     return std::string{};
 }
@@ -416,7 +436,21 @@ static std::string default_container_for_flavor(const xbase::DbArea& area) {
         return resolve_index_path(area, "", ".cnx").string();
     }
     if (is_x64_cdx_area(area)) {
-        return resolve_index_path(area, "", ".cdx").string();
+        // CNX-on-x64 (owner ruling 2026-08-09): CDX stays the preferred x64
+        // default, but when no .cdx exists and a .cnx does, honor the CNX the
+        // user built instead of failing on a missing .cdx. When neither
+        // exists, fall through to the .cdx path so the original not-found
+        // message (naming the preferred container) is preserved.
+        const std::string cdx = resolve_index_path(area, "", ".cdx").string();
+        if (container_exists(cdx)) return cdx;
+        const std::string cnx = resolve_index_path(area, "", ".cnx").string();
+        if (container_exists(cnx)) {
+            cli::cmdout::print_line(
+                "SET ORDER: advisory -- no .cdx container found; using existing CNX"
+                " (LMDB-backed CDX is the preferred x64 index).");
+            return cnx;
+        }
+        return cdx;
     }
     return resolve_index_path(area, "", ".cdx").string();
 }
@@ -446,6 +480,15 @@ static bool validate_explicit_container_for_flavor(const xbase::DbArea& area,
     }
 
     if (is_x64_cdx_area(area)) {
+        if (isCnx) {
+            // CNX-on-x64 (owner ruling 2026-08-09): explicit .cnx is honored
+            // with an advisory; CDX/LMDB stays the preferred x64 default.
+            // Mirrors the SET INDEX guard in cmd_setindex.cpp.
+            cli::cmdout::print_line(
+                "SET ORDER: advisory -- LMDB-backed CDX is the preferred index for x64 tables;"
+                " using CNX as explicitly requested.");
+            return true;
+        }
         if (!isCdx) {
             err = msg(MessageId::SetOrderV64RequiresCdxText);
             return false;

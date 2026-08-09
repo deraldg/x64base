@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: DOT|BOTTOM
 // command: BOTTOM
@@ -94,12 +103,12 @@ void cmd_BOTTOM(xbase::DbArea& A, std::istringstream& in)
         return;
     }
 
-    const int32_t rn = cli::navsel::pick_recno(
+    const std::int64_t rn = cli::navsel::pick_recno(
         A,
         cli::navsel::Mode::AutoByFilter,
         cli::navsel::Step::Last);
 
-    if (rn <= 0 || !A.gotoRec(rn) || !A.readCurrent()) {
+    if (rn <= 0 || !A.gotoRec64(static_cast<std::uint64_t>(rn)) || !A.readCurrent()) {
         cli::cmdout::print_prefixed_message("BOTTOM", dottalk::helpdata::MessageId::NavFailedText);
         return;
     }

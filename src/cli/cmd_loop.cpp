@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // path: src/cli/cmd_loop.cpp
 // purpose: LOOP implementation with numeric repetition (N TIMES)

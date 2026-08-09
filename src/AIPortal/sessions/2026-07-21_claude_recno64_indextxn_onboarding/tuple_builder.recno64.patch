@@ -1,0 +1,44 @@
+--- a/src/cli/tuple_builder.cpp
++++ b/src/cli/tuple_builder.cpp
+@@
+ #include <algorithm>
+ #include <cctype>
++#include <cstdint>
+ #include <sstream>
+ #include <string>
+ #include <unordered_set>
+ #include <vector>
+@@
+ // If TABLE buffering is enabled for an area, return the highest-priority buffered value for (recno, field1).
+-bool get_buffer_override(int area0, int recno, int field1, std::string& out_val) {
++bool get_buffer_override(int area0, std::int64_t recno, int field1, std::string& out_val) {
+     if (!dottalk::table::in_range(area0)) return false;
+     if (!dottalk::table::is_enabled(area0)) return false;
+
+     const auto& tb = dottalk::table::get_tb_const(area0);
+     if (tb.empty()) return false;
+
+     const auto range = tb.changes.equal_range(recno);
+@@
+-int safe_recno(const xbase::DbArea* A) {
+-    if (!A) return 0;
+-    try { return static_cast<int>(A->recno()); } catch (...) { return 0; }
+-}
++std::int64_t safe_recno(const xbase::DbArea* A) {
++    if (!A) return 0;
++    // RECNO64: use recno64() so x64 (DBF64) record numbers above UINT32_MAX are
++    // not truncated in tuple provenance / table-buffer overlay lookups.
++    try { return static_cast<std::int64_t>(A->recno64()); } catch (...) { return 0; }
++}
+@@
+         // Overlay TABLE-buffered edits (preview) for this area+recno+field.
+         if (have_area) {
+             const int area0 = slot;
+-            const int recno = safe_recno(ar);
++            const std::int64_t recno = safe_recno(ar);
+
+             std::string ov;
+             if (field1 > 0 && get_buffer_override(area0, recno, field1, ov)) {
+                 val = ov;
+             }
+         }

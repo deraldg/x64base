@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ==============================
 // File: src/cli/cmd_text.cpp
 // TEXT command.

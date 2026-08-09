@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/cli/helpdata_cmdhelp_bridge.cpp
 // Purpose: CLI-side bridge from existing CMDHELP/command docs into HELP DATA v2.
@@ -270,6 +279,7 @@ struct UsageContractDoc {
     std::vector<std::string> examples;
     std::vector<std::string> notes;
     std::vector<std::string> aliases;
+    std::vector<std::string> related;
 };
 
 static void add_contract_line(UsageContractDoc& doc,
@@ -291,6 +301,8 @@ static void add_contract_line(UsageContractDoc& doc,
         doc.notes.push_back(clean);
     } else if (section == "aliases" || section == "alias") {
         doc.aliases.push_back(hd::upper(clean));
+    } else if (section == "related") {
+        doc.related.push_back(clean);
     }
 }
 
@@ -316,6 +328,9 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
         if (lineU == "@DOTTALK.USAGE V1") {
             continue;
         }
+        if (lineU == "@DOTTALK.END" || lineU == "@DOTTALK.CONTRACT.END") {
+            break;
+        }
 
         const auto colon = line.find(':');
         if (colon != std::string::npos) {
@@ -336,7 +351,8 @@ static UsageContractDoc parse_usage_contract_block(const std::vector<std::string
             if (key == "summary" || key == "usage" ||
                 key == "examples" || key == "example" ||
                 key == "notes" || key == "note" ||
-                key == "aliases" || key == "alias") {
+                key == "aliases" || key == "alias" ||
+                key == "related") {
                 section = key;
                 add_contract_line(doc, section, value);
                 continue;
@@ -450,6 +466,11 @@ static void append_usage_contract_artifacts_for_doc(const UsageContractDoc& doc,
     ordinal = 1;
     for (const auto& s : doc.notes) {
         add(hd::ArtifactKind::Note, "USAGE_CONTRACT_NOTE", s, ordinal++);
+    }
+
+    ordinal = 1;
+    for (const auto& s : doc.related) {
+        add(hd::ArtifactKind::Related, "USAGE_CONTRACT_RELATED", s, ordinal++);
     }
 }
 

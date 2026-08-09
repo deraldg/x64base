@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: DOT|DDL
 // command: DDL
@@ -17,6 +26,7 @@
 //   DDL FETCH <url> TO <file> OVERWRITE
 //   DDL VALIDATE <schema.json> USING <validator.json>
 //   DDL CREATE DBF <out.dbf> FROM <schema.json>
+//   DDL CREATE DBF <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> <out.dbf> FROM <schema.json>
 //   DDL CREATE DBF <out.dbf> FROM <schema.json> OVERWRITE
 //   DDL CREATE DBF <out.dbf> FROM <schema.json> SEED CSV <path.csv>
 //   DDL CREATE DBF <out.dbf> FROM <schema.json> SEED BLANK <n>
@@ -26,8 +36,9 @@
 // notes:
 //   DDL with no arguments shows usage.
 //   FETCH writes a schema-side file and refuses overwrite unless OVERWRITE is supplied.
-//   VALIDATE currently checks that both schema and validator inputs exist and reports OK.
+//   VALIDATE parses both inputs and enforces the in-tree schema_json_v1 contract subset.
 //   CREATE DBF writes a DBF file from schema field definitions.
+//   CREATE DBF defaults to the legacy MSDOS/DBASE flavor unless a flavor token is supplied.
 //   CREATE DBF refuses existing output unless OVERWRITE is supplied.
 //   Relative schema inputs resolve under SCHEMAS.
 //   Relative FETCH outputs resolve under SCHEMAS.
@@ -57,17 +68,21 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include <nlohmann/json.hpp>
 #include "xbase.hpp"
+#include "xbase/dbf_create.hpp"
+#include "xbase/field_name_policy.hpp"
 
 #if __has_include("cli/path_resolver.hpp") && __has_include("cli/cmd_setpath.hpp")
   #include "cli/path_resolver.hpp"
@@ -85,6 +100,7 @@
 
 namespace fs = std::filesystem;
 using nlohmann::json;
+using DbfFlavor = xbase::dbf_create::Flavor;
 
 // ---------- small helpers ---------------------------------------------------
 
@@ -474,17 +490,51 @@ static int ddl_fetch_url_to_file(const std::string&,
 struct FieldDef {
     std::string name;
     char        type;
-    uint8_t     length;
+    uint32_t    length;
     uint8_t     decimals;
+    std::string descriptor_name;
 };
 
-static uint8_t safe_len_for_type(char t, int declared_len) {
+static std::string ddl_flavor_name(DbfFlavor flavor) {
+    return xbase::dbf_create::flavor_name(flavor);
+}
+
+static std::string default_index_engine_for_flavor(DbfFlavor flavor) {
+    switch (flavor) {
+        case DbfFlavor::X64: return "CDX";
+        case DbfFlavor::VFP: return "CDX";
+        case DbfFlavor::FOX26: return "CNX";
+        case DbfFlavor::MSDOS:
+        default: return "CNX";
+    }
+}
+
+static std::optional<DbfFlavor> parse_dbf_flavor_token(const std::string& token) {
+    const std::string u = up(token);
+    if (u == "MSDOS" || u == "DBASE") return DbfFlavor::MSDOS;
+    if (u == "FOX26" || u == "FOXPRO" || u == "FOXPRO26") return DbfFlavor::FOX26;
+    if (u == "VFP") return DbfFlavor::VFP;
+    if (u == "X64") return DbfFlavor::X64;
+    return std::nullopt;
+}
+
+static uint32_t safe_len_for_type(char t, int declared_len, DbfFlavor flavor) {
     switch (t) {
-        case 'C': return (uint8_t)std::clamp(declared_len > 0 ? declared_len : 1, 1, 254);
-        case 'N': return (uint8_t)std::clamp(declared_len > 0 ? declared_len : 1, 1, 254);
+        case 'C':
+            if (flavor == DbfFlavor::X64) {
+                return static_cast<uint32_t>(std::max(declared_len, 1));
+            }
+            return static_cast<uint32_t>(std::clamp(declared_len > 0 ? declared_len : 1, 1, 255));
+        case 'N':
+        case 'F':
+            return static_cast<uint32_t>(std::clamp(declared_len > 0 ? declared_len : 1, 1, 255));
         case 'D': return 8;
         case 'L': return 1;
-        case 'M': return 10;
+        case 'M': return (flavor == DbfFlavor::X64) ? 8u : 10u;
+        case 'I': return 4;
+        case 'B': return 8;
+        case 'Y': return 8;
+        case 'T': return 8;
         default:  return 1;
     }
 }
@@ -494,7 +544,342 @@ static uint8_t safe_decimals_for_type(char t, int declared_dec) {
     return 0;
 }
 
-static std::vector<FieldDef> parse_fields_from_schema(const fs::path& schema_path) {
+static bool is_identifier_token(const std::string& s) {
+    if (s.empty()) return false;
+    for (unsigned char c : s) {
+        if (std::isalnum(c) == 0 && c != '_') return false;
+    }
+    return true;
+}
+
+static std::string json_type_name(const json& value) {
+    if (value.is_null()) return "null";
+    if (value.is_boolean()) return "boolean";
+    if (value.is_number_integer()) return "integer";
+    if (value.is_number()) return "number";
+    if (value.is_string()) return "string";
+    if (value.is_array()) return "array";
+    if (value.is_object()) return "object";
+    return "unknown";
+}
+
+static void add_validation_error(std::vector<std::string>& errors,
+                                 const std::string& path,
+                                 const std::string& message) {
+    errors.push_back(path + ": " + message);
+}
+
+static bool has_string_value(const json& obj,
+                             const char* key,
+                             const std::string& path,
+                             std::vector<std::string>& errors) {
+    if (!obj.contains(key)) {
+        add_validation_error(errors, path + "." + key, "required property is missing");
+        return false;
+    }
+    if (!obj[key].is_string()) {
+        add_validation_error(errors, path + "." + key,
+                             "expected string, got " + json_type_name(obj[key]));
+        return false;
+    }
+    return true;
+}
+
+static bool string_in_set(const std::string& value,
+                          std::initializer_list<const char*> allowed) {
+    for (const char* item : allowed) {
+        if (value == item) return true;
+    }
+    return false;
+}
+
+static void validate_enum_string(const json& obj,
+                                 const char* key,
+                                 const std::string& path,
+                                 std::initializer_list<const char*> allowed,
+                                 std::vector<std::string>& errors) {
+    if (!has_string_value(obj, key, path, errors)) return;
+    if (!string_in_set(obj[key].get<std::string>(), allowed)) {
+        add_validation_error(errors, path + "." + key, "value is outside the allowed enum");
+    }
+}
+
+static bool validate_optional_integer_range(const json& obj,
+                                            const char* key,
+                                            const std::string& path,
+                                            int min_value,
+                                            int max_value,
+                                            std::vector<std::string>& errors) {
+    if (!obj.contains(key)) return true;
+    if (!obj[key].is_number_integer()) {
+        add_validation_error(errors, path + "." + key,
+                             "expected integer, got " + json_type_name(obj[key]));
+        return false;
+    }
+    const int value = obj[key].get<int>();
+    if (value < min_value || value > max_value) {
+        add_validation_error(errors, path + "." + key,
+                             "integer is outside the allowed range");
+        return false;
+    }
+    return true;
+}
+
+static bool validate_schema_v1_contract(const json& schema,
+                                        const json& validator,
+                                        std::vector<std::string>& errors) {
+    if (!validator.is_object()) {
+        add_validation_error(errors, "validator", "expected JSON object");
+        return false;
+    }
+    if (!validator.contains("$id") ||
+        !validator["$id"].is_string() ||
+        validator["$id"].get<std::string>().find("schema_json_v1.schema.json") == std::string::npos) {
+        add_validation_error(errors, "validator.$id",
+                             "expected DotTalk++ schema_json_v1 validator");
+    }
+    if (!validator.contains("properties") ||
+        !validator["properties"].is_object() ||
+        !validator["properties"].contains("fields")) {
+        add_validation_error(errors, "validator.properties.fields",
+                             "validator does not expose the fields contract");
+    }
+
+    if (!schema.is_object()) {
+        add_validation_error(errors, "$", "expected JSON object");
+        return errors.empty();
+    }
+
+    for (const char* key : {"version", "name", "encoding", "date_policy",
+                            "null_policy", "logical_policy", "fields"}) {
+        if (!schema.contains(key)) {
+            add_validation_error(errors, std::string("$.") + key,
+                                 "required property is missing");
+        }
+    }
+
+    if (schema.contains("version")) {
+        if (!schema["version"].is_string()) {
+            add_validation_error(errors, "$.version",
+                                 "expected string, got " + json_type_name(schema["version"]));
+        } else if (schema["version"].get<std::string>() != "1.0") {
+            add_validation_error(errors, "$.version", "expected const value 1.0");
+        }
+    }
+    if (schema.contains("name") && has_string_value(schema, "name", "$", errors) &&
+        !is_identifier_token(schema["name"].get<std::string>())) {
+        add_validation_error(errors, "$.name", "expected identifier token [A-Za-z0-9_]+");
+    }
+    if (schema.contains("encoding")) {
+        (void)has_string_value(schema, "encoding", "$", errors);
+    }
+    if (schema.contains("date_policy")) {
+        validate_enum_string(schema, "date_policy", "$", {"ISO", "FOX"}, errors);
+    }
+    if (schema.contains("null_policy")) {
+        validate_enum_string(schema, "null_policy", "$",
+                             {"EMPTY_AS_EMPTY", "EMPTY_AS_NULL"}, errors);
+    }
+    if (schema.contains("logical_policy")) {
+        validate_enum_string(schema, "logical_policy", "$", {"TF", "ZERO_ONE"}, errors);
+    }
+
+    std::set<std::string> field_names;
+    if (schema.contains("fields")) {
+        const json& fields = schema["fields"];
+        if (!fields.is_array()) {
+            add_validation_error(errors, "$.fields",
+                                 "expected array, got " + json_type_name(fields));
+        } else if (fields.empty()) {
+            add_validation_error(errors, "$.fields", "must contain at least one field");
+        } else {
+            for (std::size_t i = 0; i < fields.size(); ++i) {
+                const std::string path = "$.fields[" + std::to_string(i) + "]";
+                const json& fld = fields[i];
+                if (!fld.is_object()) {
+                    add_validation_error(errors, path,
+                                         "expected object, got " + json_type_name(fld));
+                    continue;
+                }
+                const bool has_name = has_string_value(fld, "name", path, errors);
+                const bool has_type = has_string_value(fld, "type", path, errors);
+                std::string name;
+                if (has_name) {
+                    name = fld["name"].get<std::string>();
+                    if (!is_identifier_token(name)) {
+                        add_validation_error(errors, path + ".name",
+                                             "expected identifier token [A-Za-z0-9_]+");
+                    }
+                    const std::string key = up(name);
+                    if (!field_names.insert(key).second) {
+                        add_validation_error(errors, path + ".name",
+                                             "duplicate field name");
+                    }
+                }
+                char type = '\0';
+                if (has_type) {
+                    const std::string ty = fld["type"].get<std::string>();
+                    if (ty.size() != 1 ||
+                        !string_in_set(ty, {"C", "N", "F", "D", "L", "M", "I", "B", "Y", "T"})) {
+                        add_validation_error(errors, path + ".type",
+                                             "value is outside the allowed field type enum");
+                    } else {
+                        type = ty[0];
+                    }
+                }
+                validate_optional_integer_range(fld, "length", path, 1, 2147483647, errors);
+                validate_optional_integer_range(fld, "decimals", path, 0, 15, errors);
+                if (type == 'C' || type == 'N' || type == 'F') {
+                    if (!fld.contains("length")) {
+                        add_validation_error(errors, path + ".length",
+                                             "required for C/N/F fields");
+                    }
+                }
+                if (type == 'D' && fld.contains("length") &&
+                    fld["length"].is_number_integer() && fld["length"].get<int>() != 8) {
+                    add_validation_error(errors, path + ".length",
+                                         "D fields must have length 8 when length is supplied");
+                }
+                if ((type == 'N' || type == 'F') &&
+                    fld.contains("length") && fld.contains("decimals") &&
+                    fld["length"].is_number_integer() && fld["decimals"].is_number_integer() &&
+                    fld["decimals"].get<int>() > fld["length"].get<int>()) {
+                    add_validation_error(errors, path + ".decimals",
+                                         "decimal count exceeds field length");
+                }
+                if ((type == 'L' || type == 'M') && fld.contains("decimals")) {
+                    add_validation_error(errors, path + ".decimals",
+                                         "not valid for L/M fields");
+                }
+            }
+        }
+    }
+
+    if (schema.contains("indexes")) {
+        const json& indexes = schema["indexes"];
+        if (!indexes.is_array()) {
+            add_validation_error(errors, "$.indexes",
+                                 "expected array, got " + json_type_name(indexes));
+        } else {
+            for (std::size_t i = 0; i < indexes.size(); ++i) {
+                const std::string path = "$.indexes[" + std::to_string(i) + "]";
+                const json& idx = indexes[i];
+                if (!idx.is_object()) {
+                    add_validation_error(errors, path,
+                                         "expected object, got " + json_type_name(idx));
+                    continue;
+                }
+                if (has_string_value(idx, "name", path, errors) &&
+                    !is_identifier_token(idx["name"].get<std::string>())) {
+                    add_validation_error(errors, path + ".name",
+                                         "expected identifier token [A-Za-z0-9_]+");
+                }
+                validate_enum_string(idx, "engine", path,
+                                     {"DBF", "INX", "CNX", "CDX", "LMDB", "SQLite"}, errors);
+                if (!idx.contains("order")) {
+                    add_validation_error(errors, path + ".order",
+                                         "required property is missing");
+                } else if (!idx["order"].is_array()) {
+                    add_validation_error(errors, path + ".order",
+                                         "expected array, got " + json_type_name(idx["order"]));
+                } else if (idx["order"].empty()) {
+                    add_validation_error(errors, path + ".order",
+                                         "must contain at least one field reference");
+                } else {
+                    for (std::size_t j = 0; j < idx["order"].size(); ++j) {
+                        const std::string opath = path + ".order[" + std::to_string(j) + "]";
+                        if (!idx["order"][j].is_string()) {
+                            add_validation_error(errors, opath,
+                                                 "expected string, got " + json_type_name(idx["order"][j]));
+                            continue;
+                        }
+                        const std::string ref = up(idx["order"][j].get<std::string>());
+                        if (!field_names.empty() && field_names.find(ref) == field_names.end()) {
+                            add_validation_error(errors, opath,
+                                                 "field reference is not declared in $.fields");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (schema.contains("relations")) {
+        const json& relations = schema["relations"];
+        if (!relations.is_array()) {
+            add_validation_error(errors, "$.relations",
+                                 "expected array, got " + json_type_name(relations));
+        } else {
+            for (std::size_t i = 0; i < relations.size(); ++i) {
+                const std::string path = "$.relations[" + std::to_string(i) + "]";
+                const json& rel = relations[i];
+                if (!rel.is_object()) {
+                    add_validation_error(errors, path,
+                                         "expected object, got " + json_type_name(rel));
+                    continue;
+                }
+                (void)has_string_value(rel, "name", path, errors);
+                (void)has_string_value(rel, "parent_table", path, errors);
+                (void)has_string_value(rel, "child_table", path, errors);
+                validate_enum_string(rel, "cardinality", path,
+                                     {"1:1", "1:N", "N:1", "N:N"}, errors);
+                if (!rel.contains("on")) {
+                    add_validation_error(errors, path + ".on",
+                                         "required property is missing");
+                } else if (!rel["on"].is_array() || rel["on"].empty()) {
+                    add_validation_error(errors, path + ".on",
+                                         "expected non-empty array");
+                } else {
+                    for (std::size_t j = 0; j < rel["on"].size(); ++j) {
+                        const std::string on_path = path + ".on[" + std::to_string(j) + "]";
+                        const json& pair = rel["on"][j];
+                        if (!pair.is_object()) {
+                            add_validation_error(errors, on_path,
+                                                 "expected object, got " + json_type_name(pair));
+                            continue;
+                        }
+                        (void)has_string_value(pair, "parent", on_path, errors);
+                        (void)has_string_value(pair, "child", on_path, errors);
+                    }
+                }
+            }
+        }
+    }
+
+    return errors.empty();
+}
+
+static std::string descriptor_token_for(const std::string& name) {
+    std::string out = name;
+    if (out.size() > 10) out.resize(10);
+    return up(out);
+}
+
+static void apply_descriptor_policy(std::vector<FieldDef>& fields, DbfFlavor flavor) {
+    if (flavor == DbfFlavor::X64) {
+        std::vector<std::string> names;
+        names.reserve(fields.size());
+        for (const auto& f : fields) names.push_back(f.name);
+        const auto plans = xbase::field_name_policy::plan_x64_unique_fallback(names);
+        for (std::size_t i = 0; i < fields.size(); ++i) {
+            fields[i].descriptor_name = plans[i].descriptor_name;
+        }
+        return;
+    }
+
+    std::set<std::string> seen;
+    for (auto& f : fields) {
+        f.descriptor_name = f.name.substr(0, 10);
+        const std::string token = descriptor_token_for(f.descriptor_name);
+        if (!seen.insert(token).second) {
+            throw std::runtime_error(
+                "schema creates duplicate 10-byte DBF descriptor token: " + token);
+        }
+    }
+}
+
+static std::vector<FieldDef> parse_fields_from_schema(const fs::path& schema_path,
+                                                      DbfFlavor flavor) {
     std::ifstream f(schema_path);
     if (!f) throw std::runtime_error("cannot open schema: " + s8(schema_path));
 
@@ -517,147 +902,101 @@ static std::vector<FieldDef> parse_fields_from_schema(const fs::path& schema_pat
         const int dec = fld.contains("decimals") ? fld["decimals"].get<int>() : 0;
 
         FieldDef d;
-        d.name     = name.substr(0, 10);
-        d.type     = (t=='C'||t=='N'||t=='D'||t=='L'||t=='M') ? t : 'C';
-        d.length   = safe_len_for_type(d.type, len);
+        d.name     = name;
+        d.type     = xbase::dbf_create::supports_type_now(t, flavor) ? t : '\0';
+        if (d.type == '\0') {
+            throw std::runtime_error(
+                "field '" + name + "' type '" + std::string(1, t) +
+                "' is not supported by " + ddl_flavor_name(flavor));
+        }
+        d.length   = safe_len_for_type(d.type, len, flavor);
         d.decimals = safe_decimals_for_type(d.type, dec);
 
         if (d.type == 'D') { d.length = 8;  d.decimals = 0; }
         if (d.type == 'L') { d.length = 1;  d.decimals = 0; }
-        if (d.type == 'M') { d.length = 10; d.decimals = 0; }
+        if (d.type == 'M') { d.length = (flavor == DbfFlavor::X64) ? 8u : 10u; d.decimals = 0; }
+        if (d.type == 'I') { d.length = 4;  d.decimals = 0; }
+        if (d.type == 'B') { d.length = 8;  d.decimals = 0; }
+        if (d.type == 'Y') { d.length = 8;  d.decimals = 4; }
+        if (d.type == 'T') { d.length = 8;  d.decimals = 0; }
+        if ((d.type == 'N' || d.type == 'F') && d.decimals > d.length) {
+            throw std::runtime_error("field '" + name + "' decimal count exceeds length");
+        }
 
         out.push_back(d);
     }
 
-    if (out.empty()) out.push_back(FieldDef{"_STUB", 'C', 1, 0});
+    if (out.empty()) out.push_back(FieldDef{"_STUB", 'C', 1, 0, {}});
+    apply_descriptor_policy(out, flavor);
     return out;
 }
 
-static uint16_t compute_record_length(const std::vector<FieldDef>& fields) {
-    uint16_t rec = 1;
-    for (const auto& f : fields) rec += f.length;
-    return rec;
+static std::vector<xbase::dbf_create::FieldSpec> to_field_specs(const std::vector<FieldDef>& fields) {
+    std::vector<xbase::dbf_create::FieldSpec> specs;
+    specs.reserve(fields.size());
+    for (const auto& f : fields) {
+        xbase::dbf_create::FieldSpec spec;
+        spec.name = f.name;
+        spec.type = f.type;
+        spec.len = f.length;
+        spec.dec = f.decimals;
+        spec.descriptor_name = f.descriptor_name;
+        specs.push_back(std::move(spec));
+    }
+    return specs;
+}
+
+static json load_schema_index_declarations(const fs::path& schema_path,
+                                           DbfFlavor flavor) {
+    std::ifstream f(schema_path);
+    if (!f) throw std::runtime_error("cannot open schema: " + s8(schema_path));
+
+    json j = json::parse(f, nullptr, true, true);
+    json out = json::array();
+    if (!j.contains("indexes") || !j["indexes"].is_array()) return out;
+
+    for (const auto& item : j["indexes"]) {
+        if (!item.is_object()) continue;
+        json idx = item;
+        if (!idx.contains("engine")) {
+            idx["engine"] = default_index_engine_for_flavor(flavor);
+        }
+        idx["status"] = "metadata_only";
+        idx["physical_index_built"] = false;
+        out.push_back(std::move(idx));
+    }
+    return out;
 }
 
 static void write_empty_dbf(const fs::path& out_dbf,
-                            const std::vector<FieldDef>& fields)
+                            const std::vector<FieldDef>& fields,
+                            DbfFlavor flavor)
 {
-    const uint16_t header_len = (uint16_t)(32 + 32 * fields.size() + 1);
-    const uint16_t rec_len    = compute_record_length(fields);
-
     if (!ensure_parent_dir(out_dbf))
         throw std::runtime_error("cannot create parent directory for: " + s8(out_dbf));
 
-    std::ofstream out(out_dbf, std::ios::binary | std::ios::trunc);
-    if (!out) throw std::runtime_error("cannot write: " + s8(out_dbf));
-
-    const uint8_t ver = 0x03;
-    const auto t = std::chrono::system_clock::now();
-    std::time_t tt = std::chrono::system_clock::to_time_t(t);
-    std::tm tm{};
-#if defined(_WIN32)
-    gmtime_s(&tm, &tt);
-#else
-    gmtime_r(&tt, &tm);
-#endif
-    const uint8_t yy = (uint8_t)((tm.tm_year + 1900) % 100);
-    const uint8_t mm = (uint8_t)(tm.tm_mon + 1);
-    const uint8_t dd = (uint8_t)tm.tm_mday;
-
-    const auto put16 = [&](uint16_t v){ out.put((char)(v & 0xFF)); out.put((char)((v>>8)&0xFF)); };
-    const auto put32 = [&](uint32_t v){
-        out.put((char)(v & 0xFF));
-        out.put((char)((v >> 8) & 0xFF));
-        out.put((char)((v >> 16) & 0xFF));
-        out.put((char)((v >> 24) & 0xFF));
-    };
-
-    out.put((char)ver);
-    out.put((char)yy);
-    out.put((char)mm);
-    out.put((char)dd);
-    put32(0u);
-    put16(header_len);
-    put16(rec_len);
-
-    for (int i = 0; i < 20; ++i) out.put('\0');
-
-    for (const auto& f : fields) {
-        char namebuf[11]{0};
-        for (size_t i = 0; i < f.name.size() && i < 10; ++i) namebuf[i] = f.name[i];
-        out.write(namebuf, 11);
-
-        out.put((char)f.type);
-        out.put('\0'); out.put('\0'); out.put('\0'); out.put('\0');
-        out.put((char)f.length);
-        out.put((char)f.decimals);
-        for (int i = 0; i < 14; ++i) out.put('\0');
+    std::string err;
+    if (!xbase::dbf_create::create_dbf(s8(out_dbf), to_field_specs(fields), flavor, err)) {
+        throw std::runtime_error(err.empty() ? ("cannot write: " + s8(out_dbf)) : err);
     }
-
-    out.put((char)0x0D);
-    out.flush();
-
-    if (!out) throw std::runtime_error("write failed: " + s8(out_dbf));
 }
 
 static void append_blank_records(const fs::path& out_dbf,
-                                 const std::vector<FieldDef>& fields,
                                  uint32_t count)
 {
     if (count == 0) return;
 
-    const uint16_t rec_len = compute_record_length(fields);
-
-    std::fstream f(out_dbf, std::ios::binary | std::ios::in | std::ios::out);
-    if (!f) throw std::runtime_error("cannot reopen for append: " + s8(out_dbf));
-
-    f.seekg(0, std::ios::beg);
-    unsigned char header[32];
-    f.read(reinterpret_cast<char*>(header), 32);
-    if (!f) throw std::runtime_error("failed to read header for update");
-
-    uint32_t nrecs = (uint32_t)header[4]
-                   | ((uint32_t)header[5] << 8)
-                   | ((uint32_t)header[6] << 16)
-                   | ((uint32_t)header[7] << 24);
-
-    std::string rec;
-    rec.resize(rec_len, ' ');
-    rec[0] = ' ';
-
-    f.seekp(0, std::ios::end);
+    xbase::DbArea area;
+    area.open(s8(out_dbf));
     for (uint32_t i = 0; i < count; ++i) {
-        f.write(rec.data(), (std::streamsize)rec.size());
-        if (!f) throw std::runtime_error("failed to append blank record");
+        if (!area.appendBlank()) throw std::runtime_error("failed to append blank record");
     }
-
-    nrecs += count;
-    header[4] = (unsigned char)(nrecs & 0xFF);
-    header[5] = (unsigned char)((nrecs >> 8) & 0xFF);
-    header[6] = (unsigned char)((nrecs >> 16) & 0xFF);
-    header[7] = (unsigned char)((nrecs >> 24) & 0xFF);
-
-    const auto t = std::chrono::system_clock::now();
-    std::time_t tt = std::chrono::system_clock::to_time_t(t);
-    std::tm tm{};
-#if defined(_WIN32)
-    gmtime_s(&tm, &tt);
-#else
-    gmtime_r(&tt, &tm);
-#endif
-    header[1] = (unsigned char)((tm.tm_year + 1900) % 100);
-    header[2] = (unsigned char)(tm.tm_mon + 1);
-    header[3] = (unsigned char)tm.tm_mday;
-
-    f.seekp(0, std::ios::beg);
-    f.write(reinterpret_cast<const char*>(header), 32);
-    if (!f) throw std::runtime_error("failed to update header after append");
-    f.flush();
+    area.close();
 }
 
 // ---------- command core ----------------------------------------------------
 
-static int ddl_validate_stub(const fs::path& schema, const fs::path& validator) {
+static int ddl_validate_schema_v1(const fs::path& schema, const fs::path& validator) {
     if (!file_exists(schema)) {
         std::cout << "DDL VALIDATE: schema file not found: " << s8(schema) << "\n";
         return 1;
@@ -666,15 +1005,48 @@ static int ddl_validate_stub(const fs::path& schema, const fs::path& validator) 
         std::cout << "DDL VALIDATE: validator file not found: " << s8(validator) << "\n";
         return 1;
     }
+
+    json schema_json;
+    json validator_json;
+    try {
+        std::ifstream sf(schema);
+        schema_json = json::parse(sf, nullptr, true, true);
+    } catch (const std::exception& ex) {
+        std::cout << "DDL VALIDATE: schema parse failed: " << ex.what() << "\n";
+        return 1;
+    }
+    try {
+        std::ifstream vf(validator);
+        validator_json = json::parse(vf, nullptr, true, true);
+    } catch (const std::exception& ex) {
+        std::cout << "DDL VALIDATE: validator parse failed: " << ex.what() << "\n";
+        return 1;
+    }
+
+    std::vector<std::string> errors;
+    const bool ok = validate_schema_v1_contract(schema_json, validator_json, errors);
+    if (!ok) {
+        std::cout << "DDL VALIDATE: FAILED\n";
+        std::cout << "  schema    = " << s8(schema) << "\n";
+        std::cout << "  validator = " << s8(validator) << "\n";
+        std::cout << "  errors    = " << errors.size() << "\n";
+        for (const auto& err : errors) {
+            std::cout << "  - " << err << "\n";
+        }
+        return 1;
+    }
+
     std::cout << "DDL VALIDATE: OK\n";
     std::cout << "  schema    = " << s8(schema) << "\n";
     std::cout << "  validator = " << s8(validator) << "\n";
+    std::cout << "  contract  = schema_json_v1\n";
     return 0;
 }
 
 static int ddl_create_dbf_real(
     const fs::path&    out_dbf,
     const fs::path&    schema,
+    DbfFlavor          flavor,
     bool               overwrite,
     const fs::path&    seed_csv,
     uint32_t           seed_blank,
@@ -691,9 +1063,11 @@ static int ddl_create_dbf_real(
     }
 
     std::vector<FieldDef> fields;
+    json declared_indexes = json::array();
     try {
-        fields = parse_fields_from_schema(schema);
-        write_empty_dbf(out_dbf, fields);
+        fields = parse_fields_from_schema(schema, flavor);
+        declared_indexes = load_schema_index_declarations(schema, flavor);
+        write_empty_dbf(out_dbf, fields, flavor);
     } catch (const std::exception& ex) {
         std::cout << "DDL CREATE DBF: " << ex.what() << "\n";
         return 1;
@@ -704,7 +1078,7 @@ static int ddl_create_dbf_real(
 
     try {
         if (seed_blank > 0) {
-            append_blank_records(out_dbf, fields, seed_blank);
+            append_blank_records(out_dbf, seed_blank);
             rows_written += seed_blank;
         } else if (!seed_csv.empty()) {
             if (!file_exists(seed_csv)) {
@@ -727,9 +1101,10 @@ static int ddl_create_dbf_real(
         json ddl = json::object();
         ddl["table"] = table;
         ddl["engine"] = "DBF";
+        ddl["dbf_flavor"] = ddl_flavor_name(flavor);
         ddl["schema_version"] = "1.0";
         ddl["fields"] = json::array();
-        ddl["indexes"] = json::array();
+        ddl["indexes"] = declared_indexes;
         ddl["relations"] = json::array();
 
         json notes = json::array();
@@ -742,6 +1117,7 @@ static int ddl_create_dbf_real(
             jf["type"] = std::string(1, f.type);
             jf["length"] = f.length;
             jf["decimals"] = f.decimals;
+            if (!f.descriptor_name.empty()) jf["descriptor_name"] = f.descriptor_name;
             ddl["fields"].push_back(jf);
         }
 
@@ -775,7 +1151,8 @@ static int ddl_create_dbf_real(
         json engine_obj = json::object();
         engine_obj["name"] = "dottalkpp";
         engine_obj["version"] = "alpha";
-        engine_obj["platform"] = "dbf-header-v1";
+        engine_obj["platform"] = "dbf-create-backend";
+        engine_obj["dbf_flavor"] = ddl_flavor_name(flavor);
 
         json timestamps = json::object();
         timestamps["finished"] = now_utc_iso();
@@ -793,9 +1170,11 @@ static int ddl_create_dbf_real(
 
         json idx = json::object();
         idx["table"] = table;
-        idx["engine"] = "CNX";
-        idx["indexes"] = json::array();
+        idx["engine"] = default_index_engine_for_flavor(flavor);
+        idx["dbf_flavor"] = ddl_flavor_name(flavor);
+        idx["indexes"] = declared_indexes;
         idx["warnings"] = json::array();
+        idx["warnings"].push_back("Index declarations are metadata-only in this DDL milestone; no physical index was built.");
 
         write_text_file(sidecar_dir / (table + ".indexes.json"), idx.dump(2));
 
@@ -810,6 +1189,7 @@ static int ddl_create_dbf_real(
     ok << "DDL CREATE DBF: OK";
     ok << "\n  schema = " << s8(schema);
     ok << "\n  output = " << s8(out_dbf);
+    ok << "\n  flavor = " << ddl_flavor_name(flavor);
     if (rows_written > 0) ok << "\n  blank_rows = " << rows_written;
     if (emit_sidecars) ok << "\n  sidecars = " << s8(sidecar_dir);
     ok << "\n";
@@ -826,6 +1206,7 @@ static void print_ddl_usage()
         << "  DDL FETCH <url> TO <file> [OVERWRITE]\n"
         << "  DDL VALIDATE <schema.json> USING <validator.json>\n"
         << "  DDL CREATE DBF <out.dbf> FROM <schema.json> [OVERWRITE]\n"
+        << "  DDL CREATE DBF <MSDOS|DBASE|FOX26|FOXPRO|VFP|X64> <out.dbf> FROM <schema.json> [OVERWRITE]\n"
         << "      [SEED CSV <path.csv>] [SEED BLANK <n>]\n"
         << "      [REJECTS <rejects.csv>] [EMIT SIDECARS]\n"
         << "Path rules:\n"
@@ -833,6 +1214,7 @@ static void print_ddl_usage()
         << "  - Relative FETCH outputs resolve under SCHEMAS.\n"
         << "  - Relative CREATE DBF outputs resolve under TMP.\n"
         << "Notes:\n"
+        << "  - CREATE DBF defaults to MSDOS/DBASE unless a flavor token is supplied.\n"
         << "  - CREATE DBF refuses existing output unless OVERWRITE is supplied.\n"
         << "  - EMIT SIDECARS writes companion schema/load/index metadata.\n";
 }
@@ -884,7 +1266,7 @@ void cmd_DDL(xbase::DbArea& /*area*/, std::istringstream& iss) {
 
         const fs::path schema = resolve_ddl_input(schema_raw);
         const fs::path validator = resolve_ddl_input(validator_raw);
-        (void)ddl_validate_stub(schema, validator);
+        (void)ddl_validate_schema_v1(schema, validator);
         return;
     }
 
@@ -895,9 +1277,37 @@ void cmd_DDL(xbase::DbArea& /*area*/, std::istringstream& iss) {
             return;
         }
 
-        const std::string out_dbf_raw = read_pathish(iss);
+        DbfFlavor flavor = DbfFlavor::MSDOS;
+        std::string out_dbf_raw = read_pathish(iss);
+        if (auto parsed_flavor = parse_dbf_flavor_token(out_dbf_raw)) {
+            flavor = *parsed_flavor;
+            out_dbf_raw = read_pathish(iss);
+        } else if (up(out_dbf_raw) == "AS") {
+            const std::string flavor_raw = read_word(iss);
+            auto parsed = parse_dbf_flavor_token(flavor_raw);
+            if (!parsed) {
+                std::cout << "DDL CREATE DBF: expected DBF flavor after AS\n";
+                return;
+            }
+            flavor = *parsed;
+            out_dbf_raw = read_pathish(iss);
+        }
+
         const std::string from_kw = up(read_word(iss));
-        if (from_kw != "FROM") {
+        if (from_kw == "AS") {
+            const std::string flavor_raw = read_word(iss);
+            auto parsed = parse_dbf_flavor_token(flavor_raw);
+            if (!parsed) {
+                std::cout << "DDL CREATE DBF: expected DBF flavor after AS\n";
+                return;
+            }
+            flavor = *parsed;
+        } else if (from_kw != "FROM") {
+            std::cout << "DDL CREATE DBF: expected FROM <schema.json>\n";
+            return;
+        }
+        const std::string actual_from_kw = (from_kw == "AS") ? up(read_word(iss)) : from_kw;
+        if (actual_from_kw != "FROM") {
             std::cout << "DDL CREATE DBF: expected FROM <schema.json>\n";
             return;
         }
@@ -967,7 +1377,7 @@ void cmd_DDL(xbase::DbArea& /*area*/, std::istringstream& iss) {
         const fs::path seed_csv = seed_csv_raw.empty() ? fs::path{} : resolve_seed_csv_input(seed_csv_raw);
         const fs::path rejects_csv = rejects_raw.empty() ? fs::path{} : resolve_rejects_output(rejects_raw);
 
-        (void)ddl_create_dbf_real(out_dbf, schema, overwrite, seed_csv, seed_blank, rejects_csv, emit_sidecars);
+        (void)ddl_create_dbf_real(out_dbf, schema, flavor, overwrite, seed_csv, seed_blank, rejects_csv, emit_sidecars);
         return;
     }
 

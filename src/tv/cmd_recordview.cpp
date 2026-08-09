@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_recordview.cpp
 // RECORDVIEW (readonly) ? RECORD (edit/modify) ? BROWSETV (TV grid)
 // Now with visible selection highlight for the active field/row.
@@ -53,7 +62,8 @@
 // usage:
 //   BROWSETV [ALL]
 // notes:
-//   This conditional developer surface may move the active record and has no command-local usage branch.
+//   In ArcticTalk this opens a read-only child grid on the active desktop.
+//   Navigation moves the active work-area record cursor; ALL includes deleted records.
 // related:
 //   RECORDVIEW, BROWSE
 //
@@ -103,14 +113,13 @@ extern void cmd_REPLACE(xbase::DbArea&, std::istringstream&);
 // ---------- shared helpers ----------
 struct ColSpec { std::string name; int width; };
 
-static std::vector<ColSpec> columnsFrom(const DbArea& a, int maxWidth){
-    std::vector<ColSpec> cols; int used=0;
-    int recw=1; for (int n=std::max(1,a.recCount()); n>9; n/=10) ++recw;
-    used += 1 + 1 + recw + 1;
+static std::vector<ColSpec> columnsFrom(const DbArea& a){
+    std::vector<ColSpec> cols;
     for (auto &f : a.fields()){
-        int w = std::max(1, (int)f.length);
-        if (used + w + 1 > maxWidth) break;
-        cols.push_back({f.name, w}); used += w + 1;
+        // Preserve the complete schema. GridView's horizontal scrollbar makes
+        // wide records navigable instead of silently dropping trailing fields.
+        const int w = std::max({1, (int)f.length, (int)f.name.size()});
+        cols.push_back({f.name, w});
     }
     return cols;
 }
@@ -204,6 +213,9 @@ public:
         setLimit(std::max<short>(S(1),w), std::max<short>(S(1),(short)lines_.size())); drawView();
     }
     void setHighlight(int row){ hi_=std::max(-1,row); drawView(); }
+    void scrollHorizontal(int amount){
+        scrollTo(S(std::max(0, (int)delta.x+amount)), delta.y);
+    }
     void ensureVisible(int row){
         if(row<0) return;
         const int top = delta.y;
@@ -460,61 +472,189 @@ public:
         const TRect vr(S(1),S(1),S(w-2),S(h-3)); view_=new GridView(vr,hsb,vsb); insert(view_);
 
         insert(new TStaticText(TRect(S(1),S(h-3),S(w-2),S(h-2)),
-            "~?/?/PgUp/PgDn/Home/End~ move   ~Enter~ open   ~A~ ALL   ~R~ refresh   ~Esc~ close"));
+            "~Up/Dn/Pg/Home/End~ row  ~Left/Right~ columns  ~Enter~ record  ~A~ ALL  ~R~ refresh  ~Esc~ close"));
 
         recw_=1; for(int n=std::max(1,a_->recCount()); n>9; n/=10) ++recw_;
+        recw_=std::max(5, recw_);
+        if(a_->recCount()>0)
+            cur_=clampInt(a_->recno(), 1, a_->recCount());
+        else
+            cur_=0;
         reload();
     }
 
     void handleEvent(TEvent& ev) override{
         TWindow::handleEvent(ev); if(!a_||ev.what!=evKeyDown) return;
-        const int32_t total=a_->recCount(); const int page=std::max<int>(1, (int)view_->size.y-2); bool handled=true;
+        const int32_t total=a_->recCount();
+        const int page=std::max<int>(1, (int)view_->size.y-2);
+        bool handled=true;
+        bool refresh=false;
         switch(ev.keyDown.keyCode){
-            case kbHome: cur_=1; break;
-            case kbEnd:  cur_=total; break;
-            case kbUp:   cur_=std::max<int32_t>(1,cur_-1); break;
-            case kbDown: cur_=std::min<int32_t>(total,cur_+1); break;
-            case kbPgUp: cur_=std::max<int32_t>(1,cur_-page); break;
-            case kbPgDn: cur_=std::min<int32_t>(total,cur_+page); break;
+            case kbHome: moveToEdge(1); refresh=true; break;
+            case kbEnd:  moveToEdge(total); refresh=true; break;
+            case kbUp:   moveBy(-1); refresh=true; break;
+            case kbDown: moveBy(1); refresh=true; break;
+            case kbPgUp: moveBy(-page); refresh=true; break;
+            case kbPgDn: moveBy(page); refresh=true; break;
+            case kbLeft: view_->scrollHorizontal(-4); break;
+            case kbRight:view_->scrollHorizontal(4); break;
             case kbEnter: openRecord(); break;
             default: handled=false; break;
         }
         if(!handled){
             const ushort ch=ev.keyDown.charScan.charCode;
-            if(ch=='A'||ch=='a'){ showAll_=!showAll_; reload(); handled=true; }
-            else if(ch=='R'||ch=='r'){ reload(); handled=true; }
-            else if(ch==27){ close(); handled=true; }
+            if(ch=='A'||ch=='a'){ showAll_=!showAll_; handled=true; refresh=true; }
+            else if(ch=='R'||ch=='r'){ handled=true; refresh=true; }
+            else if(ch==27){ close(); clearEvent(ev); return; }
         }
-        if(handled){ clearEvent(ev); }
+        if(handled){
+            if(refresh)
+                reload();
+            clearEvent(ev);
+        }
     }
 
 private:
-    void openRecord(){ if(cur_<1||cur_>a_->recCount()) return; auto* w=new RecordViewWindow(a_,cur_); TProgram::deskTop->insert(w); w->select(); }
+    bool visibleRecord(int32_t rn){
+        if(!a_ || rn<1 || rn>a_->recCount())
+            return false;
+        if(!a_->gotoRec(rn) || !a_->readCurrent())
+            return false;
+        return showAll_ || !a_->isDeleted();
+    }
+
+    int32_t findVisible(int32_t start, int step){
+        if(!a_ || step==0)
+            return 0;
+        const int32_t total=a_->recCount();
+        for(int32_t rn=start; rn>=1 && rn<=total; ){
+            if(visibleRecord(rn))
+                return rn;
+            if((step>0 && rn==total) || (step<0 && rn==1))
+                break;
+            rn+=step;
+        }
+        return 0;
+    }
+
+    void moveToEdge(int32_t edge){
+        if(!a_ || a_->recCount()<1){
+            cur_=0;
+            return;
+        }
+        const int step=edge<=1 ? 1 : -1;
+        const int32_t found=findVisible(edge<=1 ? 1 : a_->recCount(), step);
+        if(found)
+            cur_=found;
+    }
+
+    void moveBy(int amount){
+        if(!a_ || amount==0 || a_->recCount()<1)
+            return;
+        const int step=amount<0 ? -1 : 1;
+        int count=amount<0 ? -amount : amount;
+        int32_t next=cur_;
+        while(count-- > 0){
+            if((step>0 && next>=a_->recCount()) || (step<0 && next<=1))
+                break;
+            const int32_t found=findVisible(next+step, step);
+            if(!found)
+                break;
+            next=found;
+        }
+        cur_=next;
+    }
+
+    void openRecord(){
+        if(cur_<1||cur_>a_->recCount())
+            return;
+        a_->gotoRec(cur_);
+        a_->readCurrent();
+        auto* w=new RecordViewWindow(a_,cur_);
+        TProgram::deskTop->insert(w);
+        w->select();
+    }
+
     void reload(){
-        std::vector<std::string> lines; int maxW=std::max<int>(10, (int)view_->size.x);
-        auto cols=columnsFrom(*a_, maxW);
-        std::string hdr = showAll_ ? "[ALL] " : "      ";
-        hdr += "  "; hdr.append((size_t)recw_,' '); hdr.push_back(' ');
+        std::vector<std::string> lines;
+        auto cols=columnsFrom(*a_);
+        std::string hdr = "D ";
+        std::string recTitle = "RECNO";
+        if((int)recTitle.size()<recw_)
+            recTitle.insert(recTitle.begin(), (size_t)(recw_-(int)recTitle.size()), ' ');
+        hdr += recTitle;
+        hdr.push_back(' ');
         for(auto& c:cols){
             std::string n=c.name;
             if((int)n.size()>c.width) n.resize((size_t)c.width);
             if((int)n.size()<c.width) n.append((size_t)(c.width-(int)n.size()), ' ');
             hdr+=n; hdr.push_back(' ');
         }
+        if(showAll_)
+            hdr += "[ALL]";
         lines.push_back(hdr);
+
         const int32_t total=a_->recCount();
-        const int rows=std::max<int>(1, (int)view_->size.y-2);
-        int32_t rn=std::max<int32_t>(1, std::min<int32_t>(total, std::max<int32_t>(1, cur_-rows/2)));
-        int printed=0;
-        for(; rn<=total && printed<rows; ++rn){
-            if(!a_->gotoRec(rn) || !a_->readCurrent()) continue;
-            if(a_->isDeleted() && !showAll_) continue;
-            lines.push_back(rowAsString(*a_, cols, recw_, a_->isDeleted()));
-            ++printed;
+        if(total<1){
+            cur_=0;
+            lines.push_back("(no rows)");
+            view_->set(std::move(lines));
+            view_->setHighlight(-1);
+            return;
         }
-        if(lines.size()==1) lines.push_back("(no rows)");
+
+        cur_=clampInt(cur_, 1, total);
+        if(!visibleRecord(cur_)){
+            const int32_t next=cur_<total ? findVisible(cur_+1, 1) : 0;
+            const int32_t prev=cur_>1 ? findVisible(cur_-1, -1) : 0;
+            cur_=next ? next : prev;
+        }
+        if(!cur_){
+            lines.push_back("(no visible rows; press A to show deleted records)");
+            view_->set(std::move(lines));
+            view_->setHighlight(-1);
+            return;
+        }
+
+        const int rows=std::max<int>(1, (int)view_->size.y-1);
+        int32_t first=cur_;
+        for(int i=0; i<rows/2; ++i){
+            const int32_t prev=first>1 ? findVisible(first-1, -1) : 0;
+            if(!prev)
+                break;
+            first=prev;
+        }
+
+        std::vector<int32_t> visibleRows;
+        int32_t rn=first;
+        while(rn && (int)visibleRows.size()<rows){
+            visibleRows.push_back(rn);
+            rn=rn<total ? findVisible(rn+1, 1) : 0;
+        }
+        while((int)visibleRows.size()<rows && !visibleRows.empty()){
+            const int32_t prev=visibleRows.front()>1 ? findVisible(visibleRows.front()-1, -1) : 0;
+            if(!prev)
+                break;
+            visibleRows.insert(visibleRows.begin(), prev);
+        }
+
+        int highlight=-1;
+        for(const int32_t visibleRn : visibleRows){
+            rn=visibleRn;
+            visibleRecord(rn);
+            lines.push_back(rowAsString(*a_, cols, recw_, a_->isDeleted()));
+            if(rn==cur_)
+                highlight=(int)lines.size()-1;
+        }
+
+        // Keep the shared work-area cursor aligned with the highlighted row;
+        // scanning the surrounding viewport above temporarily moves it.
+        a_->gotoRec(cur_);
+        a_->readCurrent();
+
         view_->set(std::move(lines));
-        // Optionally: highlight current line (header=0, first row=1). Not tracking row cursor here, leaving unhighlighted.
+        view_->setHighlight(highlight);
+        view_->ensureVisible(highlight);
     }
 
     DbArea* a_{nullptr};
@@ -574,5 +714,3 @@ void cmd_BROWSETV(DbArea& a, std::istringstream& iss){
 #endif
     cli_browse_hint();
 }
-
-

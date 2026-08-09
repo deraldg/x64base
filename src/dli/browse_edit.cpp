@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // dli/browse_edit.cpp - PATCHED
 #include "xbase.hpp"
 #include "dli/browse_edit.hpp"

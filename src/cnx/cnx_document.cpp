@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cnx
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "cnx/cnx_document.hpp"
 #include "cnx/cnx.hpp"
 

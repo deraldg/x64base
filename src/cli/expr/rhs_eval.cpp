@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================
 // DotTalk++ / xexpr RHS evaluation
 // File: src/cli/expr/rhs_eval.cpp
@@ -29,6 +38,7 @@
 #include "cli/expr/fn_date.hpp"
 #include "cli/expr/fn_string.hpp"
 #include "cli/expr/fn_numeric.hpp"
+#include "cli/expr/fn_custom.hpp"                     // RUNTIME_DEF_FAMILY runtime custom fns
 #include "cli/expr/value_eval.hpp"
 #include "xexpr/var_store.hpp"   // DotScript $name memory variables (AIF-038)
 #include "memo/memo_auto.hpp"
@@ -327,6 +337,17 @@ static std::vector<Tok> lex_value_expr(const std::string& src) {
             i = j;
             continue;
         }
+
+        // AIF-074 P1.6 (RT-02): xBase boolean literals .T. / .F. were
+        // unlexable -- a dot not followed by a digit ended the lex and the
+        // whole expression silently failed. Map them onto the T/F idents the
+        // evaluator already understands.
+        if (c == '.' && i + 2 < src.size() && src[i + 2] == '.') {
+            const char m = src[i + 1];
+            if (m == 'T' || m == 't') { out.push_back({Tok::Ident, "T"}); i += 3; continue; }
+            if (m == 'F' || m == 'f') { out.push_back({Tok::Ident, "F"}); i += 3; continue; }
+        }
+
         break;
     }
     out.push_back({Tok::End, ""});
@@ -461,6 +482,15 @@ static bool call_string_builtin(const std::string& name_upper, const std::vector
             if (argc < spec_min_args(s) || argc > spec_max_args(s)) return false;
             try { out = s.fn(argv); return true; } catch (...) { return false; }
         }
+    }
+    return false;
+}
+
+static bool call_custom_builtin(const std::string& name_upper, const std::vector<std::string>& argv, std::string& out) {
+    if (const auto* c = dottalk::expr::find_custom_fn(name_upper)) {
+        const int argc = static_cast<int>(argv.size());
+        if (argc < c->minArgs || argc > c->maxArgs) return false;
+        try { out = c->eval(argv); return true; } catch (...) { return false; }
     }
     return false;
 }
@@ -762,6 +792,11 @@ private:
                         if (parse_double_strict(result, d)) out = make_number(d);
                         else out = make_string(result);
                     }
+                    return true;
+                }
+
+                if (call_custom_builtin(fn,args,result)) {
+                    out = make_string(result);
                     return true;
                 }
 

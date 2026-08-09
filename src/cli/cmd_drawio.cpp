@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_drawio.cpp
 //
 // DRAWIO command
@@ -45,6 +54,7 @@
 //   SYSTEM diagrams come from SETPATH SYSTEM_DIAGRAMS / DIAGRAMS.
 //   USER diagrams come from SETPATH USER_DIAGRAMS.
 //   DRAWIO does not mutate table data or workspace state.
+//   External viewers are launched without blocking the DotTalk++ command loop.
 //
 // risk:
 //   launches_external_browser: yes
@@ -151,11 +161,31 @@ static bool launch_target(const std::string& target) {
         SW_SHOWNORMAL
     );
     return reinterpret_cast<intptr_t>(rc) > 32;
-#elif defined(__APPLE__)
-    std::string cmd = "open \"" + target + "\"";
-    return std::system(cmd.c_str()) == 0;
 #else
-    std::string cmd = "xdg-open \"" + target + "\" >/dev/null 2>&1";
+    const char* opener =
+#if defined(__APPLE__)
+        "open";
+#else
+        "xdg-open";
+#endif
+
+    const std::string probe = "command -v " + std::string(opener) + " >/dev/null 2>&1";
+    if (std::system(probe.c_str()) != 0) {
+        return false;
+    }
+
+    std::string quoted_target = "'";
+    for (const char c : target) {
+        if (c == '\'') {
+            quoted_target += "'\\''";
+        } else {
+            quoted_target += c;
+        }
+    }
+    quoted_target += "'";
+
+    const std::string cmd =
+        std::string(opener) + " " + quoted_target + " >/dev/null 2>&1 &";
     return std::system(cmd.c_str()) == 0;
 #endif
 }

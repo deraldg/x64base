@@ -1,0 +1,140 @@
+* ============================================================
+* DATE/TIME SANDBOX CURRENT-DATA SMOKE
+* ============================================================
+* Purpose:
+*   Verify date/time shell commands and CALC expression functions
+*   against the current sandbox STUDENTS table.
+*
+* Scope:
+*   Non-destructive.
+*   Uses sandbox workspace.
+*   Uses STUDENTS fields: DOB, ENROLL_D.
+*
+* Notes:
+*   Shell direct commands use command syntax:
+*       DATE
+*       CTOD DOB
+*       DATEADD DOB, 1
+*       DATEDIFF DOB, ENROLL_D
+*
+*   CALC uses expression/function syntax:
+*       CALC DATE()
+*       CALC CTOD(DOB)
+*       CALC DATEADD(DOB, 1)
+*       CALC DATEDIFF(DOB, ENROLL_D)
+* ============================================================
+
+ECHO ============================================================
+ECHO DATE/TIME SANDBOX CURRENT-DATA SMOKE
+ECHO ============================================================
+
+ECHO
+ECHO --- SET SANDBOX WORKSPACE AND SELECT STUDENTS ---
+DO SANDBOX
+WORKSPACE LOAD mcc_sandbox
+SELECT STUDENTS
+TOP
+TUPLE SID,LNAME,FNAME,DOB,ENROLL_D,GPA
+
+ECHO
+ECHO ============================================================
+ECHO SHELL DIRECT DATE/TIME COMMANDS
+ECHO ============================================================
+
+ECHO
+ECHO --- ZERO-ARG SHELL CLOCK CALLS ---
+DATE
+TODAY
+TIME
+NOW
+DATETIME
+
+ECHO
+ECHO --- CTOD SHELL CONSTANTS ---
+CTOD 2000-01-01
+CTOD "2000-01-01"
+CTOD 2000/01/01
+CTOD "2000/01/01"
+CTOD 20000101
+CTOD "20000101"
+
+ECHO
+ECHO --- CTOD SHELL FIELD VALUES ---
+CTOD DOB
+CTOD ENROLL_D
+
+ECHO
+ECHO --- DATEADD SHELL FIELD VALUES ---
+DATEADD DOB, 1
+DATEADD DOB, 30
+DATEADD DOB, -1
+DATEADD DOB, -30
+DATEADD ENROLL_D, 1
+DATEADD ENROLL_D, 30
+DATEADD ENROLL_D, -1
+DATEADD ENROLL_D, -30
+
+ECHO
+ECHO --- DATEDIFF SHELL FIELD VALUES ---
+DATEDIFF DOB, ENROLL_D
+DATEDIFF ENROLL_D, DOB
+
+ECHO
+ECHO ============================================================
+ECHO CALC DATE/TIME FUNCTIONS
+ECHO ============================================================
+
+ECHO
+ECHO --- ZERO-ARG CALC CLOCK CALLS ---
+CALC DATE()
+CALC TODAY()
+CALC TIME()
+CALC NOW()
+CALC DATETIME()
+
+ECHO
+ECHO --- CTOD CALC CONSTANTS ---
+CALC CTOD("2000-01-01")
+CALC CTOD("2000/01/01")
+CALC CTOD("20000101")
+CALC CTOD(20000101)
+
+ECHO
+ECHO --- CTOD CALC FIELD VALUES ---
+CALC CTOD(DOB)
+CALC CTOD(ENROLL_D)
+
+ECHO
+ECHO --- DATEADD CALC FIELD VALUES ---
+CALC DATEADD(DOB, 1)
+CALC DATEADD(DOB, 30)
+CALC DATEADD(DOB, -1)
+CALC DATEADD(DOB, -30)
+CALC DATEADD(ENROLL_D, 1)
+CALC DATEADD(ENROLL_D, 30)
+CALC DATEADD(ENROLL_D, -1)
+CALC DATEADD(ENROLL_D, -30)
+
+ECHO
+ECHO --- DATEADD CALC CURRENT DATE ---
+CALC DATEADD(DATE(), 1)
+CALC DATEADD(DATE(), 30)
+CALC DATEADD(DATE(), -1)
+CALC DATEADD(DATE(), -30)
+
+ECHO
+ECHO --- DATEDIFF CALC FIELD VALUES ---
+CALC DATEDIFF(DOB, ENROLL_D)
+CALC DATEDIFF(ENROLL_D, DOB)
+
+ECHO
+ECHO --- DATEDIFF CALC CURRENT DATE ---
+CALC DATEDIFF(ENROLL_D, DATE())
+CALC DATEDIFF(DATE(), ENROLL_D)
+CALC DATEDIFF(DOB, DATE())
+CALC DATEDIFF(DATE(), DOB)
+
+ECHO
+ECHO ============================================================
+ECHO DATE/TIME SANDBOX CURRENT-DATA SMOKE DONE
+ECHO ============================================================

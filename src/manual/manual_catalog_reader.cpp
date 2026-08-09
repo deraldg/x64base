@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: manual
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.contract v1
 // component: manual_catalog_reader
 // role: read accepted MAN* catalog headers and inventory rows for the MANUAL command

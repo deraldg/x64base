@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: pch
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #if defined(DOTTALK_WITH_TV) || defined(DOTTALK_TV_AVAILABLE)
 #pragma once
 

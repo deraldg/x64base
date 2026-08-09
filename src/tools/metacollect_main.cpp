@@ -1,3 +1,33 @@
+// @dottalk.file v1
+// subsystem: tools
+// layer: helper
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
+// @dottalk.external v1
+// owner: member.derald
+// tool: metacollect
+// external-kind: standalone-tool
+// os-sensitive: no (portable C++ file I/O; builds and runs on any supported toolchain)
+// target: the metacollect binary from src/tools/metacollect_main.cpp + src/meta/metacollect.cpp
+// invocation: run the built exe directly with CLI flags; no launcher and not via datarun.ps1
+// touches: reads the --source-root trees; writes metafacts to stdout and candidate CSVs to given paths
+// requires: an isolated Release build with -DDOTTALK_BUILD_METACOLLECT=ON
+// guard: read-only reflection; emits candidates only; never mutates metadata/help/runtime/source
+// egress: none (local file I/O only)
+// audit: candidate CSVs land under the run metacollect_phase/; a Gate 5 record binds them
+// reversible: yes (candidate-only; delete the emitted CSVs to undo)
+// notes:
+//   metacollect is a standalone external developer tool, not a registered command and not
+//   invoked by the engine. Outputs are review candidates; importing them into live metadata
+//   is a separate reviewed gate. Runbook:
+//   docs/maintenance/lanes/full_stack_documentation/METACOLLECT_RUNBOOK_V1.md.
+//   Concept: labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md.
+// @dottalk.end
+
 // ============================================================================
 // File: src/tools/metacollect_main.cpp
 // Purpose: Standalone developer entrypoint for read-only metadata extraction.

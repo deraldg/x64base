@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
 
@@ -612,7 +621,30 @@ bool OutputRouter::set_alternate_to(const std::string& path) {
     const std::string trimmed = trim_copy(path);
     if (trimmed.empty()) return false;
 
-    impl_->alt_file.open(trimmed, std::ios::out | std::ios::app | std::ios::binary);
+    // TRUNCATE, not append (changed 2026-07-31, AIF-081).
+    //
+    // This opened std::ios::app, so every SET ALTERNATE TO the same path
+    // accumulated. Measured consequence: one transcript held THREE runs from
+    // three different binaries, and a conclusion was drawn from the wrong one.
+    // It also made the reproduction published in
+    // AIF_081_OUTPUT_CAPTURE_RUNTIME_PROOF_V1_20260731.md non-repeatable --
+    // re-running it grew the file instead of reproducing the figures.
+    //
+    // Classic xBase and FoxPro spell this `SET ALTERNATE TO <file> [ADDITIVE]`:
+    // truncate by default, append only when asked. DotTalk++ had the default
+    // inverted against the lineage it preserves deliberately, and exposed no
+    // ADDITIVE token -- so append was not a capability anyone could request,
+    // only a surprise everyone received. Truncating removes the surprise
+    // without removing a reachable option.
+    //
+    // FOLLOW-UP, not done here: add the ADDITIVE keyword so append becomes
+    // requestable again. That needs the SET ALTERNATE parse in
+    // src/cli/cmd_set.cpp (the `opt == "ALTERNATE"` / `u == "TO"` branch), an
+    // extra parameter on this function, and the usage text in
+    // src/help/helpdata_messages.cpp (SET_ALTERNATE_TO_USAGE_TEXT) plus its
+    // localized rows. Landing the parser without the usage text would be
+    // contract drift.
+    impl_->alt_file.open(trimmed, std::ios::out | std::ios::trunc | std::ios::binary);
     if (!impl_->alt_file.is_open()) return false;
 
     impl_->alt_path = trimmed;

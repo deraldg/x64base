@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cdx
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cli/cdx/cdx_file.cpp
 #include "cdx/cdx.hpp"
 #include "xbase/ramfs.hpp"

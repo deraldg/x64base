@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cmd_bbox.cpp
 // DotTalk++ native Blackbox educational command surface.
 //
@@ -24,6 +33,14 @@
 // note: BBOX is read-only and educational.
 // note: BBOX explains SelfDoc maintenance lanes as data -> process -> information systems.
 // note: BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.
+//
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-BBOX
+// home: src/cli
+// canonical-path: src/cli/cmd_bbox.cpp
+// project: dottalkpp
+// role: command-implementation
+// @dottalk.end
 
 #include "xbase.hpp"
 #include "cli/command_output.hpp"

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 /**
  * @file include/cli/order_nav.hpp
@@ -622,9 +631,9 @@ static inline bool cdx_endpoint_from_lmdb(const std::string& cdx_path,
 struct CnxCache {
     xbase::DbArea* area{nullptr};
     std::string tag;
-    int32_t recCount{0};
-    std::vector<uint32_t> recnos;
-    std::unordered_map<uint32_t, int32_t> pos;
+    std::int64_t recCount{0};                              // RECNO64 O2
+    std::vector<std::uint64_t> recnos;                     // RECNO64 O2: 64-bit ordered recnos
+    std::unordered_map<std::uint64_t, std::int64_t> pos;   // recno -> ordinal position
 };
 
 static inline CnxCache& cnx_cache_singleton() {
@@ -644,7 +653,7 @@ static inline void cnx_cache_invalidate() {
 static inline bool cnx_cache_build(CnxCache& cache, xbase::DbArea& area, const std::string& tagName)
 {
     if (!area.isOpen()) return false;
-    const int32_t N = area.recCount();
+    const std::int64_t N = static_cast<std::int64_t>(area.recCount64());
     if (cache.area == &area &&
         cache.tag == tagName &&
         cache.recCount == N &&
@@ -658,11 +667,15 @@ static inline bool cnx_cache_build(CnxCache& cache, xbase::DbArea& area, const s
     cache.recnos.clear();
     cache.pos.clear();
 
-    if (!build_cnx_recnos_from_db(area, tagName, cache.recnos))
+    // build_cnx_recnos_from_db stays 32-bit (CNX is a V32 format, and the builder is
+    // shared with db_tuple_stream). Widen its recnos up into the 64-bit cache here.
+    std::vector<uint32_t> tmp32;
+    if (!build_cnx_recnos_from_db(area, tagName, tmp32))
         return false;
+    cache.recnos.assign(tmp32.begin(), tmp32.end());
 
     cache.pos.reserve(cache.recnos.size());
-    for (int32_t i = 0; i < static_cast<int32_t>(cache.recnos.size()); ++i) {
+    for (std::int64_t i = 0; i < static_cast<std::int64_t>(cache.recnos.size()); ++i) {
         cache.pos[cache.recnos[static_cast<size_t>(i)]] = i;
     }
     return !cache.recnos.empty();
@@ -678,7 +691,7 @@ static inline bool cdx_cache_build(CnxCache& cache,
                                    const std::string& cdxPath)
 {
     if (!area.isOpen()) return false;
-    const int32_t N = area.recCount();
+    const std::int64_t N = static_cast<std::int64_t>(area.recCount64());
     if (cache.area == &area &&
         cache.tag == tagName &&
         cache.recCount == N &&
@@ -704,11 +717,11 @@ static inline bool cdx_cache_build(CnxCache& cache,
     cache.recnos.reserve(tmp.size());
     for (std::uint64_t rn : tmp) {
         if (rn >= 1 && rn <= static_cast<std::uint64_t>(N))
-            cache.recnos.push_back(static_cast<uint32_t>(rn));
+            cache.recnos.push_back(rn);
     }
 
     cache.pos.reserve(cache.recnos.size());
-    for (int32_t i = 0; i < static_cast<int32_t>(cache.recnos.size()); ++i) {
+    for (std::int64_t i = 0; i < static_cast<std::int64_t>(cache.recnos.size()); ++i) {
         cache.pos[cache.recnos[static_cast<size_t>(i)]] = i;
     }
     return !cache.recnos.empty();
@@ -716,7 +729,7 @@ static inline bool cdx_cache_build(CnxCache& cache,
 
 } // namespace order_nav_detail
 
-static inline bool order_first_recno(xbase::DbArea& area, int32_t& out_recno) {
+static inline bool order_first_recno(xbase::DbArea& area, std::int64_t& out_recno) {
     out_recno = 0;
     if (!area.isOpen()) return false;
     if (!orderstate::hasOrder(area)) return false;
@@ -732,20 +745,20 @@ static inline bool order_first_recno(xbase::DbArea& area, int32_t& out_recno) {
         const std::string tagName = orderstate::activeTag(area);
         if (tagName.empty()) return false;
 
-        int32_t rn = 0;
+        std::int64_t rn = 0;
         cli::order_stream_display(area, /*reverse=*/false,
             [&](std::uint64_t recno) -> bool {
-                rn = static_cast<int32_t>(recno);
+                rn = static_cast<std::int64_t>(recno);
                 return false; // stop at the first record
             });
-        if (rn >= 1 && rn <= area.recCount()) { out_recno = rn; return true; }
+        if (rn >= 1 && rn <= static_cast<std::int64_t>(area.recCount64())) { out_recno = rn; return true; }
 
         const bool asc = orderstate::isAscending(area);
         auto& cache = order_nav_detail::cnx_cache_singleton();
         if (!order_nav_detail::cnx_cache_build(cache, area, tagName)) return false;
         if (cache.recnos.empty()) return false;
-        out_recno = asc ? static_cast<int32_t>(cache.recnos.front())
-                        : static_cast<int32_t>(cache.recnos.back());
+        out_recno = asc ? static_cast<std::int64_t>(cache.recnos.front())
+                        : static_cast<std::int64_t>(cache.recnos.back());
         return (out_recno != 0);
     }
     case xindex::fmt::IndexFormat::CNX: {
@@ -755,8 +768,8 @@ static inline bool order_first_recno(xbase::DbArea& area, int32_t& out_recno) {
         if (!order_nav_detail::cnx_cache_build(cache, area, tagName)) return false;
         if (cache.recnos.empty()) return false;
         const bool asc = orderstate::isAscending(area);
-        out_recno = asc ? static_cast<int32_t>(cache.recnos.front())
-                        : static_cast<int32_t>(cache.recnos.back());
+        out_recno = asc ? static_cast<std::int64_t>(cache.recnos.front())
+                        : static_cast<std::int64_t>(cache.recnos.back());
         return (out_recno != 0);
     }
     case xindex::fmt::IndexFormat::INX: {
@@ -781,7 +794,7 @@ static inline bool order_first_recno(xbase::DbArea& area, int32_t& out_recno) {
     }
 }
 
-static inline bool order_last_recno(xbase::DbArea& area, int32_t& out_recno) {
+static inline bool order_last_recno(xbase::DbArea& area, std::int64_t& out_recno) {
     out_recno = 0;
     if (!area.isOpen()) return false;
     if (!orderstate::hasOrder(area)) return false;
@@ -795,20 +808,20 @@ static inline bool order_last_recno(xbase::DbArea& area, int32_t& out_recno) {
         const std::string tagName = orderstate::activeTag(area);
         if (tagName.empty()) return false;
 
-        int32_t rn = 0;
+        std::int64_t rn = 0;
         cli::order_stream_display(area, /*reverse=*/true,
             [&](std::uint64_t recno) -> bool {
-                rn = static_cast<int32_t>(recno);
+                rn = static_cast<std::int64_t>(recno);
                 return false; // stop at the last record
             });
-        if (rn >= 1 && rn <= area.recCount()) { out_recno = rn; return true; }
+        if (rn >= 1 && rn <= static_cast<std::int64_t>(area.recCount64())) { out_recno = rn; return true; }
 
         const bool asc = orderstate::isAscending(area);
         auto& cache = order_nav_detail::cnx_cache_singleton();
         if (!order_nav_detail::cnx_cache_build(cache, area, tagName)) return false;
         if (cache.recnos.empty()) return false;
-        out_recno = asc ? static_cast<int32_t>(cache.recnos.back())
-                        : static_cast<int32_t>(cache.recnos.front());
+        out_recno = asc ? static_cast<std::int64_t>(cache.recnos.back())
+                        : static_cast<std::int64_t>(cache.recnos.front());
         return (out_recno != 0);
     }
     case xindex::fmt::IndexFormat::CNX: {
@@ -818,8 +831,8 @@ static inline bool order_last_recno(xbase::DbArea& area, int32_t& out_recno) {
         if (!order_nav_detail::cnx_cache_build(cache, area, tagName)) return false;
         if (cache.recnos.empty()) return false;
         const bool asc = orderstate::isAscending(area);
-        out_recno = asc ? static_cast<int32_t>(cache.recnos.back())
-                        : static_cast<int32_t>(cache.recnos.front());
+        out_recno = asc ? static_cast<std::int64_t>(cache.recnos.back())
+                        : static_cast<std::int64_t>(cache.recnos.front());
         return (out_recno != 0);
     }
     case xindex::fmt::IndexFormat::INX: {
@@ -846,9 +859,9 @@ static inline bool order_last_recno(xbase::DbArea& area, int32_t& out_recno) {
 
 static inline bool order_top(xbase::DbArea& area) {
     if (!area.isOpen()) return false;
-    int32_t rn{};
-    if (order_first_recno(area, rn) && rn >= 1 && rn <= area.recCount()) {
-        if (!area.gotoRec(rn)) return false;
+    std::int64_t rn{};
+    if (order_first_recno(area, rn) && rn >= 1 && rn <= static_cast<std::int64_t>(area.recCount64())) {
+        if (!area.gotoRec64(static_cast<std::uint64_t>(rn))) return false;
         return area.readCurrent();
     }
     if (!area.top()) return false;
@@ -857,9 +870,9 @@ static inline bool order_top(xbase::DbArea& area) {
 
 static inline bool order_bottom(xbase::DbArea& area) {
     if (!area.isOpen()) return false;
-    int32_t rn{};
-    if (order_last_recno(area, rn) && rn >= 1 && rn <= area.recCount()) {
-        if (!area.gotoRec(rn)) return false;
+    std::int64_t rn{};
+    if (order_last_recno(area, rn) && rn >= 1 && rn <= static_cast<std::int64_t>(area.recCount64())) {
+        if (!area.gotoRec64(static_cast<std::uint64_t>(rn))) return false;
         return area.readCurrent();
     }
     if (!area.bottom()) return false;
@@ -891,13 +904,15 @@ static inline bool order_skip(xbase::DbArea& area, int delta) {
         // map, no DBF scan; O(log n). This is what makes the FIRST ordered SKIP
         // instant.
         {
-            int32_t rn = 0;
+            std::int64_t rn = 0;
             const cli::OrderStep st = cli::order_step_cdx(area, delta_eff, rn);
             if (st == cli::OrderStep::Moved) {
-                if (rn < 1 || rn > area.recCount()) return false;
-                if (!area.gotoRec(rn)) return false;
+                if (rn < 1 || rn > static_cast<std::int64_t>(area.recCount64())) return false;
+                if (!area.gotoRec64(static_cast<std::uint64_t>(rn))) return false;
                 return area.readCurrent();
             }
+            // TODO(RECNO64 M5): the position-map fallback cache below is still 32-bit
+            // (build_cdx_recnos_from_lmdb / CnxCache.recnos / uint32 rn); widen with O2.
             if (st == cli::OrderStep::Boundary) {
                 return false; // at an order endpoint; no movement (do NOT fall back)
             }
@@ -914,22 +929,22 @@ static inline bool order_skip(xbase::DbArea& area, int delta) {
         }
         if (cache.recnos.empty()) return false;
 
-        const int32_t cur = area.recno();
-        if (cur < 1 || cur > area.recCount()) return false;
+        const std::int64_t cur = static_cast<std::int64_t>(area.recno64());
+        if (cur < 1 || cur > static_cast<std::int64_t>(area.recCount64())) return false;
 
-        auto it = cache.pos.find(static_cast<uint32_t>(cur));
+        auto it = cache.pos.find(static_cast<std::uint64_t>(cur));
         if (it == cache.pos.end()) return false;
 
         // Partial-to-boundary (matches the cursor step and xBase SKIP-to-EOF).
-        int32_t next = it->second + delta_eff;
-        const int32_t last = static_cast<int32_t>(cache.recnos.size()) - 1;
+        std::int64_t next = it->second + delta_eff;
+        const std::int64_t last = static_cast<std::int64_t>(cache.recnos.size()) - 1;
         if (next < 0) next = 0;
         if (next > last) next = last;
         if (next == it->second) return false; // already at the boundary; no move
 
-        const int32_t rn = static_cast<int32_t>(cache.recnos[static_cast<size_t>(next)]);
-        if (rn < 1 || rn > area.recCount()) return false;
-        if (!area.gotoRec(rn)) return false;
+        const std::int64_t rn = static_cast<std::int64_t>(cache.recnos[static_cast<size_t>(next)]);
+        if (rn < 1 || rn > static_cast<std::int64_t>(area.recCount64())) return false;
+        if (!area.gotoRec64(static_cast<std::uint64_t>(rn))) return false;
         return area.readCurrent();
     }
 
@@ -943,22 +958,22 @@ static inline bool order_skip(xbase::DbArea& area, int delta) {
         const bool asc = orderstate::isAscending(area);
         const int delta_eff = asc ? delta : -delta;
 
-        const int32_t cur = area.recno();
-        if (cur < 1 || cur > area.recCount()) return false;
+        const std::int64_t cur = static_cast<std::int64_t>(area.recno64());
+        if (cur < 1 || cur > static_cast<std::int64_t>(area.recCount64())) return false;
 
-        auto it = cache.pos.find(static_cast<uint32_t>(cur));
+        auto it = cache.pos.find(static_cast<std::uint64_t>(cur));
         if (it == cache.pos.end()) return false;
 
         // Partial-to-boundary (matches the cursor step and xBase SKIP-to-EOF).
-        int32_t next = it->second + delta_eff;
-        const int32_t last = static_cast<int32_t>(cache.recnos.size()) - 1;
+        std::int64_t next = it->second + delta_eff;
+        const std::int64_t last = static_cast<std::int64_t>(cache.recnos.size()) - 1;
         if (next < 0) next = 0;
         if (next > last) next = last;
         if (next == it->second) return false; // already at the boundary; no move
 
-        const int32_t rn = static_cast<int32_t>(cache.recnos[static_cast<size_t>(next)]);
-        if (rn < 1 || rn > area.recCount()) return false;
-        if (!area.gotoRec(rn)) return false;
+        const std::int64_t rn = static_cast<std::int64_t>(cache.recnos[static_cast<size_t>(next)]);
+        if (rn < 1 || rn > static_cast<std::int64_t>(area.recCount64())) return false;
+        if (!area.gotoRec64(static_cast<std::uint64_t>(rn))) return false;
         return area.readCurrent();
     }
 

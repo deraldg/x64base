@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: memo
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // memostore.hpp
 // DTX-backed memo store for DotTalk++
 //

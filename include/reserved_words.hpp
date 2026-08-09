@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // reserved_words.hpp
 // Modern C++ representation of DotTalk++ reserved keywords (2026 dialect)
 // For lexer/parser, syntax highlighting, autocompletion, etc.

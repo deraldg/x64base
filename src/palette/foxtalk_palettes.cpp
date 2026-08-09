@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: palette
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/cli/foxtalk_palettes.cpp
 // Purpose: Stub TU. Palettes are embedded in cmd_foxtalk.cpp.

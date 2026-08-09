@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xbase
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ==============================
 // File: src/xbase/dbarea.cpp
 // Core DbArea implementation.
@@ -15,6 +24,7 @@
 
 #include "xbase.hpp"
 #include "xbase/index_hooks.hpp"
+#include "xbase/trigger_hooks.hpp"
 #include "memo/memo_manager.hpp"
 
 #include "xbase_locks.hpp"
@@ -269,18 +279,43 @@ bool DbArea::replaceFieldStored(int field1, const std::string& stored_value, std
         return false;
     }
 
+    // Index maintenance runs after the physical write succeeded. A failure here
+    // does NOT undo the record write, so this still returns true: the caller's
+    // "did the write land" question is answered yes.
+    //
+    // What it must not do is swallow the failure. The apply_replace() result was
+    // previously discarded, so an index that silently stopped tracking this
+    // record produced no message, no stale mark, and no return-code difference --
+    // the failure was invisible to every caller. Report it through `err` and let
+    // the caller decide what to do (warn, mark the field stale, both).
+    //
+    // Contract for callers: a `true` return with a NON-EMPTY `err` means
+    // "record written, index not maintained" -- treat the index as stale for the
+    // affected field. Stale-index reporting itself belongs above DbArea.
+    bool index_ok = true;
     try {
         const auto after_snap = index_hooks::capture(*this);
-        (void)index_hooks::apply_replace(*this, before_snap, after_snap, rn);
+        if (!index_hooks::apply_replace(*this, before_snap, after_snap, rn)) {
+            index_ok = false;
+            if (err && err->empty()) *err = "index update failed";
+        }
     }
     catch (const std::exception& ex) {
+        index_ok = false;
         if (err && err->empty()) *err = std::string("index update failed (") + ex.what() + ")";
     }
     catch (...) {
+        index_ok = false;
         if (err && err->empty()) *err = "index update failed";
     }
 
-    // Stale-index reporting belongs above DbArea, not here.
+    // AIF-087 Phase-1 (B1): data-trigger fire after successful index apply_replace.
+    // Not cursor_hook. No fire when index maintenance failed. Buffered path never
+    // reaches this function.
+    if (index_ok) {
+        trigger_hooks::fire_field_replace(*this, field1, rn);
+    }
+
     return true;
 }
 

@@ -1,0 +1,10 @@
+SQLITE DB _drops/people.sqlite
+SQLITE EXEC DROP TABLE IF EXISTS people;
+SQLITE EXEC CREATE TABLE people (lname TEXT, fname TEXT, gpa REAL);
+SQLITE EXEC INSERT INTO people(lname,fname,gpa) VALUES ('Omega','Sophia',3.99),('Ramirez','Skyler',2.58);
+
+SQLITE QUERY "SELECT lname,fname,gpa FROM people ORDER BY lname" INTO DBF _drops/people_sorted.dbf
+
+USE _drops/people_sorted.dbf
+LIST 5
+ECHO OK: SQLite→DBF complete

@@ -1,0 +1,111 @@
+* AUTODBF-only shakedown v2
+* Date: 2026-05-12
+* Use this after Part A CREATE guards have already passed.
+* Fixture CSV path prefix: autodbf_fixtures
+
+SET ECHO ON
+SET PAGING OFF
+DOTSCRIPT x64
+WORKSPACE CLOSE
+SETPATH
+
+ECHO ============================================================
+ECHO AUTODBF-ONLY SHAKEDOWN V2 START
+ECHO ============================================================
+AUTODBF USAGE
+
+autodbf
+
+ECHO C - HEADER
+ERASE adbf_stuhdr CONFIRM
+AUTODBF X64 adbf_stuhdr FROM autodbf_fixtures/autodbf_students.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO D - NOHEADER
+ERASE adbf_nohead CONFIRM
+AUTODBF X64 adbf_nohead FROM autodbf_fixtures/autodbf_noheader.csv NOHEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO E1 - AUTO HEADER
+ERASE adbf_auto_h CONFIRM
+AUTODBF X64 adbf_auto_h FROM autodbf_fixtures/autodbf_students.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO E2 - AUTO NOHEADER
+ERASE adbf_auto_n CONFIRM
+AUTODBF X64 adbf_auto_n FROM autodbf_fixtures/autodbf_noheader.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO E3 - AUTO AMBIGUOUS
+ERASE adbf_ambig CONFIRM
+AUTODBF X64 adbf_ambig FROM autodbf_fixtures/autodbf_ambiguous.csv AUTO OVERWRITE
+STRUCT
+LIST
+
+ECHO F - TEXTONLY
+ERASE adbf_txtonly CONFIRM
+AUTODBF X64 adbf_txtonly FROM autodbf_fixtures/autodbf_textonly.csv HEADER TEXTONLY OVERWRITE
+STRUCT
+LIST
+
+ECHO G - INFER
+ERASE adbf_infer CONFIRM
+AUTODBF X64 adbf_infer FROM autodbf_fixtures/autodbf_infer.csv HEADER INFER OVERWRITE
+STRUCT
+LIST
+
+ECHO H - FIELD NAME MANGLE
+ERASE adbf_names CONFIRM
+AUTODBF X64 adbf_names FROM autodbf_fixtures/autodbf_names.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO I - OVERWRITE GUARD
+ERASE adbf_owguard CONFIRM
+AUTODBF X64 adbf_owguard FROM autodbf_fixtures/autodbf_students.csv HEADER
+STRUCT
+LIST
+ECHO EXPECTED FAIL: existing DBF without OVERWRITE
+AUTODBF X64 adbf_owguard FROM autodbf_fixtures/autodbf_students.csv HEADER
+ECHO explicit overwrite
+AUTODBF X64 adbf_owguard FROM autodbf_fixtures/autodbf_students.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO J - EXPECTED FAIL: LONG TEXT
+ERASE adbf_longtxt CONFIRM
+AUTODBF X64 adbf_longtxt FROM autodbf_fixtures/autodbf_longtext.csv HEADER
+
+ECHO K - EXPECTED FAIL: RAGGED ROWS
+ERASE adbf_ragged CONFIRM
+AUTODBF X64 adbf_ragged FROM autodbf_fixtures/autodbf_ragged.csv HEADER
+
+ECHO L - BLANKS
+ERASE adbf_blanks CONFIRM
+AUTODBF X64 adbf_blanks FROM autodbf_fixtures/autodbf_blanks.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO M - QUOTED CSV
+ERASE adbf_quotes CONFIRM
+AUTODBF X64 adbf_quotes FROM autodbf_fixtures/autodbf_quotes.csv HEADER OVERWRITE
+STRUCT
+LIST
+
+ECHO O - OLD IMPORT SURFACE
+ERASE adbf_stillok CONFIRM
+CREATE X64 adbf_stillok (ID N(6,0), NAME C(20))
+APPEND
+REPLACE ID WITH 1
+REPLACE NAME WITH "OK"
+IMPORT autodbf_fixtures/still_ok_import.csv
+LIST
+
+WORKSPACE
+WORKSPACE CLOSE
+WORKSPACE
+ECHO AUTODBF-ONLY SHAKEDOWN V2 END

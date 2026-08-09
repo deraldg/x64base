@@ -1,9 +1,49 @@
+// @dottalk.file v1
+// subsystem: reference
+// layer: implementation
+// owns:
+// project: project.x64base.runtime
+// lane: AIF-078
+// owner: member.derald
+// status: experimental
+
 #include "reference/data_address.hpp"
 
 #include <sstream>
 #include <utility>
 
 namespace dottalk::reference {
+
+namespace {
+
+// An empty path and a path of unspecified identities both mean "the current
+// workspace", so they must compare equal -- otherwise a default-constructed
+// DataAddress would stop matching one built with a default WorkspaceIdentity,
+// which is a behavior change this widening is explicitly not allowed to make.
+//
+// Written as a two-cursor scan rather than by normalizing into temporaries
+// because same_field_identity is noexcept and must not allocate.
+[[nodiscard]] bool same_workspace_path(const WorkspacePath& a,
+                                       const WorkspacePath& b) noexcept {
+    std::size_t i = 0;
+    std::size_t j = 0;
+    for (;;) {
+        while (i < a.size() && a[i].unspecified()) ++i;
+        while (j < b.size() && b[j].unspecified()) ++j;
+        if (i == a.size() || j == b.size()) {
+            return i == a.size() && j == b.size();
+        }
+        if (!(a[i] == b[j])) return false;
+        ++i;
+        ++j;
+    }
+}
+
+} // namespace
+
+bool WorkspaceIdentity::unspecified() const noexcept {
+    return logical_name.empty() && profile_path.empty() && session_id == 0;
+}
 
 bool WorkspaceIdentity::operator==(const WorkspaceIdentity& other) const noexcept {
     return logical_name == other.logical_name &&
@@ -89,15 +129,44 @@ DataAddress::DataAddress(WorkspaceIdentity workspace,
                          RecordSelector record,
                          FieldIdentity field,
                          std::vector<RelationStep> relations)
-    : workspace_(std::move(workspace)),
+    : DataAddress(WorkspacePath{std::move(workspace)},
+                  std::move(area),
+                  std::move(table),
+                  std::move(record),
+                  std::move(field),
+                  std::move(relations)) {}
+
+DataAddress::DataAddress(WorkspacePath workspace_path,
+                         DbAreaIdentity area,
+                         TableIdentity table,
+                         RecordSelector record,
+                         FieldIdentity field,
+                         std::vector<RelationStep> relations)
+    : workspace_path_(std::move(workspace_path)),
       area_(std::move(area)),
       table_(std::move(table)),
       record_(std::move(record)),
       field_(std::move(field)),
       relations_(std::move(relations)) {}
 
+const WorkspaceIdentity& DataAddress::workspace() const noexcept {
+    static const WorkspaceIdentity unspecified{};
+    for (auto it = workspace_path_.rbegin(); it != workspace_path_.rend(); ++it) {
+        if (!it->unspecified()) return *it;
+    }
+    return unspecified;
+}
+
+std::size_t DataAddress::workspace_depth() const noexcept {
+    std::size_t n = 0;
+    for (const auto& ws : workspace_path_) {
+        if (!ws.unspecified()) ++n;
+    }
+    return n;
+}
+
 bool DataAddress::same_field_identity(const DataAddress& other) const noexcept {
-    return workspace_ == other.workspace_ &&
+    return same_workspace_path(workspace_path_, other.workspace_path_) &&
            area_ == other.area_ &&
            table_ == other.table_ &&
            field_ == other.field_;
@@ -111,8 +180,17 @@ bool DataAddress::same_cell_identity(const DataAddress& other) const noexcept {
 std::string DataAddress::diagnostic_text() const {
     std::ostringstream out;
 
-    out << (workspace_.logical_name.empty() ? "CURRENT_WORKSPACE"
-                                            : workspace_.logical_name);
+    // Outermost first, dot-joined. At depth <= 1 this is byte-identical to the
+    // pre-AIF-078 rendering, which is the falsifiable no-regression condition
+    // for this widening.
+    bool wrote_workspace = false;
+    for (const auto& ws : workspace_path_) {
+        if (ws.logical_name.empty()) continue;
+        if (wrote_workspace) out << '.';
+        out << ws.logical_name;
+        wrote_workspace = true;
+    }
+    if (!wrote_workspace) out << "CURRENT_WORKSPACE";
 
     out << ".#";
     if (area_.slot >= 0) out << area_.slot;

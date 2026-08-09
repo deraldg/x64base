@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/append_support.cpp
 //
 // Shared APPEND / APPEND BLANK implementation.
@@ -252,8 +261,8 @@ namespace
                         std::cout << "[APPEND TRACE] index backend="
                                   << (im.hasBackend() ? "yes" : "no")
                                   << " type=" << (im.isCdx() ? "CDX" : (im.isCnx() ? "CNX" : "OTHER"))
-                                  << " container="" << im.containerPath() << """
-                                  << " activeTag="" << im.activeTag() << ""\n";
+                                  << " container=\"" << im.containerPath() << "\""
+                                  << " activeTag=\"" << im.activeTag() << "\"\n";
                     }
 
                     // Snapshot the completed current row across all relevant tags,

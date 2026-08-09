@@ -1,0 +1,212 @@
+# SET INDEXTXN — COMMIT-path transactional index maintenance (M1)
+# Re-grounded as an ADDITIVE diff on top of baseline d8123d2a4 (merges over the
+# @dottalk.usage contract fix; the header is NOT touched). Supersedes the stale
+# full-file draft candidate_source/cmd_commit.cpp.txt — DO NOT apply that.
+#
+# --- Source Mutation Rule preflight (AI_PORTAL.md) ---
+# Target source files:  src/cli/cmd_commit.cpp  (companions: include/cli/settings.hpp, src/cli/cmd_set.cpp)
+# Owning subsystem:      CLI COMMIT / table-buffer + xindex index maintenance
+# Baseline commit:       d8123d2a4  (homegrown-cnx-20251112-branch, dev-only, unpushed)
+# Owning lifecycle/lane: SET INDEXTXN transactional index maintenance — candidate (propose AIF-043,
+#                        x-link AIF-023/AIF-017); feeds AIF-041 M1 (RECNO64/WAL coverage) & M3 (refactor).
+# Truth/proof/risk/gate: source-evidenced vs d8123d2a4; NOT built. Risk: COMMIT path — but gated by
+#                        SET INDEXTXN (default OFF) so it is INERT until turned on. Next gate: build-green +
+#                        REGRESSION RUN INDEX_TXN (SEEK-based proof).
+# Contracts read:        @dottalk.usage COMMIT header (contract-fixed at d8123d2a4 — left untouched).
+# Constraints/conflicts: DEPENDS on cli::Settings::indexTxnOn() (settings.hpp) + a `SET INDEXTXN` branch
+#                        (cmd_set.cpp — itself contract-fixed at d8123d2a4; re-ground that companion before use).
+#                        Reuses the installed xbase::index_hooks seam (attach.cpp) — no engine change.
+# Expected behavior:     SET INDEXTXN ON + live CDX/LMDB order => COMMIT maintains the index in one LMDB
+#                        bulk txn (delete-old/insert-new per record) + invalidates nav caches. Default OFF => unchanged.
+# Proof/test plan:       build both toolchains; SET INDEXTXN ON; buffered REPLACE key + COMMIT; SEEK new hits /
+#                        SEEK old misses with no BUILDLMDB; ordered BOTTOM lands on sentinel; DELETE erases key.
+#
+# NOTE: index_hooks capture/apply_replace is the same seam replaceFieldStored uses; with bulk_txn_ open the
+#       edits join it (routed via IndexManager::apply_replace_snapshot -> CdxBackend). Partial-commit policy =
+#       commit-what-applied (see M1 patch doc §5). Deletes use an empty after-snapshot (erase).
+--- a/src/cli/cmd_commit.cpp
++++ b/src/cli/cmd_commit.cpp
+@@ -93,6 +93,12 @@
+ #if DOTTALK_HAS_XINDEX
+ // Legacy index rebuild commands. CDX/LMDB is not rebuilt by COMMIT.
+ void cmd_REINDEX(xbase::DbArea& A, std::istringstream& args);
+ void cmd_REBUILD(xbase::DbArea& A, std::istringstream& args);
++
++// SET INDEXTXN (default OFF): transactional in-COMMIT index maintenance.
++#include "xindex/attach.hpp"          // xindex::ensure_manager
++#include "xindex/index_manager.hpp"   // IndexManager::{isCdx,beginBulkWrite,commitBulkWrite,abortBulkWrite}
++#include "xbase/index_hooks.hpp"      // xbase::index_hooks::{capture,apply_replace}
++#include "cli/order_hooks.hpp"        // orderhooks::reconcile_after_mutation
+ #endif
+
+ extern "C" xbase::XBaseEngine* shell_engine();
+@@ -205,7 +211,8 @@
+-static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk) {
++static bool apply_one_recno(xbase::DbArea& A, const Agg& agg, bool talk,
++                            bool maintain_index) {
+     const std::uint64_t rn = agg.recno;
+     if (rn == 0 || rn > A.recCount64()) return false;
+
+     if (!A.gotoRec64(rn)) return false;
+     if (!A.readCurrent()) return false;
+
+     // Lock at commit time (per-record). If you later add table locks, this is where it goes.
+     std::string lock_err;
+     if (!xbase::locks::try_lock_record(A, rn, &lock_err)) {
+         if (talk) cli::cmdout::print_prefixed_message(
+             "COMMIT", dottalk::helpdata::MessageId::CommitRecLockedText,
+             {{"rn", std::to_string(rn)}, {"detail", lock_err}});
+         return false;
+     }
+
++#if DOTTALK_HAS_XINDEX
++    // Pre-image key snapshot (all field-backed tags) BEFORE mutating field bytes.
++    // Routes onto the open bulk txn via the installed index_hooks seam.
++    xbase::index_hooks::Snapshot before_snap;
++    if (maintain_index) before_snap = xbase::index_hooks::capture(A);
++#else
++    (void)maintain_index;
++#endif
++
+     bool ok = true;
+
+     if (agg.flags & dottalk::table::CHANGE_UPDATE) {
+         for (const auto& kv : agg.field_values) {
+             const int f1 = kv.first;
+             const std::string& v = kv.second;
+             if (!A.set(f1, v)) {
+                 ok = false;
+                 break;
+             }
+         }
+         if (ok) ok = A.writeCurrent();
+     }
+
+     if (ok && (agg.flags & dottalk::table::CHANGE_DELETE)) {
+         ok = A.deleteCurrent();
+     }
+
++#if DOTTALK_HAS_XINDEX
++    if (maintain_index && ok) {
++        // DELETE => empty after-snapshot (erase keys; CDX excludes deleted rows).
++        // UPDATE => post-image after-snapshot (delete old / insert new per tag).
++        xbase::index_hooks::Snapshot after_snap;
++        if (!(agg.flags & dottalk::table::CHANGE_DELETE)) {
++            (void)A.readCurrent();
++            after_snap = xbase::index_hooks::capture(A);
++        }
++        if (!xbase::index_hooks::apply_replace(A, before_snap, after_snap, rn)) {
++            if (talk) cli::cmdout::print_prefixed_message(
++                "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
++        }
++    }
++#endif
++
+     xbase::locks::unlock_record(A, rn);
+     return ok;
+ }
+@@ -333,6 +360,24 @@
+     if (!dottalk::table::journal_begin_commit(area0)) {
+         dottalk::table::set_dirty(area0, true);
+         cli::cmdout::print_prefixed_message(
+             "COMMIT", dottalk::helpdata::MessageId::CommitJournalFinalizeFailedText);
+         return {CommitStatus::FinalizeFailure, 0, 1};
+     }
+
++    // SET INDEXTXN gate: maintain the index in-COMMIT only when the flag is ON
++    // and the live backend is CDX/LMDB. Default OFF reproduces prior behavior.
++    bool maintain_index = false;
++#if DOTTALK_HAS_XINDEX
++    xindex::IndexManager* im = nullptr;
++    if (cli::Settings::indexTxnOn()) {
++        im = &xindex::ensure_manager(A);
++        maintain_index = im->isCdx();
++    }
++    if (maintain_index) {
++        std::string berr;
++        if (!im->beginBulkWrite(&berr)) {
++            dottalk::table::set_dirty(area0, true);
++            cli::cmdout::print_prefixed_message(
++                "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
++            return {CommitStatus::FinalizeFailure, 0, 1};
++        }
++    }
++#endif
++
+     // Iterate unique recnos in the multimap.
+     int applied_ok = 0;
+     int applied_fail = 0;
+@@ -343,7 +388,7 @@
+         const Agg agg = aggregate_for_recno(tb, recno);
+-        const bool ok = apply_one_recno(A, agg, talk);
++        const bool ok = apply_one_recno(A, agg, talk, maintain_index);
+
+         if (ok) {
+             ++applied_ok;
+             it = tb.changes.erase(range.first, range.second);
+@@ -356,6 +401,13 @@
+     if (applied_fail != 0) {
++#if DOTTALK_HAS_XINDEX
++        // Partial: applied records are durable + de-buffered; persist their index
++        // edits to stay consistent -> commit the bulk. On failure, mark stale.
++        if (maintain_index) {
++            std::string cerr;
++            if (!im->commitBulkWrite(&cerr)) dottalk::table::set_stale(area0, true);
++        }
++#endif
+         // Keep dirty/stale; buffer still contains remaining failed recnos.
+         dottalk::table::set_dirty(area0, true);
+@@ -371,6 +423,9 @@
+     if (auto* mm = A.memoManagerPtr()) {
+         std::string memo_err;
+         if (!mm->flush(&memo_err)) {
++#if DOTTALK_HAS_XINDEX
++            if (maintain_index) { im->abortBulkWrite(); dottalk::table::set_stale(area0, true); }
++#endif
+             tb.changes = pending_before;
+             dottalk::table::set_dirty(area0, true);
+@@ -386,6 +441,9 @@
+     dottalk::table::set_dirty(area0, false);
+     if (!auto_reindex_if_needed(A, area0, talk, interactive_rebuild)) {
++#if DOTTALK_HAS_XINDEX
++        if (maintain_index) { im->abortBulkWrite(); dottalk::table::set_stale(area0, true); }
++#endif
+         tb.changes = pending_before;
+         dottalk::table::set_dirty(area0, true);
+         cli::cmdout::print_prefixed_message(
+             "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
+         return {CommitStatus::FinalizeFailure, applied_ok, 1};
+     }
+
++#if DOTTALK_HAS_XINDEX
++    // Commit the index bulk BEFORE the journal commit marker. On failure the DBF
++    // is already applied; mark stale so BUILDLMDB reconciles.
++    if (maintain_index) {
++        std::string cerr;
++        if (!im->commitBulkWrite(&cerr)) {
++            dottalk::table::set_stale(area0, true);
++            tb.changes = pending_before;
++            dottalk::table::set_dirty(area0, true);
++            cli::cmdout::print_prefixed_message(
++                "COMMIT", dottalk::helpdata::MessageId::CommitIndexFinalizeFailedText);
++            return {CommitStatus::FinalizeFailure, applied_ok, 1};
++        }
++    }
++#endif
++
+     // Persistent TABLE BUFFER stub hook. A future implementation must return
+     // false when the durable journal cannot record/finalize the commit.
+     if (!dottalk::table::journal_note_commit(area0)) {
+@@ -403,6 +475,11 @@
+         return {CommitStatus::FinalizeFailure, applied_ok, 1};
+     }
+
++#if DOTTALK_HAS_XINDEX
++    // Invalidate CLI order/nav caches so ordered browsers/relations rebuild from
++    // the maintained index (DbTupleStream materializes from it). Best-effort.
++    if (maintain_index) orderhooks::reconcile_after_mutation(A);
++#endif
++
+     tb.clear();
+     dottalk::table::set_dirty(area0, false);
+     dottalk::table::set_stale(area0, false);

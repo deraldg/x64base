@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 //
 // CdxNativeBackend — native CDX (V64) key backend, LMDB-free.
@@ -42,6 +51,17 @@ public:
 
     void upsert(const Key& key, RecNo rec) override;
     void erase (const Key& key, RecNo rec) override;
+
+    // Does NOT maintain. upsert/erase are still no-ops that set stale_ and
+    // return normally (cdx_native_backend.cpp), so every mutation against a
+    // native CDX-V64 order leaves the index stale -- which regression IDXSTALE
+    // proves, and which the corrective REPLACE warning reports.
+    //
+    // Stated EXPLICITLY rather than inherited from the default, so that whoever
+    // implements those two methods sees the flag that must flip with them. The
+    // obligations for flipping it are on IIndexBackend::maintainsIncrementally;
+    // CNX's own transition (XIDX-TXN-02 M1) is the worked example.
+    bool maintainsIncrementally() const override { return false; }
 
     // Native CDX V64: full 64-bit recno index ("build for big").
     std::uint64_t maxRecordNumber() const override { return UINT64_MAX; }

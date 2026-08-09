@@ -1,4 +1,13 @@
-﻿// dtx_format.hpp
+// @dottalk.file v1
+// subsystem: memo
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+// dtx_format.hpp
 // DotTalk++ native memo sidecar on-disk format definition
 
 #pragma once

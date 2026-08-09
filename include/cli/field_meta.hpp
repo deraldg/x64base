@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // Plan A: Minimal field metadata POD used by codecs/packer.
 // Keep this header-only and free of external dependencies.

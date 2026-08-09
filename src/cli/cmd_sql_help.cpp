@@ -1,9 +1,18 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cmd_sql_help.cpp
 // @dottalk.usage v1
 // owner: DOT|SQLHELP
 // command: SQLHELP
 // category: reference
-// status: supported
+// status: experimental
 // noargs: report
 // effect: report
 // mutates: none

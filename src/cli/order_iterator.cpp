@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/order_iterator.cpp
 #include "cli/order_iterator.hpp"
 
@@ -404,7 +413,7 @@ bool order_stream_display(xbase::DbArea& area,
 #endif
 }
 
-OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, int32_t& out_recno)
+OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, std::int64_t& out_recno)
 {
     out_recno = 0;
 #if !DOTTALK_HAS_XINDEX
@@ -437,8 +446,8 @@ OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, int32_t& out_recn
     const xindex::Key baseKey = im.buildActiveTagBaseKeyFromCurrentRecord();
     if (baseKey.empty()) return OrderStep::Unavailable; // tag field unresolved
 
-    const int32_t cur = area.recno();
-    if (cur < 1 || cur > area.recCount()) return OrderStep::Unavailable;
+    const std::int64_t cur = static_cast<std::int64_t>(area.recno64());
+    if (cur < 1 || cur > static_cast<std::int64_t>(area.recCount64())) return OrderStep::Unavailable;
 
     const bool forward = index_delta > 0;
     const int steps = index_delta > 0 ? index_delta : -index_delta;
@@ -446,8 +455,8 @@ OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, int32_t& out_recn
     xindex::RecNo landed = 0;
     bool located = false;
     if (cdx->stepOrdered(baseKey, static_cast<xindex::RecNo>(cur), forward, steps, landed, located)) {
-        if (landed >= 1 && static_cast<int32_t>(landed) <= area.recCount()) {
-            out_recno = static_cast<int32_t>(landed);
+        if (landed >= 1 && static_cast<std::int64_t>(landed) <= static_cast<std::int64_t>(area.recCount64())) {
+            out_recno = static_cast<std::int64_t>(landed);
             return OrderStep::Moved;
         }
         return OrderStep::Unavailable;

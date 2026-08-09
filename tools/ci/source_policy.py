@@ -16,11 +16,12 @@ def require(condition: bool, message: str) -> None:
 
 
 license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
-require("TENTATIVE MIT LICENSE" in license_text, "LICENSE must retain its tentative status")
+require(license_text.strip() == "To be determined.", "LICENSE must state the current project status exactly")
 
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 require("`main` is the canonical public source" in readme, "README must identify public main as canonical")
-require("To be defined" not in readme, "README contains obsolete undefined-license wording")
+require("To be determined." in readme, "README must state the current project license status")
+require("To be defined" not in readme, "README contains obsolete license wording")
 
 cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 require("C:/Users/" not in cmake and "D:/code/" not in cmake, "CMake contains a personal machine path")

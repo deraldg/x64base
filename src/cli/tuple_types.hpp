@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 
 #include <cstdint>
@@ -21,6 +30,11 @@ struct TupleColumn {
     std::string name;       // column label (resolved to canonical field name when possible)
     int         area_slot;  // work area slot (0..MAX_AREA-1) that owns it; -1 if unknown
     std::string field;      // resolved field name in that area, or original token if unresolved
+    // AIF-074 P1.2 (R16a): engine-owned type surface, mode-invariant.
+    // Blank-is-a-value; there is no null state. ' ' = type not resolved.
+    char        ftype = ' ';
+    int         flen  = 0;
+    int         fdec  = 0;
 };
 
 struct TupleFragment {
@@ -45,6 +59,7 @@ struct TupleBuildOptions {
     bool        values_area_prefix_echo = false; // for pretty printers
     bool        strict_fields           = false; // error on missing explicit field
     bool        refresh_relations       = true;  // refresh SET RELATION before build
+    bool        overlay_table_buffer    = true;  // preview uncommitted TABLE BUFFER edits
     std::string null_token              = "";    // pretty placeholder
 };
 

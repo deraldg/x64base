@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // inx_meta.hpp ? DotTalk++ INX metadata reader (header-only interface)
 // Reads the lightweight header of a ".inx" index file without touching writers.
