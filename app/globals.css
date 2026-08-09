@@ -80,3 +80,29 @@ body {
     margin: 1rem auto;
   }
 }
+
+/* Pagefind search UI -- theme onto the dark palette. The default UI is light, so on the dark
+   site the result-title links rendered dark-on-dark (nearly invisible). Scope to
+   `#search .pagefind-ui` (id + class) so these beat Pagefind's own `.pagefind-ui` variable
+   defaults in the cascade. */
+#search .pagefind-ui {
+  --pagefind-ui-primary: rgb(var(--brand));
+  --pagefind-ui-text: rgb(var(--fg));
+  --pagefind-ui-background: rgb(var(--card));
+  --pagefind-ui-border: rgb(var(--border));
+  --pagefind-ui-tag: rgb(var(--card));
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+}
+/* Result titles are links: make them the brand teal, not near-invisible. */
+#search .pagefind-ui__result-link {
+  color: rgb(var(--brand));
+}
+#search .pagefind-ui__result-link:hover {
+  color: rgb(var(--fg));
+}
+/* Excerpt / body text readable on the dark background. */
+#search .pagefind-ui__result-excerpt,
+#search .pagefind-ui__message {
+  color: rgb(var(--muted));
+}
