@@ -51,6 +51,26 @@ to go through, instead of refusing CNX we just warn."
   (`REBUILD`), not force `BUILDLMDB`. Flagged for the recurse-back; the LMDB-env failure itself was
   observed, not diagnosed here.
 
+## Scope C -- SET ORDER tag-container resolution (found on recurse-back, 2026-08-08)
+
+`RECURSED IN <- owner re-test @ SET ORDER, 2026-08-08` (same parked frame). After the SET INDEX
+refusal, `SET ORDER TO id` on the x64 `TEST64` failed:
+
+```
+SET ORDER: file not found: D:\...\INDEXES\x64\TEST64.cdx
+```
+
+- **File:** `src/cli/cmd_setorder.cpp` (lines 23-32): bare-tag resolution *prefers an
+  already-attached compatible container*, and only falls back flavor-aware when none is attached --
+  `classic -> <table>.cnx`, `true x64/v128 -> <table>.cdx`.
+- **Root:** because Scope A refused the `.cnx` attach, nothing was attached, so SET ORDER fell back
+  to the x64 default `TEST64.cdx` -- which does not exist -- and failed.
+- **Coupling:** fixing Scope A (let the `.cnx` attach) likely makes `SET ORDER TO <tag>` succeed via
+  the existing "prefer attached container" path. But the **bare-tag fallback still hard-forces
+  `.cdx` for x64** (lines 24-26); make that fallback honor an existing `<table>.cnx` when present
+  (advisory that CDX is preferred), instead of only ever looking for `.cdx`.
+- Owner note: "set order will need to be modified."
+
 ## Scope B -- WORKSPACE OPEN index-source conveniences
 
 Today `WORKSPACE OPEN DBF` auto-attaches the flavor-appropriate index (x64/v128 -> CDX(LMDB),
@@ -72,6 +92,8 @@ selectable:
 
 - On an x64 table: `SET INDEX TO <t>.cnx` attaches (with an advisory), `SET ORDER TO TAG <tag>`
   orders by it, and a seek/skip round-trip is correct. No hard refusal.
+- `SET ORDER TO <tag>` on an x64 table with only a `.cnx` present resolves to the `.cnx` (Scope C),
+  not a missing `.cdx`.
 - `WORKSPACE OPEN DBF CNX` opens the set with CNX attached; `WORKSPACE OPEN DBF CDX` with CDX;
   bare `WORKSPACE OPEN DBF` unchanged. `WORKSPACE SAVE` then `LOAD` restores the mixed graph.
 - `REINDEX` on a `.cnx`-ordered x64 table routes to `REBUILD` (CNX), not `BUILDLMDB` (see Scope A
