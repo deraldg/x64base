@@ -93,8 +93,37 @@ Sequential specialization: engine -> doctrine -> process -> tooling -> steady st
 per layer. What CANNOT be concluded (M2's standing honesty ledger): F1 vs F3 cannot be ordered
 from git alone (Claude's arrival and its model generation are one event in this record -- the
 owner's financial audit is the only independent clock); C1 (owner fluency) is unmeasurable
-in-repo and is assumed nonzero; correlation language only, throughout. Remaining M2 input: the
-financial audit dates. Then M3 writes the report.
+in-repo and is assumed nonzero; correlation language only, throughout.
+
+## M1/M2 -- the financial clock (owner ledger audit, 2026-08-09; DATES ONLY)
+
+Privacy rule, standing: the source ledger is OWNER-HELD, OFF-REPO. This section records dates
+and patterns only -- no amounts, no accounts. The ledger is the evidence of record; this is its
+extraction.
+
+- **Claude subscription first charge: 2026-07-14 -- the SAME DAY as the closeout convention
+  (AIF-006/008 date).** Tier-upgrade charges follow on 07-21, 07-22, 07-24 (the climb to the
+  Cowork-capable tier); first in-repo Claude session 07-21; commit knee W30. F1 and F2 are not
+  merely bracketing the knee -- they are ONE EVENT: a single regime change on 2026-07-14, the
+  process codified the day the tool was acquired.
+- **Spend migration visible at the hinge:** an OpenAI usage-billing burst (daily API charges,
+  late June, intensifying 07-04..07-08) STOPS ~07-13; Anthropic billing begins 07-14. The
+  Codex-API era hands off to the Claude era across a single day. W29's "week" is really the
+  hinge of 2026-07-13/14.
+- **Subscription != adoption (measured):** Grok/xAI billed monthly since 2026-01-10; first
+  in-repo artifact 2026-07-30 -- six months of paid access before use. ChatGPT Plus and GitHub
+  (Copilot) billed continuously from the ledger's start (Jan 2026, predating it). Billing
+  OVERCOUNTS adoption; the repo UNDERCOUNTS access; each clock corrects the other. Owner
+  weighting (2026-08-09, verbatim intent): "my use of grok and copilot is trivial" -- so for
+  attribution, F1's load-bearing agents are ChatGPT/Codex (the pre-hinge era) and Claude (the
+  post-hinge era); Grok and Copilot are held at negligible weight regardless of billing tenure.
+- **M2 verdict on F1-vs-F2 ordering: unanswerable, and that is the finding.** They were never
+  separate events. F3 (model generation) remains entangled with F1 by construction (one
+  subscribes to whatever generation is current). The supportable claim: the acceleration
+  correlates with a deliberate, dateable regime change (2026-07-14) comprising tool + doctrine
+  together, applied at scale the following week, automated the week after.
+
+Remaining before M3: owner review of this extraction; then the findings report.
 
 ## M1 seed -- agent-adoption timeline (first evidence in the record, extracted 2026-08-09)
 
