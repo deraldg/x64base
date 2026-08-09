@@ -64,3 +64,29 @@ the `DotTalkBBSD` task before rebuilding the daemon (it locks the exe).
 set (this push, the consolidation tool, the root pointer). Run general onboarding
 (`trigger.onboard`) before or after that pickup, whichever is cheaper for you. Then read the
 spec, `claim-aif`, run `promote.py`'s `.dts` against the store, and verify attribution.
+
+## Round 1 review -- ACCEPTED WITH CORRECTIONS (2026-08-08)
+
+Grok accepted the lane and returned a review-needed package `AIPR-20260808-GROK-001` (read-only,
+no tree mutation, verification procedure included). It was ground-truthed against source; the
+exchange is recorded in `proof.grok_lane1_coworker_kind_collision`. **Three corrections were
+issued back to Grok and MUST land before the diff is applied:**
+
+1. **KIND value collides -- use 5, not 3.** `include/bbs/bbs_schema.hpp` already enumerates
+   `KIND: 0=post 1=reply 2=agent_prompt 3=agent_reply 4=system`. Grok's proposed
+   `KIND=3=consolidated_from_chat` would reclassify every existing `agent_reply` and corrupt
+   recall. The next free value is **5**: `KIND=5 = consolidated_from_chat`.
+2. **Do not overload `RUNID` for the lane.** Schema defines `RUNID` as an `ai_runs` ref, not a
+   free-text tag. Add a dedicated `SYSPOST` field (`SRCLANE`) for the source lane, or link a real
+   `ai_runs` row. Keep `RUNID` for its defined purpose.
+3. **Do not hard-code `AIF-089`.** Lane numbers are allocated atomically by `claim-aif` (O_EXCL);
+   089 is a suspicious lone gap below the 092-097 band. The maintainer runs `claim-aif` and stamps
+   the assigned number into the package -- leave it `AIF-<assigned>`.
+
+**Accepted as-is:** `promote.py` records/`.dts` consumed verbatim (judgment not re-opened);
+attribution `current_member()` only, author never 0 (AIF-075); confirm-UX = `board.governance` /
+SYSGRANT loop (interactive `PSEUDO PROMOTE ... CONFIRM` deferred to Lane 2).
+
+**NEXT ACTION (owner):** send the corrections to Grok; when it re-issues the KIND/`SRCLANE` diff,
+run its verification procedure against a real `promote.py` `.dts`. That closes the engine-bound
+write half.
