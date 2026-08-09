@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-09T14:04:04Z
+    generated_utc : 2026-08-09T14:05:57Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 7011cba6a  (2026-08-09)
-    upstream      : 7011cba6a
+    HEAD          : afee2c18d  (2026-08-09)
+    upstream      : afee2c18d
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_CNX_ON_X64_2026-08-09.md
-    commits behind HEAD : ?
+    commits behind HEAD : 0
 
 ## Staleness warnings
 
-- none
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-100. Same shape as AIF-062/078/080.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-100 | gate governance (build/commit/publish) | member.derald | **MISSING** |
 | AIF-099 | cnx-on-x64 warn-not-refuse | member.derald | yes |
 | AIF-098 | frontal_mem M2 lane1 write adapter | member.derald | yes |
 | AIF-097 | private-site auth + search | member.derald | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-091 | dbf-vfp-type-support | member.ai.claude.cowork | yes |
 | AIF-090 | x64base-agent-skill | member.ai.claude.cowork | yes |
 | AIF-088 | command_catalog_runtime_drift | member.derald | yes |
-| AIF-087 | triggers-pdlc | member.derald | yes |
-| ... | 20 older claims omitted | | |
+| ... | 21 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -58,7 +58,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| COWORK-20260809-001 | member.derald | - | - | AIF-099 |
+| COWORK-20260809-001 | member.derald | - | - | AIF-099 -> AIF-100 |
 | COWORK-20260808-001 | member.derald | - | - | AIF-097 -> AIF-098 |
 | COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
 | COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
