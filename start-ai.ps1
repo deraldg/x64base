@@ -27,13 +27,13 @@
 #   $env:X64BASE_SITE    website source dir   [default: D:/dev/x64base-site]
 #   $env:X64BASE_PYTHON  python launcher      [default: system python -- carries the gateway deps]
 #
-# Which python (learned the hard way, 2026-08-08): the gateway imports
-# maint_server / schema_registry / crud (and re-runs build_reports.py, which needs
-# yaml). It needs a python where ALL of those import. On this box that is the FULL
-# system `python`, NOT the minimal vcpkg `.venv312` -- that venv has pyyaml but is
-# missing gateway deps, and defaulting to it made the gateway refuse :3000.
-# $py12 / .venv312 is correct for a yaml-only standalone tool; it is WRONG for this
-# gateway. Override with $env:X64BASE_PYTHON if your system python is not the right one.
+# Which python: the gateway runs under the default `python` (system), which has the
+# imports it needs -- maint_server / schema_registry / crud, plus yaml for the
+# build_reports it re-runs -- verified running in the foreground (2026-08-08). Use the
+# full system python here, not $py12 / .venv312 (that venv is for yaml-only standalone
+# tools; the gateway's import set is broader). Override via $env:X64BASE_PYTHON.
+# NOTE: the ":3000 refused" seen during setup was NOT the interpreter -- it was a
+# cmd /k quoting mistake in THIS script, since fixed at the gateway launch below.
 
 param([switch]$Built)
 
@@ -94,7 +94,12 @@ if ($Built) {
 }
 
 Write-Host 'starting reports gateway on :3000 (console Execute enabled) ...'
-$gwArgs = ('/k "{0}" "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002 --enable-write' -f $py, $repo)
+# Keep {0} ($py) UNQUOTED. `cmd /k` strips the first and last quote off the whole
+# line, so an extra pair around the exe mangles the command into "The filename,
+# directory name, or volume label syntax is incorrect" and the gateway never binds.
+# The default 'python' has no spaces; if X64BASE_PYTHON is a spaced path, set an
+# 8.3 short path or a symlink rather than quoting here.
+$gwArgs = ('/k {0} "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002 --enable-write' -f $py, $repo)
 Start-Process -FilePath 'cmd.exe' -ArgumentList $gwArgs -WorkingDirectory $repo
 Wait-Port 3000 'gateway'
 
