@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-09T14:05:57Z
+    generated_utc : 2026-08-09T14:07:16Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : afee2c18d  (2026-08-09)
-    upstream      : afee2c18d
+    HEAD          : 06e1c25ef  (2026-08-09)
+    upstream      : 06e1c25ef
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,17 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_CNX_ON_X64_2026-08-09.md
-    commits behind HEAD : 0
+    commits behind HEAD : 1
 
 ## Staleness warnings
 
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-100. Same shape as AIF-062/078/080.
+- The newest closeout is 1 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-100 | gate governance (build/commit/publish) | member.derald | **MISSING** |
+| AIF-100 | gate governance (build/commit/publish) | member.derald | yes |
 | AIF-099 | cnx-on-x64 warn-not-refuse | member.derald | yes |
 | AIF-098 | frontal_mem M2 lane1 write adapter | member.derald | yes |
 | AIF-097 | private-site auth + search | member.derald | yes |

@@ -1,8 +1,9 @@
 # Gate Governance Lane -- document, record, and maintain the build/commit/publish gates
 
 **Status:** charter (review-needed). Owner: member.derald. Steward: member.ai.claude.cowork.
-Date 2026-08-09. **AIF: unclaimed** -- claim a fresh number with `claim-aif` on pickup and stamp
-it here (the check-aif-claimed gate will hold this charter's intake row to that).
+Date 2026-08-09. **AIF-100** (claimed 2026-08-09, run `COWORK-20260809-001`) -- and the claim
+was surfaced by the estate this lane governs: the collision gate's reconciliation advisory
+("claim(s) with no intake row: AIF-100") flagged the missing row before this stamp landed.
 Parent project: `project.x64base.runtime` (tooling) with a publication seam.
 
 ## Why now (owner: "they are getting to be good")
