@@ -1,0 +1,136 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1jd4bobh2p2ts.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T2095,<h2 id="the-problem-the-amnesiac-collaborator"><a class="no-underline" href="#the-problem-the-amnesiac-collaborator">The problem: the amnesiac collaborator</a></h2>
+<p>Every conversation with a capable AI ends in erasure. The system that reasoned with you an hour
+ago retains nothing of it; the next session begins from zero, re-reading and re-deriving what was
+already known. The loss is not a limit of intelligence. Retention is orthogonal to reasoning: a
+larger model reasons better over the context it is given, but between sessions it does not
+remember, it re-reads. The gap is closed not by a better model but by a missing layer of
+infrastructure.</p>
+<p>The claim of this project is deliberately modest and therefore achievable: <strong>persistent knowledge
+between AI sessions is achievable now, without advancing the underlying intelligence, by building
+a memory-consolidation pipeline modeled on human memory</strong> -- hold experience briefly, triage it by
+value, promote the valuable, let the rest decay, and recall through associative links. The
+load-bearing word is consolidation. Capture is easy and nearly worthless; the intelligence of the
+system lives in the selection.</p>
+<h2 id="the-memory-is-human-side"><a class="no-underline" href="#the-memory-is-human-side">The memory is human-side</a></h2>
+<p>The long-term memory does not live in the AI. The model is stateless across sessions; it carries
+nothing forward on its own. Durability is gained on the human side, by storing the AI's working
+state in a substrate the human owns and controls: the board store, the durable tables, the curated
+documents. Long-term memory is therefore a property of the owner-controlled store, not a faculty
+the AI possesses. The AI contributes reasoning and fast, volatile short-term memory; the human
+side contributes the slow, durable long-term store. Neither has continuity alone; together they
+have a memory that persists.</p>
+<h2 id="the-architecture"><a class="no-underline" href="#the-architecture">The architecture</a></h2>
+<p><img src="/images/memory/frontal-mem-architecture-v1.svg" alt="Frontal Memory architecture: consolidation pipeline, recall graph, and BBS substrate"></p>
+<p>Three layers. A <strong>consolidation pipeline</strong> moves a live session left to right toward permanence:
+a raw buffer feeds a deferred triage step ("sleep"), which promotes a small valuable fraction into
+a permanent store and discards the rest. An associative <strong>recall graph</strong> of typed,
+strength-weighted links ("synapses") makes the kept knowledge reachable: a new session wakes with
+a working set assembled by traversing the graph. And a <strong>substrate</strong> -- the AI-BBS board store,
+the durable tables, cross-process locking -- already exists on the platform; the consolidation
+layer sits on top of it.</p>
+<h2 id="a-taxonomy-of-memory-classes"><a class="no-underline" href="#a-taxonomy-of-memory-classes">A taxonomy of memory classes</a></h2>
+<p>The design turns on distinguishing kinds of memory that differ in what they hold, how long they
+live, and how they earn permanence.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Class</th><th>Contents</th><th>Lifespan</th><th>Decays?</th><th>Promotion trigger</th></tr></thead><tbody><tr><td>Sensory / buffer</td><td>Raw transcript</td><td>Seconds to minutes</td><td>Discarded</td><td>input to triage</td></tr><tr><td>Short-term / working</td><td>Session reasoning, open threads</td><td>Session to days</td><td>Yes, on a clock</td><td>passes the triage value test</td></tr><tr><td>Semantic</td><td>Facts, conventions, decisions</td><td>Indefinite</td><td>No; revised</td><td>promoted and de-timed</td></tr><tr><td>Episodic</td><td>What happened and why</td><td>Indefinite</td><td>Slowly</td><td>promoted with provenance</td></tr><tr><td>Procedural</td><td>How-to, protocols, prohibitions</td><td>Indefinite</td><td>No</td><td>repetition or explicit rule</td></tr></tbody></table>
+<p>Forgetting is a feature, not a defect to tolerate. A store that keeps everything drowns its own
+signal; generalization requires discarding detail. The aim is selective forgetting with reliable
+recall of what mattered, not total memory.</p>
+<h2 id="triage-the-value-function"><a class="no-underline" href="#triage-the-value-function">Triage: the value function</a></h2>
+<p>This is the heart of it. At the end of a session most of what was produced should disappear and a
+little of it should last forever; deciding which is which is the whole game. No single signal
+suffices, so the value function is a weighted combination of several, each a proxy for "this will
+matter later":</p>
+<ul>
+<li><strong>Acted upon.</strong> Did the memory change a decision or produce an artifact?</li>
+<li><strong>Costly to learn.</strong> A lesson that took an hour to learn is worth keeping even if it is small,
+because its value is the cost of rediscovering it.</li>
+<li><strong>Re-referenced.</strong> A memory recalled again has demonstrated its own utility.</li>
+<li><strong>Contradiction.</strong> A claim that conflicts with the store forces an update rather than an
+addition -- high value, because it is where the store learns.</li>
+<li><strong>Novelty.</strong> Content that diverges from what the store would have predicted carries more
+information than content that merely confirms it.</li>
+</ul>
+<p>Triage runs deferred and offline, the system's equivalent of sleep, so it does not slow the live
+interaction and can count signals that only appear in hindsight. Its two errors are not symmetric:
+in a small, trusted store, over-promotion (bloating the store, diluting the signal) is the graver
+sin, so the promotion threshold is tuned to that asymmetry. And the same gate runs on the agent's
+own work: to defer a task without a reason is to score it low -- deferral is demotion.</p>
+<p>This value function is built and running as <code>tools/memory/consolidate.py</code> in the engine repo: it
+scores a session's working set, applies the threshold, and emits a hybrid promotion proposal --
+the agent proposes, the owner confirms.</p>
+<h2 id="synapses-the-associative-recall-graph"><a class="no-underline" href="#synapses-the-associative-recall-graph">Synapses: the associative recall graph</a></h2>
+<p>A memory that cannot be reached is, functionally, a memory that does not exist. Storage is the
+easy half; retrieval is the binding constraint. Every memory carries directed, typed edges to
+related memories -- this decision supersedes that one, this mistake arose from that convention,
+this fact supports that conclusion -- and recall traverses these edges rather than scanning the
+whole store. Edges carry a strength that decays with disuse and reinforces on recall, so
+frequently walked paths harden into highways and unused links fade. Recall is the inverse of
+triage: where triage compresses a session down to a few durable memories, recall expands a query
+back up into the smallest working set that restores competence.</p>
+<h2 id="the-substrate-the-ai-bbs"><a class="no-underline" href="#the-substrate-the-ai-bbs">The substrate: the AI-BBS</a></h2>
+<p>The architecture is not hypothetical. The platform's BBS already provides most of what a shared
+memory needs: memories are posts on boards, sessions are members, and the board is where one
+session's consolidated knowledge is left for the next to find. The durable declarative store,
+cross-process locking, and an in-memory catalog for the working set already exist. Because many
+sessions may write memory at once, every memory is stamped with its origin -- which session
+produced it, when, and with what confidence -- so a later reader can weigh it, trust it, or
+question it.</p>
+<h2 id="where-this-stands"><a class="no-underline" href="#where-this-stands">Where this stands</a></h2>
+<p>The substrate, the value function, and the recall graph exist. The remaining work -- the durable
+write adapter, the strength decay-and-reinforce, the aging rollups, and the instrumentation that
+measures whether retention actually cuts time-to-context and mistake rate -- is chartered as an
+optimization project (see the roadmap). The goal, which runs against the instinct that started the
+project, is not total memory. It is a system that forgets almost all of a day and never forgets
+the one thing from it that counts.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"min-w-0 flex-1","data-pagefind-ignore":"all","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ae143719dd1a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/?v=ae143719dd1a","children":"Frontal Memory (private)"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory/overview",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/overview/?v=ae143719dd1a","children":"Frontal Memory -- the thesis and the architecture"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Frontal Memory -- the thesis and the architecture"}],["$","p",null,{"className":"mt-2 text-muted","children":"Persistent memory for artificial minds: hold experience briefly, triage it by value, promote the valuable, let the rest decay, and recall through associative links."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"_BjsjS9Q-K7YYH7MJJ2L5"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

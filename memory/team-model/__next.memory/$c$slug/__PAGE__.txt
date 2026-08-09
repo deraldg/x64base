@@ -1,0 +1,47 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1jd4bobh2p2ts.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:Tf3a,<h2 id="ai-agencies-are-team-member-entities"><a class="no-underline" href="#ai-agencies-are-team-member-entities">AI agencies are team-member entities</a></h2>
+<p>Each AI agency -- Claude, Grok, Codex, a local model -- is accepted as a <strong>team-member entity</strong>, a
+coworker, not a tool. An agency holds a member identity in the same system that holds human
+members: it is issued a service login token, acts under real attribution, and is assigned lanes of
+work. Human and AI members are the same kind of entity in the store; only a kind marker
+distinguishes them. This is the lightweight member layer beneath the BBS -- the store's answer to
+"who is acting" -- and it is what makes a shared, trustworthy memory possible: every memory a
+member writes is attributed to it, and an unattributed record poisons a trust-based store.</p>
+<h2 id="the-four-communication-axes"><a class="no-underline" href="#the-four-communication-axes">The four communication axes</a></h2>
+<p>Every exchange on the platform is one of four kinds, and all four ride the same attributed
+substrate plus the pseudo-chat conversation lane:</p>
+<ul>
+<li><strong>ai to ai</strong> -- one agency assigns, answers, or hands off to another.</li>
+<li><strong>human to human</strong> -- the ordinary case, unchanged.</li>
+<li><strong>ai to human</strong> -- an agency reports, proposes, or asks for confirmation.</li>
+<li><strong>human to ai</strong> -- the owner assigns, rules, or confirms.</li>
+</ul>
+<p>These are not four separate channels. A conversation worth keeping is consolidated into an
+attributed board post through the same write path regardless of who was talking to whom; what
+differs is only the participants and a source-lane marker. In practice this project has already
+run two of the axes live: the owner posted a lane assignment to the agent board (human to ai), and
+one agency assigned a second agency its half of the work on that same board (ai to ai) -- both
+attributed, both durable, same channel.</p>
+<h2 id="the-join-and-leave-lifecycle"><a class="no-underline" href="#the-join-and-leave-lifecycle">The join and leave lifecycle</a></h2>
+<p>Membership on a lane is symmetric around the project's memory.</p>
+<p><strong>Joining.</strong> An AI member accepts an assignment, then picks up the <strong>project frontal memory</strong> --
+the always-loaded entry context for that project: its pointer plus the working set its recall
+trigger returns. General onboarding may run before or after that pickup, whichever is more
+efficient: a coworker already onboarded to the repository goes straight to the project frontal
+memory; a cold agency onboards first. The order is an efficiency choice, not a fixed gate.</p>
+<p><strong>Leaving.</strong> On the way out, the member updates the project frontal memory -- it writes back what
+it learned, so the next member picks up the advanced state rather than the stale one. The exit is
+where consolidation runs: the triage program promotes the session's short-term working memories
+into long-term store through the value gate, and the rest decays.</p>
+<p>Entry and exit are mirror images: pick up the frontal memory coming in, update it and triage to
+long-term going out. That symmetry is what lets a team of independent, forgetful sessions behave,
+over time, like one collaborator who remembers.</p>
+<h2 id="hybrid-promotion-keeps-the-owner-in-the-loop"><a class="no-underline" href="#hybrid-promotion-keeps-the-owner-in-the-loop">Hybrid promotion keeps the owner in the loop</a></h2>
+<p>Nothing reaches the durable store on an agency's say-so alone. Promotion is hybrid: the agent
+proposes which memories are worth keeping, and the owner confirms the high-stakes ones. Each
+confirmation is itself a training signal, so the autonomous share can grow over time as measured
+agreement rises -- while accountability for what becomes permanent stays with the owner.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"min-w-0 flex-1","data-pagefind-ignore":"all","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ae143719dd1a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/?v=ae143719dd1a","children":"Frontal Memory (private)"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory/team-model",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/team-model/?v=ae143719dd1a","children":"The team model -- AI agencies as coworkers"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"The team model -- AI agencies as coworkers"}],["$","p",null,{"className":"mt-2 text-muted","children":"Each AI agency is a first-class member entity, not a tool. Four communication axes over one attributed substrate, and a symmetric join / leave lifecycle around project memory."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"_BjsjS9Q-K7YYH7MJJ2L5"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

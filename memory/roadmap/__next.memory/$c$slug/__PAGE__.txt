@@ -1,0 +1,68 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1jd4bobh2p2ts.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:Td12,<h2 id="why-an-optimization-project"><a class="no-underline" href="#why-an-optimization-project">Why an optimization project</a></h2>
+<p>The quality of the whole memory system reduces to the quality of one decision, repeated: which
+short-term memories become permanent. A perfect store with a poor value function is a warehouse of
+trivia; a modest store with a good one is a memory. So the triage program is framed as an
+optimization project -- tuning the value function, and the pipeline around it, is the work. It is
+chartered as a development lane in the AI Frontal Memory project, with a running core already in
+place and a phased runway ahead.</p>
+<h2 id="phases"><a class="no-underline" href="#phases">Phases</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Phase</th><th>What it delivers</th><th>Status</th></tr></thead><tbody><tr><td>M0</td><td>The value-function core: five signals, hybrid propose / confirm, normalize-on-collect, cost-asymmetry bias</td><td>Built and tested; reproduces a by-hand triage</td></tr><tr><td>M1</td><td>The durable write adapter: an owner-confirmed memory becomes an attributed board post; a first-class source-lane marker; the confirm workflow</td><td>Assigned to a coworker agency</td></tr><tr><td>M2</td><td>Autonomous-share growth: owner confirmations become a training signal that raises the autonomous promote fraction as measured agreement rises</td><td>Planned</td></tr><tr><td>M3</td><td>Decay-and-reinforce: link strength decays with disuse and reinforces on recall, so unused paths fade and used ones harden</td><td>Design</td></tr><tr><td>M4</td><td>Grandfather retention: recent memories stay atomic, then roll up into weekly and monthly aggregates; atoms age out only once a coarser rollup supersedes them</td><td>Design</td></tr><tr><td>M5</td><td>Instrumentation: measure time-to-context and mistake rate before and after, so the retention claim is proven rather than asserted</td><td>Design</td></tr></tbody></table>
+<h2 id="the-core-is-real"><a class="no-underline" href="#the-core-is-real">The core is real</a></h2>
+<p>M0 is not a plan. The value function runs as <code>tools/memory/consolidate.py</code>: it scores a session's
+working set, buckets each candidate as promote, hold, or discard against a threshold tuned to the
+domain's cost asymmetry, and emits a hybrid proposal. A companion renderer turns an
+owner-confirmed proposal into attributed post records ready for the durable write. Its acceptance
+test is a closed loop: the tool reproduces, on this project's own session, the same keep-and-drop
+decisions a person made by hand.</p>
+<h2 id="the-discipline-that-keeps-it-honest"><a class="no-underline" href="#the-discipline-that-keeps-it-honest">The discipline that keeps it honest</a></h2>
+<p>Two rules govern the whole lane. <strong>Measure, do not assert:</strong> the claim that retention cuts
+time-to-context and mistake rate is instrumented before it is believed. And <strong>no wheel
+reinvention:</strong> the program consumes the parts the platform already has -- the durable store, the
+locking, the attributed write path, the recall graph -- and a named, verified gap is the only
+license for building something new. Forgetting remains the point: the end state is not total
+memory but selective forgetting with reliable recall of what mattered.</p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"min-w-0 flex-1","data-pagefind-ignore":"all","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ae143719dd1a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/?v=ae143719dd1a","children":"Frontal Memory (private)"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/memory/roadmap",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/memory/roadmap/?v=ae143719dd1a","children":"The triage program -- development roadmap"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"The triage program -- development roadmap"}],["$","p",null,{"className":"mt-2 text-muted","children":"The consolidation engine as an optimization project: the value function is the whole game, so tuning it is the work. Phased from a running core toward autonomy, decay, and measurement."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"_BjsjS9Q-K7YYH7MJJ2L5"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
