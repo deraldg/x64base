@@ -1,0 +1,23 @@
+id: proof.aside.rule_caught_its_own_author
+label: The aside rule caught its own author over-scoping -- the same session it was coined
+state: source_defined
+related:
+- D:/code/ccode/labtalk/ai_portal/AI_GLOSSARY_V1.md
+- D:/code/ccode/tools/ps/py12_guard.ps1
+- D:/code/ccode/tools/staging/check_host_python.py
+notes: 'ASIDE, RECORDED -- the rule caught its own author. On 2026-08-08 the term "aside" was coined
+  and made a standing rule (AI_GLOSSARY_V1.md): a side trip to fix or check a side issue during a
+  task in progress, which does NOT get its own PDLC / AIF / lane unless promoted. In the SAME
+  session a bare-python slip (a host command that should use the repo venv $py12) -- itself an
+  aside off the memory and site work -- was being fixed, and the fix over-scoped: from a one-file
+  shell guard (py12_guard.ps1, the aside-sized fix that lets the environment forgive the mistake)
+  into a repo-wide lint gate (check_host_python.py) that scanned the tree and surfaced a 51-item
+  backlog. The owner caught it and named the pattern: this is an aside; you do not make a session
+  to make a session -- scope. The guard was the aside; the gate is a promotion candidate that
+  earned its keep by finding real drift, but building it inside the aside was exactly making a
+  session to make a session. Same shape as proof.ai_portal.discoverability_caught_its_own_author:
+  the doctrine was demonstrated by its own author falling through it, in the sitting it was
+  written. Rule reinforced: an aside gets the smallest fix that closes it plus at most one durable
+  artifact; the moment it wants a backlog, a gate, or ceremony, stop and name it a promotion
+  candidate rather than building through. Evidence: commit 549e40ea9 (guard + gate) and the
+  glossary aside rule.'
