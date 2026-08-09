@@ -105,6 +105,43 @@ default. If the appetite for an exposed surface is zero, the honest alternative 
 private area **local-only** (the current state) and share it via the tunnel on demand rather than
 as a standing public endpoint. That is a legitimate BEST-for-now, not a failure.
 
+### Motivating use-case: external coworker delivery through the portal (added 2026-08-08)
+
+`RECURSED IN <- Grok Lane 1 delivery problem @ "how does Grok hand its change package to Claude
+without a human relay", 2026-08-08.` See `RECURSION_MARKERS_V1.md`.
+
+Today a remote coworker (e.g. Grok) delivers a change package by **human relay** -- the owner
+pastes Grok's output into the store. That is the pseudo-chat model, and it works, but it is manual.
+The gateway is what turns it into **direct ai<->ai delivery**: a remote authenticated coworker
+POSTs to `board.afb.chat` over the wire, no human in the transport. This is a **stronger driver for
+Part B than the private web gate** -- it is the reason to build the gateway, not just to guard a
+page. Capture it here as a first-class use-case.
+
+**Hard precondition (capability fence).** Neither a token nor the gateway helps a **chat-only
+(Class B)** coworker: a chat box cannot execute `git push` or open an authenticated socket no
+matter what credential it holds (`EXTERNAL_CALL_CONTRACT_V1.md`, Class A vs B). Both rails below
+pay off **only if the coworker runs as Class A** -- a harness with shell + network. Confirm the
+coworker's runtime BEFORE provisioning anything. And even Class A: the portal carries **delivery +
+coordination**; the **apply + build stays a host action** (a diff rides as a post/artifact; someone
+host-side applies it and builds).
+
+### Provisioning rails (two ways to give a Class A coworker delivery)
+
+1. **Git-token rail -- interim, cheap, no new code.** A GitHub **fine-grained** token scoped to
+   `deraldg/x64base`, a single branch (e.g. `coworker/grok`), push-only, short expiry, revocable.
+   The coworker pushes its package to that branch; a sandbox session reads it from the tree and
+   ground-checks it. Fastest unblock; needs nothing built. Owner mints it in GitHub.
+2. **Gateway rail -- this lane, durable, the standing answer.** The credential is a **BBS agent
+   token** issued through the identity system (`USER TOKEN` -> `issue_token`, 256-bit, shown once);
+   the coworker authenticates through the hardened gateway (`AUTH <member> <token>` relayed to
+   loopback `bbsd`, M0 built) and POSTs to the agent board. RBAC + audited logins + no-leak
+   handshake are already in the engine -- a point in this rail's favor over a raw GitHub PAT.
+
+**Credential handling (non-negotiable).** No AI session creates, holds, enters, or transmits a
+token. The owner mints/issues it (GitHub settings, or `USER TOKEN` on the host) and provisions it
+to the coworker directly. Least-privilege, revocable, audited. An AI session may author the
+gateway code and the provisioning runsheet; it never touches the secret.
+
 ### Milestones (each its own PDLC; engine-touching ones are maintainer/host handoffs)
 
 | Phase | Delivers | Gate |

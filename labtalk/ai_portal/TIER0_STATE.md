@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-09T05:32:43Z
+    generated_utc : 2026-08-09T06:12:48Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 9342e0b5c  (2026-08-08)
-    upstream      : 9342e0b5c
+    HEAD          : 9106b3508  (2026-08-08)
+    upstream      : 9106b3508
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_PORTAL_MEMORY_SYNAPSE_2026-08-08.md
-    commits behind HEAD : 22
+    commits behind HEAD : 23
 
 ## Staleness warnings
 
-- The newest closeout is 22 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 23 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-098. Same shape as AIF-062/078/080.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-098 | frontal_mem M2 lane1 write adapter | member.derald | **MISSING** |
 | AIF-097 | private-site auth + search | member.derald | yes |
 | AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
@@ -44,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-088 | command_catalog_runtime_drift | member.derald | yes |
 | AIF-087 | triggers-pdlc | member.derald | yes |
 | AIF-086 | ai-systems-integration-sdlc | member.ai.codex.local | yes |
-| AIF-083 | bbs-agency-legs | member.ai.claude.cowork | yes |
-| ... | 18 older claims omitted | | |
+| ... | 19 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -58,7 +59,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
-| COWORK-20260808-001 | member.derald | - | - | AIF-097 |
+| COWORK-20260808-001 | member.derald | - | - | AIF-097 -> AIF-098 |
 | COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
 | COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
 | COWORK-20260807-003 | member.ai.claude.cowork | - | - | AIF-092 -> AIF-093 |
