@@ -123,6 +123,15 @@ sitting under the BBS.
 - **team-member entity / coworker** -- an AI agency holding a member identity + service token.
   Home: `src/cli/cmd_user.cpp` (`USER LOGIN`/`AS`/`TOKEN`), `src/identity/identity_admin.cpp`
   (`current_member`, `login`); conduct rule: `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`.
+- **one member id per DEPLOYMENT, not per brand (owner-ratified 2026-08-09).** A member
+  identity (e.g. `member.ai.claude.cowork`) names a specific deployment -- provider + runtime +
+  capability class -- not every session of that provider. A different deployment of the same
+  brand (e.g. a hosted chat-only Claude) is a DIFFERENT member (`member.ai.claude.web`, etc.)
+  and must not stamp another deployment's id or claim its lane assignments. This is "capability
+  is a property of the deployment" (`EXTERNAL_CALL_CONTRACT_V1.md`) applied to identity: the
+  steward of record on a lane is the deployment named, and attribution (AIF-050/075) is only
+  truthful if ids do not blur across deployments. Observed trigger: a second Claude session
+  read "assigned to member.ai.claude.cowork" and inferred "me."
 - **the four communication axes** -- every exchange is one of ai<->ai, human<->human,
   ai<->human, human<->ai, and all four ride the same attributed substrate (BBS Lane 1) plus the
   pseudo-chat lanes. Worked examples this session: the owner posted an assignment to the board
