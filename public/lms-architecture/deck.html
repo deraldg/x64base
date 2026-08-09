@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LMS Architecture Artifact -- x64base / DotTalk++ / LabTalk</title>
+<style>
+  :root{
+    --ink:#eaf0fb; --muted:#7fa8c9; --faint:#4d6f92;
+    --accent:#00c2cb; --accent-soft:rgba(0,194,203,.14); --line:rgba(0,194,203,.16);
+    --mono:'Consolas','Cascadia Mono',monospace;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{overflow:hidden;color:var(--ink);
+       font-family:'Calibri Light','Calibri',sans-serif;-webkit-font-smoothing:antialiased;
+       background:#070e17}
+
+  .deck{position:relative;display:flex;flex-direction:column;height:100vh;overflow:hidden;
+        background:
+          radial-gradient(1200px 700px at 78% -18%, rgba(0,194,203,.09), transparent 60%),
+          radial-gradient(900px 620px at 12% 118%, rgba(124,111,255,.08), transparent 58%),
+          #070e17}
+  .deck:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.42;
+    background:linear-gradient(rgba(0,194,203,.035) 1px,transparent 1px),
+               linear-gradient(90deg,rgba(0,194,203,.035) 1px,transparent 1px);
+    background-size:72px 72px;
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 30%,#000 25%,transparent 78%);
+            mask-image:radial-gradient(120% 90% at 50% 30%,#000 25%,transparent 78%)}
+
+  /* ---------------- top bar ---------------- */
+  .top{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:18px;
+       opacity:0;transition:opacity .3s;pointer-events:none;
+       padding:13px 26px;backdrop-filter:blur(14px);
+       background:linear-gradient(180deg,rgba(10,20,32,.86),rgba(10,20,32,.62));
+       border-bottom:1px solid var(--line)}
+  .home{display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--muted);
+        font-size:12.5px;padding:6px 11px 6px 8px;border-radius:9px;white-space:nowrap;
+        border:1px solid transparent;transition:color .2s,background .2s,border-color .2s}
+  .home:hover{color:var(--ink);background:rgba(0,194,203,.08);border-color:rgba(0,194,203,.26)}
+  .home .x{font-size:14px;line-height:1}
+  .mark{display:flex;align-items:center;gap:11px;white-space:nowrap}
+  .mark .glyph{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+       font:600 10px var(--mono);color:#04222a;letter-spacing:-.02em;
+       background:linear-gradient(150deg,#00c2cb,#3b9eff);box-shadow:0 0 16px rgba(0,194,203,.4)}
+  .mark b{font-size:13.5px;font-weight:600;letter-spacing:.01em}
+  .mark b span{color:var(--accent)}
+  .base{font:10.5px var(--mono);color:var(--faint);white-space:nowrap;letter-spacing:.02em;
+        padding-left:18px;border-left:1px solid rgba(127,168,201,.16)}
+  .spacer{flex:1}
+  .now{display:flex;align-items:baseline;gap:10px;white-space:nowrap;overflow:hidden;
+       min-width:0;justify-content:flex-end}
+  .now .eb{font:9.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;
+           color:var(--faint);flex:0 0 auto}
+  .now .tt{font-size:13.5px;color:var(--ink);font-weight:300;
+           overflow:hidden;text-overflow:ellipsis}
+  .ctl{display:flex;align-items:center;gap:8px}
+  button{background:rgba(0,194,203,.08);color:var(--ink);border:1px solid rgba(0,194,203,.26);
+         border-radius:9px;padding:7px 12px;font:12.5px 'Calibri',sans-serif;cursor:pointer;
+         line-height:1;transition:background .2s,border-color .2s,transform .12s,opacity .2s}
+  button:hover:not(:disabled){background:rgba(0,194,203,.18);border-color:var(--accent)}
+  button:active:not(:disabled){transform:translateY(1px)}
+  button:disabled{opacity:.24;cursor:default}
+  button.arrow{width:34px;padding:7px 0;font-size:14px}
+  button.solid{background:linear-gradient(150deg,rgba(0,194,203,.24),rgba(59,158,255,.16));
+               border-color:rgba(0,194,203,.5)}
+  .count{font:12px var(--mono);color:var(--muted);min-width:56px;text-align:center;letter-spacing:.04em}
+  .count b{color:var(--accent);font-weight:400}
+
+  /* ---------------- stage ---------------- */
+  .stage{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:0}
+  .fit{position:relative;width:1280px;height:720px;transform-origin:center center;
+       overflow:hidden}
+  .fit iframe{position:absolute;inset:0;width:1280px;height:720px;border:0;display:block;background:#0d1b2a}
+  .fit .layer{position:absolute;inset:0}
+  .layer.enter-r{animation:inR .5s var(--ease) both}
+  .layer.enter-l{animation:inL .5s var(--ease) both}
+  @keyframes inR{from{opacity:0;transform:translateX(38px) scale(.988)}to{opacity:1;transform:none}}
+  @keyframes inL{from{opacity:0;transform:translateX(-38px) scale(.988)}to{opacity:1;transform:none}}
+
+  /* ---------------- rail ---------------- */
+  .rail{position:absolute;bottom:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:6px;
+        opacity:0;transition:opacity .3s;pointer-events:none;
+        padding:10px 26px 14px;overflow-x:auto;backdrop-filter:blur(14px);
+        background:linear-gradient(0deg,rgba(10,20,32,.88),rgba(10,20,32,.58));
+        border-top:1px solid var(--line);scrollbar-width:none}
+  .rail::-webkit-scrollbar{height:0}
+  .chip{flex:0 0 auto;display:flex;align-items:baseline;gap:8px;padding:7px 13px;border-radius:22px;
+        border:1px solid rgba(127,168,201,.16);cursor:pointer;font-size:12px;color:var(--muted);
+        white-space:nowrap;background:rgba(255,255,255,.014);
+        transition:color .2s,border-color .2s,background .2s}
+  .chip:hover{color:var(--ink);border-color:rgba(0,194,203,.34);background:rgba(0,194,203,.07)}
+  .chip.on{color:var(--ink);border-color:rgba(0,194,203,.62);background:var(--accent-soft);
+           box-shadow:0 0 20px rgba(0,194,203,.14)}
+  .chip i{font:10px var(--mono);font-style:normal;color:var(--faint)}
+  .chip.on i{color:var(--accent)}
+  .sep{flex:0 0 auto;width:1px;height:16px;background:rgba(127,168,201,.16);margin:0 5px}
+
+  .deck.chrome .top,.deck.chrome .rail{opacity:1;pointer-events:auto}
+  .prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(0,194,203,.10);z-index:40}
+  .prog b{display:block;height:100%;width:0;
+          background:linear-gradient(90deg,#00c2cb,#3b9eff);
+          box-shadow:0 0 12px rgba(0,194,203,.55);transition:width .4s var(--ease)}
+
+
+  .deck.presenting .stage{padding:0}
+  .deck.presenting .fit{border-radius:0;box-shadow:none}
+  .pill{position:absolute;left:26px;bottom:24px;z-index:45;align-items:center;gap:4px;
+        padding:7px 9px;border-radius:999px;backdrop-filter:blur(16px);
+        background:rgba(16,28,42,.80);border:1px solid rgba(127,168,201,.20);
+        box-shadow:0 12px 34px rgba(0,0,0,.5);transition:opacity .45s}
+  .pill{display:flex}
+  .pill.idle{opacity:0}
+  .pill button{width:34px;height:34px;padding:0;border-radius:50%;font-size:15px;
+        background:transparent;border:0;color:var(--muted)}
+  .pill button:hover:not(:disabled){background:rgba(255,255,255,.07);color:var(--ink)}
+  .pill .n{min-width:38px;height:32px;border-radius:9px;display:grid;place-items:center;
+        font:13px var(--mono);color:var(--ink);background:rgba(255,255,255,.07)}
+  .hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:40;
+        font:10.5px var(--mono);color:rgba(127,168,201,.5);letter-spacing:.1em;
+        text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .4s}
+  .deck.presenting .hint{opacity:1;animation:fade 3.4s 1.2s forwards}
+  @keyframes fade{to{opacity:0}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <div class="top">
+    <a class="home" id="home" href="/" target="_top" title="Back to x64base.com (Esc)">
+      <span class="x">&#8592;</span> Site
+    </a>
+    <div class="mark">
+      <span class="glyph">64</span>
+      <b>LMS Architecture <span>Artifact</span></b>
+    </div>
+    <div class="base">development @ 648967b74 &middot; report-only &middot; source-evidenced &middot; <a href="/lms-proposal/" target="_top" style="color:#f0a55e">the proposal this corrects &rarr;</a></div>
+    <div class="spacer"></div>
+    <div class="now"><div class="eb" id="eb"></div><div class="tt" id="tt"></div></div>
+    <div class="ctl">
+      <button class="arrow" id="prev" title="Previous (left arrow)">&#8592;</button>
+      <span class="count" id="count"></span>
+      <button class="arrow" id="next" title="Next (right arrow)">&#8594;</button>
+      <button class="solid" id="mode" title="Fullscreen (F)">Present</button>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="fit" id="fit"></div>
+  </div>
+
+  <div class="rail" id="rail"></div>
+  <div class="prog"><b id="bar"></b></div>
+  <div class="pill" id="pill">
+    <button id="pprev" title="Previous">&#8249;</button>
+    <span class="n" id="pnum">1</span>
+    <button id="pnext" title="Next">&#8250;</button>
+    <span style="width:1px;height:18px;background:rgba(127,168,201,.22);margin:0 3px"></span>
+    <button id="pexit" title="Exit presentation (Esc)" style="font-size:12px">&#10005;</button>
+  </div>
+  <div class="hint">&#8592; &#8594; to navigate &nbsp;&middot;&nbsp; esc to exit</div>
+</div>
+
+<script>
+const SLIDES=[
+ {id:"cover",       t:"Cover",              g:"Open"},
+ {id:"onboarding",  t:"Method",             g:"Open"},
+ {id:"vocabulary",  t:"The Root Error",     g:"Findings"},
+ {id:"portals",     t:"Two Portals",        g:"Findings"},
+ {id:"layers",      t:"Layer Model",        g:"Findings"},
+ {id:"x64base",     t:"x64base",            g:"Components"},
+ {id:"dottalk",     t:"DotTalk++",          g:"Components"},
+ {id:"labtalk",     t:"LabTalk",            g:"Components"},
+ {id:"proofs",      t:"Proof & Evidence",   g:"Components"},
+ {id:"corrections", t:"Corrections",        g:"Decisions"},
+ {id:"questions",   t:"Open Questions",     g:"Decisions"},
+ {id:"next",        t:"Next Step",          g:"Decisions"},
+ {id:"count",       t:"The Count",          g:"Decisions"},
+ {id:"closing",     t:"Closeout",           g:"Decisions"}
+];
+const SRC = id => "sections/" + id + ".html";
+const $   = id => document.getElementById(id);
+let i = -1, presenting = false;
+
+/* ---- rail, grouped ---- */
+const rail = $("rail");
+let lastG = null;
+const chips = SLIDES.map((s, k) => {
+  if (s.g !== lastG) { lastG = s.g;
+    if (k) { const sp = document.createElement("span"); sp.className = "sep"; rail.appendChild(sp); } }
+  const c = document.createElement("div");
+  c.className = "chip";
+  c.innerHTML = '<i>' + String(k + 1).padStart(2, "0") + '</i>' + s.t;
+  c.onclick = () => go(k);
+  rail.appendChild(c);
+  return c;
+});
+
+/* ---- sizing: claim only the space left under any host chrome ---- */
+function fit(){
+  const deck = $("deck");
+  const top  = deck.getBoundingClientRect().top + (window.scrollY || 0);
+  // When embedded, the host sizes us and `top` is 0; standalone, this claims the
+  // space under any chrome above. Overhang correction belongs to the HOST page --
+  // from inside an iframe this document can only see its own scrollHeight.
+  deck.style.height = Math.max(430, window.innerHeight - top) + "px";
+
+  const st = $("stage"), el = $("fit");
+  const pad = 0;
+  const s = Math.min((st.clientWidth - pad) / 1280, (st.clientHeight - pad) / 720);
+  el.style.transform = "scale(" + s + ")";
+  el.style.margin = ((720 * s - 720) / 2) + "px " + ((1280 * s - 1280) / 2) + "px";
+}
+addEventListener("resize", fit);
+
+/* ---- navigation: cross-fade two layers so the outgoing slide does not blink ---- */
+function go(k){
+  k = Math.max(0, Math.min(SLIDES.length - 1, k));
+  if (k === i) return;
+  const dir = k > i ? "enter-r" : "enter-l";
+  const s = SLIDES[k];
+
+  const layer = document.createElement("div");
+  layer.className = "layer " + (i < 0 ? "enter-r" : dir);
+  const f = document.createElement("iframe");
+  f.title = s.t; f.src = SRC(s.id);
+  layer.appendChild(f);
+
+  const fit_ = $("fit");
+  const old = fit_.lastElementChild;
+  fit_.appendChild(layer);
+  if (old) setTimeout(() => old.remove(), 520);
+
+  i = k;
+  $("eb").textContent   = s.g;
+  $("tt").textContent   = s.t;
+  $("count").innerHTML  = "<b>" + String(i + 1).padStart(2, "0") + "</b> / " + SLIDES.length;
+  $("prev").disabled    = (i === 0);
+  $("next").disabled    = (i === SLIDES.length - 1);
+  chips.forEach((c, k2) => c.classList.toggle("on", k2 === i));
+  chips[i].scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  $("bar").style.width  = ((i + 1) / SLIDES.length * 100) + "%";
+  $("pnum").textContent = i + 1;
+  $("pprev").disabled   = (i === 0);
+  $("pnext").disabled   = (i === SLIDES.length - 1);
+  history.replaceState(null, "", "#" + s.id);
+}
+
+/* ---- present ---- */
+function setMode(on){
+  presenting = on;
+  $("deck").classList.toggle("presenting", on);
+  $("mode").textContent = on ? "Exit" : "Present";
+  if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  if (!on && document.fullscreenElement) document.exitFullscreen?.();
+  requestAnimationFrame(fit);
+}
+$("mode").onclick = () => setMode(!presenting);
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && presenting) setMode(false);
+});
+
+$("prev").onclick  = () => go(i - 1);
+$("next").onclick  = () => go(i + 1);
+$("pexit").onclick = () => setMode(false);
+$("pprev").onclick = () => go(i - 1);
+$("pnext").onclick = () => go(i + 1);
+
+/* the navigator fades out of the way while presenting */
+let idleT;
+function wake(){
+  const p = $("pill"); p.classList.remove("idle");
+  clearTimeout(idleT);
+  idleT = setTimeout(() => { if (presenting) p.classList.add("idle"); }, 2600);
+}
+addEventListener("mousemove", e => {
+  wake();
+  // Chrome is for navigating, not for framing the slide. Show it only when the
+  // pointer is near an edge where a control lives; otherwise the slide is the page.
+  const h = window.innerHeight;
+  $("deck").classList.toggle("chrome", e.clientY < 70 || e.clientY > h - 90);
+});
+addEventListener("keydown", wake);
+addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); go(i + 1); }
+  if (e.key === "ArrowLeft"  || e.key === "PageUp")                    { e.preventDefault(); go(i - 1); }
+  if (e.key === "Home") go(0);
+  if (e.key === "End")  go(SLIDES.length - 1);
+  if (e.key === "f" || e.key === "F") setMode(!presenting);
+  if (e.key === "Escape") {
+    if (presenting) setMode(false);
+    else (window.top || window).location.href = $("home").getAttribute("href");
+  }
+});
+
+/* ---- start ---- */
+fit();
+const start = SLIDES.findIndex(s => s.id === location.hash.slice(1));
+go(start >= 0 ? start : 0);
+setTimeout(fit, 80);
+</script>
+</body>
+</html>

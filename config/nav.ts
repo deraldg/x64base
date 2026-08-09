@@ -5,6 +5,20 @@ export const topNav: NavItem[] = [
   { label: "Products", href: "/products" },
   { label: "LabTalk", href: "/products/labtalk" },
   { label: "Documentation", href: "/docs" },
+  // Two LMS decks, kept deliberately separate and NOT reconciled (AIF-102).
+  //
+  //   /lms-proposal/     the received Microsoft Copilot pitch, preserved unchanged
+  //                      as prior art. Authored with no repository access; it names
+  //                      an "xBridge Protocol" that exists nowhere in the tree.
+  //   /lms-architecture/ the local assessment of that pitch, measured against the
+  //                      tree, carrying the LabTalk campus registry counts.
+  //
+  // Both are `static` in the website documentation matrix, and both are report-only:
+  // no AIF closeout promotes either to repo authority. Provenance for the pair:
+  // docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/
+  // Trailing slashes match the rest of the site and avoid a redirect hop.
+  { label: "LMS", href: "/lms-proposal/" },
+  { label: "Architecture", href: "/lms-architecture/" },
   { label: "Downloads", href: "/downloads" },
   // The AI views (lanes/runs/proofs/tasks + the maintenance console) are served by
   // the local reports gateway (tools/reports/serve_dynamic_reports.py) at `/AI/`,
