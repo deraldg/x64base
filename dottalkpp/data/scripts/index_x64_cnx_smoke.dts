@@ -127,19 +127,25 @@ SET PATH INDEXES_X32 INDEXES/x32
 
 ECHO
 ECHO --- SCOPE F: ATTACHED CNX WINS BARE-TAG SET ORDER (no CDX hop) ---
-* SANDBOX students has BOTH students.cdx and students.cnx, so the hop is
-* expressible here. With the CNX deliberately attached, bare SET ORDER TO
-* <tag> must resolve on the ATTACHED CNX -- pre-fix it hopped to the .cdx
-* (observed live 2026-08-09: REINDEX honored the CNX while SET ORDER TO TAG
-* switched to CDX; two commands disagreeing about the active index).
+* Give the DISPOSABLE COPY both containers so the hop is expressible
+* self-contained (v1 of this phase used SANDBOX students.cnx -- a file that
+* only ever "existed" as the pre-fix x32-slot leak masquerading as local;
+* the phase was designed on evidence planted by the bug under test).
+* With BOTH containers present and the CNX deliberately attached, bare
+* SET ORDER TO <tag> must resolve on the ATTACHED CNX -- pre-fix it hopped
+* to the .cdx (observed live 2026-08-09: REINDEX honored the CNX while
+* SET ORDER TO TAG switched to CDX).
 WORKSPACE CLOSE
-USE students
-SET INDEX TO students.cnx
-SET ORDER TO LNAME
+USE students_cnx64_smoke
+CDX CREATE
+CDX ADDTAG SID
+BUILDLMDB
+SET INDEX TO students_cnx64_smoke.cnx
+SET ORDER TO SID
 AREA
-* Expect: "SET ORDER: CNX TAG 'LNAME'" and Index file ...students.cnx --
-* NOT "CDX TAG" / students.cdx. The auto-attached CDX default from GUARD 1
-* is unchanged (that phase already proves it).
+* Expect: advisory then "SET INDEX: CNX attached"; then
+* "SET ORDER: CNX TAG 'SID'" with Index file ...students_cnx64_smoke.cnx --
+* NOT "CDX TAG" / .cdx. Both containers are erased with the copy at cleanup.
 
 ECHO
 ECHO --- CLEANUP ---
