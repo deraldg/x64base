@@ -99,6 +99,30 @@ selectable:
 - `REINDEX` on a `.cnx`-ordered x64 table routes to `REBUILD` (CNX), not `BUILDLMDB` (see Scope A
   related symptom).
 
+## Scope D -- regression (a fix without a regression rots)
+
+A behavior change to index-attach policy MUST land with a curated regression, or the next refactor
+silently reverts it. The repo already has the matrix cells `INDEX_X32` (CNX smoke) and `INDEX_X64`
+(CDX/LMDB smoke); **CNX-on-x64 is the missing cell.**
+
+- **New curated regression** (register in `src/cli/cmd_regression.cpp` alongside INDEX_X32/INDEX_X64;
+  script under `dottalkpp/data/scripts/`), proposed name `INDEX_X64_CNX`. Self-bootstrapping and
+  self-erasing throwaway x64 table in SANDBOX (follow the `students_cdx_smoke` / `students_x32_idxtest`
+  pattern already in the index smokes). Explicit-run until soaked, then promote to the default suite.
+- **Asserts (the three scopes):**
+  - Scope A -- `SET INDEX TO <t>.cnx` on the x64 table attaches with an advisory (no hard refusal);
+    a seek/skip round-trip under the CNX order is correct.
+  - Scope C -- `SET ORDER TO <tag>` resolves to the `.cnx` when that is what exists (not a missing
+    `.cdx`); ordered TOP/BOTTOM/SKIP are correct.
+  - Scope B -- `WORKSPACE OPEN DBF CNX` opens the set CNX-attached; `WORKSPACE SAVE` then `LOAD`
+    restores the mixed graph.
+  - Guard the preferred default: with no explicit `.cnx`, an x64 table still auto-attaches CDX
+    (the advisory path must not become the default).
+- **Also update** the affected existing smokes if the policy shift changes any asserted line, and
+  note it in their descriptions.
+- Engine-touching -> host build + `./datarun.ps1` proof; the sandbox cannot run it (see the golden
+  rule -- assert only what was actually run).
+
 ## Registration (on pickup, host-side)
 
 `claim-aif` a fresh number, add the intake row, stamp it here. Engine-touching -> maintainer/host
