@@ -90,3 +90,11 @@ SYSGRANT loop (interactive `PSEUDO PROMOTE ... CONFIRM` deferred to Lane 2).
 **NEXT ACTION (owner):** send the corrections to Grok; when it re-issues the KIND/`SRCLANE` diff,
 run its verification procedure against a real `promote.py` `.dts`. That closes the engine-bound
 write half.
+
+## HANDED TO THE NEXT BUILD (2026-08-08)
+
+`RECURSED BACK <- frame 0`: corrections sent, Grok re-issued R2, **AIF-098 claimed**, R2 patches
+**ground-checked PASS**. The remaining engine-bound work (apply + build on a fresh store + `datarun`
+proof) is a host action and is handed off. **Runsheet: `AIF098_BUILD_HANDOFF_V1.md`** (self-contained
+apply/build/verify/close steps + the gate catch). Patches: `READY_TO_APPLY_PATCHES.md`. The next
+build session executes the runsheet and pastes the `datarun` output to Claude to adjudicate.
