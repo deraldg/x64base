@@ -7,27 +7,46 @@
 #
 # What it does, in order:
 #   1. free ports 3000 / 3002 / 8770 (stop any stale listener)
-#   2. start the Next.js website on :3002              (its own window)
+#   2. start the website on :3002                      (its own window)
+#         default   : `next dev`  -- live editing/HMR; site SEARCH does NOT work
+#                     (Pagefind has no index under dev)
+#         -Built    : `npm run build` + `serve out` -- production-like; SEARCH WORKS
 #   3. start the reports gateway on :3000              (its own window, writes ON)
-#         -> /AI/         live reports, rebuilt per request
+#         -> /AI/         live reports, rebuilt per request (needs pyyaml -> venv)
 #         -> /AI/console  maintenance UI (--enable-write allows Execute)
+#         -> everything else proxied to :3002 (so /search rides the built site)
 #   4. open http://localhost:3000/AI/console
 #
 # Stop everything by closing the two spawned windows (or Ctrl+C in each).
 #
 # Run:
-#   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1
+#   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1            (dev)
+#   powershell -ExecutionPolicy Bypass -File <repo>\start-ai.ps1 -Built     (search works)
 #
-# Overridable (defaults match run_reports.py):
+# Overridable:
 #   $env:X64BASE_SITE    website source dir   [default: D:/dev/x64base-site]
-#   $env:X64BASE_PYTHON  python launcher      [default: python]
+#   $env:X64BASE_PYTHON  python launcher      [default: the repo venv .venv312]
+#
+# Why the venv default: the gateway re-runs tools/reports/build_reports.py via
+# sys.executable, and build_reports imports yaml. So the gateway MUST run under a
+# python that has pyyaml -- the house-standard .venv312 -- not bare `python`
+# (which may resolve to a system python without pyyaml). The interactive
+# py12_guard does NOT help here: this spawns cmd.exe, not interactive PowerShell.
+
+param([switch]$Built)
 
 $ErrorActionPreference = 'Continue'
 
 # Repo root = the directory this script lives in (no hard-coded path).
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 $site = if ($env:X64BASE_SITE)   { $env:X64BASE_SITE }   else { 'D:/dev/x64base-site' }
-$py   = if ($env:X64BASE_PYTHON) { $env:X64BASE_PYTHON } else { 'python' }
+$py   = if ($env:X64BASE_PYTHON) { $env:X64BASE_PYTHON } else { Join-Path $repo '.venv312\Scripts\python.exe' }
+
+# Pre-flight: fail loud here rather than into a 404 / ModuleNotFoundError later.
+if (-not (Test-Path $site)) { Write-Host ("  WARNING: website dir not found: {0} (set `$env:X64BASE_SITE)" -f $site) }
+if (($py -match '[\\/]') -and -not (Test-Path $py)) {
+  Write-Host ("  WARNING: python not found: {0} -- the gateway needs pyyaml; set `$env:X64BASE_PYTHON" -f $py)
+}
 
 function Stop-Port([int]$port) {
   Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
@@ -57,14 +76,23 @@ Write-Host 'freeing ports 3000 / 3002 / 8770 ...'
 Stop-Port 3000; Stop-Port 3002; Stop-Port 8770
 Start-Sleep -Seconds 1
 
-Write-Host ("starting website (Next.js) on :3002 in {0} ..." -f $site)
-Start-Process -FilePath 'cmd.exe' `
-  -ArgumentList '/k', 'npx next dev -p 3002' `
-  -WorkingDirectory $site
-Wait-Port 3002 'website'
+if ($Built) {
+  Write-Host ("building + serving the STATIC site on :3002 in {0} (search works in this mode) ..." -f $site)
+  # `npm run build` runs the Pagefind index step; `serve out` serves the built tree with the index.
+  Start-Process -FilePath 'cmd.exe' `
+    -ArgumentList '/k', 'npm run build && npx serve out -l 3002' `
+    -WorkingDirectory $site
+  Wait-Port 3002 'website (built)' 300   # build + Pagefind index can take a couple of minutes
+} else {
+  Write-Host ("starting website (Next.js dev) on :3002 in {0} -- note: site SEARCH is inert under dev ..." -f $site)
+  Start-Process -FilePath 'cmd.exe' `
+    -ArgumentList '/k', 'npx next dev -p 3002' `
+    -WorkingDirectory $site
+  Wait-Port 3002 'website'
+}
 
 Write-Host 'starting reports gateway on :3000 (console Execute enabled) ...'
-$gwArgs = ('/k {0} "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002 --enable-write' -f $py, $repo)
+$gwArgs = ('/k "{0}" "{1}\tools\reports\serve_dynamic_reports.py" --bind 127.0.0.1 --port 3000 --upstream http://127.0.0.1:3002 --enable-write' -f $py, $repo)
 Start-Process -FilePath 'cmd.exe' -ArgumentList $gwArgs -WorkingDirectory $repo
 Wait-Port 3000 'gateway'
 
@@ -72,6 +100,11 @@ Write-Host ''
 Write-Host 'READY:'
 Write-Host '  AI views:  http://localhost:3000/AI/'
 Write-Host '  Console:   http://localhost:3000/AI/console'
+if ($Built) {
+  Write-Host '  Search:    http://localhost:3000/search   (built mode -- index present)'
+} else {
+  Write-Host '  Search:    inert under `next dev` -- relaunch with -Built to test /search'
+}
 Write-Host ''
-Write-Host ('(Standalone console with writes, no gateway:  {0} tools\dbf\maint_server.py  -> http://127.0.0.1:8770/ )' -f $py)
+Write-Host ('(Standalone console with writes, no gateway:  "{0}" tools\dbf\maint_server.py  -> http://127.0.0.1:8770/ )' -f $py)
 Start-Process 'http://localhost:3000/AI/console'
