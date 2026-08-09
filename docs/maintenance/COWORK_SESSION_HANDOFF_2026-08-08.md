@@ -106,6 +106,8 @@ The session continued. Landed on `development` / the site branch:
      interpreter (venv) twice before running the gateway in the foreground, which proved the
      gateway fine and the spawn the bug. Fixed by unquoting (`05641a888`). Lesson: for host-only
      changes I cannot test in the sandbox, get ground truth first; do not assert "done."
+     Now codified as **the golden rule** (`AI_GLOSSARY_V1.md` + proof
+     `proof.golden_rule_verify_before_assert`).
 
 ## Good-neighbor notes (continuation)
 

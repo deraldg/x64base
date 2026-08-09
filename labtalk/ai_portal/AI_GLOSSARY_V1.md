@@ -73,6 +73,12 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   (author-zero posts, a consumer committed without its definition, a handoff written where a
   clone cannot see it). **Verify before you rely; trust the measurement, not the success
   message.**
+- **the golden rule (verify before you assert)** -- never report a change as "done" unless you
+  verified it. For anything you cannot test in-session -- a host-only build, an engine run, a
+  live service -- get ground truth first (run it, read the actual error) or hand the
+  verification off explicitly; do NOT assert done. The sharpened form of "trust the measurement,
+  not the success message," earned 2026-08-08 when three host-only changes were each asserted
+  working and each broke. Evidence: `proof.golden_rule_verify_before_assert`.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.

@@ -542,6 +542,32 @@ proofs:
   notes: 'AIF-069 closed as a runtime-observed development slice. Debug build passed and REGRESSION RUN
     EXPORT_SDF exported two schema-width rows with no header: "AB    7  12.3T" and "WXYZ123  -4.5F", each
     length 14. The generated temp SDF file was inspected for row length and hex prefix, then removed.'
+- id: proof.golden_rule_verify_before_assert
+  label: The golden rule, earned -- host-only changes asserted "done" broke; ground truth came only on
+    running
+  state: source_defined
+  related:
+  - D:/code/ccode/labtalk/ai_portal/AI_GLOSSARY_V1.md
+  - D:/code/ccode/tools/reports/serve_dynamic_reports.py
+  - D:/code/ccode/start-ai.ps1
+  - D:/code/ccode/tools/reports/bbs_auth_relay.py
+  notes: 'THE GOLDEN RULE, EARNED. On 2026-08-08 a run of host-only changes -- ones the sandbox cannot
+    execute -- were each asserted "done" and each broke on the maintainer machine. (1) A data-pagefind-ignore
+    added to the /AI page body broke the reports gateway LIVE-banner injection, which matches an exact
+    body-and-wrap marker string; reverted (the opt-in Pagefind mode already excluded /AI, so the change
+    was never needed). (2) In start-ai.ps1, quoting the python argument inside cmd /k mangled the gateway
+    launch -- cmd strips the first and last quote off the whole line, producing "The filename, directory
+    name, or volume label syntax is incorrect" and :3000 refused. The interpreter (the .venv312) was blamed
+    TWICE, and reverted, before the gateway was finally RUN in the foreground -- which proved the gateway
+    fine and the spawn the bug. In every case the truth arrived only when the thing was run and its actual
+    output read, not from confident reasoning. RULE: never report a host-only change (a build, an engine
+    run, a live service) as done without ground truth -- run it, or hand the run off explicitly, and read
+    the real output or error, before asserting. This is the sharpened form of "trust the measurement,
+    not the success message." Counter-example from the same session, the right shape: the bbs_auth_relay
+    logic WAS verifiable in-session, so it was tested (9 unit tests) and reported as tested-not-integrated
+    -- test what you can, assert only that, hand off the rest. Same pattern as proof.aside.rule_caught_its_own_author
+    and proof.ai_portal.discoverability_caught_its_own_author: the doctrine demonstrated by its own author
+    falling through it.'
 - id: proof.help.cmdhelp_source_exists
   label: CMDHELP source exists
   state: source_defined
