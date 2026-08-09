@@ -149,6 +149,25 @@ class DynamicReportServer(http.server.ThreadingHTTPServer):
         self.render_lock = threading.Lock()
         self.write_enabled = write_enabled  # console Execute on the shared surface
 
+    def handle_error(self, request, client_address):
+        """Client aborts get one line; every other exception keeps its traceback.
+
+        Navigation, reload, and the Turbopack overlay polling /_next/webpack-hmr all
+        cancel in-flight responses. Those are not gateway faults. A traceback per
+        abort buries the failures that matter -- notably the clean 502 raised when
+        the upstream website is actually down.
+        """
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionAbortedError, ConnectionResetError,
+                            BrokenPipeError)):
+            sys.stdout.write(
+                f"{dt.datetime.now():%Y-%m-%d %H:%M:%S} {client_address[0]} "
+                f"client aborted ({type(exc).__name__})\n"
+            )
+            sys.stdout.flush()
+            return
+        super().handle_error(request, client_address)
+
     def render_report(self, name: str) -> tuple[bytes, str]:
         builder = self.repo_root / "tools" / "reports" / "build_reports.py"
         with self.render_lock, tempfile.TemporaryDirectory(
@@ -206,6 +225,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._send_json(500, {"ok": False, "error": f"{type(exc).__name__}: {exc}"})
             return
         self.send_error(404, "Unknown endpoint")
+
+    def _write(self, body: bytes) -> bool:
+        """Write a response body. Returns False if the client hung up first.
+
+        Every response path routes through here so an aborted client produces one
+        log line instead of a traceback. Real write errors still raise.
+        """
+        try:
+            self.wfile.write(body)
+            return True
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            self.log_message('client closed connection during "%s"', self.path)
+            return False
 
     def _dispatch(self, *, include_body: bool):
         path = urllib.parse.urlsplit(self.path).path
@@ -265,7 +297,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
-            self.wfile.write(body)
+            self._write(body)
 
     def _send_html(self, code, html, *, include_body: bool = True):
         body = html.encode("utf-8")
@@ -275,7 +307,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
-            self.wfile.write(body)
+            self._write(body)
 
     def _serve_report(self, name: str, *, include_body: bool):
         try:
@@ -291,7 +323,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(message)))
             self.end_headers()
             if include_body:
-                self.wfile.write(message)
+                self._write(message)
             return
 
         self.send_response(200)
@@ -304,7 +336,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
-            self.wfile.write(body)
+            self._write(body)
 
     def _serve_regression(self, *, include_body: bool):
         """Live regression list, generated from the engine registry at request time."""
@@ -352,7 +384,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
-            self.wfile.write(body)
+            self._write(body)
 
     def _proxy(self, *, include_body: bool):
         target = self.server.upstream + self.path
@@ -375,7 +407,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(message)))
             self.end_headers()
             if include_body:
-                self.wfile.write(message)
+                self._write(message)
             return
 
         body = response.read() if include_body else b""
@@ -389,7 +421,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if include_body:
-            self.wfile.write(body)
+            self._write(body)
 
     def log_message(self, fmt: str, *args):
         timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

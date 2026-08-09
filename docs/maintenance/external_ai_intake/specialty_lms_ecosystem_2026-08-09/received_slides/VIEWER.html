@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specialty LMS Ecosystem -- Unified Platform Proposal</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#111823;--line:#22303f;--ink:#dbe4ee;--dim:#7f92a8;--accent:#5fb3f7;--warn:#f0a55e}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+  .app{display:flex;height:100vh}
+  aside{width:268px;flex:0 0 268px;background:#080c11;border-right:1px solid var(--line);
+        display:flex;flex-direction:column}
+  .hd{padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+  .hd h1{font-size:13px;margin:0 0 4px;letter-spacing:.02em}
+  .hd p{margin:0;font-size:11px;color:var(--dim);font-family:ui-monospace,Consolas,monospace}
+  .list{flex:1;overflow:auto;padding:8px}
+  .it{display:flex;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;align-items:flex-start}
+  .it:hover{background:#131c27}
+  .it.on{background:#16283a;outline:1px solid #2b4b6b}
+  .num{font:11px/1.4 ui-monospace,Consolas,monospace;color:var(--dim);min-width:18px;padding-top:1px}
+  .it.on .num{color:var(--accent)}
+  .tt{font-size:12.5px;line-height:1.35}
+  .sec{display:block;font-size:10.5px;color:var(--dim);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+  .ft{padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+  main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .bar .t{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  button{background:#1b2836;color:var(--ink);border:1px solid var(--line);border-radius:6px;
+         padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+  button:hover{background:#23364a;border-color:#365a7d}
+  button:disabled{opacity:.35;cursor:default}
+  .pos{font:12px ui-monospace,Consolas,monospace;color:var(--dim);min-width:52px;text-align:center}
+  .stage{flex:1;background:#05080c;display:flex;align-items:center;justify-content:center;padding:14px;min-height:0}
+  .frame{width:100%;height:100%;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  iframe{width:100%;height:100%;border:0;display:block}
+  .note{background:#241a0e;color:#e8cfa8;border-top:1px solid #45341c;padding:7px 16px;font-size:11.5px}
+  @media(max-width:820px){aside{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="hd">
+      <h1>Specialty LMS Ecosystem</h1>
+      <p>Unified Platform Proposal &middot; 13 slides</p>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="ft">Arrows / Space to navigate</div>
+  </aside>
+  <main>
+    <div class="bar">
+      <button id="prev">&larr; Prev</button>
+      <span class="pos" id="pos">1 / 13</span>
+      <button id="next">Next &rarr;</button>
+      <span class="t" id="title"></span>
+      <button id="open">Open slide</button>
+      <button id="full">Fullscreen</button>
+    </div>
+    <div class="stage"><div class="frame"><iframe id="f" title="slide"></iframe></div></div>
+    <div class="note" id="note">Recovered from the saved Copilot artifact -- content is original, not regenerated. Evidence placeholders on slides 3, 5, 6, 7, 8, 10, 11, 12 still need real data.</div>
+  </main>
+</div>
+<script>
+const SLIDES=[
+ {n:1,file:"slides/01.html",title:"The Unified Specialty LMS Ecosystem",section:"Cover"},
+ {n:2,file:"slides/02.html",title:"Executive Summary",section:"Overview"},
+ {n:3,file:"slides/03.html",title:"The Problem Space",section:"Problem Statement"},
+ {n:4,file:"slides/04.html",title:"Platform Architecture at a Glance",section:"Architecture"},
+ {n:5,file:"slides/05.html",title:"x64base: The Foundation",section:"Component Deep-Dive"},
+ {n:6,file:"slides/06.html",title:"DotTalk++: Where Learners Connect",section:"Component Deep-Dive"},
+ {n:7,file:"slides/07.html",title:"LabTalk: Where Competency Is Proven",section:"Component Deep-Dive"},
+ {n:8,file:"slides/08.html",title:"How the Three Systems Connect",section:"Integration Model"},
+ {n:9,file:"slides/09.html",title:"Who Uses What -- and How",section:"Roles &amp; Access"},
+ {n:10,file:"slides/10.html",title:"The xBridge Data Flow",section:"Learner Journey"},
+ {n:11,file:"slides/11.html",title:"Key Performance Indicators",section:"Evidence &amp; ROI"},
+ {n:12,file:"slides/12.html",title:"Path to Full Ecosystem Deployment",section:"Roadmap"},
+ {n:13,file:"slides/13.html",title:"One Ecosystem. Every Learner.",section:"Closing CTA"}
+];
+let i=0;
+const $=id=>document.getElementById(id);
+const list=$("list");
+SLIDES.forEach((s,k)=>{
+  const d=document.createElement("div");
+  d.className="it"; d.dataset.k=k;
+  d.innerHTML='<span class="num">'+String(s.n).padStart(2,"0")+'</span>'+
+              '<span class="tt">'+s.title+'<span class="sec">'+s.section+'</span></span>';
+  d.onclick=()=>go(k);
+  list.appendChild(d);
+});
+function go(k){
+  i=Math.max(0,Math.min(SLIDES.length-1,k));
+  const s=SLIDES[i];
+  $("f").src=s.file;
+  $("pos").textContent=(i+1)+" / "+SLIDES.length;
+  $("title").textContent=s.title;
+  $("prev").disabled=(i===0); $("next").disabled=(i===SLIDES.length-1);
+  [...list.children].forEach((el,k2)=>el.classList.toggle("on",k2===i));
+  const on=list.children[i]; if(on) on.scrollIntoView({block:"nearest"});
+  if(location.hash!=="#"+(i+1)) history.replaceState(null,"","#"+(i+1));
+}
+$("prev").onclick=()=>go(i-1);
+$("next").onclick=()=>go(i+1);
+$("open").onclick=()=>window.open(SLIDES[i].file,"_blank");
+$("full").onclick=()=>{const e=document.querySelector(".frame");
+  if(!document.fullscreenElement){e.requestFullscreen&&e.requestFullscreen();}
+  else{document.exitFullscreen();}};
+addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){e.preventDefault();go(i+1);}
+  if(e.key==="ArrowLeft"||e.key==="PageUp"){e.preventDefault();go(i-1);}
+  if(e.key==="Home")go(0); if(e.key==="End")go(SLIDES.length-1);
+});
+const h=parseInt(location.hash.slice(1),10);
+go(Number.isFinite(h)&&h>=1?h-1:0);
+</script>
+</body>
+</html>

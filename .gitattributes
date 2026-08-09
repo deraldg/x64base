@@ -16,6 +16,15 @@
 
 * text=auto
 
+# Received external-AI packages are PRESERVED VERBATIM (AIF-102). Their manifests
+# claim the payload is "unchanged, exactly as rendered by the producing agent", and
+# a text=auto round-trip would silently rewrite line endings and make that claim
+# false. Byte-preservation is the whole point of the landing zone, so the payload
+# is marked -text. Applies to the payload only; the .md manifest/assessment written
+# locally beside it stay normal text.
+docs/maintenance/external_ai_intake/**/received_slides/**   -text
+docs/maintenance/external_ai_intake/**/payload/**           -text
+
 # Windows scripts & MSVC project files -> CRLF (native tooling expects it)
 *.ps1       text eol=crlf
 *.bat       text eol=crlf

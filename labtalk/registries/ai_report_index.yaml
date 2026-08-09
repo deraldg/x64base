@@ -100,3 +100,58 @@ reports:
     notes: >
       Root-cause + fix for the external-intake discoverability gap. Delivers this
       index (Part A); proposes contract/validator/pointer changes (Parts B-D).
+
+  - report_id: AIPR-20260809-COPILOT-001
+    provider: Microsoft
+    product: Copilot (Tasks / slides skill)
+    date: 2026-08-09
+    kind: review_needed_change_package
+    project: project.labtalk.campus
+    path: docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/MANIFEST.md
+    status: review-needed
+    topics:
+      - specialty LMS ecosystem
+      - xBridge protocol
+      - role-based access model
+      - learner journey
+      - KPI and ROI framework
+      - phased deployment roadmap
+    aliases:
+      - the copilot LMS deck
+      - specialty LMS proposal
+      - hybrid presentation-proposal
+      - unified platform proposal
+      - three engines one platform
+      - xbridge
+    notes: >
+      Thirteen-slide external proposal authored with NO repository access.
+      Preserved unchanged as prior art. Names an xBridge Protocol that does not
+      exist in the tree, and reads the AI coordination vocabulary (lane, proof,
+      member, board, AI Portal) as learning-management concepts. Not evidence
+      about this project; see the paired assessment.
+
+  - report_id: AIPR-20260809-003
+    provider: Anthropic
+    product: Cowork (Claude)
+    date: 2026-08-09
+    kind: intake_assessment
+    project: project.labtalk.campus
+    path: docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/ASSESSMENT_LOCAL_WORKBENCH.md
+    status: assessment-complete
+    related_to: AIPR-20260809-COPILOT-001
+    topics:
+      - external ai intake
+      - LMS vocabulary collision
+      - LabTalk registry measurement
+      - AI Portal purpose
+    aliases:
+      - lms architecture assessment
+      - is there an LMS here
+      - campus registry count
+      - labs lessons proofs count
+      - student-ready count
+    notes: >
+      Accept as prior art, reject as description. Carries the first measurement
+      of the campus registries: 4 labs, 16 lessons, 36 concepts, 56 proofs,
+      ZERO student-ready. Produced the reviewed /lms-architecture deck on the
+      website. Proposed lane AIF-102; Q1-Q5 owner rulings outstanding.
