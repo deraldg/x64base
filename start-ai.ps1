@@ -25,13 +25,15 @@
 #
 # Overridable:
 #   $env:X64BASE_SITE    website source dir   [default: D:/dev/x64base-site]
-#   $env:X64BASE_PYTHON  python launcher      [default: the repo venv .venv312]
+#   $env:X64BASE_PYTHON  python launcher      [default: system python -- carries the gateway deps]
 #
-# Why the venv default: the gateway re-runs tools/reports/build_reports.py via
-# sys.executable, and build_reports imports yaml. So the gateway MUST run under a
-# python that has pyyaml -- the house-standard .venv312 -- not bare `python`
-# (which may resolve to a system python without pyyaml). The interactive
-# py12_guard does NOT help here: this spawns cmd.exe, not interactive PowerShell.
+# Which python (learned the hard way, 2026-08-08): the gateway imports
+# maint_server / schema_registry / crud (and re-runs build_reports.py, which needs
+# yaml). It needs a python where ALL of those import. On this box that is the FULL
+# system `python`, NOT the minimal vcpkg `.venv312` -- that venv has pyyaml but is
+# missing gateway deps, and defaulting to it made the gateway refuse :3000.
+# $py12 / .venv312 is correct for a yaml-only standalone tool; it is WRONG for this
+# gateway. Override with $env:X64BASE_PYTHON if your system python is not the right one.
 
 param([switch]$Built)
 
@@ -40,7 +42,7 @@ $ErrorActionPreference = 'Continue'
 # Repo root = the directory this script lives in (no hard-coded path).
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 $site = if ($env:X64BASE_SITE)   { $env:X64BASE_SITE }   else { 'D:/dev/x64base-site' }
-$py   = if ($env:X64BASE_PYTHON) { $env:X64BASE_PYTHON } else { Join-Path $repo '.venv312\Scripts\python.exe' }
+$py   = if ($env:X64BASE_PYTHON) { $env:X64BASE_PYTHON } else { 'python' }
 
 # Pre-flight: fail loud here rather than into a 404 / ModuleNotFoundError later.
 if (-not (Test-Path $site)) { Write-Host ("  WARNING: website dir not found: {0} (set `$env:X64BASE_SITE)" -f $site) }
