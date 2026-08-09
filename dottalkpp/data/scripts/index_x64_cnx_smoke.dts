@@ -106,9 +106,46 @@ AREA
 * carries no flavor guard; this proves it on an x64 table.
 
 ECHO
+ECHO --- SCOPE E: CROSS-SLOT DECOY (owner-caught leak, 2026-08-09) ---
+* The old dirs_for_mode searched the INDEXES_X32 slot BEFORE the configured
+* INDEXES slot whenever CNX was wanted, so an x64 table could attach a
+* same-stem .cnx built over a DIFFERENT table (observed live:
+* dbf/x64/STUDENTS.dbf wearing indexes/x32/STUDENTS.cnx). Plant a decoy
+* copy of the smoke's .cnx in a dir posing as the x32 slot; the attach
+* MUST come from the configured slot (INDEXES/SANDBOX), not the decoy.
+COPY FILE INDEXES\SANDBOX\students_cnx64_smoke.cnx TO tmp\students_cnx64_smoke.cnx OVERWRITE
+SET PATH INDEXES_X32 tmp
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF CNX
+SELECT STUDENTS_CNX64_SMOKE
+AREA
+* Expect: Index file path contains INDEXES\SANDBOX (configured slot), NOT
+* \tmp\ (the decoy posing as the x32 slot). Under the pre-fix order the
+* decoy would win and AREA would show the tmp path -- the known-bad that
+* the single-slot SANDBOX environment could not previously express.
+SET PATH INDEXES_X32 INDEXES/x32
+
+ECHO
+ECHO --- SCOPE F: ATTACHED CNX WINS BARE-TAG SET ORDER (no CDX hop) ---
+* SANDBOX students has BOTH students.cdx and students.cnx, so the hop is
+* expressible here. With the CNX deliberately attached, bare SET ORDER TO
+* <tag> must resolve on the ATTACHED CNX -- pre-fix it hopped to the .cdx
+* (observed live 2026-08-09: REINDEX honored the CNX while SET ORDER TO TAG
+* switched to CDX; two commands disagreeing about the active index).
+WORKSPACE CLOSE
+USE students
+SET INDEX TO students.cnx
+SET ORDER TO LNAME
+AREA
+* Expect: "SET ORDER: CNX TAG 'LNAME'" and Index file ...students.cnx --
+* NOT "CDX TAG" / students.cdx. The auto-attached CDX default from GUARD 1
+* is unchanged (that phase already proves it).
+
+ECHO
 ECHO --- CLEANUP ---
 WORKSPACE CLOSE
 ERASE students_cnx64_smoke CONFIRM
+* Note: the decoy tmp\students_cnx64_smoke.cnx remains in TMP (transient dir).
 
 ECHO ============================================================
 ECHO INDEX X64 CNX SMOKE v1 DONE

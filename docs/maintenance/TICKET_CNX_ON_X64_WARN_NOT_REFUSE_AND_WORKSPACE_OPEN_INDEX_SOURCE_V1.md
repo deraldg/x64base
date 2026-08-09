@@ -21,6 +21,37 @@ said "change this function only" on policy change). Host re-proof owed: rebuild 
 refusal, 2026-08-08.` See `RECURSION_MARKERS_V1.md`. This ticket is a parked frame; the origin
 frame (send Grok its corrections) is still open.
 
+## Scope E -- cross-slot leak (owner-caught LIVE after the seven-phase proof, 2026-08-09)
+
+Hours after the lane was proven, owner dogfood in the real x64 workspace caught what the
+regression could not: `dbf/x64/STUDENTS.dbf` wearing `indexes/x32/STUDENTS.cnx` -- a same-stem
+FOREIGN container built over the x32 twin table. Root: `cmd_workspace.cpp` `dirs_for_mode`
+searched the hard-coded INDEXES_X32 slot BEFORE the configured INDEXES slot whenever CNX was
+wanted ("CNX is an x32 thing", still alive in the path resolver after the guards were fixed).
+The regression missed it structurally: SANDBOX has a single indexes slot, so the failure was
+inexpressible there -- green because it could not be red.
+
+- **Fix:** `dirs_for_mode` reordered -- sibling dir, then the CONFIGURED slot, then the flavor
+  slots as last-resort fallbacks (symmetric for CDX/x64 too).
+- **Proof made expressible:** regression Scope E plants a same-stem decoy `.cnx` in a dir posing
+  as the x32 slot (`SET PATH INDEXES_X32 tmp`) and asserts the attach comes from the configured
+  slot. Under the pre-fix order the decoy wins.
+- **Recorded:** `proof.owner_dogfood_caught_cross_slot_leak` (dogfood-after-proof doctrine; the
+  AIF-100 census consequence: a proof whose environment cannot express its failure class is
+  flagged, not counted as coverage).
+
+## Scope F -- attached CNX wins bare-tag SET ORDER (owner transcript, 2026-08-09)
+
+Observed live on the pre-Scope-E binary: with `indexes\x32\STUDENTS.cnx` attached to the x64
+STUDENTS, bare `REINDEX` honored the CNX (rebuilt it, OK=6) while bare `SET ORDER TO TAG FNAME`
+silently hopped to `INDEXES\x64\STUDENTS.cdx` -- two commands disagreeing about the active
+index. Cause: `preferred_attached_container_for_flavor` honored only flavor-DEFAULT attachments
+(x64+CDX). Fixed: an attached container wins whichever legal family it is (x64: CDX or CNX).
+Regression phase added (SANDBOX students has BOTH containers, so the hop is expressible).
+Classic-side mirror (attached CDX on v32) belongs to the mirror lane. Same transcript also
+produced the orthogonality discovery (`proof.cnx_orthogonality_recno_permutation`) and the
+mirror lane ticket (`TICKET_CDX_ON_V32_WARN_NOT_REFUSE_MIRROR_V1.md`).
+
 ## Trigger (owner ran the test on purpose to force the failure)
 
 On an x64 (v64/v128) table `TEST64`:

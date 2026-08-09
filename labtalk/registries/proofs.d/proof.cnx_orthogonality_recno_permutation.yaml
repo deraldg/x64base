@@ -1,0 +1,37 @@
+id: proof.cnx_orthogonality_recno_permutation
+label: The cross-generation index cocktail works BY CONSTRUCTION -- a CNX is a table-agnostic recno permutation, and REINDEX self-heals a foreign container
+state: source_defined
+related:
+- D:/code/ccode/src/cli/cmd_setorder.cpp
+- D:/code/ccode/src/cli/cmd_rebuild.cpp
+- D:/code/ccode/docs/maintenance/TICKET_CNX_ON_X64_WARN_NOT_REFUSE_AND_WORKSPACE_OPEN_INDEX_SOURCE_V1.md
+- D:/code/ccode/docs/maintenance/TICKET_CDX_ON_V32_WARN_NOT_REFUSE_MIRROR_V1.md
+notes: 'THE ORTHOGONALITY DISCOVERY (owner, live, 2026-08-09). While exercising CNX-on-x64
+  (AIF-099) the owner observed an x64 STUDENTS.dbf running correctly under a CNX container built
+  for its v32 twin, and named why: "the system is accepting the v32 CNX index, because the logic
+  and the data are identical in structure." MECHANISM, stated precisely: a CNX RUN1 container
+  stores a RECNO PERMUTATION plus tag metadata -- no typed keys (~4 bytes per recno; CNXLIVE
+  doctrine: the attached TABLE is the ordering authority, comparisons read live field values).
+  So a CNX is nearly table-agnostic: attach it to any table with the same logical structure and
+  traversal is coherent. The table generations (v32/v64) are ORTHOGONAL to the container, which
+  carries order, not data. SELF-HEALING observed in the same transcript: bare REINDEX (AIF-099
+  routing) rebuilt the x32-slot container FROM the x64 table (6 tags, 200 recs, OK=6 FAIL=0), so
+  the foreign container stopped being foreign in content the moment it was reindexed -- only its
+  LOCATION remained wrong (the cross-slot leak, fixed separately). HONEST CAVEAT: before that
+  rebuild the ordering was genuinely another table''s permutation and only looked right because
+  both fixtures carry identical rows; same-stem DIFFERENT-content tables order silently wrong,
+  which is why container identity must be intentional (slot-precedence fix + Scope E decoy).
+  THE REAL x32 BOUNDARIES, enumerated: RUN1 4-byte recnos vs the x64 recno64 space; record
+  counts past int32; x32 10-char name limits vs x64 256; any future typed-key CNX feature.
+  Until one fires, the cocktail works by construction, not by luck. OWNER PREDICTION, endorsed:
+  the REVERSE direction -- v32 tables under v64 LMDB/CDX -- is the WIDENING conversion (small
+  recnos embed losslessly in the 64-bit keyspace; key derivation reads field values identically)
+  and should be nearly out-of-box; it is currently blocked only by the mirror stale-policy guard
+  (SetOrderV32UsesCnxNotCdxText; setindex classic branch accepts .inx/.cnx only) -- opened as the
+  mirror lane. THIRD FINDING from the same transcript (Scope F trigger): with a CNX attached on
+  x64, bare REINDEX honored it but bare SET ORDER TO TAG hopped to the CDX, because
+  preferred_attached_container_for_flavor only honored flavor-DEFAULT attachments -- the last
+  site still carrying the old assumption; fixed so an attached container wins regardless of
+  which legal family it is. One live session produced: a working cross-generation cocktail, a
+  self-healing rebuild, a precise boundary map, a validated reverse hypothesis, and the final
+  guard inconsistency. Dogfood as discovery instrument, again.'

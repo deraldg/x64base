@@ -1,0 +1,35 @@
+id: proof.owner_dogfood_caught_cross_slot_leak
+label: A green seven-phase regression missed what two minutes of owner dogfood caught -- the proof environment could not express the failure
+state: source_defined
+related:
+- D:/code/ccode/src/cli/cmd_workspace.cpp
+- D:/code/ccode/dottalkpp/data/scripts/index_x64_cnx_smoke.dts
+- D:/code/ccode/docs/maintenance/TICKET_CNX_ON_X64_WARN_NOT_REFUSE_AND_WORKSPACE_OPEN_INDEX_SOURCE_V1.md
+- D:/code/ccode/docs/maintenance/GATE_GOVERNANCE_LANE_V1.md
+notes: 'THE DOGFOOD PROOFED THE DOCUMENTATION, 2026-08-09 (AIF-099). Hours after the CNX-on-x64
+  lane was proven by a seven-phase regression -- all phases PASS, adjudicated from host
+  transcripts -- the owner used the feature live in the real x64 workspace and caught, from two
+  path lines, what the regression could not: dbf/x64/STUDENTS.dbf was wearing
+  indexes/x32/STUDENTS.cnx, a same-stem container built over the DIFFERENT x32 twin table. Root
+  cause: cmd_workspace.cpp dirs_for_mode hard-searched the INDEXES_X32 slot BEFORE the configured
+  INDEXES slot whenever CNX was wanted -- the "CNX is an x32 thing" assumption cleared from the
+  SET INDEX / SET ORDER guards that morning, still alive in the PATH RESOLVER. The policy changed;
+  the geography had not. WHY THE REGRESSION MISSED IT, stated structurally: the INDEX_X64_CNX
+  smoke runs in SANDBOX, which has a SINGLE indexes slot -- no x32/x64 split, no possible name
+  collision, so the failure was INEXPRESSIBLE in the proof environment. The proof was green
+  because it could not be red. This is the warm-assessor lesson (AIF-082: an inspection reads the
+  documents while working the system exercises the paths) at the level of TEST ENVIRONMENTS: a
+  proof environment that cannot express a failure class silently certifies it. The insidious
+  detail: both STUDENTS tables carry 200 rows of the same fixture data, so the foreign ordering
+  LOOKED plausible -- the worst kind of wrong. FIXES: (1) dirs_for_mode reordered -- configured
+  slot outranks the hard-coded flavor slots, which remain last-resort fallbacks; (2) the
+  regression gained Scope E, a DECOY phase that plants a same-stem .cnx in a dir posing as the
+  x32 slot and asserts the configured slot wins -- the known-bad made expressible, per the
+  "seen it FAIL" rule. RULES REINFORCED: dogfood after proof, not instead of it (the owner rule
+  that final tests promote to regressions has a converse -- live use keeps auditing the
+  regressions); when a policy changes, sweep its ASSUMPTIONS out of every layer, not just the
+  layer that refused (guards were fixed, the resolver was not); and for the AIF-100 gate
+  census: a gate or proof whose environment cannot express its failure class must be flagged,
+  not counted as coverage. Same family as proof.golden_rule_verify_before_assert and the
+  aside/discoverability proofs: the doctrine demonstrated on its own authors, this time with the
+  OWNER as the cold runner who caught it.'

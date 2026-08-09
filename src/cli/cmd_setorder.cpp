@@ -419,7 +419,14 @@ static std::string preferred_attached_container_for_flavor(const xbase::DbArea& 
     const bool isCnx = orderstate::isCnx(area);
 
     if (is_classic_tag_area(area) && isCnx) return name;
-    if (is_x64_cdx_area(area) && isCdx) return name;
+    // Scope F (AIF-099, owner-caught 2026-08-09): an ATTACHED container wins,
+    // whichever legal family it is. Previously only a flavor-DEFAULT attachment
+    // (x64+CDX) was honored, so with a CNX deliberately attached on an x64
+    // table, bare REINDEX rebuilt the CNX while bare SET ORDER TO TAG silently
+    // hopped to the .cdx -- two commands disagreeing about which index is
+    // active. CNX is legal on x64 (warn-not-refuse ruling); the user attached
+    // it, so tag resolution stays on it.
+    if (is_x64_cdx_area(area) && (isCdx || isCnx)) return name;
 
     return std::string{};
 }

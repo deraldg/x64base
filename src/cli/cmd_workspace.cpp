@@ -731,9 +731,18 @@ static std::optional<fs::path> find_index_for_dbf(const fs::path& dbfPath,
     auto dirs_for_mode = [&](IndexMode wanted) {
         std::vector<fs::path> dirs;
         append_unique_dir(dirs, sibDir);
+        // AIF-099 cross-slot fix (owner-caught live, 2026-08-09): the CONFIGURED
+        // INDEXES slot outranks the hard-coded flavor slots. The old order
+        // searched INDEXES_X32 before the configured slot whenever CNX was
+        // wanted -- a leftover of the "CNX is an x32 thing" policy -- so an x64
+        // table in an x64 workspace could attach the x32 twin's same-stem .cnx
+        // (a FOREIGN container built over a different table). Observed:
+        // dbf/x64/STUDENTS.dbf wearing indexes/x32/STUDENTS.cnx. Flavor slots
+        // remain as LAST-RESORT fallbacks only. Proof: INDEX_X64_CNX Scope E
+        // (decoy in the x32 slot must lose to the configured slot).
+        append_unique_dir(dirs, idxDir);
         if (wanted == IndexMode::ForceCdx) append_unique_dir(dirs, idxX64Dir);
         if (wanted == IndexMode::ForceCnx || wanted == IndexMode::ForceInx) append_unique_dir(dirs, idxX32Dir);
-        append_unique_dir(dirs, idxDir);
         return dirs;
     };
 
