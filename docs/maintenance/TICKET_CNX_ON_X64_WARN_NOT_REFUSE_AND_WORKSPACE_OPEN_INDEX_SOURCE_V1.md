@@ -5,6 +5,10 @@ Date 2026-08-08. **AIF: unclaimed** -- claim a fresh number with `claim-aif` on 
 AIF-052/097). This is a scoping ticket, not a build; the owner said "create a ticket and we will
 recurse back."
 
+`RECURSED IN <- session close-out (Grok Lane 1 wrap + ./datarun CNX-on-x64 check) @ the SET INDEX
+refusal, 2026-08-08.` See `RECURSION_MARKERS_V1.md`. This ticket is a parked frame; the origin
+frame (send Grok its corrections) is still open.
+
 ## Trigger (owner ran the test on purpose to force the failure)
 
 On an x64 (v64/v128) table `TEST64`:

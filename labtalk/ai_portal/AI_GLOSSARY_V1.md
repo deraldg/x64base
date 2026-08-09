@@ -94,6 +94,13 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   own PDLC or AIF unless it is promoted** into standing work; a promoted aside graduates to a
   claimed lane like anything else. This keeps the main task moving without ceremony for every
   small detour, while still catching the ones that turn out to matter.
+- **recursion / recurse back** -- the call-stack view of stepping back: stepping out of the current
+  task to handle a side issue is a push (a new frame), "recurse back" is the pop (return to the
+  frame underneath). An aside is one such frame. Home: `RECURSION_MARKERS_V1.md`.
+- **recursion marker** -- a short greppable breadcrumb (`RECURSED OUT -> / IN <- / BACK <-`) placed
+  in the SDLC/PDLC artifact at each push/pop so the movement pattern is trackable and an
+  un-returned step-back (an `OUT` with no `BACK`) surfaces as a leak instead of vanishing. The
+  temporal/movement complement to the recall graph's semantic edges. Home: `RECURSION_MARKERS_V1.md`.
 - **pseudo-chat** -- the short-term-to-long-term consolidation channel; a live exchange
   consolidates into an attributed BBS post through the value gate. Home:
   `docs/maintenance/PSEUDO_CHAT_RETURN_LANE_V1.md`.
