@@ -94,8 +94,20 @@ TUPLE SID,LNAME,FNAME
 * "file not found: ...students_cnx64_smoke.cdx".
 
 ECHO
+ECHO --- SCOPE B: WORKSPACE OPEN DBF CNX (explicit index source) ---
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF CNX
+SELECT STUDENTS_CNX64_SMOKE
+AREA
+* Expect: under explicit CNX mode the x64 copy attaches its .cnx, while
+* plain students (no .cnx present) opens WITHOUT an attached index --
+* the requested mode is honored, not silently swapped to CDX. This is a
+* verification phase: the WORKSPACE mode plumbing predates AIF-099 and
+* carries no flavor guard; this proves it on an x64 table.
+
+ECHO
 ECHO --- CLEANUP ---
-CLOSE
+WORKSPACE CLOSE
 ERASE students_cnx64_smoke CONFIRM
 
 ECHO ============================================================

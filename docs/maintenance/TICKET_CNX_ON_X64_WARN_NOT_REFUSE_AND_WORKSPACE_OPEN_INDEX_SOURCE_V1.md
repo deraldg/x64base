@@ -4,9 +4,18 @@
 **AIF-099** (claimed 2026-08-09, run COWORK-20260809-001, lane "cnx-on-x64 warn-not-refuse").
 Scopes A/C/REINDEX-routing/D landed and proven by `REGRESSION RUN INDEX_X64_CNX` on the host
 (all five expectations PASS, adjudicated by Claude/Cowork from the datarun transcript; REBUILD
-proven to populate a CNX on an x64 table, OK=2 FAIL=0). Scope B (WORKSPACE OPEN DBF [CDX|CNX])
-remains the open follow-up of this lane. Cosmetic follow-up: the USE banner still prints
-"Valid Index/Indices: CDX" for v64; could read "CDX, CNX" now.
+proven to populate a CNX on an x64 table, OK=2 FAIL=0).
+
+**Follow-up slice (2026-08-09, same lane):** Scope B was found ALREADY BUILT -- the
+`WORKSPACE OPEN <target> CNX|CDX|INX|AUTO|NOINDEX` grammar, mode parse (`parse_index_mode_ci`),
+explicit-mode honor (`effective_index_mode_for_area` only applies flavor policy on Auto), and
+the flavor-blind attach (`attach_workspace_index`) all predate AIF-099 and carry no x64 guard.
+Measure-don't-build: instead of code, a Scope B verification phase was added to
+`index_x64_cnx_smoke.dts` (WORKSPACE OPEN DBF CNX attaches the copy's .cnx on x64; plain
+students without a .cnx opens unindexed -- mode honored, not swapped to CDX). Cosmetic banner
+fixed: `cmd_use.cpp` `valid_index_types_for` now reports "CDX, CNX" for x64 (its own comment
+said "change this function only" on policy change). Host re-proof owed: rebuild + rerun
+`REGRESSION RUN INDEX_X64_CNX` (now six phases).
 
 `RECURSED IN <- session close-out (Grok Lane 1 wrap + ./datarun CNX-on-x64 check) @ the SET INDEX
 refusal, 2026-08-08.` See `RECURSION_MARKERS_V1.md`. This ticket is a parked frame; the origin
