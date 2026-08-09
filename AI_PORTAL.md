@@ -1,5 +1,13 @@
 # x64base AI Portal
 
+> **STOP -- confirm your branch before reading further.** This portal is
+> authoritative ONLY on the `development` branch. `main` is a lagging, frozen
+> public snapshot: do NOT onboard from it, and do NOT derive current state
+> (lane numbers, targets, status) from anything you read there. Enumerate the
+> published branches (`git ls-remote --heads origin`) and baseline on
+> `development`. Full rule + the recorded failure it prevents: the "Baseline
+> branch -- enumerate first" section under the Outside-AI Delivery Rule below.
+
 Status: **Alpha/Experimental**
 Audience: AI development partners and maintainers
 Published location: repository root as `AI_PORTAL.md`
