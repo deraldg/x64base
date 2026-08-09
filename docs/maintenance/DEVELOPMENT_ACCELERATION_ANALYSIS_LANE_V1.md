@@ -61,6 +61,29 @@ Candidate factors (owner's three + confounds that must be priced):
 | M2 | **Attribution analysis.** Knee location vs factor dates; per-metric knees compared (do docs metrics lead source metrics?); honest confound accounting; explicitly correlational language. | findings state what CANNOT be concluded as clearly as what can |
 | M3 | **Report + publication candidate.** A findings doc; optionally a site page/whitepaper (the Frontal_Mem thesis validation angle: "documented from month eleven onward" meets "the eleventh month is when it went vertical"). Publication rides the matrix + flush pipeline, not a hand-page. | owner review; matrix row if published |
 
+## M1 seed -- agent-adoption timeline (first evidence in the record, extracted 2026-08-09)
+
+First-mention / first-file-add dates from `git log` (adoption PROXIES -- lower bounds; the
+owner's financial audit of subscription starts, reaching back to 2025-08, is the precision
+source and M1's next input):
+
+| Agent / era | First evidence | What it was |
+|---|---|---|
+| ChatGPT (pre-repo era) | predates the record | Owner (verbatim): "prior to that most dev was simple short sessions of chatgpt desperately trying to scrap together a dozen or so files to stay within the initial restrictive storage/memory limits in early AI." The context-window scarcity that era imposed is the ORIGIN CONDITION of the Frontal_Mem thesis -- the memory system exists because the limits did. First in-repo doctrine mention 2026-07-25 (AIF-060 agency model, `e3bae587b`). |
+| Codex / Copilot footprint | **2025-08-29** (first path-adds; branch `rename-cli-to-dli-20250829`) | Matches the owner's billing recollection "back to 08/25" independently -- two sources, days apart. |
+| Codex (named in commits) | 2026-07-21 (`e68ccf1af`) | DEF family / security doctrine era. |
+| **Claude (Cowork)** | **2026-07-21/22** (session dir `2026-07-21_claude_recno64_indextxn_onboarding`; first commit mention `be021e8b7` 2026-07-22) | **Arrives IN the knee week (W30, week of 2026-07-20).** |
+| Ollama | 2026-07-25 (`596f6b7d1`) | AI-BBS agent-server bundle (AIF-052..059). |
+| Grok | 2026-07-30 intake (`2e1b1c548`); first lane files 2026-08-08 | Virtual-workspaces intake, then the Lane 1 coworker assignment. |
+| Copilot (named in commits) | 2026-08-03 (`09bcaeb21`) | Remote-agent branch-baseline hardening. |
+| Disk access for Claude/Codex (owner factor 4) | owner-dated "a few weeks ago" -- to be pinned in M1 | Capability-class change: read access to the working tree; the enabler that made F1/F2 executable at depth. |
+
+**The bracket, stated plainly:** the closeout convention lands W29 (2026-07-14); Claude arrives
+W30 (2026-07-21); the commit knee IS W30. F2 leads by one week; F1/F3 (a new agent, on a then-new
+model generation) lands exactly at the knee. The two candidate causes BRACKET the transition --
+which is precisely why M2 must stay correlational and why the financial audit's exact
+subscription dates matter: they are the only independent clock that can order F1 against F3.
+
 ## Rules inherited
 
 Prove-the-bottleneck / measure-first (M0 before any narrative); bounded metrics only (an
