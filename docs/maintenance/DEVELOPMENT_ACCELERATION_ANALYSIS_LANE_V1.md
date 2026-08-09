@@ -1,7 +1,7 @@
 # Development Acceleration Analysis -- measuring the six-week exponential
 
 **Status:** charter (review-needed). Owner: member.derald. Steward: member.ai.claude.cowork.
-Date 2026-08-09. **AIF: unclaimed** -- claim on pickup and stamp here.
+Date 2026-08-09. **AIF-101** (claimed 2026-08-09, run `COWORK-20260809-001`).
 Parent: `project.ai_friendly` (process analysis) with a Frontal_Mem seam.
 
 ## Owner statement of record (2026-08-09, verbatim intent)
