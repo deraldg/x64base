@@ -237,6 +237,35 @@ not outrank the identified operational carrier.
 - Retains final rulings, commit authority, promotion authority, and publication
   authority.
 
+## M4 seed observation -- plan-to-produce is the flagship lab (owner, 2026-08-10)
+
+Recorded so the last leg is not lost. The 2026-08-10 runtime proof of the
+environment scripts incidentally exercised three of M4's five process spines
+against live data: procure-to-pay (vendor/open-PO join), order-to-cash (order
+book across CONFIRMED/PICKING/SHIPPED stages), and close-to-report (`ERP TRIAL`
+computed a coherent double-entry trial balance: the 2,938.25 in Sales Revenue
+is the same 2,938.25 in Accounts Receivable), plus the inventory substrate
+(`v_Reorder_Alert` returned exactly the five below-reorder items). The data is
+proven teachable: 330 records, FK-clean (`foreign_key_check` 0), double-entry
+consistent, process-coherent across stages, on both carriers.
+
+**The untouched spine, plan-to-produce, is the wonderful teaching example
+(owner's words) and should anchor the M4 labs:** BOM_Headers -> BOM_Details ->
+Routings -> Work_Orders -> WO_Operations / WO_Materials. It is the only spine
+that is genuinely RECURSIVE (a BOM explodes into components that are themselves
+assemblies -- the WIP items PDU core, pump rotor, valve trim exist in the seed
+precisely to teach multi-level explosion), it crosses the most modules (sales
+demand -> engineering structure -> capacity -> materials -> labor via
+Time_Cards -> GL via overhead), and it owns the two most instructive views
+(`v_BOM_Explosion`, `v_Work_Order_Status`). On the x64base side it is also the
+natural showcase for traditional navigation: SET RELATION down a BOM is the
+xBase idiom at its best, and the FK seek tags for every hop were built and
+proven attaching 2026-08-10. Suggested lab arc: one sales order for a PDU-100
+followed from demand to work order, BOM explosion to component availability
+(reorder alert fires), routing through work centers, material issue and labor
+capture, to the overhead landing in the trial balance -- one order touching all
+five spines, which is the whole point of an ERP.
+
 ## Milestones and gates
 
 | Milestone | Outcome | Exit gate |
