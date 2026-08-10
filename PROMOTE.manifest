@@ -48,7 +48,13 @@
 
 # --- entry + hygiene -------------------------------------------------------
 .gitignore
-AI_PORTAL.md
+# AI_PORTAL.md -- deliberately NOT overlaid from development. main carries a
+# non-perishable pointer to the development portal (no-widows-and-orphans rule,
+# 2026-08-10); overlaying dev's full portal here would republish perishable
+# state on a frozen branch. Source of truth for the pointer text:
+# dev docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md. NOTE: this staging
+# manifest copy is historical; rebuild-staging.ps1 reads development's
+# PROMOTE.manifest, which already excludes AI_PORTAL.md.
 AI_README.md
 BUILDING.md
 
