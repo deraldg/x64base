@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "cascade-dual-carrier-schema-v1",
+  "path": "public/images/schemas/cascade-dual-carrier-schema-v1.svg",
+  "derived_from": [
+    "diagrams/sources/cascade_dual_carrier_schema_v1.mmd"
+  ],
+  "upstream_authority": "ccode:dottalkpp/data/cascade_precision_erp/x64base_mirror/dual_schema_contract.json",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "73fc3ff096d13e9748a7496dd6ee04de327aefab08bcec99fecb1e64d4d44505",
+  "output_sha256": "1778a5c1e6ef30a074c3c2d347a6ad893240daf340b6c5c77303f88b9e5a67dd",
+  "truth_status": "source-derived",
+  "review_status": "review-needed"
+}

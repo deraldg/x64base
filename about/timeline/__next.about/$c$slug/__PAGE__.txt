@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-3:I[97367,["/_next/static/chunks/1jd4bobh2p2ts.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
-4:"$Sreact.suspense"
-2:T5b4,<h2 id="1993--the-beginning"><a class="no-underline" href="#1993--the-beginning">1993 — The beginning</a></h2>
+4:I[97367,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T93f,<h2 id="1993--the-beginning"><a class="no-underline" href="#1993--the-beginning">1993 — The beginning</a></h2>
 <ul>
 <li>Early xBase tooling and teaching materials</li>
 <li>First experiments with inspectable file formats</li>
@@ -16,13 +16,32 @@
 <li>Scripting approaches aimed at education and repeatable data work</li>
 <li>CLI-first utilities for inspection and maintenance</li>
 </ul>
+<h2 id="2025--documented-ai-assisted-development"><a class="no-underline" href="#2025--documented-ai-assisted-development">2025 — Documented AI-assisted development</a></h2>
+<ul>
+<li><strong>July 21:</strong> earliest probable AI-assisted DotTalk modernization activity,
+inferred from eight coordinated <code>*_modern</code> source artifacts produced in a
+44-second batch. The artifacts do not identify an AI model.</li>
+<li><strong>August 2:</strong> earliest direct preserved project-specific AI material, followed
+minutes later by the earliest explicitly Gemini-attributed project record.</li>
+<li><strong>December 13:</strong> a preserved DotTalk++ archive and message provide later
+corroboration of the project identity and direction.</li>
+<li><a href="/about/ai-assisted-history">Read the complete evidence record</a>.</li>
+</ul>
 <h2 id="2026--canonical-unification"><a class="no-underline" href="#2026--canonical-unification">2026 — Canonical unification</a></h2>
 <ul>
-<li>DBF_64 and FPT64 formalized</li>
-<li>Documentation, licensing, curriculum, and tooling consolidated under a single platform</li>
-<li>SelfDoc and the Master Documentation Organizer become part of the system architecture: documentation, proof, and artifact-protection lanes created to keep AI-assisted work reviewable and prevent damage to source, HELP data, generated manuals, diagrams, and staged publication artifacts.</li>
-</ul>
-<blockquote>
-<p>Replace or extend these bullets with your canonical milestones as you finalize the historical record.</p>
-</blockquote>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=ae143719dd1a","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/?v=ae143719dd1a","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/timeline",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/timeline/?v=ae143719dd1a","children":"Timeline"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Timeline"}],["$","p",null,{"className":"mt-2 text-muted","children":"Key milestones from 1993 to 2026."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"_BjsjS9Q-K7YYH7MJJ2L5"}
-5:null
+<li>
+<p>DBF_64 and FPT64 formalized</p>
+</li>
+<li>
+<p>Documentation, licensing, curriculum, and tooling consolidated under a single platform</p>
+</li>
+<li>
+<p>SelfDoc and the Master Documentation Organizer become part of the system architecture: documentation, proof, and artifact-protection lanes created to keep AI-assisted work reviewable and prevent damage to source, HELP data, generated manuals, diagrams, and staged publication artifacts.</p>
+</li>
+<li>
+<p>The public project-history convention records August 2, 2025 as the earliest
+directly documented AI-assisted DotTalk date while preserving July 21 as probable.</p>
+</li>
+</ul>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=f12001464ed8","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/?v=f12001464ed8","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/timeline",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/timeline/?v=f12001464ed8","children":"Timeline"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Timeline"}],["$","p",null,{"className":"mt-2 text-muted","children":"Key milestones from 1993 to 2026."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"n8QdIIQAUxOME_fw1dTrJ"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null

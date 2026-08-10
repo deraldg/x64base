@@ -1,0 +1,419 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+c:I[68027,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/0j7est96yuwh-.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","about","ai-assisted-history",""],"q":"","i":false,"f":[[["",{"children":["about",{"children":[["slug","ai-assisted-history","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0j7est96yuwh-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/0y0oc-id9x9-y.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":[["$","span",null,{"className":"font-mono text-brand","children":"WEBSITE ALPHA"}]," · ",["$","span",null,{"className":"text-fg","children":"AI-assisted, source-reviewed documentation"}]," · ","Updated ","2026-08-05",null]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","data-pagefind-body":true,"children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=f12001464ed8","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication/?v=f12001464ed8","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=f12001464ed8","children":"Downloads"}]]}],["$","div",null,{"className":"mt-4","children":[["$","div",null,{"className":"text-xs font-semibold uppercase tracking-wide text-muted","children":"Credits & Contributors"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors/?v=f12001464ed8","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements/?v=f12001464ed8","children":"Third-party credits"}]]}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/?v=f12001464ed8","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products/?v=f12001464ed8","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=f12001464ed8","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news/?v=f12001464ed8","children":"News"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact/?v=f12001464ed8","children":"Contact"}]]}]]}],["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":["© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a ","$L5","."]}],"$L6"]}]]}]}]]}]}]]}],{"children":["$L7",{"children":["$L8",{"children":["$L9",{},null,false,null]},null,false,"$@a"]},null,false,"$@a"]},null,false,null],"$Lb",false]],"m":"$undefined","G":["$c",["$Ld"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"n8QdIIQAUxOME_fw1dTrJ"}
+f:I[97367,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+10:"$Sreact.suspense"
+13:I[97367,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+15:I[97367,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","a",null,{"href":"/licensing","className":"hover:text-fg hover:underline","children":"commercial license"}]
+6:["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]
+7:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+8:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+9:["$","$1","c",{"children":["$Le",null,["$","$Lf",null,{"children":["$","$10",null,{"name":"Next.MetadataOutlet","children":"$@11"}]}]]}]
+12:[]
+a:"$W12"
+b:["$","$1","h",{"children":[null,["$","$L13",null,{"children":"$L14"}],["$","div",null,{"hidden":true,"children":["$","$L15",null,{"children":["$","$10",null,{"name":"Next.Metadata","children":"$L16"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+d:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0j7est96yuwh-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+17:T376e,<blockquote>
+<p><strong>Public history decision.</strong> Use <strong>August 2, 2025</strong> as the earliest directly
+documented date of AI-assisted DotTalk development. Preserve <strong>July 21,
+2025</strong> as the earliest probable date, explicitly labeled as an inference.</p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Record field</th><th>Value</th></tr></thead><tbody><tr><td>Record ID</td><td><code>DOTTALK-AI-EVIDENCE-V1</code></td></tr><tr><td>Record date</td><td>August 10, 2026</td></tr><tr><td>Evidence period</td><td>June 25, 2025 through December 13, 2025</td></tr><tr><td>Status</td><td>Project-history evidence record; not a forensic affidavit</td></tr><tr><td>Public single-date convention</td><td>August 2, 2025</td></tr></tbody></table>
+<h2 id="publication-and-evidence-boundary"><a class="no-underline" href="#publication-and-evidence-boundary">Publication and evidence boundary</a></h2>
+<p>This page is the public web transcription of the supplied historical evidence
+record. That record was prepared from a preserved <code>pyxbase.zip</code> archive,
+archive-member metadata, cryptographic hashes, and connected mailbox records.
+The private messages and archive are not republished here.</p>
+<p>The website build verifies this page's structure and publication safety. It
+does not independently authenticate private mailbox records or turn ZIP
+timestamps into forensic proof. The wording therefore remains deliberately
+narrow: <strong>earliest preserved evidence found</strong>, not the exact day the work began.</p>
+<h2 id="executive-finding"><a class="no-underline" href="#executive-finding">Executive finding</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Date</th><th>Classification</th><th>Finding</th></tr></thead><tbody><tr><td>June 25, 2025</td><td>Contextual</td><td>General AI use is documented, but the reviewed message does not connect that use directly to DotTalk.</td></tr><tr><td>July 21, 2025</td><td>Probable project evidence</td><td>Eight modernized C and header artifacts, including <code>DOTTALK_modern.c</code> and <code>DOTTALK_modern.h</code>, were produced in one 44-second batch. The artifacts do not identify the tool or model.</td></tr><tr><td>August 2, 2025</td><td>Direct / explicit project evidence</td><td>Preserved assistant output applies directly to DotTalk's work-area architecture; minutes later, a <code>gemini.txt</code> record explicitly identifies Gemini while continuing the project.</td></tr></tbody></table>
+<p>The formal conclusion is that AI-assisted work on the DotTalk lineage is
+evidenced by modernization artifacts dated July 21, 2025, with direct preserved
+project-specific AI material beginning August 2, 2025.</p>
+<h2 id="evidence-standard"><a class="no-underline" href="#evidence-standard">Evidence standard</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Evidence level</th><th>Meaning</th></tr></thead><tbody><tr><td>Contextual</td><td>Establishes general AI use, but not project-specific AI work.</td></tr><tr><td>Probable project evidence</td><td>Strongly suggests AI assistance, but the artifact does not identify an AI system.</td></tr><tr><td>Direct or explicit project evidence</td><td>Preserves AI-style output tied to DotTalk concepts or explicitly names the model.</td></tr><tr><td>Independent preservation</td><td>Establishes that the reviewed archive existed in the maintainer's possession no later than the message timestamp.</td></tr></tbody></table>
+<h2 id="evidence-chronology"><a class="no-underline" href="#evidence-chronology">Evidence chronology</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Date and time</th><th>Artifact or record</th><th>Evidence level</th><th>What it establishes</th></tr></thead><tbody><tr><td>June 25, 2025, 2:23:38 PM PDT</td><td>Sent message, <code>Initial Research</code></td><td>Contextual</td><td>The maintainer states that AI is being used for project planning; the message is not DotTalk-specific.</td></tr><tr><td>July 21, 2025, 6:03:20-6:04:04</td><td>Eight <code>*_modern</code> artifacts in <code>pyxbase.zip</code></td><td>Probable</td><td>A rapid modernization batch includes DotTalk source and headers. AI attribution is inferred, not stated.</td></tr><tr><td>August 2, 2025, 9:44:48</td><td><code>pyxbase/text/new 1.txt</code></td><td>Direct AI-style record</td><td>Assistant output addresses <code>AREA</code>, <code>SELECT</code>, <code>select_rec</code>, and <code>s[MAX_AREA]</code>, translating the work-area model into <code>DbfArea</code> and <code>DbfInstance</code> classes.</td></tr><tr><td>August 2, 2025, 10:00:52</td><td><code>pyxbase/text/gemini.txt</code></td><td>Explicit named-model record</td><td>The filename identifies Gemini, and the content continues assembly of the Python DBF project.</td></tr><tr><td>August 2, 2025, 9:47:25 PM PDT</td><td>Sent message, <code>files</code>, with <code>pyxbase.zip</code></td><td>Independent preservation</td><td>The mailbox timestamp establishes possession of the archive no later than this time.</td></tr><tr><td>August 3, 2025, 7:47:50 PM PDT</td><td>Sent message, <code>pyxbase</code>, with the archive</td><td>Second preservation copy</td><td>A second mailbox record independently preserves the same development archive.</td></tr><tr><td>December 13, 2025, 11:39:46 AM PST</td><td>Sent message, <code>My Summer Proect</code> [sic], with <code>dottalkpp_Alpha7.zip</code></td><td>Later corroboration</td><td>The project is described as DotTalk++, including its C++ lineage, relational database direction, period prompt, and self-documenting HELP direction.</td></tr></tbody></table>
+<h2 id="why-july-21-remains-probable"><a class="no-underline" href="#why-july-21-remains-probable">Why July 21 remains probable</a></h2>
+<p>The earliest stored archive timestamps belong to these eight modernization
+artifacts:</p>
+<ul>
+<li><code>XBCMDS_modern.h</code></li>
+<li><code>XBINDEX_modern.h</code></li>
+<li><code>DOTTALK_modern.h</code></li>
+<li><code>XBASE_modern.c</code></li>
+<li><code>XBCMDS_modern.c</code></li>
+<li><code>XBINDEX_modern.c</code></li>
+<li><code>DOTTALK_modern.c</code></li>
+<li><code>TEST_modern.c</code></li>
+</ul>
+<p>Their naming, coordinated scope, and 44-second production interval are
+consistent with automated or AI-assisted modernization. The files themselves
+do not name an AI system or prove the mechanism used. July 21 is therefore an
+important internal research date, but it is not the public single-date
+convention.</p>
+<h2 id="why-august-2-is-direct"><a class="no-underline" href="#why-august-2-is-direct">Why August 2 is direct</a></h2>
+<p>The 9:44:48 assistant record works directly with existing DotTalk/xBase
+architecture: <code>AREA</code>, <code>SELECT</code>, the global <code>s[MAX_AREA]</code> array, <code>select_rec</code>,
+and the continuing roles of <code>initbase()</code> and <code>open_file()</code>. It proposes a
+Python object model using <code>DbfArea</code> and <code>DbfInstance</code>.</p>
+<p>At 10:00:52, <code>gemini.txt</code> continues the same work by assembling <code>dbf_core.py</code>,
+<code>xbase_cli.py</code>, and project documentation. Its filename provides the earliest
+preserved explicit model attribution found in the reviewed material.</p>
+<h2 id="preservation-record"><a class="no-underline" href="#preservation-record">Preservation record</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Property</th><th>Recorded value</th></tr></thead><tbody><tr><td>Archive</td><td><code>pyxbase.zip</code></td></tr><tr><td>Archive size</td><td>287,206 bytes</td></tr><tr><td>Archive contents</td><td>93 files and 10 directory entries</td></tr><tr><td>Archive SHA-256</td><td><code>df829ac3fd86e514499b66e53144c97dceb1f2e7ed7811d4a8c3c275ac8aebea</code></td></tr><tr><td>Retrieved for review</td><td>August 10, 2026</td></tr><tr><td>Handling</td><td>Read-only inspection; hashes computed from retrieved bytes; no archive members modified</td></tr></tbody></table>
+<h2 id="key-artifact-manifest"><a class="no-underline" href="#key-artifact-manifest">Key artifact manifest</a></h2>
+<p>The timestamps below are the timezone-naive values stored in the ZIP central
+directory. Hashes are shown as recorded prefixes; the two directly discussed
+text artifacts retain their complete hashes below the table.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Stored timestamp</th><th>Archive member</th><th align="right">Bytes</th><th>SHA-256 prefix</th></tr></thead><tbody><tr><td>2025-07-21 06:03:20</td><td><code>pyxbase/ccode/XBCMDS_modern.h</code></td><td align="right">1,727</td><td><code>8be43bd06bcbc95e...</code></td></tr><tr><td>2025-07-21 06:03:24</td><td><code>pyxbase/ccode/XBINDEX_modern.h</code></td><td align="right">4,221</td><td><code>0855ba4fb8ebf758...</code></td></tr><tr><td>2025-07-21 06:03:28</td><td><code>pyxbase/ccode/DOTTALK_modern.h</code></td><td align="right">286</td><td><code>8f53ac4783d26698...</code></td></tr><tr><td>2025-07-21 06:03:40</td><td><code>pyxbase/ccode/XBASE_modern.c</code></td><td align="right">20,789</td><td><code>cf56decc99291675...</code></td></tr><tr><td>2025-07-21 06:03:44</td><td><code>pyxbase/ccode/XBCMDS_modern.c</code></td><td align="right">19,896</td><td><code>50d370def1266a82...</code></td></tr><tr><td>2025-07-21 06:03:50</td><td><code>pyxbase/ccode/XBINDEX_modern.c</code></td><td align="right">17,278</td><td><code>5521bc8f819a978b...</code></td></tr><tr><td>2025-07-21 06:03:56</td><td><code>pyxbase/ccode/DOTTALK_modern.c</code></td><td align="right">11,931</td><td><code>8cfb11fca33ebd5f...</code></td></tr><tr><td>2025-07-21 06:04:04</td><td><code>pyxbase/ccode/TEST_modern.c</code></td><td align="right">3,134</td><td><code>84d4a0962219265e...</code></td></tr><tr><td>2025-08-02 09:44:48</td><td><code>pyxbase/text/new 1.txt</code></td><td align="right">25,885</td><td><code>ca07b351bb4fe509...</code></td></tr><tr><td>2025-08-02 10:00:52</td><td><code>pyxbase/text/gemini.txt</code></td><td align="right">55,733</td><td><code>87c77ac42f2fa73c...</code></td></tr><tr><td>2025-08-02 10:05:18</td><td><code>pyxbase/text/g2.txt</code></td><td align="right">44,163</td><td><code>db26d233ec296492...</code></td></tr><tr><td>2025-08-02 10:10:10</td><td><code>pyxbase/text/g3.txt</code></td><td align="right">1,838</td><td><code>a0a0284dc2f51f69...</code></td></tr><tr><td>2025-08-02 10:11:06</td><td><code>pyxbase/text/gmd.txt</code></td><td align="right">2,971</td><td><code>de93fa4a4da999f2...</code></td></tr></tbody></table>
+<ul>
+<li><code>new 1.txt</code> SHA-256:
+<code>ca07b351bb4fe50948049fbf786285da057af8a76b280c62f454840994628b7d</code></li>
+<li><code>gemini.txt</code> SHA-256:
+<code>87c77ac42f2fa73c6215caae879a0797b78fd80f5eea8cd286d7bb79bef60035</code></li>
+</ul>
+<h2 id="interpretation-rules-and-limitations"><a class="no-underline" href="#interpretation-rules-and-limitations">Interpretation rules and limitations</a></h2>
+<ol>
+<li>ZIP timestamps preserve local wall-clock time with two-second precision,
+but they do not encode a timezone. The dates are more reliable than the
+timezone attribution.</li>
+<li>File timestamps can survive copying or be changed. The mailbox evidence
+supplies an independent "existed no later than" bound, not cryptographic
+authentication of each internal timestamp.</li>
+<li>The July 21 batch strongly suggests automation or AI assistance but does
+not identify a model or prove the mechanism.</li>
+<li><code>new 1.txt</code> is direct AI-style project output, but its model is unnamed.
+The later <code>gemini.txt</code> filename provides explicit model attribution.</li>
+<li>This is the earliest evidence found in the reviewed material. An older
+archive, chat export, cloud revision, or message could move the documented
+date earlier.</li>
+</ol>
+<h2 id="approved-project-history-wording"><a class="no-underline" href="#approved-project-history-wording">Approved project-history wording</a></h2>
+<p><strong>Full wording:</strong> AI-assisted work on the DotTalk lineage is evidenced by a
+rapid source-modernization batch dated July 21, 2025. Direct preserved AI
+transcript evidence begins August 2, 2025, when AI-generated material
+translated the existing <code>AREA</code>, <code>SELECT</code>, <code>select_rec</code>, and <code>s[MAX_AREA]</code>
+architecture into a Python object model; an explicitly named Gemini transcript
+followed minutes later.</p>
+<p><strong>Concise wording:</strong> Documented AI-assisted DotTalk development began by
+August 2, 2025, with probable modernization activity preserved from July 21,
+2025.</p>
+<h2 id="source-register"><a class="no-underline" href="#source-register">Source register</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>ID</th><th>Source</th><th>Role in the finding</th></tr></thead><tbody><tr><td>S1</td><td>Connected message, <code>Initial Research</code>, June 25, 2025</td><td>Establishes general AI use, not DotTalk-specific work.</td></tr><tr><td>S2</td><td>Preserved <code>pyxbase.zip</code> with the full archive hash above</td><td>Establishes internal artifacts and stored timestamps.</td></tr><tr><td>S3</td><td><code>pyxbase/text/new 1.txt</code></td><td>Establishes direct AI-style assistance on DotTalk work-area architecture.</td></tr><tr><td>S4</td><td><code>pyxbase/text/gemini.txt</code></td><td>Establishes explicit Gemini-attributed project work.</td></tr><tr><td>S5</td><td>Connected message, <code>files</code>, August 2, 2025, with the archive</td><td>Establishes independent possession by that time.</td></tr><tr><td>S6</td><td>Connected message, <code>pyxbase</code>, August 3, 2025, with the archive</td><td>Supplies a second preservation copy.</td></tr><tr><td>S7</td><td>Connected message, <code>My Summer Proect</code> [sic], December 13, 2025, with <code>dottalkpp_Alpha7.zip</code></td><td>Later corroboration of project identity and direction.</td></tr></tbody></table>
+<p>Private message bodies and attachments remain outside this public page. The
+source register records their evidentiary role without exposing mailbox
+addresses or republishing private correspondence.</p>e:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=f12001464ed8","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/?v=f12001464ed8","children":"About"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/about/ai-assisted-history",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/about/ai-assisted-history/?v=f12001464ed8","children":"Earliest Preserved AI-Assisted DotTalk Work"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Earliest Preserved AI-Assisted DotTalk Work"}],["$","p",null,{"className":"mt-2 text-muted","children":"The evidence, chronology, limits, and public wording behind the documented 2025 start of AI-assisted DotTalk development."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$17"},"children":null}]}]]}]
+14:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+18:I[27201,["/_next/static/chunks/0y0oc-id9x9-y.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+11:null
+16:[["$","title","0",{"children":"Earliest Preserved AI-Assisted DotTalk Work — x64base"}],["$","meta","1",{"name":"description","content":"The evidence, chronology, limits, and public wording behind the documented 2025 start of AI-assisted DotTalk development."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/about/ai-assisted-history/"}],["$","meta","3",{"property":"og:title","content":"Earliest Preserved AI-Assisted DotTalk Work"}],["$","meta","4",{"property":"og:description","content":"The evidence, chronology, limits, and public wording behind the documented 2025 start of AI-assisted DotTalk development."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/about/ai-assisted-history/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Earliest Preserved AI-Assisted DotTalk Work"}],["$","meta","12",{"name":"twitter:description","content":"The evidence, chronology, limits, and public wording behind the documented 2025 start of AI-assisted DotTalk development."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L18","17",{}]]

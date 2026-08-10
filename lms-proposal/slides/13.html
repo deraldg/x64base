@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)blob:https://copilot.fun/30c965c1-c8d0-4998-a01b-c276124cc498 -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
+._nav-link-tooltip {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  max-width: min(80%, 600px);
+  padding: 4px 8px;
+  background: rgba(32, 33, 36, 0.88);
+  color: #e8eaed;
+  font: 12px/16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top-right-radius: 4px;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  box-sizing: border-box;
+}
+._nav-link-tooltip._visible {
+  opacity: 1;
+}
+@media (prefers-color-scheme: light) {
+  ._nav-link-tooltip {
+    background: rgba(241, 243, 244, 0.92);
+    color: #202124;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+</style>
+<script nonce="">
+(function() {
+  // Helper: check if a raw href is an external URL (http/https)
+  // Hash links (#section), relative paths (/page), mailto:, tel:, etc. are NOT external
+  function _isExternalHref(rawHref) {
+    if (!rawHref) return false;
+    var h = rawHref.trim().toLowerCase();
+    // onejs-sdl-disable-next-line no-insecure-url -- detects and upgrades user-provided HTTP links
+    return h.startsWith('http://') || h.startsWith('https://') || h.startsWith('//');
+  }
+
+  // --- Link hover URL preview tooltip ---
+  var _tooltip = document.createElement('div');
+  _tooltip.className = '_nav-link-tooltip';
+  function _ensureTooltipMounted() {
+    if (!_tooltip.parentNode) {
+      (document.body || document.documentElement).appendChild(_tooltip);
+    }
+  }
+
+  document.addEventListener('mouseover', function(event) {
+    var el = event.target;
+    while (el && el.tagName !== 'A') {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    var rawHref = el.getAttribute('href');
+    if (!rawHref || rawHref.startsWith('javascript:')) return;
+    _ensureTooltipMounted();
+    // Show raw href for clean display (avoids blob: URL noise)
+    _tooltip.textContent = rawHref;
+    _tooltip.classList.add('_visible');
+  }, true);
+
+  document.addEventListener('mouseout', function(event) {
+    var el = event.target;
+    while (el && el.tagName !== 'A') {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    _tooltip.classList.remove('_visible');
+  }, true);
+
+  // --- Intercept anchor tag clicks ---
+  document.addEventListener('click', function(event) {
+    var target = event.target;
+    while (target && target.tagName !== 'A') {
+      target = target.parentElement;
+    }
+    if (!target) return;
+
+    var rawHref = target.getAttribute('href');
+    if (!rawHref || rawHref.startsWith('javascript:')) return;
+
+    // Hash links: Ctrl/Cmd+click to scroll to target, plain click places cursor
+    if (rawHref.startsWith('#')) {
+      if (event.ctrlKey || event.metaKey) {
+        var targetId = rawHref.substring(1);
+        if (targetId) {
+          var targetEl = document.getElementById(targetId) || document.getElementsByName(targetId)[0];
+          if (targetEl) {
+            event.preventDefault();
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+      return;
+    }
+
+    // Only intercept external links (http/https)
+    if (!_isExternalHref(rawHref)) return;
+
+    // Allow download links to proceed natively instead of intercepting them.
+    // The 'download' attribute signals the browser to save the file rather than navigate.
+    if (target.hasAttribute('download')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    window.parent.postMessage({
+      type: 'navigate-link',
+      payload: {
+        url: target.href || rawHref,
+        target: target.target || undefined
+      },
+      timestamp: Date.now()
+    }, '*');
+  }, true);
+
+  // --- Intercept window.open calls ---
+  var _origOpen = window.open;
+  window.open = function(url, target, features) {
+    if (!url) return null;
+    var urlStr = String(url);
+
+    // Only intercept external URLs (http/https)
+    if (!_isExternalHref(urlStr)) {
+      return _origOpen.call(window, url, target, features);
+    }
+
+    var resolvedUrl;
+    try {
+      resolvedUrl = new URL(urlStr, window.location.href).href;
+    } catch (e) {
+      resolvedUrl = urlStr;
+    }
+
+    window.parent.postMessage({
+      type: 'navigate-link',
+      payload: {
+        url: resolvedUrl,
+        target: target || '_blank'
+      },
+      timestamp: Date.now()
+    }, '*');
+    return null;
+  };
+})();
+</script>
+      <script nonce="">
+        (function() {
+          if (typeof window !== 'undefined' && window.trustedTypes && window.trustedTypes.createPolicy) {
+            try {
+              window.trustedTypes.createPolicy('default', {
+                createHTML: function(input) { return input; },
+                createScript: function(input) { return input; },
+                createScriptURL: function(input) { return input; }
+              });
+            } catch (e) {
+              // Policy may already exist — ignore
+            }
+          }
+        })();
+      </script>
+      <script nonce="">
+        (function() {
+          const _0x1a2b = {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error,
+            debug: console.debug
+          };
+
+          function _0x3c4d(e, t, n) {
+            try {
+              const o = {
+                type: 'iframe-console-log',
+                payload: {
+                  level: e,
+                  message: String(t),
+                  args: n.map(e => {
+                    try {
+                      return typeof e === 'object' ? JSON.stringify(e, null, 2) : String(e);
+                    } catch (e) {
+                      return '[Circular or Non-serializable]';
+                    }
+                  }),
+                  timestamp: Date.now(),
+                  stackTrace: e === 'error' ? new Error().stack : undefined
+                }
+              };
+
+              window.parent.postMessage(o, '*');
+            } catch (e) {
+              _0x1a2b[e].apply(console, [t, ...n]);
+            }
+          }
+
+          console.log = function(...args) {
+            _0x1a2b.log.apply(console, args);
+            _0x3c4d('log', args[0] || '', args.slice(1));
+          };
+
+          console.info = function(...args) {
+            _0x1a2b.info.apply(console, args);
+            _0x3c4d('info', args[0] || '', args.slice(1));
+          };
+
+          console.warn = function(...args) {
+            _0x1a2b.warn.apply(console, args);
+            _0x3c4d('warn', args[0] || '', args.slice(1));
+          };
+
+          console.error = function(...args) {
+            _0x1a2b.error.apply(console, args);
+            _0x3c4d('error', args[0] || '', args.slice(1));
+          };
+
+          console.debug = function(...args) {
+            _0x1a2b.debug.apply(console, args);
+            _0x3c4d('debug', args[0] || '', args.slice(1));
+          };
+
+          window.addEventListener('error', function(event) {
+            _0x3c4d('error', event.message, [
+              'Error in ' + event.filename + ':' + event.lineno + ':' + event.colno,
+              event.error ? event.error.stack : ''
+            ]);
+          });
+
+          window.addEventListener('unhandledrejection', function(event) {
+            _0x3c4d('error', 'Unhandled Promise Rejection', [
+              event.reason ? String(event.reason) : 'Unknown reason'
+            ]);
+          });
+
+          window.addEventListener('securitypolicyviolation', function(event) {
+            _0x3c4d('error', 'CSP Violation: ' + event.effectiveDirective, [
+              'blockedURI: ' + event.blockedURI,
+              'violatedDirective: ' + event.violatedDirective,
+              'originalPolicy: ' + event.originalPolicy,
+              'disposition: ' + event.disposition,
+              'documentURI: ' + event.documentURI
+            ]);
+          });
+
+          var _llmRequestHandlers = {};
+
+          window._useLLM = function(name, params) {
+            const requestId = Math.random().toString(36).slice(2);
+            const p = new Promise((resolve) => {
+              _llmRequestHandlers[requestId] = resolve;
+            });
+
+            const llmMsg = {
+              type: "use-llm",
+              requestId: requestId,
+              timestamp: Date.now(),
+              payload: {
+                name: name,
+                params: params,
+              },
+            };
+            window.parent.postMessage(llmMsg, '*');
+
+            return p;
+          };
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'update-theme') {
+              const theme = event.data.payload?.theme;
+              if (theme === 'dark' || theme === 'light') {
+                const html = document.documentElement || document.querySelector('html');
+                if (html) {
+                  html.setAttribute('data-theme', theme);
+                }
+              }
+            }
+
+            if (event.source === window.parent && event.data.type === 'llmReply') {
+              const requestId = event.data.requestId;
+              const handler = _llmRequestHandlers[requestId];
+              if (handler !== undefined) {
+                handler(event.data.payload);
+                delete _llmRequestHandlers[requestId];
+              }
+            }
+          });
+
+          
+        })();
+      </script>
+    
+      <script nonce="">
+        (function() {
+          var _appDataCfg = null;
+
+          var _reqCounter = 0;
+          var _pendingRequests = {};
+
+          function _appDataRequest(method, path, body) {
+            if (!_appDataCfg) {
+              return Promise.reject(new Error('AppSDK: not configured for this artifact type.'));
+            }
+            var requestId = 'adr-' + (++_reqCounter);
+            var fullPath = _appDataCfg.appId + '/' + path;
+
+            return new Promise(function(resolve, reject) {
+              var timeoutId = setTimeout(function() {
+                delete _pendingRequests[requestId];
+                reject(new Error('AppSDK: request timed out'));
+              }, 30000);
+
+              _pendingRequests[requestId] = { resolve: resolve, reject: reject, timeoutId: timeoutId };
+
+              var requestMsg = {
+                type: 'app-data:request',
+                timestamp: Date.now(),
+                payload: { method: method, path: fullPath, body: body, requestId: requestId }
+              };
+              window.parent.postMessage(requestMsg, '*');
+            });
+          }
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'app-data:response') {
+              var payload = event.data.payload;
+              var pending = _pendingRequests[payload.requestId];
+              if (pending) {
+                clearTimeout(pending.timeoutId);
+                delete _pendingRequests[payload.requestId];
+                if (payload.ok) {
+                  pending.resolve(payload.data !== undefined ? payload.data : null);
+                } else {
+                  pending.reject(new Error(payload.error || 'Request failed'));
+                }
+              }
+            }
+          });
+
+          window.AppSDK = {
+            upsert: function(entityId, entityType, data) {
+              return _appDataRequest('PUT', entityId + '/' + entityType, { data: data });
+            },
+            get: function(entityId, entityType) {
+              return _appDataRequest('GET', entityId + '/' + entityType);
+            },
+            list: function(entityId) {
+              return _appDataRequest('GET', entityId);
+            },
+            delete: function(entityId, entityType) {
+              return _appDataRequest('DELETE', entityId + '/' + entityType);
+            },
+            deleteAll: function() {
+              return _appDataRequest('DELETE', '');
+            }
+          };
+        })();
+      </script>
+      
+      <script nonce="">
+        (function() {
+          var _aiReqCounter = 0;
+          var _aiPendingRequests = {};
+
+          // Per-method timeouts (ms). Image generation can take longer than chat/TTS.
+          var _aiTimeouts = { chat: 30000, generateImage: 60000, speak: 30000 };
+
+          function _appAiRequest(method, fields) {
+            var requestId = 'aai-' + (++_aiReqCounter);
+            var timeoutMs = _aiTimeouts[method] || 30000;
+
+            return new Promise(function(resolve, reject) {
+              var timeoutId = setTimeout(function() {
+                delete _aiPendingRequests[requestId];
+                reject(new Error('AppSDK.ai: request timed out'));
+              }, timeoutMs);
+
+              _aiPendingRequests[requestId] = { method: method, resolve: resolve, reject: reject, timeoutId: timeoutId };
+
+              var payload = { requestId: requestId, method: method };
+              for (var key in fields) {
+                if (Object.prototype.hasOwnProperty.call(fields, key)) {
+                  payload[key] = fields[key];
+                }
+              }
+
+              var requestMsg = {
+                type: 'app-ai:request',
+                timestamp: Date.now(),
+                payload: payload
+              };
+              window.parent.postMessage(requestMsg, '*');
+            });
+          }
+
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'app-ai:response') {
+              var payload = event.data.payload;
+              var pending = _aiPendingRequests[payload.requestId];
+              if (pending) {
+                clearTimeout(pending.timeoutId);
+                delete _aiPendingRequests[payload.requestId];
+                if (payload.ok) {
+                  if (pending.method === 'generateImage') {
+                    pending.resolve({ image: payload.image, format: payload.format });
+                  } else if (pending.method === 'speak') {
+                    pending.resolve({ audio: payload.audio, format: payload.format });
+                  } else {
+                    pending.resolve({ content: payload.content });
+                  }
+                } else {
+                  pending.reject(new Error(payload.error || 'AI request failed'));
+                }
+              }
+            }
+          });
+
+          // Attach to existing AppSDK or create it
+          window.AppSDK = window.AppSDK || {};
+          window.AppSDK.ai = {
+            chat: function(request) {
+              if (!request || !Array.isArray(request.messages) || request.messages.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: messages array is required'));
+              }
+              return _appAiRequest('chat', { messages: request.messages });
+            },
+            generateImage: function(request) {
+              if (!request || typeof request.prompt !== 'string' || request.prompt.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: prompt is required'));
+              }
+              var fields = { prompt: request.prompt };
+              if (request.aspectRatio) fields.aspectRatio = request.aspectRatio;
+              if (request.quality) fields.quality = request.quality;
+              return _appAiRequest('generateImage', fields);
+            },
+            speak: function(request) {
+              if (!request || typeof request.text !== 'string' || request.text.length === 0) {
+                return Promise.reject(new Error('AppSDK.ai: text is required'));
+              }
+              var fields = { text: request.text };
+              if (request.voice) fields.voice = request.voice;
+              if (request.audioFormat) fields.audioFormat = request.audioFormat;
+              return _appAiRequest('speak', fields);
+            }
+          };
+        })();
+      </script>
+      <style>html { overflow: hidden !important; }</style>
+  
+  <meta content="width=1280, height=720, initial-scale=1.0" name="viewport">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1b2a;
+      --bg-card: #162840;
+      --bg-card-deep: #0f2035;
+      --text: #eaf0fb;
+      --text-muted: #7fa8c9;
+      --accent: #00c2cb;
+      --accent-dim: rgba(0, 194, 203, 0.12);
+      --accent-glow: rgba(0, 194, 203, 0.25);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      font-family: 'Calibri', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      position: relative;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--text) !important;
+      font-family: 'Calibri Light', 'Calibri', sans-serif;
+    }
+
+    /* Dramatic background: deep radial glow from upper-left + subtle circuit mesh */
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 900px 500px at 15% 20%, rgba(0, 194, 203, 0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 90% 85%, rgba(0, 80, 140, 0.18) 0%, transparent 65%),
+        linear-gradient(160deg, #0a1520 0%, #0d1b2a 50%, #0b1825 100%);
+    }
+
+    /* Subtle circuit grid overlay */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(0, 194, 203, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 194, 203, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* Left vertical accent bar */
+    .accent-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: linear-gradient(180deg, transparent 0%, var(--accent) 30%, #0077ff 70%, transparent 100%);
+      z-index: 2;
+    }
+
+    /* Top accent line */
+    .top-line {
+      position: absolute;
+      top: 0;
+      left: 6px;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, rgba(0, 119, 255, 0.4) 60%, transparent 100%);
+      z-index: 2;
+    }
+
+    /* Bottom accent line */
+    .bottom-line {
+      position: absolute;
+      bottom: 0;
+      left: 6px;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, rgba(0, 119, 255, 0.3) 60%, transparent 100%);
+      z-index: 2;
+    }
+
+    .content-wrap {
+      position: relative;
+      z-index: 10;
+      width: 1280px;
+      height: 720px;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 72px 0 80px;
+      box-sizing: border-box;
+    }
+
+    /* Big headline */
+    .main-headline {
+      font-family: 'Calibri Light', 'Calibri', sans-serif;
+      font-size: 64px;
+      font-weight: 300;
+      line-height: 1.08;
+      color: var(--text) !important;
+      letter-spacing: -0.5px;
+      margin: 0 0 4px 0;
+    }
+
+    .main-headline span.accent-word {
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    /* Decorative headline underline */
+    .headline-rule {
+      width: 220px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      margin: 10px 0 16px 0;
+      border-radius: 2px;
+    }
+
+    .subhead {
+      font-family: 'Calibri', sans-serif;
+      font-size: 19px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      max-width: 780px;
+      margin: 0 0 28px 0;
+      font-weight: 400;
+    }
+
+    /* Three-column bullets row */
+    .bullets-row {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .bullet-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid rgba(0, 194, 203, 0.18);
+      border-radius: 10px;
+      padding: 18px 20px 16px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bullet-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), rgba(0, 194, 203, 0.2));
+    }
+
+    .bullet-icon-wrap {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      background: var(--accent-dim);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .bullet-text-block {
+      flex: 1;
+    }
+
+    .bullet-title {
+      font-family: 'Calibri', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 4px 0;
+      line-height: 1.2;
+    }
+
+    .bullet-desc {
+      font-family: 'Calibri', sans-serif;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /* CTA Box */
+    .cta-box {
+      background: linear-gradient(135deg, rgba(0, 194, 203, 0.18) 0%, rgba(0, 194, 203, 0.08) 100%);
+      border: 1.5px solid rgba(0, 194, 203, 0.55);
+      border-radius: 12px;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 0;
+      box-shadow: 0 0 32px rgba(0, 194, 203, 0.12), inset 0 1px 0 rgba(0, 194, 203, 0.25);
+    }
+
+    .cta-label {
+      font-family: 'Calibri', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin: 0 0 3px 0;
+    }
+
+    .cta-text {
+      font-family: 'Calibri', sans-serif;
+      font-size: 17px;
+      color: var(--text);
+      font-weight: 400;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .cta-icon-wrap {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0d1b2a;
+      box-shadow: 0 0 20px rgba(0, 194, 203, 0.45);
+    }
+
+    /* Footer */
+    .footer-bar {
+      position: absolute;
+      bottom: 0;
+      left: 6px;
+      right: 0;
+      height: 52px;
+      background: rgba(10, 20, 32, 0.85);
+      border-top: 1px solid rgba(0, 194, 203, 0.15);
+      display: flex;
+      align-items: center;
+      padding: 0 72px 0 74px;
+      gap: 0;
+      z-index: 10;
+    }
+
+    .footer-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Calibri', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-item:not(:last-child) {
+      border-right: 1px solid rgba(127, 168, 201, 0.2);
+      padding-right: 24px;
+      margin-right: 24px;
+    }
+
+    .footer-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(127, 168, 201, 0.55);
+      display: block;
+      margin-bottom: 1px;
+    }
+
+    .footer-value {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Pill badges */
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-family: 'Calibri', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .pill-teal {
+      background: rgba(0, 194, 203, 0.15);
+      border: 1px solid rgba(0, 194, 203, 0.4);
+      color: var(--accent);
+    }
+
+    .pill-blue {
+      background: rgba(0, 119, 255, 0.12);
+      border: 1px solid rgba(0, 119, 255, 0.35);
+      color: #5aaaff;
+    }
+
+    .pill-purple {
+      background: rgba(130, 80, 255, 0.12);
+      border: 1px solid rgba(130, 80, 255, 0.35);
+      color: #b08aff;
+    }
+
+    /* Decorative large watermark text */
+    .watermark-text {
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Calibri Light', 'Calibri', sans-serif;
+      font-size: 220px;
+      font-weight: 700;
+      color: rgba(0, 194, 203, 0.03);
+      line-height: 1;
+      letter-spacing: -10px;
+      white-space: nowrap;
+      z-index: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body data-id="0">
+
+  <!-- Background layers -->
+  <div data-id="1" class="bg-layer"></div>
+  <div data-id="2" class="bg-grid"></div>
+  <div data-id="3" class="accent-bar"></div>
+  <div data-id="4" class="top-line"></div>
+  <div data-id="5" class="bottom-line"></div>
+
+  <!-- Watermark decorative text -->
+  <div data-id="6" class="watermark-text" id="watermark-deco-z9k2" data-selection-initialized="true" style="cursor: text;">UNIFIED</div>
+
+  <!-- Main content -->
+  <div data-id="7" class="content-wrap" id="main-content-wrap-p4r7">
+
+    <!-- Pill badges row -->
+    <div data-id="8" class="pill-row" id="pill-row-m3x8">
+      <span data-id="9" class="pill pill-teal" id="pill-x64-a2b5" data-selection-initialized="true" style="cursor: pointer;">
+        <svg data-id="10" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;"><rect data-id="11" width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect data-id="12" width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line data-id="13" x1="6" x2="6.01" y1="6" y2="6"></line><line data-id="14" x1="6" x2="6.01" y1="18" y2="18"></line></svg>
+        x64base
+      </span>
+      <span data-id="15" class="pill pill-blue" id="pill-dottalk-c7d9" data-selection-initialized="true" style="cursor: pointer;">
+        <svg data-id="16" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;"><path data-id="17" d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+        DotTalk++
+      </span>
+      <span data-id="18" class="pill pill-purple" id="pill-labtalk-e1f6" data-selection-initialized="true" style="cursor: pointer;">
+        <svg data-id="19" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;"><path data-id="20" d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"></path><path data-id="21" d="M8.5 2h7"></path><path data-id="22" d="M14.5 16h-5"></path></svg>
+        LabTalk
+      </span>
+    </div>
+
+    <!-- Main headline -->
+    <h1 data-id="23" class="main-headline" id="main-headline-q8w3" data-selection-initialized="true" style="cursor: text;">
+      One <span data-id="24" class="accent-word" data-selection-initialized="true" style="cursor: text;">Ecosystem</span>.<br data-id="25">
+      Every Learner. Every Domain.
+    </h1>
+    <div data-id="26" class="headline-rule" id="headline-rule-v5n1"></div>
+
+    <!-- Subhead -->
+    <p data-id="27" class="subhead" id="subhead-text-k2j7" data-selection-initialized="true" style="cursor: text;">
+      x64base, DotTalk++, and LabTalk are stronger together — and this proposal outlines exactly how to make that a reality.
+    </p>
+
+    <!-- Three bullet cards -->
+    <div data-id="28" class="bullets-row" id="bullets-row-t6y4">
+
+      <!-- Bullet 1 -->
+      <div data-id="29" class="bullet-card" id="bullet-card-arch-h8u2">
+        <div data-id="30" class="bullet-icon-wrap" id="bullet-icon-1-b3m9" data-selection-initialized="true" style="cursor: pointer;">
+          <svg data-id="31" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;">
+            <circle data-id="32" cx="12" cy="12" r="10"></circle>
+            <path data-id="33" d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div data-id="34" class="bullet-text-block" id="bullet-text-1-r5p0">
+          <p data-id="35" class="bullet-title" id="bullet-title-1-w7c3" data-selection-initialized="true" style="cursor: text;">Architecture is proven</p>
+          <p data-id="36" class="bullet-desc" id="bullet-desc-1-f4s6" data-selection-initialized="true" style="cursor: text;">xBridge integration model is standards-compliant and extensible — built on LTI 1.3, xAPI, and OAuth 2.0.</p>
+        </div>
+      </div>
+
+      <!-- Bullet 2 -->
+      <div data-id="37" class="bullet-card" id="bullet-card-roles-d9l4">
+        <div data-id="38" class="bullet-icon-wrap" id="bullet-icon-2-a6n8" data-selection-initialized="true" style="cursor: pointer;">
+          <svg data-id="39" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;">
+            <circle data-id="40" cx="12" cy="12" r="10"></circle>
+            <path data-id="41" d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div data-id="42" class="bullet-text-block" id="bullet-text-2-g2k7">
+          <p data-id="43" class="bullet-title" id="bullet-title-2-x1v9" data-selection-initialized="true" style="cursor: text;">Roles are defined</p>
+          <p data-id="44" class="bullet-desc" id="bullet-desc-2-j3h5" data-selection-initialized="true" style="cursor: text;">Every stakeholder — learner to compliance officer — has a clear, governed place in the unified ecosystem.</p>
+        </div>
+      </div>
+
+      <!-- Bullet 3 -->
+      <div data-id="45" class="bullet-card" id="bullet-card-evidence-u5r2">
+        <div data-id="46" class="bullet-icon-wrap" id="bullet-icon-3-e8q1" data-selection-initialized="true" style="cursor: pointer;">
+          <svg data-id="47" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;">
+            <circle data-id="48" cx="12" cy="12" r="10"></circle>
+            <path data-id="49" d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div data-id="50" class="bullet-text-block" id="bullet-text-3-m0c4">
+          <p data-id="51" class="bullet-title" id="bullet-title-3-p7d2" data-selection-initialized="true" style="cursor: text;">Evidence framework is ready</p>
+          <p data-id="52" class="bullet-desc" id="bullet-desc-3-b6n3" data-selection-initialized="true" style="cursor: text;">Placeholder metrics across all six KPIs are structured and ready to be replaced with your validated pilot data.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CTA Box -->
+    <div data-id="53" class="cta-box" id="cta-box-main-y9s5">
+      <div data-id="54" class="cta-icon-wrap" id="cta-icon-wrap-o3t8" data-selection-initialized="true" style="cursor: pointer;">
+        <svg data-id="55" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" data-selection-initialized="true" style="cursor: pointer;">
+          <path data-id="56" d="m5 12 7-7 7 7"></path>
+          <path data-id="57" d="M12 19V5"></path>
+        </svg>
+      </div>
+      <div data-id="58" id="cta-text-block-z4w6">
+        <p data-id="59" class="cta-label" id="cta-label-k1r9" data-selection-initialized="true" style="cursor: text;">Next Step</p>
+        <p data-id="60" class="cta-text" id="cta-text-content-h5j2" data-selection-initialized="true" style="cursor: text;">Review evidence placeholders with your data team and schedule a technical integration workshop.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer bar -->
+  <div data-id="61" class="footer-bar" id="footer-bar-main-c8v3">
+    <div data-id="62" class="footer-item" id="footer-item-prepared-n2x7">
+      <div data-id="63">
+        <span data-id="64" class="footer-label" data-selection-initialized="true" style="cursor: text;">Prepared by</span>
+        <span data-id="65" class="footer-value" id="footer-prepared-val-q6p4" data-selection-initialized="true" style="cursor: text;">___________</span>
+      </div>
+    </div>
+    <div data-id="66" class="footer-item" id="footer-item-version-a4m1">
+      <div data-id="67">
+        <span data-id="68" class="footer-label" data-selection-initialized="true" style="cursor: text;">Version</span>
+        <span data-id="69" class="footer-value" id="footer-version-val-r7b9" data-selection-initialized="true" style="cursor: text;">Draft 1.0 · August 2026</span>
+      </div>
+    </div>
+    <div data-id="70" class="footer-item" id="footer-item-contact-w3f5">
+      <div data-id="71">
+        <span data-id="72" class="footer-label" data-selection-initialized="true" style="cursor: text;">Contact</span>
+        <span data-id="73" class="footer-value" id="footer-contact-val-s0d6" data-selection-initialized="true" style="cursor: text;">___________</span>
+      </div>
+    </div>
+  </div>
+
+<script nonce="">
+(function() {
+
+  var activeElement = null;
+  var originalContentMap = {};
+  var SELECTABLE_SELECTOR = '[data-id]';
+  var INNER_THRESHOLD = 3;
+  var OUTER_THRESHOLD = 8;
+  var SKIP_TAGS = {'HTML':1,'HEAD':1,'BODY':1,'SCRIPT':1,'STYLE':1,'LINK':1,'META':1,'PATH':1,'CIRCLE':1,'RECT':1,'POLYGON':1,'POLYLINE':1,'LINE':1,'ELLIPSE':1,'G':1,'DEFS':1,'CLIPPATH':1,'USE':1,'SYMBOL':1,'IFRAME':1};
+
+
+  function selectNode(node) {
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    selection.addRange(range);
+  }
+
+  function hasStyleValue(el, styleProp) {
+    var computed = window.getComputedStyle(el);
+    if (styleProp === 'fontWeight') {
+      return computed.fontWeight === 'bold' || parseInt(computed.fontWeight, 10) >= 700;
+    } else if (styleProp === 'fontStyle') {
+      return computed.fontStyle === 'italic';
+    } else if (styleProp === 'textDecoration') {
+      return (computed.textDecorationLine || computed.textDecoration).includes('underline');
+    }
+    return false;
+  }
+
+  function getElementStyles(el) {
+    var computed = window.getComputedStyle(el);
+    return {
+      fontSize: computed.fontSize,
+      fontColor: computed.color,
+      fontWeight: hasStyleValue(el, 'fontWeight') ? 'bold' : 'normal',
+      fontStyle: hasStyleValue(el, 'fontStyle') ? 'italic' : 'normal',
+      textDecoration: hasStyleValue(el, 'textDecoration') ? 'underline' : 'none'
+    };
+  }
+
+  function getSelectionStyles() {
+    var selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    var range = selection.getRangeAt(0);
+    var container = range.commonAncestorContainer;
+    var element = container.nodeType === 3 ? container.parentNode : container;
+    if (element && element.tagName === 'SPAN' && activeElement && activeElement.contains(element)) {
+      return getElementStyles(element);
+    }
+    if (activeElement) return getElementStyles(activeElement);
+    return null;
+  }
+
+  function getBodyHtml() {
+    // Temporarily clear overflow overrides so they aren't persisted in the snapshot
+    var hadActiveElement = activeElement;
+    clearOverflowOverrides();
+
+    // Reconstruct a clean HTML document without injected scripts
+    var headClone = document.head.cloneNode(true);
+
+    // Clone head and remove any scripts we injected
+    var headScripts = headClone.querySelectorAll('script');
+    headScripts.forEach(function(s) { s.remove(); });
+
+    // Also remove any style tags with id starting with 'text-streaming'
+    var hideStyles = headClone.querySelectorAll('style[id^="text-streaming"]');
+    hideStyles.forEach(function(s) { s.remove(); });
+
+    // Clone body and remove any scripts we injected
+    var bodyClone = document.body.cloneNode(true);
+    var bodyScripts = bodyClone.querySelectorAll('script');
+    bodyScripts.forEach(function(s) { s.remove(); });
+
+    // Remove runtime state that shouldn't be persisted
+    var initializedElements = bodyClone.querySelectorAll('[data-selection-initialized]');
+    initializedElements.forEach(function(el) { 
+      el.removeAttribute('data-selection-initialized');
+      el.removeAttribute('contenteditable');
+
+      // Clear selection-related inline styles
+      el.style.outline = '';
+      el.style.outlineOffset = '';
+      el.style.borderRadius = '';
+      el.style.cursor = '';
+    });
+
+    // Build clean HTML
+    var html = '<!DOCTYPE html><html>' + headClone.outerHTML + bodyClone.outerHTML + '</html>';
+
+    // Re-apply overflow overrides if an element is still active
+    if (hadActiveElement) overrideAncestorOverflow(hadActiveElement);
+
+    return html;
+  }
+
+  function getContainingSpan(range) {
+    var container = range.commonAncestorContainer;
+    if (container.nodeType === 3) container = container.parentNode;
+    if (container.tagName === 'SPAN' && activeElement && container.parentNode === activeElement) {
+      var spanRange = document.createRange();
+      spanRange.selectNodeContents(container);
+      if (range.toString() === spanRange.toString()) return container;
+    }
+    return null;
+  }
+
+  function cleanupSpan(span, styleProp) {
+    span.style[styleProp] = '';
+    if (!span.getAttribute('style') || span.getAttribute('style').trim() === '') {
+      var parent = span.parentNode;
+      while (span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
+    }
+  }
+
+  function getStyledAncestor(range, styleProp) {
+    var container = range.commonAncestorContainer;
+    var el = container.nodeType === 3 ? container.parentNode : container;
+    while (el && el !== activeElement) {
+      if (el.tagName === 'SPAN' && hasStyleValue(el, styleProp)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  function placeCaretAtPoint(x, y) {
+    var range;
+    if (document.caretPositionFromPoint) {
+      var pos = document.caretPositionFromPoint(x, y);
+      if (pos) {
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.collapse(true);
+      }
+    } else if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    }
+    if (range) {
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+
+
+  // Track ancestors whose overflow was temporarily overridden
+  var overriddenAncestors = [];
+
+  function clearOverflowOverrides() {
+    for (var i = 0; i < overriddenAncestors.length; i++) {
+      var entry = overriddenAncestors[i];
+      entry.el.style.overflow = entry.overflow;
+      entry.el.style.overflowX = entry.overflowX;
+      entry.el.style.overflowY = entry.overflowY;
+    }
+    overriddenAncestors = [];
+  }
+
+  function overrideAncestorOverflow(el) {
+    clearOverflowOverrides();
+    var node = el.parentElement;
+    while (node && node !== document.body && node !== document.documentElement) {
+      var computed = window.getComputedStyle(node);
+      if (computed.overflow === 'hidden' || computed.overflowX === 'hidden' || computed.overflowY === 'hidden') {
+        overriddenAncestors.push({
+          el: node,
+          overflow: node.style.overflow,
+          overflowX: node.style.overflowX,
+          overflowY: node.style.overflowY
+        });
+        node.style.overflow = 'visible';
+      }
+      node = node.parentElement;
+    }
+  }
+
+  function deactivateElement() {
+    if (activeElement) {
+      if (!isImageElement(activeElement)) {
+        activeElement.removeAttribute('contenteditable');
+      }
+      activeElement.style.outline = 'none';
+      activeElement.style.outlineOffset = '';
+      activeElement.style.borderRadius = '';
+      clearOverflowOverrides();
+    }
+  }
+
+  function isImageElement(el) {
+    var tag = el.tagName.toUpperCase();
+    if (tag === 'IMG' || tag === 'SVG') return true;
+
+    // Check direct children only to avoid matching deep container divs
+    var children = el.children;
+    for (var i = 0; i < children.length; i++) {
+      var childTag = children[i].tagName.toUpperCase();
+      if (childTag === 'IMG' || childTag === 'SVG') return true;
+    }
+    return false;
+  }
+
+  // Returns the data-id value for an element
+  function getSlotId(el) {
+    return el.getAttribute('data-id') || '';
+  }
+
+  // Find an element by its data-id value
+  function findByDataId(dataId) {
+    return document.querySelector('[data-id="' + dataId.replace(/"/g, '\"') + '"]');
+  }
+
+  // Determines if a [data-id] element should be selectable:
+  // - Has direct text content (editable element) OR
+  // - Has mixed content (child elements AND direct text nodes) OR
+  // - Is an img/svg tag OR
+  // - Contains a direct child img/svg
+  function isSelectableElement(el) {
+    var tag = el.tagName.toUpperCase();
+    if (SKIP_TAGS[tag]) return false;
+    if (tag === 'IMG' || tag === 'SVG') return true;
+
+    // Check if element has meaningful text content (not just whitespace).
+    // Ignore <br> tags when counting children so line-broken text is still selectable.
+    var children = el.children;
+    var nonBrChildren = 0;
+    for (var j = 0; j < children.length; j++) {
+      if (children[j].tagName.toUpperCase() !== 'BR') nonBrChildren++;
+    }
+    if (el.textContent && el.textContent.trim().length > 0 && nonBrChildren === 0) return true;
+
+    // Mixed content: element has both child elements AND direct text nodes.
+    // e.g. <li><span>Nvidia</span> retreat on reports...</li>
+    // The bare text is not inside any child element and needs the parent to be selectable.
+    if (nonBrChildren > 0) {
+      var childNodes = el.childNodes;
+      for (var k = 0; k < childNodes.length; k++) {
+        if (childNodes[k].nodeType === 3 && childNodes[k].textContent.trim().length > 0) return true;
+      }
+    }
+
+    for (var i = 0; i < children.length; i++) {
+      var childTag = children[i].tagName.toUpperCase();
+      if (childTag === 'IMG' || childTag === 'SVG') return true;
+    }
+    return false;
+  }
+
+  function activateElement(el) {
+    activeElement = el;
+    originalContentMap[getSlotId(el)] = el.innerHTML;
+    el.style.outline = '2.5px solid #987AEE';
+    el.style.outlineOffset = '2px';
+    el.style.borderRadius = '6px';
+    overrideAncestorOverflow(el);
+    if (!isImageElement(el)) {
+      el.contentEditable = 'true';
+      el.focus({ preventScroll: true });
+    }
+  }
+
+  function notifyElementSelected(el) {
+    var rect = el.getBoundingClientRect();
+    var isImage = isImageElement(el);
+    var elementType = isImage ? 'image' : (el.dataset?.elementType || 'text');
+    var value = isImage ? el.outerHTML : el.textContent;
+    window.parent.postMessage({
+      type: 'element_selected',
+      slotId: getSlotId(el),
+      elementType: elementType,
+      value: value,
+      styles: isImage ? undefined : getElementStyles(el),
+      bounds: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+    }, '*');
+  }
+
+  function isInBorderZone(rect, clientX, clientY, innerThreshold, outerThreshold) {
+    var expandedLeft = rect.left - outerThreshold;
+    var expandedRight = rect.right + outerThreshold;
+    var expandedTop = rect.top - outerThreshold;
+    var expandedBottom = rect.bottom + outerThreshold;
+    if (clientX < expandedLeft || clientX > expandedRight || clientY < expandedTop || clientY > expandedBottom) {
+      return false;
+    }
+    var contentLeft = rect.left + innerThreshold;
+    var contentRight = rect.right - innerThreshold;
+    var contentTop = rect.top + innerThreshold;
+    var contentBottom = rect.bottom - innerThreshold;
+    var inContentArea = clientX >= contentLeft && clientX <= contentRight && clientY >= contentTop && clientY <= contentBottom;
+    return !inContentArea;
+  }
+
+
+  function setupElement(el) {
+    if (el.dataset.selectionInitialized) return;
+    el.dataset.selectionInitialized = 'true';
+    
+    var elIsImage = isImageElement(el);
+    el.style.cursor = elIsImage ? 'pointer' : 'text';
+    
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var isNewSelection = activeElement !== el;
+      var needsReactivation = !isNewSelection && el.contentEditable !== 'true';
+      var rect = el.getBoundingClientRect();
+      var clickedOnBorder = isInBorderZone(rect, e.clientX, e.clientY, INNER_THRESHOLD, OUTER_THRESHOLD);
+      
+      if (isNewSelection) {
+        deactivateElement();
+        activateElement(el);
+      } else if (needsReactivation && !elIsImage) {
+        activateElement(el);
+      }
+      
+      if (!elIsImage) {
+        if (clickedOnBorder) {
+          selectNode(el);
+        } else {
+          var currentSelection = window.getSelection();
+          var hasTextSelected = currentSelection && currentSelection.toString().length > 0;
+          if (e.detail === 1 && !hasTextSelected) {
+            placeCaretAtPoint(e.clientX, e.clientY);
+          }
+        }
+      }
+      notifyElementSelected(el);
+    });
+    
+    var blurTimeout = null;
+    
+    el.addEventListener('blur', function() {
+      var wasActiveAtBlur = el === activeElement;
+      blurTimeout = setTimeout(function() {
+        var elKey = getSlotId(el);
+        var currentHtml = el.innerHTML;
+        var originalContent = originalContentMap[elKey];
+        var contentChanged = wasActiveAtBlur && originalContent !== undefined && currentHtml !== originalContent;
+        if (!elIsImage) {
+          el.removeAttribute('contenteditable');
+        }
+        var message = { type: 'element_blur', slotId: elKey };
+        if (contentChanged) message.html = getBodyHtml();
+        window.parent.postMessage(message, '*');
+        delete originalContentMap[elKey];
+      }, 150);
+    });
+    
+    el.addEventListener('focus', function() {
+      if (blurTimeout) { clearTimeout(blurTimeout); blurTimeout = null; }
+    });
+    
+    el.addEventListener('keydown', function(e) {
+      if (elIsImage) return;
+      if (e.key === 'Backspace' && el.textContent.trim() === '') {
+        e.preventDefault();
+        var elKey = getSlotId(el);
+        el.remove();
+        activeElement = null;
+        delete originalContentMap[elKey];
+        window.parent.postMessage({ type: 'element_deleted', slotId: elKey, html: getBodyHtml() }, '*');
+      }
+    });
+    
+    el.addEventListener('mouseenter', function() {
+      if (el !== activeElement) {
+        el.style.outline = '1.5px solid rgba(59, 130, 246, 0.5)';
+        el.style.outlineOffset = '2px';
+        el.style.borderRadius = '6px';
+      }
+    });
+    
+    el.addEventListener('mouseleave', function() {
+      if (el !== activeElement) {
+        el.style.outline = 'none';
+        el.style.outlineOffset = '';
+        el.style.borderRadius = '';
+      }
+      el.style.cursor = elIsImage ? 'pointer' : 'text';
+    });
+    
+    el.addEventListener('mousemove', function(e) {
+      if (elIsImage) return;
+      var rect = el.getBoundingClientRect();
+      el.style.cursor = isInBorderZone(rect, e.clientX, e.clientY, INNER_THRESHOLD, OUTER_THRESHOLD) ? 'pointer' : 'text';
+    });
+  }
+
+  // Initialize only elements that are meaningful editable content
+  function initializeElements() {
+    var allElements = document.querySelectorAll(SELECTABLE_SELECTOR);
+    for (var i = 0; i < allElements.length; i++) {
+      if (isSelectableElement(allElements[i])) {
+        setupElement(allElements[i]);
+      }
+    }
+  }
+
+
+  // Collect all initialized selectable elements for hit-testing
+  function getSelectableElements() {
+    return document.querySelectorAll('[data-selection-initialized]');
+  }
+
+  function setupBodyListeners() {
+    if (!document.body) return;
+    
+    document.body.addEventListener('click', function(e) {
+      window.parent.postMessage({ type: 'iframe_clicked' }, '*');
+      
+      // Check if click target is inside an initialized element
+      var closestInitialized = e.target.closest('[data-selection-initialized]');
+      if (closestInitialized) return; // Element's own click handler will fire
+      
+      // Click was not directly on an initialized element — check via bounding rects
+      // (handles CSS overlays, pseudo-elements blocking the actual element)
+      var elements = getSelectableElements();
+      for (var i = 0; i < elements.length; i++) {
+        var el = elements[i];
+        var rect = el.getBoundingClientRect();
+
+        // For image elements, check if click is anywhere inside bounding rect
+        if (isImageElement(el)) {
+          if (e.clientX >= rect.left && e.clientX <= rect.right &&
+              e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            e.stopPropagation();
+            deactivateElement();
+            activateElement(el);
+            notifyElementSelected(el);
+            return;
+          }
+        }
+        if (isInBorderZone(rect, e.clientX, e.clientY, INNER_THRESHOLD, OUTER_THRESHOLD)) {
+          e.stopPropagation();
+          deactivateElement();
+          activateElement(el);
+          if (!isImageElement(el)) {
+            selectNode(el);
+          }
+          notifyElementSelected(el);
+          return;
+        }
+      }
+      window.parent.postMessage({ type: 'element_deselected' }, '*');
+    });
+    
+    document.body.addEventListener('mousemove', function(e) {
+      if (e.target.closest('[data-selection-initialized]')) return;
+      var elements = getSelectableElements();
+      for (var i = 0; i < elements.length; i++) {
+        var rect = elements[i].getBoundingClientRect();
+        if (isImageElement(elements[i])) {
+          if (e.clientX >= rect.left && e.clientX <= rect.right &&
+              e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            document.body.style.cursor = 'pointer';
+            return;
+          }
+        }
+        if (isInBorderZone(rect, e.clientX, e.clientY, INNER_THRESHOLD, OUTER_THRESHOLD)) {
+          document.body.style.cursor = 'pointer';
+          return;
+        }
+      }
+      document.body.style.cursor = '';
+    });
+    
+    document.body.addEventListener('mouseup', function(e) {
+      var selection = window.getSelection();
+      var hasSelection = selection && selection.toString().length > 0;
+      if (!hasSelection) return;
+      
+      var range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+      if (!range) return;
+      
+      var container = range.commonAncestorContainer;
+      if (container.nodeType === 3) container = container.parentNode;
+      var slotElement = container.closest ? container.closest('[data-selection-initialized]') : null;
+      if (!slotElement) return;
+      
+      if (slotElement !== activeElement) {
+        deactivateElement();
+        activateElement(slotElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        notifyElementSelected(slotElement);
+      }
+    });
+  }
+
+
+  document.addEventListener('selectionchange', function() {
+    var selection = window.getSelection();
+    var selectedText = selection ? selection.toString() : '';
+    var hasSelection = selectedText.length > 0;
+    var message = { type: 'selection_changed', hasSelection: hasSelection, selectedText: selectedText };
+    
+    if (hasSelection) {
+      var styles = getSelectionStyles();
+      if (styles) message.styles = styles;
+      if (selection.rangeCount > 0) {
+        var rect = selection.getRangeAt(0).getBoundingClientRect();
+        message.bounds = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+      } else if (activeElement) {
+        var rect = activeElement.getBoundingClientRect();
+        message.bounds = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+      }
+    }
+    window.parent.postMessage(message, '*');
+  });
+
+
+  function applyToSelection(selection, range, command, styleProp, styleValue, styleMap) {
+    if (range.collapsed) return;
+    
+    var existingSpan = getContainingSpan(range);
+    if (existingSpan) {
+      var isTurningOffSpan = styleValue === styleMap[command].offValue;
+      var spanHasStyleExplicitly = existingSpan.style[styleProp] && existingSpan.style[styleProp] !== '';
+      if (isTurningOffSpan && spanHasStyleExplicitly) {
+        cleanupSpan(existingSpan, styleProp);
+        if (existingSpan.parentNode) selectNode(existingSpan);
+      } else {
+        existingSpan.style[styleProp] = styleValue;
+        selectNode(existingSpan);
+      }
+      return;
+    }
+    
+    var isTurningOff = styleValue === styleMap[command].offValue;
+    var styledAncestor = isTurningOff ? getStyledAncestor(range, styleProp) : null;
+    
+    if (styledAncestor) {
+      var selectedText = range.toString();
+      var beforeRange = document.createRange();
+      beforeRange.setStart(styledAncestor, 0);
+      beforeRange.setEnd(range.startContainer, range.startOffset);
+      var beforeText = beforeRange.toString();
+      
+      var afterRange = document.createRange();
+      afterRange.setStart(range.endContainer, range.endOffset);
+      afterRange.setEnd(styledAncestor, styledAncestor.childNodes.length);
+      var afterText = afterRange.toString();
+      
+      var parent = styledAncestor.parentNode;
+      var styleCSS = styledAncestor.style.cssText;
+      var unstyledCSS = styleCSS.replace(new RegExp(styleProp.replace(/([A-Z])/g, '-$1').toLowerCase() + '\\s*:\\s*[^;]+;?', 'gi'), '').trim();
+      
+      var newNodes = [];
+      if (beforeText) {
+        var beforeSpan = document.createElement('span');
+        beforeSpan.style.cssText = styleCSS;
+        beforeSpan.textContent = beforeText;
+        newNodes.push(beforeSpan);
+      }
+      
+      var middleNode;
+      if (unstyledCSS) {
+        middleNode = document.createElement('span');
+        middleNode.style.cssText = unstyledCSS;
+        middleNode.textContent = selectedText;
+      } else {
+        middleNode = document.createTextNode(selectedText);
+      }
+      newNodes.push(middleNode);
+      
+      if (afterText) {
+        var afterSpan = document.createElement('span');
+        afterSpan.style.cssText = styleCSS;
+        afterSpan.textContent = afterText;
+        newNodes.push(afterSpan);
+      }
+      
+      newNodes.forEach(function(node) { parent.insertBefore(node, styledAncestor); });
+      parent.removeChild(styledAncestor);
+      activeElement.normalize();
+      selectNode(middleNode);
+      return;
+    }
+    
+    if (isTurningOff && styleProp === 'textDecoration' && hasStyleValue(activeElement, styleProp)) {
+      var selText = range.toString();
+      var fullText = activeElement.textContent;
+      var selStart = fullText.indexOf(selText);
+      if (selStart === -1) selStart = 0;
+      var beforeText = fullText.substring(0, selStart);
+      var afterText = fullText.substring(selStart + selText.length);
+      
+      activeElement.style[styleProp] = '';
+      activeElement.innerHTML = '';
+      
+      if (beforeText) {
+        var beforeSpan = document.createElement('span');
+        beforeSpan.style[styleProp] = 'underline';
+        beforeSpan.textContent = beforeText;
+        activeElement.appendChild(beforeSpan);
+      }
+      var middleNode = document.createTextNode(selText);
+      activeElement.appendChild(middleNode);
+      if (afterText) {
+        var afterSpan = document.createElement('span');
+        afterSpan.style[styleProp] = 'underline';
+        afterSpan.textContent = afterText;
+        activeElement.appendChild(afterSpan);
+      }
+      selectNode(middleNode);
+      return;
+    }
+    
+    var fragment = range.extractContents();
+    
+    if (isTurningOff) {
+      fragment.querySelectorAll('span').forEach(function(span) { cleanupSpan(span, styleProp); });
+      if (hasStyleValue(activeElement, styleProp)) {
+        var overrideSpan = document.createElement('span');
+        overrideSpan.style[styleProp] = styleValue;
+        overrideSpan.appendChild(fragment);
+        range.insertNode(overrideSpan);
+        selectNode(overrideSpan);
+      } else {
+        range.insertNode(fragment);
+      }
+    } else {
+      var span = document.createElement('span');
+      span.style[styleProp] = styleValue;
+      span.appendChild(fragment);
+      span.querySelectorAll('span').forEach(function(nested) {
+        if (nested.style[styleProp]) cleanupSpan(nested, styleProp);
+      });
+      range.insertNode(span);
+      selectNode(span);
+    }
+  }
+
+
+  window.addEventListener('message', function(e) {
+    var data = e.data;
+    if (data && data.type === 'slideCommand' && data.payload) {
+      data = { type: data.payload.command, ...data.payload.data };
+    }
+    
+    if (data.type === 'clear_selection') {
+      deactivateElement();
+      activeElement = null;
+      window.parent.postMessage({ type: 'element_deselected' }, '*');
+      return;
+    }
+    
+    if (data.type === 'focus_active_element') {
+      if (activeElement) {
+        if (!isImageElement(activeElement)) {
+          activeElement.contentEditable = 'true';
+          originalContentMap[getSlotId(activeElement)] = activeElement.innerHTML;
+        }
+        activeElement.focus({ preventScroll: true });
+      }
+      return;
+    }
+    
+    if (data.type === 'reload_content') {
+      deactivateElement();
+      activeElement = null;
+      originalContentMap = {};
+      
+      if (!data.fullHtml || data.fullHtml.length === 0) {
+        return;
+      }
+      
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(data.fullHtml, 'text/html');
+      
+      var scripts = Array.from(document.head.querySelectorAll('script'));
+      document.head.innerHTML = doc.head.innerHTML;
+      scripts.forEach(function(s) { document.head.appendChild(s); });
+      
+      document.body.innerHTML = doc.body.innerHTML;
+      
+      // Re-initialize selectable elements after content reload
+      var allElements = document.querySelectorAll(SELECTABLE_SELECTOR);
+      for (var i = 0; i < allElements.length; i++) {
+        if (isSelectableElement(allElements[i])) {
+          setupElement(allElements[i]);
+        }
+      }
+      window.parent.postMessage({ type: 'content_reloaded' }, '*');
+      return;
+    }
+    
+    if (data.type === 'replace_text' && data.id) {
+      // Look up by data-id
+      var element = findByDataId(data.id);
+      if (element) element.textContent = data.newText || '';
+      return;
+    }
+    
+    if (data.type === 'replace_text' && activeElement) {
+      var selection = window.getSelection();
+      var selectedText = selection ? selection.toString() : '';
+      
+      if (selection && selection.rangeCount > 0 && selectedText.length > 0) {
+        var range = selection.getRangeAt(0);
+        var container = range.commonAncestorContainer;
+        var parentSpan = container.nodeType === 3 ? container.parentNode : container;
+        var styleSource = activeElement;
+        var isInsideStyledSpan = parentSpan && parentSpan.tagName === 'SPAN' && parentSpan !== activeElement && activeElement.contains(parentSpan);
+        if (isInsideStyledSpan) styleSource = parentSpan;
+        
+        var computedStyles = window.getComputedStyle(styleSource);
+        var hasBold = computedStyles.fontWeight === 'bold' || parseInt(computedStyles.fontWeight, 10) >= 700;
+        var hasItalic = computedStyles.fontStyle === 'italic';
+        var hasUnderline = (computedStyles.textDecorationLine || computedStyles.textDecoration).includes('underline');
+        var hasCustomColor = computedStyles.color && computedStyles.color !== 'rgb(0, 0, 0)';
+        var hasCustomFontSize = computedStyles.fontSize && computedStyles.fontSize !== '16px';
+        var hasAnyStyle = hasBold || hasItalic || hasUnderline || hasCustomColor || hasCustomFontSize;
+        
+        if (hasAnyStyle || isInsideStyledSpan) {
+          var newSpan = document.createElement('span');
+          if (hasBold) newSpan.style.fontWeight = 'bold';
+          if (hasItalic) newSpan.style.fontStyle = 'italic';
+          if (hasUnderline) newSpan.style.textDecoration = 'underline';
+          if (computedStyles.color) newSpan.style.color = computedStyles.color;
+          if (computedStyles.fontSize) newSpan.style.fontSize = computedStyles.fontSize;
+          newSpan.textContent = data.newText;
+          range.deleteContents();
+          range.insertNode(newSpan);
+          activeElement.normalize();
+          selectNode(newSpan);
+        } else {
+          range.deleteContents();
+          var textNode = document.createTextNode(data.newText);
+          range.insertNode(textNode);
+          activeElement.normalize();
+          var newRange = document.createRange();
+          newRange.selectNodeContents(textNode);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } else {
+        activeElement.textContent = data.newText;
+      }
+      
+      window.parent.postMessage({ type: 'text_replaced', slotId: getSlotId(activeElement), html: getBodyHtml() }, '*');
+      return;
+    }
+    
+    if (data.type !== 'format_command' || !activeElement) return;
+    
+    var command = data.command;
+    var value = data.value;
+    var isOn = value === 'true' || value === true;
+    
+    var selection = window.getSelection();
+    var selectedText = selection ? selection.toString() : '';
+    var fullText = activeElement.textContent || '';
+    var isFullSelection = selectedText.length > 0 && selectedText === fullText;
+    
+    var styleMap = {
+      'bold': { prop: 'fontWeight', onValue: 'bold', offValue: 'normal' },
+      'italic': { prop: 'fontStyle', onValue: 'italic', offValue: 'normal' },
+      'underline': { prop: 'textDecoration', onValue: 'underline', offValue: 'none' },
+      'fontSize': { prop: 'fontSize', onValue: value + 'px', offValue: null },
+      'fontColor': { prop: 'color', onValue: value, offValue: null }
+    };
+    
+    var styleInfo = styleMap[command];
+    if (!styleInfo) return;
+    
+    var styleValue = (command === 'fontSize' || command === 'fontColor') 
+      ? styleInfo.onValue 
+      : (isOn ? styleInfo.onValue : styleInfo.offValue);
+    
+    if (isFullSelection) {
+      activeElement.style[styleInfo.prop] = styleValue;
+      activeElement.querySelectorAll('span').forEach(function(span) { cleanupSpan(span, styleInfo.prop); });
+      activeElement.querySelectorAll('*').forEach(function(child) {
+        if (child.style && child.style[styleInfo.prop]) {
+          child.style[styleInfo.prop] = '';
+        }
+        if (styleInfo.prop === 'color') {
+          child.style.color = 'inherit';
+        }
+      });
+    } else if (selection && selection.rangeCount > 0) {
+      applyToSelection(selection, selection.getRangeAt(0), command, styleInfo.prop, styleValue, styleMap);
+    }
+    
+    activeElement.normalize();
+    
+    window.parent.postMessage({
+      type: 'element_style_updated',
+      slotId: getSlotId(activeElement),
+      styles: getElementStyles(activeElement),
+      html: getBodyHtml()
+    }, '*');
+    
+    var updatedSelStyles = getSelectionStyles();
+    var currentSelection = window.getSelection();
+    var currentSelectedText = currentSelection ? currentSelection.toString() : '';
+    window.parent.postMessage({
+      type: 'selection_changed',
+      hasSelection: currentSelectedText.length > 0,
+      selectedText: currentSelectedText,
+      styles: updatedSelStyles
+    }, '*');
+  });
+
+
+  var isMouseDown = false;
+  document.addEventListener('mousedown', function() { isMouseDown = true; });
+  document.addEventListener('mouseup', function() { isMouseDown = false; });
+
+  // Auto-activate the first selectable element when iframe gains keyboard focus.
+  window.addEventListener('focus', function() {
+    if (isMouseDown) return;
+    if (!activeElement) {
+      var elements = Array.from(getSelectableElements());
+      if (elements.length > 0) {
+        activateElement(elements[0]);
+        notifyElementSelected(elements[0]);
+      }
+    }
+  });
+
+  // Prevent focus-induced scrolling inside the slide.
+  function resetScroll() {
+    if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
+  }
+  window.addEventListener('scroll', resetScroll, { passive: false });
+
+  // Tab navigation between selectable elements
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab') return;
+
+    var tabDirection = e.shiftKey ? 'backward' : 'forward';
+
+    var elements = Array.from(getSelectableElements());
+    if (elements.length === 0) return;
+
+    // If text is selected and an element is active, let Tab flow
+    // naturally to the formatting toolbar in the parent frame.
+    if (activeElement && !e.shiftKey) {
+      var selection = window.getSelection();
+      var hasSelection = selection && selection.toString().length > 0;
+      if (hasSelection) {
+        e.preventDefault();
+        // Don't null activeElement — focus_active_element needs it
+        // when Shift+Tab returns from the toolbar.
+        deactivateElement();
+        // Tell the parent to focus the formatting toolbar
+        window.parent.postMessage({ type: 'tab_to_toolbar' }, '*');
+        return;
+      }
+    }
+
+    // Navigate to next/previous selectable element
+    var currentIndex = activeElement ? elements.indexOf(activeElement) : -1;
+    var nextIndex;
+    var atBoundary = false;
+
+    if (e.shiftKey) {
+      if (currentIndex <= 0) {
+        atBoundary = true;
+      } else {
+        nextIndex = currentIndex - 1;
+      }
+    } else {
+      if (currentIndex >= elements.length - 1) {
+        atBoundary = true;
+      } else {
+        nextIndex = currentIndex + 1;
+      }
+    }
+
+    // At boundary: tell parent to move focus to prev/next slide.
+    // Browsers cannot reliably Tab out of nested sandboxed iframes,
+    // so we always preventDefault and let the parent handle it.
+    if (atBoundary) {
+      e.preventDefault();
+      deactivateElement();
+      activeElement = null;
+      window.parent.postMessage({ type: 'tab_exit', direction: tabDirection }, '*');
+      return;
+    }
+
+    e.preventDefault();
+    deactivateElement();
+    activateElement(elements[nextIndex]);
+    notifyElementSelected(elements[nextIndex]);
+  });
+
+
+  function initialize() {
+    initializeElements();
+    setupBodyListeners();
+  }
+
+  if (document.body) {
+    initialize();
+  } else {
+    document.addEventListener('DOMContentLoaded', initialize);
+  }
+
+})();
+</script>
+</body></html>

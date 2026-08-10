@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "cascade-erp-module-schema-v1",
+  "path": "public/images/schemas/cascade-erp-module-schema-v1.svg",
+  "derived_from": [
+    "diagrams/sources/cascade_erp_module_schema_v1.mmd"
+  ],
+  "upstream_authority": "ccode:dottalkpp/data/cascade_precision_erp/x64base_mirror/dual_schema_contract.json",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "638a4ffec369e4427052dbbaa4f0c6bd2180d0475b5faeb8ed11607ab570eb86",
+  "output_sha256": "eb32e1ed534a799d046c38a94847a7468042e73033d3d90697db134babe5f921",
+  "truth_status": "source-derived",
+  "review_status": "review-needed"
+}
