@@ -1,6 +1,6 @@
-&& cascade_erp_build_indexes.dts -- build the physical CDX tags the
-&& sidecars declare as metadata_only. GENERATED -- do not hand-edit.
-&& Run AFTER cascade_erp.dts has set the environment, or standalone:
+* cascade_erp_build_indexes.dts -- build the physical CDX tags the
+* sidecars declare as metadata_only. GENERATED -- do not hand-edit.
+* Run AFTER cascade_erp.dts has set the environment, or standalone:
 SET TALK ON
 SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
 SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES

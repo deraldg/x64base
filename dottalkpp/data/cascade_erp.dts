@@ -1,51 +1,51 @@
-&& cascade_erp.dts -- Cascade Precision Mfg ERP: x64base DBF environment
-&& System bundle (owner ruling 2026-08-10): everything Cascade lives under
-&& dottalkpp/data/systems/cascade_erp/. This script sets the slots, opens a
-&& sane working set, and attaches indexes where they exist.
-&&
-&& Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_erp.dts
-&& Schema + tag orders: systems/cascade_erp/schema/CASCADE_ERP.dtgraph (generated)
-&& NOTE: this root copy exists for the house root-switcher convention
-&& (x64.dts, sandbox.dts...). The bundle copy at
-&& systems/cascade_erp/scripts/cascade_erp.dts is the maintained original;
-&& if they drift, the bundle copy wins.
-&& Physical index build (once, or after re-mirror): cascade_erp_build_indexes.dts
-&& SQLite twin: cascade_sql.dts
+* cascade_erp.dts -- Cascade Precision Mfg ERP: x64base DBF environment
+* System bundle (owner ruling 2026-08-10): everything Cascade lives under
+* dottalkpp/data/systems/cascade_erp/. This script sets the slots, opens a
+* sane working set, and attaches indexes where they exist.
+*
+* Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_erp.dts
+* Schema + tag orders: systems/cascade_erp/schema/CASCADE_ERP.dtgraph (generated)
+* NOTE: this root copy exists for the house root-switcher convention
+* (x64.dts, sandbox.dts...). The bundle copy at
+* systems/cascade_erp/scripts/cascade_erp.dts is the maintained original;
+* if they drift, the bundle copy wins.
+* Physical index build (once, or after re-mirror): cascade_erp_build_indexes.dts
+* SQLite twin: cascade_sql.dts
 
 SET TALK ON
 ECHO === CASCADE ERP (x64base DBF side) ===
 
-&& --- environment: point every slot into the bundle -----------------------
+* --- environment: point every slot into the bundle -----------------------
 SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
 SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
 SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
 
-&& --- working set: one table per module spine -----------------------------
-&& Area 1: Items (inventory hub -- most-referenced parent, 8 inbound FKs)
+* --- working set: one table per module spine -----------------------------
+* Area 1: Items (inventory hub -- most-referenced parent, 8 inbound FKs)
 SELECT 1
 USE CASCADE_Items
-&& Area 2: Vendors (procurement parent)
+* Area 2: Vendors (procurement parent)
 SELECT 2
 USE CASCADE_Vendors
-&& Area 3: Customers (sales parent)
+* Area 3: Customers (sales parent)
 SELECT 3
 USE CASCADE_Customers
-&& Area 4: Sales_Orders (order-to-cash spine)
+* Area 4: Sales_Orders (order-to-cash spine)
 SELECT 4
 USE CASCADE_Sales_Orders
-&& Area 5: Purchase_Orders (procure-to-pay spine)
+* Area 5: Purchase_Orders (procure-to-pay spine)
 SELECT 5
 USE CASCADE_Purchase_Orders
-&& Area 6: Work_Orders (plan-to-produce spine)
+* Area 6: Work_Orders (plan-to-produce spine)
 SELECT 6
 USE CASCADE_Work_Orders
-&& Area 7: GL_Journal (close-to-report spine)
+* Area 7: GL_Journal (close-to-report spine)
 SELECT 7
 USE CASCADE_GL_Journal
 
-&& --- indexes: attach where built ----------------------------------------
-&& Until cascade_erp_build_indexes.dts has run, these SET INDEX lines will
-&& report not-found; that is expected, not an error in this script.
+* --- indexes: attach where built ----------------------------------------
+* Until cascade_erp_build_indexes.dts has run, these SET INDEX lines will
+* report not-found; that is expected, not an error in this script.
 SELECT 1
 SET INDEX TO CASCADE_Items.cdx
 SET ORDER TO TAG ITEM_ID
@@ -53,7 +53,7 @@ SELECT 4
 SET INDEX TO CASCADE_Sales_Orders.cdx
 SET ORDER TO TAG SO_ID
 
-&& --- prove the environment, do not just assert it ------------------------
+* --- prove the environment, do not just assert it ------------------------
 SELECT 1
 LIST STATUS
 ECHO === CASCADE x64base environment ready: 7 areas open ===

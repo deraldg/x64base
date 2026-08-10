@@ -266,6 +266,50 @@ followed from demand to work order, BOM explosion to component availability
 capture, to the overhead landing in the trial balance -- one order touching all
 five spines, which is the whole point of an ERP.
 
+## Two house graphs and two name planes (owner doctrine + proof, 2026-08-10)
+
+- **Two house graphs.** x64base walks the same 58 FK edges two ways:
+  traditional `SET RELATION` (xBase navigation; the REL engine, restorable
+  from workspace `RELATION` lines) and `SQLSEL` (declarative SQL whose row
+  sets are confirmed against an in-process SQLite oracle -- the
+  `SQLSEL_SELECT_V1` regression's design). One graph, two walkers; SQLite
+  itself is the third, native walker on the other carrier. SQLSEL joins are
+  a future phase ("v1 reads a single table" -- its own message), so today
+  the traditional walker is the only in-engine multi-table traversal.
+- **Two name planes.** x64 tables carry LONG logical field names alongside
+  10-char DBF descriptors. Proven by the cascade_all load sequence: the CDX
+  tag subsystem resolves DESCRIPTORS (`CDX ADDTAG`), the REL subsystem
+  resolves LOGICAL names (22 truncated descriptors rejected with "field not
+  found", then accepted as logical names). Generated artifacts must emit
+  each subsystem its own plane: TAG lines in descriptors, RELATION lines in
+  logical names. The `.dtgraph` generator does this as of 2026-08-10.
+- Workspace contract, same proof: `WORKSPACE LOAD` resolves `dbf=` paths
+  through the CURRENT slots -- environment first (`SET PATH` into the
+  bundle), then load. First load attempt against default slots failed 43/43
+  opens; env-first restored 43/43.
+- **MILESTONE, runtime-proven 2026-08-10 (owner-driven interactive session):
+  the traditional walker walks Cascade.** `WORKSPACE LOAD cascade_all`
+  restored 43 areas + 58/58 relations (both self-referencing edges
+  included), and SET RELATION traversal followed the parent BY POSITION:
+  parent TOP -> `REL REFRESH` -> child `? SO_ID` = 1; parent BOTTOM ->
+  `REL REFRESH` -> child recno moved 1 -> 11, `? SO_ID` = 6. House semantic
+  measured and recorded: **slaving is REFRESH-driven** (`REL REFRESH` after
+  a parent move; not implicit per movement as in FoxPro). Promoted to
+  regression CASCADE_ENV Section 2 (C_T6..C_T8) per the promote-final-tests
+  rule. Second walker next: `REL JOIN`/`REL ENUM ... TUPLE <expr>` over the
+  same relations (syntax reference: the RELJOIN regression).
+- **Testing sequence (owner, 2026-08-10): SET RELATION first, SQLSEL later.**
+  Initial traversal testing runs through the traditional walker
+  (`cmd_rel.cpp`, the REL engine, the workspace RELATION lines); SQLSEL
+  joins follow when its join phase lands. The comparison program is the
+  point of the system: the same questions answered by house-x64base via
+  SET RELATION, by house-x64base via SQLSEL, and by SQLite natively --
+  three independently derived answers over one graph. Agreements build
+  confidence; disagreements (like the lexicographic-vs-numeric ITEM_ID
+  ordering already recorded above) are the teaching material. Learning and
+  theory, not just parity: every divergence gets explained, not merely
+  fixed.
+
 ## Milestones and gates
 
 | Milestone | Outcome | Exit gate |

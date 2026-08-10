@@ -1,35 +1,35 @@
-&& cascade_sql.dts -- Cascade Precision Mfg ERP: SQLite environment
-&& The SQLite side is the sealed V1 data authority (AIF-105). SQLite is built
-&& into the engine: the ERP command family owns open/inspect, SQLSEL queries.
-&&
-&& Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_sql.dts
-&& Carrier: systems/cascade_erp/sqlite/cascade_precision_mfg_erp.sqlite
-&&   (sealed package: schema, seed, dump, manifest, checksums.sha256, 34 CSVs)
-&& x64base twin: cascade_erp.dts
+* cascade_sql.dts -- Cascade Precision Mfg ERP: SQLite environment
+* The SQLite side is the sealed V1 data authority (AIF-105). SQLite is built
+* into the engine: the ERP command family owns open/inspect, SQLSEL queries.
+*
+* Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_sql.dts
+* Carrier: systems/cascade_erp/sqlite/cascade_precision_mfg_erp.sqlite
+*   (sealed package: schema, seed, dump, manifest, checksums.sha256, 34 CSVs)
+* x64base twin: cascade_erp.dts
 
 SET TALK ON
 ECHO === CASCADE ERP (SQLite side) ===
 
-&& --- open the canonical carrier ------------------------------------------
-&& ERP CASCADE tries the known carrier paths; the bundle path is first in
-&& the engine's candidate list. Explicit fallback shown commented.
+* --- open the canonical carrier ------------------------------------------
+* ERP CASCADE tries the known carrier paths; the bundle path is first in
+* the engine's candidate list. Explicit fallback shown commented.
 ERP CASCADE
-&& ERP OPEN systems\cascade_erp\sqlite\cascade_precision_mfg_erp.sqlite
+* ERP OPEN systems\cascade_erp\sqlite\cascade_precision_mfg_erp.sqlite
 
-&& --- prove the connection, not just the open ------------------------------
+* --- prove the connection, not just the open ------------------------------
 ERP STATUS
 ERP CHECK
 ERP RELATIONS
 
-&& --- demo queries: one per process spine ---------------------------------
-&& ERP SELECT runs SQL through the open ERP connection. (NOT SQLSEL: that
-&& command reads open DBF work areas -- proven the hard way, datarun
-&& 2026-08-10, and recorded here so nobody re-learns it.)
+* --- demo queries: one per process spine ---------------------------------
+* ERP SELECT runs SQL through the open ERP connection. (NOT SQLSEL: that
+* command reads open DBF work areas -- proven the hard way, datarun
+* 2026-08-10, and recorded here so nobody re-learns it.)
 ERP SELECT SELECT COUNT(*) AS n_items FROM Items
 ERP SELECT SELECT SO_ID, Customer_ID, Status FROM Sales_Orders LIMIT 5
 ERP SELECT SELECT v.Vendor_Name, COUNT(po.PO_ID) AS open_pos FROM Vendors v JOIN Purchase_Orders po ON po.Vendor_ID = v.Vendor_ID GROUP BY v.Vendor_Name
 
-&& --- the 9 analytical views live here natively ---------------------------
+* --- the 9 analytical views live here natively ---------------------------
 ERP TRIAL
 ERP SELECT SELECT * FROM v_Reorder_Alert LIMIT 5
 
