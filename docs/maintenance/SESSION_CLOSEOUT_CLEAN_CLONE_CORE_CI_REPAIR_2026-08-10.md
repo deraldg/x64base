@@ -128,6 +128,29 @@ staging proof used the fresh ignored directory
 building. Earlier partial `windows-msvc-core-staging*` probe directories are
 ignored local build output and are not repository content.
 
+## Good-neighbor notices
+
+This repair bore on two neighboring lanes but did not take ownership of their
+authoritative records:
+
+- **AIF-100 -- CI gate governance.** The final green run reports an advisory
+  GitHub Actions compatibility warning for `actions/checkout@v4` and
+  `actions/setup-python@v5`: both target deprecated Node.js 20 and are being
+  forced onto Node.js 24. No workflow or gate source was changed by AIF-104.
+  Consequence: the current proof remains valid, but the owning lane should
+  review action-version maintenance before GitHub removes the compatibility
+  path.
+- **AIF-064 -- run-registry fragments.** The shared generated file
+  `labtalk/registries/ai_runs.yaml` was already dirty with other sessions'
+  entries. AIF-104 committed its owned fragment
+  `labtalk/registries/runs.d/AIPR-20260810-001.yaml` and deliberately left the
+  shared flat file unstaged and unmodified by this lane. Consequence: the flat
+  registry will not expose AIPR-20260810-001 until its owning lane safely
+  regenerates and commits the aggregate after coordinating the existing work.
+
+No stale session, unread quip, foreign claim, or unrelated dirty-tree file was
+reaped, acknowledged, edited, staged, or committed during housekeeping.
+
 ## Final state
 
 - AIF-104: closed.
@@ -135,4 +158,3 @@ ignored local build output and are not repository content.
 - Staging main: clean and equal to `origin/main` at `78f95ce2c`.
 - GitHub CI: green on all three jobs.
 - Release artifact: produced by the green Windows job with 14-day retention.
-
