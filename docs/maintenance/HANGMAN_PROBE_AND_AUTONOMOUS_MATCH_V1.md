@@ -197,8 +197,10 @@ instructive:
    a footnote in a lane doc, and Part B of a closeout named for triggers. Nothing was
    named for hangman, so nothing said "this is the record." A reader who did not already
    know the story could not assemble it. That is an orphan by discoverability rather
-   than by maintenance -- the same family as the no-widows-and-orphans rule, one layer
-   in.
+   than by maintenance -- the family covered by the widow-and-orphan support rule, one
+   layer in. Its triage disposition was ANCHOR: not deleted and not rewritten, but given
+   a searchable name and back-links so a reader who does not already know the story can
+   find it.
 
 Both are fixed by this file existing under a searchable name, plus the pointers added
 alongside it.

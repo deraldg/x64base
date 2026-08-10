@@ -1,13 +1,17 @@
 # DRAFT: replacement for AI_PORTAL.md on the `main` branch (pointer-only)
 
 **Status:** APPROVED -- owner ruled "Promote" 2026-08-10, and ratified the companion rule
-**no widows and orphans** (glossary: `labtalk/ai_portal/AI_GLOSSARY_V1.md`): no published
-document without a refresh path, no pointer without a resolvable target on its own surface.
+**we support widows and orphans** (glossary: `labtalk/ai_portal/AI_GLOSSARY_V1.md`): a duty
+of care, not a prohibition -- existing widows and orphans are TRIAGED to a disposition
+(adopt / re-home / anchor / retire) rather than deleted, and new ones are avoided by never
+publishing a document without a refresh path or a pointer without a resolvable target on its
+own surface. This promotion is the "adopt" case: main's orphaned portal is re-homed as a
+pointer that cannot decay, not evicted.
 Sub-ruling CORRECTED by measurement (2026-08-10, same day): `AI_PORTAL.md` stays OUT of
 `PROMOTE.manifest`. The manifest overlays DEV's file, which is the full portal -- inclusion
 would republish perishable state onto `main`. And `rebuild-staging.ps1` resets staging to
 `main` before overlaying, so the excluded pointer keeps its `main` content across every
-rebuild. No-widows-and-orphans is satisfied by non-perishability plus this doc as the
+rebuild. The support rule is satisfied by non-perishability plus this doc as the
 pointer's declared owner; the stale ACTIVE `AI_PORTAL.md` entry found in staging's historical
 manifest copy was converted to an explanatory exclusion note at promotion time.
 Owner: member.derald. Steward: member.ai.claude.cowork.

@@ -104,19 +104,31 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   autonomous exchange therefore needs a participant wrapped in something with a heartbeat (a
   daemon, a scheduled task, an Action/flow), a turn signal, and a per-session exchange guard.
   Humans self-limit; a paced AI-Human chat self-limits; **only AI-AI can run away.**
-- **no widows and orphans (owner rule, 2026-08-10)** -- publishing-surface integrity, named for
-  the typesetting rule. An ORPHAN is a published document nothing refreshes: it shipped once,
-  fell off every maintenance path, and now asserts a dead regime with full authority (main's
-  `AI_PORTAL.md`, trimmed from `PROMOTE.manifest`, drifted 507 commits and collided a hosted
-  agent onto AIF-044). A WIDOW is a pointer whose target does not exist on the surface it ships
-  on. Every published surface carries neither: every document rides a refresh path (manifest,
-  generator, or matrix) or is removed; every pointer resolves on its own branch. Consequence ruled
-  with it: the pointer-only `main:AI_PORTAL.md` is promoted. CORRECTED 2026-08-10 (measured,
-  same day): it stays OUT of `PROMOTE.manifest` -- the manifest's source is dev's FULL portal,
-  so inclusion would republish perishable state onto `main`; and `rebuild-staging.ps1` resets
-  staging to `main` before overlaying, so the excluded pointer survives every rebuild with its
-  `main` content intact. The rule is satisfied by non-perishability (the pointer cannot decay),
-  with the draft doc as its declared owner/refresh path.
+- **we support widows and orphans (owner rule, 2026-08-10)** -- publishing-surface integrity,
+  named for the typesetting terms but deliberately framed as a duty of CARE, not a prohibition.
+  An ORPHAN is a published document nothing refreshes: it shipped once, fell off every
+  maintenance path, and now asserts a dead regime with full authority (main's `AI_PORTAL.md`,
+  trimmed from `PROMOTE.manifest`, drifted 507 commits and collided a hosted agent onto
+  AIF-044). A WIDOW is a pointer whose target does not exist on the surface it ships on. There
+  is also an orphan-by-DISCOVERABILITY: a record that is maintained but unreachable because
+  nothing is named for it (the hangman probe, nearly lost 2026-08-10).
+  **The policy has two halves, in this order:**
+  1. **SUPPORT BY TRIAGE.** A widow or orphan already in the tree is never simply deleted. It
+     is triaged and given a disposition: ADOPT (put it back on a refresh path), RE-HOME
+     (replace its content with something that cannot decay -- the pointer treatment), ANCHOR
+     (give it a searchable name and back-links, for the discoverability case), or RETIRE
+     (remove it deliberately, with the removal recorded). Deletion is one outcome of triage,
+     never the reflex.
+  2. **AVOID CREATING THEM.** Publishing something is accepting responsibility for refreshing
+     it. Before a document reaches a published surface it must ride a refresh path (manifest,
+     generator, or matrix) or be non-perishable by construction; every pointer must resolve on
+     the surface it ships on.
+  Worked example, both halves: main's orphaned portal was ADOPTED, not evicted -- re-homed as a
+  non-perishable pointer (2026-08-10). It stays OUT of `PROMOTE.manifest`, corrected by
+  measurement the same day: the manifest's source is dev's FULL portal, so inclusion would
+  republish perishable state onto `main`; and `rebuild-staging.ps1` resets staging to `main`
+  before overlaying, so the excluded pointer survives every rebuild intact. Care is satisfied by
+  non-perishability plus a declared owner doc, not by an overlay.
   Home: `docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md`.
 
 ## Derived / conceptual terms
