@@ -1,0 +1,24 @@
+run_id: AIPR-20260810-001
+member: member.ai.codex.local
+product: Codex
+project: project.x64base.runtime
+lanes:
+- AIF-104
+role: implementer
+authored_by: member.ai.codex.local
+planned_by: member.derald
+owner: member.derald
+committer: member.derald
+git:
+  branch: development
+  baseline: 9efa31278
+  head: 1bd7103d1
+chat_handle: codex-task:019fa118-fb90-7593-a062-2254c59b2306
+handle_binding: SELF_REPORTED
+continues_run: null
+started: 2026-08-10
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_CLEAN_CLONE_CORE_CI_REPAIR_2026-08-10.md
+reports:
+- AIPR-20260810-001
+status: closed
