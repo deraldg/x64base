@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_tuptalk.cpp
 //
 // TUPTALK / TT ? tuple-based normalization test harness + live DBF capture.
@@ -95,6 +104,7 @@
 #include <vector>
 
 #include "xbase.hpp"
+#include "cli/fixed_width_row.hpp"
 #include "value_normalize.hpp"
 
 using xbase::DbArea;
@@ -120,9 +130,6 @@ static void ltrim(std::string& s) {
     auto it = std::find_if(s.begin(), s.end(),
                            [](unsigned char ch) { return !std::isspace(ch); });
     s.erase(s.begin(), it);
-}
-static void rtrim(std::string& s) {
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
 }
 static std::string upcopy(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
@@ -497,15 +504,6 @@ static size_t push_all(DbArea& area, const std::string* mask /*nullable*/) {
     return added;
 }
 
-static std::string lpad(const std::string& s, size_t w) {
-    if (s.size() >= w) return s.substr(s.size() - w);
-    return std::string(w - s.size(), ' ') + s;
-}
-static std::string rpad(const std::string& s, size_t w) {
-    if (s.size() >= w) return s.substr(0, w);
-    return s + std::string(w - s.size(), ' ');
-}
-
 // Build entire fixed-width row using schema widths and simple alignment rules.
 static void push_row(DbArea& area) {
     const auto& defs = area.fields();
@@ -513,25 +511,11 @@ static void push_row(DbArea& area) {
         std::cout << "TUPTALK PUSH ROW: no fields in current area.\n";
         return;
     }
-    std::string out;
-    out.reserve(256);
-    size_t total_len = 0;
-    for (int i=1; i <= (int)defs.size(); ++i) {
-        const auto& f = defs[(size_t)i-1];
-        std::string v = area.get(i);
-        rtrim(v); // why: prevent double-padding artifacts
-
-        size_t w = (f.length > 0 ? (size_t)f.length :
-                    (f.type=='D' ? (size_t)8 : (f.type=='L' ? (size_t)1 : (size_t)10)));
-        bool right_align = (f.type=='N' || f.type=='F' || f.type=='Y');
-
-        out += right_align ? lpad(v, w) : rpad(v, w);
-        total_len += w;
-    }
+    std::string out = cli::fixed_width::build_schema_aligned_row(area);
 
     TupEntry e;
     e.ftype = 'C';
-    e.flen  = static_cast<int>(total_len);
+    e.flen  = static_cast<int>(out.size());
     e.fdec  = 0;
     e.raw   = std::move(out);
     e.norm.reset();
@@ -540,7 +524,8 @@ static void push_row(DbArea& area) {
     g_tuptalk.push_back(std::move(e));
 
     std::cout << "TUPTALK: pushed ROW as #" << idx
-              << " (len=" << (int)total_len << ", fields=" << defs.size() << ").\n";
+              << " (len=" << static_cast<int>(g_tuptalk.back().raw.size())
+              << ", fields=" << defs.size() << ").\n";
 }
 
 static void handle_push(DbArea& area, std::istringstream& iss) {
@@ -642,6 +627,4 @@ void cmd_TUPTALK(DbArea& area, std::istringstream& iss) {
                   << "\" (expected RESET, ADD, LIST, NORMALIZE, DUMP, EXPORT, PUSH, HELP).\n";
     }
 }
-
-
 

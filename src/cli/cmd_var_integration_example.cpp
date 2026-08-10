@@ -1,6 +1,19 @@
-// @dottalk.usage v1
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// This file is example-only; the user-visible VAR surface is owned by
+// src/cli/cmd_var.cpp. Do not register cmd_VAR_example as a user command.
 // owner: DOT|VAR_INTEGRATION_EXAMPLE
-// command: VAR
+// documents: VAR (integration example only)
 // category: example-helper
 // status: documentation-example
 // noargs: n/a

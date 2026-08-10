@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: workspace
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "workspace/schema_area_state.hpp"
 
 #include "workspace/workarea_slot.hpp"

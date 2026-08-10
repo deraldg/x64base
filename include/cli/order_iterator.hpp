@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // include/cli/order_iterator.hpp
 //
@@ -86,6 +95,6 @@ enum class OrderStep {
 // (positive = forward / MDB_NEXT) using one ordered LMDB cursor -- no position
 // map, no DBF scan. This is the O(log n) fast path for ordered SKIP on CDX. On
 // Unavailable the caller should fall back to the position-map cache.
-OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, int32_t& out_recno);
+OrderStep order_step_cdx(xbase::DbArea& area, int index_delta, std::int64_t& out_recno);
 
 } // namespace cli

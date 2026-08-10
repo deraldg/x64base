@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: bindings
+// layer: glue
+// owns:
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -12,38 +21,7 @@
 namespace py = pybind11;
 namespace fs = std::filesystem;
 
-// =============================================================
-// CRITICAL INCLUDE ORDER (MSVC)
-// -------------------------------------------------------------
-// xbase.hpp forward-declares xindex::IndexManager, but DbArea has
-// unique_ptr<IndexManager> AND defaulted move ops inline:
-//   DbArea(DbArea&&) = default;
-//   DbArea& operator=(DbArea&&) = default;
-//
-// MSVC will require IndexManager COMPLETE in any TU that parses
-// those inline definitions (pybind11 tends to trigger this).
-//
-// Therefore: include the header that DEFINES xindex::IndexManager
-// BEFORE including xbase.hpp.
-// =============================================================
-
 #if defined(HAVE_XBASE)
-  // Try common locations first. If your project uses a different header name,
-  // add it here (or see the findstr command below).
-  #if __has_include("xindex/index_manager.hpp")
-    #include "xindex/index_manager.hpp"
-  #elif __has_include("xindex/index_manager.h")
-    #include "xindex/index_manager.h"
-  #elif __has_include("xindex/IndexManager.hpp")
-    #include "xindex/IndexManager.hpp"
-  #elif __has_include("xindex/IndexManager.h")
-    #include "xindex/IndexManager.h"
-  #elif __has_include("xindex.hpp")
-    #include "xindex.hpp"
-  #else
-    #error "pydottalk: cannot find a header that DEFINES xindex::IndexManager. Add the correct include above."
-  #endif
-
   #include "xbase.hpp"
   #include "xbase_64.hpp"
   #include "xbase_field_getters.hpp"

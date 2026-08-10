@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xexpr
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xexpr/var_store.cpp
 // DotScript scoped memory-variable store. See var_store.hpp.
 

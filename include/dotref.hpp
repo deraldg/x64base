@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 //dotref.hpp
 
 #pragma once
@@ -34,6 +43,24 @@ inline const std::vector<Item>& catalog() {
 
         {"STOP_ON_ERROR", "STOP_ON_ERROR [OFF|WARNING|ERROR]",
                  "Set or report the severity threshold at which a running DotScript aborts (stop_on_error[severity]); SET ERRORSTOP TO is the compatibility form, DOTTALK_ERRORSTOP the startup default.", true},
+
+        {"BUILDVECTORS", "BUILDVECTORS | BUILD VECTORS | BUILD INFO",
+                 "Report the compile-time engine capacity limits and configuration fingerprint; read-only.", true},
+
+        {"DEFCMD", "DEFCMD [USAGE|LIST|<NAME> [=] <body-text>]",
+                 "Define or list an experimental session-only scratch command; cannot shadow protected built-ins and never writes table data or disk state.", true},
+
+        {"UNDEFCMD", "UNDEFCMD <NAME>",
+                 "Remove a session-only scratch command created by DEFCMD; never removes built-ins or unrelated extensions.", true},
+
+        {"DEFFN", "DEFFN [USAGE|LIST|<NAME> [=] <body-text>]",
+                 "Define or list an experimental session-only expression function; cannot shadow compiled built-ins and never writes table data or disk state.", true},
+
+        {"UNDEFFN", "UNDEFFN <NAME>",
+                 "Remove a session-only custom expression function created by DEFFN; never removes compiled built-ins.", true},
+
+        {"USER", "USER [USAGE|LIST|ROLES|PERMS|WHOAMI|CAN|STORE|ADD|REQUEST|REQUESTS|GRANTS|APPROVE|DENY|REVOKE|GRANT|UNGRANT|DELETE|LOGIN|LOGOUT|PASSWD|TOKEN|AS|ENFORCE|SAVE|LOAD|VERIFY] ...",
+                 "Inspect and administer the identity, authentication, and RBAC model; report modes are read-only, while owner-gated administration and persistence modes may update identity metadata and authorization state.", true},
 
         {"STRUCT",    "STRUCT", "Display table structure.", true},
 
@@ -94,14 +121,17 @@ inline const std::vector<Item>& catalog() {
 
         {"LMDB",      "LMDB [USAGE|INFO|OPEN|USE|SEEK|DUMP|SCAN|CLOSE] ...", "Inspect or manage per-area LMDB-backed index/storage wiring where supported.", true},
 
-        {"VDISK",     "VDISK MOUNT|UNMOUNT|STATUS",
+        {"VDISK",     "VDISK MOUNT|UNMOUNT|STATUS|CONFIG",
                  "Activate the in-process RAM virtual disk for in-memory tables (AIF-043). "
                  "MOUNT points the DBF/INDEXES/LMDB path slots under the relocatable RAM slot "
                  "(default data\\ram) and mounts it as an xbase::ramfs virtual root, so CREATE "
                  "X64, USE, and native CDX-V64 live entirely in RAM with no files on disk. "
                  "UNMOUNT drops all RAM files and unmounts (ephemeral teardown). STATUS reports "
-                 "the RAM root, mount state, byte usage, and resident file list. Relocate the RAM "
-                 "root with SET PATH RAM <path> before MOUNT. Typically activated via DO mem.", true},
+                 "the RAM root, mount state, byte usage, and resident file list. CONFIG shows the "
+                 "optional bin/vdisk.ini admin config (enabled/root/mode/size/warn_pct/on_full), the "
+                 "Layer-1 sizing recommendation, and the Layer-2 soft budget. Relocate the RAM root "
+                 "with SET PATH RAM <path> (or the vdisk.ini root key) before MOUNT. Typically "
+                 "activated via DO mem.", true},
 
         {"CNX",       "CNX <name>",
                  "Index container command (CNX multi-tag support).", true},
@@ -161,7 +191,7 @@ inline const std::vector<Item>& catalog() {
         Notes (current shakedown observations):
             - Clears TABLE stale state on success.
             - May currently trigger full INX rebuild work as part of the commit path (performance issue).)", true},
-{"EXPORT", "EXPORT <csv>", "Export to CSV.", true},
+{"EXPORT", "EXPORT [TO] <file> [CSV|PIPE|SDF]", "Export to CSV, pipe-delimited text, or fixed-width SDF.", true},
 
         {"EXPORTFUNCTIONS", "EXPORTFUNCTIONS [MD [<path>]]", "Export the expression/function catalog through the canonical command surface.", true},
 
@@ -388,7 +418,7 @@ Notes:
         OPTIONS / SUBCOMMANDS
             FOR <expr>           Apply a filter expression (tuple/expr aware).
             CLEAR FOR            Clear active filter.
-            ORDER PHYSICAL|INX|CNX|<tag>   Change controlling order/tag.
+            ORDER PHYSICAL|INX|CNX|CDX|<tag>   Change controlling order/tag.
             SHOW CHILDREN [LIMIT n]        Browse related child rows from current record.
             SHOW|HIDE SCHEMA|JSON          Toggle schema/JSON debug overlays.
             STATUS VERBOSE|COMPACT         Toggle status verbosity.
@@ -496,6 +526,8 @@ Notes:
         {"COMMANDSHELP", "COMMANDSHELP", "Command help (alias of CMDHELP).", true},
 
         {"CMDHELPCHK",   "CMDHELPCHK", "Validate HELP catalogs vs the command registry.", true},
+
+        {"CMDREL", "CMDREL", "Print the recipe for relating HELP COMMANDS to CMD_ARGS (help-build diagnostic).", true},
 
         {"EXITS", "EXITS [LIST|SHOW <id>|VALIDATE|WHERE]",
          "Inspect and validate the reviewed extension-exit manifest without executing extension code.", true},
@@ -693,13 +725,15 @@ Notes:
             SQLITE SELECT * FROM t
 
         Notes:
-            Used for regression testing and DBF↔SQL bridging experiments.)", true},
+            Used for regression testing and DBF<->SQL bridging experiments.)", true},
 
         {"SQLVER", "SQLVER", "Report SQLite availability and version.", true},
 
-        {"SQL",    "SQL <statement>", "Execute an SQL statement using the configured SQL engine.", true},
+        {"SQL",    "SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>] [VERBOSE]",
+                 "Scan the CURRENT work area with a predicate and report matches or a count. It does NOT execute SQL statements -- for a SELECT statement use SQLSEL, and for the SQLite bridge use SQLITE. Reads records and may temporarily move the cursor; does not mutate table data.", true},
 
-        {"SQLSEL", "SQLSEL <expr>", "Execute an SQL SELECT and display results.", true},
+        {"SQLSEL", "SQLSEL SELECT <cols>|*|COUNT(*) FROM <table> [WHERE <pred>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]",
+                 "SQLsel: run a SELECT statement over an OPEN work area. Statement-scoped -- it names its own table, ignores session filter and cursor state, restores every cursor, and reads committed table truth. Bare column names only in v1 (no expression projection, joins, or GROUP BY). The legacy predicate-scan form SQLSEL [COUNT] [FOR <expr>] is still accepted. See SQLSEL USAGE.", true},
 
         {"INSERT", "INSERT <statement>", "Insert data rows (scripting/SQL helper; see command usage).", true},
 
@@ -712,6 +746,19 @@ Notes:
         {"VALIDATE", "VALIDATE <path>", "Schema/sidecar validation command.", true},
 
         {"AREA51", "AREA51", "Developer sandbox / experimental command.", true},
+
+        // AI system -- the engine-side window into the AI-BBS substrate (AIF-075/076).
+        {"BBS", "BBS [USAGE|BOARDS|READ <board.key> [THREAD <id>] [LAST <n>]|POST <board.key> SUBJECT <s> BODY <t>|REPLY <post.id> BODY <t>|CLOSE <thread.id>]",
+                 "AI-BBS persistence substrate: durable boards, threads and posts as x64base DBF under data/metadata/bbs/, with RBAC and attributed authorship; board.governance projects the SYSGRANT request/approve loop (AIF-075).", true},
+
+        {"NET", "NET [USAGE|EGRESS STATUS|EGRESS OPEN [MINUTES <n>] [reason]|EGRESS CLOSE]",
+                 "NET EGRESS: read and toggle the WSL/AFB outbound egress isolation as a permissioned, audited capability (host.network.egress; Windows/mirrored-mode). Verified revocable egress isolation, not an air-gap.", true},
+
+        {"CANARY", "CANARY [USAGE]",
+                 "Dev canary for the metadata catalog reader adapter: reads the already-open SYSCMD area and reports adapter row/distribution counts (handler cmd_CATALOGCANARY).", true},
+
+        {"EVALDIFF", "EVALDIFF FOR <predicate>",
+                 "Compare classic DbArea and TupleRow predicate-evaluator outcomes over the same physical records without changing either evaluator.", true},
 
         {"GENERIC", "GENERIC", "Developer utility placeholder command.", true},
 
@@ -746,6 +793,8 @@ Notes:
         {"DIR", "DIR [<mask>|<path>]", "List directory or file entries through the DotTalk++ shell surface.", true},
         {"ECHO", "ECHO <text...>", "Echo text to the current DotTalk++ output route.", true},
         {"ERASE", "ERASE <target>", "Erase a file or supported target through the DotTalk++ shell surface.", true},
+
+        {"EDIT", "EDIT [USAGE] <file>", "Launch the configured external editor for a file path; OS-sensitive (spawns the editor as a child process, editor.mode Off disables it). See the @dottalk.external contract in src/edu/edu_edit.cpp.", true},
         {"FIND", "FIND <text> [IN <field>]", "Find text or values using the active order when possible, with scan fallback when needed.", true},
         {"GOTO", "GOTO <recno>|TOP|BOTTOM", "Move the current work area to a specific record or boundary position.", true},
         {"LIST", "LIST [ALL] [FIELDS <list>] [FOR <expr>]", "List records from the current table using DotTalk++ command semantics.", true},
@@ -821,11 +870,6 @@ Notes:
         {"SECURITY", "SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN <role> [AS <worker>]|WHOAMI|ASSIGNMENTS|LOGOUT]",
                  "Inspect DotTalk++ security policy/runtime rules and manage the current shell-session role identity and assignment view.", true},
 
-        {"SMARTBROWSE", "SMARTBROWSE [<source>] [FOR <expr>] [ORDER <tag>|PHYSICAL]",
-                 "Launch the smart browser surface for relational, expression-aware, and order-aware browsing.", true},
-
-        // Phase 5 DOTREF curation batch 3: small command-surface cleanup.
-
         // Phase 5 DOTREF curation batch 3: small command-surface cleanup.
         {"BELL", "BELL [ON|OFF]",
                  "Ring the shell bell when enabled, or turn the DotTalk++ bell setting on or off.", true},
@@ -867,6 +911,9 @@ Notes:
 
         {"BOOLEAN", "BOOLEAN [USAGE|<expr>]",
                  "Demonstrate or evaluate boolean/logical expression behavior in the DotTalk++ expression layer.", true},
+
+        {"FORMULA", "FORMULA [USAGE|<expr>]",
+                 "Evaluate a scalar expression through the xexpr engine and print the formatted value (education eval command; its FoxPro ? / ?? print form is carried in foxref).", true},
 
         {"CASE", "CASE [USAGE|ON|OFF|STATUS]",
                  "Inspect or control case-sensitivity behavior for comparisons and expression/predicate evaluation.", true},
@@ -979,9 +1026,6 @@ Notes:
 
         {"INIT", "INIT [USAGE]",
                  "Initialize default paths, perform best-effort stale-lock cleanup, and process startup ini scripts.", true},
-
-        {"SIMPLEBROWSE", "SIMPLEBROWSE [FOR <expr>] [ORDER <tag>|PHYSICAL] [LIMIT <n>]",
-                 "Launch the implemented simple browser surface for current work-area, relation, and logical-row inspection.", true},
 
         {"SIX", "SIX [USAGE|<args...>]",
                  "Experimental or compatibility index-related surface for SIX-style indexing concepts and diagnostics.", true},

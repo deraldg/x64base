@@ -1,0 +1,6 @@
+USE students
+EXPORT CSV _drops/rt_students.csv HEADER ON DATES ISO
+IMPORT CSV _drops/rt_students.csv SCHEMA _drops/students.schema.json REJECTS _drops/rt_rejects.csv
+USE rt_students
+COUNT
+ECHO OK: Round-trip DBF→CSV→DBF complete (rows=%LASTCOUNT%)

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ---- TVision uses ----
 #define Uses_TApplication
 #define Uses_TDeskTop
@@ -611,7 +620,6 @@ bool isNestedTvCommand(const std::string& cmd)
     return cmd == "ARCTICTALK" ||
            cmd == "FOXTALK" ||
            cmd == "TVISION" ||
-           cmd == "BROWSETV" ||
            cmd == "BROWSETUI";
 }
 
@@ -1116,8 +1124,8 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtSysColorGreen:  return run("COLOR GREEN");
         case cmFtSysColorAmber:  return run("COLOR AMBER");
         case cmFtSysShell:       return prefill("! ");
-        case cmFtSysDotScriptX32: return run("DOTSCRIPT x32");
-        case cmFtSysDotScriptX64: return run("DOTSCRIPT x64");
+        case cmFtSysDotScriptX32: return run("DO X32");
+        case cmFtSysDotScriptX64: return run("DO X64");
         case cmFtSysDotScriptSandbox: return run("DOTSCRIPT sandbox");
         case cmFtSysDotScriptInit: return prefill("DOTSCRIPT init.ini");
         case cmFtSysDotScriptShutdown: return prefill("DOTSCRIPT shutdown.ini");
@@ -1224,11 +1232,11 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtListPredicates: return run("PREDICATES");
 
         // Browsers.
-        case cmFtBrowseCurrent:  return run("BROWSE");
+        case cmFtBrowseCurrent:  return run("BROWSETV");
         case cmFtBrowseSimple:   return prefill("SIMPLEBROWSER ");
         case cmFtBrowseSmart:    return prefill("SMARTBROWSER ");
         case cmFtBrowseText:     return info("BROWSETUI is not launched inside ArcticTalk yet. Use the outer CLI until it is integrated.");
-        case cmFtBrowseTv:       return info("BROWSETV is not launched inside ArcticTalk yet. Use the outer CLI until it is integrated.");
+        case cmFtBrowseTv:       return run("BROWSETV ALL");
         case cmFtBrowseDev:      return run("BROWSER");
         case cmFtBrowseRecord:   return run("RECORDVIEW");
         case cmFtBrowseChildren: return prefill("SIMPLEBROWSER SHOW CHILDREN LIMIT 20");
@@ -1288,6 +1296,12 @@ bool TFoxtalkApp::dispatchMenu(int id)
         case cmFtCmdSqlite:      return run("SQLITE");
         case cmFtCmdSqlExec:     return prefill("SQL ");
         case cmFtCmdSqlSelect:   return prefill("SQLSEL ");
+
+        // Regression/test surface. Potentially mutating runs require an
+        // explicit Enter/Run confirmation from the command bar.
+        case cmFtTestRegressionList: return run("REGRESSION LIST");
+        case cmFtTestRegressionRun:  return prefill("REGRESSION RUN ");
+        case cmFtTestRegressionAll:  return prefill("REGRESSION ALL");
 
         // Help.
         case cmFtHelpMain:       return run("HELP");

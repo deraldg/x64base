@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: test
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/tests/test_x64_record_limit.cpp
 //
 // Proves the X64_MAX_RECORD_SIZE (16 MiB) hard guard rejects an over-ceiling

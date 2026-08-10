@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_rel.cpp
 // REL command dispatcher. Keeps REL subcommand parsing in one place and forwards
 // to the underlying RELATIONS / SET RELATIONS / JOIN / ENUM handlers.
@@ -56,7 +65,8 @@ static void rel_usage() {
         << "  REL LOAD [path] | REL LOAD AS <dataset>\n"
         << "  REL ADD <parent> <child> ON <field>[,<field>...]      # same-field relation\n"
         << "  REL ADD <parent> <child> ON <parent_field> TO <child_field>  # asymmetric relation\n"
-        << "  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR\n";
+        << "  REL CLEAR <parent>|ALL                   # alias of SET RELATIONS CLEAR\n"
+        << "  REL SCANLIMIT [<n>]                      # report or set the relation scan limit\n";
 }
 
 static std::string up(std::string s) { return textio::up(std::move(s)); }
@@ -70,6 +80,10 @@ void cmd_REL(xbase::DbArea& area, std::istringstream& in) {
         return;
     }
     sub = up(sub);
+
+    // AIF-074 P1.3 (RDB-06): fresh truncation latch per REL command, so the
+    // once-per-cycle warning fires again if this command hits the scan limit.
+    relations_api::clear_scan_truncated();
 
     if (sub == "LIST") {
         // REL LIST           -> existing one-hop display (via cmd_RELATIONS_LIST)
@@ -125,6 +139,25 @@ void cmd_REL(xbase::DbArea& area, std::istringstream& in) {
     }
 
     // Aliases to SET RELATIONS
+    if (sub == "SCANLIMIT") {
+        // AIF-074 P1.3: CLI reach for the relation scan limit (closes AIF-073
+        // OQ-1). No argument reports; a positive integer sets.
+        std::string nTok;
+        if (!(in >> nTok)) {
+            std::cout << "REL: scan limit is " << relations_api::scan_limit() << ".\n";
+            return;
+        }
+        char* end = nullptr;
+        const unsigned long long v = std::strtoull(nTok.c_str(), &end, 10);
+        if (!end || *end != '\0' || v == 0ULL) {
+            std::cout << "REL: SCANLIMIT expects a positive integer.\n";
+            return;
+        }
+        relations_api::set_scan_limit(static_cast<std::size_t>(v));
+        std::cout << "REL: scan limit set to " << relations_api::scan_limit() << ".\n";
+        return;
+    }
+
     if (sub == "ADD" || sub == "CLEAR") {
         std::string rest;
         std::getline(in, rest);

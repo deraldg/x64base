@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/shortcut_resolver.hpp
 #pragma once
 
@@ -71,12 +80,16 @@ inline const std::unordered_map<std::string, std::string>& ShortcutResolver::get
         // ---- SQL-ish shortcuts (your originals) ----------------------------
         { "WH",           "SQL" },
 
-        { "SM",           "SMARTBROWSE" },
-        { "SMART",        "SMARTBROWSE" },
+        { "SM",           "SMARTBROWSER" },
+        { "SMART",        "SMARTBROWSER" },
 
         // ---- Simple Browser -----------------------------------------------
-        { "SB",           "SIMPLEBROWSE" },
-        { "WS",           "SIMPLEBROWSE" },
+        { "SB",           "SIMPLEBROWSER" },
+
+        // ---- Workspace ------------------------------------------------------
+        // WS reads as WORKSPACE to every user; it previously pointed at
+        // SIMPLEBROWSER, which SB already covers (owner ruling, 2026-07-29).
+        { "WS",           "WORKSPACE" },
 
         // ---- “fast typist” / concatenation accidents ----------------------
         { "SMARTLISTFOR", "SMARTLIST" },

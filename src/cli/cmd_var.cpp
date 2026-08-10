@@ -1,14 +1,24 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: DOT|VAR
 // command: VAR
 // category: scripting
 // status: supported
 // noargs: usage
-// effect: parse
-// mutates: none-currently
+// effect: evaluate-and-store
+// mutates: session-variables
 // usage-access: VAR USAGE
 // summary:
-//   Validate and accept DotScript variable assignment syntax.
+//   Evaluate an expression and store it as a scoped DotScript memory variable,
+//   referenced later as $name.
 //
 // usage:
 //   VAR USAGE
@@ -18,12 +28,18 @@
 //   VAR threshold = 3.0
 //   VAR label = UPPER(LNAME)
 //   VAR today = DATE()
+//   VAR nums = {10, 20, 30}
+//   ? $threshold * 2          && reference a stored variable as $name
 //
 // notes:
 //   VAR with no arguments prints usage.
-//   VAR USAGE prints usage and does not validate/accept an assignment.
-//   Current implementation validates the variable name and expression presence,
-//   then reports the accepted assignment.
+//   VAR USAGE prints usage and does not evaluate or store.
+//   VAR evaluates the right-hand side through the array-preserving expression
+//   path and stores the result in the scoped session memory-variable store,
+//   keyed by the sigil-stripped, case-insensitive name; the value may be a
+//   scalar or an array. The stored variable is read back in later expressions
+//   as $name. Distinct from SET VAR (&macro) variables, which do textual
+//   substitution rather than value storage.
 //
 // risk:
 //   mutates_table_data: no
@@ -31,6 +47,7 @@
 // related:
 //   DOTSCRIPT
 //   CALC
+//   SET VAR
 //
 
 #include <iostream>

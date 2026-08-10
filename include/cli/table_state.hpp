@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cli/table_state.hpp
 #pragma once
 
@@ -17,8 +26,14 @@ namespace dottalk::table {
 // Constants & Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-constexpr int kMaxFields = 256;
+// Field cap derives from the one build-vector authority (AIF-044) instead of an
+// independent literal, so the table-buffer bit-array width (kWords) can never silently
+// disagree with xbase::MAX_FIELDS again. The static_assert enforces the invariant that
+// was previously only a comment ("must always agree with xbase::MAX_FIELDS").
+constexpr int kMaxFields = static_cast<int>(dottalk::build::max_fields);
 constexpr int kWords     = (kMaxFields + 63) / 64;
+static_assert(kMaxFields == static_cast<int>(xbase::MAX_FIELDS),
+              "table-buffer kMaxFields must equal engine xbase::MAX_FIELDS (AIF-044)");
 
 // Change operation bit flags
 enum ChangeType : std::uint64_t {
@@ -39,7 +54,7 @@ struct ChangeEntry {
 // Per-area change buffer
 class TableBuffer {
 public:
-    static constexpr size_t kMaxChanges = 10000;
+    static constexpr size_t kMaxChanges = dottalk::build::table_buffer::max_changes; // AIF-044
 
     bool                            history_enabled = false;  // true = keep full history, false = keep only latest
     std::multimap<std::uint64_t, ChangeEntry> changes;
@@ -115,7 +130,20 @@ int  count_stale();
 
 void reset_all();
 
-// Persistent buffer / journal stubs
+// Persistent buffer / write-ahead journal.
+//
+// NOT stubs. This is an implemented WAL: `<dbf>.tbj`, a per-transaction append-only
+// redo log (format TBJ1; `U`/`D` records carrying priority + H/S retention mode, values
+// hex-encoded), durably fsynced with a `C <count>` COMMIT marker BEFORE the buffered
+// changes are applied to the DBF, and replayed idempotently on open by
+// recover_table_buffer_journal(). See src/cli/table_state.cpp.
+//
+// SCOPE (AIF-061): the log covers DBF RECORD writes. It does NOT yet cover the memo
+// store -- an x64 memo REPLACE converts text to a stored object-id and journals only
+// that id, so a crash between the DBF apply and the memo write can leave a recovered
+// record referencing an object the memo store never durably wrote. Record-level
+// atomicity is real; whole-row atomicity for memo-bearing rows is not yet.
+// Lane: docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
 BufferPersistenceMode persistence_mode(int area0);
 bool is_persistent_enabled(int area0);
 void set_persistence_mode(int area0, BufferPersistenceMode mode);
@@ -123,8 +151,9 @@ std::string journal_path(int area0);
 void set_journal_path(int area0, const std::string& path);
 void clear_journal_state(int area0);
 
-// Stub hooks. These are intentionally no-op placeholders for the future
-// persistent TABLE BUFFER journal. They centralize the future update points.
+// Implemented WAL hooks. Each is a no-op returning true when persistence mode is
+// not RamJournal, so callers can invoke them unconditionally; when RamJournal is
+// active they do real durable work. (These were placeholders once; they are not now.)
 bool journal_note_buffer_on(int area0, const std::string& table_name = std::string{});
 bool journal_note_change(int area0, const ChangeEntry& entry);
 // Write-ahead: append the COMMIT marker and durably fsync the redo log BEFORE the

@@ -1,0 +1,52 @@
+* ============================================================================
+* 01_dbf_to_csv_v2.dts   --  DBF -> CSV, runnable
+*
+* Replaces 01_dbf_to_csv_students.dts, which could not execute:
+*   EXPORT CSV <f> HEADER ON DELIMITER , DATES ISO QUOTES RFC4180
+*     -> EXPORT grammar is EXPORT [TO] <file> [CSV|PIPE]. DELIMITER, DATES and
+*        QUOTES options do not exist.
+*   _drops/  -> does not exist under the runtime data root; TMP does.
+*   USE students -> ambiguous: no students.dbf at the DBF root; four variants
+*        live in sandbox/ og/ x64/ with row counts 215/200/210/204.
+*
+* Fixture is built here from the SEALED Cascade package so the test never
+* depends on an ambiguous pre-existing table. See README_SUITE_REPAIR_V1.md.
+* ============================================================================
+
+SET TALK ON
+ECHO CONV01 BEGIN dbf-to-csv
+
+* -- build a known fixture from sealed, checksummed source ---------------------
+ECHO CONV01 FIXTURE autodbf from sealed Items.csv
+AUTODBF X64 CONVERSION_FIXTURE_ITEMS_V1 FROM cascade_precision_erp/data/Items.csv HEADER INFER OVERWRITE
+
+* -- export it back out --------------------------------------------------------
+ECHO CONV01 EXPORT
+USE CONVERSION_FIXTURE_ITEMS_V1
+COUNT
+EXPORT TO tmp/conv01_items_export.csv CSV
+
+* -- prove the export is readable by re-importing it ---------------------------
+* A file being written is not proof it is well formed. Round-tripping it through
+* AUTODBF proves the CSV is parseable and preserves shape.
+ECHO CONV01 REIMPORT
+AUTODBF X64 CONVERSION_FIXTURE_ITEMS_REIMPORT_V1 FROM tmp/conv01_items_export.csv HEADER INFER OVERWRITE
+USE CONVERSION_FIXTURE_ITEMS_REIMPORT_V1
+COUNT
+STRUCT
+
+ECHO CONV01 END
+
+* ============================================================================
+* PASS CRITERIA
+*   fixture COUNT            = 18
+*   reimport COUNT           = 18      <- export lost no rows
+*   reimport field count     = 13      <- export lost no columns
+*   tmp/conv01_items_export.csv exists and has a header row
+*
+* NOTE: EXPORT writes a header row by default (per its contract notes), which is
+* why the reimport can use HEADER. Type letters after reimport may differ from
+* the fixture where EXPORT rendered a value differently than the sealed CSV --
+* any such difference is a REAL FINDING about export fidelity, not a test bug.
+* Record it rather than adjusting the expectation.
+* ============================================================================

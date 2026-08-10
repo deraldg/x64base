@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: DOT|AUTODBF
 // command: AUTODBF
@@ -25,6 +34,8 @@
 //
 // notes:
 //   AUTODBF defaults to X64, AUTO header detection, INFER types, comma CSV.
+//   CSV records are parsed as records, not physical lines: quoted fields may
+//   contain commas, doubled quotes, and embedded newlines.
 //   AUTO is conservative: it chooses HEADER only when the first row looks like
 //   names and later data strongly indicates typed data.  Use HEADER or NOHEADER
 //   to remove ambiguity.
@@ -119,6 +130,14 @@ struct CsvScan {
     std::string error;
     std::vector<std::string> firstRow;
     std::vector<ColumnProfile> profiles;
+};
+
+struct CsvRecord {
+    std::string text;
+    std::size_t startLine = 0;
+    std::size_t endLine = 0;
+    bool ok = false;
+    std::string error;
 };
 
 struct AutoDbfColumn {
@@ -269,17 +288,146 @@ static void strip_utf8_bom(std::string& s)
     }
 }
 
-static std::vector<std::string> split_csv_record(std::string line)
+static bool csv_record_needs_more_data(const std::string& record)
 {
-    strip_trailing_cr(line);
-    std::vector<std::string> cols = csv::split_line(line);
-    if (!cols.empty()) strip_utf8_bom(cols[0]);
-    return cols;
+    bool inQuotes = false;
+    for (std::size_t i = 0; i < record.size(); ++i) {
+        if (record[i] != '"') {
+            continue;
+        }
+        if (inQuotes && i + 1 < record.size() && record[i + 1] == '"') {
+            ++i;
+            continue;
+        }
+        inQuotes = !inQuotes;
+    }
+    return inQuotes;
 }
 
-static bool is_blank_line(const std::string& line)
+static bool read_csv_record(std::istream& in, std::size_t& lineNumber, CsvRecord& record)
 {
-    return textio::trim(line).empty();
+    record = CsvRecord{};
+
+    std::string line;
+    if (!std::getline(in, line)) {
+        return false;
+    }
+
+    ++lineNumber;
+    strip_trailing_cr(line);
+    record.text = std::move(line);
+    record.startLine = lineNumber;
+    record.endLine = lineNumber;
+
+    while (csv_record_needs_more_data(record.text)) {
+        if (!std::getline(in, line)) {
+            record.error = "unterminated quoted CSV field";
+            return true;
+        }
+        ++lineNumber;
+        strip_trailing_cr(line);
+        record.text.push_back('\n');
+        record.text += line;
+        record.endLine = lineNumber;
+    }
+
+    record.ok = true;
+    return true;
+}
+
+static bool parse_csv_record(const std::string& record,
+                             std::vector<std::string>& cols,
+                             std::string& err)
+{
+    cols.clear();
+
+    std::string cur;
+    bool inQuotes = false;
+    bool afterClosingQuote = false;
+    bool atFieldStart = true;
+
+    for (std::size_t i = 0; i < record.size(); ++i) {
+        const char c = record[i];
+
+        if (inQuotes) {
+            if (c == '"') {
+                if (i + 1 < record.size() && record[i + 1] == '"') {
+                    cur.push_back('"');
+                    ++i;
+                } else {
+                    inQuotes = false;
+                    afterClosingQuote = true;
+                }
+            } else {
+                cur.push_back(c);
+            }
+            continue;
+        }
+
+        if (afterClosingQuote) {
+            if (c == ',') {
+                cols.push_back(cur);
+                cur.clear();
+                afterClosingQuote = false;
+                atFieldStart = true;
+                continue;
+            }
+            err = "malformed CSV: characters after closing quote";
+            return false;
+        }
+
+        if (atFieldStart && c == '"') {
+            inQuotes = true;
+            atFieldStart = false;
+            continue;
+        }
+
+        if (c == ',') {
+            cols.push_back(cur);
+            cur.clear();
+            atFieldStart = true;
+            continue;
+        }
+
+        if (c == '"') {
+            err = "malformed CSV: quote in unquoted field";
+            return false;
+        }
+
+        cur.push_back(c);
+        atFieldStart = false;
+    }
+
+    if (inQuotes) {
+        err = "malformed CSV: unterminated quoted field";
+        return false;
+    }
+
+    cols.push_back(cur);
+    return true;
+}
+
+static bool split_csv_record(const CsvRecord& record,
+                             std::vector<std::string>& cols,
+                             std::string& err,
+                             bool stripFirstColumnBom = false)
+{
+    if (!record.ok) {
+        err = record.error.empty() ? "malformed CSV record" : record.error;
+        return false;
+    }
+    if (!parse_csv_record(record.text, cols, err)) {
+        return false;
+    }
+    if (stripFirstColumnBom && !cols.empty()) {
+        strip_utf8_bom(cols[0]);
+    }
+    return true;
+}
+
+static bool is_blank_record(const CsvRecord& record)
+{
+    return textio::trim(record.text).empty();
 }
 
 static bool is_headerish_cell(const std::string& raw)
@@ -354,13 +502,22 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
         return scan;
     }
 
-    std::string line;
     std::size_t lineNumber = 0;
+    CsvRecord record;
+    std::string parseErr;
 
-    while (std::getline(in, line)) {
-        ++lineNumber;
-        if (is_blank_line(line)) continue;
-        scan.firstRow = split_csv_record(line);
+    while (read_csv_record(in, lineNumber, record)) {
+        if (!record.ok) {
+            scan.firstBadLine = record.startLine;
+            scan.error = record.error;
+            return scan;
+        }
+        if (is_blank_record(record)) continue;
+        if (!split_csv_record(record, scan.firstRow, parseErr, true)) {
+            scan.firstBadLine = record.startLine;
+            scan.error = parseErr;
+            return scan;
+        }
         break;
     }
 
@@ -372,13 +529,22 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
     scan.expectedColumns = scan.firstRow.size();
     std::vector<ColumnProfile> dataOnlyProfiles(scan.expectedColumns);
 
-    while (std::getline(in, line)) {
-        ++lineNumber;
-        if (is_blank_line(line)) continue;
+    while (read_csv_record(in, lineNumber, record)) {
+        if (!record.ok) {
+            scan.firstBadLine = record.startLine;
+            scan.error = record.error;
+            return scan;
+        }
+        if (is_blank_record(record)) continue;
 
-        const std::vector<std::string> cols = split_csv_record(line);
+        std::vector<std::string> cols;
+        if (!split_csv_record(record, cols, parseErr)) {
+            scan.firstBadLine = record.startLine;
+            scan.error = parseErr;
+            return scan;
+        }
         if (cols.size() != scan.expectedColumns) {
-            scan.firstBadLine = lineNumber;
+            scan.firstBadLine = record.startLine;
             scan.actualColumns = cols.size();
             scan.error = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfColumnCountMismatch);
             return scan;
@@ -407,13 +573,22 @@ static CsvScan scan_csv_file(const AutoDbfOptions& opt)
     lineNumber = 0;
     bool skippedFirstNonBlank = false;
 
-    while (std::getline(in, line)) {
-        ++lineNumber;
-        if (is_blank_line(line)) continue;
+    while (read_csv_record(in, lineNumber, record)) {
+        if (!record.ok) {
+            scan.firstBadLine = record.startLine;
+            scan.error = record.error;
+            return scan;
+        }
+        if (is_blank_record(record)) continue;
 
-        const std::vector<std::string> cols = split_csv_record(line);
+        std::vector<std::string> cols;
+        if (!split_csv_record(record, cols, parseErr)) {
+            scan.firstBadLine = record.startLine;
+            scan.error = parseErr;
+            return scan;
+        }
         if (cols.size() != scan.expectedColumns) {
-            scan.firstBadLine = lineNumber;
+            scan.firstBadLine = record.startLine;
             scan.actualColumns = cols.size();
             scan.error = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfColumnCountMismatch);
             return scan;
@@ -643,16 +818,16 @@ static bool convert_value_for_field(const std::string& raw,
                                     std::string& out,
                                     std::string& err)
 {
-    const std::string s = textio::trim(raw);
-
     if (fs.type == 'C') {
-        if (s.size() > fs.len) {
+        if (raw.size() > fs.len) {
             err = cli::cmdout::message_text(dottalk::helpdata::MessageId::AutoDbfCharacterWidthOverflow);
             return false;
         }
-        out = s;
+        out = raw;
         return true;
     }
+
+    const std::string s = textio::trim(raw);
 
     if (fs.type == 'N' || fs.type == 'F') {
         if (s.empty()) {
@@ -705,19 +880,27 @@ static bool for_each_data_row(const AutoDbfOptions& opt,
         return false;
     }
 
-    std::string line;
     std::size_t lineNumber = 0;
     bool skippedFirstNonBlank = false;
+    CsvRecord record;
+    std::string parseErr;
 
-    while (std::getline(in, line)) {
-        ++lineNumber;
-        if (is_blank_line(line)) continue;
+    while (read_csv_record(in, lineNumber, record)) {
+        if (!record.ok) {
+            err = record.error;
+            return false;
+        }
+        if (is_blank_record(record)) continue;
 
-        std::vector<std::string> cols = split_csv_record(line);
+        std::vector<std::string> cols;
+        if (!split_csv_record(record, cols, parseErr)) {
+            err = "line " + std::to_string(record.startLine) + ": " + parseErr;
+            return false;
+        }
         if (cols.size() != expectedColumns) {
             err = cli::cmdout::message_text(
                 dottalk::helpdata::MessageId::AutoDbfLineExpectedColumnsFound,
-                {{"line", std::to_string(lineNumber)},
+                {{"line", std::to_string(record.startLine)},
                  {"expected", std::to_string(expectedColumns)},
                  {"found", std::to_string(cols.size())}});
             return false;
@@ -729,7 +912,7 @@ static bool for_each_data_row(const AutoDbfOptions& opt,
         }
         skippedFirstNonBlank = true;
 
-        if (!fn(lineNumber, cols)) return false;
+        if (!fn(record.startLine, cols)) return false;
     }
 
     return true;

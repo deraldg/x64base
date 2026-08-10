@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: datadict
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // DD096Z-D2ZK DDICT call-site bridge helpers.
 
 #include "ddict_callsite_bridge.hpp"

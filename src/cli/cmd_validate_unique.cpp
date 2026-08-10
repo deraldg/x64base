@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]
 //
 // Scans current work area and reports duplicates for the given field.
@@ -6,9 +15,13 @@
 //   - duplicate values keep the first occurrence
 //   - later duplicates are assigned new numbers
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|VALIDATE_UNIQUE
-// command: VALIDATE UNIQUE
+// documents: VALIDATE UNIQUE
 // category: validation
 // status: supported
 // noargs: usage
@@ -58,6 +71,7 @@
 
 #include "xbase.hpp"
 #include "textio.hpp"
+#include "cli/unique_registry.hpp"
 
 using namespace textio;
 
@@ -67,6 +81,7 @@ static void print_validate_unique_usage()
     std::cout
         << "Usage:\n"
         << "  VALIDATE UNIQUE USAGE\n"
+        << "  VALIDATE UNIQUE                (all fields declared via SET UNIQUE)\n"
         << "  VALIDATE UNIQUE FIELD <name> [IGNORE DELETED] [REPAIR] [REPORT TO <path>]\n"
         << "Examples:\n"
         << "  VALIDATE UNIQUE FIELD SID\n"
@@ -134,11 +149,11 @@ static bool field_is_numericish(xbase::DbArea& A, int idx) {
 
 static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignoreDeleted) {
     long long mx = std::numeric_limits<long long>::min();
-    const int total = A.recCount();
-    const int save = A.recno();
+    const std::int64_t total = static_cast<std::int64_t>(A.recCount64());
+    const std::int64_t save = static_cast<std::int64_t>(A.recno64());
 
-    for (int r = 1; r <= total; ++r) {
-        if (!A.gotoRec(r)) continue;
+    for (std::int64_t r = 1; r <= total; ++r) {
+        if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
         if (ignoreDeleted) {
             try { if (A.isDeleted()) continue; } catch (...) {}
         }
@@ -159,13 +174,50 @@ static long long compute_max_numeric_value(xbase::DbArea& A, int idx, bool ignor
     }
 
     if (save > 0) {
-        A.gotoRec(save);
+        A.gotoRec64(static_cast<std::uint64_t>(save));
     }
 
     if (mx == std::numeric_limits<long long>::min())
         return 0;
 
     return mx;
+}
+
+// REPAIR routes through DbArea::replaceFieldStored(), which takes a per-record
+// lock and maintains the active index. Two things can therefore go wrong for an
+// individual record without invalidating the pass as a whole, and both must be
+// visible rather than absorbed into a bare "updated N record(s)" count:
+//
+//   skipped   -- not written at all (record locked by another process, or the
+//                write failed). The duplicate/blank value is still there.
+//   unindexed -- written, but index maintenance afterwards failed. The value is
+//                corrected on disk while an active tag still points at the old
+//                one, so that record needs a REINDEX/REBUILD to be findable.
+static void report_repair_exceptions(const std::vector<std::int64_t>& skipped,
+                                     const std::vector<std::int64_t>& unindexed)
+{
+    auto print_recnos = [](const std::vector<std::int64_t>& v) {
+        const std::size_t preview = std::min<std::size_t>(5, v.size());
+        for (std::size_t i = 0; i < preview; ++i) {
+            std::cout << (i ? ", " : " ") << v[i];
+        }
+        if (v.size() > preview) {
+            std::cout << ", ... and " << (v.size() - preview) << " more";
+        }
+        std::cout << "\n";
+    };
+
+    if (!skipped.empty()) {
+        std::cout << "VALIDATE: REPAIR skipped " << skipped.size()
+                  << " record(s) (locked or write failed) at rec:";
+        print_recnos(skipped);
+    }
+
+    if (!unindexed.empty()) {
+        std::cout << "VALIDATE: REPAIR wrote " << unindexed.size()
+                  << " record(s) whose index update failed; REINDEX/REBUILD needed. rec:";
+        print_recnos(unindexed);
+    }
 }
 
 void cmd_VALIDATE_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
@@ -182,6 +234,27 @@ void cmd_VALIDATE_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     if (!(in >> tok2)) {
+        if (T1 == "UNIQUE") {
+            // AIF-074 P1.1 slice 2: no-FIELD form -- validate every field the
+            // unique_reg registry declares for the current table (report-only;
+            // the explicit FIELD form keeps REPAIR/REPORT options).
+            if (!A.isOpen()) {
+                std::cout << "VALIDATE: No file open.\n";
+                return;
+            }
+            const auto declared = unique_reg::list_unique_fields(A);
+            if (declared.empty()) {
+                std::cout << "VALIDATE: no unique fields declared for this "
+                             "table. Use SET UNIQUE FIELD <name> ON|PRIMARY, "
+                             "or VALIDATE UNIQUE FIELD <name>.\n";
+                return;
+            }
+            for (const auto& f : declared) {
+                std::istringstream sub("UNIQUE FIELD " + f);
+                cmd_VALIDATE_UNIQUE(A, sub);
+            }
+            return;
+        }
         print_validate_unique_usage();
         return;
     }
@@ -255,22 +328,22 @@ const std::string fieldU = upcopy(fieldName);
         return;
     }
 
-    const int startRec = A.recno();
-    const int total = A.recCount();
+    const std::int64_t startRec = static_cast<std::int64_t>(A.recno64());
+    const std::int64_t total = static_cast<std::int64_t>(A.recCount64());
     if (total <= 0) {
         std::cout << "VALIDATE: Table is empty.\n";
         return;
     }
 
-    std::unordered_map<std::string, int> firstSeen;
-    struct Dup { int recno; std::string value; int first; bool blank; };
+    std::unordered_map<std::string, std::int64_t> firstSeen;
+    struct Dup { std::int64_t recno; std::string value; std::int64_t first; bool blank; };
     std::vector<Dup> dups;
     dups.reserve(16);
 
     int blankCount = 0;
 
-    for (int r = 1; r <= total; ++r) {
-        if (!A.gotoRec(r)) continue;
+    for (std::int64_t r = 1; r <= total; ++r) {
+        if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
 
         if (ignoreDeleted) {
             try { if (A.isDeleted()) continue; } catch (...) {}
@@ -300,25 +373,56 @@ const std::string fieldU = upcopy(fieldName);
     }
 
     int repaired = 0;
+    std::vector<std::int64_t> repairSkipped;    // not written (locked / write failed)
+    std::vector<std::int64_t> repairUnindexed;  // written, but index not maintained
 
     if (doRepair && !dups.empty()) {
         long long nextValue = compute_max_numeric_value(A, idx, ignoreDeleted) + 1;
 
         for (const auto& d : dups) {
-            if (!A.gotoRec(d.recno)) continue;
+            if (!A.gotoRec64(static_cast<std::uint64_t>(d.recno))) {
+                repairSkipped.push_back(d.recno);
+                continue;
+            }
 
             if (ignoreDeleted) {
                 try { if (A.isDeleted()) continue; } catch (...) {}
             }
 
             try {
-                A.readCurrent();
-                A.set(idx, std::to_string(nextValue));
-                if (A.writeCurrent()) {
+                // Must succeed before the write: replaceFieldStored() captures
+                // the index key set from the current record buffer, so writing
+                // on a failed read could delete key entries belonging to a
+                // different record.
+                if (!A.readCurrent()) {
+                    repairSkipped.push_back(d.recno);
+                    continue;
+                }
+
+                // Use the engine mutation funnel, not set() + writeCurrent().
+                // REPAIR rewrites a uniqueness-candidate field -- precisely the
+                // kind of field likely to carry an index tag -- and the raw
+                // write path carries no index hook, so the previous code left
+                // active CDX/CNX tags pointing at the old value with nothing
+                // recording the divergence. replaceFieldStored() owns the record
+                // lock, the physical write, and the index replace snapshot.
+                //
+                // Consequence accepted deliberately: this now takes a per-record
+                // lock the old loop did not. A record held by another process is
+                // skipped and reported rather than silently rewritten or
+                // aborting the whole pass -- REPAIR stays a reporting command.
+                std::string write_err;
+                if (A.replaceFieldStored(idx, std::to_string(nextValue), &write_err)) {
                     ++repaired;
                     ++nextValue;
+
+                    // true + non-empty err means "written, index not maintained".
+                    if (!write_err.empty()) repairUnindexed.push_back(d.recno);
+                } else {
+                    repairSkipped.push_back(d.recno);
                 }
             } catch (...) {
+                repairSkipped.push_back(d.recno);
             }
         }
 
@@ -327,8 +431,8 @@ const std::string fieldU = upcopy(fieldName);
         dups.clear();
         blankCount = 0;
 
-        for (int r = 1; r <= total; ++r) {
-            if (!A.gotoRec(r)) continue;
+        for (std::int64_t r = 1; r <= total; ++r) {
+            if (!A.gotoRec64(static_cast<std::uint64_t>(r))) continue;
 
             if (ignoreDeleted) {
                 try { if (A.isDeleted()) continue; } catch (...) {}
@@ -359,7 +463,7 @@ const std::string fieldU = upcopy(fieldName);
     }
 
     if (startRec > 0) {
-        A.gotoRec(startRec);
+        A.gotoRec64(static_cast<std::uint64_t>(startRec));
         try { A.readCurrent(); } catch (...) {}
     }
 
@@ -372,6 +476,7 @@ const std::string fieldU = upcopy(fieldName);
             std::cout << " REPAIR updated " << repaired << " record(s).";
         }
         std::cout << "\n";
+        if (doRepair) report_repair_exceptions(repairSkipped, repairUnindexed);
         return;
     }
 
@@ -397,6 +502,7 @@ const std::string fieldU = upcopy(fieldName);
         std::cout << "VALIDATE: REPAIR updated " << repaired
                   << " record(s), but " << dups.size()
                   << " problem record(s) remain.\n";
+        report_repair_exceptions(repairSkipped, repairUnindexed);
     }
 
     if (!reportPath.empty()) {

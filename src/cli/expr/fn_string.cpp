@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/expr/fn_string.cpp
 // FoxPro-style string builtins for DotTalk++
 //
@@ -7,6 +16,7 @@
 // - TRANSFORM() is currently a pass-through placeholder.
 
 #include "cli/expr/fn_string.hpp"
+#include "cli/text_match.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -141,67 +151,9 @@ static std::string dt_empty(const std::vector<std::string>& args) {
 
 static std::string dt_soundex(const std::vector<std::string>& args) {
     if (args.empty()) return {};
-
-    std::string letters;
-    for (char ch : args[0]) {
-        unsigned char uch = static_cast<unsigned char>(ch);
-        if (std::isalpha(uch)) {
-            letters.push_back(static_cast<char>(std::toupper(uch)));
-        }
-    }
-
-    if (letters.empty()) return {};
-
-    auto code_for = [](char c) -> char {
-        switch (c) {
-            case 'B': case 'F': case 'P': case 'V': return '1';
-            case 'C': case 'G': case 'J': case 'K': case 'Q':
-            case 'S': case 'X': case 'Z': return '2';
-            case 'D': case 'T': return '3';
-            case 'L': return '4';
-            case 'M': case 'N': return '5';
-            case 'R': return '6';
-            default: return '0';
-        }
-    };
-
-    std::string out;
-    out.reserve(4);
-    out.push_back(letters[0]);
-
-    // Standard Soundex rule:
-    // - Keep first letter.
-    // - Vowels/Y reset duplicate-code suppression.
-    // - H/W do not reset duplicate-code suppression.
-    // This preserves classic examples such as ASHCRAFT -> A261,
-    // TYMCZAK -> T522, and PFISTER -> P236.
-    char prev = code_for(letters[0]);
-
-    for (std::size_t i = 1; i < letters.size() && out.size() < 4; ++i) {
-        char c = letters[i];
-        char code = code_for(c);
-
-        if (c == 'H' || c == 'W') {
-            continue;
-        }
-
-        if (code == '0') {
-            prev = '0';
-            continue;
-        }
-
-        if (code != prev) {
-            out.push_back(code);
-        }
-
-        prev = code;
-    }
-
-    while (out.size() < 4) {
-        out.push_back('0');
-    }
-
-    return out.substr(0, 4);
+    // Canonical Soundex lives in cli/text_match.hpp (shared with HELP did-you-mean).
+    // Preserves classic examples (ASHCRAFT -> A261, TYMCZAK -> T522, PFISTER -> P236).
+    return dottalk::text::soundex(args[0]);
 }
 
 // --------------------------------------------------
@@ -329,6 +281,82 @@ static std::string dt_transform(const std::vector<std::string>& args) {
     return args.empty() ? "" : args[0];
 }
 
+// STUFF(cExpr, nStart, nLen, cRepl): replace nLen chars of cExpr at 1-based nStart
+// with cRepl (nLen 0 inserts).
+static std::string dt_stuff(const std::vector<std::string>& args) {
+    if (args.size() < 4) return args.empty() ? "" : args[0];
+    std::string s = args[0];
+    int start = 0, len = 0;
+    try { start = std::stoi(args[1]); len = std::stoi(args[2]); }
+    catch (...) { return s; }
+    const std::string& repl = args[3];
+    if (start < 1) start = 1;
+    std::size_t pos = static_cast<std::size_t>(start - 1);
+    if (pos > s.size()) pos = s.size();
+    if (len < 0) len = 0;
+    std::size_t n = static_cast<std::size_t>(len);
+    if (pos + n > s.size()) n = s.size() - pos;
+    s.replace(pos, n, repl);
+    return s;
+}
+
+// Pad helpers: cExpr to nLen with cFill (default space); truncate to nLen if longer.
+static std::string dt_padl(const std::vector<std::string>& args) {
+    if (args.size() < 2) return args.empty() ? "" : args[0];
+    std::string s = args[0];
+    int len = 0;
+    try { len = std::stoi(args[1]); } catch (...) { return s; }
+    char fill = (args.size() >= 3 && !args[2].empty()) ? args[2][0] : ' ';
+    if (len < 0) len = 0;
+    std::size_t L = static_cast<std::size_t>(len);
+    if (s.size() >= L) return s.substr(0, L);
+    return std::string(L - s.size(), fill) + s;
+}
+
+static std::string dt_padr(const std::vector<std::string>& args) {
+    if (args.size() < 2) return args.empty() ? "" : args[0];
+    std::string s = args[0];
+    int len = 0;
+    try { len = std::stoi(args[1]); } catch (...) { return s; }
+    char fill = (args.size() >= 3 && !args[2].empty()) ? args[2][0] : ' ';
+    if (len < 0) len = 0;
+    std::size_t L = static_cast<std::size_t>(len);
+    if (s.size() >= L) return s.substr(0, L);
+    return s + std::string(L - s.size(), fill);
+}
+
+static std::string dt_padc(const std::vector<std::string>& args) {
+    if (args.size() < 2) return args.empty() ? "" : args[0];
+    std::string s = args[0];
+    int len = 0;
+    try { len = std::stoi(args[1]); } catch (...) { return s; }
+    char fill = (args.size() >= 3 && !args[2].empty()) ? args[2][0] : ' ';
+    if (len < 0) len = 0;
+    std::size_t L = static_cast<std::size_t>(len);
+    if (s.size() >= L) return s.substr(0, L);
+    std::size_t total = L - s.size();
+    std::size_t left = total / 2;
+    return std::string(left, fill) + s + std::string(total - left, fill);
+}
+
+// PROPER(cExpr): title-case -- first letter of each word up, rest down.
+static std::string dt_proper(const std::vector<std::string>& args) {
+    if (args.empty()) return {};
+    std::string s = args[0];
+    bool at_start = true;
+    for (char& c : s) {
+        unsigned char u = static_cast<unsigned char>(c);
+        if (std::isalpha(u)) {
+            c = at_start ? static_cast<char>(std::toupper(u))
+                         : static_cast<char>(std::tolower(u));
+            at_start = false;
+        } else {
+            at_start = true;
+        }
+    }
+    return s;
+}
+
 // --------------------------------------------------
 // Registry
 // --------------------------------------------------
@@ -352,6 +380,11 @@ static const BuiltinFnSpec kStringFns[] = {
     { "RAT",2,2,&dt_rat },
     { "STRTRAN",3,3,&dt_strtran },
     { "CHRTRAN",3,3,&dt_chrtran },
+    { "STUFF",4,4,&dt_stuff },
+    { "PADL",2,3,&dt_padl },
+    { "PADR",2,3,&dt_padr },
+    { "PADC",2,3,&dt_padc },
+    { "PROPER",1,1,&dt_proper },
     { "CHR",1,1,&dt_chr },
     { "ASC",1,1,&dt_asc },
     { "SPACE",1,1,&dt_space },

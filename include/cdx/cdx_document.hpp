@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cdx
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 //
 // CdxDocument — native CDX (V64) in-memory index document.

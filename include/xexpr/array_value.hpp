@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xexpr
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xexpr/array_value.hpp
 //
 // DotScript array runtime core (DOTSCRIPT-ARRAYS lane, AIF-038, M1a).

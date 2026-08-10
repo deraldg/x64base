@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: datadict
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // DD096Z-D2ZK DDICT call-site bridge helpers.
 // These helpers are intentionally small wrappers around the D2ZI resolver.

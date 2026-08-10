@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_calcwrite.cpp
 // @dottalk.usage v1
 // owner: DOT|CALCWRITE
@@ -925,6 +934,21 @@ void cmd_CALCWRITE(xbase::DbArea& area, std::istringstream& in) {
     try { after = get_logical_field_text(area, field1); } catch (...) { after.clear(); }
 
     if (visible_before != after) dottalk::table::mark_stale_field(area0, field1);
+
+    // A true return with a non-empty write_err means the record was written but
+    // index maintenance afterwards failed. Warn and mark the field stale; the
+    // write itself stands. Mirrors the same check in cmd_REPLACE.
+    // Same message-id caveat as cmd_REPLACE: CalcWriteDetailText is also the
+    // hard-failure id, so the text is prefixed to distinguish them. A dedicated
+    // warning id is a message-catalog change, kept out of this slice.
+    if (!write_err.empty()) {
+        dottalk::table::mark_stale_field(area0, field1);
+        cli::cmdout::print_prefixed_message(
+            "CALCWRITE",
+            dottalk::helpdata::MessageId::CalcWriteDetailText,
+            {{"detail", "record written, but " + write_err +
+                        "; REINDEX/REBUILD needed."}});
+    }
 
     cli::cmdout::print_prefixed_message(
         "CALCWRITE",

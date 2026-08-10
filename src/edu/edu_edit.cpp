@@ -1,4 +1,13 @@
-// src/cli/cmd_edit.cpp
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+// src/edu/edu_edit.cpp
 // External editor launcher for DotTalk++
 //
 // Command surface:
@@ -35,6 +44,7 @@
 // noargs: usage
 // effect: launch-editor
 // mutates: filesystem-through-editor
+// os-sensitive: yes
 // usage-access: EDIT USAGE
 // summary:
 //   Launch the configured external editor for a file path.
@@ -56,6 +66,25 @@
 //   mutates_filesystem: through editor
 //   mutates_table_data: no
 //
+
+// @dottalk.external v1
+// owner: EDU|EDIT
+// command: EDIT
+// external-kind: os-process
+// os-sensitive: yes
+// target: the editor configured in cli::Settings::instance().editor (mode + command)
+// invocation: spawns the configured external editor as a child process on the host OS
+// touches: host process table; host filesystem, through the launched editor
+// requires: editor.mode != Off and a resolvable editor command
+// guard: EDIT USAGE/HELP/? returns before any launch; editor.mode Off disables launching
+// egress: none (local child process only)
+// audit: none today (the launch is not transcript-recorded)
+// reversible: no (edits happen inside the external editor, outside engine control)
+// notes:
+//   EDIT hands control to an external OS program; the engine cannot bound what that
+//   program does to the filesystem. This is the OS-boundary contract the usage risk
+//   block summarizes. Concept: labtalk/ai_portal/EXTERNAL_CALL_CONTRACT_V1.md.
+// @dottalk.end
 
 #include "xbase.hpp"
 

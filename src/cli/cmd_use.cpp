@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_use.cpp
 // DotTalk++ USE command (open DBF in a work area) — duplicate-open guard, NOINDEX, auto-attach
 
@@ -471,7 +480,9 @@ static const char* valid_index_types_for(const DbArea& a)
     (void)a;
     return "none (table-only build)";
 #else
-    if (is_x64_cdx_area(a)) return "CDX";
+    // CNX-on-x64 (AIF-099, owner ruling 2026-08-09): explicit CNX is now
+    // accepted on x64 tables (advisory path); CDX/LMDB remains preferred.
+    if (is_x64_cdx_area(a)) return "CDX, CNX";
     if (is_classic_tag_area(a)) return "CNX, INX";
     switch (a.kind()) {
     case AreaKind::Tup:  return "TUP";

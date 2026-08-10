@@ -1,9 +1,22 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // SET UNIQUE FIELD <name> ON|OFF
 // Lists current unique fields if called without args.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET UNIQUE
-// command: SET UNIQUE
+// documents: SET UNIQUE
 // category: constraints
 // status: supported
 // noargs: report
@@ -68,10 +81,12 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
             return;
         }
 
+        const std::string prim = unique_reg::primary_field(A);
         std::string joined;
         for (size_t i = 0; i < fields.size(); ++i) {
             if (i) joined += ", ";
             joined += fields[i];
+            if (!prim.empty() && fields[i] == prim) joined += " (PRIMARY)";
         }
         cli::cmdout::print_message(
             dottalk::helpdata::MessageId::SetUniqueFieldsText,
@@ -96,6 +111,17 @@ void cmd_SET_UNIQUE(xbase::DbArea& A, std::istringstream& in) {
     }
 
     const std::string Uon = upcopy(onoff);
+    if (Uon == "PRIMARY") {
+        // AIF-074 P1.1: PRIMARY designates the table's primary key (implies ON).
+        unique_reg::set_primary_field(A, fname);
+        cli::cmdout::print_message(
+            dottalk::helpdata::MessageId::SetUniqueFieldStatusText,
+            {
+                {"state", "PRIMARY"},
+                {"field", upcopy(fname)}
+            });
+        return;
+    }
     if (Uon != "ON" && Uon != "OFF") {
         print_setunique_usage();
         return;

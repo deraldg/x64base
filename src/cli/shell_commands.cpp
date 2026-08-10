@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 /*
     Registration Policy
     -------------------
@@ -52,6 +61,13 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 {
     using namespace dli;
 
+    // AREA51 was the last registration here that captured the engine directly;
+    // it moved to src/cli/cmd_area51.cpp on 2026-07-27 and now reaches engine
+    // state through shell_engine() like every other standalone command. The
+    // parameter stays because this is an extern "C" entry point with a stable
+    // signature, and future registrations may want it again.
+    (void)eng;
+
     // ---------------------------------------------------------------------
     // Relation-refresh policy
     // ---------------------------------------------------------------------
@@ -95,26 +111,12 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
 
     // Developer/debug status command. It reports current area and order state
     // without invoking the full AREA command and without refreshing relations.
-    registry().add("AREA51",    [&](DbArea&, std::istringstream&){
-        int i = eng.currentArea();
-        DbArea& cur = eng.area(i);
-        std::cout << "Current area: " << i << "\n";
-        if (cur.isOpen()) {
-            std::cout << "  File: " << cur.name()
-                      << "  Recs: " << cur.recCount()
-                      << "  Recno: " << cur.recno() << "\n";
-            try {
-                bool asc = orderstate::isAscending(cur);
-                std::string idx = orderstate::hasOrder(cur) ? orderstate::orderName(cur) : std::string("(none)");
-                std::string tag = orderstate::hasOrder(cur) ? orderstate::activeTag(cur) : std::string("(none)");
-                std::cout << "  Order: " << (asc ? "ASCEND" : "DESCEND") << "\n"
-                          << "  Index file  : " << idx << "\n"
-                          << "  Active tag  : " << tag << "\n";
-            } catch (...) {}
-        } else {
-            std::cout << "  (no file open)\n";
-        }
-    });
+    // Moved to src/cli/cmd_area51.cpp 2026-07-27 (AIF-066 follow-on): registered
+    // inline it had no source file, so no @dottalk.usage contract, so no SYSCMD
+    // row and no HELP topic. Behaviour unchanged; it now has an identity the
+    // documentation chain can see.
+    registry().add("AREA51",       [](DbArea& A, std::istringstream& S){ cmd_AREA51(A,S); });
+    registry().add("EVALDIFF",     [](DbArea& A, std::istringstream& S){ cmd_EVALDIFF(A,S); });
 
     // ---------------------------------------------------------------------
     // Direct cursor movers
@@ -149,14 +151,14 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Browsers may move the active record during navigation. That movement
     // should flow through engine cursor APIs so the hook sees it.
     // Interactive browsers typically move cursor internally; hook covers it.
-    registry().add("SIMPLEBROWSE", [](DbArea& A, std::istringstream& S){ cmd_SIMPLE_BROWSER(A,S); });
+    registry().add("SIMPLEBROWSER",[](DbArea& A, std::istringstream& S){ app_SIMPLE_BROWSER(A,S); });
     registry().add("BROWSE",       [](DbArea& A, std::istringstream& S){ cmd_BROWSE(A,S);         });
     registry().add("RBROWSE",      [](DbArea& A, std::istringstream& S){ cmd_RBROWSE(A,S);        });
     registry().add("ERSATZ",       [](DbArea& A, std::istringstream& S){ cmd_ERSATZ(A,S);         });
     registry().add("HIER",         [](DbArea& A, std::istringstream& S){ cmd_HIER(A,S);           });
     registry().add("BROWSER",      [](DbArea& A, std::istringstream& S){ cmd_BROWSER(A,S);        });
     registry().add("BROWSETUI",    [](DbArea& A, std::istringstream& S){ cmd_BROWSETUI(A,S);      });
-    registry().add("SMARTBROWSE",  [](DbArea& A, std::istringstream& S){ cmd_SMART_BROWSER(A,S);  });
+    registry().add("SMARTBROWSER", [](DbArea& A, std::istringstream& S){ app_SMART_BROWSER(A,S);  });
 
     // ---------------------------------------------------------------------
     // TABLE buffering
@@ -310,6 +312,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // Tuple/relationship exploration commands
     // ---------------------------------------------------------------------
     // Aliases are kept together so help/reflection can see shared ownership.
+    registry().add("VDISK",        [](DbArea& A, std::istringstream& S){ cmd_VDISK(A,S);       });
     registry().add("TUPLEDELTA",   [](DbArea& A, std::istringstream& S){ cmd_TUPLEDELTA(A,S);  });
     registry().add("TUPTALK",      [](DbArea& A, std::istringstream& S){ cmd_TUPTALK(A,S);     });
     registry().add("TUPLE",        [](DbArea& A, std::istringstream& S){ cmd_TUPLE(A,S);       });
@@ -373,7 +376,6 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("WORKSPACE", [](DbArea& A, std::istringstream& S){ cmd_WORKSPACE(A,S); });
     registry().add("PROJECTS",  [](DbArea& A, std::istringstream& S){ cmd_PROJECTS(A,S);  });
     registry().add("WSREPORT",  [](DbArea& A, std::istringstream& S){ cmd_WSREPORT(A,S);  });
-    registry().add("VDISK",     [](DbArea& A, std::istringstream& S){ cmd_VDISK(A,S);      });
 
     // ZAP is destructive and can invalidate cursor/relation assumptions.
     // Refresh explicitly after it runs.
@@ -470,6 +472,17 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // references, beta notes, and PowerShell notes.
     registry().add("HELP",         [](DbArea& A, std::istringstream& S){ cmd_HELP(A,S);        });
     registry().add("TEST",         [](DbArea& A, std::istringstream& S){ cmd_TEST(A,S);        });
+    registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
+    registry().add("DEFCMD",       [](DbArea& A, std::istringstream& S){ cmd_DEFCMD(A,S);      });
+    registry().add("UNDEFCMD",     [](DbArea& A, std::istringstream& S){ cmd_UNDEFCMD(A,S);    });
+    registry().add("DEFFN",        [](DbArea& A, std::istringstream& S){ cmd_DEFFN(A,S);       });
+    registry().add("UNDEFFN",      [](DbArea& A, std::istringstream& S){ cmd_UNDEFFN(A,S);     });
+    registry().add("BUILDVECTORS", [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("BUILD VECTORS",[](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("BUILD INFO",   [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
+    registry().add("USER",         [](DbArea& A, std::istringstream& S){ cmd_USER(A,S);         });
+    registry().add("BBS",          [](DbArea& A, std::istringstream& S){ cmd_BBS(A,S);          });
+    registry().add("NET",          [](DbArea& A, std::istringstream& S){ cmd_NET(A,S);          });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
     registry().add("FOXHELP",      [](DbArea& A, std::istringstream& S){ cmd_FOXHELP(A,S);     });
     registry().add("DOTHELP",      [](DbArea& A, std::istringstream& S){ cmd_DOTHELP(A,S);     });
@@ -494,6 +507,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("ERROR_CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });
     registry().add("ERROR_STATUS", [](DbArea& A, std::istringstream& S){ cmd_ERROR_STATUS(A,S); });
     registry().add("ERROR_TEST",   [](DbArea& A, std::istringstream& S){ cmd_ERROR_TEST(A,S);   });
+    registry().add("STOP_ON_ERROR",[](DbArea& A, std::istringstream& S){ cmd_STOP_ON_ERROR(A,S);});
 
     // Friendly multi-word aliases for the same diagnostic commands.
     registry().add("ERROR CLEAR",  [](DbArea& A, std::istringstream& S){ cmd_ERROR_CLEAR(A,S);  });

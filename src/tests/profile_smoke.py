@@ -36,14 +36,17 @@ def main() -> int:
     before_dbf = digest(dbf)
     before_cnx = digest(cnx)
 
-    commands = ["USE dbf\\x32\\students.dbf NOINDEX"]
+    # DotTalk accepts forward slashes on both Windows and POSIX.  Backslashes
+    # are native separators only on Windows and become literal filename
+    # characters when this smoke runs under WSL/Linux.
+    commands = ["USE dbf/x32/students.dbf NOINDEX"]
     if args.index_mode == "NONE":
         commands.extend(("STATUS", "SEEK ANDERSON"))
     else:
         commands.extend(
             (
-                "SETCNX indexes\\x32\\students.cnx",
-                "SETORDER indexes\\x32\\students.cnx LNAME --asc",
+                "SETCNX indexes/x32/students.cnx",
+                "SETORDER indexes/x32/students.cnx LNAME --asc",
                 "SEEK ANDERSON",
                 "LIST 1",
             )

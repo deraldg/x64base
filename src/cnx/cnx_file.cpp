@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cnx
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cnx/cnx_file.cpp
 // Minimal CNX container implementation matching include/cnx/cnx.hpp (cnxfile::* API).
 // Supports: open/create, read/flush header, read/write tagdir, add/drop tag.

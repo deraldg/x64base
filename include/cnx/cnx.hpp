@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cnx
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // include/cnx/cnx.hpp
 // Minimal CNX container: header I/O, tag directory read/write, add/drop tag.

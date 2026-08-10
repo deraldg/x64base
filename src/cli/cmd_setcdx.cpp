@@ -1,10 +1,23 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_setcdx.cpp
 // SET CDX [<name-or-path>]
 // Resolve CDX using SET PATH INDEXES slot via cli/path_resolver.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET CDX
-// command: SET CDX
+// documents: SET CDX
 // category: index
 // status: supported
 // noargs: mutate

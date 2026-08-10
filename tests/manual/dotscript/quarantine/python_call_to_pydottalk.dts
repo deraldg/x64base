@@ -1,0 +1,2 @@
+cd /mnt/d/code/ccode/build-wsl/src
+( cd /mnt/d/code/ccode/dottalkpp/data && ./dottalkpp )

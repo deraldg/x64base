@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_ersatz.cpp
 // @dottalk.usage v1
 // owner: DOT|ERSATZ
@@ -101,6 +110,7 @@
 #include "xbase.hpp"
 #include "set_relations.hpp"
 #include "workareas.hpp"
+#include "cli/unique_registry.hpp"
 
 // Real WORKSPACE command entry point
 void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in);
@@ -1534,9 +1544,32 @@ echo ============================================================
 
     static std::string tuple_identity_key(const dottalk::TupleRow& row)
     {
-        // Preferred identity for now: first tuple value. In current DotTalk++
-        // tables this is normally SID/TID/etc. Once PRIMARY UNIQUE metadata is
-        // surfaced to tuple_builder, this should switch to that field.
+        // AIF-074 P1.1 slice 2: when the row's anchor area declares a PRIMARY
+        // key (unique_reg), that column's value is the identity -- the switch
+        // this function's original comment requested. Falls back to the
+        // first-value heuristic when no primary is declared or resolvable.
+        if (!row.columns.empty() && row.columns.front().area_slot >= 0) {
+            try {
+                const int slot = row.columns.front().area_slot;
+                xbase::DbArea* a = workareas::db(static_cast<std::size_t>(slot));
+                if (a && a->isOpen()) {
+                    const std::string prim = unique_reg::primary_field(*a);
+                    if (!prim.empty()) {
+                        const std::size_t n =
+                            std::min(row.columns.size(), row.values.size());
+                        for (std::size_t i = 0; i < n; ++i) {
+                            if (row.columns[i].area_slot != slot) continue;
+                            if (textio::up(row.columns[i].field) != prim &&
+                                textio::up(row.columns[i].name)  != prim) continue;
+                            const std::string v = trim(row.values[i]);
+                            if (!v.empty()) return v;
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+
+        // Legacy identity: first tuple value (normally SID/TID/etc.).
         if (!row.values.empty() && !trim(row.values.front()).empty())
             return trim(row.values.front());
 

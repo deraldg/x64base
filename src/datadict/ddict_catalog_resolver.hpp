@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: datadict
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 // DD096Z-D2ZI guarded resolver source patch.
 // Compatibility bridge for legacy compact DD* names and x64 DATA_DICTIONARY_* names.

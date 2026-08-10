@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: src/cli/set_relations.cpp
 // Purpose: Relation graph storage, lookup, and tuple-walk helpers shared by
 //          REL, ERSATZ, and workspace restoration flows.
@@ -14,6 +23,7 @@
 #include "db_tuple_stream.hpp"
 #include "tuple_types.hpp"
 #include "textio.hpp"
+#include "workarea_util.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -61,6 +71,17 @@ static constexpr bool default_relation_verbose = false;
 bool        g_autorefresh = true;
 bool        g_verbose     = default_relation_verbose;
 std::size_t g_scan_limit  = 500000;
+
+// AIF-074 P1.3 (RDB-06): truncation latch. note_scan_truncated() warns ONCE
+// per latch cycle so cascaded refresh loops cannot spam the transcript.
+bool g_scan_truncated = false;
+static void note_scan_truncated() {
+    if (!g_scan_truncated) {
+        g_scan_truncated = true;
+        std::cout << "REL: scan limit (" << g_scan_limit
+                  << ") reached; results may be incomplete.\n";
+    }
+}
 
 xbase::XBaseEngine* g_engine = nullptr;
 
@@ -143,27 +164,9 @@ static bool is_numeric_literal(const std::string& s) {
     return any_digit;
 }
 
-static xbase::DbArea* find_open_area_by_name_ci(const std::string& logical_or_name) {
-    const std::string target = up_copy(textio::trim(logical_or_name));
-    if (target.empty()) return nullptr;
-
-    const std::size_t n = workareas::count();
-    for (std::size_t i = 0; i < n; ++i) {
-        xbase::DbArea* a = workareas::db(i);
-        if (!a) continue;
-        bool open = false;
-        try { open = a->isOpen(); } catch (...) { open = false; }
-        if (!open) continue;
-
-        try {
-            const std::string ln = a->logicalName();
-            if (!ln.empty() && up_copy(ln) == target) return a;
-            const std::string nm = a->name();
-            if (!nm.empty() && up_copy(nm) == target) return a;
-        } catch (...) {}
-    }
-    return nullptr;
-}
+// AIF-074 P0.2: find_open_area_by_name_ci moved to the shared home in
+// workarea_util.{hpp,cpp}; behavior unchanged.
+using cli::find_open_area_by_name_ci;
 
 static int slot_of_area_ptr(const xbase::DbArea* area) {
     if (!area) return -1;
@@ -316,13 +319,15 @@ static bool values_match(xbase::DbArea& child,
     for (const auto& [child_field_index, expected_raw] : kv) {
         const std::string expected = textio::trim(expected_raw);
 
-        const auto& fds = child.fields();
-        const std::size_t idx0 = static_cast<std::size_t>(child_field_index - 1);
-        const xbase::FieldDef* fd = (child_field_index > 0 && idx0 < fds.size()) ? &fds[idx0] : nullptr;
-
         const std::string actual = textio::trim(get_by_index_as_string(child, child_field_index));
 
-        if (fd && fd->type == 'N' && !expected.empty() && !actual.empty()
+        // AIF-074 P1.4 (typed equality, closes RDB-03): numeric comparison
+        // applies when BOTH sides are numeric literals, regardless of which
+        // side's field is declared numeric -- previously only a numeric CHILD
+        // field got numeric compare, so a char child holding "1" failed
+        // against a numeric parent's "1.00". Blank-is-a-value (R16a) is
+        // preserved: empty values take the exact string path.
+        if (!expected.empty() && !actual.empty()
             && is_numeric_literal(expected) && is_numeric_literal(actual)) {
             try {
                 const double e = std::stod(expected);
@@ -361,7 +366,7 @@ static bool goto_first_match(xbase::DbArea& child,
             try { child.readCurrent(); } catch (...) {}
             if (!child.isDeleted() && values_match(child, kv)) return true;
 
-            if (++scanned >= scan_limit) return false;
+            if (++scanned >= scan_limit) { note_scan_truncated(); return false; }
 
             const int prev = child.recno();
             if (!child.skip(1)) return false;
@@ -488,6 +493,11 @@ void attach_engine(xbase::XBaseEngine* eng) noexcept { g_engine = eng; }
 void set_autorefresh(bool on) noexcept { g_autorefresh = on; }
 void set_verbose(bool on) noexcept { g_verbose = on; }
 void set_scan_limit(std::size_t max_steps) noexcept { g_scan_limit = max_steps ? max_steps : 1; }
+
+// AIF-074 P1.3 (RDB-06 truncation honesty).
+void clear_scan_truncated() noexcept { g_scan_truncated = false; }
+bool scan_truncated() noexcept { return g_scan_truncated; }
+std::size_t scan_limit() noexcept { return g_scan_limit; }
 
 bool add_relation(const std::string& parent_area,
                   const std::string& child_area,
@@ -698,7 +708,7 @@ int match_count_for_child(const std::string& child_area) {
                 try { child_db->readCurrent(); } catch (...) {}
                 if (!child_db->isDeleted() && values_match(*child_db, kv)) ++count;
 
-                if (++scanned >= g_scan_limit) break;
+                if (++scanned >= g_scan_limit) { note_scan_truncated(); break; }
 
                 const int prev = child_db->recno();
                 if (!child_db->skip(1)) break;
@@ -1046,7 +1056,8 @@ static bool enum_chain_dfs(
 
     if (child_db->recno() <= 0 || child_db->recno() > rec_count) return true;
 
-    for (std::size_t scanned = 0; scanned < g_scan_limit; ++scanned) {
+    std::size_t scanned = 0;
+    for (; scanned < g_scan_limit; ++scanned) {
         ScopedEngineSelect focus(child_db);
 
         const int cur = child_db->recno();
@@ -1081,6 +1092,10 @@ static bool enum_chain_dfs(
         if (post_read_recno <= prev_recno) break;
         if (post_read_recno > rec_count) break;
     }
+
+    // AIF-074 P1.3 (RDB-06): natural loop exit means the scan limit stopped
+    // the enumeration, not end-of-table -- say so.
+    if (scanned >= g_scan_limit) note_scan_truncated();
 
     return true;
 }

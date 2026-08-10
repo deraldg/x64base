@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/locate_state.hpp
 // Lightweight, header-only state carrier for LOCATE/CONTINUE.
 // Keeps the last FOR/expression text and the next record to start from.

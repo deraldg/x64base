@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // inx_meta.cpp ? DotTalk++ INX metadata reader (implementation)
 // See inx_meta.hpp for the on-disk header layout.
 //

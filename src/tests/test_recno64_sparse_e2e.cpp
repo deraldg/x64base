@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tests
+// layer: test
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/tests/test_recno64_sparse_e2e.cpp
 //
 // RECNO64 M4-5 — the REAL end-to-end boundary proof (the "gumption" test).

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // foxref.hpp
 #pragma once
 #include <string>
@@ -478,86 +487,6 @@ inline const std::vector<Item>& catalog() {
 
         {"RECORDVIEW","RECORDVIEW", "Vertical record viewer.", true},
 
-        {"SIMPLEBROWSER", "SIMPLEBROWSER [options]",
-        R"(SIMPLEBROWSER  (SB)
-        NAME
-            SIMPLEBROWSER
-
-        ALIASES
-            SB
-
-        PURPOSE
-            Workspace/DbArea-centric interactive browser for table relationships and logical rows.
-
-        SYNTAX
-            SIMPLEBROWSER [FOR <expr>] [ORDER <tag>|PHYSICAL] [LIMIT <n>]
-
-        OPTIONS / SUBCOMMANDS
-            FOR <expr>           Apply a filter expression (tuple/expr aware).
-            CLEAR FOR            Clear active filter.
-            ORDER PHYSICAL|INX|CNX|CDX|<tag>   Change controlling order/tag.
-            SHOW CHILDREN [LIMIT n]        Browse related child rows from current record.
-            SHOW|HIDE SCHEMA|JSON          Toggle schema/JSON debug overlays.
-            STATUS VERBOSE|COMPACT         Toggle status verbosity.
-
-        EXAMPLES
-            SIMPLEBROWSER
-            SB FOR lname = "GRIMWOOD"
-            SB ORDER LNAME
-            SB SHOW CHILDREN LIMIT 20
-
-        NOTES
-            Simple Browser is designed for browsing within the current workspace DbArea.
-            It is order-aware and expression/predicate aware.
-
-        SEE ALSO
-            SMARTBROWSER, SMARTLIST, REL, TUPLE, WORKSPACE
-
-        STATUS
-            stable
-        )", true},
-
-        {"SB", "SB", "Alias for SIMPLEBROWSER.", true},
-
-        {"SMARTBROWSER", "SMARTBROWSER [options]",
-        R"(SMARTBROWSER  (SM, SMART)
-        NAME
-            SMARTBROWSER
-
-        ALIASES
-            SM, SMART
-
-        PURPOSE
-            Advanced browser/workhorse for relational + expression-aware browsing across backends.
-
-        SYNTAX
-            SMARTBROWSER [<source>] [FOR <expr>] [ORDER <tag>|PHYSICAL]
-
-        OPTIONS / SUBCOMMANDS
-            <source>             Optional source (DbArea/workspace, SQLite3, or schema engine where available).
-            FOR <expr>           Apply an expression filter using the predicate pipeline.
-            ORDER <tag>|PHYSICAL Set controlling order/tag when browsing DbArea-backed sources.
-
-        EXAMPLES
-            SMARTBROWSER
-            SM FOR gpa >= 3.5
-            SMART ORDER LNAME
-
-        NOTES
-            Smart Browser is the flagship browser. It can operate with DbArea/workspaces and,
-            when configured, can also operate with SQLite3 and schema-driven sources.
-
-        SEE ALSO
-            SIMPLEBROWSER, SMARTLIST, WORKSPACE, SQLITE, REL, TUPLE
-
-        STATUS
-            stable
-        )", true},
-
-        {"SMART", "SMART", "Alias for SMARTBROWSER.", true},
-
-        {"SM",    "SM",    "Alias for SMARTBROWSER.", true},
-
         {"COLOR", "COLOR <GREEN|AMBER|DEFAULT>",
         R"(Switch CLI/TUI color theme.
 
@@ -728,7 +657,7 @@ inline const std::vector<Item>& catalog() {
             SQLITE SELECT * FROM t
 
         Notes:
-            Used for regression testing and DBF↔SQL bridging experiments.)", true},
+            Used for regression testing and DBF<->SQL bridging experiments.)", true},
 
         {"SQLVER", "SQLVER", "Report SQLite availability and version.", true},
 
@@ -837,8 +766,6 @@ inline const std::vector<Item>& catalog() {
         {"AREA51", "AREA51", "Developer sandbox / experimental command.", true},
 
         {"GENERIC", "GENERIC", "Developer utility placeholder command.", true},
-
-        {"NORMALIZE", "NORMALIZE <expr>", "Normalize/clean an input expression or text (developer utility).", true},
 
         {"RECORD", "RECORD", "Display or return the current record context (utility).", true},
 

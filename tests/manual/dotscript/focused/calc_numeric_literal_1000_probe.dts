@@ -1,0 +1,36 @@
+ECHO ============================================================
+ECHO CALC NUMERIC LITERAL 1000 PROBE
+ECHO ============================================================
+
+ECHO --- BASIC LITERALS ---
+CALC 10
+CALC 100
+CALC 1000
+CALC 10000
+
+ECHO --- SIMPLE ARITHMETIC ---
+CALC 1000 + 1
+CALC 1000 - 1
+CALC 1000 / 10
+CALC 1000 * 2
+
+ECHO --- OTHER FUNCTIONS WITH 1000 ---
+CALC ABS(1000)
+CALC INT(1000)
+CALC ROUND(1000,0)
+CALC SQRT(1000)
+CALC MAX(1000,1)
+CALC MIN(1000,1)
+CALC BETWEEN(1000,1,2000)
+
+ECHO --- LOG FAMILY ---
+CALC LOG(999)
+CALC LOG(1000)
+CALC LOG(1001)
+CALC LOG10(999)
+CALC LOG10(1000)
+CALC LOG10(1001)
+
+ECHO ============================================================
+ECHO CALC NUMERIC LITERAL 1000 PROBE DONE
+ECHO ============================================================

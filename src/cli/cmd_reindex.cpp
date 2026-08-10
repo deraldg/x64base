@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_reindex.cpp
 // REINDEX [INX|CNX|CDX|SIX|SCX|ALL|CUSTOM] [family-specific args...]
 //
@@ -97,6 +106,7 @@
 #include "cli/path_resolver.hpp"
 #include "cli/cmd_setpath.hpp"
 #include "cli/table_state.hpp"
+#include "cli/order_state.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -240,6 +250,14 @@ static ReindexFamily default_family_for_area(const DbArea& A)
 {
     if (!A.isOpen()) {
         return ReindexFamily::CDX; // no-table fallback
+    }
+    // CNX-on-x64 (owner ruling 2026-08-09): when the ACTIVE order is CNX,
+    // bare REINDEX rebuilds what the user is actually using. Previously a
+    // CNX-ordered v64 table was routed to CDX/BUILDLMDB, which rebuilt the
+    // wrong (often absent) container and failed. The flavor default below is
+    // unchanged when no CNX order is active.
+    if (orderstate::isCnx(A)) {
+        return ReindexFamily::CNX;
     }
     return looks_like_v64_table(A) ? ReindexFamily::CDX : ReindexFamily::INX;
 }
@@ -556,9 +574,18 @@ static void run_reindex_scx(DbArea& A, const std::string& argRest)
 
 static bool dispatch_all(DbArea& A, const std::string& rest)
 {
-    if (default_family_for_area(A) == ReindexFamily::CDX) {
+    const ReindexFamily def = default_family_for_area(A);
+
+    if (def == ReindexFamily::CDX) {
         cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexAllCdxText);
         return run_reindex_cdx(A, rest);
+    }
+
+    // CNX-on-x64: a v64 table with an active CNX order has no INX family;
+    // ALL rebuilds the CNX container only. Classic tables keep INX + CNX.
+    if (def == ReindexFamily::CNX && looks_like_v64_table(A)) {
+        cli::cmdout::print_line("REINDEX ALL -> CNX (active CNX order on v64 table)");
+        return run_reindex_cnx(A, rest);
     }
 
     cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexAllInxCnxText);
@@ -590,6 +617,10 @@ void cmd_REINDEX(DbArea& A, std::istringstream& args) {
         if (def == ReindexFamily::CDX) {
             cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexDefaultCdxText);
             run_reindex_cdx(A, std::string());
+        } else if (def == ReindexFamily::CNX) {
+            // CNX-on-x64: active CNX order routes to the CNX rebuild engine.
+            cli::cmdout::print_line("REINDEX default -> CNX (active CNX order, via REBUILD)");
+            run_reindex_cnx(A, std::string());
         } else {
             cli::cmdout::print_message(dottalk::helpdata::MessageId::ReindexDefaultInxText);
             run_reindex_inx(A, std::string());

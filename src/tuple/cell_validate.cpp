@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tuple
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "dt/data/cell_validate.hpp"
 
 #include <algorithm>

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: bindings
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/bindings/pydottalk.cpp
 // Minimal pybind11 module exposing a CLI-backed Session (Windows-focused).
 // Build with: -DBUILD_PYDOT_TALK=ON -DDTX_BACKEND_NATIVE=OFF

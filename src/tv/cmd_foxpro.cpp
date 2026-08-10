@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_foxpro.cpp ? FOXPRO-like Turbo Vision UI for DotTalk++
 // - No App subclassing: we keep TApplication directly (avoids TProgInit ctor issues).
 // - FoxPro MS-DOS colors via custom MenuBar/StatusLine palettes.

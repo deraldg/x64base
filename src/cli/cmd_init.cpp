@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_init.cpp
 // Initializes runtime environment before the REPL (paths, locks, init scripts)
 
@@ -46,6 +55,7 @@
 #include <string>
 #include <vector>
 #include <cctype>
+#include "cli/dotscript_lexing.hpp"  // canonical comment/line lexing (AIF-037)
 
 #if defined(_WIN32)
 #  include <windows.h>
@@ -219,20 +229,7 @@ static fs::path find_user_ini_in_bin() {
 }
 
 static bool begins_with_comment(const std::string& s) {
-    std::size_t i = 0;
-    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) {
-        ++i;
-    }
-    if (i >= s.size()) {
-        return false;
-    }
-    if (s[i] == '#') {
-        return true;
-    }
-    if (s[i] == '*') {
-        return true;
-    }
-    return (s[i] == '/' && i + 1 < s.size() && s[i + 1] == '/');
+    return dottalk::lexing::is_comment_line(s);
 }
 
 static void run_init_script(xbase::DbArea& current, const fs::path& ini_path, const char* label) {

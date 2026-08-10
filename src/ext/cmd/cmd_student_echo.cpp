@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: ext
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // @dottalk.usage v1
 // owner: EXT|STUDENTECHO
 // command: STUDENTECHO

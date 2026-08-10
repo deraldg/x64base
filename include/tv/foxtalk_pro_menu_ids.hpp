@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 
 // Professional ArcticTalk menu command ids.
@@ -186,7 +195,12 @@ enum : unsigned short {
     cmFtHelpTuple,
     cmFtHelpBrowser,
     cmFtHelpKeys,
-    cmFtHelpAbout
+    cmFtHelpAbout,
+
+    // Appended so existing professional menu command ids remain stable.
+    cmFtTestRegressionList,
+    cmFtTestRegressionRun,
+    cmFtTestRegressionAll
 };
 
 } // namespace foxtalk

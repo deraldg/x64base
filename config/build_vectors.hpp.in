@@ -1,0 +1,53 @@
+#pragma once
+// ============================================================================
+// GENERATED FILE — DO NOT EDIT.
+// Produced by configure_file() from config/build_vectors.hpp.in
+// Inputs defined in config/build_vectors.cmake (AIF-044, BUILD_VECTORS lane).
+// The one compiled authority for engine capacity decisions ("build vectors").
+// Doctrine: format geometry is fixed; engine acceptance/creation policy is vectored.
+// ============================================================================
+
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+
+namespace dottalk::build {
+
+inline constexpr std::size_t   max_areas              = @DOTTALK_MAX_AREAS@;
+inline constexpr std::size_t   max_fields             = @DOTTALK_MAX_FIELDS@;
+inline constexpr std::uint64_t max_rows               = @DOTTALK_MAX_ROWS@ull;
+inline constexpr std::size_t   legacy_max_index_slots = @DOTTALK_LEGACY_MAX_INDEX_SLOTS@;
+
+namespace x64 {
+inline constexpr std::uint64_t max_record_bytes      = @DOTTALK_X64_MAX_RECORD_BYTES@ull;
+inline constexpr std::uint64_t record_advisory_bytes = @DOTTALK_X64_RECORD_ADVISORY_BYTES@ull;
+inline constexpr std::uint16_t table_name_default    = @DOTTALK_X64_TABLE_NAME_DEFAULT@;
+inline constexpr std::uint16_t table_name_max        = @DOTTALK_X64_TABLE_NAME_MAX@;
+inline constexpr std::uint16_t field_name_default    = @DOTTALK_X64_FIELD_NAME_DEFAULT@;
+inline constexpr std::uint16_t field_name_max        = @DOTTALK_X64_FIELD_NAME_MAX@;
+} // namespace x64
+
+namespace table_buffer {
+inline constexpr std::size_t max_changes = @DOTTALK_TABLE_BUFFER_MAX_CHANGES@;
+} // namespace table_buffer
+
+namespace ui {
+// Default interactive shell prompt character. Runtime-mutable (shell.cpp prompt_char).
+inline constexpr char prompt_char_default = '@DOTTALK_PROMPT_CHAR@';
+} // namespace ui
+
+// C++-side guards: reject an impossible generated contract.
+static_assert(max_fields > 0, "build vector max_fields must be positive");
+static_assert(max_areas  > 0, "build vector max_areas must be positive");
+static_assert(max_fields <= std::numeric_limits<std::uint32_t>::max(),
+              "build vector max_fields must fit a 32-bit field index");
+static_assert(max_areas  <= std::numeric_limits<std::uint32_t>::max(),
+              "build vector max_areas must fit a 32-bit area number");
+static_assert(x64::record_advisory_bytes <= x64::max_record_bytes,
+              "x64 record advisory must not exceed the hard record ceiling");
+static_assert(x64::field_name_default <= x64::field_name_max,
+              "x64 field-name default must not exceed its maximum");
+static_assert(x64::table_name_default <= x64::table_name_max,
+              "x64 table-name default must not exceed its maximum");
+
+} // namespace dottalk::build

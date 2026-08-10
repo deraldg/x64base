@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // File: include/xbase.hpp
 // Purpose: Core xBase engine types, constants, and DbArea/XBaseEngine contracts.
 // Boundary: This header defines engine-facing runtime state only. CLI, shell,
@@ -19,20 +28,23 @@
 #include <utility>
 
 #include "memo/memo_context.hpp"
+#include "dottalk/build_vectors.hpp"   // AIF-044 generated build-vector authority
 
 namespace dottalk::memo { class MemoManager; }
 
 namespace xbase {
 
-// ---- Constants -------------------------------------------------------------
-constexpr int         MAX_FIELDS         = 256;   // (was 128; doubled — table-buffer kMaxFields already 256)
-constexpr int         MAX_INDEX          = 5;
-constexpr int         MAX_AREA           = 512;   // work areas (was 256; doubled)
-// Record-size guardrails (fixed record = sum of field widths). The hard ceiling
-// catches corrupt/absurd 64-bit record lengths before a giant allocation; the
-// soft advisory nudges wide rows toward memo (M) fields for storage/scan gains.
-constexpr std::uint64_t X64_MAX_RECORD_SIZE      = 16ull * 1024 * 1024; // 16 MiB hard ceiling
-constexpr std::uint64_t X64_RECORD_SIZE_ADVISORY = 64ull * 1024;        // 64 KiB soft advisory
+// ---- Constants (derived from the generated build-vector authority; AIF-044) --
+// Values now flow from dottalk::build (config/build_vectors.cmake -> configure_file).
+// GATE #1: defaults preserve prior compiled behavior (areas 512, fields 256, index 5,
+// record 16 MiB / advisory 64 KiB). Aliases keep every existing xbase:: name working.
+constexpr int           MAX_FIELDS = static_cast<int>(dottalk::build::max_fields);             // was 256
+constexpr int           MAX_INDEX  = static_cast<int>(dottalk::build::legacy_max_index_slots); // was 5
+constexpr int           MAX_AREA   = static_cast<int>(dottalk::build::max_areas);              // was 512
+// Record-size guardrails (fixed record = sum of field widths). Hard ceiling catches
+// corrupt/absurd 64-bit record lengths; soft advisory nudges wide rows toward memo.
+constexpr std::uint64_t X64_MAX_RECORD_SIZE      = dottalk::build::x64::max_record_bytes;       // was 16 MiB
+constexpr std::uint64_t X64_RECORD_SIZE_ADVISORY = dottalk::build::x64::record_advisory_bytes;  // was 64 KiB
 constexpr char        IS_DELETED         = '*';
 constexpr char        NOT_DELETED        = ' ';
 constexpr uint8_t     HEADER_TERM_BYTE   = 0x0D;
@@ -172,6 +184,29 @@ public:
     bool writeCurrent();
     bool appendBlank();
     bool deleteCurrent();
+
+    // ---- Selective decode (scan-evaluator lane M2) ------------------------
+    // readCurrentRaw() loads the current record's raw bytes into the record
+    // buffer and updates the deleted flag, but does NOT decode every field into
+    // per-field strings the way readCurrent() does. This skips the eager
+    // all-fields std::string decode that dominates scan cost when a predicate
+    // only touches a few fields. Additive: readCurrent() is unchanged. Callers
+    // using this MUST read field values only via decodeFieldFromBuffer() (or the
+    // numeric fast path) — get()/_fd are NOT refreshed until the next full
+    // readCurrent().
+    bool readCurrentRaw();
+
+    // Decode a single field (1-based) directly from the current record buffer,
+    // using the exact same codec + x64-memo object-id handling as the full
+    // loadFieldsFromBuffer(). Correct for every field type; decodes only the one
+    // field asked for. Returns empty on any error/out-of-range.
+    std::string decodeFieldFromBuffer(int idx1) const;
+
+    // Numeric fast path: decode an N/F (ASCII-numeric) field from the current
+    // record buffer straight to double with no std::string allocation. Returns
+    // false for non-N/F types or an unparseable value (caller should fall back
+    // to decodeFieldFromBuffer()).
+    bool fieldNumFromBuffer(int idx1, double& out) const;
 
     // Core engine-owned replace entry point.
     // Contract:
@@ -420,6 +455,10 @@ private:
     bool        loadFieldsFromBuffer();
     void        storeFieldsToBuffer();
     static std::string rtrim(std::string s);
+
+    // Byte offset of field idx1 (1-based) within _recbuf (record starts at 1,
+    // after the deleted flag). Returns SIZE_MAX if idx1 is out of range.
+    std::size_t fieldByteOffset_(int idx1) const;
 
     // Index helpers
     int         findFieldCI(const std::string& name) const;

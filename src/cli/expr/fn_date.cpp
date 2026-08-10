@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/expr/fn_date.cpp
 // FoxPro-style date/time builtins — centralized in the expression layer.
 
@@ -60,16 +69,104 @@ static int days_in_month(int y, int m) {
 // Builtin implementations
 // --------------------------------------------------
 
-static std::string dt_date(const std::vector<std::string>& /*argv*/) {
-    return dottalk::date::now_local().date8;
+// --------------------------------------------------
+// Clock-zone selection (added 2026-07-26)
+//
+// DATE(), TODAY(), TIME(), NOW() and DATETIME() take an OPTIONAL zone
+// argument. With no argument they are unchanged: local wall-clock, the xBase
+// default every existing script and proof depends on.
+//
+//     DATE()          -> local  (unchanged, the default)
+//     DATE("UTC")     -> UTC
+//     DATE("LOCAL")   -> local, stated explicitly
+//     DATE("UCT")     -> ""     (empty: a typo must not silently return local)
+//
+// The empty-string-on-bad-input convention matches CTOD(), which already
+// returns " " rather than guessing. Silently treating an unrecognised zone as
+// local is exactly the failure this whole change exists to prevent: a wrong
+// timestamp that looks right.
+//
+// WHY AN OPTIONAL ARG RATHER THAN NEW FUNCTION NAMES: zero disruption to the
+// existing surface, no new reserved words, and the call site reads as a single
+// concept -- the same date, stated in a chosen frame.
+//
+// OBSERVED BEHAVIOUR, verified at the prompt 2026-07-26. DotTalk++ accepts
+// commands as functions and as scalars, so the same idea has more than one
+// spelling and they do NOT all live in the same position:
+//
+//   COMMAND position (the prompt, a .dts line):
+//     DATE                -> 20260726   local, unchanged
+//     DATE UTC            -> 20260727   bare token, works
+//     date "UTC"          -> 20260727   quoted, works
+//     DATE --UTC          -> (blank)    not a zone token
+//     DATE -UTC           -> (blank)    not a zone token
+//     date("UTC")         -> Unknown command
+//         ^ the parenthesised form is EXPRESSION syntax. In command position
+//           the parser wants DATE UTC. This is the command/function duality,
+//           not a defect -- but it will look like one to anyone who tries the
+//           function spelling at the prompt first.
+//
+//   EXPRESSION position (? , REPLACE ... WITH, CALC, IF):
+//     DATE("UTC")         -> works, via the kDateFns table below
+//     UDATE()             -> works, via the fast path in shell_eval_utils.cpp
+//
+// The blanks are the guard working. --UTC and -UTC are flag-style spellings a
+// CLI habit produces naturally; they are not recognised, so pick_zone() returns
+// Invalid and the function yields empty. A blank is a visible question. Falling
+// back to local would have returned a real-looking date for a request that was
+// never honoured, which is the whole failure this change exists to prevent.
+// Accepting --UTC/-UTC as synonyms is a one-line change in pick_zone() if the
+// friendlier spelling is ever wanted; it was left out because flag syntax is
+// not xBase idiom and blank-on-unknown is the more teachable rule.
+// --------------------------------------------------
+namespace {
+
+enum class ZoneSel { Local, Utc, Invalid };
+
+ZoneSel pick_zone(const std::vector<std::string>& argv) {
+    if (argv.empty()) return ZoneSel::Local;          // xBase default, unchanged
+    std::string z;
+    for (unsigned char c : argv[0]) {
+        if (std::isspace(c)) continue;
+        z.push_back(static_cast<char>(std::toupper(c)));
+    }
+    if (z.empty())                      return ZoneSel::Local;
+    if (z == "UTC" || z == "Z" ||
+        z == "GMT" || z == "ZULU")      return ZoneSel::Utc;
+    if (z == "LOCAL" || z == "L")       return ZoneSel::Local;
+    return ZoneSel::Invalid;
 }
 
-static std::string dt_today(const std::vector<std::string>& /*argv*/) {
-    return dottalk::date::now_local().date8;
+// Returns false when the zone token was not recognised, so each caller can
+// emit its own empty value rather than a plausible-looking wrong one.
+bool zone_snapshot(const std::vector<std::string>& argv,
+                   dottalk::date::ClockSnapshot& out) {
+    switch (pick_zone(argv)) {
+        case ZoneSel::Local:   out = dottalk::date::now_local(); return true;
+        case ZoneSel::Utc:     out = dottalk::date::now_utc();   return true;
+        case ZoneSel::Invalid: return false;
+    }
+    return false;
 }
 
-static std::string dt_time(const std::vector<std::string>& /*argv*/) {
-    return dottalk::date::now_local().time6;
+} // namespace
+
+static std::string dt_date(const std::vector<std::string>& argv) {
+    dottalk::date::ClockSnapshot cs;
+    if (!zone_snapshot(argv, cs)) return {};
+    return cs.date8;
+}
+
+static std::string dt_today(const std::vector<std::string>& argv) {
+    dottalk::date::ClockSnapshot cs;
+    if (!zone_snapshot(argv, cs)) return {};
+    return cs.date8;
+}
+
+static std::string dt_time(const std::vector<std::string>& argv) {
+    dottalk::date::ClockSnapshot cs;
+    if (!zone_snapshot(argv, cs)) return {};
+    return cs.time6;
 }
 
 static std::string dt_seconds(const std::vector<std::string>& /*argv*/) {
@@ -99,12 +196,41 @@ static std::string dt_seconds(const std::vector<std::string>& /*argv*/) {
     return std::string(buf);
 }
 
-static std::string dt_now(const std::vector<std::string>& /*argv*/) {
-    return dottalk::date::now_local().datetime14;
+static std::string dt_now(const std::vector<std::string>& argv) {
+    dottalk::date::ClockSnapshot cs;
+    if (!zone_snapshot(argv, cs)) return {};
+    return cs.datetime14;
 }
 
-static std::string dt_datetime(const std::vector<std::string>& /*argv*/) {
-    return dottalk::date::now_local().datetime14;
+static std::string dt_datetime(const std::vector<std::string>& argv) {
+    dottalk::date::ClockSnapshot cs;
+    if (!zone_snapshot(argv, cs)) return {};
+    return cs.datetime14;
+}
+
+// --------------------------------------------------
+// UTC aliases (added 2026-07-26)
+//
+// UDATE() / UTIME() / UNOW() / UDATETIME() are exactly DATE("UTC") and
+// friends. They exist because the zero-argument spelling is the xBase idiom --
+// short, no quoting, no parse -- and because a bare name can take the
+// clock-only fast path in shell_eval_utils.cpp that the argument form cannot.
+//
+// The argument form remains the general mechanism; these are the ergonomic
+// spelling for the case that matters most in practice: writing an unambiguous
+// timestamp into evidence.
+// --------------------------------------------------
+
+static std::string dt_udate(const std::vector<std::string>& /*argv*/) {
+    return dottalk::date::now_utc().date8;
+}
+
+static std::string dt_utime(const std::vector<std::string>& /*argv*/) {
+    return dottalk::date::now_utc().time6;
+}
+
+static std::string dt_unow(const std::vector<std::string>& /*argv*/) {
+    return dottalk::date::now_utc().datetime14;
 }
 
 static std::string dt_ctod(const std::vector<std::string>& argv) {
@@ -280,12 +406,24 @@ static std::string dt_datediff(const std::vector<std::string>& argv) {
 // --------------------------------------------------
 
 static const BuiltinFnSpec kDateFns[] = {
-    { "DATE",      0, 0, &dt_date },
-    { "TODAY",     0, 0, &dt_today },
-    { "TIME",      0, 0, &dt_time },
+    // Arity widened 0,0 -> 0,1 on 2026-07-26 for the optional zone argument.
+    // No-argument calls are byte-identical to before; SECONDS() is deliberately
+    // NOT widened (see dt_seconds -- elapsed-since-midnight is a local-day
+    // concept and a UTC variant would mean something different, not something
+    // better).
+    { "DATE",      0, 1, &dt_date },
+    { "TODAY",     0, 1, &dt_today },
+    { "TIME",      0, 1, &dt_time },
     { "SECONDS",   0, 0, &dt_seconds },
-    { "NOW",       0, 0, &dt_now },
-    { "DATETIME",  0, 0, &dt_datetime },
+    { "NOW",       0, 1, &dt_now },
+    { "DATETIME",  0, 1, &dt_datetime },
+
+    // UTC aliases -- zero-arg equivalents of DATE("UTC") etc. Kept 0,0: their
+    // whole point is the bare spelling, and UDATE("LOCAL") would be nonsense.
+    { "UDATE",     0, 0, &dt_udate },
+    { "UTIME",     0, 0, &dt_utime },
+    { "UNOW",      0, 0, &dt_unow },
+    { "UDATETIME", 0, 0, &dt_unow },
 
     { "CTOD",      1, 1, &dt_ctod },
     { "DTOC",      1, 2, &dt_dtoc },

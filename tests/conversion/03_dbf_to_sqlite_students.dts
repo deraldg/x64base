@@ -1,0 +1,23 @@
+USE students
+SQLITE DB _drops/students.sqlite
+SQLITE EXEC DROP TABLE IF EXISTS students;
+SQLITE EXEC CREATE TABLE students (
+  sid      NUMERIC,
+  lname    TEXT,
+  fname    TEXT,
+  dob      TEXT,
+  gender   TEXT,
+  major    TEXT,
+  enroll_d TEXT,
+  gpa      REAL,
+  email    TEXT
+);
+BEGIN
+SCAN
+  SQLITE EXEC INSERT INTO students VALUES (
+    #SID, #LNAME, #FNAME, #DOB, #GENDER, #MAJOR, #ENROLL_D, #GPA, #EMAIL
+  );
+ENDSCAN
+COMMIT
+SQLITE SELECT COUNT(*) FROM students;
+ECHO OK: DBF→SQLite complete

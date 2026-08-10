@@ -1,0 +1,256 @@
+* ============================================================
+* DotTalk++ Modern Non-Destructive Smoke Test
+* Updated from old Jan 6 script
+* ============================================================
+* Purpose:
+*   Exercise current command/help/path/schema/index/filter/relation/
+*   expression/tuple surfaces without destructive mutation.
+*
+* Deliberately excluded or neutralized:
+*   APPEND, REPLACE, DELETE, RECALL, PACK, ZAP, ERASE, COPY mutation,
+*   UI launches, old INX-only SETINDEX path, unsupported SCHEMA calls.
+* ============================================================
+
+VERSION
+SETPATH
+DIR
+
+HELP
+FOXHELP
+CMDHELP
+COMMANDSHELP
+PREDHELP
+PREDICATES
+
+ECHO FOXPALETTE   <---- TVISION APP
+COLOR DEFAULT
+
+DO SANDBOX
+SCHEMAS CLOSE
+SCHEMAS OPEN DBF
+SCHEMAS
+
+SELECT STUDENTS
+SHOW
+STATUS
+STRUCT
+FIELDS
+WSREPORT
+
+COLOR DEFAULT
+SHOW
+STATUS
+STRUCT
+FIELDS
+
+AREA
+RECNO
+TOP
+RECNO
+BOTTOM
+RECNO
+RECORD
+RECORDVIEW
+DISPLAY
+LIST 10
+
+ECHO READY
+
+* ------------------------------------------------------------
+* Current CDX/LMDB index workflow
+* ------------------------------------------------------------
+
+SET INDEX TO students
+SET ORDER TO TAG LNAME
+
+TOP
+RECNO
+TUPLE *
+SMARTLIST LNAME,FNAME,SID NEXT 10
+
+SEEK "WHITE"
+RECNO
+DISPLAY
+FIND "WHITE" IN LNAME
+RECNO
+DISPLAY
+
+ASCEND
+SMARTLIST LNAME,FNAME,SID NEXT 10
+
+DESCEND
+SMARTLIST LNAME,FNAME,SID NEXT 10
+
+ASCEND
+
+* ------------------------------------------------------------
+* Unique setting smoke only
+* ------------------------------------------------------------
+
+SET UNIQUE FIELD SID ON
+SET UNIQUE FIELD SID OFF
+
+* ------------------------------------------------------------
+* Relation smoke
+* ------------------------------------------------------------
+
+GOTO 1
+SET RELATION TO SID INTO ENROLL
+REL_REFRESH
+REL LIST
+CMDREL
+
+TUPLE *
+TUPLE LNAME,FNAME
+TUPLE #6.*
+
+* ------------------------------------------------------------
+* Filtering and predicate smoke
+* ------------------------------------------------------------
+
+SET FILTER TO GPA > 3
+LIST 10 FOR GPA > 3
+SMARTLIST SID,LNAME,FNAME,GPA NEXT 10 FOR GPA >= 2.5
+
+SET FILTER TO
+
+WHERE GPA < 2
+SMARTLIST SID,LNAME,FNAME,GPA NEXT 10
+
+* ------------------------------------------------------------
+* SQL smoke
+* ------------------------------------------------------------
+
+SQL SELECT * FROM STUDENTS WHERE GPA >= 3
+SQLSEL SELECT SID,LNAME,FNAME FROM STUDENTS
+
+* ------------------------------------------------------------
+* Normalization / validation
+* ------------------------------------------------------------
+
+NORMALIZE D 8 20250101
+VALIDATE UNIQUE FIELD SID IGNORE DELETED
+
+* ------------------------------------------------------------
+* LOOP smoke
+* ------------------------------------------------------------
+
+GOTO 1
+LOOP
+ECHO LOOP_BASE
+ENDLOOP
+
+GOTO 1
+LOOP 4
+ECHO LOOP_COUNT
+ENDLOOP
+
+GOTO 1
+LOOP FOR GPA >= 3
+RECNO
+ENDLOOP
+
+GOTO 1
+LOOP FOR LNAME = "WHITE"
+DISPLAY
+ENDLOOP
+
+* ------------------------------------------------------------
+* SCAN smoke
+* ------------------------------------------------------------
+
+GOTO 1
+SCAN FOR RECNO < 5
+ECHO SCAN_WHILE_EQUIV
+SKIP 1
+ENDSCAN
+
+GOTO 1
+SCAN FOR RECNO <= 5
+ECHO SCAN_UNTIL_EQUIV
+SKIP 1
+ENDSCAN
+
+LOOP_BUFFER
+SCAN_BUFFER
+
+* ------------------------------------------------------------
+* Reflection / catalog checks
+* ------------------------------------------------------------
+
+CMDARGCHK
+CMDHELPCHK
+CMDREL
+
+* ------------------------------------------------------------
+* UI commands: echo only, do not launch in smoke test
+* ------------------------------------------------------------
+
+COLOR AMBER
+ECHO BROWSE   <---- TVISION APP
+ECHO BROWSETUI   <---- TVISION APP
+ECHO BROWSETV   <---- TVISION APP
+ECHO TVISION   <---- TVISION APP
+ECHO FOXPRO   <---- TVISION APP
+ECHO FOXTALK   <---- TVISION APP
+ECHO GENERIC   <---- TVISION APP
+
+COLOR DEFAULT
+
+* ------------------------------------------------------------
+* Non-destructive command presence checks
+* ------------------------------------------------------------
+
+ECHO !
+ECHO BANG
+
+GO TOP
+GOTO 1
+
+REFRESH
+RECORD
+
+SET
+TEST
+
+* ------------------------------------------------------------
+* Expression / evaluator smoke
+* ------------------------------------------------------------
+
+CALC 1 + 1
+CALC SOUNDEX("WHITE")
+CALC UPPER("abc")
+CALC (GPA + 1)
+
+FORMULA LNAME + ", " + FNAME
+
+* Known canaries - keep, but inspect manually
+EVAL 2+2
+EVAL 3*3
+BOOLEAN .T.
+
+* ------------------------------------------------------------
+* Tuple normalization harness
+* ------------------------------------------------------------
+
+ECHO TTEST   <---- TVISION APP
+TUPTALK
+TUPTALK RESET
+TUPTALK ADD C 10 "abc"
+TUPTALK ADD N 8 0 50000001
+TUPTALK ADD D 8 20250101
+TUPTALK LIST
+TUPTALK NORMALIZE
+
+* ------------------------------------------------------------
+* Final table re-open / WHERE debug canary
+* ------------------------------------------------------------
+
+USE STUDENTS
+SET INDEX TO students
+SET ORDER TO TAG LNAME
+
+WHERE GPA = GPA DEBUG
+CALC 1 + 1
+
+ECHO DONE

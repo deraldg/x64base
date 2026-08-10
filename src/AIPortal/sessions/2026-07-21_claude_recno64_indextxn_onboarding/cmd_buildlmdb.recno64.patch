@@ -1,0 +1,45 @@
+--- a/src/cli/cmd_buildlmdb.cpp
++++ b/src/cli/cmd_buildlmdb.cpp
+@@ static bool build_tag_lmdb_from_field(xbase::DbArea& area,
+     // Clear existing contents
+     rc = mdb_drop(txn, dbi, 0);
+     if (rc != MDB_SUCCESS) {
+         cli::cmdout::print_prefixed_message(
+             "BUILDLMDB",
+             MessageId::BuildLmdbLmdbStepTagFailed,
+             {{"step", "drop/clear"},
+              {"tag", tag_name_uc},
+              {"code", std::to_string(rc)},
+              {"detail", lmdb_err(rc)}});
+         mdb_txn_abort(txn);
+         return false;
+     }
+
+-    const int32_t total = area.recCount();
++    // RECNO64 (AIF-027 residual): build the index over the full 64-bit record
++    // range. A 32-bit loop capped the LMDB index at 2^31, so no reader/cursor
++    // widening could address indexed records past that.
++    const std::int64_t total = static_cast<std::int64_t>(area.recCount64());
+     std::string k;
+     k.reserve((size_t)keylen);
+     std::string keybuf;
+     keybuf.resize((size_t)keylen + 8);
+     unsigned char recbuf[8]{};
+
+-    for (int32_t rn = 1; rn <= total; ++rn) {
+-        if (!area.gotoRec(rn) || !area.readCurrent()) continue;
++    for (std::int64_t rn = 1; rn <= total; ++rn) {
++        if (!area.gotoRec64(static_cast<std::uint64_t>(rn)) || !area.readCurrent()) continue;
+         if (area.isDeleted()) continue;
+
+         k = area.get(fld);
+         if (fdef.type == 'C' || fdef.type == 'c') {
+             k = textio::rtrim(k);
+             k = textio::up(k);
+         }
+         if ((int)k.size() > keylen) k.resize((size_t)keylen);
+         if ((int)k.size() < keylen) k.append((size_t)(keylen - (int)k.size()), ' ');
+
+         std::memcpy(&keybuf[0], k.data(), (size_t)keylen);
+         pack_recno_le8((uint64_t)rn, recbuf);
+         std::memcpy(&keybuf[(size_t)keylen], recbuf, 8);

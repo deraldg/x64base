@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // dot_talk_m365_integration.hpp
 // Primitive file-based integration with Microsoft 365 via OneDrive
 // Version: 0.1.0

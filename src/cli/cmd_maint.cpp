@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // cmd_maint.cpp
 // DotTalk++ native MAINT command
 // First-wave maintenance/SDLC inspection surface.
@@ -50,6 +59,14 @@
 // related: CMDHELP
 // related: DDICT
 // related: MANUAL
+// @dottalk.end
+//
+// @dottalk.location v1
+// id: DOTSRC-DOTTALKPP-CLI-CMD-MAINT
+// home: src/cli
+// canonical-path: src/cli/cmd_maint.cpp
+// project: dottalkpp
+// role: command-implementation
 // @dottalk.end
 
 #include "xbase.hpp"

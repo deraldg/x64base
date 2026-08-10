@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/xindex/cdx_backend.cpp
 #include "xindex/cdx_backend.hpp"
 
@@ -177,7 +186,40 @@ bool CdxBackend::open_env_dir_(const std::string& env_dir, std::string* err) {
     }
 
     (void)mdb_env_set_maxdbs(env_, 128);
-    (void)mdb_env_set_mapsize(env_, 1024ull * 1024ull * 1024ull); // 1 GiB
+
+    // ADOPT THE PERSISTED MAPSIZE -- do not assert one here. (AIF-065)
+    //
+    // This line used to read
+    //     mdb_env_set_mapsize(env_, 1024ull * 1024ull * 1024ull); // 1 GiB
+    // and it silently destroyed the entire BUILDLMDB size ladder. BUILDLMDB
+    // parses TINY/SMALL/MEDIUM/LARGE/XL/HUGE, honours the 8 MiB floor, echoes
+    // the choice and writes the environment at that size -- and then the first
+    // index attach through this function overwrote it with 1 GiB.
+    //
+    // PROVEN TWICE, 2026-07-27, on never-attached environments built at 128 MiB
+    // earlier the same day:
+    //     SYSSUBCMD  31 rows   134,217,728 -> 1,073,741,824
+    //     SYSFUNC    69 rows   134,217,728 -> 1,073,741,824
+    // Independent of row count: the assertion had nothing to do with how much
+    // data existed. Transcripts in labtalk/proofs/runs/, registered in
+    // proofs.yaml. That is also why every data.mdb in the tree held one of
+    // exactly two sizes -- the one BUILDLMDB wrote, or the one asserted here.
+    //
+    // NOTE THIS IS *NOT* A DELETION. Deleting the call was the obvious remedy
+    // and is WRONG: LMDB documents its default as 10485760 bytes (10 MiB),
+    // smaller than every environment here, which would trade an 8x overcharge
+    // for MDB_MAP_FULL on contact. Passing ZERO is the documented "adopt the
+    // persisted size" form (lmdb.h, mdb_env_set_mapsize).
+    //
+    // CDX builds the index CONTAINERS, so this site -- not lmdb_backend.cpp --
+    // is the path almost every environment goes through. One environment backs
+    // a whole container, not a tag.
+    //
+    // VERIFY BY MEASUREMENT, NOT BY READING THIS COMMENT: BUILDLMDB TINY on a
+    // never-attached table must produce a 32 MiB file that is STILL 32 MiB
+    // after an attach. tools/proofs/run_proof.ps1 with -ExpectNoChange is the
+    // regression. SYSARGS is the last unspent control.
+    (void)mdb_env_set_mapsize(env_, 0);
 
     rc = mdb_env_open(env_, env_dir_.c_str(), 0, 0664);
     if (rc != MDB_SUCCESS) {
@@ -325,9 +367,10 @@ void CdxBackend::rebuild() {
         const bool is_char = (fdef.type == 'C' || fdef.type == 'c');
         const int keylen = static_cast<int>(fdef.length);
 
-        const int32_t total = area_.recCount();
-        for (int32_t rn = 1; rn <= total; ++rn) {
-            if (!area_.gotoRec(rn) || !area_.readCurrent()) continue;
+        // RECNO64: full 64-bit sweep + gotoRec64 so rebuild is not capped at 2^31.
+        const std::uint64_t total = area_.recCount64();
+        for (std::uint64_t rn = 1; rn <= total; ++rn) {
+            if (!area_.gotoRec64(rn) || !area_.readCurrent()) continue;
             if (area_.isDeleted()) continue;
 
             std::string s = area_.get(fld);
@@ -483,23 +526,36 @@ void CdxBackend::setTag(const std::string& tag_upper) {
     const auto up = upper_copy_(tag_upper);
     if (up.empty()) return;
 
-    // Bulk mode: resolve (or create) the tag DBI INSIDE the shared bulk write
-    // transaction. The normal path below opens its own RO txn (and a RW txn with
-    // MDB_CREATE for a new tag); doing that while a bulk write txn is already held
-    // on this thread would be a second transaction on the same env -> LMDB
-    // conflict/deadlock. Opening the DBI in bulk_txn_ avoids it and keeps the
-    // whole bulk DELETE/RECALL in one transaction. Preserves the existing
-    // create-on-demand behavior, just inside the batch.
+    // TAG SELECTION DOES NOT CREATE TAGS.
+    //
+    // Both branches below used to fall back to mdb_dbi_open(..., MDB_CREATE),
+    // so asking to select a tag that did not exist silently manufactured a real
+    // LMDB sub-database for it. Combined with two callers upstream --
+    // capture_delete_snapshot_for_current_record enumerating FIELDS rather than
+    // tags, and IndexManager::setTag never validating against the container --
+    // that meant every field a record ever mutated became a de-facto tag DB.
+    //
+    // Observed 2026-07-30 (regression IDXDIFF): a 5-field table with 4 tags
+    // produced "tags=[-NOTE,+NOTE] ok=yes" when the untagged NOTE field was
+    // edited. The .cdx tagdir said 4 tags; the env held 5. BUILDLMDB, which
+    // reads the container, rebuilt only the real 4 -- so container and env
+    // diverge silently and the phantoms are invisible to every listing.
+    //
+    // It also has a hard ceiling: this env is opened with maxdbs=128 while
+    // DOTTALK_MAX_FIELDS is 256, so a wide table could exhaust maxdbs and fail
+    // a legitimate write with MDB_DBS_FULL.
+    //
+    // Tag creation belongs to CDX ADDTAG and BUILDLMDB, which own the container
+    // tagdir. A maintenance path must never mint one as a side effect of being
+    // asked to look at it. Selecting an unknown tag is now an error.
     if (bulk_txn_) {
         MDB_dbi dbi = 0;
         unsigned int flags = 0;
         std::string err;
         if (!open_dbi_for_tag_(bulk_txn_, up, dbi, flags, err)) {
-            const int rc = mdb_dbi_open(bulk_txn_, up.c_str(), MDB_CREATE, &dbi);
-            if (rc != MDB_SUCCESS) {
-                throw_on_mdb_err_(rc, "mdb_dbi_open(MDB_CREATE bulk)");
-            }
-            (void)mdb_dbi_flags(bulk_txn_, dbi, &flags);
+            throw std::runtime_error(
+                "setTag(bulk): tag '" + up + "' is not built in the LMDB environment"
+                " (if CDX ADDTAG declared it, run REINDEX CDX / BUILDLMDB)");
         }
         dbis_[up] = dbi;
         tag_upper_ = up;
@@ -516,21 +572,25 @@ void CdxBackend::setTag(const std::string& tag_upper) {
         std::string err;
 
         ro = ensure_ro_txn_();
-        if (!open_dbi_for_tag_(ro, up, dbi, flags, err)) {
-            mdb_txn_abort(ro);
-            ro = nullptr;
+        const bool found = open_dbi_for_tag_(ro, up, dbi, flags, err);
+        mdb_txn_abort(ro);
+        ro = nullptr;
 
-            MDB_txn* rw = begin_rw_txn_();
-            const int rc = mdb_dbi_open(rw, up.c_str(), MDB_CREATE, &dbi);
-            if (rc != MDB_SUCCESS) {
-                end_txn_abort_(rw);
-                throw_on_mdb_err_(rc, "mdb_dbi_open(MDB_CREATE)");
-            }
-            (void)mdb_dbi_flags(rw, dbi, &flags);
-            end_txn_commit_(rw);
-        } else {
-            mdb_txn_abort(ro);
-            ro = nullptr;
+        // See the note above: no MDB_CREATE fallback. An unknown tag is an
+        // error, not an invitation to create one.
+        //
+        // Two sources of truth meet here, and the message has to distinguish
+        // them or the operator cannot act on it. SET ORDER validates the tag
+        // against the CONTAINER tagdir (cmd_setorder.cpp cdx_has_tag ->
+        // cdxfile::read_tagdir); this check is against the LMDB ENVIRONMENT.
+        // A tag declared by CDX ADDTAG but never built by REINDEX CDX /
+        // BUILDLMDB exists in the first and not the second. That used to
+        // auto-create an empty env DB, so ordered traversal silently returned
+        // nothing; it is now a clean failure, and the remedy belongs in the text.
+        if (!found) {
+            throw std::runtime_error(
+                "setTag: tag '" + up + "' is not built in the LMDB environment"
+                " (if CDX ADDTAG declared it, run REINDEX CDX / BUILDLMDB)");
         }
 
         dbis_[up] = dbi;
@@ -860,15 +920,18 @@ CdxBackend::LmdbCursor::~LmdbCursor() {
     if (txn_) mdb_txn_abort(txn_);
 }
 
-static inline bool decode_recno_from_cursor_key(bool composite, const MDB_val& k, const MDB_val& v, std::uint32_t& out) {
+static inline bool decode_recno_from_cursor_key(bool composite, const MDB_val& k, const MDB_val& v, std::uint64_t& out) {
+    // RECNO64 / O11: the recno is stored full-width (8-byte LE, see make_storage_*).
+    // Decode it as uint64 and carry it out unnarrowed -- truncating to uint32 here
+    // silently mis-landed ordered traversal (TOP/BOTTOM/SKIP/materialize) past 2^32.
     std::uint64_t rec64 = 0;
     if (decode_u64_le_local(v.mv_data, v.mv_size, rec64)) {
-        out = static_cast<std::uint32_t>(rec64);
+        out = rec64;
         return true;
     }
     if (composite && k.mv_size >= 8 &&
         decode_u64_le_local(static_cast<const unsigned char*>(k.mv_data) + (k.mv_size - 8), 8, rec64)) {
-        out = static_cast<std::uint32_t>(rec64);
+        out = rec64;
         return true;
     }
     return false;
@@ -901,7 +964,7 @@ bool CdxBackend::LmdbCursor::first(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -919,7 +982,7 @@ bool CdxBackend::LmdbCursor::next(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -953,7 +1016,7 @@ bool CdxBackend::LmdbCursor::last(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);
@@ -971,7 +1034,7 @@ bool CdxBackend::LmdbCursor::prev(Key& outKey, RecNo& outRec) {
 
     if (!within_bounds_raw(k, low_, high_, has_low_, has_high_)) return false;
 
-    std::uint32_t r = 0;
+    std::uint64_t r = 0;
     if (!decode_recno_from_cursor_key(composite_, k, v, r)) return false;
 
     decode_key_out(composite_, k, outKey);

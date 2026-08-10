@@ -1,0 +1,24 @@
+* cs_theory.txt -- up-to-date open educational resources for first-two-year CS theory.
+* Curated 2026-08-04. All free/open; books that are living or courses that get refreshed.
+
+* Algorithms & data structures
+https://jeffe.cs.illinois.edu/teaching/algorithms/
+https://opendatastructures.org/
+https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/
+
+* Discrete math & math for CS
+https://discrete.openmathbooks.org/
+https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-spring-2015/
+
+* Architecture & systems
+https://www.nand2tetris.org/
+https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/
+https://pages.cs.wisc.edu/~remzi/OSTEP/
+
+* Databases, languages, theory
+https://15445.courses.cs.cmu.edu/
+https://craftinginterpreters.com/
+https://ocw.mit.edu/courses/18-404j-theory-of-computation-fall-2020/
+
+* Curriculum map
+https://github.com/ossu/computer-science

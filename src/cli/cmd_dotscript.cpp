@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/commands/cmd_dotscript.cpp
 // DOTSCRIPT runner with TRACE banner + scripts/tests resolver + @file support + one-level subscript limit.
 
@@ -72,6 +81,8 @@
 #include "xbase.hpp"
 #include "shell_transcript.hpp"
 #include "script_reader.hpp"   // read_script_command: shared ';'-continuation reader
+#include "xbase_error_context.hpp"  // stop_on_error[severity] threshold + trip check
+#include "cli/dotscript_lexing.hpp" // canonical comment/line lexing (AIF-037)
 
 using xbase::DbArea;
 
@@ -146,13 +157,7 @@ static inline std::string strip_at_prefix(std::string s) {
 }
 
 static inline bool looks_like_comment_or_blank(const std::string& line) {
-    const std::string t = ltrim_copy(line);
-    if (t.empty()) return true;
-    if (t.rfind("*", 0) == 0) return true;
-    if (t.rfind("//", 0) == 0) return true;
-    if (t.rfind("&&", 0) == 0) return true;
-    if (t.rfind(";", 0) == 0) return true;
-    return false;
+    return dottalk::lexing::is_comment_or_blank(line);
 }
 
 
@@ -559,9 +564,20 @@ void cmd_DOTSCRIPT(DbArea& area, std::istringstream& args)
         }
 
         DbArea& cur = current_shell_area_or(area);
+        const auto err_gen0 = xbase::error::error_generation();
         if (!shell_execute_line(cur, trimmed)) {
             std::cout << "DOTSCRIPT: " << resolved->string() << ":" << cmd_start
                       << ": Unknown command: " << trimmed << "\n";
+        }
+
+        // stop_on_error[severity]: abort the run if this line recorded a new
+        // error at or above the configured threshold.
+        if (xbase::error::errorstop_tripped(err_gen0)) {
+            std::cout << "DOTSCRIPT: " << resolved->string() << ":" << cmd_start
+                      << ": stopped (STOP_ON_ERROR "
+                      << xbase::error::errorstop_level_name(xbase::error::get_errorstop())
+                      << ")\n";
+            break;
         }
     }
 }

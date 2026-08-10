@@ -1,6 +1,21 @@
-// @dottalk.usage v1
+// @dottalk.file v1
+// subsystem: cli
+// layer: reference
+// owns: foxref reference catalog (include/foxref.hpp) anchor TU
+// project: project.x64base.runtime
+// lane:
+// owner: member.derald
+// status: supported
+
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// FOXREF is NOT a command: it is the FoxPro/legacy reference-catalog MODULE
+// (namespace foxref, catalog() in include/foxref.hpp), mined by CMDHELP/FOXHELP as
+// part of the `registry U foxref U dotref U edref` help surface. This TU anchors
+// that module and exports no command handler.
 // owner: DOT|FOXREF_IMPL
-// command: FOXREF
+// documents: foxref reference catalog (include/foxref.hpp)
 // category: reference-helper
 // status: implementation-shim
 // noargs: n/a
@@ -8,15 +23,12 @@
 // mutates: none
 // usage-access: owned-by FOXREF/HELP surface
 // summary:
-//   Empty translation-unit shim for FOXREF inline implementation.
-//
-// usage:
-//   This file does not export a command handler.
-//   FOXREF command behavior and usage are owned by the actual FOXREF/help surface.
+//   Translation-unit shim anchoring the foxref reference-catalog module. The
+//   catalog and its legacy-facing help surface live in include/foxref.hpp; this
+//   file keeps the build graph stable and exports no command.
 //
 // notes:
-//   This file exists to keep the FOXREF implementation layout/build graph stable.
-//   Do not add command dispatch behavior here unless the FOXREF architecture changes.
+//   Do not add command dispatch here. FOXREF is a reference module, not a command.
 //
 // risk:
 //   mutates_table_data: no

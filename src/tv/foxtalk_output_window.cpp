@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: tv
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "tv/foxtalk_output_window.hpp"
 #include "tv/foxtalk_log_view.hpp"
 #include "tv/foxtalk_util.hpp"

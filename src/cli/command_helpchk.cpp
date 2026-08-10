@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/cli/command_helpchk.cpp
 // @dottalk.usage v1
@@ -42,6 +51,8 @@
 //   HELP
 //   CMDHELP
 //   HELP DATA
+//
+// @dottalk.end
 //
 // Robust validator for commands.dbf/.dbt produced by CMDHELP.
 // Adds HELP DATA v2 artifact validation for help_artifacts.dbf/.dbt.

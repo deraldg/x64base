@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/expr/function_catalog.cpp
 #include "cli/expr/function_catalog.hpp"
 
@@ -74,6 +83,76 @@ FunctionDoc{
     { "LTRIM(<expr>)" },
     { "LTRIM(NAME)", "LTRIM(\"  SMITH\")" },
     {},
+    {}
+},
+
+FunctionDoc{
+    "PROPER",
+    {},
+    FunctionCategory::String,
+    1, 1,
+    "Convert text to proper case: capitalize the first letter of each word and lowercase the rest.",
+    { "PROPER(<expr>)" },
+    { "PROPER(NAME)", "PROPER(\"john smith\")" },
+    {
+        "FoxPro-compatible string helper; input is coerced through the expression engine string path."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADL",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on the left to a given length, optionally with a specified pad character.",
+    { "PADL(<expr>, <length>)", "PADL(<expr>, <length>, <pad>)" },
+    { "PADL(NAME, 10)", "PADL(\"7\", 4, \"0\")" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADR",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on the right to a given length, optionally with a specified pad character.",
+    { "PADR(<expr>, <length>)", "PADR(<expr>, <length>, <pad>)" },
+    { "PADR(NAME, 10)", "PADR(\"7\", 4, \"0\")" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "PADC",
+    {},
+    FunctionCategory::String,
+    2, 3,
+    "Pad a string on both sides to center it within a given length, optionally with a specified pad character.",
+    { "PADC(<expr>, <length>)", "PADC(<expr>, <length>, <pad>)" },
+    { "PADC(NAME, 10)", "PADC(\"AB\", 6)" },
+    {
+        "FoxPro-compatible string helper; the default pad character is a space."
+    },
+    {}
+},
+
+FunctionDoc{
+    "STUFF",
+    {},
+    FunctionCategory::String,
+    4, 4,
+    "Replace part of a string: remove <length> characters starting at <start> and insert the replacement text.",
+    { "STUFF(<expr>, <start>, <length>, <replacement>)" },
+    { "STUFF(\"abcDE\", 4, 0, \"xy\")", "STUFF(NAME, 1, 3, \"XXX\")" },
+    {
+        "FoxPro-compatible string helper; positions are 1-based and a <length> of 0 inserts without deleting."
+    },
     {}
 },
 
@@ -443,13 +522,102 @@ FunctionDoc{
     "DATE",
     {},
     FunctionCategory::Date,
-    0, 0,
-    "Return the current system date.",
-    { "DATE()" },
-    { "DATE()", "DATE() = TODAY()" },
+    0, 1,
+    "Return the current system date, local by default or in a named zone.",
+    { "DATE()", "DATE(\"UTC\")" },
+    { "DATE()", "DATE() = TODAY()", "DATE(\"UTC\")", "DATE(\"LOCAL\")" },
     {
-        "Zero-argument date function.",
-        "Intended to return the current date without time."
+        "No argument returns local wall-clock date -- the xBase default, unchanged.",
+        "Optional zone argument accepts UTC/GMT/Z/ZULU or LOCAL/L, case-insensitive.",
+        "An unrecognised zone token returns EMPTY -- never a silent fallback to local.",
+        "In COMMAND position the parenthesised form is not valid: use DATE UTC."
+    },
+    {
+        "Results depend on system clock accuracy.",
+        "DBF type D is 8 bytes YYYYMMDD and cannot store a zone; a UTC value "
+        "loses its frame on write. See docs/maintenance/UTC_CLOCK_AND_ZONE_SELECTION_V1.md."
+    }
+},
+
+// -----------------------------------------------------------------------------
+// UTC aliases -- added 2026-07-26 with the zone argument (commit 72a847ec4).
+//
+// REGISTERED HERE BECAUSE kDateFns IS NOT ENOUGH. fn_date.cpp's kDateFns is the
+// EXECUTION table; this file is the DOCUMENTATION table, and it is maintained by
+// hand. A function added only to kDateFns runs correctly at the prompt and is
+// invisible to every documentation surface downstream -- SYSFUNC, dotref, HELP,
+// the manual -- because metacollect harvests all_function_docs() from here.
+//
+// That is exactly what happened: these four were added to kDateFns in 72a847ec4
+// and omitted here, so the SYSFUNC seed built on 2026-07-26 was stale on arrival
+// by precisely these four names. Same defect class as AIF-065 (a thing declared
+// in one place and not honoured in another, with nothing comparing the two).
+//
+// If you add a function to kDateFns, ADD IT HERE IN THE SAME COMMIT.
+// -----------------------------------------------------------------------------
+
+FunctionDoc{
+    "UDATE",
+    {},
+    FunctionCategory::Date,
+    0, 0,
+    "Return the current UTC date. Zero-argument alias for DATE(\"UTC\").",
+    { "UDATE()" },
+    { "UDATE()", "UDATE() = DATE(\"UTC\")" },
+    {
+        "Zero-argument by design so it works in command position as UDATE.",
+        "Provided because DATE(\"UTC\") is expression syntax only."
+    },
+    {
+        "Results depend on system clock accuracy.",
+        "Crossing midnight UTC, UDATE() and DATE() report different days."
+    }
+},
+
+FunctionDoc{
+    "UTIME",
+    {},
+    FunctionCategory::Date,
+    0, 0,
+    "Return the current UTC time. Zero-argument alias for TIME(\"UTC\").",
+    { "UTIME()" },
+    { "UTIME()", "UTIME() = TIME(\"UTC\")" },
+    {
+        "Zero-argument by design so it works in command position as UTIME."
+    },
+    {
+        "Results depend on system clock accuracy.",
+        "SECONDS() has NO UTC variant: elapsed-since-midnight is a local-day concept."
+    }
+},
+
+FunctionDoc{
+    "UNOW",
+    {},
+    FunctionCategory::Date,
+    0, 0,
+    "Return the current UTC date and time. Zero-argument alias for NOW(\"UTC\").",
+    { "UNOW()" },
+    { "UNOW()", "UNOW() = NOW(\"UTC\")" },
+    {
+        "Zero-argument by design so it works in command position as UNOW.",
+        "Preferred for any timestamp written into evidence another process compares."
+    },
+    {
+        "Results depend on system clock accuracy."
+    }
+},
+
+FunctionDoc{
+    "UDATETIME",
+    {},
+    FunctionCategory::Date,
+    0, 0,
+    "Return the current UTC date and time. Alias of UNOW().",
+    { "UDATETIME()" },
+    { "UDATETIME()", "UDATETIME() = UNOW()" },
+    {
+        "Shares the UNOW implementation; provided for symmetry with DATETIME()."
     },
     {
         "Results depend on system clock accuracy."
@@ -460,8 +628,8 @@ FunctionDoc{
     "TODAY",
     {},
     FunctionCategory::Date,
-    0, 0,
-    "Return the current system date.",
+    0, 1,
+    "Return the current system date, local by default or in a named zone.",
     { "TODAY()" },
     { "TODAY()", "TODAY() = DATE()" },
     {
@@ -476,8 +644,8 @@ FunctionDoc{
     "NOW",
     {},
     FunctionCategory::Date,
-    0, 0,
-    "Return the current date/time value.",
+    0, 1,
+    "Return the current date/time value, local by default or in a named zone.",
     { "NOW()" },
     { "NOW()" },
     {
@@ -493,8 +661,8 @@ FunctionDoc{
     "DATETIME",
     {},
     FunctionCategory::Date,
-    0, 0,
-    "Return the current date/time value.",
+    0, 1,
+    "Return the current date/time value, local by default or in a named zone.",
     { "DATETIME()" },
     { "DATETIME()" },
     {
@@ -510,8 +678,8 @@ FunctionDoc{
     "TIME",
     {},
     FunctionCategory::Date,
-    0, 0,
-    "Return the current system time.",
+    0, 1,
+    "Return the current system time, local by default or in a named zone.",
     { "TIME()" },
     { "TIME()" },
     {

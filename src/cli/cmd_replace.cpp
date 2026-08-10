@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_replace.cpp — REPLACE by field INDEX or NAME
 // Usage:
 //   REPLACE <field_index> WITH <value>
@@ -991,6 +1000,26 @@ void cmd_REPLACE(xbase::DbArea& A, std::istringstream& in) {
         try { after = A.get(field1); } catch (...) { after.clear(); }
 
         if (before != after) dottalk::table::mark_stale_field(area0, field1);
+
+        // replaceFieldStored() returns true for a successful record write even
+        // when index maintenance afterwards failed; that case is reported as a
+        // non-empty write_err. The record is on disk, so this is a warning and
+        // not a failure -- but the index no longer tracks this record, so mark
+        // the field stale rather than letting the divergence go unrecorded.
+        //
+        // NOTE: this reuses ReplaceDetailText, which is also the hard-failure
+        // detail id. The text is prefixed so a reader can tell them apart, but
+        // a caller keying on the message id alone would read this success as a
+        // failure. A dedicated warning id belongs in the message catalog; that
+        // is a catalog change and is deliberately not smuggled into this slice.
+        if (!write_err.empty()) {
+            dottalk::table::mark_stale_field(area0, field1);
+            cli::cmdout::print_prefixed_message(
+                "REPLACE",
+                dottalk::helpdata::MessageId::ReplaceDetailText,
+                {{"detail", "record written, but " + write_err +
+                            "; REINDEX/REBUILD needed."}});
+        }
 
         if (Settings::instance().talk_on.load()) {
             cli::cmdout::print_prefixed_message(

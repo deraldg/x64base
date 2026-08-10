@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: edu
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/edu_erp.cpp
 // DotTalk++: EDU_ERP / ERP command
 //
@@ -43,7 +52,8 @@
 
 // @dottalk.usage v1
 // owner: EDU|ERP
-// command: ERP / EDU_ERP
+// command: ERP
+// handler: edu_ERP
 // category: education-database-demo
 // status: supported
 // noargs: status-and-brief-usage

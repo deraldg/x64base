@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_setindex.cpp
 // SET INDEX TO <container>
 //
@@ -34,9 +43,13 @@
 // - For .inx, trailing TAG / bare tag is accepted but ignored, because INX is
 //   effectively a single-order container.
 
-// @dottalk.usage v1
+// @dottalk.usage.voluntary v1
+// NOT UNDER CONTRACT -- voluntary description, offered not promised.
+// Nothing verifies this block and nothing may fail because of it.
+// The binding identity for this surface is the @dottalk.subusage
+// contract on its ladder arm in src/cli/cmd_set.cpp.
 // owner: DOT|SET INDEX
-// command: SET INDEX
+// documents: SET INDEX
 // category: index
 // status: supported
 // noargs: usage
@@ -261,6 +274,18 @@ static bool validate_explicit_ext_for_flavor(const xbase::DbArea& A,
     }
 
     if (is_x64_cdx_area(A)) {
+        if (ext == ".cnx") {
+            // CNX-on-x64 (owner ruling 2026-08-09): CNX was re-enacted to x64
+            // standards for ramfs/vdisk in-RAM indexing (XIDX-TXN-02 M1 realtime
+            // maintenance), so a blanket refusal is stale policy. An EXPLICIT
+            // .cnx request is honored with an advisory; LMDB-backed CDX remains
+            // the preferred and default index for non-RAM x64 use. Bare tokens
+            // (no extension) still resolve to .cdx -- the default is unchanged.
+            cli::cmdout::print_line(
+                "SET INDEX: advisory -- LMDB-backed CDX is the preferred index for x64 tables;"
+                " attaching CNX as explicitly requested.");
+            return true;
+        }
         if (ext != ".cdx") {
             err = msg(MessageId::SetIndexV64RequiresCdxText);
             return false;

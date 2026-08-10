@@ -1,0 +1,5 @@
+* Expect students_import.csv + students.schema.json in _drops/
+IMPORT CSV _drops/students_import.csv SCHEMA _drops/students.schema.json REJECTS _drops/rejects.csv
+USE students_import
+COUNT
+ECHO OK: CSV→DBF complete (rows=%LASTCOUNT%)

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ===============================================
 // src/cli/cmd_wherecache.cpp
 // Developer command: WHERECACHE STATS | CLEAR | CAP <n>
@@ -6,7 +15,7 @@
 // owner: DOT|WHERECACHE
 // command: WHERECACHE
 // category: diagnostics
-// status: supported
+// status: experimental
 // noargs: report
 // effect: mixed
 // mutates: where-cache

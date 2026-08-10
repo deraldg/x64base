@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================
 // nav_select.hpp
 //
@@ -65,10 +74,10 @@ inline Mode resolve_mode(xbase::DbArea& A, Mode mode)
     return mode;
 }
 
-inline int32_t pick_recno(xbase::DbArea& A,
+inline std::int64_t pick_recno(xbase::DbArea& A,
                           Mode mode,
                           Step step,
-                          int32_t from_recno = 0)
+                          std::int64_t from_recno = 0)
 {
     if (!A.isOpen()) return 0;
 
@@ -76,21 +85,18 @@ inline int32_t pick_recno(xbase::DbArea& A,
 
     switch (mode) {
     case Mode::LogicalView:
-        // NOTE(RECNO64 M3): logical_nav is 64-bit; pick_recno's int32_t return
-        // (and the RawOrder path's order_nav int32_t API) still narrow. Explicit
-        // casts keep this honest and warning-free until the order_nav / pick_recno
-        // widening slice (M4) lands.
+        // RECNO64 M5: pick_recno now returns 64-bit; logical_nav is already 64-bit.
         switch (step) {
         case Step::First:
-            return static_cast<int32_t>(cli::logical_nav::first_recno(A));
+            return static_cast<std::int64_t>(cli::logical_nav::first_recno(A));
         case Step::Last:
-            return static_cast<int32_t>(cli::logical_nav::last_recno(A));
+            return static_cast<std::int64_t>(cli::logical_nav::last_recno(A));
         case Step::Next:
-            return static_cast<int32_t>(cli::logical_nav::next_recno(
+            return static_cast<std::int64_t>(cli::logical_nav::next_recno(
                 A, from_recno > 0 ? static_cast<std::uint64_t>(from_recno)
                                   : A.recno64()));
         case Step::Prior:
-            return static_cast<int32_t>(cli::logical_nav::prev_recno(
+            return static_cast<std::int64_t>(cli::logical_nav::prev_recno(
                 A, from_recno > 0 ? static_cast<std::uint64_t>(from_recno)
                                   : A.recno64()));
         }
@@ -98,32 +104,32 @@ inline int32_t pick_recno(xbase::DbArea& A,
 
     case Mode::RawOrder:
         {
-            int32_t rn = 0;
+            std::int64_t rn = 0;
 
             switch (step) {
             case Step::First:
                 if (order_first_recno(A, rn)) return rn;
-                return (A.recCount() > 0 ? 1 : 0);
+                return (A.recCount64() > 0 ? 1 : 0);
 
             case Step::Last:
                 if (order_last_recno(A, rn)) return rn;
-                return (A.recCount() > 0 ? A.recCount() : 0);
+                return (A.recCount64() > 0 ? static_cast<std::int64_t>(A.recCount64()) : 0);
 
             case Step::Next:
             {
-                const int32_t save = A.recno();
-                const int32_t start = (from_recno > 0 ? from_recno : save);
+                const std::int64_t save = static_cast<std::int64_t>(A.recno64());
+                const std::int64_t start = (from_recno > 0 ? from_recno : save);
 
                 if (start <= 0) return 0;
                 if (start != save) {
-                    if (!A.gotoRec(start) || !A.readCurrent()) return 0;
+                    if (!A.gotoRec64(static_cast<std::uint64_t>(start)) || !A.readCurrent()) return 0;
                 }
 
                 const bool ok = order_skip(A, +1);
-                rn = ok ? A.recno() : 0;
+                rn = ok ? static_cast<std::int64_t>(A.recno64()) : 0;
 
                 if (save > 0) {
-                    (void)A.gotoRec(save);
+                    (void)A.gotoRec64(static_cast<std::uint64_t>(save));
                     (void)A.readCurrent();
                 }
                 return rn;
@@ -131,19 +137,19 @@ inline int32_t pick_recno(xbase::DbArea& A,
 
             case Step::Prior:
             {
-                const int32_t save = A.recno();
-                const int32_t start = (from_recno > 0 ? from_recno : save);
+                const std::int64_t save = static_cast<std::int64_t>(A.recno64());
+                const std::int64_t start = (from_recno > 0 ? from_recno : save);
 
                 if (start <= 0) return 0;
                 if (start != save) {
-                    if (!A.gotoRec(start) || !A.readCurrent()) return 0;
+                    if (!A.gotoRec64(static_cast<std::uint64_t>(start)) || !A.readCurrent()) return 0;
                 }
 
                 const bool ok = order_skip(A, -1);
-                rn = ok ? A.recno() : 0;
+                rn = ok ? static_cast<std::int64_t>(A.recno64()) : 0;
 
                 if (save > 0) {
-                    (void)A.gotoRec(save);
+                    (void)A.gotoRec64(static_cast<std::uint64_t>(save));
                     (void)A.readCurrent();
                 }
                 return rn;

@@ -1,0 +1,100 @@
+* ============================================================
+* SET_CASE_NEAR_SHAKEDOWN_V1.DTS
+*
+* Purpose:
+*   Focused shakedown for SETCASE / SET CASE and SETNEAR / SET NEAR.
+*
+* Scope:
+*   - Direct SETCASE command
+*   - Routed SET CASE command through cmd_set.cpp
+*   - Direct SETNEAR command, if registered
+*   - Routed SET NEAR command through cmd_set.cpp
+*   - Basic SEEK behavior canary under SET NEAR OFF/ON
+*
+* Safety:
+*   - Read-only
+*   - No mutation
+*   - No rebuild
+* ============================================================
+
+SET ECHO OFF
+COLOR DEFAULT
+ECHO ===== SET CASE / SET NEAR SHAKEDOWN V1 START =====
+
+ECHO ===== PHASE 0 CLEAN START =====
+SCHEMAS CLOSE
+REL CLEAR ALL
+SET FILTER TO
+VERSION
+STATUS
+
+ECHO ===== PHASE 1 SETCASE DIRECT =====
+SETCASE
+SETCASE ON
+SETCASE
+SETCASE OFF
+SETCASE
+
+ECHO ===== PHASE 2 SET CASE THROUGH SET COMMAND =====
+SET CASE
+SET CASE ON
+SET CASE
+SET CASE OFF
+SET CASE
+
+ECHO ===== PHASE 3 SETNEAR DIRECT =====
+ECHO [NOTE] If SETNEAR is not registered as a direct command yet, this section should show Unknown command.
+SETNEAR
+SETNEAR ON
+SETNEAR
+SETNEAR OFF
+SETNEAR
+
+ECHO ===== PHASE 4 SET NEAR THROUGH SET COMMAND =====
+SET NEAR
+SET NEAR ON
+SET NEAR
+SET NEAR OFF
+SET NEAR
+
+ECHO ===== PHASE 5 INVALID ARGUMENTS =====
+SET CASE MAYBE
+SET NEAR MAYBE
+
+ECHO ===== PHASE 6 SEEK / NEAR CANARY SETUP =====
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG LNAME
+AREA
+TOP
+RECNO
+SMARTLIST 5
+
+ECHO ===== PHASE 7 SEEK WITH NEAR OFF =====
+SET NEAR OFF
+ECHO [EXPECT] SEEK WILX should be Not Found unless WILX exists exactly.
+SEEK Wilx
+RECNO
+TUPLE *
+
+ECHO ===== PHASE 8 SEEK WITH NEAR ON =====
+SET NEAR ON
+ECHO [CURRENT] If SEEK has not consumed SET NEAR yet, behavior may match NEAR OFF.
+ECHO [FUTURE] Expected later: Near match, first key >= WILX.
+SEEK Wilx
+RECNO
+TUPLE *
+
+ECHO ===== PHASE 9 CLEAN SHUTDOWN =====
+SET NEAR OFF
+SET CASE OFF
+SET ORDER TO 0
+SET FILTER TO
+CLOSE
+SCHEMAS CLOSE
+STATUS
+
+ECHO ===== SET CASE / SET NEAR SHAKEDOWN V1 END =====
+QUIT

@@ -1,0 +1,265 @@
+* ============================================================================
+* 12_cobol_fixed_record_v1.dts
+* PDLC COBOL hop -- DBF -> fixed-record -> GnuCOBOL build/run
+*
+* Status: CANDIDATE / RUNNABLE WHERE GnuCOBOL IS INSTALLED
+* Owner: member.derald   authored_by: member.ai.claude.cowork
+*
+* CORRECTION TO AN EARLIER JUDGEMENT
+*   10_crosswalk_cascade_items_v1.dts stage S0 declared the COBOL hop
+*   "SKIPPED -- no-preserved-gnucobol-transcript" and left it inert. That
+*   wording was inherited from the PDLC review rather than checked, and it
+*   understated what exists. Verified in src/edu/edu_cobol.cpp:
+*
+*     status: supported          -- not experimental
+*     COBOL EXPORT STUDENTS      -- writes the fixed-record file from the
+*                                   current table (requires logicalName STUDENTS)
+*     COBOL BUILD <src.cob>      -- invokes: cobc -x -free   (honours COBCONFIG)
+*     COBOL RUN <program>        -- launches the built program
+*     COBOL TEST <src.cob>       -- build + run in one step
+*
+*   And the artifacts are already in the tree:
+*     dottalkpp/data/projects/cobol/data/students_ro.dat
+*     dottalkpp/data/projects/cobol/src/first_cobol_test.cob
+*
+*   So the hop was never a capability gap. What was missing is exactly what the
+*   review said: a PRESERVED TRANSCRIPT. This script produces one.
+*
+* PREREQUISITE
+*   GnuCOBOL on PATH (cobc). Optionally COBCONFIG pointing at a dialect config.
+*   If cobc is absent, BUILD/TEST will fail with a compiler error -- that is a
+*   legitimate recorded outcome for a machine without the toolchain, not a
+*   defect in this script. Record it and note the host.
+* ============================================================================
+
+SET TALK ON
+ECHO COBOL BEGIN fixed-record-hop
+
+* ---------------------------------------------------------------------------
+* C1  origin: the legacy dBASE III STUDENTS table
+* ---------------------------------------------------------------------------
+* COBOL EXPORT STUDENTS checks db.logicalName() == "STUDENTS", so the table must
+* be opened under that logical name. og/STUDENTS is the 0x03 dBASE III fixture
+* used by the dialect ladder -- the same 200 rows feed both proofs.
+* PATH PROTOCOL: set the DBF slot, then use a BARE table name. A slashed
+* relative path (og/STUDENTS) resolves against the DATA root, not the DBF slot,
+* and fails -- that defect sank run 1 of the dialect ladder. Using the bare name
+* also matters here for a second reason: COBOL EXPORT STUDENTS checks
+* db.logicalName() == "STUDENTS", and the logical name comes from the opened
+* table, so it must be opened as STUDENTS.
+ECHO COBOL C1 ORIGIN
+SETPATH DBF D:\code\ccode\dottalkpp\data\dbf\og
+SETPATH
+USE STUDENTS
+COUNT
+STRUCT
+ECHO COBOL C1 END
+
+* ---------------------------------------------------------------------------
+* C2  DBF -> fixed-record
+* ---------------------------------------------------------------------------
+* This is the hop the whole PDLC chain starts from, in reverse: fixed-record
+* COBOL data is what 1970s-80s systems held, and this proves DotTalk++ can
+* still write that shape from a modern table.
+ECHO COBOL C2 EXPORT
+COBOL EXPORT STUDENTS
+ECHO COBOL C2 END
+
+* ---------------------------------------------------------------------------
+* C3  compile and run a COBOL program against it
+* ---------------------------------------------------------------------------
+ECHO COBOL C3 BUILD
+COBOL BUILD first_cobol_test.cob
+* Bare name, no extension -- the portable, documented form. This exercises the
+* BUILD/RUN extension-symmetry fix in run_program_path() (edu_cobol.cpp): on
+* Windows RUN now retries once with ".exe" when the bare name has no extension.
+* If this line fails with "file not found", the engine has not been rebuilt
+* since that fix.
+ECHO COBOL C3 RUN
+COBOL RUN first_cobol_test
+ECHO COBOL C3 END
+
+ECHO COBOL END fixed-record-hop
+
+* ============================================================================
+* PASS CRITERIA
+*   C1  COUNT = 200, 9 fields, opened from the 0x03 dBASE III fixture
+*   C2  EXPORT reports success and writes students_ro.dat under the cobol data
+*       root. Record the byte size and record length -- a fixed-record file has
+*       a deterministic size, so size / reclen must equal 200 exactly. That
+*       division IS the fidelity check for this hop.
+*   C3  BUILD completes without compiler error; RUN produces program output.
+*
+* WHY THE SIZE ARITHMETIC MATTERS
+*   Fixed-record formats have no delimiters and no header count. The only proof
+*   that 200 rows crossed is that the file is exactly 200 * reclen bytes. A
+*   short write is invisible to any tool that just opens the file and reads.
+*
+* RECORD HONESTLY
+*   If cobc is not installed, C3 fails and C1/C2 still stand -- report it as
+*   "DBF -> fixed-record proven; compile/run pending toolchain on this host"
+*   rather than failing the whole hop. Note the machine and the cobc version
+*   (cobc --version) in the transcript header so the proof is attributable.
+*
+* ============================================================================
+* FIRST RECORDED RUN -- 2026-07-26, build Jul 26 2026 12:52:47, v0.6
+* Invocation: ./datarun.ps1 -CommandLines 'DOTSCRIPT <abs path>' > tmp\cobol.txt
+* Host: Windows, GnuCOBOL present
+* ============================================================================
+* RESULT: C1 PASS . C2 PASS . C3 BUILD PASS . C3 RUN BLOCKED BY ENGINE DEFECT
+*
+*   C1  Opened STUDENTS (v32), 200 records, 9 fields, GPA N(4,2), DOB/ENROLL_D D
+*
+*   C2  "COBOL EXPORT: wrote 200 STUDENTS record(s) to
+*        ...\dottalkpp\data\projects\cobol\data\students_ro.dat"
+*
+*       FIXED-RECORD ARITHMETIC -- THE ACTUAL FIDELITY PROOF:
+*         file size      = 22200 bytes
+*         record length  =   111 bytes  (the students_ro fixed profile; note it
+*                                        is NOT the DBF's 109 -- the fixed
+*                                        layout is its own contract)
+*         22200 / 111    =   200 records EXACTLY
+*       A fixed-record file has no header count and no delimiters, so exact
+*       division is the only evidence that all 200 rows crossed. It divides.
+*       DBF -> FIXED-RECORD IS PROVEN.
+*
+*   C3  BUILD PASS -- "COBOL BUILD: created ...\bin\first_cobol_test.exe"
+*       GnuCOBOL compiled the program. Only a cosmetic compiler warning:
+*         first_cobol_test.cob:47: warning: line not terminated by a newline
+*       Worth fixing in the .cob source, but harmless.
+*
+*       RUN FAILED -- "COBOL RUN: file not found:
+*                      ...\bin\first_cobol_test"   (no extension)
+*
+* ============================================================================
+* ENGINE DEFECT -- COBOL BUILD/RUN EXTENSION ASYMMETRY ON WINDOWS
+* ============================================================================
+*   src/edu/edu_cobol.cpp
+*
+*     default_build_output_from_source()   (line ~243)
+*       #if defined(_WIN32)
+*           return cobol_bin_root() / (source_path.stem().string() + ".exe");
+*       #else
+*           return cobol_bin_root() / source_path.stem();
+*       #endif
+*
+*     run_program_path()                   (line ~412)
+*       if (!fs::exists(program_path)) { "COBOL RUN: file not found" ... }
+*
+*   BUILD is platform-aware and appends .exe on Windows. RUN is NOT -- it does a
+*   bare existence check with no .exe fallback. So the documented, natural
+*   sequence
+*       COBOL BUILD first_cobol_test.cob
+*       COBOL RUN   first_cobol_test
+*   cannot work on Windows, even though BUILD just succeeded. The user must know
+*   to type the extension that BUILD silently added.
+*
+*   FIXED 2026-07-26 in src/edu/edu_cobol.cpp run_program_path(): under
+*   #if defined(_WIN32), when the path does not exist and carries no extension,
+*   retry once with ".exe" before reporting not-found. BUILD and RUN are now
+*   symmetric across platforms and this script uses the bare name.
+*   REQUIRES A REBUILD of dottalkpp before it takes effect.
+*
+* ============================================================================
+* SECOND DEFECT FOUND ON THE SAME RUN -- STALE ASSIGN PATH IN THE FIXTURE
+* ============================================================================
+*   With the .exe workaround applied, the program RAN and failed deeper:
+*     libcob: error: file does not exist (status = 35) for file STUDENT-FILE
+*             ('D:' => D:\code\ccode\dottalkpp\data\students_ro.dat)
+*
+*   first_cobol_test.cob had a hardcoded ASSIGN pointing at the DATA root:
+*       ASSIGN TO "D:\code\ccode\dottalkpp\data\students_ro.dat"
+*   but COBOL EXPORT STUDENTS writes to
+*       ...\dottalkpp\data\projects\cobol\data\students_ro.dat
+*   Nothing has ever written to the old location, so OPEN INPUT could never
+*   succeed -- the program failed immediately after a successful export.
+*   REPAIRED: ASSIGN repointed; the missing trailing newline was also added,
+*   which clears the -Wmissing-newline warning on every build.
+*
+* ============================================================================
+* THE COPYBOOK IS THE CROSSWALK -- corrected reading of the arithmetic
+* ============================================================================
+*   An earlier note here called 111 "the students_ro fixed profile ... NOT the
+*   DBF's 109". That was wrong. Reading the FD in first_cobol_test.cob:
+*       X(8) X(20) X(15) X(8) X(1) X(4) X(8) X(5) X(40)  =  109 bytes
+*   which is EXACTLY the dBASE III record length, field for field:
+*       SID N(8,0) LNAME C(20) FNAME C(15) DOB D(8) GENDER C(1)
+*       MAJOR C(4) ENROLL_D D(8) GPA N(4,2) EMAIL C(40)
+*   So 22,200 = 200 x 111 where 111 = 109 + CRLF under LINE SEQUENTIAL.
+*   The COBOL copybook and the DBF schema are the same layout. That equivalence
+*   is the migration evidence, not just a size coincidence.
+*
+* ============================================================================
+* RETRACTION -- A FALSE FINDING THIS SESSION PRODUCED (recorded 2026-07-26)
+* ============================================================================
+*   Gate 4's guard reported "staged PDF predates the assembly it evidences by
+*   3h35m". THAT FINDING WAS FALSE and has been retracted.
+*
+*   The guard compared datetime.fromtimestamp(mtime) -- NAIVE, holding LOCAL
+*   time -- against build_utc parsed with the "Z" stripped, also naive. On a
+*   UTC-7 host that made the PDF look 7 hours older than it was.
+*     PDF mtime, true UTC : 2026-07-23T07:39:07Z
+*     assembly build_utc  : 2026-07-23T04:14:23Z
+*   The PDF is 3h24m45s AFTER the assembly -- the CORRECT order. There was no
+*   provenance violation. Acting on the finding would have meant re-rendering a
+*   PDF that was fine.
+*
+*   Same defect class as session_coordinator.py _age_min(), found the same day,
+*   in code written hours apart. Timestamps crossing a process boundary must be
+*   epochs or carry a timezone; naive local compared to UTC lies silently and
+*   in a plausible direction. FIXED in manual_guard_v1.py parse_iso().
+*
+*   A guard that invents a violation is worse than no guard. Gate 4 is now
+*   FAIL 0 / WARN 4, and all four remaining warnings are real.
+*
+* ============================================================================
+* THIRD DEFECT, SELF-INFLICTED -- FIXED-FORMAT COMMENTS IN A FREE-FORMAT SOURCE
+* ============================================================================
+*   The repair above was written with fixed-format comments ('*' in column 7).
+*   The engine compiles with "cobc -x -free" (edu_cobol.cpp:376,384) -- FREE
+*   format, where '*' is not a comment marker and '*>' is. That turned a clean
+*   build into ~60 syntax errors: "PROCEDURE DIVISION header missing",
+*   "'bytes' is a reserved word", "'STUDENT-FILE' is not defined".
+*   The compile flag had already been read while tracing the toolchain; it was
+*   simply not applied. Corrected: all comments now use '*>'.
+*   Signal missed: the original source carried ZERO comments. In free format a
+*   comment needs a marker the author may not have bothered with -- the absence
+*   was evidence about the format, not an invitation to document.
+*
+* ============================================================================
+* FINAL RUN -- 2026-07-26, rebuilt engine (edu_cobol.cpp .exe fallback applied)
+* ============================================================================
+* RESULT: FULL PASS. THE COBOL HOP IS CLOSED END TO END.
+*
+*   C3 BUILD  "created ...\bin\first_cobol_test.exe"
+*             No compiler warnings -- the -Wmissing-newline warning is gone.
+*
+*   C3 RUN    "COBOL RUN first_cobol_test"   -- BARE NAME, no extension.
+*             The .exe fallback in run_program_path() resolved it. BUILD and
+*             RUN are symmetric on Windows again; the documented sequence works.
+*
+*   PROGRAM OUTPUT: 200 student lines, then
+*             RECORDS READ: 0000200
+*             COBOL RUN: exit code 0
+*
+*   IDENTITY ACROSS THE HOP -- record 1, read by COBOL from the fixed-record
+*   file, against the same record read by DotTalk++ from the dBASE III table:
+*             50000000  Taylor  Quinn  2.97
+*             SID 50000000 . LNAME Taylor . FNAME Quinn . GPA 2.97
+*   Identical. GPA kept both decimals through DBF -> fixed-record -> COBOL READ.
+*
+* STATUS OF THE COBOL HOP AFTER THIS RUN
+*   DBF -> fixed-record ....... PROVEN (200 records, 22,200 = 200 x 111)
+*   GnuCOBOL compile .......... PROVEN (clean, no warnings)
+*   program execution ......... PROVEN (200 records read, exit 0)
+*   copybook <-> DBF schema ... PROVEN EQUIVALENT (109 bytes, field for field)
+*
+*   The PDLC review's "runtime-capable, proof incomplete" was right about the
+*   gap and wrong about the cause: the missing piece was never GnuCOBOL. It was
+*   two latent defects -- a BUILD/RUN extension asymmetry in the engine and a
+*   stale ASSIGN path in the fixture -- neither of which could surface until
+*   somebody actually ran the hop and preserved the output.
+*
+*   THE LINE NOW READS: fixed-record COBOL hop -- EMPIRICALLY DEMONSTRATED,
+*   preserved transcript, 200 records, values identical at both ends.
+* ============================================================================

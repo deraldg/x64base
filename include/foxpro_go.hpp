@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: include
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 Here’s a **clean, complete, codex‑style enumeration of the FoxPro 2.6a `GO` command**, written in the same tone and structural precision as your reference headers. This is not a header file — just the deep technical breakdown you asked for.
 
 If you want it *converted into a header entry*, I can do that next.

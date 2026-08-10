@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // ============================================================================
 // File: src/cli/command_registry.cpp
 // Project: DotTalk++
@@ -112,6 +121,23 @@ CommandRegistry::registration_info(const std::string& name) const
     const auto it = registrations_.find(normalize_key(name));
     if (it == registrations_.end()) return std::nullopt;
     return it->second;
+}
+
+bool CommandRegistry::remove(const std::string& name)
+{
+    const std::string key = normalize_key(name);
+    if (key.empty()) return false;
+
+    const auto it = registrations_.find(key);
+    if (it == registrations_.end()) return false;
+
+    // Never remove protected/core commands. Scratch commands are registered as
+    // non-protected Extension origin, so only those (and other extensions) qualify.
+    if (it->second.protected_name) return false;
+
+    registrations_.erase(it);
+    map_.erase(key);
+    return true;
 }
 
 RunResult CommandRegistry::try_run(DbArea& area,

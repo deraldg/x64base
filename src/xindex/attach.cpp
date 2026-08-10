@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #include "xindex/attach.hpp"
 #include "xindex/index_manager.hpp" // ensure IndexManager is visible
 #include "xbase.hpp"                // ensure xbase::DbArea is visible

@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/dli/recno_shim.cpp ? provides dli_current_recno for browse_edit.cpp
 #include "xbase.hpp"
 

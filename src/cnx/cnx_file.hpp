@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cnx
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cnx/cnx_file.hpp
 #pragma once
 // Compatibility shim: forward all includes to the public header.

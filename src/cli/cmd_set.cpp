@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_set.cpp
 // FoxPro-style SET command router for DotTalk++
 
@@ -8,7 +17,7 @@
 // status: supported
 // noargs: usage
 // effect: mixed
-// mutates: settings output-routing table-buffer order-state filter-state relation-state path-state
+// mutates: settings output-routing table-buffer order-state filter-state relation-state path-state errorstop-policy
 // usage-access: SET USAGE
 // summary:
 //   General SET dispatcher for session settings, output routing, table buffering,
@@ -66,6 +75,8 @@
 //   SET CNX <args>
 //   SET CDX <args>
 //   SET LMDB <args>
+//   SET ERRORSTOP
+//   SET ERRORSTOP TO OFF | WARNING | ERROR
 //
 // notes:
 //   SET with no arguments shows usage.
@@ -75,6 +86,9 @@
 //   TABLE BUFFER toggles table buffering state for the current area or all open areas.
 //   SET CASE and SET NEAR mutate expression/search behavior settings.
 //   SET may mutate table-buffer, order, path, relation, filter, and output state depending on the option.
+//   SET ERRORSTOP [TO] <severity> is the compatibility form of STOP_ON_ERROR; it sets the
+//   DotScript stop-on-error threshold (OFF|WARNING|ERROR), mutating errorstop policy only,
+//   and with no severity reports the current threshold.
 //
 // risk:
 //   mutates_session_settings: yes
@@ -84,6 +98,7 @@
 //   mutates_index_order_state: INDEX ORDER CNX CDX LMDB
 //   mutates_filter_state: FILTER
 //   mutates_relation_state: RELATION RELATIONS
+//   mutates_errorstop_policy: ERRORSTOP
 //   mutates_table_data: no direct table-data mutation
 //
 // related:
@@ -94,6 +109,7 @@
 //   SET_RELATION
 //   SETCASE
 //   SETNEAR
+//   STOP_ON_ERROR
 //
 
 #include "xbase.hpp"
@@ -109,6 +125,7 @@
 #include "cli/command_output.hpp"
 #include "cli/output_router.hpp"
 #include "cli/settings.hpp"
+#include "xbase_error_context.hpp"   // SET ERRORSTOP -> stop_on_error[severity]
 #include "cli/table_state.hpp"
 
 #include "help/message_catalog.hpp"
@@ -649,6 +666,24 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     }
     opt = up_copy(opt);
 
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: USAGE
+    // aliases: HELP; ?
+    // category: help
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Print the SET subcommand surface. Also the bare-SET behaviour:
+    //   SET with no option prints the same text.
+    // usage:
+    //   SET
+    //   SET USAGE
+    //   SET HELP
+    //   SET ?
     if (opt == "USAGE" || opt == "HELP" || opt == "?") {
         print_set_usage();
         return;
@@ -659,6 +694,26 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // Selects the active message-rendering locale. This does not
     // localize command keywords; it selects message text templates.
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: LANGUAGE
+    // aliases: LOCALE
+    // category: locale
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Select the active message-rendering locale. Does NOT localize
+    //   command keywords; it selects message text templates (AIF-066).
+    //   Bare form reports current locale rather than erroring.
+    // usage:
+    //   SET LANGUAGE
+    //   SET LANGUAGE [TO] <en-US|es|fr|de|it|DEFAULT>
+    //   SET LANGUAGE CHECK|VALIDATE|CATALOG
+    //   SET LANGUAGE REPORT|EXPORT [locale]
+    //   SET LANGUAGE STATUS
     if (opt == "LANGUAGE" || opt == "LOCALE") {
         std::string tok;
         if (!(args >> tok)) {
@@ -765,6 +820,22 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
 
 // MSG-022E BEGIN SET MESSAGE CATALOG CHECK
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: MESSAGE
+    // category: messaging
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Inspect and exercise the message catalog: provider status,
+    //   routing proof, and single-symbol emission for a given locale.
+    // usage:
+    //   SET MESSAGE CATALOG CHECK|STATUS
+    //   SET MESSAGE PROOF <args>
+    //   SET MESSAGE EMIT <symbol> [LOCALE <locale>]
     if (opt == "MESSAGE") {
         std::string sub1;
         args >> sub1;
@@ -801,6 +872,22 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
 
 
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: TABLE
+    // category: buffer
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Enable or disable table buffering for the current work area, or
+    //   for every open area with ALL. Requires an engine; reports the
+    //   area number it acted on.
+    // usage:
+    //   SET TABLE BUFFER ON|OFF
+    //   SET TABLE BUFFER ON|OFF ALL
     if (opt == "TABLE") {
         std::string sub;
         args >> sub;
@@ -879,6 +966,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SET CONSOLE
     // Fox-style alias for PRN TO CONSOLE / PRN TO NULL
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: CONSOLE
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Fox-style alias for PRN TO CONSOLE / PRN TO NULL.
+    // usage:
+    //   SET CONSOLE ON|OFF
     if (opt == "CONSOLE") {
         std::string tok;
         args >> tok;
@@ -905,6 +1005,22 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SET PRINT
     // Fox-style alias for PRN TO FILE / PRN OFF
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: PRINT
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Fox-style alias for PRN TO FILE / PRN OFF. SET PRINT ON with no
+    //   prior TO <file> reports that a file is required rather than
+    //   silently doing nothing.
+    // usage:
+    //   SET PRINT ON|OFF
+    //   SET PRINT TO <file>
     if (opt == "PRINT") {
         std::string tok;
         args >> tok;
@@ -963,6 +1079,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET ALTERNATE
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: ALTERNATE
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Echo session output to a secondary transcript file.
+    // usage:
+    //   SET ALTERNATE ON|OFF
+    //   SET ALTERNATE TO <file>
     if (opt == "ALTERNATE") {
         std::string tok;
         args >> tok;
@@ -1010,6 +1140,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET TALK
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: TALK
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Show or suppress per-command progress chatter.
+    // usage:
+    //   SET TALK ON|OFF
     if (opt == "TALK") {
         std::string tok;
         args >> tok;
@@ -1030,6 +1173,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET ECHO
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: ECHO
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Echo each input line before executing it. Primarily for scripts.
+    // usage:
+    //   SET ECHO ON|OFF
     if (opt == "ECHO") {
         std::string tok;
         args >> tok;
@@ -1050,6 +1206,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET PAGING
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: PAGING
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Page long output at the console.
+    // usage:
+    //   SET PAGING ON|OFF
     if (opt == "PAGING") {
         std::string tok;
         args >> tok;
@@ -1070,6 +1239,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET WRAP
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: WRAP
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Wrap output lines at the console width instead of truncating.
+    // usage:
+    //   SET WRAP ON|OFF
     if (opt == "WRAP") {
         std::string tok;
         args >> tok;
@@ -1089,9 +1271,46 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
     // ─────────────────────────────────────────────────────────────
     // SET DEVDIAG
-    // Controls passive startup/shutdown/relation diagnostics in dev builds.
-    // Explicit command traces remain under their own command surfaces.
+    // Controls passive startup and shutdown diagnostics in dev builds,
+    // including the RELATIONS BOOT trace. Explicit command traces remain under
+    // their own command surfaces.
+    //
+    // CORRECTED 2026-07-27 (AIF-067). This comment previously read
+    // "startup/shutdown/relation diagnostics", which reads as ongoing relation
+    // diagnostics. There are none. cli::Settings::passiveDevDiagnosticsEnabled()
+    // is consulted at exactly seven sites:
+    //     cmd_set.cpp   x3   this command reporting its own state
+    //     main.cpp      x4   startup / shutdown
+    //     shell.cpp:184      shell startup
+    //     relations_boot.cpp:39   relations BOOT, once
+    // NONE of them is in a relation-refresh path, so turning DEVDIAG on emits
+    // nothing when relations_api::refresh_if_enabled() fires.
+    //
+    // This matters beyond wording: the flag was used to try to observe whether
+    // AREA51 triggers a relation refresh, and the test could not have produced
+    // a signal either way. A diagnostic switch that does not cover the path
+    // being investigated yields a NULL result that reads exactly like a
+    // negative one. If ongoing relation-refresh tracing is wanted, it has to be
+    // added; it does not exist today.
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: DEVDIAG
+    // category: diagnostics
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Control PASSIVE startup and shutdown diagnostics in dev builds,
+    //   including the relations BOOT trace. Does NOT trace ongoing relation
+    //   refresh -- no such diagnostic exists. Explicit command traces stay
+    //   under their own surfaces. Bare form reports current state.
+    // usage:
+    //   SET DEVDIAG
+    //   SET DEVDIAG ON|OFF
+    //   SET DEVDIAG STATUS|CHECK
     if (opt == "DEVDIAG") {
         std::string tok;
         if (!(args >> tok)) {
@@ -1125,6 +1344,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET TIMER
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: TIMER
+    // category: diagnostics
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Report elapsed time per command. Routed through the canonical
+    //   executor so in-script timing matches interactive timing.
+    // usage:
+    //   SET TIMER ON|OFF
     if (opt == "TIMER") {
         std::string tok;
         args >> tok;
@@ -1145,6 +1378,19 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET POLLING
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: POLLING
+    // category: diagnostics
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Enable background polling behaviour.
+    // usage:
+    //   SET POLLING ON|OFF
     if (opt == "POLLING") {
         std::string tok;
         args >> tok;
@@ -1165,6 +1411,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET DELETED
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: DELETED
+    // category: navigation
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Hide (ON) or show (OFF) records flagged deleted. Note the sense:
+    //   ON means HIDE, which the status line spells out because the
+    //   polarity is a routine source of confusion.
+    // usage:
+    //   SET DELETED ON|OFF
     if (opt == "DELETED") {
         std::string tok;
         args >> tok;
@@ -1182,11 +1443,153 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
         return;
     }
 
+    // SET INDEXTXN ON|OFF  (transactional in-COMMIT index maintenance)
+    // Default OFF: COMMIT keeps the legacy batch behavior (BUILDLMDB / REBUILD /
+    // REINDEX). ON enables incremental maintenance inside COMMIT for the active
+    // transactional (CDX/LMDB) backend. print_line keeps it message-catalog-free.
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: INDEXTXN
+    // category: index
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Transactional in-COMMIT index maintenance. Default OFF keeps the
+    //   legacy batch behaviour (BUILDLMDB / REBUILD / REINDEX); ON enables
+    //   incremental maintenance inside COMMIT for the active CDX/LMDB
+    //   backend. Deliberately message-catalog-free (print_line), so it is
+    //   NOT localized -- unlike its ladder siblings.
+    //   AIF-067: absent from SetUsageText, so previously undiscoverable.
+    // usage:
+    //   SET INDEXTXN
+    //   SET INDEXTXN ON|OFF
+    //   SET INDEXTXN STATUS|CHECK
+    //   SET INDEXTXN USAGE|HELP|?
+    if (opt == "INDEXTXN") {
+        std::string tok;
+        if (!(args >> tok)) {
+            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
+                (S.index_txn_on.load() ? "ON" : "OFF"));
+            return;
+        }
+        const std::string up = up_copy(tok);
+        if (up == "STATUS" || up == "CHECK") {
+            cli::cmdout::print_line(std::string("SET INDEXTXN: ") +
+                (S.index_txn_on.load() ? "ON" : "OFF"));
+            return;
+        }
+        if (up == "USAGE" || up == "HELP" || up == "?") {
+            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF   (default OFF = legacy batch rebuild)");
+            return;
+        }
+        bool on = S.index_txn_on.load();
+        if (!parse_on_off(tok, on)) {
+            cli::cmdout::print_line("Usage: SET INDEXTXN ON|OFF");
+            return;
+        }
+        S.index_txn_on.store(on);
+        cli::cmdout::print_line(std::string("SET INDEXTXN: ") + (on ? "ON" : "OFF"));
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SET ERRORSTOP [TO] OFF|WARNING|ERROR
+    // Compatibility form of the native STOP_ON_ERROR command. Sets the severity
+    // at which a running DotScript aborts. Errors derive from messaging: the
+    // threshold is compared against the severity carried by the recorded
+    // canonical error code.
+    // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: ERRORSTOP
+    // category: script
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Compatibility form of the native STOP_ON_ERROR command. Sets the
+    //   severity at which a running DotScript aborts, compared against the
+    //   severity carried by the recorded canonical error code. Strips an
+    //   inline && comment before parsing. Bare form reports the threshold.
+    //   AIF-067: absent from SetUsageText, so previously undiscoverable.
+    // usage:
+    //   SET ERRORSTOP
+    //   SET ERRORSTOP [TO] OFF|WARNING|ERROR
+    if (opt == "ERRORSTOP") {
+        std::string tail = ltrim_copy(rest(args));
+        {
+            // Accept an optional leading TO (SET ERRORSTOP TO ERROR).
+            std::istringstream ts(tail);
+            std::string first;
+            ts >> first;
+            if (up_copy(first) == "TO") {
+                tail = ltrim_copy(rest(ts));
+            }
+        }
+
+        // Drop an inline "&&" comment and keep the first token as the severity.
+        {
+            const std::string::size_type amp = tail.find("&&");
+            if (amp != std::string::npos) tail.erase(amp);
+        }
+        std::string sev;
+        {
+            std::istringstream sev_toks(tail);
+            sev_toks >> sev;
+        }
+
+        if (sev.empty()) {
+            cli::cmdout::print_info(
+                "SET ERRORSTOP",
+                std::string("threshold is ") +
+                    xbase::error::errorstop_level_name(xbase::error::get_errorstop()));
+            return;
+        }
+
+        bool ok = false;
+        const xbase::error::errorstop_level lvl =
+            xbase::error::parse_errorstop_level(sev, &ok);
+        if (!ok) {
+            xbase::error::set_last_error(xbase::error::e_invalid_argument());
+            cli::cmdout::print_info(
+                "SET ERRORSTOP",
+                std::string("invalid severity '") + sev + "'; use OFF, WARNING, or ERROR.");
+            return;
+        }
+
+        xbase::error::set_errorstop(lvl);
+        cli::cmdout::print_info(
+            "SET ERRORSTOP",
+            std::string("threshold set to ") + xbase::error::errorstop_level_name(lvl));
+        return;
+    }
+
     // ─────────────────────────────────────────────────────────────
     // SET CASE
     // Routes Fox-style SET CASE ON|OFF through the SETCASE handler.
     // Direct SETCASE remains available through the command registry.
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: CASE
+    // aliases: SETCASE
+    // category: settings
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETCASE
+    // usage-access: SET USAGE
+    // summary:
+    //   Fox-style spelling routed to the SETCASE handler. Direct SETCASE
+    //   remains independently registered in the command registry, which is
+    //   why it resolves through two paths.
+    // usage:
+    //   SET CASE ON|OFF
     if (opt == "CASE" || opt == "SETCASE") {
         std::istringstream r(rest(args));
         cmd_SETCASE(A, r);
@@ -1198,6 +1601,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SEEK remains exact while NEAR is OFF. When NEAR is ON, SEEK/FIND
     // may later use nearest greater/equal ordered-key behavior.
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: NEAR
+    // aliases: SETNEAR
+    // category: navigation
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETNEAR
+    // usage-access: SET USAGE
+    // summary:
+    //   SEEK stays exact while NEAR is OFF. When ON, SEEK/FIND may use
+    //   nearest greater-or-equal ordered-key behaviour.
+    // usage:
+    //   SET NEAR ON|OFF
     if (opt == "NEAR" || opt == "SETNEAR") {
         std::istringstream r(rest(args));
         cmd_SETNEAR(A, r);
@@ -1207,6 +1625,22 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET EDITOR TO <value|DEFAULT|OFF>
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: EDITOR
+    // category: settings
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Choose the external editor. TO is REQUIRED here, unlike LANGUAGE
+    //   or ERRORSTOP where it is optional.
+    // usage:
+    //   SET EDITOR TO <command>
+    //   SET EDITOR TO DEFAULT
+    //   SET EDITOR TO OFF
     if (opt == "EDITOR") {
         std::string sub;
         args >> sub;
@@ -1257,6 +1691,25 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SET DEVICE TO SCREEN|FILE <path>|PRINTER [name]|NULL
     // Fox-style alias for PRN
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: DEVICE
+    // category: output
+    // tier: public
+    // status: supported
+    // disp-style: inline
+    // handler: cmd_SET
+    // usage-access: SET USAGE
+    // summary:
+    //   Fox-style alias for PRN. TO is required. PRINTER with no name
+    //   stages the default printer.
+    //   CONSOLE is accepted as a synonym for SCREEN, and OFF for NULL;
+    //   neither synonym appears in SetUsageText.
+    // usage:
+    //   SET DEVICE TO SCREEN|CONSOLE
+    //   SET DEVICE TO FILE <path>
+    //   SET DEVICE TO PRINTER [name]
+    //   SET DEVICE TO NULL|OFF
     if (opt == "DEVICE") {
         std::string sub;
         args >> sub;
@@ -1327,6 +1780,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET UNIQUE
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: UNIQUE
+    // category: index
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SET_UNIQUE
+    // usage-access: SET USAGE
+    // summary:
+    //   Routed to the SET_UNIQUE handler; see that command for argument
+    //   detail.
+    // usage:
+    //   SET UNIQUE FIELD <name> ON|OFF
     if (opt == "UNIQUE") {
         std::istringstream r(rest(args));
         cmd_SET_UNIQUE(A, r);
@@ -1336,6 +1803,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET PATH
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: PATH
+    // category: workspace
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETPATH
+    // usage-access: SET USAGE
+    // summary:
+    //   Routed to the SETPATH handler. Governs the DBF path protocol:
+    //   SETPATH DBF <dir> then BARE table names.
+    // usage:
+    //   SET PATH <slot> <path>
     if (opt == "PATH") {
         std::istringstream r(rest(args));
         cmd_SETPATH(A, r);
@@ -1346,6 +1827,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // SET INDEX
     // ─────────────────────────────────────────────────────────────
 #if DOTTALK_HAS_XINDEX
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: INDEX
+    // category: index
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETINDEX
+    // build-gate: DOTTALK_HAS_XINDEX
+    // usage-access: SET USAGE
+    // summary:
+    //   Routed to the SETINDEX handler. Present only when the index
+    //   subsystem is compiled in.
+    // usage:
+    //   SET INDEX TO <file>
     if (opt == "INDEX") {
         std::istringstream r(rest(args));
         cmd_SETINDEX(A, r);
@@ -1355,6 +1851,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET ORDER
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: ORDER
+    // category: index
+    // tier: public
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETORDER
+    // build-gate: DOTTALK_HAS_XINDEX
+    // usage-access: SET USAGE
+    // summary:
+    //   Routed to the SETORDER handler. Tag 0 clears the controlling
+    //   order. Present only when the index subsystem is compiled in.
+    // usage:
+    //   SET ORDER TO <tag|0>
     if (opt == "ORDER") {
         std::istringstream r(rest(args));
         cmd_SETORDER(A, r);
@@ -1366,6 +1877,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET FILTER
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: FILTER
+    // category: navigation
+    // tier: developer
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETFILTER
+    // build-gate: DOTTALK_WITH_DEV
+    // usage-access: SET USAGE
+    // summary:
+    //   Routed to the SETFILTER handler. Developer/transitional surface.
+    // usage:
+    //   SET FILTER TO <expr>
     if (opt == "FILTER") {
         std::istringstream r(rest(args));
         cmd_SETFILTER(A, r);
@@ -1375,6 +1900,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET RELATION
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: RELATION
+    // category: relations
+    // tier: developer
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SET_RELATION
+    // build-gate: DOTTALK_WITH_DEV
+    // usage-access: SET USAGE
+    // summary:
+    //   Singular form, routed to cmd_SET_RELATION. Distinct handler from
+    //   the plural SET RELATIONS -- they are not spellings of one another.
+    // usage:
+    //   SET RELATION <args...>
     if (opt == "RELATION") {
         std::istringstream r(rest(args));
         cmd_SET_RELATION(A, r);
@@ -1384,6 +1924,42 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET RELATIONS
     // ─────────────────────────────────────────────────────────────
+    // CORRECTED 2026-07-27. The contract below previously read
+    // "disp-style: routed / handler: cmd_SET_RELATIONS", describing a path the
+    // dispatcher never takes -- and it had already been generated into
+    // SET USAGE and seeded into SYSSUBCMD before anyone checked.
+    //
+    // THE ARM BELOW IS DEAD CODE. shell_api_extras.cpp:79 rewrites the line
+    // before shell_dispatch runs, so `opt` can never equal "RELATIONS" here.
+    // Left in place rather than deleted: removing it is a behaviour change that
+    // wants its own lane, and a dead arm that is LABELLED is safer than one
+    // silently removed from under a reader who expects it. Tracked as owed.
+    //
+    // NOTE THIS PROSE SITS ABOVE THE CONTRACT, NOT INSIDE IT. When it followed
+    // the `usage:` list, the harvester collected these sentences AS USAGE LINES
+    // -- SYSSUBCMD's RELATIONS row shipped with
+    // "syntax=SET RELATIONS <args...> | CORRECTED 2026-07-27. This contract
+    // previously read". A contract block is a machine-read region; commentary
+    // goes before it or after a blank line, never trailing inside it.
+
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: RELATIONS
+    // category: relations
+    // tier: developer
+    // status: supported
+    // disp-style: rewritten
+    // handler: cmd_REL
+    // build-gate: DOTTALK_WITH_DEV
+    // usage-access: SET USAGE
+    // summary:
+    //   Plural form. REWRITTEN BEFORE DISPATCH: preprocess_for_dispatch turns
+    //   `SET RELATIONS <args>` into `REL <args>`, so this reaches the native
+    //   relation engine (the cmd_rel.cpp house-SQL family), NOT the ladder arm
+    //   below. Contrast the SINGULAR SET RELATION, which is not rewritten and
+    //   is the VFP-compatibility front-end over relations_api.
+    // usage:
+    //   SET RELATIONS <args...>
     if (opt == "RELATIONS") {
         std::istringstream r(rest(args));
         cmd_SET_RELATIONS(A, r);
@@ -1394,6 +1970,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
 #if DOTTALK_HAS_XINDEX
     // SET CNX is available in both legacy and LMDB index profiles.
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: CNX
+    // category: index
+    // tier: developer
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETCNX
+    // build-gate: DOTTALK_HAS_XINDEX
+    // usage-access: SET USAGE
+    // summary:
+    //   Available in BOTH legacy and LMDB index profiles, unlike CDX and
+    //   LMDB which are LMDB-profile only.
+    // usage:
+    //   SET CNX [TO] <container.cnx>
     if (opt == "CNX") {
         std::istringstream r(rest(args));
         cmd_SETCNX(A, r);
@@ -1403,6 +1994,20 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
 
 #if DOTTALK_WITH_INDEX
     // SET CDX / LMDB are LMDB-index profile commands.
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: CDX
+    // category: index
+    // tier: developer
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETCDX
+    // build-gate: DOTTALK_WITH_INDEX
+    // usage-access: SET USAGE
+    // summary:
+    //   LMDB-index-profile command, routed to the SETCDX handler.
+    // usage:
+    //   SET CDX [TO] <container.cdx>
     if (opt == "CDX") {
         std::istringstream r(rest(args));
         cmd_SETCDX(A, r);
@@ -1412,6 +2017,21 @@ void cmd_SET(xbase::DbArea& A, std::istringstream& args) {
     // ─────────────────────────────────────────────────────────────
     // SET LMDB
     // ─────────────────────────────────────────────────────────────
+    // @dottalk.subusage v1
+    // parent: SET
+    // sub: LMDB
+    // category: index
+    // tier: developer
+    // status: supported
+    // disp-style: routed
+    // handler: cmd_SETLMDB
+    // build-gate: DOTTALK_WITH_INDEX
+    // usage-access: SET USAGE
+    // summary:
+    //   LMDB-index-profile command, routed to the SETLMDB handler.
+    //   See AIF-065 for the mapsize ladder defect on the writer side.
+    // usage:
+    //   SET LMDB <args...>
     if (opt == "LMDB") {
         std::istringstream r(rest(args));
         cmd_SETLMDB(A, r);

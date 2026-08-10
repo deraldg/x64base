@@ -1,4 +1,13 @@
-﻿#pragma once
+// @dottalk.file v1
+// subsystem: import
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+#pragma once
 // @dottalk.contract
 // file: include/import/import_normalize.hpp
 // subsystem: import

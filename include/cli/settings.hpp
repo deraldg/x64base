@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 #pragma once
 #include <atomic>
 #include <cstdlib>
@@ -17,6 +26,15 @@ inline bool default_passive_dev_diagnostics_enabled() {
 #else
     return false;
 #endif
+}
+
+// SET INDEXTXN default. OFF unless DOTTALK_INDEX_TXN env opts in (CI/regression can
+// seed ON without editing scripts). Runtime `SET INDEXTXN` always overrides.
+inline bool default_index_txn_enabled() {
+    const char* v = std::getenv("DOTTALK_INDEX_TXN");
+    if (!v || !*v) return false;
+    const char c = static_cast<char>(*v);
+    return !(c == '0' || c == 'n' || c == 'N' || c == 'f' || c == 'F');
 }
 
 } // namespace detail
@@ -56,6 +74,10 @@ struct Settings {
     std::atomic<bool> confirm_on{false};      // SET CONFIRM
     std::atomic<bool> exclusive_on{false};    // SET EXCLUSIVE
     std::atomic<bool> multilocks_on{false};   // SET MULTILOCKS
+
+    // Transactional in-COMMIT index maintenance (SET INDEXTXN). OFF (default) keeps
+    // the legacy batch behavior (BUILDLMDB / REBUILD / REINDEX); ON is opt-in.
+    std::atomic<bool> index_txn_on{detail::default_index_txn_enabled()}; // SET INDEXTXN
 
     // ---- Formatting ----
     std::atomic<bool> century_on{false};      // SET CENTURY
@@ -118,6 +140,10 @@ struct Settings {
     // Convenience used elsewhere
     static bool deletedOn() { return instance().deleted_on.load(); }
     static void setDeleted(bool on) { instance().deleted_on.store(on); }
+
+    // SET INDEXTXN — transactional in-COMMIT index maintenance toggle.
+    static bool indexTxnOn() { return instance().index_txn_on.load(); }
+    static void setIndexTxn(bool on) { instance().index_txn_on.store(on); }
 };
 
 } // namespace cli

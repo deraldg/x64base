@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: cli
+// layer: command
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // src/cli/cmd_rollback.cpp
 // @dottalk.usage v1
 // owner: DOT|ROLLBACK
@@ -6,7 +15,7 @@
 // status: supported
 // noargs: rollback-current-area
 // effect: discard-buffered-changes
-// mutates: buffer-state dirty-stale-flags
+// mutates: buffer-state dirty-stale-flags journal
 // usage-access: ROLLBACK USAGE
 // summary:
 //   Discard buffered/uncommitted table changes for the current area or all areas.
@@ -24,6 +33,7 @@
 //   ROLLBACK USAGE returns before modifying buffer state.
 //   ROLLBACK without arguments clears buffered state for the current area.
 //   ROLLBACK ALL clears buffered state across all areas.
+//   ROLLBACK best-effort notes a ROLLBACK marker in the durable journal for the area.
 //
 // risk:
 //   discards_uncommitted_changes: yes except usage

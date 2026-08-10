@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: dli
+// layer: helper
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // dli/browsetui_fastpatch.cpp ? surgical helpers to speed up browsetui
 #include "dli/screen.hpp"
 #include <string>

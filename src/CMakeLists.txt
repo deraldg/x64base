@@ -108,6 +108,7 @@ set(_EXCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/palette"   # palette handled explicitly
   "${CMAKE_CURRENT_SOURCE_DIR}/build"     # exclude src in src/build
   "${CMAKE_CURRENT_SOURCE_DIR}/common"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AIPortal"  # AI session collection point (AI_README) — never compiled; candidate source drafts keep native filenames, no .txt renaming needed
 )
 
 # Filter without re-globbing (avoids glob cache issues)
@@ -141,13 +142,14 @@ set(DOTTALKPP_SOURCES "${DOTTALKPP_SOURCES_FILTERED}")
 list(REMOVE_ITEM DOTTALKPP_SOURCES
   "${CMAKE_SOURCE_DIR}/src/cli/record_view.cpp"
   "${CMAKE_SOURCE_DIR}/src/cli/index_summary_none.cpp"
-  # Stale duplicate of xbase::dbf_create::create_dbf. If globbed into the CLI it
-  # links into the exe and shadows xbase.lib's ramfs-aware create_dbf (the exe's
-  # own object wins over the library member), so CREATE writes to disk while
-  # USE/open read RAM (the AIF-043 in-memory split). The live implementation is
-  # owned exclusively by src/xbase/dbf_create.cpp; the dup is parked to
-  # src/core/dbf_create.cpp.bak. This entry + the shadow guard below are
-  # belt-and-suspenders if it is ever un-parked.
+  # Stale duplicate of xbase::dbf_create::create_dbf. When globbed into the CLI
+  # it links into the exe and shadows xbase.lib's ramfs-aware create_dbf (the
+  # exe's own object wins over the library member), so CREATE writes to disk
+  # while USE/open read RAM — the AIF-043 in-memory split. The live, ramfs-aware
+  # implementation is owned exclusively by src/xbase/dbf_create.cpp. The dup is
+  # now parked to src/core/dbf_create.cpp.bak (out of the glob); this REMOVE_ITEM
+  # + the duplicate-basename shadow guard below remain as belt-and-suspenders if
+  # it is ever un-parked.
   "${CMAKE_SOURCE_DIR}/src/core/dbf_create.cpp"
 )
 
@@ -226,7 +228,7 @@ if (NOT DOTTALK_COMPONENT_LABTALK)
     "${CMAKE_SOURCE_DIR}/src/cli/app_erp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/app_paxon.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/case_catalog.cpp"
-    "${CMAKE_SOURCE_DIR}/src/cli/cmd_codaysl.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_codasyl.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_drawio.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_erp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_idx.cpp"
@@ -240,6 +242,11 @@ if (NOT DOTTALK_COMPONENT_EXTERNAL)
   list(FILTER DOTTALKPP_SOURCES EXCLUDE REGEX "/src/ms365/")
   list(REMOVE_ITEM DOTTALKPP_SOURCES
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_bang.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_buildvectors.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_defcmd.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_deffn.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_user.cpp"
+    "${CMAKE_SOURCE_DIR}/src/cli/cmd_example.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_image_display.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_sftp.cpp"
     "${CMAKE_SOURCE_DIR}/src/cli/cmd_web.cpp"
@@ -356,8 +363,8 @@ endif()
 # the exe; at link the exe's own object silently wins over the static-library
 # member of the same name. That is exactly how src/core/dbf_create.cpp shadowed
 # xbase.lib's ramfs-aware create_dbf and made in-memory CREATE write to disk
-# while USE read RAM. Fail loudly at configure time instead of shipping a
-# silently-shadowed link.
+# while USE read RAM — a bug that no clean rebuild could surface. Fail loudly at
+# configure time instead of shipping a silently-shadowed link.
 file(GLOB_RECURSE _dottalk_lib_srcs CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/xbase/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/xindex/*.cpp"
@@ -390,7 +397,7 @@ add_executable(dottalkpp ${DOTTALKPP_SOURCES})
 
 # Build hardening (AIF-043): disable incremental linking so a recompiled object
 # is always re-embedded into the exe. Incremental links left a stale object in
-# the exe during the AIF-043 lane, which made a fixed source appear unfixed.
+# the exe during this lane, which made a fixed source appear unfixed.
 if(MSVC)
   target_link_options(dottalkpp PRIVATE "/INCREMENTAL:NO")
 endif()
@@ -513,6 +520,9 @@ endif()
 if (TARGET dottalk_value)
   target_link_libraries(dottalkpp PRIVATE dottalk_value)
 endif()
+
+# AI-BBS lane libs (libsodium/ws2_32) are linked at the top level, where
+# find_package(unofficial-sodium) is in scope (see CMakeLists.txt after add_subdirectory(src)).
 
 # 7) Build summary
 message(STATUS "dottalkpp: DOTTALK_WITH_DEV = ${DOTTALK_WITH_DEV}")

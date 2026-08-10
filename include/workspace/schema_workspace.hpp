@@ -1,4 +1,13 @@
-﻿#pragma once
+// @dottalk.file v1
+// subsystem: workspace
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
+#pragma once
 // @dottalk.contract
 // file: include/workspace/schema_workspace.hpp
 // subsystem: workspace

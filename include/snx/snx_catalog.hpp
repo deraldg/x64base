@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: snx
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // include/snx/snx_catalog.hpp
 #pragma once
 

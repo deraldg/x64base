@@ -1,3 +1,12 @@
+// @dottalk.file v1
+// subsystem: xindex
+// layer: header
+// owns: 
+// project: project.x64base.runtime
+// lane: 
+// owner: member.derald
+// status: supported
+
 // include/xindex/cdx_backend.hpp
 #pragma once
 /**
@@ -60,6 +69,13 @@ public:
 
     void upsert(const Key& key, RecNo rec) override;
     void erase (const Key& key, RecNo rec) override;
+
+    // Maintains. CDX-over-LMDB has a full runtime lifecycle: key-field
+    // mutations, append, delete and recall all run through the mutation hooks,
+    // and COMMIT is documented as deliberately NOT rebuilding it
+    // (cmd_commit.cpp header). This is the reference implementation the other
+    // backends are measured against.
+    bool maintainsIncrementally() const override { return true; }
 
     std::unique_ptr<Cursor> seek(const Key& key) const override;
     std::unique_ptr<Cursor> scan(const Key& low, const Key& high) const override;
