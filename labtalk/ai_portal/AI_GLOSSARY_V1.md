@@ -94,9 +94,13 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   `AI_PORTAL.md`, trimmed from `PROMOTE.manifest`, drifted 507 commits and collided a hosted
   agent onto AIF-044). A WIDOW is a pointer whose target does not exist on the surface it ships
   on. Every published surface carries neither: every document rides a refresh path (manifest,
-  generator, or matrix) or is removed; every pointer resolves on its own branch. Consequence
-  ruled with it: the pointer-only `main:AI_PORTAL.md` is promoted AND added to
-  `PROMOTE.manifest`, because manifest exclusion is exactly how it orphaned the first time.
+  generator, or matrix) or is removed; every pointer resolves on its own branch. Consequence ruled
+  with it: the pointer-only `main:AI_PORTAL.md` is promoted. CORRECTED 2026-08-10 (measured,
+  same day): it stays OUT of `PROMOTE.manifest` -- the manifest's source is dev's FULL portal,
+  so inclusion would republish perishable state onto `main`; and `rebuild-staging.ps1` resets
+  staging to `main` before overlaying, so the excluded pointer survives every rebuild with its
+  `main` content intact. The rule is satisfied by non-perishability (the pointer cannot decay),
+  with the draft doc as its declared owner/refresh path.
   Home: `docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md`.
 
 ## Derived / conceptual terms

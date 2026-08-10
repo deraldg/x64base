@@ -3,8 +3,13 @@
 **Status:** APPROVED -- owner ruled "Promote" 2026-08-10, and ratified the companion rule
 **no widows and orphans** (glossary: `labtalk/ai_portal/AI_GLOSSARY_V1.md`): no published
 document without a refresh path, no pointer without a resolvable target on its own surface.
-The rule also settles this draft's open sub-ruling below: `AI_PORTAL.md` IS added to
-`PROMOTE.manifest`, because manifest exclusion is exactly the mechanism that orphaned it.
+Sub-ruling CORRECTED by measurement (2026-08-10, same day): `AI_PORTAL.md` stays OUT of
+`PROMOTE.manifest`. The manifest overlays DEV's file, which is the full portal -- inclusion
+would republish perishable state onto `main`. And `rebuild-staging.ps1` resets staging to
+`main` before overlaying, so the excluded pointer keeps its `main` content across every
+rebuild. No-widows-and-orphans is satisfied by non-perishability plus this doc as the
+pointer's declared owner; the stale ACTIVE `AI_PORTAL.md` entry found in staging's historical
+manifest copy was converted to an explanatory exclusion note at promotion time.
 Owner: member.derald. Steward: member.ai.claude.cowork.
 Date 2026-08-09 (ruled 2026-08-10). **Not a file for this branch** -- this is the approved
 CONTENT of `AI_PORTAL.md` as it should exist on `main`, delivered once through the sanctioned
