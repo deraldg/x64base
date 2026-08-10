@@ -88,6 +88,16 @@ are the ontology, the seed-rise plan, and the recall graph named below.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.
+- **no widows and orphans (owner rule, 2026-08-10)** -- publishing-surface integrity, named for
+  the typesetting rule. An ORPHAN is a published document nothing refreshes: it shipped once,
+  fell off every maintenance path, and now asserts a dead regime with full authority (main's
+  `AI_PORTAL.md`, trimmed from `PROMOTE.manifest`, drifted 507 commits and collided a hosted
+  agent onto AIF-044). A WIDOW is a pointer whose target does not exist on the surface it ships
+  on. Every published surface carries neither: every document rides a refresh path (manifest,
+  generator, or matrix) or is removed; every pointer resolves on its own branch. Consequence
+  ruled with it: the pointer-only `main:AI_PORTAL.md` is promoted AND added to
+  `PROMOTE.manifest`, because manifest exclusion is exactly how it orphaned the first time.
+  Home: `docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md`.
 
 ## Derived / conceptual terms
 

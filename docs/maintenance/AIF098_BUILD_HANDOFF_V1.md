@@ -4,9 +4,13 @@
 the engine-bound half to the **next build** (a host-capable session -- the sandbox and Grok both
 sit behind the capability fence and cannot build/run). See `RECURSION_MARKERS_V1.md`.
 
-**Status:** apply-ready. AIF-098 claimed + tracked (`coordination/aif/AIF-098.claim`), intake row
-filed, R2 patches ground-checked PASS. Owner `member.derald`; steward `member.ai.claude.cowork`;
-coworker Grok (authored the engine-bound half). Run: `COWORK-20260808-001`.
+**Status:** ON HOLD (owner ruling 2026-08-10) -- valid held item: a BBS test for a real
+proposed source modification, deferred until the owner schedules the build window. Nothing
+here decays: patches are ground-checked against pinned baselines, and the fresh-store
+requirement is recorded below. Apply-ready when picked up. AIF-098 claimed + tracked
+(`coordination/aif/AIF-098.claim`), intake row filed, R2 patches ground-checked PASS.
+Owner `member.derald`; steward `member.ai.claude.cowork`; coworker Grok (authored the
+engine-bound half). Run: `COWORK-20260808-001`.
 
 ## Already done -- do NOT redo
 

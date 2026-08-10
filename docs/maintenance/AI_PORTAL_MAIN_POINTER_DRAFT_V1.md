@@ -1,9 +1,14 @@
 # DRAFT: replacement for AI_PORTAL.md on the `main` branch (pointer-only)
 
-**Status:** draft (review-needed). Owner: member.derald. Steward: member.ai.claude.cowork.
-Date 2026-08-09. **Not a file for this branch** -- this is the proposed CONTENT of
-`AI_PORTAL.md` as it should exist on `main`, delivered once through the sanctioned staging
-channel (`C:\x64base` -> commit -> push), never by editing `main` directly.
+**Status:** APPROVED -- owner ruled "Promote" 2026-08-10, and ratified the companion rule
+**no widows and orphans** (glossary: `labtalk/ai_portal/AI_GLOSSARY_V1.md`): no published
+document without a refresh path, no pointer without a resolvable target on its own surface.
+The rule also settles this draft's open sub-ruling below: `AI_PORTAL.md` IS added to
+`PROMOTE.manifest`, because manifest exclusion is exactly the mechanism that orphaned it.
+Owner: member.derald. Steward: member.ai.claude.cowork.
+Date 2026-08-09 (ruled 2026-08-10). **Not a file for this branch** -- this is the approved
+CONTENT of `AI_PORTAL.md` as it should exist on `main`, delivered once through the sanctioned
+staging channel (`C:\x64base` -> commit -> push), never by editing `main` directly.
 
 Rationale: `main`'s current `AI_PORTAL.md` is an ORPHAN -- published under an older regime,
 later trimmed from `PROMOTE.manifest` ("metalevel docs, portal seeds ... deliberately
