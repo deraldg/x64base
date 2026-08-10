@@ -17,6 +17,8 @@ ai_report_audit:
   git:
     branch: development
     baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    measurement_baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    baseline_scope: session_start
   authorization:
     requested_by: maintainer ("we adopt it and process it into our system properly", 2026-08-09)
     scope: >
@@ -37,11 +39,12 @@ ai_report_audit:
 
 # Local Workbench Assessment -- Specialty LMS Ecosystem Package
 
-    assesses     : AIPR-20260809-COPILOT-001
-    baseline     : development @ 648967b74
-    evidence     : source-evidenced for the architecture findings;
-                   measured (file counts) for section 3
-    disposition  : accept as prior art, reject as description
+    assesses                    : AIPR-20260809-COPILOT-001
+    measurement_baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    baseline_scope              : session_start
+    evidence                    : source-evidenced for the architecture findings;
+                                  measured (file counts) for section 3
+    disposition                 : accept as prior art, reject as description
 
 Read for this assessment, in the order `AI_README.md` prescribes:
 `AI_TIER1_SEED_V1.md`, `TIER0_STATE.md`, `AI_README.md`,

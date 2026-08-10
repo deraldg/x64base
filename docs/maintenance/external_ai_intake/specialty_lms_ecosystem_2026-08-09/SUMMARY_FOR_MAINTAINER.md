@@ -1,9 +1,10 @@
 # Summary for the maintainer -- Specialty LMS intake
 
-    package    : AIPR-20260809-COPILOT-001  (Microsoft Copilot, hosted_proposal)
-    assessment : AIPR-20260809-003          (Cowork/Claude, local_write)
-    proposed   : AIF-103
-    baseline   : development @ 648967b74
+    package                     : AIPR-20260809-COPILOT-001  (Microsoft Copilot, hosted_proposal)
+    assessment                  : AIPR-20260809-003          (Cowork/Claude, local_write)
+    proposed                    : AIF-103
+    measurement_baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    baseline_scope              : session_start
 
 ## In one paragraph
 

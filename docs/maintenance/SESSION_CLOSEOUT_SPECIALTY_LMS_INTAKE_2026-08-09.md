@@ -17,6 +17,8 @@ ai_report_audit:
   git:
     branch: development
     baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    measurement_baseline_commit: 648967b7438bd6e45f2b99417d41f0902e4df4cd
+    baseline_scope: session_start
   authorization:
     requested_by: maintainer
     scope: >
@@ -130,27 +132,36 @@ from the assessing agent:
 
 ## Still open
 
-1. **AIF-102 was claimed by mistake and must be released.** The publish script
-   ran `claim-aif` unconditionally instead of reusing an existing claim for this
-   run, so the dry pass took AIF-102 and the committing pass took AIF-103. Both
-   claim files and both intake rows landed in `b06e91412`; the AIF-102 row was
-   removed in the follow-up and the claim is released by:
-   `python tools/coordination/session_coordinator.py release-aif --number 102 --run COWORK-20260809-002`
-   The script now refuses to claim twice for the same run.
-2. **The gateway patch belongs under AIF-100**, not AIF-103. It is reported here
+1. **AIF-102 was claimed by mistake -- RESOLVED.** The publish script ran
+   `claim-aif` unconditionally instead of reusing an existing claim for this run,
+   so the review pass took AIF-102 and the committing pass took AIF-103. Both
+   claim files and both intake rows landed in `b06e91412`. Released and the row
+   dropped in `37f05130f`; the script now reuses a claim already held by the run
+   rather than allocating a second. Left here as a closed record, not an action.
+2. **Four unrelated claim files were swept in by this lane's follow-up commit
+   (`37f05130f`).** `AIF-087`, `AIF-097`, `AIF-100`, `AIF-101` -- all
+   `member.derald` runs -- were untracked, and the corrective commit staged
+   `coordination/aif` as a directory rather than naming `AIF-103.claim` and the
+   `AIF-102` deletion. Cause: the same scoped-slice rule this lane cites
+   elsewhere, broken while fixing an earlier mistake in the same lane.
+   **Left tracked deliberately:** the ledger is supposed to be tracked
+   (`CLAUDE.md`, AIF-050), so the end state is correct and unpicking it would
+   re-untrack four legitimate claims. Only the attribution is wrong, and this
+   row is the correction. Recorded rather than silently accepted.
+3. **The gateway patch belongs under AIF-100**, not AIF-103. It is reported here
    because it happened in this session; the lane assignment is the owner's.
-3. **Q1-Q5 owner rulings** -- see the assessment, section 6. Q3 (do learner
+4. **Q1-Q5 owner rulings** -- see the assessment, section 6. Q3 (do learner
    records live in x64base tables) and Q5 (does a lab proof carry
    engineering-proof weight) are the two that change what a campus build is.
-4. **Line endings on the preserved payload.** `.gitattributes` now marks
+5. **Line endings on the preserved payload.** `.gitattributes` now marks
    `external_ai_intake/**/received_slides/**` as `-text`, because `text=auto`
    would rewrite the received slides and quietly falsify the manifest's
    "preserved unchanged" claim. Added during this lane, not before it.
-5. **`allow_reuse_address = True`** on `DynamicReportServer` -- open question,
+6. **`allow_reuse_address = True`** on `DynamicReportServer` -- open question,
    not a finding. On Windows this permits a later bind to displace an earlier
    one silently, which is the hazard `start-ai.ps1` exists to prevent. No
    evidence it occurred.
-6. **`start-ai.ps1` writes no log.** Both spawned windows run under `cmd /k`
+7. **`start-ai.ps1` writes no log.** Both spawned windows run under `cmd /k`
    with no tee, so runtime evidence lives only in scrollback. This cost real
    time this session. A `-Log` switch would make gateway evidence citable.
 
