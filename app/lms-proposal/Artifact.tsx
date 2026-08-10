@@ -64,7 +64,7 @@ export default function Artifact() {
     >
       <iframe
         src={"/lms-proposal/deck.html" + hash}
-        title="Specialty NON-LMS Ecosystem Proposal"
+        title="Specialty NON LMS Ecosystem Proposal"
         allow="fullscreen"
         allowFullScreen
         style={{ width: "100%", height: "100%", border: 0, display: "block" }}
