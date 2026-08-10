@@ -125,25 +125,27 @@ from the assessing agent:
 - **Not updated:** `docs/agents/CURRENT_TARGET.md`. No controlling-target change
   is claimed; the owner ruling of 2026-07-31 ("no single controlling lane")
   still stands.
-- **Owed:** the AIF intake queue row for AIF-103, which cannot be written until
-  the number is claimed.
+- `docs/ai-friendly/AI_INTERACTION_INTAKE_QUEUE_V1.md` -- intake row for AIF-103.
+- `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md` -- Session Log row (AIF-006).
 
 ## Still open
 
-1. **AIF-103 is proposed, not claimed.** Verified free in both
-   `coordination/aif/` (highest AIF-101) and the intake queue. Not allocated:
-   `claim-aif` shells out to `git grep` and is host-side only, and this session
-   ran in a Cowork sandbox where no git command may be run.
-   Run: `python tools/coordination/session_coordinator.py claim-aif`
+1. **AIF-102 was claimed by mistake and must be released.** The publish script
+   ran `claim-aif` unconditionally instead of reusing an existing claim for this
+   run, so the dry pass took AIF-102 and the committing pass took AIF-103. Both
+   claim files and both intake rows landed in `b06e91412`; the AIF-102 row was
+   removed in the follow-up and the claim is released by:
+   `python tools/coordination/session_coordinator.py release-aif --number 102 --run COWORK-20260809-002`
+   The script now refuses to claim twice for the same run.
 2. **The gateway patch belongs under AIF-100**, not AIF-103. It is reported here
    because it happened in this session; the lane assignment is the owner's.
 3. **Q1-Q5 owner rulings** -- see the assessment, section 6. Q3 (do learner
    records live in x64base tables) and Q5 (does a lab proof carry
    engineering-proof weight) are the two that change what a campus build is.
-4. **Stray file to remove before staging:**
-   `tools/reports/serve_dynamic_reports.py.bak.20260809-124330`. A copy is
-   preserved outside the worktree; the in-tree one would not delete from the
-   sandbox mount.
+4. **Line endings on the preserved payload.** `.gitattributes` now marks
+   `external_ai_intake/**/received_slides/**` as `-text`, because `text=auto`
+   would rewrite the received slides and quietly falsify the manifest's
+   "preserved unchanged" claim. Added during this lane, not before it.
 5. **`allow_reuse_address = True`** on `DynamicReportServer` -- open question,
    not a finding. On Windows this permits a later bind to displace an earlier
    one silently, which is the hazard `start-ai.ps1` exists to prevent. No
