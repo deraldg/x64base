@@ -59,7 +59,9 @@ def main() -> int:
 
     completed = subprocess.run(
         [str(args.exe.resolve())],
-        cwd=data,
+        # The runtime treats its launch directory as the application root and
+        # derives DATA as <root>/data. Launching inside data doubled that path.
+        cwd=data.parent,
         input="\n".join(commands) + "\n",
         text=True,
         capture_output=True,

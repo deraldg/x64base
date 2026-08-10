@@ -472,6 +472,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // references, beta notes, and PowerShell notes.
     registry().add("HELP",         [](DbArea& A, std::istringstream& S){ cmd_HELP(A,S);        });
     registry().add("TEST",         [](DbArea& A, std::istringstream& S){ cmd_TEST(A,S);        });
+#if DOTTALK_COMPONENT_EXTERNAL
     registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
     registry().add("DEFCMD",       [](DbArea& A, std::istringstream& S){ cmd_DEFCMD(A,S);      });
     registry().add("UNDEFCMD",     [](DbArea& A, std::istringstream& S){ cmd_UNDEFCMD(A,S);    });
@@ -481,6 +482,7 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("BUILD VECTORS",[](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
     registry().add("BUILD INFO",   [](DbArea& A, std::istringstream& S){ cmd_BUILDVECTORS(A,S); });
     registry().add("USER",         [](DbArea& A, std::istringstream& S){ cmd_USER(A,S);         });
+#endif
     registry().add("BBS",          [](DbArea& A, std::istringstream& S){ cmd_BBS(A,S);          });
     registry().add("NET",          [](DbArea& A, std::istringstream& S){ cmd_NET(A,S);          });
     registry().add("REGRESSION",   [](DbArea& A, std::istringstream& S){ cmd_REGRESSION(A,S);  });
@@ -500,7 +502,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     // METADATA
     registry().add("EXPFUNCs",     [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
     registry().add("EXPORTFUNCTIONS", [](DbArea& A, std::istringstream& S){ cmd_EXPORTFUNCTIONS (A,S); });
+#if DOTTALK_HAS_XINDEX
     registry().add("SCX",          [](DbArea& A, std::istringstream& S){ cmd_SCX(A,S);          });
+#endif
 
     registry().add("SECURITY",     [](DbArea& A, std::istringstream& S){ cmd_SECURITY(A,S);    });
 
@@ -561,7 +565,9 @@ extern "C" void register_shell_commands(xbase::XBaseEngine& eng, bool include_ui
     registry().add("RETRO",        [](DbArea& A, std::istringstream& S){ cmd_RETRO(A,S);       });
     registry().add("CASE",         [](DbArea& A, std::istringstream& S){ edu_CASESTUDY(A,S);   });
 #endif
+#if DOTTALK_COMPONENT_EXTERNAL
     registry().add("EXAMPLE",      [](DbArea& A, std::istringstream& S){ cmd_EXAMPLE(A,S);     });
+#endif
     registry().add("ASCII",        [](DbArea& A, std::istringstream& S){ edu_ASCII_TABLE(A,S); });
 
     // ---------------------------------------------------------------------

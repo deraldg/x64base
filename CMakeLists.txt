@@ -493,7 +493,7 @@ if (DOTTALK_BUILD_BBSD AND NOT TARGET dottalk_bbsd)
     # Only what the identity/board DBF paths need — NOT xindex/xexpr (CDX + expr engines pull
     # un-libraried src/ symbols; the daemon does no indexed/expression work).
     target_link_libraries(dottalk_bbsd PRIVATE
-        xbase memo
+        xbase memo dottalk_inx_payload
         nlohmann_json::nlohmann_json unofficial-sodium::sodium)
     if (WIN32)
         target_link_libraries(dottalk_bbsd PRIVATE ws2_32)
