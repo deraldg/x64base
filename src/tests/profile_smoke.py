@@ -39,14 +39,16 @@ def main() -> int:
     # DotTalk accepts forward slashes on both Windows and POSIX.  Backslashes
     # are native separators only on Windows and become literal filename
     # characters when this smoke runs under WSL/Linux.
-    commands = ["USE dbf/x32/students.dbf NOINDEX"]
+    # Preserve the tracked fixture's canonical case. Windows and DrvFs accept
+    # the lowercase spelling, but a native Linux checkout correctly does not.
+    commands = ["USE dbf/x32/STUDENTS.dbf NOINDEX"]
     if args.index_mode == "NONE":
         commands.extend(("STATUS", "SEEK ANDERSON"))
     else:
         commands.extend(
             (
-                "SETCNX indexes/x32/students.cnx",
-                "SETORDER indexes/x32/students.cnx LNAME --asc",
+                "SETCNX indexes/x32/STUDENTS.cnx",
+                "SETORDER indexes/x32/STUDENTS.cnx LNAME --asc",
                 "SEEK ANDERSON",
                 "LIST 1",
             )
