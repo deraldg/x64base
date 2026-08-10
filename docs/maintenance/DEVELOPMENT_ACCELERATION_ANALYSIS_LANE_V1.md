@@ -123,7 +123,54 @@ extraction.
   correlates with a deliberate, dateable regime change (2026-07-14) comprising tool + doctrine
   together, applied at scale the following week, automated the week after.
 
-Remaining before M3: owner review of this extraction; then the findings report.
+**M3 DRAFTED (2026-08-09):** `DEVELOPMENT_ACCELERATION_FINDINGS_V1.md` -- five findings (F-A
+phase transition; F-B the 2026-07-14 regime change; F-C Frontal_Mem mechanism match; F-D the
+disk-access capability event; F-E the scarcity-era origin), the not-claimed section, and the
+publication note. White paper drafted (`WHITE_PAPER_JULY14_REGIME_CHANGE_V1.md`). Awaiting
+owner review; publication decision rides the matrix/flush pipeline.
+
+## STANDING RULE -- this lane is ONGOING (owner directive, 2026-08-09)
+
+Owner (verbatim intent): "continue observations in this lane, it is ongoing, it will help us
+model predictive milestones, factoring accelerated learning and technology."
+
+Consequences, binding on the lane:
+
+1. **The lane does not close at M3.** It is a standing observatory, not a one-shot analysis.
+   The weekly series is re-run and APPENDED at natural checkpoints (session closeouts, week
+   boundaries, factor events); the extractor stays maintained; new factor events (model
+   generations, capability grants, coworker adoptions, process changes) are logged on the M1
+   timeline WHEN THEY HAPPEN, dated, with evidence -- not reconstructed later.
+2. **The mandate extends from descriptive to PREDICTIVE.** The measured series + factor
+   timeline become inputs to milestone forecasting: given the observed compounding shape,
+   when should the next lifecycle phases (beta gates, publication passes, coworker
+   integrations) land? Two forward-looking variables are promoted from the confound ledger to
+   MODELED factors: **accelerated learning** (owner + system fluency, previously C1 -- now
+   tracked via its own observables: time-to-close per lane, reworks per lane, gate-failure
+   rate over time) and **technology** (model/tooling generation changes, previously F3 -- now
+   logged prospectively as dated events so their deltas are measurable instead of entangled).
+3. **Honesty rules carry forward unchanged:** predictions are stated with bounds and revisited
+   against actuals (a prediction row is a falsifiable gate, not a hope); the golden rule
+   applies to forecasts exactly as to claims of work done.
+
+| M | Delivers | Gate |
+|---|---|---|
+| M4 (standing) | Ongoing observation: appended weekly series + prospectively dated factor events | series never more than one closeout stale; every factor event cites evidence |
+
+### M4 factor-event log (prospective, dated, append-only)
+
+- **2026-08-09..10 -- Codex 24-hour continuous run** (F1 intensity event): produced AIF-103..106
+  (LMS intake, clean-core CI repair, Cascade ERP gold-standard lane, AI-history evidence
+  publication) + two site commits. Evidence: ccode `b06e91412..ff5f50058`; site `8ee1b4ba9`,
+  `f12001464`.
+- **2026-08-10 -- Codex credit exhaustion until 2026-08-16** (capacity-constraint event, the
+  inverse of an upgrade): one coworker offline ~6 days; load shifts to Claude/owner. First
+  natural experiment for M5 -- does throughput dip, hold, or reshape while one agent is out?
+- **2025-08-02 -- earliest DOCUMENTED AI-assisted DotTalk work** (AIF-106 evidence record;
+  probable start 2025-07-21, labeled inference). Third independent clock for the adoption
+  timeline: owner billing recollection ("back to 08/25"), repo footprint (2025-08-29), and now
+  archive/mailbox evidence (2025-08-02) mutually agree within one month.
+| M5 | Predictive-milestone model v1: forecast next-phase landings from the measured compounding shape, with stated bounds | each prediction logged BEFORE the fact; scored against actuals when due |
 
 ## M1 seed -- agent-adoption timeline (first evidence in the record, extracted 2026-08-09)
 

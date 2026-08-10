@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-10T13:18:31Z
+    generated_utc : 2026-08-10T18:58:22Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 6b91e19af  (2026-08-10)
-    upstream      : 6b91e19af
+    HEAD          : ff5f50058  (2026-08-10)
+    upstream      : ff5f50058
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -22,8 +22,8 @@ cannot drift, because nothing here is written by hand.
 
 ## Newest closeout
 
-    file          : SESSION_CLOSEOUT_CLEAN_CLONE_CORE_CI_REPAIR_2026-08-10.md
-    commits behind HEAD : 0
+    file          : SESSION_CLOSEOUT_DOTTALK_AI_HISTORY_WEB_2026-08-10.md
+    commits behind HEAD : ?
 
 ## Staleness warnings
 
@@ -33,6 +33,8 @@ cannot drift, because nothing here is written by hand.
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-106 | dottalk-ai-historical-evidence-publication | member.ai.codex.local | yes |
+| AIF-105 | Cascade ERP metadata, ETL, migration, and learning gold standard | member.ai.codex.local | yes |
 | AIF-104 | clean-clone core CI link and profile repair | member.ai.codex.local | yes |
 | AIF-103 | specialty LMS external intake (Copilot proposal + local assessment) | member.ai.claude.cowork | yes |
 | AIF-101 | development acceleration analysis (six-week exponential) | member.derald | yes |
@@ -43,9 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
 | AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
-| AIF-093 | dottalkpp-text-extension | member.ai.claude.cowork | yes |
-| AIF-092 | publication-surface-recovery | member.ai.claude.cowork | yes |
-| ... | 24 older claims omitted | | |
+| ... | 26 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -58,15 +58,15 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| CODEX-20260810-AI-HISTORY-WEB-001 | member.ai.codex.local | - | - | AIF-106 |
+| CODEX-20260810-ERP-RELATIONS-001 | member.ai.codex.local | - | - | AIF-105 |
 | CODEX-20260810-001 | member.ai.codex.local | - | - | AIF-104 |
 | COWORK-20260809-002 | member.ai.claude.cowork | - | - | AIF-103 |
 | COWORK-20260809-001 | member.derald | - | - | AIF-099 -> AIF-100 -> AIF-101 |
 | COWORK-20260808-001 | member.derald | - | - | AIF-097 -> AIF-098 |
 | COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
 | COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
-| COWORK-20260807-003 | member.ai.claude.cowork | - | - | AIF-092 -> AIF-093 |
-| COWORK-20260807-002 | member.ai.claude.cowork | - | - | AIF-091 |
-| ... | | | | 21 older run(s) omitted |
+| ... | | | | 23 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
