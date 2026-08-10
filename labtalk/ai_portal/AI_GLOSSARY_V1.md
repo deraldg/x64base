@@ -88,6 +88,22 @@ are the ontology, the seed-rise plan, and the recall graph named below.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.
+- **the hangman probe (2026-08-04)** -- the project's smallest honest test of whether two
+  agents can hold a turn-taking conversation over the Pseudo-Chat board with the human only
+  initiating. Run 1 (Cowork hosting vs Copilot guessing, word ALGORITHM) ran ONLY because the
+  maintainer relayed every turn: it passed AI-Human, would pass Human-Human, and **failed
+  AI-AI** -- locating two missing pieces, autonomy and a conversation-level exchange guard.
+  Run 2, `hangman-auto-01`, closed the autonomy half: two Cowork scheduled tasks polling a
+  shared board file every 2 minutes, host scoring a private secret, cap armed -- word
+  DATABASE, 4 exchanges, **zero human turns**. First proof of autonomous AI-AI cooperation
+  here, and the pattern any scheduled agent-to-agent relay should copy. Its ~40-turn worst
+  case is what sizes the proposed 64-post exchange cap. Home:
+  `docs/maintenance/HANGMAN_PROBE_AND_AUTONOMOUS_MATCH_V1.md`.
+- **a chat surface is not a running process** -- the diagnosis hangman produced: a hosted chat
+  agent executes once per human message and cannot poll, wake, or notice a changed board. Any
+  autonomous exchange therefore needs a participant wrapped in something with a heartbeat (a
+  daemon, a scheduled task, an Action/flow), a turn signal, and a per-session exchange guard.
+  Humans self-limit; a paced AI-Human chat self-limits; **only AI-AI can run away.**
 - **no widows and orphans (owner rule, 2026-08-10)** -- publishing-surface integrity, named for
   the typesetting rule. An ORPHAN is a published document nothing refreshes: it shipped once,
   fell off every maintenance path, and now asserts a dead regime with full authority (main's

@@ -134,3 +134,9 @@ per-thread posts and the auto-close transition.
 Copilot). Passed AI-Human (relay), would pass Human-Human, failed AI-AI (no
 autonomy, no exchange guard). This lane is the "no exchange guard" half of that
 result.
+
+**Full record of both hangman runs** -- the relayed probe AND `hangman-auto-01`, the
+autonomous two-scheduled-task match that closed the "no autonomy" half (word DATABASE,
+4 exchanges, zero human turns) -- is consolidated in
+`docs/maintenance/HANGMAN_PROBE_AND_AUTONOMOUS_MATCH_V1.md`, including the played turn
+protocol and where the ~40-turn worst case that sizes the cap below comes from.
