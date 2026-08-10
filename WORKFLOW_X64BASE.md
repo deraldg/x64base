@@ -1,127 +1,51 @@
-# X64Base Workflow
+# x64base Promotion Workflow
 
-## Roles
+This file describes repository roles without binding commands to a particular
+drive letter, mount point, user profile, or workstation layout.
 
-`D:\code\ccode`
-Primary development repo. New code, real fixes, active data work, and ongoing
-development happen here first. Runtime data lives under its `dottalkpp`
-subtree.
+The durable authority is
+`docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`. If this summary
+and that contract disagree, the contract wins.
 
-`D:\code\ccode\x64base\dottalkpp`
-Curated GitHub staging tree. This is not the authoring source of truth. It is a
-publishable subset promoted from the development tree, then verified, committed,
-and pushed.
+## Repository Roles
 
-`C:\x64base`
-Checkpoint runtime mirror. Refresh it from `D:\code\ccode\x64base` only when a
-path-sensitive smoke or release-style runtime proof is needed.
+1. **Development workspace** -- the configured `development` checkout. This is
+   the sole authoring workspace.
+2. **Publication staging** -- a clean checkout based on current GitHub `main`.
+   It receives only a reviewed source slice from development.
+3. **GitHub `main`** -- receives the verified staging commit.
 
-`GitHub`
-Push only from `D:\code\ccode\x64base` after staging is clean and verified.
+Never merge or push the `development` branch to `main`. Promotion copies an
+explicitly reviewed file set; it does not merge branch history.
 
-## Direction Of Travel
+## Promotion Sequence
 
-Normal direction:
+1. Confirm the development checkout is on `development` and identify unrelated
+   dirty work that must remain untouched.
+2. Confirm publication staging is based on current GitHub `main`, then create a
+   main-based promotion branch.
+3. Copy only the approved, named source and support files from development.
+4. Reconcile intentional additions, deletions, and case-only renames.
+5. Exclude reproducible runtime data and build output. In particular, do not
+   promote `.mdb` files.
+6. Run the applicable Windows and WSL/Linux configure, build, and test lanes in
+   staging.
+7. Stage named paths only, review the staged diff, and commit the verified
+   promotion branch.
+8. Publish through the maintained main-branch review process.
 
-`D:\code\ccode` -> `D:\code\ccode\x64base` -> `C:\x64base`
+## Portability Rule
 
-Do not treat `C:\x64base` or `D:\code\ccode\x64base\dottalkpp` as the place
-where ordinary development starts.
+Repository launchers and build scripts must derive the repository root from
+their own location or accept it as an argument. They must not embed local drive
+letters, WSL mount paths, user names, or absolute toolchain locations.
 
-## Rules
+Toolchains are supplied through environment variables such as `VCPKG_ROOT` or
+through explicit command arguments. Build directories are relative to the
+active checkout unless the caller deliberately provides another location.
 
-1. Code fixes happen in `D:\code\ccode` first.
-2. `D:\code\ccode\x64base\dottalkpp` is a curated promotion target, not the main development surface.
-3. `C:\x64base` is a mirror only. Never let it become a second working tree.
-4. Git status, staging, commits, PRs, and push happen only in `D:\code\ccode\x64base`.
-5. If a smoke test in `C:\x64base` uncovers a defect, fix it in `D:\code\ccode\dottalkpp`, then promote again.
-6. Do not hand-edit the same change in both dev and stage.
+## Verification Boundary
 
-## Promotion Policy
-
-### Code
-
-- Promote source, headers, CMake files, scripts, docs, and runtime support from
-  `D:\code\ccode` into `D:\code\ccode\x64base`.
-- Prefer targeted promotion over root-level blanket copying.
-
-### DBF Layout
-
-- The curated layout in `x64base` is the publish target.
-- If dev still has older folder placement, reconcile dev to match the curated
-  `x64base` layout before the next long development phase.
-- Do not run a blind full data mirror from dev to stage until that layout
-  normalization is complete.
-
-### Index Containers
-
-- Keep and promote `cdx`, `cnx`, `idx`, and `inx` files when they are validated.
-- These are portable distribution assets and belong in the staged tree.
-
-### LMDB Environments
-
-- LMDB env payloads are local runtime artifacts.
-- Oversized `data.mdb` files in dev are not publish assets.
-- Stage may keep local rebuilt LMDB envs for testing, but GitHub should only get
-  the portable index containers.
-- If dev has stale 1 GiB LMDB envs and stage has validated 128 MiB rebuilds,
-  use stage as the one-time cleanup reference and realign dev accordingly.
-
-### Holdouts
-
-- `biblebase` and `cascade_precision_erp` stay outside the GitHub promotion path
-  for now.
-
-## Recommended Loop
-
-1. Make or review changes in `D:\code\ccode\dottalkpp`.
-2. Promote the approved subset into `D:\code\ccode\x64base`.
-3. Build and smoke-test in `D:\code\ccode\x64base`.
-4. Refresh `C:\x64base` only at a checkpoint.
-5. Run the `C:\x64base` proof if path-sensitive runtime behavior matters.
-6. Commit and push from `D:\code\ccode\x64base`.
-
-## Current Reality
-
-At the moment, some cleanup exists only in stage:
-
-- curated workspace and support-data layout
-- reduced LMDB mapsizes in stage
-- GitHub-safe LMDB handling
-
-That means the next cleanup step is asymmetric:
-
-1. keep dev as the code source of truth
-2. use stage as the reference for one-time data-layout normalization
-3. once dev matches the curated layout, resume the normal `dev -> stage` flow
-
-## Common Commands
-
-From `D:\code\ccode\x64base`:
-
-```powershell
-pwsh .\tools\stage_status.ps1
-pwsh .\tools\build_stage.ps1
-pwsh .\datarun.ps1
-pwsh .\tools\promote_dev_dottalkpp_to_stage.ps1 -WhatIf
-```
-
-Code-first promotion is the safe default. Data lanes must be named explicitly:
-
-```powershell
-pwsh .\tools\promote_dev_dottalkpp_to_stage.ps1 -WhatIf -DataLane indexes,metadata
-```
-
-## C Mirror
-
-Dry run:
-
-```powershell
-pwsh .\tools\sync_stage_to_c.ps1 -WhatIf
-```
-
-Real mirror:
-
-```powershell
-pwsh .\tools\sync_stage_to_c.ps1
-```
+A successful development build does not verify staging. A successful staging
+build does not publish anything. Work is published only after the staging diff,
+commit, and remote result have each been verified.

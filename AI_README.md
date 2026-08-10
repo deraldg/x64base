@@ -2,6 +2,18 @@
 
 Root start point for a new AI assistant working in this repo.
 
+## STOP: Repository Roles Before Any Other Read
+
+| Location | Branch | Role |
+| --- | --- | --- |
+| `D:\code\ccode` | `development` | Sole development and authoring workspace |
+| `C:\x64base` | `main` | Sterilized publication staging for GitHub `main` |
+
+Never work on original changes in `C:\x64base`. Never push or merge
+`development` to `main`. A push from `D:\code\ccode` may target only
+`development`; only the reviewed staging workflow in `C:\x64base` may update
+`main`. See `docs/contracts/REPOSITORY_ROLE_AND_PROMOTION_CONTRACT_V1.md`.
+
 ## Purpose
 
 Use this file when prior chat history, hosted memory, or model-specific context
@@ -18,40 +30,41 @@ depth-on-demand, not a queue.
 
 Start here, in this order, and stop when you have enough for the task:
 
+Invariants first, then state: read the 8 KB seed before the perishable resume.
+
 | Step | Read | Why |
 | --- | --- | --- |
-| 0 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
-| 1 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
-| 2 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
-| 3 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
-| 4 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
-| 5 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
-| 6 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
+| 0 | **`labtalk/ai_portal/AI_TIER1_SEED_V1.md` -- read FIRST** | The 8 KB budgeted "safe to act" seed: where you are, what you may do, git safety, house conventions, and a five-question stopping rule. Invariants before state -- the cheapest read and the only one that makes you *safe*, not merely informed. |
+| 1 | **Newest `docs/maintenance/SESSION_CLOSEOUT_*.md`** | Fastest true resume. What the last session did, and what it left open. If none exists, skip. |
+| 1b | If the BBS daemon is up: AUTH and `BBS READ board.worklog LAST 20` for your lane's live handoff; post one back on finishing (AIF-057, see `AI_BBS_OPERATIONS_RUNBOOK_V1.md` sec 11). | The live, identity-bound pickup/dropoff. Optional and simplex -- the closeout is authority; the board is the fast handoff. Skip if the daemon is down. |
+| 2 | `docs/agents/CURRENT_TARGET.md` | The active objective. |
+| 3 | `labtalk/ai_portal/DEVELOPMENT_FLOW_AUTHORITY_SEEDS_V1.md` | Where the authoritative tree is; what you may and may not do. |
+| 4 | If you can **write** to the repo: `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md` | The failure modes specific to an agent that acts, not just proposes. |
+| 5 | `labtalk/ai_portal/SDLC_FAST_START_SEED_V1.md` | Which lifecycle owns the task; the gates. |
+| 6 | For material work: `labtalk/ai_portal/SCOPE_CALIBRATION_SEED_V1.md` | Mode, change class, actual build target, product/index profile, and smallest sufficient gates. |
+| 7 | Before touching source: `labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md` | The engineering standards + **definition of done**: usage contracts (`@dottalk.usage`), regression doctrine (self-asserting/sandboxed/registered + socket smoke), the lane close-out checklist, and house conventions. Read this so you apply the standards, not reverse-engineer them. |
+| 8 | Before touching source: `labtalk/ai_portal/SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` | The contract preflight. |
+| 9 | Before writing DotScript: `labtalk/ai_portal/DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md` | Learn the command surface from source + runtime, not memory. |
 
 Everything else — the assimilation book, the bootstrap card, the older portal
 docs — is context you pull *when the task needs it*, not a mandatory prefix.
 
-The older ordered list below is retained for continuity, but the table above is
-the canonical entry sequence.
+**Looking for a prior report or a received external-AI package** (e.g. "the Grok
+post about virtual databases")? Do **not** grep the tree. Look it up by
+`report_id`, provider, or concept alias in
+`labtalk/registries/ai_report_index.yaml`. Received external-AI packages land
+under `docs/maintenance/external_ai_intake/`; the index is kept current by
+`python labtalk/ai_portal/audit_trail.py --emit-index`.
 
-## Start Here (legacy list — superseded by the table above)
+**Retired 2026-07-31 (AIF-082, 6.5b):** an eleven-item "Start Here" list used to
+sit here, marked superseded but still presented as a numbered reading order under
+a "Start Here" heading. A numbered list under that heading is an instruction
+regardless of the disclaimer above it, and a cold agent follows instructions. Git
+holds it; `git log -- AI_README.md` recovers it. The table above is the only
+entry sequence.
 
-Read these files first, in order:
-
-1. `docs/ai-friendly/AI_ASSIMILATION_PORTAL_V1.md`
-2. `docs/ai-friendly/AI_ASSIMILATION_BOOK_V1.md`
-3. `docs/ai-friendly/AI_FRIENDLY_DASHBOARD_V1.md`
-4. `docs/agents/AI_BABY_BOOTSTRAP_CARD.md`
-5. `docs/agents/CURRENT_TARGET.md`
-6. `DOTTALKPP_DOTSCRIPT_AND_DEV_HANDOFF_V1.md`
-7. `docs/contracts/README.md`
-8. `docs/contracts/CONTRACT_LIFECYCLE_V1.md`
-9. `labtalk/README.md`
-10. `labtalk/portal/README.md`
-11. `labtalk/ai_portal/README.md`
-
-If a file is missing, record that as drift and continue with the next available
-repo-local source.
+If a file named above is missing, record that as drift and continue with the next
+available repo-local source.
 
 ## AI Portal
 
@@ -86,12 +99,14 @@ Public repository identity:
 
 ```text
 origin: https://github.com/deraldg/x64base.git
-public branch: main
+public (stable) branch: main
+development integration branch: development
 ```
 
-The development branch is current workspace state and must be discovered
-locally. Do not preserve a transient development branch name here as a current
-instruction.
+The `development` branch on origin is the named integration branch (renamed on
+GitHub from the earlier dated `homegrown-cnx-20251112-branch`). It carries
+current workspace state and moves quickly. Always confirm the checked-out branch
+locally before making Git decisions — do not assume a branch name from this file.
 
 Always re-check before making Git decisions:
 
@@ -100,6 +115,27 @@ git remote -v
 git branch --show-current
 git status --short
 ```
+
+### Remote / hosted agents -- MANDATORY branch enumeration
+
+If you cannot read `D:\code\ccode` (you are a hosted/remote AI seeing only GitHub
+and the website), you MUST enumerate the published branches before choosing a
+baseline. Do NOT default to `main`:
+
+```
+git ls-remote --heads https://github.com/deraldg/x64base.git
+```
+
+- `main` is a **lagging public snapshot**, not the authority for active work.
+- `development` is **also published on GitHub** and is the **richer, current**
+  integration branch -- the baseline for feature, source, and prior-art work.
+
+Baseline on `development` and record its exact commit; use `main` only if the
+maintainer names it for the task. "Confirm the branch; do not hard-code a
+transient name" means **discover** the branch, not assume `main`. Skipping
+enumeration and building against `main` is a hard onboarding failure (observed
+2026-08). If you cannot reconcile against `development`, say so explicitly and
+mark the work provisional -- never claim `main` == authority.
 
 Repository boundary pointers:
 
@@ -174,14 +210,17 @@ Use this as the default local authority map:
 - primary implementation/source truth: `D:\code\ccode`
 - DotTalk++ runtime tree: `D:\code\ccode\dottalkpp`
 - Laboratory Campus / LabTalk tree: `D:\code\ccode\labtalk`
-- clean staging mirror: `C:\x64base`
-- staged DotTalk++ mirror: `C:\x64base\dottalkpp`
+- sterilized publication staging: `C:\x64base`
+- staged DotTalk++ projection: `C:\x64base\dottalkpp`
 - website source tree: `D:\dev\x64base-site`
 
 Normal source flow:
 
 ```text
-D:\code\ccode -> C:\x64base -> GitHub repository
+D:\code\ccode (development authoring)
+-> reviewed promotion
+-> C:\x64base (sterilized main staging)
+-> GitHub main
 ```
 
 Normal website flow:
@@ -243,7 +282,8 @@ labtalk/registries/ai_portal.yaml
 Main DotTalk++ runtime:
 
 ```powershell
-& D:\code\ccode\build\src\Release\dottalkpp.exe
+# From the repository root:
+& .\build\src\Release\dottalkpp.exe
 ```
 
 Build:
@@ -251,6 +291,72 @@ Build:
 ```powershell
 cmake --build build --config Release --target dottalkpp
 ```
+
+### WSL working environment (added 2026-07-31, AIF-082 / C8)
+
+MSVC is **not** required for engine work. The wsl presets carry
+`DOTTALK_INDEX_MODE: LMDB`, so LMDB paths are provable on Linux. A prior session
+lost most of its runtime evidence to the belief that MSVC was mandatory.
+
+```bash
+# From the repository root:
+./wslbuild.sh                        # configure if needed, build, stage
+./wslbuild.sh dottalkpp -a           # build + REGRESSION ALL
+./wslbuild.sh dottalkpp -t IDXSTALE  # build + REGRESSION RUN <NAME>
+```
+
+Preset `wsl-lean` builds to `build-wsl-lean/`, staged to
+`dottalkpp/bin-wsl-lean/`. Run from the data root:
+
+```bash
+cd dottalkpp/data
+printf '%s\n' 'CMD1' 'CMD2' | ../bin-wsl-lean/dottalkpp
+```
+
+Rules, each of which has already cost a session:
+
+- **Do NOT reintroduce the `vcpkg.json` / `vcpkg-wsl.json` swap.**
+  `VCPKG_MANIFEST_FEATURES=index` in the preset already excludes
+  tvision/wx/pybind11. An unswapped run under the old scheme destructively
+  reconciled the installed tree ("Removing 53/53 tvision:x64-linux"). The
+  reasoning is at the top of `wslbuild.sh`; read it before touching the build.
+- **`ninja: no work to do` is not proof your change is in the binary.** Two
+  differing build stamps in `ABOUT` is genuinely ambiguous. Compare object mtime
+  against source mtime, or grep the linked ELF for a string you just added. This
+  has already caught one false-green.
+- **Capture with `SET ALTERNATE`, never `DOTSCRIPT ... OUT`.** Measured
+  2026-07-31, same script and binary: 89 lines vs 42. ALTERNATE is a strict
+  superset; `DOTSCRIPT OUT` silently drops everything routed through
+  `cli::cmdout`, which is the entire user-facing command surface. The DOTSCRIPT
+  help text claims otherwise and is wrong (AIF-081, unfixed).
+- **`DOTTALK_INDEX_TRACE` and `DOTTALK_APPEND_TRACE` default ON**
+  (`index_manager.cpp:449-457`, `append_support.cpp:74-82`). They are opt-OUT.
+  Pin them explicitly for reproducible figures.
+
+### A sandbox is not the WSL host
+
+An AI partner running in a mounted Linux sandbox (for example Cowork) is **not**
+in the maintainer's WSL and generally cannot build or run:
+
+| | WSL host | Cowork sandbox, measured 2026-07-31 |
+| --- | --- | --- |
+| Distro | Ubuntu 24.04 | Ubuntu 22.04.5 |
+| glibc | 2.38 | 2.35 |
+| GLIBCXX | 3.4.32 | 3.4.30 |
+| cmake / ninja | present | **absent** |
+| lmdb / sqlite3 / nlohmann / sodium headers | present | **absent** |
+
+The staged `bin-wsl-lean` ELF is readable there but **will not execute** -- it
+needs glibc 2.38 and GLIBCXX 3.4.32. The practical ceiling in such a sandbox is
+per-translation-unit `g++ -fsyntax-only`. Builds and runs are therefore
+maintainer-operated handoffs: the agent prepares the exact command and the
+expected evidence.
+
+**A sandboxed agent must run NO git commands.** Even `git status` refreshes the
+index, takes `.git/index.lock`, and cannot reliably unlink it across the mount,
+which then blocks the maintainer's commits. This happened on 2026-07-31. Read
+files freely; run git only host-side. `claim-aif` shells out to `git grep`, so
+it is host-side too. See `labtalk/ai_portal/LOCAL_ACCESS_AGENT_CHECKLIST_V1.md`.
 
 Convenience launchers from the repo root:
 
@@ -280,6 +386,19 @@ HELP
 ```
 
 ## Coding Standards, Conventions, And Rules
+
+**Tooling is cross-platform. This is not negotiable.** x64base is cross-platform C++ on
+deliberately cross-compatible libraries, and its tooling holds the same line. Write
+**Python 3 + stdlib** (the `tools/**` convention) or DotScript. ASCII output. A `.ps1` or
+`.sh` is acceptable only as a thin wrapper around a cross-platform tool, never as the place
+logic lives. Recorded exception: the `afb-`/`bbsd-startup` scripts register Windows
+Scheduled Tasks and have no cross-platform equivalent.
+
+**Test the tool; do not merely write it.** Two shipped-looking tools carried confident,
+wrong claims until they were exercised against purpose-built throwaway fixtures. Untested
+tooling does not fail loudly -- it succeeds while being wrong.
+
+Full rules: `labtalk/ai_portal/AI_ENGINEERING_STANDARDS_SEED_V1.md` section 4.
 
 Start with pointers instead of inventing a new style guide:
 
@@ -345,7 +464,15 @@ Mutation risk:
 Smallest safe action:
 Proof/test:
 Residual risk:
+Already built?      (grep src/ before asserting absence -- the repo UNDER-reports itself)
+Vantage point:      (are you reading state your machine can actually see?)
 ```
+
+**Those last two are not filler.** Both cost this project real time: a partner reported a
+crash-proven write-ahead log as missing because a stale header comment said "stubs" and the
+proofs were untracked; and three separate claims about repository state turned out to be
+artifacts of an agent sandbox that could not see the maintainer's drives. Absence of
+evidence *from where you are standing* is not evidence of absence.
 
 ## Closeout Shape
 
@@ -371,3 +498,22 @@ session changed lane state — objective, branch, authority pointer, contract,
 dashboard status, intake row — the AI-facing document describing that state
 must be updated in the same session, or the omission explicitly justified. See
 `AI_PORTAL.md` -> "Closeout Updates Startup".
+
+**Authoring your closeout (AIF-074 lesson, 2026-07-29 -- three gate rejections
+taught this):**
+
+1. START FROM `docs/maintenance/SESSION_CLOSEOUT_TEMPLATE.md`. Copy it; do not
+   reconstruct the envelope from memory or from any draft that never passed
+   the gate.
+2. The ENFORCED envelope schema is whatever
+   `labtalk/registries/ai_report_audit.yaml` says (currently
+   `ai-report-audit-v1` with its exact `required_fields` list). The v2 spec
+   (`AI_REPORT_AUDIT_V2_SPEC.md`) is SPECIFIED BUT NOT YET ENFORCED; v2 fields
+   are welcome additively, but the schema string and required set must satisfy
+   the registry or the pre-commit gate hard-blocks the commit.
+3. The envelope is real YAML front matter: `---` on line 1, `---` after, THEN
+   the title. A fenced ```yaml block does not count.
+4. General trust order when authoring ANY portal artifact, highest first: a
+   passing in-tree example > the enforced policy registry > the spec document >
+   your memory. Self-generated artifacts that never passed a gate rank below
+   all of these.
