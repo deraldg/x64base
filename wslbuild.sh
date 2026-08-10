@@ -15,15 +15,10 @@
 # ---------------------------------------------------------------------------
 # WHY THERE IS NO MANIFEST SWAP HERE
 #
-# The full script (wsl_build_dottalkpp.sh) swaps vcpkg-wsl.json over vcpkg.json
-# because vcpkg-wsl.json lists tvision and wxwidgets as unconditional
-# dependencies. That swap is what an earlier version of this script omitted, and
-# omitting it was destructive: CMake re-configures on its own (ninja regenerates
-# build.ninja whenever a globbed source set changes, and src/CMakeLists.txt uses
-# file(GLOB_RECURSE)), the re-configure re-ran vcpkg in manifest mode against the
-# canonical vcpkg.json, and vcpkg reconciled the installed tree to match --
-# "Removing 53/53 tvision:x64-linux" -- after which configure died at
-# src/tv/CMakeLists.txt find_package(tvision).
+# The retired full-build script swapped vcpkg-wsl.json over vcpkg.json because
+# vcpkg-wsl.json listed tvision and wxwidgets as unconditional dependencies.
+# That swap was destructive when interrupted or when CMake regenerated against
+# the other manifest: vcpkg reconciled the installed tree to the transient file.
 #
 # The fix is not to replicate the swap. It is to not need it.
 #
@@ -33,8 +28,9 @@
 # base packages and there is nothing to remove or re-add. vcpkg_installed is
 # per-build-dir, so build-wsl-lean never disturbs build-wsl.
 #
-# vcpkg-wsl.json is therefore redundant with the features block, and is the root
-# cause of both the swap dance and the wxwidgets build time on Linux.
+# vcpkg-wsl.json is therefore redundant with the features block for this lane.
+# The compatibility entrypoint wsl_build_dottalkpp.sh delegates here and does
+# not perform a manifest swap.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 

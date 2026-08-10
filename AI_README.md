@@ -282,7 +282,8 @@ labtalk/registries/ai_portal.yaml
 Main DotTalk++ runtime:
 
 ```powershell
-& D:\code\ccode\build\src\Release\dottalkpp.exe
+# From the repository root:
+& .\build\src\Release\dottalkpp.exe
 ```
 
 Build:
@@ -298,7 +299,7 @@ MSVC is **not** required for engine work. The wsl presets carry
 lost most of its runtime evidence to the belief that MSVC was mandatory.
 
 ```bash
-cd /mnt/d/code/ccode
+# From the repository root:
 ./wslbuild.sh                        # configure if needed, build, stage
 ./wslbuild.sh dottalkpp -a           # build + REGRESSION ALL
 ./wslbuild.sh dottalkpp -t IDXSTALE  # build + REGRESSION RUN <NAME>
@@ -308,7 +309,7 @@ Preset `wsl-lean` builds to `build-wsl-lean/`, staged to
 `dottalkpp/bin-wsl-lean/`. Run from the data root:
 
 ```bash
-cd /mnt/d/code/ccode/dottalkpp/data
+cd dottalkpp/data
 printf '%s\n' 'CMD1' 'CMD2' | ../bin-wsl-lean/dottalkpp
 ```
 
