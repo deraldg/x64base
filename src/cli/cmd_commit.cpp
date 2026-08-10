@@ -467,6 +467,9 @@ static CommitResult commit_one_area(xbase::DbArea& A,
     if (auto* mm = A.memoManagerPtr()) {
         std::string memo_err;
         if (!mm->flush(&memo_err)) {
+            // COMMIT failed during memo flush: buffer retained for retry. The
+            // DBF writes are idempotent, so restoring the original pending set
+            // is safer than clearing state after a partial finalize failure.
 #if DOTTALK_HAS_XINDEX
             if (maintain_index) { im->abortBulkWrite(); dottalk::table::set_stale(area0, true); }
 #endif
