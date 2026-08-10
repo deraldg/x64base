@@ -12,7 +12,7 @@ biblebase, pinocchio) if it earns it.
 | `meta/` | 172 generated JSON sidecars (`*.ddl/indexes/load/schema.copy.json`) | **measured mirror metadata** (source for the .dtschema) |
 | `indexes/` | `*.cdx` physical indexes (built by `scripts/cascade_erp_build_indexes.dts`) | derived |
 | `lmdb/` | LMDB environment (local, never committed) | derived |
-| `schema/` | `CASCADE_ERP.dtschema` (fields, tag orders, relations), `CASCADE_ERP.graph.mmd` (58-edge FK relation graph), `CASCADE_ERP.graph.html` (browser viewer, Mermaid CDN) | generated projections; regenerate via `tools/cascade_erp/generate_dtschema.py` |
+| `schema/` | `CASCADE_ERP.dtgraph` (attributed relation graph: fields, tag orders, relations -- NOT `.dtschema`, which is the engine's WORKSPACE snapshot format), `CASCADE_ERP.graph.mmd` (58-edge Mermaid), `CASCADE_ERP.graph.html` (browser viewer, Mermaid CDN) | generated projections; regenerate via `tools/cascade_erp/generate_dtschema.py` |
 | `scripts/` | `cascade_erp.dts` (DBF env), `cascade_sql.dts` (SQLite env), `cascade_erp_build_indexes.dts` (physical tag build) | authored + generated |
 
 Entry points, from the data root (`datarun.ps1` cwd):

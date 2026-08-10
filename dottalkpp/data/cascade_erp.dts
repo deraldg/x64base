@@ -5,8 +5,10 @@
 &&
 && Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_erp.dts
 && Schema + tag orders: systems/cascade_erp/schema/CASCADE_ERP.dtgraph (generated)
-&& (.dtschema is the engine WORKSPACE SAVE/LOAD snapshot format -- save your
-&&  open state with WORKSPACE SAVE <name> after running this script)
+&& NOTE: this root copy exists for the house root-switcher convention
+&& (x64.dts, sandbox.dts...). The bundle copy at
+&& systems/cascade_erp/scripts/cascade_erp.dts is the maintained original;
+&& if they drift, the bundle copy wins.
 && Physical index build (once, or after re-mirror): cascade_erp_build_indexes.dts
 && SQLite twin: cascade_sql.dts
 

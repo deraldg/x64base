@@ -353,7 +353,11 @@ this before resuming.
   candidate list; old paths retained as fallbacks). NOTE: `edu_erp.cpp` also
   carries the steward's uncommitted AIF-105 diff; the commit decision (fuse
   with dual attribution vs wait) is the owner's.
-- New generated projection: `schema/CASCADE_ERP.dtschema` + executable
+- New generated projection: `schema/CASCADE_ERP.dtgraph`
+  (renamed from `.dtschema` 2026-08-10 when `WORKSPACE SAVE` revealed that
+  extension is the engine's own workspace-snapshot format, `DTSHEMA`;
+  `.dtgraph` = attributed relation graph, next consumer the ERSATZ `.erz`
+  relational browser) + executable
   `scripts/cascade_erp_build_indexes.dts`, emitted by
   `tools/cascade_erp/generate_dtschema.py` from the meta sidecars (34 tables,
   9 views, 103 tags of which 6 composite/partial, 58 relations; meta aggregate
