@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html><head><meta charset="ascii"><title>Cascade ERP relation graph (generated)</title></head>
+<body style="background:#0b1220;color:#dbe7ff;font-family:sans-serif">
+<p>Cascade ERP FK relation graph -- GENERATED from sidecar metadata; never schema authority. Source: CASCADE_ERP.graph.mmd (same dir). Requires internet for the Mermaid CDN; offline, paste the .mmd into any Mermaid renderer.</p>
+<pre class="mermaid">
+graph LR
+  AP_Invoices -->|PO_ID| Purchase_Orders
+  AP_Invoices -->|Vendor_ID| Vendors
+  AP_Payments -->|AP_Invoice_ID| AP_Invoices
+  AR_Invoices -->|Customer_ID| Customers
+  AR_Invoices -->|SO_ID| Sales_Orders
+  AR_Payments -->|AR_Invoice_ID| AR_Invoices
+  BOM_Details -->|BOM_ID| BOM_Headers
+  BOM_Details -->|Component_Item_ID| Items
+  BOM_Headers -->|Item_ID| Items
+  Departments -->|Manager_ID| Employees
+  Employees -->|Dept_ID| Departments
+  Employees -->|Reports_To| Employees
+  GL_Accounts -->|Parent_ID| GL_Accounts
+  GL_Journal -->|Account_ID| GL_Accounts
+  Inventory_Movements -->|Created_By| Employees
+  Inventory_Movements -->|Item_ID| Items
+  Inventory_Movements -->|Warehouse_ID| Warehouses
+  PO_Lines -->|Item_ID| Items
+  PO_Lines -->|PO_ID| Purchase_Orders
+  Payroll_Runs -->|Employee_ID| Employees
+  Price_Lists -->|Customer_ID| Customers
+  Price_Lists -->|Item_ID| Items
+  Purchase_Orders -->|Approved_By| Employees
+  Purchase_Orders -->|Vendor_ID| Vendors
+  Quality_Results -->|Inspector_ID| Employees
+  Quality_Results -->|Test_ID| Quality_Tests
+  Quality_Tests -->|Item_ID| Items
+  Receiving -->|Inspector_ID| Employees
+  Receiving -->|POLine_ID| PO_Lines
+  Receiving -->|PO_ID| Purchase_Orders
+  Receiving -->|Warehouse_ID| Warehouses
+  Routings -->|Item_ID| Items
+  Routings -->|Center_ID| Work_Centers
+  SO_Lines -->|Item_ID| Items
+  SO_Lines -->|SO_ID| Sales_Orders
+  Sales_Orders -->|Customer_ID| Customers
+  Sales_Orders -->|Sales_Rep_ID| Employees
+  Shipment_Lines -->|SOLine_ID| SO_Lines
+  Shipment_Lines -->|Shipment_ID| Shipments
+  Shipments -->|SO_ID| Sales_Orders
+  Shipments -->|Warehouse_ID| Warehouses
+  Stock_Levels -->|Item_ID| Items
+  Stock_Levels -->|Warehouse_ID| Warehouses
+  Time_Cards -->|Employee_ID| Employees
+  Time_Cards -->|Center_ID| Work_Centers
+  Time_Cards -->|WO_ID| Work_Orders
+  Vendor_Items -->|Item_ID| Items
+  Vendor_Items -->|Vendor_ID| Vendors
+  WO_Materials -->|Item_ID| Items
+  WO_Materials -->|Warehouse_ID| Warehouses
+  WO_Materials -->|WO_ID| Work_Orders
+  WO_Operations -->|Routing_ID| Routings
+  WO_Operations -->|Center_ID| Work_Centers
+  WO_Operations -->|WO_ID| Work_Orders
+  Warehouses -->|Manager_ID| Employees
+  Work_Orders -->|BOM_ID| BOM_Headers
+  Work_Orders -->|Item_ID| Items
+  Work_Orders -->|SO_ID| Sales_Orders
+</pre>
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"dark",maxEdges:2000});</script>
+</body></html>
