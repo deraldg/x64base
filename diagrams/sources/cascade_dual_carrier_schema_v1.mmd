@@ -1,0 +1,36 @@
+flowchart LR
+  SQLITE["SQLite 3 authority<br/>34 tables - 9 views - 330 rows"]
+  RO["Read-only schema inspection<br/>tables - columns - indexes - foreign keys - view SQL"]
+  CONTRACT["dual_schema_contract.json<br/>58 FK field edges<br/>types - defaults - constraints - relations"]
+  SCHEMAS["43 explicit x64 schemas<br/>34 tables + 9 view snapshots"]
+  BUILD["DotTalk++ DDL + IMPORT<br/>validated schemas and sealed CSV"]
+  DBF["x64base DBF mirror<br/>43 namespaced X64 tables"]
+  SIDECARS["Relational sidecars<br/>DDL - indexes - relations - load receipts"]
+  LESSON["LabTalk teaching surface<br/>inspect - compare - migrate - explain"]
+
+  SQLITE --> RO --> CONTRACT
+  CONTRACT --> SCHEMAS --> BUILD --> DBF
+  CONTRACT --> SIDECARS
+  DBF --> LESSON
+  SIDECARS --> LESSON
+  SQLITE -. canonical query behavior .-> LESSON
+
+  subgraph BOUNDARY["Honest capability boundary"]
+    NATIVE["SQLite<br/>native FK and view execution"]
+    PROJECTED["x64base<br/>structural projection and snapshots"]
+    RULE["Complete mirror schema<br/>does not mean identical native enforcement"]
+    NATIVE --> RULE
+    PROJECTED --> RULE
+  end
+
+  SQLITE --> NATIVE
+  DBF --> PROJECTED
+
+  classDef authority fill:#0d2a35,stroke:#60c8d4,color:#e9f0ff,stroke-width:2px;
+  classDef contract fill:#2b1d35,stroke:#a855f7,color:#e9f0ff,stroke-width:2px;
+  classDef carrier fill:#2b2115,stroke:#ff9540,color:#e9f0ff,stroke-width:2px;
+  classDef lesson fill:#153020,stroke:#4ade80,color:#e9f0ff,stroke-width:2px;
+  class SQLITE,NATIVE authority;
+  class CONTRACT,SCHEMAS,SIDECARS,RULE contract;
+  class BUILD,DBF,PROJECTED carrier;
+  class LESSON lesson;

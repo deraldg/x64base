@@ -14,6 +14,11 @@ const items = [
     description: "How the x64base lineage began and why it matters.",
     href: "/about/origin-story"
   },
+  {
+    title: "AI-Assisted Development History",
+    description: "The evidence record behind the project’s 2025 AI-development chronology.",
+    href: "/about/ai-assisted-history"
+  },
   { title: "Timeline", description: "Key milestones from 1993 to 2026.", href: "/about/timeline" },
   { title: "Project Story", description: "Tone, positioning, and the codex-style clarity.", href: "/about/brand-story" },
   { title: "Project Identity", description: "Naming, visual identity, attribution, and trademark notes.", href: "/brand" },

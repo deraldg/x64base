@@ -252,41 +252,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card/40 p-6">
-        <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">open architecture</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">The extension seams are part of the product.</h2>
-            <p className="mt-4 leading-7 text-muted">
-              x64base is not only a DBF runtime. It is an intentionally open architecture for index
-              backends, workbench front ends, custom commands and functions, student code hooks,
-              polling, triggers, and runtime lifecycle observation. That work remains visible because
-              it is part of how the engine is learned, extended, reviewed, and proved.
-            </p>
-            <div className="mt-5 space-y-2 text-sm leading-6 text-muted">
-              <p>Live runtime evidence already includes central command registration, Open Index API boundaries, education hooks, and order-aware traversal work.</p>
-              <p>That means the architecture is open by design, not by accident.</p>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {openArchitectureLanes.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={`${item.title}-${item.href}`}
-                  href={item.href!}
-                  className="rounded-lg border border-border bg-bg/35 p-4 transition hover:border-brand/60"
-                >
-                  <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
-                  <h3 className="mt-3 text-base font-semibold tracking-tight text-fg">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted">{item.text}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {ecosystem.map((item) => {
           const Icon = item.icon;
@@ -305,6 +270,74 @@ export default function HomePage() {
             </Link>
           );
         })}
+      </section>
+
+      <section className="rounded-lg border border-border bg-card/55 p-6">
+        <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">LMS boundary</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Learning modules, without pretending to grade students.</h2>
+            <p className="mt-4 leading-7 text-muted">
+              LabTalk can organize lessons, cases, evidence, and local delivery messages, but it is
+              not currently a full learning-management system. It does not enroll or grade students.
+              A lesson module can stand alone, become an agent skill or plugin, or later connect to
+              an external LMS through the reserved provider-neutral boundary.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/products/labtalk" className="text-sm font-semibold text-brand hover:underline">
+                LabTalk module
+              </Link>
+              <Link href="/docs/labtalk/lms-integration-lane" className="text-sm font-semibold text-brand hover:underline">
+                Communications boundary
+              </Link>
+              <Link href="/lms-architecture/" className="text-sm font-semibold text-brand hover:underline">
+                Architecture assessment
+              </Link>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ["module", "Lessons, cases, schemas, and proof can travel as a focused teaching unit."],
+              ["skill", "An AI-facing package can reduce the same material to a governed capability."],
+              ["plugin", "A host can add the module without turning LabTalk into the host LMS."],
+            ].map(([title, text]) => (
+              <div key={title} className="rounded-lg border border-border bg-bg/35 p-4">
+                <div className="font-mono text-xs uppercase text-brand">{title}</div>
+                <p className="mt-3 text-sm leading-6 text-fg">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-card/30 p-5">
+        <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">supporting architecture</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">Extension seams remain inspectable.</h2>
+            <p className="mt-3 text-sm leading-6 text-muted">
+              Architecture supports the learning module and runtime; it is not the homepage hero.
+              Index backends, workbench front ends, extension commands, and lifecycle hooks remain
+              visible as evidence-bearing implementation boundaries.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {openArchitectureLanes.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={`${item.title}-${item.href}`}
+                  href={item.href!}
+                  className="rounded-lg border border-border bg-bg/25 p-4 transition hover:border-brand/60"
+                >
+                  <Icon className="h-5 w-5 text-muted" aria-hidden="true" />
+                  <h3 className="mt-3 text-sm font-semibold tracking-tight text-fg">{item.title}</h3>
+                  <p className="mt-2 text-xs leading-5 text-muted">{item.text}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       <section className="rounded-lg border border-border bg-card/35 p-5">

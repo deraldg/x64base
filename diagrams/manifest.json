@@ -125,6 +125,30 @@
       "upstream_authority": "ccode:labtalk/diagrams/selfdoc_full_stack_docpush_dfd_v1.mmd",
       "truth_status": "source-derived-draft",
       "review_status": "review-needed"
+    },
+    {
+      "id": "cascade-erp-module-schema-v1",
+      "source": "diagrams/sources/cascade_erp_module_schema_v1.mmd",
+      "output": "public/images/schemas/cascade-erp-module-schema-v1.svg",
+      "upstream_authority": "ccode:dottalkpp/data/cascade_precision_erp/x64base_mirror/dual_schema_contract.json",
+      "truth_status": "source-derived",
+      "review_status": "review-needed"
+    },
+    {
+      "id": "cascade-dual-carrier-schema-v1",
+      "source": "diagrams/sources/cascade_dual_carrier_schema_v1.mmd",
+      "output": "public/images/schemas/cascade-dual-carrier-schema-v1.svg",
+      "upstream_authority": "ccode:dottalkpp/data/cascade_precision_erp/x64base_mirror/dual_schema_contract.json",
+      "truth_status": "source-derived",
+      "review_status": "review-needed"
+    },
+    {
+      "id": "database-ecology-schema-catalog-v1",
+      "source": "diagrams/sources/database_ecology_schema_catalog_v1.mmd",
+      "output": "public/images/schemas/database-ecology-schema-catalog-v1.svg",
+      "upstream_authority": "ccode:labtalk/registries/database_ecology.yaml",
+      "truth_status": "source-observed",
+      "review_status": "review-needed"
     }
   ]
 }

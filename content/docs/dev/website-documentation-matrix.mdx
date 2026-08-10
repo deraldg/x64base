@@ -20,12 +20,11 @@ source, HELP, metadata, SelfDoc, manualgen, diagrams, and runtime proof.
 > signed-off site (advance `Last audited`, reclassify any changed pages, record new
 > diagrams and feeds). The run does not close until the matrix is current -- a stale
 > matrix is a fail-closed condition on the website signoff.** **Last audited:
-> 2026-08-06 (full-stack pass 4, owner-approved for live publish. This pass added the
-> start-to-finish documentation-push DFD hero on
-> `/docs/dev/selfdoc-website-publication`, the AI-views/diagrams and private AI Portal
-> section rows, the AutoSSL trigger, the `AUTODBF` CSV-to-DBF coverage in the DotScript
-> import/export section, and the additional maintained fullstack steps. Next scheduled
-> run: Document FullStack push v5).**
+> 2026-08-10 (schema-catalog and AI-history evidence pass. Added the dedicated
+> public `/schemas/` catalog and the reported `/about/ai-assisted-history`
+> evidence record, with the timeline and About index updated. The preceding
+> owner-approved full-stack pass 4 was 2026-08-06. Next scheduled run: Document
+> FullStack push v5).**
 
 ## Proof Rules
 
@@ -121,6 +120,8 @@ should have been preserved was overwritten during the pass.
 | Website Area | Public Pages | Primary Feed Lanes | Proof / Data-Mining Inputs | Current Publication State |
 | --- | --- | --- | --- | --- |
 | Home and top-level positioning | `/`, `/about`, `/products` | Project truth, product naming, licensing, contributor review | `content/docs/dev/project-truth.mdx`, product pages, brand rules, local source review | Reviewed framing; not intended to carry detailed proof tables. |
+| DotTalk AI development history | `/about/timeline`, `/about/ai-assisted-history` | AIF-106 historical evidence publication; website history retention | Supplied `DOTTALK-AI-EVIDENCE-V1`; `pyxbase.zip` manifest and SHA-256; archive-member timestamps and hashes; private mailbox preservation metadata | `reported`. The page publishes the reviewed finding and evidence limits without republishing private messages or archives. Public convention: August 2, 2025 is direct; July 21 is probable. A new source discovery appends or revises the record explicitly; it must not silently erase the prior finding. |
+| Public database schema catalog | `/schemas/` | Historical database migration, database ecology, Cascade dual-carrier, HELP/metadata/SelfDoc lanes | `labtalk/registries/database_ecology.yaml`, `DOTTALKPP_LABTALK_DATABASE_ECOLOGY_INVENTORY_V1.md`, Cascade `dual_schema_contract.json`, Mermaid sources and SVG provenance | `maintained`. Public, navigation-visible schema-family catalog. Cascade gets detailed relational diagrams; MCC, HELP, metadata, governance, documentation, application, and fixture schemas receive a measured catalog section. Counts must be re-measured before update; derived indexes and replicas are not promoted as independent logical schemas. |
 | LMS proposal (received) | `/lms-proposal/` (deck route; 13 slides under `public/lms-proposal/slides/`) | External-AI intake lane | `docs/maintenance/external_ai_intake/specialty_lms_ecosystem_2026-08-09/MANIFEST.md` (`AIPR-20260809-COPILOT-001`) | `static`. Received Microsoft Copilot proposal, preserved unchanged as prior art and authored with NO repository access. Names an "xBridge Protocol" that exists nowhere in the tree; RBAC matrix and KPI grid are proposals, KPI values are placeholders. Carries a standing unverified-proposal banner and links to the assessment. Never promote to manual or website copy as technical truth. |
 | LMS architecture assessment | `/lms-architecture/` (deck route; slide documents under `public/lms-architecture/sections/`) | AI Portal onboarding lane, LabTalk campus/registry lane | `AI_README.md`, `labtalk/ai_portal/AI_TIER1_SEED_V1.md`, `labtalk/ai_portal/TIER0_STATE.md`, `labtalk/portal/README.md`, `labtalk/registries/*.yaml` counts | `static`. Report-only assessment by an AI partner, baselined at `development @ 648967b74`; source-evidenced, not runtime-proven. Carries no AIF claim and no `ai-report-audit-v1` envelope, and is not repo authority -- every slide says so. Contradicts the aspirational Specialty LMS proposal deck by design; do not reconcile the two. |
 | x64base Engine docs | `/docs/engine/*` | Source/runtime lane, SelfDoc feature crosswalk, DBF headers, index/memo lanes, ecosystem research | `include/xbase.hpp`, `include/xbase_vfp.hpp`, `include/xbase_64.hpp`, command source, `labtalk/reports/selfdoc/x64base_engine_feature_crosswalk_v1.*`, x64 canary scripts | Partly generated and reviewed. Feature crosswalk and x64 capacity math carry explicit evidence labels. |

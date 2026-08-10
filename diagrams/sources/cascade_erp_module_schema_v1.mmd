@@ -1,0 +1,82 @@
+flowchart LR
+  subgraph FIN["Finance - 6 tables"]
+    GL["GL_Accounts<br/>GL_Journal"]
+    AP["AP_Invoices<br/>AP_Payments"]
+    AR["AR_Invoices<br/>AR_Payments"]
+  end
+
+  subgraph SALES["Sales - 6 tables"]
+    CUST["Customers"]
+    SO["Sales_Orders<br/>SO_Lines"]
+    PRICE["Price_Lists"]
+    SHIP["Shipments<br/>Shipment_Lines"]
+  end
+
+  subgraph PROC["Procurement - 5 tables"]
+    VEND["Vendors<br/>Vendor_Items"]
+    PO["Purchase_Orders<br/>PO_Lines"]
+    RECV["Receiving"]
+  end
+
+  subgraph INV["Inventory - 4 tables"]
+    ITEM["Items"]
+    WH["Warehouses"]
+    STOCK["Stock_Levels"]
+    MOVE["Inventory_Movements"]
+  end
+
+  subgraph MFG["Manufacturing - 7 tables"]
+    BOM["BOM_Headers<br/>BOM_Details"]
+    ROUTE["Routings<br/>Work_Centers"]
+    WO["Work_Orders<br/>WO_Operations<br/>WO_Materials"]
+  end
+
+  subgraph QUAL["Quality - 2 tables"]
+    QT["Quality_Tests"]
+    QR["Quality_Results"]
+  end
+
+  subgraph PEOPLE["People - 4 tables"]
+    ORG["Departments<br/>Employees"]
+    LABOR["Payroll_Runs<br/>Time_Cards"]
+  end
+
+  CUST --> SO
+  CUST --> PRICE
+  SO --> AR
+  SO --> SHIP
+  SO --> WO
+  VEND --> PO
+  VEND --> AP
+  PO --> AP
+  PO --> RECV
+  ITEM --> PRICE
+  ITEM --> PO
+  ITEM --> STOCK
+  ITEM --> MOVE
+  ITEM --> BOM
+  ITEM --> ROUTE
+  ITEM --> WO
+  ITEM --> QT
+  WH --> STOCK
+  WH --> MOVE
+  WH --> RECV
+  WH --> SHIP
+  WH --> WO
+  BOM --> WO
+  ROUTE --> WO
+  QT --> QR
+  ORG --> LABOR
+  ORG --> PO
+  ORG --> QR
+  ORG --> RECV
+  ORG --> SHIP
+  ORG --> MOVE
+  ORG --> WH
+  ORG --> SO
+  ORG --> WO
+
+  classDef hub fill:#0d2a35,stroke:#60c8d4,color:#e9f0ff,stroke-width:2px;
+  classDef module fill:#101d2e,stroke:#1e2e48,color:#e9f0ff;
+  class ITEM,ORG hub;
+  class GL,AP,AR,CUST,SO,PRICE,SHIP,VEND,PO,RECV,WH,STOCK,MOVE,BOM,ROUTE,WO,QT,QR,LABOR module;

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "diagram_id": "database-ecology-schema-catalog-v1",
+  "path": "public/images/schemas/database-ecology-schema-catalog-v1.svg",
+  "derived_from": [
+    "diagrams/sources/database_ecology_schema_catalog_v1.mmd"
+  ],
+  "upstream_authority": "ccode:labtalk/registries/database_ecology.yaml",
+  "generator": "@mermaid-js/mermaid-cli@11.16.0",
+  "generator_config": "diagrams/mermaid-config.json",
+  "source_sha256": "3515f8b8591758d67e1d61de88776a279f3457f5d926b097275453918bf3e20c",
+  "output_sha256": "b491efaa459d35eaf06321198bf2e559434be0311d4d21c49978d555a516238a",
+  "truth_status": "source-observed",
+  "review_status": "review-needed"
+}

@@ -1,0 +1,175 @@
+---
+title: "Earliest Preserved AI-Assisted DotTalk Work"
+description: "The evidence, chronology, limits, and public wording behind the documented 2025 start of AI-assisted DotTalk development."
+---
+
+> **Public history decision.** Use **August 2, 2025** as the earliest directly
+> documented date of AI-assisted DotTalk development. Preserve **July 21,
+> 2025** as the earliest probable date, explicitly labeled as an inference.
+
+| Record field | Value |
+| --- | --- |
+| Record ID | `DOTTALK-AI-EVIDENCE-V1` |
+| Record date | August 10, 2026 |
+| Evidence period | June 25, 2025 through December 13, 2025 |
+| Status | Project-history evidence record; not a forensic affidavit |
+| Public single-date convention | August 2, 2025 |
+
+## Publication and evidence boundary
+
+This page is the public web transcription of the supplied historical evidence
+record. That record was prepared from a preserved `pyxbase.zip` archive,
+archive-member metadata, cryptographic hashes, and connected mailbox records.
+The private messages and archive are not republished here.
+
+The website build verifies this page's structure and publication safety. It
+does not independently authenticate private mailbox records or turn ZIP
+timestamps into forensic proof. The wording therefore remains deliberately
+narrow: **earliest preserved evidence found**, not the exact day the work began.
+
+## Executive finding
+
+| Date | Classification | Finding |
+| --- | --- | --- |
+| June 25, 2025 | Contextual | General AI use is documented, but the reviewed message does not connect that use directly to DotTalk. |
+| July 21, 2025 | Probable project evidence | Eight modernized C and header artifacts, including `DOTTALK_modern.c` and `DOTTALK_modern.h`, were produced in one 44-second batch. The artifacts do not identify the tool or model. |
+| August 2, 2025 | Direct / explicit project evidence | Preserved assistant output applies directly to DotTalk's work-area architecture; minutes later, a `gemini.txt` record explicitly identifies Gemini while continuing the project. |
+
+The formal conclusion is that AI-assisted work on the DotTalk lineage is
+evidenced by modernization artifacts dated July 21, 2025, with direct preserved
+project-specific AI material beginning August 2, 2025.
+
+## Evidence standard
+
+| Evidence level | Meaning |
+| --- | --- |
+| Contextual | Establishes general AI use, but not project-specific AI work. |
+| Probable project evidence | Strongly suggests AI assistance, but the artifact does not identify an AI system. |
+| Direct or explicit project evidence | Preserves AI-style output tied to DotTalk concepts or explicitly names the model. |
+| Independent preservation | Establishes that the reviewed archive existed in the maintainer's possession no later than the message timestamp. |
+
+## Evidence chronology
+
+| Date and time | Artifact or record | Evidence level | What it establishes |
+| --- | --- | --- | --- |
+| June 25, 2025, 2:23:38 PM PDT | Sent message, `Initial Research` | Contextual | The maintainer states that AI is being used for project planning; the message is not DotTalk-specific. |
+| July 21, 2025, 6:03:20-6:04:04 | Eight `*_modern` artifacts in `pyxbase.zip` | Probable | A rapid modernization batch includes DotTalk source and headers. AI attribution is inferred, not stated. |
+| August 2, 2025, 9:44:48 | `pyxbase/text/new 1.txt` | Direct AI-style record | Assistant output addresses `AREA`, `SELECT`, `select_rec`, and `s[MAX_AREA]`, translating the work-area model into `DbfArea` and `DbfInstance` classes. |
+| August 2, 2025, 10:00:52 | `pyxbase/text/gemini.txt` | Explicit named-model record | The filename identifies Gemini, and the content continues assembly of the Python DBF project. |
+| August 2, 2025, 9:47:25 PM PDT | Sent message, `files`, with `pyxbase.zip` | Independent preservation | The mailbox timestamp establishes possession of the archive no later than this time. |
+| August 3, 2025, 7:47:50 PM PDT | Sent message, `pyxbase`, with the archive | Second preservation copy | A second mailbox record independently preserves the same development archive. |
+| December 13, 2025, 11:39:46 AM PST | Sent message, `My Summer Proect` [sic], with `dottalkpp_Alpha7.zip` | Later corroboration | The project is described as DotTalk++, including its C++ lineage, relational database direction, period prompt, and self-documenting HELP direction. |
+
+## Why July 21 remains probable
+
+The earliest stored archive timestamps belong to these eight modernization
+artifacts:
+
+- `XBCMDS_modern.h`
+- `XBINDEX_modern.h`
+- `DOTTALK_modern.h`
+- `XBASE_modern.c`
+- `XBCMDS_modern.c`
+- `XBINDEX_modern.c`
+- `DOTTALK_modern.c`
+- `TEST_modern.c`
+
+Their naming, coordinated scope, and 44-second production interval are
+consistent with automated or AI-assisted modernization. The files themselves
+do not name an AI system or prove the mechanism used. July 21 is therefore an
+important internal research date, but it is not the public single-date
+convention.
+
+## Why August 2 is direct
+
+The 9:44:48 assistant record works directly with existing DotTalk/xBase
+architecture: `AREA`, `SELECT`, the global `s[MAX_AREA]` array, `select_rec`,
+and the continuing roles of `initbase()` and `open_file()`. It proposes a
+Python object model using `DbfArea` and `DbfInstance`.
+
+At 10:00:52, `gemini.txt` continues the same work by assembling `dbf_core.py`,
+`xbase_cli.py`, and project documentation. Its filename provides the earliest
+preserved explicit model attribution found in the reviewed material.
+
+## Preservation record
+
+| Property | Recorded value |
+| --- | --- |
+| Archive | `pyxbase.zip` |
+| Archive size | 287,206 bytes |
+| Archive contents | 93 files and 10 directory entries |
+| Archive SHA-256 | `df829ac3fd86e514499b66e53144c97dceb1f2e7ed7811d4a8c3c275ac8aebea` |
+| Retrieved for review | August 10, 2026 |
+| Handling | Read-only inspection; hashes computed from retrieved bytes; no archive members modified |
+
+## Key artifact manifest
+
+The timestamps below are the timezone-naive values stored in the ZIP central
+directory. Hashes are shown as recorded prefixes; the two directly discussed
+text artifacts retain their complete hashes below the table.
+
+| Stored timestamp | Archive member | Bytes | SHA-256 prefix |
+| --- | --- | ---: | --- |
+| 2025-07-21 06:03:20 | `pyxbase/ccode/XBCMDS_modern.h` | 1,727 | `8be43bd06bcbc95e...` |
+| 2025-07-21 06:03:24 | `pyxbase/ccode/XBINDEX_modern.h` | 4,221 | `0855ba4fb8ebf758...` |
+| 2025-07-21 06:03:28 | `pyxbase/ccode/DOTTALK_modern.h` | 286 | `8f53ac4783d26698...` |
+| 2025-07-21 06:03:40 | `pyxbase/ccode/XBASE_modern.c` | 20,789 | `cf56decc99291675...` |
+| 2025-07-21 06:03:44 | `pyxbase/ccode/XBCMDS_modern.c` | 19,896 | `50d370def1266a82...` |
+| 2025-07-21 06:03:50 | `pyxbase/ccode/XBINDEX_modern.c` | 17,278 | `5521bc8f819a978b...` |
+| 2025-07-21 06:03:56 | `pyxbase/ccode/DOTTALK_modern.c` | 11,931 | `8cfb11fca33ebd5f...` |
+| 2025-07-21 06:04:04 | `pyxbase/ccode/TEST_modern.c` | 3,134 | `84d4a0962219265e...` |
+| 2025-08-02 09:44:48 | `pyxbase/text/new 1.txt` | 25,885 | `ca07b351bb4fe509...` |
+| 2025-08-02 10:00:52 | `pyxbase/text/gemini.txt` | 55,733 | `87c77ac42f2fa73c...` |
+| 2025-08-02 10:05:18 | `pyxbase/text/g2.txt` | 44,163 | `db26d233ec296492...` |
+| 2025-08-02 10:10:10 | `pyxbase/text/g3.txt` | 1,838 | `a0a0284dc2f51f69...` |
+| 2025-08-02 10:11:06 | `pyxbase/text/gmd.txt` | 2,971 | `de93fa4a4da999f2...` |
+
+- `new 1.txt` SHA-256:
+  `ca07b351bb4fe50948049fbf786285da057af8a76b280c62f454840994628b7d`
+- `gemini.txt` SHA-256:
+  `87c77ac42f2fa73c6215caae879a0797b78fd80f5eea8cd286d7bb79bef60035`
+
+## Interpretation rules and limitations
+
+1. ZIP timestamps preserve local wall-clock time with two-second precision,
+   but they do not encode a timezone. The dates are more reliable than the
+   timezone attribution.
+2. File timestamps can survive copying or be changed. The mailbox evidence
+   supplies an independent "existed no later than" bound, not cryptographic
+   authentication of each internal timestamp.
+3. The July 21 batch strongly suggests automation or AI assistance but does
+   not identify a model or prove the mechanism.
+4. `new 1.txt` is direct AI-style project output, but its model is unnamed.
+   The later `gemini.txt` filename provides explicit model attribution.
+5. This is the earliest evidence found in the reviewed material. An older
+   archive, chat export, cloud revision, or message could move the documented
+   date earlier.
+
+## Approved project-history wording
+
+**Full wording:** AI-assisted work on the DotTalk lineage is evidenced by a
+rapid source-modernization batch dated July 21, 2025. Direct preserved AI
+transcript evidence begins August 2, 2025, when AI-generated material
+translated the existing `AREA`, `SELECT`, `select_rec`, and `s[MAX_AREA]`
+architecture into a Python object model; an explicitly named Gemini transcript
+followed minutes later.
+
+**Concise wording:** Documented AI-assisted DotTalk development began by
+August 2, 2025, with probable modernization activity preserved from July 21,
+2025.
+
+## Source register
+
+| ID | Source | Role in the finding |
+| --- | --- | --- |
+| S1 | Connected message, `Initial Research`, June 25, 2025 | Establishes general AI use, not DotTalk-specific work. |
+| S2 | Preserved `pyxbase.zip` with the full archive hash above | Establishes internal artifacts and stored timestamps. |
+| S3 | `pyxbase/text/new 1.txt` | Establishes direct AI-style assistance on DotTalk work-area architecture. |
+| S4 | `pyxbase/text/gemini.txt` | Establishes explicit Gemini-attributed project work. |
+| S5 | Connected message, `files`, August 2, 2025, with the archive | Establishes independent possession by that time. |
+| S6 | Connected message, `pyxbase`, August 3, 2025, with the archive | Supplies a second preservation copy. |
+| S7 | Connected message, `My Summer Proect` [sic], December 13, 2025, with `dottalkpp_Alpha7.zip` | Later corroboration of project identity and direction. |
+
+Private message bodies and attachments remain outside this public page. The
+source register records their evidentiary role without exposing mailbox
+addresses or republishing private correspondence.

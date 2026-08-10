@@ -1,0 +1,67 @@
+flowchart TB
+  ROOT["DotTalk++ / LabTalk database schema catalog"]
+
+  subgraph EDU["Education and reference"]
+    MCC64["MCC x64<br/>13 X64 DBF tables"]
+    MCC32["MCC x32<br/>13 classic DBF tables"]
+    MCCVFP["MCC VFP<br/>12 VFP DBF tables"]
+    MCCOG["MCC original<br/>12 reference tables"]
+    BIBLE["Bible x64<br/>13 SQLite tables"]
+    PIN["Pinocchio<br/>2 benchmark tables"]
+  end
+
+  subgraph OPS["Runtime and governance"]
+    HELP["HELP<br/>10 live + 6 V32 tables"]
+    META["Runtime metadata<br/>8 tables"]
+    IDENT["Identity / RBAC<br/>9 tables"]
+    BBS["AI-BBS<br/>3 tables"]
+    PORTAL["AI Portal tracking<br/>5 tables"]
+    DDICT["Data dictionary<br/>17 tables"]
+  end
+
+  subgraph DOCS["Documentation and language"]
+    COMMENTS["Source comments<br/>8 tables"]
+    MANUALS["Manual assembly<br/>8 tables"]
+    MSG["Messaging<br/>2 tables"]
+    LOCALE["Locale<br/>2 tables"]
+  end
+
+  subgraph APPS["Applications and fixtures"]
+    PYCRUD["PyCRUD demo<br/>4 SQLite tables"]
+    MEMO["Memo / dialect fixtures<br/>14 tables"]
+    SANDBOX["Sandbox / probes<br/>50 generated tables"]
+  end
+
+  ROOT --> EDU
+  ROOT --> OPS
+  ROOT --> DOCS
+  ROOT --> APPS
+
+  MCC64 -. format comparison .-> MCC32
+  MCC32 -. dialect comparison .-> MCCVFP
+  MCCVFP -. provenance .-> MCCOG
+  HELP --> META
+  META --> DDICT
+  IDENT --> PORTAL
+  IDENT --> BBS
+  COMMENTS --> MANUALS
+  MSG --> LOCALE
+  DDICT --> MANUALS
+
+  INDEX["Derived indexes<br/>LMDB - CDX - CNX<br/>not separate table schemas"]
+  OPS -. indexed by .-> INDEX
+  DOCS -. indexed by .-> INDEX
+  EDU -. indexed by .-> INDEX
+
+  classDef root fill:#0d2a35,stroke:#60c8d4,color:#e9f0ff,stroke-width:2px;
+  classDef edu fill:#153020,stroke:#4ade80,color:#e9f0ff;
+  classDef ops fill:#2b1d35,stroke:#a855f7,color:#e9f0ff;
+  classDef docs fill:#2b2115,stroke:#ff9540,color:#e9f0ff;
+  classDef apps fill:#101d2e,stroke:#1e2e48,color:#e9f0ff;
+  classDef derived fill:#1d2330,stroke:#96aac8,color:#e9f0ff,stroke-dasharray:5 5;
+  class ROOT root;
+  class MCC64,MCC32,MCCVFP,MCCOG,BIBLE,PIN edu;
+  class HELP,META,IDENT,BBS,PORTAL,DDICT ops;
+  class COMMENTS,MANUALS,MSG,LOCALE docs;
+  class PYCRUD,MEMO,SANDBOX apps;
+  class INDEX derived;
