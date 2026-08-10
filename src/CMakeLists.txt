@@ -32,6 +32,16 @@ if (DOTTALK_HAS_XINDEX AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/xindex/CMakeLists
   add_subdirectory(xindex)
 endif()
 
+# CdxDocument is also used by table-only compositions where the full xindex
+# library is intentionally absent. Keep its payload implementation in one
+# reusable internal target instead of compiling a library-owned source into an
+# executable and bypassing the duplicate-basename guard below.
+add_library(dottalk_inx_payload STATIC
+  xindex/inx_payload.cpp
+)
+target_include_directories(dottalk_inx_payload PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_compile_features(dottalk_inx_payload PUBLIC cxx_std_20)
+
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/memo/CMakeLists.txt")
   add_subdirectory(memo)
 endif()
@@ -406,6 +416,9 @@ endif()
 # interactive index command surface is disabled.
 find_package(unofficial-lmdb CONFIG REQUIRED)
 target_link_libraries(dottalkpp PRIVATE unofficial::lmdb::lmdb)
+if (NOT DOTTALK_HAS_XINDEX)
+  target_link_libraries(dottalkpp PRIVATE dottalk_inx_payload)
+endif()
 
 # Common shared infrastructure extracted from CLI.
 # src/common stays excluded from the glob above, so these are added explicitly.
