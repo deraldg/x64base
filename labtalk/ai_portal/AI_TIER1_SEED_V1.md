@@ -1,14 +1,14 @@
 # AI Tier 1 Seed V1 -- what you must know before you act
 
-    status      : seed, awaiting M1 ruling 6.2 / 6.5g (lane AIF-082)
+    status      : seed (lane AIF-082; ruling state lives in the lane doc)
     owner       : member.derald   steward: member.ai.claude.cowork
     created_utc : 2026-07-31T13:25:00Z
-    updated_utc : 2026-08-05T00:00:00Z
+    updated_utc : 2026-08-10T00:00:00Z
     budget      : 8192 B hard ceiling (see "Maintenance contract")
 
-The smallest set that makes you **safe to act**. It does not make you
-knowledgeable about the engine; that loads per task. If you can answer the five
-questions at the end, stop reading and start working.
+The smallest set that makes you **safe to act**. Engine knowledge loads per
+task. If you can answer the five questions at the end, stop reading and start
+working.
 
 ---
 
@@ -112,9 +112,9 @@ smallest working set, measured. Table below is the fallback.
 | About to | Read |
 | --- | --- |
 | change source | `AI_ENGINEERING_STANDARDS_SEED_V1.md`, `SOURCE_MUTATION_CONTRACT_GATE_SEED_V1.md` |
-| read or write DBF, memos, or indexes | x64 is not x32. x64 memo text is a MemoManager/x64-sidecar concern, NOT classic `.dbt`; CDX/CNX/LMDB are the index/memo family. Use the native x64 path (`src/cli/cmd_use.cpp`), never a v32 reader. `docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md` (+ dev-09/10) |
-| use a reference authority or catalog | authorities are dotref, foxref, edref, pshell_ref, sql_ref, devref (each owns its namespace) plus SYSFUNC for functions; verify with `tools/fullstack_docs/refcheck_v1.py` / `normcheck_v1.py` |
-| edit the website | classify the page first: `x64base-site` `content/docs/dev/website-documentation-matrix.mdx`. Never hand-edit `generated`/`derived`/`maintained_current` -- fix source and regenerate; hand-edit only `static`/`maintained` |
+| read or write DBF, memos, or indexes | x64 is not x32: memo text is MemoManager/x64-sidecar, never classic `.dbt`; use the native x64 path, never a v32 reader. `docs/manuals/developer/dev/dev-08-dbf-x32-x64-formats.md` (+ dev-09/10) |
+| use a reference authority or catalog | each authority owns its namespace (dotref, foxref, edref, pshell_ref, sql_ref, devref; SYSFUNC for functions); verify with `tools/fullstack_docs/refcheck_v1.py` |
+| edit the website | classify the page first via `x64base-site` `content/docs/dev/website-documentation-matrix.mdx`; hand-edit only `static`/`maintained` -- otherwise fix source and regenerate |
 | write DotScript | `DOTTALKPP_DOTSCRIPT_READINESS_SEEDS_V1.md`, `dottalkpp/data/scripts/README.txt` |
 | plan gates for a change | `SCOPE_CALIBRATION_SEED_V1.md`, `SDLC_FAST_START_SEED_V1.md` |
 | open a lane | prior art first, then `claim-aif`, then register **before or with** the work. `AI_SESSION_COORDINATION_PROTOCOL_V1.md` |

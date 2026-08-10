@@ -64,3 +64,17 @@ to Prove It" rules (a checker is unproven until seen FAILING; bound every metric
 `claim-aif` a fresh number (run id of the claiming session), add the intake row citing it,
 stamp it here. Docs/tooling lane: authorable in-sandbox; anything touching hooks is verified by
 running the real gate on the host with a known-bad input, per M2's own standard.
+
+## Pre-registry change log (entries migrate into GATE_REGISTRY_V1 at M1)
+
+- **2026-08-10 (member.ai.claude.cowork) -- staged-set visibility, advisory.**
+  Trigger: cf5caa7bb shipped a third file its author never staged; root cause was the
+  pre-commit hook's tier0-refresh block silently regenerating and staging
+  `TIER0_STATE.md` at commit time. Two advisory changes per M3 (advisory-first, severity
+  declared): (1) `prepush_gate.py` prints every staged path (`= path`) when the set is at
+  or under `STAGED_LIST_THRESHOLD` (15) -- counts alone hide stowaways until they are in
+  history; (2) the `refresh-tier0.ps1` hook template announces when its refresh actually
+  stages a change. Neither alters any exit code. Known-bad proof owed at M2: host-run the
+  gate with a deliberately pre-staged extra file and capture the listing; hook template
+  change requires per-clone `-InstallHook` re-run and a host transcript showing the
+  announcement line.

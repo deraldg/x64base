@@ -51,6 +51,9 @@ import sys
 # --- Threshold for the "mass change" heuristic ---------------------------------
 MASS_CHANGE_THRESHOLD = 60
 
+# --- Threshold for listing the staged set by name (stowaway visibility) --------
+STAGED_LIST_THRESHOLD = 15
+
 # --- HARD BLOCK patterns (never belong in a source commit) ---------------------
 # Directory-segment matches (any path containing the segment) and glob suffixes.
 HARD_BLOCK_DIR_SEGMENTS = (
@@ -394,6 +397,17 @@ def main() -> int:
     print(f"  source/docs/config : {len(ok)}")
     print(f"  data/fixtures      : {len(data)}")
     print(f"  hard-block         : {len(hard)}")
+
+    # STAGED-SET VISIBILITY -- advisory by name, small sets only. Counts alone
+    # let a pre-staged stowaway ride: a file staged by another session (or a
+    # hook) is invisible in "N path(s)" until the commit's own stat output, when
+    # it is already in history. Measured 2026-08-10: cf5caa7bb shipped a third
+    # file its author never staged. Listing every path for sets under the
+    # threshold makes the stowaway visible at the moment it can still be
+    # unstaged; large sets already trip the mass-change WARN above.
+    if len(paths) <= STAGED_LIST_THRESHOLD:
+        for p in sorted(paths):
+            print(f"    = {p}")
 
     exit_code = 0
 

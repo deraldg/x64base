@@ -60,10 +60,15 @@ if ($InstallHook) {
   # POSIX sh hook: forward slashes, and a shell-usable python invocation.
   $pyForHook = ($py -replace '\\','/')
   $genFwd    = 'labtalk/ai_portal/generate_tier0_state.py'
+  # The refresh must ANNOUNCE itself when it stages a change: a silent add here
+  # put an unexplained third file into cf5caa7bb (2026-08-10) and was initially
+  # misread as another session's stray staging. By design it rides the commit;
+  # by design it now says so.
   $block = @"
 $begin
 $pyForHook "$genFwd" --write >/dev/null 2>&1 || true
 git add labtalk/ai_portal/TIER0_STATE.md >/dev/null 2>&1 || true
+git diff --cached --quiet -- labtalk/ai_portal/TIER0_STATE.md 2>/dev/null || echo "tier0-refresh: TIER0_STATE.md regenerated -- rides in this commit (by design)"
 $end
 "@
   if (-not (Test-Path $hook)) { "#!/bin/sh`n" | Set-Content -Encoding ascii $hook }
