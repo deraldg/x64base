@@ -1411,7 +1411,14 @@ static bool apply_relation_line(const std::string& body) {
 // (and the future memo carrier, M2) are thin shells around it. The returned
 // text is the byte-exact .dtschema payload (LF line endings, as the binary
 // file writer has always produced). Behavior of WORKSPACE SAVE: unchanged.
-static std::string schema_save_to_string() {
+static std::string measure_open_flavor();  // defined below (carrier section)
+
+// version: 2 = the proven format (default, untouched); 3 = owner-chartered
+// 2026-08-11, valid for all flavors -- SAME body as 2 plus declarative lines
+// (FLAVOR now; residence/TARGET arrives with the hydration step that gives it
+// semantics -- a line with no consumer is a paper claim). Coexistence rule:
+// v3 is opt-in per save; every v2 producer and consumer keeps working.
+static std::string schema_save_to_string(int version = 2) {
     std::ostringstream out;
 
     auto weak_can = [](const fs::path& p) -> fs::path {
@@ -1453,7 +1460,20 @@ static std::string schema_save_to_string() {
     const fs::path rootDbf = dbf_root();
     const fs::path rootIdx = idx_root();
 
-    out << "DTSHEMA 2\n";
+    out << "DTSHEMA " << (version == 3 ? 3 : 2) << "\n";
+    if (version == 3) {
+        // v3 declarative lines (owner-chartered 2026-08-11). Roots make the
+        // posture SELF-LOCATING: the v3 loader resolves relative dbf/index
+        // entries against these instead of demanding a pre-set environment.
+        // LMDB root is recorded for disk residence; RAM lmdb is per-mount and
+        // transient, so its application stays chartered (owner: "lmdb only
+        // for disks").
+        const std::string fl = measure_open_flavor();
+        if (!fl.empty()) out << "FLAVOR " << fl << "\n";
+        out << "DBFROOT " << s8(rootDbf) << "\n";
+        out << "IDXROOT " << s8(rootIdx) << "\n";
+        out << "LMDBROOT " << s8(paths::get_slot(paths::Slot::LMDB)) << "\n";
+    }
 
     for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
         try {
@@ -1551,7 +1571,7 @@ static std::string file_carrier_wsid() {
     return std::string("F") + buf;
 }
 
-static void schema_save_to_file(const fs::path& file) {
+static void schema_save_to_file(const fs::path& file, int version = 2) {
     fs::path outPath = resolve_workspace_file_path(file, true);
 
     {
@@ -1567,7 +1587,7 @@ static void schema_save_to_file(const fs::path& file) {
         return;
     }
 
-    out << stamp_ws_id(schema_save_to_string(), file_carrier_wsid());
+    out << stamp_ws_id(schema_save_to_string(version), file_carrier_wsid());
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
@@ -1584,8 +1604,12 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
         return ec ? p : r;
     };
 
-    const fs::path rootDbf = dbf_root();
-    const fs::path rootIdx = idx_root();
+    // Non-const: a v3 posture's DBFROOT/IDXROOT lines re-point these for this
+    // load only (self-locating posture); the resolve lambdas capture by
+    // reference, so later AREA lines resolve against the payload's roots.
+    // Global SETPATH slots are never mutated.
+    fs::path rootDbf = dbf_root();
+    fs::path rootIdx = idx_root();
 
     auto resolve_dbf = [&](const fs::path& p) -> fs::path {
         fs::path q = translate_cross_os_absolute(p);
@@ -1615,6 +1639,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     int schemaVersion = 0;
     if (headerNorm == "dtshema 1") schemaVersion = 1;
     else if (headerNorm == "dtshema 2") schemaVersion = 2;
+    else if (headerNorm == "dtshema 3") schemaVersion = 3;  // superset of 2; extra declarative lines
     else {
         std::cout << "WORKSPACE LOAD: bad or unsupported file header.\n";
         return;
@@ -1709,6 +1734,22 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
 #else
             std::cout << "  ~ RELATION ignored (relations module not present): " << body << "\n";
 #endif
+        } else if (to_lower(t).rfind("flavor ", 0) == 0) {
+            // v3 declarative line: flavor the posture was measured as at save.
+            // Informational on load today; admission checks may consume later.
+            std::cout << "  FLAVOR: " << trim_copy(t.substr(7)) << "\n";
+        } else if (to_lower(t).rfind("dbfroot ", 0) == 0) {
+            // v3 self-locating roots (owner suggestion 2026-08-11): the
+            // posture carries where its tables live. Applied to THIS load's
+            // resolution only -- global SETPATH slots are never mutated.
+            rootDbf = fs::path(trim_copy(t.substr(8)));
+            std::cout << "  DBFROOT: " << s8(rootDbf) << "\n";
+        } else if (to_lower(t).rfind("idxroot ", 0) == 0) {
+            rootIdx = fs::path(trim_copy(t.substr(8)));
+            std::cout << "  IDXROOT: " << s8(rootIdx) << "\n";
+        } else if (to_lower(t).rfind("lmdbroot ", 0) == 0) {
+            // Recorded + echoed; application is chartered (disk-only rule).
+            std::cout << "  LMDBROOT: " << trim_copy(t.substr(9)) << " (recorded, not applied)\n";
         } else if (to_lower(t).rfind("wsid ", 0) == 0) {
             // Instance identity line (owner rule 2026-08-11): carrier-flavored
             // unique id. Informational on load; the version line above still
@@ -1926,8 +1967,8 @@ static bool open_catalog(xbase::DbArea& a, std::string& err) {
     return true;
 }
 
-static void save_to_memo(const std::string& name) {
-    const std::string base = schema_save_to_string();
+static void save_to_memo(const std::string& name, int version = 2) {
+    const std::string base = schema_save_to_string(version);
 
     std::string err;
     xbase::DbArea a;
@@ -1999,7 +2040,7 @@ static void save_to_memo(const std::string& name) {
                && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one
                && set_by_name(a, "FLAVOR", measure_open_flavor(), err)
                && set_by_name(a, "OS_COMPAT", "ALL", err)    // a CLAIM column, not a measurement
-               && set_by_name(a, "FMT", "DTSHEMA 2", err)
+               && set_by_name(a, "FMT", version == 3 ? "DTSHEMA 3" : "DTSHEMA 2", err)
                && set_by_name(a, "SIZE_B", std::to_string(payload.size()), err)
                && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
                && set_by_name(a, "DEPTH", "0", err)          // leaf until hydration says otherwise
@@ -2698,21 +2739,26 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
         } else if (sub_command == "save") {
             // AIF-070 M2 (owner ruling D1): a trailing MEMO keyword selects the
             // memo carrier -- WORKSPACE SAVE <name> MEMO. File remains default.
+            // DTSHEMA 3 (owner-chartered 2026-08-11): a trailing V3 keyword
+            // opts this save into version 3; v2 stays the default so every
+            // proven path is untouched. Keywords combine in either order.
             std::string wsargs = trim_copy(rest_of_args);
             bool to_memo = false;
-            {
+            int  ver = 2;
+            for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
-                if (sp != std::string::npos && to_lower(trim_copy(wsargs.substr(sp + 1))) == "memo") {
-                    to_memo = true;
-                    wsargs = trim_copy(wsargs.substr(0, sp));
-                }
+                if (sp == std::string::npos) break;
+                const std::string last = to_lower(trim_copy(wsargs.substr(sp + 1)));
+                if (last == "memo" && !to_memo)      { to_memo = true; wsargs = trim_copy(wsargs.substr(0, sp)); }
+                else if (last == "v3" && ver == 2)   { ver = 3;        wsargs = trim_copy(wsargs.substr(0, sp)); }
+                else break;
             }
             if (to_memo) {
                 if (wsargs.empty()) std::cout << "WORKSPACE SAVE: missing workspace name before MEMO.\n";
-                else ws_memo::save_to_memo(wsargs);
+                else ws_memo::save_to_memo(wsargs, ver);
             } else {
                 fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
-                schema_save_to_file(out);
+                schema_save_to_file(out, ver);
             }
 
         } else if (sub_command == "load") {

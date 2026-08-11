@@ -1,0 +1,48 @@
+* ============================================================================
+* workspace_v3_selflocate.dts -- DTSHEMA 3 step 1 (owner-chartered 2026-08-11):
+* opt-in v3 payloads carry FLAVOR plus DBFROOT/IDXROOT/LMDBROOT declarative
+* lines, and a v3 load resolves its AREA entries against the PAYLOAD's roots,
+* not the current environment (self-locating posture). Global SETPATH slots
+* are never mutated; LMDBROOT is recorded-not-applied (owner: "lmdb only for
+* disks" -- application chartered).
+*
+* Proof shape: save mcc_x64's posture as v3 into the catalog, then BREAK the
+* environment on purpose (SETPATH to the default roots, where no MCC table
+* lives) and load it back. Restoration despite the wrong environment IS the
+* proof. Coexistence guard: WORKSPACE_MEMO must run green on the same build
+* (v3 is opt-in; v2 producers and consumers stay untouched).
+*
+* Run: DO workspace_v3_selflocate  |  regression: REGRESSION RUN WORKSPACE_V3
+* Markers: V3_T1 (STUDENTS row readable through the self-located load).
+* RUNTIME-PROVEN 2026-08-11 (build 14:47:06) by hand before promotion: WSID M6,
+* FLAVOR X64, both roots echoed, 13 areas restored from the wrong environment.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "WS-V3-PROOF-BEGIN"
+
+* --- environment-first: the save leg runs from the real x64 roots -----------
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
+WORKSPACE CLOSE
+WORKSPACE LOAD mcc_x64
+WORKSPACE SAVE v3_regress MEMO V3
+WORKSPACE CLOSE
+
+* --- break the environment on purpose ---------------------------------------
+SETPATH DBF DBF
+SETPATH INDEXES INDEXES
+
+* --- self-location: the payload's roots must find the tables ----------------
+WORKSPACE LOAD v3_regress MEMO
+SELECT 8
+TOP
+? "V3_T1_selflocated_students_row:" + (SID >= 1)
+
+FORMULA "WS-V3-PROOF-END"
+
+* --- teardown: close and restore the x64 disk environment -------------------
+WORKSPACE CLOSE
+SETPATH DBF DBF/X64
+SETPATH INDEXES INDEXES/X64
