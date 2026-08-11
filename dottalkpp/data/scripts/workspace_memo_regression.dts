@@ -1,0 +1,70 @@
+* ============================================================================
+* workspace_memo_regression.dts - AIF-070 M2/M3: the memo-carrier proof.
+*
+* Proves (runtime-proven 2026-08-11 before promotion, per the
+* promote-final-tests rule): a whole database posture -- 43 areas + 58
+* relations -- saved INTO a memo field of the WORKSPACES catalog
+* (WORKSPACE SAVE <name> MEMO) and restored FROM INSIDE THE TABLE
+* (WORKSPACE LOAD <name> MEMO), then walked by both house walkers.
+* One format, two carriers; the oracle byte-compare reads the token back
+* from the FIELD (a len=10 truncation of the canonical 16-hex token slipped
+* past a memory-ref oracle once, 2026-08-11 -- never again).
+*
+* Writes: WORKSPACES.dbf catalog rows (append-history, owner ruling D4; a
+* rerun SUPERSEDES the prior wm_regress row -- by design, not residue).
+* Requires: workspaces/cascade_all.dtschema and the cascade_erp bundle.
+* Markers: WM_T1..WM_T4 must all print .T. The save line must print
+* "oracle byte-compare OK" -- a transcript checkpoint, like ERP CHECK
+* (a .dts marker cannot read command output; house rule).
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "WORKSPACE-MEMO-PROOF-BEGIN"
+
+* --- environment FIRST: .dtschema payloads are root-relative (measured
+* 2026-08-11: a load under the wrong roots resolves 0 areas, 58 rejected) ----
+SET PATH DBF SYSTEMS/CASCADE_ERP/DBF
+SET PATH INDEXES SYSTEMS/CASCADE_ERP/INDEXES
+SET PATH LMDB SYSTEMS/CASCADE_ERP/LMDB
+
+* --- stand the posture up from the FILE carrier, save to the MEMO carrier ---
+* The catalog self-creates on first touch (x64 flavor, planned descriptors,
+* memo sidecar); the save appends an attributed, timestamped, env-stamped row.
+WORKSPACE LOAD cascade_all
+WORKSPACE SAVE wm_regress MEMO
+WORKSPACE CLOSE
+
+* --- restore FROM INSIDE THE TABLE ------------------------------------------
+WORKSPACE LOAD wm_regress MEMO
+
+* WM_T1: the memo-restored posture relates -- parent TOP drives the child
+SELECT CASCADE_SALES_ORDERS
+SET ORDER TAG SO_ID
+TOP
+REL REFRESH
+SELECT CASCADE_SO_LINES
+? "WM_T1_child_follows_parent_top:" + (SO_ID = 1)
+
+* WM_T2: moving the parent re-drives the child (refresh-driven slaving,
+* over relations that lived in a memo between save and load)
+SELECT CASCADE_SALES_ORDERS
+BOTTOM
+REL REFRESH
+SELECT CASCADE_SO_LINES
+? "WM_T2_child_follows_parent_bottom:" + (SO_ID = 6)
+
+* WM_T3: the followed child record is real data, not just a position
+? "WM_T3_child_line_is_order6_line1:" + (SOLINE_ID = 11)
+
+* --- walker #2 over the memo-restored graph ---------------------------------
+SQLSEL SOLINE_ID, SO_ID FROM CASCADE_SO_Lines WHERE SO_ID = 6
+* WM_T4: cursor-neutral walker agreement -- the C_T9 assertion, but over a
+* posture that round-tripped through the memo carrier.
+? "WM_T4_walkers_agree_over_memo_restored_graph:" + (SOLINE_ID = 11)
+
+FORMULA "WORKSPACE-MEMO-PROOF-END"
+
+* --- teardown: close areas, restore the x64 disk environment ----------------
+WORKSPACE CLOSE
+DO x64

@@ -1,5 +1,19 @@
 # Workspace-in-Memo Plan V1 -- saving database workspaces in memo fields
 
+**MILESTONE (2026-08-11, same day as authoring): M1-M3 RUNTIME-PROVEN.**
+Build 09:50:38 transcript: `WORKSPACE SAVE cascade_all MEMO` wrote 9,065 B
+with the oracle byte-compare passing against the token read back FROM THE
+FIELD; `WORKSPACE LOAD cascade_all MEMO` restored 43 areas + 58/58 relations
+from inside the WORKSPACES catalog; CASCADE_ENV stayed 10/10. Two defects
+found and fixed by the process working as designed: (1) a stale binary made a
+failed build look green -- the build stamp is the measurement; (2) SNAPSHOT
+at classic len=10 truncated the canonical 16-hex x64 token -- caught by the
+fresh-session read the proof sequence prescribed, and the oracle now reads
+from the field so it can never slip through again. Owed next (promote-final-
+tests): a WORKSPACE_MEMO regression wrapping this exact run; then the status
+board's memo-resident entry advances to "first increment runtime-proven"
+(the FULL mini-database claim stays chartered).
+
 **Status:** review-needed plan (authored 2026-08-11). Owner: member.derald.
 Coauthor of record: member.ai.claude.cowork (Coworker, Class A).
 Parent lane: **AIF-070** (virtual workspaces / memo-resident mini-databases,

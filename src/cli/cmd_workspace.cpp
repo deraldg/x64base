@@ -130,6 +130,13 @@
 #include "xbase.hpp"
 #include "xbase_64.hpp"
 #include "memo/memo_auto.hpp"   // cli_memo::memo_auto_on_use / memo_auto_on_close
+// AIF-070 M2 (memo carrier) dependencies:
+#include "xbase/dbf_create.hpp"          // create the WORKSPACES catalog (X64, memo field)
+#include "xbase/field_name_policy.hpp"   // descriptor-name planning (two name planes)
+#include "xbase/fields.hpp"              // fields::findFieldCI (public; DbArea's member is private)
+#include "xbase_locks.hpp"               // cooperative FLOCK for catalog appends
+#include "identity/identity_admin.hpp"   // AIF-075: current_member attribution
+#include <ctime>
 #if DOTTALK_HAS_XINDEX
 #include "xindex/index_manager.hpp"
 #include "xindex/attach.hpp"
@@ -1707,6 +1714,233 @@ static void schema_load_from_file(const fs::path& file) {
     schema_load_from_stream(in, s8(inPath));
 }
 
+// ===================== AIF-070 M2: the memo carrier =========================
+// One format, two carriers: the .dtschema text from schema_save_to_string()
+// is stored byte-exact in a memo field of the WORKSPACES catalog (X64 table
+// in the workspaces root, standalone DbArea -- deliberately OUTSIDE the work
+// areas so saving never disturbs the state being saved; the bbs_store
+// pattern). Oracle gate: every memo save is immediately read back and
+// byte-compared against the serialized string -- mismatch is a loud hard
+// fail. History is append-only (owner ruling D4): a re-save marks the prior
+// live row SUPERSEDED=1 and appends a fresh row. Attribution is mandatory
+// (AIF-075): AUTHOR records current_member id/kind. DBF_ROOT/IDX_ROOT record
+// the SET PATH env active at save time, because .dtschema payloads are
+// root-relative by design -- a snapshot declares its own preconditions
+// (lesson measured 2026-08-11: a load under the wrong roots resolves 0/58).
+
+namespace ws_memo {
+
+static fs::path catalog_dir() {
+    // The same root WORKSPACE SAVE files land in (owner ruling D2).
+    return resolve_workspace_file_path(fs::path("_probe"), true).parent_path();
+}
+static fs::path catalog_path() { return catalog_dir() / "WORKSPACES.dbf"; }
+
+// RAII whole-table lock; the bbs_store idiom (cross-process FLOCK,
+// pid-stamped, stale-owner recovering). Appends grow the header, so
+// whole-table granularity is correct.
+struct WsLock {
+    xbase::DbArea& a; bool held = false;
+    WsLock(xbase::DbArea& area, std::string& err) : a(area) {
+        std::string lerr;
+        held = xbase::locks::try_lock_table(a, &lerr);
+        if (!held && err.empty())
+            err = "WORKSPACE MEMO: catalog busy (locked by another process)"
+                  + (lerr.empty() ? std::string() : ": " + lerr);
+    }
+    ~WsLock() { if (held) xbase::locks::unlock_table(a); }
+    explicit operator bool() const { return held; }
+    WsLock(const WsLock&) = delete;
+    WsLock& operator=(const WsLock&) = delete;
+};
+
+static bool set_by_name(xbase::DbArea& a, const char* col, const std::string& v, std::string& err) {
+    const int i = fields::findFieldCI(a, col);   // 0-based; -1 = missing
+    if (i < 0) { err = std::string("WORKSPACE MEMO: catalog missing column ") + col; return false; }
+    if (!a.set(i + 1, v)) { err = std::string("WORKSPACE MEMO: cannot set ") + col; return false; }
+    return true;
+}
+static std::string get_by_name(const xbase::DbArea& a, const char* col) {
+    const int i = fields::findFieldCI(a, col);
+    return i >= 0 ? a.get(i + 1) : std::string();
+}
+
+static std::string now_stamp() {
+    std::time_t t = std::time(nullptr);
+    char buf[20] = {0};
+    std::tm tmv{};
+#if defined(_WIN32)
+    localtime_s(&tmv, &t);
+#else
+    localtime_r(&t, &tmv);
+#endif
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tmv);
+    return buf;
+}
+
+static std::string author_stamp() {
+    std::uint64_t id = 0; int kind = 0;
+    try { dottalk::identity::current_member(id, kind); } catch (...) {}
+    return "member#" + std::to_string(id) + "/kind" + std::to_string(kind);
+}
+
+static bool ensure_catalog(std::string& err) {
+    std::error_code ec;
+    if (fs::exists(catalog_path(), ec)) return true;
+    fs::create_directories(catalog_dir(), ec);
+
+    std::vector<xbase::dbf_create::FieldSpec> f;
+    auto C = [&](const char* n, std::uint32_t len) {
+        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
+        f.push_back(s);
+    };
+    C("WS_NAME", 64); C("SAVED_AT", 19); C("AUTHOR", 48); C("SUPERSEDED", 1);
+    C("DBF_ROOT", 180); C("IDX_ROOT", 180);
+    // Memo token field: the canonical x64/DTX token is 16-char hex
+    // (src/memo/memo_ref.cpp). len=10 (classic dBASE convention) TRUNCATED
+    // the token and broke fresh-session reads -- measured 2026-08-11.
+    { xbase::dbf_create::FieldSpec m; m.name = "SNAPSHOT"; m.type = 'M'; m.len = 16; m.dec = 0; f.push_back(m); }
+
+    // Two name planes: physical descriptors planned like every x64 create.
+    std::vector<std::string> names; names.reserve(f.size());
+    for (const auto& s : f) names.push_back(s.name);
+    const auto plans = xbase::field_name_policy::plan_x64_unique_fallback(names);
+    for (std::size_t k = 0; k < f.size() && k < plans.size(); ++k)
+        f[k].descriptor_name = plans[k].descriptor_name;
+
+    return xbase::dbf_create::create_dbf(s8(catalog_path()), f,
+                                         xbase::dbf_create::Flavor::X64, err);
+}
+
+static bool open_catalog(xbase::DbArea& a, std::string& err) {
+    if (!ensure_catalog(err)) return false;
+    try { a.open(s8(catalog_path())); }
+    catch (const std::exception& e) { err = std::string("WORKSPACE MEMO: cannot open catalog: ") + e.what(); return false; }
+    std::string merr;
+    if (!cli_memo::memo_auto_on_use(a, s8(catalog_path()), true, merr)) {
+        err = "WORKSPACE MEMO: memo sidecar: " + merr;
+        return false;
+    }
+    return true;
+}
+
+static void save_to_memo(const std::string& name) {
+    const std::string payload = schema_save_to_string();
+
+    std::string err;
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) { std::cout << err << "\n"; return; }
+
+    {
+        WsLock lk(a, err);
+        if (!lk) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
+
+        // D4 append-history: supersede any prior live row of this name.
+        const std::uint64_t n = a.recCount64();
+        for (std::uint64_t r = 1; r <= n; ++r) {
+            try {
+                a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
+                if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
+                    if (!set_by_name(a, "SUPERSEDED", "1", err)) { std::cout << err << "\n"; }
+                    else a.writeCurrent();
+                }
+            } catch (...) {}
+        }
+
+        // Fresh row + memo payload.
+        auto* store = cli_memo::memo_store_for(a);
+        if (!store || !store->is_open()) {
+            std::cout << "WORKSPACE MEMO: memo backend not attached.\n";
+            cli_memo::memo_auto_on_close(a); a.close(); return;
+        }
+        dottalk::memo::MemoPutResult mr = store->put_text(payload);
+        if (!mr.ok) {
+            std::cout << "WORKSPACE MEMO: memo write failed"
+                      << (mr.error.empty() ? "" : (": " + mr.error)) << "\n";
+            cli_memo::memo_auto_on_close(a); a.close(); return;
+        }
+
+        a.appendBlank();
+        bool ok = set_by_name(a, "WS_NAME", name, err)
+               && set_by_name(a, "SAVED_AT", now_stamp(), err)
+               && set_by_name(a, "AUTHOR", author_stamp(), err)
+               && set_by_name(a, "SUPERSEDED", "0", err)
+               && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
+               && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
+               && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
+        if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
+        a.writeCurrent();
+
+        // ORACLE GATE: read the memo back and byte-compare. Loudly. The ref
+        // comes FROM THE FIELD, not from memory -- the field is what a fresh
+        // session will read, and a field-width truncation already slipped
+        // past a memory-ref oracle once (2026-08-11).
+        dottalk::memo::MemoRef ref{}; ref.token = trim_copy(get_by_name(a, "SNAPSHOT"));
+        dottalk::memo::MemoGetResult back = store->get_text(ref);
+        if (!back.ok || back.text != payload) {
+            std::cout << "WORKSPACE MEMO: ORACLE FAIL -- readback "
+                      << (back.ok ? "differs from serialized payload" : ("failed: " + back.error))
+                      << " (" << payload.size() << " B written, "
+                      << (back.ok ? std::to_string(back.text.size()) : std::string("?"))
+                      << " B read). Row appended but NOT trustworthy.\n";
+        } else {
+            std::cout << "WORKSPACE SAVE: wrote memo '" << name << "' ("
+                      << payload.size() << " B, oracle byte-compare OK) to "
+                      << s8(catalog_path()) << "\n";
+        }
+    } // release FLOCK while area still open
+
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+}
+
+static void load_from_memo(const std::string& name) {
+    std::string err;
+    xbase::DbArea a;
+    if (!open_catalog(a, err)) { std::cout << err << "\n"; return; }
+
+    std::string token;
+    std::string saved_at;
+    const std::uint64_t n = a.recCount64();
+    for (std::uint64_t r = 1; r <= n; ++r) {   // last live row wins (append-history)
+        try {
+            a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
+            if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
+                token = trim_copy(get_by_name(a, "SNAPSHOT"));
+                saved_at = get_by_name(a, "SAVED_AT");
+            }
+        } catch (...) {}
+    }
+
+    if (token.empty()) {
+        std::cout << "WORKSPACE LOAD: no live memo workspace named '" << name << "'.\n";
+        cli_memo::memo_auto_on_close(a); a.close(); return;
+    }
+
+    auto* store = cli_memo::memo_store_for(a);
+    if (!store || !store->is_open()) {
+        std::cout << "WORKSPACE MEMO: memo backend not attached.\n";
+        cli_memo::memo_auto_on_close(a); a.close(); return;
+    }
+    dottalk::memo::MemoRef ref{}; ref.token = token;
+    dottalk::memo::MemoGetResult got = store->get_text(ref);
+    cli_memo::memo_auto_on_close(a);
+    a.close();
+
+    if (!got.ok) {
+        std::cout << "WORKSPACE MEMO: memo read failed"
+                  << (got.error.empty() ? "" : (": " + got.error)) << "\n";
+        return;
+    }
+
+    std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << saved_at
+              << ", " << got.text.size() << " B)\n";
+    std::istringstream in(got.text);
+    schema_load_from_stream(in, "memo:" + name);
+}
+
+} // namespace ws_memo
+
 
 // --------- Tuple / Ordered Row View -----------------------------------------
 
@@ -2318,8 +2552,24 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // Refresh after all requested closes have completed.
             refresh_relations_if_enabled_safe();
         } else if (sub_command == "save") {
-            fs::path out = rest_of_args.empty() ? fs::path("session") : fs::path(rest_of_args);
-            schema_save_to_file(out);
+            // AIF-070 M2 (owner ruling D1): a trailing MEMO keyword selects the
+            // memo carrier -- WORKSPACE SAVE <name> MEMO. File remains default.
+            std::string wsargs = trim_copy(rest_of_args);
+            bool to_memo = false;
+            {
+                const auto sp = wsargs.find_last_of(" \t");
+                if (sp != std::string::npos && to_lower(trim_copy(wsargs.substr(sp + 1))) == "memo") {
+                    to_memo = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
+                }
+            }
+            if (to_memo) {
+                if (wsargs.empty()) std::cout << "WORKSPACE SAVE: missing workspace name before MEMO.\n";
+                else ws_memo::save_to_memo(wsargs);
+            } else {
+                fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
+                schema_save_to_file(out);
+            }
 
         } else if (sub_command == "load") {
             try {
@@ -2330,10 +2580,23 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 }
             } catch (...) {}
 
-            if (rest_of_args.empty()) {
+            // AIF-070 M2: WORKSPACE LOAD <name> MEMO loads from the catalog.
+            std::string wsargs = trim_copy(rest_of_args);
+            bool from_memo = false;
+            {
+                const auto sp = wsargs.find_last_of(" \t");
+                if (sp != std::string::npos && to_lower(trim_copy(wsargs.substr(sp + 1))) == "memo") {
+                    from_memo = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
+                }
+            }
+            if (from_memo) {
+                if (wsargs.empty()) std::cout << "WORKSPACE LOAD: missing workspace name before MEMO.\n";
+                else ws_memo::load_from_memo(wsargs);
+            } else if (wsargs.empty()) {
                 std::cout << "WORKSPACE LOAD: missing file path.\n";
             } else {
-                schema_load_from_file(fs::path(rest_of_args));
+                schema_load_from_file(fs::path(wsargs));
             }
 
         } else if (sub_command == "tuples" || sub_command == "tuple" ||
