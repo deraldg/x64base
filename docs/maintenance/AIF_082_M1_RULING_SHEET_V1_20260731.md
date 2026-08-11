@@ -284,3 +284,13 @@ ahead of upstream that range is empty, so the gate inspects nothing and passes.
 Confirmed by evidence 2026-07-31: `@{u}..HEAD` inspected the real set and ran
 every check before the push of `1b60b728f..3df21616d`. Same self-passing shape as
 R27b, in documentation rather than code. Recommend: correct the usage string.
+
+**RUNNING-TOTAL RETIRED (owner ruling 2026-08-10, prompted by the report's own
+catch).** The derived Open Rulings report measured 18 open rows while the last
+hand-kept footer above said 20 -- the exact drift the hand-kept total exists to
+prevent and cannot. Per the no-perishable-literals rule (CLAUDE.md maintenance
+rule: if an agent can cheaply measure it, measure it), the hand-kept "Total
+open" footer is retired. The derived count on the AI Portal Open Rulings page
+owns this figure from here on. Earlier "Total open" lines above stand untouched
+as historical record; `build_rulings_report.py` recognizes this sentinel and
+stops comparing against them.

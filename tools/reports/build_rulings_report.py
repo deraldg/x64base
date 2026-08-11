@@ -107,8 +107,15 @@ def parse_sheet(p: Path) -> dict:
                           detail=' '.join(body.split())[:520],
                           rec=recm.group(1) if recm else '', settled=False, date=None))
     tot = TOTAL.findall(txt)
+    # RUNNING-TOTAL RETIRED sentinel (owner ruling 2026-08-10): the hand-kept
+    # footer drifted (declared 20, measured 18) and was retired per the
+    # no-perishable-literals rule. Earlier "Total open" lines remain in the
+    # sheet as historical record; once the sentinel is present this page owns
+    # the count and stops comparing against them.
+    retired = 'RUNNING-TOTAL RETIRED' in txt
     return dict(path=p, items=items, ratified=ratified,
-                declared_open=int(tot[-1]) if tot else None,
+                declared_open=None if retired else (int(tot[-1]) if tot else None),
+                total_retired=retired,
                 mtime=datetime.datetime.utcfromtimestamp(p.stat().st_mtime))
 
 
@@ -249,6 +256,11 @@ def main() -> int:
                  f'<b>{len(openi)}</b>. A hand-kept running total drifts every time a row is added '
                  'without updating the footer; the derived figure is the measurement. '
                  'Correct the sheet, or drop the hand-kept total and let this page own it.</div>')
+    elif sheets[0].get('total_retired'):
+        b.append('<div class="note"><b>Hand-kept total retired</b> (owner ruling 2026-08-10) -- '
+                 'this page caught the footer drifting (declared 20, measured 18) and now owns '
+                 'the count. Historical "Total open" lines remain in the sheet as record; the '
+                 'derived figure above is the measurement.</div>')
 
     by = {}
     for i in openi:
