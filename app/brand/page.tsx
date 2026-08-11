@@ -26,7 +26,9 @@ export default function BrandPage() {
         </p>
       </header>
 
-      <figure className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
+      {/* Reduced 75% (owner correction 2026-08-11): the social card is a
+          reference figure here, not a banner. */}
+      <figure className="max-w-[433px] overflow-hidden rounded-lg border border-border bg-card shadow-soft">
         <Image
           src="/images/brand/x64base-campus-social-card.png"
           alt="x64base — A glass-box database engine and configurable Laboratory Campus"
