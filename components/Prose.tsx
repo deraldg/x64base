@@ -5,7 +5,9 @@ export function Prose({ children, className, html }: PropsWithChildren<{ classNa
   return (
     <article
       className={clsx(
-        "prose prose-invert max-w-none",
+        // prose-invert only under html.dark -- hardcoded invert painted
+        // near-white text on the light theme (docs section, 2026-08-11).
+        "prose dark:prose-invert max-w-none",
         "prose-a:text-brand prose-a:no-underline hover:prose-a:underline",
         "prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5",
         "prose-pre:border prose-pre:border-border prose-pre:bg-bg/30",
