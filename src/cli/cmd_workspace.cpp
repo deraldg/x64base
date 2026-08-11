@@ -1516,6 +1516,28 @@ static std::string stamp_ws_id(std::string payload, const std::string& id) {
     return payload;
 }
 
+// FLAVOR is MEASURED from the open areas at save time, never declared
+// (owner nod 2026-08-11). versionByte 0x64 / kind V128 = X64; version
+// 0x30-0x32 = VFP; kind V32 (0x03/0x83/0xF5) = X32. All areas agree ->
+// that flavor; disagree -> MIXED; nothing open -> empty (claim withheld).
+static std::string measure_open_flavor() {
+    std::string fl;
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+            std::string f = "OTHER";
+            const std::uint8_t vb = A.versionByte();
+            if (vb == xbase::DBF_VERSION_64 || A.kind() == xbase::AreaKind::V128) f = "X64";
+            else if (vb == 0x30 || vb == 0x31 || vb == 0x32) f = "VFP";
+            else if (A.kind() == xbase::AreaKind::V32) f = "X32";
+            if (fl.empty()) fl = f;
+            else if (fl != f) return "MIXED";
+        } catch (...) {}
+    }
+    return fl;
+}
+
 static std::string file_carrier_wsid() {
     std::time_t t = std::time(nullptr);
     char buf[20] = {0};
@@ -1974,6 +1996,9 @@ static void save_to_memo(const std::string& name) {
         a.appendBlank();
         bool ok = set_by_name(a, "WS_ID", std::to_string(newId), err)
                && set_by_name(a, "WS_NAME", name, err)
+               && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one
+               && set_by_name(a, "FLAVOR", measure_open_flavor(), err)
+               && set_by_name(a, "OS_COMPAT", "ALL", err)    // a CLAIM column, not a measurement
                && set_by_name(a, "FMT", "DTSHEMA 2", err)
                && set_by_name(a, "SIZE_B", std::to_string(payload.size()), err)
                && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
@@ -1986,8 +2011,7 @@ static void save_to_memo(const std::string& name) {
                && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
                && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
                && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
-        // SCHEMA_NAME / FLAVOR / OS_COMPAT populate in M2 (mcc_x64 canonical
-        // save); PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT are chartered columns.
+        // PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT remain chartered columns.
         if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
         a.writeCurrent();
 
