@@ -477,6 +477,16 @@ General implementation conventions:
   reviewed.
 - Default to report-only when touching DBF/CDX/LMDB data, HELP tables,
   metadata, generated catalogs, manuals, proofs, backups, or archives.
+- Handoff commands carry their own environment, set non-destructively (owner
+  rule, 2026-08-11). The agent cannot observe the operator's current drive or
+  directory and must never mutate it: use `git -C <tree>` for git, and
+  `Push-Location <tree>; <command>; Pop-Location` for anything cwd-dependent
+  (npm, generators, datarun-style tools). A bare command that assumes a
+  location is a defect; three publishes failed on it 2026-08-10/11.
+- It costs nothing to do it right (owner rule, 2026-08-11): when the correct
+  form of a small act is free -- the location-proof command, the scoped add,
+  the measured number -- the correct form is mandatory. Convenience is not a
+  reason. Full entry: `labtalk/ai_portal/AI_GLOSSARY_V1.md`.
 
 ## Minimal New-AI Checklist
 

@@ -98,6 +98,14 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   "Chartered" coined 2026-08-10 for the site's proven-capabilities page: designed and ruled,
   not yet source-evidenced. The tier ladder is what lets the hero stay modest while the
   feature list explains the cool.
+- **it costs nothing to do it right (owner rule, 2026-08-11)** -- when the correct form
+  of a small act is free, the correct form is mandatory; convenience is not a reason.
+  Coined ruling on handoff hygiene: a location-proof command (`git -C`,
+  `Push-Location ...; Pop-Location`) costs the same keystrokes as a bare one and cannot
+  fail on the operator's invisible cwd -- three publishes failed on the bare form
+  2026-08-10/11. The general form: where correctness is priced at zero, sloppiness is a
+  choice, not a trade-off. Companion to the golden rule: verify before you assert, and
+  when doing it right is free, just do it right.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.
