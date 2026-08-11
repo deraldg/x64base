@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Menu, X } from "lucide-react";
 import { topNav } from "@/config/nav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -43,16 +44,20 @@ export function Navbar() {
               {i.label}
             </Link>
           ))}
+          <ThemeToggle />
         </nav>
 
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-xl border border-border bg-card/60 p-2 text-muted hover:text-fg md:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Open menu"}
-        >
-          {open ? <X size={18} /> : <Menu size={18} />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-card/60 p-2 text-muted hover:text-fg"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? "Close menu" : "Open menu"}
+          >
+            {open ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
       </div>
 
       {open ? (

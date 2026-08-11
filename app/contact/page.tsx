@@ -44,7 +44,7 @@ export default function ContactPage() {
 
       <section className="rounded-2xl border border-border bg-card/20 p-6 text-sm text-muted">
         <p>
-          x64base™ <br />© 1993–2026 Derald R Grimwood Jr
+          x64base <br />© 1993–2026 Derald R Grimwood Jr
         </p>
       </section>
     </div>

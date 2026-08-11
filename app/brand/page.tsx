@@ -12,7 +12,7 @@ const items = [
   { href: "/brand/visual-identity", title: "Visual Identity", description: "Palette, type, and iconography." },
   { href: "/brand/usage-guide", title: "Usage Guide", description: "Tone, wording, and naming conventions." },
   { href: "/brand/logo-concepts", title: "Logo Concepts", description: "Concept directions and application notes." },
-  { href: "/brand/trademarks", title: "Trademark Notes", description: "Attribution and status notes for project names." }
+  { href: "/brand/trademarks", title: "Project Names", description: "Attribution notes for project names." }
 ];
 
 export default function BrandPage() {

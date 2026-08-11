@@ -58,6 +58,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen">
+        {/* Theme no-flash: apply the stored preference (light default, owner
+            ruling 2026-08-11) before anything paints. Runs synchronously as the
+            first element in body; ThemeToggle keeps it in sync afterward. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"
+          }}
+        />
         <div className="border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted">
           <span className="font-mono text-brand">WEBSITE ALPHA</span>
           {" · "}

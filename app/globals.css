@@ -2,7 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme: light is the DEFAULT (owner ruling 2026-08-11); html.dark restores the
+   original midnight palette. All colors route through these variables, so the
+   whole site flips on one class. Preference (light/dark/system) persists in
+   localStorage("theme"); a no-flash script in layout.tsx applies it pre-paint. */
 :root {
+  --bg: 246 249 252;      /* cool paper */
+  --fg: 16 28 44;         /* midnight text */
+  --muted: 73 94 120;
+  --card: 255 255 255;
+  --border: 208 221 235;
+
+  --brand: 11 132 145;    /* teal, darkened for contrast on light */
+  --teal: 11 132 145;
+  --orange: 186 92 20;
+  --green: 21 128 61;
+  --purple: 126 58 194;
+  --red: 185 48 48;
+}
+
+html.dark {
   --bg: 5 12 20;          /* midnight blue */
   --fg: 233 240 255;
   --muted: 150 170 200;
@@ -25,13 +44,20 @@ body {
 body {
   color: rgb(var(--fg));
   background:
+    linear-gradient(180deg, rgba(var(--teal), 0.08), transparent 360px),
+    linear-gradient(90deg, rgba(var(--orange), 0.06), transparent 38%, rgba(var(--teal), 0.05)),
+    rgb(var(--bg));
+}
+
+html.dark body {
+  background:
     linear-gradient(180deg, rgba(96, 200, 212, 0.1), transparent 360px),
     linear-gradient(90deg, rgba(255, 149, 64, 0.08), transparent 38%, rgba(96, 200, 212, 0.07)),
     rgb(var(--bg));
 }
 
 ::selection {
-  background: rgba(96, 200, 212, 0.35);
+  background: rgba(var(--teal), 0.35);
 }
 
 

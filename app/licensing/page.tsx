@@ -14,8 +14,9 @@ export default function LicensingPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Open source, with a commercial door</h1>
         <p className="text-muted">
           x64base is <strong>dual-licensed</strong>. It is free and open source under the GNU
-          General Public License v3 for everyone, and available under a separate commercial
-          license for anyone who wants to use it in a closed or proprietary product.
+          General Public License v3 (GPL-3.0-only, committed to the repository 2026-08-11) for
+          everyone, and available under a separate commercial license for anyone who wants to
+          use it in a closed or proprietary product.
         </p>
       </header>
 
@@ -54,8 +55,7 @@ export default function LicensingPage() {
         Educational and non-commercial use is already free under the GPL. Accredited
         institutions that need commercial terms may request them at no or nominal cost.
         <br />
-        <code>x64base</code>, <code>DotTalk++</code>, and <code>LabTalk</code> are project marks
-        of the author; the license covers the software, not the marks.
+        The license covers the software; project names remain the author&apos;s.
       </p>
 
       <div className="flex flex-wrap gap-4 text-sm">
@@ -66,7 +66,7 @@ export default function LicensingPage() {
           Full licensing strategy
         </a>
         <a className="text-muted hover:text-fg hover:underline" href="/brand">
-          Trademarks &amp; brand
+          Brand
         </a>
         <a className="text-muted hover:text-fg hover:underline" href="/docs/dev/third-party-acknowledgements">
           Third-party credits

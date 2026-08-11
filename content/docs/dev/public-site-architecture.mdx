@@ -1,11 +1,20 @@
 ---
 title: "x64base.com and dottalkpp.com Architecture"
-description: "Separate architecture maps for the main x64base ecosystem website, the DotTalk++ artifact room, and the governed connections between them."
+description: "Separate architecture maps for the x64base development/conception website, the lean dottalkpp.com entry site, and the governed connections between them."
 ---
 
 The two public sites share an upstream evidence spine but serve different readers
 and publication duties. They are complementary, independently versioned sites,
 not mirrors.
+
+**Roles updated 2026-08-11 (owner ruling; AIF-107).** x64base.com is the
+development and conception site -- the owner's imagination, inspiration, and
+reality merge space, kept honest by evidence discipline. dottalkpp.com is the
+lean public entry surface for the rest of the world: static HTML, six nav
+items, an evidence-tiered status board, no glamour -- the same principle as the
+engine's lean release on `main`. The earlier "technical library / artifact
+room" plan for dottalkpp.com (which the diagrams below still depict) is
+superseded; the diagrams are retained as design history until redrawn.
 
 **Inspect the diagrams:** select any diagram to open its full-resolution SVG and
 use browser zoom for detailed labels and flows.
@@ -31,18 +40,20 @@ in `deraldg/x64base`.
 
 [![Architecture of dottalkpp.com from DotTalk++ evidence, MDO and manualgen, and separately maintained public artifacts through focused technical rooms, publication gates, GitHub Actions, and GitHub Pages](/images/sdlc/dottalkpp-com-site-architecture-v1.svg)](/images/sdlc/dottalkpp-com-site-architecture-v1.svg)
 
-`dottalkpp.com` is the focused technical library and artifact room. Its public
-surface owns:
+`dottalkpp.com` is the lean public entry surface (role updated 2026-08-11,
+AIF-107). Its public surface owns:
 
-- curated and versioned manuals;
-- the DotScript language guide;
-- command, function, mutator, format, and HELP references;
-- generated SelfDoc, contract, proof, and manualgen reports;
-- reviewed downloads, proof packets, accessibility companions, and archives;
-- source, artifact, README-preservation, and publication governance.
+- a six-item navigation: About, Documentation, Status, Downloads, Schemas,
+  Contact -- adding a seventh means removing one;
+- the evidence-tiered status board (the only place growth rates live, with
+  unstarted work listed);
+- a changelog instead of news;
+- plain vocabulary, gate-enforced (`check_site.py`), with every capability
+  claim carrying its evidence tier.
 
-Its maintained source tree is versioned in `deraldg/dottalkpp`, built by GitHub
-Actions, and published through GitHub Pages to `dottalkpp.com`.
+Its maintained source is `build_lean_site.py` in `deraldg/dottalkpp` -- the
+generator is the source of truth, emitted HTML is never hand-edited -- and it
+publishes through GitHub Pages to `dottalkpp.com`.
 
 ## Connections Between The Sites
 
@@ -51,7 +62,7 @@ Actions, and published through GitHub Pages to `dottalkpp.com`.
 | Connection | Direction | Rule |
 | --- | --- | --- |
 | Technical evidence | Upstream to both sites | Source/runtime/HELP/metadata/contracts/proof remain authoritative. |
-| Ecosystem navigation | `x64base.com -> dottalkpp.com` | Send readers to deeper manuals, references, generated reports, and artifacts. |
+| Ecosystem navigation | `x64base.com -> dottalkpp.com` | Send general readers to the lean entry site: current status, documentation, downloads. |
 | Project context | `dottalkpp.com -> x64base.com` | Send readers to engine, products, Laboratory Campus, history, and governance context. |
 | Artifact notices | Reviewed duplex | dottalkpp.com may contribute reviewed route summaries and downloadable-artifact notices to x64base.com. |
 | Manual/website reverse flow | Blocked by default | Public prose does not become runtime or manual truth. |
@@ -59,8 +70,9 @@ Actions, and published through GitHub Pages to `dottalkpp.com`.
 | Release history | Independent | Each site keeps its own source tree, build, routes, and version history. |
 
 The shared rule is simple: **one evidence spine, two publication roles**.
-x64base.com explains the ecosystem; dottalkpp.com carries the deeper technical
-library. Neither site replaces source or runtime authority.
+x64base.com is the development and conception space; dottalkpp.com is the lean
+front door for everyone else. Neither site replaces source or runtime
+authority.
 
 See [SelfDoc Website Publication](/docs/dev/selfdoc-website-publication),
 [Website Documentation Matrix](/docs/dev/website-documentation-matrix), and

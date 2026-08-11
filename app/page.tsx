@@ -218,6 +218,13 @@ export default function HomePage() {
             >
               View GitHub
             </a>
+            <a
+              href="https://dottalkpp.com"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
+            >
+              dottalkpp.com - the lean site
+              <ArrowRight size={16} aria-hidden="true" />
+            </a>
           </div>
 
           <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -246,25 +253,25 @@ export default function HomePage() {
           </dl>
         </div>
 
-        <div className="relative overflow-hidden rounded-lg border border-border bg-card shadow-soft">
-          <Image
-            src="/x64base-hero-engine.png"
-            alt="Abstract x64base database engine made from record grids, index nodes, and memo blocks"
-            width={1792}
-            height={1024}
-            priority
-            className="h-full min-h-[360px] w-full object-cover"
-          />
-          <div className="absolute inset-x-0 bottom-0 border-t border-border bg-bg/78 px-5 py-4 backdrop-blur">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-mono text-xs text-brand">engine status</p>
-                <p className="mt-1 text-sm text-fg">DotTalk++ CLI + DBF runtime + metadata validation</p>
-              </div>
-              <Link href="/docs/engine/api-reference" className="text-sm font-semibold text-brand hover:underline">
-                API reference
-              </Link>
-            </div>
+        {/* Brand image reduced 75% (owner tone-down, 2026-08-11): a modest
+            figure, not a hero panel. */}
+        <div className="flex flex-col items-center gap-3 justify-self-center">
+          <div className="w-full max-w-[300px] overflow-hidden rounded-lg border border-border bg-card shadow-soft">
+            <Image
+              src="/x64base-hero-engine.png"
+              alt="Abstract x64base database engine made from record grids, index nodes, and memo blocks"
+              width={1792}
+              height={1024}
+              priority
+              className="h-auto w-full object-cover"
+            />
+          </div>
+          <div className="w-full max-w-[300px] rounded-lg border border-border bg-card/55 px-4 py-3">
+            <p className="font-mono text-xs text-brand">engine status</p>
+            <p className="mt-1 text-sm text-fg">DotTalk++ CLI + DBF runtime + metadata validation</p>
+            <Link href="/docs/engine/api-reference" className="mt-1 inline-block text-sm font-semibold text-brand hover:underline">
+              API reference
+            </Link>
           </div>
         </div>
       </section>
