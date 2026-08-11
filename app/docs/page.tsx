@@ -84,6 +84,33 @@ const sectionSummary = [
     href: "/docs/dev/historical-source-lineage",
     icon: Archive
   },
+  // Four cards adopted 2026-08-11 from a stale duplicate site worktree
+  // (held 2026-07-28 UI work; triage disposition ADOPT): these pages existed
+  // in the tree and sidebar but the docs landing never surfaced them.
+  {
+    title: "Historical family tree",
+    description: "Read the restored xBase, XDLL, xBase2, DotTalk, recovery, and modern-continuation hierarchy as a real page.",
+    href: "/docs/dev/historical-family-tree",
+    icon: GitBranch
+  },
+  {
+    title: "Historical source files",
+    description: "Open byte-preserved C and header files from the original archive as read-only text.",
+    href: "/docs/dev/historical-source-files",
+    icon: Code2
+  },
+  {
+    title: "RAM DBF and VDISK",
+    description: "Use process-local x64 DBF tables and CDX indexes in RAM without confusing transient storage with durability.",
+    href: "/docs/engine/ram-dbf-vdisk",
+    icon: Database
+  },
+  {
+    title: "Identity and RBAC",
+    description: "Understand persisted members, authentication, permissions, owner gates, enforcement, and legacy SECURITY diagnostics.",
+    href: "/docs/engine/identity-security",
+    icon: GitBranch
+  },
   {
     title: "Current work lanes",
     description: "Review active, planned, and alpha lanes without flattening them into finished-product claims.",

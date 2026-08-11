@@ -104,19 +104,61 @@ Evidence: the CMake target list in any build transcript; the
 [architecture](/docs/engine/architecture) layering; per-command source contracts
 in the command files.
 
-## Payload-agnostic memos (and where that is heading)
+## Payload-agnostic memos, proven by adversary
 
-**Source-evidenced today; the interesting destination is chartered.** x64
-memos are addressed by 64-bit object identifiers and are payload-agnostic by
-design -- the memo layer does not care what it stores. That is the confirmed
-mechanism. The chartered destination built on it -- memo-resident
-mini-databases, where a memo field carries an entire small database as a
-teaching payload -- is a registered design lane, stated here at exactly that
-tier: designed and intended, not yet runtime-proven.
+**Runtime-proven.** x64 memos are addressed by 64-bit object identifiers and
+do not inspect what they store -- and that claim is no longer taken on the
+source's word. A seeded stress harness drives six chaotic operation patterns
+against the store (self-mutation, cross-memo prefix overwrites, growth and
+shedding, duplication, merge-and-erase, emptying and erasure), with payloads
+that deliberately include embedded NUL and high bytes, while an in-memory
+shadow model byte-compares every stored object after every generation. Four
+seeds: 20,500 generations, 104,044 operations, roughly 215 close/reopen
+cycles, **zero divergences**. Byte fidelity, cross-memo isolation, reopen
+durability, and payload agnosticism all held. Every run replays exactly from
+its seed.
 
-Evidence: `src/memo/memo_ref.cpp` (64-bit payload-agnostic MemoRef); the
-virtual-workspaces intake package (2026-07-28) for the chartered lane; the
-[FPT64 memo format](/docs/engine/fpt64-memo-format) reference.
+The harness came from an unusual place: an external AI (Microsoft Copilot)
+supplied a whimsical "memo zoo" stress spec, which was mapped rather than
+adopted -- its creature species became *driver personas*, because our memos
+have no behavior and that absence is precisely the claim under test. The zoo
+proves the cage.
+
+Evidence: `src/memo/memo_zoo.cpp` (seeded harness, shadow-model oracle);
+`src/memo/memo_smoke.cpp`; `src/memo/memo_ref.cpp` (64-bit payload-agnostic
+MemoRef); the [FPT64 memo format](/docs/engine/fpt64-memo-format) reference.
+Not claimed: contention. Concurrency at the memo layer is a named, unrun
+milestone -- a second process holding the cooperative table lock while the
+zoo runs.
+
+## A database posture that lives inside the database
+
+**Runtime-proven; the larger destination stays chartered.** `WORKSPACE SAVE
+<name> MEMO` serializes the entire open posture -- work areas, attached
+indexes, selected tag orders, aliases, and every declared relation -- into a
+memo field of a self-creating catalog table, and `WORKSPACE LOAD <name> MEMO`
+restores it from inside that table. The snapshot text is byte-identical in
+either carrier (one format, two carriers), so there is no second serializer
+to drift. Each catalog row records the author (real member attribution), the
+timestamp, and the path roots active at save time -- snapshots are
+root-relative, so each one declares its own preconditions -- and history is
+append-only, with a re-save superseding rather than overwriting. Every save
+is verified: the payload is read back through the token *stored in the field*
+and byte-compared, loudly failing on mismatch.
+
+The standing demonstration restores 43 work areas and 58 relations from a
+memo and then walks the restored graph both ways -- positional traversal and
+the house SELECT -- which agree to the record. Workspaces became data:
+queryable, relatable, attributed, versioned, and verifiable in the same store
+they describe.
+
+What remains chartered: memo-resident *mini-databases*, where the payload is
+a whole small database rather than a posture. That is designed, not run, and
+is stated at that tier everywhere it appears.
+
+Evidence: `REGRESSION RUN WORKSPACE_MEMO`; the `WORKSPACES` catalog in the
+runtime data root; the virtual-workspaces design package (2026-07-28) for the
+chartered destination.
 
 ## SQLite in the same room, on purpose
 

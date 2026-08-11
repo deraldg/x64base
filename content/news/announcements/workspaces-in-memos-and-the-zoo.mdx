@@ -1,0 +1,113 @@
+---
+title: "A database that keeps its own workspaces -- and a zoo that proved the cage"
+description: "In one morning: a whole database posture learned to live inside a memo field, and an adversarial harness from a rival AI ran 104,044 chaotic operations against the memo store without a single divergence."
+date: "2026-08-11"
+---
+
+Two things happened on 2026-08-11 that belong in the same story, because one
+made the other trustworthy.
+
+## The engine put a database posture inside itself
+
+A *posture* is everything a working database is arranged to be at a given
+moment: which tables are open in which work areas, which indexes are attached,
+which tag orders are selected, what the aliases are, and every declared
+relation between them. x64base could already write that arrangement to a small
+plain-text snapshot and restore it with one command -- 43 work areas and 58
+relations from a single file.
+
+As of today it can put that same snapshot **inside a memo field of a table in
+its own database**, and load it back out:
+
+```text
+WORKSPACE SAVE cascade_all MEMO
+WORKSPACE LOAD cascade_all MEMO
+```
+
+The catalog those snapshots live in creates itself on first use: an ordinary
+x64 table, locked cooperatively for each append, recording who saved the
+posture (real member attribution), when, and which path roots were active at
+the time -- because snapshots are root-relative, so each one declares its own
+preconditions. History is append-only: saving again supersedes the prior row
+rather than overwriting it.
+
+Every save verifies itself. The payload is immediately read back through the
+token *stored in the field* -- the same path a future session will take -- and
+byte-compared against what was written. A mismatch fails loudly.
+
+The proof is a registered regression: load the posture from a file, save it to
+a memo, close everything, restore it from inside the table, and then walk the
+restored graph two independent ways -- positional traversal and the house
+SELECT -- which agree on the same record. Workspaces became data: queryable,
+relatable, attributed, versioned, verifiable, in the store they describe.
+
+## Then a rival AI's stress test tried to break the floor it stands on
+
+That feature rests on a claim: the memo store is *payload-agnostic* -- it does
+not inspect, interpret, or care about what it holds. Until today that claim was
+source-evidenced, which in our vocabulary means "the mechanism is confirmed in
+the code; the end-to-end run has not happened."
+
+The end-to-end run arrived from an unexpected direction. Microsoft Copilot,
+asked for a wild test, produced a "Quantum Memo Zoo": memos as semi-autonomous
+creatures with species, temperaments, predation rules and reproduction
+triggers. Delightful -- and, read literally, inapplicable, because our memos
+have no behavior at all.
+
+That absence is exactly the claim under test. So the spec was **mapped, not
+adopted**: the species became *driver personas*. A seeded harness performs each
+creature's chaotic pattern *against* the store, while a shadow model in memory
+mirrors every operation and byte-compares every object after every generation.
+Entropy-Fawns mutate their own bytes. Pointer-Beetles overwrite a neighbor's
+first 64 bytes -- that one tests isolation. Stack-Serpents grow and shed.
+Fork-Turtles duplicate. Merge-Hawks concatenate two victims and erase both.
+Null-Otters empty themselves or delete a neighbor. Payloads deliberately
+include embedded NUL and high bytes, because "agnostic" should mean agnostic.
+
+Four seeds, all green:
+
+| seed | generations | operations | divergences |
+| --- | ---: | ---: | ---: |
+| 20260811 | 500 | 1,584 | 0 |
+| 7 | 5,000 | 22,353 | 0 |
+| 42 | 5,000 | 29,648 | 0 |
+| 1993 | 10,000 | 50,459 | 0 |
+
+**20,500 generations, 104,044 operations, ~215 close/reopen cycles, zero
+divergences.** Byte fidelity, cross-memo isolation, and reopen durability held
+throughout. Every run replays exactly from its seed. "Payload-agnostic memos"
+moved from source-evidenced to runtime-proven the same hour.
+
+The zoo also produced an actual ecological finding, replicated across every
+seed and starting population: predation beats reproduction, deterministically.
+Merge-Hawks and Null-Otters drove every world down to the population floor.
+Copilot's apex predators win in all of them.
+
+## What is still not claimed
+
+Two things the zoo did *not* prove, stated plainly because an external reviewer
+enthusiastically claimed both on our behalf and was corrected:
+
+- **Contention.** The harness ran as a single process. Concurrency at the memo
+  layer -- a second process holding the cooperative table lock while the
+  animals run -- is a named, unrun milestone.
+- **RAM residency of the store.** The zoo stressed a disk-backed store. Our
+  RAM virtual disk hosts tables and indexes, but the memo store on the RAM
+  filesystem is unmeasured, and is now on the list because that review exposed
+  the gap.
+
+And the destination the posture work points at -- memo-resident
+*mini-databases*, where the payload is an entire small database rather than an
+arrangement -- remains chartered. Designed, registered, not yet run.
+
+Two defects were caught by our own gates while this was built, and both are
+recorded rather than smoothed over: a stale binary that made a failed build
+look like a passing test (the build stamp is now part of every proof), and a
+memo-token field declared at the classic dBASE width, silently truncating the
+modern 16-character token (caught by a fresh-session read; the verifier now
+reads through the field). A gate that has never disagreed with its author has
+never been tested.
+
+Everything above is visible at its evidence tier on
+[Proven Capabilities](/docs/engine/proven-capabilities) and on the
+[status board](https://dottalkpp.com/status/).
