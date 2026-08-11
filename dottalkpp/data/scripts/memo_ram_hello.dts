@@ -19,6 +19,14 @@
 * RUNTIME-PROVEN 2026-08-11 (build 10:05:05): all three .T. on first run --
 * the 2026-05-13 reds are GREEN on the RAM path. Promoted per the
 * promote-final-tests rule the same day.
+*
+* CORRECTION 2026-08-11 (afternoon, measured by the RAM-hydration leak check):
+* "nothing is written to disk" was FALSE for the memo half. The DBF lives in
+* ramfs, but the DTX memo sidecar does its own file I/O, bypasses the VFS,
+* and lands as a REAL file (data/ram/STUDMEMO.dtx, 4624 B -- it survived
+* VDISK UNMOUNT). The VDISK census ("RAM files = 1" despite "(+ memo)") was
+* correct all along. Lifecycle proof stands; memo RESIDENCY was disk, not
+* RAM. True RAM memos need ramfs coverage in the memo store layer (chartered).
 * ============================================================================
 SET ECHO OFF
 STOP_ON_ERROR OFF
