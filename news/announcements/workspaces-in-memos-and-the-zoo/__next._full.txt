@@ -1,0 +1,145 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+e:I[68027,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/1f9pto6-2hwnn.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","news","announcements","workspaces-in-memos-and-the-zoo",""],"q":"","i":false,"f":[[["",{"children":["news",{"children":[["category","announcements","d",null],{"children":[["slug","workspaces-in-memos-and-the-zoo","c",null],{"children":["__PAGE__",{}]}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1f9pto6-2hwnn.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/16rd13b1yhviq.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"}}],["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":[["$","span",null,{"className":"font-mono text-brand","children":"WEBSITE ALPHA"}]," · ",["$","span",null,{"className":"text-fg","children":"AI-assisted, source-reviewed documentation"}]," · ","Updated ","2026-08-05",null]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","data-pagefind-body":true,"children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=8d2e2b4ffbb7","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication/?v=8d2e2b4ffbb7","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=8d2e2b4ffbb7","children":"Downloads"}]]}],["$","div",null,{"className":"mt-4","children":[["$","div",null,{"className":"text-xs font-semibold uppercase tracking-wide text-muted","children":"Credits & Contributors"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors/?v=8d2e2b4ffbb7","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements/?v=8d2e2b4ffbb7","children":"Third-party credits"}]]}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/?v=8d2e2b4ffbb7","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products/?v=8d2e2b4ffbb7","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=8d2e2b4ffbb7","children":"Downloads"}],"$L5","$L6"]}]]}],"$L7"]}]}]]}]}]]}],{"children":["$L8",{"children":["$L9",{"children":["$La",{"children":["$Lb",{},null,false,null]},null,false,"$@c"]},null,false,"$@c"]},null,false,"$@c"]},null,false,null],"$Ld",false]],"m":"$undefined","G":["$e",["$Lf"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"QSp_kfG3k4ywsCujE7ALP"}
+11:I[97367,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+12:"$Sreact.suspense"
+15:I[97367,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+17:I[97367,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","a",null,{"className":"text-muted hover:text-fg","href":"/news/?v=8d2e2b4ffbb7","children":"News"}]
+6:["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact/?v=8d2e2b4ffbb7","children":"Contact"}]
+7:["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":["© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a ",["$","a",null,{"href":"/licensing","className":"hover:text-fg hover:underline","children":"commercial license"}],"."]}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]
+8:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+9:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+a:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+b:["$","$1","c",{"children":["$L10",null,["$","$L11",null,{"children":["$","$12",null,{"name":"Next.MetadataOutlet","children":"$@13"}]}]]}]
+14:[]
+c:"$W14"
+d:["$","$1","h",{"children":[null,["$","$L15",null,{"children":"$L16"}],["$","div",null,{"hidden":true,"children":["$","$L17",null,{"children":["$","$12",null,{"name":"Next.Metadata","children":"$L18"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+f:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/1f9pto6-2hwnn.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+19:T1990,<p>Two things happened on 2026-08-11 that belong in the same story, because one
+made the other trustworthy.</p>
+<h2 id="the-engine-put-a-database-posture-inside-itself"><a class="no-underline" href="#the-engine-put-a-database-posture-inside-itself">The engine put a database posture inside itself</a></h2>
+<p>A <em>posture</em> is everything a working database is arranged to be at a given
+moment: which tables are open in which work areas, which indexes are attached,
+which tag orders are selected, what the aliases are, and every declared
+relation between them. x64base could already write that arrangement to a small
+plain-text snapshot and restore it with one command -- 43 work areas and 58
+relations from a single file.</p>
+<p>As of today it can put that same snapshot <strong>inside a memo field of a table in
+its own database</strong>, and load it back out:</p>
+<pre><code class="language-text">WORKSPACE SAVE cascade_all MEMO
+WORKSPACE LOAD cascade_all MEMO
+</code></pre>
+<p>The catalog those snapshots live in creates itself on first use: an ordinary
+x64 table, locked cooperatively for each append, recording who saved the
+posture (real member attribution), when, and which path roots were active at
+the time -- because snapshots are root-relative, so each one declares its own
+preconditions. History is append-only: saving again supersedes the prior row
+rather than overwriting it.</p>
+<p>Every save verifies itself. The payload is immediately read back through the
+token <em>stored in the field</em> -- the same path a future session will take -- and
+byte-compared against what was written. A mismatch fails loudly.</p>
+<p>The proof is a registered regression: load the posture from a file, save it to
+a memo, close everything, restore it from inside the table, and then walk the
+restored graph two independent ways -- positional traversal and the house
+SELECT -- which agree on the same record. Workspaces became data: queryable,
+relatable, attributed, versioned, verifiable, in the store they describe.</p>
+<h2 id="then-a-rival-ais-stress-test-tried-to-break-the-floor-it-stands-on"><a class="no-underline" href="#then-a-rival-ais-stress-test-tried-to-break-the-floor-it-stands-on">Then a rival AI's stress test tried to break the floor it stands on</a></h2>
+<p>That feature rests on a claim: the memo store is <em>payload-agnostic</em> -- it does
+not inspect, interpret, or care about what it holds. Until today that claim was
+source-evidenced, which in our vocabulary means "the mechanism is confirmed in
+the code; the end-to-end run has not happened."</p>
+<p>The end-to-end run arrived from an unexpected direction. Microsoft Copilot,
+asked for a wild test, produced a "Quantum Memo Zoo": memos as semi-autonomous
+creatures with species, temperaments, predation rules and reproduction
+triggers. Delightful -- and, read literally, inapplicable, because our memos
+have no behavior at all.</p>
+<p>That absence is exactly the claim under test. So the spec was <strong>mapped, not
+adopted</strong>: the species became <em>driver personas</em>. A seeded harness performs each
+creature's chaotic pattern <em>against</em> the store, while a shadow model in memory
+mirrors every operation and byte-compares every object after every generation.
+Entropy-Fawns mutate their own bytes. Pointer-Beetles overwrite a neighbor's
+first 64 bytes -- that one tests isolation. Stack-Serpents grow and shed.
+Fork-Turtles duplicate. Merge-Hawks concatenate two victims and erase both.
+Null-Otters empty themselves or delete a neighbor. Payloads deliberately
+include embedded NUL and high bytes, because "agnostic" should mean agnostic.</p>
+<p>Four seeds, all green:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>seed</th><th align="right">generations</th><th align="right">operations</th><th align="right">divergences</th></tr></thead><tbody><tr><td>20260811</td><td align="right">500</td><td align="right">1,584</td><td align="right">0</td></tr><tr><td>7</td><td align="right">5,000</td><td align="right">22,353</td><td align="right">0</td></tr><tr><td>42</td><td align="right">5,000</td><td align="right">29,648</td><td align="right">0</td></tr><tr><td>1993</td><td align="right">10,000</td><td align="right">50,459</td><td align="right">0</td></tr></tbody></table>
+<p><strong>20,500 generations, 104,044 operations, ~215 close/reopen cycles, zero
+divergences.</strong> Byte fidelity, cross-memo isolation, and reopen durability held
+throughout. Every run replays exactly from its seed. "Payload-agnostic memos"
+moved from source-evidenced to runtime-proven the same hour.</p>
+<p>The zoo also produced an actual ecological finding, replicated across every
+seed and starting population: predation beats reproduction, deterministically.
+Merge-Hawks and Null-Otters drove every world down to the population floor.
+Copilot's apex predators win in all of them.</p>
+<h2 id="what-is-still-not-claimed"><a class="no-underline" href="#what-is-still-not-claimed">What is still not claimed</a></h2>
+<p>Two things the zoo did <em>not</em> prove, stated plainly because an external reviewer
+enthusiastically claimed both on our behalf and was corrected:</p>
+<ul>
+<li><strong>Contention.</strong> The harness ran as a single process. Concurrency at the memo
+layer -- a second process holding the cooperative table lock while the
+animals run -- is a named, unrun milestone.</li>
+<li><strong>RAM residency of the store.</strong> The zoo stressed a disk-backed store. Our
+RAM virtual disk hosts tables and indexes, but the memo store on the RAM
+filesystem is unmeasured, and is now on the list because that review exposed
+the gap.</li>
+</ul>
+<p>And the destination the posture work points at -- memo-resident
+<em>mini-databases</em>, where the payload is an entire small database rather than an
+arrangement -- remains chartered. Designed, registered, not yet run.</p>
+<p>Two defects were caught by our own gates while this was built, and both are
+recorded rather than smoothed over: a stale binary that made a failed build
+look like a passing test (the build stamp is now part of every proof), and a
+memo-token field declared at the classic dBASE width, silently truncating the
+modern 16-character token (caught by a fresh-session read; the verifier now
+reads through the field). A gate that has never disagreed with its author has
+never been tested.</p>
+<p>Everything above is visible at its evidence tier on
+<a href="/docs/engine/proven-capabilities">Proven Capabilities</a> and on the
+<a href="https://dottalkpp.com/status/">status board</a>.</p>10:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=8d2e2b4ffbb7","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/?v=8d2e2b4ffbb7","children":"News"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/?v=8d2e2b4ffbb7","children":"announcements"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements/workspaces-in-memos-and-the-zoo",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/workspaces-in-memos-and-the-zoo/?v=8d2e2b4ffbb7","children":"A database that keeps its own workspaces -- and a zoo that proved the cage"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"A database that keeps its own workspaces -- and a zoo that proved the cage"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-3 text-sm text-muted","children":[["$","span",null,{"className":"font-mono","children":"2026-08-11"}],["$","span",null,{"children":["Category: ","announcements"]}]]}],["$","p",null,{"className":"mt-3 text-muted","children":"In one morning: a whole database posture learned to live inside a memo field, and an adversarial harness from a rival AI ran 104,044 chaotic operations against the memo store without a single divergence."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$19"},"children":null}]}]]}]
+16:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1a:I[27201,["/_next/static/chunks/16rd13b1yhviq.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+13:null
+18:[["$","title","0",{"children":"A database that keeps its own workspaces -- and a zoo that proved the cage — x64base"}],["$","meta","1",{"name":"description","content":"In one morning: a whole database posture learned to live inside a memo field, and an adversarial harness from a rival AI ran 104,044 chaotic operations against the memo store without a single divergence."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/news/announcements/workspaces-in-memos-and-the-zoo/"}],["$","meta","3",{"property":"og:title","content":"A database that keeps its own workspaces -- and a zoo that proved the cage"}],["$","meta","4",{"property":"og:description","content":"In one morning: a whole database posture learned to live inside a memo field, and an adversarial harness from a rival AI ran 104,044 chaotic operations against the memo store without a single divergence."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/news/announcements/workspaces-in-memos-and-the-zoo/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"A database that keeps its own workspaces -- and a zoo that proved the cage"}],["$","meta","12",{"name":"twitter:description","content":"In one morning: a whole database posture learned to live inside a memo field, and an adversarial harness from a rival AI ran 104,044 chaotic operations against the memo store without a single divergence."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L1a","17",{}]]
