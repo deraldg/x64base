@@ -61,6 +61,21 @@ reopen the store mid-run). Population cap is a DRIVER rule; at the cap the
 harness measures store behavior at scale, it does not expect the store to
 police reproduction.
 
+Two stressors from the spec's earlier draft (owner FYI, 2026-08-11), added:
+
+- **Hibernation:** a memo is declared immutable for an interval. The driver
+  enforces the vow; the Sentinel holds the table FLOCK across the window --
+  proving other writers block cleanly and the sleeper's bytes are identical
+  on wake (a quiet-period durability probe).
+- **Steady state:** after the chaos phases end, N quiet generations of
+  read-only sweeps must show ZERO divergence drift -- the ecosystem settles
+  and the oracle stays green with nobody writing. Catches deferred-write
+  and cache-flush ghosts that only surface after the noise stops.
+
+Population range 50-500 per the spec; "evolving new fields" is catalog/
+driver bookkeeping, not a store behavior (the store owes bytes, not
+schema).
+
 ## 4. Placement and shape
 
 A standalone C++ harness beside the existing smoke test
