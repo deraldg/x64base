@@ -134,6 +134,8 @@
      (owner, 2026-08-10 -- "the user can't see it"). Slide text below stays
      Copilot's verbatim; this strip is OUR reading, worn openly. */
   .brand{position:absolute;top:0;left:0;right:0;z-index:46;text-align:center;
+        pointer-events:none; /* informational only -- an invisible strip must
+        never eat clicks meant for the top bar beneath it (owner catch 2026-08-10) */
         padding:8px 14px 0;backdrop-filter:blur(12px);
         background:linear-gradient(180deg,rgba(10,20,32,.94),rgba(10,20,32,.72));
         border-bottom:1px solid var(--line);transition:opacity .3s}
