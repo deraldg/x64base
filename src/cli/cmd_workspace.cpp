@@ -116,7 +116,9 @@
 #include <climits>
 #include <cstdlib>
 #include <filesystem>
+#include <chrono>
 #include <fstream>
+#include "xbase/ramfs.hpp"
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -2079,33 +2081,42 @@ static void save_to_memo(const std::string& name, int version = 2) {
     a.close();
 }
 
-static void load_from_memo(const std::string& name) {
+// Shared payload fetch: last live row wins (append-history). Returns the
+// payload text plus the row's recorded roots -- the v2 source-location
+// fallback when the payload carries no DBFROOT/IDXROOT lines of its own.
+struct MemoFetch {
+    bool ok = false;
+    std::string text, saved_at, dbf_root, idx_root, error;
+};
+static MemoFetch fetch_memo_payload(const std::string& name) {
+    MemoFetch out;
     std::string err;
     xbase::DbArea a;
-    if (!open_catalog(a, err)) { std::cout << err << "\n"; return; }
+    if (!open_catalog(a, err)) { out.error = err; return out; }
 
     std::string token;
-    std::string saved_at;
     const std::uint64_t n = a.recCount64();
-    for (std::uint64_t r = 1; r <= n; ++r) {   // last live row wins (append-history)
+    for (std::uint64_t r = 1; r <= n; ++r) {
         try {
             a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
             if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
-                token = trim_copy(get_by_name(a, "SNAPSHOT"));
-                saved_at = get_by_name(a, "SAVED_AT");
+                token        = trim_copy(get_by_name(a, "SNAPSHOT"));
+                out.saved_at = get_by_name(a, "SAVED_AT");
+                out.dbf_root = trim_copy(get_by_name(a, "DBF_ROOT"));
+                out.idx_root = trim_copy(get_by_name(a, "IDX_ROOT"));
             }
         } catch (...) {}
     }
 
     if (token.empty()) {
-        std::cout << "WORKSPACE LOAD: no live memo workspace named '" << name << "'.\n";
-        cli_memo::memo_auto_on_close(a); a.close(); return;
+        out.error = "WORKSPACE LOAD: no live memo workspace named '" + name + "'.";
+        cli_memo::memo_auto_on_close(a); a.close(); return out;
     }
 
     auto* store = cli_memo::memo_store_for(a);
     if (!store || !store->is_open()) {
-        std::cout << "WORKSPACE MEMO: memo backend not attached.\n";
-        cli_memo::memo_auto_on_close(a); a.close(); return;
+        out.error = "WORKSPACE MEMO: memo backend not attached.";
+        cli_memo::memo_auto_on_close(a); a.close(); return out;
     }
     dottalk::memo::MemoRef ref{}; ref.token = token;
     dottalk::memo::MemoGetResult got = store->get_text(ref);
@@ -2113,15 +2124,142 @@ static void load_from_memo(const std::string& name) {
     a.close();
 
     if (!got.ok) {
-        std::cout << "WORKSPACE MEMO: memo read failed"
-                  << (got.error.empty() ? "" : (": " + got.error)) << "\n";
+        out.error = "WORKSPACE MEMO: memo read failed" +
+                    (got.error.empty() ? std::string() : (": " + got.error));
+        return out;
+    }
+    out.ok = true;
+    out.text = std::move(got.text);
+    return out;
+}
+
+static void load_from_memo(const std::string& name) {
+    MemoFetch f = fetch_memo_payload(name);
+    if (!f.ok) { std::cout << f.error << "\n"; return; }
+
+    std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << f.saved_at
+              << ", " << f.text.size() << " B)\n";
+    std::istringstream in(f.text);
+    schema_load_from_stream(in, "memo:" + name);
+}
+
+// ---- memo -> RAM hydration (owner lane, step 2, 2026-08-11) ----------------
+// Copy the posture's tables (and native index files) from their DISK homes
+// into the mounted RAM VFS, then load the posture with its roots re-pointed
+// at RAM -- the self-location mechanism from DTSHEMA 3 step 1, reused as the
+// hydration vehicle. The copy goes through xbase::ramfs streams, NEVER
+// std::filesystem: the VFS is in-process, and an OS-level copy would land on
+// real disk while claiming RAM (a false hydration). LMDB is not hydrated --
+// owner rule "lmdb only for disks", grounded in ramfs.hpp's own contract
+// (LMDB must mmap a real OS file). Memo sidecars: no MCC table carries a
+// memo field until the Part B regeneration lands; sidecar hydration is
+// chartered WITH that lane. The hydration is TIMED and reports a number,
+// not an adjective.
+static void hydrate_to_ram(const std::string& name) {
+    const fs::path ramRoot = paths::get_slot(paths::Slot::RAM);
+    if (ramRoot.empty() || !xbase::ramfs::mounted(s8(ramRoot))) {
+        std::cout << "WORKSPACE LOAD RAM: VDISK is not mounted -- run VDISK MOUNT "
+                     "(or DO mem) first.\n";
         return;
     }
 
-    std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << saved_at
-              << ", " << got.text.size() << " B)\n";
-    std::istringstream in(got.text);
-    schema_load_from_stream(in, "memo:" + name);
+    MemoFetch f = fetch_memo_payload(name);
+    if (!f.ok) { std::cout << f.error << "\n"; return; }
+
+    // Source roots: payload DBFROOT/IDXROOT (v3) outrank the catalog row's
+    // recorded roots (the v2 fallback).
+    fs::path srcDbf = f.dbf_root.empty() ? dbf_root() : fs::path(f.dbf_root);
+    fs::path srcIdx = f.idx_root.empty() ? idx_root() : fs::path(f.idx_root);
+    struct Entry { std::string dbf, idx; };
+    std::vector<Entry> entries;
+    {
+        std::istringstream scan(f.text);
+        std::string line;
+        while (std::getline(scan, line)) {
+            const std::string t = trim_copy(line);
+            const std::string low = to_lower(t);
+            if (low.rfind("dbfroot ", 0) == 0)      srcDbf = fs::path(trim_copy(t.substr(8)));
+            else if (low.rfind("idxroot ", 0) == 0) srcIdx = fs::path(trim_copy(t.substr(8)));
+            else if (low.rfind("area ", 0) == 0) {
+                auto field = [&](const char* key) -> std::string {
+                    auto pos = t.find(key);
+                    if (pos == std::string::npos) return {};
+                    pos += std::char_traits<char>::length(key);
+                    auto end = t.find('|', pos);
+                    return trim_copy(end == std::string::npos ? t.substr(pos)
+                                                             : t.substr(pos, end - pos));
+                };
+                Entry e; e.dbf = field("dbf="); e.idx = field("index=");
+                if (!e.dbf.empty()) entries.push_back(e);
+            }
+        }
+    }
+    if (entries.empty()) {
+        std::cout << "WORKSPACE LOAD RAM: payload has no AREA entries.\n";
+        return;
+    }
+
+    const fs::path ramIdx = ramRoot / "indexes";   // the VDISK mount convention
+    auto copy_into_ram = [&](const fs::path& src, const fs::path& dst,
+                             std::uint64_t& bytes) -> bool {
+        std::ifstream in(src, std::ios::binary);
+        if (!in.good()) return false;
+        auto out = xbase::ramfs::open(s8(dst), /*create*/true);
+        if (!out) return false;
+        char buf[1 << 16];
+        while (in.read(buf, sizeof(buf)) || in.gcount() > 0) {
+            out->write(buf, in.gcount());
+            bytes += static_cast<std::uint64_t>(in.gcount());
+        }
+        out->flush();
+        return true;
+    };
+
+    const auto t0 = std::chrono::steady_clock::now();
+    std::uint64_t bytes = 0;
+    int copied = 0, missing = 0;
+    for (const auto& e : entries) {
+        const fs::path srcTable = fs::path(e.dbf).is_absolute() ? fs::path(e.dbf)
+                                                                : srcDbf / e.dbf;
+        if (copy_into_ram(srcTable, ramRoot / fs::path(e.dbf).filename(), bytes)) ++copied;
+        else { ++missing; std::cout << "  ! hydrate: missing source " << s8(srcTable) << "\n"; }
+
+        if (!e.idx.empty() && to_lower(e.idx) != "none") {
+            const fs::path srcIndex = fs::path(e.idx).is_absolute() ? fs::path(e.idx)
+                                                                    : srcIdx / e.idx;
+            if (copy_into_ram(srcIndex, ramIdx / fs::path(e.idx).filename(), bytes)) ++copied;
+            // A missing index is not fatal: the loader already degrades loudly.
+        }
+    }
+
+    // Re-point the payload at RAM and load through the standard v3 mechanism:
+    // strip any root lines, inject RAM roots after the header.
+    std::string hydrated;
+    {
+        std::istringstream scan(f.text);
+        std::string line;
+        bool first = true;
+        while (std::getline(scan, line)) {
+            const std::string low = to_lower(trim_copy(line));
+            if (low.rfind("dbfroot ", 0) == 0 || low.rfind("idxroot ", 0) == 0 ||
+                low.rfind("lmdbroot ", 0) == 0) continue;
+            hydrated += line; hydrated += "\n";
+            if (first) {
+                hydrated += "DBFROOT " + s8(ramRoot) + "\n";
+                hydrated += "IDXROOT " + s8(ramIdx) + "\n";
+                first = false;
+            }
+        }
+    }
+    std::istringstream in(hydrated);
+    schema_load_from_stream(in, "ram-memo:" + name);
+
+    const auto t1 = std::chrono::steady_clock::now();
+    const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    std::cout << "WORKSPACE HYDRATE: memo '" << name << "' -> RAM: " << copied
+              << " file(s), " << bytes << " B in " << ms << " ms"
+              << (missing ? (" (" + std::to_string(missing) + " source(s) missing)") : "")
+              << "\n";
 }
 
 } // namespace ws_memo
@@ -2771,18 +2909,31 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             } catch (...) {}
 
             // AIF-070 M2: WORKSPACE LOAD <name> MEMO loads from the catalog.
+            // Step 2 (2026-08-11): trailing RAM hydrates the posture's files
+            // into the mounted VDISK first (memo carrier only today) --
+            // WORKSPACE LOAD <name> MEMO RAM, keywords in either order.
             std::string wsargs = trim_copy(rest_of_args);
             bool from_memo = false;
-            {
+            bool to_ram = false;
+            for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
-                if (sp != std::string::npos && to_lower(trim_copy(wsargs.substr(sp + 1))) == "memo") {
+                if (sp == std::string::npos) break;
+                const std::string last = to_lower(trim_copy(wsargs.substr(sp + 1)));
+                if (last == "memo" && !from_memo) {
                     from_memo = true;
                     wsargs = trim_copy(wsargs.substr(0, sp));
-                }
+                } else if (last == "ram" && !to_ram) {
+                    to_ram = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
+                } else break;
             }
-            if (from_memo) {
+            if (to_ram && !from_memo) {
+                std::cout << "WORKSPACE LOAD: RAM hydration is memo-carrier only today "
+                             "(WORKSPACE LOAD <name> MEMO RAM).\n";
+            } else if (from_memo) {
                 if (wsargs.empty()) std::cout << "WORKSPACE LOAD: missing workspace name before MEMO.\n";
-                else ws_memo::load_from_memo(wsargs);
+                else if (to_ram)   ws_memo::hydrate_to_ram(wsargs);
+                else               ws_memo::load_from_memo(wsargs);
             } else if (wsargs.empty()) {
                 std::cout << "WORKSPACE LOAD: missing file path.\n";
             } else {
