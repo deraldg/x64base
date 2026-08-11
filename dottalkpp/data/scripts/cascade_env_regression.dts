@@ -98,6 +98,17 @@ SELECT CASCADE_SO_LINES
 * C_T8: the followed child record is real data, not just a position
 ? "C_T8_child_line_is_order6_line1:" + (SOLINE_ID = 11)
 
+* --- walker #2: SQLSEL answers the same question by SET (proven 2026-08-10) --
+* House form: SQLSEL <select-body>, second SELECT optional (owner quick fix;
+* SQLSEL is the house SELECT, deliberately competing with SQLite). Transcript
+* checkpoint like ERP CHECK: expected rows 11,12 / totals 250.0, 6.5 --
+* the same record 11 the SET RELATION walk landed on by position.
+SQLSEL SOLINE_ID, SO_ID, ITEM_ID, LINE_TOTAL FROM CASCADE_SO_Lines WHERE SO_ID = 6
+* C_T9: walker agreement, asserted by cursor state -- SQLSEL is cursor-neutral
+* (its own regression proves that), so the child must STILL be on record 11
+* from the relation walk after the query returns.
+? "C_T9_sqlsel_cursor_neutral_walkers_agree:" + (SOLINE_ID = 11)
+
 FORMULA "CASCADE-ENV-PROOF-END"
 
 * --- teardown: close areas, restore the x64 disk environment ----------------

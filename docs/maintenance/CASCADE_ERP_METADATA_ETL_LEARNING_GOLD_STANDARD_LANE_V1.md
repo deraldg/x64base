@@ -298,6 +298,17 @@ five spines, which is the whole point of an ERP.
   regression CASCADE_ENV Section 2 (C_T6..C_T8) per the promote-final-tests
   rule. Second walker next: `REL JOIN`/`REL ENUM ... TUPLE <expr>` over the
   same relations (syntax reference: the RELJOIN regression).
+- **Walker #2 proven same day (SQLSEL by set, 2026-08-10):** the identical
+  question answered declaratively -- `SQLSEL ... FROM CASCADE_SO_Lines
+  WHERE SO_ID = 6` returned exactly rows 11,12 (totals 250.0, 6.5) and
+  `count(*)` = 2, agreeing with the positional walk that landed on record
+  11. Naming history recorded: SQLSEL is the HOUSE SELECT (deliberately
+  competing with SQLite); the doubled `SQLSEL SELECT` form was an early
+  canonicalization mistake and the second `SELECT` is now optional (owner
+  quick fix, 2026-08-10) -- the documentation tree still carries the old
+  form in places and is owed a sweep. Parser split to keep straight:
+  `SQLSEL` (house, DBF work areas, optional SELECT) vs `ERP SELECT <sql>`
+  (SQLite passthrough; its inner SELECT is real SQL and stays).
 - **Testing sequence (owner, 2026-08-10): SET RELATION first, SQLSEL later.**
   Initial traversal testing runs through the traditional walker
   (`cmd_rel.cpp`, the REL engine, the workspace RELATION lines); SQLSEL
