@@ -1522,6 +1522,26 @@ static std::string schema_save_to_string(int version = 2) {
         } catch (...) {}
     }
 
+    if (version == 3) {
+        // Session state (owner requirement 2026-08-11): cursor positions and
+        // the selected area, so a restore resumes EXACTLY where the session
+        // stood -- not at row 1. PHYSICAL recno is recorded (the GPS prior
+        // art: physical is the anchor, logical row is derived from it under
+        // the active order); GPS is the natural post-restore verifier.
+        for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+            try {
+                xbase::DbArea& A = get_area_0based(area0);
+                if (!area_open(A)) continue;
+                const std::uint64_t rn = A.recno64();
+                if (rn > 0) out << "CURSOR " << area0 << " " << rn << "\n";
+            } catch (...) {}
+        }
+        try {
+            auto* eng = shell_engine();
+            if (eng) out << "CURRENT " << eng->currentArea() << "\n";
+        } catch (...) {}
+    }
+
     return out.str();
 }
 
@@ -1655,6 +1675,8 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     int area_count = 0;
     int relation_count = 0;
     int relation_rejected_count = 0;
+    int cursor_count = 0;       // v3 session state
+    int pending_current = -1;   // v3 selected area; applied after the loop
 
     while (std::getline(in, line)) {
         std::string t = trim_copy(line);
@@ -1757,6 +1779,22 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
             // unique id. Informational on load; the version line above still
             // governs parsing.
             std::cout << "  WSID: " << trim_copy(t.substr(5)) << "\n";
+        } else if (to_lower(t).rfind("cursor ", 0) == 0) {
+            // v3 session state: restore the physical recno (GPS anchor).
+            // Emitted after AREA/REL lines, so the area is already open.
+            int n = -1; std::uint64_t rn = 0;
+            std::istringstream cs(t.substr(7)); cs >> n >> rn;
+            if (n >= 0 && n < xbase::MAX_AREA && rn > 0) {
+                try {
+                    xbase::DbArea& A = get_area_0based(n);
+                    if (area_open(A) && A.gotoRec64(rn)) { A.readCurrent(); ++cursor_count; }
+                } catch (...) {}
+            }
+        } else if (to_lower(t).rfind("current ", 0) == 0) {
+            // v3 session state: the selected area, applied after the loop.
+            int n = -1;
+            std::istringstream cs(t.substr(8)); cs >> n;
+            if (n >= 0 && n < xbase::MAX_AREA) pending_current = n;
         } else if (to_lower(t).rfind("key ", 0) == 0) {
             // AIF-074 P1.1: KEY <table> <field> UNIQUE|PRIMARY -> unique_reg.
             std::string body = trim_copy(t.substr(4));
@@ -1779,7 +1817,11 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
         }
     }
 
-    normalize_selected_area_after_workspace_change();
+    // v3 session state: the saved selection outranks normalization; the
+    // final refresh below then slaves children to the RESTORED parents
+    // (refresh-driven house semantic), completing "resume exactly here".
+    if (pending_current >= 0) (void)select_engine_area(pending_current);
+    else normalize_selected_area_after_workspace_change();
 
     std::cout << "WORKSPACE LOAD: restored " << area_count << " area(s)";
 #if HAVE_RELATIONS
@@ -1790,6 +1832,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
 #else
     std::cout << " (relations: stubbed)";
 #endif
+    if (cursor_count > 0) std::cout << " (+ " << cursor_count << " cursor(s))";
     std::cout << ".\n";
     // WORKSPACE LOAD is a structural lifecycle operation: areas and
     // optional relations have now been fully restored. Refresh only after
