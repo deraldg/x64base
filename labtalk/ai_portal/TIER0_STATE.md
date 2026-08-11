@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-11T11:52:23Z
+    generated_utc : 2026-08-11T11:55:06Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 00130f12b  (2026-08-10)
+    HEAD          : 44967a70f  (2026-08-11)
     upstream      : 00130f12b
-    unpushed      : 0 commit(s) ahead of upstream
+    unpushed      : 1 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,18 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md
-    commits behind HEAD : 17
+    commits behind HEAD : 18
 
 ## Staleness warnings
 
-- The newest closeout is 17 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-107. Same shape as AIF-062/078/080.
+- The newest closeout is 18 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- 1 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-107 | low-key-entry-surface | member.ai.claude.cowork | **MISSING** |
+| AIF-107 | low-key-entry-surface | member.ai.claude.cowork | yes |
 | AIF-106 | dottalk-ai-historical-evidence-publication | member.ai.codex.local | yes |
 | AIF-105 | Cascade ERP metadata, ETL, migration, and learning gold standard | member.ai.codex.local | yes |
 | AIF-104 | clean-clone core CI link and profile repair | member.ai.codex.local | yes |
