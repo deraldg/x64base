@@ -117,10 +117,20 @@
   .pill button:hover:not(:disabled){background:rgba(255,255,255,.07);color:var(--ink)}
   .pill .n{min-width:38px;height:32px;border-radius:9px;display:grid;place-items:center;
         font:13px var(--mono);color:var(--ink);background:rgba(255,255,255,.07)}
-  .warn{position:absolute;top:0;left:0;right:0;z-index:46;text-align:center;
-        padding:5px 12px;font:10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;
-        background:rgba(245,158,11,.13);color:#f0a55e;border-bottom:1px solid rgba(245,158,11,.30)}
-  .deck.chrome .warn{opacity:0;transition:opacity .3s}
+  /* Always-visible brand strip: the NON must live on the face, not the tab
+     (owner, 2026-08-10 -- "the user can't see it"). Slide text below stays
+     Copilot's verbatim; this strip is OUR reading, worn openly. */
+  .brand{position:absolute;top:0;left:0;right:0;z-index:46;text-align:center;
+        padding:8px 14px 0;backdrop-filter:blur(12px);
+        background:linear-gradient(180deg,rgba(10,20,32,.94),rgba(10,20,32,.72));
+        border-bottom:1px solid var(--line);transition:opacity .3s}
+  .brand .t{font-size:16.5px;font-weight:600;letter-spacing:.02em;line-height:1.35}
+  .brand .t em{font-style:normal;color:var(--accent);text-shadow:0 0 16px rgba(0,194,203,.5)}
+  .brand .t small{font-size:11px;font-weight:400;color:var(--muted);margin-left:12px}
+  .warn{margin-top:5px;text-align:center;
+        padding:4px 12px;font:10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;
+        background:rgba(245,158,11,.13);color:#f0a55e;border-top:1px solid rgba(245,158,11,.30)}
+  .deck.chrome .brand{opacity:0}
   .hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:40;
         font:10.5px var(--mono);color:rgba(127,168,201,.5);letter-spacing:.1em;
         text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .4s}
@@ -163,7 +173,12 @@
     <span style="width:1px;height:18px;background:rgba(127,168,201,.22);margin:0 3px"></span>
     <button id="pexit" title="Exit presentation (Esc)" style="font-size:12px">&#10005;</button>
   </div>
-  <div class="warn" id="warn">UNVERIFIED EXTERNAL PROPOSAL &middot; authored without repository access &middot; xBridge does not exist in the tree</div>
+  <div class="brand" id="brand">
+    <div class="t">Specialty <em>NON LMS</em> Ecosystem
+      <small>our title &middot; the slides below (cover "LMS" included) are Copilot's, preserved verbatim</small>
+    </div>
+    <div class="warn" id="warn">UNVERIFIED EXTERNAL PROPOSAL &middot; authored without repository access &middot; xBridge does not exist in the tree</div>
+  </div>
   <div class="hint">&#8592; &#8594; to navigate &nbsp;&middot;&nbsp; esc to exit</div>
 </div>
 

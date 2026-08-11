@@ -16,6 +16,11 @@ export const metadata = {
   // iframe title, and deck.html's own chrome + tab title. Copilot's received
   // slides (including the cover hero, which still reads "LMS") are untouched
   // per the intake preserve rule; the contradiction is the point.
+  // Amended 2026-08-10 evening (owner: "the user can't see it"): chrome-only
+  // placement made the NON invisible -- the top bar renders at opacity 0 until
+  // the pointer nears an edge, so the visible page AFFIRMED "LMS" while only
+  // the tab negated it. deck.html now carries an always-visible brand strip
+  // ("Specialty NON LMS Ecosystem -- our title") above the untouched slides.
   title: "Specialty NON LMS Ecosystem -- Unified Platform Proposal",
   description:
     "Received external proposal (Microsoft Copilot, 2026-08-09), preserved unchanged. "
