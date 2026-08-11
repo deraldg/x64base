@@ -1503,6 +1503,32 @@ static std::string schema_save_to_string() {
     return out.str();
 }
 
+// Instance identity (owner rule 2026-08-11): every serialized posture carries
+// a unique WSID line whose PREFIX is its carrier flavor -- F<utc-stamp> for
+// file/RAM saves, M<catalog ws_id> for memo saves. This does NOT replace the
+// format version line (DTSHEMA 2 stays). The FORMAT is identical across
+// carriers; the INSTANCE is identified. Old loaders skip the line unharmed
+// (the KEY-line tolerance precedent); the current loader echoes it.
+static std::string stamp_ws_id(std::string payload, const std::string& id) {
+    const auto nl = payload.find('\n');
+    if (nl == std::string::npos) return payload;
+    payload.insert(nl + 1, "WSID " + id + "\n");
+    return payload;
+}
+
+static std::string file_carrier_wsid() {
+    std::time_t t = std::time(nullptr);
+    char buf[20] = {0};
+    std::tm tmv{};
+#if defined(_WIN32)
+    gmtime_s(&tmv, &t);
+#else
+    gmtime_r(&t, &tmv);
+#endif
+    std::strftime(buf, sizeof(buf), "%Y%m%dT%H%M%SZ", &tmv);
+    return std::string("F") + buf;
+}
+
 static void schema_save_to_file(const fs::path& file) {
     fs::path outPath = resolve_workspace_file_path(file, true);
 
@@ -1519,7 +1545,7 @@ static void schema_save_to_file(const fs::path& file) {
         return;
     }
 
-    out << schema_save_to_string();
+    out << stamp_ws_id(schema_save_to_string(), file_carrier_wsid());
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
@@ -1661,6 +1687,11 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
 #else
             std::cout << "  ~ RELATION ignored (relations module not present): " << body << "\n";
 #endif
+        } else if (to_lower(t).rfind("wsid ", 0) == 0) {
+            // Instance identity line (owner rule 2026-08-11): carrier-flavored
+            // unique id. Informational on load; the version line above still
+            // governs parsing.
+            std::cout << "  WSID: " << trim_copy(t.substr(5)) << "\n";
         } else if (to_lower(t).rfind("key ", 0) == 0) {
             // AIF-074 P1.1: KEY <table> <field> UNIQUE|PRIMARY -> unique_reg.
             std::string body = trim_copy(t.substr(4));
@@ -1789,13 +1820,41 @@ static bool ensure_catalog(std::string& err) {
     if (fs::exists(catalog_path(), ec)) return true;
     fs::create_directories(catalog_dir(), ec);
 
+    // Catalog v2 (owner design session 2026-08-11): single-key identity
+    // (WS_NAME is the human handle -- NO composite keys, owner ruling),
+    // WS_ID surrogate for machine identity + PREV_ID lineage chains,
+    // dimensions as queryable attributes, FMT for future payload kinds
+    // (DTSHEMA 2 today, MINIDB later), DEPTH/SELF_REF as the recursion
+    // guard's declaration half, budget fields for hydration admission.
+    // PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT / dimension fields are created
+    // now and populated by later milestones -- an empty column is a
+    // chartered claim, same rule as the public status board.
     std::vector<xbase::dbf_create::FieldSpec> f;
     auto C = [&](const char* n, std::uint32_t len) {
         xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'C'; s.len = len; s.dec = 0;
         f.push_back(s);
     };
-    C("WS_NAME", 64); C("SAVED_AT", 19); C("AUTHOR", 48); C("SUPERSEDED", 1);
+    auto N = [&](const char* n, std::uint32_t len) {
+        xbase::dbf_create::FieldSpec s; s.name = n; s.type = 'N'; s.len = len; s.dec = 0;
+        f.push_back(s);
+    };
+    N("WS_ID", 10);        // unique auto-id (see allocation note in save_to_memo)
+    C("WS_NAME", 32);      // THE key: the human handle you load by
+    C("SCHEMA_NAME", 64);  // dimension: "My Community College" (M2 populates)
+    C("FLAVOR", 8);        // dimension: X64/X32/VFP/REF (M2 populates)
+    C("OS_COMPAT", 8);     // dimension: ALL/WIN/POSIX/MAC -- a CLAIM, not a partition
+    C("FMT", 12);          // payload format tag: "DTSHEMA 2" now, "MINIDB n" later
+    C("PAYLOAD_SHA", 64);  // integrity + cycle-detection material (chartered)
+    N("SIZE_B", 12);       // payload bytes (populated now)
+    N("EST_HYD_B", 12);    // estimated hydrated bytes (chartered; budget input)
+    N("MAX_AREAS", 4);     // areas the posture opens (populated now; admission input)
+    N("DEPTH", 2);         // MANDATORY recursion declaration: 0 = leaf posture
+    C("SELF_REF", 1);      // payload references a workspace catalog (T/F)
+    N("PREV_ID", 10);      // lineage: WS_ID of the row this save superseded (0 = first)
+    C("SUPERSEDED", 1);
+    C("SAVED_AT", 19); C("AUTHOR", 48);
     C("DBF_ROOT", 180); C("IDX_ROOT", 180);
+    C("VERIFIED_AT", 19);  // last oracle re-verification (chartered; WORKSPACE VERIFY)
     // Memo token field: the canonical x64/DTX token is 16-char hex
     // (src/memo/memo_ref.cpp). len=10 (classic dBASE convention) TRUNCATED
     // the token and broke fresh-session reads -- measured 2026-08-11.
@@ -1816,16 +1875,37 @@ static bool open_catalog(xbase::DbArea& a, std::string& err) {
     if (!ensure_catalog(err)) return false;
     try { a.open(s8(catalog_path())); }
     catch (const std::exception& e) { err = std::string("WORKSPACE MEMO: cannot open catalog: ") + e.what(); return false; }
+
+    // v1-catalog guard: a WORKSPACES.dbf without WS_ID predates the v2
+    // schema (2026-08-11). Refuse LOUDLY rather than mis-populate -- the
+    // no-ALTER-add-field gap means we cannot upgrade in place yet.
+    if (fields::findFieldCI(a, "WS_ID") < 0) {
+        err = "WORKSPACE MEMO: catalog at " + s8(catalog_path()) +
+              " is pre-v2 (no WS_ID). Remove WORKSPACES.* in the workspaces "
+              "root and re-save; the catalog self-creates with the v2 schema.";
+        a.close();
+        return false;
+    }
+
+    // Declaration half of "use unique auto-id" (owner pointer: see
+    // cmd_setunique.cpp): register WS_ID as the PRIMARY unique field in the
+    // house uniqueness registry. VALIDATE UNIQUE can then police the catalog
+    // like any other table, and the workspace serializer emits it as a
+    // KEY line automatically. Generation half lives in save_to_memo.
+    unique_reg::set_unique_field(a, "WS_ID", true);
+    unique_reg::set_primary_field(a, "WS_ID");
+
     std::string merr;
     if (!cli_memo::memo_auto_on_use(a, s8(catalog_path()), true, merr)) {
         err = "WORKSPACE MEMO: memo sidecar: " + merr;
+        a.close();
         return false;
     }
     return true;
 }
 
 static void save_to_memo(const std::string& name) {
-    const std::string payload = schema_save_to_string();
+    const std::string base = schema_save_to_string();
 
     std::string err;
     xbase::DbArea a;
@@ -1835,17 +1915,48 @@ static void save_to_memo(const std::string& name) {
         WsLock lk(a, err);
         if (!lk) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
 
-        // D4 append-history: supersede any prior live row of this name.
+        // One scan, two jobs (under the FLOCK):
+        //  - D4 append-history: supersede any prior live row of this name,
+        //    remembering its WS_ID as this save's PREV_ID lineage.
+        //  - WS_ID allocation, generation half of "use unique auto-id"
+        //    (owner ruling 2026-08-11). Measured that day: the x64 header
+        //    slot autoq_next EXISTS (xbase_64.hpp:52; init=1 at create;
+        //    hydrated into the area at open, xbase_64.hpp:530) but is
+        //    LOAD-ONLY -- no APPEND consumer, no increment, no store path
+        //    back to the header. Wiring those three is a chartered engine
+        //    lane. Until it lands: max(WS_ID)+1 under this FLOCK -- the
+        //    proven bbs_store next_id pattern, self-healing after any
+        //    manual edit and forward-compatible with the autoq wiring.
+        std::uint64_t maxId = 0, prevId = 0;
         const std::uint64_t n = a.recCount64();
         for (std::uint64_t r = 1; r <= n; ++r) {
             try {
                 a.gotoRec(static_cast<int32_t>(r)); a.readCurrent();
+                const std::uint64_t rid =
+                    std::strtoull(trim_copy(get_by_name(a, "WS_ID")).c_str(), nullptr, 10);
+                if (rid > maxId) maxId = rid;
                 if (get_by_name(a, "WS_NAME") == name && get_by_name(a, "SUPERSEDED") != "1") {
+                    prevId = rid;
                     if (!set_by_name(a, "SUPERSEDED", "1", err)) { std::cout << err << "\n"; }
                     else a.writeCurrent();
                 }
             } catch (...) {}
         }
+        const std::uint64_t newId = maxId + 1;
+
+        // Instance identity (owner rule 2026-08-11): memo-carried postures
+        // stamp a memo-flavored unique id -- M<ws_id> -- as a WSID line
+        // after the DTSHEMA 2 header (version line untouched). The catalog
+        // row and the payload now name each other.
+        const std::string payload = stamp_ws_id(base, "M" + std::to_string(newId));
+
+        // Derived metadata, measured from the payload itself.
+        std::size_t areaCount = 0;
+        for (std::size_t p = payload.find("\nAREA "); p != std::string::npos;
+             p = payload.find("\nAREA ", p + 6)) ++areaCount;
+        // SELF_REF heuristic: does the posture open the workspace catalog
+        // family? Declaration only -- enforcement is the hydration stack.
+        const bool selfRef = payload.find("WORKSPACES") != std::string::npos;
 
         // Fresh row + memo payload.
         auto* store = cli_memo::memo_store_for(a);
@@ -1861,13 +1972,22 @@ static void save_to_memo(const std::string& name) {
         }
 
         a.appendBlank();
-        bool ok = set_by_name(a, "WS_NAME", name, err)
+        bool ok = set_by_name(a, "WS_ID", std::to_string(newId), err)
+               && set_by_name(a, "WS_NAME", name, err)
+               && set_by_name(a, "FMT", "DTSHEMA 2", err)
+               && set_by_name(a, "SIZE_B", std::to_string(payload.size()), err)
+               && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
+               && set_by_name(a, "DEPTH", "0", err)          // leaf until hydration says otherwise
+               && set_by_name(a, "SELF_REF", selfRef ? "T" : "F", err)
+               && set_by_name(a, "PREV_ID", std::to_string(prevId), err)
                && set_by_name(a, "SAVED_AT", now_stamp(), err)
                && set_by_name(a, "AUTHOR", author_stamp(), err)
                && set_by_name(a, "SUPERSEDED", "0", err)
                && set_by_name(a, "DBF_ROOT", s8(dbf_root()), err)
                && set_by_name(a, "IDX_ROOT", s8(idx_root()), err)
                && set_by_name(a, "SNAPSHOT", mr.ref.token, err);
+        // SCHEMA_NAME / FLAVOR / OS_COMPAT populate in M2 (mcc_x64 canonical
+        // save); PAYLOAD_SHA / EST_HYD_B / VERIFIED_AT are chartered columns.
         if (!ok) { std::cout << err << "\n"; cli_memo::memo_auto_on_close(a); a.close(); return; }
         a.writeCurrent();
 
