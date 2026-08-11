@@ -1,6 +1,7 @@
 # AI Glossary -- coined vocabulary of the portal + Frontal_Mem (index)
 
-**Status:** maintained index. Owner: member.derald. Date 2026-08-08. Registered as recall node
+**Status:** maintained index. Owner: member.derald. Date 2026-08-08; updated 2026-08-10
+(Cascade double milestone + learning doctrine). Registered as recall node
 `doc.ai_glossary`; reached from `trigger.onboard`. This is a **pointer index**, not a corpus:
 each term gets one line and a home. Definitions live in the homes; this file just makes the
 vocabulary reachable in one hop. It is not hosted in the frontal seed (byte budget + AIF-082);
@@ -85,6 +86,18 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   rots; the close-out question is "where did the final test go?" First application:
   `INDEX_X64_CNX` (the CNX-on-x64 policy proof, registered in `cmd_regression.cpp`). The
   companion of the golden rule: verify before you assert, then KEEP verifying after you close.
+- **no perishable literals (AIF-082)** -- if an agent can cheaply measure it, do not assert
+  it; hand-kept numbers drift the moment nobody updates them. Born as the frontal-seed
+  maintenance rule (CLAUDE.md); first enforcement against OURSELVES 2026-08-10: the derived
+  Open Rulings report measured 18 open rows against a hand-kept footer saying 20, the owner
+  retired the footer the same evening, and the page now owns the count (sentinel
+  `RUNNING-TOTAL RETIRED`, commit 7a38c7fb8). The incident is kept visible as story -- the
+  pipeline catching its maintainers is the best advertisement measurement gets.
+- **evidence tiers (planned / chartered / source-evidenced / runtime-proven)** -- every public
+  claim states which tier its evidence sits in and demotes the day the tier says so.
+  "Chartered" coined 2026-08-10 for the site's proven-capabilities page: designed and ruled,
+  not yet source-evidenced. The tier ladder is what lets the hero stay modest while the
+  feature list explains the cool.
 - **openness is a one-way door** -- released-open cannot be pulled back; income is preserved by
   dual-license + copyright + CLA, never by "open then close." Home:
   `docs/maintenance/licensing/LICENSING_PRINCIPLE_ONE_WAY_DOOR_V1.md`.
@@ -131,6 +144,64 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   non-perishability plus a declared owner doc, not by an overlay.
   Home: `docs/maintenance/AI_PORTAL_MAIN_POINTER_DRAFT_V1.md`.
 
+## Learning doctrine (the macro-system teaches -- coined 2026-08-10)
+
+- **learning micro-system** -- one bounded, executable learning unit: its own data, indexes,
+  schema, scripts, and self-proof, loadable and retirable as a unit. First proven instance:
+  the Cascade ERP bundle (`dottalkpp/data/systems/cascade_erp/`). Home:
+  `docs/maintenance/CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md`.
+- **learning macro-system** -- the wider ecosystem (x64base, DotTalk++, LabTalk, metadata,
+  documentation, testing, AI, publication) that connects the micro-systems. Learning theory is
+  itself subject matter here, not just method: the system studies how it teaches. Terminology
+  settled with Grok 2026-08-10; the initialisms (LuS/LMaS) are NOT house usage -- the mu glyph
+  fails the ASCII rule and LMaS sits one letter from the LMS it exists to escape. Spell the
+  terms out.
+- **NON LMS** -- the founding refusal: this is not a Learning Management System (no grading,
+  no management), while drifting toward a Learning Memory System -- fun, true, and not true
+  (owner titling, unhyphenated). Its visibility arc is itself a lesson: tab-title-only (nobody
+  saw it) -> always-visible brand strip -> red-pen correction on the cover. Owner's law,
+  2026-08-10: "the user can't see it" -- a negation teaches nothing unless it is
+  forward-facing. Home: `app/lms-proposal/page.tsx` (x64base-site) + the site matrix row.
+- **demonstrated negation** -- teaching a concept by RUNNABLY exhibiting its absence; the
+  deliberate sibling of learning-by-failure (failure finds the boundary by accident; this
+  builds the exhibit that meets it by design). Owner-ratified as a method, not a joke.
+  Instances so far: the NON LMS red-pen correction; the golden rule's "a timed-out search is
+  not a negative result -- absence must be demonstrated"; the planned ETL non-feature exhibits
+  (show no CDC by changing a DBF and watching nothing react; show no orchestrator by running
+  scripts out of order). A system selling learning can afford to demonstrate its own negative
+  space; vendors cannot. Home: the ETL subject-lane charter (founding principles).
+- **the red pen** -- correcting a preserved external artifact in OUR overlay layer, never by
+  editing the artifact: the received document stays byte-identical, the disagreement renders
+  on top, attributed to the house. First instance: the proofreader's caret + handwritten NON
+  over Copilot's "LMS Ecosystem" cover (deck shell overlay, slide untouched). The intake
+  preserve rule made visible. Home: `public/lms-proposal/deck.html` (x64base-site).
+
+## Relational doctrine (Cascade double milestone -- 2026-08-10)
+
+- **two house graphs** -- one declared relation graph, two supported consumers: SET RELATION
+  (traditional, positional) and SQLSEL (set-based; the house SELECT, second SELECT optional;
+  SQLite is companion carrier AND verification oracle). Comparing them is the point --
+  "learning and theory." Home: the Cascade lane doc + `tools/cascade_erp/generate_dtschema.py`
+  headers.
+- **walker** -- a relational consumer strategy over the declared graph. "Two walkers, one
+  graph" = the double milestone: both walkers answered the same question over the live
+  34-table / 58-relation Cascade graph and agreed (regression `CASCADE_ENV`, marker C_T9).
+- **two name planes** -- CDX tags resolve 10-char DBF descriptors; the REL engine and
+  expression evaluator resolve x64 LONG logical names. Each generator emits to its consumer's
+  plane. Proven 2026-08-10: 22 truncated names rejected, then 58/58 logical names accepted.
+- **refresh-driven slaving** -- the child cursor follows its parent on `REL REFRESH`, not
+  implicitly per movement; a deliberate difference from FoxPro. Slaving positions, it does not
+  filter -- probe with `? FIELD` after refresh, not with LIST.
+- **canonical workspace posture** -- the MCC pattern, x64 generation: pure children sit on
+  their spine FK tag, hubs on their PK tag, parents on their code/human tag. Applied 34/34 in
+  `workspaces/cascade_all.dtschema`.
+- **.dtschema / .dtgraph / .erz** -- the file-plane vocabulary, named 2026-08-10: `.dtschema`
+  is the engine's own WORKSPACE SAVE/LOAD snapshot format; `.dtgraph` is a GENERATED
+  attributed relation graph (tag orders + FK edges, provenance-stamped with source sha256);
+  `.erz` is an ERSATZ browser session. `.dtgraph` was chosen over `.dtschema` for generated
+  output to avoid colliding with the engine format, and over `dtcatalog` to avoid colliding
+  with metadata.
+
 ## Derived / conceptual terms
 
 - **session / run / member** -- terms over the chat atom (an acting instance / its run id / the
@@ -171,6 +242,10 @@ sitting under the BBS.
 - **team-member entity / coworker** -- an AI agency holding a member identity + service token.
   Home: `src/cli/cmd_user.cpp` (`USER LOGIN`/`AS`/`TOKEN`), `src/identity/identity_admin.cpp`
   (`current_member`, `login`); conduct rule: `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`.
+- **coauthor of record (owner ruling 2026-08-10)** -- a Coworker (Class A) that authors a
+  lane's artifacts is named coauthor of record on the lane doc, under real attribution
+  (AIF-075), with the owner as planner/committer. First instance: member.ai.claude.cowork on
+  the Cascade AIF-105 lane. Coworker is the house term ("what is our term" -- Coworker).
 - **one member id per DEPLOYMENT, not per brand (owner-ratified 2026-08-09).** A member
   identity (e.g. `member.ai.claude.cowork`) names a specific deployment -- provider + runtime +
   capability class -- not every session of that provider. A different deployment of the same
