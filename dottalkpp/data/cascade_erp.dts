@@ -5,6 +5,8 @@
 *
 * Run from the data root (datarun.ps1 cwd):  DOTSCRIPT systems/cascade_erp/scripts/cascade_erp.dts
 * Schema + tag orders: systems/cascade_erp/schema/CASCADE_ERP.dtgraph (generated)
+* (.dtschema is the engine WORKSPACE SAVE/LOAD snapshot format -- save your
+*  open state with WORKSPACE SAVE <name> after running this script)
 * NOTE: this root copy exists for the house root-switcher convention
 * (x64.dts, sandbox.dts...). The bundle copy at
 * systems/cascade_erp/scripts/cascade_erp.dts is the maintained original;
@@ -52,6 +54,12 @@ SET ORDER TO TAG ITEM_ID
 SELECT 4
 SET INDEX TO CASCADE_Sales_Orders.cdx
 SET ORDER TO TAG SO_ID
+
+* --- walker #2 demo: the house SELECT (second SELECT optional) -----------
+* SQLSEL reads OPEN DBF work areas, so it queries a table this script opened
+* (Sales_Orders, area 4). Expected: exactly one row, SO 1 (measured
+* 2026-08-10). The set answer beside the positional one.
+SQLSEL SO_ID, CUSTOMER_ID, STATUS FROM CASCADE_Sales_Orders WHERE SO_ID = 1
 
 * --- prove the environment, do not just assert it ------------------------
 SELECT 1

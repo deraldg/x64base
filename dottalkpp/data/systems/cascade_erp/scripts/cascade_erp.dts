@@ -51,6 +51,12 @@ SELECT 4
 SET INDEX TO CASCADE_Sales_Orders.cdx
 SET ORDER TO TAG SO_ID
 
+* --- walker #2 demo: the house SELECT (second SELECT optional) -----------
+* SQLSEL reads OPEN DBF work areas, so it queries a table this script opened
+* (Sales_Orders, area 4). Expected: exactly one row, SO 1 (measured
+* 2026-08-10). The set answer beside the positional one.
+SQLSEL SO_ID, CUSTOMER_ID, STATUS FROM CASCADE_Sales_Orders WHERE SO_ID = 1
+
 * --- prove the environment, do not just assert it ------------------------
 SELECT 1
 LIST STATUS
