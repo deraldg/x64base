@@ -106,6 +106,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "Site Improvement Plan", href: "/docs/dev/site-improvement-plan" },
       { label: "Important Documents", href: "/docs/dev/important-documents" },
       { label: "Website Documentation Matrix", href: "/docs/dev/website-documentation-matrix" },
+      { label: "Coined Vocabulary (Glossary)", href: "/docs/dev/coined-vocabulary" },
       { label: "Historical Source Lineage", href: "/docs/dev/historical-source-lineage" },
       { label: "Historical Family Tree", href: "/docs/dev/historical-family-tree" },
       { label: "Historical Source Files", href: "/docs/dev/historical-source-files" },

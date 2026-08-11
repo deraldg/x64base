@@ -65,6 +65,37 @@ The storyboard currently connects these case families:
 | Document imaging, ERP, auto-ID, and process data | Shows transactions connecting documents, inventory, shipping, invoicing, and industrial operations. |
 | DotTalk++ and the AI-era campus | Shows why transparent, inspectable database systems still matter when AI enters the workflow. |
 
+## Live Case: The Pipeline That Audited Its Own Maintainers (2026-08-10)
+
+The newest case comes from inside the macro-system itself, and it is the first
+one proven the same day it happened.
+
+The AI Portal's Open Rulings page is a small ETL run executed per request:
+extract the ruling sheets (canonical markdown), transform by parsing rows and
+deriving counts, load by rendering the view. Its contract is one sentence on
+the page: nothing here is hand-entered. On 2026-08-10 its reconciliation check
+fired against its own maintainers -- the sheet's hand-kept footer declared 20
+open rulings; the derived parse measured 18. One number was asserted, one was
+measured, and they had drifted exactly the way hand-kept totals always do. The
+owner retired the footer the same evening; the derived figure owns the count
+now, and the drift incident stays visible on the page as story rather than
+being erased.
+
+Two lessons the campus takes from this case:
+
+- **Measurement over assertion.** A pipeline that has never disagreed with its
+  maintainers has checks that have never been tested. Ours disagreed, was
+  right, and the correction became doctrine.
+- **Demonstrated negation.** The campus teaches concepts partly by runnably
+  exhibiting their absence -- the deliberate sibling of learning by failure
+  (failure finds the boundary by accident; a built exhibit meets it by
+  design). A batch, file-based system is an honest classroom for modern ETL
+  precisely because its gaps can be demonstrated: change a table outside the
+  pipeline and watch nothing react (that absence is why change-data-capture
+  exists), run two steps out of order and watch the failure (that absence is
+  why orchestrators exist). The principles are shown where we have them; the
+  motivations are shown where we do not.
+
 ## Proof-Aware Case Pattern
 
 Campus cases should not be loose anecdotes. They should move through the same
