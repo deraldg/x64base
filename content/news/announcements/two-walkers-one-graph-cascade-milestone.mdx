@@ -1,0 +1,55 @@
+---
+title: "Two walkers, one graph: the Cascade double milestone"
+description: "In a single day, SET RELATION and SQLsel each answered the same question over a 34-table ERP -- and agreed on the answer, down to the record."
+date: "2026-08-10"
+---
+
+Here is a question a database can be asked: *which order lines belong to sales
+order 6?*
+
+On 2026-08-10 the engine answered it twice, two entirely different ways, over
+the same live schema -- the Cascade Precision Mfg teaching ERP, 34 tables, 9
+views, 58 foreign-key relations, standing in both SQLite and x64base carriers.
+
+**The first walker answered by position.** One `WORKSPACE LOAD` restored all
+43 work areas, their indexes, their tag orders, and all 58 declared relations
+from a single plain-text snapshot. Then classic navigation did what classic
+navigation does: move the parent to sales order 6, refresh, and the child
+cursor lands on record 11 -- the first line of that order. The answer *is
+where you are standing.*
+
+**The second walker answered by set.** `SQLsel`, the house SELECT, took the
+same question declaratively -- `WHERE SO_ID = 6` -- and returned the qualifying
+rows: records 11 and 12, line totals 250.0 and 6.5, count of 2. The answer
+*is the set that qualifies.* And because SQLsel's row sets are verified
+against an in-process SQLite oracle in its own regression, the second walker's
+correctness is anchored to an independent implementation.
+
+Record 11 appears in both transcripts. Same truth, two theories of the
+question -- which is the point of the whole system. Navigation, filtration,
+and declaration are one idea wearing different syntax, and a schema that can
+demonstrate that on real data is a database course in a single exercise.
+
+The day also surfaced things worth knowing that nobody had written down:
+
+- **Slaving is refresh-driven.** The child follows the parent on
+  `REL REFRESH`, not implicitly per movement -- a deliberate difference from
+  FoxPro, now measured and recorded.
+- **x64 has two name planes.** Index tags resolve 10-character DBF
+  descriptors; the relation engine resolves long logical names. Twenty-two
+  truncated names were rejected before this was understood; fifty-eight
+  logical names were accepted after. The lesson is now baked into the
+  generators.
+- **The proof is a regression now.** `REGRESSION RUN CASCADE_ENV` replays the
+  entire arc -- environment, indexes, orders, both walkers, ten self-asserting
+  markers -- on demand, per the house rule that a task's final test is
+  promoted to a regression when the task closes.
+
+For the fuller inventory of what the engine has quietly proven -- tables and
+indexes living entirely in RAM, three DBF flavors under one runtime, an index
+family with cross-generation attachment, a workspace format that restores an
+entire database posture from one file -- see the new
+[Proven Capabilities](/docs/engine/proven-capabilities) page, where every
+entry states its evidence tier and cites its transcript.
+
+No claims beyond the proofs. The proofs were enough.

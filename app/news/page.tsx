@@ -1,57 +1,36 @@
 import Link from "@/components/StaticLink";
-import { Card } from "@/components/Card";
 import { getAllNewsPosts } from "@/lib/news";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "News",
   description:
-    "Press releases, announcements, and milestone updates across x64base, DotTalk++, LabTalk, and the Arctic workbench lanes."
+    "Milestones and working announcements from the x64base, DotTalk++, and LabTalk lanes -- written from proofs, not positioning."
 };
 
 export default function NewsPage() {
   const allPosts = getAllNewsPosts().sort((a, b) => (b.frontmatter.date ?? "").localeCompare(a.frontmatter.date ?? ""));
   const posts = allPosts
-    .sort((a, b) => (b.frontmatter.date ?? "").localeCompare(a.frontmatter.date ?? ""))
-    .slice(0, 6);
+    .filter((p) => p.category === "announcements")
+    .slice(0, 8);
   const pressReleaseCount = allPosts.filter((p) => p.category === "press-releases").length;
-  const announcementCount = allPosts.filter((p) => p.category === "announcements").length;
 
   return (
     <div className="space-y-8">
       <header className="max-w-2xl space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">News</h1>
         <p className="text-muted">
-          Press releases, announcements, and milestone updates across x64base, DotTalk++, LabTalk, and the
-          emerging Arctic workbench lanes.
+          Milestones and working announcements from the engine, shell, and campus lanes. Entries are
+          written from proofs and transcripts -- when something is demonstrated, it gets reported;
+          when it is not, it does not appear here.
         </p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card
-          title="Press Releases"
-          description="Architecture milestones, publication notes, release positioning, and major ecosystem updates."
-          href="/news/press-releases"
-        >
-          <div className="text-xs uppercase tracking-[0.2em] text-muted">{pressReleaseCount} posts</div>
-        </Card>
-        <Card
-          title="Announcements"
-          description="Runtime improvements, messaging/catalog work, regression lanes, curriculum, and build updates."
-          href="/news/announcements"
-        >
-          <div className="text-xs uppercase tracking-[0.2em] text-muted">{announcementCount} posts</div>
-        </Card>
-      </div>
-
       <section className="rounded-2xl border border-border bg-card/30 p-6">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">Latest</h2>
-          <Link href="/news/press-releases" className="text-sm text-muted hover:text-fg">
-            Press releases →
-          </Link>
+          <h2 className="text-lg font-semibold tracking-tight">Latest announcements</h2>
           <Link href="/news/announcements" className="text-sm text-muted hover:text-fg">
-            Announcements →
+            All announcements →
           </Link>
         </div>
 
@@ -74,6 +53,22 @@ export default function NewsPage() {
               </div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-dashed border-border bg-card/10 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold tracking-tight">Press releases</h2>
+            <p className="mt-1 text-sm text-muted">
+              Deliberately minimal for now: {pressReleaseCount} early posts are retained as history, and a
+              proper press surface is an open to-do -- it will be built when there is a release to
+              press about, not before.
+            </p>
+          </div>
+          <Link href="/news/press-releases" className="text-sm text-muted hover:text-fg">
+            Archive →
+          </Link>
         </div>
       </section>
     </div>

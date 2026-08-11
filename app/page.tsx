@@ -79,6 +79,7 @@ const ecosystem = [
 
 const quickLinks = [
   { title: "Engine architecture", href: "/docs/engine/architecture" },
+  { title: "Proven capabilities", href: "/docs/engine/proven-capabilities" },
   { title: "Open Engine APIs", href: "/docs/engine/api-reference" },
   { title: "Indexing rules", href: "/docs/engine/indexing-rules" },
   { title: "Pinocchio benchmarks", href: "/docs/engine/pinocchio-benchmarks" },

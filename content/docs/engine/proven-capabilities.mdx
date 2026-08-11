@@ -1,0 +1,138 @@
+---
+title: "Proven Capabilities"
+description: "Features the engine has demonstrated with transcripts, regressions, or oracle checks -- each entry names its evidence and its tier."
+---
+
+Some of the engine's most distinctive behavior is easy to miss because it was
+proven quietly, in regressions and session transcripts, rather than announced.
+This page promotes those behaviors to named features -- under one rule: **every
+entry states its evidence tier, and nothing here outranks its proof.** Tiers
+follow the house convention: *runtime-proven* (a transcript or regression shows
+it), *source-evidenced* (the mechanism is confirmed in source; the end-to-end
+run has not happened), *chartered* (a designed and registered lane, not yet
+built).
+
+## One engine, three DBF flavors
+
+**Runtime-proven.** The same runtime opens and works classic x32 DBF, the
+x64-family format, and Visual FoxPro tables. The teaching datasets ship in all
+three (plus a reference copy), and the `INDEX_X32` and `INDEX_X64` regressions
+exercise flavor-correct behavior on every run. Flavor is a property of the
+table, not the build: one executable, three dialects.
+
+Evidence: `REGRESSION RUN INDEX_X32` / `INDEX_X64`; the MCC teaching datasets
+(x64, x32, VFP, reference); the [DBF flavors and indexes](/docs/engine/dbf-flavors-and-indexes)
+reference.
+
+## An index family, not an index
+
+**Runtime-proven, one direction of cross-attachment chartered.** The engine
+carries INX and CNX (classic-generation), CDX with an LMDB-backed key store
+(x64-generation), and publishes the attach / rebuild / order / seek seams as
+architecture rather than sealed internals. Cross-generation attachment is
+policy, not accident: a CNX can be explicitly attached to an x64 table with an
+advisory (proven by the `INDEX_X64_CNX` regression, including `REINDEX`
+routing and the unchanged CDX default); the mirror direction (CDX on classic
+tables) is a chartered lane awaiting its proof.
+
+Evidence: `REGRESSION RUN INDEX_X64_CNX`; [CDX / LMDB indexing](/docs/engine/cdx-lmdb-indexing);
+the Open Index API section of the [API reference](/docs/engine/api-reference).
+
+## Whole tables -- and their indexes -- in RAM
+
+**Runtime-proven.** The in-process RAM virtual disk (`VDISK`) hosts complete
+x64 tables *and their native CDX indexes* with zero files on disk: built,
+indexed, and traversed in ordered form entirely in memory, then unmounted. The
+`MEM` regression is the standing proof (create, index, ordered read-back,
+teardown -- all in RAM).
+
+Evidence: `REGRESSION RUN MEM`; `VDISK STATUS` residency checkpoints in its
+transcript.
+
+## Two relational consumers over one declared graph
+
+**Runtime-proven, on a production-shaped schema.** The same declared relation
+graph is walked by two independent engines: traditional `SET RELATION`
+navigation (position drives the child cursor) and `SQLsel`, the house
+set-oriented SELECT (the qualifying rows come back as a set). On 2026-08-10
+both walkers answered the same question over a 34-table ERP schema with 58
+foreign-key relations -- and agreed on the answer, down to the record. SQLsel's
+row sets are additionally verified against an in-process SQLite oracle in its
+own regression, so the second walker's correctness is anchored to an external
+implementation.
+
+Evidence: `REGRESSION RUN CASCADE_ENV` (both walkers in one run);
+`SQLSEL_SELECT_V1` (the oracle harness); the [Schemas](/schemas) page for the
+graph itself.
+
+## A workspace that restores a whole database posture from one file
+
+**Runtime-proven.** `WORKSPACE SAVE` captures open areas, attached indexes,
+selected tag orders, aliases, and declared relations into a plain-text
+`.dtschema` snapshot; `WORKSPACE LOAD` restores all of it. The standing
+demonstration restores 43 work areas and 58 relations -- an entire ERP, posed
+and ready to relate -- from a single command against one committed file.
+
+Evidence: `workspaces/cascade_all.dtschema` in the repository;
+`REGRESSION RUN CASCADE_ENV` Section 2.
+
+## GUI-orthogonal by construction
+
+**Source-evidenced, enforced as doctrine.** Terminal, TUI, and future GUI
+surfaces are consumers of the same runtime truth: ordering, cursor state,
+relations, validation, and command execution live in the engine and DotTalk++,
+never duplicated in UI logic. A front end can be added or removed without the
+database behaving differently -- which is what makes the parallel GUI/TUI lane
+a lane rather than a rewrite.
+
+Evidence: the [Application UI DSL lane](/docs/dev/application-ui-dsl-lane);
+the workbench front-ends principle on the [architecture](/docs/engine/architecture) page.
+
+## Modular by structure, not by slogan
+
+**Source-evidenced -- verifiable from the build itself.** The claim is
+checkable in one build log: the engine links as separate libraries with
+separate responsibilities -- `xbase` (tables and work areas), `xindex`
+(indexes), `memo` (memo storage), `xexpr` (the expression evaluator),
+`dottalk_value` (the value system), `dottalk_tvui` (the TUI) -- under the
+`dottalkpp` command host. The execution chain is equally legible: `main` to
+shell, shell to command registry, registry to one `cmd_*` translation unit per
+command, commands to the libraries. Every seam in that sentence is a real
+compilation boundary.
+
+Evidence: the CMake target list in any build transcript; the
+[architecture](/docs/engine/architecture) layering; per-command source contracts
+in the command files.
+
+## Payload-agnostic memos (and where that is heading)
+
+**Source-evidenced today; the interesting destination is chartered.** x64
+memos are addressed by 64-bit object identifiers and are payload-agnostic by
+design -- the memo layer does not care what it stores. That is the confirmed
+mechanism. The chartered destination built on it -- memo-resident
+mini-databases, where a memo field carries an entire small database as a
+teaching payload -- is a registered design lane, stated here at exactly that
+tier: designed and intended, not yet runtime-proven.
+
+Evidence: `src/memo/memo_ref.cpp` (64-bit payload-agnostic MemoRef); the
+virtual-workspaces intake package (2026-07-28) for the chartered lane; the
+[FPT64 memo format](/docs/engine/fpt64-memo-format) reference.
+
+## SQLite in the same room, on purpose
+
+**Runtime-proven.** SQLite is compiled in as a companion carrier and as a
+verification instrument: dual-carrier teaching systems keep a sealed SQLite
+authority beside their x64base mirrors, the `ERP` and `SQLITE` command
+families open and query it natively, and the house SELECT checks its answers
+against a SQLite oracle. Competing with SQLite and using it as the referee are
+the same decision, made deliberately.
+
+Evidence: `ERP CHECK` scorecards in the Cascade transcripts; the
+[Schemas](/schemas) dual-carrier contract; `SQLSEL_SELECT_V1`.
+
+---
+
+*This page follows the site's proof-language rule: entries are promoted here
+when their evidence exists, and their wording is demoted the day their
+evidence tier says so. If a capability you expected is missing, it is either
+listed at a lower tier above, or its proof has not run yet.*
