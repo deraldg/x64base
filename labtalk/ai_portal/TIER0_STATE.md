@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-11T02:43:29Z
+    generated_utc : 2026-08-11T11:52:23Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 09b85dda5  (2026-08-10)
-    upstream      : 09b85dda5
+    HEAD          : 00130f12b  (2026-08-10)
+    upstream      : 00130f12b
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,18 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md
-    commits behind HEAD : 16
+    commits behind HEAD : 17
 
 ## Staleness warnings
 
-- The newest closeout is 16 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 17 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-107. Same shape as AIF-062/078/080.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-107 | low-key-entry-surface | member.ai.claude.cowork | **MISSING** |
 | AIF-106 | dottalk-ai-historical-evidence-publication | member.ai.codex.local | yes |
 | AIF-105 | Cascade ERP metadata, ETL, migration, and learning gold standard | member.ai.codex.local | yes |
 | AIF-104 | clean-clone core CI link and profile repair | member.ai.codex.local | yes |
@@ -44,8 +46,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-097 | private-site auth + search | member.derald | yes |
 | AIF-096 | coordination-ontology | member.derald | yes |
 | AIF-095 | dottalkpp-site | member.derald | yes |
-| AIF-094 | pdlc-vocabulary-merge | member.ai.claude.cowork | yes |
-| ... | 26 older claims omitted | | |
+| ... | 27 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -58,6 +59,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260811-001 | member.ai.claude.cowork | - | - | AIF-107 |
 | CODEX-20260810-AI-HISTORY-WEB-001 | member.ai.codex.local | - | - | AIF-106 |
 | CODEX-20260810-ERP-RELATIONS-001 | member.ai.codex.local | - | - | AIF-105 |
 | CODEX-20260810-001 | member.ai.codex.local | - | - | AIF-104 |
@@ -65,8 +67,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | COWORK-20260809-001 | member.derald | - | - | AIF-099 -> AIF-100 -> AIF-101 |
 | COWORK-20260808-001 | member.derald | - | - | AIF-097 -> AIF-098 |
 | COWORK-20260807-005 | member.derald | - | - | AIF-095 -> AIF-096 |
-| COWORK-20260807-004 | member.ai.claude.cowork | - | - | AIF-094 |
-| ... | | | | 23 older run(s) omitted |
+| ... | | | | 24 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.
