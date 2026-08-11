@@ -108,9 +108,21 @@ concurrent process for the FLOCK phase.
 - **M1 Solo zoo:** single process, full v1 cast, shadow oracle,
   10k+ generations across several seeds, reopen-every included. Green =
   agnosticism + isolation + fidelity + durability runtime-proven.
-- **M2 Sentinel:** two processes (zoo + ram) against one store; FLOCK
-  serializes; oracle stays green. Green = concurrency claim proven at the
-  memo layer (bbs_store's append discipline, generalized).
+- **M2a Sentinel (contention):** two processes (zoo + ram) against one
+  store; FLOCK serializes; oracle stays green. Green = concurrency claim
+  proven at the memo layer (bbs_store's append discipline, generalized).
+  NAMED with urgency 2026-08-11: an external AI reviewer (Copilot) already
+  described the store as "concurrency-safe... proven under contention" --
+  a claim we corrected because THIS milestone has not run. The gap between
+  what admirers assert and what transcripts show is exactly what this
+  milestone closes, in whichever direction the evidence points.
+- **M2b RAM-VFS zoo (added 2026-08-11, from the same external review):**
+  M1 ran against a DISK-backed store (tmp/memo_zoo.dtx). The RAM virtual
+  disk hosts tables and indexes (MEM regression) but the MEMO STORE on
+  ramfs is UNMEASURED. M2b mounts the store inside the RAM VFS and releases
+  the same seeded cast. Green = the "RAM-native, memo-backed" tier claim
+  gains its missing leg; discovery first: whether MemoStore can target a
+  ramfs path from a standalone harness, or needs the engine host.
 - **M3 Promotion:** status board's payload-agnostic entry advances to
   runtime-proven citing the harness line; the WORKSPACES catalog inherits
   the confidence (its snapshots are just one well-behaved animal in a
