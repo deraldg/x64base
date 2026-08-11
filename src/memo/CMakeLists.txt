@@ -13,6 +13,11 @@ file(GLOB_RECURSE MEMO_SOURCES CONFIGURE_DEPENDS
 # built while paging/inspection are being layered over the working DTX path.
 list(FILTER MEMO_SOURCES EXCLUDE REGEX ".*/x64_memo_store\\.cpp$")
 
+# AIF-070 memo zoo (MEMO_ZOO_ORTHOGONALITY_STRESS_CHARTER_V1): standalone
+# orthogonality stress harness with its own main(); excluded from the lib
+# glob and built as its own executable below.
+list(FILTER MEMO_SOURCES EXCLUDE REGEX ".*/memo_zoo\\.cpp$")
+
 add_library(memo STATIC ${MEMO_SOURCES})
 
 target_include_directories(memo
@@ -34,4 +39,13 @@ if (MSVC)
   target_compile_options(memo PRIVATE /W4 /permissive- /MP)
 else()
   target_compile_options(memo PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# The zoo proves the cage: seeded, shadow-oracle, replayable.
+add_executable(memo_zoo memo_zoo.cpp)
+target_link_libraries(memo_zoo PRIVATE memo)
+if (MSVC)
+  target_compile_options(memo_zoo PRIVATE /W4 /permissive- /MP)
+else()
+  target_compile_options(memo_zoo PRIVATE -Wall -Wextra -Wpedantic)
 endif()

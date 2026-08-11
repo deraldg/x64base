@@ -1,5 +1,19 @@
 # Memo Zoo Orthogonality Stress Charter V1 -- the zoo proves the cage
 
+**M1 SOAKED (2026-08-11, same day as chartering).** `src/memo/memo_zoo.cpp`
+(target `memo_zoo`), six driver personas, shadow oracle, embedded-NUL and
+high-byte payloads, Temporal Collapse reopens, steady-state settle, final
+reopen sweep. Four seeds green: 20260811 (500 gens / 1,584 ops),
+7 (5,000 / 22,353), 42 (5,000 / 29,648, genesis population 200),
+1993 (10,000 / 50,459, reopen every 50). Totals: 20,500 generations,
+104,044 ops, ~215 reopen cycles, ZERO divergences. Payload-agnosticism,
+cross-memo isolation, and reopen durability: RUNTIME-PROVEN at the store
+level. Emergent ecology finding, replicated across all seeds: predation
+(Hawk merge + Otter erase) drives every population to the floor (8) --
+Merge-Hawks are apex predators in every world; a Turtle-bias rebalance is a
+tuning note, not a proof gap. M2 (Sentinel as a second process, FLOCK) and
+the hibernation window remain open.
+
 **Status:** review-needed charter (authored 2026-08-11). Owner: member.derald.
 Coauthor of record: member.ai.claude.cowork (Coworker, Class A).
 Parent claim under test: **memos are payload-agnostic and orthogonal** --
