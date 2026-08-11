@@ -152,13 +152,35 @@ the house SELECT -- which agree to the record. Workspaces became data:
 queryable, relatable, attributed, versioned, and verifiable in the same store
 they describe.
 
-What remains chartered: memo-resident *mini-databases*, where the payload is
-a whole small database rather than a posture. That is designed, not run, and
-is stated at that tier everywhere it appears.
+The same afternoon the catalog grew into a *table of workspaces*: a v2 schema
+with a unique auto-id, carrier-flavored instance identity stamped into every
+serialized posture, dimensions measured from the open areas rather than
+declared, recursion-guard columns, and supersede lineage that doubles as a
+version chain. Format version 3 landed opt-in beside the proven version 2:
+a v3 posture is *self-locating* -- it records its own dbf/index roots and a
+restore resolves against them, proven by restoring 13 areas from a
+deliberately mis-set environment. A posture can also hydrate straight into
+the in-process RAM filesystem, timed rather than adjectived: 24 files and
+92 KB stood up in the 71-94 ms range, with the RAM census agreeing with the
+hydration counter byte for byte, and dismissal (unmount) dropping every RAM
+file while disk stays untouched. And a v3 save now captures *session state*:
+per-area cursor positions and the selected area ride in the payload, so a
+restore resumes exactly where work stopped -- the standing proof drives a
+sales-order parent to its last record, saves, tears everything down,
+reloads, and finds parent and slaved child exactly where they were.
 
-Evidence: `REGRESSION RUN WORKSPACE_MEMO`; the `WORKSPACES` catalog in the
-runtime data root; the virtual-workspaces design package (2026-07-28) for the
-chartered destination.
+What remains chartered: memo-resident *mini-databases*, where the payload is
+a whole small database rather than a posture, and the commit/rollback
+writeback cycle from RAM to disk. Both are designed, not run, and are stated
+at that tier everywhere they appear. One correction from the same day is
+recorded rather than smoothed: an earlier RAM-memo demonstration claimed
+zero disk writes, and the day's own hydration tooling measured the memo
+sidecar landing on real disk -- the claim was corrected in place and RAM
+coverage for the memo store is now the chartered prerequisite.
+
+Evidence: `REGRESSION RUN WORKSPACE_MEMO` / `WORKSPACE_V3` / `WORKSPACE_RAM`
+/ `WORKSPACE_SESSION`; the `WORKSPACES` catalog in the runtime data root; the
+virtual-workspaces design package (2026-07-28) for the chartered destination.
 
 ## SQLite in the same room, on purpose
 
