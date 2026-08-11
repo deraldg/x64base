@@ -74,6 +74,19 @@
        overflow:hidden}
   .fit iframe{position:absolute;inset:0;width:1280px;height:720px;border:0;display:block;background:#0d1b2a}
   .fit .layer{position:absolute;inset:0}
+
+  /* Red-pen proofreader's insertion on the cover (owner's mock, 2026-08-10):
+     caret before "LMS", "NON" written in below -- OUR annotation layered over
+     Copilot's untouched slide, the way an editor marks up a received
+     manuscript. Canvas coordinates (1280x720); scales with the slide. */
+  .redpen{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:5;
+          pointer-events:none;opacity:0;animation:penIn .6s ease .9s forwards}
+  @keyframes penIn{to{opacity:1}}
+  .redpen svg{position:absolute;left:24px;top:330px}
+  .redpen b{position:absolute;left:30px;top:388px;transform:rotate(-8deg);
+          font:400 54px 'Segoe Script','Bradley Hand','Comic Sans MS',cursive;
+          color:#ff5252;letter-spacing:.03em;
+          text-shadow:0 0 12px rgba(255,60,60,.35)}
   .layer.enter-r{animation:inR .5s var(--ease) both}
   .layer.enter-l{animation:inL .5s var(--ease) both}
   @keyframes inR{from{opacity:0;transform:translateX(38px) scale(.988)}to{opacity:1;transform:none}}
@@ -245,6 +258,20 @@ function go(k){
   const f = document.createElement("iframe");
   f.title = s.t; f.src = SRC(s.id);
   layer.appendChild(f);
+
+  // The cover gets the red-pen correction: a proofreader's caret before
+  // "LMS" and a handwritten NON -- ours, over the verbatim slide.
+  if (s.id === "01") {
+    const a = document.createElement("div");
+    a.className = "redpen";
+    a.innerHTML =
+      '<svg width="120" height="60" viewBox="0 0 120 60" fill="none">' +
+      '<path d="M52 58 Q56 44 62 34" stroke="#ff5252" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M54 34 L64 30 L66 42" stroke="#ff5252" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+      '</svg>' +
+      '<b>NON</b>';
+    layer.appendChild(a);
+  }
 
   const fit_ = $("fit");
   const old = fit_.lastElementChild;
