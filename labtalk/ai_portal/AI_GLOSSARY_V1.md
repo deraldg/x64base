@@ -178,6 +178,17 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   (show no CDC by changing a DBF and watching nothing react; show no orchestrator by running
   scripts out of order). A system selling learning can afford to demonstrate its own negative
   space; vendors cannot. Home: the ETL subject-lane charter (founding principles).
+- **the iterative example** -- the house learning motto, owner-coined 2026-08-11:
+  "we regroup, go back and amend, and move forward." A deficiency shaped by its era is
+  not lived with once the future arrives. Founding instance: the MCC dataset was
+  generated without memo fields because memos were unimaginably far off (the whole
+  fight was migrating the C code to C++); when memo-resident workspaces landed and
+  made the gap visible, the ruling was to regenerate the MCC flavors WITH memo fields
+  for STUDENTS and TEACHERS rather than let the old ceiling shape new design --
+  "rather than live with a deficiency and let it shape our future." Distinct from
+  learning-by-failure and demonstrated negation: those find or exhibit boundaries;
+  this one moves a boundary that history drew. Owner: "It needs promotions" --
+  promote to the site coined-vocabulary page. Home: AIF-070 catalog v2 lane.
 - **the red pen** -- correcting a preserved external artifact in OUR overlay layer, never by
   editing the artifact: the received document stays byte-identical, the disagreement renders
   on top, attributed to the house. First instance: the proofreader's caret + handwritten NON
