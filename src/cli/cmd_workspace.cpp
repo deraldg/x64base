@@ -1399,21 +1399,13 @@ static bool apply_relation_line(const std::string& body) {
 
 // --------- SAVE / LOAD ------------------------------------------------------
 
-static void schema_save_to_file(const fs::path& file) {
-    fs::path outPath = resolve_workspace_file_path(file, true);
-
-    {
-        std::error_code ec;
-        if (outPath.has_parent_path() && !outPath.parent_path().empty()) {
-            fs::create_directories(outPath.parent_path(), ec);
-        }
-    }
-
-    std::ofstream out(outPath, std::ios::binary);
-    if (!out.good()) {
-        std::cout << "WORKSPACE SAVE: cannot write file: " << s8(outPath) << "\n";
-        return;
-    }
+// AIF-070 M1: serialization split from file I/O -- one format, two carriers.
+// schema_save_to_string() is the SINGLE serializer; the file writer below
+// (and the future memo carrier, M2) are thin shells around it. The returned
+// text is the byte-exact .dtschema payload (LF line endings, as the binary
+// file writer has always produced). Behavior of WORKSPACE SAVE: unchanged.
+static std::string schema_save_to_string() {
+    std::ostringstream out;
 
     auto weak_can = [](const fs::path& p) -> fs::path {
         std::error_code ec;
@@ -1501,18 +1493,35 @@ static void schema_save_to_file(const fs::path& file) {
         } catch (...) {}
     }
 
+    return out.str();
+}
+
+static void schema_save_to_file(const fs::path& file) {
+    fs::path outPath = resolve_workspace_file_path(file, true);
+
+    {
+        std::error_code ec;
+        if (outPath.has_parent_path() && !outPath.parent_path().empty()) {
+            fs::create_directories(outPath.parent_path(), ec);
+        }
+    }
+
+    std::ofstream out(outPath, std::ios::binary);
+    if (!out.good()) {
+        std::cout << "WORKSPACE SAVE: cannot write file: " << s8(outPath) << "\n";
+        return;
+    }
+
+    out << schema_save_to_string();
     out.flush();
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
 
-static void schema_load_from_file(const fs::path& file) {
-    fs::path inPath = resolve_workspace_file_path(file, false);
-
-    std::ifstream in(inPath, std::ios::binary);
-    if (!in.good()) {
-        std::cout << "WORKSPACE LOAD: cannot read file: " << s8(inPath) << "\n";
-        return;
-    }
+// AIF-070 M1: loader split from file I/O. schema_load_from_stream() is the
+// SINGLE parser; the file loader below (and the future memo carrier, M3)
+// feed it an open stream plus a source label used for messages and the
+// last-loaded-workspace state. Behavior of WORKSPACE LOAD: unchanged.
+static void schema_load_from_stream(std::istream& in, const std::string& sourceLabel) {
 
     auto weak_can = [](const fs::path& p) -> fs::path {
         std::error_code ec;
@@ -1556,7 +1565,7 @@ static void schema_load_from_file(const fs::path& file) {
         return;
     }
 
-    last_loaded_workspace_file() = s8(inPath);
+    last_loaded_workspace_file() = sourceLabel;
 
     schema_close_all();
 
@@ -1684,6 +1693,18 @@ static void schema_load_from_file(const fs::path& file) {
     // the complete load so relation caches do not see a half-built state.
     relations_boot::retry_pending_autoload();
     refresh_relations_if_enabled_safe();
+}
+
+static void schema_load_from_file(const fs::path& file) {
+    fs::path inPath = resolve_workspace_file_path(file, false);
+
+    std::ifstream in(inPath, std::ios::binary);
+    if (!in.good()) {
+        std::cout << "WORKSPACE LOAD: cannot read file: " << s8(inPath) << "\n";
+        return;
+    }
+
+    schema_load_from_stream(in, s8(inPath));
 }
 
 
