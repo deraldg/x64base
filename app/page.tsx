@@ -22,41 +22,57 @@ const proofPoints = [
   { label: "Docs flush", value: "9/9 gates", href: "/docs/dev/documentation-progress" }
 ];
 
+// Each card carries a maturity note plus a pointer to where its CURRENT state
+// actually lives (evidence gallery, docs progress, curriculum) -- labels stay
+// stable, state stays behind a maintained pointer (no perishable claims here).
 const ecosystem = [
   {
     title: "x64base Engine",
     href: "/products/x64base-engine",
     desc: "DBF-style runtime, x64-family table work, indexes, memos, work areas, and validation.",
+    state: { label: "active beta / proof-gated", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: Database
   },
   {
     title: "DotTalk++",
     href: "/products/dottalk",
     desc: "A readable command language for teaching, inspection, and scripted workflows.",
+    state: { label: "active beta / proof-gated", stateIn: "docs progress", href: "/docs/dev/documentation-progress" },
     icon: TerminalSquare
   },
   {
     title: "DotScript",
     href: "/products/dotscript",
     desc: "The script language product for repeatable command files, loops, variables, comments, and automation.",
+    state: { label: "active beta", stateIn: "language guide", href: "/docs/dottalk/dotscript-language-guide" },
     icon: ScrollText
   },
   {
     title: "TupTalk",
     href: "/products/tuptalk",
     desc: "Tuple-centered tools for row inspection, export, validation, and record movement.",
+    state: { label: "active beta", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: Boxes
   },
   {
     title: "RelTalk",
     href: "/products/reltalk",
-    desc: "A relation-focused layer for declared relation graphs, traversal, and connected data exploration.",
+    desc: "A relation-focused layer for declared relation graphs, traversal, workspace persistence, and connected data exploration.",
+    state: { label: "core runtime-proven; join/browse surfaces explicit-run", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: GitBranch
+  },
+  {
+    title: "SQLsel",
+    href: "/products/sqlsel",
+    desc: "The house SELECT over open work areas: selection, projection, ORDER BY, LIMIT, COUNT(*) -- every shipped operator verified against a SQLite oracle. An x64base set algebra under construction, operator by operator.",
+    state: { label: "shipped operators oracle-proven; joins in a future phase", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
+    icon: BarChart3
   },
   {
     title: "Laboratory Campus / LabTalk",
     href: "/products/labtalk",
     desc: "The configurable education and collaboration campus where engine work, tools, documentation, and proof become lessons.",
+    state: { label: "alpha campus; shipped lessons proof-backed (a deliberate hybrid)", stateIn: "curriculum", href: "/docs/dottalk/curriculum" },
     icon: GraduationCap
   }
 ];
@@ -264,6 +280,11 @@ export default function HomePage() {
               <Icon className="h-5 w-5 text-brand" aria-hidden="true" />
               <h2 className="mt-4 text-lg font-semibold tracking-tight">{item.title}</h2>
               <p className="mt-2 text-sm leading-6 text-muted">{item.desc}</p>
+              {item.state ? (
+                <p className="mt-3 font-mono text-xs text-muted">
+                  {item.state.label} · latest state in {item.state.stateIn}
+                </p>
+              ) : null}
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand">
                 Open <ArrowRight size={14} aria-hidden="true" />
               </span>
