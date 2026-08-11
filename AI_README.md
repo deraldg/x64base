@@ -173,11 +173,35 @@ HELP/manual/website text must not outrun source and proof.
 
 ## Website And Publication Locations
 
-Public website:
+Public websites (the estate, two surfaces with distinct roles -- AIF-107):
 
 ```text
-https://x64base.com/
+https://x64base.com/      ecosystem home / working archive: engine story, product
+                          family, Laboratory Campus, schemas, selected evidence
+https://dottalkpp.com/    lean public entry surface: static HTML, six nav items,
+                          evidence-tiered status board, changelog instead of news
 ```
+
+dottalkpp.com facts an agent must know before touching it:
+
+- Source repo: `deraldg/dottalkpp`, working copy `D:\dev\dottalkpp-lean`
+  (has `.git` + `CNAME`). `build_lean_site.py` is the SOURCE OF TRUTH; the
+  emitted HTML is overwritten on every build -- never hand-edit it.
+  `check_site.py` gates links, vocabulary, and metadata before deploy.
+- Editorial rules (the site's charter, in its README): every claim carries an
+  evidence tier; growth rates live ONLY on `/status/`; unstarted work is
+  listed ("an absence you cannot see is a claim by omission"); no product
+  storefronts; retired vocabulary stays retired (gate-enforced); six nav
+  items -- adding a seventh means removing one.
+- Same principle as the engine's lean release on `main`: simple, current,
+  no glamour, never claims to be complete.
+- Lane + provenance: `docs/maintenance/AIF_107_LOW_KEY_ENTRY_SURFACE_LANE_V1.md`
+  and `SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md` (open items G2:
+  status board not yet reconciled against `development`).
+- Stale-copy caution (measured 2026-08-11): `D:\dev\x64base-lean-site` is an
+  older generator copy (no git, no CNAME, pre-license-settlement) -- do not
+  work there; triage pending. Same caution class as `D:\x64base-site` vs the
+  real `D:\dev\x64base-site`.
 
 Public docs start points:
 
@@ -212,7 +236,9 @@ Use this as the default local authority map:
 - Laboratory Campus / LabTalk tree: `D:\code\ccode\labtalk`
 - sterilized publication staging: `C:\x64base`
 - staged DotTalk++ projection: `C:\x64base\dottalkpp`
-- website source tree: `D:\dev\x64base-site`
+- website source tree (x64base.com): `D:\dev\x64base-site`
+- lean site source tree (dottalkpp.com): `D:\dev\dottalkpp-lean` (repo
+  `deraldg/dottalkpp`; generator `build_lean_site.py` is the truth)
 
 Normal source flow:
 

@@ -40,6 +40,7 @@ next agent. A scan you did not record is a scan the next agent repeats.
 | Grok coworker lane (Lane 1 write adapter) | `docs/maintenance/GROK_PUSH_L1_WRITE_ADAPTER_V1.md`; spec `LANE_L1_WRITE_ADAPTER_ASSIGNMENT_GROK_V1.md` | `tools/memory/promote.py`; `assign_grok_pseudochat.dts` |
 | Identity / members / agent login token (the lightweight member layer) | `src/cli/cmd_user.cpp` -- `USER LOGIN`/`AS`/`TOKEN`; `src/identity/identity_admin.cpp` -- `current_member`, `login` | AIF-075 attribution; `docs/maintenance/GOOD_NEIGHBOR_POLICY_V1.md`; team model in `AI_GLOSSARY_V1.md` |
 | Site auth gateway / private-area + search design | `docs/maintenance/PRIVATE_SITE_AUTH_AND_SEARCH_SCOPE_V1.md` | gateway `tools/reports/serve_dynamic_reports.py`; auth `src/bbs/bbs_server.cpp`, `src/identity/identity_admin.cpp` |
+| dottalkpp.com lean site (AIF-107 entry surface) | lane `docs/maintenance/AIF_107_LOW_KEY_ENTRY_SURFACE_LANE_V1.md`; closeout `SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md` | source repo `deraldg/dottalkpp` at `D:\dev\dottalkpp-lean` (`build_lean_site.py` is the truth; emitted HTML never hand-edited; `check_site.py` gates); estate map in AI_README "Website And Publication Locations" |
 
 ## How to use instead of grep
 
