@@ -1,0 +1,199 @@
+1:"$Sreact.fragment"
+2:I[62319,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+c:I[68027,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+:HL["/_next/static/chunks/2q42eym_83ii-.css","style"]
+:HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"P":null,"c":["","docs","engine","workspaces",""],"q":"","i":false,"f":[[["",{"children":["docs",{"children":[["slug","engine/workspaces","c",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2q42eym_83ii-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/1-30yhn-6zqn3.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"}}],["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":[["$","span",null,{"className":"font-mono text-brand","children":"WEBSITE ALPHA"}]," · ",["$","span",null,{"className":"text-fg","children":"AI-assisted, source-reviewed documentation"}]," · ","Full-stack docs reconciled ","2026-08-05",null]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","data-pagefind-body":true,"children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=c4509a6632e7","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication/?v=c4509a6632e7","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=c4509a6632e7","children":"Downloads"}]]}],["$","div",null,{"className":"mt-4","children":[["$","div",null,{"className":"text-xs font-semibold uppercase tracking-wide text-muted","children":"Credits & Contributors"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors/?v=c4509a6632e7","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements/?v=c4509a6632e7","children":"Third-party credits"}]]}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/?v=c4509a6632e7","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products/?v=c4509a6632e7","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=c4509a6632e7","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news/?v=c4509a6632e7","children":"News"}],"$L5"]}]]}],"$L6"]}]}]]}]}]]}],{"children":["$L7",{"children":["$L8",{"children":["$L9",{},null,false,null]},null,false,"$@a"]},null,false,"$@a"]},null,false,null],"$Lb",false]],"m":"$undefined","G":["$c",["$Ld"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"UvuYcfZc0W7heoB2Y7Qvt"}
+f:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+10:"$Sreact.suspense"
+13:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+15:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact/?v=c4509a6632e7","children":"Contact"}]
+6:["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":["© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a ",["$","a",null,{"href":"/licensing","className":"hover:text-fg hover:underline","children":"commercial license"}],"."]}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]
+7:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+8:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+9:["$","$1","c",{"children":["$Le",[["$","script","script-0",{"src":"/_next/static/chunks/3zguxvz6lw9iq.js","async":true,"nonce":"$undefined"}]],["$","$Lf",null,{"children":["$","$10",null,{"name":"Next.MetadataOutlet","children":"$@11"}]}]]}]
+12:[]
+a:"$W12"
+b:["$","$1","h",{"children":[null,["$","$L13",null,{"children":"$L14"}],["$","div",null,{"hidden":true,"children":["$","$L15",null,{"children":["$","$10",null,{"name":"Next.Metadata","children":"$L16"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+d:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2q42eym_83ii-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+17:I[87771,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js","/_next/static/chunks/3zguxvz6lw9iq.js"],"Sidebar"]
+e:["$","div",null,{"className":"flex gap-8","children":[["$","$L17",null,{"groups":[{"label":"Getting Started","items":[{"label":"Overview","href":"/docs/getting-started/overview"},{"label":"Installation","href":"/docs/getting-started/installation"},{"label":"Quickstart","href":"/docs/getting-started/quickstart"},{"label":"FAQ","href":"/docs/getting-started/faq"}]},{"label":"x64base Engine","items":[{"label":"Architecture","href":"/docs/engine/architecture"},{"label":"Proven Capabilities","href":"/docs/engine/proven-capabilities"},{"label":"ACID and the Glass-Box Engine","href":"/docs/engine/acid-and-glass-box"},{"label":"Runtime Footprint","href":"/docs/engine/runtime-footprint"},{"label":"xBase Ecosystem Context","href":"/docs/engine/xbase-ecosystem-context"},{"label":"Ecosystem Feature Comparison","href":"/docs/engine/ecosystem-feature-comparison"},{"label":"x64 Capacity Math","href":"/docs/engine/x64-capacity-math"},{"label":"DBF Flavors and Index Defaults","href":"/docs/engine/dbf-flavors-and-indexes"},{"label":"DBF_64 Specification","href":"/docs/engine/dbf-64-specification"},{"label":"FPT64 Memo Format","href":"/docs/engine/fpt64-memo-format"},{"label":"RAM DBF and VDISK","href":"/docs/engine/ram-dbf-vdisk"},{"label":"Workspaces","href":"/docs/engine/workspaces"},{"label":"Indexing Rules","href":"/docs/engine/indexing-rules"},{"label":"CDX and LMDB Indexing","href":"/docs/engine/cdx-lmdb-indexing"},{"label":"Pinocchio Benchmarks","href":"/docs/engine/pinocchio-benchmarks"},{"label":"Regression & Proof Testing","href":"/docs/engine/regression-and-proof-testing"},{"label":"Engine Feature Crosswalk","href":"/docs/engine/feature-crosswalk"},{"label":"SQLsel and SQL Conformance","href":"/docs/engine/sqlsel-and-sql-conformance"},{"label":"Error Codes","href":"/docs/engine/error-codes"},{"label":"Messaging & Localization","href":"/docs/engine/messaging-and-localization"},{"label":"Identity, Authentication & RBAC","href":"/docs/engine/identity-security"},{"label":"API Reference","href":"/docs/engine/api-reference"},{"label":"Python Integration","href":"/docs/engine/python-integration"}]},{"label":"DotTalk++","items":[{"label":"Language Guide","href":"/docs/dottalk/language-guide"},{"label":"DotScript Language Guide","href":"/docs/dottalk/dotscript-language-guide"},{"label":"SET Family","href":"/docs/dottalk/set-family"},{"label":"Command Families","href":"/docs/dottalk/command-families"},{"label":"Data Mutators","href":"/docs/dottalk/data-mutators"},{"label":"Syntax","href":"/docs/dottalk/syntax"},{"label":"REPL","href":"/docs/dottalk/repl"},{"label":"Command Catalog","href":"/docs/dottalk/command-catalog"},{"label":"Command Reference","href":"/docs/dottalk/command-reference"},{"label":"Function Catalog","href":"/docs/dottalk/function-catalog"},{"label":"Examples","href":"/docs/dottalk/examples"},{"label":"Curriculum","href":"/docs/dottalk/curriculum"}]},{"label":"DotTalk++ Workbench","items":[{"label":"TupTalk","href":"/docs/talk-family/tuptalk"},{"label":"TableTalk","href":"/docs/talk-family/tabletalk"},{"label":"RelTalk","href":"/docs/talk-family/reltalk"},{"label":"SQLsel","href":"/docs/talk-family/sqlsel"},{"label":"Parallel GUI/TUI","href":"/docs/talk-family/parallel-gui-tui"},{"label":"Arctic TUI","href":"/docs/talk-family/arctic"}]},{"label":"Laboratory Campus","items":[{"label":"Academic Start Here","href":"/docs/labtalk/academic-start"},{"label":"Overview","href":"/docs/labtalk/overview"},{"label":"AI Portal — Alpha/Experimental","href":"/docs/labtalk/ai-portal"},{"label":"AI Agent Sync — Live State","href":"/docs/labtalk/agent-sync"},{"label":"Current Tasks & Projects","href":"/docs/labtalk/current-work"},{"label":"Cases and Storyboard","href":"/docs/labtalk/cases-storyboard"},{"label":"Database Evolution Path","href":"/docs/labtalk/database-evolution"},{"label":"Education Features","href":"/docs/labtalk/education-features"},{"label":"Lesson Platform","href":"/docs/labtalk/lessons"},{"label":"LMS Communications Lane","href":"/docs/labtalk/lms-integration-lane"},{"label":"Student Lessons","href":"/docs/labtalk/student-lessons"},{"label":"Guided Lesson: Records, Fields, Tables","href":"/docs/labtalk/lesson-records-fields-tables"},{"label":"Career Lessons","href":"/docs/labtalk/career-lessons"},{"label":"Suggest a Lesson","href":"/docs/labtalk/suggest-a-lesson"},{"label":"Runtime Evidence Gallery","href":"/docs/labtalk/runtime-evidence"},{"label":"SelfDoc Lane Diagrams","href":"/docs/labtalk/selfdoc-lane"},{"label":"Non-Profit Guide","href":"/docs/labtalk/non-profit-guide"},{"label":"Examples","href":"/docs/labtalk/examples"},{"label":"Academic Positioning","href":"/docs/labtalk/academic-positioning"}]},{"label":"Developer Resources","items":[{"label":"Current Project Truth","href":"/docs/dev/project-truth"},{"label":"Recursive Co-development","href":"/docs/dev/recursive-co-development"},{"label":"Current Work Lanes","href":"/docs/dev/current-lanes"},{"label":"Roadmap","href":"/docs/dev/roadmap"},{"label":"Developer Manual (Assembled)","href":"/docs/dev/developer-manual"},{"label":"How the Manual Assembles Itself","href":"/docs/dev/manual-assembly"},{"label":"Documentation Progress","href":"/docs/dev/documentation-progress"},{"label":"Full-stack Documentation Push","href":"/docs/dev/full-stack-documentation-push"},{"label":"Site Improvement Plan","href":"/docs/dev/site-improvement-plan"},{"label":"Important Documents","href":"/docs/dev/important-documents"},{"label":"Website Documentation Matrix","href":"/docs/dev/website-documentation-matrix"},{"label":"Coined Vocabulary (Glossary)","href":"/docs/dev/coined-vocabulary"},{"label":"Historical Source Lineage","href":"/docs/dev/historical-source-lineage"},{"label":"Historical Family Tree","href":"/docs/dev/historical-family-tree"},{"label":"Historical Source Files","href":"/docs/dev/historical-source-files"},{"label":"Application UI DSL Lane","href":"/docs/dev/application-ui-dsl-lane"},{"label":"Developer Profile","href":"/docs/dev/developer-profile"},{"label":"Developer Handbook","href":"/docs/dev/developer-handbook"},{"label":"SelfDoc Website Publication","href":"/docs/dev/selfdoc-website-publication"},{"label":"Public Site Architecture","href":"/docs/dev/public-site-architecture"},{"label":"SelfDoc Feed Pipeline","href":"/docs/dev/selfdoc-feed-pipeline"},{"label":"HELP / Message / SelfDoc DFD","href":"/docs/dev/help-message-selfdoc-dfd"},{"label":"Onboarding Guide","href":"/docs/dev/onboarding-guide"},{"label":"Naming Conventions","href":"/docs/dev/naming-conventions"},{"label":"Coding Standards","href":"/docs/dev/coding-standards"},{"label":"Contribution Guide","href":"/docs/dev/contribution-guide"},{"label":"Experimental Work","href":"/docs/dev/experimental"}]}]}],"$L18"]}]
+19:T20f0,<p>A <strong>workspace</strong> is the shape of a working session: which tables are open in
+which work areas, which index containers are attached, which tag orders are
+selected, what aliases they answer to, which relations are declared between
+them, and -- since version 3 -- where every cursor sat and which area was
+selected. It is the difference between "the data" and "how the data is
+currently arranged for work."</p>
+<p>Workspaces are ordinary text or ordinary table rows. There is nothing
+proprietary in the middle.</p>
+<h2 id="the-command-surface"><a class="no-underline" href="#the-command-surface">The command surface</a></h2>
+<p><code>WORKSPACE SAVE &#x3C;name> [MEMO] [V3] [MINIDB]</code> and
+<code>WORKSPACE LOAD &#x3C;name> [MEMO] [RAM]</code>. The trailing keywords are modifiers,
+combinable in either order, and every one of them is opt-in -- the bare forms
+behave exactly as they always have.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Form</th><th>What it does</th></tr></thead><tbody><tr><td><code>WORKSPACE SAVE &#x3C;file></code></td><td>writes a <code>.dtschema</code> text snapshot (format version 2)</td></tr><tr><td><code>WORKSPACE SAVE &#x3C;file> V3</code></td><td>version 3: adds measured flavor, its own dbf/index/lmdb roots, and session state</td></tr><tr><td><code>WORKSPACE SAVE &#x3C;name> MEMO</code></td><td>stores the snapshot in a memo field of the <code>WORKSPACES</code> catalog instead of a file</td></tr><tr><td><code>WORKSPACE SAVE &#x3C;name> MEMO MINIDB</code></td><td>stores the snapshot <em>and every table and index byte</em> as one container (implies V3)</td></tr><tr><td><code>WORKSPACE LOAD &#x3C;file></code></td><td>restores from a text snapshot</td></tr><tr><td><code>WORKSPACE LOAD &#x3C;name> MEMO</code></td><td>restores from the catalog</td></tr><tr><td><code>WORKSPACE LOAD &#x3C;name> MEMO RAM</code></td><td>hydrates the tables into the RAM virtual disk, then restores against them</td></tr><tr><td><code>WORKSPACE CLOSE</code></td><td>closes areas and clears relations</td></tr></tbody></table>
+<p>Two carriers, one format: the snapshot text is byte-identical whether it
+lands in a file or a memo field, because there is one serializer and one
+loader. A second writer would be a second truth, and the project has been
+bitten by exactly that before -- a parallel snapshot writer once claimed the
+same format version name for an incompatible layout, and reconciling it to a
+name of its own is recorded doctrine rather than a quiet cleanup.</p>
+<h3 id="version-3-and-why-version-2-stays"><a class="no-underline" href="#version-3-and-why-version-2-stays">Version 3, and why version 2 stays</a></h3>
+<p>Version 3 is a superset: same body, extra declarative lines. Older readers
+skip lines they do not recognize, so a v3 snapshot degrades rather than
+breaks, and v2 remains the default so every proven path keeps working
+untouched. What v3 adds:</p>
+<ul>
+<li><strong>Measured flavor</strong> -- read from the open tables at save time, never
+declared by hand. Disagreement among areas is reported as mixed rather
+than averaged away.</li>
+<li><strong>Its own roots</strong> -- the snapshot records the directories its tables and
+indexes live under, so a restore resolves against the <em>payload's</em> roots
+rather than whatever environment happens to be set. The standing proof
+deliberately points the engine at the wrong directories first; the
+workspace still stands up.</li>
+<li><strong>Session state</strong> -- each area's physical record position and the selected
+area. On restore they are applied and then relations are refreshed, so
+children re-slave to the restored parent positions.</li>
+</ul>
+<h3 id="the-catalog"><a class="no-underline" href="#the-catalog">The catalog</a></h3>
+<p>Memo-carried workspaces live in <code>WORKSPACES</code>, a self-creating x64 table in
+the workspaces root. Each row records a unique id, the name, the display
+schema name, measured flavor, OS-compatibility claim, payload format,
+size, the areas it opens, recursion-guard fields, the id of the row it
+superseded, the author (a real member identity), the timestamp, and the
+roots active at save. Saving again supersedes rather than overwrites, so the
+table keeps its own history -- and that lineage chain is, in practice, a
+commit log.</p>
+<p>Every memo save is verified: the payload is read back through the token
+stored <em>in the field</em> -- not the one held in memory -- and byte-compared. A
+field-width truncation once slipped past a memory-side check; it cannot
+again.</p>
+<h2 id="multiple-workspaces-and-simultaneous-use"><a class="no-underline" href="#multiple-workspaces-and-simultaneous-use">Multiple workspaces and simultaneous use</a></h2>
+<p>Here the documentation has to be careful, because the honest answer has three
+parts.</p>
+<p><strong>What is true today.</strong> Many workspaces can <em>exist</em> -- the catalog holds as
+many rows as you like, and today's teaching catalog holds well over a dozen.
+Any one of them can be loaded on demand, from a file, from a memo, or
+hydrated into RAM. But loading is a <strong>swap, not co-residency</strong>: <code>WORKSPACE LOAD</code> closes what is open and then restores the saved set. One workspace is
+live at a time.</p>
+<p><strong>What that costs.</strong> For a single operator moving between systems -- open
+the ERP, work, save, open the college, work, save -- swapping is exactly
+right, and RAM hydration makes it fast. What it does not yet support is two
+schemas open side by side for comparison, which is the natural next want.</p>
+<p><strong>Why it is not simply switched on.</strong> Co-residency is not a memory problem;
+it is a <em>naming</em> problem, and the hazards are known and written down before
+any code is committed to them:</p>
+<ul>
+<li><strong>Name resolution.</strong> Table references resolve by first match across open
+areas. Open two systems that both contain a <code>STUDENTS</code> table and a join
+resolves to whichever loaded first -- returning plausible wrong rows rather
+than an error. This is the sharp one, and it argues for scoping names to a
+workspace before allowing two.</li>
+<li><strong>RAM residency.</strong> Hydration flattens tables to filenames under one virtual
+root, so two hydrated workspaces would both want the same <code>STUDENTS.dbf</code>
+slot. A per-workspace subroot is cheap to decide now and a migration to
+decide later.</li>
+<li><strong>Relation scope.</strong> Declared relations and their refresh are engine-wide
+today. With two workspaces live, a refresh has no notion of whose graph it
+belongs to.</li>
+<li><strong>Work-area budget.</strong> Slots are allocated eagerly and shared; two
+workspaces draw from one pool.</li>
+</ul>
+<p><strong>What sharing means.</strong> The RAM virtual disk is in-process. Another user, or
+another process, cannot see your hydrated workspace at all -- so sharing is
+necessarily an explicit act: write it back to disk, or send it. That is a
+constraint, but a clarifying one, because it puts locking exactly where it
+belongs -- at the moment work crosses back into shared storage, not around
+the private work itself.</p>
+<p>The design work for named, concurrent workspaces is registered as a lane with
+its costs already measured; these findings are its entry conditions rather
+than a to-do list written after the fact.</p>
+<h2 id="evidence"><a class="no-underline" href="#evidence">Evidence</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Claim</th><th>Proof</th></tr></thead><tbody><tr><td>posture round-trips through a file</td><td><code>REGRESSION RUN CASCADE_ENV</code> (43 areas, 58 relations)</td></tr><tr><td>posture round-trips through a memo, both walkers agree after</td><td><code>WORKSPACE_MEMO</code></td></tr><tr><td>a v3 snapshot self-locates from a broken environment</td><td><code>WORKSPACE_V3</code></td></tr><tr><td>a workspace hydrates into RAM, timed and census-checked</td><td><code>WORKSPACE_RAM</code></td></tr><tr><td>cursors, selection, and refresh restore</td><td><code>WORKSPACE_SESSION</code></td></tr><tr><td>a whole database rides in one memo field and hydrates from it</td><td><code>WORKSPACE_MINIDB</code></td></tr></tbody></table>
+<p>Related: <a href="/docs/engine/proven-capabilities">Proven capabilities</a> ·
+<a href="/schemas">Schemas</a> (the table of databases) ·
+<a href="/docs/engine/regression-and-proof-testing">Regression and proof testing</a></p>18:["$","div",null,{"className":"min-w-0 flex-1","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=c4509a6632e7","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/?v=c4509a6632e7","children":"Documentation"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/docs/engine/workspaces",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/docs/engine/workspaces/?v=c4509a6632e7","children":"Workspaces"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Workspaces"}],["$","p",null,{"className":"mt-2 text-muted","children":"What a workspace is, the full WORKSPACE command surface, the catalog that stores them, and the honest state of multiple and simultaneous workspaces."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$19"},"children":null}]}],"$L1a"]}]
+1a:["$","div",null,{"className":"mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm md:flex-row md:items-center md:justify-between","children":[["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/ram-dbf-vdisk/?v=c4509a6632e7","children":["← ","RAM DBF and VDISK"]}]}],["$","div",null,{"children":["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/engine/indexing-rules/?v=c4509a6632e7","children":["Indexing Rules"," →"]}]}]]}]
+14:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1b:I[27201,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+11:null
+16:[["$","title","0",{"children":"Workspaces — x64base"}],["$","meta","1",{"name":"description","content":"What a workspace is, the full WORKSPACE command surface, the catalog that stores them, and the honest state of multiple and simultaneous workspaces."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/docs/engine/workspaces/"}],["$","meta","3",{"property":"og:title","content":"Workspaces"}],["$","meta","4",{"property":"og:description","content":"What a workspace is, the full WORKSPACE command surface, the catalog that stores them, and the honest state of multiple and simultaneous workspaces."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/docs/engine/workspaces/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"Workspaces"}],["$","meta","12",{"name":"twitter:description","content":"What a workspace is, the full WORKSPACE command surface, the catalog that stores them, and the honest state of multiple and simultaneous workspaces."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L1b","17",{}]]

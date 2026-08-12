@@ -1,0 +1,68 @@
+1:"$Sreact.fragment"
+4:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+2:T1268,<p>The day began with a small favor: add a memo field to a students-shaped
+table, put a string in it, say hello. It ended with the students table living
+<em>inside</em> a memo field, alongside twelve of its neighbors and every index they
+use.</p>
+<h2 id="what-landed"><a class="no-underline" href="#what-landed">What landed</a></h2>
+<p><strong>A table of databases.</strong> The workspace catalog became a real metadata table:
+a unique id per saved workspace, the flavor measured from the open tables
+rather than declared, size and area counts, recursion-guard fields, lineage
+to the row each save superseded, the author as a real member identity, and
+the roots the data lived under. Saving again supersedes rather than
+overwrites, so the table carries its own history -- which makes the lineage
+chain, in practice, a commit log.</p>
+<p><strong>Postures that carry their own address.</strong> A new opt-in snapshot version
+records the directories its tables and indexes live under, and a restore
+resolves against <em>those</em> rather than whatever environment happens to be set.
+The proof breaks the environment deliberately -- points the engine at the
+wrong directories -- and the workspace stands up anyway. The previous version
+stayed the default and untouched; the new lines are additive, and older
+readers skip them.</p>
+<p><strong>Sessions that resume where they stopped.</strong> The same snapshot version
+records where every cursor sat and which area was selected. The standing
+proof drives a sales-order parent to its last record, saves, tears the whole
+workspace down, reloads, and finds parent and slaved child exactly where they
+were -- 43 cursors restored, then relations refreshed so children re-slave to
+the restored parents.</p>
+<p><strong>Databases that hydrate into memory.</strong> A stored workspace can be stood up
+into the in-process RAM filesystem -- 24 files, 92 KB, in well under a tenth
+of a second -- and dropped again by unmounting, with the disk originals
+untouched. The residency claim is cross-checked rather than asserted: the
+copier's byte count and the RAM disk's own census agree exactly, every run.</p>
+<p><strong>And then the destination itself.</strong> By evening, one save could carry the
+posture <em>and every table and index byte</em> as a single binary-safe container:
+the whole 13-table teaching database, 94 KB, inside one memo field,
+byte-compare verified as a unit. Loading it needs no disk at all -- onto a
+clean RAM disk, 24 files hydrated <em>from the memo</em> in 65 ms with zero disk
+reads, faster than the disk-sourced path because it is memory to memory.</p>
+<p>A database normally contains tables. Here a table contains databases.</p>
+<h2 id="why-it-worked-in-one-day"><a class="no-underline" href="#why-it-worked-in-one-day">Why it worked in one day</a></h2>
+<p>Because almost none of it was new. The container needed binary safety --
+which an adversarial memo harness had already proven, months of generations
+against a shadow-model oracle, before anything binary existed to carry. It
+needed the payload to land anywhere -- which the self-locating snapshot
+already did. It needed a byte sink that honestly reports RAM residency --
+which the virtual disk already was. It needed versioning, attribution and
+verification -- which the catalog already had. The feature that answers "can a
+database live in a memo field?" is about a hundred and fifty lines long,
+because every hard part had been built earlier for a different reason.</p>
+<h2 id="what-is-not-claimed"><a class="no-underline" href="#what-is-not-claimed">What is not claimed</a></h2>
+<p>The write-back cycle -- committing a memory-resident database back to disk --
+is designed and not built. Index environments that must map a real operating
+system file stay on disk by contract. Two workspaces cannot yet be resident
+at once, and the reasons are naming rather than memory: table references
+resolve by first match, so two systems that both contain a <code>STUDENTS</code> table
+would silently answer with the wrong one. Those hazards are measured and
+written down as entry conditions for that lane rather than discovered later.</p>
+<p>One correction from the same day is on the record too: an earlier
+demonstration claimed a RAM-built table with a memo wrote nothing to disk.
+The day's own residency tooling measured the memo's sidecar landing on real
+disk -- the table was in memory, the memo was not. The claim was corrected in
+place, and RAM coverage for the memo store is now a named prerequisite.</p>
+<p>Details: <a href="/docs/engine/workspaces">Workspaces</a> ·
+<a href="/docs/engine/proven-capabilities">Proven capabilities</a> ·
+<a href="/schemas">Schemas: a table of databases</a></p>0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=c4509a6632e7","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/?v=c4509a6632e7","children":"News"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/?v=c4509a6632e7","children":"announcements"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/news/announcements/a-table-of-databases",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/news/announcements/a-table-of-databases/?v=c4509a6632e7","children":"A table whose rows are databases"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"A table whose rows are databases"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-3 text-sm text-muted","children":[["$","span",null,{"className":"font-mono","children":"2026-08-11"}],["$","span",null,{"children":["Category: ","announcements"]}]]}],null,["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$2"},"children":null}]}]]}],null,"$L3"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"UvuYcfZc0W7heoB2Y7Qvt"}
+3:["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]
+6:null
