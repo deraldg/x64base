@@ -25,6 +25,7 @@
 // usage:
 //   REGRESSION USAGE
 //   REGRESSION LIST
+//   REGRESSION FIND <words...>
 //   REGRESSION SHOW <name>
 //   REGRESSION RUN <name>
 //   REGRESSION <name>
@@ -71,6 +72,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "common/path_state.hpp"
 #include "shell_api.hpp"
@@ -382,6 +384,15 @@ std::string upper_copy(std::string s)
     return s;
 }
 
+// Mirrors upper_copy; used by REGRESSION FIND for case-insensitive matching.
+std::string lower_copy(std::string s)
+{
+    for (char& c : s) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return s;
+}
+
 const RegressionSpec* find_regression_spec(const std::string& token)
 {
     const std::string key = upper_copy(trim_copy(token));
@@ -445,6 +456,7 @@ void print_regression_usage()
         << "Usage:\n"
         << "  REGRESSION USAGE\n"
         << "  REGRESSION LIST\n"
+        << "  REGRESSION FIND <words...>       (search names/scripts/summaries)\n"
         << "  REGRESSION SHOW <name>\n"
         << "  REGRESSION RUN <name>\n"
         << "  REGRESSION <name>\n"
@@ -453,6 +465,9 @@ void print_regression_usage()
         << "  - REGRESSION is a curated launcher over DOTSCRIPT.\n"
         << "  - Scripts are expected to bootstrap their own environment.\n"
         << "  - LIST shows curated stable entrypoints rather than every historical script.\n"
+        << "  - FIND is the question-to-spec bridge: LIST and SHOW both assume you\n"
+        << "    already know the NAME. All terms must match. THE SPEC IS THE HOW-TO --\n"
+        << "    read the script for worked usage, or RUN it to watch it work.\n"
         << "  - ALL runs the curated default suite in declared order.\n"
         << "  - HARVEST is the top-layer shakedown for newly promoted surfaces.\n"
         << "  - LANGUAGE proves es/fr/de/it USAGE rendering across the localized command surface.\n";
@@ -479,6 +494,65 @@ void print_regression_show(const RegressionSpec& spec)
               << "  Script  : " << spec.script << "\n"
               << "  Resolved: " << resolved.string() << "\n"
               << "  Default : " << (spec.in_default_suite ? "yes" : "no") << "\n";
+}
+
+// REGRESSION FIND <words> -- the question-to-spec bridge (owner ruling
+// 2026-08-12: "the regression tests are also how-tos").
+//
+// The specs ARE the documentation. They are the only documentation in this
+// tree that cannot drift silently, because a stale one goes RED -- whereas on
+// the day this was written, three separate prose surfaces describing WORKSPACE
+// were found stale at once (the @dottalk.usage block, the runtime USAGE text,
+// and a hand-written operations doc). So FIND deliberately adds NO new prose:
+// it searches the summaries that already exist beside the specs and are
+// already printed by LIST. The FAQ content IS the spec corpus.
+//
+// What it fixes: LIST and SHOW both assume you already know the NAME. Nobody
+// arrives knowing to type WORKSPACE_MINIDB when the question is "how do I put
+// a database inside a memo". FIND closes exactly that gap and nothing else.
+//
+// Every term must match (AND, not OR) -- with 44 rich summaries a single
+// common word matches almost everything, which is not an answer.
+void print_regression_find(const std::string& terms_raw)
+{
+    std::vector<std::string> terms;
+    {
+        std::istringstream ts(lower_copy(trim_copy(terms_raw)));
+        std::string t;
+        while (ts >> t) terms.push_back(t);
+    }
+    if (terms.empty()) {
+        std::cout << "REGRESSION FIND: give one or more words to search for.\n"
+                     "  Searches regression NAMES, script filenames and summaries.\n"
+                     "  Example: REGRESSION FIND memo ram\n";
+        return;
+    }
+
+    std::size_t hits = 0;
+    for (const auto& spec : kRegressionSpecs) {
+        const std::string hay =
+            lower_copy(std::string(spec.name) + " " + spec.script + " " + spec.summary);
+
+        bool all = true;
+        for (const auto& t : terms) {
+            if (hay.find(t) == std::string::npos) { all = false; break; }
+        }
+        if (!all) continue;
+
+        ++hits;
+        std::cout << "  " << spec.name << "\n"
+                  << "    script : " << spec.script << "\n"
+                  << "    run    : REGRESSION RUN " << spec.name << "\n"
+                  << "    detail : REGRESSION SHOW " << spec.name << "\n";
+    }
+
+    if (hits == 0) {
+        std::cout << "REGRESSION FIND: no regression matches all of those terms.\n"
+                     "  Try fewer or broader words, or REGRESSION LIST to browse.\n";
+        return;
+    }
+    std::cout << "REGRESSION FIND: " << hits << " match(es). The SCRIPT is the how-to --\n"
+                 "  read it for worked usage, or REGRESSION RUN it to watch it work.\n";
 }
 
 void run_regression_script(DbArea& area, const RegressionSpec& spec)
@@ -527,6 +601,13 @@ void cmd_REGRESSION(DbArea& area, std::istringstream& in)
 
     if (op == "ALL") {
         run_regression_default_suite(area);
+        return;
+    }
+
+    if (op == "FIND" || op == "SEARCH") {
+        std::string rest;
+        std::getline(in, rest);
+        print_regression_find(rest);
         return;
     }
 
