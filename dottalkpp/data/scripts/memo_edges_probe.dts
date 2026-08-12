@@ -1,0 +1,60 @@
+* ============================================================================
+* memo_edges_probe.dts -- first in-house batch of AIF-108 challenge ideas,
+* the CLI-reachable payload/lifecycle edges (challenge M2: "run every [NOW]
+* idea in-house first -- we do not open a challenge on ground we have not
+* walked"). Covers ideas 1 (empty payload), 2 (one byte), 12 (update longer;
+* append-new), 13 (update shorter; no truncation), and the clear/reinsert
+* cycle. Binary-payload ideas (NULs, high bytes) are NOT reachable from CLI
+* string literals -- those stay for harness-tier submissions, stated plainly.
+*
+* Self-bootstrapping in the RAM VFS, self-erasing. Markers by field value.
+* PROBE tier: promoted to a regression only after a maintainer green.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+DO mem
+VDISK UNMOUNT
+DO mem
+
+FORMULA "MEMO-EDGES-BEGIN"
+
+CREATE X64 MEDGES (ID N(4,0), NOTES M)
+APPEND
+REPLACE ID WITH 1
+
+* --- idea 1: empty payload round-trip ---------------------------------------
+REPLACE NOTES WITH ""
+CLOSE
+USE MEDGES
+? "ME_T1_empty_roundtrip:" + (NOTES = "")
+
+* --- idea 2: one byte --------------------------------------------------------
+REPLACE NOTES WITH "X"
+CLOSE
+USE MEDGES
+? "ME_T2_one_byte:" + (NOTES = "X")
+
+* --- idea 12: update longer (append-new semantics observable at CLI tier) ---
+REPLACE NOTES WITH "a considerably longer payload than one byte, easily"
+CLOSE
+USE MEDGES
+? "ME_T3_update_longer:" + (NOTES = "a considerably longer payload than one byte, easily")
+
+* --- idea 13: update shorter (no truncation artifacts) -----------------------
+REPLACE NOTES WITH "short"
+CLOSE
+USE MEDGES
+? "ME_T4_update_shorter:" + (NOTES = "short")
+
+* --- clear then reinsert (the canary's third act, on the edge table) ---------
+REPLACE NOTES WITH ""
+REPLACE NOTES WITH "after the clear"
+CLOSE
+USE MEDGES
+? "ME_T5_clear_reinsert:" + (NOTES = "after the clear")
+
+FORMULA "MEMO-EDGES-END"
+
+VDISK UNMOUNT
+DO x64

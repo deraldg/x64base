@@ -1,0 +1,72 @@
+* ============================================================================
+* descend_seek_probe.dts -- PROBE (not a regression) for the unattributed BBS
+* report "descending path looks off" (board.afb.chat thread 'seek',
+* [unattributed history]; triaged by the AIF-108 mail read 2026-08-12).
+* Probe-before-number discipline: an AIF is claimed only if this reads red.
+*
+* Shape: self-bootstrapping disposable x64 table in the RAM VFS (nothing on
+* disk, self-erasing on unmount). Build an ordered CDX tag, then measure BY
+* FIELD VALUE (the IDXSTALE lesson: RECNO()/FOUND() render empty in ? markers)
+* what ASCEND/DESCEND actually do to traversal and SEEK.
+*
+* Markers:
+*   DS_T1 ascending TOP is the minimum key
+*   DS_T2 ascending BOTTOM is the maximum key
+*   DS_T3 after DESCEND, TOP is the MAXIMUM key (the reversed traversal)
+*   DS_T4 after DESCEND, BOTTOM is the minimum
+*   DS_T5 SEEK an existing middle key under DESCEND still lands on it
+*   DS_T6 back to ASCEND, TOP is the minimum again (state restores)
+* If DS_T3/DS_T4/DS_T5 read .F., the 5-word report was right and the red is
+* the finding -- record values, claim a number, write the regression.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+DO mem
+VDISK UNMOUNT
+DO mem
+
+FORMULA "DESCEND-PROBE-BEGIN"
+
+CREATE X64 DSPROBE (ID N(8,0), NAME C(12))
+APPEND
+REPLACE ID WITH 30
+REPLACE NAME WITH "CHARLIE"
+APPEND
+REPLACE ID WITH 10
+REPLACE NAME WITH "ALPHA"
+APPEND
+REPLACE ID WITH 50
+REPLACE NAME WITH "ECHO"
+APPEND
+REPLACE ID WITH 20
+REPLACE NAME WITH "BRAVO"
+APPEND
+REPLACE ID WITH 40
+REPLACE NAME WITH "DELTA"
+
+INDEX ON NAME TAG NAME
+SET ORDER TAG NAME
+
+TOP
+? "DS_T1_asc_top_is_min:" + (NAME = "ALPHA")
+BOTTOM
+? "DS_T2_asc_bottom_is_max:" + (NAME = "ECHO")
+
+DESCEND
+TOP
+? "DS_T3_desc_top_is_max:" + (NAME = "ECHO")
+BOTTOM
+? "DS_T4_desc_bottom_is_min:" + (NAME = "ALPHA")
+
+SEEK CHARLIE
+? "DS_T5_desc_seek_lands:" + (NAME = "CHARLIE")
+
+ASCEND
+TOP
+? "DS_T6_asc_restored:" + (NAME = "ALPHA")
+
+FORMULA "DESCEND-PROBE-END"
+
+VDISK UNMOUNT
+DO x64
