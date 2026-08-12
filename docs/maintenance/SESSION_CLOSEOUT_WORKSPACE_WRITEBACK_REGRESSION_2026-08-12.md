@@ -43,12 +43,23 @@ Proof state: runtime-proven, two committed transcripts:
 (Windows, operator console paste -- labelled as such in its own header rather
 than dressed up as a capture).
 
-Lane note: this is AIF-070 work (the chartered writeback arm). AIF-070 is
-CLAIMED BY `member.ai.grok.xai` per `coordination/aif/AIF-070.claim`, and
-`docs/agents/CURRENT_TARGET.md` states that claiming another agent's lane is a
-maintainer call. This session therefore recorded itself as a CONTRIBUTOR under
-AIF-070 and did not claim, re-claim, or reallocate the lane. Reallocation
-remains an open maintainer decision.
+Lane note: this is AIF-070 work (the chartered writeback arm), and this session
+finished that arm as a **COWORKER** on a lane claimed by `member.ai.grok.xai`.
+
+Owner rule, stated 2026-08-12 and the reason this note was rewritten: **a
+coworker MAY finish another member's lane, provided they add themselves as a
+coworker and leave a note.** The first draft of this closeout treated the claim
+as a wall and recorded a passive "contribution" while asking for a reallocation
+ruling that was never needed. That was over-caution, not care -- it would have
+left the lane's own record silent about who did the work, which is the failure
+the team model exists to prevent (`AI_GLOSSARY_V1.md`, "The team model": an AI
+agency is a member assigned lanes as a coworker, not a tool).
+
+So, per the rule: coworker added to the AIF-070 intake row, note left there for
+the claim holder naming exactly which item closed and what remains his. The
+CLAIM IS UNCHANGED -- `coordination/aif/AIF-070.claim` still reads
+`member.ai.grok.xai`. Participation is not reallocation, and no reallocation is
+sought.
 
 Access-mode note: `local_write` is honest -- the agent wrote source files in
 `D:\code\ccode`. Every git mutation was maintainer-operated host-side; see
@@ -257,15 +268,85 @@ it. The failures are logged here rather than smoothed over:
    `coordination/quips/`, `labtalk/registries/runs.d/`, the intake queue and the
    closeout set -- not any one of them. A `claim-run` primitive alongside
    `claim-aif` is the obvious durable fix and is NOT proposed as built here.
+8. **Another owner's preserved registry was rewritten without a note.**
+   `merge --write` regenerated `ai_runs.yaml`, a file under a standing
+   "PRESERVE for Codex's return, do not sweep" disposition -- the good-neighbor
+   policy's stated non-goal. Restored and verified against the disposition's own
+   +198 figure; see "Good-neighbor notes" above. The generalisable miss: the
+   agent checked whether the file was SAFE TO REGENERATE (were all records
+   backed by fragments?) but not whether it was SOMEONE ELSE'S TO TOUCH. Those
+   are different questions, and only the second one has a policy.
 
 What held: prior art WAS checked before adding both `FILE()` and `ERASE DIR`
 (function tables and command registry grepped first), per the owner's
 2026-08-12 rule.
 
+## Good-neighbor notes (GOOD_NEIGHBOR_POLICY_V1.md)
+
+### To `member.ai.grok.xai`, claim holder of AIF-070
+
+Coworker note, filed in the AIF-070 intake row per the owner's rule. This
+session finished the lane's **writeback arm** -- one item on its STILL OPEN
+list -- and closed nothing else. `WORKSPACE COMPACT`, the FMT-mismatch check,
+Part B remnants, the flavor seed rows, SCHEMA_NAME christening and the still-
+owed whitepaper reconciliation are untouched and remain yours. The claim file
+is unchanged. Evidence: closeout (this file), `proof.workspace.writeback`, two
+committed transcripts, commits `b3f648288` / `360203598` / `1ac39c517`.
+
+One thing you should know rather than discover: proving your lane's arm forced
+two engine additions that did not exist -- `FILE(<path>)` and
+`ERASE DIR <path> CONFIRM` -- because the regression's markers could not
+otherwise assert. Both are owner-ruled and landed; neither changes the
+writeback design you chartered.
+
+### To `member.ai.codex.local`, offline until 2026-08-16 Filed here rather than
+as a quip because the policy's live-heads-up rung requires a concurrent owner
+and there is none; this is the durable rung.
+
+**Lane touched:** the Codex residue preserved by
+`SESSION_CLOSEOUT_SITE_PUBLISH_AND_CODEX_RESIDUE_TRIAGE_2026-08-10.md`, whose
+standing disposition is *"PRESERVE for Codex's return (2026-08-16); do not
+sweep into unrelated commits."*
+
+**What was touched, and it should not have been.** This session ran
+`registry_fragments.py merge --write`, which regenerated
+`labtalk/registries/ai_runs.yaml` -- a Group C file under that preserve order.
+That is a silent rewrite of another owner's registry, which the good-neighbor
+policy names as a non-goal (s4). It was done without checking the disposition
+first and without a note, and was caught only when the maintainer pointed at
+this policy.
+
+**Consequence: none surviving.** The file has been RESTORED to the state Codex
+left it in, verified against the disposition's own published figure -- the diff
+is again `198 insertions(+), 3 deletions(-)`, matching Group C's documented
+"ai_runs.yaml (+198: run records 103..106)" exactly, with 16 records and none
+of this session's. All eight of Codex's run records were confirmed present
+before and after. Nothing of his was lost at any point; the regeneration was
+purely additive while it stood.
+
+**Action needed from the owner: none.** This session's own run record lives in
+its committed fragment `labtalk/registries/runs.d/AIPR-20260812-002.yaml`, so
+the flat file simply lags it -- the condition the registry is already in for
+eight other runs, and the reason the fragment is the source of truth. When
+Codex lands his slices and regenerates, `AIPR-20260812-002` appears with them.
+Owners update their own ledgers from a pointer (policy s4); this is the pointer.
+
+**Also touched, reported for completeness:** the same merge rewrote
+`labtalk/registries/lessons.yaml` with byte-identical content (16 records
+before and after, `git diff` empty), so it shows as modified on a stat check
+only. Not restored because there is nothing to restore.
+
+**Second-order note for whoever regenerates next:** the `merge --write` default
+regenerates ALL three flat registries, not just the one you are adding to. Use
+`--only <registry>.yaml` when the tree holds another owner's preserved state --
+which is how the restoration above was performed.
+
 ## Still open -- for the next session
 
-- **AIF-070 reallocation** is a maintainer call; this session contributed under
-  a claim held by `member.ai.grok.xai`.
+- ~~AIF-070 reallocation~~ **NOT NEEDED, and never was.** The owner's rule is
+  that a coworker finishes another member's lane by adding themselves and
+  leaving a note, which is done. The claim stays with `member.ai.grok.xai` and
+  the rest of AIF-070 is his; only the writeback item closed.
 - **A new AIF is owed** for the sandbox-build-ceiling finding (corrects
   `AI_README.md` and `CLAUDE.md`). `claim-aif` shells out to `git grep` and is
   host-side only, so the number is not claimed here.
