@@ -33,15 +33,41 @@ ai_report_audit:
 Date: 2026-08-12.
 Owning lifecycle: SDLC.
 SDLC lane: runtime / dotscript (regression).
-Truth state: source-defined + runtime-proven for the six writeback markers on
-BOTH platforms -- Linux (g++ 11) and Windows (MSVC, pro-md). Both landed the
-same 15 files with `[oracle OK]` on every one.
-Proof state: runtime-proven, two committed transcripts:
-`labtalk/proofs/runs/workspace_writeback_proof_teed_20260812T174605Z.log`
-(Linux, full `SET ALTERNATE`-class capture) and
-`labtalk/proofs/runs/workspace_writeback_proof_windows_20260812T180000Z.log`
-(Windows, operator console paste -- labelled as such in its own header rather
-than dressed up as a capture).
+Truth state: source-defined + runtime-proven for the writeback markers.
+
+**RETRACTED AND REPLACED, 2026-08-12 (same day, later session).** This block
+originally read "runtime-proven ... on BOTH platforms" and cited two
+transcripts. **The Linux half of that claim was false, and the transcript
+backing it is a false green.** It is left in place, uncorrected, as evidence of
+what happened -- see the correction file beside it. What the retraction rests on:
+
+- `WORKSPACE WRITEBACK TO <rel>`, `ERASE DIR <rel>` and `FILE(<rel>)` resolved
+  against the process CWD; `SET PATH DBF <rel>` resolved against DATA. The spec
+  therefore WROTE to one directory and READ from another. The two spellings
+  coincide only because `datarun.ps1` runs with cwd = DATA.
+- The Linux run was made at a different cwd. Its writeback landed in
+  `dottalkpp/DBF/wbregress`; its markers read `dottalkpp/data/DBF/wbregress`,
+  a directory left populated by the maintainer's EARLIER Windows runs. Six
+  markers reported green off data the run under test had not written.
+- Detected when that stale directory was later deleted as litter and the same
+  spec, same binary, same cwd went red -- the arms did not change, the
+  accidental input did.
+
+Proof state after the fix (all four surfaces now route through
+`paths::resolve_in_slot`):
+
+- **Linux, valid:** `labtalk/proofs/runs/workspace_writeback_pathfix_proof_20260812T195516Z.log`
+  -- 13/13 markers green, writeback echoing a resolved absolute path under DATA.
+  Each new arm additionally shown to FAIL under targeted mutation (below), so no
+  marker here is trusted merely for being green.
+- **Windows, valid but SCOPED TO THE OLD SOURCE:**
+  `labtalk/proofs/runs/workspace_writeback_proof_windows_20260812T180000Z.log`.
+  That run was self-consistent (cwd = DATA made all four resolutions agree) and
+  nothing retracts it, but it predates the path fix. Windows and WSL share ONE
+  physical tree (`D:\code\ccode` == `/mnt/d/code/ccode`, owner-confirmed), so the
+  MSVC binary is now STALE against three source files. **Rebuild MSVC before any
+  Windows re-run** -- this is the same handoff defect recorded as process-failure
+  5 in this file, and stating the precondition here is the correction.
 
 Lane note: this is AIF-070 work (the chartered writeback arm), and this session
 finished that arm as a **COWORKER** on a lane claimed by `member.ai.grok.xai`.

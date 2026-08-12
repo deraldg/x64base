@@ -36,12 +36,48 @@
 *   WB_T4  a second table proves it was not a one-table accident
 *   WB_T5  ABORT arm: one table open, 13-table posture -> refuses
 *   WB_T6  the aborted target does not exist afterward (nothing means nothing)
+*   WB_G1  fixture guard: the sentinel was actually planted
+*   WB_T7  COLLISION arm: writeback into an existing target without CONFIRM
+*          refuses and WRITES NOTHING -- proven by the sentinel surviving
+*   WB_T8  CONFIRM arm: the same call WITH CONFIRM does replace
+*   WB_T9  the .__wbak backup holds the PRIOR content and OPENS as a table --
+*          the undo of last resort, proven recoverable rather than asserted
+*   WB_T10 WITH INDEXES lands the index container bytes
+*   WB_T11 and the mirrored container WORKS after the documented destination
+*          rebuild (BUILDLMDB), so the mirror is functional, not file-shaped
+*
+* WHY THE SENTINEL (WB_G1..WB_T9): writeback writes the SAME bytes every run,
+* so "replaced" and "refused" are indistinguishable by inspection -- both leave
+* a target full of correct-looking data. Mutating the landed copy first makes
+* the two outcomes produce DIFFERENT VALUES, so each arm reads a field instead
+* of trusting a message. Added 2026-08-12 after these three branches were found
+* never to have executed: a destructive verb had its refusal proven and its
+* replacement path unproven.
+*
+* WHAT WB_T11 DOES NOT CLAIM: the landed .cdx is a BYTE-MIRROR, not a ready
+* index. LMDB environments are not carried (owner rule, lmdb only for disks),
+* so the destination needs the rebuild this arm performs. That is the promise
+* WITH INDEXES actually makes; the arm asserts exactly it and nothing more.
 *
 * Assertion vocabulary note (2026-08-12): WB_T5/WB_T6 use FILE(<path>),
 * added to the engine for exactly these arms -- an absence proof needs a
 * by-value read of the filesystem. FILE() is deliberately broader than
 * VFP's (any entry counts, directories included) because "nothing means
 * nothing" fails on a leftover empty directory too.
+*
+* PATH RESOLUTION, and why this spec could not be trusted before 2026-08-12:
+* every relative path below -- the WRITEBACK TO target, the ERASE DIR
+* bootstrap/teardown, the FILE() probes, and SET PATH DBF -- must name ONE
+* directory. They did not. WRITEBACK, ERASE DIR and FILE() resolved against
+* the process CWD while SET PATH resolved against DATA, so this spec wrote to
+* one place and read from another. It agreed only because datarun.ps1 runs
+* with cwd = DATA, which made the two spellings coincide by accident.
+* Consequence worth remembering: a Linux run of this spec at a different cwd
+* reported SIX GREEN MARKERS while reading a directory populated by an
+* earlier, unrelated run -- a false green produced by the very spec written to
+* hunt them. All four surfaces now route through paths::resolve_in_slot, so a
+* relative token means the same directory to the writer, the reader, the
+* prober and the teardown, whatever the shell's cwd.
 *
 * Indexes are deliberately NOT asserted: each table's index CHOICE travels in
 * the posture (index=/indextype=, mixed types preserved) and the FILE is
@@ -97,6 +133,67 @@ GO 1
 ? "WB_T4_second_table_intact:" + (LNAME > "")
 CLOSE
 
+* --- the replacement cycle: refusal, CONFIRM, and the .__wbak undo ----------
+* Plant a sentinel in the LANDED copy so the next two outcomes differ by value.
+SELECT 1
+USE STUDENTS NOINDEX
+GO 1
+REPLACE LNAME WITH "WBAKSENTINEL"
+CLOSE
+USE STUDENTS NOINDEX
+GO 1
+? "WB_G1_sentinel_planted:" + (ALLTRIM(LNAME) = "WBAKSENTINEL")
+CLOSE
+
+* Same writeback, same target, NO CONFIRM -- must refuse and write nothing.
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbregress
+WORKSPACE CLOSE
+VDISK UNMOUNT
+SET PATH DBF DBF/wbregress
+SELECT 1
+USE STUDENTS NOINDEX
+GO 1
+? "WB_T7_refusal_wrote_nothing:" + (ALLTRIM(LNAME) = "WBAKSENTINEL")
+CLOSE
+
+* Now WITH CONFIRM -- must replace, and must leave the prior bytes in .__wbak.
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbregress CONFIRM
+WORKSPACE CLOSE
+VDISK UNMOUNT
+SET PATH DBF DBF/wbregress
+SELECT 1
+USE STUDENTS NOINDEX
+GO 1
+? "WB_T8_confirm_replaced:" + (ALLTRIM(LNAME) = "Taylor")
+CLOSE
+USE STUDENTS.__wbak.dbf NOINDEX
+GO 1
+? "WB_T9_wbak_holds_prior:" + (ALLTRIM(LNAME) = "WBAKSENTINEL")
+CLOSE
+
+* --- WITH INDEXES: the byte-mirror arm --------------------------------------
+ERASE DIR DBF/wbidx CONFIRM
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbidx WITH INDEXES
+WORKSPACE CLOSE
+VDISK UNMOUNT
+? "WB_T10_index_container_landed:" + FILE("DBF/wbidx/indexes/STUDENTS.cdx")
+SET PATH DBF DBF/wbidx
+SET PATH INDEXES DBF/wbidx/indexes
+SET PATH LMDB DBF/wbidx/lmdb
+SELECT 1
+USE STUDENTS
+BUILDLMDB
+SET ORDER TO TAG LNAME
+GO TOP
+? "WB_T11_mirror_usable_after_rebuild:" + (ALLTRIM(LNAME) = "Anderson")
+CLOSE
+
 * --- the abort arm: one table open against a 13-table posture ---------------
 WORKSPACE CLOSE
 DO x64
@@ -114,4 +211,5 @@ FORMULA "WS-WRITEBACK-PROOF-END"
 WORKSPACE CLOSE
 ERASE DIR DBF/wbregress CONFIRM
 ERASE DIR DBF/wbabort CONFIRM
+ERASE DIR DBF/wbidx CONFIRM
 DO x64

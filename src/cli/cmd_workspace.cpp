@@ -87,7 +87,12 @@
 //   WORKSPACE CLOSE <n> [m ...]
 //   WORKSPACE CLOSE <name|file|stem|alias>[,...]
 //   WORKSPACE SAVE <file>
+//   WORKSPACE SAVE <name> MEMO [V3]
+//   WORKSPACE SAVE <name> MEMO MINIDB
 //   WORKSPACE LOAD <file>
+//   WORKSPACE LOAD <name> MEMO
+//   WORKSPACE LOAD <name> MEMO RAM
+//   WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]
 //   WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]
 //
 // notes:
@@ -103,6 +108,36 @@
 //   WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
 //   Default index policy is flavor-aware: true x64/v128 uses CDX(LMDB), classic VFP/v32 uses CNX.
 //   DDL owns schema/definition work; WORKSPACE owns live session/work-area state.
+//   MEMO/MINIDB/RAM/WRITEBACK added to this block 2026-08-12. They had been
+//   shipping and unlisted, so HELP and the reflection surfaces described a verb
+//   that predated its own memo-resident lane -- the contract drift this comment
+//   header exists to prevent.
+//   SAVE <name> MEMO stores a POSTURE (tables stay on disk); SAVE <name> MEMO
+//   MINIDB stores a CONTAINER whose payload IS the database (table bytes ride
+//   along). MINIDB implies V3: the embedded posture must be self-locating to
+//   survive being re-pointed at RAM. Trailing keywords parse in any order.
+//   Reads are residence-aware, so a RAM-resident working set can be saved whole.
+//   LOAD <name> MEMO RAM hydrates a MINIDB container into the mounted VDISK
+//   with zero disk reads. Plain LOAD ... MEMO REFUSES a MINIDB payload by
+//   design: its tables have no disk home, and standing up empty areas over
+//   missing files is the silent-success failure this codebase hunts.
+//   WRITEBACK requires <name>. The dispatcher comment spells it "[<name>]",
+//   which reads as optional; it is not. The TO parse looks for a " to " with a
+//   token before it, so a leading "TO <root>" is swallowed as the NAME and
+//   fails looking for a catalog row of that name (measured 2026-08-12).
+//   WRITEBACK is the return leg (RAM/memo -> real disk). Enumeration comes from
+//   the POSTURE's AREA lines, never the session's attach order; a shortfall
+//   ABORTS having written nothing, empty directories included. CONFIRM is
+//   required to replace existing files and replaced files are kept as
+//   <name>.__wbak. WITH INDEXES copies index container BYTES only -- LMDB is
+//   not carried (owner rule: lmdb only for disks), so the destination needs
+//   BUILDLMDB before SET ORDER TO TAG will work.
+//   TO <root> resolves like every other path token (paths::resolve_in_slot):
+//   absolute stays absolute, separators mean DATA-root-relative, a bare name
+//   sits in the DBF slot. Corrected 2026-08-12; it previously followed the
+//   process CWD while SET PATH followed DATA.
+//   Operator manual: docs/maintenance/RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md
+//   Mechanism and design: docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
 //
 // related:
 //   DBAREA
@@ -110,6 +145,7 @@
 //   DDL
 //   REL
 //   STATUS
+//   VDISK
 //
 #include <algorithm>
 #include <cctype>
@@ -2442,7 +2478,23 @@ static bool writeback_to_disk(const std::string& name,
                               bool withIndexes) {
     const auto t0 = std::chrono::steady_clock::now();
 
+    // Resolve the TO target the way every other path token in the engine is
+    // resolved (paths::resolve_in_slot): absolute stays absolute, a token
+    // containing separators is DATA-root-relative, a bare name sits in the
+    // DBF slot.
+    //
+    // Measured 2026-08-12: this used to take the token RAW, so std::filesystem
+    // resolved it against the PROCESS CWD while SET PATH DBF resolved the same
+    // spelling against DATA. "TO DBF/wbregress" and "SET PATH DBF DBF/wbregress"
+    // therefore named DIFFERENT directories, and only coincided because
+    // datarun.ps1 happens to run with cwd = DATA. A destructive verb was
+    // silently following the shell, and the regression that guards it read a
+    // directory its own writeback had not written -- a false green.
     fs::path rootDbf = explicitRoot;
+    if (!rootDbf.empty()) {
+        rootDbf = paths::resolve_in_slot(paths::get_slot(paths::Slot::DBF),
+                                         s8(explicitRoot));
+    }
     fs::path rootIdx;
 
     // The POSTURE is the manifest. Not a naming convention, not the session's
@@ -2454,6 +2506,7 @@ static bool writeback_to_disk(const std::string& name,
     // instead of asking the session, because the session's active order is
     // exactly the variable that made the first run write 15 of 27 files.
     std::vector<std::string> wantTables;   // basenames the posture declares
+    std::vector<std::string> wantIndexes;  // index= selections the posture declares
     std::size_t postureIdxCount = 0;
 
     MemoFetch f = fetch_memo_payload(name);
@@ -2507,7 +2560,17 @@ static bool writeback_to_disk(const std::string& name,
                 const auto ib = iv.find('|');
                 if (ib != std::string::npos) iv = iv.substr(0, ib);
                 iv = trim_copy(iv);
-                if (!iv.empty() && to_lower(iv) != "none") ++postureIdxCount;
+                // Keep the NAME, not just a tally. Counting and discarding is
+                // what made WITH INDEXES inert: the gather then had nothing to
+                // enumerate from and fell back on session attach state.
+                if (!iv.empty() && to_lower(iv) != "none") {
+                    const std::string key = to_lower(s8(fs::path(iv).filename()));
+                    bool seen = false;
+                    for (const auto& w : wantIndexes)
+                        if (to_lower(s8(fs::path(w).filename())) == key) { seen = true; break; }
+                    if (!seen) wantIndexes.push_back(iv);   // one container may serve many tables
+                    ++postureIdxCount;
+                }
             }
         }
     }
@@ -2549,39 +2612,29 @@ static bool writeback_to_disk(const std::string& name,
     std::vector<Pending> pending;
     std::size_t emptySources = 0;
 
+    auto gather = [&](const fs::path& src, const fs::path& dst) -> bool {
+        std::string payload;
+        if (!read_all_bytes(src, payload)) {
+            std::cout << "WORKSPACE WRITEBACK: ABORTED -- cannot read "
+                      << s8(src) << " (nothing was written)\n";
+            return false;
+        }
+        if (payload.empty()) ++emptySources;
+        pending.push_back(Pending{dst, std::move(payload)});
+        return true;
+    };
+
     for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
         try {
             xbase::DbArea& A = get_area_0based(area0);
             if (!area_open(A)) continue;
 
-            auto gather = [&](const fs::path& src, const fs::path& dst) -> bool {
-                std::string payload;
-                if (!read_all_bytes(src, payload)) {
-                    std::cout << "WORKSPACE WRITEBACK: ABORTED -- cannot read "
-                              << s8(src) << " (nothing was written)\n";
-                    return false;
-                }
-                if (payload.empty()) ++emptySources;
-                pending.push_back(Pending{dst, std::move(payload)});
-                return true;
-            };
-
             const fs::path dbf(A.filename());
             if (!gather(dbf, rootDbf / dbf.filename())) return false;
 
-            // Index files ride only when explicitly asked (WITH INDEXES).
-            // The workspace's per-table index CHOICE lives in the posture
-            // (index=/indextype=) and travels with it; the index FILE is
-            // regenerable at the destination from that choice, and which
-            // container is attached right now is session state -- the exact
-            // thing that must not silently decide what lands on disk.
-            if (withIndexes) {
-                const std::string idx = getOrderNameSafe(A);
-                if (!idx.empty() && to_lower(idx) != "none") {
-                    const fs::path ip(idx);
-                    if (!gather(ip, rootIdx / ip.filename())) return false;
-                }
-            }
+            // Index files ride only when explicitly asked (WITH INDEXES), and
+            // they are gathered FROM THE POSTURE after this loop -- not here.
+            // See the posture-driven index gather below for why.
 
             // Memo sidecar: the backend names its own file (AIF-108 carriage
             // rule); flush first because DTX buffers and bypasses the ramfs.
@@ -2591,6 +2644,25 @@ static bool writeback_to_disk(const std::string& name,
                 if (!mp.empty() && !gather(mp, rootDbf / mp.filename())) return false;
             }
         } catch (...) {}
+    }
+
+    // ---- WITH INDEXES: enumerate from the POSTURE, never the session -------
+    // Measured 2026-08-12: this branch used to ask each open area for its
+    // ATTACHED order (getOrderNameSafe). After a MEMO RAM hydration nothing is
+    // attached, so it gathered zero containers, created an empty indexes/
+    // directory, and reported success -- the silent-success shape, inside the
+    // very function whose v2 fix exists to kill order-dependent enumeration.
+    // The posture declares the index CHOICE per table; that declaration is the
+    // manifest here exactly as AREA/dbf= is for tables. A declared container
+    // that cannot be read ABORTS, consistent with the shortfall rule: a
+    // half-mirrored workspace looks finished and is not.
+    if (withIndexes) {
+        const fs::path idxSrcRoot = paths::get_slot(paths::Slot::INDEXES);
+        for (const auto& iv : wantIndexes) {
+            const fs::path ip(iv);
+            const fs::path src = ip.is_absolute() ? ip : (idxSrcRoot / ip.filename());
+            if (!gather(src, rootIdx / ip.filename())) return false;
+        }
     }
 
     if (pending.empty()) {
@@ -3133,7 +3205,13 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE CLOSE <n> [m ...]                (Close by area index)\n";
     std::cout << "  WORKSPACE CLOSE <name|file|stem|alias>[,...] (Close by name/alias; case-insensitive)\n";
     std::cout << "  WORKSPACE SAVE <file>                      (Save areas [+relations if available])\n";
+    std::cout << "  WORKSPACE SAVE <name> MEMO [V3]            (Save POSTURE into the memo catalog)\n";
+    std::cout << "  WORKSPACE SAVE <name> MEMO MINIDB          (Save CONTAINER: posture + table bytes)\n";
     std::cout << "  WORKSPACE LOAD <file>                      (Load areas [+relations]; relative/cross-OS paths supported)\n";
+    std::cout << "  WORKSPACE LOAD <name> MEMO                 (Load a POSTURE from the catalog)\n";
+    std::cout << "  WORKSPACE LOAD <name> MEMO RAM             (Hydrate a MINIDB container into the mounted VDISK)\n";
+    std::cout << "  WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]\n";
+    std::cout << "                                             (Return leg: RAM/memo -> real disk)\n";
     std::cout << "  WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]\n";
     std::cout << "Notes:\n";
     std::cout << "  - WORKSPACE with no arguments is a read-only report of open areas.\n";
@@ -3142,6 +3220,14 @@ static void workspace_print_usage() {
     std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
     std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
     std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
+    std::cout << "  - MEMO stores a POSTURE (tables stay on disk); MINIDB stores the TABLE BYTES,\n";
+    std::cout << "    so the payload IS the database. MINIDB implies V3 and requires MEMO.\n";
+    std::cout << "  - Plain LOAD <name> MEMO REFUSES a MINIDB payload: its tables have no disk\n";
+    std::cout << "    home, and empty areas over missing files is a silent failure. Use MEMO RAM.\n";
+    std::cout << "  - WRITEBACK enumerates from the POSTURE, never the session's attach order.\n";
+    std::cout << "    A shortfall ABORTS having written nothing. CONFIRM is required to replace;\n";
+    std::cout << "    replaced files are kept as <name>.__wbak. WITH INDEXES copies container\n";
+    std::cout << "    BYTES only -- LMDB is not carried, so the destination needs BUILDLMDB.\n";
     std::cout << "  - Without CNX/INX/CDX, index files are chosen by DBF flavor: true x64/v128 CDX, classic VFP/v32 CNX.\n";
 }
 

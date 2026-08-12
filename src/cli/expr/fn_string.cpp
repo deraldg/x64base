@@ -16,7 +16,9 @@
 // - TRANSFORM() is currently a pass-through placeholder.
 
 #include "cli/expr/fn_string.hpp"
+#include "cli/path_resolver.hpp"
 #include "cli/text_match.hpp"
+#include "common/path_state.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -155,8 +157,19 @@ static std::string dt_empty(const std::vector<std::string>& args) {
 // VFP (which is files-only): returns .T. for ANY filesystem entry, directory
 // included, because an absence proof wants the widest possible detector --
 // "nothing means nothing" fails on a leftover empty directory too.
-// Relative paths resolve against the process CWD, matching WORKSPACE
-// WRITEBACK's TO <root> and ERASE's cwd fallback. NOT SET PATH aware.
+// Relative paths resolve through paths::resolve_in_slot, the same rule every
+// other path token in the engine uses: absolute stays absolute, a token with
+// separators is DATA-root-relative, a bare name sits in the DBF slot.
+//
+// Corrected 2026-08-12, same day it was added. The first cut resolved against
+// the process CWD and this comment claimed that "matched" WORKSPACE WRITEBACK
+// and ERASE. It did -- all three were wrong together, and being wrong in
+// unison is not a specification. SET PATH resolved the same spelling against
+// DATA, so a marker of the form FILE("DBF/wbabort/STUDENTS.dbf") probed a
+// different directory than the writeback it was auditing. It agreed only
+// because datarun.ps1 runs with cwd = DATA. An absence proof that reads the
+// wrong directory always reports absence.
+//
 // Registered here AND in function_catalog.cpp in the same commit, per the
 // kDateFns rule (execution table and documentation table must not drift).
 
@@ -184,7 +197,9 @@ static std::string dt_file(const std::vector<std::string>& args) {
     std::replace(s.begin(), s.end(), '\\', '/');
 
     std::error_code ec;
-    const bool present = std::filesystem::exists(std::filesystem::path(s), ec) && !ec;
+    const std::filesystem::path probe = dottalk::paths::resolve_in_slot(
+        dottalk::paths::get_slot(dottalk::paths::Slot::DBF), s);
+    const bool present = std::filesystem::exists(probe, ec) && !ec;
     return present ? ".T." : ".F.";
 }
 

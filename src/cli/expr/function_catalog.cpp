@@ -440,15 +440,16 @@ FunctionDoc{
     1, 1,
     "Return whether a file or directory exists at the given path.",
     { "FILE(<path>)" },
-    { "FILE(\"DBF\\wbabort\\STUDENTS.dbf\")", "FILE(\"tmp/probe.txt\")" },
+    { "FILE(\"DBF/wbabort/STUDENTS.dbf\")", "FILE(\"tmp/probe.txt\")" },
     {
         "Added 2026-08-12 with the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6): an absence proof needs a by-value read of the filesystem.",
         "Deliberately broader than VFP's files-only FILE(): returns .T. for any filesystem entry, directories included -- 'nothing means nothing' fails on a leftover empty directory too.",
-        "Relative paths resolve against the process working directory, matching WORKSPACE WRITEBACK's TO <root> and ERASE's cwd fallback.",
+        "Relative paths resolve through paths::resolve_in_slot, the engine's standard rule: absolute stays absolute, a token containing separators is DATA-root-relative, a bare name sits in the DBF slot.",
+        "Corrected 2026-08-12, the same day it was added. The first cut resolved against the process working directory and this note claimed that 'matched' WORKSPACE WRITEBACK and ERASE -- all three were wrong together, and agreeing is not the same as being right. SET PATH resolved the same spelling against DATA, so an absence proof probed a different directory than the writeback it audited.",
         "Registered in kStringFns (fn_string.cpp) and here in the same commit, per the kDateFns rule."
     },
     {
-        "No SET PATH resolution: FILE() reads the filesystem where the process stands, not where the DBF slot points."
+        "Not a raw filesystem probe: FILE() reads where the engine's path slots point, not where the process happens to stand. To probe an arbitrary location outside the DATA tree, pass an absolute path."
     }
 },
 

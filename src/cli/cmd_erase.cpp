@@ -92,6 +92,7 @@
 #include "cli/command_output.hpp"
 #include "cli/command_registry.hpp"
 #include "cli/path_resolver.hpp"
+#include "common/path_state.hpp"
 #include "textio.hpp"
 #include "xbase.hpp"
 
@@ -271,7 +272,15 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
         }
 
         std::error_code ec;
-        const fs::path dir(dir_arg);
+        // Same resolution as every other path token in the engine, and the
+        // same one WORKSPACE WRITEBACK's TO target uses: absolute stays
+        // absolute, separators mean DATA-root-relative, a bare name sits in
+        // the DBF slot. A teardown that resolved differently from the write
+        // it is tearing down would delete the wrong directory or miss the
+        // right one -- which is exactly what happened while this took the
+        // raw token and followed the process CWD (measured 2026-08-12).
+        const fs::path dir = dottalk::paths::resolve_in_slot(
+            dottalk::paths::get_slot(dottalk::paths::Slot::DBF), dir_arg);
         if (!fs::exists(dir, ec) || ec) {
             // Absence is the desired end state of a teardown, not an error --
             // a bootstrap pre-clean on a fresh tree lands here by design.
