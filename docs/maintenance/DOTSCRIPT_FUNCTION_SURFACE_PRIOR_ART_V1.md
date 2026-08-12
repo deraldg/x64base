@@ -191,6 +191,72 @@ list below: the choice is no longer binary between "new construct" and
 "threshold extension" -- there is a third, smaller option that ships value
 before either.
 
+## 5c. The block family: buffer-and-replay already exists (owner pointer:
+## "scan/endscan loop/endloop, et al")
+
+Measured: DotScript already has a full begin/end block family, and every
+member works the same way -- **the begin command switches the shell into
+buffering, lines are captured instead of executed, and the end command
+replays the stored body**:
+
+| Construct | Contract language (from the source) |
+| --- | --- |
+| `SCAN [FOR] ... ENDSCAN` | "Buffer and execute a SCAN...ENDSCAN record loop over the current logical rowset" |
+| `LOOP [<n>] ... ENDLOOP` | "Start buffering commands for later replay by ENDLOOP" -- with a count form |
+| `WHILE <expr> ... ENDWHILE` | "begin buffering; shell must route lines to WHILE_BUFFER" |
+| `UNTIL <expr> ... ENDUNTIL` | same shape, inverted condition |
+| `IF / ELSE / ENDIF` | conditional block on the shell's shared boolean evaluator |
+
+**Consequence, and it is the largest reduction in this note:** body capture,
+body storage, and body replay -- the entire mechanical substance of a
+`FUNCTION ... ENDFUNC` definition -- are already implemented five times over.
+A function definition is the same buffering gesture with one difference at
+the end marker: instead of *executing* the captured body, `ENDFUNC` files it
+in the registry `DEFFN` already owns. A call is a replay with a frame around
+it. The function lane is therefore not "build a body parser"; it is "route
+existing buffer machinery into an existing registry, and add the frame."
+
+**The shared ceiling, confirmed:** `SCAN` carries an explicit re-entrancy
+guard -- "nested SCAN not allowed during ENDSCAN" -- the same one-level shape
+as DOTSCRIPT's one-subscript limit. The whole block family sits under the
+same no-frames ceiling, which means call frames lift *all* of these
+restrictions as one piece of work, not as per-construct fixes.
+
+**Closer measurement of the three replay loops (owner pointer round two)**
+sharpens this further:
+
+- **The replay engine is already a named, injectable seam.** LOOP's contract:
+  "ENDLOOP executes buffered commands through the *pluggable shell
+  executor*"; WHILE and UNTIL both execute "through the *canonical loop
+  executor*." A function call is the same executor invoked with a frame --
+  the execution seam does not need to be built, only parameterized.
+- **The house has already picked a replay cap:** LOOP carries a "hard default
+  max iterations: 1000," clamped rather than errored. The recursion-depth
+  ruling (section 6, item 4) has a sibling precedent and a house number
+  style to match.
+- **Buffers persist after execution** -- both WHILE and UNTIL state "buffer
+  persists after ENDWHILE (mirrors ENDLOOP behavior)." A stored body already
+  outlives its run; it is one naming step away from being a definition.
+- **A label form is parked in the grammar:** `LOOP FOR <label>` "stores a
+  nonnumeric label and currently replays once" -- an honestly-declared MVP
+  stub that is, structurally, a named body waiting for semantics.
+- **Deliberate buffer isolation, recorded as intent:** WHILE and UNTIL are
+  "private buffering (no loop_state deps)" twins (263 lines each) with
+  separate WHILE_BUFFER / UNTIL_BUFFER routing. Three buffers is a design
+  choice here, not drift -- but any frame work should unify at the executor
+  seam rather than adding a fourth private buffer.
+- **WHILE/UNTIL are record loops**, not general loops: execution "starts at
+  the current record and advances one record per iteration." A general
+  conditional loop and a function body replay both belong to the
+  executor+buffer layer beneath that record-advancing policy.
+
+**And the record-loop engine ties back to error handling:** the unified
+harness (`dt::predicate::loop_records`, serving SCAN / COUNT / DELETE FOR /
+LIST FOR) already models what section 5b needs a probe for -- its `LoopSpec`
+carries `stop_on_error` and its `LoopResult` returns `visited / matched /
+acted / aborted / last_error`. Abort-with-reason is an existing result shape
+in the tree, one seam below the script surface.
+
 ## 6. What is genuinely undecided
 
 These are owner rulings, not research questions:
