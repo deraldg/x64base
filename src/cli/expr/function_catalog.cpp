@@ -434,6 +434,25 @@ FunctionDoc{
 },
 
 FunctionDoc{
+    "FILE",
+    {},
+    FunctionCategory::Logical,
+    1, 1,
+    "Return whether a file or directory exists at the given path.",
+    { "FILE(<path>)" },
+    { "FILE(\"DBF\\wbabort\\STUDENTS.dbf\")", "FILE(\"tmp/probe.txt\")" },
+    {
+        "Added 2026-08-12 with the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6): an absence proof needs a by-value read of the filesystem.",
+        "Deliberately broader than VFP's files-only FILE(): returns .T. for any filesystem entry, directories included -- 'nothing means nothing' fails on a leftover empty directory too.",
+        "Relative paths resolve against the process working directory, matching WORKSPACE WRITEBACK's TO <root> and ERASE's cwd fallback.",
+        "Registered in kStringFns (fn_string.cpp) and here in the same commit, per the kDateFns rule."
+    },
+    {
+        "No SET PATH resolution: FILE() reads the filesystem where the process stands, not where the DBF slot points."
+    }
+},
+
+FunctionDoc{
     "RAT",
     {},
     FunctionCategory::Search,

@@ -220,10 +220,12 @@ having already done it, in pieces, each proven alone.
   container bytes. Part B's remaining half is the fixture side: MCC
   flavors regenerated with NOTES M so the CANONICAL workspace exercises
   this path, not just the regression's throwaway table.
-- **Writeback lane -- RULED 2026-08-12, ready to build.** A hydrated
-  mini-database that returns to DISK is a database EXTRACTED from a memo --
-  the export direction. Writeback and MINIDB together close the full cycle:
-  disk -> memo -> RAM -> disk. Three owner rulings, all settled:
+- **Writeback lane -- LANDED WITH PROOF 2026-08-12** (ruled and built the
+  same day). A hydrated mini-database that returns to DISK is a database
+  EXTRACTED from a memo -- the export direction. Writeback and MINIDB
+  together close the full cycle: disk -> memo -> RAM -> disk, and the cycle
+  is now runtime-proven in both directions. Three owner rulings, all
+  settled:
 
   1. **Verb: `WRITEBACK`** (owner choice over PERSIST and FLUSH). Pairs with
      the already-settled `DISMISS` for the discard side. `COMMIT` was
@@ -256,13 +258,51 @@ having already done it, in pieces, each proven alone.
   you have somewhere else to stand), the FMT disagreement check third (cheap,
   but it wants both of the above to exist before it has anything to guard).
 
+  **What landed (2026-08-12, `WORKSPACE WRITEBACK <name> [TO <root>]
+  [WITH INDEXES] [CONFIRM]`, cmd_workspace.cpp):** the POSTURE is the
+  manifest -- enumeration comes from the record of what the workspace IS
+  (its AREA lines, dbf= plus the per-table index=/indextype= choice), never
+  from the session's attach order, because the session's order is exactly
+  the variable that made the first cut silently write 15 of 27 files while
+  reporting success. A declared table that is not open ABORTS the whole
+  writeback; an abort leaves the filesystem untouched INCLUDING empty
+  directories (v2 fix: target dirs are created only after every gate has
+  passed -- the first cut created them before the manifest check while
+  printing 'Nothing was written'). Safety stack: gather-all-before-writing,
+  zero-byte-source abort (the AIF-110 corruption shape, and writeback is
+  where it would become permanent), CONFIRM to replace existing targets
+  with the replacement list printed first, `.__wbak` copies of everything
+  replaced, oracle re-read + byte-compare on every landed file. Index FILES
+  are not written by default -- the CHOICE travels in the posture, the file
+  is rebuildable at the destination; `WITH INDEXES` copies container bytes
+  for a byte-mirror. Proof: `workspace_writeback.dts` / spec 44
+  (`WORKSPACE_WRITEBACK`), WB_T1..WB_T6 -- manifest-checked success both
+  ways (values, count-by-reachability, memo sidecar, second table) and the
+  refusal arms (shortfall refuses; aborted target absent, asserted by
+  value). The proof forced two vocabulary additions, both owner-ruled the
+  same day: `FILE(<path>)` (SYSFUNC catalog had no filesystem probe; an
+  absence proof needs a by-value read, and FILE() deliberately counts
+  directories -- "nothing means nothing" fails on a leftover empty dir) and
+  `ERASE DIR <path> CONFIRM` (no verb could delete a directory; without
+  clean-slate reruns the regression reads the PREVIOUS run's landed files
+  after a collision refusal -- a stale false green). Honest non-claims:
+  the WITH INDEXES arm and the CONFIRM/collision/`.__wbak` gates are built
+  but not yet regression-covered (never re-run into an existing target
+  since the v2 rebuild); and `build_minidb_container` still enumerates
+  indexes order-dependently -- the same defect shape writeback v1 had, the
+  likely author of the old 24-vs-25 variance, queued to go posture-driven.
+  Remaining from the rulings: `WORKSPACE COMPACT`, then the FMT
+  disagreement check.
+
 ## 6. Honest non-claims and limits
 
 - **No multi-file atomicity.** The container is written in one memo put and
   verified as one unit -- that IS atomic at the carrier level -- but
   hydration writes N RAM files sequentially; a mid-hydration failure leaves
   a partial RAM set. Acceptable today because the RAM set is disposable by
-  definition; becomes real when writeback lands.
+  definition. Writeback (landed 2026-08-12) answers its half of this with
+  gather-all-before-writing: a read failure aborts having written nothing,
+  so the DISK side never holds a partial workspace that looks finished.
 - **No LMDB carriage.** Out of scope by the ramfs contract (LMDB must mmap
   a real OS file) and by owner rule ("lmdb only for disks"). CDX orders
   attach in RAM through the native fallback; the LMDB route fails there

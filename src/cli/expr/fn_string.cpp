@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <filesystem>
 #include <iomanip>
 #include <locale>
 #include <sstream>
@@ -143,6 +144,48 @@ static std::string dt_empty(const std::vector<std::string>& args) {
     } catch (...) {}
 
     return ".F.";
+}
+
+// --------------------------------------------------
+// FILE() — filesystem existence probe (FoxPro-compatible name)
+// --------------------------------------------------
+// Added 2026-08-12 for the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6):
+// "the aborted target does not exist afterward" needs a by-value read of the
+// filesystem, and the catalog had no such probe. Deliberately broader than
+// VFP (which is files-only): returns .T. for ANY filesystem entry, directory
+// included, because an absence proof wants the widest possible detector --
+// "nothing means nothing" fails on a leftover empty directory too.
+// Relative paths resolve against the process CWD, matching WORKSPACE
+// WRITEBACK's TO <root> and ERASE's cwd fallback. NOT SET PATH aware.
+// Registered here AND in function_catalog.cpp in the same commit, per the
+// kDateFns rule (execution table and documentation table must not drift).
+
+static std::string dt_file(const std::vector<std::string>& args) {
+    if (args.empty()) return ".F.";
+
+    std::string s = args[0];
+
+    // Strip quotes if present (same convention as dt_empty)
+    if (s.size() >= 2) {
+        if ((s.front() == '"' && s.back() == '"') ||
+            (s.front() == '\'' && s.back() == '\'')) {
+            s = s.substr(1, s.size() - 2);
+        }
+    }
+
+    // Trim surrounding whitespace; a blank path is not a path
+    const auto b = s.find_first_not_of(" \t\r\n");
+    if (b == std::string::npos) return ".F.";
+    const auto e = s.find_last_not_of(" \t\r\n");
+    s = s.substr(b, e - b + 1);
+
+    // Cross-OS: scripts spell paths either way; POSIX does not treat '\' as
+    // a separator (house pattern, see shell.cpp / cmd_setorder.cpp).
+    std::replace(s.begin(), s.end(), '\\', '/');
+
+    std::error_code ec;
+    const bool present = std::filesystem::exists(std::filesystem::path(s), ec) && !ec;
+    return present ? ".T." : ".F.";
 }
 
 // --------------------------------------------------
@@ -375,6 +418,7 @@ static const BuiltinFnSpec kStringFns[] = {
     { "CONCAT",1,32,&dt_concat },
     { "STRCAT",1,32,&dt_concat },
     { "EMPTY",1,1,&dt_empty },
+    { "FILE",1,1,&dt_file },
     { "SOUNDEX",1,1,&dt_soundex },
     { "AT",2,2,&dt_at },
     { "RAT",2,2,&dt_rat },

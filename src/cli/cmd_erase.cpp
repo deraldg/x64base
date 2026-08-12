@@ -13,10 +13,12 @@
 // Supported syntax:
 //   ERASE <table> [CONFIRM]
 //   ERASE TABLE <table> [CONFIRM]
+//   ERASE DIR <path> [CONFIRM]
 //
 // Examples:
 //   ERASE TABLE clients CONFIRM
 //   ERASE students.dbf CONFIRM
+//   ERASE DIR DBF\wbregress CONFIRM
 //
 // Behavior:
 //   - Resolves <table> to a .dbf path (adds .dbf if missing).
@@ -29,6 +31,14 @@
 //     through the active LMDB slot:
 //       <stem>.cdx.d
 //   - Safety gate: without CONFIRM, it prints what it *would* delete and does nothing.
+//   - ERASE DIR (owner-ruled 2026-08-12): explicit directory teardown. A landed
+//     writeback target has no table token -- the .dbf normalization would mangle
+//     it -- and the WORKSPACE WRITEBACK regression needs clean-slate reruns
+//     (a leftover target makes the writeback refuse on collision while the
+//     markers read the PREVIOUS run's files: a stale false green). No .dbf
+//     normalization, no sidecar sweep, no SETPATH resolution: the named
+//     directory (cwd-relative or absolute) and its contents, nothing else.
+//     Same CONFIRM contract: dry-run without it.
 
 // @dottalk.usage v1
 // owner: DOT|ERASE
@@ -46,19 +56,23 @@
 //   ERASE USAGE
 //   ERASE <table> [CONFIRM]
 //   ERASE TABLE <table> [CONFIRM]
+//   ERASE DIR <path> [CONFIRM]
 //
 // examples:
 //   ERASE TABLE clients
 //   ERASE TABLE clients CONFIRM
 //   ERASE students.dbf CONFIRM
+//   ERASE DIR DBF\wbregress CONFIRM
 //
 // notes:
 //   ERASE USAGE prints usage and does not inspect or delete files.
 //   Without CONFIRM, ERASE performs a dry-run and lists files that would be deleted.
 //   CONFIRM physically deletes the DBF, matching index containers/files, and matching LMDB backend directory when present.
+//   ERASE DIR deletes the named directory and everything under it; cwd-relative or absolute path, no SETPATH resolution, no sidecar sweep. Dry-run without CONFIRM.
 //
 // risk:
 //   deletes_filesystem: ERASE ... CONFIRM
+//   deletes_directory_recursive: ERASE DIR ... CONFIRM
 //   dry_run_without_confirm: yes
 //   mutates_table_data: filesystem-level delete
 //
@@ -235,6 +249,66 @@ void cmd_ERASE(xbase::DbArea& /*area*/, std::istringstream& iss) {
             print_usage();
             return;
         }
+    }
+
+    // ERASE DIR <path> [CONFIRM] -- explicit directory teardown (owner-ruled
+    // 2026-08-12; charter in the file header). Handled before the table path
+    // so a directory token never reaches the .dbf normalization below.
+    if (textio::up(tok) == "DIR") {
+        std::string dir_arg;
+        if (!(iss >> dir_arg) || dir_arg.empty()) { print_usage(); return; }
+
+        // Cross-OS: scripts spell paths either way; POSIX does not treat
+        // '\' as a separator (house pattern, see shell.cpp).
+        std::replace(dir_arg.begin(), dir_arg.end(), '\\', '/');
+
+        bool dir_confirm = false;
+        std::string t2;
+        while (iss >> t2) {
+            if (textio::up(t2) == "CONFIRM" || t2 == "/Y" || t2 == "-Y") {
+                dir_confirm = true;
+            }
+        }
+
+        std::error_code ec;
+        const fs::path dir(dir_arg);
+        if (!fs::exists(dir, ec) || ec) {
+            // Absence is the desired end state of a teardown, not an error --
+            // a bootstrap pre-clean on a fresh tree lands here by design.
+            cli::cmdout::print_line("ERASE DIR: '" + dir_arg +
+                                    "' does not exist -- nothing to delete.");
+            return;
+        }
+        ec.clear();
+        if (!fs::is_directory(dir, ec) || ec) {
+            cli::cmdout::print_line("ERASE DIR: '" + dir_arg +
+                                    "' is not a directory -- use ERASE <table|file> for files.");
+            return;
+        }
+
+        if (!dir_confirm) {
+            ec.clear();
+            std::size_t entries = 0;
+            for (auto it = fs::recursive_directory_iterator(dir, ec);
+                 !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
+                ++entries;
+            }
+            cli::cmdout::print_line("ERASE DIR (dry-run): would remove '" + dir_arg +
+                                    "' and " + std::to_string(entries) +
+                                    " entrie(s) under it. Re-run with CONFIRM.");
+            return;
+        }
+
+        ec.clear();
+        const std::uintmax_t removed = fs::remove_all(dir, ec);
+        if (ec) {
+            cli::cmdout::print_line("ERASE DIR: failed on '" + dir_arg + "': " +
+                                    ec.message());
+        } else {
+            cli::cmdout::print_line("ERASE DIR: removed '" + dir_arg + "' (" +
+                                    std::to_string(removed) + " entrie(s)).");
+        }
+        return;
     }
 
     std::string table_arg;

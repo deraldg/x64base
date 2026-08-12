@@ -1,0 +1,117 @@
+* ============================================================================
+* workspace_writeback.dts -- the return leg: disk -> memo -> RAM -> DISK.
+*
+* WORKSPACE WRITEBACK (owner-ruled verb, 2026-08-12) writes every table the
+* POSTURE declares, plus each area's memo sidecar, out of wherever they
+* currently live and onto a real disk root. Hydration is its proven inverse,
+* so the round trip is the test: bytes that went into a memo, through the RAM
+* VFS, and back to disk must still read as the same rows.
+*
+* WHAT THIS SPEC GUARDS, beyond "it wrote some files":
+*
+*   The manifest, not the loop. Enumeration comes from the posture's AREA
+*   lines -- the record of what the workspace IS -- not from the session's
+*   attached order. The first cut asked the session and silently wrote 15 of
+*   27 files, reporting cheerful success; the same order-dependent
+*   enumeration is why a posture once omitted students.cdx. A count is a fact
+*   about a loop until something declares what the count SHOULD be.
+*
+*   The refusal is a feature. A partial workspace on disk looks finished, so
+*   a shortfall ABORTS. WB_T5 is the arm that proves the refusal still
+*   refuses -- a regression that silently started succeeding here would be
+*   worse than one that started failing.
+*
+*   Nothing means nothing. An aborted writeback must leave the filesystem
+*   untouched, empty directories included (measured: the first cut created
+*   the target dirs before the manifest check while claiming it had not).
+*
+* Markers:
+*   WB_T1  round trip preserves VALUES (Taylor Quinn from disk->memo->RAM->disk)
+*   WB_T2  round trip preserves COUNT (GO 200 reads Avery Davis -- the count
+*          asserted by REACHABILITY and a field value, not by a counter:
+*          no RECCOUNT() exists in the SYSFUNC catalog, and a count is a
+*          fact about a loop anyway; record 200 reading as record 200's
+*          VALUE is the by-value form of "all 200 made the trip")
+*   WB_T3  the memo sidecar made the trip (NOTES readable, null-virgin)
+*   WB_T4  a second table proves it was not a one-table accident
+*   WB_T5  ABORT arm: one table open, 13-table posture -> refuses
+*   WB_T6  the aborted target does not exist afterward (nothing means nothing)
+*
+* Assertion vocabulary note (2026-08-12): WB_T5/WB_T6 use FILE(<path>),
+* added to the engine for exactly these arms -- an absence proof needs a
+* by-value read of the filesystem. FILE() is deliberately broader than
+* VFP's (any entry counts, directories included) because "nothing means
+* nothing" fails on a leftover empty directory too.
+*
+* Indexes are deliberately NOT asserted: each table's index CHOICE travels in
+* the posture (index=/indextype=, mixed types preserved) and the FILE is
+* rebuildable at the destination. WITH INDEXES copies container bytes when a
+* byte-mirror is wanted; that arm is not covered here.
+*
+* Disposable: writes to dbf\wbregress; both dbf\wbregress and dbf\wbabort are
+* ERASE DIR'd at bootstrap AND teardown, so every run is clean-slate. The
+* pre-clean is not hygiene theater: a leftover wbregress makes WRITEBACK
+* refuse on collision while the reads below happily consume the PREVIOUS
+* run's files -- a stale false green, the worst kind.
+* Requires the mcc_minidb_memo catalog row (written by mcc_add_notes_memo).
+*
+* Run: DO workspace_writeback | regression: REGRESSION RUN WORKSPACE_WRITEBACK
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+* --- bootstrap: clean slate (rerun hygiene) ---------------------------------
+ERASE DIR DBF/wbregress CONFIRM
+ERASE DIR DBF/wbabort CONFIRM
+
+FORMULA "WS-WRITEBACK-PROOF-BEGIN"
+
+* --- the round trip: memo -> RAM -> disk ------------------------------------
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbregress
+WORKSPACE CLOSE
+VDISK UNMOUNT
+
+* --- read the landed copy: it must be the SAME DATABASE ---------------------
+SET PATH DBF DBF/wbregress
+SET PATH INDEXES DBF/wbregress
+SELECT 1
+USE STUDENTS NOINDEX
+GO 1
+? "WB_T1_values_survive_round_trip:" + (ALLTRIM(FNAME) = "Quinn")
+* The count, read by value: GO 200 only lands if all 200 records made the
+* trip, and the landed record must read as the SOURCE's record 200 (Avery
+* Davis). A short table either fails the GO or lands on the wrong name --
+* both red. (Fixture ground truth: x64 STUDENTS r1 = Quinn Taylor,
+* r200 = Avery Davis, SID 50000199.)
+GO 200
+? "WB_T2_count_survives:" + (ALLTRIM(FNAME) = "Avery")
+GO 1
+? "WB_T3_memo_sidecar_made_the_trip:" + (NOTES = "")
+CLOSE
+
+SELECT 2
+USE TEACHERS NOINDEX
+GO 1
+? "WB_T4_second_table_intact:" + (LNAME > "")
+CLOSE
+
+* --- the abort arm: one table open against a 13-table posture ---------------
+WORKSPACE CLOSE
+DO x64
+USE STUDENTS NOINDEX
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/wbabort
+CLOSE
+* If the refusal held, nothing was created. FILE() on a member that WOULD
+* have landed is the by-value read of "the filesystem is untouched".
+? "WB_T5_shortfall_refused:" + (FILE("DBF/wbabort/STUDENTS.dbf") = .F.)
+? "WB_T6_aborted_target_absent:" + (FILE("DBF/wbabort/BUILDING.dbf") = .F.)
+
+FORMULA "WS-WRITEBACK-PROOF-END"
+
+* --- teardown: nothing left on disk ------------------------------------------
+WORKSPACE CLOSE
+ERASE DIR DBF/wbregress CONFIRM
+ERASE DIR DBF/wbabort CONFIRM
+DO x64

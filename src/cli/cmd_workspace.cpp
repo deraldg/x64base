@@ -2412,6 +2412,332 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
     return true;
 }
 
+// ---- WRITEBACK: the return leg of disk -> memo -> RAM -> disk -------------
+// Owner rulings 2026-08-12: the verb is WRITEBACK (pairs with the settled
+// DISMISS; COMMIT stays rejected for colliding with the table-buffer
+// transaction verb, FLUSH for reading as drain-to-existing-home).
+//
+// What it does: every OPEN area's table bytes -- plus its attached native
+// index and its memo sidecar -- are read through the residence-aware reader
+// (so a RAM-resident working set is read from ramfs) and written to a REAL
+// disk root. This is the exact inverse of hydrate_minidb's landing loop,
+// which is why it is testable: hydrate, writeback, and the bytes must agree.
+//
+// Target selection, in order:
+//   1. an explicit TO <root>
+//   2. the catalog row's DBF_ROOT / IDX_ROOT -- where the workspace CAME
+//      from, which is what "write it back" means by default
+// A born-in-RAM workspace with no catalog row has no source to return to and
+// must say TO explicitly; that refusal is deliberate, not a limitation to
+// route around.
+//
+// Safety posture (this lane spent 2026-08-12 learning what silent and
+// plausible costs): every file is reported by name and byte count as it
+// lands, the target is refused if it resolves inside the mounted RAM root
+// (writing RAM to RAM is a mistake, not a no-op), and nothing is deleted --
+// writeback overwrites its own targets and touches nothing else.
+static bool writeback_to_disk(const std::string& name,
+                              const fs::path& explicitRoot,
+                              bool confirmed,
+                              bool withIndexes) {
+    const auto t0 = std::chrono::steady_clock::now();
+
+    fs::path rootDbf = explicitRoot;
+    fs::path rootIdx;
+
+    // The POSTURE is the manifest. Not a naming convention, not the session's
+    // current attach state -- the record the workspace was saved as. Its AREA
+    // lines carry dbf= (the mandatory data member) plus index=/indextype=/tag=
+    // (this workspace's PER-TABLE index choice, which is what lets one
+    // workspace mix CNX, CDX and INX tables; the x64-prefers-CDX autoload is
+    // only the fallback when nothing was chosen). Writeback reads that record
+    // instead of asking the session, because the session's active order is
+    // exactly the variable that made the first run write 15 of 27 files.
+    std::vector<std::string> wantTables;   // basenames the posture declares
+    std::size_t postureIdxCount = 0;
+
+    MemoFetch f = fetch_memo_payload(name);
+    if (!f.ok) {
+        std::cout << "WORKSPACE WRITEBACK: " << f.error
+                  << " (no catalog row, so no manifest and no source to return "
+                     "to -- a born-in-RAM workspace must say TO <root>, and "
+                     "cannot be completeness-checked)\n";
+        return false;
+    }
+    if (rootDbf.empty()) {
+        if (f.dbf_root.empty()) {
+            std::cout << "WORKSPACE WRITEBACK: catalog row '" << name
+                      << "' records no DBF_ROOT -- use TO <root>.\n";
+            return false;
+        }
+        rootDbf = fs::path(f.dbf_root);
+        if (!f.idx_root.empty()) rootIdx = fs::path(f.idx_root);
+    }
+    if (rootIdx.empty()) rootIdx = rootDbf / "indexes";
+
+    // A MINIDB payload wraps its posture in a POSTURE <len> section; a plain
+    // payload IS the posture. Take the AREA lines either way.
+    {
+        std::string posture = f.text;
+        if (posture.rfind("MINIDB 1\n", 0) == 0) {
+            const auto p = posture.find("\nPOSTURE ");
+            if (p != std::string::npos) {
+                const auto nl = posture.find('\n', p + 1);
+                if (nl != std::string::npos) {
+                    const std::size_t len =
+                        std::strtoull(posture.substr(p + 9, nl - p - 9).c_str(), nullptr, 10);
+                    posture = posture.substr(nl + 1, len);
+                }
+            }
+        }
+        std::istringstream scan(posture);
+        std::string line;
+        while (std::getline(scan, line)) {
+            if (to_lower(line).rfind("area ", 0) != 0) continue;
+            const auto dp = line.find("dbf=");
+            if (dp == std::string::npos) continue;
+            std::string v = line.substr(dp + 4);
+            const auto bar = v.find('|');
+            if (bar != std::string::npos) v = v.substr(0, bar);
+            v = trim_copy(v);
+            if (!v.empty()) wantTables.push_back(to_lower(s8(fs::path(v).filename())));
+            const auto ip = line.find("index=");
+            if (ip != std::string::npos) {
+                std::string iv = line.substr(ip + 6);
+                const auto ib = iv.find('|');
+                if (ib != std::string::npos) iv = iv.substr(0, ib);
+                iv = trim_copy(iv);
+                if (!iv.empty() && to_lower(iv) != "none") ++postureIdxCount;
+            }
+        }
+    }
+
+    if (wantTables.empty()) {
+        std::cout << "WORKSPACE WRITEBACK: '" << name
+                  << "' has no AREA lines in its posture -- nothing declared "
+                     "to write back.\n";
+        return false;
+    }
+
+    // Refuse a RAM target: the point of writeback is leaving the VFS.
+    const fs::path ramRoot = paths::get_slot(paths::Slot::RAM);
+    if (!ramRoot.empty() && xbase::ramfs::mounted(s8(ramRoot))) {
+        const std::string t = to_lower(s8(fs::weakly_canonical(rootDbf)));
+        const std::string r = to_lower(s8(fs::weakly_canonical(ramRoot)));
+        if (t.rfind(r, 0) == 0) {
+            std::cout << "WORKSPACE WRITEBACK: refusing -- target resolves "
+                         "inside the mounted RAM root (" << s8(ramRoot)
+                      << "). Writeback exists to leave the VFS.\n";
+            return false;
+        }
+    }
+
+    // NOTE: target directories are NOT created here. An abort must leave the
+    // filesystem untouched -- "nothing was written" has to be literally true,
+    // including empty directories. (Measured 2026-08-12: the first cut created
+    // them before the manifest check, so a refused writeback still left a
+    // wbtest2/ and wbtest2/indexes/ behind while claiming it had not.)
+
+    // ---- PHASE 1: GATHER EVERYTHING FIRST, WRITE NOTHING ------------------
+    // The worst case for this verb is COMPLETE REPLACEMENT of good canonical
+    // data by a bad working set -- exactly what AIF-110 would have done
+    // permanently if writeback had existed the day the rewrite blanked 200
+    // rows. So nothing lands until every source has been read successfully:
+    // a partial writeback (half new, half stale) is a worse outcome than a
+    // refused one, because it is inconsistent AND looks finished.
+    struct Pending { fs::path dst; std::string bytes; };
+    std::vector<Pending> pending;
+    std::size_t emptySources = 0;
+
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+
+            auto gather = [&](const fs::path& src, const fs::path& dst) -> bool {
+                std::string payload;
+                if (!read_all_bytes(src, payload)) {
+                    std::cout << "WORKSPACE WRITEBACK: ABORTED -- cannot read "
+                              << s8(src) << " (nothing was written)\n";
+                    return false;
+                }
+                if (payload.empty()) ++emptySources;
+                pending.push_back(Pending{dst, std::move(payload)});
+                return true;
+            };
+
+            const fs::path dbf(A.filename());
+            if (!gather(dbf, rootDbf / dbf.filename())) return false;
+
+            // Index files ride only when explicitly asked (WITH INDEXES).
+            // The workspace's per-table index CHOICE lives in the posture
+            // (index=/indextype=) and travels with it; the index FILE is
+            // regenerable at the destination from that choice, and which
+            // container is attached right now is session state -- the exact
+            // thing that must not silently decide what lands on disk.
+            if (withIndexes) {
+                const std::string idx = getOrderNameSafe(A);
+                if (!idx.empty() && to_lower(idx) != "none") {
+                    const fs::path ip(idx);
+                    if (!gather(ip, rootIdx / ip.filename())) return false;
+                }
+            }
+
+            // Memo sidecar: the backend names its own file (AIF-108 carriage
+            // rule); flush first because DTX buffers and bypasses the ramfs.
+            if (auto* ms = cli_memo::memo_backend_for(A); ms && ms->is_open()) {
+                (void)ms->flush();
+                const fs::path mp(ms->path());
+                if (!mp.empty() && !gather(mp, rootDbf / mp.filename())) return false;
+            }
+        } catch (...) {}
+    }
+
+    if (pending.empty()) {
+        std::cout << "WORKSPACE WRITEBACK: no open areas -- nothing to write "
+                     "back. (Load or hydrate a workspace first.)\n";
+        return false;
+    }
+
+    // ---- COMPLETENESS: the manifest decides, not the loop's arithmetic ----
+    // Every table the posture declares must be present among the open areas.
+    // A shortfall REFUSES: a workspace on disk that is missing tables looks
+    // finished, and "15 file(s) written" is a fact about a loop, not a claim
+    // the code has defended.
+    {
+        std::vector<std::string> missing;
+        for (const auto& want : wantTables) {
+            bool found = false;
+            for (const auto& p : pending) {
+                if (to_lower(s8(p.dst.filename())) == want) { found = true; break; }
+            }
+            if (!found) missing.push_back(want);
+        }
+        if (!missing.empty()) {
+            std::cout << "WORKSPACE WRITEBACK: ABORTED -- the posture declares "
+                      << wantTables.size() << " table(s); " << missing.size()
+                      << " are not open:\n";
+            for (const auto& m : missing) std::cout << "  ? " << m << "\n";
+            std::cout << "Nothing was written. Load the whole workspace, or "
+                         "write back the one that is actually open.\n";
+            return false;
+        }
+    }
+    if (emptySources) {
+        std::cout << "WORKSPACE WRITEBACK: ABORTED -- " << emptySources
+                  << " source file(s) read as ZERO BYTES. That is the shape of "
+                     "a broken working set, and writing it over disk data "
+                     "would make the loss permanent. Nothing was written.\n";
+        return false;
+    }
+
+    // ---- PHASE 2: what would be REPLACED, and does the caller mean it? ----
+    std::vector<const Pending*> collisions;
+    for (const auto& p : pending) {
+        std::error_code ec2;
+        if (fs::exists(p.dst, ec2)) collisions.push_back(&p);
+    }
+
+    if (!collisions.empty() && !confirmed) {
+        std::cout << "WORKSPACE WRITEBACK: " << collisions.size()
+                  << " existing file(s) would be REPLACED at " << s8(rootDbf)
+                  << ":\n";
+        std::size_t shown = 0;
+        for (const auto* p : collisions) {
+            if (shown++ == 8) { std::cout << "  ... and "
+                                          << (collisions.size() - 8)
+                                          << " more\n"; break; }
+            std::error_code ec3;
+            const auto oldSize = fs::file_size(p->dst, ec3);
+            std::cout << "  ~ " << s8(p->dst.filename()) << "  "
+                      << (ec3 ? 0u : oldSize) << " B -> " << p->bytes.size()
+                      << " B\n";
+        }
+        std::cout << "Nothing written. Re-run with CONFIRM to replace them.\n";
+        return false;
+    }
+
+    // Every gate has passed; only now may the filesystem change.
+    {
+        std::error_code ecMk;
+        fs::create_directories(rootDbf, ecMk);
+        if (withIndexes) fs::create_directories(rootIdx, ecMk);
+    }
+
+    // ---- PHASE 3: back up every target being replaced ---------------------
+    // Undo of last resort. The MCC chain saved this lane twice on 2026-08-12
+    // precisely because a rewrite left a backup behind.
+    std::size_t backedUp = 0;
+    for (const auto* p : collisions) {
+        std::error_code ec4;
+        const fs::path bak = p->dst.parent_path() /
+            (p->dst.stem().string() + ".__wbak" + p->dst.extension().string());
+        fs::remove(bak, ec4);
+        fs::copy_file(p->dst, bak, fs::copy_options::overwrite_existing, ec4);
+        if (!ec4) ++backedUp;
+    }
+
+    // ---- PHASE 4: write, then PHASE 5: oracle every landing ---------------
+    std::size_t files = 0;
+    std::uint64_t bytes = 0;
+    bool anyFail = false;
+
+    for (const auto& p : pending) {
+        {
+            std::ofstream out(p.dst, std::ios::binary | std::ios::trunc);
+            if (!out) {
+                std::cout << "  ! writeback: cannot write " << s8(p.dst) << "\n";
+                anyFail = true;
+                continue;
+            }
+            out.write(p.bytes.data(), static_cast<std::streamsize>(p.bytes.size()));
+            out.flush();
+            if (!out) {
+                std::cout << "  ! writeback: short write " << s8(p.dst) << "\n";
+                anyFail = true;
+                continue;
+            }
+        }
+
+        // Oracle: read the landed file back and byte-compare. Same discipline
+        // the memo save uses -- a write that reports success without being
+        // re-read is a claim, not a proof.
+        std::string verify;
+        if (!read_all_bytes(p.dst, verify) || verify != p.bytes) {
+            std::cout << "  ! writeback: ORACLE MISMATCH on " << s8(p.dst)
+                      << " (wrote " << p.bytes.size() << " B, read back "
+                      << verify.size() << " B) -- the .__wbak copy is the "
+                         "previous content\n";
+            anyFail = true;
+            continue;
+        }
+
+        ++files;
+        bytes += p.bytes.size();
+        std::cout << "  -> " << s8(p.dst.filename()) << "  "
+                  << p.bytes.size() << " B  [oracle OK]\n";
+    }
+
+    const auto t1 = std::chrono::steady_clock::now();
+    const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+    std::cout << "WORKSPACE WRITEBACK: " << files << " file(s), " << bytes
+              << " B to " << s8(rootDbf) << " in " << ms << " ms";
+    if (backedUp) std::cout << "  (" << backedUp << " replaced, .__wbak kept)";
+    if (anyFail)  std::cout << "  [WITH FAILURES -- see above]";
+    std::cout << "\n";
+    std::cout << "  manifest: " << wantTables.size()
+              << " table(s) declared by the posture, all present.\n";
+    if (!withIndexes && postureIdxCount) {
+        std::cout << "  indexes: NOT written -- " << postureIdxCount
+                  << " index selection(s) travel in the posture "
+                     "(index=/indextype= per table, mixed types preserved); "
+                     "rebuild at the destination, or re-run WITH INDEXES to "
+                     "copy the container bytes too.\n";
+    }
+    return !anyFail && files > 0;
+}
+
 static void hydrate_to_ram(const std::string& name) {
     const fs::path ramRoot = paths::get_slot(paths::Slot::RAM);
     if (ramRoot.empty() || !xbase::ramfs::mounted(s8(ramRoot))) {
@@ -3170,6 +3496,63 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             } else {
                 fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
                 schema_save_to_file(out, ver);
+            }
+
+        } else if (sub_command == "writeback") {
+            // AIF-070 return leg (owner ruling 2026-08-12):
+            //   WORKSPACE WRITEBACK [<name>] [TO <root>] [CONFIRM]
+            // Default target is the catalog row's DBF_ROOT -- where the
+            // workspace came from. CONFIRM is required to replace existing
+            // files; the refusal lists what would be replaced first. Prior
+            // art for the keyword is ERASE ... CONFIRM.
+            std::string wsargs = trim_copy(rest_of_args);
+            bool confirmed = false;
+            bool withIndexes = false;
+            fs::path toRoot;
+
+            for (;;) {
+                const auto sp = wsargs.find_last_of(" \t");
+                if (sp == std::string::npos) break;
+                const std::string last = to_lower(trim_copy(wsargs.substr(sp + 1)));
+                if (last == "confirm" && !confirmed) {
+                    confirmed = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
+                } else if (last == "indexes" && !withIndexes) {
+                    withIndexes = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
+                    // absorb the WITH of "WITH INDEXES"
+                    const auto sp2 = wsargs.find_last_of(" \t");
+                    if (sp2 != std::string::npos &&
+                        to_lower(trim_copy(wsargs.substr(sp2 + 1))) == "with") {
+                        wsargs = trim_copy(wsargs.substr(0, sp2));
+                    }
+                } else break;
+            }
+            {
+                const std::string low = to_lower(wsargs);
+                const auto tp = low.rfind(" to ");
+                if (tp != std::string::npos) {
+                    toRoot = fs::path(trim_copy(wsargs.substr(tp + 4)));
+                    wsargs = trim_copy(wsargs.substr(0, tp));
+                }
+            }
+
+            if (wsargs.empty() && toRoot.empty()) {
+                std::cout << "WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]\n"
+                             "  Writes every table the POSTURE declares, plus each area's memo\n"
+                             "  sidecar, to disk -- the return leg of disk -> memo -> RAM -> disk.\n"
+                             "  The posture is the manifest: a table it declares that is not open\n"
+                             "  ABORTS the writeback rather than reporting a partial success.\n"
+                             "  Default target is the catalog row's DBF_ROOT (where it came from).\n"
+                             "  Reads are residence-aware, so a RAM working set writes out fine.\n"
+                             "  Index FILES are not written by default -- each table's index\n"
+                             "  choice (index=/indextype=) travels in the posture and is\n"
+                             "  rebuildable at the destination, mixed types preserved. WITH\n"
+                             "  INDEXES copies the attached container bytes as well.\n"
+                             "  Zero-byte sources abort; existing targets need CONFIRM and are\n"
+                             "  kept as .__wbak; every landed file is re-read and byte-compared.\n";
+            } else {
+                (void)ws_memo::writeback_to_disk(wsargs, toRoot, confirmed, withIndexes);
             }
 
         } else if (sub_command == "load") {
