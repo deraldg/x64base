@@ -54,6 +54,19 @@ That question points to a different center of gravity:
 - Metadata space for longer names, field/type evolution, diagnostics, and
   self-documentation.
 - A command-driven runtime that remains teachable and inspectable.
+- Workspaces as first-class data rather than as a session convenience.
+
+That last item is the newest and the least expected, so it is worth stating
+plainly. In the classic model a workspace is ambient: work areas exist while
+the program runs, and what persists are the tables. Here a workspace is a
+value -- serialized to text, stored in a table row like any other record,
+attributed to a member, versioned by an append-only supersede chain, and
+verified byte-for-byte when written. Once a workspace is a value, its payload
+can grow from *how to arrange the tables* into *the tables themselves*, and a
+row of an ordinary table can hold a whole small database. That is a
+consequence of the memo layer never inspecting what it stores, which is an
+old xBase virtue taken literally rather than a new invention. See
+[Workspaces](/docs/engine/workspaces).
 
 ## Historical Limits
 

@@ -27,6 +27,7 @@ export const docsSidebar: SidebarGroup[] = [
       { label: "DBF_64 Specification", href: "/docs/engine/dbf-64-specification" },
       { label: "FPT64 Memo Format", href: "/docs/engine/fpt64-memo-format" },
       { label: "RAM DBF and VDISK", href: "/docs/engine/ram-dbf-vdisk" },
+      { label: "Workspaces", href: "/docs/engine/workspaces" },
       { label: "Indexing Rules", href: "/docs/engine/indexing-rules" },
       { label: "CDX and LMDB Indexing", href: "/docs/engine/cdx-lmdb-indexing" },
       { label: "Pinocchio Benchmarks", href: "/docs/engine/pinocchio-benchmarks" },

@@ -1,0 +1,82 @@
+---
+title: "A table whose rows are databases"
+date: "2026-08-11"
+summary: "A workspace catalog grew into a table of databases -- and by evening a whole 13-table system was riding inside one memo field, hydrating into memory in 65 ms with no disk source at all."
+---
+
+The day began with a small favor: add a memo field to a students-shaped
+table, put a string in it, say hello. It ended with the students table living
+*inside* a memo field, alongside twelve of its neighbors and every index they
+use.
+
+## What landed
+
+**A table of databases.** The workspace catalog became a real metadata table:
+a unique id per saved workspace, the flavor measured from the open tables
+rather than declared, size and area counts, recursion-guard fields, lineage
+to the row each save superseded, the author as a real member identity, and
+the roots the data lived under. Saving again supersedes rather than
+overwrites, so the table carries its own history -- which makes the lineage
+chain, in practice, a commit log.
+
+**Postures that carry their own address.** A new opt-in snapshot version
+records the directories its tables and indexes live under, and a restore
+resolves against *those* rather than whatever environment happens to be set.
+The proof breaks the environment deliberately -- points the engine at the
+wrong directories -- and the workspace stands up anyway. The previous version
+stayed the default and untouched; the new lines are additive, and older
+readers skip them.
+
+**Sessions that resume where they stopped.** The same snapshot version
+records where every cursor sat and which area was selected. The standing
+proof drives a sales-order parent to its last record, saves, tears the whole
+workspace down, reloads, and finds parent and slaved child exactly where they
+were -- 43 cursors restored, then relations refreshed so children re-slave to
+the restored parents.
+
+**Databases that hydrate into memory.** A stored workspace can be stood up
+into the in-process RAM filesystem -- 24 files, 92 KB, in well under a tenth
+of a second -- and dropped again by unmounting, with the disk originals
+untouched. The residency claim is cross-checked rather than asserted: the
+copier's byte count and the RAM disk's own census agree exactly, every run.
+
+**And then the destination itself.** By evening, one save could carry the
+posture *and every table and index byte* as a single binary-safe container:
+the whole 13-table teaching database, 94 KB, inside one memo field,
+byte-compare verified as a unit. Loading it needs no disk at all -- onto a
+clean RAM disk, 24 files hydrated *from the memo* in 65 ms with zero disk
+reads, faster than the disk-sourced path because it is memory to memory.
+
+A database normally contains tables. Here a table contains databases.
+
+## Why it worked in one day
+
+Because almost none of it was new. The container needed binary safety --
+which an adversarial memo harness had already proven, months of generations
+against a shadow-model oracle, before anything binary existed to carry. It
+needed the payload to land anywhere -- which the self-locating snapshot
+already did. It needed a byte sink that honestly reports RAM residency --
+which the virtual disk already was. It needed versioning, attribution and
+verification -- which the catalog already had. The feature that answers "can a
+database live in a memo field?" is about a hundred and fifty lines long,
+because every hard part had been built earlier for a different reason.
+
+## What is not claimed
+
+The write-back cycle -- committing a memory-resident database back to disk --
+is designed and not built. Index environments that must map a real operating
+system file stay on disk by contract. Two workspaces cannot yet be resident
+at once, and the reasons are naming rather than memory: table references
+resolve by first match, so two systems that both contain a `STUDENTS` table
+would silently answer with the wrong one. Those hazards are measured and
+written down as entry conditions for that lane rather than discovered later.
+
+One correction from the same day is on the record too: an earlier
+demonstration claimed a RAM-built table with a memo wrote nothing to disk.
+The day's own residency tooling measured the memo's sidecar landing on real
+disk -- the table was in memory, the memo was not. The claim was corrected in
+place, and RAM coverage for the memo store is now a named prerequisite.
+
+Details: [Workspaces](/docs/engine/workspaces) ·
+[Proven capabilities](/docs/engine/proven-capabilities) ·
+[Schemas: a table of databases](/schemas)

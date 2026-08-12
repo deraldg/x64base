@@ -88,6 +88,13 @@ still applies unless specifically marked production-ready.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Work areas / DB areas | Yes | Yes | Yes | Yes | Runtime dependent | Yes | No |
 | Workspace wrapper over areas | Yes | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
+| Workspace snapshot to a plain-text file | Yes: `.dtschema` captures areas, index attachments, tag orders, aliases, and declared relations; one command restores 43 areas + 58 relations | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
+| Self-locating snapshot (carries its own data roots) | Yes, format v3: a restore resolves against the payload's roots, proven from a deliberately wrong environment | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Session state in the snapshot (cursor positions + selected area) | Yes, format v3: positions restored, then relations refreshed so children re-slave to restored parents | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Workspace stored *inside* a database table | Yes: `WORKSPACE SAVE <name> MEMO` writes the snapshot into a memo field of a self-creating catalog, attributed, versioned by supersede, byte-verified on write | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Whole small database carried in one memo field | Yes: `MINIDB` container carries posture + every table and index byte (94 KB for a 13-table system), oracle-verified as a unit | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Hydrate a stored database into RAM on demand | Yes: from disk or from the memo itself -- 24 files / 92 KB in the 65-95 ms range, census cross-checked, dropped by unmount | Not same claim | Not same claim | Not same claim | Not same claim | Not same claim | No |
+| Multiple workspaces simultaneously resident | No -- load is a swap, not co-residency; the naming and residency hazards are measured and registered before any build | Not same claim | Not same claim | Product/project dependent | Runtime dependent | Product dependent | No |
 | Relations (navigational model) | Yes: `REL`, relation tree, relation-aware browse; declared edges followed by traversal | Yes/xBase model | Yes | Yes | Runtime dependent | Yes/product dependent | No native |
 | SQL `SELECT` over native DBF tables | Partial: `SQLSEL SELECT` with `WHERE`, `ORDER BY`, `LIMIT`, `COUNT(*)`, oracle-verified against SQLite; no `JOIN` or `GROUP BY` yet | Vendor site lists "Native RDDs, SQL, ODBC" as connectivity features; SQL over local DBF not evidenced there | Unknown | Yes: Universal-SQL runs `SELECT`/`INSERT`/`UPDATE`/`DELETE` against a local or shared DBF table, per vendor feature list | Dialect model confirmed (a VFP dialect exists); SQL-over-DBF specifics Unknown | Unknown | No |
 | Tuple/grid relational view | Yes | App/library dependent | App/library dependent | Product/app dependent | App dependent | Product dependent | No |
@@ -162,6 +169,30 @@ ON CLICK DO save_customer
 This is a planned lane, not current runtime syntax. It would let future
 DotTalk++ scripts define small database applications that can target Arctic TUI
 first, then Parallel GUI/TUI, wxWidgets GUI, and web surfaces later.
+
+## Unique And Oddball Features
+
+The tables above compare like against like. This one does not: these are
+behaviors with no column to sit in, because no other project in the family
+appears to claim them. Some are genuinely novel; some are simply *odd*, kept
+because they turned out to be useful or because they teach something. Each
+states its evidence tier, and none of them is a reason to choose this project
+over a mature one.
+
+| Feature | What it is | Tier |
+| --- | --- | --- |
+| A table whose rows are databases | The workspace catalog is an ordinary table with an ordinary memo field, and a row's payload can be a whole database -- tables, indexes, posture, cursor positions. The inversion of the usual containment: a database contains tables; here a table contains databases | runtime-proven |
+| Databases that carry their own address | A saved workspace records the roots its tables live under, so restoring it does not depend on the environment being set correctly first. Proven by breaking the environment on purpose | runtime-proven |
+| A session you can resume exactly | Not just which tables were open -- where every cursor sat and which area was selected, restored and then relation-refreshed so children re-slave to restored parents | runtime-proven |
+| Hydrate a database into memory in ~70 ms | A stored database can be stood up in an in-process RAM filesystem, worked at memory speed, and dropped by unmounting. Rollback is an unmount; commit is a write-back (the latter still chartered) | runtime-proven (hydrate), chartered (write-back) |
+| Memos that never look at their payload | The memo store is payload-agnostic by design and proven so by an adversarial harness before it was ever asked to carry binary -- which is exactly why databases can ride in it now | runtime-proven |
+| A zoo as a test harness | The orthogonality proof is a seeded ecology of six "species" -- driver personas with names like Fawn and Serpent -- run for 20,500 generations against a shadow-model oracle. It came from an external AI's whimsical spec, mapped rather than adopted | runtime-proven |
+| Regressions that carry their own doctrine | Each regression entry stores not just what it tests but why it exists, what defect birthed it, and what it deliberately does *not* claim -- and the public list is generated from that same table, so it cannot flatter the engine | runtime-proven |
+| Tests that record when they were wrong | When a test's subject moves, the record says so rather than quietly retuning: a three-month-old memo canary was re-measured green by accident and its status updated in place, next to the original red expectations | runtime-proven |
+| Governance that measures itself | The project's rulings page is generated from canonical sources and once caught its own maintainers' hand-kept count drifting -- the derived figure won, and the incident is kept visible | runtime-proven |
+| A BBS inside the database engine | Boards, threads, posts, permissions and identity, implemented as ordinary tables and reachable from the shell and a loopback daemon -- the collaboration surface dogfoods the storage engine | source-evidenced |
+| A Bible verse on every startup | The banner prints a verse from a compiled-in SQLite carrier. It is also, incidentally, a working demonstration that the companion carrier is real and queryable at process start | runtime-proven, and yes, on purpose |
+| An engine that documents itself into its own tables | Command help, topics, and localization live in DBF tables the engine reads at runtime, and the manuals are generated from them -- the documentation is data the database serves about itself | runtime-proven |
 
 ## Summary Position
 

@@ -256,6 +256,85 @@ export default function SchemasPage() {
           likewise excluded from the logical schema catalog.
         </div>
       </section>
+
+      <section className="space-y-6 border-t border-border pt-10">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.22em] text-brand">the inversion</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight">A table of databases</h2>
+          <p className="mt-3 max-w-4xl leading-7 text-muted">
+            Every schema above describes a database made of tables. The catalog described here is the
+            other way round: <strong className="text-fg">a table whose rows are databases</strong>.
+            Not a registry that points at databases living elsewhere -- rows that carry them.
+          </p>
+        </div>
+
+        <div className="space-y-4 text-[15px] leading-7 text-muted">
+          <p>
+            The <span className="font-mono text-fg">WORKSPACES</span> catalog is an ordinary x64 table
+            with an ordinary memo field. Each row is one saved workspace: a unique id, the human name
+            you load it by, the flavor and format measured at save time, size, lineage to the row it
+            superseded, who saved it and when, and the roots its tables lived under. The memo field
+            holds the payload. What varies is how much of the database that payload is:
+          </p>
+          <ul className="ml-5 list-disc space-y-2">
+            <li>
+              <strong className="text-fg">A posture</strong> -- which tables, which indexes, which tag
+              orders, which relations, and where each cursor sat. Roughly a kilobyte for a
+              thirteen-table system. The tables stay on disk; the row describes how to stand them up.
+            </li>
+            <li>
+              <strong className="text-fg">A mini-database</strong> -- the posture <em>plus</em> every
+              table's bytes and every attached index's bytes, in one binary-safe container. Ninety-four
+              kilobytes for the same thirteen-table system. Nothing stays on disk; the row
+              <em> is </em>the database, and it can be stood up into memory with no disk source at all.
+            </li>
+          </ul>
+          <p>
+            That is the inversion worth sitting with. A database normally contains tables; here a table
+            contains databases, versioned by the same append-only history the engine gives any other
+            table, attributed to a real member, and verified byte-for-byte when written. Ordinary
+            database machinery -- rows, a memo field, a record lock, an append -- turns out to be enough
+            to hold databases, because nothing in the memo layer ever asked what it was storing.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card/45 p-6">
+          <h3 className="text-xl font-semibold tracking-tight text-fg">Why there is a Cascade-sized limit</h3>
+          <div className="mt-3 space-y-4 text-[15px] leading-7 text-muted">
+            <p>
+              A mini-database is deliberately <em>mini</em>, and Cascade -- 34 tables, 43 work areas --
+              is roughly the shape of the ceiling. Three real budgets set it, none of them arbitrary:
+            </p>
+            <ul className="ml-5 list-disc space-y-2">
+              <li>
+                <strong className="text-fg">Work areas.</strong> A hydrated workspace occupies engine
+                work-area slots, and the slot table is allocated eagerly rather than on demand. The
+                budget is a build-time vector, measured rather than guessed, and every simultaneous
+                workspace draws from the same pool.
+              </li>
+              <li>
+                <strong className="text-fg">Memory.</strong> Hydration puts the whole payload in RAM
+                twice at the moment of transfer -- once as the memo string, once as the virtual-disk
+                files. A container that would exceed the RAM budget must be refused, not attempted.
+              </li>
+              <li>
+                <strong className="text-fg">Honest carriage.</strong> Some things cannot ride at all:
+                LMDB index environments must map a real operating-system file, so they stay on disk by
+                contract rather than by preference.
+              </li>
+            </ul>
+            <p>
+              The governing rule is the house growth doctrine -- <em>strict first, then dynamic</em>.
+              A fixed, stated ceiling that refuses clearly beats an elastic one that degrades
+              mysteriously, and the elastic version is only earned once the fixed one has been
+              measured against real systems. Cascade is that measuring stick: big enough to be a real
+              ERP, small enough to prove the mechanism, and the reason a size-governance seam
+              (estimated hydration cost per row) exists as a column in the catalog before it exists as
+              an enforcement.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

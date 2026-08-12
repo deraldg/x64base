@@ -46,15 +46,24 @@ export function ThemeToggle() {
 
   const Icon = mode === "dark" ? Moon : mode === "system" ? Monitor : Sun;
 
+  // Owner report 2026-08-11: the toggle "went missing". Measured: it was in the
+  // built DOM the whole time. A bare 16px muted-grey glyph on a translucent
+  // card reads as decoration rather than a control, and in light mode it
+  // nearly vanishes -- so the defect was AFFORDANCE, not absence. Fixed with
+  // full-contrast foreground, a solid card, and a text label naming the
+  // current mode, so the control says what it is and what it will do next.
+  // `mode` starts "light" on server and client alike, so labelling it
+  // introduces no hydration mismatch.
   return (
     <button
       type="button"
       onClick={cycle}
       title={mounted ? `Theme: ${mode} — click for ${next}` : "Theme"}
       aria-label={mounted ? `Theme is ${mode}. Switch to ${next}.` : "Theme"}
-      className="inline-flex items-center justify-center rounded-xl border border-border bg-card/60 p-2 text-muted transition hover:text-fg"
+      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-2 text-fg transition hover:border-brand hover:text-brand"
     >
       <Icon size={16} />
+      <span className="text-xs font-medium capitalize">{mode}</span>
     </button>
   );
 }

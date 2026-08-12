@@ -1,0 +1,136 @@
+---
+title: "Workspaces"
+description: "What a workspace is, the full WORKSPACE command surface, the catalog that stores them, and the honest state of multiple and simultaneous workspaces."
+---
+
+A **workspace** is the shape of a working session: which tables are open in
+which work areas, which index containers are attached, which tag orders are
+selected, what aliases they answer to, which relations are declared between
+them, and -- since version 3 -- where every cursor sat and which area was
+selected. It is the difference between "the data" and "how the data is
+currently arranged for work."
+
+Workspaces are ordinary text or ordinary table rows. There is nothing
+proprietary in the middle.
+
+## The command surface
+
+`WORKSPACE SAVE <name> [MEMO] [V3] [MINIDB]` and
+`WORKSPACE LOAD <name> [MEMO] [RAM]`. The trailing keywords are modifiers,
+combinable in either order, and every one of them is opt-in -- the bare forms
+behave exactly as they always have.
+
+| Form | What it does |
+| --- | --- |
+| `WORKSPACE SAVE <file>` | writes a `.dtschema` text snapshot (format version 2) |
+| `WORKSPACE SAVE <file> V3` | version 3: adds measured flavor, its own dbf/index/lmdb roots, and session state |
+| `WORKSPACE SAVE <name> MEMO` | stores the snapshot in a memo field of the `WORKSPACES` catalog instead of a file |
+| `WORKSPACE SAVE <name> MEMO MINIDB` | stores the snapshot *and every table and index byte* as one container (implies V3) |
+| `WORKSPACE LOAD <file>` | restores from a text snapshot |
+| `WORKSPACE LOAD <name> MEMO` | restores from the catalog |
+| `WORKSPACE LOAD <name> MEMO RAM` | hydrates the tables into the RAM virtual disk, then restores against them |
+| `WORKSPACE CLOSE` | closes areas and clears relations |
+
+Two carriers, one format: the snapshot text is byte-identical whether it
+lands in a file or a memo field, because there is one serializer and one
+loader. A second writer would be a second truth, and the project has been
+bitten by exactly that before -- a parallel snapshot writer once claimed the
+same format version name for an incompatible layout, and reconciling it to a
+name of its own is recorded doctrine rather than a quiet cleanup.
+
+### Version 3, and why version 2 stays
+
+Version 3 is a superset: same body, extra declarative lines. Older readers
+skip lines they do not recognize, so a v3 snapshot degrades rather than
+breaks, and v2 remains the default so every proven path keeps working
+untouched. What v3 adds:
+
+- **Measured flavor** -- read from the open tables at save time, never
+  declared by hand. Disagreement among areas is reported as mixed rather
+  than averaged away.
+- **Its own roots** -- the snapshot records the directories its tables and
+  indexes live under, so a restore resolves against the *payload's* roots
+  rather than whatever environment happens to be set. The standing proof
+  deliberately points the engine at the wrong directories first; the
+  workspace still stands up.
+- **Session state** -- each area's physical record position and the selected
+  area. On restore they are applied and then relations are refreshed, so
+  children re-slave to the restored parent positions.
+
+### The catalog
+
+Memo-carried workspaces live in `WORKSPACES`, a self-creating x64 table in
+the workspaces root. Each row records a unique id, the name, the display
+schema name, measured flavor, OS-compatibility claim, payload format,
+size, the areas it opens, recursion-guard fields, the id of the row it
+superseded, the author (a real member identity), the timestamp, and the
+roots active at save. Saving again supersedes rather than overwrites, so the
+table keeps its own history -- and that lineage chain is, in practice, a
+commit log.
+
+Every memo save is verified: the payload is read back through the token
+stored *in the field* -- not the one held in memory -- and byte-compared. A
+field-width truncation once slipped past a memory-side check; it cannot
+again.
+
+## Multiple workspaces and simultaneous use
+
+Here the documentation has to be careful, because the honest answer has three
+parts.
+
+**What is true today.** Many workspaces can *exist* -- the catalog holds as
+many rows as you like, and today's teaching catalog holds well over a dozen.
+Any one of them can be loaded on demand, from a file, from a memo, or
+hydrated into RAM. But loading is a **swap, not co-residency**: `WORKSPACE
+LOAD` closes what is open and then restores the saved set. One workspace is
+live at a time.
+
+**What that costs.** For a single operator moving between systems -- open
+the ERP, work, save, open the college, work, save -- swapping is exactly
+right, and RAM hydration makes it fast. What it does not yet support is two
+schemas open side by side for comparison, which is the natural next want.
+
+**Why it is not simply switched on.** Co-residency is not a memory problem;
+it is a *naming* problem, and the hazards are known and written down before
+any code is committed to them:
+
+- **Name resolution.** Table references resolve by first match across open
+  areas. Open two systems that both contain a `STUDENTS` table and a join
+  resolves to whichever loaded first -- returning plausible wrong rows rather
+  than an error. This is the sharp one, and it argues for scoping names to a
+  workspace before allowing two.
+- **RAM residency.** Hydration flattens tables to filenames under one virtual
+  root, so two hydrated workspaces would both want the same `STUDENTS.dbf`
+  slot. A per-workspace subroot is cheap to decide now and a migration to
+  decide later.
+- **Relation scope.** Declared relations and their refresh are engine-wide
+  today. With two workspaces live, a refresh has no notion of whose graph it
+  belongs to.
+- **Work-area budget.** Slots are allocated eagerly and shared; two
+  workspaces draw from one pool.
+
+**What sharing means.** The RAM virtual disk is in-process. Another user, or
+another process, cannot see your hydrated workspace at all -- so sharing is
+necessarily an explicit act: write it back to disk, or send it. That is a
+constraint, but a clarifying one, because it puts locking exactly where it
+belongs -- at the moment work crosses back into shared storage, not around
+the private work itself.
+
+The design work for named, concurrent workspaces is registered as a lane with
+its costs already measured; these findings are its entry conditions rather
+than a to-do list written after the fact.
+
+## Evidence
+
+| Claim | Proof |
+| --- | --- |
+| posture round-trips through a file | `REGRESSION RUN CASCADE_ENV` (43 areas, 58 relations) |
+| posture round-trips through a memo, both walkers agree after | `WORKSPACE_MEMO` |
+| a v3 snapshot self-locates from a broken environment | `WORKSPACE_V3` |
+| a workspace hydrates into RAM, timed and census-checked | `WORKSPACE_RAM` |
+| cursors, selection, and refresh restore | `WORKSPACE_SESSION` |
+| a whole database rides in one memo field and hydrates from it | `WORKSPACE_MINIDB` |
+
+Related: [Proven capabilities](/docs/engine/proven-capabilities) ·
+[Schemas](/schemas) (the table of databases) ·
+[Regression and proof testing](/docs/engine/regression-and-proof-testing)
