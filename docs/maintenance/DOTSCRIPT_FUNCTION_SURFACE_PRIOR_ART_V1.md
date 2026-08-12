@@ -40,6 +40,65 @@ The evaluation was produced from public materials and matches the tree on
 every point. That accuracy is itself a data point for the AIF-108 cooperation
 experiment chartered the previous night.
 
+## 1b. Peer review: control flow (Grok, 2026-08-12)
+
+A second outside evaluation arrived the day after the first -- an xBase
+control-flow inventory versus the DotScript surface, **authored by
+member.ai.grok.xai and designated a peer review by the owner**. Verbatim
+text preserved at
+`docs/maintenance/external_ai_intake/dotscript_control_flow_review_2026-08-12/MANIFEST.md`.
+Same agency as the open Lane 1 assignment and the reserved AIF-102 -- Grok
+active in the peer-review role while that assignment stays open. Checked
+against the tree:
+**accurate on every presence/absence claim** -- IF/ELSE/ENDIF, LOOP n,
+WHILE/ENDWHILE, UNTIL/ENDUNTIL, SCAN/ENDSCAN present; DO CASE, loop
+EXIT/LOOP (break/continue), counted FOR, and FOR EACH absent; the
+single-buffered-SCAN limit real. Its design judgments also hold: SCAN as the
+first-class construct is the right priority for a database language, and
+explicit UNTIL beats the classic infinite-WHILE-plus-EXIT idiom for
+teaching.
+
+What outside analysis could not see, and cross-reading against the tree
+adds -- **three name-collision hazards for the "completeness items" it
+recommends**:
+
+1. **`EXIT` is taken -- it quits the shell.** `cmd_quit.cpp` declares
+   `aliases: EXIT` ("QUIT and EXIT share the same implementation"), and the
+   registry binds `EXIT` to `cmd_QUIT`. A classic loop-`EXIT` (break) would
+   collide with a session-terminating command -- the worst possible
+   collision, since the failure mode is a script killing the shell.
+   Any break keyword needs either context-sensitivity inside buffered
+   bodies or a different word.
+2. **`LOOP` is taken -- it opens a block.** Classic xBase `LOOP` means
+   *continue*; DotScript's `LOOP` *begins* a counted block. A continue
+   keyword must be something else (or context-resolved), and the manuals
+   should teach the divergence from classic explicitly.
+3. **`DO` is taken -- it runs scripts.** `DO mem`, `DO x64`,
+   `DO <script>` is the script invocation form, so classic `DO CASE` would
+   sit inside the script-runner's parse. A DotScript-faithful multi-way
+   branch is more plausibly bare `CASE ... OTHERWISE ... ENDCASE` --
+   period-adjacent, collision-free, same end-keyword style.
+
+Two nuances the evaluation missed, both already measured in 5c: WHILE and
+UNTIL are *record* loops (advance one record per iteration), not general
+conditional loops -- a general loop form is a real gap its inventory did not
+name; and `LOOP FOR <label>` already exists as an honestly-declared stub.
+
+On FOR EACH, the evaluation's sequencing instinct ("natural once the
+tuple-as-array work finishes") is already normative: arrays spec section 18
+rules that the first release needs no new loop syntax, sketches FOR EACH as
+MAY-add with syntax not yet normative, and requires structural-mutation
+detection during iteration -- for which the runtime's `mutation_sequence` /
+`structure_sequence` fields already exist on every ArrayValue. The outside
+recommendation and the inside spec agree, and the spec got there first with
+the guard rails.
+
+Disposition: control flow stays out of AIF-109's build scope (the evaluation
+itself ranks it "in good shape"); the three collisions are recorded here so
+no future CASE/EXIT/continue work starts without them; the counted-FOR and
+general-loop gaps ride the same call-frame lane review, since frames change
+what any new loop may enclose.
+
 ## 2. DEFFN and DEFCMD: seams built, evaluation absent
 
 Both exist, both are `status: experimental`, both are session-only and never
