@@ -17,6 +17,7 @@ export const docsSidebar: SidebarGroup[] = [
     label: "x64base Engine",
     items: [
       { label: "Architecture", href: "/docs/engine/architecture" },
+      { label: "Engine Specifications", href: "/docs/engine/specifications" },
       { label: "Proven Capabilities", href: "/docs/engine/proven-capabilities" },
       { label: "ACID and the Glass-Box Engine", href: "/docs/engine/acid-and-glass-box" },
       { label: "Runtime Footprint", href: "/docs/engine/runtime-footprint" },

@@ -1,0 +1,114 @@
+---
+title: "Engine Specifications"
+description: "The measurable shape of the x64base engine on one page: formats, ceilings, defaults, subsystems, and verification -- each figure with its source."
+---
+
+One page, the measurable facts. Figures are stated as of **2026-08-11** and
+carry their source; where a deeper reference page exists, this page gives the
+number and points rather than restating the mechanism. Nothing here is a
+roadmap item -- unbuilt things are marked chartered or absent, not implied.
+
+## Language, platform, license
+
+| Item | Value |
+| --- | --- |
+| Implementation language | C++20 |
+| Build systems | CMake presets; MSVC (Windows) and GCC/WSL (Linux) builds both exercised |
+| Library structure | separate compiled libraries: `xbase` (tables/areas), `xindex`, `memo`, `xexpr`, `dottalk_value`, `dottalk_tvui`, under the `dottalkpp` host |
+| Bundled carriers | SQLite (compiled in; 3.50.x observed at runtime), LMDB (index backend) |
+| License | GPL-3.0-only, declared at the repository root |
+| Optional bindings | `pydottalk` (pybind11) exposing a bounded native `DbArea` surface |
+
+## Table formats (three flavors, one engine)
+
+| Item | Value |
+| --- | --- |
+| Classic x32 | version bytes 0x03 / 0x83 / 0xF5 (dBASE / Fox lineages) |
+| Visual FoxPro | version bytes 0x30 / 0x31 / 0x32, incl. autoincrement and varchar headers; VFP currency supported |
+| x64 dialect | version byte 0x64; extended 64-bit header (`xbase_64`) |
+| Record addressing | 64-bit (`recno64` / `recCount64` authoritative; 32-bit accessors return -1 above INT32_MAX rather than clamping) |
+| Header sequence slot | `autoq_next` (64-bit next-autoincrement) present in the x64 header; hydrated at open; append-side wiring is a chartered lane, stated as such |
+| Long names | up to 256-byte table/field names in x64 metadata (ceiling raised from 128 in 2026-07; default 128), with classic 10-byte fallback descriptors -- two name planes, both real |
+| Field types | classic types plus binary `I`/`B`/`Y`/`T` via a register-once codec registry; custom types register through the same path |
+| Boundary proof | `X64_METRICS` regression exercises structure above the legacy 16-bit record/header geometry ceilings |
+
+Deeper: [DBF_64 Specification](/docs/engine/dbf-64-specification) ·
+[x64 Capacity Math](/docs/engine/x64-capacity-math) ·
+[DBF Flavors and Index Defaults](/docs/engine/dbf-flavors-and-indexes)
+
+## Memo subsystem
+
+| Item | Value |
+| --- | --- |
+| Store | DTX store, 64-bit object identifiers; canonical reference token is 16 hex characters |
+| Semantics | append-new: an update returns a NEW token; erase and reopen supported |
+| Payload policy | payload-agnostic -- the store never inspects contents; adversarially proven (seeded harness: 20,500 generations / 104,044 ops / embedded NUL and high bytes / 0 divergences across 4 seeds) |
+| Demonstrated cargo | plain text through whole binary databases (a 94 KB container carrying 13 tables + 11 indexes, verified byte-for-byte as a unit) |
+| Known boundary | the memo store performs its own file I/O and is not yet covered by the RAM virtual filesystem -- measured, recorded, and chartered as the prerequisite for true RAM-resident memos |
+
+Deeper: [FPT64 Memo Format](/docs/engine/fpt64-memo-format)
+
+## Index family
+
+| Item | Value |
+| --- | --- |
+| Containers | INX and CNX (classic generation, RUN1: 4-byte record numbers, table-authoritative ordering); CDX (x64 generation, RUN8: 8-byte) |
+| Engines | native maintenance and LMDB-backed keystore -- container format and maintenance engine are separate axes, chartered for full orthogonality |
+| Capacity gate | CNX refuses tables whose record count exceeds what 32-bit record numbers can address, with a corrective message naming CDX |
+| Realtime maintenance | CNX maintains order on REPLACE with no rebuild (proven); native CDX upsert/erase remain stubs on the RAM path -- reported as staleness, never silently |
+| Cross-flavor policy | an explicit CNX attaches to an x64 table with an advisory (proven); the mirror direction is chartered |
+| Transactional maintenance | `SET INDEXTXN`: buffered REPLACE/DELETE + COMMIT maintains the live index without rebuild (proven) |
+
+Deeper: [CDX / LMDB Indexing](/docs/engine/cdx-lmdb-indexing) ·
+[Indexing Rules](/docs/engine/indexing-rules)
+
+## Runtime model
+
+| Item | Value |
+| --- | --- |
+| Work areas | 512 slots (a compatibility default with no architectural upper bound; per-slot cost measured at ~1.3 KB, allocated eagerly) |
+| Relations | declared graph; traversal is refresh-driven; proven at 58 foreign-key relations over 43 open areas, walked by two independent consumers that agree by value |
+| SELECT | `SQLSEL`: WHERE, ORDER BY, LIMIT, COUNT(*), verified against an in-process SQLite oracle; no JOIN or GROUP BY yet, stated plainly |
+| Transactions | WAL-backed COMMIT / ROLLBACK on buffered writes (proven at the record level) |
+| Uniqueness | a uniqueness registry with declaration (SET UNIQUE), validation, and index-maintaining repair |
+| RAM virtual disk | in-process, path-keyed byte files; hosts tables and native CDX; LMDB excluded by its own mmap contract; census-reporting; budget config with sizing recommendation and soft high-water |
+| Locking | cross-process cooperative record/table locks, pid-stamped, with stale-owner recovery |
+| Identity | member identities with roles/permissions; writes attributed to a real member |
+
+## Workspaces
+
+| Item | Value |
+| --- | --- |
+| Snapshot formats | `DTSHEMA 2` (default), `DTSHEMA 3` (opt-in: measured flavor, own roots, cursor + selection state), `MINIDB 1` (container: posture + table and index bytes) |
+| Carriers | file or memo field -- one serializer, byte-identical text |
+| Catalog | self-creating `WORKSPACES` table: unique id, name, measured dimensions, size, recursion-guard fields, supersede lineage, author, timestamps, roots |
+| Verification | every memo save is read back through the token stored in the field and byte-compared |
+| Hydration | disk-to-RAM or memo-to-RAM (zero disk reads), timed on every run; ~70-95 ms for a 13-table / 92 KB set |
+| Simultaneity | one live workspace (load is a swap); co-residency blockers measured and registered, not discovered |
+
+Deeper: [Workspaces](/docs/engine/workspaces)
+
+## Verification surface
+
+| Item | Value |
+| --- | --- |
+| Curated regressions | 42 registered specs, 8 in the default suite; the registry stores each spec's doctrine, and the public list is generated from that same table |
+| Oracles in use | SQLite (row sets), shadow-model byte-compare (memo store), read-from-the-field byte-compare (workspace saves), census cross-check (RAM residency), derived-vs-declared reconciliation (governance) |
+| Proof style | field-value markers in transcripts; a build stamp on every proof; corrections recorded in place rather than erased |
+
+Deeper: [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) ·
+[Proven Capabilities](/docs/engine/proven-capabilities)
+
+## Command and documentation surface
+
+| Item | Value |
+| --- | --- |
+| Registered commands | 243 in the runtime registry; 212 promoted to the SYSCMD catalog (the gap is policy exclusions, listed by the gate that measures it) |
+| Functions | 74 implemented function specs, catalog-reconciled 74/74 |
+| Self-documentation | HELP content, topics, and localization live in DBF tables the engine reads; manuals are generated from them; a cross-authority gate reconciles registry, catalog, help, and reflection on every gated commit |
+| Localization | localized command surface proven for es/fr/de/it via the LANGUAGE regression |
+
+*Figures on this page that can drift (counts, ceilings, versions) are
+maintained against the same gates that measure them; if a number here
+disagrees with a gate transcript, the transcript wins and this page is the
+one that gets corrected.*

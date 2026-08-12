@@ -1,60 +1,68 @@
 ---
 title: "x64base Engine"
-description: "DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."
+description: "A C++20 DBF-family database engine: three table flavors, a 64-bit format lane, an index family, payload-agnostic memos, workspaces, and a verification culture. Complete map below."
 ---
 
-## Overview
+The engine is the base of everything on this site: a C++20 runtime that
+opens, indexes, relates, validates, and scripts DBF-family data -- classic
+x32, Visual FoxPro, and the project's own 64-bit x64 format -- under the
+DotTalk++ command shell. It is active beta, stated plainly, and its habit is
+to prove behavior with regressions and oracles rather than describe it.
 
-x64base is the database/runtime side of the DotTalk++ system. In the local source tree it is best described as active beta engine work, not a finished standalone commercial product.
+This page is the map. Each panel below is one aspect of the engine and links
+to the page that covers it completely -- the detail lives there, not here.
 
-The current engine reality includes:
+## Start here
 
-- DBF-style table handling.
-- x32 and x64-family table work.
-- field typing, validation, cursor state, record movement, and work areas.
-- memo subsystem work through `MemoRef`, `MemoManager`, `MemoObject`, and `MemoStore` concepts.
-- INX, CNX, CDX, and LMDB-backed index work.
-- data dictionary and metadata catalog readers.
-- command-shell integration through DotTalk++.
-- optional native Python access through a bounded `pydottalk` binding.
+| Panel | What you will find |
+| --- | --- |
+| **[Engine Specifications](/docs/engine/specifications)** | The measurable shape on one page: formats, ceilings, defaults, subsystems, verification -- every figure with its source |
+| **[Proven Capabilities](/docs/engine/proven-capabilities)** | The distinctive behaviors, each with its evidence tier and its proof named -- including the corrections |
+| **[Architecture](/docs/engine/architecture)** | The layering: libraries, command host, seams, and why every boundary is a real compilation boundary |
 
-## What is proven versus active
+## The storage layer
 
-Use "runtime-proven" only when a smoke path or command surface has current evidence. Use "active", "partial", "experimental", or "canary" where the local project says the feature is still being integrated.
+| Panel | What you will find |
+| --- | --- |
+| [DBF_64 Specification](/docs/engine/dbf-64-specification) | The 64-bit table format: header, geometry, record addressing |
+| [x64 Capacity Math](/docs/engine/x64-capacity-math) | What the widened fields actually buy, computed rather than asserted |
+| [DBF Flavors and Index Defaults](/docs/engine/dbf-flavors-and-indexes) | x32 / VFP / x64 recognition and per-flavor index policy |
+| [FPT64 Memo Format](/docs/engine/fpt64-memo-format) | 64-bit memos: object ids, append-new semantics, payload agnosticism |
+| [CDX / LMDB Indexing](/docs/engine/cdx-lmdb-indexing) | The index family and the LMDB-backed keystore |
+| [Indexing Rules](/docs/engine/indexing-rules) | Attach, rebuild, order, and seek behavior as policy |
 
-Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.
+## The runtime
 
-## Python integration
+| Panel | What you will find |
+| --- | --- |
+| [Workspaces](/docs/engine/workspaces) | Sessions as values: snapshots, the catalog, RAM hydration, databases inside memo fields -- and the honest state of simultaneous use |
+| [RAM DBF and VDISK](/docs/engine/ram-dbf-vdisk) | The in-process RAM filesystem: tables and indexes with zero files on disk |
+| [ACID and the Glass-Box Engine](/docs/engine/acid-and-glass-box) | What is transactional, what is cooperative, and what is deliberately visible |
+| [Error Codes](/docs/engine/error-codes) | The error surface |
+| [API Reference](/docs/engine/api-reference) | The programmable seams |
+| [Python Integration](/docs/engine/python-integration) | `pydottalk` and its boundaries |
 
-The optional `pydottalk` pybind11 module exposes a selected native `DbArea`
-surface to Python. Current smoke paths cover DBF readback and physical CRUD on a
-disposable copy. It is distinct from both the DotTalk++ command shell and the
-Laboratory Campus `pydottalk_api` / pycrud prototypes.
+## Verification
 
-See [Python Integration: pydottalk, pydottalk_api, and
-pycrud](/docs/engine/python-integration).
+| Panel | What you will find |
+| --- | --- |
+| [Regression and Proof Testing](/docs/engine/regression-and-proof-testing) | The curated suite, generated from the engine's own registry so it cannot drift |
+| [Runtime Footprint](/docs/engine/runtime-footprint) | What actually ships: one executable, two carrier DLLs |
 
-## Runtime payload
+## Context
 
-The observed Windows release payload separates the main DotTalk++ executable
-from the embedded data-engine DLLs:
+| Panel | What you will find |
+| --- | --- |
+| [xBase Ecosystem Context](/docs/engine/xbase-ecosystem-context) | Where this sits among Harbour, xHarbour, Xbase++, XSharp, and the DBF tool families |
+| [Ecosystem Feature Comparison](/docs/engine/ecosystem-feature-comparison) | The like-for-like tables -- and the unique-and-oddball table for the behaviors with no column to sit in |
+| [Schemas](/schemas) | The teaching systems the engine runs, ending with the table whose rows are databases |
+| [Current Project Truth](/docs/dev/project-truth) | Status, honestly |
 
-- `dottalkpp.exe` - command/runtime host and canonical shell surface.
-- `lmdb.dll` - LMDB backend dependency for LMDB-backed index environments.
-- `sqlite3.dll` - SQLite dependency for SQL and SQLite lanes.
+## Reading the status language
 
-The executable is larger than the two DLLs because it contains the x64base
-command surface, engine integration, scripting, SelfDoc/HELP, metadata,
-workspace, relation, browser, and TUI-enabled runtime logic.
-
-See [Runtime Footprint and Dependencies](/docs/engine/runtime-footprint).
-
-## References
-
-- [Current Project Truth](/docs/dev/project-truth)
-- [Architecture](/docs/engine/architecture)
-- [Runtime Footprint](/docs/engine/runtime-footprint)
-- [Indexing Rules](/docs/engine/indexing-rules)
-- [Error Codes](/docs/engine/error-codes)
-- [API Reference](/docs/engine/api-reference)
-- [Python Integration](/docs/engine/python-integration)
+One convention makes every page above trustworthy: claims carry tiers.
+**Runtime-proven** means a transcript or regression shows it.
+**Source-evidenced** means the mechanism is confirmed in source but the
+end-to-end run has not happened. **Chartered** means designed and registered,
+not built. Absent means absent. Complete is not bragging when it is true --
+and the tier system is what keeps it true.
