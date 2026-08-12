@@ -487,6 +487,19 @@ General implementation conventions:
   form of a small act is free -- the location-proof command, the scoped add,
   the measured number -- the correct form is mandatory. Convenience is not a
   reason. Full entry: `labtalk/ai_portal/AI_GLOSSARY_V1.md`.
+- Always check for prior art AND dogfood (owner rule, 2026-08-12). Two
+  questions before building anything, asked together: has the house already
+  solved this or the shape of this (prior art -- AIF-078's rule, AIF-085's
+  "already built?"), and should the HOUSE be the one doing this (dogfood --
+  does an engine capability, a house pattern, or a governed permission fit
+  where an outside tool is about to be bolted on)? Founding instance: an
+  SMTP notifier was built as a loose PowerShell script and failed three
+  probes before the owner pointed at cmd_net/cmd_security/cmd_user -- the
+  house pattern for permissioned host actions (permission key, AI members
+  denied by default, reasons recorded) that notification should have been
+  designed against from the first minute. The counter-examples prove the
+  rule's value: the same day's function-surface pass asked prior-art FIRST
+  and shrank three "critical gaps" to one mechanism and one function.
 
 ## Minimal New-AI Checklist
 

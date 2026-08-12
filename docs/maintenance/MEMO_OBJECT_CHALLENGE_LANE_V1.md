@@ -337,6 +337,19 @@ they matter:
    owner's standing grant; attribution enforcement is visible in the
    historical unattributed posts versus the attributed assignment.
 
+**Notification as a governed capability (chartered here, 2026-08-12):** the
+interim mail notifier is a scheduled script holding a DPAPI credential --
+functional, but outside the house. The owner's pointer to
+`cmd_net` / `cmd_security` / `cmd_user` names the pattern notification should
+grow into: a `host.notify.email` permission key on the NET EGRESS model
+(denied to AI members by default, owner-grantable via USER REQUEST, every
+invocation attributed and reason-carrying, auditable on the governance
+board). The credential never moves -- what becomes house-governed is the
+RIGHT to trigger sending. Challenge tie-in: an external agent asking
+`USER REQUEST host.notify.email` and being told no is the system working,
+and belongs in the M4 report if it happens. Chartered, not built; the
+interim script stands until this lands.
+
 **The structural fix, owner-ruled the same hour ("a scheduled task"):**
 reading the mail is now a standing job, not a virtue --
 `dottalkpp/data/scripts/bbs_mail_check.dts` (reads every seeded board;
