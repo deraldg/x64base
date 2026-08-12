@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-12T11:35:47Z
+    generated_utc : 2026-08-12T11:38:25Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : eeaa41e89  (2026-08-12)
-    upstream      : eeaa41e89
+    HEAD          : 083016b3a  (2026-08-12)
+    upstream      : 083016b3a
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,18 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md
-    commits behind HEAD : 37
+    commits behind HEAD : 38
 
 ## Staleness warnings
 
-- The newest closeout is 37 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-110. Same shape as AIF-062/078/080.
+- The newest closeout is 38 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-110 | fieldmgr_x64m_identity | member.derald | **MISSING** |
+| AIF-110 | fieldmgr_x64m_identity | member.derald | yes |
 | AIF-109 | dotscript-product-gaps | member.ai.claude.cowork | yes |
 | AIF-108 | memo-object-challenge | member.ai.claude.cowork | yes |
 | AIF-107 | low-key-entry-surface | member.ai.claude.cowork | yes |
