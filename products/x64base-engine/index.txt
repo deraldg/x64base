@@ -1,17 +1,17 @@
 1:"$Sreact.fragment"
-2:I[62319,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
-3:I[39756,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-4:I[37457,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
-c:I[68027,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
+2:I[62319,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"Navbar"]
+3:I[39756,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+4:I[37457,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default"]
+c:I[68027,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"default",1]
 :HL["/_next/static/chunks/2q42eym_83ii-.css","style"]
 :HL["/_next/static/media/70bc3e132a0a741e-s.p.3t6q91iet4nsy.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"P":null,"c":["","products","x64base-engine",""],"q":"","i":false,"f":[[["",{"children":["products",{"children":[["slug","x64base-engine","d",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2q42eym_83ii-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/1-30yhn-6zqn3.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"}}],["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":[["$","span",null,{"className":"font-mono text-brand","children":"WEBSITE ALPHA"}]," · ",["$","span",null,{"className":"text-fg","children":"AI-assisted, source-reviewed documentation"}]," · ","Full-stack docs reconciled ","2026-08-05",null]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","data-pagefind-body":true,"children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=c4509a6632e7","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication/?v=c4509a6632e7","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=c4509a6632e7","children":"Downloads"}]]}],["$","div",null,{"className":"mt-4","children":[["$","div",null,{"className":"text-xs font-semibold uppercase tracking-wide text-muted","children":"Credits & Contributors"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors/?v=c4509a6632e7","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements/?v=c4509a6632e7","children":"Third-party credits"}]]}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/?v=c4509a6632e7","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products/?v=c4509a6632e7","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=c4509a6632e7","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news/?v=c4509a6632e7","children":"News"}],"$L5"]}]]}],"$L6"]}]}]]}]}]]}],{"children":["$L7",{"children":["$L8",{"children":["$L9",{},null,false,null]},null,false,"$@a"]},null,false,"$@a"]},null,false,null],"$Lb",false]],"m":"$undefined","G":["$c",["$Ld"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"UvuYcfZc0W7heoB2Y7Qvt"}
-f:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
+0:{"P":null,"c":["","products","x64base-engine",""],"q":"","i":false,"f":[[["",{"children":["products",{"children":[["slug","x64base-engine","d",null],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2q42eym_83ii-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/2h67echogu_yr.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/14mumt5_n0xhi.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"inter_5901b7c6-module__ec5Qua__variable jetbrains_mono_eaae45be-module__q-fJ7q__variable","children":["$","body",null,{"className":"min-h-screen","children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"}}],["$","div",null,{"className":"border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted","children":[["$","span",null,{"className":"font-mono text-brand","children":"WEBSITE ALPHA"}]," · ",["$","span",null,{"className":"text-fg","children":"AI-assisted, source-reviewed documentation"}]," · ","Full-stack docs reconciled ","2026-08-05",null]}],["$","$L2",null,{}],["$","main",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","data-pagefind-body":true,"children":["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","div",null,{"className":"space-y-6","children":[["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"Page not found"}],["$","p",null,{"className":"text-muted","children":"The page you requested does not exist (or hasn’t been published yet)."}],["$","a",null,{"className":"inline-flex rounded-2xl border border-border bg-bg/30 px-4 py-2 text-sm font-semibold hover:bg-bg/40","href":"/?v=8f5f325bee70","children":"Back to home"}]]}],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","footer",null,{"className":"border-t border-border bg-bg/40","children":["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 py-10","children":[["$","div",null,{"className":"flex flex-col gap-6 md:flex-row md:items-start md:justify-between","children":[["$","div",null,{"className":"max-w-xl","children":[["$","div",null,{"className":"font-semibold","children":"x64base"}],["$","p",null,{"className":"mt-2 text-sm text-muted","children":"A modern 64-bit research evolution of the xBase lineage. Born in 1993. Reimagined for 2026."}],["$","div",null,{"className":"mt-4 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"href":"https://github.com/deraldg/x64base","target":"_blank","rel":"noreferrer","className":"text-muted hover:text-fg","children":"GitHub: x64base"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/selfdoc-website-publication/?v=8f5f325bee70","children":"SelfDoc → Website"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=8f5f325bee70","children":"Downloads"}]]}],["$","div",null,{"className":"mt-4","children":[["$","div",null,{"className":"text-xs font-semibold uppercase tracking-wide text-muted","children":"Credits & Contributors"}],["$","div",null,{"className":"mt-2 flex flex-wrap gap-4 text-xs","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/about/contributors/?v=8f5f325bee70","children":"Contributors"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/dev/third-party-acknowledgements/?v=8f5f325bee70","children":"Third-party credits"}]]}]]}]]}],["$","div",null,{"className":"grid grid-cols-2 gap-3 text-sm","children":[["$","a",null,{"className":"text-muted hover:text-fg","href":"/docs/?v=8f5f325bee70","children":"Documentation"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/products/?v=8f5f325bee70","children":"Products"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/downloads/?v=8f5f325bee70","children":"Downloads"}],["$","a",null,{"className":"text-muted hover:text-fg","href":"/news/?v=8f5f325bee70","children":"News"}],"$L5"]}]]}],"$L6"]}]}]]}]}]]}],{"children":["$L7",{"children":["$L8",{"children":["$L9",{},null,false,null]},null,false,"$@a"]},null,false,"$@a"]},null,false,null],"$Lb",false]],"m":"$undefined","G":["$c",["$Ld"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"6zPQRF7amL2tNemwW1OL1"}
+f:I[97367,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"OutletBoundary"]
 10:"$Sreact.suspense"
-13:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
-15:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
-5:["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact/?v=c4509a6632e7","children":"Contact"}]
+13:I[97367,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"ViewportBoundary"]
+15:I[97367,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"MetadataBoundary"]
+5:["$","a",null,{"className":"text-muted hover:text-fg","href":"/contact/?v=8f5f325bee70","children":"Contact"}]
 6:["$","div",null,{"className":"mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between","children":[["$","span",null,{"children":["© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a ",["$","a",null,{"href":"/licensing","className":"hover:text-fg hover:underline","children":"commercial license"}],"."]}],["$","span",null,{"className":"font-mono","children":"DBF_64 • FPT64 • Indexing • Education-first"}]]}]
 7:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
 8:["$","$1","c",{"children":[null,["$","$L3",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L4",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
@@ -20,52 +20,160 @@ f:I[97367,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5
 a:"$W12"
 b:["$","$1","h",{"children":[null,["$","$L13",null,{"children":"$L14"}],["$","div",null,{"hidden":true,"children":["$","$L15",null,{"children":["$","$10",null,{"name":"Next.Metadata","children":"$L16"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
 d:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2q42eym_83ii-.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
-17:Tcc3,<h2 id="overview"><a class="no-underline" href="#overview">Overview</a></h2>
-<p>x64base is the database/runtime side of the DotTalk++ system. In the local source tree it is best described as active beta engine work, not a finished standalone commercial product.</p>
-<p>The current engine reality includes:</p>
-<ul>
-<li>DBF-style table handling.</li>
-<li>x32 and x64-family table work.</li>
-<li>field typing, validation, cursor state, record movement, and work areas.</li>
-<li>memo subsystem work through <code>MemoRef</code>, <code>MemoManager</code>, <code>MemoObject</code>, and <code>MemoStore</code> concepts.</li>
-<li>INX, CNX, CDX, and LMDB-backed index work.</li>
-<li>data dictionary and metadata catalog readers.</li>
-<li>command-shell integration through DotTalk++.</li>
-<li>optional native Python access through a bounded <code>pydottalk</code> binding.</li>
-</ul>
-<h2 id="what-is-proven-versus-active"><a class="no-underline" href="#what-is-proven-versus-active">What is proven versus active</a></h2>
-<p>Use "runtime-proven" only when a smoke path or command surface has current evidence. Use "active", "partial", "experimental", or "canary" where the local project says the feature is still being integrated.</p>
-<p>Current active areas include CDX/LMDB lifecycle work, memo backend proof, SYS* metadata congruence, and GUI/runtime bridging.</p>
-<h2 id="python-integration"><a class="no-underline" href="#python-integration">Python integration</a></h2>
-<p>The optional <code>pydottalk</code> pybind11 module exposes a selected native <code>DbArea</code>
-surface to Python. Current smoke paths cover DBF readback and physical CRUD on a
-disposable copy. It is distinct from both the DotTalk++ command shell and the
-Laboratory Campus <code>pydottalk_api</code> / pycrud prototypes.</p>
-<p>See <a href="/docs/engine/python-integration">Python Integration: pydottalk, pydottalk_api, and
-pycrud</a>.</p>
-<h2 id="runtime-payload"><a class="no-underline" href="#runtime-payload">Runtime payload</a></h2>
-<p>The observed Windows release payload separates the main DotTalk++ executable
-from the embedded data-engine DLLs:</p>
-<ul>
-<li><code>dottalkpp.exe</code> - command/runtime host and canonical shell surface.</li>
-<li><code>lmdb.dll</code> - LMDB backend dependency for LMDB-backed index environments.</li>
-<li><code>sqlite3.dll</code> - SQLite dependency for SQL and SQLite lanes.</li>
-</ul>
-<p>The executable is larger than the two DLLs because it contains the x64base
-command surface, engine integration, scripting, SelfDoc/HELP, metadata,
-workspace, relation, browser, and TUI-enabled runtime logic.</p>
-<p>See <a href="/docs/engine/runtime-footprint">Runtime Footprint and Dependencies</a>.</p>
-<h2 id="references"><a class="no-underline" href="#references">References</a></h2>
-<ul>
-<li><a href="/docs/dev/project-truth">Current Project Truth</a></li>
-<li><a href="/docs/engine/architecture">Architecture</a></li>
-<li><a href="/docs/engine/runtime-footprint">Runtime Footprint</a></li>
-<li><a href="/docs/engine/indexing-rules">Indexing Rules</a></li>
-<li><a href="/docs/engine/error-codes">Error Codes</a></li>
-<li><a href="/docs/engine/api-reference">API Reference</a></li>
-<li><a href="/docs/engine/python-integration">Python Integration</a></li>
-</ul>e:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=c4509a6632e7","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=c4509a6632e7","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/x64base-engine",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/x64base-engine/?v=c4509a6632e7","children":"x64base Engine"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"x64base Engine"}],["$","p",null,{"className":"mt-2 text-muted","children":"DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$17"},"children":null}]}]]}]
+17:T15a2,<p>The engine is the base of everything on this site: a C++20 runtime that
+opens, indexes, relates, validates, and scripts DBF-family data -- classic
+x32, Visual FoxPro, and the project's own 64-bit x64 format -- under the
+DotTalk++ command shell. It is active beta, stated plainly, and its habit is
+to prove behavior with regressions and oracles rather than describe it.</p>
+<p>This page is the map. Each panel below is one aspect of the engine and links
+to the page that covers it completely -- the detail lives there, not here.</p>
+<h2 id="start-here"><a class="no-underline" href="#start-here">Start here</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Panel</th><th>What you will find</th></tr></thead><tbody><tr><td><strong><a href="/docs/engine/specifications">Engine Specifications</a></strong></td><td>The measurable shape on one page: formats, ceilings, defaults, subsystems, verification -- every figure with its source</td></tr><tr><td><strong><a href="/docs/engine/proven-capabilities">Proven Capabilities</a></strong></td><td>The distinctive behaviors, each with its evidence tier and its proof named -- including the corrections</td></tr><tr><td><strong><a href="/docs/engine/architecture">Architecture</a></strong></td><td>The layering: libraries, command host, seams, and why every boundary is a real compilation boundary</td></tr></tbody></table>
+<h2 id="the-storage-layer"><a class="no-underline" href="#the-storage-layer">The storage layer</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Panel</th><th>What you will find</th></tr></thead><tbody><tr><td><a href="/docs/engine/dbf-64-specification">DBF_64 Specification</a></td><td>The 64-bit table format: header, geometry, record addressing</td></tr><tr><td><a href="/docs/engine/x64-capacity-math">x64 Capacity Math</a></td><td>What the widened fields actually buy, computed rather than asserted</td></tr><tr><td><a href="/docs/engine/dbf-flavors-and-indexes">DBF Flavors and Index Defaults</a></td><td>x32 / VFP / x64 recognition and per-flavor index policy</td></tr><tr><td><a href="/docs/engine/fpt64-memo-format">FPT64 Memo Format</a></td><td>64-bit memos: object ids, append-new semantics, payload agnosticism</td></tr><tr><td><a href="/docs/engine/cdx-lmdb-indexing">CDX / LMDB Indexing</a></td><td>The index family and the LMDB-backed keystore</td></tr><tr><td><a href="/docs/engine/indexing-rules">Indexing Rules</a></td><td>Attach, rebuild, order, and seek behavior as policy</td></tr></tbody></table>
+<h2 id="the-runtime"><a class="no-underline" href="#the-runtime">The runtime</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Panel</th><th>What you will find</th></tr></thead><tbody><tr><td><a href="/docs/engine/workspaces">Workspaces</a></td><td>Sessions as values: snapshots, the catalog, RAM hydration, databases inside memo fields -- and the honest state of simultaneous use</td></tr><tr><td><a href="/docs/engine/ram-dbf-vdisk">RAM DBF and VDISK</a></td><td>The in-process RAM filesystem: tables and indexes with zero files on disk</td></tr><tr><td><a href="/docs/engine/acid-and-glass-box">ACID and the Glass-Box Engine</a></td><td>What is transactional, what is cooperative, and what is deliberately visible</td></tr><tr><td><a href="/docs/engine/error-codes">Error Codes</a></td><td>The error surface</td></tr><tr><td><a href="/docs/engine/api-reference">API Reference</a></td><td>The programmable seams</td></tr><tr><td><a href="/docs/engine/python-integration">Python Integration</a></td><td><code>pydottalk</code> and its boundaries</td></tr></tbody></table>
+<h2 id="verification"><a class="no-underline" href="#verification">Verification</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Panel</th><th>What you will find</th></tr></thead><tbody><tr><td><a href="/docs/engine/regression-and-proof-testing">Regression and Proof Testing</a></td><td>The curated suite, generated from the engine's own registry so it cannot drift</td></tr><tr><td><a href="/docs/engine/runtime-footprint">Runtime Footprint</a></td><td>What actually ships: one executable, two carrier DLLs</td></tr></tbody></table>
+<h2 id="context"><a class="no-underline" href="#context">Context</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Panel</th><th>What you will find</th></tr></thead><tbody><tr><td><a href="/docs/engine/xbase-ecosystem-context">xBase Ecosystem Context</a></td><td>Where this sits among Harbour, xHarbour, Xbase++, XSharp, and the DBF tool families</td></tr><tr><td><a href="/docs/engine/ecosystem-feature-comparison">Ecosystem Feature Comparison</a></td><td>The like-for-like tables -- and the unique-and-oddball table for the behaviors with no column to sit in</td></tr><tr><td><a href="/schemas">Schemas</a></td><td>The teaching systems the engine runs, ending with the table whose rows are databases</td></tr><tr><td><a href="/docs/dev/project-truth">Current Project Truth</a></td><td>Status, honestly</td></tr></tbody></table>
+<h2 id="reading-the-status-language"><a class="no-underline" href="#reading-the-status-language">Reading the status language</a></h2>
+<p>One convention makes every page above trustworthy: claims carry tiers.
+<strong>Runtime-proven</strong> means a transcript or regression shows it.
+<strong>Source-evidenced</strong> means the mechanism is confirmed in source but the
+end-to-end run has not happened. <strong>Chartered</strong> means designed and registered,
+not built. Absent means absent. Complete is not bragging when it is true --
+and the tier system is what keeps it true.</p>e:["$","div",null,{"children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6 text-sm text-muted","children":["$","ol",null,{"className":"flex flex-wrap items-center gap-2","children":[["$","li","/",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/?v=8f5f325bee70","children":"Home"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/?v=8f5f325bee70","children":"Products"}],["$","span",null,{"className":"text-border","children":"/"}]]}],["$","li","/products/x64base-engine",{"className":"flex items-center gap-2","children":[["$","a",null,{"className":"hover:text-fg","href":"/products/x64base-engine/?v=8f5f325bee70","children":"x64base Engine"}],null]}]]}]}],["$","h1",null,{"className":"text-3xl font-semibold tracking-tight","children":"x64base Engine"}],["$","p",null,{"className":"mt-2 text-muted","children":"A C++20 DBF-family database engine: three table flavors, a 64-bit format lane, an index family, payload-agnostic memos, workspaces, and a verification culture. Complete map below."}],["$","div",null,{"className":"mt-8","children":["$","article",null,{"className":"prose dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-code:break-words prose-code:whitespace-normal prose-code:rounded prose-code:bg-bg/50 prose-code:px-1 prose-code:py-0.5 prose-pre:border prose-pre:border-border prose-pre:bg-bg/30","dangerouslySetInnerHTML":{"__html":"$17"},"children":null}]}]]}]
 14:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-18:I[27201,["/_next/static/chunks/1-30yhn-6zqn3.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
+18:I[27201,["/_next/static/chunks/2h67echogu_yr.js","/_next/static/chunks/14mumt5_n0xhi.js"],"IconMark"]
 11:null
-16:[["$","title","0",{"children":"x64base Engine — x64base"}],["$","meta","1",{"name":"description","content":"DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/products/x64base-engine/"}],["$","meta","3",{"property":"og:title","content":"x64base Engine"}],["$","meta","4",{"property":"og:description","content":"DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/products/x64base-engine/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"x64base Engine"}],["$","meta","12",{"name":"twitter:description","content":"DBF-style runtime, x64-family table work, indexing, memos, work areas, and validation."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L18","17",{}]]
+16:[["$","title","0",{"children":"x64base Engine — x64base"}],["$","meta","1",{"name":"description","content":"A C++20 DBF-family database engine: three table flavors, a 64-bit format lane, an index family, payload-agnostic memos, workspaces, and a verification culture. Complete map below."}],["$","link","2",{"rel":"canonical","href":"https://x64base.com/products/x64base-engine/"}],["$","meta","3",{"property":"og:title","content":"x64base Engine"}],["$","meta","4",{"property":"og:description","content":"A C++20 DBF-family database engine: three table flavors, a 64-bit format lane, an index family, payload-agnostic memos, workspaces, and a verification culture. Complete map below."}],["$","meta","5",{"property":"og:url","content":"https://x64base.com/products/x64base-engine/"}],["$","meta","6",{"property":"og:image","content":"https://x64base.com/og.svg"}],["$","meta","7",{"property":"og:image:width","content":"1200"}],["$","meta","8",{"property":"og:image:height","content":"630"}],["$","meta","9",{"property":"og:image:alt","content":"x64base"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"x64base Engine"}],["$","meta","12",{"name":"twitter:description","content":"A C++20 DBF-family database engine: three table flavors, a 64-bit format lane, an index family, payload-agnostic memos, workspaces, and a verification culture. Complete map below."}],["$","meta","13",{"name":"twitter:image","content":"https://x64base.com/og.svg"}],["$","link","14",{"rel":"shortcut icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","link","15",{"rel":"icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg","type":"image/jpeg"}],["$","link","16",{"rel":"apple-touch-icon","href":"/images/brand/x64base-smiling-database-site-icon.jpg"}],["$","$L18","17",{}]]
