@@ -220,10 +220,41 @@ having already done it, in pieces, each proven alone.
   container bytes. Part B's remaining half is the fixture side: MCC
   flavors regenerated with NOTES M so the CANONICAL workspace exercises
   this path, not just the regression's throwaway table.
-- **Writeback lane** (verbs ruled, name pending): a hydrated mini-database
-  that commits back to DISK is a database EXTRACTED from a memo -- the
-  export direction. Writeback and MINIDB together close the full cycle:
-  disk -> memo -> RAM -> disk.
+- **Writeback lane -- RULED 2026-08-12, ready to build.** A hydrated
+  mini-database that returns to DISK is a database EXTRACTED from a memo --
+  the export direction. Writeback and MINIDB together close the full cycle:
+  disk -> memo -> RAM -> disk. Three owner rulings, all settled:
+
+  1. **Verb: `WRITEBACK`** (owner choice over PERSIST and FLUSH). Pairs with
+     the already-settled `DISMISS` for the discard side. `COMMIT` was
+     rejected earlier: it collides with the table-buffer transaction verb,
+     and a workspace-level persist is a different act from a record-level
+     commit. FLUSH was rejected for the same class of reason -- in this
+     engine it reads as "drain a buffer to its existing home", not
+     "materialize a RAM/memo workspace onto disk".
+  2. **Compaction: a deliberate `WORKSPACE COMPACT` verb.** Supersede keeps
+     retaining prior payload bytes by default (history is free; ten saves of
+     a 94 KB container hold ~1 MB), and space is reclaimed only when the
+     owner asks for it. Rejected: automatic erase-on-supersede, which would
+     make every save silently unrecoverable to its predecessor. `MemoStore::
+     erase` is the mechanism and is zoo-proven; `PREV_ID` lineage survives
+     compaction either way, so COMPACT frees bytes without erasing the
+     record that the history existed.
+  3. **Content type: BOTH homes, with the `FMT` column AUTHORITATIVE.** The
+     spec s24 write-call parameter records intent at write time and travels
+     with a payload carried outside the catalog; the catalog's `FMT` column
+     ('DTSHEMA 2', 'MINIDB 1') is what readers TRUST. The redundancy is
+     deliberate, so the disagreement rule must be written and enforced, not
+     assumed: **when they differ, FMT wins, and the mismatch is reported
+     rather than silently resolved** -- a payload whose self-declaration
+     disagrees with its catalog row is exactly the shape of a half-written
+     save, and this lane's whole history says such things must be loud.
+
+  Build order implied by the rulings: `WRITEBACK` first (it is the missing
+  half of the cycle and has a proven inverse to test against), `WORKSPACE
+  COMPACT` second (it needs writeback to be meaningful -- you compact after
+  you have somewhere else to stand), the FMT disagreement check third (cheap,
+  but it wants both of the above to exist before it has anything to guard).
 
 ## 6. Honest non-claims and limits
 
