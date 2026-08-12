@@ -5,7 +5,8 @@ try); this document is the owner-ordered deep record** -- "document the heck
 out of it... how did we do it? where does it reside, what lanes does it cross
 and affect?" Mechanism over chronology, per the same instruction.
 
-Owner: member.derald. Steward: member.ai.claude.cowork. Lane: AIF-070
+Owner: member.derald. **Coworker of record: member.ai.claude.cowork** (owner
+assignment 2026-08-12). Steward: member.ai.claude.cowork. Lane: AIF-070
 (Virtual Workspaces & Memo-Resident Mini-Databases, external design intake
 member.ai.grok.xai 2026-07-28, activated 2026-08-11).
 

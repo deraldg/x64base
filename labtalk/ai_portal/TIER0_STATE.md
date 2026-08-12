@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-12T03:52:58Z
+    generated_utc : 2026-08-12T08:46:54Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,8 +11,8 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : 2f624526b  (2026-08-11)
-    upstream      : 2f624526b
+    HEAD          : c58992486  (2026-08-11)
+    upstream      : c58992486
     unpushed      : 0 commit(s) ahead of upstream
 
 ## Declared target
@@ -23,16 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_LEAN_SITE_DEPLOY_2026-08-11.md
-    commits behind HEAD : 25
+    commits behind HEAD : 26
 
 ## Staleness warnings
 
-- The newest closeout is 25 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
+- The newest closeout is 26 commit(s) behind HEAD. Work has landed that no closeout describes; read `git log` as well.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
+| AIF-109 | dotscript-product-gaps | member.ai.claude.cowork | yes |
 | AIF-108 | memo-object-challenge | member.ai.claude.cowork | yes |
 | AIF-107 | low-key-entry-surface | member.ai.claude.cowork | yes |
 | AIF-106 | dottalk-ai-historical-evidence-publication | member.ai.codex.local | yes |
@@ -44,8 +45,7 @@ cannot drift, because nothing here is written by hand.
 | AIF-099 | cnx-on-x64 warn-not-refuse | member.derald | yes |
 | AIF-098 | frontal_mem M2 lane1 write adapter | member.derald | yes |
 | AIF-097 | private-site auth + search | member.derald | yes |
-| AIF-096 | coordination-ontology | member.derald | yes |
-| ... | 28 older claims omitted | | |
+| ... | 29 older claims omitted | | |
 
 ## Sessions, lineage, asides
 
@@ -58,6 +58,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 
 | run | member | parent | born_utc | asides |
 | --- | --- | --- | --- | --- |
+| COWORK-20260812-001 | member.ai.claude.cowork | - | - | AIF-109 |
 | COWORK-20260811-002 | member.ai.claude.cowork | - | - | AIF-108 |
 | COWORK-20260811-001 | member.ai.claude.cowork | - | - | AIF-107 |
 | CODEX-20260810-AI-HISTORY-WEB-001 | member.ai.codex.local | - | - | AIF-106 |
@@ -65,8 +66,7 @@ parent + born_utc from the durable lineage ledger, '-' until a run wakes.
 | CODEX-20260810-001 | member.ai.codex.local | - | - | AIF-104 |
 | COWORK-20260809-002 | member.ai.claude.cowork | - | - | AIF-103 |
 | COWORK-20260809-001 | member.derald | - | - | AIF-099 -> AIF-100 -> AIF-101 |
-| COWORK-20260808-001 | member.derald | - | - | AIF-097 -> AIF-098 |
-| ... | | | | 25 older run(s) omitted |
+| ... | | | | 26 older run(s) omitted |
 
 Perishable detail lives in the artifacts these point at. Do not
 restate anything above; regenerate it.

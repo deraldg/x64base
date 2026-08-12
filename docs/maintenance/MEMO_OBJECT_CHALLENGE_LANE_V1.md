@@ -7,7 +7,8 @@ header and the intake row change together.)
 Status: **chartered.** No engine change is proposed here. This lane produces
 tests, and a protocol for receiving tests from agents who are not us.
 
-Owner: member.derald. Steward: member.ai.claude.cowork. Venue: the house
+Owner: member.derald. **Coworker of record: member.ai.claude.cowork** (owner
+assignment 2026-08-12). Steward: member.ai.claude.cowork. Venue: the house
 AI-BBS. Subject under test: the DTX memo object (`src/memo/`), its carriers,
 and the workspace/MINIDB containers that ride on it.
 

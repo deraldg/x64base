@@ -284,12 +284,13 @@ projects:
     root: D:/code/ccode
     owner_repo: deraldg/x64base
     upstream_authority: project.x64base.runtime
-    lanes: [expression_runtime, arrays, tuples, codeblocks, maps, errorstop, lexing]
+    lanes: [expression_runtime, arrays, tuples, codeblocks, maps, errorstop, lexing, functions_procedures, error_handling]
     docs:
       - docs/maintenance/DOTSCRIPT_ARRAYS_SPEC_V1.md
       - docs/maintenance/DOTSCRIPT_ARRAYS_LANE_V1.md
       - docs/maintenance/DOTSCRIPT_STOP_ON_ERROR_LANE_V1.md
-    notes: The DotScript command/expression language surface, promoted from the project.x64base.runtime 'dotscript' lane per AIF-040. Owns the arrays lane (AIF-038, PLANNED) and the incoming tuple field-type extension lane; stop_on_error (AIF-036) and the comment lexer (AIF-037) are proven surfaces here. Runtime truth still originates in project.x64base.runtime.
+      - docs/maintenance/DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md
+    notes: The DotScript command/expression language surface, promoted from the project.x64base.runtime 'dotscript' lane per AIF-040. Owns the arrays lane (AIF-038, arrays RUNTIME-LIVE 2026-08; spec normative) and the incoming tuple field-type extension lane; stop_on_error (AIF-036) and the comment lexer (AIF-037) are proven surfaces here. 2026-08-12 (owner directive, DotScript-as-product pass) -- two lanes added for the externally-evaluated critical gaps, both under AIF-109 (the product-gap umbrella) -- functions_procedures (call frames, parameters, LOCAL, RETURN; removes the 1-subscript nesting limit; promotes DEFFN/DEFCMD from text macros on seams they already own; semantics pre-ruled by ARRAYS_SPEC s19) and error_handling (structured ON ERROR / TRY, extending the s29 message-id contract; distinct from errorstop's threshold). Prior-art findings and the five pending owner rulings are in DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md. Runtime truth still originates in project.x64base.runtime.
 
   - id: project.labtalk.pdlc
     name: PDLC - Programming Development Life Cycle (Student/Working Model)
@@ -320,9 +321,10 @@ projects:
     root: D:/code/ccode
     owner_repo: deraldg/labtalk
     upstream_authority: project.x64base.runtime
-    lanes: [analysis, design, cobol_fixed_records, dbf_xbase, codasyl_relationships, sqlite_bridge, benchmark_x64base_vs_sqlite, json_csv_spreadsheet, cases, proofs, documentation, publication, maintenance]
+    lanes: [analysis, design, cobol_fixed_records, dbf_xbase, codasyl_relationships, sqlite_bridge, cascade_erp_metadata_etl_learning, benchmark_x64base_vs_sqlite, json_csv_spreadsheet, cases, proofs, documentation, publication, maintenance]
     docs:
       - docs/maintenance/HISTORICAL_DATABASE_MIGRATION_PDLC_PROJECT_V1.md
+      - docs/maintenance/CASCADE_ERP_METADATA_ETL_LEARNING_GOLD_STANDARD_LANE_V1.md
       - labtalk/LABTALK_SDLC_FRAMEWORK_v0.md
       - labtalk/registries/projects.yaml
     source_surfaces:
