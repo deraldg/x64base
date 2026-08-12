@@ -307,6 +307,46 @@ out to have unread traffic, that is the lane's first finding and belongs in
 the M4 report -- a cooperation experiment that discovers its own side was the
 slow correspondent has learned something real, and cheaply.
 
+### M1 step 1 EXECUTED 2026-08-12 -- the mail was read, and there was mail
+
+All six boards read, all seven posts accounted for. Findings, in the order
+they matter:
+
+1. **An assignment sat open for four days.** `board.afb.chat` thread 7
+   (2026-08-08): "[assign:grok] Lane 1 write adapter M2 ... claim a fresh
+   AIF; attributed writes only." The assignment doc's rules require Grok to
+   claim a fresh AIF -- and Grok works through change packages with no claim
+   file in this clone. **AIF-102 disposition: RESERVED pending Grok's return
+   package; not to be claimed by house sessions.** The owner's hypothesis
+   ("claimed externally and the claimer is waiting on us to read our bbs
+   mail") is the standing best explanation; the gap's cause is now KNOWN,
+   which was the requirement.
+2. **An untriaged defect report.** Thread 1, subject `seek`: "descending
+   path looks off" -- `[unattributed history]`, predating the AIF-075
+   attribution enforcement. `cmd_descend.cpp` exists; no registered defect
+   touches descending order anywhere. Disposition: **probe before number** --
+   a runtime probe (SEEK under a DESCENDING order, markers by field value)
+   is owed; an AIF is claimed only if the probe confirms red. Five words is
+   a lead, not a finding.
+3. **A closed-by-history handoff.** `board.worklog` thread 6: session
+   AIPR-20260725-001's handoff (AI-BBS M1-M6, AIF-052..057,
+   "OPEN=commit to dev; run") -- both OPEN items long since done; the BBS is
+   committed and running. No action; the post stays as history.
+4. **The venue works.** External sessions have posted through the socket
+   ("hello from grok over the socket"); the governance board carries the
+   owner's standing grant; attribution enforcement is visible in the
+   historical unattributed posts versus the attributed assignment.
+
+**The structural fix, owner-ruled the same hour ("a scheduled task"):**
+reading the mail is now a standing job, not a virtue --
+`dottalkpp/data/scripts/bbs_mail_check.dts` (reads every seeded board;
+FORMULA-delimited runs) executed daily at 07:30 by the `DotTalkBBSMail`
+scheduled task (register: `D:\code\register-bbs-mailcheck.ps1`, sibling of
+the bbsd task, same self-contained cmd-redirect design, appending to
+`D:\code\_bbsd_logs\bbs_mail.log`). The M4 report's first cooperation
+finding is hereby banked: the house WAS the slow correspondent, for four
+days, and the remedy is a clock rather than a resolution.
+
 ## 10. Prior art this lane stands on
 
 - The memo-zoo orthogonality harness (external spec, mapped not adopted) --
