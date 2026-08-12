@@ -5,11 +5,35 @@
 * Probe-before-number discipline: an AIF is claimed only if this reads red.
 *
 * Shape: self-bootstrapping disposable x64 table in the RAM VFS (nothing on
-* disk, self-erasing on unmount). Build an ordered CDX tag, then measure BY
-* FIELD VALUE (the IDXSTALE lesson: RECNO()/FOUND() render empty in ? markers)
-* what ASCEND/DESCEND actually do to traversal and SEEK.
+* disk, self-erasing on unmount). Build a CNX tag -- CNX is the ONLY valid
+* index lane in RAM (owner ruling 2026-08-12; INDEX ON builds an INX via
+* std::ofstream, which bypasses the ramfs and dies on the virtual indexes
+* dir -- same bypass family as the DTX memo sidecar). Bootstrap sequence is
+* prior art from cnx_realtime_index_proof.dts: CNX CREATE / CNX ADDTAG /
+* REBUILD / SET ORDER TAG. Measure BY FIELD VALUE with ALLTRIM (the IDXSTALE
+* lesson: RECNO()/FOUND() render empty in ? markers) what ASCEND/DESCEND
+* actually do to traversal and SEEK.
+*
+* Version note: v1 of this probe used INDEX ON ... TAG in RAM; every marker
+* read .F. because the INX write failed and no order ever existed -- an
+* invalid run, not a red. This v2 is the corrected scaffold.
+*
+* VERDICT (run 2026-08-12, build Aug 11 2026 18:37:52 c78c8bd1): ALL GREEN,
+* DS_G0 + DS_T1..T6 = .T. Descending traversal, BOTTOM-under-descend,
+* SEEK-under-descend, and ASCEND restore are correct on a live CNX order in
+* the RAM VFS. The BBS report "descending path looks off" is CLOSED with
+* evidence -- no AIF claimed (probe-before-number held).
+*
+* Scaffold observation banked from the green run (ramfs-bypass ledger,
+* member 3): CNX CREATE lands in the ramfs, but CNX ADDTAG and REBUILD
+* existence-check the REAL filesystem and report "CNX not found" for a file
+* the VFS holds. SET ORDER's CNX fallback then attaches a realtime-
+* maintained order anyway, which is what the markers measured. Members 1-2:
+* DTX memo sidecar (spec 38 correction), INX writer (v1 of this probe).
 *
 * Markers:
+*   DS_G0 guard: SEEK works at all (order is live) -- if G0 is red the run
+*         is invalid and T1-T6 prove nothing (the v1 lesson, made a marker)
 *   DS_T1 ascending TOP is the minimum key
 *   DS_T2 ascending BOTTOM is the maximum key
 *   DS_T3 after DESCEND, TOP is the MAXIMUM key (the reversed traversal)
@@ -45,26 +69,33 @@ APPEND
 REPLACE ID WITH 40
 REPLACE NAME WITH "DELTA"
 
-INDEX ON NAME TAG NAME
+CNX CREATE
+CNX ADDTAG NAME
+REBUILD
 SET ORDER TAG NAME
 
+* --- G0: the order is LIVE before anything is asserted about direction ------
+GO 4
+SEEK "CHARLIE"
+? "DS_G0_order_is_live:" + (ALLTRIM(NAME) = "CHARLIE")
+
 TOP
-? "DS_T1_asc_top_is_min:" + (NAME = "ALPHA")
+? "DS_T1_asc_top_is_min:" + (ALLTRIM(NAME) = "ALPHA")
 BOTTOM
-? "DS_T2_asc_bottom_is_max:" + (NAME = "ECHO")
+? "DS_T2_asc_bottom_is_max:" + (ALLTRIM(NAME) = "ECHO")
 
 DESCEND
 TOP
-? "DS_T3_desc_top_is_max:" + (NAME = "ECHO")
+? "DS_T3_desc_top_is_max:" + (ALLTRIM(NAME) = "ECHO")
 BOTTOM
-? "DS_T4_desc_bottom_is_min:" + (NAME = "ALPHA")
+? "DS_T4_desc_bottom_is_min:" + (ALLTRIM(NAME) = "ALPHA")
 
-SEEK CHARLIE
-? "DS_T5_desc_seek_lands:" + (NAME = "CHARLIE")
+SEEK "CHARLIE"
+? "DS_T5_desc_seek_lands:" + (ALLTRIM(NAME) = "CHARLIE")
 
 ASCEND
 TOP
-? "DS_T6_asc_restored:" + (NAME = "ALPHA")
+? "DS_T6_asc_restored:" + (ALLTRIM(NAME) = "ALPHA")
 
 FORMULA "DESCEND-PROBE-END"
 

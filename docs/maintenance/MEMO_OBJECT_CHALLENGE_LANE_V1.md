@@ -120,9 +120,17 @@ Reachability tags:
 - **[BUDGET]** -- needs the growth limiter.
 - **[TOOL]** -- needs a command surface that does not exist yet.
 
+A **[WALKED]** annotation on an idea records an in-house run per the M2 rule
+(walk the ground before opening it to challengers). First batch 2026-08-12:
+`dottalkpp/data/scripts/memo_edges_probe.dts`, markers ME_T1..T5 all green
+(ideas 1, 2, 12 value-tier, 13, plus clear-then-reinsert, which is not a
+numbered idea but is the canary's third act on the edge table). Binary-
+payload ideas (4, 5, 8) are stated plainly as CLI-string-unreachable --
+those stay harness-tier for submitters with process access.
+
 ### Payload extremes
-1. Empty payload -- round-trips as empty or as absent? [NOW]
-2. One byte. [NOW]
+1. Empty payload -- round-trips as empty or as absent? [NOW] [WALKED green 2026-08-12, ME_T1]
+2. One byte. [NOW] [WALKED green 2026-08-12, ME_T2]
 3. Exactly one block boundary, then boundary +/- 1. [NOW]
 4. All 256 byte values in order, then shuffled. [NOW]
 5. One megabyte of NULs. [NOW]
@@ -134,8 +142,8 @@ Reachability tags:
 
 ### Lifecycle and durability
 11. Write, close, reopen, read, on every flavor. [NOW]
-12. Update longer; old token still resolves (append-new semantics). [NOW]
-13. Update shorter; no truncation of the new value. [NOW]
+12. Update longer; old token still resolves (append-new semantics). [NOW] [WALKED green 2026-08-12, ME_T3 -- value tier; token-level check stays open]
+13. Update shorter; no truncation of the new value. [NOW] [WALKED green 2026-08-12, ME_T4]
 14. 1,000 updates; sidecar growth vs payload growth. [NOW]
 15. Read an erased token -- what exactly comes back? [NOW]
 16. Erase and re-add identical bytes; compare tokens (dedup or not). [NOW]
@@ -328,6 +336,14 @@ they matter:
    a runtime probe (SEEK under a DESCENDING order, markers by field value)
    is owed; an AIF is claimed only if the probe confirms red. Five words is
    a lead, not a finding.
+   **CLOSED GREEN 2026-08-12** (`descend_seek_probe.dts` v2, build Aug 11
+   2026 18:37:52): DS_G0 + DS_T1..T6 all `.T.` -- descending traversal,
+   SEEK-under-descend, and ASCEND restore correct on a live CNX order in
+   the RAM VFS. No AIF claimed; probe-before-number held on both edges (a
+   v1 scaffold failure would have read as six false reds -- the probe's
+   liveness guard DS_G0 now encodes that lesson). Byproduct: two ramfs-
+   bypass members measured (INX writer; CNX ADDTAG/REBUILD existence
+   checks against the real filesystem), banked in the probe header.
 3. **A closed-by-history handoff.** `board.worklog` thread 6: session
    AIPR-20260725-001's handoff (AI-BBS M1-M6, AIF-052..057,
    "OPEN=commit to dev; run") -- both OPEN items long since done; the BBS is
