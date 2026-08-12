@@ -248,12 +248,42 @@ bool SchemaWorkspace::apply_to_runtime(WorkAreaManager& wam)
     return wam.select(current_slot);
 }
 
+// FORMAT-NAME COLLISION RECONCILED 2026-08-11 (owner ruling: reconcile now).
+// This writer emitted "DTSHEMA 3" -- a pipe-delimited runtime snapshot -- while
+// cmd_workspace.cpp's serializer emits the keyed .dtschema posture format under
+// the SAME version name. AIF-078 recorded the drift as D5/Q5 ("two writers, two
+// versions, one format name") on 2026-07-30; on 2026-08-11 an opt-in DTSHEMA 3
+// landed in the CLI serializer, turning a latent drift into an active collision
+// with incompatible layouts. The failure mode was SILENT, not loud: the CLI
+// loader matches "AREA " (with a space), so a pipe-form "AREA|0|..." line falls
+// through to tolerate-unknown and restores ZERO areas without an error.
+//
+// RULING: the CLI serializer (schema_save_to_string / schema_load_from_stream)
+// is authoritative for the .dtschema format and owns the DTSHEMA version
+// namespace -- one format, one writer, the same rule that keeps file and memo
+// carriers from drifting. THIS snapshot is a different artifact (runtime work
+// area state, pipe-delimited) and must not claim a DTSHEMA name, so it declares
+// its own: DTWSSNAP 1. Version numbers are freed for the .dtschema line, incl.
+// the DTSHEMA 4 the multi-workspace change package reserves.
+//
+// MEASURED the same day: save_file/load_file have ZERO callers in the tree --
+// this pair is an unwired parallel serializer (the AIF-079 D1 shape), which is
+// why the collision never fired and why renaming is safe. NOT deleted here: the
+// multi-workspace package plans to extend SchemaAreaState (ws tag) and this
+// class, so retiring it is a maintainer/lane call, not a drive-by.
+//
+// PRIOR ART, RECORDED HONESTLY: this snapshot already carried per-area recno
+// and CURRENT slot -- the same session-state concept the CLI serializer added
+// on 2026-08-11 as v3 CURSOR/CURRENT lines. The design was arrived at twice
+// because it was registered in neither lane's queue row: AIF-078's own lesson,
+// recurring. The CLI implementation is the wired and regression-proven one
+// (REGRESSION RUN WORKSPACE_SESSION); this one is its unwired ancestor.
 bool SchemaWorkspace::save_file(const std::string& path) const
 {
     std::ofstream f(path);
     if (!f) return false;
 
-    f << "DTSHEMA 3\n";
+    f << "DTWSSNAP 1\n";
     f << "CURRENT|" << current_slot << "\n";
 
     for (const auto& a : areas)
@@ -291,7 +321,10 @@ bool SchemaWorkspace::load_file(const std::string& path)
         if (!saw_header) {
             saw_header = true;
 
-            if (ci_equal(line, "DTSHEMA 3")) {
+            // Own name first; legacy "DTSHEMA 3" still accepted so any file
+            // this writer produced before the 2026-08-11 reconciliation loads
+            // unchanged (read-side tolerance, write-side single name).
+            if (ci_equal(line, "DTWSSNAP 1") || ci_equal(line, "DTSHEMA 3")) {
                 continue;
             }
 

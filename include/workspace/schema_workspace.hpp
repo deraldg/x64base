@@ -34,6 +34,11 @@ public:
     bool capture_from_runtime(const WorkAreaManager& wam);
     bool apply_to_runtime(WorkAreaManager& wam);
 
+    // Runtime work-area snapshot I/O, format "DTWSSNAP 1" (pipe-delimited).
+    // NOT the .dtschema posture format: cmd_workspace.cpp's serializer is
+    // authoritative there and owns the DTSHEMA version namespace (collision
+    // reconciled 2026-08-11 -- see the block comment on save_file; AIF-078
+    // D5/Q5). Measured that day: this pair has ZERO callers -- unwired.
     bool save_file(const std::string& path) const;
     bool load_file(const std::string& path);
 };
