@@ -1,0 +1,129 @@
+* ============================================================================
+* *** BLOCKED 2026-08-12 -- DO NOT RUN until the X64M identity lane lands ***
+* FIELDMGR APPEND now REFUSES x64 tables: the temp-swap rewrite breaks the
+* X64M vector metadata identity (hex-verified: the temp name
+* "STUDENTS.__fldtmp" embedded in the renamed file's header) and every
+* field reads BLANK afterward -- silent data destruction, measured twice on
+* these fixtures and both times restored from the vfp lane. Running this
+* script today stops at the refusal, harmlessly. When the rewrite
+* re-stamps X64M after the swap, remove this banner and run.
+* ============================================================================
+* mcc_add_notes_memo.dts -- Part B of the AIF-070 memo-workspace plan (task
+* #168; owner mechanism ruling 2026-08-12: "build the verb"). Adds NOTES M
+* to the CANONICAL x64 STUDENTS and TEACHERS fixtures via FIELDMGR APPEND,
+* then rebuilds their CDX+LMDB and re-saves the clean posture. The MCC
+* rebuild chain (og -> x32 -> vfp -> x64) is untouched.
+*
+* This is v3 of the script; each earlier run bought a lesson:
+*   run 1 (red): parseFieldSpec validates at its own tail, BEFORE append()
+*     can resolve the memo flavor sentinel -- fixed in validateFieldDef.
+*     Byproduct repair: re-saved posture attached students.cdx, which the
+*     old canonical posture had silently omitted.
+*   run 2 (mixed): appends SUCCEEDED (PB_T2/T4 green, 200/20 recs), but
+*     (a) CDX containers are HASH-BOUND to table structure (reclen/fields/
+*     hash in the tag directory) and correctly refuse the rewritten table
+*     -- "CDX survives an appended column" was wrong, rebuild is REQUIRED;
+*     (b) WORKSPACE OPEN DBF scanned the __fldbak backups in as areas and
+*     the posture saved 15 areas -- backups must be gone before the save.
+*
+*   run 3 (red, two lessons): (a) CDX identity lives in a SEPARATE sidecar,
+*     <container>.cdx.meta (cdx_meta.cpp) -- deleting only the .cdx leaves
+*     the stale identity behind and the fresh container is judged by it;
+*     (b) THE BIG ONE: fields_mgr's rewrite loop called gotoRec without
+*     readCurrent, so every get() read a never-filled buffer and the
+*     rewrite copied BLANK records (counts intact, values empty). Fixed to
+*     match cmd_copy's loop, the prior art that always did both. The blank
+*     tables were restored from the vfp lane -- the chain IS the backup.
+*
+* HOST PREREQUISITES (run before this script):
+*   Remove-Item data\dbf\x64\STUDENTS.__fldbak.dbf, data\dbf\x64\TEACHERS.__fldbak.dbf
+*   Remove-Item data\indexes\x64\STUDENTS.cdx, data\indexes\x64\TEACHERS.cdx
+*   Remove-Item data\indexes\x64\STUDENTS.cdx.meta, data\indexes\x64\TEACHERS.cdx.meta
+*   Remove-Item -Recurse data\lmdb\x64\STUDENTS.cdx.d, data\lmdb\x64\TEACHERS.cdx.d
+*   (CDX CREATE refuses an existing container, and openCdx trusts the .meta
+*   sidecar -- BOTH must go. The README's reset rule, now with its corollary.)
+*
+* Rerunnable: FIELDMGR APPEND refuses "already has a memo store" harmlessly
+* once NOTES exists; the index rebuild and posture re-save still execute.
+* NO MEMO VALUES ARE WRITTEN -- fixtures stay value-virgin (null tokens,
+* empty sidecars). Writability is proven by workspace_minidb.dts DB_T3/T4.
+*
+* Markers:
+*   PB_T1 STUDENTS freshness under REBUILT TAG SID (Taylor Quinn)
+*   PB_T2 STUDENTS NOTES reads empty (null token)
+*   PB_T3 TEACHERS readable under REBUILT TAG TID
+*   PB_T4 TEACHERS NOTES reads empty
+* Then: WORKSPACE must report 13 areas (backups gone), and the MINIDB
+* container line must read 27 file(s) = 13 tables + 12 CDX + 2 DTX.
+*
+* Run: DO mcc_add_notes_memo   (fixture migration; not a regression)
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+DO x64
+WORKSPACE CLOSE
+
+FORMULA "MCC-NOTES-M-BEGIN"
+
+* --- STUDENTS: memo column (no-op if already present) + index rebuild -------
+SELECT 1
+USE STUDENTS NOINDEX
+FIELDMGR APPEND NOTES M
+CLOSE
+
+USE STUDENTS NOINDEX
+CDX CREATE
+CDX ADDTAG SID
+CDX ADDTAG MAJOR
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+CDX ADDTAG DOB
+CDX ADDTAG GPA
+BUILDLMDB CLEAN YES
+CDX TAGS
+CLOSE
+
+USE STUDENTS
+SET INDEX TO STUDENTS
+SET ORDER TO TAG SID
+TOP
+? "PB_T1_students_fresh_under_rebuilt_sid:" + (ALLTRIM(FNAME) = "Quinn")
+? "PB_T2_students_notes_null:" + (NOTES = "")
+CLOSE
+
+* --- TEACHERS: same ----------------------------------------------------------
+SELECT 2
+USE TEACHERS NOINDEX
+FIELDMGR APPEND NOTES M
+CLOSE
+
+USE TEACHERS NOINDEX
+CDX CREATE
+CDX ADDTAG TID
+CDX ADDTAG DEPT_ID
+CDX ADDTAG LNAME
+CDX ADDTAG FNAME
+BUILDLMDB CLEAN YES
+CDX TAGS
+CLOSE
+
+USE TEACHERS
+SET INDEX TO TEACHERS
+SET ORDER TO TAG TID
+TOP
+? "PB_T3_teachers_readable_under_rebuilt_tid:" + (LNAME > "")
+? "PB_T4_teachers_notes_null:" + (NOTES = "")
+CLOSE
+
+* --- clean posture re-save: WORKSPACE must report 13 areas ------------------
+WORKSPACE CLOSE
+WORKSPACE OPEN DBF
+WORKSPACE
+WORKSPACE SAVE mcc_x64
+
+* --- the Part-B-meets-carriage proof: container must report 27 file(s) ------
+WORKSPACE SAVE mcc_minidb_memo MEMO MINIDB
+WORKSPACE CLOSE
+
+FORMULA "MCC-NOTES-M-END"

@@ -95,6 +95,14 @@ bool default_fixed_length_for_type(char t, std::uint32_t& len, std::uint8_t& dec
         len = 1;
         dec = 0;
         return true;
+    case 'M':
+        // Memo token slot width is FLAVOR-dependent (x64 = 8, legacy = 10;
+        // measured in cmd_create.cpp). The parser does not know the flavor,
+        // so 0 is a sentinel that append() resolves against the open table
+        // before validation. (AIF-108 Part B memo enablement, 2026-08-12.)
+        len = 0;
+        dec = 0;
+        return true;
     default:
         return false;
     }
@@ -107,6 +115,7 @@ bool is_supported_append_type(char t) noexcept
     case 'N':
     case 'D':
     case 'L':
+    case 'M':
         return true;
     default:
         return false;
@@ -150,6 +159,12 @@ std::string default_field_value(const xbase::FieldDef& fd)
         return std::string(8, ' ');
     case 'L':
         return "?";
+    case 'M':
+        // A blank token IS the null memo ref (dtx::ref_token_is_blank
+        // accepts all-spaces), so default-filling with spaces needs NO
+        // sidecar write at append time -- the DTX comes free from
+        // memo_auto_on_use autocreate on the next USE.
+        return std::string(fd.length, ' ');
     default:
         return std::string(fd.length, ' ');
     }
@@ -200,7 +215,13 @@ Result append_rewrite_table(xbase::DbArea& db,
         out.open(tempPath.string());
 
         for (int rec = 1; rec <= db.recCount(); ++rec) {
-            if (!db.gotoRec(rec)) {
+            // gotoRec POSITIONS; readCurrent FILLS THE BUFFER. Without the
+            // second call every db.get() below reads a never-filled buffer
+            // and the rewrite copies BLANK records -- measured 2026-08-12
+            // on the canonical MCC fixtures (200 blank STUDENTS rows,
+            // counts intact, every marker red by value). The proven prior
+            // art, cmd_copy's logical_copy_to_as, has always done both.
+            if (!db.gotoRec(rec) || !db.readCurrent()) {
                 r.status = Status::Failed;
                 r.message = "FIELDMGR APPEND: failed reading source record";
                 out.close();
@@ -430,6 +451,24 @@ bool validateFieldDef(const xbase::FieldDef& fd, std::string& err)
         }
         return true;
 
+    case 'M':
+        // Token slot widths: 8 (x64 DTX) or 10 (legacy DBT). Length 0 is
+        // the parser's flavor-unknown sentinel and is legal HERE because
+        // parseFieldSpec validates at its own tail, before append() can
+        // resolve it against the open table (measured red 2026-08-12:
+        // the first migration run refused bare 'M' for exactly this
+        // ordering). append() resolves 0 -> 8/10 before create_dbf ever
+        // sees the FieldDef.
+        if (fd.length != 8 && fd.length != 10 && fd.length != 0) {
+            err = "memo field length must be 8 (x64) or 10 (legacy)";
+            return false;
+        }
+        if (fd.decimals != 0) {
+            err = "memo field decimals must be 0";
+            return false;
+        }
+        return true;
+
     default:
         err = "unsupported field type";
         return false;
@@ -635,15 +674,50 @@ Result append(xbase::DbArea& db,
         return r;
     }
 
+    // X64 GUARD (2026-08-12, measured on the canonical MCC fixtures, twice):
+    // the temp-create-then-rename rewrite BREAKS the X64M vector metadata
+    // identity -- create_dbf stamps the block with the TEMP name
+    // (hex-verified: "STUDENTS.__fldtmp" inside the renamed file's header),
+    // and the x64 vector reader then returns BLANK fields for every record
+    // while counts, schema, and deleted flags all look correct. That is
+    // silent data destruction. APPEND is refused on x64 tables until the
+    // rewrite updates (or re-stamps) the X64M identity after the swap --
+    // the fix belongs to the rewrite flow, not to callers. Legacy flavors
+    // (classic fixed-layout rows, no X64M block) are unaffected.
+    if (db.versionByte() == 0x64) {
+        r.status = Status::Unsupported;
+        r.message = "FIELDMGR APPEND: blocked on x64 tables -- the rewrite "
+                    "does not yet preserve X64M vector metadata identity "
+                    "across the temp-file swap (reads go blank; measured "
+                    "2026-08-12). Rebuild-with-new-schema via the COPY "
+                    "chain instead until this lane lands.";
+        return r;
+    }
+
+    // Guard scope narrowed 2026-08-12 (AIF-108 Part B): this refuses only
+    // tables that ALREADY carry a memo store -- appending a SECOND memo
+    // field (token preservation across the rewrite) stays deferred. Adding
+    // the FIRST memo field to a memo-less table is now supported: the
+    // rewrite's create_dbf sets the memo header bit when an M spec is
+    // present, blank tokens are the null ref, and the sidecar autocreates
+    // on next USE.
     if (db.memoKind() != xbase::DbArea::MemoKind::NONE) {
         r.status = Status::Unsupported;
-        r.message = "FIELDMGR APPEND: memo tables not supported yet";
+        r.message = "FIELDMGR APPEND: table already has a memo store; "
+                    "adding another memo field is not supported yet";
         return r;
     }
 
     xbase::FieldDef fd = fdIn;
     fd.name = upper_copy(trim_copy(fd.name));
     fd.type = static_cast<char>(std::toupper(static_cast<unsigned char>(fd.type)));
+
+    // Resolve the parser's memo-length sentinel against the open table's
+    // flavor (parseFieldSpec cannot know it): x64 token slot = 8, legacy
+    // DBT slot = 10.
+    if (fd.type == 'M' && fd.length == 0) {
+        fd.length = (db.versionByte() == 0x64) ? 8u : 10u;
+    }
 
     if (fd.length > 255u && db.versionByte() != 0x64) {
         r.status = Status::InvalidArgument;

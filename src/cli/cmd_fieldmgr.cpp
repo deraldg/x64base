@@ -39,6 +39,7 @@
 // examples:
 //   FIELDMGR SHOW
 //   FIELDMGR APPEND ZIP C10
+//   FIELDMGR APPEND NOTES M
 //   FIELDMGR DELETE ZIP
 //   FIELDMGR MODIFY ZIP NAME POSTAL
 //   FIELDMGR VALIDATE
@@ -47,6 +48,13 @@
 //   FIELDMGR with no arguments shows current field metadata.
 //   SHOW and LIST are read-only reports.
 //   APPEND, DELETE, and MODIFY mutate table schema.
+//   APPEND supports type M (first memo field on a memo-less table only;
+//   token slot width is flavor-resolved, blank tokens are the null ref,
+//   the sidecar autocreates on next USE). Landed 2026-08-12.
+//   APPEND is BLOCKED on x64 tables (2026-08-12): the temp-swap rewrite
+//   does not preserve X64M vector metadata identity and reads go blank --
+//   silent data destruction, measured twice on the MCC fixtures. The
+//   refusal stands until the rewrite re-stamps X64M after the swap.
 //   COPY exports or copies field metadata through the fields manager layer.
 //   VALIDATE and CHECK report field/schema consistency.
 //   REBUILD INDEXES delegates index rebuild through the fields manager layer.
