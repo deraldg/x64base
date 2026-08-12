@@ -60,10 +60,11 @@ export function ThemeToggle() {
       onClick={cycle}
       title={mounted ? `Theme: ${mode} — click for ${next}` : "Theme"}
       aria-label={mounted ? `Theme is ${mode}. Switch to ${next}.` : "Theme"}
-      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-2 text-fg transition hover:border-brand hover:text-brand"
+      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-brand/60 bg-card px-2 py-0.5 text-fg shadow-sm transition hover:border-brand hover:text-brand"
     >
-      <Icon size={16} />
-      <span className="text-xs font-medium capitalize">{mode}</span>
+      <Icon size={14} />
+      <span className="text-xs font-semibold capitalize">{mode}</span>
+      <span className="text-[10px] text-muted">theme</span>
     </button>
   );
 }

@@ -23,7 +23,7 @@ roadmap item -- unbuilt things are marked chartered or absent, not implied.
 
 | Item | Value |
 | --- | --- |
-| Classic x32 | version bytes 0x03 / 0x83 / 0xF5 (dBASE / Fox lineages) |
+| Classic x32 | version bytes 0x03 / 0x83 / 0xF5 (dBASE / Fox lineages). Support is scoped: tables, house memos, and house indexes -- see the scope note below |
 | Visual FoxPro | version bytes 0x30 / 0x31 / 0x32, incl. autoincrement and varchar headers; VFP currency supported |
 | x64 dialect | version byte 0x64; extended 64-bit header (`xbase_64`) |
 | Record addressing | 64-bit (`recno64` / `recCount64` authoritative; 32-bit accessors return -1 above INT32_MAX rather than clamping) |
@@ -31,6 +31,33 @@ roadmap item -- unbuilt things are marked chartered or absent, not implied.
 | Long names | up to 256-byte table/field names in x64 metadata (ceiling raised from 128 in 2026-07; default 128), with classic 10-byte fallback descriptors -- two name planes, both real |
 | Field types | classic types plus binary `I`/`B`/`Y`/`T` via a register-once codec registry; custom types register through the same path |
 | Boundary proof | `X64_METRICS` regression exercises structure above the legacy 16-bit record/header geometry ceilings |
+
+### What classic x32 support means here, exactly
+
+Classic 32-bit support is **deliberately limited in scope**, and the scope is
+worth stating precisely so nobody plans around a promise that was never made.
+What is supported is **tables, memos, and indexes** -- and specifically the
+**house memos and house indexes we provide for v32**:
+
+| In scope for x32 | Detail |
+| --- | --- |
+| Tables | classic DBF table reading, writing, structure, cursor and record work |
+| House memos | the memo carriers this project implements and maintains |
+| House indexes | the INX and CNX containers this project implements and maintains, including realtime CNX order maintenance |
+
+That is the whole claim. This project is not a Clipper, dBASE, or FoxPro
+compatibility platform, does not aim to reproduce a legacy application
+runtime, and does not chase every historical index or memo variant produced
+by three decades of vendors. The x32 lane exists because teaching a database
+engine honestly means showing the classic generation beside the new one -- not
+because this is a migration target.
+
+**If you need broader classic coverage, other platforms exist and are better
+suited.** Harbour, xHarbour, Alaska Xbase++, XSharp, and the commercial
+dBASE/DBF tool families all carry far deeper legacy compatibility, and the
+[ecosystem comparison](/docs/engine/ecosystem-feature-comparison) names them
+with links. Choosing one of those over this project for legacy work is the
+correct decision, and saying so costs this project nothing.
 
 Deeper: [DBF_64 Specification](/docs/engine/dbf-64-specification) ·
 [x64 Capacity Math](/docs/engine/x64-capacity-math) ·

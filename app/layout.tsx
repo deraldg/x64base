@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import currentWork from "@/public/artifacts/current-work-v1.json";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -67,7 +68,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();"
           }}
         />
-        <div className="border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted">
+        {/* Theme control lives HERE, not only in the navbar (owner report
+            2026-08-11, third round). Measured: the navbar instances render in
+            the built HTML -- both of them -- and were still not reaching the
+            owner's eye. Rather than keep theorizing about why, the control was
+            moved to the one strip on the page we have direct evidence he reads
+            (he caught the date label change in it). The banner is always
+            visible, above the fold, on every route and every width. */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-b border-border bg-card/40 px-4 py-1.5 text-center text-xs text-muted">
+          <ThemeToggle />
           <span className="font-mono text-brand">WEBSITE ALPHA</span>
           {" · "}
           <span className="text-fg">AI-assisted, source-reviewed documentation</span>
