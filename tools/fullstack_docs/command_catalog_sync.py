@@ -4,7 +4,7 @@
 The website page `content/docs/dottalk/command-catalog.mdx` is a *derivative* of
 the engine's central shell command registry (`src/cli/shell_commands.cpp`) plus
 the per-command `@dottalk.usage v1` blocks. It drifts whenever commands are
-registered, renamed, or removed and the page is not regenerated — which is
+registered, renamed, or removed and the page is not regenerated -- which is
 exactly what happened when REGRESSION/EXPORTFUNCTIONS/SCX (added 2026-07-16) and
 CONCAT/STRCAT/EXITS/HANUKKAH never reached the page, while REPLACE_MULTI/SNX
 lingered after removal.
@@ -290,8 +290,8 @@ def check(source_root: Path, catalog: Path, syscmd: Path | None = None) -> int:
 
     # Optional second documentation surface: the SYSCMD DBF export. The catalog
     # should be a superset of both the central registry AND every ACTIVE command
-    # SYSCMD documents (that is what caught REGRESSION — SYSCMD had it, the
-    # website did not; and PREDHELP/STUDENT* — self-registered commands the
+    # SYSCMD documents (that is what caught REGRESSION -- SYSCMD had it, the
+    # website did not; and PREDHELP/STUDENT* -- self-registered commands the
     # registry-only extraction cannot see but the DBF documents).
     documented: set[str] = set()
     raw: dict[str, str] = {}

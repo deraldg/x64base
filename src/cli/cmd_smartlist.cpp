@@ -9,7 +9,7 @@
 
 // src/cli/cmd_smartlist.cpp
 //
-// SMARTLIST — LIST-style output honoring current order with classic or AST-based FOR filtering.
+// SMARTLIST -- LIST-style output honoring current order with classic or AST-based FOR filtering.
 //
 // Usage:
 //   SMARTLIST [ALL | <limit> | DELETED] [DEBUG] [TUPLES] [FOR <pred>]

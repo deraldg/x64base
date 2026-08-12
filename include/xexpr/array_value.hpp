@@ -17,7 +17,7 @@
 // parser, command, or function pokes the element vector directly.
 //
 // The element leaf is the spec's conceptual runtime Value (§30). It is kept
-// self-contained here so the array *graph mechanics* — where the real bugs live —
+// self-contained here so the array *graph mechanics* -- where the real bugs live --
 // can be unit-proven independently of the engine. Engine integration (M1b) binds
 // this to xexpr::Value by adding ValueKind::Array + an ArrayRef payload and
 // mapping scalar leaves; the mechanics below do not change.
@@ -41,7 +41,7 @@ inline bool operator==(NilValue, NilValue) noexcept { return true; }
 
 // Conceptual runtime value (spec §30). Integration maps this onto xexpr::Value.
 //
-// Numbers are `double` only — matching the engine's canonical number model
+// Numbers are `double` only -- matching the engine's canonical number model
 // (`xexpr::Value` / `dottalk::expr::EvalValue` are both double-based) and the xBase
 // family's char-level cross-program compatibility: values cross program boundaries as
 // characters, so a distinct integer kind would not survive a string round-trip. There

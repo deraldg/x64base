@@ -40,7 +40,7 @@ BrowseArgs parse_args(std::istringstream& in){
     BrowseArgs a;
     auto toks = tokenize(in);
 
-    // Extract explicit FOR and START KEY first (do not remove tokens—just detect).
+    // Extract explicit FOR and START KEY first (do not remove tokens--just detect).
     a.for_expr = extract_for_expr(toks);
     a.start_key_literal = extract_start_key(toks);
 

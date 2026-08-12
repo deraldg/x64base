@@ -26,7 +26,7 @@
     off-projection    tracked on main, not source, not on the manifest -> purge
     git-managed       engine source/build -> skipped (git's domain)
     GONE              projection file on main, absent in dev (e.g. staging-
-                      authored CHANGELOG.md) — non-fatal unless -StrictGone
+                      authored CHANGELOG.md) -- non-fatal unless -StrictGone
 
 .PARAMETER Dev        Development root (source of truth). Default D:\code\ccode
 .PARAMETER Stage      Public staging root (main). Default C:\x64base

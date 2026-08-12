@@ -1,5 +1,5 @@
 * ============================================================================
-* TICKET B — PHASE 0 decode-cost benchmark (AIF-043 gate)  v5 — self-timing
+* TICKET B -- PHASE 0 decode-cost benchmark (AIF-043 gate)  v5 -- self-timing
 * ----------------------------------------------------------------------------
 * Now self-times via SET TIMER (fixed 2026-07-22 to fire in script/DO mode) and
 * cross-checks with SECONDS() (fixed to sub-second/ms resolution). Each measured

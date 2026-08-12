@@ -104,7 +104,7 @@ InMemoryIdentityStore build_seed() {
     const UserId U_AI_GROK   = U(7, "user.ai.grok.xai",      "grok",   "Grok (xAI)",      "", AuthKind::Token);
     const UserId U_GUEST     = U(8, "user.guest",            "guest",  "Guest",           "", AuthKind::Token);
 
-    // --- Members (Contract §3.2) — humans bind a USERS row; AI members do not ---
+    // --- Members (Contract §3.2) -- humans bind a USERS row; AI members do not ---
     auto M = [&](std::uint64_t id, const char* key, MemberKind kind, UserId uid, RoleId def_role) {
         TeamMember m; m.id = TeamMemberId{id}; m.key = key; m.kind = kind; m.default_role = def_role;
         if (uid.valid()) m.user_id = uid;

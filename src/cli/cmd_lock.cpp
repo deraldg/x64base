@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// cmd_lock.cpp — owner-aware UI (works with the back-compat shims too)
+// cmd_lock.cpp -- owner-aware UI (works with the back-compat shims too)
 // @dottalk.usage v1
 // owner: DOT|LOCK
 // command: LOCK

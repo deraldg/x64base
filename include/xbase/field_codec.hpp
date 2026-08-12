@@ -12,7 +12,7 @@
 //
 // A field-type codec converts between a field's fixed-width on-disk bytes and the
 // engine's text value. Every field type — built-in (C/N/F/D/L/M and the binary
-// VFP types I/B/Y/T) or custom — is one `Codec`. The registry (`codec_for` /
+// VFP types I/B/Y/T) or custom -- is one `Codec`. The registry (`codec_for` /
 // `register_codec`) is the single extensibility seam: registering a custom type is
 // exactly how a built-in type is defined, so custom field types are first-class.
 //

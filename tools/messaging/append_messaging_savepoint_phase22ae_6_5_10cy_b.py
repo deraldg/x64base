@@ -45,7 +45,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Output artifacts passed: {row.get('OUTPUT_ARTIFACTS_PASSED','')}/{row.get('OUTPUT_ARTIFACTS_TOTAL','')}

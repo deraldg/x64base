@@ -45,7 +45,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Manual probe output capture proven: {row.get('MANUAL_PROBE_OUTPUT_CAPTURE_PROVEN','')}

@@ -1,5 +1,5 @@
 * predicate_memvar_parity_regression.dts
-* PARITY TARGET — currently EXPECTED RED until the expression-path convergence lands.
+* PARITY TARGET -- currently EXPECTED RED until the expression-path convergence lands.
 *
 * Proves $name / $a[n] resolve in the PREDICATE path (IF/WHILE/UNTIL/WHERE), not only
 * in the display path (?/CALC/FORMULA). Today IF routes through the compiled WHERE
@@ -8,7 +8,7 @@
 * (AIF-041: centralize predicate + expression eval on the house expr system), it does.
 *
 * Pass criterion:
-*   BEFORE convergence: PASS markers ABSENT (known red) — the FAIL-EXPECTED marker
+*   BEFORE convergence: PASS markers ABSENT (known red) -- the FAIL-EXPECTED marker
 *                       prints, or the IF reports an evaluation error.
 *   AFTER  convergence: "PARITY_predicate_memvar:PASS" and
 *                       "PARITY_predicate_array_subscript:PASS" both print.

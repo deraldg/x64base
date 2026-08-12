@@ -115,7 +115,7 @@ void DbArea::open(const std::string& filename)
     // In-memory tables (AIF-043 V2): a path under a mounted ramfs root is served
     // from RAM. USE/OPEN binds the byte store to the RAM file; no OS file, no lock
     // handle. When no ramfs root is mounted (the default), is_virtual() is always
-    // false and this branch is dead — behavior is byte-identical to before.
+    // false and this branch is dead -- behavior is byte-identical to before.
     if (xbase::ramfs::is_virtual(abs)) {
         if (!xbase::ramfs::exists(abs)) {
             throw std::runtime_error("DbArea: file does not exist: " + abs);
@@ -274,7 +274,7 @@ bool DbArea::gotoRec64(std::uint64_t recno) {
 
     _crn64 = recno;
     // Keep the legacy 32-bit mirror honest: exact when it fits, clamped (never
-    // silently wrong past the boundary — x64 callers read _crn64/recno64()).
+    // silently wrong past the boundary -- x64 callers read _crn64/recno64()).
     _crn = (recno > static_cast<std::uint64_t>(std::numeric_limits<int32_t>::max()))
         ? std::numeric_limits<int32_t>::max()
         : static_cast<int32_t>(recno);

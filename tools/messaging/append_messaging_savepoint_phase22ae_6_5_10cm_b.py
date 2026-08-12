@@ -32,7 +32,7 @@ def main():
     if SAVEPOINT in old:
         print("[MSG-022AE.6.5.10CM-B] Side-branch savepoint already appears in journal; refusing duplicate append."); return 0
     entry=f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Official latest before CM-B: {s.get('OFFICIAL_LATEST_SAVEPOINT_BEFORE_CM_B','')}

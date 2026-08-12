@@ -151,7 +151,7 @@ bool DbArea::fieldNumFromBuffer(int idx1, double& out) const
     if (off + f.length > _recbuf.size()) return false;
 
     // N/F fields are right-justified, space-padded ASCII decimal. Copy the (short,
-    // fixed-width) span to a stack buffer, NUL-terminate, and strtod — no heap.
+    // fixed-width) span to a stack buffer, NUL-terminate, and strtod -- no heap.
     const char* p = _recbuf.data() + off;
     const std::size_t len = f.length;
 

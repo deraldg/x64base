@@ -42,7 +42,7 @@ def main() -> int:
         print("[MSG-022AE.6.5.10DR-B] Side-branch savepoint already appears in journal; refusing duplicate append.")
         return 0
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Source-locale HELP-only eligibility plan created: {row.get('SOURCE_LOCALE_HELP_ONLY_ELIGIBILITY_PLAN_CREATED','')}

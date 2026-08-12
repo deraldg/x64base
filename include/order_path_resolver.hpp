@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/order_path_resolver.hpp
-// DotTalk++ — Order/Path Resolver (CNX/INX) — header-only
+// DotTalk++ -- Order/Path Resolver (CNX/INX) -- header-only
 // Drop-in utility for consistent path resolution and status strings.
 //
 // Usage (examples):

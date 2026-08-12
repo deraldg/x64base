@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Manifest-driven manual assembler — MANUAL-ASSEMBLY lane, M3.
+Manifest-driven manual assembler -- MANUAL-ASSEMBLY lane, M3.
 
 Reads tools/manualgen/manual_assembly_manifest.yaml (the bill of materials) and
 emits a single assembled developer manual plus an assembly report. Dispatches on
@@ -134,7 +134,7 @@ def git_commit():
 
 
 # --------------------------------------------------------------------------- #
-# generators (assembler:*) — each returns a markdown region body
+# generators (assembler:*) -- each returns a markdown region body
 # --------------------------------------------------------------------------- #
 def gen_frontmatter_title(ctx):
     acc = ctx["accepted"]
@@ -593,7 +593,7 @@ def main(out_dir=None):
     rendered = {}
     headings = []
 
-    # pass 1 — everything except heading-dependent parts
+    # pass 1 -- everything except heading-dependent parts
     for p in parts:
         if p["id"] in DEFERRED:
             continue
@@ -603,7 +603,7 @@ def main(out_dir=None):
 
     ctx["headings"] = headings
 
-    # pass 2 — TOC + index (need the assembled heading tree)
+    # pass 2 -- TOC + index (need the assembled heading tree)
     for pid in DEFERRED:
         p = by_id[pid]
         md = render_part(p, ctx)

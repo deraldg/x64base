@@ -109,7 +109,7 @@ def render_source_view(row: dict[str, Any], data: bytes) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{html.escape(title)} — x64base historical source</title>
+  <title>{html.escape(title)} -- x64base historical source</title>
   <style>
     :root {{ color-scheme: dark; }}
     body {{ margin: 0; background: #08111d; color: #dbeafe; font: 16px/1.5 system-ui, sans-serif; }}

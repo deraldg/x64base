@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// event_record.hpp — runtime -> documentation intake seam (M5).
+// event_record.hpp -- runtime -> documentation intake seam (M5).
 //
 // Writes a proof/run transcript for a runtime event (an agent connection, an egress toggle) so it
 // can be promoted into labtalk/proofs/runs/ + proofs.yaml + ai_runs.yaml by the SelfDoc/MDO tooling.

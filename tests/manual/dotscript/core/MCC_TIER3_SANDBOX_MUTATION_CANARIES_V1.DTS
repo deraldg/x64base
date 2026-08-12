@@ -5,7 +5,7 @@
 *   Controlled mutation canaries for DotTalk++ MCC data.
 *
 * Tier:
-*   Tier-3 — sandbox mutation / controlled write testing.
+*   Tier-3 -- sandbox mutation / controlled write testing.
 *
 * Scope:
 *   - COPY TO sandbox/temp target

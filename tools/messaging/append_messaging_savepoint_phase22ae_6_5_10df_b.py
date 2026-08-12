@@ -45,7 +45,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Target selection plan created: {row.get('TARGET_SELECTION_PLAN_CREATED','')}

@@ -198,14 +198,14 @@ SelectionResult collect_selected_recnos(xbase::DbArea& area,
     // scan instead of re-parsing/re-compiling it per row (the dominant scan
     // cost). compile_bool_predicate falls back to per-row eval_bool for anything
     // not safely hoistable, so this selection is identical to the previous
-    // per-row match_current() path — which is retained for LOCATE/CONTINUE.
+    // per-row match_current() path -- which is retained for LOCATE/CONTINUE.
     std::shared_ptr<dottalk::expr::CompiledPredicate> compiled;
     const bool have_expr = spec.use_expr && !spec.expr.empty();
     if (have_expr) {
         const std::string expr_norm = normalize_expr(spec.expr);
         if (!expr_norm.empty()) {
             // M2 selective decode: allow the readCurrentRaw() fast path only
-            // when no persistent SET FILTER is active — a filter evaluates its
+            // when no persistent SET FILTER is active -- a filter evaluates its
             // own predicate against the fully decoded record, which the raw path
             // does not populate.
             const bool allow_raw = !filter::has_active_filter(&area);

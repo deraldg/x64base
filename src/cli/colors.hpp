@@ -27,11 +27,11 @@ enum class Theme {
     LightGray,
     DarkGray,
     BrightBlue,
-    BrightGreen,   // "Matrix" mode — G+
+    BrightGreen,   // "Matrix" mode -- G+
     BrightCyan,
     BrightRed,     // R+
     BrightMagenta,
-    Yellow,        // Amber CRT — GR+ / W+
+    Yellow,        // Amber CRT -- GR+ / W+
     White          // W+
 };
 

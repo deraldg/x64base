@@ -115,7 +115,7 @@ static std::string dt_concat(const std::vector<std::string>& args) {
 }
 
 // --------------------------------------------------
-// EMPTY() — corrected implementation
+// EMPTY() -- corrected implementation
 // --------------------------------------------------
 
 static std::string dt_empty(const std::vector<std::string>& args) {
@@ -204,7 +204,7 @@ static std::string dt_file(const std::vector<std::string>& args) {
 }
 
 // --------------------------------------------------
-// SOUNDEX() — classic 4-character phonetic code
+// SOUNDEX() -- classic 4-character phonetic code
 // --------------------------------------------------
 
 static std::string dt_soundex(const std::vector<std::string>& args) {

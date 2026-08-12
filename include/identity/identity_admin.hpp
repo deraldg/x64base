@@ -61,27 +61,27 @@ AdminResult remove_member(const std::string& member_key);
 
 // Owner mints/rotates an opaque login token for an AI/service member (its service-User
 // credential home is created if absent). The plaintext token is returned in out_token and
-// shown only once; a re-issue invalidates the old one. This is how agents authenticate —
+// shown only once; a re-issue invalidates the old one. This is how agents authenticate --
 // no memorized password, and "lost token" = owner reissues.
 AdminResult issue_token(const std::string& member_key, std::string& out_token);
 
 // --- Session authentication (2d) -----------------------------------------------
 // A session has a PRINCIPAL (the authenticated identity, set by login) and an ACTING
 // member (the effective identity used for every permission check). Boot default is the
-// low-privilege member.public, UNAUTHENTICATED — owner powers require USER LOGIN. The
+// low-privilege member.public, UNAUTHENTICATED -- owner powers require USER LOGIN. The
 // owner may sudo to another identity via act_as (USER AS); the acting member can only
 // become owner-class by authenticating, which closes the escalation hole.
 const std::string& principal_key();       // authenticated identity (member.public until login)
 bool               session_authenticated();
 
 // Verify <secret> against the member's stored salted credential (SYSUSER.CRED). A member
-// whose account has no credential set yet logs in on first use (bootstrap) — set one with
+// whose account has no credential set yet logs in on first use (bootstrap) -- set one with
 // set_password. AI/service members (no user account) cannot password-login; use owner sudo.
 AdminResult login(const std::string& member_key, const std::string& secret);
 AdminResult logout();
 
 // Store a salted local-hash credential for a member (persisted). Allowed for the
-// authenticated owner, the member itself, or — on a fresh system — for the owner from the
+// authenticated owner, the member itself, or -- on a fresh system -- for the owner from the
 // console. NOTE: the hash is local obfuscation-grade (non-cryptographic), not for hostile
 // networks; upgradeable to real crypto later.
 AdminResult set_password(const std::string& member_key, const std::string& secret);

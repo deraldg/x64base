@@ -131,7 +131,7 @@ void cmd_VAR(xbase::DbArea& current, std::istringstream& iss) {
     // field references, functions, arithmetic AND array literals/subscripts all work)
     // and store the result directly. Using eval_rhs_avalue rather than eval_rhs is
     // essential: eval_rhs returns an EvalValue, which has no array kind and would
-    // flatten `{1,2,3}` to the string "{array:3}" — the variable must keep its real
+    // flatten `{1,2,3}` to the string "{array:3}" -- the variable must keep its real
     // ArrayRef so `$x[n]` subscripting works. Names are stored under the sigil-stripped
     // bare form, so `VAR x = ...` and a later `$x` reference agree.
     std::string err;

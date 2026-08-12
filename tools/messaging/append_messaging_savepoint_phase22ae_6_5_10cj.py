@@ -50,7 +50,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 - Phase: {PHASE}

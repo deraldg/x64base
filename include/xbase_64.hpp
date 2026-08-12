@@ -156,7 +156,7 @@ constexpr uint16_t X64_TABLE_NAME_LENGTH      = dottalk::build::x64::table_name_
 constexpr uint16_t X64_FIELD_NAME_LENGTH      = dottalk::build::x64::field_name_default; // was 128
 constexpr uint16_t X64_TABLE_NAME_LENGTH_MAX  = dottalk::build::x64::table_name_max;     // was 256
 constexpr uint16_t X64_FIELD_NAME_LENGTH_MAX  = dottalk::build::x64::field_name_max;     // was 256
-// Format-fixed (DBF/VFP descriptor compatibility) — NOT a build vector; stays source-owned.
+// Format-fixed (DBF/VFP descriptor compatibility) -- NOT a build vector; stays source-owned.
 constexpr uint16_t X64_FALLBACK_FIELD_TOKEN_BYTES = 10; // DBF/VFP fallback token
 
 // -----------------------------------------------------------------------------

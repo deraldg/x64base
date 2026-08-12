@@ -45,7 +45,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Guarded apply plan created: {row.get('GUARDED_APPLY_PLAN_CREATED','')}

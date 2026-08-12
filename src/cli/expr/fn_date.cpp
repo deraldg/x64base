@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/expr/fn_date.cpp
-// FoxPro-style date/time builtins — centralized in the expression layer.
+// FoxPro-style date/time builtins -- centralized in the expression layer.
 
 #include "cli/expr/fn_date.hpp"
 
@@ -172,7 +172,7 @@ static std::string dt_time(const std::vector<std::string>& argv) {
 static std::string dt_seconds(const std::vector<std::string>& /*argv*/) {
     // FoxPro SECONDS(): seconds elapsed since midnight, with sub-second
     // (millisecond) resolution. The prior implementation derived from the
-    // HHMMSS time6 string, so it was integer-only — useless for benchmarking
+    // HHMMSS time6 string, so it was integer-only -- useless for benchmarking
     // and self-timing (deltas rounded to whole seconds). Use a real clock.
     using namespace std::chrono;
     const auto now = system_clock::now();

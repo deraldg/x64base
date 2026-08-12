@@ -48,7 +48,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Official latest before CS-B: {s.get('OFFICIAL_LATEST_SAVEPOINT_BEFORE_CS_B','')}

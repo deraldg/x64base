@@ -9,10 +9,10 @@
 
 #pragma once
 //
-// CdxDocument — native CDX (V64) in-memory index document.
+// CdxDocument -- native CDX (V64) in-memory index document.
 //
 // Twin of CnxDocument, but reads 8-byte-recno "RUN8" payloads from a .cdx
-// container (via the ramfs-routable cdxfile:: layer) — a uint64 native index
+// container (via the ramfs-routable cdxfile:: layer) -- a uint64 native index
 // ("build for big"; CNX/RUN1 at uint32 is the small fallback). It reuses the
 // generic in-memory tag/header structures from CnxDocument (aliased below as
 // CdxTag/CdxHeader) and InxPayload, which carries uint64 recnos as of V4a.

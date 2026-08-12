@@ -10,10 +10,10 @@
 #pragma once
 // include/cli/ai_devtools_policy.hpp
 //
-// AI-friendly dev-tools permission gate — SHIPPED DORMANT BY DESIGN.
+// AI-friendly dev-tools permission gate -- SHIPPED DORMANT BY DESIGN.
 // See docs/maintenance/AI_DEV_TOOLS_SECURITY_DOCTRINE_V1.md.
 //
-// Protocol (governance): any agent — AI or human — must obtain *limited*, scoped
+// Protocol (governance): any agent -- AI or human -- must obtain *limited*, scoped
 // permission before using the AI-friendly runtime dev-tools (DEFCMD / UNDEFCMD /
 // DEFFN / UNDEFFN, and future DEF-family surfaces). The project owner is exempt.
 //

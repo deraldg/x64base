@@ -45,7 +45,7 @@ def main() -> int:
         return 0
 
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Target candidate rows reviewed: {row.get('TARGET_CANDIDATE_ROWS_REVIEWED','')}

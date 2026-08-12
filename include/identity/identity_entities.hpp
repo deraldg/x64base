@@ -11,7 +11,7 @@
 // include/identity/identity_entities.hpp
 // Domain entities for the identity / RBAC layer (AIF-045, Contract v1 §3).
 //
-// PURE DATA. No database access and no permission computation live here — resolving
+// PURE DATA. No database access and no permission computation live here -- resolving
 // effective permissions is a separate service (M1b), per the entity-vs-service split.
 
 #include "identity/identity_ids.hpp"
@@ -35,7 +35,7 @@ struct RowStamp {
     std::uint64_t row_version   = 0;
 };
 
-// §3.1 identity / account. Owns identity only — never role/project/permission/session.
+// §3.1 identity / account. Owns identity only -- never role/project/permission/session.
 struct User {
     UserId       id;
     std::string  key;               // user.derald
@@ -94,7 +94,7 @@ struct MemberPermissionOverride {
     std::optional<WorkNodeId> work_scope;
 };
 
-// §3.6 two SEPARATE hierarchies — org containment vs work decomposition.
+// §3.6 two SEPARATE hierarchies -- org containment vs work decomposition.
 enum class OrgUnitType  : std::uint8_t { Organization, Division, Department, Team, Committee, Class, Lab };
 enum class WorkNodeType : std::uint8_t { Project, Lane, Gate, Milestone, Epic, Task, Proof, Publication };
 

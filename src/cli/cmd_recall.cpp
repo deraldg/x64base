@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_recall.cpp — RECALL using shared selector
+// src/cli/cmd_recall.cpp -- RECALL using shared selector
 //
 // Incremental indexing behavior:
 // - Direct-write mode: if a CDX/LMDB backend is active, RECALL rebuilds index

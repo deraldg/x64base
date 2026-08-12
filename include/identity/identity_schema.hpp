@@ -12,12 +12,12 @@
 // DBF schema for the identity / RBAC catalog (AIF-045 2b-ii, APH-5 self-hosting).
 //
 // PURE DATA. Declares the nine SYS* identity tables that persist the nine
-// InMemoryIdentityStore vectors, one table per vector. No database access here —
+// InMemoryIdentityStore vectors, one table per vector. No database access here --
 // the writer/loader (identity_dbf_store.*) consumes these specs.
 //
 // Storage convention (DOTTALKPP_DBF_PATH_POLICY): identity tables are SYSTEM
 // catalogs, so they live under data/metadata/identity/ alongside the other SYS*
-// runtime catalogs — not in the data/dbf fixture dirs, not in a profile home.
+// runtime catalogs -- not in the data/dbf fixture dirs, not in a profile home.
 //
 // Round-trip invariant (Contract v1 §Invariant 5): the authoritative 64-bit IDs
 // AND the portable string keys are both persisted, so a x64base -> reload ->

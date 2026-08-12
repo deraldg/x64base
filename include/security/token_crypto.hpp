@@ -7,13 +7,13 @@
 // owner: member.derald
 // status: supported
 
-// token_crypto.hpp — gold-standard identity crypto (M3): Argon2id + CSPRNG via libsodium.
+// token_crypto.hpp -- gold-standard identity crypto (M3): Argon2id + CSPRNG via libsodium.
 //
 // Replaces the placeholder identity crypto:
 //   - gen_token()      : was mt19937_64 (predictable) -> libsodium randombytes_buf, 256-bit.
 //   - make_credential(): was salt + FNV-1a-64 -> Argon2id (crypto_pwhash_str), memory-hard.
 //
-// libsodium is a vetted, audited implementation — chosen so authentication does not depend on
+// libsodium is a vetted, audited implementation -- chosen so authentication does not depend on
 // hand-rolled cryptography. The credential is a self-describing PHC string
 // ("$argon2id$v=19$m=...,t=...,p=...$salt$hash"); its parameters travel with the hash, so
 // raising cost later does not break existing credentials. Verification is constant-time

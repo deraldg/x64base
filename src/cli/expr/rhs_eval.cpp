@@ -452,7 +452,7 @@ static std::string scalar_to_string(const ScalarValue& v) {
         case ScalarValue::K_Bool: return v.tf ? ".T." : ".F.";
         case ScalarValue::K_Array:
             // Compact identity form; ARRAY LIST (M3) renders full contents. Arrays are
-            // not a scalar function-argument type — this is display/placeholder only.
+            // not a scalar function-argument type -- this is display/placeholder only.
             return "{array:" + std::to_string(dottalk::array::length(v.arr)) + "}";
         default: return {};
     }
@@ -687,7 +687,7 @@ private:
     }
 
     // Postfix one-based subscripting: `<array>[ index ]`, chainable (`$m[1][2]`).
-    // Applies to any primary that evaluates to an array — most importantly `$A[n]`
+    // Applies to any primary that evaluates to an array -- most importantly `$A[n]`
     // and `{…}[n]`. Out-of-range / non-integer / non-array subscripts fail the parse
     // (surfaced as an evaluation error); AIF-036 message-catalog routing is M1b-3.
     bool parse_postfix(ScalarValue& out) {
@@ -811,8 +811,8 @@ private:
                 }
             }
 
-            // DotScript memory variables ($name). The `$` sigil is unambiguous — a
-            // field name never begins with `$` — so this resolution is additive and
+            // DotScript memory variables ($name). The `$` sigil is unambiguous -- a
+            // field name never begins with `$` -- so this resolution is additive and
             // cannot shadow a field. Variables are stored under the sigil-stripped,
             // case-insensitive name (see cmd_VAR). Scalars cross as chars/double per
             // the family's char-compat contract; an array binds by shared reference so

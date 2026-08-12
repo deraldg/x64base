@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// bbs_server.hpp — localhost, token-authenticated BBS/agent server (M4). Public API.
+// bbs_server.hpp -- localhost, token-authenticated BBS/agent server (M4). Public API.
 //
 // SECURITY (load-bearing):
 //   - binds 127.0.0.1 ONLY (never 0.0.0.0). In mirrored-mode WSL the loopback is shared with

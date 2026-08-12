@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/area_banner.cpp
-// DotTalk++ — AREA banner formatter (definition)
+// DotTalk++ -- AREA banner formatter (definition)
 
 #include "area_banner.hpp"
 #include <utility>

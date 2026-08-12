@@ -329,7 +329,7 @@ std::string make_credential(const std::string& secret) {
 bool verify_credential(const std::string& stored, const std::string& secret) {
     if (dottalk::security::is_argon2_credential(stored))     // new Argon2id format
         return dottalk::security::verify_credential(stored, secret);
-    // legacy FNV fallback (transitional — re-run USER PASSWD / USER TOKEN to upgrade)
+    // legacy FNV fallback (transitional -- re-run USER PASSWD / USER TOKEN to upgrade)
     const auto pos = stored.find('$');
     if (pos == std::string::npos) return false;
     return fnv_hex(stored.substr(0, pos), secret) == stored.substr(pos + 1);
@@ -388,7 +388,7 @@ AdminResult login(const std::string& member_key, const std::string& secret) {
 
     if (u->credential_ref.empty()) {
         // Bootstrap (credential-less) login is owner-only (first-run local trust). A
-        // non-owner — including an AI service account — needs an owner-issued credential.
+        // non-owner -- including an AI service account -- needs an owner-issued credential.
         if (!is_owner_member(member_key))
             return AdminResult::fail("'" + member_key + "' has no credential set — the owner must set one "
                                      "(USER PASSWD for humans, USER TOKEN for agents)");

@@ -11,7 +11,7 @@
 // include/identity/permission_resolver.hpp
 // Effective-permission resolver for the identity / RBAC layer (AIF-045, Contract v1 §4).
 //
-// A PURE function over a resolved snapshot — no I/O, no database access, no clock. A service
+// A PURE function over a resolved snapshot -- no I/O, no database access, no clock. A service
 // (M2+) materializes the ResolutionSnapshot from x64base tables (in-scope role permissions,
 // scoped overrides, live authorization, session capabilities, security-policy verdict); this
 // function only decides. That makes it unit-testable and reproducible, and it doubles as the
@@ -90,7 +90,7 @@ inline Decision resolve(const ResolutionRequest& req, const ResolutionSnapshot& 
     if (!snap.session_capable)
         return {Outcome::Deny, DenyStage::SessionCapability, "outside active session capabilities"};
 
-    // 5. Runtime security policy — the last word, independent of RBAC.
+    // 5. Runtime security policy -- the last word, independent of RBAC.
     if (!snap.security_policy_allows)
         return {Outcome::Deny, DenyStage::SecurityPolicy, "denied by runtime security policy (final)"};
 

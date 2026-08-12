@@ -192,7 +192,7 @@ public:
     // all-fields std::string decode that dominates scan cost when a predicate
     // only touches a few fields. Additive: readCurrent() is unchanged. Callers
     // using this MUST read field values only via decodeFieldFromBuffer() (or the
-    // numeric fast path) — get()/_fd are NOT refreshed until the next full
+    // numeric fast path) -- get()/_fd are NOT refreshed until the next full
     // readCurrent().
     bool readCurrentRaw();
 

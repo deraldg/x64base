@@ -1,11 +1,11 @@
 * scan_memvar_parity_regression.dts
-* Scan-path parity target — RED until the predx convergence lands, then GREEN.
+* Scan-path parity target -- RED until the predx convergence lands, then GREEN.
 *
 * Proves a `$name` memory variable resolves in a FOR / scan predicate (the
 * predx::eval_expr surface used by LOCATE / COUNT / SCAN / LIST FOR and SET FILTER),
 * not only in the display path (?/CALC) and the IF/WHILE predicate path (AIF-041, done).
 * The compiled scan/filter evaluator (predx) is the remaining path that does not yet
-* resolve `$name` — and note `$` is ALSO the xBase substring-containment operator there,
+* resolve `$name` -- and note `$` is ALSO the xBase substring-containment operator there,
 * so the convergence hinges on the operand-leading `$name` detector, not just injection.
 *
 * Environment bootstrap (regression doctrine: every test sets its own environment; ambient

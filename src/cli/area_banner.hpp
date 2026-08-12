@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/area_banner.hpp
-// DotTalk++ — AREA banner formatter (declaration)
+// DotTalk++ -- AREA banner formatter (declaration)
 
 #pragma once
 #include <string>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Manual drift gate — MANUAL-ASSEMBLY lane, M4.
+Manual drift gate -- MANUAL-ASSEMBLY lane, M4.
 
 Fails the build when a *generated* region of the committed assembled manual no
 longer matches what its generator produces from current source. This is the

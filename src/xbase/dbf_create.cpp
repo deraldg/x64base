@@ -389,11 +389,11 @@ static bool write_vfp_dbf(const std::string& path,
     return true;
 }
 
-} // namespace (anonymous) — internal file/VFP/classic writers + helpers
+} // namespace (anonymous) -- internal file/VFP/classic writers + helpers
 
 // Byte-store-agnostic X64 (v64) DBF serializer.  Writes a complete, freshly
-// created (0-record) X64 DBF image — VfpHeader + LargeHeaderExtension +
-// VfpField[] + 0x0D + x64 name-metadata block + 0x1A EOF — into ANY ostream.
+// created (0-record) X64 DBF image -- VfpHeader + LargeHeaderExtension +
+// VfpField[] + 0x0D + x64 name-metadata block + 0x1A EOF -- into ANY ostream.
 //
 // The path-based create_dbf writer wraps this (into an ofstream); the in-memory
 // table path (CREATE MEMORY) wraps it into DbArea's RAM byte store, so the
@@ -552,7 +552,7 @@ bool serialize_x64_dbf(std::ostream& out,
 // lifetime) and delegates the byte layout to serialize_x64_dbf.
 //
 // In-memory tables (AIF-043 V3): a path under a mounted ramfs root is created
-// straight into RAM — no OS directory, no file. The identical serializer feeds
+// straight into RAM -- no OS directory, no file. The identical serializer feeds
 // the ramfs stream, so the RAM image is byte-identical to a disk .dbf, and the
 // subsequent DbArea::open (V2) reads it back from ramfs. When no root is mounted
 // (the default) is_virtual() is false and this branch is dead.
@@ -678,7 +678,7 @@ bool create_dbf(const std::string& path,
         return false;
     }
 
-    // In-memory tables (AIF-043 M1) are X64/v64 only — the RAM byte store and
+    // In-memory tables (AIF-043 M1) are X64/v64 only -- the RAM byte store and
     // ramfs open path are wired for the v64 layout. Reject other flavors on a
     // virtual path with a clear message instead of a confusing ofstream failure.
     if (xbase::ramfs::is_virtual(path) && flavor != Flavor::X64) {

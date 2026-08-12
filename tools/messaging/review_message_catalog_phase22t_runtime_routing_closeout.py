@@ -296,10 +296,10 @@ Phase 22T is report-only. It closes the first runtime routing pilot set after
 
 ## Proven seams
 
-- `MESSAGE_LOCALE_SET` — SET LANGUAGE success routing.
-- `UNSUPPORTED_MESSAGE_LOCALE` — unsupported-locale rejection routing.
-- `HELP_HINT_COMMAND` — HELP hint routing with placeholder substitution.
-- `SET MESSAGE PROOF` — shared/gated proof lane.
+- `MESSAGE_LOCALE_SET` -- SET LANGUAGE success routing.
+- `UNSUPPORTED_MESSAGE_LOCALE` -- unsupported-locale rejection routing.
+- `HELP_HINT_COMMAND` -- HELP hint routing with placeholder substitution.
+- `SET MESSAGE PROOF` -- shared/gated proof lane.
 
 ## Protected boundaries
 

@@ -1,5 +1,5 @@
 * identity_accept_regression.dts
-* AI-agent local-security accept cycle (AIF-045 2c) — repeatable, self-cleaning.
+* AI-agent local-security accept cycle (AIF-045 2c) -- repeatable, self-cleaning.
 *
 * Admits a throwaway AI agent, proves the resolver denies a requires-approval action,
 * the owner grants it (scoped + time-boxed) so the resolver flips to ALLOW, ungrants so

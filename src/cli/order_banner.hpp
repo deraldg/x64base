@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/order_banner.hpp
-// DotTalk++ — AREA banner formatter — header-only
+// DotTalk++ -- AREA banner formatter -- header-only
 //
 // Wire-up: build an AreaFacts struct from your DbArea + order_state and
 // print the returned strings in AREA (or anywhere you show state).
@@ -50,7 +50,7 @@ inline std::string order_phrase(const AreaFacts& f){
         const std::string dir = f.asc ? "ASC" : "DESC";
         return f.tag + " (" + dir + ") " + via_phrase(f.kind, f.index_rel);
     }
-    // INX/IDX (legacy) — show direction and optional tag
+    // INX/IDX (legacy) -- show direction and optional tag
     const std::string dir = f.asc ? "ASCEND" : "DESCEND";
     if (!f.tag.empty()) {
         return dir + " " + via_phrase(f.kind, f.index_rel) + "  Tag: " + f.tag;

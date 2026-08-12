@@ -141,7 +141,7 @@ struct Settings {
     static bool deletedOn() { return instance().deleted_on.load(); }
     static void setDeleted(bool on) { instance().deleted_on.store(on); }
 
-    // SET INDEXTXN — transactional in-COMMIT index maintenance toggle.
+    // SET INDEXTXN -- transactional in-COMMIT index maintenance toggle.
     static bool indexTxnOn() { return instance().index_txn_on.load(); }
     static void setIndexTxn(bool on) { instance().index_txn_on.store(on); }
 };

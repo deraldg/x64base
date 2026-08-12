@@ -348,8 +348,8 @@ bool shell_execute_line(xbase::DbArea& area, const std::string& rawLine)
 
     // SET TIMER instrumentation. This is the single canonical executor every
     // front-end routes through (interactive REPL, DO/DOTSCRIPT, init/shutdown
-    // scripts, loop bodies), so placing the timer here — rather than only in
-    // the interactive wrapper — makes `SET TIMER ON` report per-command
+    // scripts, loop bodies), so placing the timer here -- rather than only in
+    // the interactive wrapper -- makes `SET TIMER ON` report per-command
     // elapsed inside scripts too (benchmarks can self-time). Guarded by the
     // opt-in flag, so it is inert unless the user turns the timer on.
     auto& S = cli::Settings::instance();

@@ -42,7 +42,7 @@ def main() -> int:
         print("[MSG-022AE.6.5.10DN-B] Side-branch savepoint already appears in journal; refusing duplicate append.")
         return 0
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Operator HELP target evidence accepted: {row.get('OPERATOR_HELP_TARGET_EVIDENCE_ACCEPTED','')}

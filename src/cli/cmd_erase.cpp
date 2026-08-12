@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_erase.cpp
-// ERASE — physically deletes a table file and its same-stem sidecars.
+// ERASE -- physically deletes a table file and its same-stem sidecars.
 //
 // Supported syntax:
 //   ERASE <table> [CONFIRM]

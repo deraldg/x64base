@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_append_blank.cpp — APPEND BLANK
+// src/cli/cmd_append_blank.cpp -- APPEND BLANK
 //
 // Delegates to shared append support so APPEND and APPEND BLANK stay aligned.
 

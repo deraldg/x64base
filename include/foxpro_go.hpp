@@ -7,13 +7,13 @@
 // owner: member.derald
 // status: supported
 
-Here’s a **clean, complete, codex‑style enumeration of the FoxPro 2.6a `GO` command**, written in the same tone and structural precision as your reference headers. This is not a header file — just the deep technical breakdown you asked for.
+Here’s a **clean, complete, codex‑style enumeration of the FoxPro 2.6a `GO` command**, written in the same tone and structural precision as your reference headers. This is not a header file -- just the deep technical breakdown you asked for.
 
 If you want it *converted into a header entry*, I can do that next.
 
 ---
 
-# 🔷 **FoxPro 2.6a — `GO` Command Enumeration (Full Codex)**
+# 🔷 **FoxPro 2.6a -- `GO` Command Enumeration (Full Codex)**
 
 The `GO` command is deceptively simple on the surface, but FoxPro’s runtime gives it a surprisingly rich set of behaviors depending on:
 
@@ -217,7 +217,7 @@ Positions `orders` on the first matching order for customer #5.
 
 # 🟦 **8. Summary Line (for header use)**
 
-**GO** — Move the record pointer to a specific record, first/last record, or relative position. Triggers relationship updates and respects filters, deleted records, and index order (TOP/BOTTOM only).
+**GO** -- Move the record pointer to a specific record, first/last record, or relative position. Triggers relationship updates and respects filters, deleted records, and index order (TOP/BOTTOM only).
 
 ---
 

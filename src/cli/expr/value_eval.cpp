@@ -262,7 +262,7 @@ private:
                     }
                 }
 
-                // custom fns (runtime-registered — RUNTIME_DEF_FAMILY lane)
+                // custom fns (runtime-registered -- RUNTIME_DEF_FAMILY lane)
                 if (const auto* c = dottalk::expr::find_custom_fn(fn)) {
                     const int argc = static_cast<int>(args.size());
                     if (argc < c->minArgs || argc > c->maxArgs) return false;
@@ -803,7 +803,7 @@ compile_bool_predicate(xbase::DbArea& A, const std::string& exprText, bool allow
     cp->original = exprText;
 
     // Reproduce eval_bool's text preprocessing ONCE. Only hoist when it is a
-    // no-op (which guarantees record-independence — nothing was expanded or
+    // no-op (which guarantees record-independence -- nothing was expanded or
     // folded away that could depend on the current record) and the predicate is
     // not a DotScript/bridge predicate ($name / {..}). Anything else keeps the
     // per-row eval_bool path so behavior is byte-for-byte identical.

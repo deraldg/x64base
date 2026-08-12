@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_browse.cpp — thin forwarder to the refactored BROWSE module
+// src/cli/cmd_browse.cpp -- thin forwarder to the refactored BROWSE module
 
 // @dottalk.usage v1
 // owner: DOT|BROWSE

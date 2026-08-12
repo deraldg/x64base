@@ -267,7 +267,7 @@ static bool parse_one(const std::string& part,
     if (!vr.ok) {
         // Not a static-catalog type.  Accept iff a runtime-registered custom
         // field type exists for this code AND it is eligible for this CREATE
-        // flavor (FIELDTYPE M4b: the registry IS the validated chain — no
+        // flavor (FIELDTYPE M4b: the registry IS the validated chain -- no
         // per-type switch edit needed here or in the catalog / supports_type_now).
         if (!xbase::fieldcodec::field_type_registered(T)) {
             err = "CREATE: field type '" + std::string(1, T) +

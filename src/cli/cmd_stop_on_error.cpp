@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_stop_on_error.cpp
-// STOP_ON_ERROR [severity] — set or report the DotScript stop-on-error threshold.
+// STOP_ON_ERROR [severity] -- set or report the DotScript stop-on-error threshold.
 
 // @dottalk.usage v1
 // owner: DOT|STOP_ON_ERROR

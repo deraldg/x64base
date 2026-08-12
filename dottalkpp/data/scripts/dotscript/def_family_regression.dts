@@ -1,13 +1,13 @@
 * def_family_regression.dts
-* Runtime DEF-family testbed — DEFCMD / DEFFN / EXAMPLE (RUNTIME_DEF_FAMILY lane).
+* Runtime DEF-family testbed -- DEFCMD / DEFFN / EXAMPLE (RUNTIME_DEF_FAMILY lane).
 *
 * Proves runtime definition, invocation, argument passthrough, expression resolution,
-* composition with a builtin, listing, and removal — all session-only, with no rebuild.
+* composition with a builtin, listing, and removal -- all session-only, with no rebuild.
 * Kept as the PERMANENT worked example of the AI-friendly dev-tools.
 *
 * Environment bootstrap (regression doctrine: every test sets its own environment):
 * sets ECHO OFF + STOP_ON_ERROR OFF so the intentional post-removal "unknown" lines do
-* not abort the run. This test opens/mutates NO table and NO file — only the session
+* not abort the run. This test opens/mutates NO table and NO file -- only the session
 * command/function registries, which it cleans up (UNDEFCMD/UNDEFFN). Safe for the
 * default suite once proven green.
 *

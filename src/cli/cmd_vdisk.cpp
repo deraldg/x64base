@@ -86,7 +86,7 @@ std::string up_(std::string s)
     return s;
 }
 
-// bin/vdisk.ini — sits alongside dottalkpp.ini / init.ini.
+// bin/vdisk.ini -- sits alongside dottalkpp.ini / init.ini.
 std::string vdisk_ini_path()
 {
     return (dottalk::paths::get_slot(dottalk::paths::Slot::BIN) / "vdisk.ini").string();

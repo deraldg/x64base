@@ -170,7 +170,7 @@ def _primary_section(paths: ManualgenPaths, slug: str) -> Path:
 
 def _render_runtime_candidate(source_packet: str, source_sha256: str) -> str:
     return f"""<!-- Candidate-only prose review fragment. Not publication. -->
-# Runtime Evidence — Prose Delta Candidate
+# Runtime Evidence -- Prose Delta Candidate
 
 - Target: `{RUNTIME_SLUG}`
 - Suggested anchor after: `## Smoke tests, shakedowns, regressions, builds, and releases`
@@ -217,7 +217,7 @@ Invocation, and Automation for entry-path behavior.
 
 def _render_command_candidate(source_packet: str, source_sha256: str) -> str:
     return f"""<!-- Candidate-only prose review fragment. Not publication. -->
-# Command Surface — Prose Delta Candidate
+# Command Surface -- Prose Delta Candidate
 
 - Target: `{COMMAND_SLUG}`
 - Source packet: `{source_packet}`
@@ -260,7 +260,7 @@ branch, so the bare command form is the documented launch surface.
 
 def _render_partial_help_candidate(source_packet: str, source_sha256: str) -> str:
     return f"""<!-- Candidate-only appendix prose. Not publication. -->
-# Partial HELP Reference — Prose Appendix Candidate
+# Partial HELP Reference -- Prose Appendix Candidate
 
 - Target: `{PARTIAL_HELP_SLUG}`
 - Target kind: `new_candidate_appendix`

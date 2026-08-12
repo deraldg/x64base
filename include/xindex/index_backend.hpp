@@ -57,7 +57,7 @@ struct IIndexBackend {
     // full range (default). Classic 32-bit on-disk formats (CNX, legacy .inx)
     // override this so an x64 table bound to an insufficient backend can be
     // rejected with a clear error instead of silently truncating record numbers
-    // beyond UINT32_MAX. Reporting only — not intense classic-32 support.
+    // beyond UINT32_MAX. Reporting only -- not intense classic-32 support.
     virtual std::uint64_t maxRecordNumber() const { return UINT64_MAX; }
     bool supportsWideRecords() const { return maxRecordNumber() > UINT32_MAX; }
 

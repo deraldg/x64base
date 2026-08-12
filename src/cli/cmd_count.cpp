@@ -9,7 +9,7 @@
 
 // src/cli/cmd_count.cpp
 //
-// COUNT — selector-backed, predicate-backed.
+// COUNT -- selector-backed, predicate-backed.
 // Forms supported:
 //   COUNT
 //   COUNT FOR <expr>

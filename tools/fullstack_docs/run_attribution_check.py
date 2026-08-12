@@ -10,7 +10,7 @@ cross-checks against the run registry:
   - does the run declare author != owner (the truth the record must tell)?
 
 Advisory by default (reports, exit 0). --strict fails (exit 1) if any closeout newer than the
-adoption date lacks a run_id — the promotion to a hard gate once v2 is the convention.
+adoption date lacks a run_id -- the promotion to a hard gate once v2 is the convention.
 
 No third-party deps (regex over the YAML front-matter, so it runs anywhere).
 Owner: member.derald · steward: member.ai.claude.cowork · lane: AIF-050 · status: candidate

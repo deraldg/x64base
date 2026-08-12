@@ -28,7 +28,7 @@ inline std::string to_upper(std::string s) {
     return s;
 }
 
-// Classic Soundex (4 chars). Canonical implementation — SOUNDEX() calls this too.
+// Classic Soundex (4 chars). Canonical implementation -- SOUNDEX() calls this too.
 inline std::string soundex(const std::string& in) {
     std::string letters;
     for (char ch : in) {
@@ -86,7 +86,7 @@ inline std::size_t levenshtein(const std::string& aRaw, const std::string& bRaw)
 }
 
 // Rank candidates as near-matches of `term`. Tiers: 0 prefix, 1 substring, 2 same
-// Soundex (phonetic — catches GAINT->GIANT), 3 small edit distance. Sorted by tier,
+// Soundex (phonetic -- catches GAINT->GIANT), 3 small edit distance. Sorted by tier,
 // then distance, then name. Case-insensitive; exact matches are skipped (they resolve
 // upstream). Returns up to `limit` distinct original-case names.
 inline std::vector<std::string>

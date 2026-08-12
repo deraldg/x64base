@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_replace_multi.cpp — multi-field replace with one record lock + one write
+// src/cli/cmd_replace_multi.cpp -- multi-field replace with one record lock + one write
 //
 // Maintenance note, 2026-05-01:
 //   MULTIREP must evaluate/dequote RHS values before validation/storage,

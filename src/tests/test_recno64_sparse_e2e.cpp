@@ -9,7 +9,7 @@
 
 // src/tests/test_recno64_sparse_e2e.cpp
 //
-// RECNO64 M4-5 — the REAL end-to-end boundary proof (the "gumption" test).
+// RECNO64 M4-5 -- the REAL end-to-end boundary proof (the "gumption" test).
 //
 // Instead of fabricating cursor state, this builds an actual x64 table on disk whose
 // record_count is set past 2^31, writes real records at recno 1, 2^31+1, and 2^31+2,
@@ -76,8 +76,8 @@ bool sparse_write_at(const std::string& path, std::uint64_t off,
 
 int main() {
     const std::uint64_t I32MAX = 2147483647ull;
-    const std::uint64_t RA     = I32MAX + 1;   // 2147483648 — first record past 2^31
-    const std::uint64_t RB     = I32MAX + 2;   // 2147483649 — a distinct record past 2^31
+    const std::uint64_t RA     = I32MAX + 1;   // 2147483648 -- first record past 2^31
+    const std::uint64_t RB     = I32MAX + 2;   // 2147483649 -- a distinct record past 2^31
     const std::uint64_t BIG    = RB;           // record_count = 2^31 + 2
 
     const std::string path = "recno64_sparse_e2e.dbf";

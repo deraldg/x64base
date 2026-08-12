@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// token_crypto.cpp — gold-standard identity crypto via libsodium (Argon2id + CSPRNG).
+// token_crypto.cpp -- gold-standard identity crypto via libsodium (Argon2id + CSPRNG).
 //
 // Depends on libsodium (vcpkg: "libsodium" -> unofficial-sodium::sodium). No hand-rolled crypto.
 #include "security/token_crypto.hpp"
@@ -26,7 +26,7 @@ bool           g_init_ok = false;
 // --- Argon2id cost ---------------------------------------------------------
 // libsodium presets embed their parameters in the hash string, so raising these later does NOT
 // invalidate existing credentials (verify reads the stored m/t/p). Default = INTERACTIVE
-// (~64 MiB, t=2) — comfortably above OWASP's Argon2id minimum (19 MiB, t=2) while keeping logins
+// (~64 MiB, t=2) -- comfortably above OWASP's Argon2id minimum (19 MiB, t=2) while keeping logins
 // snappy on student/lab machines. Raise to *_MODERATE (256 MiB) or *_SENSITIVE (1 GiB) for
 // higher-value deployments.
 constexpr unsigned long long kOps = crypto_pwhash_OPSLIMIT_INTERACTIVE;

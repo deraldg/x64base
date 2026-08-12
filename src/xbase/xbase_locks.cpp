@@ -166,7 +166,7 @@ static bool write_lock_file(const std::string& path, const Owner& owner, std::st
 }
 
 static bool force_remove(const std::string& path, std::string* err) {
-    // In-memory tables (AIF-043 V3): a RAM table is process-local/single-area —
+    // In-memory tables (AIF-043 V3): a RAM table is process-local/single-area --
     // there is no OS lock file to touch, so locking is a no-op success.
     if (xbase::ramfs::is_virtual(path)) return true;
     std::error_code ec;

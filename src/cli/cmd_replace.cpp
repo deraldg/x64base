@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_replace.cpp — REPLACE by field INDEX or NAME
+// src/cli/cmd_replace.cpp -- REPLACE by field INDEX or NAME
 // Usage:
 //   REPLACE <field_index> WITH <value>
 //   REPLACE <field_name>  WITH <value>
@@ -587,7 +587,7 @@ static bool validate_field_value_for_store(const xbase::DbArea& A,
 
         default:
             // Registered custom field types (FIELDTYPE M4b) validate + canonicalize
-            // *through their own Codec* — the type's Codec is the single source of
+            // *through their own Codec* -- the type's Codec is the single source of
             // truth, so no per-type case is needed here.  encode into a scratch
             // region, then decode it back to the canonical text that gets stored.
             if (xbase::fieldcodec::field_type_registered(t)) {

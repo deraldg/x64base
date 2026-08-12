@@ -8,7 +8,7 @@
 // status: supported
 
 // src/cli/cmd_use.cpp
-// DotTalk++ USE command (open DBF in a work area) — duplicate-open guard, NOINDEX, auto-attach
+// DotTalk++ USE command (open DBF in a work area) -- duplicate-open guard, NOINDEX, auto-attach
 
 // @dottalk.usage v1
 // owner: DOT|USE

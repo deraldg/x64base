@@ -1329,7 +1329,7 @@ static void print_current_help_report(const std::string& dir) {
     }
 }
 
-// HELP GIANT ALL / CMDHELP REPORT ALL — the exhaustive "recollection": every HELP DATA
+// HELP GIANT ALL / CMDHELP REPORT ALL -- the exhaustive "recollection": every HELP DATA
 // topic rendered in full (no 24-row preview cap, no 100-char truncation), grouped by topic.
 // Same corpus the manual/website are assembled from. Respects SET PAGING.
 static void print_current_help_full(const std::string& dir) {
@@ -1395,7 +1395,7 @@ static void print_current_help_full(const std::string& dir) {
             tbody += "\n";
             ++n;
         }
-        if (n == 0) continue;  // topic was pure provenance — skip its header
+        if (n == 0) continue;  // topic was pure provenance -- skip its header
         ++shown_topics;
         shown_rows += n;
         body += "\n";

@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_delete.cpp — DELETE with implicit filesystem record locking
+// src/cli/cmd_delete.cpp -- DELETE with implicit filesystem record locking
 //
 // Incremental indexing behavior:
 // - Direct-write mode: if a CDX/LMDB or CNX backend is active, DELETE snapshots

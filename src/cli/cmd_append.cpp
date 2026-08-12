@@ -7,7 +7,7 @@
 // owner: member.derald
 // status: supported
 
-// src/cli/cmd_append.cpp — APPEND
+// src/cli/cmd_append.cpp -- APPEND
 //
 // Supported forms:
 //   APPEND

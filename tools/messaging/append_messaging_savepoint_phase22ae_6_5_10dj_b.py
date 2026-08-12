@@ -26,7 +26,7 @@ def main() -> int:
     if SAVEPOINT in old:
         print("[MSG-022AE.6.5.10DJ-B] Side-branch savepoint already appears in journal; refusing duplicate append."); return 0
     entry = f"""
-## {SAVEPOINT} — {status}
+## {SAVEPOINT} -- {status}
 
 - Timestamp UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')}
 - Target verification probe staging created: {row.get('TARGET_VERIFICATION_PROBE_STAGING_CREATED','')}

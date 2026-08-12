@@ -71,7 +71,7 @@ bool Value::truthy() const noexcept {
         case ValueKind::String: return !text_.empty();
         case ValueKind::Date:   return date8_ != 0;
         // A bound, non-empty array is truthy; NIL/empty/unbound are not. This is a
-        // pragmatic coercion for predicate contexts — xBase has no array->logical
+        // pragmatic coercion for predicate contexts -- xBase has no array->logical
         // rule, so callers should prefer ISARRAY()/ALEN() for real tests.
         case ValueKind::Array:  return arr_ && !arr_->elements.empty();
         default:                return false;

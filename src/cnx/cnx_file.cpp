@@ -13,7 +13,7 @@
 // Adds: append_bytes / read_at / write_at for RUN blocks (future b-tree pages).
 //
 // In-memory containers (AIF-043 V4d): a path under a mounted ramfs root is served
-// from RAM via io() (either the disk std::fstream or a ramfs std::iostream) — the
+// from RAM via io() (either the disk std::fstream or a ramfs std::iostream) -- the
 // same one-handle seam as the cdxfile twin and DbArea. When no ramfs root is
 // mounted (default), is_virtual() is false and the RAM branch is dead.
 

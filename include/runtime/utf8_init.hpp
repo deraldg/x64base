@@ -50,7 +50,7 @@ inline void init_utf8() {
     ::SetConsoleOutputCP(CP_UTF8);
     ::SetConsoleCP(CP_UTF8);
 
-    // 2) VT OUTPUT (ANSI) — optional.
+    // 2) VT OUTPUT (ANSI) -- optional.
     if (HANDLE hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
         hOut != INVALID_HANDLE_VALUE && hOut != nullptr) {
         DWORD mode = 0;

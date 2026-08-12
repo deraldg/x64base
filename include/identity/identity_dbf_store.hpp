@@ -17,7 +17,7 @@
 // self-hosting round-trip: x64base -> reload -> x64base with identity unchanged.
 //
 // This milestone (2b-ii M2/M3) provides explicit save/load/verify; it does NOT
-// change the boot path — the static seed in identity_bootstrap.cpp stays the
+// change the boot path -- the static seed in identity_bootstrap.cpp stays the
 // authority until the round-trip is proven and boot-from-DBF is deliberately
 // adopted (with degraded read-only fallback) in a follow-on.
 
