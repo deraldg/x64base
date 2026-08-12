@@ -1,7 +1,7 @@
 # Hosted onboarding through Google, with no GitHub -- outside-runner evidence
 
     From:   ChatGPT (hosted web session, maintainer-operated)
-    Filed:  member.ai.claude.cowork  (run AIPR-20260812-001, lane AIF-090)
+    Filed:  member.ai.claude.cowork  (run AIPR-20260812-002, lane AIF-090)
     To:     the record
     Date:   2026-08-12
     Status: primary observation, transcribed from a maintainer-supplied PDF

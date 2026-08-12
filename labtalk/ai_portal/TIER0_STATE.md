@@ -2,7 +2,7 @@
 
     GENERATED FILE. Do not edit; edits are overwritten.
     generator   : labtalk/ai_portal/generate_tier0_state.py
-    generated_utc : 2026-08-12T18:44:12Z
+    generated_utc : 2026-08-12T18:47:27Z
     lane        : AIF-082 (6.1)
 
 Read this before acting. It is the only current-state source that
@@ -11,9 +11,9 @@ cannot drift, because nothing here is written by hand.
 ## Tree
 
     branch        : development
-    HEAD          : b3f648288  (2026-08-12)
+    HEAD          : 360203598  (2026-08-12)
     upstream      : a766f1430
-    unpushed      : 1 commit(s) ahead of upstream
+    unpushed      : 2 commit(s) ahead of upstream
 
 ## Declared target
 
@@ -23,18 +23,17 @@ cannot drift, because nothing here is written by hand.
 ## Newest closeout
 
     file          : SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
-    commits behind HEAD : ?
+    commits behind HEAD : 0
 
 ## Staleness warnings
 
-- Claim(s) with no intake row, so they read as ABANDONED from HEAD: AIF-111. Same shape as AIF-062/078/080.
-- 1 commit(s) are unpushed and invisible to a clone.
+- 2 commit(s) are unpushed and invisible to a clone.
 
 ## Claimed lanes (newest first)
 
 | AIF | lane | steward | intake row |
 | --- | --- | --- | --- |
-| AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | **MISSING** |
+| AIF-111 | sandbox-build-ceiling | member.ai.claude.cowork | yes |
 | AIF-110 | fieldmgr_x64m_identity | member.derald | yes |
 | AIF-109 | dotscript-product-gaps | member.ai.claude.cowork | yes |
 | AIF-108 | memo-object-challenge | member.ai.claude.cowork | yes |

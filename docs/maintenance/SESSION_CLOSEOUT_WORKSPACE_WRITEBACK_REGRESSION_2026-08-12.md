@@ -1,7 +1,7 @@
 ---
 ai_report_audit:
   schema: ai-report-audit-v1
-  report_id: AIPR-20260812-001
+  report_id: AIPR-20260812-002
   recorded_at_utc: 2026-08-12T17:46:05Z
   agent:
     provider: Anthropic
@@ -10,7 +10,7 @@ ai_report_audit:
     access_mode: local_write
   session:
     id: not_exposed
-    chat_reference: COWORK-20260812-001
+    chat_reference: COWORK-20260812-002
   project:
     id: project.x64base.runtime
     root: D:/code/ccode
@@ -245,6 +245,18 @@ it. The failures are logged here rather than smoothed over:
    command that assumes a location is a defect; three publishes failed on it")
    and its companion ("it costs nothing to do it right"). Reissued as a single
    location-proofed `git -C D:\code\ccode add -- ...` line.
+7. **A run id was allocated by grep, and collided.** This session first took
+   `AIPR-20260812-001` / `COWORK-20260812-001` after checking only the closeout
+   set -- both were already held by the morning session (`AIF-110.claim`,
+   `AIF-109.claim`, and three quip files). Caught before commit and rewritten to
+   `-002` across the closeout envelope, the intake MANIFEST, the dashboard row
+   and the run fragment. Exactly the "grep is not an allocator" lesson
+   (AIF-078), applied to run ids rather than AIF numbers: **AIF numbers have an
+   atomic allocator (`claim-aif`); run ids do not.** Until one exists, the
+   honest check is the whole ledger -- `coordination/aif/*.claim`,
+   `coordination/quips/`, `labtalk/registries/runs.d/`, the intake queue and the
+   closeout set -- not any one of them. A `claim-run` primitive alongside
+   `claim-aif` is the obvious durable fix and is NOT proposed as built here.
 
 What held: prior art WAS checked before adding both `FILE()` and `ERASE DIR`
 (function tables and command registry grepped first), per the owner's
