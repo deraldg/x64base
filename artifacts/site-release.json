@@ -3,7 +3,7 @@
   "package_version": "0.1.0",
   "source_branch": "codex/lean-sites-publish",
   "source_commit": "8f5f325bee70a5e4ae693c5677b039f23abfbc74",
-  "published_at_utc": "2026-08-12T03:02:51.711Z",
+  "published_at_utc": "2026-08-12T03:10:16.346Z",
   "publish_mode": "github-pages",
   "source_root": "website source tree",
   "deploy_branch": "gh-pages",
