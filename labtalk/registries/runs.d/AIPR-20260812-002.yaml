@@ -1,0 +1,26 @@
+run_id: AIPR-20260812-002
+member: member.ai.claude.cowork
+product: Cowork
+project: project.x64base.runtime
+lanes:
+- AIF-070
+- AIF-082
+- AIF-090
+role: regression_repair_and_onboarding_records
+authored_by: member.ai.claude.cowork
+planned_by: member.derald
+owner: member.derald
+committer: member.derald
+git:
+  branch: development
+  baseline: a766f1430
+  head: b3f648288
+chat_handle: COWORK-20260812-002
+handle_binding: SELF_REPORTED
+continues_run: AIPR-20260812-001
+started: 2026-08-12
+closeouts:
+- docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
+reports:
+- AIPR-20260812-002
+status: active

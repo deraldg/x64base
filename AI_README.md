@@ -118,9 +118,10 @@ git status --short
 
 ### Remote / hosted agents -- MANDATORY branch enumeration
 
-If you cannot read `D:\code\ccode` (you are a hosted/remote AI seeing only GitHub
-and the website), you MUST enumerate the published branches before choosing a
-baseline. Do NOT default to `main`:
+If you cannot read `D:\code\ccode` (you are a hosted/remote AI seeing GitHub, the
+website, and possibly a maintainer-shared channel -- see below), you MUST
+enumerate the published branches before choosing a baseline. Do NOT default to
+`main`:
 
 ```
 git ls-remote --heads https://github.com/deraldg/x64base.git
@@ -136,6 +137,44 @@ transient name" means **discover** the branch, not assume `main`. Skipping
 enumeration and building against `main` is a hard onboarding failure (observed
 2026-08). If you cannot reconcile against `development`, say so explicitly and
 mark the work provisional -- never claim `main` == authority.
+
+#### A third channel exists: maintainer-shared cloud + the BBS by mail
+
+Measured 2026-08-12. A hosted ChatGPT session onboarded correctly with **no
+GitHub involvement at all**, through Google Drive (a shared document) plus the
+BBS delivered over Gmail. So "hosted means GitHub and the website" is
+incomplete. If the maintainer has shared a channel with you, it is a legitimate
+source -- with three standing conditions, all earned from that run's own
+honesty:
+
+- **A backup of the tree is not the tree.** That session found older `ccode`
+  copies in Drive and correctly refused to treat them as authoritative. Do the
+  same: a stale copy is prior art, never a baseline.
+- **State arriving by mail is state as of the mail.** That run reported baseline
+  `db04678b dirty` while `development` HEAD had already moved several commits
+  on. Date every figure you take from the channel, and say the channel is where
+  you got it.
+- **Check whether you got canon or a summary, and SAY WHICH.** That session
+  reported that the canonical files were not in the channel and that it
+  reconstructed the contract from an older derived report -- **its own
+  testimony, never verified against the channel.** Name the exact documents you
+  actually read, by filename. "I onboarded" is not a claim anyone can check;
+  "I read these four files" is. If you did not read `AI_TIER1_SEED_V1.md`
+  itself, mark the onboarding provisional -- as it did.
+
+**What is actually established, and what is not.** Owner-attested: the channel
+worked, with no GitHub. Verified against the tree: the invariants that session
+recited are correct, and the state figure it quoted was stale. NOT verified:
+everything it said about WHAT it read -- that is an agent describing its own
+inputs, the weakest tier in this project's authority order, and the first draft
+of this section repeated it as fact before the maintainer caught it. Treat a
+hosted agent's account of its own sourcing as testimony.
+
+Evidence, tiered: `docs/maintenance/external_ai_intake/hosted_google_onboarding_2026-08-12/`
+(AIF-090). **Open action, worth doing whether or not that testimony holds:** put
+`AI_README.md`, `AI_PORTAL.md`, `AI_TIER1_SEED_V1.md` and `TIER0_STATE.md` into
+the shared channel. A channel demonstrably carrying canon removes the question
+instead of answering it.
 
 Repository boundary pointers:
 

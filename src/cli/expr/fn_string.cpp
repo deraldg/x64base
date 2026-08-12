@@ -147,7 +147,7 @@ static std::string dt_empty(const std::vector<std::string>& args) {
 }
 
 // --------------------------------------------------
-// FILE() — filesystem existence probe (FoxPro-compatible name)
+// FILE() -- filesystem existence probe (FoxPro-compatible name)
 // --------------------------------------------------
 // Added 2026-08-12 for the WORKSPACE WRITEBACK refusal arms (WB_T5/WB_T6):
 // "the aborted target does not exist afterward" needs a by-value read of the

@@ -947,6 +947,46 @@ proofs:
     writes_memo / clears_memo_field, so the call sites to instrument are pre-identified. Closing this
     retires the COMMIT contract''s own disclaimer that it "is not an atomic transaction across DBF, memo,
     and index storage."'
+- id: proof.workspace.writeback
+  label: WORKSPACE WRITEBACK -- the memo/RAM to disk return leg, proven on two toolchains
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/runs/workspace_writeback_proof_windows_20260812T180000Z.log
+  item_id: runtime.workspace_writeback
+  return_code: 0
+  related:
+  - D:/code/ccode/labtalk/proofs/runs/workspace_writeback_proof_teed_20260812T174605Z.log
+  - D:/code/ccode/docs/maintenance/SESSION_CLOSEOUT_WORKSPACE_WRITEBACK_REGRESSION_2026-08-12.md
+  - D:/code/ccode/docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
+  - D:/code/ccode/dottalkpp/data/scripts/workspace_writeback.dts
+  - D:/code/ccode/src/cli/cmd_workspace.cpp
+  - D:/code/ccode/src/cli/cmd_regression.cpp
+  notes: 'Closes AIF-070''s last arm: disk -> memo -> RAM -> disk, with hydration as the proven inverse,
+    so the round trip IS the test. Spec 44 WORKSPACE_WRITEBACK, WB_T1..WB_T6 all .T. on BOTH toolchains
+    -- Linux g++ 11 (sandbox) and Windows MSVC pro-md, build stamp "dottalk++ v0.6 (2026-08-12, b3f64828
+    dirty) (Aug 12 2026 10:56:44)". Both landed THE SAME 15 files (13 tables + 2 memo sidecars) with [oracle
+    OK] on every one, and both refused the shortfall arm having written nothing. Windows measures: hydrate
+    27 files / 104411 B / 68.9 ms zero disk reads; writeback 15 files / 95579 B / 57.5 ms; teardown removed
+    16. The 27-vs-15 gap is the documented index behaviour, not a shortfall -- index FILES are derived
+    and rebuildable, the per-table CHOICE (index=/indextype=) travels in the posture. WHAT THE SPEC GUARDS
+    is enumeration authority: the manifest comes from the posture''s AREA lines, never the session''s
+    attach order, because the first cut asked the session and silently wrote 15 of 27 files while reporting
+    cheerful success. Refusal arms matter as much as green ones: a shortfall ABORTS rather than leaving
+    a partial workspace that looks finished, and an abort leaves the filesystem untouched INCLUDING empty
+    directories (v2 fix -- the first cut created target dirs before the manifest check while printing
+    "Nothing was written"). Proving it forced two owner-ruled vocabulary additions the same day, because
+    the markers could not otherwise assert: FILE(<path>) (no filesystem probe existed in SYSFUNC; deliberately
+    broader than VFP so a leftover empty directory cannot pass an absence proof) and ERASE DIR <path>
+    CONFIRM (no verb could delete a directory, and without clean-slate reruns the regression reads the
+    PREVIOUS run''s files after a collision refusal -- a stale false green). Idempotence measured, not
+    designed: the second Linux run went deliberately into the first run''s litter and still closed green.
+    INCIDENT WORTH KEEPING: the first Windows re-run was RED (FORMULA error on WB_T5/T6) purely because
+    the staged exe predated the FILE() addition by 44 minutes; diagnosed by grepping the binary for a
+    string only the change introduces, with the check proven both ways (0 stale / 1 fresh) before being
+    trusted, and independently agreed by the same commit''s FN_COVERAGE lane (fn specs 75 vs SYSFUNC 74,
+    flagging exactly FILE). Rebuild was the only variable changed. NOT COVERED, stated rather than implied:
+    the WITH INDEXES byte-mirror arm, and the CONFIRM / collision / .__wbak gates, which are built but
+    have never been re-run into an existing target since the v2 rebuild. Also owed: SYSFUNC_IMPORT_v1.csv
+    is stale by exactly FILE, to be closed by metacollect regeneration rather than hand-forged.'
 - id: proof.worktree.lane_isolation
   label: Worktree-per-lane isolation -- sessions stop sharing one working tree
   state: design-intended

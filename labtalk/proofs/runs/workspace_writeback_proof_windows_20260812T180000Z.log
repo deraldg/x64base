@@ -1,0 +1,142 @@
+PROVENANCE NOTE -- read before citing this file.
+
+This is an OPERATOR CONSOLE PASTE of the Windows/MSVC re-run, transcribed by the
+agent from the maintainer's terminal. It is NOT a `SET ALTERNATE` capture and is
+not a complete session transcript: it begins mid-build and carries only the
+regression run. The house rule is to capture with `SET ALTERNATE` (see
+AI_README.md, WSL section); this file is labelled honestly rather than dressed
+up as something it is not. The Linux-side proof for the same commit IS a full
+captured transcript: workspace_writeback_proof_teed_20260812T174605Z.log.
+
+Subject : REGRESSION RUN WORKSPACE_WRITEBACK (spec 44)
+Platform: Windows, MSVC, pro-md build
+Build   : dottalk++ v0.6 (2026-08-12, b3f64828 dirty) (Aug 12 2026 10:56:44)
+Base    : commit b3f648288 plus the uncommitted second-pass slice
+Why     : the first Windows re-run emitted `FORMULA error: scalar evaluation
+          failed` for WB_T5/WB_T6 because the staged exe (16:12:47Z) predated
+          the FILE() addition (16:56:25Z). Rebuild, then re-run. This is that
+          re-run, and it confirms the stale-binary diagnosis by removing the
+          only variable that changed.
+Result  : WB_T1..WB_T6 all .T.
+
+--- transcript (operator paste) ---------------------------------------------
+
+. REGRESSION: running WORKSPACE_WRITEBACK
+  Script: workspace_writeback.dts
+  Resolved: D:\code\ccode\dottalkpp\data\scripts\workspace_writeback.dts
+Echo is OFF
+STOP_ON_ERROR: threshold set to OFF
+ERASE DIR: 'DBF/wbregress' does not exist -- nothing to delete.
+ERASE DIR: 'DBF/wbabort' does not exist -- nothing to delete.
+WS-WRITEBACK-PROOF-BEGIN
+VDISK: note: RAM disk mounted (in-process VFS): D:\code\ccode\dottalkpp\data\ram
+VDISK: note:   DBF     -> D:\code\ccode\dottalkpp\data\ram
+VDISK: note:   INDEXES -> D:\code\ccode\dottalkpp\data\ram\indexes
+VDISK: note:   LMDB    -> D:\code\ccode\dottalkpp\data\ram\lmdb
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+  DBFROOT: D:\code\ccode\dottalkpp\data\ram
+  IDXROOT: D:\code\ccode\dottalkpp\data\ram\indexes
+  WSID: M48
+  FLAVOR: X64
+WORKSPACE LOAD: restored 13 area(s) and 0 relation(s) (+ 13 cursor(s)).
+WORKSPACE MINIDB: hydrated 'mcc_minidb_memo' FROM THE MEMO: 27 file(s), 104411 B in 68.8906 ms (zero disk reads)
+  -> BUILDING.dbf  630 B  [oracle OK]
+  -> CLASSES.dbf  13015 B  [oracle OK]
+  -> COURSES.dbf  6863 B  [oracle OK]
+  -> DEPT.dbf  703 B  [oracle OK]
+  -> ENROLL.dbf  27224 B  [oracle OK]
+  -> MAJORS.dbf  896 B  [oracle OK]
+  -> ROOMS.dbf  842 B  [oracle OK]
+  -> STUD_MAJ.dbf  4510 B  [oracle OK]
+  -> STUDENTS.dbf  24078 B  [oracle OK]
+  -> STUDENTS.dtx  4096 B  [oracle OK]
+  -> TASSIGN.dbf  5310 B  [oracle OK]
+  -> TEACHERS.dbf  2640 B  [oracle OK]
+  -> TEACHERS.dtx  4096 B  [oracle OK]
+  -> TERMS.dbf  372 B  [oracle OK]
+  -> TEST64.dbf  304 B  [oracle OK]
+WORKSPACE WRITEBACK: 15 file(s), 95579 B to DBF/wbregress in 57.4753 ms
+  manifest: 13 table(s) declared by the posture, all present.
+  indexes: NOT written -- 12 index selection(s) travel in the posture (index=/indextype= per table, mixed types preserved); rebuild at the destination, or re-run WITH INDEXES to copy the container bytes too.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 13 area(s) closed.
+VDISK: note: RAM disk unmounted; all RAM files dropped
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\wbregress
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\DBF\wbregress
+Selected area 1.
+Current area: 1
+Opened STUDENTS (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+WB_T1_values_survive_round_trip:.T.
+WB_T2_count_survives:.T.
+WB_T3_memo_sidecar_made_the_trip:.T.
+Closed.
+Selected area 2.
+Current area: 2
+Opened TEACHERS (v64) : Record count 20
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+WB_T4_second_table_intact:.T.
+Closed.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\x64
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\x64
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\x64
+Opened STUDENTS (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+WORKSPACE WRITEBACK: ABORTED -- the posture declares 13 table(s); 12 are not open:
+  ? building.dbf
+  ? classes.dbf
+  ? courses.dbf
+  ? dept.dbf
+  ? enroll.dbf
+  ? majors.dbf
+  ? rooms.dbf
+  ? stud_maj.dbf
+  ? tassign.dbf
+  ? teachers.dbf
+  ? terms.dbf
+  ? test64.dbf
+Nothing was written. Load the whole workspace, or write back the one that is actually open.
+Closed.
+WB_T5_shortfall_refused:.T.
+WB_T6_aborted_target_absent:.T.
+WS-WRITEBACK-PROOF-END
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+ERASE DIR: removed 'DBF/wbregress' (16 entrie(s)).
+ERASE DIR: 'DBF/wbabort' does not exist -- nothing to delete.
+SETPATH: DBF = D:\code\ccode\dottalkpp\data\DBF\x64
+SETPATH: INDEXES = D:\code\ccode\dottalkpp\data\INDEXES\x64
+SETPATH: LMDB = D:\code\ccode\dottalkpp\data\LMDB\x64
+
+--- end transcript ----------------------------------------------------------
+
+CROSS-PLATFORM AGREEMENT (the reason both transcripts are kept)
+
+Both platforms landed THE SAME 15 files with [oracle OK] on every one, and both
+refused the shortfall arm having written nothing. The two runs disagree on
+nothing that matters and agree on the file set, which is the claim the spec
+exists to defend.
+
+Windows measures recorded here for the first time:
+  hydrate   27 file(s), 104411 B, 68.8906 ms (zero disk reads)
+  writeback 15 file(s),  95579 B, 57.4753 ms
+  manifest  13 table(s) declared, all present
+  indexes   12 selection(s) travel in the posture, files NOT written
+
+The 27-vs-15 gap is the documented index behavior, not a shortfall: hydration
+carries 13 tables + 12 index containers + 2 memo sidecars out of the memo, while
+writeback lands 13 tables + 2 sidecars because index FILES are derived and
+rebuildable at the destination -- the CHOICE travels in the posture. `WITH
+INDEXES` is the byte-mirror option and remains UNTESTED.
+
+Teardown removed 16 entries, so the run left nothing behind.

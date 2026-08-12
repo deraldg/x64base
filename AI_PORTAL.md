@@ -86,6 +86,65 @@ system did not cover, so it silently goes stale or incomplete. Consequences:
   portal initiation as still owed and perform it first -- reaching the authoritative
   tree (`D:\code\ccode`), not the staging repo, is part of that initiation.
 
+#### The onboarding instruction is the FIRST line, and onboarding expires
+
+Maintainer rule, 2026-08-12. The obligation above existed, was correct, and was
+violated again -- a Cowork session was handed a numbered list of open problems,
+worked all of them, committed, and only onboarded when the maintainer said so.
+The rule failed not on content but on **position**: it asked a handoff to
+"open by pointing back" while every handoff in practice opens with the work,
+which is what a resuming agent reads and acts on. So it is now structural, and
+it gains an expiry:
+
+**1. First instruction, not a preamble.** A handoff's FIRST instruction -- ahead
+of context, state, and the task list -- is the onboarding directive:
+
+```text
+Start at AI_README.md, then AI_PORTAL.md. If you have not onboarded
+this session, do that BEFORE the work below.
+```
+
+A handoff whose first instruction is a task is defective, regardless of what its
+later paragraphs say. This applies to every resume vehicle: session records,
+`docs/agents/HANDOFF_*.md`, BBS worklog posts, and a maintainer's own pasted
+"open problems" note. **The agent's duty is symmetric and does not depend on the
+handoff being correct:** a resuming agent that is handed work without that line
+treats initiation as still owed and performs it first. Being handed a defective
+handoff is not an excuse; it is the case the rule exists for.
+
+**2. Onboarding degrades -- refresh it.** Being onboarded is a perishable state,
+not a permanent badge. Re-onboard when ANY of these is true:
+
+- more than **7 days** have passed since you last read the Tier 1 seed
+  (proposed default; owner-settable -- one edit here changes it);
+- `AI_TIER1_SEED_V1.md` or `AI_PORTAL.md` has changed since you last read it;
+- your context was compacted, truncated, or resumed from a summary;
+- you are picking up a lane you did not open.
+
+Perishable state (`TIER0_STATE.md`, the intake queue, the newest closeout) is
+re-read **every session**, no exception and no expiry clock -- it is stale by
+default, which is why it is generated rather than asserted.
+
+**3. Make the clock measurable, not felt.** An agent cannot introspect its own
+staleness, so do not ask it to. A handoff SHOULD carry:
+
+```text
+onboarded_utc : <when the author last read the seed>
+seed_commit   : <git log -1 --format=%H -- labtalk/ai_portal/AI_TIER1_SEED_V1.md>
+```
+
+Then staleness is a comparison anyone can run rather than a judgement call, and
+it satisfies the bound rule under "Build It to Prove It": a published figure is
+tied to something it must respect. A checker over `docs/agents/HANDOFF_*.md`
+(first-instruction present; recorded `seed_commit` still current) is the
+obvious next gate -- **chartered, not built.** Until it exists this is prose,
+and prose obligations in this project run 6-of-18 compliance against 83-94
+percent for the ones with gates behind them. Expect it to be violated until
+someone builds the check.
+
+Home lane: `docs/maintenance/ONBOARDING_COST_AND_ACCEPTANCE_LANE_V1.md`
+(AIF-082), which owns onboarding cost and acceptance.
+
 ### The assigned task role is an authorization boundary
 
 Recorded 2026-07-30 after a local-access Codex session was assigned to give a
@@ -632,6 +691,25 @@ decisions, and doctrine can go stale. Hosted partners (e.g. ChatGPT) also cannot
 the maintainer's local `D:\code\ccode` tree at all. The **doc-only live portal** closes
 that gap:
 
+> **A second gap-closer was measured 2026-08-12 and is NOT this page.** A hosted
+> ChatGPT session onboarded correctly with no GitHub involvement, through Google
+> Drive plus the BBS delivered over Gmail -- so the sentence above ("cannot read
+> the tree") remains true while the conclusion usually drawn from it, that GitHub
+> and the website are a hosted partner's only reach, does not. The maintainer can
+> hand a hosted agent a channel directly. **Mind the tiers, because this entry
+> was first written without them:** the channel working is owner-attested; the
+> invariants that session recited were checked against the tree and are correct;
+> its state figure lagged HEAD by several commits, also checked. But its account
+> of WHAT it read -- a derived report rather than canon -- is the agent's own
+> testimony about its own inputs, unverified, and repeating it as fact is
+> chat-tier asserting registration-tier. Conditions of use and the open action
+> (put the four canonical files in the channel) are in
+> `AI_README.md`, "A third channel exists"; evidence is at
+> `docs/maintenance/external_ai_intake/hosted_google_onboarding_2026-08-12/`
+> (AIF-090). The two gap-closers are complementary: this page is published and
+> versioned at the maintainer's cadence, the channel is private, immediate, and
+> unversioned.
+
 - A public, frequently updated page — **AI Agent Sync — Live Current State**, at
   `/docs/labtalk/agent-sync` on the x64base website — carries the current governance
   surface (working agreement, doctrine, the canonical-Value decision, active-track
@@ -810,6 +888,12 @@ boundary, working with the maintainer).
 
 Rules, each earned:
 
+- **Open with the onboarding instruction.** It is the handoff's FIRST
+  instruction, ahead of the work, and it carries `onboarded_utc` / `seed_commit`
+  so the next agent can measure whether its own onboarding has expired. Full
+  rule and the expiry clock: "The onboarding instruction is the FIRST line, and
+  onboarding expires", above. Not restated here on purpose (AIF-082 6.8: two
+  copies that restate will diverge).
 - **Commit it.** An uncommitted handoff is invisible to a clone and therefore to
   the next agent. On 2026-07-31 a handoff containing the fix for that session's
   own worst mistake sat unreachable from the corpus while the mistake was made.

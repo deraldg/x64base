@@ -1,0 +1,121 @@
+[32mINIT: Paths
+  BIN        : /tmp/x64/build/src
+  DATA       : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data
+  DBF        : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/dbf
+  INDEXES    : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/indexes
+  LMDB       : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/lmdb
+  WORKSPACES : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/workspaces
+  SCHEMAS    : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/schemas
+  PROJECTS   : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/projects
+  SCRIPTS    : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/scripts
+  TESTS      : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/tests
+  HELP       : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/help
+  LOGS       : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/logs
+  TMP        : /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/tmp
+INIT: no .ini file found in /tmp/x64/build/src
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. REGRESSION: running WORKSPACE_WRITEBACK
+  Script: workspace_writeback.dts
+  Resolved: /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/scripts/workspace_writeback.dts
+Echo is OFF
+STOP_ON_ERROR: threshold set to OFF
+ERASE DIR: removed 'DBF/wbregress' (16 entrie(s)).
+ERASE DIR: 'DBF/wbabort' does not exist -- nothing to delete.
+WS-WRITEBACK-PROOF-BEGIN
+VDISK: note: RAM disk mounted (in-process VFS): /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram
+VDISK: note:   DBF     -> /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram
+VDISK: note:   INDEXES -> /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram/indexes
+VDISK: note:   LMDB    -> /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram/lmdb
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+  DBFROOT: /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram
+  IDXROOT: /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/ram/indexes
+  WSID: M48
+  FLAVOR: X64
+WORKSPACE LOAD: restored 13 area(s) and 0 relation(s) (+ 13 cursor(s)).
+WORKSPACE MINIDB: hydrated 'mcc_minidb_memo' FROM THE MEMO: 27 file(s), 104411 B in 157.414 ms (zero disk reads)
+  -> BUILDING.dbf  630 B  [oracle OK]
+  -> CLASSES.dbf  13015 B  [oracle OK]
+  -> COURSES.dbf  6863 B  [oracle OK]
+  -> DEPT.dbf  703 B  [oracle OK]
+  -> ENROLL.dbf  27224 B  [oracle OK]
+  -> MAJORS.dbf  896 B  [oracle OK]
+  -> ROOMS.dbf  842 B  [oracle OK]
+  -> STUD_MAJ.dbf  4510 B  [oracle OK]
+  -> STUDENTS.dbf  24078 B  [oracle OK]
+  -> STUDENTS.dtx  4096 B  [oracle OK]
+  -> TASSIGN.dbf  5310 B  [oracle OK]
+  -> TEACHERS.dbf  2640 B  [oracle OK]
+  -> TEACHERS.dtx  4096 B  [oracle OK]
+  -> TERMS.dbf  372 B  [oracle OK]
+  -> TEST64.dbf  304 B  [oracle OK]
+WORKSPACE WRITEBACK: 15 file(s), 95579 B to DBF/wbregress in 223.034 ms
+  manifest: 13 table(s) declared by the posture, all present.
+  indexes: NOT written -- 12 index selection(s) travel in the posture (index=/indextype= per table, mixed types preserved); rebuild at the destination, or re-run WITH INDEXES to copy the container bytes too.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 13 area(s) closed.
+VDISK: note: RAM disk unmounted; all RAM files dropped
+SETPATH: DBF = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/DBF/wbregress
+SETPATH: INDEXES = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/DBF/wbregress
+Selected area 1.
+Current area: 1
+Opened STUDENTS (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+Recno: 1
+WB_T1_values_survive_round_trip:.T.
+Recno: 200
+WB_T2_count_survives:.T.
+Recno: 1
+WB_T3_memo_sidecar_made_the_trip:.T.
+Closed.
+Selected area 2.
+Current area: 2
+Opened TEACHERS (v64) : Record count 20
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+Recno: 1
+WB_T4_second_table_intact:.T.
+Closed.
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+SETPATH: DBF = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/DBF/x64
+SETPATH: INDEXES = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/INDEXES/x64
+SETPATH: LMDB = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/LMDB/x64
+Opened STUDENTS (v64) : Record count 200
+Valid Index/Indices   : CDX, CNX
+NOINDEX: auto-attach skipped (physical order).
+WORKSPACE WRITEBACK: ABORTED -- the posture declares 13 table(s); 12 are not open:
+  ? building.dbf
+  ? classes.dbf
+  ? courses.dbf
+  ? dept.dbf
+  ? enroll.dbf
+  ? majors.dbf
+  ? rooms.dbf
+  ? stud_maj.dbf
+  ? tassign.dbf
+  ? teachers.dbf
+  ? terms.dbf
+  ? test64.dbf
+Nothing was written. Load the whole workspace, or write back the one that is actually open.
+Closed.
+WB_T5_shortfall_refused:.T.
+WB_T6_aborted_target_absent:.T.
+WS-WRITEBACK-PROOF-END
+WORKSPACE CLOSE: Closing all work areas...
+REL: cleared all
+WORKSPACE: 0 area(s) closed.
+ERASE DIR: removed 'DBF/wbregress' (16 entrie(s)).
+ERASE DIR: 'DBF/wbabort' does not exist -- nothing to delete.
+SETPATH: DBF = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/DBF/x64
+SETPATH: INDEXES = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/INDEXES/x64
+SETPATH: LMDB = /sessions/sharp-great-euler/mnt/ccode/dottalkpp/data/LMDB/x64
+. SHUTDOWN: no shutdown.ini found in /tmp/x64/build/src
