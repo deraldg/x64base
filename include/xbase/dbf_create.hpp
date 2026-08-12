@@ -47,4 +47,17 @@ bool create_dbf(const std::string& path,
                 Flavor flavor,
                 std::string& err);
 
+// Identity-explicit overload (AIF-110). For X64, `tableName` seeds the X64M
+// authoritative table identity INSTEAD of the path stem. Required whenever the
+// create path and the table's final identity differ -- the founding case is
+// FIELDMGR APPEND's temp-file rewrite, where the stem-derived default stamped
+// "STUDENTS.__fldtmp" into the renamed file's metadata (hex-verified
+// 2026-08-12). Empty tableName falls back to the path stem; non-X64 flavors
+// ignore it (their formats carry no name authority block).
+bool create_dbf(const std::string& path,
+                const std::string& tableName,
+                const std::vector<FieldSpec>& fields,
+                Flavor flavor,
+                std::string& err);
+
 } // namespace xbase::dbf_create

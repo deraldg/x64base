@@ -1,12 +1,11 @@
 * ============================================================================
-* *** BLOCKED 2026-08-12 -- DO NOT RUN until the X64M identity lane lands ***
-* FIELDMGR APPEND now REFUSES x64 tables: the temp-swap rewrite breaks the
-* X64M vector metadata identity (hex-verified: the temp name
-* "STUDENTS.__fldtmp" embedded in the renamed file's header) and every
-* field reads BLANK afterward -- silent data destruction, measured twice on
-* these fixtures and both times restored from the vfp lane. Running this
-* script today stops at the refusal, harmlessly. When the rewrite
-* re-stamps X64M after the swap, remove this banner and run.
+* UNBLOCKED 2026-08-12, same session: the AIF-110 lane landed. Two defects
+* fixed and runtime-proven on throwaway copies -- the rewrite loop's
+* MISSING writeCurrent() (the actual blank-writer; every set() landed in a
+* buffer the next appendBlank discarded) and the X64M identity stamped
+* from the temp path stem (real, hex-verified, but NOT the blank cause).
+* Long-name appends also landed en route (parse admits the x64 ceiling,
+* descriptor gets the field_name_policy ~n token). Guard lifted.
 * ============================================================================
 * mcc_add_notes_memo.dts -- Part B of the AIF-070 memo-workspace plan (task
 * #168; owner mechanism ruling 2026-08-12: "build the verb"). Adds NOTES M

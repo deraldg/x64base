@@ -558,9 +558,16 @@ bool serialize_x64_dbf(std::ostream& out,
 // (the default) is_virtual() is false and this branch is dead.
 static bool write_x64_dbf(const std::string& path,
                           const std::vector<FieldSpec>& fields,
-                          std::string& err)
+                          std::string& err,
+                          const std::string& tableNameOverride = std::string())
 {
-    const std::string tableName = std::filesystem::path(path).stem().string();
+    // Identity rule (AIF-110): the X64M authoritative table name defaults to
+    // the path stem, but callers whose CREATE path differs from the table's
+    // final identity (temp-file rewrites) MUST override it. The stem default
+    // is what stamped "STUDENTS.__fldtmp" into a renamed canonical fixture.
+    const std::string tableName = tableNameOverride.empty()
+        ? std::filesystem::path(path).stem().string()
+        : tableNameOverride;
 
     if (xbase::ramfs::is_virtual(path)) {
         auto rs = xbase::ramfs::open(path, /*create=*/true);
@@ -691,6 +698,28 @@ bool create_dbf(const std::string& path,
     default:
         return write_classic_dbf(path, fields, TableFlavor::MSDOS_DBASE, err);
     }
+}
+
+// Identity-explicit overload (AIF-110): see header. Delegates everything to
+// the path-based create; only the X64M table identity differs.
+bool create_dbf(const std::string& path,
+                const std::string& tableName,
+                const std::vector<FieldSpec>& fields,
+                Flavor flavor,
+                std::string& err)
+{
+    if (tableName.empty() || flavor != Flavor::X64) {
+        return create_dbf(path, fields, flavor, err);
+    }
+
+    if (fields.empty()) {
+        err = "no fields specified";
+        return false;
+    }
+    if (!validate_lengths_for_flavor(fields, flavor, err)) {
+        return false;
+    }
+    return write_x64_dbf(path, fields, err, tableName);
 }
 
 } // namespace xbase::dbf_create

@@ -9,6 +9,9 @@
 
 #include "xbase/fields.hpp"
 #include "xbase/dbf_create.hpp"
+#include "xbase/field_name_policy.hpp"
+#include "xbase_64.hpp"
+#include <cstdlib>
 #include "xindex/attach.hpp"
 #include "xindex/index_manager.hpp"
 
@@ -204,7 +207,37 @@ Result append_rewrite_table(xbase::DbArea& db,
 
     std::string err;
     const auto flavor = flavor_from_db(db);
-    if (!xbase::dbf_create::create_dbf(tempPath.string(), outFields, flavor, err)) {
+
+    // Naming methodology (AIF-110, x64 only). Two rules the first version of
+    // this rewrite broke or bypassed:
+    //   1. TABLE identity: the X64M authoritative table name must be the
+    //      FINAL identity, never the temp path stem. Prefer the open area's
+    //      promoted logical name (X64M is its source of truth); fall back to
+    //      the final file's stem.
+    //   2. FIELD tokens: descriptor tokens are the DOS-8.3 tier of the x64
+    //      two-tier scheme and must come from field_name_policy's
+    //      plan_x64_unique_fallback (sanitize, truncate to 10, ~n mangle on
+    //      collision) -- the same plan cmd_create and cmd_copy use -- not
+    //      from ad-hoc truncation.
+    std::string tableName;
+    if (flavor == xbase::dbf_create::Flavor::X64) {
+        tableName = db.logicalName();
+        if (tableName.empty()) {
+            tableName = std::filesystem::path(finalPathStr).stem().string();
+        }
+
+        std::vector<std::string> logicalNames;
+        logicalNames.reserve(outFields.size());
+        for (const auto& s : outFields) logicalNames.push_back(s.name);
+        const auto plans =
+            xbase::field_name_policy::plan_x64_unique_fallback(logicalNames);
+        for (std::size_t i = 0; i < outFields.size() && i < plans.size(); ++i) {
+            outFields[i].descriptor_name = plans[i].descriptor_name;
+        }
+    }
+
+    if (!xbase::dbf_create::create_dbf(tempPath.string(), tableName,
+                                       outFields, flavor, err)) {
         r.status = Status::Failed;
         r.message = "FIELDMGR APPEND: create temp table failed: " + err;
         return r;
@@ -253,6 +286,26 @@ Result append_rewrite_table(xbase::DbArea& db,
             if (!out.set(out.fieldCount(), default_field_value(fd))) {
                 r.status = Status::Failed;
                 r.message = "FIELDMGR APPEND: failed default-filling appended field";
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tempPath, ec);
+                return r;
+            }
+
+            // THE MISSING WRITE (AIF-110, found 2026-08-12 by full-path
+            // trace). set() only stores into the in-memory _fd vector;
+            // appendBlank() writes a SPACE-PADDED row to disk immediately
+            // and the next appendBlank() discards pending _fd values
+            // (dbf_file.cpp appendBlank -> gotoRec64 -> readCurrent). Only
+            // writeCurrent() encodes _fd into the record and lands it --
+            // without this call every rewritten table was 0x20 wall to
+            // wall while counts, headers, and X64M all read correct.
+            // Must run INSIDE the loop, before deleteCurrent() (which
+            // finishes with its own writeCurrent under the deleted flag).
+            // The proven sibling, cmd_copy's loop, always had this line.
+            if (!out.writeCurrent()) {
+                r.status = Status::Failed;
+                r.message = "FIELDMGR APPEND: failed writing destination record";
                 out.close();
                 std::error_code ec;
                 std::filesystem::remove(tempPath, ec);
@@ -372,8 +425,15 @@ bool validateFieldName(const std::string& nameIn, std::string& err)
         return false;
     }
 
-    if (name.size() > 10) {
-        err = "field name exceeds 10 characters";
+    // Ceiling raised 2026-08-12 (AIF-110, owner: "long names were not
+    // stressed"): the parse layer cannot know the flavor, so it admits up
+    // to the x64 authority ceiling (X64M carries the long name, the
+    // descriptor gets the field_name_policy ~n-mangled 10-byte token).
+    // append() re-tightens to 10 for legacy flavors, whose descriptor IS
+    // the name.
+    if (name.size() > xbase::X64_FIELD_NAME_LENGTH_MAX) {
+        err = "field name exceeds the x64 ceiling of " +
+              std::to_string(xbase::X64_FIELD_NAME_LENGTH_MAX) + " characters";
         return false;
     }
 
@@ -684,15 +744,16 @@ Result append(xbase::DbArea& db,
     // rewrite updates (or re-stamps) the X64M identity after the swap --
     // the fix belongs to the rewrite flow, not to callers. Legacy flavors
     // (classic fixed-layout rows, no X64M block) are unaffected.
-    if (db.versionByte() == 0x64) {
-        r.status = Status::Unsupported;
-        r.message = "FIELDMGR APPEND: blocked on x64 tables -- the rewrite "
-                    "does not yet preserve X64M vector metadata identity "
-                    "across the temp-file swap (reads go blank; measured "
-                    "2026-08-12). Rebuild-with-new-schema via the COPY "
-                    "chain instead until this lane lands.";
-        return r;
-    }
+    // AIF-110 guard LIFTED 2026-08-12, same session it was raised: both
+    // defects the guard covered are fixed and runtime-proven on throwaway
+    // copies (build 05:04:34): the missing out.writeCurrent() in the
+    // rewrite loop (the blank-writer -- every set() landed in a buffer the
+    // next appendBlank discarded) and the X64M identity stamped from the
+    // temp path stem. Proof: short-name memo append and 19-char long-name
+    // append both read values back post-rewrite; hex shows real record
+    // bytes, correct X64M identity, and the field_name_policy descriptor
+    // token. The DOTTALK_X64_FIELDMGR_UNSAFE hatch existed only for this
+    // lane's own reproduction and is gone with the guard.
 
     // Guard scope narrowed 2026-08-12 (AIF-108 Part B): this refuses only
     // tables that ALREADY carry a memo store -- appending a SECOND memo
@@ -717,6 +778,16 @@ Result append(xbase::DbArea& db,
     // DBT slot = 10.
     if (fd.type == 'M' && fd.length == 0) {
         fd.length = (db.versionByte() == 0x64) ? 8u : 10u;
+    }
+
+    // Flavor-aware name-length tightening (the parse layer admits the x64
+    // ceiling; see validateFieldName). Legacy flavors have no X64M block --
+    // their 10-byte descriptor IS the name, so long names are refused here.
+    if (db.versionByte() != 0x64 && fd.name.size() > 10) {
+        r.status = Status::InvalidArgument;
+        r.message = "FIELDMGR APPEND: field name exceeds 10 characters "
+                    "(legacy flavor; long names require an x64 table)";
+        return r;
     }
 
     if (fd.length > 255u && db.versionByte() != 0x64) {

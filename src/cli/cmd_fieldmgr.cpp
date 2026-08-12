@@ -51,10 +51,13 @@
 //   APPEND supports type M (first memo field on a memo-less table only;
 //   token slot width is flavor-resolved, blank tokens are the null ref,
 //   the sidecar autocreates on next USE). Landed 2026-08-12.
-//   APPEND is BLOCKED on x64 tables (2026-08-12): the temp-swap rewrite
-//   does not preserve X64M vector metadata identity and reads go blank --
-//   silent data destruction, measured twice on the MCC fixtures. The
-//   refusal stands until the rewrite re-stamps X64M after the swap.
+//   APPEND supports long field names on x64 (up to the X64M ceiling; the
+//   descriptor gets the field_name_policy 10-byte token, ~n-mangled on
+//   collision). Legacy flavors stay capped at 10. Landed 2026-08-12
+//   (AIF-110, which also fixed the rewrite's missing writeCurrent -- the
+//   blank-record corruption -- and the X64M temp-name identity stamp).
+//   Known example drift: 'APPEND ZIP C10' below predates the paren
+//   grammar; the parser wants C(10).
 //   COPY exports or copies field metadata through the fields manager layer.
 //   VALIDATE and CHECK report field/schema consistency.
 //   REBUILD INDEXES delegates index rebuild through the fields manager layer.
