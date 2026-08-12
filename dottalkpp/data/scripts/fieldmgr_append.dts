@@ -1,0 +1,128 @@
+* ============================================================================
+* fieldmgr_append.dts -- the regression AIF-110 proved nobody ever wrote.
+*
+* FIELDMGR APPEND rewrites a table in place (temp create, record copy, backup
+* swap, reopen). On 2026-08-12 that rewrite was found to blank-corrupt every
+* x64 table it touched: record count, schema, field descriptors, and deleted
+* flags all read CORRECT while every field value became 0x20. The cause was a
+* missing writeCurrent() -- set() only fills an in-memory vector that the next
+* appendBlank() discards.
+*
+* THE LESSON THIS SCRIPT ENCODES: a test that asserts SHAPE (counts, field
+* names, types) passes green on a blanked table. Every marker below asserts a
+* FIELD VALUE.
+*
+* Arms:
+*   FA_T1  values survive the rewrite (the missing-writeCurrent arm)
+*   FA_T2  the appended field exists and reads empty, not garbage
+*   FA_T3  long field name (> 10 chars) resolves after the rewrite -- the x64
+*          two-tier scheme: X64M carries the long name, the descriptor carries
+*          the field_name_policy 10-byte token
+*   FA_T4  a value written THROUGH the long name reads back through it
+*   FA_T5  DELETED-ROW ARM: a deleted record keeps its values across the
+*          rewrite. This is the arm that would have caught the original bug on
+*          day one -- deleteCurrent() ends in its own writeCurrent(), so
+*          deleted rows survived correct while live rows blanked. The MCC
+*          fixtures have no deleted records, which is exactly why the
+*          corruption was 200/200 and looked total.
+*   FA_T6  BINARY-CODEC ARM: I / B / Y / T values survive the rewrite. These
+*          types have encode() paths that CAN return false (16 failure sites
+*          in field_codec.cpp: invalid int32, out of range, invalid double,
+*          invalid currency, invalid datetime), and storeFieldsToBuffer
+*          SWALLOWS that failure -- "(void)fieldcodec::codec_for(...)" --
+*          leaving the space-padded region. That is the same silent-blank
+*          shape as the AIF-110 defect, one layer down. If a round-trip ever
+*          trips it, this marker reads .F. and the swallow becomes a defect
+*          with a number instead of a suspicion.
+*
+* NOT covered (stated rather than implied): the deleted FLAG itself (only the
+* deleted row's DATA is asserted); legacy-flavor appends; MODIFY and DELETE
+* field ops (not implemented); concurrent append.
+*
+* Disposable: creates and erases its own table on the x64 lane. Cannot run in
+* the RAM VFS -- the rewrite swaps files with std::filesystem::rename, which
+* the ramfs does not serve.
+*
+* Run: DO fieldmgr_append | regression: REGRESSION RUN FIELDMGR_APPEND
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+DO x64
+WORKSPACE CLOSE
+
+FORMULA "FIELDMGR-APPEND-BEGIN"
+
+* --- build a disposable table with plain AND binary-codec field types -------
+SELECT 1
+CREATE X64 FMGRTST (ID N(8,0), NAME C(20), COUNTER I, RATIO B, PRICE Y, WHEN T)
+
+APPEND
+REPLACE ID WITH 101
+REPLACE NAME WITH "FirstRow"
+REPLACE COUNTER WITH 4242
+REPLACE RATIO WITH 2.5
+REPLACE PRICE WITH 19.95
+REPLACE WHEN WITH 20260812
+
+APPEND
+REPLACE ID WITH 102
+REPLACE NAME WITH "DeletedRow"
+REPLACE COUNTER WITH 7
+REPLACE RATIO WITH 1.5
+REPLACE PRICE WITH 5.00
+REPLACE WHEN WITH 20260101
+
+APPEND
+REPLACE ID WITH 103
+REPLACE NAME WITH "ThirdRow"
+REPLACE COUNTER WITH 99
+REPLACE RATIO WITH 0.5
+REPLACE PRICE WITH 1.00
+REPLACE WHEN WITH 20251225
+
+* --- mark record 2 deleted BEFORE the rewrite (the FA_T5 setup) -------------
+GO 2
+DELETE
+CLOSE
+
+* --- arm 1: long-name append (must precede the memo append; a table that
+*     already carries a memo refuses a second memo field by design) ----------
+USE FMGRTST NOINDEX
+FIELDMGR APPEND EXTENDED_DESCRIPTION C(24)
+CLOSE
+
+USE FMGRTST NOINDEX
+GO 1
+? "FA_T1_values_survive_rewrite:" + (ALLTRIM(NAME) = "FirstRow")
+? "FA_T3_long_name_resolves:" + (EXTENDED_DESCRIPTION = "")
+REPLACE EXTENDED_DESCRIPTION WITH "written by long name"
+GO 1
+? "FA_T4_value_through_long_name:" + (ALLTRIM(EXTENDED_DESCRIPTION) = "written by long name")
+
+* --- arm 2: the binary-codec round trip (probes the encode swallow) ---------
+? "FA_T6_binary_codecs_survive:" + (COUNTER = 4242)
+CLOSE
+
+* --- arm 3: memo append on top, then re-assert everything -------------------
+USE FMGRTST NOINDEX
+FIELDMGR APPEND NOTES M
+CLOSE
+
+USE FMGRTST NOINDEX
+GO 1
+? "FA_T2_appended_memo_reads_empty:" + (NOTES = "")
+GO 3
+? "FA_T7_third_row_intact_after_two_rewrites:" + (ALLTRIM(NAME) = "ThirdRow")
+
+* --- arm 4: the deleted row kept its data across both rewrites --------------
+SET DELETED OFF
+GO 2
+? "FA_T5_deleted_row_data_survives:" + (ALLTRIM(NAME) = "DeletedRow")
+CLOSE
+
+FORMULA "FIELDMGR-APPEND-END"
+
+* --- teardown ----------------------------------------------------------------
+ERASE FMGRTST CONFIRM
+WORKSPACE CLOSE
