@@ -113,7 +113,11 @@ Reachability tags:
 
 - **[NOW]** -- writable against today's engine.
 - **[SIDECAR]** -- blocked until MINIDB containers carry memo sidecars
-  (the Part B coupling).
+  (the Part B coupling). **UNBLOCKED 2026-08-12**: carriage landed
+  (backend-named capture, real-filesystem hydration landing, DB_T3/DB_T4
+  residue-hardened proof in `workspace_minidb.dts`). [SIDECAR] ideas are
+  now writable against the engine; the MCC-fixture half of Part B
+  (NOTES M on canonical tables) remains open.
 - **[MULTI]** -- blocked on the multi-workspace lane.
 - **[PROC]** -- needs a second process (the BBS daemon makes some of these
   reachable now).

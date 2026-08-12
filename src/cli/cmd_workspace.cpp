@@ -2075,6 +2075,19 @@ static std::string build_minidb_container(const std::string& posture,
                 const fs::path ip(idx);
                 add(ip, "indexes/" + s8(ip.filename()));
             }
+            // Memo sidecar carriage (AIF-108 [SIDECAR] unblock, 2026-08-12).
+            // The attached backend names its own file -- no extension
+            // guessing. flush() first: DTX I/O buffers and BYPASSES the
+            // ramfs (bypass-ledger member 1), so the bytes live on the real
+            // disk under the mount dir and must be made current before
+            // capture. read_all_bytes() handles the residence split already:
+            // is_virtual(path) is true under the mount but exists() in the
+            // VFS is false for a DTX, so it falls through to the OS read.
+            if (auto* ms = cli_memo::memo_backend_for(A); ms && ms->is_open()) {
+                (void)ms->flush();
+                const fs::path mp(ms->path());
+                if (!mp.empty()) add(mp, s8(mp.filename()));
+            }
         } catch (...) {}
     }
     c += "END\n";
@@ -2338,10 +2351,30 @@ static bool hydrate_minidb(const std::string& name, const std::string& payload,
             const fs::path dst = (rel.rfind("indexes/", 0) == 0)
                 ? ramIdx / fs::path(rel.substr(8))
                 : ramRoot / fs::path(rel);
-            auto out = xbase::ramfs::open(s8(dst), /*create*/true);
-            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
-            out->write(payload.data() + pos, static_cast<std::streamsize>(len));
-            out->flush();
+            // Memo sidecars (AIF-108 [SIDECAR], 2026-08-12) land on the REAL
+            // filesystem, not the VFS: the DTX layer bypasses the ramfs
+            // (bypass-ledger member 1), so a sidecar written into the VFS
+            // would sit exactly where memo I/O never looks. The mount dir
+            // exists physically, so the sidecar is disk-resident beside the
+            // virtual DBF -- the measured status quo, now deliberate. When
+            // ramfs memo coverage lands, this branch collapses into the one
+            // below.
+            const std::string dstExt = to_lower(s8(fs::path(rel).extension()));
+            const bool memoSidecar =
+                dstExt == ".dtx" || dstExt == ".dbt" || dstExt == ".fpt";
+            if (memoSidecar) {
+                std::error_code ec;
+                fs::create_directories(dst.parent_path(), ec);
+                std::ofstream out(dst, std::ios::binary | std::ios::trunc);
+                if (!out) { std::cout << "WORKSPACE MINIDB: cannot create sidecar file " << s8(dst) << "\n"; return false; }
+                out.write(payload.data() + pos, static_cast<std::streamsize>(len));
+                out.flush();
+            } else {
+                auto out = xbase::ramfs::open(s8(dst), /*create*/true);
+                if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
+                out->write(payload.data() + pos, static_cast<std::streamsize>(len));
+                out->flush();
+            }
             pos += len;
             ++files; bytes += len;
         } else {

@@ -206,11 +206,20 @@ having already done it, in pieces, each proven alone.
   remaining leg of "RAM memo": today the CONTAINER hydrates to RAM but the
   memo store it came from is disk-resident (the DTX-sidecar-bypasses-ramfs
   finding, corrected the same day).
-- **Part B (MCC regeneration with NOTES M)**: the container does NOT yet
-  carry memo sidecars, because no MCC table has one. The instant Part B
-  lands, `build_minidb_container` must learn the sidecar naming convention
-  or MINIDB saves of memo-bearing tables will be silently incomplete --
-  this is a NAMED COUPLING, and Part B's checklist should include it.
+- **Part B (MCC regeneration with NOTES M)**: the container did NOT
+  originally carry memo sidecars, because no MCC table has one -- a NAMED
+  COUPLING at authoring time. **RESOLVED from the engine side 2026-08-12**
+  (owner: "minidb sidecar carriage"): `build_minidb_container` now asks
+  each area's attached backend for its own file (`IMemoBackend::path()`,
+  flushed before capture) -- better than the predicted "learn the naming
+  convention," because the backend simply names itself. Hydration lands
+  sidecars on the REAL filesystem under the mount dir (deliberately: the
+  DTX layer bypasses the ramfs and would never see a VFS-resident
+  sidecar). Proof: DB_T3/DB_T4 in `workspace_minidb.dts`, residue-hardened
+  by poisoning the live sidecar post-save so a green can only come from
+  container bytes. Part B's remaining half is the fixture side: MCC
+  flavors regenerated with NOTES M so the CANONICAL workspace exercises
+  this path, not just the regression's throwaway table.
 - **Writeback lane** (verbs ruled, name pending): a hydrated mini-database
   that commits back to DISK is a database EXTRACTED from a memo -- the
   export direction. Writeback and MINIDB together close the full cycle:
@@ -227,7 +236,11 @@ having already done it, in pieces, each proven alone.
   a real OS file) and by owner rule ("lmdb only for disks"). CDX orders
   attach in RAM through the native fallback; the LMDB route fails there
   correctly and loudly.
-- **No memo-sidecar carriage yet** (Part B coupling above).
+- **Memo-sidecar carriage landed 2026-08-12** (engine side; see Part B
+  bullet above). Honest residual: a hydrated sidecar is DISK-resident
+  under the mount dir, not VFS-resident -- unavoidable until ramfs
+  memo-store coverage lands -- and it survives unmount as residue
+  (truncate-overwritten by the next hydration of the same name).
 - **No size governance yet.** SIZE_B records what a container weighs;
   nothing yet refuses a save that would dwarf the sidecar or the RAM
   budget. EST_HYD_B and the vdisk Layer-2 budget are the chartered seams.

@@ -22,7 +22,18 @@
 *
 * Run: DO workspace_minidb | regression: REGRESSION RUN WORKSPACE_MINIDB
 * Markers: DB_T1 (row readable from memo-carried table), DB_T2 (order
-* attached from memo-carried index).
+* attached from memo-carried index), DB_T3/DB_T4 (memo SIDECAR carriage,
+* added 2026-08-12 -- AIF-108 [SIDECAR] unblock).
+*
+* Act 2 sidecar proof shape: the DTX layer bypasses the ramfs, so a
+* RAM-session sidecar is really disk-resident under the mount dir and
+* SURVIVES unmount as residue. A naive roundtrip check could therefore go
+* green off the residue. So after saving the container, the script POISONS
+* the live sidecar value; only then does it unmount, remount, and hydrate.
+* DB_T3 green means the hydrated value came from the CONTAINER (hydration
+* truncate-overwrites the residue), not from leftovers. DB_T4 proves the
+* hydrated sidecar is writable. Residue note: MDMEMO.dtx remains on real
+* disk under data\ram after the run (harmless; truncated by the next run).
 * ============================================================================
 SET ECHO OFF
 STOP_ON_ERROR OFF
@@ -48,6 +59,27 @@ TOP
 SELECT 4
 SET ORDER TAG SID
 ? "DB_T2_index_from_memo:" + (SID >= 1)
+
+* --- act 2: memo sidecar carriage (AIF-108 [SIDECAR] unblock) ---------------
+WORKSPACE CLOSE
+SELECT 1
+CREATE X64 MDMEMO (ID N(4,0), NOTES M)
+APPEND
+REPLACE ID WITH 1
+REPLACE NOTES WITH "carried through the container"
+WORKSPACE SAVE minidb_sidecar MEMO MINIDB
+
+* poison the LIVE sidecar so residue and container disagree -- a green below
+* can only come from container bytes
+REPLACE NOTES WITH "residue, must not survive hydration"
+CLOSE
+VDISK UNMOUNT
+DO mem
+WORKSPACE LOAD minidb_sidecar MEMO RAM
+SELECT 1
+? "DB_T3_memo_value_from_container:" + (NOTES = "carried through the container")
+REPLACE NOTES WITH "post-hydration write"
+? "DB_T4_sidecar_writable_after_hydration:" + (NOTES = "post-hydration write")
 
 FORMULA "WS-MINIDB-PROOF-END"
 
