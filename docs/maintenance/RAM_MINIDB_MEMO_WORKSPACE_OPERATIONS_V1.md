@@ -287,6 +287,30 @@ Out of scope by the ramfs contract (LMDB must mmap a real OS file) and by owner
 rule: **lmdb only for disks**. CDX orders attach in RAM through the native
 fallback; the LMDB route fails there correctly and loudly.
 
+**Afterthought, recorded so it is not rediscovered expensively (2026-08-12).**
+The constraint is not really about disks, it is about OS VISIBILITY: the
+in-process VFS is not a filesystem the kernel knows, so mmap cannot reach it. A
+SYSTEM virtual disk is a real OS filesystem that happens to live in RAM, so
+LMDB works there normally -- which would lift this limit, the destination
+BUILDLMDB requirement after WITH INDEXES, and the disk-resident memo sidecar
+(5.4) all at once, since those are three symptoms of one cause. It likely needs
+NO engine change: the DBF/INDEXES/LMDB slots are independent, so pointing all
+three at the vdisk path and never calling VDISK MOUNT stays on the ordinary
+disk code path.
+
+NOT pursued, and the reason is not difficulty. **The VFS is cross-platform and
+needs no privileges or provisioning; a system vdisk is per-OS setup.** That
+makes ramfs the correct default rather than a workaround, and makes
+zero-disk-reads a provable property instead of a configuration claim. Owner
+disposition: low risk, easy to test if a need ever appears.
+
+Guard against one conflation if it is ever taken up: **residence is not
+carriage.** A vdisk fixes where LMDB may LIVE. It does not make an LMDB
+environment sane to SHIP inside a memo container -- an env is a directory of
+mmap'd files with page-size and architecture sensitivity plus a lock file. The
+current design carries the index CHOICE and rebuilds the FILE, and that
+reasoning survives a vdisk unchanged.
+
 ### 5.2 No multi-file atomicity on hydration
 The container is written in one memo put and verified as one unit -- atomic at
 the carrier level -- but hydration writes N RAM files sequentially. A

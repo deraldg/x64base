@@ -64,6 +64,17 @@ VDISK UNMOUNT
 DO x64
 SET PATH DBF DBF/lsfall
 SET PATH INDEXES DBF/lsfall/indexes
+* LMDB MUST be repointed too, even though this spec never builds an LMDB env.
+* ERASE <table> sweeps THREE INDEPENDENT SLOTS -- DBF sidecars in place, index
+* files through the active INDEXES slot, and the LMDB environment through the
+* active LMDB slot. Leave one slot pointing at another dataset and ERASE will
+* reach across and delete that dataset's env. The first version of this spec
+* repointed only DBF and INDEXES, and its ERASE STUDENTS below destroyed
+* data/LMDB/x64/STUDENTS.cdx.d -- the shared x64 FIXTURE's environment, which
+* is gitignored and therefore not recoverable from git. Measured 2026-08-12;
+* the fixture was rebuilt with BUILDLMDB. A scratch root must own ALL THREE
+* slots before anything destructive runs in it.
+SET PATH LMDB DBF/lsfall/lmdb
 WORKSPACE OPEN DBF
 WORKSPACE SAVE ls_probe MEMO V3
 WORKSPACE CLOSE
@@ -122,6 +133,7 @@ VDISK UNMOUNT
 DO x64
 SET PATH DBF DBF/lsfall
 SET PATH INDEXES DBF/lsfall/indexes
+SET PATH LMDB DBF/lsfall/lmdb
 WORKSPACE OPEN DBF
 WORKSPACE SAVE ls_idxprobe MEMO V3
 WORKSPACE CLOSE

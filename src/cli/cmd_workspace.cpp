@@ -1800,16 +1800,20 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     // be resolved BEFORE anything is closed. Every carrier already holds its
     // payload in memory (memo, MINIDB, RAM); the file carrier is a small text
     // file. See preflight_missing_members() for the rule and the reason.
+    // Named payloadIn, not "body": the RELATION and KEY branches below already
+    // use a local "body" for the remainder of a line, and MSVC C4456'd the
+    // shadowing (GCC is silent without -Wshadow, which is how it reached a
+    // Windows build unnoticed).
     std::string payloadText;
     {
         std::ostringstream all;
         all << in.rdbuf();
         payloadText = all.str();
     }
-    std::istringstream body(payloadText);
+    std::istringstream payloadIn(payloadText);
 
     std::string header;
-    std::getline(body, header);
+    std::getline(payloadIn, header);
     const std::string headerNorm = to_lower(trim_copy(header));
 
     int schemaVersion = 0;
@@ -1856,7 +1860,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     int cursor_count = 0;       // v3 session state
     int pending_current = -1;   // v3 selected area; applied after the loop
 
-    while (std::getline(body, line)) {
+    while (std::getline(payloadIn, line)) {
         std::string t = trim_copy(line);
         if (t.empty()) continue;
 
@@ -1935,7 +1939,23 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
 #endif
         } else if (to_lower(t).rfind("flavor ", 0) == 0) {
             // v3 declarative line: flavor the posture was measured as at save.
-            // Informational on load today; admission checks may consume later.
+            //
+            // INFORMATIONAL BY DESIGN, not pending a gate (owner ruling
+            // 2026-08-12). An earlier note here read "admission checks may
+            // consume later", which invited exactly the wrong change. The
+            // engine is deliberately LENIENT: mixed flavors AND mixed index
+            // types are allowed to coexist in one workspace. That is the same
+            // orthogonality the posture already encodes by storing the index
+            // CHOICE per table (index=/indextype=) rather than pinning one
+            // container format per workspace -- which is what lets a single
+            // workspace mix CNX, CDX and INX. Refusing a load on a FLAVOR
+            // mismatch would contradict the property that makes mixed
+            // workspaces possible in the first place.
+            //
+            // Considered and NOT taken: grouping flavors into directories for
+            // conformity now that multiple workspaces exist. It would buy
+            // tidiness at the cost of flexibility and orthogonality, so it is
+            // recorded here as a road not taken rather than a backlog item.
             std::cout << "  FLAVOR: " << trim_copy(t.substr(7)) << "\n";
         } else if (to_lower(t).rfind("dbfroot ", 0) == 0) {
             // v3 self-locating roots (owner suggestion 2026-08-11): the
