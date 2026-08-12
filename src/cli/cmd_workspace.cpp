@@ -92,6 +92,7 @@
 //   WORKSPACE LOAD <file>
 //   WORKSPACE LOAD <name> MEMO
 //   WORKSPACE LOAD <name> MEMO RAM
+//   WORKSPACE LOAD <file|name [MEMO]> PARTIAL
 //   WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]
 //   WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]
 //
@@ -121,6 +122,14 @@
 //   with zero disk reads. Plain LOAD ... MEMO REFUSES a MINIDB payload by
 //   design: its tables have no disk home, and standing up empty areas over
 //   missing files is the silent-success failure this codebase hunts.
+//   LOAD REFUSES A SHORTFALL (owner-directed 2026-08-12): the declared dbf
+//   members are resolved and probed BEFORE anything is closed, so a load that
+//   cannot be completed leaves the CURRENT session standing rather than
+//   destroying it and then reporting the wreckage. Until this landed, LOAD
+//   closed every area, failed every open, and still said "restored 0 area(s)"
+//   -- the same manifest WRITEBACK refuses a shortfall on. Indexes are NOT
+//   checked (derived and rebuildable; the choice travels in the posture).
+//   PARTIAL opts back into the old permissive behaviour explicitly.
 //   WRITEBACK requires <name>. The dispatcher comment spells it "[<name>]",
 //   which reads as optional; it is not. The TO parse looks for a " to " with a
 //   token before it, so a leading "TO <root>" is swallowed as the NAME and
@@ -1650,16 +1659,117 @@ static void schema_save_to_file(const fs::path& file, int version = 2) {
     std::cout << "WORKSPACE SAVE: wrote " << s8(outPath) << "\n";
 }
 
+// Residence-aware existence probe. A RAM-resident source must be asked through
+// ramfs, NEVER std::filesystem: the VFS is in-process, so an OS probe does not
+// see a hydrated file at all and would report a perfectly good RAM workspace as
+// missing. Same rule, same reason, as read_all_bytes() below.
+static bool member_exists(const fs::path& p) {
+    const std::string sp = s8(p);
+    if (xbase::ramfs::is_virtual(sp)) return xbase::ramfs::exists(sp);
+    std::error_code ec;
+    return fs::exists(p, ec) && !ec;
+}
+
+static fs::path weak_canonical_or_self(const fs::path& p) {
+    std::error_code ec;
+    fs::path r = fs::weakly_canonical(p, ec);
+    return ec ? p : r;
+}
+
+// ONE resolver, used by BOTH the preflight and the load itself. Deliberately
+// not duplicated: a preflight that resolved even slightly differently from the
+// loader would pass a member the loader then fails to open, or refuse one it
+// would have found -- two components that must agree, which is precisely the
+// drift this codebase spends its days hunting.
+static fs::path resolve_member_dbf(const fs::path& rootDbf, const fs::path& p) {
+    fs::path q = translate_cross_os_absolute(p);
+    if (q.is_absolute() || looks_like_windows_abs(q) || looks_like_posix_abs(q)) {
+        return weak_canonical_or_self(q);
+    }
+    return weak_canonical_or_self(rootDbf / q);
+}
+
+// Field extraction for an AREA line ("AREA n | dbf=... | index=... | ...").
+// Shared with the loader for the same no-drift reason as the resolver.
+static std::string posture_area_field(const std::string& line, const char* key) {
+    auto pos = line.find(std::string(key));
+    if (pos == std::string::npos) return {};
+    pos += std::char_traits<char>::length(key);
+    auto end = line.find('|', pos);
+    std::string v = (end == std::string::npos) ? line.substr(pos) : line.substr(pos, end - pos);
+    return trim_copy(v);
+}
+
+// ---- LOAD shortfall preflight (owner ruling 2026-08-12) ---------------------
+//
+// THE ASYMMETRY THIS CLOSES. WORKSPACE WRITEBACK enumerates from the posture
+// and REFUSES a shortfall: "the posture declares 13 table(s); 12 are not open
+// ... Nothing was written." WORKSPACE LOAD enumerated from the SAME posture and
+// accepted any shortfall in silence. Measured 2026-08-12 against a v3 posture
+// whose declared DBFROOT had been deleted: 13 areas declared, 13 opens failed,
+// and the summary line read "WORKSPACE LOAD: restored 0 area(s)". The verb
+// reported success having restored nothing. Per-area failures were printed, but
+// the sentence a script or an operator reads last was a success sentence.
+//
+// RESOLVE-ALL-BEFORE-CLOSING, the mirror of writeback's proven
+// gather-all-before-writing. The declared members are resolved and probed
+// BEFORE schema_close_all() runs, so a refused load leaves the CURRENT session
+// standing. That ordering is the whole point: the old code closed every area
+// first and only then discovered it could not refill them, so even an honest
+// error message would have been reporting damage already done.
+//
+// INDEXES ARE NOT CHECKED, deliberately. An index file is derived and
+// rebuildable; the per-table CHOICE (index=/indextype=) travels in the posture
+// and find_index_for_dbf already falls back. Refusing a load over a missing
+// .cdx would refuse a workspace that is entirely recoverable. Tables are the
+// mandatory member -- the same line writeback draws.
+//
+// Roots are tracked in line order because that is how the loader resolves:
+// DBFROOT re-points resolution for the lines that FOLLOW it. The writer always
+// emits roots before AREA lines, so this agrees with reality; if a posture ever
+// arrives with them reordered, preflight and load will at least be wrong
+// together rather than disagreeing.
+static std::vector<std::string> preflight_missing_members(const std::string& payload,
+                                                          int& declared_out) {
+    std::vector<std::string> missing;
+    declared_out = 0;
+
+    fs::path rootDbf = dbf_root();
+    std::istringstream scan(payload);
+    std::string line;
+    bool first = true;
+
+    while (std::getline(scan, line)) {
+        const std::string t = trim_copy(line);
+        if (t.empty()) continue;
+        if (first) { first = false; continue; }   // the DTSHEMA version header
+
+        const std::string low = to_lower(t);
+        if (low.rfind("dbfroot ", 0) == 0) {
+            rootDbf = fs::path(trim_copy(t.substr(8)));
+        } else if (low.rfind("area ", 0) == 0) {
+            const std::string dbf = posture_area_field(t, "dbf=");
+            if (dbf.empty()) continue;            // the loader reports this itself
+            ++declared_out;
+            const fs::path resolved = resolve_member_dbf(rootDbf, fs::path(dbf));
+            if (!member_exists(resolved)) missing.push_back(s8(resolved));
+        }
+    }
+    return missing;
+}
+
 // AIF-070 M1: loader split from file I/O. schema_load_from_stream() is the
 // SINGLE parser; the file loader below (and the future memo carrier, M3)
 // feed it an open stream plus a source label used for messages and the
-// last-loaded-workspace state. Behavior of WORKSPACE LOAD: unchanged.
-static void schema_load_from_stream(std::istream& in, const std::string& sourceLabel) {
+// last-loaded-workspace state.
+//
+// allowPartial: WORKSPACE LOAD <name> PARTIAL. Default false -- a shortfall
+// refuses. See preflight_missing_members() for why.
+static void schema_load_from_stream(std::istream& in, const std::string& sourceLabel,
+                                    bool allowPartial = false) {
 
     auto weak_can = [](const fs::path& p) -> fs::path {
-        std::error_code ec;
-        fs::path r = fs::weakly_canonical(p, ec);
-        return ec ? p : r;
+        return weak_canonical_or_self(p);
     };
 
     // Non-const: a v3 posture's DBFROOT/IDXROOT lines re-point these for this
@@ -1670,11 +1780,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     fs::path rootIdx = idx_root();
 
     auto resolve_dbf = [&](const fs::path& p) -> fs::path {
-        fs::path q = translate_cross_os_absolute(p);
-        if (q.is_absolute() || looks_like_windows_abs(q) || looks_like_posix_abs(q)) {
-            return weak_can(q);
-        }
-        return weak_can(rootDbf / q);
+        return resolve_member_dbf(rootDbf, p);
     };
 
     auto resolve_index = [&](const fs::path& p) -> fs::path {
@@ -1690,8 +1796,20 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
         return weak_can(rootDbf / q);
     };
 
+    // Two-phase: the whole payload is read up front so the declared members can
+    // be resolved BEFORE anything is closed. Every carrier already holds its
+    // payload in memory (memo, MINIDB, RAM); the file carrier is a small text
+    // file. See preflight_missing_members() for the rule and the reason.
+    std::string payloadText;
+    {
+        std::ostringstream all;
+        all << in.rdbuf();
+        payloadText = all.str();
+    }
+    std::istringstream body(payloadText);
+
     std::string header;
-    std::getline(in, header);
+    std::getline(body, header);
     const std::string headerNorm = to_lower(trim_copy(header));
 
     int schemaVersion = 0;
@@ -1701,6 +1819,30 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     else {
         std::cout << "WORKSPACE LOAD: bad or unsupported file header.\n";
         return;
+    }
+
+    // ---- the refusal, BEFORE anything is closed -----------------------------
+    if (!allowPartial) {
+        int declared = 0;
+        const std::vector<std::string> missing = preflight_missing_members(payloadText, declared);
+        if (!missing.empty()) {
+            std::cout << "WORKSPACE LOAD: ABORTED -- the posture declares "
+                      << declared << " table(s); " << missing.size()
+                      << " cannot be found:\n";
+            std::size_t shown = 0;
+            for (const auto& m : missing) {
+                if (shown++ == 8) {
+                    std::cout << "  ... and " << (missing.size() - 8) << " more\n";
+                    break;
+                }
+                std::cout << "  ? " << m << "\n";
+            }
+            std::cout << "Nothing was closed and nothing was loaded; the current "
+                         "workspace is untouched.\n"
+                         "Fix the location (a v3 posture carries its own DBFROOT), "
+                         "or re-run with PARTIAL to restore only what exists.\n";
+            return;
+        }
     }
 
     last_loaded_workspace_file() = sourceLabel;
@@ -1714,7 +1856,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     int cursor_count = 0;       // v3 session state
     int pending_current = -1;   // v3 selected area; applied after the loop
 
-    while (std::getline(in, line)) {
+    while (std::getline(body, line)) {
         std::string t = trim_copy(line);
         if (t.empty()) continue;
 
@@ -1730,13 +1872,10 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
                 continue;
             }
 
+            // Shared with the preflight so the two cannot read the same line
+            // differently.
             auto get_field = [&](const char* key) -> std::string {
-                auto pos = t.find(std::string(key));
-                if (pos == std::string::npos) return {};
-                pos += std::char_traits<char>::length(key);
-                auto end = t.find('|', pos);
-                std::string v = (end == std::string::npos) ? t.substr(pos) : t.substr(pos, end - pos);
-                return trim_copy(v);
+                return posture_area_field(t, key);
             };
 
             fs::path dbf = get_field("dbf=");
@@ -1877,7 +2016,7 @@ static void schema_load_from_stream(std::istream& in, const std::string& sourceL
     refresh_relations_if_enabled_safe();
 }
 
-static void schema_load_from_file(const fs::path& file) {
+static void schema_load_from_file(const fs::path& file, bool allowPartial = false) {
     fs::path inPath = resolve_workspace_file_path(file, false);
 
     std::ifstream in(inPath, std::ios::binary);
@@ -1886,7 +2025,7 @@ static void schema_load_from_file(const fs::path& file) {
         return;
     }
 
-    schema_load_from_stream(in, s8(inPath));
+    schema_load_from_stream(in, s8(inPath), allowPartial);
 }
 
 // ===================== AIF-070 M2: the memo carrier =========================
@@ -2308,7 +2447,7 @@ static MemoFetch fetch_memo_payload(const std::string& name) {
     return out;
 }
 
-static void load_from_memo(const std::string& name) {
+static void load_from_memo(const std::string& name, bool allowPartial = false) {
     MemoFetch f = fetch_memo_payload(name);
     if (!f.ok) { std::cout << f.error << "\n"; return; }
 
@@ -2324,7 +2463,7 @@ static void load_from_memo(const std::string& name) {
     std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << f.saved_at
               << ", " << f.text.size() << " B)\n";
     std::istringstream in(f.text);
-    schema_load_from_stream(in, "memo:" + name);
+    schema_load_from_stream(in, "memo:" + name, allowPartial);
 }
 
 // ---- memo -> RAM hydration (owner lane, step 2, 2026-08-11) ----------------
@@ -3210,6 +3349,7 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE LOAD <file>                      (Load areas [+relations]; relative/cross-OS paths supported)\n";
     std::cout << "  WORKSPACE LOAD <name> MEMO                 (Load a POSTURE from the catalog)\n";
     std::cout << "  WORKSPACE LOAD <name> MEMO RAM             (Hydrate a MINIDB container into the mounted VDISK)\n";
+    std::cout << "  WORKSPACE LOAD <target> [MEMO] PARTIAL     (Restore only what exists; default REFUSES a shortfall)\n";
     std::cout << "  WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]\n";
     std::cout << "                                             (Return leg: RAM/memo -> real disk)\n";
     std::cout << "  WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]\n";
@@ -3224,6 +3364,10 @@ static void workspace_print_usage() {
     std::cout << "    so the payload IS the database. MINIDB implies V3 and requires MEMO.\n";
     std::cout << "  - Plain LOAD <name> MEMO REFUSES a MINIDB payload: its tables have no disk\n";
     std::cout << "    home, and empty areas over missing files is a silent failure. Use MEMO RAM.\n";
+    std::cout << "  - LOAD enumerates from the POSTURE too, and REFUSES a shortfall BEFORE it\n";
+    std::cout << "    closes anything -- a load that cannot complete leaves your current\n";
+    std::cout << "    workspace standing. Indexes are not checked (derived, rebuildable).\n";
+    std::cout << "    PARTIAL restores only what exists.\n";
     std::cout << "  - WRITEBACK enumerates from the POSTURE, never the session's attach order.\n";
     std::cout << "    A shortfall ABORTS having written nothing. CONFIRM is required to replace;\n";
     std::cout << "    replaced files are kept as <name>.__wbak. WITH INDEXES copies container\n";
@@ -3654,9 +3798,13 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // Step 2 (2026-08-11): trailing RAM hydrates the posture's files
             // into the mounted VDISK first (memo carrier only today) --
             // WORKSPACE LOAD <name> MEMO RAM, keywords in either order.
+            // Trailing PARTIAL (owner ruling 2026-08-12) opts INTO the old
+            // permissive behaviour: restore whatever exists and report the
+            // rest. Without it a shortfall now ABORTS before anything closes.
             std::string wsargs = trim_copy(rest_of_args);
             bool from_memo = false;
             bool to_ram = false;
+            bool allow_partial = false;
             for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
                 if (sp == std::string::npos) break;
@@ -3667,6 +3815,9 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 } else if (last == "ram" && !to_ram) {
                     to_ram = true;
                     wsargs = trim_copy(wsargs.substr(0, sp));
+                } else if (last == "partial" && !allow_partial) {
+                    allow_partial = true;
+                    wsargs = trim_copy(wsargs.substr(0, sp));
                 } else break;
             }
             if (to_ram && !from_memo) {
@@ -3675,11 +3826,11 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             } else if (from_memo) {
                 if (wsargs.empty()) std::cout << "WORKSPACE LOAD: missing workspace name before MEMO.\n";
                 else if (to_ram)   ws_memo::hydrate_to_ram(wsargs);
-                else               ws_memo::load_from_memo(wsargs);
+                else               ws_memo::load_from_memo(wsargs, allow_partial);
             } else if (wsargs.empty()) {
                 std::cout << "WORKSPACE LOAD: missing file path.\n";
             } else {
-                schema_load_from_file(fs::path(wsargs));
+                schema_load_from_file(fs::path(wsargs), allow_partial);
             }
 
         } else if (sub_command == "tuples" || sub_command == "tuple" ||

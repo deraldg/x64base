@@ -1,0 +1,140 @@
+* ============================================================================
+* workspace_load_shortfall.dts -- WORKSPACE LOAD refuses a partial restore,
+* and refuses it BEFORE anything is closed.
+*
+* THE ASYMMETRY THIS GUARDS. Both ends of this lane read the same manifest --
+* the posture's AREA lines -- and until 2026-08-12 they reached opposite
+* verdicts on the same shortfall:
+*
+*   WORKSPACE WRITEBACK: ABORTED -- the posture declares 13 table(s); 12 are
+*   not open ... Nothing was written.
+*
+*   WORKSPACE LOAD:      restored 0 area(s) and 0 relation(s).
+*
+* The second was measured, not hypothesised: a v3 posture whose declared
+* DBFROOT had been deleted closed every area, failed all 13 opens, and ended
+* on a sentence containing the word "restored". Each failure printed, so the
+* transcript was honest line by line and a lie in summary -- and a script
+* reading the last line, or an operator skimming, saw success.
+*
+* WHY THE ORDER IS THE WHOLE POINT. The old loader called schema_close_all()
+* BEFORE it discovered it could not refill those areas. Even a corrected
+* message would have been reporting damage already done. The fix is
+* RESOLVE-ALL-BEFORE-CLOSING -- the mirror of writeback's proven
+* gather-all-before-writing -- so a refused load leaves the CURRENT session
+* standing. L_T1 is that arm, and it is the one that matters: it does not
+* assert that the load failed, it asserts that the session SURVIVED it.
+*
+* WHAT IS DELIBERATELY NOT CHECKED: indexes. An index file is derived and
+* rebuildable, the per-table CHOICE travels in the posture, and the loader
+* already falls back. Refusing a workspace over a missing .cdx would refuse
+* one that is entirely recoverable. L_T5 asserts exactly that non-check, so a
+* future tightening that starts refusing on indexes fails here rather than
+* surprising someone mid-restore.
+*
+* Markers:
+*   L_G1  fixture guard: a healthy session is standing before the doomed load
+*   L_T2  the shortfall posture really is short (the removed member is gone)
+*   L_T1  REFUSAL ARM: after the refusal the ORIGINAL session is still live
+*   L_T3  PARTIAL opts back in: the surviving members restore
+*   L_T4  a HEALTHY posture is unaffected by the new gate
+*   L_T5  a missing INDEX does not refuse -- tables are mandatory, indexes are not
+*
+* Disposable: writes dbf/lsfall, ERASE DIR'd at bootstrap AND teardown.
+* Leaves catalog rows ls_probe / ls_idxprobe (superseded by name on re-run).
+* Requires the mcc_minidb_memo catalog row.
+*
+* Run: DO workspace_load_shortfall | regression: REGRESSION RUN WORKSPACE_LOADSHORT
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+ERASE DIR DBF/lsfall CONFIRM
+
+FORMULA "WS-LOADSHORT-PROOF-BEGIN"
+
+* --- land a real 13-table workspace, WITH indexes (L_T5 needs them) ---------
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/lsfall WITH INDEXES
+WORKSPACE CLOSE
+VDISK UNMOUNT
+
+* --- author a v3 posture that declares all 13 of them -----------------------
+DO x64
+SET PATH DBF DBF/lsfall
+SET PATH INDEXES DBF/lsfall/indexes
+WORKSPACE OPEN DBF
+WORKSPACE SAVE ls_probe MEMO V3
+WORKSPACE CLOSE
+
+* --- make the posture SHORT by removing exactly one declared member ---------
+ERASE STUDENTS CONFIRM
+? "L_T2_member_really_removed:" + (FILE("DBF/lsfall/STUDENTS.dbf") = .F.)
+
+* --- stand up a DIFFERENT healthy session; it must survive the refusal ------
+* Areas are selected BY NAME throughout, never by ordinal: the x64 root
+* carries FMGRTST.__fldbak and the lsfall root does not, so the same table
+* sits at a different slot in each. The first draft of this spec used ordinals
+* and produced two reds that were the SPEC's fault, not the engine's.
+DO x64
+WORKSPACE OPEN DBF
+SELECT STUDENTS
+GO 1
+? "L_G1_healthy_session_standing:" + (ALLTRIM(FNAME) = "Quinn")
+
+* --- THE REFUSAL ARM --------------------------------------------------------
+* 13 declared, 1 unfindable. Must abort, and must not close anything.
+* NOTE: the session opened above is deliberately LEFT OPEN. That is the arm.
+WORKSPACE LOAD ls_probe MEMO
+* If the refusal came BEFORE schema_close_all(), STUDENTS is still open and
+* still reads Quinn. If it came after, every area is closed, SELECT finds
+* nothing, and the field read falls back to a bare string -- a red.
+SELECT STUDENTS
+GO 1
+? "L_T1_session_survived_refusal:" + (ALLTRIM(FNAME) = "Quinn")
+
+* --- PARTIAL: the escape hatch still restores what exists -------------------
+WORKSPACE LOAD ls_probe MEMO PARTIAL
+SELECT TEACHERS
+GO 1
+? "L_T3_partial_restored_survivors:" + (ALLTRIM(LNAME) > "")
+WORKSPACE CLOSE
+
+* --- a healthy posture must be untouched by the new gate --------------------
+DO x64
+WORKSPACE LOAD mcc_x64
+SELECT 8
+TOP
+? "L_T4_healthy_posture_unaffected:" + (SID >= 1)
+WORKSPACE CLOSE
+
+* --- a missing INDEX is NOT a shortfall -------------------------------------
+* Re-land the tables, author a posture that records index= per table, then
+* remove the whole index container. Tables are all present, so the load must
+* proceed -- indexes are derived.
+ERASE DIR DBF/lsfall CONFIRM
+DO mem
+WORKSPACE LOAD mcc_minidb_memo MEMO RAM
+WORKSPACE WRITEBACK mcc_minidb_memo TO DBF/lsfall WITH INDEXES
+WORKSPACE CLOSE
+VDISK UNMOUNT
+DO x64
+SET PATH DBF DBF/lsfall
+SET PATH INDEXES DBF/lsfall/indexes
+WORKSPACE OPEN DBF
+WORKSPACE SAVE ls_idxprobe MEMO V3
+WORKSPACE CLOSE
+ERASE DIR DBF/lsfall/indexes CONFIRM
+WORKSPACE LOAD ls_idxprobe MEMO
+SELECT STUDENTS
+GO 1
+? "L_T5_missing_index_does_not_refuse:" + (ALLTRIM(FNAME) = "Quinn")
+WORKSPACE CLOSE
+
+FORMULA "WS-LOADSHORT-PROOF-END"
+
+* --- teardown ---------------------------------------------------------------
+WORKSPACE CLOSE
+ERASE DIR DBF/lsfall CONFIRM
+DO x64
