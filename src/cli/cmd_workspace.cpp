@@ -2012,7 +2012,77 @@ static bool open_catalog(xbase::DbArea& a, std::string& err) {
     return true;
 }
 
-static void save_to_memo(const std::string& name, int version = 2) {
+// ---- MINIDB: the payload IS the database (AIF-070's chartered destination) --
+// Until now a memo carried a POSTURE -- which tables, which orders, which
+// relations -- and the tables themselves stayed on disk. A MINIDB payload
+// carries the posture AND the table bytes, so a whole small database lives
+// inside one memo field of another database. Container, length-prefixed so
+// binary sections need no escaping (the memo store is payload-agnostic --
+// runtime-proven by the zoo harness on embedded NULs and high bytes):
+//
+//   MINIDB 1\n
+//   POSTURE <len>\n<posture text bytes>
+//   FILE <len> <relative-path>\n<file bytes>
+//   ...
+//   END\n
+//
+// Reads go through a residence-aware reader: a table already living in the
+// RAM VFS is read from ramfs, not the OS, so a RAM session can save its whole
+// working set into a memo -- the owner's "save the state in the memo when we
+// close". Paths are stored RELATIVE (basename, indexes/basename) so a payload
+// carries no machine-specific location.
+static bool read_all_bytes(const fs::path& p, std::string& out) {
+    const std::string sp = s8(p);
+    if (xbase::ramfs::is_virtual(sp) && xbase::ramfs::exists(sp)) {
+        auto in = xbase::ramfs::open(sp, /*create*/false);
+        if (!in) return false;
+        std::ostringstream ss; ss << in->rdbuf(); out = ss.str();
+        return true;
+    }
+    std::ifstream in(p, std::ios::binary);
+    if (!in.good()) return false;
+    std::ostringstream ss; ss << in.rdbuf(); out = ss.str();
+    return true;
+}
+
+static std::string build_minidb_container(const std::string& posture,
+                                          std::size_t& files_out,
+                                          std::uint64_t& bytes_out) {
+    std::string c = "MINIDB 1\n";
+    c += "POSTURE " + std::to_string(posture.size()) + "\n";
+    c += posture;
+
+    files_out = 0; bytes_out = 0;
+    auto add = [&](const fs::path& src, const std::string& rel) {
+        std::string bytes;
+        if (!read_all_bytes(src, bytes)) {
+            std::cout << "  ! minidb: cannot read " << s8(src) << "\n";
+            return;
+        }
+        c += "FILE " + std::to_string(bytes.size()) + " " + rel + "\n";
+        c += bytes;
+        ++files_out; bytes_out += bytes.size();
+    };
+
+    for (int area0 = 0; area0 < xbase::MAX_AREA; ++area0) {
+        try {
+            xbase::DbArea& A = get_area_0based(area0);
+            if (!area_open(A)) continue;
+            const fs::path dbf(A.filename());
+            add(dbf, s8(dbf.filename()));
+            const std::string idx = getOrderNameSafe(A);
+            if (!idx.empty() && to_lower(idx) != "none") {
+                const fs::path ip(idx);
+                add(ip, "indexes/" + s8(ip.filename()));
+            }
+        } catch (...) {}
+    }
+    c += "END\n";
+    return c;
+}
+
+static void save_to_memo(const std::string& name, int version = 2,
+                         bool minidb = false) {
     const std::string base = schema_save_to_string(version);
 
     std::string err;
@@ -2056,15 +2126,22 @@ static void save_to_memo(const std::string& name, int version = 2) {
         // stamp a memo-flavored unique id -- M<ws_id> -- as a WSID line
         // after the DTSHEMA 2 header (version line untouched). The catalog
         // row and the payload now name each other.
-        const std::string payload = stamp_ws_id(base, "M" + std::to_string(newId));
+        const std::string posture = stamp_ws_id(base, "M" + std::to_string(newId));
 
-        // Derived metadata, measured from the payload itself.
+        // Derived metadata, measured from the POSTURE (not the container --
+        // a MINIDB container carries binary table bytes that must not be
+        // scanned for keywords).
         std::size_t areaCount = 0;
-        for (std::size_t p = payload.find("\nAREA "); p != std::string::npos;
-             p = payload.find("\nAREA ", p + 6)) ++areaCount;
+        for (std::size_t p = posture.find("\nAREA "); p != std::string::npos;
+             p = posture.find("\nAREA ", p + 6)) ++areaCount;
         // SELF_REF heuristic: does the posture open the workspace catalog
         // family? Declaration only -- enforcement is the hydration stack.
-        const bool selfRef = payload.find("WORKSPACES") != std::string::npos;
+        const bool selfRef = posture.find("WORKSPACES") != std::string::npos;
+
+        std::size_t mdFiles = 0; std::uint64_t mdBytes = 0;
+        const std::string payload = minidb
+            ? build_minidb_container(posture, mdFiles, mdBytes)
+            : posture;
 
         // Fresh row + memo payload.
         auto* store = cli_memo::memo_store_for(a);
@@ -2085,7 +2162,8 @@ static void save_to_memo(const std::string& name, int version = 2) {
                && set_by_name(a, "SCHEMA_NAME", name, err)   // display name; defaults to handle until owner supplies one
                && set_by_name(a, "FLAVOR", measure_open_flavor(), err)
                && set_by_name(a, "OS_COMPAT", "ALL", err)    // a CLAIM column, not a measurement
-               && set_by_name(a, "FMT", version == 3 ? "DTSHEMA 3" : "DTSHEMA 2", err)
+               && set_by_name(a, "FMT", minidb ? "MINIDB 1"
+                                               : (version == 3 ? "DTSHEMA 3" : "DTSHEMA 2"), err)
                && set_by_name(a, "SIZE_B", std::to_string(payload.size()), err)
                && set_by_name(a, "MAX_AREAS", std::to_string(areaCount), err)
                && set_by_name(a, "DEPTH", "0", err)          // leaf until hydration says otherwise
@@ -2117,6 +2195,11 @@ static void save_to_memo(const std::string& name, int version = 2) {
             std::cout << "WORKSPACE SAVE: wrote memo '" << name << "' ("
                       << payload.size() << " B, oracle byte-compare OK) to "
                       << s8(catalog_path()) << "\n";
+            if (minidb) {
+                std::cout << "  MINIDB 1: " << mdFiles << " file(s), " << mdBytes
+                          << " B of table+index bytes carried IN the memo"
+                          << " (posture " << posture.size() << " B)\n";
+            }
         }
     } // release FLOCK while area still open
 
@@ -2180,6 +2263,15 @@ static void load_from_memo(const std::string& name) {
     MemoFetch f = fetch_memo_payload(name);
     if (!f.ok) { std::cout << f.error << "\n"; return; }
 
+    // A MINIDB payload has no disk home to open -- its tables live in the
+    // memo. Refuse with the instruction rather than half-loading.
+    if (f.text.rfind("MINIDB 1\n", 0) == 0) {
+        std::cout << "WORKSPACE LOAD: '" << name << "' is a MINIDB payload "
+                     "(tables carried in the memo). Hydrate it: VDISK MOUNT "
+                     "(or DO mem), then WORKSPACE LOAD " << name << " MEMO RAM.\n";
+        return;
+    }
+
     std::cout << "WORKSPACE LOAD: memo '" << name << "' (saved " << f.saved_at
               << ", " << f.text.size() << " B)\n";
     std::istringstream in(f.text);
@@ -2198,6 +2290,95 @@ static void load_from_memo(const std::string& name) {
 // memo field until the Part B regeneration lands; sidecar hydration is
 // chartered WITH that lane. The hydration is TIMED and reports a number,
 // not an adjective.
+// MINIDB hydration: the payload is the source. No disk read at all -- the
+// table bytes come OUT of the memo and INTO the RAM VFS, then the posture
+// (carried in the same container) stands the areas up with roots re-pointed
+// at RAM. This is the direction the lane was chartered for: a whole small
+// database living inside a memo field, hydrated on demand.
+static bool hydrate_minidb(const std::string& name, const std::string& payload,
+                           const fs::path& ramRoot, const fs::path& ramIdx) {
+    const auto t0 = std::chrono::steady_clock::now();
+
+    std::size_t pos = 0;
+    auto read_line = [&](std::string& out) -> bool {
+        const auto nl = payload.find('\n', pos);
+        if (nl == std::string::npos) return false;
+        out = payload.substr(pos, nl - pos);
+        pos = nl + 1;
+        return true;
+    };
+
+    std::string line;
+    if (!read_line(line) || trim_copy(line) != "MINIDB 1") {
+        std::cout << "WORKSPACE MINIDB: unrecognized container header.\n";
+        return false;
+    }
+
+    std::string posture;
+    int files = 0;
+    std::uint64_t bytes = 0;
+
+    while (read_line(line)) {
+        const std::string t = trim_copy(line);
+        if (t == "END") break;
+        const std::string low = to_lower(t);
+
+        if (low.rfind("posture ", 0) == 0) {
+            const std::size_t len = std::strtoull(t.substr(8).c_str(), nullptr, 10);
+            if (pos + len > payload.size()) { std::cout << "WORKSPACE MINIDB: truncated posture.\n"; return false; }
+            posture = payload.substr(pos, len);
+            pos += len;
+        } else if (low.rfind("file ", 0) == 0) {
+            std::istringstream hs(t.substr(5));
+            std::size_t len = 0; hs >> len;
+            std::string rel; std::getline(hs, rel); rel = trim_copy(rel);
+            if (rel.empty() || pos + len > payload.size()) {
+                std::cout << "WORKSPACE MINIDB: bad FILE section.\n"; return false;
+            }
+            const fs::path dst = (rel.rfind("indexes/", 0) == 0)
+                ? ramIdx / fs::path(rel.substr(8))
+                : ramRoot / fs::path(rel);
+            auto out = xbase::ramfs::open(s8(dst), /*create*/true);
+            if (!out) { std::cout << "WORKSPACE MINIDB: cannot create RAM file " << s8(dst) << "\n"; return false; }
+            out->write(payload.data() + pos, static_cast<std::streamsize>(len));
+            out->flush();
+            pos += len;
+            ++files; bytes += len;
+        } else {
+            std::cout << "  ~ MINIDB: unknown section (ignored): " << t << "\n";
+        }
+    }
+
+    if (posture.empty()) { std::cout << "WORKSPACE MINIDB: container carried no posture.\n"; return false; }
+
+    // Re-point the posture at RAM and load through the standard v3 path.
+    std::string hydrated;
+    {
+        std::istringstream scan(posture);
+        std::string l; bool first = true;
+        while (std::getline(scan, l)) {
+            const std::string low = to_lower(trim_copy(l));
+            if (low.rfind("dbfroot ", 0) == 0 || low.rfind("idxroot ", 0) == 0 ||
+                low.rfind("lmdbroot ", 0) == 0) continue;
+            hydrated += l; hydrated += "\n";
+            if (first) {
+                hydrated += "DBFROOT " + s8(ramRoot) + "\n";
+                hydrated += "IDXROOT " + s8(ramIdx) + "\n";
+                first = false;
+            }
+        }
+    }
+    std::istringstream in(hydrated);
+    schema_load_from_stream(in, "minidb:" + name);
+
+    const auto t1 = std::chrono::steady_clock::now();
+    const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    std::cout << "WORKSPACE MINIDB: hydrated '" << name << "' FROM THE MEMO: "
+              << files << " file(s), " << bytes << " B in " << ms
+              << " ms (zero disk reads)\n";
+    return true;
+}
+
 static void hydrate_to_ram(const std::string& name) {
     const fs::path ramRoot = paths::get_slot(paths::Slot::RAM);
     if (ramRoot.empty() || !xbase::ramfs::mounted(s8(ramRoot))) {
@@ -2208,6 +2389,13 @@ static void hydrate_to_ram(const std::string& name) {
 
     MemoFetch f = fetch_memo_payload(name);
     if (!f.ok) { std::cout << f.error << "\n"; return; }
+
+    // Carrier detection: a MINIDB container carries its own table bytes, so
+    // hydration reads the PAYLOAD, not the disk. Same verb, different source.
+    if (f.text.rfind("MINIDB 1\n", 0) == 0) {
+        (void)hydrate_minidb(name, f.text, ramRoot, ramRoot / "indexes");
+        return;
+    }
 
     // Source roots: payload DBFROOT/IDXROOT (v3) outrank the catalog row's
     // recorded roots (the v2 fallback).
@@ -2925,6 +3113,7 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
             // proven path is untouched. Keywords combine in either order.
             std::string wsargs = trim_copy(rest_of_args);
             bool to_memo = false;
+            bool as_minidb = false;
             int  ver = 2;
             for (;;) {
                 const auto sp = wsargs.find_last_of(" \t");
@@ -2932,11 +3121,19 @@ void cmd_WORKSPACE(xbase::DbArea& current, std::istringstream& in) {
                 const std::string last = to_lower(trim_copy(wsargs.substr(sp + 1)));
                 if (last == "memo" && !to_memo)      { to_memo = true; wsargs = trim_copy(wsargs.substr(0, sp)); }
                 else if (last == "v3" && ver == 2)   { ver = 3;        wsargs = trim_copy(wsargs.substr(0, sp)); }
+                else if (last == "minidb" && !as_minidb) {
+                    // MINIDB implies v3: the container's posture must be
+                    // self-locating, since it will be re-pointed at RAM.
+                    as_minidb = true; ver = 3; wsargs = trim_copy(wsargs.substr(0, sp));
+                }
                 else break;
             }
             if (to_memo) {
                 if (wsargs.empty()) std::cout << "WORKSPACE SAVE: missing workspace name before MEMO.\n";
-                else ws_memo::save_to_memo(wsargs, ver);
+                else ws_memo::save_to_memo(wsargs, ver, as_minidb);
+            } else if (as_minidb) {
+                std::cout << "WORKSPACE SAVE: MINIDB is a memo carrier "
+                             "(WORKSPACE SAVE <name> MEMO MINIDB).\n";
             } else {
                 fs::path out = wsargs.empty() ? fs::path("session") : fs::path(wsargs);
                 schema_save_to_file(out, ver);
