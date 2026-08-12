@@ -42,6 +42,14 @@
 *   (CDX CREATE refuses an existing container, and openCdx trusts the .meta
 *   sidecar -- BOTH must go. The README's reset rule, now with its corollary.)
 *
+* KNOWN TWO-STEP (measured on the landing run 2026-08-12): FIELDMGR APPEND
+* creates fresh <table>.__fldbak.dbf backups DURING this script, and the
+* WORKSPACE OPEN DBF below scans them in -- so the first run saves a
+* 15-area posture. After markers read green: host-delete the two fresh
+* backups, then re-run ONLY the posture tail (WORKSPACE CLOSE / OPEN DBF /
+* WORKSPACE / SAVE mcc_x64 / SAVE mcc_minidb_memo MEMO MINIDB / CLOSE) to
+* land the clean 13-area posture and the 27-file container.
+*
 * Rerunnable: FIELDMGR APPEND refuses "already has a memo store" harmlessly
 * once NOTES exists; the index rebuild and posture re-save still execute.
 * NO MEMO VALUES ARE WRITTEN -- fixtures stay value-virgin (null tokens,

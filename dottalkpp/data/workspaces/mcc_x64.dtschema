@@ -1,5 +1,5 @@
 DTSHEMA 2
-WSID F20260812T112459Z
+WSID F20260812T121051Z
 AREA 0 | dbf=BUILDING.dbf | index=BUILDING.cdx | indextype=CDX | tag=none | alias=BUILDING
 AREA 1 | dbf=CLASSES.dbf | index=CLASSES.cdx | indextype=CDX | tag=none | alias=CLASSES
 AREA 2 | dbf=COURSES.dbf | index=COURSES.cdx | indextype=CDX | tag=none | alias=COURSES
