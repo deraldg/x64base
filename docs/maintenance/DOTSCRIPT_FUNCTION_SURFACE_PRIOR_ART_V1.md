@@ -316,26 +316,57 @@ carries `stop_on_error` and its `LoopResult` returns `visited / matched /
 acted / aborted / last_error`. Abort-with-reason is an existing result shape
 in the tree, one seam below the script surface.
 
-## 6. What is genuinely undecided
+## 6. Owner rulings (RESOLVED 2026-08-12)
 
-These are owner rulings, not research questions:
+All five ruled in one sitting. Governing doctrine the owner set for the whole
+set, coined here and promoted to the glossary:
 
-1. **Declaration surface for parameters** -- an xBase-faithful `PARAMETERS`
-   line inside the body, versus a signature on the `FUNCTION` line. Both are
-   period-correct; only one should be taught.
-2. **`LOCAL`: declaration or inference.** Explicit declaration is
-   xBase-faithful and teaching-legible; inference is friendlier and quietly
-   changes what a bare assignment means inside a frame.
-3. **Where a function body lives** -- inline in a `.dts` file, in its own
-   file, or registered at runtime through the existing `DEFFN` seam. The
-   third is the cheapest and the least conventional.
-4. **Recursion depth cap** -- section 27's numbers cover data; call frames
-   need their own, and the strict-then-dynamic doctrine says pick a number
-   and refuse clearly.
-5. **Error model shape** -- whether `TRY`/`CATCH` is a script-level construct
-   or an extension of the existing `STOP_ON_ERROR` threshold with a handler
-   hook. The second is smaller and less teachable; the first is what the
-   evaluation asked for.
+> **"We are not a clone; that ship has sailed, so we get to improve the
+> product when we step out of the box. Go for gold unless the cost is
+> platinum."** -- when the better design and the clone-faithful design
+> diverge, take the better one, because fidelity to a discontinued lineage is
+> not itself a goal. The only brake is disproportionate cost (platinum): a
+> gold design is chosen unless it would cost far out of proportion to what it
+> buys. This is the affirmative twin of "it costs nothing to do it right" --
+> that rule forbids cheapening a free correct act; this one forbids
+> defaulting to the merely-faithful when the better answer is affordable.
+
+1. **Parameter surface: SIGNATURE ON THE FUNCTION LINE.** `FUNCTION
+   ADDTAX($AMT, $RATE)`, not a `PARAMETERS` body line. RULED. The signature
+   is visible where the function is named -- a reader and a future
+   `FUNCTION LIST` both learn arity without opening the body -- and it is the
+   form that AGREES WITH THE SCOPE MODEL in ruling 2 (Pascal declares its
+   parameters in the header). Go-for-gold over the older `PARAMETERS`-line
+   fidelity; the parenthesized parameter list is the parser's one new piece.
+2. **`LOCAL` explicit-declared, Pascal-style procedure scope.** RULED.
+   Declared, not inferred (an override may come later). Scope is
+   procedure-level and NESTS: a variable declared in a procedure is visible to
+   that procedure AND the procedures it calls, unless an inner declaration of
+   the same name shadows it. This is close to classic xBase PRIVATE (visible
+   down the call chain, shadowable), so the gold choice is also the faithful
+   one here -- no tension. Pure lexical isolation is the thing NOT chosen.
+3. **Function bodies live inline in the `.dts`.** RULED. Not a separate file,
+   not runtime `DEFFN` registration. Rides the existing buffer-and-replay
+   machinery (section 5c) with no new file-loading path; most teaching-legible
+   because the definition sits where it is used.
+4. **Recursion depth cap: hard 1000, as a named constant.** RULED. Matches
+   LOOP's existing hard-max precedent; a constant (greppable, one-edit
+   change), never a literal. Strict-first per the growth doctrine; a dynamic
+   cap can come later behind the same constant.
+5. **Error model: expose the state, keep the threshold; defer TRY/CATCH.**
+   RULED, and reframed by the owner: error handling is not a missing
+   construct -- the POLICY already exists as `STOP_ON_ERROR OFF | WARNING |
+   ERROR`, which is precisely "bypass so scripts complete even if one item
+   fails" versus "hard stop when continuing would be dangerous for the rest
+   of the script." The work is to make that policy SCRIPTABLE and
+   INSPECTABLE: one or two catalog functions exposing last-error and the
+   generation counter to expressions, so a script can make the
+   bypass-or-stop decision PER OPERATION with the existing `IF`, not only
+   globally. Uses the severity classification and generation counter that
+   already exist (section 5b). `TRY`/`CATCH` as a block construct is a
+   later maybe, not this lane -- the smaller, more xBase-faithful surface
+   ships first and may prove sufficient (demonstrated-negation candidate:
+   show the scripted probe covers the real cases before building blocks).
 
 ## 7. Recommended sequencing (proposal only)
 
@@ -348,7 +379,14 @@ These are owner rulings, not research questions:
 4. **Tuple bridges** when the function surface needs to return structured
    data -- section 21 is specified and TUPTALK is the working half.
 
-Nothing above should be built before the owner rules on section 6.
+Section 6 is now RULED, so this sequencing is cleared to become a charter.
+The lane it feeds: `FUNCTION NAME($params)` with signature-line parameters,
+`LOCAL` declarations with Pascal nesting scope, `RETURN`, inline bodies,
+recursion capped at a named 1000, and the nesting limit removed as the
+consequence of call frames -- then the error-state catalog probe as the
+second increment. No further owner ruling gates the build; the writeback-side
+rulings (verb name, MINIDB compaction, content-type home) are a SEPARATE
+sitting and do not block this lane.
 
 ---
 

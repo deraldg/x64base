@@ -189,6 +189,19 @@ are the ontology, the seed-rise plan, and the recall graph named below.
   learning-by-failure and demonstrated negation: those find or exhibit boundaries;
   this one moves a boundary that history drew. Owner: "It needs promotions" --
   promote to the site coined-vocabulary page. Home: AIF-070 catalog v2 lane.
+- **go for gold unless the cost is platinum** -- the house design doctrine,
+  owner-coined 2026-08-12 ruling the DotScript function surface: "we are not a
+  clone, that ship has sailed, so we get to improve the product when we step
+  out of the box." When the better design and the lineage-faithful design
+  diverge, take the better one -- fidelity to a discontinued xBase/FoxPro
+  lineage is not itself a goal, only a starting vocabulary. The single brake
+  is DISPROPORTIONATE cost: a gold design is chosen unless it would cost far
+  out of proportion to what it buys (platinum). The affirmative twin of "it
+  costs nothing to do it right": that rule forbids cheapening a free correct
+  act; this one forbids defaulting to the merely-faithful when the better
+  answer is affordable. First application: parameters on the FUNCTION
+  signature line (modern, matches the chosen Pascal scope) over the older
+  PARAMETERS-body-line fidelity. Home: `docs/maintenance/DOTSCRIPT_FUNCTION_SURFACE_PRIOR_ART_V1.md` section 6.
 - **the red pen** -- correcting a preserved external artifact in OUR overlay layer, never by
   editing the artifact: the received document stays byte-identical, the disagreement renders
   on top, attributed to the house. First instance: the proofreader's caret + handwritten NON
