@@ -6,6 +6,13 @@ export const topNav: NavItem[] = [
   { label: "LabTalk", href: "/products/labtalk" },
   { label: "Documentation", href: "/docs" },
   { label: "Schemas", href: "/schemas" },
+  // ECO: the ecoschema drill-down map, generated from the tree
+  // (docs/maintenance/ECOSCHEMA_MAP_V1.html) and served as a static drop-in
+  // from public/eco/. Self-contained -- one <style>, one <script>, zero
+  // external references -- so it needs no build step and cannot break the
+  // Next build. Linked as index.html for the same reason as /AI/: a bare
+  // directory 404s under `next dev`, which has no DirectoryIndex.
+  { label: "ECO", href: "/eco/index.html" },
   // Two LMS decks, kept deliberately separate and NOT reconciled (AIF-102).
   //
   //   /lms-proposal/     the received Microsoft Copilot pitch, preserved unchanged

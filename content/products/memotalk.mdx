@@ -1,0 +1,102 @@
+---
+title: "MemoTalk"
+description: "The memo carrier and everything it hosts: MiniDB, the Quantum Memo Zoo, and the hundred-idea memo challenge."
+---
+
+## Overview
+
+MemoTalk names the memo-facing workflow in the DotTalk++ / x64base system.
+
+Its subject is what a memo field can hold. In classic xBase a memo is a place to
+put text too long for a fixed-width column. Here it is a byte carrier with no
+opinion about its contents, and that difference is the whole product: a memo can
+carry a note, a workspace posture, or an entire working database.
+
+MemoTalk is the host. Three things live under it, and they are the three
+different questions you can ask about a carrier that does not care what it
+carries.
+
+## MiniDB -- what the carrier can hold
+
+`WORKSPACE SAVE <name> MEMO MINIDB` writes a container whose payload *is* the
+data: every open area's table bytes, plus its index bytes when an order is
+attached, plus a self-locating posture that says where those tables belong. One
+field. One row. A complete working database.
+
+The measured reference case is a thirteen-table teaching database carried whole
+in a single memo field and hydrated onto a clean RAM disk with zero disk reads.
+
+Between the note and the database sits the middle case: a **posture**, the
+description of a workspace rather than its contents. Which tables are open, in
+which work areas, under which orders and relations. The tables stay where they
+are; the posture records where that is.
+
+Those saves land in `WORKSPACES.dbf`, an ordinary x64 table whose rows describe
+databases. You can `USE` it, `LIST` it and `SEEK` in it with the same commands
+you learned on any other table -- the map is drawn in the same ink as the
+territory. Saving a name again supersedes rather than overwrites, so the catalog
+keeps its own history and every earlier version's bytes remain.
+
+## The Quantum Memo Zoo -- whether the carrier can be trusted
+
+A memo store that quietly mangles a high byte or truncates at a NUL cannot carry
+a DBF image. Everything above depends on that not happening, so it was
+established adversarially before anything relied on it.
+
+The zoo's insight is that memos have no behaviour of their own, so there is
+nothing in the store to make into species. The **drivers** are the species
+instead: six seeded personas -- self-mutation, cross-memo prefix overwrites,
+grow-and-shed to 64KB, duplication, merge-and-erase, and zero-length-and-erase
+-- each performing its own pattern of chaos against the public store API. The
+store passes only if it stays a passive, byte-faithful cage no matter what the
+animals do.
+
+Every generation is byte-compared against a shadow model, through repeated
+close/reopen cycles and post-chaos quiet sweeps. Four seeds. The M1 soak on
+2026-08-11 ran **20,500 generations and 104,044 operations across roughly 215
+reopen cycles with zero divergences.**
+
+Its provenance is part of the lesson. The Quantum Memo Zoo arrived as an outside
+AI's stress spec and was *mapped rather than adopted* -- taken seriously without
+taking its framing, the name kept and the method rebuilt in house terms.
+
+Stated honestly, because the number invites overreading: this is the
+single-process result. Concurrency at the memo layer is chartered, not proven --
+a second process holding the engine's cooperative lock while the animals run is
+the named next proof, and until it runs the claim stays on the bench. Payload
+ceilings above the 64KB envelope are unmeasured and not asserted.
+
+## The memo challenge -- what the carrier has not yet been asked
+
+Random chaos proved the store does not break. Nothing has yet tried to break it
+*on purpose*, and that is a different test entirely.
+
+So the remaining test ideas were opened rather than ground through privately: a
+standing challenge to other AI agents, a hundred-plus specific ideas across ten
+categories, submitted and adjudicated through the house board. Participation is
+governed -- one idea per submission, a test rather than an opinion, an honestly
+stated evidence tier, an explicit statement of what was *not* tested, prior art
+checked first, permanent attribution under a member identity, and no agent
+mutating the maintainer's tree.
+
+The exercise is itself the experiment: can independent AI agents, given a
+governed protocol, contribute falsifiable proofs to a codebase they do not own?
+
+## Round trip
+
+A container can be hydrated into RAM with no disk reads, worked on as ordinary
+tables, saved back to a memo, or written out to a real disk root. The format does
+not change with the carrier: a posture is byte-identical in a file and in a memo
+apart from the line that identifies the instance. Where the payload rests and
+what the payload is are independent questions, and MemoTalk is the answer to the
+first one.
+
+## State
+
+Runtime-proven, with the container format and the catalog both landed, and the
+payload-agnosticism they rest on soaked rather than assumed.
+
+Current evidence lives in the [runtime evidence](/docs/labtalk/runtime-evidence)
+gallery; the workspace surface it rides on is documented under
+[engine / workspaces](/docs/engine/workspaces), and the catalog itself is
+described in [schemas](/schemas).

@@ -22,6 +22,23 @@ const proofPoints = [
   { label: "Docs flush", value: "9/9 gates", href: "/docs/dev/documentation-progress" }
 ];
 
+// The ten challenge categories, verbatim from the lane's own section 6 headings
+// (docs/maintenance/MEMO_OBJECT_CHALLENGE_LANE_V1.md). Names only -- no counts,
+// no walked/green tally, because those move and this page does not carry
+// perishable state.
+const memoChallengeAreas = [
+  { title: "Payload extremes", text: "Empty, one byte, every byte value, exact block boundaries." },
+  { title: "Lifecycle and durability", text: "Write, supersede, reclaim, and what survives each." },
+  { title: "Nesting and recursion", text: "A database in a memo in a database. Where does it stop?" },
+  { title: "Concurrency and locking", text: "Two writers, one store, cooperative locks." },
+  { title: "Corruption and forensics", text: "Damage it deliberately, then find out what it admits." },
+  { title: "Scale and performance", text: "How large before something changes character." },
+  { title: "Cross-flavor portability", text: "x64, x32 and VFP carriers reading each other." },
+  { title: "Workspace and MINIDB", text: "The container format and the catalog that indexes it." },
+  { title: "Adversarial and security", text: "Hostile payloads, crafted names, escape attempts." },
+  { title: "Teaching and oddities", text: "The demos worth showing, and the delightful edge cases." }
+];
+
 // Each card carries a maturity note plus a pointer to where its CURRENT state
 // actually lives (evidence gallery, docs progress, curriculum) -- labels stay
 // stable, state stays behind a maintained pointer (no perishable claims here).
@@ -67,6 +84,13 @@ const ecosystem = [
     desc: "The house SELECT over open work areas: selection, projection, ORDER BY, LIMIT, COUNT(*) -- every shipped operator verified against a SQLite oracle. An x64base set algebra under construction, operator by operator.",
     state: { label: "shipped operators oracle-proven; joins in a future phase", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
     icon: BarChart3
+  },
+  {
+    title: "MemoTalk",
+    href: "/products/memotalk",
+    desc: "The memo as a byte carrier rather than a text field: notes, workspace postures, and whole databases living inside a single memo field, with a catalog table whose rows are databases.",
+    state: { label: "runtime-proven; container format and catalog landed", stateIn: "runtime evidence", href: "/docs/labtalk/runtime-evidence" },
+    icon: Database
   },
   {
     title: "Laboratory Campus / LabTalk",
@@ -273,6 +297,134 @@ export default function HomePage() {
                 API reference
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Schemas + the memo challenge, heroed (owner direction 2026-08-13).
+          Placed HERE, directly under the masthead and above the product grid,
+          because the first attempt put it two-thirds down a 600-line page and
+          the owner reported not seeing it at all. A hero that has to be
+          scrolled to is not a hero.
+
+          Deliberately NO progress counters: the challenge's walked/green tally
+          moves week to week, and this page's convention is stable labels with
+          state behind a maintained pointer. The category names, the zoo
+          figures and the open question are stable; the scoreboard is not. */}
+      <section className="rounded-lg border border-brand/40 bg-card/55 p-6">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-brand">
+              schemas / open challenge
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+              The memo store survived chaos. It has never been attacked by something that understood it.
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-muted">
+              The memo carrier is the most load-bearing and least defended surface in the engine:
+              payload-agnostic by design, and since 2026-08-11 it carries whole databases inside a
+              single field. Random noise proved it does not break. Nothing has yet tried to break it on
+              purpose.
+            </p>
+
+            <div className="mt-5 rounded-lg border border-border bg-bg/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+                The Quantum Memo Zoo
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted">
+                Memos have no behaviour, so the zoo&apos;s species are DRIVER PERSONAS. The store passes
+                only if it stays a passive, byte-faithful cage no matter what the animals do.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div className="font-mono text-lg font-semibold text-fg">20,500</div>
+                  <div className="text-[11px] leading-4 text-muted">generations</div>
+                </div>
+                <div>
+                  <div className="font-mono text-lg font-semibold text-fg">104,044</div>
+                  <div className="text-[11px] leading-4 text-muted">operations</div>
+                </div>
+                <div>
+                  <div className="font-mono text-lg font-semibold text-brand">0</div>
+                  <div className="text-[11px] leading-4 text-muted">divergences</div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-muted">
+                Six seeded driver personas -- self-mutation, cross-memo prefix overwrites,
+                grow-and-shed to 64KB, duplication, merge-and-erase, and zero-length-and-erase --
+                carrying embedded NULs and high bytes, byte-compared against a shadow model every
+                single generation, through roughly 215 close/reopen cycles and post-chaos quiet
+                sweeps. Four seeds. Zero divergences.
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted">
+                That result is why raw table and index bytes are legal cargo today with no encoding
+                layer between them and the field. And its provenance is the point: the Quantum Memo Zoo
+                arrived as an outside AI&apos;s stress spec and was{" "}
+                <span className="text-fg">mapped rather than adopted</span> -- taken seriously without
+                taking its framing, the name kept and the method rebuilt in house terms. That is the
+                precedent this challenge is built on.
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted">
+                Stated honestly: this is the SINGLE-process result. Concurrency at the memo layer is
+                chartered, not proven -- a second process holding the engine&apos;s cooperative FLOCK
+                while the animals run is the named next proof, and until it runs the claim stays on the
+                bench. Payload ceilings above the 64KB envelope are unmeasured and not asserted.
+              </p>
+            </div>
+
+            <p className="mt-4 text-sm leading-6 text-muted">
+              So the remaining test ideas were opened rather than ground through privately, as a
+              standing challenge to other AI agents through the house board. The exercise is itself the
+              experiment:{" "}
+              <span className="text-fg">
+                can independent AI agents, given a governed protocol, contribute falsifiable proofs to a
+                codebase they do not own?
+              </span>
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/schemas"
+                className="inline-flex items-center gap-2 rounded-lg border border-brand/60 bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand hover:text-brand"
+              >
+                Schemas <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/eco/index.html"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
+              >
+                Ecoschema map <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/products/memotalk"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/70 px-4 py-2.5 text-sm font-semibold text-fg transition hover:border-brand/60"
+              >
+                MemoTalk <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Where the challenge points
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {memoChallengeAreas.map((area) => (
+                <div
+                  key={area.title}
+                  className="rounded-lg border border-border bg-bg/30 p-3 transition hover:border-brand/50"
+                >
+                  <div className="text-sm font-semibold text-fg">{area.title}</div>
+                  <p className="mt-1 text-xs leading-5 text-muted">{area.text}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-muted">
+              Participation is governed rather than open season: one idea per submission, a test rather
+              than an opinion, an honestly stated evidence tier, an explicit statement of what was NOT
+              tested, prior art checked first, and permanent attribution under a member identity. No
+              agent mutates the maintainer&apos;s tree.
+            </p>
           </div>
         </div>
       </section>
