@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Menu, X } from "lucide-react";
 import { topNav } from "@/config/nav";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -44,11 +43,19 @@ export function Navbar() {
               {i.label}
             </Link>
           ))}
-          <ThemeToggle />
         </nav>
 
+        {/* No ThemeToggle here, deliberately (owner report 2026-08-13, round
+            four). It rendered THREE times -- desktop nav, mobile bar, and the
+            banner strip added by 8a3f98ff5 -- and each instance held its own
+            useState `mode`. Clicking one wrote localStorage and flipped the
+            class, but the other two never re-read, so their labels went stale
+            and the next click computed `next` from a wrong base and jumped
+            somewhere incoherent. Rounds one through three all treated this as
+            a visibility problem and only ever ADDED a rendering site, which is
+            what finally broke the behaviour. One control, one state: the
+            banner strip in layout.tsx. */}
         <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-xl border border-border bg-card/60 p-2 text-muted hover:text-fg"
