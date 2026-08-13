@@ -1,9 +1,46 @@
 # Cowork session handoff -- 2026-08-12 (afternoon)
 
     session : member.ai.claude.cowork
-    lanes   : AIF-070 (coworker, writeback arm), plus house-keeping
-    commits : 5a4f9b3ec (path split + writeback arms), aa32edbc5 (REGRESSION FIND)
-    status  : em-dash sweep staged but UNCOMMITTED; scanner work PAUSED for review
+    lanes   : AIF-070 (coworker, writeback arm), full_stack_documentation (v5),
+              plus house-keeping
+    status  : 8 commits landed. Scanner work PAUSED for Active Peer Review.
+              Flush v5 OPEN at Gate 0, blocked on the metacollect repair below.
+
+    UPDATED at end of session. The first version of this file was written after
+    commit 2 of 8 and its "still owed" list went stale within the hour -- which
+    is itself the argument for updating a handoff rather than leaving the reader
+    to reconcile it against the log.
+
+    commits, in order:
+      5a4f9b3ec  CWD-vs-DATA path split closed across WRITEBACK TO / ERASE DIR /
+                 FILE(); writeback's three untested arms proven; a false-green
+                 Linux proof RETRACTED across closeout, registry and log
+      aa32edbc5  REGRESSION FIND -- the question-to-spec bridge
+      4c584ba8f  em-dash sweep (215 replacements, 141 files) + this handoff +
+                 the peer-review packet
+      6f7e73e14  WORKSPACE LOAD refuses a shortfall BEFORE it closes anything
+      28a14d653  load-shortfall fixup: a destroyed fixture and a shadowed name
+      c04ac1bdb  contracts corrected; dotref.hpp brought up to the verb surface
+      42e0ecc56  flush v5 opened (DOCFLUSH-20260812-001) + v6 hints
+      a350c00ef  CMDHELP's preview now states its own scope
+
+---
+
+## Read this first if you are picking up the lane
+
+- **Flush v5 is OPEN at Gate 0**, not closed:
+  `docs/maintenance/lanes/full_stack_documentation/runs/DOCFLUSH-20260812-001/`.
+  Gate 0 envelope, Gate 2 baseline (+ its 103 KB transcript), and
+  `V6_HINTS_V1.md` are committed. **Gate 0 does not pass until metacollect is
+  repaired** -- see "Known broken" below.
+- **`V6_HINTS_V1.md` is the highest-value file in that directory.** It carries
+  the LEGACY-first rebuild sequence as a seven-step gate, the finding that HELP
+  DATA carries NO provenance at all, the three-separately-authored-descriptions
+  problem, the five expression functions publishing as unsupported commands, and
+  a "settled -- do not re-derive" section.
+- **`WORKSPACE LOAD` behaviour CHANGED.** A shortfall now aborts before anything
+  closes. Anything relying on a silent partial restore needs the new `PARTIAL`
+  keyword. Proven by `WORKSPACE_LOADSHORT` (6/6, every arm mutation-killed).
 
 ---
 
@@ -125,10 +162,42 @@ stays open.
 
 ## Still owed, unstarted
 
-- `WORKSPACE OPEN <dir>` resolution (paused for review).
-- DTSCHEMA v3 regression (owner-identified, never written).
-- `RECNO` as a predicate identifier evaluates empty and returns a confident
-  zero -- `SMARTLIST ... FOR RECNO > 195` gives 0 records with no error, while
-  the same query on a field predicate works and `RECNO` renders fine as a
-  projection column.
-- Whether the path split gets its own AIF number. It is not AIF-070's.
+**Waiting on an owner ruling (nothing else can proceed on these):**
+
+- **The `dt_meta` safety boundary** -- unblocks metacollect, SYSFUNC, the
+  FN_COVERAGE warn, and flush v5's Gate 0. Highest leverage item here.
+- **`.__wbak` placement** -- filter the scanner, relocate the backups, or route
+  them to the house TMP slot. With the Active Peer Review; packet is
+  `PEER_REVIEW_WORKSPACE_SCANNER_AND_WBAK_PLACEMENT_V1.md`.
+- **`WORKSPACE OPEN <dir>`** resolves CWD-relative and opens nothing SILENTLY.
+  Same review, same surface, deliberately not fixed separately so one ruling
+  covers the whole scanner.
+- **Whether `workspace_wbak_scan.dts` becomes a registered regression.** Written
+  and green (4/4), unregistered by choice.
+- **Whether the path split gets its own AIF number.** It is not AIF-070's -- it
+  predates that lane and any verb taking a relative target was exposed.
+- **The five expression functions publishing as unsupported DOT commands**
+  (FILE, UDATE, UDATETIME, UNOW, UTIME). Recorded in the v6 hints with three
+  candidate rulings.
+
+**Owed work, no ruling needed:**
+
+- `SYSFUNC_IMPORT_v1.csv` regeneration -- blocked on metacollect, not on a
+  decision.
+- `RECNO` as a PREDICATE identifier evaluates empty and returns a confident
+  zero: `SMARTLIST ... FOR RECNO > 195` gives 0 records with no error, while the
+  same query on a field predicate works and `RECNO` renders fine as a PROJECTION
+  column. Measured; unfiled.
+- 19 em-dashes in the four files reverted for good-neighbour reasons (section 1).
+- dotref summary length: this session's three entries added 96 rows, about 32
+  each, against roughly 3.5 rows per entry across the other ~255. A trim to
+  syntax-plus-essentials was offered and not yet ruled on.
+
+**CORRECTED -- do not chase this one:**
+
+- The DTSCHEMA v3 regression is **not** missing. `WORKSPACE_V3` /
+  `workspace_v3_selflocate.dts` exists, is registered, and runs green. It is
+  THIN (one marker for a feature making six separable promises), which is a
+  coverage question rather than an absence. The earlier entry here said "never
+  written" because this session did not check prior art before believing it --
+  the same failure recorded in section 7 of the v6 hints.
