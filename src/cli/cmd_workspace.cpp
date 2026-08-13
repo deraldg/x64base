@@ -148,6 +148,27 @@
 //   Operator manual: docs/maintenance/RAM_MINIDB_MEMO_WORKSPACE_OPERATIONS_V1.md
 //   Mechanism and design: docs/maintenance/MEMO_RESIDENT_MINIDB_V1.md
 //
+// risk:
+//   Added 2026-08-12. WORKSPACE had NO risk block while ERASE, VDISK,
+//   REGRESSION, SMARTLIST and ZAP all carried one -- and WORKSPACE had
+//   meanwhile grown the most destructive surface of the group. The absence was
+//   not a judgement that the verb is safe; it predated WRITEBACK entirely.
+//   reads_table_records: yes
+//   mutates_session: OPEN ADD CLOSE LOAD -- all replace or discard live areas
+//   closes_all_open_areas: LOAD, and OPEN (replacement-style); ADD is additive
+//   writes_filesystem: WRITEBACK only
+//   overwrites_existing_files: WRITEBACK ... CONFIRM, which is required to
+//     replace and keeps every replaced file as <name>.__wbak
+//   destroys_prior_backup: yes -- .__wbak is ONE generation deep and kept
+//     indefinitely; a second confirmed writeback discards the first backup
+//     silently. Measured 2026-08-12.
+//   writes_catalog_rows: SAVE ... MEMO (append-history; reruns supersede)
+//   refuses_rather_than_partial: LOAD (shortfall, before closing anything) and
+//     WRITEBACK (manifest shortfall, before writing anything)
+//   mutates_table_data: no
+//   no_transaction_or_rollback: yes -- a completed WRITEBACK is not undone by
+//     anything except the .__wbak copies it left
+//
 // related:
 //   DBAREA
 //   DBAREAS
