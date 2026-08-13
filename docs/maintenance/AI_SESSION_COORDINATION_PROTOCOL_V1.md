@@ -122,6 +122,58 @@ Filesystem-atomic, same medium as the rest of the protocol; no daemon, no DBF.
 - No RBAC, no history. A quip that must survive the session was the wrong primitive
   and belongs in a checkin note, an AIF claim, or a BBS post.
 
+## Pointers, not copies (owner rule, 2026-08-13)
+
+**Coworkers that share a platform and local disk access exchange POINTERS to
+documents, never shuffled copies of them.**
+
+A pointer is three things, and all three are required:
+
+    <tree path>  +  <commit sha you read it against>  +  <section anchor>
+
+The reasoning is the same one that makes the mechanism above filesystem-atomic:
+the tree is the medium sessions actually share. A copy handed between sessions
+forks on contact. It then has to be reconciled by hand, and reconciliation is
+where claims drift from what the file says -- which is the failure this whole
+protocol exists to prevent, arriving through the document channel instead of
+the commit channel.
+
+Practical consequences:
+
+- An artifact that has, or should have, a home in the tree gets PLACED ONCE at
+  an agreed path, and is referenced by pointer from then on. It does not keep
+  living in a scratch `outputs/` folder that later needs merging in.
+- Cross-reference rather than restate. Restating is copying with extra steps,
+  and the restatement is what goes stale.
+- Retractions and corrections are applied IN THE PLACED FILE. Do not re-ship a
+  corrected body; say what changed and point at it.
+
+### The precondition, which is not optional
+
+**A pointer is only a pointer if the referent is REACHABLE BY THE READER.**
+Aimed at something the reader cannot open, it is not a reference; it is a
+request for a copy, wearing a path.
+
+So before pointing, confirm the referent is visible from where the reader
+sits, and say so. For a hosted or non-host session reading the public remote,
+that means the file must be PUSHED, not merely committed.
+
+Proven the day the rule was written. Five assignments were issued to a hosted
+coworker by path. Measured afterwards: `development` was **15 commits ahead of
+`origin/development`**, so the coworker's baseline (`a766f14`, the tip of the
+public repo) predated three of the referenced artifacts entirely. The coworker
+caught it, not the author, and correctly refused to work the assignments from
+the lane docs' descriptions of files it could not open -- naming the failure
+mode by its house name.
+
+The check is cheap and belongs in the habit:
+
+    git --no-optional-locks cat-file -e <sha>:<path>   # is it there?
+    git --no-optional-locks rev-list --count origin/<branch>..HEAD
+
+Corollary for host-mounted sessions: **unpushed work is invisible work.** A
+pointer handed to a non-host coworker is a promise that a push has happened.
+
 ## Limits / honest reach
 
 - Coordinates **local concurrent sessions on one machine/working tree** — the actual scenario. It is
