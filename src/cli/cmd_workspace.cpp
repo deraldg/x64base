@@ -2479,10 +2479,21 @@ struct MemoFetch {
 //      surrogate that has never held a letter. The M/F prefix lives in the
 //      WSID LINE INSIDE the payload text (stamp_ws_id), a different thing
 //      that happens to share a name.
-//   2. Even corrected it would have been a constant. The only appendBlank()
-//      against this table is in save_to_memo, so a catalogued row IS a memo
-//      row by construction. A column that can only take one value is not a
-//      column; it is a fact about the table.
+//   2. Even corrected it would have been a constant. No code path in the tree
+//      targets WORKSPACES.dbf by name except this file, and within it only
+//      save_to_memo appends, so every row the SYSTEM writes here is a memo
+//      row. A column that can only take one value is not a column; it is a
+//      fact about the table.
+//
+// Refined 2026-08-13 after checking claim 2 tree-wide instead of in one file,
+// which is how it was first "verified". 17 files call appendBlank(); the other
+// 16 are GENERIC (APPEND, COPY, IMPORT, SQL INSERT, ...) and append to whatever
+// area is open. The catalog is an ordinary x64 table -- that is the whole point
+// of it, the map drawn in the same ink as the territory -- so `USE WORKSPACES`
+// followed by `APPEND BLANK` puts a row here like anywhere else. The invariant
+// is therefore "nothing the system writes puts a non-memo row in this table",
+// NOT "nothing can". Read this report as a record of saves, not as a proof
+// about arbitrary rows.
 //
 // So carrier is stated once in the footer, and the file carrier is counted
 // where it actually lives -- the .dtschema files in this same directory, which
@@ -2555,8 +2566,9 @@ static void report_catalog() {
     std::cout << "  FMT is the PAYLOAD: DTSHEMA 2/3 carry a posture and the tables stay\n"
                  "  where they are; MINIDB 1 carries the table bytes themselves ("
               << minidb << " here).\n"
-                 "  Every row here is the MEMO carrier, by construction -- appending to\n"
-                 "  this table IS what saving to a memo does, and nothing else writes it.\n"
+                 "  Every row the SYSTEM writes here is the MEMO carrier: appending to this\n"
+                 "  table IS what saving to a memo does, and no other code path targets it.\n"
+                 "  (It is an ordinary table, so USE + APPEND BLANK can still add a row.)\n"
                  "  The FILE carrier is therefore NOT listed above: those are the "
               << fileCarrier << "\n"
                  "  .dtschema/.dtschemas files in this same directory. Same postures,\n"

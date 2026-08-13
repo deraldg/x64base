@@ -180,9 +180,21 @@ author, and which rows are superseded.
 tables stay where they are. `MINIDB 1` carries the TABLE BYTES themselves.
 
 **Carrier is a fact about the table, not a column in it.** Appending to
-`WORKSPACES.dbf` IS what saving to a memo does -- `save_to_memo` holds the only
-`appendBlank()` against it -- so every catalogued row is the memo carrier by
-construction. The FILE carrier never appears here at all: those are the
+`WORKSPACES.dbf` IS what saving to a memo does, and no other code path in the
+tree targets that table by name, so every row the SYSTEM writes here is the
+memo carrier.
+
+    REFINED 2026-08-13. This first read "save_to_memo holds the only
+    appendBlank() against it", verified by grepping ONE file. Checked
+    tree-wide, 17 files call appendBlank(); 16 are generic (APPEND, COPY,
+    IMPORT, SQL INSERT) and write whatever area is open. The catalog is an
+    ordinary x64 table -- the map in the same ink as the territory -- so
+    `USE WORKSPACES` then `APPEND BLANK` adds a row like anywhere else. The
+    invariant is "nothing the system writes puts a non-memo row here", not
+    "nothing can". The property that makes the catalog teachable is the same
+    one that makes the stronger claim false.
+
+The FILE carrier never appears here at all: those are the
 `.dtschema` / `.dtschemas` files sitting in the same directory, which the
 report counts in its footer so the catalog does not read as the whole
 inventory.
