@@ -162,6 +162,16 @@ RecordView make_record_view(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            // Special symbol: RECCOUNT -- the DBF header's stored record count
+            // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
+            // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
+            // HEADER, not something a loop derives, so a spec asserting "all N
+            // made the trip" by probing record N's value was working around a
+            // missing accessor rather than around an absent fact. 64-bit
+            // accessor deliberately: recCount() returns -1 past INT32_MAX.
+            if (up == "RECCOUNT") {
+                return std::to_string(area.recCount64());
+            }
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
@@ -178,6 +188,9 @@ RecordView make_record_view(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECCOUNT") {
+                return static_cast<double>(area.recCount64());
             }
         }
 
@@ -235,6 +248,16 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             if (up == "DELETED") {
                 return area.isDeleted() ? "T" : "F";
             }
+            // Special symbol: RECCOUNT -- the DBF header's stored record count
+            // (bytes 4-7, HeaderRec::num_of_recs), reached via recCount64().
+            // Owner correction 2026-08-12: a DBF record count is a FACT IN THE
+            // HEADER, not something a loop derives, so a spec asserting "all N
+            // made the trip" by probing record N's value was working around a
+            // missing accessor rather than around an absent fact. 64-bit
+            // accessor deliberately: recCount() returns -1 past INT32_MAX.
+            if (up == "RECCOUNT") {
+                return std::to_string(area.recCount64());
+            }
         }
 
         int idx = field_index_ci_cached(area, name, *idx_cache);
@@ -249,6 +272,9 @@ RecordView make_record_view_raw(xbase::DbArea& area) {
             for (char c: name) up.push_back((char)std::toupper((unsigned char)c));
             if (up == "DELETED") {
                 return area.isDeleted() ? 1.0 : 0.0;
+            }
+            if (up == "RECCOUNT") {
+                return static_cast<double>(area.recCount64());
             }
         }
 
