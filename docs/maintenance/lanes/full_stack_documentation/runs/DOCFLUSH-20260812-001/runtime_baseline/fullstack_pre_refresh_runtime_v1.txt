@@ -1,0 +1,2976 @@
+[32mINIT: Paths
+  BIN        : D:\code\ccode\dottalkpp\bin
+  DATA       : D:\code\ccode\dottalkpp\data
+  DBF        : D:\code\ccode\dottalkpp\data\dbf
+  INDEXES    : D:\code\ccode\dottalkpp\data\indexes
+  LMDB       : D:\code\ccode\dottalkpp\data\lmdb
+  WORKSPACES : D:\code\ccode\dottalkpp\data\workspaces
+  SCHEMAS    : D:\code\ccode\dottalkpp\data\schemas
+  PROJECTS   : D:\code\ccode\dottalkpp\data\projects
+  SCRIPTS    : D:\code\ccode\dottalkpp\data\scripts
+  TESTS      : D:\code\ccode\dottalkpp\data\tests
+  HELP       : D:\code\ccode\dottalkpp\data\help
+  LOGS       : D:\code\ccode\dottalkpp\data\logs
+  TMP        : D:\code\ccode\dottalkpp\data\tmp
+INIT: processing system .ini D:\code\ccode\dottalkpp\bin\dottalkpp.ini
+INIT: processing user .ini D:\code\ccode\dottalkpp\bin\init.ini
+Echo is OFF
+Paging is OFF
+Talk is OFF
+dottalk++ v0.6 (2026-08-12, 46bd9233 dirty)  (Aug 12 2026 18:30:58)
+DotTalk++ build Aug 12 2026 18:30:58
+SQLite available: 1, version: 3.50.4
+[0m         [33m*[0m
+[0m         [32m^[0m
+[0m        [32m^[31mo[32m^[0m
+[0m       [32m^^[36m#[32m^^[0m
+[0m      [32m^^^[33m*[32m^^^[0m
+[0m     [32m^^[33m+[32m^^^^^^[0m
+[0m    [32m^^^^^[31mo[32m^^^^^[0m
+[0m   [32m^^^[36m#[32m^^^^^[33m+[32m^^^[0m
+[0m  [32m^^[31mo[32m^^^^[33m*[32m^^^^^^^[0m
+[0m [32m^^^^^[33m+[32m^^^^^^[31mo[32m^^^^[0m
+[32m^^^^[36m#[32m^^^^[31mo[32m^^^^[33m+[32m^^^^[0m
+[0m         [37m|||[0m
+[0m         [37m|||[0m
+EDU_BIBLETALK: opened BibleTalk seed biblebase\bible_kjv_x64.sqlite
+BibleTalk Quote
+  Psalms 119:96
+  I have seen an end of all perfection: but thy commandment is exceeding broad.
+DotTalk++ type HELP. USE, SELECT <n>, AREA, COLOR <GREEN|AMBER|DEFAULT>, ABOUT, QUIT.
+
+Dev: CMDHELPCHK, GPS, WORKSPACE, ERSATZ.
+
+Hello World!
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . Echo is OFF
+. STOP_ON_ERROR: threshold set to OFF
+. . DOCFLUSH-V5-BASELINE-BEGIN
+. . . ABOUT - Page 1 of 2
+===================
+
+DotTalk++
+
+Author
+ Derald Grimwood
+
+Dedicated to
+ Kathy Grimwood
+
+Project
+ DotTalk++ is a modern C++ xBase-inspired database runtime and command shell.
+
+Heritage
+ The DotTalk++ command model draws inspiration from the classic xBase
+ lineage of database languages:
+
+ dBase - early interactive database shell
+ Clipper - compiled xBase systems
+ FoxPro - relational navigation and index-driven querying
+
+ DotTalk++ preserves many of the familiar commands and workflows from
+ these systems while extending them with:
+
+ modern help catalogs
+ relational traversal (REL ENUM)
+ tuple projection
+ scripting and automation
+
+ DotTalk++ also combines aspects of both the interactive xBase model
+ and the compiled application model. Like dBase and FoxPro, it provides
+ a live command shell for exploring data. Like Clipper, it can be extended
+ through source code and compiled. It is also structured as modular
+ runtime libraries, including xbase and xindex, beneath the shell.
+
+History
+ The project traces back to 1993, when Derald Grimwood wrote a small
+ ANSI C database program as a practical and experimental system,
+ including fixed-length record storage and a simple in-memory B-tree.
+
+ In 2025, that earlier work was revived and used as the conceptual basis
+ for a modern 64-bit rebuild in C++. The result became DotTalk++:
+ not a direct port, but a broader reimplementation and expansion.
+
+Current Direction
+ DotTalk++ aims to retain the clarity of the xBase interaction model
+ while making the engine suitable for modern experimentation and
+ education.
+
+ It is intended to serve as:
+ - a working DBF database runtime
+ - a relational exploration environment
+ - a scripting and automation shell
+ - a teaching system for database concepts
+
+ Internally, DotTalk++ is also organized as a modular system:
+ - xbase : core DBF/table/runtime library
+ - xindex : indexing library
+ - dottalk : command shell and interactive environment
+
+ In this sense, DotTalk++ sits between FoxPro and Clipper:
+ - interactive and stateful like FoxPro
+ - extensible and compilable like Clipper
+
+Design Philosophy
+ DotTalk++ is intentionally stateful and interactive.
+
+ It exposes important runtime concepts directly, including:
+ - current work area
+ - current record pointer
+ - active order/index
+ - active filter
+ - relation graph
+ - buffering state
+
+ The goal is to make database behavior visible and understandable during
+ live operation, rather than hiding it behind abstraction.
+
+Working Model
+ DotTalk++ can be understood as four cooperating layers:
+
+ 1. Command Layer - interactive commands and scripting
+ 2. Data Layer - tables, records, fields, indexes
+ 3. Logic Layer - expressions, predicates, control flow
+ 4. Projection Layer - LIST, SMARTLIST, TUPLE, REL ENUM, browsers
+
+Runtime Environment
+ OS family   : Windows
+ Architecture: x64
+ C++ standard: C++2020
+ Compiler    : MSVC 1,944
+
+Years
+ Origin: 1993 ANSI C
+ Revival / C++ X64 modern rebuild: 2025-
+
+Summary
+ DotTalk++ honors the xBase tradition while extending it into a modern,
+ teachable, experiment-friendly database runtime.
+
+ User interfaces change, languages change, but the underlying database principles remain constant. -- Derald Grimwood
+
+ABOUT - Page 2 of 2
+===================
+
+Application
+-----------
+Name            : DotTalk++
+Build Mode      : Release
+Build Date      : Aug 12 2026 18:19:12
+Architecture    : x64
+Compiler        : MSVC 1,944
+C++ Std         : 202,002
+
+Operating System
+----------------
+OS              : Windows 6.1.7,600
+
+Hardware
+--------
+CPU Threads     : 22
+Installed RAM   : 63.5 GB
+
+Storage
+-------
+Disk Root       : D:\
+Disk Free       : 237.5 GB
+Disk Total      : 838.4 GB
+
+Console
+-------
+Size            : 0 x 0
+ANSI / VT       : disabled
+
+Network
+-------
+Computer Name   : GRIMWOOD
+Local IPv4      : 10.0.0.181
+
+Current Session
+---------------
+File Open       : No
+Dbfile          : (none)
+Records         : 0
+Fields          : 0
+
+. . . CMDHELP Report (current HELP DATA)
+  directory : D:\code\ccode\dottalkpp\data\help
+  line rows : 28731
+  topics    : 527
+
+By KIND:
+  ALIAS              50
+  ARGUMENT           414
+  DEPRECATION        1
+  ERROR              478
+  EXAMPLE            1,057
+  HINT               19
+  MESSAGE            1,009
+  NOTE               3,622
+  RELATED            1,962
+  SOURCE_FACT        4,296
+  STATUS             1,560
+  SUMMARY            2,277
+  SYNTAX             5,998
+  USAGE              5,943
+  WARNING            45
+
+By SOURCE:
+  CURATED_DOC        868
+  DOTREF             896
+  EDREF              786
+  FOXREF             665
+  REGISTRY           462
+  SHARED_MSG         2,637
+  SOURCE_MINER       7,503
+  USAGE_CONTRACT     14,914
+
+Preview rows
+TOPICKEY            KIND          SOURCE          CONFID        ROLE      TEXT
+--------------------------------------------------------------------------------
+DOT|ABOUT           STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|ABOUT           SUMMARY       DOTREF          CATALOG       TEXT      Print DotTalk++ project identity, lineage, build/runtime information, and current session summary.
+DOT|ABOUT           SYNTAX        DOTREF          CATALOG       TEXT      ABOUT
+DOT|AGGS            STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|AGGS            SUMMARY       DOTREF          CATALOG       TEXT      Aggregate command-family owner for SUM, AVG, MIN, and MAX; use AGGS USAGE for family/subcommand help
+DOT|AGGS            SYNTAX        DOTREF          CATALOG       TEXT      AGGS [SUM|AVG|MIN|MAX] <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+DOT|APPEND          STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|APPEND          SUMMARY       DOTREF          CATALOG       TEXT      Append a new record using current table defaults and active buffering rules.
+DOT|APPEND          SYNTAX        DOTREF          CATALOG       TEXT      APPEND
+DOT|APPEND_BLANK    STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|APPEND_BLANK    SUMMARY       DOTREF          CATALOG       TEXT      Append a blank record to the current table.
+DOT|APPEND_BLANK    SYNTAX        DOTREF          CATALOG       TEXT      APPEND BLANK
+DOT|ARCTICTALK      STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      Launch the ArcticTalk Turbo Vision TUI shell.
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT              Example:
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  ARCTICTALK
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT      
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT              Notes:
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  Intended for keyboard-driven browsing and diagnostics.
+DOT|ARCTICTALK      SUMMARY       DOTREF          CATALOG       TEXT                  Exits back to the DotTalk++ CLI.
+DOT|ARCTICTALK      SYNTAX        DOTREF          CATALOG       TEXT      ARCTICTALK
+DOT|AREA            STATUS        REGISTRY        REFLECTED     TEXT      implemented=yes; supported=yes
+DOT|AREA            SUMMARY       DOTREF          CATALOG       TEXT      Report the current DotTalk++ work-area state.
+. CMDHELP Topics (current HELP DATA)
+  directory : D:\code\ccode\dottalkpp\data\help
+  topics    : 527
+
+  DOT|ABOUT
+  DOT|AGGS
+  DOT|APPEND
+  DOT|APPEND BLANK
+  DOT|APPEND_BLANK
+  DOT|ARCTICTALK
+  DOT|AREA
+  DOT|AREA51
+  DOT|ASCEND
+  DOT|ASCII
+  DOT|AUTODBF
+  DOT|AVERAGE
+  DOT|AVG
+  DOT|BANG
+  DOT|BBOX
+  DOT|BBS
+  DOT|BELL
+  DOT|BETA
+  DOT|BIBLETALK
+  DOT|BOOLEAN
+  DOT|BOTTOM
+  DOT|BROWSE
+  DOT|BROWSER
+  DOT|BROWSETUI
+  DOT|BROWSETV
+  DOT|BUILD INFO
+  DOT|BUILD VECTORS
+  DOT|BUILDLMDB
+  DOT|BUILDVECTORS
+  DOT|CALC
+  DOT|CALCWRITE
+  DOT|CANARY
+  DOT|CASE
+  DOT|CATALOGCANARY
+  DOT|CDX
+  DOT|CHRISTMAS
+  DOT|CLEAR
+  DOT|CLOSE
+  DOT|CMDARGCHK
+  DOT|CMDHELP
+  DOT|CMDHELPCHK
+  DOT|CMDREL
+  DOT|CNX
+  DOT|COBOL
+  DOT|CODASYL
+  DOT|COLOR
+  DOT|COMMANDSHELP
+  DOT|COMMIT
+  DOT|CONCAT
+  DOT|CONTINUE
+  DOT|COPY
+  DOT|COUNT
+  DOT|CREATE
+  DOT|DBAREA
+  DOT|DBAREAS
+  DOT|DDICT
+  DOT|DDL
+  DOT|DEFCMD
+  DOT|DEFFN
+  DOT|DELETE
+  DOT|DESCEND
+  DOT|DIR
+  DOT|DISPLAY
+  DOT|DOTHELP
+  DOT|DOTSCRIPT
+  DOT|DRAWIO
+  DOT|DUMP
+  DOT|ECHO
+  DOT|EDIT
+  DOT|ELSE
+  DOT|ENDIF
+  DOT|ENDLOOP
+  DOT|ENDSCAN
+  DOT|ENDUNTIL
+  DOT|ENDWHILE
+  DOT|ERASE
+  DOT|ERP
+  DOT|ERROR CLEAR
+  DOT|ERROR STATUS
+  DOT|ERROR TEST
+  DOT|ERROR_CLEAR
+  DOT|ERROR_STATUS
+  DOT|ERROR_TEST
+  DOT|ERSATZ
+  DOT|EVAL
+  DOT|EVALDIFF
+  DOT|EVALUATE
+  DOT|EXAMPLE
+  DOT|EXIT
+  DOT|EXITS
+  DOT|EXPFUNCS
+  DOT|EXPORT
+  DOT|EXPORT FUNCTIONS
+  DOT|EXPORTFUNCTIONS
+  DOT|EXPORTSQL
+  DOT|FIELDMGR
+  DOT|FIELDS
+  DOT|FILE
+  DOT|FIND
+  DOT|FIRST
+  DOT|FORMULA
+  DOT|FOX PALETTE ENTRY
+  DOT|FOXHELP
+  DOT|FOXPRO
+  DOT|FOXREF
+  DOT|FOXSTANDARD
+  DOT|FOXTALK
+  DOT|GENERIC
+  DOT|GO
+  DOT|GOTO
+  DOT|GPS
+  DOT|HANUKKAH
+  DOT|HELP
+  DOT|HELP GROUPED
+  DOT|HIER
+  DOT|IDX
+  DOT|IF
+  DOT|IMAGE
+  DOT|IMAGE DISPLAY
+  DOT|IMPORT
+  DOT|IMPORTSQL
+  DOT|INDEX
+  DOT|INDEXSEEK
+  DOT|INIT
+  DOT|INSERT
+  DOT|LAST
+  DOT|LIST
+  DOT|LIST LMDB
+  DOT|LIST_LMDB
+  DOT|LMDB
+  DOT|LMDB DUMP
+  DOT|LMDB UTIL
+  DOT|LMDBDUMP
+  DOT|LMDB_UTIL
+  DOT|LOCATE
+  DOT|LOCK
+  DOT|LOOP
+  DOT|LOOP_BUFFER
+  DOT|MAINT
+  DOT|MANSTAR
+  DOT|MANUAL
+  DOT|MAX
+  DOT|MCC
+  DOT|MEMO
+  DOT|MIN
+  DOT|MSGMGR
+  DOT|MULTIREP
+  DOT|NET
+  DOT|NEXT
+  DOT|NORMALIZE
+  DOT|ORDER
+  DOT|PACK
+  DOT|PALETTE
+  DOT|PALETTE SHIM
+  DOT|POLLING
+  DOT|PREDHELP
+  DOT|PREDICATES
+  DOT|PRINT
+  DOT|PRINT EDIT
+  DOT|PRINT SMART BROWSER
+  DOT|PRIOR
+  DOT|PRN
+  DOT|PROJECTS
+  DOT|PSHELL
+  DOT|PSHELL HELP
+  DOT|QUIT
+  DOT|RBROWSE
+  DOT|REBUILD
+  DOT|RECALL
+  DOT|RECNO
+  DOT|RECORD
+  DOT|RECORDVIEW
+  DOT|REFRESH
+  DOT|REGRESSION
+  DOT|REINDEX
+  DOT|REL
+  DOT|REL ENUM
+  DOT|RELATIONS
+  DOT|REL_LIST
+  DOT|REL_REFRESH
+  DOT|REPLACE
+  DOT|REPLACE MULTI
+  DOT|RETRO
+  DOT|ROLLBACK
+  DOT|RPG
+  DOT|RULE
+  DOT|SB
+  DOT|SCAN
+  DOT|SCAN_BUFFER
+  DOT|SCHEMA
+  DOT|SCHEMAS
+  DOT|SCX
+  DOT|SECHO
+  DOT|SECURITY
+  DOT|SEEK
+  DOT|SELECT
+  DOT|SET
+  DOT|SET CASE
+  DOT|SET CDX
+  DOT|SET CNX
+  DOT|SET FILTER
+  DOT|SET INDEX
+  DOT|SET LMDB
+  DOT|SET NEAR
+  DOT|SET ORDER
+  DOT|SET PATH
+  DOT|SET RELATION
+  DOT|SET UNIQUE
+  DOT|SET VAR
+  DOT|SET VAR!
+  DOT|SETPATH COMMAND
+  DOT|SFTP
+  DOT|SHELLO
+  DOT|SHOW
+  DOT|SHOWINI
+  DOT|SHUTDOWN
+  DOT|SIMPLEBROWSER
+  DOT|SIX
+  DOT|SKIP
+  DOT|SM
+  DOT|SMART
+  DOT|SMARTBROWSER
+  DOT|SMARTLIST
+  DOT|SNAPSHOT
+  DOT|SORT
+  DOT|SQL
+  DOT|SQL ERASE
+  DOT|SQL HELP
+  DOT|SQL INSERT
+  DOT|SQL SELECT
+  DOT|SQL SHOW
+  DOT|SQL UPDATE
+  DOT|SQLERASE
+  DOT|SQLHELP
+  DOT|SQLITE
+  DOT|SQLSEL
+  DOT|SQLVER
+  DOT|STATUS
+  DOT|STOP ON ERROR
+  DOT|STOP_ON_ERROR
+  DOT|STRCAT
+  DOT|STRUCT
+  DOT|STRUCT BASIC
+  DOT|STUDENT ECHO
+  DOT|STUDENT HELLO
+  DOT|STUDENTECHO
+  DOT|STUDENTHELLO
+  DOT|STU_REPEAT
+  DOT|STU_UPPER
+  DOT|SUM
+  DOT|TABLE
+  DOT|TABLE BUFFER
+  DOT|TABLEMETA
+  DOT|TABLE_BUFFER
+  DOT|TEST
+  DOT|TEXT
+  DOT|TOP
+  DOT|TRANSACTION
+  DOT|TRIGGER
+  DOT|TTESTAPP
+  DOT|TUPEXPORT
+  DOT|TUPLE
+  DOT|TUPLEDELTA
+  DOT|TUPTALK
+  DOT|TUPVALIDATE
+  DOT|TURBO PACK
+  DOT|TURBOPACK
+  DOT|TVISION
+  DOT|UDATE
+  DOT|UDATETIME
+  DOT|UNDEFCMD
+  DOT|UNDEFFN
+  DOT|UNDELETE
+  DOT|UNLOCK
+  DOT|UNOW
+  DOT|UNTIL
+  DOT|UNTIL_BUFFER
+  DOT|UPDATE
+  DOT|USE
+  DOT|USER
+  DOT|UTIME
+  DOT|VALIDATE
+  DOT|VALIDATE UNIQUE
+  DOT|VAR
+  DOT|VAR INTEGRATION EXAMPLE
+  DOT|VDISK
+  DOT|VERSION
+  DOT|VMWARE
+  DOT|VT200
+  DOT|WA
+  DOT|WAMREPORT
+  DOT|WEB
+  DOT|WHERE
+  DOT|WHERECACHE
+  DOT|WHILE
+  DOT|WHILE_BUFFER
+  DOT|WORKSPACE
+  DOT|WSREPORT
+  DOT|ZAP
+  DOT|ZIP
+  FOX|!
+  FOX|ALLTRIM
+  FOX|APPEND
+  FOX|APPEND BLANK
+  FOX|APPEND_BLANK
+  FOX|ARCTICTALK
+  FOX|AREA
+  FOX|AREA51
+  FOX|ASC
+  FOX|ASCEND
+  FOX|AT
+  FOX|ATC
+  FOX|AVERAGE
+  FOX|AVG
+  FOX|BANG
+  FOX|BOTTOM
+  FOX|BROWSE
+  FOX|BROWSER
+  FOX|BROWSETUI
+  FOX|BROWSETV
+  FOX|BUILDLMDB
+  FOX|CALC
+  FOX|CALCWRITE
+  FOX|CDX
+  FOX|CHR
+  FOX|CLEAR
+  FOX|CLOSE
+  FOX|CMDARGCHK
+  FOX|CMDHELP
+  FOX|CMDHELPCHK
+  FOX|CMDREL
+  FOX|CNX
+  FOX|COLOR
+  FOX|COMMANDSHELP
+  FOX|COMMIT
+  FOX|CONCAT
+  FOX|CONTINUE
+  FOX|COPY
+  FOX|COUNT
+  FOX|CTOD
+  FOX|DATE
+  FOX|DBAREA
+  FOX|DBAREAS
+  FOX|DDL
+  FOX|DELETE
+  FOX|DESCEND
+  FOX|DIR
+  FOX|DISPLAY
+  FOX|DO
+  FOX|DOTSCRIPT
+  FOX|DTOC
+  FOX|DUMP
+  FOX|ECHO
+  FOX|EDIT
+  FOX|ELSE
+  FOX|ENDIF
+  FOX|ENDLOOP
+  FOX|ENDSCAN
+  FOX|ENDUNTIL
+  FOX|ENDWHILE
+  FOX|ERASE
+  FOX|EVAL
+  FOX|EXPORT
+  FOX|FIELDS
+  FOX|FIND
+  FOX|FORMULA
+  FOX|FOXHELP
+  FOX|FOXPRO
+  FOX|FOXTALK
+  FOX|GENERIC
+  FOX|GO
+  FOX|GOTO
+  FOX|HELP
+  FOX|IF
+  FOX|IMPORT
+  FOX|INDEX
+  FOX|INDEXSEEK
+  FOX|INIT
+  FOX|INSERT
+  FOX|LEFT
+  FOX|LEN
+  FOX|LIST
+  FOX|LIST_LMDB
+  FOX|LMDB
+  FOX|LOCATE
+  FOX|LOCK
+  FOX|LOOP
+  FOX|LOWER
+  FOX|LTRIM
+  FOX|MAX
+  FOX|MIN
+  FOX|MULTIREP
+  FOX|PACK
+  FOX|PADC
+  FOX|PADL
+  FOX|PADR
+  FOX|PREDHELP
+  FOX|PREDICATES
+  FOX|PROPER
+  FOX|RECALL
+  FOX|RECNO
+  FOX|RECORD
+  FOX|RECORDVIEW
+  FOX|REFRESH
+  FOX|REINDEX
+  FOX|REL
+  FOX|RELATIONS
+  FOX|REL_LIST
+  FOX|REL_REFRESH
+  FOX|REPLACE
+  FOX|REPLICATE
+  FOX|RIGHT
+  FOX|ROLLBACK
+  FOX|RTRIM
+  FOX|RUN
+  FOX|SCAN
+  FOX|SCHEMA
+  FOX|SCHEMAS
+  FOX|SEEK
+  FOX|SELECT
+  FOX|SET
+  FOX|SET CASE
+  FOX|SET CDX
+  FOX|SET CNX
+  FOX|SET FILTER
+  FOX|SET INDEX
+  FOX|SET LMDB
+  FOX|SET ORDER
+  FOX|SET PATH
+  FOX|SET RELATION
+  FOX|SET VAR
+  FOX|SET VAR!
+  FOX|SHOW
+  FOX|SKIP
+  FOX|SMARTLIST
+  FOX|SPACE
+  FOX|SQL
+  FOX|SQLITE
+  FOX|SQLSEL
+  FOX|SQLVER
+  FOX|STATUS
+  FOX|STR
+  FOX|STRUCT
+  FOX|STUFF
+  FOX|SUBSTR
+  FOX|SUM
+  FOX|TABLE
+  FOX|TEST
+  FOX|TIME
+  FOX|TOP
+  FOX|TRANSFORM
+  FOX|TRIM
+  FOX|TUPLE
+  FOX|TUPTALK
+  FOX|TURBOPACK
+  FOX|TVISION
+  FOX|UNDELETE
+  FOX|UNLOCK
+  FOX|UNTIL
+  FOX|UPDATE
+  FOX|UPPER
+  FOX|USE
+  FOX|VAL
+  FOX|VALIDATE
+  FOX|VERSION
+  FOX|WHERE
+  FOX|WHILE
+  FOX|WORKSPACE
+  FOX|WSREPORT
+  FOX|ZAP
+  ED|BUFFERING
+  ED|COMMIT
+  ED|DECISION
+  ED|EDUCATIONAL_USE
+  ED|ENUM
+  ED|EXPRESSION
+  ED|FILTER
+  ED|GLOSSARY
+  ED|INDEX
+  ED|INTRO
+  ED|LOOPS
+  ED|METADATA
+  ED|MODEL
+  ED|NAVIGATION
+  ED|ORDER
+  ED|PREDICATE
+  ED|PROJECTION
+  ED|RELATION
+  ED|REL_ENUM
+  ED|SCAN
+  ED|SCHEMA
+  ED|SCRIPT
+  ED|SEARCH
+  ED|SEQUENTIAL
+  ED|STATE
+  ED|TABLE_RECORD_FIELD
+  ED|TESTING
+  ED|TUPLE
+  ED|WORKAREA
+  UI|ARCTICTALK
+  EDU|ASCII
+  EDU|BIBLETALK
+  EDU|BOOLEAN
+  UI|BROWSETV
+  EDU|CASE
+  EDU|CHRISTMAS
+  EDU|COBOL
+  EDU|EDIT
+  EDU|ERP
+  EDU|EVALUATE
+  EDU|FORMULA
+  UI|FOXPRO
+  UI|GENERIC
+  EDU|HANUKKAH
+  DEV|HIER
+  EDU|IDX
+  INTERNAL|LOOP_BUFFER
+  EDU|NORMALIZE
+  UI|RECORD
+  UI|RECORDVIEW
+  INTERNAL|SCAN_BUFFER
+  EDU|SIX
+  EXT|STUDENTECHO
+  EXT|STUDENTHELLO
+  EDU|TEXT
+  INTERNAL|UNTIL_BUFFER
+  INTERNAL|WHILE_BUFFER
+. . . 
+=== REFLECTION REPORTS ===
+
+Subcommand Inventory
+====================
+
+PARENT    NAME              QUALIFIED_NAME          DISPATCH              PUBLIC  HANDLER             AUTHORITY         STATUS    SYNTAX  
+------    ------------      -------------------     -------------------   ------  --------------      ----------------  -------   ------  
+SET       ALTERNATE         SET ALTERNATE           inline                Y       inline              command_catalog   partial   Y       
+SET       CASE              SET CASE                conditional_routed    Y       cmd_SETCASE         command_catalog   partial   Y       
+SET       CDX               SET CDX                 conditional_routed    Y       cmd_SETCDX          command_catalog   partial   Y       
+SET       CNX               SET CNX                 conditional_routed    Y       cmd_SETCNX          command_catalog   partial   Y       
+SET       DELETED           SET DELETED             inline                Y       inline              command_catalog   partial   Y       
+SET       DEVICE            SET DEVICE              inline                Y       inline              command_catalog   partial   Y       
+SET       ECHO              SET ECHO                inline                Y       inline              command_catalog   partial   Y       
+SET       EDITOR            SET EDITOR              inline                Y       inline              command_catalog   partial   Y       
+SET       FILTER            SET FILTER              conditional_routed    Y       cmd_SETFILTER       command_catalog   partial   Y       
+SET       INDEX             SET INDEX               routed                Y       cmd_SETINDEX        command_catalog   partial   Y       
+SET       LMDB              SET LMDB                conditional_routed    Y       cmd_SETLMDB         command_catalog   partial   Y       
+SET       ORDER             SET ORDER               routed                Y       cmd_SETORDER        command_catalog   partial   Y       
+SET       PAGING            SET PAGING              inline                Y       inline              command_catalog   partial   Y       
+SET       PATH              SET PATH                routed                Y       cmd_SETPATH         command_catalog   partial   Y       
+SET       POLLING           SET POLLING             inline                Y       inline              command_catalog   partial   Y       
+SET       PRINT             SET PRINT               inline                Y       inline              command_catalog   partial   Y       
+SET       RELATION          SET RELATION            conditional_routed    Y       cmd_SET_RELATION    command_catalog   partial   Y       
+SET       RELATIONS         SET RELATIONS           conditional_routed    Y       cmd_SET_RELATIONS   command_catalog   partial   Y       
+SET       TABLE BUFFER      SET TABLE BUFFER        inline                Y       inline              command_catalog   partial   Y       
+SET       TALK              SET TALK                inline                Y       inline              command_catalog   partial   Y       
+SET       TIMER             SET TIMER               inline                Y       inline              command_catalog   partial   Y       
+SET       WRAP              SET WRAP                inline                Y       inline              command_catalog   partial   Y       
+
+Command Inventory
+=================
+
+COMMAND         FAMILY    AUTHORITY         STATUS    ALIASES           SHORTCUTS         REEXPRESSIONS       SUBS  DIRECT  OUTROUTER  MSGCAT  HANDLER             SOURCE
+-----------     -------   ----------------  -------   -------           ---------         -------------       ----  ------  ---------  ------  --------------      -----------------
+AREA            inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_AREA            shell_commands.cpp
+BOTTOM          navigationcommand_catalog   partial   LAST              -                 -                   0     Y       N          N       cmd_BOTTOM          cmd_bottom.cpp
+COLOR           presentationcommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_COLOR           cmd_color.cpp
+COMMIT          mutation  command_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_COMMIT          table_buffer.cpp
+COUNT           inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_COUNT           cmd_count.cpp
+DBAREAS         inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_DBAREAS         cmd_dbareas.cpp
+DDL             schema    command_catalog   partial   SCHEMA            -                 -                   0     N       Y          N       cmd_SCHEMA          shell_commands.cpp
+DISPLAY         inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_DISPLAY         cmd_display.cpp
+FIELDS          inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_FIELDS          cmd_fields.cpp
+GO              navigationcommand_catalog   partial   GOTO              -                 -                   0     Y       N          N       cmd_GO              cmd_go.cpp
+HELP            help      command_catalog   partial   -                 -                 -                   0     N       Y          N       cmd_HELP            cmd_help.cpp
+LIST            listing   command_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_LIST            cmd_list.cpp
+RECNO           inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_RECNO           cmd_recno.cpp
+REFRESH         inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_REFRESH         cmd_refresh.cpp
+REL             relation  command_catalog   partial   RELATION, RELATIONS, CMDREL-                 -                   0     Y       N          N       cmd_REL             cmd_rel.cpp
+SEEK            index     command_catalog   partial   FIND, INDEXSEEK   -                 -                   0     Y       N          N       cmd_SEEK            cmd_seek.cpp
+SET             core      command_catalog   partial   -                 -                 -                   22    N       Y          N       cmd_SET             shell_commands.cpp
+SKIP            navigationcommand_catalog   partial   NEXT, PRIOR       -                 -                   0     Y       N          N       cmd_SKIP            cmd_skip.cpp
+SMARTLIST       listing   command_catalog   partial   -                 SL                -                   0     N       N          N       cmd_SMARTLIST       shell_commands.cpp
+STATUS          inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_STATUS          cmd_status.cpp
+STRUCT          inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_STRUCT          cmd_struct.cpp
+TOP             navigationcommand_catalog   partial   FIRST             -                 -                   0     Y       N          N       cmd_TOP             cmd_top.cpp
+VERSION         inspectioncommand_catalog   partial   -                 -                 -                   0     Y       N          N       cmd_VERSION         cmd_version.cpp
+WORKSPACE       workspace command_catalog   partial   SCHEMAS           -                 -                   0     Y       N          N       cmd_WORKSPACE       cmd_workspace.cpp
+
+Function Inventory
+==================
+
+NAME            CATEGORY    MIN   MAX   AUTHORITY         STATUS    SOURCE
+-----------     ---------   ---   ---   ----------------  -------   -------------
+ABS             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+ACOS            Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+ALLTRIM         String      1     1     function_catalog  partial   fn_string.cpp
+ASC             String      1     1     function_catalog  partial   fn_string.cpp
+ASIN            Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+AT              Search      2     2     function_catalog  partial   fn_string.cpp
+ATAN            Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+ATC             Search      2     3     function_catalog  partial   function_catalog
+BETWEEN         Numeric     3     3     function_catalog  partial   fn_numeric.cpp
+CDOW            Date        1     1     function_catalog  partial   fn_date.cpp
+CEILING         Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+CHR             String      1     1     function_catalog  partial   fn_string.cpp
+CHRTRAN         String      3     3     function_catalog  partial   fn_string.cpp
+CMONTH          Date        1     1     function_catalog  partial   fn_date.cpp
+CONCAT          Construction1     32    function_catalog  partial   fn_string.cpp
+COS             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+CTOD            Date        1     1     function_catalog  partial   fn_date.cpp
+DATE            Date        0     1     function_catalog  partial   fn_date.cpp
+DATEADD         Date        2     2     function_catalog  partial   fn_date.cpp
+DATEDIFF        Date        2     2     function_catalog  partial   fn_date.cpp
+DATETIME        Date        0     1     function_catalog  partial   fn_date.cpp
+DAY             Date        1     1     function_catalog  partial   fn_date.cpp
+DOW             Date        1     1     function_catalog  partial   fn_date.cpp
+DTOC            Date        1     2     function_catalog  partial   fn_date.cpp
+DTOS            Date        1     1     function_catalog  partial   fn_date.cpp
+EMPTY           Logical     1     1     function_catalog  partial   fn_string.cpp
+EXP             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+FILE            Logical     1     1     function_catalog  partial   fn_string.cpp
+FLOOR           Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+GOMONTH         Date        2     2     function_catalog  partial   fn_date.cpp
+INT             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+LEFT            String      2     2     function_catalog  partial   fn_string.cpp
+LEN             Numeric     1     1     function_catalog  partial   fn_string.cpp
+LIKE            Logical     2     2     function_catalog  partial   function_catalog
+LOG             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+LOG10           Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+LOWER           String      1     1     function_catalog  partial   fn_string.cpp
+LTRIM           String      1     1     function_catalog  partial   fn_string.cpp
+MAX             Numeric     2     32    function_catalog  partial   fn_numeric.cpp
+MIN             Numeric     2     32    function_catalog  partial   fn_numeric.cpp
+MOD             Numeric     2     2     function_catalog  partial   fn_numeric.cpp
+MONTH           Date        1     1     function_catalog  partial   fn_date.cpp
+NOW             Date        0     1     function_catalog  partial   fn_date.cpp
+PADC            String      2     3     function_catalog  partial   fn_string.cpp
+PADL            String      2     3     function_catalog  partial   fn_string.cpp
+PADR            String      2     3     function_catalog  partial   fn_string.cpp
+PROPER          String      1     1     function_catalog  partial   fn_string.cpp
+RAND            Numeric     0     0     function_catalog  partial   fn_numeric.cpp
+RAT             Search      2     2     function_catalog  partial   fn_string.cpp
+REPLICATE       Construction2     2     function_catalog  partial   fn_string.cpp
+RIGHT           String      2     2     function_catalog  partial   fn_string.cpp
+ROUND           Numeric     1     2     function_catalog  partial   fn_numeric.cpp
+RTRIM           String      1     1     function_catalog  partial   fn_string.cpp
+SECONDS         Date        0     0     function_catalog  partial   fn_date.cpp
+SIN             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+SOUNDEX         Search      1     1     function_catalog  partial   fn_string.cpp
+SPACE           Construction1     1     function_catalog  partial   fn_string.cpp
+SQRT            Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+STR             Conversion  1     3     function_catalog  partial   fn_string.cpp
+STRCAT          string      1     32    function_catalog  partial   fn_string.cpp
+STRTRAN         String      3     3     function_catalog  partial   fn_string.cpp
+STUFF           String      4     4     function_catalog  partial   fn_string.cpp
+SUBSTR          String      2     3     function_catalog  partial   fn_string.cpp
+TAN             Numeric     1     1     function_catalog  partial   fn_numeric.cpp
+TIME            Date        0     1     function_catalog  partial   fn_date.cpp
+TODAY           Date        0     1     function_catalog  partial   fn_date.cpp
+TRANSFORM       Conversion  1     2     function_catalog  partial   fn_string.cpp
+TRIM            string      1     1     function_catalog  partial   fn_string.cpp
+UDATE           Date        0     0     function_catalog  partial   fn_date.cpp
+UDATETIME       Date        0     0     function_catalog  partial   fn_date.cpp
+UNOW            Date        0     0     function_catalog  partial   fn_date.cpp
+UPPER           String      1     1     function_catalog  partial   fn_string.cpp
+UTIME           Date        0     0     function_catalog  partial   fn_date.cpp
+VAL             Conversion  1     1     function_catalog  partial   fn_string.cpp
+YEAR            Date        1     1     function_catalog  partial   fn_date.cpp
+
+Structural Checks
+=================
+OK no structural issues found
+
+. . . DOTTALK REFERENCE
+
+Project-native commands and subsystems
+
+
+DBAREA
+  DBAREA
+  Report or inspect the current DbArea/workspace (diagnostics).
+
+DBAREAS
+  DBAREAS
+  Report the current work-area tree and relation-oriented area diagnostics.
+
+STATUS
+  STATUS
+  Display area status.
+
+STOP_ON_ERROR
+  STOP_ON_ERROR [OFF|WARNING|ERROR]
+  Set or report the severity threshold at which a running DotScript aborts (stop_on_error[severity]); SET ERRORSTOP TO is the compatibility form, DOTTALK_ERRORSTOP the startup default.
+
+BUILDVECTORS
+  BUILDVECTORS | BUILD VECTORS | BUILD INFO
+  Report the compile-time engine capacity limits and configuration fingerprint; read-only.
+
+DEFCMD
+  DEFCMD [USAGE|LIST|<NAME> [=] <body-text>]
+  Define or list an experimental session-only scratch command; cannot shadow protected built-ins and never writes table data or disk state.
+
+UNDEFCMD
+  UNDEFCMD <NAME>
+  Remove a session-only scratch command created by DEFCMD; never removes built-ins or unrelated extensions.
+
+DEFFN
+  DEFFN [USAGE|LIST|<NAME> [=] <body-text>]
+  Define or list an experimental session-only expression function; cannot shadow compiled built-ins and never writes table data or disk state.
+
+UNDEFFN
+  UNDEFFN <NAME>
+  Remove a session-only custom expression function created by DEFFN; never removes compiled built-ins.
+
+USER
+  USER [USAGE|LIST|ROLES|PERMS|WHOAMI|CAN|STORE|ADD|REQUEST|REQUESTS|GRANTS|APPROVE|DENY|REVOKE|GRANT|UNGRANT|DELETE|LOGIN|LOGOUT|PASSWD|TOKEN|AS|ENFORCE|SAVE|LOAD|VERIFY] ...
+  Inspect and administer the identity, authentication, and RBAC model; report modes are read-only, while owner-gated administration and persistence modes may update identity metadata and authorization state.
+
+STRUCT
+  STRUCT
+  Display table structure.
+
+FIELDS
+  FIELDS
+  Show structure (field list).
+
+SET ORDER
+  SET ORDER TO <tag>
+  Set controlling index tag (compatibility form; see SETORDER). ramfs/VDISK-aware: attaches a RAM-resident CDX-V64 under a mounted VDISK (AIF-043).
+
+SETORDER
+  SETORDER <tag>|PHYSICAL
+  Set controlling order/tag for the current area (or PHYSICAL for natural order). ramfs/VDISK-aware: attaches a RAM-resident CDX-V64 under a mounted VDISK (the LMDB env gate is skipped for virtual containers); ordered traversal reads back in native-index order from RAM (AIF-043).
+
+SET INDEX
+  SET INDEX TO <base>
+  Attach/activate a single-tag INX index (base name).
+
+SETINDEX
+  SETINDEX <tag|path>
+  Activate an index for the area (DotTalk++ convenience wiring).
+
+SET CDX
+  SET CDX TO <file>
+  Attach or inspect a CDX container for the current area.
+
+SETCDX
+  SETCDX TO <file>
+  Attach or inspect a CDX container using the compact DotTalk++ command form.
+
+SET CNX
+  SET CNX TO <file>
+  Attach or activate a CNX container for the current area.
+
+SET LMDB
+  SET LMDB TO <path>
+  Attach or point the current area at an LMDB-backed index environment where supported.
+
+SETLMDB
+  SETLMDB TO <path>
+  Attach or point the current area at an LMDB-backed index environment using the compact DotTalk++ form.
+
+SET NEAR
+  SET NEAR ON|OFF|STATUS
+  Control near-match seek behavior for active-order navigation.
+
+SET FILTER
+  SET FILTER TO <expr>
+  Set a filter expression using the spaced compatibility form.
+
+SET CASE
+  SET CASE ON|OFF
+  Control case-sensitivity using the spaced compatibility form.
+
+SET PATH
+  SET PATH <slot> <path>
+  Set a runtime root/path slot using the spaced command form. Slots include DBF, INDEXES, LMDB, and RAM (the relocatable in-process RAM-disk root used by VDISK / DO mem for in-memory tables, default data/ram) (AIF-043).
+
+SET RELATION
+  SET RELATION TO <child> ON <field>[,<field>...]
+  Define or route FoxPro-style relation wiring into the DotTalk++ relation backend.
+
+REINDEX
+  REINDEX [ALL]
+  Rebuild index files for the current table (or all open tables). ramfs/VDISK-aware: under a mounted VDISK, REINDEX CDX rebuilds the native CDX-V64 (RUN8) container in RAM with no LMDB and no file on disk (AIF-043).
+
+BUILDLMDB
+  BUILDLMDB [HELP|?] [MAPSIZE <n[K|M|G]>|SIZE <n[K|M|G]>|TINY|SMALL|MEDIUM|LARGE|XL|HUGE] [YES|AUTO|NOPROMPT] [CLEAN|FORCE] [QUIET]
+  Build or rebuild the LMDB backing store for the current CDX container; may mutate LMDB/index files but not table records.
+
+CDX
+  CDX [INFO|TAGS|CREATE|ADDTAG|DROPTAG] [<path.cdx>]
+  Inspect or manage CDX container metadata and tag directories. ramfs/VDISK-aware: under a mounted VDISK the container resolves from RAM (a native CDX-V64), so CREATE/ADDTAG/DROPTAG operate on the in-RAM container with no file on disk (AIF-043).
+
+INDEX
+  INDEX [ON <field> TAG <name> | STATUS | LIST]
+  General index-management command surface for the current table.
+
+LMDB
+  LMDB [USAGE|INFO|OPEN|USE|SEEK|DUMP|SCAN|CLOSE] ...
+  Inspect or manage per-area LMDB-backed index/storage wiring where supported.
+
+VDISK
+  VDISK MOUNT|UNMOUNT|STATUS|CONFIG
+  Activate the in-process RAM virtual disk for in-memory tables (AIF-043). MOUNT points the DBF/INDEXES/LMDB path slots under the relocatable RAM slot (default data\ram) and mounts it as an xbase::ramfs virtual root, so CREATE X64, USE, and native CDX-V64 live entirely in RAM with no files on disk. UNMOUNT drops all RAM files and unmounts (ephemeral teardown). STATUS reports the RAM root, mount state, byte usage, and resident file list. CONFIG shows the optional bin/vdisk.ini admin config (enabled/root/mode/size/warn_pct/on_full), the Layer-1 sizing recommendation, and the Layer-2 soft budget. Relocate the RAM root with SET PATH RAM <path> (or the vdisk.ini root key) before MOUNT. Typically activated via DO mem.
+
+CNX
+  CNX <name>
+  Index container command (CNX multi-tag support).
+
+SETCNX
+  SETCNX TO <file>
+  Attach/activate a CNX container for the current area.
+
+INDEXSEEK
+  INDEXSEEK <value>
+  Seek using the active index/order (DotTalk++ seek wiring).
+
+WHERE
+  WHERE <expr>
+  Apply an SQL-like filter to the current context.
+
+SETFILTER
+  SETFILTER <expr>
+  Set a filter expression (DotTalk++ variant).
+
+CLEAR
+  CLEAR [FILTER|ORDER|REL|ALL]
+  Clear current state (filters/orders/relations) depending on context.
+
+SETCASE
+  SETCASE ON|OFF
+  Control case-sensitivity / collation mode for comparisons.
+
+PREDHELP
+  PREDHELP [<topic>]
+  Help for predicates/expressions and filtering.
+
+PREDICATES
+  PREDICATES
+  List supported predicates/operators for filtering.
+
+SMARTLIST
+  SMARTLIST [ALL|DELETED|<n>] [DEBUG] [FOR <expr>]
+  LIST-style output with SQL-grade filtering (order-aware).
+
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+
+TABLE
+  TABLE <subcommand> ...
+  Table buffering / stale tracking.
+
+        Subcommands:
+            TABLE ON
+                Enable table buffering for the current area. REPLACE writes into a per-field buffer and
+                marks fields STALE instead of immediately writing to disk.
+
+            TABLE OFF
+                Disable buffering. REPLACE writes directly to disk (no buffering).
+
+            TABLE STALE
+                Show which fields are currently stale (buffered) for the current area.
+
+            TABLE FRESH [ALL|<n>|<n>,<m>]
+                Apply buffered updates to disk and clear stale flags on success.
+                (Scope forms depend on build; ALL / area lists were previously supported.)
+
+        Notes:
+            - In current shakedown observations, LIST output reflects the physical record, not buffered overlays.
+            - Some builds may not recognize TABLE REFRESH; prefer TABLE FRESH.
+
+COMMIT
+  COMMIT
+  Commit buffered TABLE updates to disk.
+
+        Notes (current shakedown observations):
+            - Clears TABLE stale state on success.
+            - May currently trigger full INX rebuild work as part of the commit path (performance issue).
+
+EXPORT
+  EXPORT [TO] <file> [CSV|PIPE|SDF]
+  Export to CSV, pipe-delimited text, or fixed-width SDF.
+
+EXPORTFUNCTIONS
+  EXPORTFUNCTIONS [MD [<path>]]
+  Export the expression/function catalog through the canonical command surface.
+
+IMPORT
+  IMPORT <csv>
+  Import from CSV.
+
+COPY
+  COPY <source> TO <target>
+  Copy table or data content into another target using DotTalk++ copy semantics.
+
+SETPATH
+  SETPATH | SETPATH RESET | SETPATH <SLOT> <path>
+  Manage runtime root directories.
+
+        Usage:
+            SETPATH
+                Show current roots.
+
+            SETPATH RESET
+                Restore defaults (based on DATA root).
+
+            SETPATH <SLOT> <path>
+                Set a root slot to absolute(path). If <path> is relative, it is resolved under DATA.
+
+        Slots:
+            DATA, DBF, INDEXES, SCHEMAS, SCRIPTS, TESTS, HELP, LOGS, TMP
+
+        Notes:
+            Used so HELP/TESTS/etc. can be moved without requiring full paths.
+
+WORKSPACE
+  WORKSPACE [OPEN <DBF|dir>|CLOSE|SAVE <name>|LOAD <name>]
+  Canonical live work-area/session command.
+
+        Usage:
+            WORKSPACE
+                List current open work areas.
+
+            WORKSPACE CLOSE
+                Close all work areas and clear relation state.
+
+            WORKSPACE OPEN DBF
+                Scan the configured DBF path slot and open tables into areas 0..N.
+
+            WORKSPACE OPEN <dir>
+                Scan a specific directory and open DBFs into areas 0..N.
+
+            WORKSPACE SAVE <name>
+                Save a workspace layout where supported.
+
+            WORKSPACE LOAD <name>
+                Restore a saved workspace layout where supported.
+
+        Notes:
+            WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
+            DDL owns schema/definition work.
+            WSREPORT owns verbose diagnostics.
+
+SCHEMAS
+  SCHEMAS [OPEN <DBF|dir>|CLOSE]
+  Deprecated compatibility shim for WORKSPACE.
+
+        Current mapping:
+            SCHEMAS             -> WORKSPACE
+            SCHEMAS OPEN <arg>  -> WORKSPACE OPEN <arg>
+            SCHEMAS CLOSE       -> WORKSPACE CLOSE
+
+        Notes:
+            Use WORKSPACE for live work-area/session operations.
+            Use DDL for schema/definition operations.
+            SCHEMAS remains only so older DotScript files continue to run.
+
+REL
+  REL <subcommand> ...
+  Relations engine commands (native DotTalk++ relation graph).
+
+Subcommands:
+    REL LIST
+    REL LIST ALL
+    REL REFRESH
+    REL ENUM [LIMIT <n>] <child1> [<child2> ...] TUPLE <tuple-expr>
+    REL SAVE [path] | REL SAVE AS <dataset>
+    REL LOAD [path] | REL LOAD AS <dataset>
+    REL ADD <parent> <child> ON <field>[,<field>...]
+    REL CLEAR <parent>|ALL
+
+Examples:
+    REL LIST
+    REL ADD STUDENTS ENROLL ON SID
+    REL ADD ENROLL CLASSES ON CLS_ID
+    REL REFRESH
+
+    REL ENUM LIMIT 10 ENROLL CLASSES TASSIGN TEACHERS TUPLE ;
+        STUDENTS.SID,STUDENTS.LNAME,ENROLL.CLS_ID,CLASSES.CID,TEACHERS.LNAME
+
+Conceptual Model:
+    REL maintains a directed relation graph between work areas.
+    REL ADD defines edges.
+    REL REFRESH recalculates relation state.
+    REL ENUM traverses the graph and emits tuple rows.
+
+Traversal Behavior:
+    REL ENUM performs depth-first traversal of the relation chain.
+    Each successful path produces one tuple row.
+
+    Example chain:
+        STUDENTS -> ENROLL -> CLASSES -> TASSIGN -> TEACHERS
+
+Matching:
+    Current implementation uses same-name field equality:
+        parent.FIELD == child.FIELD
+
+Notes:
+    REL is the native DotTalk++ relation system.
+    FoxPro-style SET RELATION commands map into this backend.
+
+    REL ENUM is the row enumeration engine used by relational
+    browsers and tuple views.
+
+REL ENUM
+  REL ENUM [LIMIT <n>] <path...> TUPLE <tuple-expr>
+  Traverse a relation chain and emit tuple rows.
+
+Syntax:
+    REL ENUM [LIMIT <n>] <child1> [<child2> ...] TUPLE <tuple-expr>
+
+Example:
+    REL ENUM LIMIT 5 ENROLL CLASSES TASSIGN TEACHERS
+        TUPLE STUDENTS.SID,STUDENTS.LNAME,TEACHERS.LNAME
+
+Execution Model:
+    1. Current selected area is the root.
+    2. Each child token represents the next relation edge.
+    3. Traversal expands matches depth-first.
+
+Example traversal:
+    STUDENTS
+        -> ENROLL
+            -> CLASSES
+                -> TASSIGN
+                    -> TEACHERS
+
+Each complete path emits one tuple row.
+
+LIMIT:
+    LIMIT applies to emitted rows, not intermediate matches.
+
+Projection:
+    The TUPLE clause defines which fields are emitted.
+
+Used By:
+    SIMPLEBROWSER
+    SMARTBROWSER
+    relational tuple views.
+
+RELATIONS
+  RELATIONS [USAGE|ALL]
+  Compatibility-facing relation listing surface backed by the native REL engine.
+
+Examples:
+    RELATIONS
+    RELATIONS ALL
+
+Notes:
+    RELATIONS and REL LIST point at the same relation-state reporting lane.
+    Prefer REL for the canonical DotTalk++ relation command family.
+
+REL_LIST
+  REL_LIST [ALL]
+  Alias for relation-state listing through the REL/RELATIONS reporting lane.
+
+REL_REFRESH
+  REL_REFRESH
+  Refresh relation state for the current workspace through the native REL backend.
+
+TUPLE
+  TUPLE <spec>
+  Build one tuple row from fields across work areas.
+
+        Examples:
+            TUPLE *                    (all fields from current area)
+            TUPLE LNAME,FNAME          (selected fields from current area)
+            TUPLE #11.*                (all fields from area 11)
+            TUPLE #9.*,#11.LNAME       (mix of areas)
+
+        Notes:
+            #n prefixes a work area slot; "*" means all fields for that area.
+            Output fields are separated by ASCII Unit Separator (0x1F).
+
+TUPTALK
+  TUPTALK
+  DotTalk++ tuple/logical-row command.
+
+ARCTICTALK
+  ARCTICTALK
+  Launch the ArcticTalk Turbo Vision TUI shell.
+
+        Example:
+            ARCTICTALK
+
+        Notes:
+            Intended for keyboard-driven browsing and diagnostics.
+            Exits back to the DotTalk++ CLI.
+
+FOXTALK
+  FOXTALK
+  Legacy alias for the ArcticTalk Turbo Vision TUI shell.
+
+        Example:
+            FOXTALK
+
+        Notes:
+            Intended for keyboard-driven browsing and diagnostics.
+            Exits back to the DotTalk++ CLI.
+
+BROWSETUI
+  BROWSETUI
+  Text-mode browser UI (developer tool).
+
+BROWSETV
+  BROWSETV
+  Turbo Vision browser UI (developer tool).
+
+BROWSE
+  BROWSE
+  Open the classic browse surface for the current table/work-area context.
+
+BROWSER
+  BROWSER
+  Developer browser command (experimental).
+
+RECORDVIEW
+  RECORDVIEW
+  Vertical record viewer.
+
+SIMPLEBROWSER
+  SIMPLEBROWSER [options]
+  SIMPLEBROWSER  (SB)
+        NAME
+            SIMPLEBROWSER
+
+        ALIASES
+            SB
+
+        PURPOSE
+            Workspace/DbArea-centric interactive browser for table relationships and logical rows.
+
+        SYNTAX
+            SIMPLEBROWSER [FOR <expr>] [ORDER <tag>|PHYSICAL] [LIMIT <n>]
+
+        OPTIONS / SUBCOMMANDS
+            FOR <expr>           Apply a filter expression (tuple/expr aware).
+            CLEAR FOR            Clear active filter.
+            ORDER PHYSICAL|INX|CNX|CDX|<tag>   Change controlling order/tag.
+            SHOW CHILDREN [LIMIT n]        Browse related child rows from current record.
+            SHOW|HIDE SCHEMA|JSON          Toggle schema/JSON debug overlays.
+            STATUS VERBOSE|COMPACT         Toggle status verbosity.
+
+        EXAMPLES
+            SIMPLEBROWSER
+            SB FOR lname = "GRIMWOOD"
+            SB ORDER LNAME
+            SB SHOW CHILDREN LIMIT 20
+
+        NOTES
+            Simple Browser is designed for browsing within the current workspace DbArea.
+            It is order-aware and expression/predicate aware.
+
+        SEE ALSO
+            SMARTBROWSER, SMARTLIST, REL, TUPLE, WORKSPACE
+
+        STATUS
+            stable
+        
+
+SB
+  SB
+  Alias for SIMPLEBROWSER.
+
+SMARTBROWSER
+  SMARTBROWSER [options]
+  SMARTBROWSER  (SM, SMART)
+        NAME
+            SMARTBROWSER
+
+        ALIASES
+            SM, SMART
+
+        PURPOSE
+            Advanced browser/workhorse for relational + expression-aware browsing across backends.
+
+        SYNTAX
+            SMARTBROWSER [<source>] [FOR <expr>] [ORDER <tag>|PHYSICAL]
+
+        OPTIONS / SUBCOMMANDS
+            <source>             Optional source (DbArea/workspace, SQLite3, or schema engine where available).
+            FOR <expr>           Apply an expression filter using the predicate pipeline.
+            ORDER <tag>|PHYSICAL Set controlling order/tag when browsing DbArea-backed sources.
+
+        EXAMPLES
+            SMARTBROWSER
+            SM FOR gpa >= 3.5
+            SMART ORDER LNAME
+
+        NOTES
+            Smart Browser is the flagship browser. It can operate with DbArea/workspaces and,
+            when configured, can also operate with SQLite3 and schema-driven sources.
+
+        SEE ALSO
+            SIMPLEBROWSER, SMARTLIST, WORKSPACE, SQLITE, REL, TUPLE
+
+        STATUS
+            stable
+        
+
+SMART
+  SMART
+  Alias for SMARTBROWSER.
+
+SM
+  SM
+  Alias for SMARTBROWSER.
+
+COLOR
+  COLOR <GREEN|AMBER|DEFAULT>
+  Switch CLI/TUI color theme.
+
+        Examples:
+            COLOR GREEN
+            COLOR G+
+            COLOR AMBER
+            COLOR DEFAULT
+
+        Notes:
+            Used by ArcticTalk/Foxtalk Turbo Vision palette wiring.
+
+TVISION
+  TVISION
+  Turbo Vision diagnostics / demos.
+
+TURBOPACK
+  TURBOPACK
+  Turbo Vision / pack-related utility.
+
+FOXPRO
+  FOXPRO
+  DotTalk++ UI / browser command.
+
+HELP
+  HELP [<topic>] | HELP GIANT [USAGE|TOPICS|KIND|SOURCE|<topic>] | HELP /GIANT [USAGE|TOPICS|KIND|SOURCE|<topic>] [/FOX] [/PRED]
+  General help entry point; HELP GIANT uses normal shell paging via SET PAGING ON|OFF.
+
+FOXHELP
+  FOXHELP [<term>]
+  List or search command help topics.
+
+        Examples:
+            FOXHELP
+            FOXHELP WORKSPACE
+            FOXHELP REL
+
+        Notes:
+            Uses the help catalogs and any HELP DBFs.
+
+CMDHELP
+  CMDHELP [BUILD]
+  Build / report the HELP command catalogs.
+
+        Examples:
+            CMDHELP BUILD
+            CH               (alias report, if enabled)
+
+        Notes:
+            Mines command registry + foxref + optional DBF help sources.
+
+COMMANDSHELP
+  COMMANDSHELP
+  Command help (alias of CMDHELP).
+
+CMDHELPCHK
+  CMDHELPCHK
+  Validate HELP catalogs vs the command registry.
+
+CMDREL
+  CMDREL
+  Print the recipe for relating HELP COMMANDS to CMD_ARGS (help-build diagnostic).
+
+EXITS
+  EXITS [LIST|SHOW <id>|VALIDATE|WHERE]
+  Inspect and validate the reviewed extension-exit manifest without executing extension code.
+
+DDICT
+  DDICT [STATUS|HELP|TABLES|OBJECTS|FIELDS <table>|TAGS <table>|REL <object>|EVIDENCE <object>]
+  Inspect the active Data Dictionary catalog from inside DotTalk++.
+
+Usage:
+    DDICT
+    DDICT HELP
+    DDICT STATUS
+    DDICT TABLES
+    DDICT OBJECTS [TYPE <type>] [PROFILE <profile>]
+    DDICT FIELDS <table>
+    DDICT TAGS <table>
+    DDICT REL <object-id-or-name> [IN|OUT|BOTH]
+    DDICT EVIDENCE <object-id-or-name>
+
+Notes:
+    DDICT is read-only over the active Data Dictionary catalog.
+
+MANUAL
+  MANUAL [USAGE|STATUS|TABLES|COUNTS|RESOLVE <token>|CATALOG STATUS|CATALOG TABLES|CATALOG COUNTS|CATALOG RESOLVE <token>|SECTIONS|MEDIA|REVIEW]
+  Inspect the accepted MAN* manualgen catalog from inside DotTalk++.
+
+Usage:
+    MANUAL
+    MANUAL USAGE
+    MANUAL STATUS
+    MANUAL TABLES
+    MANUAL COUNTS
+    MANUAL RESOLVE <token>
+    MANUAL CATALOG STATUS
+    MANUAL CATALOG TABLES
+    MANUAL CATALOG COUNTS
+    MANUAL CATALOG RESOLVE <token>
+    MANUAL SECTIONS
+    MANUAL MEDIA
+    MANUAL REVIEW
+
+Notes:
+    MANUAL is read-only.
+    MANUAL reports accepted MAN* manualgen catalog evidence.
+    MANUAL does not mutate DBFs, HELP, META, CMDHELPCHK, source files, or publication artifacts.
+    Resolver/reader/formatter support modules are not registered commands.
+
+MANSTAR
+  MANSTAR [USAGE|<args...>]
+  Inspect or drive the MANSTAR/manual-star helper surface where enabled.
+
+MSGMGR
+  MSGMGR [USAGE|STATUS|CHECK|SEED PRIORITYA CHECK|SEED PRIORITYA APPLY]
+  Message Manager command house for runtime messaging and locale-spine inspection.
+
+Notes:
+    STATUS and CHECK are report-oriented.
+    SEED PRIORITYA APPLY mutates SYSTEM_MESSAGES / SYSTEM_MESSAGE_TEXT and matching messaging LMDB backends.
+    MSGMGR does not mutate HELP DATA, CMDHELPCHK, manualgen, Data Dictionary, SelfDoc, or source-derived catalogs.
+
+BBOX
+  BBOX [USAGE|MODEL|LANES|COMMENTS|HELP|MANUALGEN|DATADICT|MESSAGING|MAINT]
+  Teach and inspect the Blackbox model: data enters a processing system and information comes out.
+
+Usage:
+    BBOX
+    BBOX USAGE
+    BBOX MODEL
+    BBOX LANES
+    BBOX COMMENTS
+    BBOX HELP
+    BBOX MANUALGEN
+    BBOX DATADICT
+    BBOX MESSAGING
+    BBOX MAINT
+
+Notes:
+    BBOX is read-only.
+    BBOX is educational.
+    BBOX explains SelfDoc lanes using the data in -> processing -> information out model.
+    BBOX does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.
+
+MAINT
+  MAINT [USAGE|STATUS|LANES|COOKBOOK|BOUNDARY|BBOX|DOCS|GUI|AI|CONTRACTS]
+  Inspect DotTalk++ maintenance lanes, cookbooks, status, AI Friendly, and protected-system boundaries.
+
+Usage:
+    MAINT
+    MAINT USAGE
+    MAINT STATUS
+    MAINT LANES
+    MAINT COOKBOOK
+    MAINT BOUNDARY
+    MAINT BBOX
+    MAINT DOCS
+    MAINT GUI
+    MAINT AI
+    MAINT AI USAGE
+    MAINT AI STATUS
+    MAINT AI DASHBOARD
+    MAINT AI ASSIMILATE
+    MAINT AI BOOK
+    MAINT AI INTAKE
+    MAINT AI GATES
+    MAINT AI VISIBILITY
+    MAINT CONTRACTS
+    MAINT CONTRACTS USAGE
+    MAINT CONTRACTS STATUS
+    MAINT CONTRACTS SCAN
+    MAINT CONTRACTS REGISTRY
+    MAINT CONTRACTS INTAKE
+    MAINT CONTRACTS DRIFT
+    MAINT CONTRACTS GATES
+
+Notes:
+    MAINT is read-only first wave.
+    MAINT inspects and explains maintenance/SDLC lanes; it does not execute mutation lanes.
+    MAINT AI is a read-only native visibility surface for AI Portal partner onboarding, curation, and routing.
+    MAINT AI ASSIMILATE points a new or second-opinion AI to the durable repo-local AI Portal.
+    The AI Portal is an Alpha Python/registry surface; MAINT AI does not launch it or grant mutation authority.
+    MAINT does not mutate DBFs, HELP, META, CMDHELPCHK, source files, runtime scripts, or publication artifacts.
+    PowerShell is MDO scaffolding only; the permanent maintenance app is native C++.
+
+CMDARGCHK
+  CMDARGCHK
+  Validate command argument parsing and report issues.
+
+WSREPORT
+  WSREPORT
+  Workspace report / diagnostics.
+
+SHOW
+  SHOW <topic>
+  Show internal engine state / debug views.
+
+DUMP
+  DUMP
+  Debug: print a structured dump of an internal value/state.
+
+VERSION
+  VERSION
+  Print build/version information.
+
+DOTSCRIPT
+  DOTSCRIPT <file.dts>
+  Run a DotTalk script file (test harness / automation).
+
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+
+TEST
+  TEST <script>|<suite>
+  DotTalk++ scripting/test harness command.
+
+GO
+  GO <commandLine>
+  Execute a DotTalk++ command line (dispatch to command handlers).
+
+SCAN
+  SCAN [ALL|DELETED] [FOR <pred>] [WHILE <pred>] [NEXT <n>|REST]
+  Iterate records using a SCAN block (record loop).
+
+ENDSCAN
+  ENDSCAN
+  End a SCAN block.
+
+CONTINUE
+  CONTINUE
+  Continue a running loop/scan block (scripting control flow).
+
+LOOP
+  LOOP FOR <n> TIMES
+  Begin a LOOP block (scripting).
+
+ENDLOOP
+  ENDLOOP
+  End a LOOP block (scripting).
+
+WHILE
+  WHILE <expr>
+  Begin a WHILE block (scripting).
+
+ENDWHILE
+  ENDWHILE
+  End a WHILE block (scripting control flow).
+
+UNTIL
+  UNTIL <expr>
+  Begin an UNTIL block (scripting).
+
+ENDUNTIL
+  ENDUNTIL
+  End an UNTIL block (scripting).
+
+SET VAR
+  SET VAR <name> TO <value> | SET VAR <name>
+  Set or show a macro variable (used by &name expansion in scripts).
+
+SET VAR!
+  SET VAR! <name> TO <value> | SET VAR! <name>
+  Force-set a macro variable (variant used in some scripts).
+
+CALC
+  CALC <expr>
+  Evaluate an expression and display the result.
+
+        Important parsing note:
+            In current DotTalk++ behavior, if the expression contains operators like =, >=, <=,
+            it should be wrapped in parentheses to avoid being parsed as CALCWRITE syntax.
+
+        Examples:
+            CALC 1 + 2
+            CALC (UPPER("a") = "A")     && safe
+            CALC UPPER("a") = "A"       && may be parsed as CALCWRITE
+
+        Notes:
+            Quoted strings containing '=' are treated as literals and should not trigger CALCWRITE.
+
+CALCWRITE
+  CALCWRITE <expr>
+  Evaluate an expression and write the result to a target (see command usage).
+
+EVAL
+  EVAL <expr>
+  Evaluate an expression and print its value.
+
+CONCAT
+  CONCAT(<c1>[, <c2> ...]) | CONCAT <args...>
+  Concatenate string arguments. (Available as CALC function; also usable as a command where wired.)
+
+STRCAT
+  STRCAT(<c1>[, <c2> ...]) | STRCAT <args...>
+  Compatibility alias for CONCAT in the DotTalk++ string-expression surface.
+
+SQLITE
+  SQLITE <subcommand> ...
+  SQLite integration.
+
+        Examples:
+            SQLITE DB data\sql_regression.sqlite
+            SQLITE EXEC CREATE TABLE t(x INT)
+            SQLITE EXEC INSERT INTO t(x) VALUES (1)
+            SQLITE SELECT * FROM t
+
+        Notes:
+            Used for regression testing and DBF<->SQL bridging experiments.
+
+SQLVER
+  SQLVER
+  Report SQLite availability and version.
+
+SQL
+  SQL [COUNT] [ALL|DELETED] [FOR <expr> | <expr>] [VERBOSE]
+  Scan the CURRENT work area with a predicate and report matches or a count. It does NOT execute SQL statements -- for a SELECT statement use SQLSEL, and for the SQLite bridge use SQLITE. Reads records and may temporarily move the cursor; does not mutate table data.
+
+SQLSEL
+  SQLSEL SELECT <cols>|*|COUNT(*) FROM <table> [WHERE <pred>] [ORDER BY <field> [ASC|DESC]] [LIMIT <n>]
+  SQLsel: run a SELECT statement over an OPEN work area. Statement-scoped -- it names its own table, ignores session filter and cursor state, restores every cursor, and reads committed table truth. Bare column names only in v1 (no expression projection, joins, or GROUP BY). The legacy predicate-scan form SQLSEL [COUNT] [FOR <expr>] is still accepted. See SQLSEL USAGE.
+
+INSERT
+  INSERT <statement>
+  Insert data rows (scripting/SQL helper; see command usage).
+
+UPDATE
+  UPDATE <statement>
+  Update data rows (scripting/SQL helper; see command usage).
+
+DDL
+  DDL [args...]
+  Canonical schema/definition command family.
+
+SCHEMA
+  SCHEMA [args...]
+  Deprecated compatibility alias for DDL. Use DDL for schema/definition work.
+
+VALIDATE
+  VALIDATE <path>
+  Schema/sidecar validation command.
+
+AREA51
+  AREA51
+  Developer sandbox / experimental command.
+
+BBS
+  BBS [USAGE|BOARDS|READ <board.key> [THREAD <id>] [LAST <n>]|POST <board.key> SUBJECT <s> BODY <t>|REPLY <post.id> BODY <t>|CLOSE <thread.id>]
+  AI-BBS persistence substrate: durable boards, threads and posts as x64base DBF under data/metadata/bbs/, with RBAC and attributed authorship; board.governance projects the SYSGRANT request/approve loop (AIF-075).
+
+NET
+  NET [USAGE|EGRESS STATUS|EGRESS OPEN [MINUTES <n>] [reason]|EGRESS CLOSE]
+  NET EGRESS: read and toggle the WSL/AFB outbound egress isolation as a permissioned, audited capability (host.network.egress; Windows/mirrored-mode). Verified revocable egress isolation, not an air-gap.
+
+CANARY
+  CANARY [USAGE]
+  Dev canary for the metadata catalog reader adapter: reads the already-open SYSCMD area and reports adapter row/distribution counts (handler cmd_CATALOGCANARY).
+
+EVALDIFF
+  EVALDIFF FOR <predicate>
+  Compare classic DbArea and TupleRow predicate-evaluator outcomes over the same physical records without changing either evaluator.
+
+GENERIC
+  GENERIC
+  Developer utility placeholder command.
+
+NORMALIZE
+  NORMALIZE <expr>
+  Normalize/clean an input expression or text (developer utility).
+
+RECORD
+  RECORD
+  Display or return the current record context (utility).
+
+LOCK
+  LOCK [RECORD|TABLE|<recno>...]
+  Lock the current record (or table) for editing.
+
+UNLOCK
+  UNLOCK [ALL]
+  Release a previously acquired lock (optionally all locks).
+
+REFRESH
+  REFRESH
+  Refresh internal state / UI view (where applicable).
+
+MULTIREP
+  MULTIREP <field>=<expr> ...
+  Perform multiple replace operations in one pass (text transform).
+
+ASCEND
+  ASCEND
+  Set ascending sort direction for the active order/tag.
+
+DESCEND
+  DESCEND
+  Set descending sort direction for the active order/tag.
+
+AREA
+  AREA
+  Report the current DotTalk++ work-area state.
+
+APPEND
+  APPEND
+  Append a new record using current table defaults and active buffering rules.
+
+APPEND_BLANK
+  APPEND BLANK
+  Append a blank record to the current table.
+
+BOTTOM
+  BOTTOM
+  Move to the last record in the current table/order.
+
+CLOSE
+  CLOSE [ALL|<area>|<alias>]
+  Close the current table, a selected area, or all open work areas.
+
+COUNT
+  COUNT [FOR <expr>]
+  Count records in the current table, optionally using a FOR expression.
+
+DELETE
+  DELETE
+  Mark the current record deleted using current table semantics.
+
+DISPLAY
+  DISPLAY [ALL] [FIELDS <list>] [FOR <expr>]
+  Display records from the current table without changing the default DOT help namespace.
+
+DIR
+  DIR [<mask>|<path>]
+  List directory or file entries through the DotTalk++ shell surface.
+
+ECHO
+  ECHO <text...>
+  Echo text to the current DotTalk++ output route.
+
+ERASE
+  ERASE <target>
+  Erase a file or supported target through the DotTalk++ shell surface.
+
+EDIT
+  EDIT [USAGE] <file>
+  Launch the configured external editor for a file path; OS-sensitive (spawns the editor as a child process, editor.mode Off disables it). See the @dottalk.external contract in src/edu/edu_edit.cpp.
+
+FIND
+  FIND <text> [IN <field>]
+  Find text or values using the active order when possible, with scan fallback when needed.
+
+GOTO
+  GOTO <recno>|TOP|BOTTOM
+  Move the current work area to a specific record or boundary position.
+
+LIST
+  LIST [ALL] [FIELDS <list>] [FOR <expr>]
+  List records from the current table using DotTalk++ command semantics.
+
+LIST_LMDB
+  LIST_LMDB [USAGE|ALL|<limit>|DELETED|NODELETED|ASC|DESC|<tag>]
+  List records through the active LMDB order/tag, with LL as the shorthand alias.
+
+LOCATE
+  LOCATE FOR <expr> | LOCATE <field> <op> <value>
+  Position on the first record matching a predicate or simple field comparison.
+
+PACK
+  PACK
+  Permanently remove deleted records from the current table.
+
+RECALL
+  RECALL
+  Unmark the current deleted record when supported by the current table state.
+
+UNDELETE
+  UNDELETE
+  Compatibility alias for RECALL to unmark the current deleted record.
+
+RECNO
+  RECNO
+  Report the current record number for the active work area.
+
+REPLACE
+  REPLACE <field> WITH <value>
+  Replace one field in the current record using table-buffer and memo-aware semantics.
+
+SEEK
+  SEEK <value> [IN <field>] | SEEK <field> = <value>
+  Seek through the active order or by scanning a requested field.
+
+SELECT
+  SELECT <area-or-alias>
+  Select the active DotTalk++ work area by number or logical name.
+
+SET
+  SET [<option> [<value>]]
+  Show or change DotTalk++ runtime settings.
+
+SKIP
+  SKIP [<n>]
+  Move relative to the current record in the active work area.
+
+TOP
+  TOP
+  Move to the first record in the current table/order.
+
+USE
+  USE <table> [ALIAS <name>] [NOINDEX]
+  Open a DBF table in the active DotTalk++ work area.
+
+ZAP
+  ZAP
+  Delete all records from the current table.
+
+ABOUT
+  ABOUT
+  Print DotTalk++ project identity, lineage, build/runtime information, and current session summary.
+
+BETA
+  BETA [LIST|<id>|DONE <id>|DEFER <id>|OPEN <id>|CLEAR <id>|SAVE|LOAD]
+  Track and manage beta stabilization notes and local beta-status overrides.
+
+DOTHELP
+  DOTHELP [<term>]
+  Show project-native DotTalk++ reference entries from the DOTREF catalog.
+
+GPS
+  GPS
+  Report current session/navigation position and work-area orientation diagnostics.
+
+SHUTDOWN
+  SHUTDOWN
+  Run DotTalk++ shutdown processing, including shutdown.ini when present.
+
+EXPFUNCS
+  EXPFUNCS [MD [<path>]]
+  Export the expression/function catalog to Markdown documentation.
+
+AGGS
+  AGGS [SUM|AVG|MIN|MAX] <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Aggregate command-family owner for SUM, AVG, MIN, and MAX; use AGGS USAGE for family/subcommand help.
+
+SUM
+  SUM <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Direct aggregate verb that sums an expression or numeric field over the current table scope.
+
+AVG
+  AVG <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Direct aggregate verb that averages an expression or numeric field over the current table scope.
+
+AVERAGE
+  AVERAGE <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Compatibility alias for AVG over the current table scope.
+
+MIN
+  MIN <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Direct aggregate verb that reports the minimum value over the current table scope.
+
+MAX
+  MAX <value_expr> [FOR <pred>] [WHERE <pred>] [DELETED|NOT DELETED|!DELETED]
+  Direct aggregate verb that reports the maximum value over the current table scope.
+
+MCC
+  MCC
+  Load the MCC v32 demo workspace by running DotScript x32 and WORKSPACE LOAD mcc.dtschemas.
+
+MEMO
+  MEMO [STATUS|VERIFY|GC] [ALL] [CONFIRM]
+  Inspect, verify, or garbage-collect memo payload metadata; GC requires CONFIRM for destructive cleanup.
+
+PRN
+  PRN [STATUS|ON|OFF|TO <file>|CLOSE]
+  Manage printer/output routing for command output and report-style text.
+
+RBROWSE
+  RBROWSE
+  Launch the relation-aware browser view for the current workspace context.
+
+REGRESSION
+  REGRESSION [USAGE|LIST|SHOW <name>|RUN <name>|<name>|ALL]
+  Launch curated DotTalk++ regression and shakedown DotScript entrypoints that bootstrap their own environments.
+
+SECURITY
+  SECURITY [USAGE|SHOW|SELFTEST|RUNTIME|LOGIN <role> [AS <worker>]|WHOAMI|ASSIGNMENTS|LOGOUT]
+  Inspect DotTalk++ security policy/runtime rules and manage the current shell-session role identity and assignment view.
+
+BELL
+  BELL [ON|OFF]
+  Ring the shell bell when enabled, or turn the DotTalk++ bell setting on or off.
+
+IDX
+  IDX [USAGE|LIST|DROP <tag>|DROP ALL|ON <field|#n> TAG <name> [SORT <algo>|<algo>] [ASC|DESC]]
+  Memory-only educational index lab for teaching sort and index concepts without writing persistent index files.
+
+IMAGE
+  IMAGE [USAGE|INFO <file>|<file>]
+  Inspect image file metadata or open a supported image file in the operating-system viewer.
+
+RETRO
+  RETRO [USAGE|LIST|SHOW <system>|<system>|HELP]
+  Display ASCII-safe retro computer and system splash screens.
+
+SCX
+  SCX [USAGE|CREATE <file>|ADDTAG <file> <name> FIELD <n> [DESC]|BUILD <file>|TAGS <file>|INFO <file>]
+  Student/local SCX index-file lab command for creating, tagging, building, listing, and inspecting SCX index files.
+
+FIRST
+  FIRST
+  Move to the first record in the current logical order; navigation alias aligned with TOP.
+
+LAST
+  LAST
+  Move to the last record in the current logical order; navigation alias aligned with BOTTOM.
+
+NEXT
+  NEXT [<n>]
+  Move forward by one or more records from the current record; navigation alias aligned with SKIP.
+
+PRIOR
+  PRIOR [<n>]
+  Move backward by one or more records from the current record; navigation alias aligned with SKIP -<n>.
+
+ASCII
+  ASCII [USAGE|TABLE|<value>]
+  Display ASCII/character-code reference information for teaching and diagnostics.
+
+AUTODBF
+  AUTODBF [USAGE|<source> [TO <dbf>]]
+  Create or infer a DBF table from an input source using DotTalk++ automatic DBF-generation rules.
+
+BIBLETALK
+  BIBLETALK [USAGE|QUOTE|SEARCH <text>|BOOKS]
+  Use the BibleTalk educational seed database for quote, lookup, and teaching/demo workflows.
+
+BOOLEAN
+  BOOLEAN [USAGE|<expr>]
+  Demonstrate or evaluate boolean/logical expression behavior in the DotTalk++ expression layer.
+
+FORMULA
+  FORMULA [USAGE|<expr>]
+  Evaluate a scalar expression through the xexpr engine and print the formatted value (education eval command; its FoxPro ? / ?? print form is carried in foxref).
+
+CASE
+  CASE [USAGE|ON|OFF|STATUS]
+  Inspect or control case-sensitivity behavior for comparisons and expression/predicate evaluation.
+
+CHRISTMAS
+  CHRISTMAS
+  Display the DotTalk++ Christmas/holiday console splash screen.
+
+HANUKKAH
+  HANUKKAH
+  Display the DotTalk++ Hanukkah/holiday console splash screen.
+
+COBOL
+  COBOL [USAGE|HELP]
+  Display COBOL-oriented educational/demo material for historical data-processing context.
+
+CODASYL
+  CODASYL [USAGE|HELP]
+  Display CODASYL/network-database educational/demo material for historical database context.
+
+ERP
+  ERP [USAGE|HELP]
+  Display ERP-oriented educational/demo material connecting database concepts to business systems.
+
+EVALUATE
+  EVALUATE <expr>
+  Evaluate an expression through the DotTalk++ expression layer and display the result.
+
+TEXT
+  TEXT [USAGE|<args...>]
+  Text-oriented helper command surface for demonstration, teaching, or local text workflows.
+
+CREATE
+  CREATE [USAGE|<args...>]
+  Create a new table, structure, or local project artifact through the implemented DotTalk++ creation surface.
+
+DRAWIO
+  DRAWIO [USAGE|<args...>]
+  Generate or manage Draw.io-oriented diagram artifacts for documentation and teaching workflows.
+
+ERSATZ
+  ERSATZ [USAGE|<args...>]
+  Launch or drive the Ersatz relational browser/demo surface for workspace and relation-graph inspection.
+
+EXPORTSQL
+  EXPORTSQL [USAGE|<args...>]
+  Export DotTalk++ table or workspace data through the SQL export helper surface.
+
+IMPORTSQL
+  IMPORTSQL [USAGE|<args...>]
+  Import or bridge SQL data into DotTalk++ through the SQL import helper surface.
+
+FIELDMGR
+  FIELDMGR [USAGE|<args...>]
+  Inspect or manage field-level metadata and field-oriented helper workflows.
+
+IF
+  IF <logical_expr>
+  Begin a conditional DotScript block; execute the following block when the logical expression is true.
+
+ELSE
+  ELSE
+  Begin the alternate branch of an IF block when the IF condition is false.
+
+ENDIF
+  ENDIF
+  End an IF/ELSE conditional block.
+
+ERROR CLEAR
+  ERROR CLEAR
+  Clear the current DotTalk++ error/status state.
+
+ERROR STATUS
+  ERROR STATUS
+  Display the current DotTalk++ error/status state.
+
+ERROR TEST
+  ERROR TEST [<args...>]
+  Exercise the DotTalk++ error/status reporting path for diagnostics and tests.
+
+ERROR_CLEAR
+  ERROR_CLEAR
+  Compatibility/direct-handler spelling for ERROR CLEAR.
+
+ERROR_STATUS
+  ERROR_STATUS
+  Compatibility/direct-handler spelling for ERROR STATUS.
+
+ERROR_TEST
+  ERROR_TEST [<args...>]
+  Compatibility/direct-handler spelling for ERROR TEST.
+
+REBUILD
+  REBUILD [USAGE|ALL|<target>]
+  Rebuild table/index/help-related derived state where supported by the current target context.
+
+ROLLBACK
+  ROLLBACK [USAGE|HELP|?]
+  Discard staged TABLE/buffered changes without committing them; operational behavior depends on the current buffering state.
+
+RULE
+  RULE [USAGE|<args...>]
+  Inspect or manage validation-rule metadata and rule-oriented helper workflows.
+
+SECHO
+  SECHO [USAGE|<text...>]
+  Scripted/student echo helper for emitting text from teaching, demo, or test scripts.
+
+SET UNIQUE
+  SET UNIQUE [ON|OFF] | SET UNIQUE FIELD <field> ON|OFF
+  View or control uniqueness policy for the current SET command context or a specific field.
+
+SETNEAR
+  SETNEAR [ON|OFF|STATUS]
+  Compatibility/internal surface for seek-near behavior policy behind SET-family navigation semantics.
+
+PROJECTS
+  PROJECTS [USAGE|LIST|OPEN <name>|STATUS]
+  Inspect or manage DotTalk++ project/workflow entries and project-oriented local state.
+
+PSHELL
+  PSHELL [USAGE|<command...>]
+  Invoke or document the PowerShell/platform-shell helper surface where enabled by the runtime policy.
+
+BANG
+  BANG [USAGE|<command...>]
+  Run the host-shell escape surface when enabled by runtime policy; ! is the shell shortcut alias.
+
+SFTP
+  SFTP [USAGE|<args...>]
+  File-transfer helper surface for SFTP-oriented workflows where enabled by local policy.
+
+SHOWINI
+  SHOWINI [USAGE|SYSTEM|USER|ALL]
+  Display DotTalk++ initialization/configuration files and resolved startup settings.
+
+INIT
+  INIT [USAGE]
+  Initialize default paths, perform best-effort stale-lock cleanup, and process startup ini scripts.
+
+SIX
+  SIX [USAGE|<args...>]
+  Experimental or compatibility index-related surface for SIX-style indexing concepts and diagnostics.
+
+SORT
+  SORT [USAGE|<args...>]
+  Sort or demonstrate ordering behavior through the implemented DotTalk++ sort command surface.
+
+SQLERASE
+  SQLERASE [USAGE|<args...>]
+  SQL helper surface for erase/drop/delete-style SQL maintenance workflows where enabled.
+
+SQLHELP
+  SQLHELP [USAGE|<topic>]
+  Show SQL-oriented help and guidance for DotTalk++ SQL bridge workflows.
+
+TABLEMETA
+  TABLEMETA [USAGE|<args...>]
+  Inspect table metadata, structural facts, and table-oriented metadata helper output.
+
+TUPEXPORT
+  TUPEXPORT [USAGE|<args...>]
+  Export tuple/projection output through the tuple export helper surface.
+
+VAR
+  VAR USAGE | VAR <name> = <expr>
+  Evaluate an expression and store it as a scoped DotScript memory variable, referenced later as $name (e.g. VAR n = 40 + 2 then ? $n). Distinct from SET VAR (&macro) variables.
+
+EXAMPLE
+  EXAMPLE [USAGE|<name>|LIST]
+  Show or run small DotTalk++ example/demo material for teaching and verification workflows.
+
+FOXSTANDARD
+  FOXSTANDARD [USAGE|HELP|<topic>]
+  Display FoxPro/xBase standard-reference or compatibility teaching material.
+
+HIER
+  HIER [USAGE|<args...>]
+  Inspect or demonstrate hierarchy-oriented data, relation, or teaching views.
+
+SHELLO
+  SHELLO [USAGE|<text...>]
+  Small shell/student hello demonstration command for teaching command wiring and output.
+
+STUDENTECHO
+  STUDENTECHO [USAGE|<text...>]
+  Student/demo echo command used to teach command registration, argument handling, and output.
+
+STUDENTHELLO
+  STUDENTHELLO [USAGE]
+  Student/demo hello command used to teach the simplest command registration and output path.
+
+STU_REPEAT
+  STU_REPEAT [USAGE|<text...>]
+  Student/demo repeat command used to teach argument handling, loops, and command output.
+
+STU_UPPER
+  STU_UPPER [USAGE|<text...>]
+  Student/demo uppercase command used to teach string handling and command output.
+
+QUIT
+  QUIT
+  Request DotTalk++ shell shutdown without mutating table data or documentation catalogs.
+
+EXIT
+  EXIT
+  Alias for QUIT.
+
+WA
+  WA [USAGE|<args...>]
+  Work-area shorthand/helper surface for inspecting or selecting active work-area context.
+
+WEB
+  WEB [USAGE|<args...>]
+  Web-oriented helper command surface for local documentation, preview, or integration workflows where enabled.
+
+ZIP
+  ZIP [USAGE|<args...>]
+  Archive helper command surface for ZIP-oriented local packaging or inspection workflows.
+
+LMDBDUMP
+  LMDBDUMP [USAGE|<args...>]
+  Developer/diagnostic surface for dumping or inspecting LMDB-backed index/storage state.
+
+LMDB_UTIL
+  LMDB_UTIL [USAGE|<args...>]
+  Developer/diagnostic LMDB utility surface for low-level backend inspection and maintenance workflows.
+
+WHERECACHE
+  WHERECACHE [USAGE|<args...>]
+  Developer/diagnostic surface for inspecting, clearing, or validating WHERE/predicate cache behavior.
+
+TUPLEDELTA
+  TUPLEDELTA [USAGE|<args...>]
+  Tuple diagnostic helper surface for comparing projected tuple output or tuple-state deltas.
+
+TUPVALIDATE
+  TUPVALIDATE [USAGE|<args...>]
+  Tuple validation helper surface for checking tuple projection, relation-walk, or logical-row consistency.
+
+LOOP_BUFFER
+  LOOP_BUFFER [USAGE|<args...>]
+  Developer/diagnostic helper surface for inspecting or testing buffered LOOP control-flow behavior.
+
+SCAN_BUFFER
+  SCAN_BUFFER [USAGE|<args...>]
+  Developer/diagnostic helper surface for inspecting or testing buffered SCAN/table-iteration behavior.
+
+TABLE_BUFFER
+  TABLE_BUFFER [USAGE|<args...>]
+  Developer/diagnostic helper surface for inspecting or testing TABLE buffering and stale-field behavior.
+
+UNTIL_BUFFER
+  UNTIL_BUFFER [USAGE|<args...>]
+  Developer/diagnostic helper surface for inspecting or testing buffered UNTIL control-flow behavior.
+
+WHILE_BUFFER
+  WHILE_BUFFER [USAGE|<args...>]
+  Developer/diagnostic helper surface for inspecting or testing buffered WHILE control-flow behavior.
+
+Usage:
+  DOTHELP <term>
+  HELP /DOT <term>
+. FoxPro-style commands (subset):
+  USE          - Open a DBF in the current work area, auto-attach memo storage, and auto-attach flavor-appropriate indexes unless NOINDEX is specified.
+  CLOSE        - Close the current work area or close all open tables (FoxPro: CLOSE TABLES/DATABASES/ALL).
+  SELECT       - Select the active work area by number or alias.
+  AREA         - Report or set the current work area slot.
+  DBAREA       - Report or inspect the current DbArea/workspace (diagnostics).
+  STATUS       - Display area status.
+  STRUCT       - Display table structure.
+  FIELDS       - Show structure (field list).
+  TOP          - Go to first record.
+  BOTTOM       - Go to last record.
+  GOTO         - Go to record number.
+  SKIP         - Move the record pointer forward/backward by <nRecords> (default 1).
+  RECNO        - Return the current record number.
+  INDEX        - Create an index on an expression (DotTalk++ adaptation: CDX via TAG/OF, INX via TO).
+  SET          - Modern settings/index router.
+
+        Public syntax:
+            SET INDEX TO <table>.cdx
+            SET ORDER TO TAG <tag> [IN <alias>]
+            SET ORDER TO <tag>
+            SET ORDER TO 0
+            SET FILTER TO <expr>
+            SET FILTER TO
+            SET TALK ON|OFF
+            SET ECHO ON|OFF
+            SET DELETED ON|OFF
+            SET CASE
+            SET CASE ON|OFF
+            SET UNIQUE
+            SET UNIQUE FIELD <field> ON|OFF
+            SET RELATION[S] <args...>
+            SET PATH
+            SET PATH RESET
+            SET PATH <slot> <path>
+
+        Output routing:
+            SET CONSOLE ON|OFF
+            SET PRINT ON|OFF
+            SET PRINT TO <file>
+            SET ALTERNATE ON|OFF
+            SET ALTERNATE TO <file>
+
+        Notes:
+            This is the preferred public entry point.
+            Older standalone forms such as SETINDEX / SETORDER / SETFILTER / SETCASE
+            are compatibility or internal targets behind the routed SET command.
+  SET INDEX    - Preferred public syntax for attaching the current area's CDX container.
+  SET ORDER    - Preferred public syntax for activating a tag or returning to physical order.
+  SETINDEX     - Compatibility/internal target behind routed SET INDEX.
+  SETORDER     - Compatibility/internal target behind routed SET ORDER.
+  REINDEX      - Legacy INX rebuild path. Public CDX/LMDB workflow typically uses BUILDLMDB or COMMIT-triggered rebuilds.
+  CNX          - Index container command (CNX multi-tag support).
+  SETCNX       - Developer/transitional command for CNX container attachment.
+  SETCDX       - Developer/transitional command for direct CDX container attachment.
+  SETLMDB      - Developer/transitional LMDB utility command. Public index workflow prefers SET INDEX / SET ORDER / BUILDLMDB.
+  CDX          - Developer/transitional CDX command family.
+  BUILDLMDB    - Rebuild CDX/LMDB tags for the current table/container.
+  LMDB         - Developer LMDB utility command family for direct backend inspection/testing.
+  LIST_LMDB    - Developer listing helper for LMDB-backed order inspection.
+  FIND         - Find a value in the current order/index (FoxPro: FIND).
+  SEEK         - Seek an exact match using the current index/order.
+  INDEXSEEK    - Seek using the active index/order (DotTalk++ seek wiring).
+  LIST         - List records with optional field selection and filtering (default skips DELETED unless DELETED/ALL is specified).
+  DISPLAY      - Display the current record (optionally selected fields).
+  COUNT        - Count matching records; optionally store the result to a variable.
+  LOCATE       - Locate the first record matching a predicate/filter.
+  WHERE        - Apply an SQL-like filter to the current context.
+  SET FILTER   - Preferred public syntax for setting or clearing the current filter.
+  SETFILTER    - Compatibility/internal target behind routed SET FILTER.
+  CLEAR        - Clear current state (filters/orders/relations) depending on context.
+  SET CASE     - Preferred public syntax for viewing or setting case-sensitive comparison mode.
+  SETCASE      - Compatibility/internal target behind routed SET CASE.
+  PREDHELP     - Help for predicates/expressions and filtering.
+  PREDICATES   - List supported predicates/operators for filtering.
+  SMARTLIST    - LIST-style output with SQL-grade filtering (order-aware).
+
+        Examples:
+            SMARTLIST 20 FOR gpa >= 3.5
+            SMARTLIST ALL FOR lname LIKE "SMI%"
+
+        Notes:
+            Evaluates filters using the expression/predicate pipeline.
+  APPEND       - Append a new record (interactive in future).
+  APPEND_BLANK - Append a blank record to the current table/work area. (FoxPro equivalent: APPEND BLANK)
+  APPEND BLANK - Append blank record (compatibility alias). [unsupported]
+  REPLACE      - Replace a field value with an expression (optionally across records).
+  EDIT         - Edit a field/value interactively (where supported).
+  DELETE       - Mark record(s) deleted.
+  RECALL       - Un-delete record(s).
+  UNDELETE     - Un-delete (recall) the current record or selection.
+  PACK         - Permanently remove deleted rows (see notes).
+  ZAP          - Remove all records.
+  TABLE        - Table buffering / stale tracking.
+
+        Subcommands:
+            TABLE ON
+                Enable table buffering for the current area. REPLACE writes into a per-field buffer and
+                marks fields STALE instead of immediately writing to disk.
+
+            TABLE OFF
+                Disable buffering. REPLACE writes directly to disk (no buffering).
+
+            TABLE STALE
+                Show which fields are currently stale (buffered) for the current area.
+
+            TABLE FRESH [ALL|<n>|<n>,<m>]
+                Apply buffered updates to disk and clear stale flags on success.
+                (Scope forms depend on build; ALL / area lists were previously supported.)
+
+        Notes:
+            - In current shakedown observations, LIST output reflects the physical record, not buffered overlays.
+            - Some builds may not recognize TABLE REFRESH; prefer TABLE FRESH.
+  COMMIT       - Commit buffered TABLE updates to disk.
+
+        Notes:
+            - Applies buffered TABLE writes.
+            - May rebuild active indexes automatically after success.
+            - In current public CDX/LMDB workflow, COMMIT can trigger a CDX/LMDB rebuild when the area is stale and a CDX order is active.
+  ROLLBACK     - Discard staged TABLE/buffered changes without committing them.
+
+        Notes:
+            ROLLBACK USAGE/HELP/? is runtime-supported and does not mutate data.
+            Operational ROLLBACK behavior depends on the current buffering state.
+            This row is no longer planned-only.
+  EXPORT       - Export to CSV.
+  IMPORT       - Import from CSV.
+  COPY         - Copy a file to a new location (FoxPro: COPY FILE ... TO ...).
+  DIR          - List directory contents.
+  ERASE        - Delete file(s) matching <filespec> (FoxPro: ERASE).
+  SET PATH     - Manage runtime root directories.
+
+        Usage:
+            SET PATH
+                Show current roots.
+
+            SET PATH RESET
+                Restore defaults (based on DATA root).
+
+            SET PATH <SLOT> <path>
+                Set a root slot to absolute(path). If <path> is relative, it is resolved under DATA.
+
+        Slots:
+            DATA, DBF, INDEXES, SCHEMAS, SCRIPTS, TESTS, HELP, LOGS, TMP
+
+        Notes:
+            Relative paths are resolved under DATA.
+            Example:
+                SET PATH INDEXES indexes
+            not:
+                SET PATH INDEXES data/indexes
+            when DATA already points at the data root.
+  SETPATH      - Manage runtime root directories.
+
+        Usage:
+            SETPATH
+                Show current roots.
+
+            SETPATH RESET
+                Restore defaults (based on DATA root).
+
+            SETPATH <SLOT> <path>
+                Set a root slot to absolute(path). If <path> is relative, it is resolved under DATA.
+
+        Slots:
+            DATA, DBF, INDEXES, SCHEMAS, SCRIPTS, TESTS, HELP, LOGS, TMP
+
+        Notes:
+            Compatibility/internal command behind routed SET PATH.
+  WORKSPACE    - Canonical live work-area/session command.
+
+        Usage:
+            WORKSPACE
+                List current open work areas.
+
+            WORKSPACE CLOSE
+                Close all work areas and clear relation state.
+
+            WORKSPACE OPEN DBF
+                Scan the configured DBF path slot and open tables into areas 0..N.
+
+            WORKSPACE OPEN <dir>
+                Scan a specific directory and open DBFs into areas 0..N.
+
+            WORKSPACE SAVE <name>
+                Save a workspace layout where supported.
+
+            WORKSPACE LOAD <name>
+                Restore a saved workspace layout where supported.
+
+        Notes:
+            WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
+            DDL owns schema/definition work.
+            WSREPORT owns verbose diagnostics.
+  SCHEMAS      - Deprecated compatibility shim for WORKSPACE.
+
+        Current mapping:
+            SCHEMAS             -> WORKSPACE
+            SCHEMAS OPEN <arg>  -> WORKSPACE OPEN <arg>
+            SCHEMAS CLOSE       -> WORKSPACE CLOSE
+
+        Notes:
+            Use WORKSPACE for live work-area/session operations.
+            Use DDL for schema/definition operations.
+            SCHEMAS remains only so older DotScript files continue to run.
+  REL          - Relations engine commands.
+
+        Subcommands:
+            REL LIST
+            REL LIST ALL
+            REL REFRESH
+            REL ENUM [LIMIT n] <path...> TUPLE <projection>
+            REL SAVE [path]
+            REL SAVE AS <dataset>
+            REL LOAD [path]
+            REL LOAD AS <dataset>
+            REL ADD <parent> <child> ON <field>
+            REL CLEAR <parent>
+            REL CLEAR ALL
+
+        Examples:
+            REL ADD STUDENTS ENROLL ON SID
+            REL ADD ENROLL CLASSES ON CLS_ID
+            REL LIST
+            REL LIST ALL
+            REL REFRESH
+
+            REL ENUM LIMIT 10 ENROLL CLASSES TASSIGN TEACHERS TUPLE
+                STUDENTS.SID,STUDENTS.LNAME,ENROLL.CLS_ID,CLASSES.CID,TEACHERS.LNAME
+
+        Notes:
+            REL is the modern DotTalk++ relationship engine.
+            It stores and traverses parent/child links explicitly.
+            FoxPro-style SET RELATION syntax is now parsed and translated into this backend.
+            REL ENUM is the traversal/projection side of the engine and should be documented further as it stabilizes.
+  SET RELATION - FoxPro-style routed relation syntax.
+
+        Supported forms:
+            SET RELATION TO SID INTO ENROLL
+            SET RELATION TO SID INTO ENROLL, SID INTO STUD_MAJ
+            SET RELATION ADDITIVE TO SID INTO STUD_MAJ
+            SET RELATION OFF INTO ENROLL
+            SET RELATION OFF ALL
+
+        Examples:
+            SELECT STUDENTS
+            SET RELATION TO SID INTO ENROLL
+
+            SELECT STUDENTS
+            SET RELATION TO SID INTO ENROLL, SID INTO STUD_MAJ
+
+            SELECT STUDENTS
+            SET RELATION TO SID INTO ENROLL
+            SET RELATION ADDITIVE TO SID INTO STUD_MAJ
+
+            SELECT STUDENTS
+            SET RELATION OFF INTO ENROLL
+
+            SELECT STUDENTS
+            SET RELATION OFF ALL
+
+        Notes:
+            DotTalk++ parses FoxPro SET RELATION syntax and maps it to the modern REL backend.
+            Non-ADDITIVE SET RELATION replaces the current parent's outgoing relations.
+            ADDITIVE appends another child relation for the same parent.
+            OFF INTO removes one child relation from the current parent.
+            OFF ALL clears all outgoing relations for the current parent.
+  RELATIONS    - Compatibility topic for FoxPro-style relation wiring.
+
+        See:
+            SET RELATION
+            REL
+            REL LIST
+            REL ENUM
+
+        Examples:
+            SET RELATION TO SID INTO ENROLL
+            SET RELATION ADDITIVE TO SID INTO STUD_MAJ
+            SET RELATION OFF ALL
+
+        Notes:
+            In DotTalk++, FoxPro relation syntax is implemented by parsing SET RELATION
+            and translating it into the REL engine's internal relationship model.
+  REL_LIST     - Compatibility alias for REL LIST.
+  REL_REFRESH  - Compatibility alias for REL REFRESH.
+  CMDREL       - Relations help / compatibility command.
+  TUPLE        - Build one tuple row from fields across work areas.
+
+        Examples:
+            TUPLE *                    (all fields from current area)
+            TUPLE LNAME,FNAME          (selected fields from current area)
+            TUPLE #11.*                (all fields from area 11)
+            TUPLE #9.*,#11.LNAME       (mix of areas)
+
+        Notes:
+            #n prefixes a work area slot; "*" means all fields for that area.
+            Output fields are separated by ASCII Unit Separator (0x1F).
+  TUPTALK      - DotTalk++ tuple/logical-row command.
+  ARCTICTALK   - Launch the ArcticTalk Turbo Vision TUI shell.
+
+        Example:
+            ARCTICTALK
+
+        Notes:
+            Intended for keyboard-driven browsing and diagnostics.
+            Exits back to the DotTalk++ CLI.
+  FOXTALK      - Legacy alias for the ArcticTalk Turbo Vision TUI shell.
+
+        Example:
+            FOXTALK
+
+        Notes:
+            Intended for keyboard-driven browsing and diagnostics.
+            Exits back to the DotTalk++ CLI.
+  BROWSE       - Table browser (FoxPro). [unsupported]
+  BROWSETUI    - Text-mode browser UI (developer tool).
+  BROWSETV     - Turbo Vision browser UI (developer tool).
+  BROWSER      - Developer browser command (experimental).
+  RECORDVIEW   - Vertical record viewer.
+  COLOR        - Switch CLI/TUI color theme.
+
+        Examples:
+            COLOR GREEN
+            COLOR G+
+            COLOR AMBER
+            COLOR DEFAULT
+
+        Notes:
+            Used by ArcticTalk/Foxtalk Turbo Vision palette wiring.
+  TVISION      - Turbo Vision diagnostics / demos.
+  TURBOPACK    - Fast PACK path for plain non-memo, non-x64 DBF tables.
+
+        Notes:
+            TURBOPACK USAGE does not require an open table and does not rewrite files.
+            Memo tables and x64 tables are refused; use PACK instead.
+            This is a pack/DBF command, not a Turbo Vision launcher.
+  FOXPRO       - DotTalk++ UI / browser command.
+  HELP         - General help entry point (supports /FOX and /PRED views).
+  FOXHELP      - List or search command help topics.
+
+        Examples:
+            FOXHELP
+            FOXHELP WORKSPACE
+            FOXHELP REL
+
+        Notes:
+            Uses the help catalogs and any HELP DBFs.
+  CMDHELP      - Build / report the HELP command catalogs.
+
+        Examples:
+            CMDHELP BUILD
+            CH               (alias report, if enabled)
+
+        Notes:
+            Mines command registry + foxref + optional DBF help sources.
+  COMMANDSHELP - Command help (alias of CMDHELP).
+  CMDHELPCHK   - Validate HELP catalogs vs the command registry.
+  CMDARGCHK    - Validate command argument parsing and report issues.
+  WSREPORT     - Workspace report / diagnostics.
+  SHOW         - Show internal engine state / debug views.
+  DUMP         - Debug: print a structured dump of an internal value/state.
+  VERSION      - Print build/version information.
+  INIT         - Initialize/report runtime path roots and environment.
+  DBAREAS      - Report all open DbAreas/workspaces.
+  DOTSCRIPT    - Run a DotTalk script file (test harness / automation).
+
+        Example:
+            DOTSCRIPT run_all_sql_tests.dts
+  TEST         - DotTalk++ scripting/test harness command.
+  GO           - Execute a DotTalk++ command line (dispatch to command handlers).
+  SCAN         - Iterate records using a SCAN block (record loop).
+  ENDSCAN      - End a SCAN block.
+  CONTINUE     - Continue a running loop/scan block (scripting control flow).
+  LOOP         - Begin a LOOP block (scripting).
+  ENDLOOP      - End a LOOP block (scripting).
+  WHILE        - Begin a WHILE block (scripting).
+  ENDWHILE     - End a WHILE block (scripting control flow).
+  UNTIL        - Begin an UNTIL block (scripting).
+  ENDUNTIL     - End an UNTIL block (scripting).
+  IF           - Conditional execution block.
+
+        Syntax:
+            IF <logicalExpression>
+                <commands>
+            ELSE
+                <commands>
+            ENDIF
+
+        Notes:
+            IF USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.
+  ELSE         - Optional ELSE branch for an IF block.
+
+        Syntax:
+            ELSE
+
+        Notes:
+            ELSE USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.
+  ENDIF        - End an IF block.
+
+        Syntax:
+            ENDIF
+
+        Notes:
+            ENDIF USAGE reports syntax without changing command-flow state.
+            Runtime usage/help/? behavior is supported.
+  SET VAR      - Set or show a macro variable (used by &name expansion in scripts).
+  SET VAR!     - Force-set a macro variable (variant used in some scripts).
+  CALC         - Evaluate an expression and display the result.
+
+        Important parsing note:
+            In current DotTalk++ behavior, if the expression contains operators like =, >=, <=,
+            it should be wrapped in parentheses to avoid being parsed as CALCWRITE syntax.
+
+        Examples:
+            CALC 1 + 2
+            CALC (UPPER("a") = "A")     && safe
+            CALC UPPER("a") = "A"       && may be parsed as CALCWRITE
+
+        Notes:
+            Quoted strings containing '=' are treated as literals and should not trigger CALCWRITE.
+  CALCWRITE    - Evaluate an expression and write the result to a target (see command usage).
+  EVAL         - Evaluate an expression and print its value.
+  FORMULA      - Evaluate/print an expression (FoxPro-style ? / ?? shortcut).
+  CONCAT       - Concatenate string arguments. (Available as CALC function; also usable as a command where wired.)
+  SQLITE       - SQLite integration.
+
+        Examples:
+            SQLITE DB data\sql_regression.sqlite
+            SQLITE EXEC CREATE TABLE t(x INT)
+            SQLITE EXEC INSERT INTO t(x) VALUES (1)
+            SQLITE SELECT * FROM t
+
+        Notes:
+            Used for regression testing and DBF<->SQL bridging experiments.
+  SQLVER       - Report SQLite availability and version.
+  SQL          - Execute an SQL statement using the configured SQL engine.
+  SQLSEL       - Execute an SQL SELECT and display results.
+  INSERT       - Insert data rows (scripting/SQL helper; see command usage).
+  UPDATE       - Update data rows (scripting/SQL helper; see command usage).
+  ALLTRIM      - Remove leading and trailing spaces from <cExpression>.
+  TRIM         - Remove trailing spaces from <cExpression> (alias/compat; see RTRIM).
+  LTRIM        - Remove leading spaces from <cExpression>.
+  RTRIM        - Remove trailing spaces from <cExpression>.
+  UPPER        - Convert <cExpression> to upper-case.
+  LOWER        - Convert <cExpression> to lower-case.
+  LEFT         - Return the left-most <nChars> characters of <cExpression>.
+  RIGHT        - Return the right-most <nChars> characters of <cExpression>.
+  SUBSTR       - Return substring of <cExpr> starting at <nStart> for <nLen> characters (or to end).
+  LEN          - Return the length (character count) of <cExpression>.
+  AT           - Return the 1-based position of <cSearch> within <cExpression> (case-sensitive).
+  ATC          - Return the 1-based position of <cSearch> within <cExpression> (case-insensitive).
+  STUFF        - Replace <nLen> characters of <cExpr> starting at <nStart> with <cRepl>.
+  CHR          - Convert an integer ASCII code (0-255) to a 1-character string.
+  ASC          - Return the ASCII code (0-255) of the first character of <cExpression>.
+  SPACE        - Return a character string containing <nSpaces> spaces.
+  REPLICATE    - Repeat <cExpression> <nTimes> times.
+  STR          - Convert numeric <nExpr> to a character string (optionally controlling width/decimals).
+  VAL          - Convert a numeric-looking character expression to a number.
+  PADL         - Left-pad to length <nLen>.
+  PADR         - Right-pad to length <nLen>.
+  PADC         - Center-pad to length <nLen>.
+  PROPER       - Convert <cExpression> to Proper Case (title case).
+  TRANSFORM    - Format <eExpr> as a string using an optional picture/mask.
+  DATE         - Return the current system date.
+  TIME         - Return the current system time as a character string (HH:MM:SS).
+  CTOD         - Convert a character date to a Date value using current SET DATE/SET CENTURY.
+  DTOC         - Convert a Date value to a character string using current SET DATE/SET CENTURY.
+  SUM          - Sum a numeric expression over a record set.
+  AVERAGE      - Compute the average of a numeric expression over a record set.
+  AVG          - Alias for AVERAGE (xBase compatibility).
+  MIN          - Return the smaller of <e1> and <e2> (aggregate MIN typically via SQL/CALC).
+  MAX          - Return the larger of <e1> and <e2> (aggregate MAX typically via SQL/CALC).
+  ECHO         - Print text to the console.
+  !            - Alias for BANG (execute an OS command).
+  BANG         - Execute an OS command (shell escape).
+  RUN          - Run an OS command (FoxPro). [unsupported]
+  DO           - Execute a program. (Use DOTSCRIPT instead.) [unsupported]
+  DDL          - Canonical schema/definition command family.
+  SCHEMA       - Deprecated compatibility alias for DDL. Use DDL for schema/definition work.
+  VALIDATE     - Schema/sidecar validation command.
+  AREA51       - Developer sandbox / experimental command.
+  GENERIC      - Developer utility placeholder command.
+  RECORD       - Display or return the current record context (utility).
+  LOCK         - Lock the current record (or table) for editing.
+  UNLOCK       - Release a previously acquired lock (optionally all locks).
+  REFRESH      - Refresh internal state / UI view (where applicable).
+  MULTIREP     - Perform multiple replace operations in one pass (text transform).
+  ASCEND       - Set ascending sort direction for the active order/tag.
+  DESCEND      - Set descending sort direction for the active order/tag.
+Tip: FOXHELP <NAME> for details, e.g. FOXHELP INDEX
+. . . MANUAL CATALOG STATUS
+  mode: read-only
+  repo_root: D:\code\ccode
+  accepted_dbf_dir: D:\code\ccode\docs\manuals\developer\manualgen\accepted_catalogs\man_catalog_v1\dbf
+  accepted_dbf_dir_exists: 1
+  expected_MAN_tables: 8
+  present_MAN_tables: 8
+. MANUAL CATALOG COUNTS
+  note: this lightweight native surface reports expected counts and DBF presence; DBF row readback remains in manualgen reports.
+  MANRUN expected=3 dbf_exists=1
+  MANSECTION expected=25 dbf_exists=1
+  MANMEDIA expected=9 dbf_exists=1
+  MANANCHOR expected=9 dbf_exists=1
+  MANHASH expected=13 dbf_exists=1
+  MANREVIEW expected=3 dbf_exists=1
+  MANPUB expected=4 dbf_exists=1
+  MANAPPX expected=6 dbf_exists=1
+. . . . . . WORKSPACE
+
+Manage live work-area/session state
+
+Syntax:
+  WORKSPACE
+  WORKSPACE OPEN DBF
+  WORKSPACE OPEN <dir>
+  WORKSPACE CLOSE
+  WORKSPACE SAVE <name>
+  WORKSPACE LOAD <name>
+
+Notes:
+  WORKSPACE owns live areas, aliases, orders, and relation/session layout
+  DDL owns schema/definition work
+. ERASE
+  ERASE <target>
+  Erase a file or supported target through the DotTalk++ shell surface.
+. REGRESSION - Launch curated DotTalk++ regression DotScript entrypoints
+
+Syntax:
+  REGRESSION LIST
+  REGRESSION SHOW <name>
+  REGRESSION RUN <name>
+  REGRESSION <name>
+  REGRESSION ALL
+
+Examples:
+  REGRESSION LIST
+  REGRESSION SHOW NONDESTRUCTIVE
+  REGRESSION RUN INDEX_X32
+  REGRESSION RUN X64_METRICS
+  REGRESSION RUN HARVEST
+  REGRESSION INDEX_X64
+  REGRESSION ALL
+
+Notes:
+  REGRESSION delegates script execution to DOTSCRIPT
+  Curated entries are expected to bootstrap their own runtime environment
+  LIST is intentionally smaller than the full historical script estate
+  Dev-only warning/repro canaries stay out unless intentionally promoted
+  HARVEST is the top-layer proof path for recently promoted command/help/regression surfaces
+. . . . . . FUNCTIONS
+=========
+
+NUMERIC (21)
+-------------
+ABS         ACOS        ASIN        ATAN        BETWEEN     
+CEILING     COS         EXP         FLOOR       INT         
+LEN         LOG         LOG10       MAX         MIN         
+MOD         RAND        ROUND       SIN         SQRT        
+TAN         
+
+DATE (22)
+----------
+CDOW        CMONTH      CTOD        DATE        DATEADD     
+DATEDIFF    DATETIME    DAY         DOW         DTOC        
+DTOS        GOMONTH     MONTH       NOW         SECONDS     
+TIME        TODAY       UDATE       UDATETIME   UNOW        
+UTIME       YEAR        
+
+STRING (17)
+------------
+ALLTRIM     ASC         CHR         CHRTRAN     LEFT        
+LOWER       LTRIM       PADC        PADL        PADR        
+PROPER      RIGHT       RTRIM       STRTRAN     STUFF       
+SUBSTR      UPPER       
+
+SEARCH (4)
+-----------
+AT          ATC         RAT         SOUNDEX     
+
+LOGICAL (3)
+------------
+EMPTY       FILE        LIKE        
+
+CONSTRUCTION (3)
+-----------------
+CONCAT      REPLICATE   SPACE       
+
+CONVERSION (3)
+---------------
+STR         TRANSFORM   VAL         
+
+Usage:
+  HELP FUNCTIONS
+  HELP FUNCTION <name>
+  HELP <category>      (NUMERIC, DATE, STRING, SEARCH, LOGICAL, CONSTRUCTION, CONVERSION, MISC)
+  HELP <name>          (falls through to function help if no command owns the name)
+. . DOCFLUSH-V5-BASELINE-END
+. . SHUTDOWN: processing D:\code\ccode\dottalkpp\bin\shutdown.ini

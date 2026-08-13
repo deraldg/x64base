@@ -1,0 +1,71 @@
+* ============================================================================
+* fullstack_pre_refresh_runtime_v1.dts -- DOCFLUSH-20260812-001 (flush v5)
+* Phase 2 runtime baseline.
+*
+* WHAT IS DIFFERENT ABOUT THIS BASELINE, and it must not be glossed: this is
+* NOT a pre-refresh capture. The HELP store was rebuilt ad hoc on 2026-08-12
+* (`cmdhelp build . d:\code\ccode\src`) with no Gate 0, no prior baseline, and
+* no Gate 4 validation -- and with the documented dotref recipe half-skipped
+* (CMDHELP BUILD LEGACY was not run first, and the store was not backed up).
+*
+* So this transcript captures a store that has ALREADY MOVED, from a state
+* nobody recorded. Its job is to establish the first gated ground truth since
+* v4's Gate 4, so the correct rebuild later in this run has something honest to
+* be compared against. Gate 2 must say so plainly rather than presenting these
+* numbers as a clean pre-refresh line.
+*
+* Read the transcript for mojibake as well as counts: a source em-dash inside a
+* contract block renders as a CP437 garble in HELP output, which is how v4 found
+* cmd_buildvectors.cpp:21. Measured 2026-08-12: 0 non-ASCII remain inside any
+* @dottalk.usage block tree-wide, so this run expects a CLEAN transcript. A
+* garble here would mean the store predates commit 4c584ba8f and the rebuild did
+* not take.
+*
+* Run (from D:\code\ccode, ABSOLUTE paths -- datarun pushes cwd to the data root):
+*   $run = 'D:\code\ccode\docs\maintenance\lanes\full_stack_documentation\runs\DOCFLUSH-20260812-001\runtime_baseline'
+*   ./datarun.ps1 -CommandLines (Get-Content "$run\fullstack_pre_refresh_runtime_v1.dts") |
+*     Tee-Object "$run\fullstack_pre_refresh_runtime_v1.txt"
+*   Set-Location D:\code\ccode
+*
+* Read-only: every command below reports. Nothing rebuilds, nothing writes HELP.
+* ============================================================================
+SET ECHO OFF
+STOP_ON_ERROR OFF
+
+FORMULA "DOCFLUSH-V5-BASELINE-BEGIN"
+
+* --- runtime identity: binds the transcript to an exe and a commit ----------
+ABOUT
+
+* --- HELP store as it currently stands (the ad-hoc-rebuilt state) -----------
+CMDHELP
+CMDHELP TOPICS
+
+* --- structural check of that store -----------------------------------------
+CMDHELPCHK
+
+* --- the reference authorities, each reporting its own surface ---------------
+DOTHELP
+FOXHELP
+
+* --- manual state (v4 recorded 8/8; re-measure, do not assume) --------------
+MANUAL STATUS
+MANUAL COUNTS
+
+* --- targeted topics: the commands THIS lane changed on 2026-08-12 ----------
+* If dotref landed, WORKSPACE shows MEMO / MINIDB / RAM / PARTIAL / WRITEBACK.
+* If it shows only [OPEN|CLOSE|SAVE|LOAD], the binary or the store predates the
+* header change and the LEGACY-first rebuild is required before Gate 4.
+HELP WORKSPACE
+HELP ERASE
+HELP REGRESSION
+
+* --- the function surface: FILE() is the known SYSFUNC shortfall ------------
+* SYSFUNC_IMPORT_v1.csv is stale by exactly FILE and cannot be regenerated
+* until the metacollect build is repaired (Gate 0 precondition). Captured here
+* so the gap is dated evidence rather than a remembered claim.
+HELP FUNCTIONS
+
+FORMULA "DOCFLUSH-V5-BASELINE-END"
+
+QUIT
