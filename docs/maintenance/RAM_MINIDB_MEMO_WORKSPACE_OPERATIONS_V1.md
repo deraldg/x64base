@@ -173,23 +173,31 @@ run VDISK MOUNT`.
 
     WORKSPACE CATALOG
 
-Read-only report over the memo catalog: name, FMT, carrier, size, areas,
-timestamp, author, and which rows are superseded.
+Read-only report over the memo catalog: name, FMT, size, areas, timestamp,
+author, and which rows are superseded.
 
-It separates **two axes the catalog always stored but never surfaced**, and
-keeping them apart is the whole point:
+**FMT is the PAYLOAD.** `DTSHEMA 2` / `DTSHEMA 3` carry a POSTURE and the
+tables stay where they are. `MINIDB 1` carries the TABLE BYTES themselves.
 
-- **FMT is the PAYLOAD.** `DTSHEMA 2` / `DTSHEMA 3` carry a POSTURE and the
-  tables stay where they are. `MINIDB 1` carries the TABLE BYTES themselves.
-- **CARRIER is WHERE it lives** -- `memo` or `file`, read from the WSID prefix
-  (`M<id>` / `F<utc-stamp>`).
+**Carrier is a fact about the table, not a column in it.** Appending to
+`WORKSPACES.dbf` IS what saving to a memo does -- `save_to_memo` holds the only
+`appendBlank()` against it -- so every catalogued row is the memo carrier by
+construction. The FILE carrier never appears here at all: those are the
+`.dtschema` / `.dtschemas` files sitting in the same directory, which the
+report counts in its footer so the catalog does not read as the whole
+inventory.
 
-**They are independent.** The same posture is byte-identical in a file or a
-memo; only the WSID line differs. That is why a memo-carried v2 posture is NOT
-a distinct format: a proposed "DTSHEMA 2.5" was rejected on 2026-08-12 because
-it would have claimed a byte difference that does not exist, in a namespace
-that had already cost one reconciliation. The distinction is real -- it is just
-placement, not payload, and this report is where you see it.
+    CORRECTED 2026-08-13. The first release of this report printed a CARRIER
+    column and rendered "-" for all 106 rows: it read the catalog's WS_ID,
+    which is NUMERIC, looking for an M/F prefix that lives in the WSID LINE
+    INSIDE the payload. Even fixed it would have been a constant. A column
+    that can only take one value is not a column.
+
+Payload and placement stay independent regardless. The same posture is
+byte-identical in a file or a memo; only the WSID line differs. That is why a
+memo-carried v2 posture is NOT a distinct format: a proposed "DTSHEMA 2.5" was
+rejected on 2026-08-12 because it would have claimed a byte difference that
+does not exist, in a namespace that had already cost one reconciliation.
 
 Saving a name again SUPERSEDES rather than overwrites, so the catalog keeps its
 own history and superseded rows retain their bytes. See 5.5 on what that costs.

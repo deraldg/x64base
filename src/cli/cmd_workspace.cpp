@@ -123,13 +123,16 @@
 //   with zero disk reads. Plain LOAD ... MEMO REFUSES a MINIDB payload by
 //   design: its tables have no disk home, and standing up empty areas over
 //   missing files is the silent-success failure this codebase hunts.
-//   CATALOG reports the memo catalog read-only: name, FMT, carrier, size,
-//   areas, timestamp, author, and which rows are superseded. FMT is the
-//   PAYLOAD (DTSHEMA 2/3 carry a posture, MINIDB 1 carries the table bytes);
-//   CARRIER is WHERE it lives (memo or file) and is INDEPENDENT of FMT, since
-//   the same posture is byte-identical either way. Added 2026-08-12 in place of
-//   a proposed "DTSHEMA 2.5" version, which would have put a carrier fact in
-//   the format namespace and claimed a byte difference that does not exist.
+//   CATALOG reports the memo catalog read-only: name, FMT, size, areas,
+//   timestamp, author, and which rows are superseded. FMT is the PAYLOAD
+//   (DTSHEMA 2/3 carry a posture, MINIDB 1 carries the table bytes). Every
+//   catalogued row is the MEMO carrier by construction, so carrier is stated
+//   once rather than columned; the FILE carrier is the .dtschema files in the
+//   same directory, which this table does not track and the footer counts.
+//   Added 2026-08-12 in place of a proposed "DTSHEMA 2.5" version, which would
+//   have put a placement fact in the format namespace and claimed a byte
+//   difference that does not exist. The CARRIER column shipped in that first
+//   release and was removed 2026-08-13 after it printed "-" for every row.
 //   LOAD REFUSES A SHORTFALL (owner-directed 2026-08-12): the declared dbf
 //   members are resolved and probed BEFORE anything is closed, so a load that
 //   cannot be completed leaves the CURRENT session standing rather than
@@ -2462,12 +2465,29 @@ struct MemoFetch {
 // in a namespace that has already cost one reconciliation (the DTSHEMA-name
 // collision, AIF-078 D5/Q5 -> DTWSSNAP 1).
 //
-// The real gap was VISIBILITY, not naming. The catalog already carries both
-// axes -- FMT says DTSHEMA 2 / DTSHEMA 3 / MINIDB 1, and the WSID prefix says
-// M (memo) or F (file/RAM) -- but nothing surfaced them. To find out whether a
-// saved row was a posture or a whole database you had to USE WORKSPACES and
-// read the fields yourself. This report is the answer to the question the
-// version number was reaching for: which of these rows carries its tables?
+// The real gap was VISIBILITY, not naming. FMT was already stored and never
+// surfaced: to find out whether a saved row was a posture or a whole database
+// you had to USE WORKSPACES and read the fields yourself. This report is the
+// answer to the question the version number was reaching for: which of these
+// rows carries its tables?
+//
+// CORRECTION 2026-08-13, from the first live run. This report originally
+// printed a CARRIER column derived from a WSID prefix, and it rendered "-" for
+// all 106 rows. Two mistakes, and the second is the instructive one:
+//
+//   1. It read the catalog's WS_ID, which is N("WS_ID", 10) -- a NUMERIC
+//      surrogate that has never held a letter. The M/F prefix lives in the
+//      WSID LINE INSIDE the payload text (stamp_ws_id), a different thing
+//      that happens to share a name.
+//   2. Even corrected it would have been a constant. The only appendBlank()
+//      against this table is in save_to_memo, so a catalogued row IS a memo
+//      row by construction. A column that can only take one value is not a
+//      column; it is a fact about the table.
+//
+// So carrier is stated once in the footer, and the file carrier is counted
+// where it actually lives -- the .dtschema files in this same directory, which
+// the catalog does not track at all. That absence was invisible before and is
+// the more useful half of what the column was groping for.
 //
 // Read-only: opens the catalog, walks it, closes it. No writes, no session
 // change, no cursor left behind in a user area.
@@ -2483,8 +2503,12 @@ static void report_catalog() {
         cli_memo::memo_auto_on_close(a); a.close(); return;
     }
 
-    std::cout << "  NAME                 FMT         CARRIER  BYTES      AREAS  SAVED_AT             AUTHOR\n"
-                 "  -------------------- ----------- -------- ---------- ------ -------------------- ------------\n";
+    // AUTHOR is 15 wide because author_stamp() mints "member#<id>/kind<n>",
+    // which is 14 characters at one-digit id and kind. The first release cut
+    // it at 12 and published "member#4/kin" for all 106 rows -- an identity
+    // truncated mid-token is worse than one omitted, because it reads as data.
+    std::cout << "  NAME                 FMT         BYTES      AREAS  SAVED_AT             AUTHOR         SUP\n"
+                 "  -------------------- ----------- ---------- ------ -------------------- -------------- ---\n";
 
     std::size_t live = 0, superseded = 0, minidb = 0;
     for (std::uint64_t r = 1; r <= n; ++r) {
@@ -2495,17 +2519,7 @@ static void report_catalog() {
             if (name.empty()) continue;
 
             const std::string fmt  = trim_copy(get_by_name(a, "FMT"));
-            const std::string wsid = trim_copy(get_by_name(a, "WS_ID"));
             const bool is_super    = (trim_copy(get_by_name(a, "SUPERSEDED")) == "1");
-
-            // Carrier is the WSID PREFIX, not a stored column: M<id> for a memo
-            // save, F<utc-stamp> for file/RAM. Reported as a word because the
-            // prefix convention is not something an operator should have to know.
-            std::string carrier = "-";
-            if (!wsid.empty()) {
-                if (wsid[0] == 'M' || wsid[0] == 'm') carrier = "memo";
-                else if (wsid[0] == 'F' || wsid[0] == 'f') carrier = "file";
-            }
 
             if (is_super) ++superseded; else ++live;
             if (fmt.rfind("MINIDB", 0) == 0) ++minidb;
@@ -2513,14 +2527,27 @@ static void report_catalog() {
             std::cout << "  " << std::left
                       << std::setw(21) << name.substr(0, 20)
                       << std::setw(12) << fmt.substr(0, 11)
-                      << std::setw(9)  << carrier
                       << std::setw(11) << trim_copy(get_by_name(a, "SIZE_B")).substr(0, 10)
                       << std::setw(7)  << trim_copy(get_by_name(a, "MAX_AREAS")).substr(0, 6)
                       << std::setw(21) << trim_copy(get_by_name(a, "SAVED_AT")).substr(0, 20)
-                      << trim_copy(get_by_name(a, "AUTHOR")).substr(0, 12)
-                      << (is_super ? "  (superseded)" : "")
+                      << std::setw(15) << trim_copy(get_by_name(a, "AUTHOR")).substr(0, 14)
+                      << (is_super ? "yes" : "")
                       << "\n";
         } catch (...) {}
+    }
+
+    // The file carrier is NOT in this table (see footer). Count it where it
+    // actually lives so the report does not imply the catalog is the whole
+    // inventory. Extensions are the two the loader accepts (resolve path).
+    std::size_t fileCarrier = 0;
+    {
+        std::error_code ec;
+        for (fs::directory_iterator it(catalog_dir(), ec), end; !ec && it != end; it.increment(ec)) {
+            std::error_code fec;
+            if (!it->is_regular_file(fec) || fec) continue;
+            const std::string ext = s8(it->path().extension());
+            if (ext == ".dtschema" || ext == ".dtschemas") ++fileCarrier;
+        }
     }
 
     std::cout << "  " << n << " row(s): " << live << " live, " << superseded
@@ -2528,8 +2555,12 @@ static void report_catalog() {
     std::cout << "  FMT is the PAYLOAD: DTSHEMA 2/3 carry a posture and the tables stay\n"
                  "  where they are; MINIDB 1 carries the table bytes themselves ("
               << minidb << " here).\n"
-                 "  CARRIER is where the payload lives, and is independent of FMT --\n"
-                 "  the same posture is byte-identical in a file or a memo.\n"
+                 "  Every row here is the MEMO carrier, by construction -- appending to\n"
+                 "  this table IS what saving to a memo does, and nothing else writes it.\n"
+                 "  The FILE carrier is therefore NOT listed above: those are the "
+              << fileCarrier << "\n"
+                 "  .dtschema/.dtschemas files in this same directory. Same postures,\n"
+                 "  byte-identical apart from the WSID line; only the placement differs.\n"
                  "  Saving a name again SUPERSEDES rather than overwrites, so this table\n"
                  "  keeps its own history; superseded rows retain their bytes.\n";
 
@@ -3485,7 +3516,7 @@ static void workspace_print_usage() {
     std::cout << "  WORKSPACE LOAD <name> MEMO                 (Load a POSTURE from the catalog)\n";
     std::cout << "  WORKSPACE LOAD <name> MEMO RAM             (Hydrate a MINIDB container into the mounted VDISK)\n";
     std::cout << "  WORKSPACE LOAD <target> [MEMO] PARTIAL     (Restore only what exists; default REFUSES a shortfall)\n";
-    std::cout << "  WORKSPACE CATALOG                          (Report the memo catalog: FMT, carrier, size, lineage)\n";
+    std::cout << "  WORKSPACE CATALOG                          (Report the memo catalog: FMT, size, areas, lineage)\n";
     std::cout << "  WORKSPACE WRITEBACK <name> [TO <root>] [WITH INDEXES] [CONFIRM]\n";
     std::cout << "                                             (Return leg: RAM/memo -> real disk)\n";
     std::cout << "  WORKSPACE TUPLES [LIMIT <n>] [OFFSET <n>] [AREA <n>]\n";
@@ -3496,9 +3527,9 @@ static void workspace_print_usage() {
     std::cout << "  - Relative targets resolve from SETPATH/INIT slots, primarily DBF.\n";
     std::cout << "  - WORKSPACE OPEN dbf uses the configured DBF slot directly.\n";
     std::cout << "  - Bare stems like WORKSPACE OPEN students try <DBF>/students.dbf.\n";
-    std::cout << "  - CATALOG separates the two axes the catalog already records: FMT is the\n";
-    std::cout << "    PAYLOAD (posture vs table bytes), CARRIER is WHERE it lives (memo vs file).\n";
-    std::cout << "    They are independent -- the same posture is byte-identical in either.\n";
+    std::cout << "  - CATALOG reports FMT, the PAYLOAD axis: posture (DTSHEMA 2/3) vs table\n";
+    std::cout << "    bytes (MINIDB 1). Every catalogued row is the MEMO carrier by construction;\n";
+    std::cout << "    the FILE carrier is the .dtschema files beside it, counted in the footer.\n";
     std::cout << "  - MEMO stores a POSTURE (tables stay on disk); MINIDB stores the TABLE BYTES,\n";
     std::cout << "    so the payload IS the database. MINIDB implies V3 and requires MEMO.\n";
     std::cout << "  - Plain LOAD <name> MEMO REFUSES a MINIDB payload: its tables have no disk\n";

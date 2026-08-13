@@ -273,11 +273,13 @@ inline const std::vector<Item>& catalog() {
                 files and every replaced file is kept as <name>.__wbak.
 
             WORKSPACE CATALOG
-                Read-only report over the memo catalog. Separates the two axes
-                it already stored: FMT is the PAYLOAD (DTSHEMA 2/3 carry a
-                posture, MINIDB 1 carries the table bytes) and CARRIER is WHERE
-                it lives (memo or file). They are independent -- the same
-                posture is byte-identical either way.
+                Read-only report over the memo catalog: name, FMT, size, areas,
+                timestamp, author, and which rows are superseded. FMT is the
+                PAYLOAD -- DTSHEMA 2/3 carry a posture and leave the tables
+                where they are; MINIDB 1 carries the table bytes themselves.
+                Every catalogued row is the MEMO carrier by construction; the
+                FILE carrier is the .dtschema files in the same directory,
+                which this table does not track and the footer counts.
 
         Notes:
             WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.

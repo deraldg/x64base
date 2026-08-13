@@ -188,14 +188,42 @@ locating snapshot ... Yes, format v3" -- never as the row's identity.
 
 What the proposal was really reaching for was VISIBILITY: nothing at the prompt
 told an operator which saved rows carry their tables. Answered by
-`WORKSPACE CATALOG` (2026-08-12), which reports the two axes the catalog already
-stored and never surfaced -- FMT (posture vs table bytes) and carrier (memo vs
-file, read from the WSID prefix), plus size, areas, author and which rows are
-superseded.
+`WORKSPACE CATALOG` (2026-08-12), which surfaces FMT -- posture vs table bytes
+-- plus size, areas, author and which rows are superseded.
 
 General rule for v6: **when a version number is proposed, check whether the
 distinction is a payload difference or a placement difference.** Only the first
 belongs in a format namespace.
+
+### 5c. The correction the first run produced, and why it is a pattern
+
+`WORKSPACE CATALOG` shipped with a **CARRIER column, and its first live run
+printed `-` for all 106 rows.** Both mistakes are worth carrying forward:
+
+1. It read the catalog's `WS_ID`, which is `N("WS_ID", 10)` -- NUMERIC, never
+   held a letter. The `M`/`F` prefix lives in the **WSID line inside the
+   payload** (`stamp_ws_id`). Two different things share the name "WSID", and
+   the design reasoning slid between them without anyone noticing.
+2. **Even corrected it would have been a constant.** `save_to_memo` holds the
+   only `appendBlank()` against `WORKSPACES.dbf`, so a catalogued row IS a memo
+   row by construction. A column that can only take one value is not a column.
+
+The second is the reusable one: **before adding a column, ask what would have
+to be true for it to hold a different value.** If nothing in the writer can
+produce one, the fact belongs in the footer, not the table.
+
+The fix also found something the column was groping at and missing -- the FILE
+carrier is not in the catalog AT ALL. Those are `.dtschema` files sitting in
+the same directory, invisible to every catalog query. The report now counts
+them so the table does not read as the whole inventory.
+
+**v6 process note:** this defect survived a syntax check, a documentation pass
+across four surfaces, and a full pre-commit gate. Nothing available at commit
+time could have caught it, because every gate checks *consistency*, not
+*correspondence with data*. The first RUN caught it immediately. Recorded here
+because the lane's habit is to treat a clean gate as sufficient, and for a
+report over live data it is not -- **a report is not proven by compiling; it is
+proven by pointing it at rows.**
 
 ## 6. SETTLED IN v5 -- do not re-derive these
 
