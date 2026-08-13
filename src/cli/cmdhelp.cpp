@@ -1308,15 +1308,29 @@ static void print_current_help_report(const std::string& dir) {
           << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewTextHeader) << "\n";
     out() << cli::cmdout::message_text(dottalk::helpdata::MessageId::CmdHelpPreviewDivider) << "\n";
 
+    // The preview is a SAMPLE, and until 2026-08-12 it did not say so. It
+    // printed 24 of N rows, truncated every text at 100 characters, and then
+    // simply stopped -- which reads as "this is the store" rather than "this is
+    // the first 24 rows of it". Owner observation, same day, after a long
+    // build: "it runs a long time and then just prints a few commands -- i
+    // guess they are samples." Guessing is the tell. A report that leaves the
+    // reader to infer its own scope is the cheap end of the same family as a
+    // summary line reading "restored" after restoring nothing.
+    //
+    // The caps are named rather than inline so the footer cannot drift from the
+    // loop that enforces them.
+    constexpr int         kPreviewRowCap  = 24;
+    constexpr std::size_t kPreviewTextCap = 100;
+
     int shown = 0;
     for (const auto& r : tbl.rows) {
-        if (shown >= 24) break;
+        if (shown >= kPreviewRowCap) break;
 
         std::string text = dbf_cell(r, ix_text);
         for (char& ch : text) {
             if (ch == '\n' || ch == '\r' || ch == '\t') ch = ' ';
         }
-        if (text.size() > 100) text.resize(100);
+        if (text.size() > kPreviewTextCap) text.resize(kPreviewTextCap);
 
         out() << std::left
               << std::setw(20) << dbf_cell(r, ix_topic_key).substr(0, 19)
@@ -1326,6 +1340,20 @@ static void print_current_help_report(const std::string& dir) {
               << std::setw(10) << dbf_cell(r, ix_role).substr(0, 9)
               << text << "\n";
         ++shown;
+    }
+
+    // Say what was withheld and how to see it. Naming the full-render commands
+    // here is the same fix REGRESSION FIND made for the spec corpus: the data
+    // was always reachable, but only if you already knew the command.
+    const std::size_t total = tbl.rows.size();
+    if (total > static_cast<std::size_t>(shown)) {
+        out() << "  ... " << (total - static_cast<std::size_t>(shown))
+              << " more row(s) not shown. This preview is capped at "
+              << kPreviewRowCap << " rows of " << total
+              << " and truncates text at " << kPreviewTextCap << " characters.\n"
+              << "  Full render, no cap and no truncation: CMDHELP REPORT ALL"
+                 "  (or HELP GIANT ALL)\n"
+              << "  SET PAGING ON first -- the full render is every row.\n";
     }
 }
 
