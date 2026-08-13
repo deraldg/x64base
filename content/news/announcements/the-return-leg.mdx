@@ -1,0 +1,102 @@
+---
+title: "The return leg, and a green that was not true"
+date: "2026-08-12"
+description: "The write-back cycle that yesterday's announcement listed as designed-and-not-built is now proven on two toolchains -- and the day's most useful result was discovering that the test guarding it had been passing for the wrong reason."
+---
+
+Yesterday's announcement ended with a list of things not claimed. The first
+item on it was the write-back cycle: committing a memory-resident database back
+to disk, designed and not built. It is built. The more instructive part of the
+day is that the test guarding it was green before it deserved to be.
+
+## What landed
+
+**The return leg.** A workspace that lives in a memo, or in memory, can now be
+written back onto a real disk root. The enumeration comes from the posture --
+the record of what the workspace *is* -- never from whichever tables happen to
+be attached at the moment, because the first cut asked the session and silently
+wrote fifteen of twenty-seven files while reporting cheerful success. Each
+landed file is re-read and byte-compared as it is written. A shortfall aborts
+having written nothing, and an abort leaves the filesystem untouched including
+empty directories, which had to be fixed after the first version created its
+target folders before deciding it could not fill them.
+
+**The whole cycle, proven by value.** Thirteen tables were hydrated out of a
+memo field into memory with no disk reads, mutated *in memory only*, saved back
+into a new container, and landed on disk -- with the memory-only edit read back
+at the far end. The mutation is the point: it is a value that exists nowhere on
+disk, so a passing result cannot have come from the original files.
+
+**Replacement, and the undo beside it.** Writing into an occupied directory
+refuses by default and lists what it would replace. With confirmation it
+replaces, and every replaced file is kept alongside the new one. The backup is
+not asserted to work -- it is opened as a table and read: two hundred records,
+holding exactly the content that was overwritten.
+
+**A load that refuses rather than half-restores.** The other end of the same
+lane had the opposite manners. Given a posture whose tables had moved, the
+loader closed every open area, failed every re-open, and finished on a sentence
+containing the word *restored*. Every individual failure printed, so the
+transcript was honest line by line and misleading as a whole -- and the last
+line is what a script reads. It now resolves every declared table *before* it
+closes anything, so a load that cannot complete leaves the workspace you already
+had standing. Restoring only what exists is still available, but you have to ask
+for it by name.
+
+## The green that was not true
+
+The regression guarding write-back reported six passing markers off a directory
+it had never written to.
+
+Two things that looked identical were not: the verb resolved a relative target
+against the process working directory, while the command that pointed the reader
+at that target resolved the same text against the data root. They named the same
+place only because the standard test runner happens to start in the data root.
+Run from anywhere else, the test wrote to one directory and read from another --
+and the directory it read had been left populated by an earlier, unrelated run.
+It reported success by consuming someone else's output.
+
+The spec had a guard against exactly this. Its own header warned about stale
+directories producing false greens, and it ran a pre-clean to prevent them. The
+pre-clean reported success. It cleaned the directory the reader never touched,
+because the guard resolved paths the same wrong way as the thing it guarded.
+
+That is the part worth keeping. A guard that shares its subject's defect does
+not fail loudly -- it agrees. Two components agreeing is not evidence that
+either is right.
+
+It surfaced only when the stale directory was deleted as housekeeping and the
+same test, on the same binary, went red. Nothing about the code under test had
+changed; the accidental input had gone away. The four surfaces now resolve
+relative paths by one rule, the false transcript is retained and marked as
+evidence for its own retraction rather than deleted, and the record that cited
+it has been corrected.
+
+## What is not claimed
+
+The backup kept beside a replaced file is **one generation deep and kept
+indefinitely**. A second confirmed write-back discards the first backup without
+saying so. That was measured rather than assumed, and it is a retention policy
+nobody has chosen yet.
+
+Index environments that must map a real operating-system file are still not
+carried; the destination rebuilds them. Two workspaces still cannot be resident
+at once, for the same naming reason as before. Hydration still writes its files
+one at a time, so a failure part-way leaves a partial set in memory -- acceptable
+only because that set is disposable, and the reason write-back gathers
+everything before writing anything.
+
+One open hazard is under review rather than fixed: the directory scanner admits
+the backup files as tables. A workspace opened over a directory that has been
+written back twice reports twenty-six tables where the posture declares
+thirteen, and each backup attaches the *live* table's index -- an index built
+over different records. The two features are individually reasonable and jointly
+wrong, which is the same shape as the path defect above.
+
+And one tool is broken by this work: the metadata collector no longer links,
+because a function added for the tests took a dependency the collector's library
+does not carry. It defaults to off, so every build and every gate passed while
+it was unbuildable. One catalog is stale by exactly that function until it is
+repaired.
+
+Details: [Workspaces](/docs/engine/workspaces) · [Proven capabilities](/docs/engine/proven-capabilities) · [Schemas: a table of databases](/schemas)
