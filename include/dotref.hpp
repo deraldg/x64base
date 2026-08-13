@@ -272,6 +272,13 @@ inline const std::vector<Item>& catalog() {
                 catalog row's DBF_ROOT. CONFIRM is required to replace existing
                 files and every replaced file is kept as <name>.__wbak.
 
+            WORKSPACE CATALOG
+                Read-only report over the memo catalog. Separates the two axes
+                it already stored: FMT is the PAYLOAD (DTSHEMA 2/3 carry a
+                posture, MINIDB 1 carries the table bytes) and CARRIER is WHERE
+                it lives (memo or file). They are independent -- the same
+                posture is byte-identical either way.
+
         Notes:
             WORKSPACE owns live areas, aliases, index/tag bindings, and relation/session layout.
             DDL owns schema/definition work.

@@ -150,6 +150,53 @@ Confirmed while forming the question, so v6 need not re-derive it: `edu_` and
 routing: `cmd_` / `edu_` / `app_` -> NATIVE). `lab_` does not exist as a prefix.
 `edref` is a separate catalog owning its own namespace.
 
+## 5a. The pre-MINIDB workflow still works, and is MORE exposed to the new gate
+
+Asked and answered on 2026-08-12: **can a workspace still be saved to a memo as
+a plain v2 posture, the way it worked before the container carried table bytes?**
+
+Yes, and it is still the DEFAULT -- `int ver = 2` in the dispatcher; only a
+trailing `V3` or `MINIDB` moves off it. Proven post-change the same day:
+`WORKSPACE_MEMO` uses exactly `WORKSPACE SAVE wm_regress MEMO` /
+`WORKSPACE LOAD wm_regress MEMO` (43 areas, 58 relations) and ran 4/4 green
+after the load-shortfall refusal landed.
+
+**The interaction worth knowing, because v2 is more exposed than v3.** The new
+LOAD refusal applies to every carrier. A v2 posture carries no DBFROOT, so it
+resolves against whatever environment is currently set -- which is exactly the
+case that used to half-load and now ABORTS. Same posture, same wrong
+environment: v3 finds its tables anyway because it carries its own address;
+**v2 will refuse where it previously restored what it could.** `PARTIAL`
+restores the old behaviour explicitly. Not a regression in the v2 path -- the
+new gate meeting the older format's looser guarantee.
+
+## 5b. A naming decision, recorded because the reasoning outlives it
+
+Proposed: call a v2 posture carried in a memo **"DTSHEMA 2.5"**. **Rejected**,
+and the reason generalises.
+
+A v2 posture is BYTE-IDENTICAL in a file and in a memo apart from its WSID line.
+The code keeps the axes deliberately orthogonal -- "the FORMAT is identical
+across carriers; the INSTANCE is identified" -- so a 2.5 would have announced a
+byte difference that does not exist, in a namespace that has already cost one
+reconciliation (the DTSHEMA-name collision, AIF-078 D5/Q5 -> DTWSSNAP 1).
+
+The site had already solved it correctly, which is why checking mattered:
+`/docs/engine/ecosystem-feature-comparison` names these as CAPABILITIES with
+format as an attribute -- "Workspace stored *inside* a database table", "Self-
+locating snapshot ... Yes, format v3" -- never as the row's identity.
+
+What the proposal was really reaching for was VISIBILITY: nothing at the prompt
+told an operator which saved rows carry their tables. Answered by
+`WORKSPACE CATALOG` (2026-08-12), which reports the two axes the catalog already
+stored and never surfaced -- FMT (posture vs table bytes) and carrier (memo vs
+file, read from the WSID prefix), plus size, areas, author and which rows are
+superseded.
+
+General rule for v6: **when a version number is proposed, check whether the
+distinction is a payload difference or a placement difference.** Only the first
+belongs in a format namespace.
+
 ## 6. SETTLED IN v5 -- do not re-derive these
 
 - **Contract-block ASCII is clean.** 0 non-ASCII inside any `@dottalk.usage`

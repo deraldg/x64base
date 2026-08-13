@@ -64,6 +64,46 @@ IN scope for v5:
   v4's Phase-4 rebuild, so the manual candidate lacks BBS/NET/CANARY/CMDREL/
   FORMULA/EDIT -- and the store has moved again since.
 
+**THE WEBSITE CLOSEOUT GATE, added to this envelope 2026-08-12 after reading
+the site's own rules.** `D:\dev\x64base-site\README.md` routes all website work
+-- human or AI -- through `content/docs/dev/website-documentation-matrix.mdx`
+FIRST, and that matrix states its own gate:
+
+> on every full-stack push, once the website is approved, this matrix must be
+> updated and re-audited to match the signed-off site (advance `Last audited`,
+> reclassify any changed pages, record new diagrams and feeds). **The run does
+> not close until the matrix is current** -- a stale matrix blocks.
+
+This run had not recorded that obligation. It is in scope now, and it is a
+CLOSING condition rather than a phase: v5 cannot close on a stale matrix.
+
+What v5 already knows it must reconcile there, because today's engine work
+falsified it:
+
+- **`/docs/engine/proven-capabilities`** (`maintained`) -- its workspace entry
+  ends "plus the still-chartered writeback cycle". WRITEBACK landed 2026-08-12,
+  proven on both toolchains.
+- **`/schemas`** closing section (`maintained`) -- same lane, same claim.
+- **`/docs/engine/ecosystem-feature-comparison`** (`maintained`) -- carries the
+  workspace rows including the honest NO on simultaneous residency (still true)
+  and the writeback row (no longer true).
+- **`/news/announcements/`** -- a dated announcement is drafted
+  (`the-return-leg.mdx`). News posts are event records, so the 2026-08-11
+  article is NOT edited; the correction rides in a new dated post that names
+  the earlier non-claim it closes.
+
+Direction Gates apply and were read: implementation -> website is the simplex
+default; **website -> manual is blocked**. Nothing on the site may be promoted
+back into the manual or source-side truth.
+
+A defect found while drafting, recorded here because it is the matrix's business
+and not the engine's: `lib/seo.ts` reads `fm.description`, falling back to a
+generic string, and the news index renders `frontmatter.description`. Two of
+fifteen announcements use `summary:` instead -- including the 2026-08-11
+"A table whose rows are databases" -- so that article currently publishes with
+the generic meta description and a BLANK blurb in its own index listing. One
+word per file. Owner's call whether it rides this run.
+
 OUT of scope, inherited from v4's disposition:
 
 - Phase 8 publication ascent (its own lane).

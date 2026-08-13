@@ -169,6 +169,31 @@ tells you the hydration instruction instead.
 `VDISK` must already be mounted: `WORKSPACE LOAD RAM: VDISK is not mounted --
 run VDISK MOUNT`.
 
+### 2.3a WORKSPACE CATALOG -- which of these rows carries its tables?
+
+    WORKSPACE CATALOG
+
+Read-only report over the memo catalog: name, FMT, carrier, size, areas,
+timestamp, author, and which rows are superseded.
+
+It separates **two axes the catalog always stored but never surfaced**, and
+keeping them apart is the whole point:
+
+- **FMT is the PAYLOAD.** `DTSHEMA 2` / `DTSHEMA 3` carry a POSTURE and the
+  tables stay where they are. `MINIDB 1` carries the TABLE BYTES themselves.
+- **CARRIER is WHERE it lives** -- `memo` or `file`, read from the WSID prefix
+  (`M<id>` / `F<utc-stamp>`).
+
+**They are independent.** The same posture is byte-identical in a file or a
+memo; only the WSID line differs. That is why a memo-carried v2 posture is NOT
+a distinct format: a proposed "DTSHEMA 2.5" was rejected on 2026-08-12 because
+it would have claimed a byte difference that does not exist, in a namespace
+that had already cost one reconciliation. The distinction is real -- it is just
+placement, not payload, and this report is where you see it.
+
+Saving a name again SUPERSEDES rather than overwrites, so the catalog keeps its
+own history and superseded rows retain their bytes. See 5.5 on what that costs.
+
 ### 2.4 WORKSPACE WRITEBACK -- the return leg
 
     WORKSPACE WRITEBACK [<name>] [TO <root>] [WITH INDEXES] [CONFIRM]
