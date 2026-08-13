@@ -128,13 +128,39 @@ changed. Looks complete; I have not run it and it is not my lane.
 
 Also unattributed-to-me and unrun.
 
-### S6. Small source edits, unclassified
+### S6. RECCOUNT at the expression seam -- RECLASSIFIED, and it is not small
 
     src/cli/expr/glue_xbase.cpp   +26 -0
     src/help/helpdata_messages.cpp +4 -4
     src/cli/cmd_order.cpp          +2 -2
 
-Not inspected in detail. Cheap to classify; I did not.
+**This slice was first filed as "small source edits, unclassified -- cheap to
+classify; I did not." That was wrong, and the owner caught it.** Line count is
+not blast radius.
+
+`glue_xbase.cpp` is 320 lines and is THE SEAM every field reference in every
+predicate flows through. `make_record_view` / `make_record_view_raw` have ~14
+consumers: `cmd_aggs`, `cmd_sort`, `cmd_sql_select`, `cmd_evaldiff`,
+`db_tuple_stream`, `evaluate`, `value_eval`, `filter_registry`,
+`where_shared_evaluator`, `tuple_graph_cursor`. A symbol added here appears in
+WHERE, FORMULA, aggregates, SORT, SQL SELECT, filters and tuple traversal
+simultaneously.
+
+The +26 is the owner's 2026-08-12 correction adding **RECCOUNT** as a special
+symbol in all four accessor paths (string and numeric, view and view_raw),
+reading `area.recCount64()` -- 64-bit deliberately, since `recCount()` returns
+-1 past INT32_MAX. Its comment records the reasoning, which reverses a
+workaround this session had shipped: *"a DBF record count is a FACT IN THE
+HEADER, not something a loop derives, so a spec asserting 'all N made the trip'
+by probing record N's value was working around a missing accessor rather than
+around an absent fact."*
+
+**Recommend this become its own slice**, not a miscellaneous bucket. It is
+arguably the most consequential uncommitted change in the tree, and it is
+currently sitting unstaged next to `helpdata_messages.cpp` and a two-line
+`cmd_order.cpp` edit.
+
+See section 5 for the defect the same seam still carries.
 
 ### S7. Generated portal / report output (needs a policy answer, not a review)
 
@@ -184,6 +210,63 @@ without curated FunctionDoc row."
 satisfied. Worth knowing before anyone reads the CSV's mtime as evidence.
 
 ---
+
+## 3a. What the RECCOUNT slice did NOT close, measured
+
+Owner question, 2026-08-13: did the RECCOUNT redirect also close the RECNO
+finding, or is that really open?
+
+**It closed RECCOUNT. It did not close RECNO, and RECNO turns out to be the
+symptom rather than the defect.**
+
+`RECNO` exists as a COMMAND -- `cmd_recno.cpp`, registered in
+`shell_commands.cpp`, curated in `command_catalog.cpp` and
+`reference_collection.cpp` with a `RECNO()` alias. It is NOT a special symbol in
+`glue_xbase.cpp`. So inside a predicate it falls past the `DELETED` / `RECCOUNT`
+block into `field_index_ci_cached`, finds no field of that name, and hits:
+
+    get_field_str : if (idx <= 0) return std::string();   // empty
+    get_field_num : if (idx <= 0) return std::nullopt;    // absent
+
+which is where the "confident zero" comes from downstream.
+
+**THE REAL FINDING IS BROADER THAN RECNO.** That fallthrough is not specific to
+one identifier: **any unknown name in any predicate resolves silently to empty**,
+with no "no such field" diagnostic, across all ~14 consumers of the seam. A
+misspelled field in a WHERE clause does not error -- it evaluates quietly and
+the row simply does not match. This is the house's signature silent-success
+shape sitting in the expression engine, and RECNO is just the instance visible
+enough to notice, because it is a name every xBase user expects to work.
+
+Two candidate responses, neither taken here (this is another lane's file):
+
+  (a) add `RECNO` beside `DELETED` and `RECCOUNT` -- three lines, same pattern,
+      and it is what a user reaching for it plainly means;
+  (b) treat the fallthrough itself -- decide whether an unresolvable identifier
+      should be an ERROR rather than an empty. (a) fixes one name; (b) fixes
+      the class, and is a semantics change with 14 consumers, so it is a
+      ruling rather than a patch.
+
+## 3b. Unrelated, found on the way: `src/dli/` beside `src/cli/`
+
+    src/dli/  browse_edit.cpp  browsetui_fastpatch.cpp  browsetui_integration.cpp
+              demo_main.cpp  recno_shim.cpp  replace_api.cpp  set_view.cpp
+
+Both `src/cli/recno_shim.cpp` (511 B) and `src/dli/recno_shim.cpp` (425 B) are
+TRACKED and they DIFFER. The 2026-08-13 build log lists `browse_edit.cpp`,
+`recno_shim.cpp` and `message_catalog.cpp` twice, consistent with both trees
+being compiled.
+
+**Checked before filing, and it is DELIBERATE.** `src/dli/recno_shim.cpp`
+carries `// subsystem: dli` in its `@dottalk.file` contract block, and
+`src/CMakeLists.txt:303` names `src/dli/demo_main.cpp` explicitly. So `dli` is a
+declared subsystem, not a mistyped `cli`, and this is not the finding it looked
+like at first glance.
+
+What remains, at much lower temperature: two tracked files named
+`recno_shim.cpp` in two subsystems, differing by 86 bytes, with the build log
+listing the name twice. That is normal if `dli` deliberately carries its own
+lean shim, and worth one look if it does not. Filed as a question, not a defect.
 
 ## 4. What I recommend, and what I will not do
 

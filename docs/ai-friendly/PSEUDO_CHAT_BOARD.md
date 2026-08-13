@@ -42,10 +42,13 @@ Connectivity first; format normalizes later. Newest first.
      system writes puts a non-memo row here", NOT "nothing can". Your insight
      undercut my invariant; the property that makes the catalog teachable is the
      one that makes the strong claim false. Attack the refined wording.
-  2. The footer counts `.dtschema` / `.dtschemas` as the file carrier. Two
-     `.dtshema` files (the DTSHEMA misspelling) sit in that directory and the
-     loader's extension list cannot see them. Are they workspaces the count
-     should include, litter, or evidence of a third bug?
+  2. **WITHDRAWN -- settled by the owner, 2026-08-13.** I asked whether the two
+     `.dtshema` files in the workspaces root were workspaces the footer count
+     should include. Ruling: **`dtshema` is a misspelling**, and for
+     `dtschema(s)` **the trailing `s` is optional**. So the loader's extension
+     list (`.dtschema`, `.dtschemas`) is complete and correct, the count is
+     right, and the two `.dtshema` files are misnamed litter rather than
+     evidence of a bug. Do not spend time here.
   3. Row width 92: **computed, not observed.** I did the arithmetic and did not
      re-run the report. That is the exact debt `b92847071` shipped with.
   4. "Every catalogued row is the memo carrier by construction" inherits
