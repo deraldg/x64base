@@ -85,6 +85,23 @@ function ensureMarkers() {
   fs.writeFileSync(path.join(deployDir, ".nojekyll"), "\n", "utf8");
 }
 
+// How many times this site has been published, counted from the deploy branch's
+// own history rather than stored in a file that could drift. Owner direction
+// 2026-08-13, choosing this over a visitor counter: it is a number the site can
+// honestly know about itself, it needs no third party, and it keeps the site
+// free of tracking. Every publish commit is titled "Publish x64base site <stamp>",
+// so counting them IS the release number; this run is the next one.
+function readReleaseNumber() {
+  try {
+    const log = output("git", ["log", "--oneline", "--grep", "^Publish x64base site"],
+                       { cwd: deployDir });
+    const prior = log ? log.split("\n").filter(Boolean).length : 0;
+    return prior + 1;
+  } catch {
+    return null; // never block a publish over an ornament
+  }
+}
+
 function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
   const artifactDir = path.join(outDir, "artifacts");
   fs.mkdirSync(artifactDir, { recursive: true });
@@ -94,6 +111,7 @@ function writeReleaseMetadata({ sourceCommit, sourceBranch, packageVersion }) {
       {
         site: "x64base.com",
         package_version: packageVersion,
+        release_number: readReleaseNumber(),
         source_branch: sourceBranch,
         source_commit: sourceCommit,
         published_at_utc: new Date().toISOString(),

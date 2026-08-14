@@ -1,4 +1,5 @@
 import Link from "@/components/StaticLink";
+import { ReleaseStamp } from "@/components/ReleaseStamp";
 
 export function Footer() {
   return (
@@ -61,7 +62,10 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted md:flex-row md:items-center md:justify-between">
           <span>© 1993–2026 Derald R Grimwood Jr. Dual-licensed: GPLv3, or a <a href="/licensing" className="hover:text-fg hover:underline">commercial license</a>.</span>
-          <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-mono">DBF_64 • FPT64 • Indexing • Education-first</span>
+            <ReleaseStamp />
+          </span>
         </div>
       </div>
     </footer>

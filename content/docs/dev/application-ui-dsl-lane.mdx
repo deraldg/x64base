@@ -12,6 +12,31 @@ classic xBase environments did.
 This lane is a proposed development path for moving from scripts that operate on
 data to scripts that can define small database applications.
 
+### Why the API is being opened in spec
+
+The engine's schema, command surface, function catalog and metadata are
+documented to an unusual depth, and the AI portal exists so that an agent can
+onboard to them without a human relaying context. Taken together, that is a
+deliberate position rather than an accident of thoroughness:
+
+**UI development against this engine is AI-expected.** An agent should be able
+to read the published specification and generate a working front end from it --
+menus, browsers, forms, event wiring -- without anyone hand-holding it through
+the runtime's behaviour. That expectation is the reason the API is being opened
+*in specification* rather than left as an internal seam that only the engine's
+own authors could safely call.
+
+It also sets the standard the specification has to meet. A document that a
+person can follow with the author sitting beside them is not sufficient here; if
+an agent cannot build from it unaided, the specification is incomplete, and that
+is a defect in the documentation rather than a limitation of the reader.
+
+Cross-language **C++ and Python CRUD examples continue as the worked templates**
+for users. They are the reference implementations of the same contract: two
+languages, one engine, the same create/read/update/delete behaviour, so a
+newcomer or an agent can see what a correct consumer of the API looks like
+before writing a new one.
+
 ## Current Boundary
 
 DotTalk++ currently has:

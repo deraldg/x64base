@@ -111,7 +111,7 @@ const openArchitectureLanes = [
   },
   {
     title: "Workbench Front Ends",
-    text: "GUI, TUI, and scriptable workbench surfaces are consumers of the same runtime truth. Ordering, cursor state, relations, validation, and command execution stay in DotTalk++ and the engine, not in duplicate UI logic.",
+    text: "GUI, TUI, and scriptable workbench surfaces are consumers of the same runtime truth. Ordering, cursor state, relations, validation, and command execution stay in DotTalk++ and the engine, not in duplicate UI logic. The schema, the command surface and the portal are documented in enough detail that UI work here is AI-EXPECTED: an agent should be able to read the specification and generate a front end without a human relaying it. That expectation is the reason the API is being opened in spec rather than left as an internal seam. Cross-language C++ and Python CRUD examples continue as the worked templates.",
     href: "/docs/dev/application-ui-dsl-lane",
     icon: LayoutPanelTop
   },
