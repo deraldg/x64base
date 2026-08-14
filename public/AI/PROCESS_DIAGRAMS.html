@@ -4,10 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DotTalk++ AI-BBS -- Process &amp; Data-Flow Diagrams</title>
+<!-- Byte-identical to the no-flash script in the site's app/layout.tsx:68, and to
+     the copies in tools/reports/build_reports.py and ecoschema_map.py. Same key,
+     same 'light' default, same 'system' handling. This file is COPIED verbatim
+     to the site by stage_public.py -- it is not generated, which is why the
+     2026-08-13 palette fix to build_reports.py reached the other three AI pages
+     and not this one. -->
+<script>(function(){try{var t=localStorage.getItem('theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();</script>
 <style>
-  :root{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
-    --acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;
+  /* :root is light, html.dark restores the original console values unchanged.
+     Values match build_reports.py so the four AI pages share one palette. */
+  :root{--bg:#f6f9fc;--panel:#ffffff;--line:#d0ddeb;--tx:#0a1320;--dim:#374960;
+    --acc:#0b8491;--ok:#15803d;--warn:#ba5c14;--bad:#b93030;
     --mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+  html.dark{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
+    --acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--tx);
     font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
@@ -142,9 +153,18 @@ flowchart LR
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
-  mermaid.initialize({startOnLoad:true, theme:'dark',
-    themeVariables:{primaryColor:'#171e26', primaryBorderColor:'#26323f',
-      lineColor:'#5cc8ff', fontSize:'13px', tertiaryColor:'#0f1419'}});
+  // Mermaid renders to SVG with baked-in colours, so it cannot inherit the CSS
+  // variables -- themed separately or the diagrams stay dark on a light page.
+  // The mode is READ from the class the head script already set, rather than
+  // deciding a second time; one source, so the page and its diagrams cannot
+  // disagree.
+  var dark = document.documentElement.classList.contains('dark');
+  mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'default',
+    themeVariables: dark
+      ? {primaryColor:'#171e26', primaryBorderColor:'#26323f',
+         lineColor:'#5cc8ff', fontSize:'13px', tertiaryColor:'#0f1419'}
+      : {primaryColor:'#ffffff', primaryBorderColor:'#d0ddeb',
+         lineColor:'#0b8491', fontSize:'13px', tertiaryColor:'#f6f9fc'}});
 </script>
 </body>
 </html>
