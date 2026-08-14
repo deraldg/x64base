@@ -153,7 +153,20 @@ PATH_NAMES = [
     (r"[Dd]:[\\/]dev[\\/]x64base-site", "the website root"),
     (r"[Dd]:[\\/]dev", "the website tree"),
 ]
-ANY_LOCAL_PATH = re.compile(r"[A-Za-z]:[\\/][^\s\"',;)\]]*")
+# The lookbehind is the house pattern, borrowed from
+# manualgen_lib/command_reference_candidate.py (LOCAL_PATH_RE) rather than
+# reinvented here. A drive letter never follows another letter or digit, so the
+# "s" of "https" is not a drive; without that guard this pattern read
+# "https://x64base.com/" as the local path "s://x64base.com/" and refused an
+# otherwise correct run (measured 2026-08-13, the first time the template
+# carried an absolute URL). A guard that fires on correct input teaches people
+# to bypass it, so the false positive was the defect, not the URL.
+#
+# Drive-letter detection is unchanged: "D:\code\ccode" and "D:/code" still
+# match, and "file:///D:/code" is still caught by its "D:/code" tail. The
+# trailing run is this tool's own addition -- it reports the whole offending
+# path in the refusal message, where manualgen only needs to know one exists.
+ANY_LOCAL_PATH = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s\"',;)\]]*")
 
 
 def scrub(text: str) -> str:
