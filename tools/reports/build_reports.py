@@ -151,9 +151,32 @@ def mdisplay(mid):
     if not m: return ''
     return usr.get(m['USERID'],{}).get('DISPLAY','')
 
+# These pages are served from x64base.com/AI/ as static passthroughs, so they do
+# NOT inherit the site's Next.js layout and were permanently dark while the site
+# defaults to LIGHT (owner report 2026-08-13: "the ai section does not respect
+# the theme"). The site keeps its preference in localStorage['theme'] and marks
+# <html class="dark">; THEME_SCRIPT below reads the same key, so the navbar
+# toggle now reaches these pages too.
+#
+# :root is the light palette and html.dark restores the original console values
+# unchanged -- the dark look nobody complained about is preserved byte for byte.
+# Every colour the rules below need is a variable now; hardcoded hexes could not
+# follow the theme, which is why the panel, pill, note and band colours moved up
+# here rather than staying inline.
 CSS = """
-:root{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
---acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;--mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+:root{--bg:#f6f9fc;--panel:#ffffff;--line:#d0ddeb;--tx:#0a1320;--dim:#374960;
+--acc:#0b8491;--ok:#15803d;--warn:#ba5c14;--bad:#b93030;
+--tdline:#e2eaf2;--pillbg:#eef3f8;--notebg:#eef5f8;
+--pok:#9fd3b8;--pwarn:#e0bb8a;--pbad:#e0a5a5;--pacc:#a9d6e2;
+--privbg:#fdecec;--privline:#e8a9a9;--privtx:#8c1d1d;
+--intbg:#eaf2f8;--intline:#b9d4e6;--inttx:#14506e;
+--mono:ui-monospace,"Cascadia Code",Consolas,monospace}
+html.dark{--bg:#0f1419;--panel:#171e26;--line:#26323f;--tx:#dfe7ef;--dim:#8ba0b4;
+--acc:#5cc8ff;--ok:#4ec9a0;--warn:#e8b84b;--bad:#e86a6a;
+--tdline:#1e2731;--pillbg:#1d262f;--notebg:#141c24;
+--pok:#2c5c4c;--pwarn:#5c4c22;--pbad:#5c2c2c;--pacc:#28516b;
+--privbg:#3a1d1d;--privline:#6b2f2f;--privtx:#ffb3b3;
+--intbg:#1d2a33;--intline:#2e4a5c;--inttx:#9fd0ea}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
@@ -165,13 +188,13 @@ h3{font-size:15px;margin:20px 0 8px;color:var(--tx)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;margin:9px 0}
 th{text-align:left;color:var(--dim);font-weight:600;font-size:11.5px;letter-spacing:.5px;
 text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--line)}
-td{padding:8px 9px;border-bottom:1px solid #1e2731;vertical-align:top}
+td{padding:8px 9px;border-bottom:1px solid var(--tdline);vertical-align:top}
 tr:last-child td{border-bottom:none}
 code,.m{font-family:var(--mono);font-size:12.5px}
 .pill{display:inline-block;padding:1.5px 8px;border-radius:11px;font-size:11px;font-family:var(--mono);
-border:1px solid var(--line);background:#1d262f;color:var(--dim)}
-.pill.ok{color:var(--ok);border-color:#2c5c4c}.pill.warn{color:var(--warn);border-color:#5c4c22}
-.pill.bad{color:var(--bad);border-color:#5c2c2c}.pill.acc{color:var(--acc);border-color:#28516b}
+border:1px solid var(--line);background:var(--pillbg);color:var(--dim)}
+.pill.ok{color:var(--ok);border-color:var(--pok)}.pill.warn{color:var(--warn);border-color:var(--pwarn)}
+.pill.bad{color:var(--bad);border-color:var(--pbad)}.pill.acc{color:var(--acc);border-color:var(--pacc)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px;margin:14px 0}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:13px 15px}
 .kpi .n{font-size:26px;font-weight:600;color:var(--acc);line-height:1.1}
@@ -180,17 +203,26 @@ border:1px solid var(--line);background:#1d262f;color:var(--dim)}
 .post .h{font-size:12px;color:var(--dim);font-family:var(--mono)}
 .post .b{margin-top:5px;white-space:pre-wrap;word-break:break-word}
 .dim{color:var(--dim)}.small{font-size:12.5px}
-.note{border-left:3px solid var(--acc);background:#141c24;padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0}
+.note{border-left:3px solid var(--acc);background:var(--notebg);padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0}
 .note.w{border-left-color:var(--warn)}
 ul{margin:7px 0;padding-left:20px}li{margin:3px 0}
 a{color:var(--acc)}
 .foot{margin-top:44px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
 .band{border-radius:7px;padding:9px 14px;margin:0 0 18px;font-size:12.5px;font-weight:600;
 letter-spacing:.3px}
-.band.priv{background:#3a1d1d;border:1px solid #6b2f2f;color:#ffb3b3}
-.band.int{background:#1d2a33;border:1px solid #2e4a5c;color:#9fd0ea}
-kbd{font-family:var(--mono);background:#1d262f;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
+.band.priv{background:var(--privbg);border:1px solid var(--privline);color:var(--privtx)}
+.band.int{background:var(--intbg);border:1px solid var(--intline);color:var(--inttx)}
+kbd{font-family:var(--mono);background:var(--pillbg);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px}
 """
+
+# Byte-identical to the no-flash script in the site's app/layout.tsx (line 68).
+# Same key, same 'light' default, same 'system' handling -- if that ruling ever
+# changes, both copies have to change together. Kept inline and synchronous so
+# the page never paints the wrong theme first.
+THEME_SCRIPT = ("(function(){try{var t=localStorage.getItem('theme')||'light';"
+                "var d=t==='dark'||(t==='system'&&window.matchMedia("
+                "'(prefers-color-scheme: dark)').matches);"
+                "document.documentElement.classList.toggle('dark',d);}catch(e){}})();")
 
 BANDS = {
  'private': ('band priv',
@@ -201,20 +233,28 @@ BANDS = {
    'See docs/reports/REPORTS_PUBLICATION_NOTE_V1.md'),
 }
 
+# The wrap div carries data-pagefind-body so these pages enter site search;
+# Pagefind indexes ONLY tagged pages, and until 2026-08-13 nothing under /AI/
+# was tagged, so the portal report, the boards report and the diagrams could not
+# be found by anyone searching x64base.com.
+#
+# The band and the footer are marked data-pagefind-ignore. Both are identical on
+# every page, so indexing them would make each page match every other page's
+# boilerplate -- the search equivalent of a table where one column is constant.
 def page(title, sub, body, sensitivity='internal'):
     if PUBLIC:
-        band = ('<div class="band int">Public snapshot &mdash; a read-only view generated from live '
+        band = ('<div class="band int" data-pagefind-ignore>Public snapshot &mdash; a read-only view generated from live '
                 'DotTalk++ state. Credentials and the authentication-surface map are deliberately excluded.</div>')
-        foot = f'<div class="foot">Generated {NOW} from live DotTalk++ state. Read-only snapshot &middot; x64base.com</div>'
+        foot = f'<div class="foot" data-pagefind-ignore>Generated {NOW} from live DotTalk++ state. Read-only snapshot &middot; x64base.com</div>'
     else:
         cls, msg = BANDS.get(sensitivity, BANDS['internal'])
-        band = f'<div class="{cls}">{e(msg)}</div>'
-        foot = ('<div class="foot">Generated ' + NOW + ' from live DotTalk++ state\n'
+        band = f'<div class="{cls}" data-pagefind-ignore>{e(msg)}</div>'
+        foot = ('<div class="foot" data-pagefind-ignore>Generated ' + NOW + ' from live DotTalk++ state\n'
                 '(<code>dottalkpp/data/metadata/</code>). Read-only snapshot -- regenerate with\n'
                 '<code>tools/reports/build_reports.py</code>.</div>')
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{e(title)}</title>
-<style>{CSS}</style></head><body><div class="wrap">
+<style>{CSS}</style><script>{THEME_SCRIPT}</script></head><body><div class="wrap" data-pagefind-body>
 {band}
 <div class="small" style="margin-bottom:10px"><a href="/">&larr; x64base main site</a></div>
 <h1>{e(title)}</h1><div class="sub">{sub}</div>

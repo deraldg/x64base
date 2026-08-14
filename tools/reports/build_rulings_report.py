@@ -354,7 +354,7 @@ def main() -> int:
     page = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DotTalk++ AI Portal -- Open Rulings</title>
-<style>{css}</style><script>{theme_script}</script></head><body><div class="wrap">
+<style>{css}</style><script>{theme_script}</script></head><body><div class="wrap" data-pagefind-body>
 <div class="{cls}">{e(msg)}</div>
 <h1>AI Portal -- Open Rulings</h1>
 <div class="sub">Owner decisions outstanding across AIF lanes. Generated from {e(src)}
