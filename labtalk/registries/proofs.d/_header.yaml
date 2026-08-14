@@ -2,6 +2,8 @@
 proof_states:
 - id: idea
   meaning: Concept captured, not reviewed.
+- id: design_intended
+  meaning: Design is decided and recorded; the behavior is not built yet.
 - id: source_defined
   meaning: Current source declares behavior or contract.
 - id: runtime_observed

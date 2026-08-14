@@ -1,6 +1,6 @@
 id: proof.wal.memo_atomicity
 label: Whole-row atomicity including the memo store
-state: design-intended
+state: design_intended
 source: D:/code/ccode/docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
 notes: 'GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field
   holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit

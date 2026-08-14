@@ -1,0 +1,33 @@
+id: proof.peer_review.header_only_findings
+label: A hosted peer with no tree access found three real defects from a header block
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/PEER_REVIEW_HEADER_ONLY_FINDINGS_20260813_V1.md
+related:
+- D:/code/ccode/docs/agents/HANDOFF_CLAUDE_COWORK_SITE_PUBLISH_ECO_2026-08-13.md
+- D:/code/ccode/docs/maintenance/PEER_DESIGN_REVIEW_SESSION_PROTOCOL_V1.md
+- D:/code/ccode/docs/maintenance/peer_design_review/PDR-001_workspace_scanner_wbak_2026-08-12/SESSION_V1.md
+- D:/code/ccode/docs/maintenance/BETA1_EXIT_GATE_V1.md
+- D:/code/ccode/labtalk/proofs/AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md
+notes: 'First exercise of a hosted peer-review seat, unprompted and on its first outing. HOSTED-20260813-001
+  was relayed ONLY the eight-line header of a publish handoff -- no body, no repository, no build output
+  -- and returned three findings, all of which checked out: (F1) both stated baselines were one commit
+  stale, confirmed by git merge-base --is-ancestor on each pair; (F2) the site commit b126994b3 touched
+  the map''s const D data line so the blocker "may already have moved", confirmed by git show --stat, and
+  it had -- machine-path count in public/eco/index.html went 2 at 095e9495a to 0 at b126994b3, closing the
+  blocker the report existed to raise; (F3) the report carried a member id and no run id, so no reader
+  could tell which session wrote it -- a defect landing on AIF-050, in an artifact written by that lane''s
+  steward. Standing correction adopted and dogfooded: every header from this member now carries a run
+  line. THE BEHAVIOUR MATTERS AS MUCH AS THE FINDINGS: it declined to infer the section it had not been
+  sent ("I''d rather say that than infer it"), which is the turn-validity rule working -- declining is an
+  accepted turn precisely so it is not a losing move. GENUINE AMENDMENT TO AIF-082, not a restatement:
+  AIF-082 established that review does not find RUNTIME defects (vacuous passes, moved denominators,
+  crashes rendered as findings) -- only running finds those, and that stands. This marks the boundary it
+  did not need to draw: CLAIM defects (stale baselines, unattributable signatures, anchorless assertions)
+  are found by READING, and a reviewer with no tree access is well suited to them because with nothing
+  else to check it checks the claims. Consequence for AIF-041 M6 / BETA-1 E1: a hosted seat is not a
+  weaker local seat, it is the seat that audits what local seats assert. Also validates PDR-001''s
+  adversary seat design, previously drafted and never run. LIMITS: one review, one reviewer, one report;
+  the header happened to contain two stale commits and performance on a clean header is untested; the
+  peer did NOT find the blocker (the site''s own check-public-content guard found that by running, the
+  day before) -- it found that the REPORT about the blocker had gone stale; and the peer''s findings were
+  checked by the author of the report under review, so no second party has verified the checks.'

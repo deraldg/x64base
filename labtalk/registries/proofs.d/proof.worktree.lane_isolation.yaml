@@ -1,6 +1,6 @@
 id: proof.worktree.lane_isolation
 label: Worktree-per-lane isolation -- sessions stop sharing one working tree
-state: design-intended
+state: design_intended
 source: D:/code/ccode/docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md
 related:
 - D:/code/ccode/docs/ai-friendly/AI_GITLOCK_HOT_POTATO_LANE_V1.md

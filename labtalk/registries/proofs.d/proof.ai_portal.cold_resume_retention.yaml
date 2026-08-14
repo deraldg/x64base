@@ -1,0 +1,28 @@
+id: proof.ai_portal.cold_resume_retention
+label: Artifact-mediated cold resume -- an 11-day-dormant agent recovering position from a handoff
+state: runtime_observed
+source: D:/code/ccode/labtalk/proofs/AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md
+related:
+- D:/code/ccode/docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md
+- D:/code/ccode/labtalk/ai_portal/AI_TIER1_SEED_V1.md
+- D:/code/ccode/docs/maintenance/DEVELOPMENT_ACCELERATION_ANALYSIS_LANE_V1.md
+- D:/code/ccode/docs/maintenance/BETA1_E1_GATE_FALSIFICATION_FINDINGS_2026-08-09.md
+notes: 'First recorded instance of the AI Portal memory model closing its intended loop with a
+  self-verifying anchor. A Cowork session dormant since 2026-08-01 was resumed 2026-08-12, told only
+  that a note existed, and without further instruction located the handoff, noticed the 11-day gap,
+  re-onboarded, ran the prescribed staleness check, and revised its own prior position -- accepting a
+  measured correction that a Cowork sandbox CAN build and run the engine, against AI_README.md''s
+  -fsyntax-only ceiling. FALSIFIABLE CORE, re-verifiable without the transcript: the handoff''s
+  seed_commit d08a09c5680f242abf909be0200784af1255a413 equals the actual last commit touching
+  AI_TIER1_SEED_V1.md, checked at development 29eca1962 by one git log command. LIMITS, recorded because
+  AIF-101 rules that praise is an unproven assertion: nothing was REMEMBERED -- the agent held no state
+  across 11 days and re-read, so this is artifact-mediated RECOVERY, not retention, and the credit
+  belongs to the tree rather than the agent; there is no control case (no handoff-less cold start in the
+  same window), so the "few minutes" cost has no denominator and is observation, not metric; one trial,
+  one agent, one lane, no generality claimed. FINDING produced while recording: the handoff''s staleness
+  test proves the HANDOFF is aligned with the seed, not that the READER is current -- a reader onboarded
+  before d08a09c56 running only that check would wrongly read "current". Same defect shape as
+  check_session_log_row.py and check_mandatory_tracked.py (2026-08-09): a check whose scope silently
+  excludes the case it appears to cover. Smallest correction: compare the reader''s own onboarding commit
+  against the seed, not the handoff''s. NOT engine runtime -- the coworker''s in-sandbox dottalkpp build
+  and WB_T1..WB_T6 regression result is that lane''s proof and is not re-verified here.'

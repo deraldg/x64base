@@ -1,0 +1,525 @@
+#!/usr/bin/env python3
+"""
+ecoschema_map.py -- generate the drill-down ecoschema map from the registries
+and from the source tree, and JOIN them so the bridge between the two poles is
+literal rather than decorative.
+
+The map is GENERATED, never hand-edited, for the reason Tier 0 states about
+itself: a hand-maintained picture of perishable state drifts.
+
+v2 (2026-08-12) removed the two hand-written literals that could drift:
+  - engine subsystems are now SCANNED from src/*/ with real file counts
+  - proof coverage is JOINED from labtalk/registries/proofs.yaml
+Lifecycle names remain literal on purpose: they are doctrine, each carrying a
+charter path that is checked for existence at run time and flagged if absent.
+
+Sources of truth, read at run time:
+    labtalk/registries/projects.yaml   projects, kinds, statuses, lanes
+    labtalk/registries/proofs.yaml     proof records, states, declared vocabulary
+    coordination/aif/AIF-*.claim       the atomic lane ledger
+    src/*/                             the engine's actual decomposition
+    labtalk/proofs/runs/               captured transcripts (counted, not parsed)
+
+Output:
+    docs/maintenance/ECOSCHEMA_MAP_V1.html   self-contained, no network deps
+
+Usage:
+    python tools/fullstack_docs/ecoschema_map.py [--out PATH]
+
+Owner: member.derald - steward: member.ai.claude.cowork
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import re
+import sys
+from collections import Counter, defaultdict
+
+try:
+    import yaml
+except ImportError:
+    print("ecoschema-map: PyYAML required (pip install pyyaml)", file=sys.stderr)
+    sys.exit(4)
+
+
+POLES = {
+    "x64base": {
+        "label": "x64base",
+        "tag": "top-down // the organised frame",
+        "blurb": "Accurate, and openly a hybrid of planned and finished. The frame "
+                 "built from the top down so it can span the whole system and bridge "
+                 "downward to meet the push coming up from the engine.",
+        "reads": "Read this side for intent, structure, and where a thing is GOING.",
+    },
+    "dottalkpp": {
+        "label": "DotTalk++",
+        "tag": "bottom-up // what is actually built",
+        "blurb": "The simplified version of x64base with the conceptual unintended "
+                 "hype removed. Directories that exist, with the files in them counted.",
+        "reads": "Read this side for what EXISTS. Scanned from src/, not declared.",
+    },
+}
+
+LIFECYCLES = [
+    ("DotTalk++ SDLC", "engine, runtime and system correctness",
+     "docs/maintenance/DOTTALKPP_SDLC_CHARTER_v0.md",
+     ["requirements/boundary", "design", "implementation", "verification",
+      "documentation/metadata", "release and promotion"]),
+    ("LabTalk SDLC", "laboratory campus truth and learning material",
+     "labtalk/LABTALK_SDLC_FRAMEWORK_v0.md",
+     ["labs", "cases", "lessons", "proofs", "student readiness"]),
+    ("maintenance SDLC", "the maintenance surfaces and their gates",
+     "docs/maintenance/MAINTENANCE_CHARTER_v1.md",
+     ["MAINT", "BBOX", "DDICT", "MANUAL", "drift gates"]),
+    ("AI Systems Integration SDLC", "relationships, vocabulary, end-to-end gates",
+     "docs/maintenance/AI_SYSTEMS_INTEGRATION_SDLC_CHARTER_V1.md",
+     ["portal", "curation", "onboarding", "memory", "reports", "coordination",
+      "pseudo-chat", "AI-BBS", "authorization", "evidence", "projections"]),
+    ("PDLC", "programming development life cycle, program scale",
+     "docs/maintenance/PDLC_STUDENT_WORKING_MODEL_LANE_V1.md",
+     ["analyze", "design", "code", "test/debug", "document", "maintain"]),
+]
+
+PROMOTION_LEVELS = [
+    ("source_defined", "code or contract exists"),
+    ("runtime_observed", "runtime proof exists"),
+    ("help_documented", "HELP exposes it accurately"),
+    ("validated", "a validator checked it"),
+    ("professional_ready", "safe for normal runtime use"),
+    ("lab_ready", "safe for LabTalk to package"),
+]
+
+STATUS_CLASS = {
+    "active_beta": "s-beta", "active_development": "s-active",
+    "active_curated_staging": "s-active", "active_seed": "s-seed",
+    "seed": "s-seed", "design_intended": "s-plan", "prototype": "s-proto",
+    "local_prototype": "s-proto", "reserved_local_only": "s-plan",
+    "downstream_publication_truth": "s-pub",
+    "charter_with_autonomous_poc": "s-plan",
+    "runtime_observed": "s-beta", "source_defined": "s-seed",
+    "validated": "s-active", "no proof registered": "s-plan",
+}
+
+
+# --- machine-path scrub --------------------------------------------------------
+# The map is published to x64base.com, and the site's own guard
+# (scripts/check-public-content.mjs) refuses any asset carrying a local machine
+# path. Registry notes legitimately name the roots -- projects.yaml describes
+# D:/code/ccode and C:/x64base by design -- so the scrub happens here, at the
+# publication boundary, rather than by censoring the registry.
+#
+# Caught by that guard on 2026-08-13, on the first attempt to publish this map.
+# The named map below is for readability; the catch-all is what makes it safe,
+# because the next note to name a new path would otherwise leak silently.
+PATH_NAMES = [
+    (r"[Dd]:[\\/]code[\\/]ccode", "the development root"),
+    (r"[Cc]:[\\/]x64base", "the staging root"),
+    (r"[Dd]:[\\/]dev[\\/]x64base-site", "the website root"),
+    (r"[Dd]:[\\/]dev", "the website tree"),
+]
+ANY_LOCAL_PATH = re.compile(r"[A-Za-z]:[\\/][^\s\"',;)\]]*")
+
+
+def scrub(text: str) -> str:
+    """Remove machine-absolute paths from anything destined for a public asset."""
+    if not text:
+        return text
+    for pat, rep in PATH_NAMES:
+        text = re.sub(pat, rep, text)
+    return ANY_LOCAL_PATH.sub("<local path>", text)
+
+
+def scrub_tree(obj):
+    if isinstance(obj, str):
+        return scrub(obj)
+    if isinstance(obj, dict):
+        return {k: scrub_tree(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [scrub_tree(v) for v in obj]
+    return obj
+
+
+def repo_root() -> str:
+    here = os.path.abspath(os.path.dirname(__file__))
+    for _ in range(6):
+        if os.path.isdir(os.path.join(here, ".git")) and \
+           os.path.isfile(os.path.join(here, "AI_README.md")):
+            return here
+        here = os.path.dirname(here)
+    return os.getcwd()
+
+
+def scan_subsystems(root: str) -> list[dict]:
+    """The built pole, SCANNED. No declared list to go stale."""
+    subs = []
+    for d in sorted(glob.glob(os.path.join(root, "src", "*", ""))):
+        name = os.path.basename(d.rstrip(os.sep))
+        srcs = [f for f in glob.glob(os.path.join(d, "**", "*"), recursive=True)
+                if f.rsplit(".", 1)[-1] in ("cpp", "c", "cc", "cxx")]
+        hdrs = [f for f in glob.glob(os.path.join(d, "**", "*"), recursive=True)
+                if f.rsplit(".", 1)[-1] in ("hpp", "h", "hh", "inl", "ipp")]
+        subs.append({"name": name, "src": len(srcs), "hdr": len(hdrs)})
+    return [s for s in subs if s["src"] or s["hdr"]]
+
+
+def load(root: str) -> dict:
+    projects = yaml.safe_load(
+        open(os.path.join(root, "labtalk/registries/projects.yaml"), encoding="utf-8")
+    )["projects"]
+
+    pf = yaml.safe_load(
+        open(os.path.join(root, "labtalk/registries/proofs.yaml"), encoding="utf-8"))
+    proofs = pf.get("proofs", [])
+    declared = {s["id"] for s in pf.get("proof_states", [])}
+
+    claims = []
+    for f in sorted(glob.glob(os.path.join(root, "coordination/aif/AIF-*.claim"))):
+        txt = open(f, encoding="utf-8", errors="replace").read()
+
+        def field(k: str) -> str:
+            m = re.search(rf"^{k}:\s*(.+)$", txt, re.M)
+            return m.group(1).strip() if m else ""
+
+        claims.append({"aif": os.path.basename(f)[:-6], "lane": field("lane"),
+                       "member": field("member")})
+
+    return {"projects": projects, "claims": claims, "proofs": proofs,
+            "declared_states": declared,
+            "subsystems": scan_subsystems(root),
+            "transcripts": len(glob.glob(os.path.join(root, "labtalk/proofs/runs/*"))),
+            "dts": len(glob.glob(os.path.join(root, "dottalkpp/data/scripts/**/*.dts"),
+                                 recursive=True))}
+
+
+def join_proofs(data: dict) -> dict:
+    """Map proof records onto scanned subsystems. Report what will not map."""
+    names = {s["name"] for s in data["subsystems"]}
+    by_sub, unmapped = defaultdict(list), []
+    for p in data["proofs"]:
+        src = (p.get("source") or "").replace("\\", "/")
+        hit = None
+        m = re.search(r"/(?:src|include)/([A-Za-z0-9_]+)/", src)
+        if m and m.group(1) in names:
+            hit = m.group(1)
+        if not hit:
+            for seg in p["id"].split(".")[1:3]:
+                if seg in names:
+                    hit = seg
+                    break
+        (by_sub[hit].append(p) if hit else unmapped.append(p))
+
+    undeclared = [(p["id"], p.get("state"))
+                  for p in data["proofs"]
+                  if p.get("state") not in data["declared_states"]]
+
+    where = Counter()
+    for p in data["proofs"]:
+        s = (p.get("source") or "").replace("\\", "/")
+        if not s.strip():
+            where["no source recorded"] += 1
+        elif re.search(r"/(src|include)/", s):
+            where["engine source"] += 1
+        elif "labtalk/proofs/runs" in s:
+            where["run transcript"] += 1
+        else:
+            where["a document"] += 1
+
+    return {"by_sub": by_sub, "unmapped": unmapped,
+            "undeclared": undeclared, "where": where}
+
+
+def build(data: dict, jn: dict) -> dict:
+    nodes, kids = {}, {"root": []}
+
+    def add(nid, parent, label, kind, status="", meta=None, note=""):
+        nodes[nid] = {"id": nid, "label": label, "kind": kind, "status": status,
+                      "meta": meta or {}, "note": note}
+        kids.setdefault(parent, []).append(nid)
+
+    for key, p in POLES.items():
+        add(f"pole:{key}", "root", p["label"], "pole", "",
+            {"tag": p["tag"], "reads": p["reads"]}, p["blurb"])
+    add("pole:bridge", "root", "The bridge", "pole", "",
+        {"tag": "where the two poles actually meet",
+         "reads": "Coverage, measured. This is the panel that can embarrass us."},
+        "How far up the promotion ladder each built subsystem has actually climbed, "
+        "according to the proof registry -- and how much proof exists that the "
+        "registry does not index.")
+
+    # --- x64base pole -------------------------------------------------------
+    add("grp:lifecycles", "pole:x64base", "Lifecycles", "group", "",
+        {"count": len(LIFECYCLES)},
+        "Five named lifecycles. A bare 'the SDLC' is not sufficient when more than "
+        "one could apply.")
+    for name, blurb, doc, phases in LIFECYCLES:
+        nid = "lc:" + re.sub(r"\W+", "_", name.lower())
+        add(nid, "grp:lifecycles", name, "lifecycle",
+            "" if os.path.exists(doc) else "charter not found",
+            {"doc": doc}, blurb)
+        for ph in phases:
+            add(f"{nid}:ph:{ph}", nid, ph, "phase", "", {}, "")
+
+    add("grp:promotion", "pole:x64base", "Promotion ladder", "group", "",
+        {"count": len(PROMOTION_LEVELS)},
+        "The ladder a claim climbs. Never claim a later stage because an earlier "
+        "one succeeded.")
+    for lvl, mean in PROMOTION_LEVELS:
+        n = sum(1 for p in data["proofs"] if p.get("state") == lvl)
+        add(f"pl:{lvl}", "grp:promotion", lvl, "level", "",
+            {"count": n}, f"{mean} -- {n} registered proof(s) at this rung")
+
+    add("grp:projects", "pole:x64base", "Projects", "group", "",
+        {"count": len(data["projects"])},
+        "Project contains Lane contains Milestone.")
+    lane_ix = defaultdict(list)
+    for c in data["claims"]:
+        lane_ix[c["lane"].lower()].append(c)
+    for p in data["projects"]:
+        pid = "pr:" + p["id"]
+        lanes = p.get("lanes") or []
+        add(pid, "grp:projects", p["id"], "project", p.get("status", ""),
+            {"kind": p.get("kind", ""), "count": len(lanes)},
+            (p.get("notes") or "")[:380])
+        for ln in lanes:
+            hits = lane_ix.get(ln.lower(), [])
+            add(f"{pid}:ln:{ln}", pid, ln, "lane", "",
+                {"aif": ", ".join(h["aif"] for h in hits)}, "")
+
+    add("grp:claims", "pole:x64base", "Claimed AIF lanes", "group", "",
+        {"count": len(data["claims"])},
+        "The atomic ledger. Claimed with O_EXCL, never chosen by grep.")
+    for c in data["claims"]:
+        add(f"cl:{c['aif']}", "grp:claims", c["aif"], "claim", "",
+            {"member": c["member"]}, c["lane"])
+
+    # --- dottalkpp pole: SCANNED -------------------------------------------
+    subs = data["subsystems"]
+    add("grp:engine", "pole:dottalkpp", "Engine subsystems", "group", "",
+        {"count": len(subs)},
+        f"Scanned from src/*/ at run time -- {len(subs)} directories carrying source.")
+    for s in sorted(subs, key=lambda x: -(x["src"] + x["hdr"])):
+        pr = jn["by_sub"].get(s["name"], [])
+        best = "no proof registered"
+        for lvl, _ in reversed(PROMOTION_LEVELS):
+            if any(p.get("state") == lvl for p in pr):
+                best = lvl
+                break
+        nid = "sub:" + s["name"]
+        add(nid, "grp:engine", s["name"], "subsystem", best,
+            {"count": len(pr), "files": f"{s['src']} src / {s['hdr']} hdr"},
+            f"{s['src']} source file(s), {s['hdr']} header(s). "
+            f"{len(pr)} registered proof(s).")
+        for p in pr:
+            add(f"{nid}:pf:{p['id']}", nid, p["id"], "proof",
+                p.get("state", ""), {}, (p.get("label") or "")[:200])
+
+    # --- the bridge ---------------------------------------------------------
+    covered = [s for s in subs if jn["by_sub"].get(s["name"])]
+    add("br:coverage", "pole:bridge",
+        f"{len(covered)} of {len(subs)} subsystems carry a registered proof",
+        "measure", "", {"count": len(covered)},
+        "Registry coverage of the built tree. Everything else on the built pole "
+        "shows 'no proof registered', which is a statement about the REGISTRY, "
+        "not about whether the code was ever proven.")
+    add("br:elsewhere", "pole:bridge",
+        f"{data['transcripts']} transcripts and {data['dts']} .dts scripts exist",
+        "measure", "", {},
+        "Proof artifacts on disk that the registry does not index. The engine is "
+        "not unproven; the index is aimed elsewhere.")
+    for k, v in jn["where"].most_common():
+        add(f"br:w:{k}", "pole:bridge", f"{v} proof records point at {k}", "measure",
+            "", {"count": v}, "")
+    add("br:unmapped", "pole:bridge",
+        f"{len(jn['unmapped'])} of {len(data['proofs'])} proof records map to no subsystem",
+        "measure", "", {"count": len(jn["unmapped"])},
+        "Reported rather than hidden. Most are portal and process proofs, which "
+        "have no src/ directory to land on.")
+    for p in jn["unmapped"]:
+        add(f"br:um:{p['id']}", "br:unmapped", p["id"], "proof",
+            p.get("state", ""), {}, (p.get("label") or "")[:160])
+    if jn["undeclared"]:
+        add("br:undeclared", "pole:bridge",
+            f"{len(jn['undeclared'])} proof(s) carry a state not in the declared vocabulary",
+            "defect", "", {"count": len(jn["undeclared"])},
+            "Found by this join. The header block in proofs.d/_header.yaml is the "
+            "vocabulary; these records are outside it, in two different spellings.")
+        for pid, st in jn["undeclared"]:
+            add(f"br:ud:{pid}", "br:undeclared", pid, "defect", st, {},
+                f"state '{st}' is not declared")
+
+    return {"nodes": nodes, "kids": kids, "sclass": STATUS_CLASS}
+
+
+TEMPLATE = """<!doctype html>
+<meta charset="utf-8">
+<title>x64base ecoschema -- drill-down map</title>
+<style>
+:root{--bg:#0d1117;--pan:#151b23;--pan2:#1b232d;--line:#2a3441;--tx:#d7e0ea;
+--dim:#8b98a8;--acc:#5eb0ef;--acc2:#f0b429;--ok:#5dd39e;--warn:#e8834a;--bad:#f2777a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+header{padding:18px 22px;border-bottom:1px solid var(--line);
+display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+h1{font-size:16px;margin:0}
+.sub{color:var(--dim);font-size:12px}
+#crumbs{padding:10px 22px;border-bottom:1px solid var(--line);
+color:var(--dim);font-size:12px;display:flex;gap:6px;flex-wrap:wrap}
+#crumbs b{color:var(--acc);cursor:pointer}
+#crumbs b:hover{text-decoration:underline}
+#search{margin-left:auto;background:var(--pan);border:1px solid var(--line);
+color:var(--tx);padding:6px 10px;border-radius:4px;font:inherit;min-width:230px}
+main{padding:20px 22px 60px}
+.poles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.pole{background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:20px;
+cursor:pointer;transition:.15s}
+.pole:hover{border-color:var(--acc);transform:translateY(-2px)}
+.pole h2{margin:0 0 4px;font-size:22px;color:var(--acc)}
+.pole.mid h2{color:var(--acc2)}
+.pole .tag{color:var(--acc2);font-size:12px;margin-bottom:12px}
+.pole.mid .tag{color:var(--acc)}
+.pole p{color:var(--dim);margin:0 0 12px}
+.pole .reads{color:var(--tx);font-size:12px;border-left:2px solid var(--acc);padding-left:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:var(--pan);border:1px solid var(--line);border-radius:6px;padding:14px;
+cursor:pointer;transition:.12s}
+.card:hover{border-color:var(--acc);background:var(--pan2)}
+.card.leaf{cursor:default}.card.leaf:hover{border-color:var(--line)}
+.card h3{margin:0 0 6px;font-size:13px;word-break:break-word}
+.card .k{font-size:11px;color:var(--acc);text-transform:uppercase;letter-spacing:.06em}
+.card .n{font-size:12px;color:var(--dim);margin-top:7px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;
+border:1px solid var(--line);color:var(--dim);margin:6px 6px 0 0}
+.s-beta{color:var(--ok);border-color:var(--ok)}
+.s-active{color:var(--acc);border-color:var(--acc)}
+.s-seed{color:var(--acc2);border-color:var(--acc2)}
+.s-plan{color:var(--dim)}
+.s-proto{color:var(--warn);border-color:var(--warn)}
+.s-pub{color:var(--acc);border-color:var(--acc)}
+.card .k.defect,.badge.defect{color:var(--bad);border-color:var(--bad)}
+.count{float:right;color:var(--dim);font-size:11px}
+.empty{color:var(--dim);padding:30px;text-align:center}
+footer{padding:14px 22px;border-top:1px solid var(--line);color:var(--dim);font-size:11px}
+</style>
+<header>
+  <h1>x64base &mdash; ecoschema drill-down</h1>
+  <span class="sub">GENERATED &middot; __NP__ projects &middot; __NL__ lanes &middot; __NC__ claims &middot; __NS__ subsystems scanned &middot; __NPF__ proof records</span>
+  <input id="search" placeholder="filter (searches every level)">
+</header>
+<div id="crumbs"></div>
+<main id="view"></main>
+<footer>Generated by <code>tools/fullstack_docs/ecoschema_map.py</code> from
+<code>projects.yaml</code>, <code>proofs.yaml</code>, <code>coordination/aif/*.claim</code>
+and a scan of <code>src/*/</code>. Do not hand-edit; re-run the generator.</footer>
+<script>
+const D = __DATA__;
+let path = ["root"];
+const label = id => id==="root" ? "root" : (D.nodes[id] ? D.nodes[id].label : id);
+
+function crumbs(){
+  const c=document.getElementById("crumbs"); c.innerHTML="";
+  path.forEach((id,i)=>{
+    const b=document.createElement("b"); b.textContent=label(id);
+    b.onclick=()=>{path=path.slice(0,i+1);render();}; c.appendChild(b);
+    if(i<path.length-1){const s=document.createElement("span");s.textContent="/";c.appendChild(s);}
+  });
+}
+function poles(){
+  const mk=(id,cls)=>{const n=D.nodes[id];return `<div class="pole ${cls||''}" onclick="go('${id}')">
+    <h2>${n.label}</h2><div class="tag">${n.meta.tag}</div>
+    <p>${n.note}</p><div class="reads">${n.meta.reads}</div></div>`;};
+  const k=D.kids["root"];
+  document.getElementById("view").innerHTML=
+    `<div class="poles">${mk(k[0])}${mk(k[2],'mid')}${mk(k[1])}</div>`;
+}
+function go(id){path.push(id);render();}
+function cards(id){
+  const v=document.getElementById("view"), ch=D.kids[id]||[];
+  if(!ch.length){v.innerHTML='<div class="empty">leaf &mdash; nothing below this</div>';return;}
+  v.innerHTML='<div class="grid">'+ch.map(cid=>{
+    const n=D.nodes[cid], nk=(D.kids[cid]||[]).length, def=n.kind==="defect";
+    const st=n.status?`<span class="badge ${def?'defect':(D.sclass[n.status]||'')}">${n.status}</span>`:"";
+    const fl=n.meta.files?`<span class="badge">${n.meta.files}</span>`:"";
+    const kd=n.meta.kind?`<span class="badge">${n.meta.kind}</span>`:"";
+    const af=n.meta.aif?`<span class="badge s-active">${n.meta.aif}</span>`:"";
+    const mb=n.meta.member?`<span class="badge">${n.meta.member}</span>`:"";
+    return `<div class="card ${nk?'':'leaf'}" ${nk?`onclick="go('${cid}')"`:''}>
+      <div class="k ${def?'defect':''}">${n.kind}${nk?`<span class="count">${nk}</span>`:''}</div>
+      <h3>${n.label}</h3>${n.note?`<div class="n">${n.note}</div>`:''}
+      ${st}${fl}${kd}${af}${mb}</div>`;}).join("")+'</div>';
+}
+function render(){crumbs();const c=path[path.length-1];c==="root"?poles():cards(c);}
+document.getElementById("search").addEventListener("input",e=>{
+  const q=e.target.value.trim().toLowerCase();
+  if(!q){render();return;} crumbs();
+  const hits=Object.values(D.nodes).filter(n=>
+    (n.label+" "+n.note+" "+(n.meta.aif||"")+" "+n.status).toLowerCase().includes(q));
+  document.getElementById("view").innerHTML='<div class="grid">'+hits.slice(0,300).map(n=>{
+    const nk=(D.kids[n.id]||[]).length;
+    return `<div class="card ${nk?'':'leaf'}" ${nk?`onclick="path=['root'];go('${n.id}')"`:''}>
+      <div class="k">${n.kind}</div><h3>${n.label}</h3>
+      ${n.note?`<div class="n">${n.note}</div>`:''}
+      ${n.status?`<span class="badge ${D.sclass[n.status]||''}">${n.status}</span>`:''}</div>`;
+  }).join("")+'</div>';
+});
+render();
+</script>
+"""
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Generate the ecoschema drill-down map.")
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+
+    root = repo_root()
+    os.chdir(root)
+    data = load(root)
+    jn = join_proofs(data)
+    built = build(data, jn)
+
+    built = scrub_tree(built)
+
+    nl = sum(len(p.get("lanes") or []) for p in data["projects"])
+    out = args.out or os.path.join(root, "docs/maintenance/ECOSCHEMA_MAP_V1.html")
+    doc = (TEMPLATE.replace("__DATA__", json.dumps(built))
+           .replace("__NP__", str(len(data["projects"])))
+           .replace("__NL__", str(nl))
+           .replace("__NC__", str(len(data["claims"])))
+           .replace("__NS__", str(len(data["subsystems"])))
+           .replace("__NPF__", str(len(data["proofs"]))))
+    # Refuse to emit a leaking file. A scrub nobody checks is a scrub that stops
+    # working the first time a note names a new path.
+    leaks = [m for m in ANY_LOCAL_PATH.findall(doc) if not m.startswith("<")]
+    if leaks:
+        print("ecoschema-map: REFUSING to write -- local machine path(s) survived "
+              "the scrub: " + ", ".join(sorted(set(leaks))[:5]), file=sys.stderr)
+        return 2
+
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(doc)
+
+    covered = len([s for s in data["subsystems"] if jn["by_sub"].get(s["name"])])
+    print(f"ecoschema-map: wrote {os.path.relpath(out, root)}")
+    print(f"  projects {len(data['projects'])} | lanes {nl} | claims {len(data['claims'])}")
+    print(f"  subsystems scanned {len(data['subsystems'])} | proof records {len(data['proofs'])}")
+    print(f"  BRIDGE: {covered}/{len(data['subsystems'])} subsystems carry a registered proof")
+    print(f"          {len(jn['unmapped'])}/{len(data['proofs'])} proof records map to no subsystem")
+    print(f"          proof records point at: " +
+          ", ".join(f"{k}={v}" for k, v in jn["where"].most_common()))
+    print(f"          on disk but unindexed: {data['transcripts']} transcripts, "
+          f"{data['dts']} .dts scripts")
+    if jn["undeclared"]:
+        print(f"  DEFECT: {len(jn['undeclared'])} proof(s) carry an undeclared state:")
+        for pid, st in jn["undeclared"]:
+            print(f"          '{st}' <- {pid}")
+    print(f"  nodes {len(built['nodes'])}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -6,6 +6,8 @@
 proof_states:
 - id: idea
   meaning: Concept captured, not reviewed.
+- id: design_intended
+  meaning: Design is decided and recorded; the behavior is not built yet.
 - id: source_defined
   meaning: Current source declares behavior or contract.
 - id: runtime_observed
@@ -76,6 +78,34 @@ proofs:
   - D:/code/ccode/src/cli/cmd_maint.cpp
   notes: Proves LabTalk portal can run the DotTalk++ MAINT AI ASSIMILATE read-only command and capture
     the onboarding readback.
+- id: proof.ai_portal.cold_resume_retention
+  label: Artifact-mediated cold resume -- an 11-day-dormant agent recovering position from a handoff
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md
+  related:
+  - D:/code/ccode/docs/agents/HANDOFF_CLAUDE_COWORK_SANDBOX_BUILD_2026-08-12.md
+  - D:/code/ccode/labtalk/ai_portal/AI_TIER1_SEED_V1.md
+  - D:/code/ccode/docs/maintenance/DEVELOPMENT_ACCELERATION_ANALYSIS_LANE_V1.md
+  - D:/code/ccode/docs/maintenance/BETA1_E1_GATE_FALSIFICATION_FINDINGS_2026-08-09.md
+  notes: 'First recorded instance of the AI Portal memory model closing its intended loop with a self-verifying
+    anchor. A Cowork session dormant since 2026-08-01 was resumed 2026-08-12, told only that a note existed,
+    and without further instruction located the handoff, noticed the 11-day gap, re-onboarded, ran the
+    prescribed staleness check, and revised its own prior position -- accepting a measured correction
+    that a Cowork sandbox CAN build and run the engine, against AI_README.md''s -fsyntax-only ceiling.
+    FALSIFIABLE CORE, re-verifiable without the transcript: the handoff''s seed_commit d08a09c5680f242abf909be0200784af1255a413
+    equals the actual last commit touching AI_TIER1_SEED_V1.md, checked at development 29eca1962 by one
+    git log command. LIMITS, recorded because AIF-101 rules that praise is an unproven assertion: nothing
+    was REMEMBERED -- the agent held no state across 11 days and re-read, so this is artifact-mediated
+    RECOVERY, not retention, and the credit belongs to the tree rather than the agent; there is no control
+    case (no handoff-less cold start in the same window), so the "few minutes" cost has no denominator
+    and is observation, not metric; one trial, one agent, one lane, no generality claimed. FINDING produced
+    while recording: the handoff''s staleness test proves the HANDOFF is aligned with the seed, not that
+    the READER is current -- a reader onboarded before d08a09c56 running only that check would wrongly
+    read "current". Same defect shape as check_session_log_row.py and check_mandatory_tracked.py (2026-08-09):
+    a check whose scope silently excludes the case it appears to cover. Smallest correction: compare the
+    reader''s own onboarding commit against the seed, not the handoff''s. NOT engine runtime -- the coworker''s
+    in-sandbox dottalkpp build and WB_T1..WB_T6 regression result is that lane''s proof and is not re-verified
+    here.'
 - id: proof.ai_portal.discoverability_caught_its_own_author
   label: The discoverability fix caught its own maker -- Phase 7 was the next dropped thread
   state: source_defined
@@ -824,6 +854,40 @@ proofs:
     ENROLL_D held type D, with values byte-identical at the 1985 end and the modern end. Unlooked-for
     result: the index estate migrates with the dialect, CNX/INX through FOX26 and VFP becoming CDX at
     x64. COPY converts indexes, not just tables. Not asserted by the pass criteria; should be in v2.'
+- id: proof.peer_review.header_only_findings
+  label: A hosted peer with no tree access found three real defects from a header block
+  state: runtime_observed
+  source: D:/code/ccode/labtalk/proofs/PEER_REVIEW_HEADER_ONLY_FINDINGS_20260813_V1.md
+  related:
+  - D:/code/ccode/docs/agents/HANDOFF_CLAUDE_COWORK_SITE_PUBLISH_ECO_2026-08-13.md
+  - D:/code/ccode/docs/maintenance/PEER_DESIGN_REVIEW_SESSION_PROTOCOL_V1.md
+  - D:/code/ccode/docs/maintenance/peer_design_review/PDR-001_workspace_scanner_wbak_2026-08-12/SESSION_V1.md
+  - D:/code/ccode/docs/maintenance/BETA1_EXIT_GATE_V1.md
+  - D:/code/ccode/labtalk/proofs/AI_PORTAL_COLD_RESUME_RETENTION_20260812_V1.md
+  notes: 'First exercise of a hosted peer-review seat, unprompted and on its first outing. HOSTED-20260813-001
+    was relayed ONLY the eight-line header of a publish handoff -- no body, no repository, no build output
+    -- and returned three findings, all of which checked out: (F1) both stated baselines were one commit
+    stale, confirmed by git merge-base --is-ancestor on each pair; (F2) the site commit b126994b3 touched
+    the map''s const D data line so the blocker "may already have moved", confirmed by git show --stat,
+    and it had -- machine-path count in public/eco/index.html went 2 at 095e9495a to 0 at b126994b3, closing
+    the blocker the report existed to raise; (F3) the report carried a member id and no run id, so no
+    reader could tell which session wrote it -- a defect landing on AIF-050, in an artifact written by
+    that lane''s steward. Standing correction adopted and dogfooded: every header from this member now
+    carries a run line. THE BEHAVIOUR MATTERS AS MUCH AS THE FINDINGS: it declined to infer the section
+    it had not been sent ("I''d rather say that than infer it"), which is the turn-validity rule working
+    -- declining is an accepted turn precisely so it is not a losing move. GENUINE AMENDMENT TO AIF-082,
+    not a restatement: AIF-082 established that review does not find RUNTIME defects (vacuous passes,
+    moved denominators, crashes rendered as findings) -- only running finds those, and that stands. This
+    marks the boundary it did not need to draw: CLAIM defects (stale baselines, unattributable signatures,
+    anchorless assertions) are found by READING, and a reviewer with no tree access is well suited to
+    them because with nothing else to check it checks the claims. Consequence for AIF-041 M6 / BETA-1
+    E1: a hosted seat is not a weaker local seat, it is the seat that audits what local seats assert.
+    Also validates PDR-001''s adversary seat design, previously drafted and never run. LIMITS: one review,
+    one reviewer, one report; the header happened to contain two stale commits and performance on a clean
+    header is untested; the peer did NOT find the blocker (the site''s own check-public-content guard
+    found that by running, the day before) -- it found that the REPORT about the blocker had gone stale;
+    and the peer''s findings were checked by the author of the report under review, so no second party
+    has verified the checks.'
 - id: proof.portal.truth_audit.latest
   label: Portal truth audit latest report
   state: validated
@@ -936,7 +1000,7 @@ proofs:
     when the proof transcripts were un-ignored and committed (AIF-062).'
 - id: proof.wal.memo_atomicity
   label: Whole-row atomicity including the memo store
-  state: design-intended
+  state: design_intended
   source: D:/code/ccode/docs/maintenance/AI_MEMO_WAL_ATOMICITY_LANE_V1.md
   notes: 'GAP, not yet built. An x64 memo REPLACE converts text to a stored object-id and the DBF field
     holds the id, so the WAL journals the id and never the content. A crash between the durable WAL commit
@@ -1018,7 +1082,7 @@ proofs:
     and every subsequent open fails.'
 - id: proof.worktree.lane_isolation
   label: Worktree-per-lane isolation -- sessions stop sharing one working tree
-  state: design-intended
+  state: design_intended
   source: D:/code/ccode/docs/maintenance/AI_WORKTREE_LANE_ISOLATION_LANE_V1.md
   related:
   - D:/code/ccode/docs/ai-friendly/AI_GITLOCK_HOT_POTATO_LANE_V1.md
