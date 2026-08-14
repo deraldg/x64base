@@ -2,9 +2,9 @@
 
 Scans two report classes:
 
-* Session closeouts (`closeout_glob`) — every matching file must carry a valid
+* Session closeouts (`closeout_glob`) -- every matching file must carry a valid
   `ai_report_audit` envelope. Findings here are **hard** (non-zero exit).
-* Received external-AI intake packages (`external_intake_glob`, optional) — files
+* Received external-AI intake packages (`external_intake_glob`, optional) -- files
   under the intake landing zone that carry an envelope are validated with
   intake-appropriate rules. These packages are preserved **verbatim** as
   evidence, so their findings are **advisory** (reported, but do not fail the
