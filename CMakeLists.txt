@@ -681,6 +681,44 @@ if(DOTTALK_BUILD_METACOLLECT AND NOT TARGET dt_meta)
         src/datadict/ddict_read_helpers.cpp
         src/datadict/ddict_dbf_reader.cpp
         src/meta/metacollect.cpp
+        # resolve_in_slot(), added 2026-08-13 to unbreak the metacollect link.
+        #
+        # AIF task: FILE() / WRITEBACK TO / ERASE DIR were routed through
+        # resolve_in_slot so a bare token resolves inside the active workspace
+        # slot instead of the process CWD. The CALLERS -- fn_string.cpp and
+        # function_catalog.cpp, both listed above -- are compiled into TWO link
+        # closures: the dottalkpp engine, and this dt_meta library.
+        #
+        # The engine already links src/common/path_resolver.cpp, so it built
+        # clean and the breakage stayed invisible there. dt_meta did not, so
+        # metacollect failed at link with an undefined resolve_in_slot while
+        # every other target was green -- one source file, two closures, one of
+        # them short a definition.
+        #
+        # Adding the definition here rather than stubbing it keeps both closures
+        # resolving the SAME function; a local stub would compile and then
+        # silently resolve paths differently from the engine, which is worse
+        # than a link error because a link error stops.
+        #
+        # NOTE: declared in BOTH include/cli/path_resolver.hpp and
+        # include/common/path_resolver.hpp -- one function, two headers. That
+        # duplication is not fixed here; it is its own change.
+        src/common/path_resolver.cpp
+        #
+        # The slot state resolve_in_slot() sits on. Adding path_resolver.cpp
+        # alone did NOT link: it exposed the next layer, four more undefined
+        # symbols, all dottalk::paths and all defined here --
+        #   state()                   path_state.cpp:132
+        #   get_slot(Slot)            path_state.cpp:169   (also called directly
+        #                                                   by fn_string.cpp)
+        #   workspace_search_roots()  path_state.cpp:447
+        #   script_search_roots()     path_state.cpp:458
+        #
+        # Expected to be the last layer: path_state.cpp includes only its own
+        # header and standard library, so it terminates the chain rather than
+        # reaching further into the engine. Verify by building, not by trusting
+        # this comment -- the same reasoning said one file would be enough.
+        src/common/path_state.cpp
     )
 
     target_include_directories(dt_meta PUBLIC
