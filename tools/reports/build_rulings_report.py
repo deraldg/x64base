@@ -61,6 +61,24 @@ def borrowed_style() -> tuple[str, dict]:
     return css, bands
 
 
+def borrowed_theme_script() -> str:
+    """Lift THEME_SCRIPT out of build_reports.py, for the same reason as the CSS.
+
+    Added 2026-08-13 with the light/dark palette. Without it this page would
+    borrow a stylesheet whose :root is light and never receive the class that
+    selects the dark half -- themed CSS, no way to reach the theme. Borrowing
+    beats copying here for the same reason the CSS is borrowed: one edit, and
+    the reports cannot end up disagreeing about what 'dark' means.
+    """
+    src = (ROOT / 'tools' / 'reports' / 'build_reports.py')
+    if src.is_file():
+        t = src.read_text(encoding='utf-8', errors='replace')
+        m = re.search(r'^THEME_SCRIPT\s*=\s*\((.*?)\)\s*$', t, re.S | re.M)
+        if m:
+            return ''.join(re.findall(r'"([^"]*)"', m.group(1)))
+    return ''
+
+
 # ------------------------------------------------------------------- parsing
 ROW = re.compile(r'^\|\s*\*\*([0-9A-Za-z.]+)\*\*\s*\|(.*)$')
 PARA = re.compile(r'^\*\*(R\d+[a-z0-9.]*)\s*--\s*(.+?)\.?\*\*', re.M)
@@ -239,6 +257,7 @@ def main() -> int:
     done = [i for i in items if i['settled']]
     t0 = parse_tier0()
     css, bands = borrowed_style()
+    theme_script = borrowed_theme_script()
 
     kpi = [(len(openi), 'open rulings'), (len(done), 'ratified'),
            (len(sheets), 'sheet(s) parsed')]
@@ -335,7 +354,7 @@ def main() -> int:
     page = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DotTalk++ AI Portal -- Open Rulings</title>
-<style>{css}</style></head><body><div class="wrap">
+<style>{css}</style><script>{theme_script}</script></head><body><div class="wrap">
 <div class="{cls}">{e(msg)}</div>
 <h1>AI Portal -- Open Rulings</h1>
 <div class="sub">Owner decisions outstanding across AIF lanes. Generated from {e(src)}
