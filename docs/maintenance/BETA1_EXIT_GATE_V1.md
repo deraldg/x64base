@@ -63,6 +63,57 @@ Status legend: `MET` · `PARTIAL` · `NOT-YET` · `BLOCKED` · `N/A`.
 - **Full ACID** — durability/atomicity are partial (ACID beta-1).
 - **Full localization** — target set by D1.
 
+## Scoring pass 2026-08-13 (member.ai.claude.cowork, coworker; owner review needed)
+
+Occasioned by an owner question -- whether x64base is beta 2, DotTalk++ beta 1, LabTalk
+alpha 0 -- and by the observation that the build has read `v0.6` for months. This gate
+already answers the first part, so it was scored rather than a new scheme invented. The
+rule at the head of this document is why: status is earned, not asserted.
+
+**Result: BETA-1 is NOT met.** Two structural rows are red, six cannot be scored without
+runs, and no row moved to MET in this pass.
+
+| # | Scored | Evidence, measured this session |
+| --- | --- | --- |
+| A1 | **NOT-YET** (was PARTIAL) | Both matrices EXIST -- `.github/workflows/ci.yml` runs `ubuntu-latest` and `windows-latest`. The row demands green on the beta commit, and the tree carries a metacollect build broken by the `FILE()` slot-resolution change. A red build in the tree forecloses A1 regardless of CI configuration. |
+| A3 | PARTIAL (unchanged) | No two-compiler warning log produced this session. |
+| C1 | **NOT-YET** (confirmed) | `FN_COVERAGE` still warns on `FILE` in every prepush-gate run today. `SYSFUNC_IMPORT_v1.csv` was regenerated on disk (70 -> 75 rows) but STILL carries no `FILE` row, so committing it would not clear this. |
+| C2 | PARTIAL (unchanged) | No COMMENTS reharvest this session. |
+| C3 | improved, not scored | Website claims tightened: alpha -> beta references corrected, the ECO map relabelled to what it is, the challenge page given rules and a judge. Row needs a site reality audit against the proof registry, which was not run. |
+| E2 | **MET** (was PARTIAL) -- see the correction below | Clause 1: promotion completed and verified -- staging cold-clone build green (`pro-md`, libsodium/lmdb/nlohmann-json/sqlite3 resolved), `main` at `1de39e1e3`, projection DRIFT 0 across 798 files. Clause 2: at `908db87eb`, 1,058 engine sources scanned, **0 untracked**, and **0 uncommitted** in `src/`+`include/`+`tests/`. |
+| B1 B2 B3 A2 | **UNSCORED** | Each needs a transcript from an executing binary (regression suite, restart, data-integrity proofs). None was run. Left unscored deliberately rather than inferred -- this gate accepts a durable artifact, not a recollection. |
+| C4 D1 D2 D3 E1 E3 | NOT-YET (unchanged) | Decision records and the peer-review pass; no work this session. |
+
+Shortest path to a defensible declaration, in dependency order: land or revert the 27
+uncommitted source/test changes; track or delete `src/agile/edu_agile.cpp`; fix the
+metacollect build; let CI turn A1 green. That clears the two structural rows and reduces
+the remainder to the B block, which is a regression RUN rather than a judgement call.
+
+**Correction, same session, a few hours later.** The first three of those four were done
+before this document was committed, so the E2 row above was rewritten rather than left to
+be read as current -- a scored gate whose scores are already stale is worse than an
+unscored one, because it reads as measurement. What changed:
+
+- `908db87eb` landed the 27 changes as one slice (file-contract headers across tests and
+  tools, `cmd_order` layer corrected, `check_cpp_ascii` extended) and tracked
+  `src/agile/edu_agile.cpp` + `agile.hpp`, removing five misfiled or duplicated files
+  (`shell_api.cpp` at root was a 2,100-byte truncated copy of the 13,080-byte
+  `src/cli/shell_api.cpp`; three `.dts`/`.ps1` under `src/cli/` were misfiled scripts).
+- The metacollect build was unbroken by adding `src/common/path_resolver.cpp` and
+  `src/common/path_state.cpp` to the `dt_meta` closure. It was never a signature break:
+  `fn_string.cpp` and `function_catalog.cpp` compile into TWO closures, the engine linked
+  the definitions and `dt_meta` did not, so only `metacollect` failed while every other
+  target stayed green. `metacollect.exe` now links.
+
+A1 is therefore UNBLOCKED but still NOT-YET: the row wants a clean build **and test** on
+BOTH matrices on the beta commit, and what exists is one matrix, locally, with no test
+run. It is now answerable by a CI run rather than by any further repair.
+
+Recorded because the version string and the maturity model have been drifting apart: the
+build prints `v0.6`, `projects.yaml` says `active_beta` for `project.x64base.runtime`, and
+this gate says not yet. Three records of one fact with nothing comparing them -- which is
+the same defect the gate itself was written to prevent.
+
 ## How this gate is worked
 
 The gate is filled by **AIF-041** milestones: M1→B1, M2→B2, M3→D3, M4→C4, M5→D1, M6→E1;
