@@ -4,12 +4,12 @@ Concurrent-session coordinator (AIF-050 coordination component).
 
 The failure it removes: multiple AI/Cowork sessions on one branch collide because the only shared
 state is git (which hides authorship) and a hand-edited intake queue that many agents append to at
-once — proven live when four sessions collided on AIF-047 -> 048 -> 050 in one sitting.
+once -- proven live when four sessions collided on AIF-047 -> 048 -> 050 in one sitting.
 
 Three primitives, all over the filesystem (the only medium concurrent local sessions actually share):
 
   claim-aif   Atomically claim the next-free (or a specific) AIF number. Uses O_CREAT|O_EXCL, so if
-              two sessions race for the same number exactly one wins the create — a real allocator,
+              two sessions race for the same number exactly one wins the create -- a real allocator,
               not a hope. Durable claim files under coordination/aif/ are the allocation ledger.
   checkin     Register this session's presence (member, run, lanes, files) so others can SEE it.
   lock/unlock Advisory (cooperative) file lock for a contested shared doc; check before you edit.
@@ -18,7 +18,7 @@ Three primitives, all over the filesystem (the only medium concurrent local sess
   quip        Ephemeral co-session note (the lightest rung -- no ledger, no history):
               `quip send --from <run> --to <run|all> --msg "..."`, `quip read --run <me> [--ack]`.
 
-Owner: member.derald · steward: member.ai.claude.cowork · lane: AIF-050 · status: candidate
+Owner: member.derald - steward: member.ai.claude.cowork - lane: AIF-050 - status: candidate
 """
 import argparse
 import datetime as dt

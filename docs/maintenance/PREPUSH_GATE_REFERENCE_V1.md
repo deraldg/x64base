@@ -241,14 +241,71 @@ because "refusing it would punish the sessions doing the most work."
 
 1. **Crash reported as finding** (sec 7). `ModuleNotFoundError` renders as
    "a closeout is missing its envelope, or a report id is duplicated".
-2. **The gate emits non-ASCII while enforcing ASCII.** `prepush_gate.py` carries
-   em-dashes in its own output strings, including the PASS line at `:493`, which
-   mojibakes on a non-UTF-8 console codepage. `check_house_style.py` inspects
-   added *documentation* lines, so the gate's own source escapes the rule it
-   enforces. `AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 4 covers scripts too.
-3. **`AI_PORTAL.md` "Pre-Push Gate" names two guards; twelve checks run** (sec 0).
+2. ~~**The gate emits non-ASCII while enforcing ASCII.**~~ **FIXED 2026-08-12**
+   by `member.ai.claude.cowork` as a coworker. `prepush_gate.py` carried
+   em-dashes in its own output strings, including the PASS line, which mojibaked
+   on a non-UTF-8 console codepage. `check_house_style.py` inspects added
+   *documentation* lines, so the gate's own source escaped the rule it enforces,
+   though `AI_ENGINEERING_STANDARDS_SEED_V1.md` sec 4 covers scripts too.
 
-None are fixed by this document. All three are AIF-082's surface.
+   Measured before the fix: 85 non-ASCII bytes across four gate-estate scripts --
+   `prepush_gate.py` 57, `aif_collision_gate.py` 10, `session_coordinator.py` 12,
+   `audit_trail.py` 6. Repaired with the project's own `ascii_normalize.py`
+   (AIF-090), which refused one item as an editorial choice rather than a
+   transliteration: `U+2717 BALLOT X` in the hard-block path list. Decided in
+   context and by hand as `X`, because the neighbouring marker for an ordinary
+   staged path is `=` and the column alignment carries meaning; the tool's
+   suggested `no` would have broken both.
+
+   String-only. No control flow, exit code, severity, or classification list was
+   touched. Verified after: 0 non-ASCII in all four, all four compile,
+   `test_session_coordinator.py` passes, `audit_trail.py` reports
+   `enforced=106 valid=106 findings=0` on the live tree, and the collision gate
+   still fails in both directions -- `HARD FAIL ... AIF-001` rc=1 on a seeded
+   duplicate, `no duplicate AIF numbers OK` rc=0 on the control. Detection
+   proven, not assumed, per the seen-it-FAIL rule.
+
+   **Completed 2026-08-13, and the paragraph above was premature until then.**
+   The 2026-08-12 pass was left uncommitted, and when it was measured again on
+   2026-08-13 the count was not zero: `prepush_gate.py` 14, `aif_collision_gate.py`
+   2, `session_coordinator.py` 2 (`audit_trail.py` alone had reached 0). All 18
+   were `U+2014 EM DASH`, and **8 of the 14 in `prepush_gate.py` were in output
+   strings**, including the PASS line -- so the gate that enforces ASCII printed
+   an em dash on every successful run for two days, in full view of every
+   session that read its output, this one included. Finished with the same tool
+   (`ascii_normalize.py`, no editorial exceptions needed this time; the 18 map
+   cleanly to `--`), and the verification above was re-run rather than inherited:
+   0 non-ASCII in all four, all four compile, the coordinator test passes, and
+   `audit_trail.py` still reports `enforced=106 valid=106 findings=0`.
+
+   NOT re-proven here: the collision gate's failure direction. Proving it needs
+   a duplicate AIF number seeded into the live intake queue, and this tree is
+   shared with concurrent sessions -- the rc=1 evidence above stands on the
+   2026-08-12 run, not on a 2026-08-13 repeat. Flagged rather than quietly
+   carried forward, because inheriting someone else's green is how the first
+   half of this entry came to overstate itself.
+
+   Recorded because the failure has a shape worth naming: a fix that is real,
+   measured, and half-finished reads exactly like a fix that is complete, once
+   the summary is written before the last pass. The summary was accurate about
+   what was done and wrong about what remained.
+
+3. ~~**`AI_PORTAL.md` "Pre-Push Gate" names two guards; twelve checks run**~~
+   **ALREADY FIXED** before this entry was re-read; the pointer landed at
+   `AI_PORTAL.md:1019`. This row was stale and is corrected here rather than
+   left to mislead the next reader into re-fixing it.
+
+Defect 1 remains open and is deliberately untouched: distinguishing "guard could
+not run" from "guard ran and found drift" is a logic change at the call site and
+belongs to its owning lane, not to a passing coworker. It has since been observed
+a second time, on `normcheck_v1.py`, which dies with `FileNotFoundError` on any
+clone because `dottalkpp/data/metadata/SYSCMD.dbf` is unpublished -- so the
+rendering is wrong for every agent working from a clone. See
+`BETA1_E1_GATE_FALSIFICATION_FINDINGS_2026-08-09.md` sec 7.
+
+Defects 2 and 3 were AIF-082's surface; AIF-100 (gate governance) is the
+successor lane and the right home for the registry row and known-bad proof this
+fix should become.
 
 ---
 

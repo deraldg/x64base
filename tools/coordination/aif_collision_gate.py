@@ -4,7 +4,7 @@ AIF-collision gate (AIF-050 coordination enforcement).
 
 The enforcement that makes coordination real: a duplicate AIF lane number cannot be committed.
 Wire this into the pre-push gate so it runs at the one chokepoint every parallel session funnels
-through — the maintainer's commit — regardless of whether any session ran the coordinator.
+through -- the maintainer's commit -- regardless of whether any session ran the coordinator.
 
 Checks:
   HARD  (exit 1)  duplicate AIF-NNN across intake-queue rows  <- the exact collision
@@ -13,7 +13,7 @@ Checks:
                     - an intake row with no claim (pre-coordination row; backfill or ignore)
 
 --strict promotes the reconciliation to hard once the ledger is backfilled.
-No third-party deps. Owner: member.derald · steward: member.ai.claude.cowork · lane: AIF-050.
+No third-party deps. Owner: member.derald - steward: member.ai.claude.cowork - lane: AIF-050.
 """
 import argparse
 import re

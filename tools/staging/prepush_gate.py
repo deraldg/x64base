@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-prepush_gate.py — mechanical enforcement of the AI_PORTAL Pre-Push Gate.
+prepush_gate.py -- mechanical enforcement of the AI_PORTAL Pre-Push Gate.
 
 Single source of truth for the exclusion list is AI_PORTAL.md (the
 "Outside-AI Delivery Rule", line ~300):
@@ -11,19 +11,19 @@ Single source of truth for the exclusion list is AI_PORTAL.md (the
 This guard inspects a change set (staged index by default, or a commit range)
 and classifies each path into three lanes:
 
-  HARD BLOCK  — things that must never be committed to source:
+  HARD BLOCK  -- things that must never be committed to source:
                 build trees, CMake byproducts, compiled binaries, IDE project
                 files. Presence => exit 2 (the gate fails).
 
-  WARN/ACK    — versioned data & runtime fixtures (DBF/DBT/FPT/CNX/CDX/INX,
+  WARN/ACK    -- versioned data & runtime fixtures (DBF/DBT/FPT/CNX/CDX/INX,
                 LMDB, generated help/metadata catalogs) and suspiciously large
                 change sets. These CAN be legitimate (a deliberate fixture
                 promotion the task named), so they do not hard-fail; they
                 require an explicit acknowledgement flag. Without it => exit 3.
 
-  OK          — source, headers, docs, scripts, configs, manifests.
+  OK          -- source, headers, docs, scripts, configs, manifests.
 
-Exit codes:  0 clean · 2 hard-blocked · 3 warn-needs-ack · 4 usage/git error.
+Exit codes:  0 clean - 2 hard-blocked - 3 warn-needs-ack - 4 usage/git error.
 
 Usage:
   python tools/staging/prepush_gate.py                 # check staged index
@@ -127,7 +127,7 @@ REPORT_SURFACE_PREFIXES = (
     "labtalk/registries/projects.yaml",
 )
 
-# --- Normalization guards (refcheck / normcheck) — catalog-drift enforcement ----
+# --- Normalization guards (refcheck / normcheck) -- catalog-drift enforcement ----
 # The command/function surface is described in several places (registry, SYSCMD,
 # SYSFUNC, the *ref help catalogs, command_catalog) authored by different hands at
 # different times. These guards fail when those descriptions disagree, so the drift
@@ -386,7 +386,7 @@ def main() -> int:
     paths = changed_paths(args.range_spec)
     scope = args.range_spec or "staged index"
     if not paths:
-        print(f"prepush-gate: no changes in {scope} — clean.")
+        print(f"prepush-gate: no changes in {scope} -- clean.")
         return 0
 
     hard = [p for p in paths if is_hard_block(p)]
@@ -412,30 +412,30 @@ def main() -> int:
     exit_code = 0
 
     if hard:
-        print("\n  BLOCKED — these never belong in a source commit "
+        print("\n  BLOCKED -- these never belong in a source commit "
               "(build trees / binaries / IDE project files):", file=sys.stderr)
         for p in sorted(hard)[:40]:
-            print(f"    ✗ {p}", file=sys.stderr)
+            print(f"    X {p}", file=sys.stderr)
         if len(hard) > 40:
-            print(f"    … and {len(hard) - 40} more", file=sys.stderr)
+            print(f"    ... and {len(hard) - 40} more", file=sys.stderr)
         print("  Unstage them (git restore --staged <path>) or add to .gitignore.",
               file=sys.stderr)
         exit_code = 2
 
     if data and not args.allow_data:
-        print("\n  WARN — data/runtime fixtures staged. These are report-only unless "
+        print("\n  WARN -- data/runtime fixtures staged. These are report-only unless "
               "the task named the mutation.", file=sys.stderr)
         for p in sorted(data)[:40]:
             print(f"    ? {p}", file=sys.stderr)
         if len(data) > 40:
-            print(f"    … and {len(data) - 40} more", file=sys.stderr)
+            print(f"    ... and {len(data) - 40} more", file=sys.stderr)
         print("  If intentional, re-run with --allow-data (or restore them).",
               file=sys.stderr)
         if exit_code == 0:
             exit_code = 3
 
     if len(paths) > MASS_CHANGE_THRESHOLD and not args.allow_mass:
-        print(f"\n  WARN — {len(paths)} paths staged (> {MASS_CHANGE_THRESHOLD}). "
+        print(f"\n  WARN -- {len(paths)} paths staged (> {MASS_CHANGE_THRESHOLD}). "
               "Large sets often mean an accidental mass add or an un-sliced batch.",
               file=sys.stderr)
         print("  Confirm the scope, then re-run with --allow-mass if intentional.",
@@ -458,7 +458,7 @@ def main() -> int:
     if not args.skip_aif:
         print()  # spacer before the sub-gate's own report
         if run_aif_collision_gate(args.strict_aif) != 0:
-            print("\n  BLOCKED — AIF-number collision: a duplicate lane number is present "
+            print("\n  BLOCKED -- AIF-number collision: a duplicate lane number is present "
                   "in the intake queue. Renumber one via "
                   "tools/coordination/session_coordinator.py claim-aif.", file=sys.stderr)
             exit_code = 2  # hard block dominates any WARN already set
@@ -468,7 +468,7 @@ def main() -> int:
     if not args.skip_report_audit and touches_report_surface:
         print("\n=== AI report-audit (portal report hygiene) ===")
         if run_report_audit_gate() != 0:
-            print("\n  BLOCKED — AI report-audit found hard findings (a closeout is missing "
+            print("\n  BLOCKED -- AI report-audit found hard findings (a closeout is missing "
                   "its ai_report_audit envelope, or a report id is duplicated). Fix the "
                   "envelope(s) or renumber the id; intake-package findings are advisory and "
                   "never block.", file=sys.stderr)
@@ -480,11 +480,11 @@ def main() -> int:
         print("\n=== normalization guards (refcheck / normcheck) ===")
         if run_normalization_guards() != 0:
             if args.strict_norm:
-                print("\n  BLOCKED — normalization guard found catalog drift "
+                print("\n  BLOCKED -- normalization guard found catalog drift "
                       "(--strict-norm).", file=sys.stderr)
                 exit_code = 2
             else:
-                print("\n  ADVISORY — catalog drift present (see above); NOT blocking. "
+                print("\n  ADVISORY -- catalog drift present (see above); NOT blocking. "
                       "Re-derive the lagging catalog (SYSCMD/SYSFUNC), or promote to a "
                       "hard block with --strict-norm / a lane's LANE_SEVERITY.")
 
@@ -604,7 +604,7 @@ def main() -> int:
                 exit_code = 2
 
     if exit_code == 0:
-        print("\nprepush-gate: PASS — change set is source/docs/config only "
+        print("\nprepush-gate: PASS -- change set is source/docs/config only "
               "(or acknowledged), no embedded BOM, no AIF-number collision.")
     else:
         print(f"\nprepush-gate: FAIL (exit {exit_code}).", file=sys.stderr)
